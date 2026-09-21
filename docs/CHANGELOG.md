@@ -19,6 +19,23 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 - Áp dụng nguyên tắc bất khả xâm phạm dữ liệu vận tải (**No Hard-Delete**), toàn bộ khóa ngoại dùng `PROTECT`.
 - Tạo thành công toàn bộ migration và nạp bộ dữ liệu mẫu thực tế chuẩn xác (`seed_data`) khớp 100% tài liệu điều vận.
 
+### Chuẩn Hóa Typography Quốc Tế & Cấu Trúc UI/UX Modular:
+- Nâng cấp Typography chuẩn doanh nghiệp quốc tế:
+  - **Plus Jakarta Sans**: Phông chữ hình học hiện đại (Geometric Sans) cho hệ thống tiêu đề (`h1-h6`), thẻ KPI và bảng phân tích số liệu tài chính (`tabular-nums`).
+  - **Be Vietnam Pro**: Phông chữ được tối ưu hóa đặc biệt cho tiếng Việt với tỉ lệ vàng dấu thanh, độ tương phản cao, mang lại trải nghiệm đọc mượt mà cho nội dung vận tải và bảng biểu.
+- Tái cấu trúc toàn bộ hệ thống Templates theo tiêu chuẩn công nghiệp:
+  - Layout khung sườn: [`templates/base.html`](file:///e:/Bim_Logistics/templates/base.html) và [`templates/index.html`](file:///e:/Bim_Logistics/templates/index.html).
+  - Tách thành các components độc lập:
+    - [`templates/components/sidebar.html`](file:///e:/Bim_Logistics/templates/components/sidebar.html)
+    - [`templates/components/topbar.html`](file:///e:/Bim_Logistics/templates/components/topbar.html)
+    - [`templates/components/modal_create_trip.html`](file:///e:/Bim_Logistics/templates/components/modal_create_trip.html)
+    - [`templates/components/modal_ocr.html`](file:///e:/Bim_Logistics/templates/components/modal_ocr.html)
+  - Tách thành 7 phân hệ view chuyên biệt trong `templates/views/`:
+    - `view_dashboard.html`, `view_dispatch.html`, `view_trip_detail.html`, `view_personnel.html`, `view_fleet.html`, `view_customs.html`, `view_sales.html`.
+  - Tách riêng tệp stylesheet và script:
+    - [`static/css/main.css`](file:///e:/Bim_Logistics/static/css/main.css)
+    - [`static/js/app.js`](file:///e:/Bim_Logistics/static/js/app.js)
+
 ### Giao Diện Web & Trải Nghiệm Người Dùng (UI/UX):
 - Xây dựng giao diện Single Page hiện đại theo chuẩn màu BIM Ecosystem (`teal-700`, `emerald-600`, `amber-500`, `rose-600`).
 - Tích hợp 6 màn hình quản trị nghiệp vụ:
