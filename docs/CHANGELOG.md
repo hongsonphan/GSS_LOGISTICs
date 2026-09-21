@@ -30,7 +30,14 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   6. Thủ tục Hải Quan & Quản lý Kinh Doanh Báo giá.
 - Tích hợp Mobile Simulator cho tài xế với camera OCR giả lập nhận diện hóa đơn và trả chứng từ EIR/POD.
 
-### Kiểm Thử & Kiểm Chứng (Testing & Verification):
+### Triển Khai Docker & Quản Trị Cổng Mạng (Docker Deployment):
+- Khởi tạo `Dockerfile` (Python 3.12-slim) và `docker-compose.yml`.
+- Tách biệt 2 container:
+  - `bim_logistics_postgres`: Container PostgreSQL 16 Alpine với volume bền vững `bim_logistics_postgres_data`.
+    - Cổng Database host: **`5435:5432`** (tránh cổng 5433 của `bim_erp_postgres`).
+  - `bim_logistics_web`: Container Django Web Application kết nối qua mạng nội bộ Docker.
+    - Cổng Web host: **`8085:8000`** (tránh cổng 8080 của Paperless và các dịch vụ khác).
+- Cấu hình linh hoạt tại `config/settings.py`: Tự động nhận diện môi trường Docker PostgreSQL, đồng thời hỗ trợ fallback SQLite3 khi chạy local mà không cần sửa code.
 - Xây dựng test suite tự động `core.tests` bao gồm 5 ca kiểm thử:
   - Soft-delete bảo toàn dữ liệu.
   - State Machine chuyển trạng thái nghiêm ngặt và chặn nhảy cóc.
