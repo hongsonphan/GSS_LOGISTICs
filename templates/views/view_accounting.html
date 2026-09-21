@@ -1,0 +1,145 @@
+<!-- 6. PHÂN HỆ QUẢN LÝ KẾ TOÁN & ĐỐI SOÁT CHI PHÍ CHUYẾN XE -->
+<div id="view-ke-toan" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-6">
+    
+    <!-- Header Phân Hệ -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider font-heading">
+                    Phòng Kế Toán & Tài Chính
+                </span>
+                <span class="text-xs text-slate-400 font-medium">|</span>
+                <span class="text-xs text-slate-500 font-medium">TMS Accounting, Trip Settlement & P&L Reporting</span>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight font-heading mt-1">Quản lý Kế toán</h2>
+            <p class="text-slate-500 text-sm mt-0.5 font-medium">
+                Quản lý Kế toán & Đối soát Chi phí,... Báo cáo Kế toán, kiểm tra chứng từ hóa đơn và chốt sổ chi phí chuyến xe (Khóa sửa/xóa)
+            </p>
+        </div>
+        <div class="flex items-center space-x-2.5">
+            <button onclick="loadAccountingData()" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all">
+                <i class="ph ph-arrows-clockwise text-sm"></i>
+                <span>Làm Mới</span>
+            </button>
+            <button onclick="showToast('info', 'Tính năng xuất bảng kê Excel đối soát chi phí đang kết nối định dạng AMIS MISA', 'Xuất Excel')" 
+                class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
+                <i class="ph-fill ph-file-xls text-sm"></i>
+                <span>Xuất Báo Cáo Kế Toán</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Cụm 4 Thẻ KPI Kế Toán & Đối Soát -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1: Doanh Thu Cước Vận Tải -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Cước (Tháng)</span>
+                <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
+                    <i class="ph-fill ph-currency-circle-dollar"></i>
+                </span>
+            </div>
+            <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-revenue">-- đ</p>
+            <p class="text-xs text-teal-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-trips-count">
+                <i class="ph-fill ph-check-circle text-xs"></i> Tính trên các chuyến xe đã phát sinh
+            </p>
+        </div>
+
+        <!-- KPI 2: Tổng Chi Phí Chuyến Đã Phát Sinh -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chi Phí Chuyến</span>
+                <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
+                    <i class="ph-fill ph-receipt"></i>
+                </span>
+            </div>
+            <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-expense">-- đ</p>
+            <p class="text-xs text-slate-500 font-medium mt-1.5">Dầu, BOT, nâng hạ, cân xe, bồi dưỡng kho...</p>
+        </div>
+
+        <!-- KPI 3: Lợi Nhuận Gộp Vận Tải -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Lợi Nhuận Gộp Vận Tải</span>
+                <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+                    <i class="ph-fill ph-chart-line-up"></i>
+                </span>
+            </div>
+            <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-profit">-- đ</p>
+            <p class="text-xs text-emerald-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-margin">
+                <i class="ph-bold ph-trend-up text-xs"></i> Biên lợi nhuận gộp: --%
+            </p>
+        </div>
+
+        <!-- KPI 4: Chuyến Chờ Chốt Sổ -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chờ Kế Toán Chốt Sổ</span>
+                <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                    <i class="ph-fill ph-lock-key-open"></i>
+                </span>
+            </div>
+            <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-pending">-- chuyến</p>
+            <p class="text-xs text-amber-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-settled">
+                <i class="ph-fill ph-lock-key text-xs"></i> Đã chốt sổ: -- chuyến
+            </p>
+        </div>
+    </div>
+
+    <!-- Bảng Đối Soát Chi Phí & Chốt Sổ Chuyến Xe -->
+    <div class="erp-table-container flex flex-col shadow-sm">
+        <!-- Thanh Tìm Kiếm & Bộ Lọc Kế Toán -->
+        <div class="p-4 border-b border-slate-200 bg-slate-50/70 flex flex-wrap gap-3 items-center justify-between">
+            <div class="flex flex-wrap items-center gap-2.5">
+                <div class="relative">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="acct-search-input" onkeyup="filterAccountingTable()" type="text" 
+                        placeholder="Tìm chuyến, tài xế, khách hàng, số HĐ..." 
+                        class="form-input pl-9 pr-3.5 py-1.5 text-xs w-64 bg-white border-slate-200 rounded-xl" />
+                </div>
+                <select id="acct-filter-settle" onchange="filterAccountingTable()" 
+                    class="form-select text-xs font-bold py-1.5 bg-white border-slate-200 rounded-xl text-slate-700">
+                    <option value="ALL">Tất cả tình trạng chốt sổ</option>
+                    <option value="PENDING">Chờ Kế toán đối soát & chốt</option>
+                    <option value="SETTLED">Đã chốt sổ chi phí (Khóa)</option>
+                </select>
+            </div>
+            <div class="text-xs text-slate-500 font-medium flex items-center gap-2">
+                <span class="inline-flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> Chờ chốt sổ
+                </span>
+                <span class="inline-flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Đã khóa sổ chi phí
+                </span>
+            </div>
+        </div>
+
+        <!-- Bảng Dữ Liệu Chi Tiết -->
+        <div class="overflow-x-auto">
+            <table class="erp-table whitespace-nowrap">
+                <thead>
+                    <tr>
+                        <th>Mã Chuyến & Ngày Chạy</th>
+                        <th>Khách Hàng & Tuyến Vận Tải</th>
+                        <th>Tài Xế & Biển Số</th>
+                        <th class="text-right">Doanh Thu Cước</th>
+                        <th class="text-right">Tổng Chi Phí</th>
+                        <th class="text-right">Lợi Nhuận Gộp</th>
+                        <th class="text-center">Chứng Từ / HĐĐT</th>
+                        <th class="text-center">Trạng Thái Sổ Sách</th>
+                        <th class="text-center">Thao Tác Kế Toán</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="acct-tbody">
+                    <!-- Rendered by JS -->
+                    <tr>
+                        <td colspan="9" class="p-8 text-center text-slate-400 font-medium">
+                            <i class="ph ph-spinner-gap animate-spin text-2xl mb-2 inline-block text-emerald-600"></i>
+                            <p>Đang tải dữ liệu đối soát chi phí & báo cáo kế toán...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -28,6 +28,14 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     trip_code = models.CharField(max_length=30, unique=True, db_index=True) # TVL-0916-001...
     shipment_type = models.CharField(max_length=15, choices=ShipmentType.choices, default=ShipmentType.IMPORT)
     customer = models.ForeignKey('customers.Customer', on_delete=models.PROTECT, related_name='trips')
+    booking_order = models.ForeignKey(
+        'customers.BookingOrder',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='trips',
+        help_text="Đơn hàng Booking liên thông từ phân hệ Sale"
+    )
     
     # Tài nguyên điều động
     vehicle = models.ForeignKey('fleet.Vehicle', on_delete=models.PROTECT, related_name='trips')
@@ -47,6 +55,35 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     pickup_location = models.CharField(max_length=150, help_text="1. Nơi lấy cont/hàng (Cát Lái, SPITC, TĐÁ...)")
     warehouse_location = models.CharField(max_length=150, help_text="2. Nơi đóng/trả hàng (Kho KH: Tân Vạn, WCA...)")
     dropoff_location = models.CharField(max_length=150, blank=True, help_text="3. Nơi hạ vỏ cont / bãi rỗng")
+    
+    # Chi tiết Bãi/Depot & Kho theo Bảng kê chi phí thực tế
+    pickup_depot = models.CharField(max_length=100, blank=True, help_text="Cảng lấy / Depot lấy cont (vd: Tây Nam, AP622)")
+    dropoff_depot = models.CharField(max_length=100, blank=True, help_text="Cảng hạ / Depot hạ cont (vd: Cát Lái, Tân Cảng)")
+    delivery_warehouse = models.CharField(max_length=150, blank=True, help_text="Kho giao hàng thực tế")
+
+    # Thông tin Chứng từ EIR & Hãng tàu hiện trường
+    eir_number = models.CharField(max_length=50, blank=True, help_text="Số phiếu giao nhận Container (EIR No)")
+    shipping_line = models.CharField(max_length=50, blank=True, help_text="Hãng tàu (MAE, COS, CMA CGM, ONE...)")
+    vessel_voyage = models.CharField(max_length=100, blank=True, help_text="Tên tàu / Số chuyến (USAL-UMM SALAL / 637E)")
+    destination_port = models.CharField(max_length=100, blank=True, help_text="Cảng đích (NEWARK, LONG BEACH...)")
+    vgm_weight = models.CharField(max_length=50, blank=True, help_text="Trọng lượng VGM (vd 10.93 D26C)")
+    bay_location = models.CharField(max_length=50, blank=True, help_text="Vị trí bãi cont")
+
+    # Thông tin Hóa đơn thương mại & Cửa Dock kho theo Excel thực tế
+    commercial_invoice = models.CharField(max_length=100, blank=True, help_text="Số Invoice thương mại hàng hóa (VCC33970...)")
+    warehouse_dock = models.CharField(max_length=50, blank=True, help_text="Cửa Dock bốc hàng tại kho (D2, DP...)")
+    dropoff_vehicle = models.ForeignKey('fleet.Vehicle', on_delete=models.SET_NULL, null=True, blank=True, related_name='dropoff_trips', help_text="Xe hạ cont (Cột R Excel)")
+    cont_location_type = models.CharField(max_length=50, blank=True, default='NHÀ MÁY', help_text="Vị trí cont (NHÀ MÁY, BÃI, CẢNG...)")
+    cargo_notes = models.CharField(max_length=255, blank=True, help_text="Lưu ý đóng/hạ cont (Cột T trong Excel)")
+
+    # Theo dõi chi tiết 5 mốc thời gian tại kho khách hàng (Cột B, C, D, E, F, G, H)
+    loading_date = models.DateField(null=True, blank=True, help_text="Ngày hẹn đóng hàng (Cột B)")
+    loading_time = models.CharField(max_length=50, blank=True, help_text="Giờ hẹn đóng hàng (Cột C, vd: 8H, 16H30)")
+    eta_warehouse_time = models.CharField(max_length=50, blank=True, help_text="Giờ dự kiến đến kho (Cột D)")
+    warehouse_call_in_time = models.CharField(max_length=50, blank=True, help_text="Giờ kho gọi xe vào cổng (Cột E)")
+    actual_gate_in_time = models.CharField(max_length=50, blank=True, help_text="Giờ xe vào cổng kho thực tế (Cột F)")
+    warehouse_call_out_time = models.CharField(max_length=50, blank=True, help_text="Giờ kho gọi kéo cont ra (Cột G)")
+    actual_gate_out_time = models.CharField(max_length=50, blank=True, help_text="Giờ xe kéo ra cổng thực tế (Cột H)")
 
     planned_start_time = models.DateTimeField(null=True, blank=True)
     actual_start_time = models.DateTimeField(null=True, blank=True)
@@ -60,6 +97,11 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     cached_expense = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Tổng chi phí phát sinh + lương")
     cached_profit = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Lợi nhuận gộp")
     cached_margin_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Biên lợi nhuận %")
+
+    # Khóa sổ Kế toán (Bảo vệ tính bất khả xâm phạm)
+    is_expenses_settled = models.BooleanField(default=False, help_text="Kế toán đã chốt sổ chi phí (Khóa sửa/xóa)")
+    settled_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm chốt sổ chi phí")
+    settled_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='settled_trips')
 
     class Meta:
         ordering = ['-created_at']
@@ -84,13 +126,18 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
             if tariff:
                 self.cached_revenue = tariff.freight_price
 
-        # Tính tổng chi phí đã duyệt từ bảng TripExpense
-        from apps.billing.models import TripExpense
-        approved_expenses = TripExpense.objects.filter(trip=self, status='APPROVED').aggregate(
+        # Tính tổng chi phí thực tế phát sinh từ bảng TripExpense (loại trừ các khoản bị xóa hoặc từ chối)
+        from apps.billing.models import TripExpense, ApprovalStatus
+        total_expenses = TripExpense.objects.filter(
+            trip=self, 
+            is_deleted=False
+        ).exclude(
+            status=ApprovalStatus.REJECTED
+        ).aggregate(
             total=models.Sum('amount')
         )['total'] or 0
 
-        self.cached_expense = approved_expenses
+        self.cached_expense = total_expenses
         self.cached_profit = self.cached_revenue - self.cached_expense
         if self.cached_revenue > 0:
             self.cached_margin_percent = round((self.cached_profit / self.cached_revenue) * 100, 2)

@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Keys & Secrets (CRITICAL SECURITY - DO NOT REMOVE)
+*.key
+*.pem
+*.pub
+ssh-key*
+id_rsa*
+id_ed25519*
+.env
+.env.*
+!.env.example
+
+# Database
+*.sqlite3
+*.db
+
+# Static & Media
+staticfiles/
+media/
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node / Scratch
+node_modules/
+scratch/

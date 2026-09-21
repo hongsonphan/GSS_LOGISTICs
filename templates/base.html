@@ -28,8 +28,14 @@
         }
     </script>
     
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Phosphor Icons (Direct CSS & Webfont JS) -->
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"/>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    
+    <!-- Chart.js (Modern Logistics Analytics & BI Visualization) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- International Enterprise Typography & Custom Styles -->
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
@@ -54,6 +60,8 @@
     <!-- 3. POPUP MODALS -->
     {% include 'components/modal_create_trip.html' %}
     {% include 'components/modal_ocr.html' %}
+    {% include 'components/modal_quotation.html' %}
+    {% include 'components/modal_booking.html' %}
 
     <!-- 4. GRACEFUL TOAST NOTIFICATION CONTAINER (Bim_ERP-Solutions Standard) -->
     <div id="toast-container"></div>

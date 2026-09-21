@@ -1,38 +1,342 @@
-<!-- 6. KINH DOANH -->
-<div id="view-kinh-doanh" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
-    <h2 class="text-2xl font-black text-slate-800 mb-6 font-heading">Sale & Báo giá (CRM)</h2>
-    <div class="grid grid-cols-2 gap-6 mb-6">
-        <div class="bg-white p-6 rounded-2xl border shadow-sm border-l-4 border-l-teal-600">
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Báo giá đang thương lượng</h3>
-            <p class="text-4xl font-black text-slate-800 mt-1 tabular-nums font-heading">5</p>
-        </div>
-        <div class="bg-white p-6 rounded-2xl border shadow-sm border-l-4 border-l-emerald-600">
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Hợp đồng mới (Tháng)</h3>
-            <p class="text-4xl font-black text-slate-800 mt-1 tabular-nums font-heading">12</p>
-        </div>
-    </div>
+<!-- 6. KINH DOANH & SALE / BOOKING -->
+<div id="view-kinh-doanh" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-6">
     
-    <div class="erp-table-container flex-1 flex flex-col">
-        <div class="p-4 border-b border-slate-200 bg-slate-50/50">
-            <h3 class="font-bold text-slate-800 font-heading text-[15px]">Danh sách Báo giá / Tuyến cước khách hàng</h3>
+    <!-- Top Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 text-xs font-black uppercase tracking-wider font-heading">
+                    Phân Hệ Thương Mại & CS
+                </span>
+                <span class="text-xs text-slate-400 font-medium">|</span>
+                <span class="text-xs text-slate-500 font-medium">TMS Commercial & Booking Management</span>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight font-heading mt-1">Sale & Booking</h2>
+            <p class="text-slate-500 text-sm mt-0.5 font-medium">
+                Chuyên quản lý Báo giá & Booking: Theo dõi tình trạng kinh doanh toàn diện & luồng liên thông: 
+                <span class="text-indigo-700 font-bold">1. NVKD Lên Báo Giá</span> ➔ 
+                <span class="text-teal-700 font-bold">2. Sale Admin/CS Nhận Booking</span> ➔ 
+                <span class="text-emerald-700 font-bold">3. Chuyển Giao Điều Vận</span>
+            </p>
         </div>
-        <div class="overflow-x-auto flex-1">
-            <table class="erp-table whitespace-nowrap">
-                <thead>
-                    <tr>
-                        <th>Mã BG / Hợp đồng</th>
-                        <th>Khách hàng</th>
-                        <th>Tuyến đường (Dự kiến)</th>
-                        <th>Cước phí</th>
-                        <th class="text-center">Sản lượng dự kiến</th>
-                        <th class="text-right">Doanh thu dự kiến</th>
-                        <th>Trạng thái</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100" id="sales-tbody">
-                    <!-- Rendered via API -->
-                </tbody>
-            </table>
+        <div class="flex items-center space-x-2.5">
+            <button onclick="loadSalesData()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                <i class="ph-bold ph-arrows-clockwise text-teal-600"></i>
+                <span>Làm Mới</span>
+            </button>
         </div>
     </div>
+
+    <!-- ========================================================================= -->
+    <!-- MÀN HÌNH CHÍNH: CỤM CHỈ SỐ TÌNH TRẠNG KINH DOANH & TĂNG TRƯỞNG THEO TUẦN/THÁNG -->
+    <!-- ========================================================================= -->
+    <div class="space-y-2.5">
+        <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="ph-fill ph-chart-line-up text-indigo-600 text-sm"></i>
+                Tình Trạng Kinh Doanh & Hiệu Suất Tăng Trưởng (So Với Tuần / Tháng)
+            </h3>
+            <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                <i class="ph-bold ph-arrows-clockwise text-teal-600"></i> Dữ liệu thời gian thực
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- Metric 1: Doanh Thu Hợp Đồng Tuyến / Tháng -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Kế Hoạch / Tháng</span>
+                    <span id="sales-trend-revenue" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                        <i class="ph-bold ph-trend-up"></i> +14.8%
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-revenue">429.500.000 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-revenue">
+                    <i class="ph-fill ph-check-circle text-emerald-600 text-xs"></i> 2 tuyến cước đã duyệt ký kết
+                </p>
+            </div>
+
+            <!-- Metric 2: Tổng Đơn Hàng Booking Vận Chuyển -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Đơn Hàng Booking</span>
+                    <span id="sales-trend-bookings" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                        <i class="ph-bold ph-trend-up"></i> +33.3%
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-bookings">8 Đơn hàng</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-bookings">
+                    <i class="ph-fill ph-truck text-teal-600 text-xs"></i> 6 Chờ điều · 2 Đang chạy
+                </p>
+            </div>
+
+            <!-- Metric 3: Sản Lượng Container Cần Điều -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Sản Lượng Container</span>
+                    <span id="sales-trend-containers" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                        <i class="ph-bold ph-trend-up"></i> +25.0%
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-containers">20 Cont</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-containers">
+                    <i class="ph-fill ph-package text-amber-600 text-xs"></i> Đã kéo: 3 · Còn lại: 17 cont
+                </p>
+            </div>
+
+            <!-- Metric 4: Tỷ Lệ Chốt Hợp Đồng Tuyến (Win Rate) -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Chốt Tuyến (Win Rate)</span>
+                    <span id="sales-trend-winrate" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                        <i class="ph-bold ph-trend-up"></i> +12.5%
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-winrate">50.0%</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-winrate">
+                    <i class="ph-fill ph-chats-circle text-indigo-600 text-xs"></i> 1 Đang đàm phán · 1 Chờ duyệt
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- THANH SUB-TABS PHÂN ĐỊNH VAI TRÒ: NVKD vs SALE ADMIN / CS -->
+    <!-- ========================================================================= -->
+    <div class="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <div class="flex items-center space-x-2.5 w-full md:w-auto">
+            <!-- Subtab 1: NVKD / Báo Giá -->
+            <button id="tab-btn-quotations" onclick="switchSalesSubTab('quotations')" 
+                class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-sm font-bold font-heading flex items-center justify-center space-x-2.5 transition-all shadow-sm bg-indigo-700 text-white">
+                <i class="ph-fill ph-handshake text-base"></i>
+                <span>1. Báo Giá & Khách Hàng (Sales / NVKD)</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-black bg-white/20 text-white tabular-nums" id="badge-count-quotes">4</span>
+            </button>
+            
+            <!-- Subtab 2: Sale Admin / CS / Booking -->
+            <button id="tab-btn-bookings" onclick="switchSalesSubTab('bookings')" 
+                class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-sm font-bold font-heading flex items-center justify-center space-x-2.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                <i class="ph-fill ph-truck text-base"></i>
+                <span>2. Đơn Đặt Hàng / Booking Từ Khách (Sale Admin / CS)</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-black bg-teal-100 text-teal-800 tabular-nums" id="badge-count-bookings">8</span>
+            </button>
+        </div>
+        
+        <!-- Role & Responsibility Guide Tag -->
+        <div class="hidden lg:flex items-center text-xs text-slate-500 space-x-2 px-3">
+            <i class="ph-fill ph-shield-check text-indigo-600 text-base"></i>
+            <span id="sales-tab-role-hint" class="font-medium text-slate-600">
+                Phân quyền: <strong class="text-indigo-700">Nhân viên Kinh doanh (NVKD)</strong> — Khảo sát tuyến, chào giá, đàm phán hợp đồng
+            </span>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- NỘI DUNG SUBTAB 1: BÁO GIÁ TUYẾN CƯỚC & PHỄU CRM (DÀNH CHO SALES / NVKD) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-sales-quotations" class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-2">
+            <div class="flex items-center space-x-2.5">
+                <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-sm font-heading">1</span>
+                <div>
+                    <h3 class="font-black text-slate-900 font-heading text-base">Bảng Báo Giá Tuyến Cước & Phễu Khách Hàng (CRM)</h3>
+                    <p class="text-xs text-slate-500">NVKD chủ động tìm kiếm khách hàng, chào giá cước vận chuyển, định mức chuyến và theo dõi duyệt hợp đồng</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2.5">
+                <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full font-heading flex items-center gap-1">
+                    <i class="ph-fill ph-user-circle"></i> Sales / NVKD
+                </span>
+                <button onclick="openModalQuotation()" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
+                    <i class="ph ph-plus text-base"></i>
+                    <span>Tạo Báo Giá Mới</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- DASHBOARD RIÊNG TAB 1: 4 TRẠNG THÁI CHU KỲ BÁO GIÁ -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- Thẻ 1: Đang Thương Lượng -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đang Thương Lượng</span>
+                    <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-chats-circle"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-negotiating">1</p>
+                <p class="text-xs text-amber-700 font-medium mt-1.5">Đang đàm phán cước & tuyến</p>
+            </div>
+
+            <!-- Thẻ 2: Chờ BGĐ Duyệt -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chờ BGĐ Phê Duyệt</span>
+                    <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-file-dashed"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-pending">1</p>
+                <p class="text-xs text-indigo-700 font-medium mt-1.5">Trình duyệt cước & lương chuyến</p>
+            </div>
+
+            <!-- Thẻ 3: Tuyến Cước Đã Duyệt -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tuyến Cước Đã Duyệt</span>
+                    <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-check-circle"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-approved">2</p>
+                <p class="text-xs text-emerald-700 font-medium mt-1.5">Sẵn sàng nhận booking</p>
+            </div>
+
+            <!-- Thẻ 4: Doanh Thu Kế Hoạch (Tháng) -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Kế Hoạch (Tháng)</span>
+                    <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-currency-circle-dollar"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-revenue">429.500.000 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Sản lượng cam kết hàng tháng</p>
+            </div>
+        </div>
+
+        <!-- Bảng Danh Sách Báo Giá Tuyến Cước -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Báo Giá</th>
+                            <th>Khách Hàng</th>
+                            <th>Tuyến Đường Vận Chuyển</th>
+                            <th class="text-right">Đơn Giá Cước (VNĐ)</th>
+                            <th class="text-center">Sản Lượng Dự Kiến</th>
+                            <th class="text-right">Doanh Thu Kế Hoạch</th>
+                            <th>Trạng Thái Hợp Đồng</th>
+                            <th class="text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="sales-tbody">
+                        <!-- Rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- NỘI DUNG SUBTAB 2: QUẢN LÝ ĐƠN ĐẶT HÀNG / BOOKING TỪ KHÁCH (SALE ADMIN / CS) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-sales-bookings" class="space-y-4 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-2">
+            <div class="flex items-center space-x-2.5">
+                <span class="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-sm font-heading">2</span>
+                <div>
+                    <h3 class="font-black text-slate-900 font-heading text-base">Danh Sách Đơn Đặt Hàng / Booking Từ Khách Hàng Chờ Điều Xe</h3>
+                    <p class="text-xs text-slate-500">Sale Admin / CS tiếp nhận đơn đặt vận chuyển từ khách hàng (kèm Booking hãng tàu hoặc vận tải nội địa), kiểm soát chứng từ và liên thông sang Điều Vận</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2.5">
+                <span class="text-xs font-bold text-teal-800 bg-teal-100 px-3 py-1 rounded-full border border-teal-200 font-heading flex items-center gap-1">
+                    <i class="ph-fill ph-headset"></i> Sale Admin / CS
+                </span>
+                <button onclick="openModalBooking()" class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
+                    <i class="ph ph-plus text-base"></i>
+                    <span>Tiếp Nhận Đơn / Booking Mới</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- DASHBOARD RIÊNG TAB 2: 4 CHỈ SỐ TRẠNG THÁI VẬN CHUYỂN CỦA ĐƠN VỊ VẬN TẢI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- Thẻ 1: Chờ Điều Xe -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chờ Điều Xe</span>
+                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                        <i class="ph-fill ph-clock-countdown"></i>
+                    </span>
+                </div>
+                <p class="text-2xl font-black text-slate-800 tabular-nums font-heading" id="sales-stat-pending-dispatch">6</p>
+                <p class="text-[11px] text-rose-600 font-bold mt-1">Chưa gán xe (Ưu tiên điều gấp)</p>
+            </div>
+
+            <!-- Thẻ 2: Đang Điều Xe -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đang Điều Xe</span>
+                    <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
+                        <i class="ph-fill ph-truck"></i>
+                    </span>
+                </div>
+                <p class="text-2xl font-black text-teal-700 tabular-nums font-heading" id="sales-stat-partially-dispatched">2</p>
+                <p class="text-[11px] text-teal-700 font-medium mt-1">Đang kéo cont theo từng đợt</p>
+            </div>
+
+            <!-- Thẻ 3: Đã Hoàn Thành / Đủ Xe -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Đủ Xe / Hoàn Tất</span>
+                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                        <i class="ph-fill ph-check-circle"></i>
+                    </span>
+                </div>
+                <p class="text-2xl font-black text-emerald-700 tabular-nums font-heading" id="sales-stat-completed">0</p>
+                <p class="text-[11px] text-emerald-700 font-medium mt-1">Đã phát lệnh 100% số cont</p>
+            </div>
+
+            <!-- Thẻ 4: Sản Lượng Container -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sản Lượng Container</span>
+                    <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                        <i class="ph-fill ph-package"></i>
+                    </span>
+                </div>
+                <p class="text-2xl font-black text-slate-800 tabular-nums font-heading">
+                    <span id="sales-stat-dispatched-containers">3</span> / <span id="sales-stat-total-containers">20</span> <span class="text-xs font-bold text-slate-500">Cont</span>
+                </p>
+                <p class="text-[11px] text-slate-500 font-medium mt-1">
+                    Còn lại: <span id="sales-stat-remaining-containers" class="font-bold text-amber-700">17</span> cont cần kéo
+                </p>
+            </div>
+        </div>
+
+        <!-- Bảng Quản Lý Booking (Sắp xếp theo độ gấp gần nhất) -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                    <i class="ph-fill ph-sort-ascending text-teal-700 text-sm"></i>
+                    <span>Ưu tiên vận chuyển: <strong>Đơn hàng gấp & Ngày hẹn đóng gần nhất ở trên đầu</strong></span>
+                </div>
+                <span class="text-[11px] text-slate-400 font-medium">Đơn vị vận tải container & hàng hóa nội địa</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Đơn / Lịch Đóng</th>
+                            <th>Khách Hàng & Dịch Vụ</th>
+                            <th>Số Booking (B/L) / PO</th>
+                            <th>Loại Cont & Hàng Hóa</th>
+                            <th>Tiến Độ Điều Xe</th>
+                            <th>Lộ Trình Vận Chuyển</th>
+                            <th>Hạn Cắt Máng (CY)</th>
+                            <th class="text-right">Cước Thỏa Thuận</th>
+                            <th class="text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="sales-bookings-tbody">
+                        <!-- Rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>

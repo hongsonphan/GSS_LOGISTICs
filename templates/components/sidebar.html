@@ -1,60 +1,70 @@
 <!-- SIDEBAR NAVIGATION (Chuẩn MISA AMIS - Bim_ERP-Solutions Standard) -->
 <aside class="app-sidebar select-none">
-    <!-- Brand Logo Header -->
-    <div class="app-sidebar-header flex items-center space-x-3">
-        <div class="bg-teal-600 p-2.5 rounded-xl shadow-md shadow-teal-950/40 flex items-center justify-center">
-            <i class="ph-fill ph-anchor text-white text-2xl"></i>
+    <!-- Brand Logo Header (Homepage Link -> Dashboard) -->
+    <a href="/" onclick="event.preventDefault(); switchTab('dashboard');" class="app-sidebar-header flex items-center space-x-3 cursor-pointer hover:bg-slate-900/40 transition-colors group select-none block" title="Về trang chủ Dashboard">
+        <div class="flex items-center space-x-3">
+            <div class="bg-teal-600 p-2.5 rounded-xl shadow-md shadow-teal-950/40 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <i class="ph-fill ph-anchor text-white text-2xl"></i>
+            </div>
+            <div class="overflow-hidden">
+                <h1 class="text-[17px] font-black text-white leading-tight tracking-tight font-heading truncate group-hover:text-teal-200 transition-colors">BIM Logistics</h1>
+                <p class="text-[11px] text-teal-300 uppercase tracking-wider font-bold truncate">Triền Võ • TMS & Fleet</p>
+            </div>
         </div>
-        <div class="overflow-hidden">
-            <h1 class="text-[17px] font-black text-white leading-tight tracking-tight font-heading truncate">BIM Logistics</h1>
-            <p class="text-[11px] text-teal-300 uppercase tracking-wider font-bold truncate">Triền Võ • TMS & Fleet</p>
-        </div>
-    </div>
+    </a>
     
     <!-- Navigation Items -->
     <div class="p-3 flex-1 overflow-y-auto space-y-1">
         <p class="text-[11px] font-extrabold text-teal-400 uppercase tracking-widest px-3 pt-3 pb-1.5 font-heading">Phân hệ quản trị</p>
         <ul class="space-y-1" id="sidebar-menu">
+            <!-- 1. Tổng quan Dashboard -->
             <li>
-                <button onclick="switchTab('dashboard')" class="sidebar-item-main" data-target="dashboard">
-                    <i class="ph ph-buildings text-xl mr-3 text-slate-400"></i>
-                    <span class="flex-1 text-left tracking-wide">Tổng quan Ban GĐ</span>
-                    <span class="text-[11px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400">BGD</span>
+                <button onclick="switchTab('dashboard')" class="sidebar-item-main active" data-target="dashboard">
+                    <i class="ph ph-squares-four text-xl mr-3 text-teal-300"></i>
+                    <span class="flex-1 text-left tracking-wide">Tổng quan Dashboard</span>
                 </button>
             </li>
+            <!-- 2. Sale & Booking -->
             <li>
-                <button onclick="switchTab('dieu-van')" class="sidebar-item-main active" data-target="dieu-van">
-                    <i class="ph ph-truck text-xl mr-3 text-teal-300"></i>
-                    <span class="flex-1 text-left tracking-wide">Phòng Điều Vận</span>
-                    <span class="text-[11px] px-2 py-0.5 rounded font-bold bg-teal-900/80 text-teal-200">ĐV</span>
+                <button onclick="switchTab('kinh-doanh')" class="sidebar-item-main" data-target="kinh-doanh">
+                    <i class="ph ph-handshake text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Sale & Booking</span>
                 </button>
             </li>
+            <!-- 3. Điều vận -->
+            <li>
+                <button onclick="switchTab('dieu-van')" class="sidebar-item-main" data-target="dieu-van">
+                    <i class="ph ph-truck text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Điều vận</span>
+                </button>
+            </li>
+            <!-- 4. Xe & Bãi -->
+            <li>
+                <button onclick="switchTab('xe-bai')" class="sidebar-item-main" data-target="xe-bai">
+                    <i class="ph ph-garage text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Xe & Bãi</span>
+                </button>
+            </li>
+            <!-- 5. Hành chính & Nhân sự -->
             <li>
                 <button onclick="switchTab('nhan-su')" class="sidebar-item-main" data-target="nhan-su">
                     <i class="ph ph-users text-xl mr-3 text-slate-400"></i>
-                    <span class="flex-1 text-left tracking-wide">Nhân sự & Lương</span>
-                    <span class="text-[11px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400">HC</span>
+                    <span class="flex-1 text-left tracking-wide">Hành chính & Nhân sự</span>
                 </button>
             </li>
+            <!-- 6. Quản lý Kế toán -->
             <li>
-                <button onclick="switchTab('xe-bai')" class="sidebar-item-main" data-target="xe-bai">
-                    <i class="ph ph-wrench text-xl mr-3 text-slate-400"></i>
-                    <span class="flex-1 text-left tracking-wide">Xe & Bãi</span>
-                    <span class="text-[11px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400">BT</span>
+                <button onclick="switchTab('ke-toan')" class="sidebar-item-main" data-target="ke-toan">
+                    <i class="ph ph-calculator text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Quản lý Kế toán</span>
                 </button>
             </li>
+            <!-- 7. Dịch vụ Hải quan -->
             <li>
                 <button onclick="switchTab('hai-quan')" class="sidebar-item-main" data-target="hai-quan">
                     <i class="ph ph-file-text text-xl mr-3 text-slate-400"></i>
-                    <span class="flex-1 text-left tracking-wide">Thủ tục Hải Quan</span>
-                    <span class="text-[11px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400">HQ</span>
-                </button>
-            </li>
-            <li>
-                <button onclick="switchTab('kinh-doanh')" class="sidebar-item-main" data-target="kinh-doanh">
-                    <i class="ph ph-clipboard-text text-xl mr-3 text-slate-400"></i>
-                    <span class="flex-1 text-left tracking-wide">Sale & Báo giá</span>
-                    <span class="text-[11px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400">KD</span>
+                    <span class="flex-1 text-left tracking-wide">Dịch vụ Hải quan</span>
+                    <span class="text-[9.5px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded ml-1">Phát triển sau</span>
                 </button>
             </li>
         </ul>

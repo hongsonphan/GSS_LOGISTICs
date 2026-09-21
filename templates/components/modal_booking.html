@@ -1,0 +1,237 @@
+<!-- MODAL TIẾP NHẬN & HIỆU CHỈNH ĐƠN ĐẶT HÀNG / BOOKING TỪ KHÁCH HÀNG (SALE ADMIN / CS) -->
+<div id="modal-booking" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden-view p-4 animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col border border-slate-100 max-h-[94vh]">
+        
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-teal-700 to-teal-800 p-5 text-white flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl backdrop-blur-xs">
+                    <i class="ph-fill ph-boat text-teal-200"></i>
+                </div>
+                <div>
+                    <h3 id="modal-booking-title" class="font-black font-heading text-lg tracking-tight">Tiếp Nhận Đơn Đặt Hàng / Booking Mới Từ Khách Hàng</h3>
+                    <p class="text-xs text-teal-100 font-medium mt-0.5">Sale Admin / CS tiếp nhận đơn đặt vận chuyển từ khách, kiểm soát chứng từ và liên thông sang Điều Vận</p>
+                </div>
+            </div>
+            <button onclick="closeModal('modal-booking')" class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
+                <i class="ph ph-x text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body Form -->
+        <form id="form-booking" onsubmit="saveBooking(event)" class="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+            <input type="hidden" id="booking-id" value="">
+
+            <!-- KHỐI 1: PHÂN LOẠI DỊCH VỤ & THÔNG TIN KHÁCH HÀNG -->
+            <div class="space-y-3">
+                <div class="flex items-center space-x-2 pb-1.5 border-b border-slate-100 text-teal-800 font-bold uppercase tracking-wider text-xs">
+                    <i class="ph-fill ph-identification-card text-base"></i>
+                    <span>1. Phân Loại Dịch Vụ & Khách Hàng Đặt Đơn</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Phân loại Dịch Vụ -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">
+                            Phân Loại Dịch Vụ <span class="text-rose-600">*</span>
+                        </label>
+                        <select id="booking-type" onchange="onBookingTypeChange()" 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-bold text-slate-800 text-sm transition-all">
+                            <option value="EXPORT_FCL">🚢 Kéo Cont Xuất Khẩu (FCL - Cấp rỗng ➔ Cảng)</option>
+                            <option value="IMPORT_FCL">📦 Kéo Cont Nhập Khẩu (FCL - Lấy cảng ➔ Trả rỗng)</option>
+                            <option value="DOMESTIC">🚚 Vận Chuyển Nội Địa / Nhà Máy (FTL)</option>
+                        </select>
+                    </div>
+
+                    <!-- Khách Hàng Đặt Đơn -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">
+                            Khách Hàng (Shipper / Consignee) <span class="text-rose-600">*</span>
+                        </label>
+                        <input type="text" id="booking-customer" required placeholder="VD: WORLDWIDE LINK, TTI, OASIS..." 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-bold text-slate-900 text-sm transition-all">
+                    </div>
+
+                    <!-- Số Booking Khách Cung Cấp / Số PO -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">
+                            Số Booking Khách Cung Cấp / Số PO <span class="text-rose-600">*</span>
+                        </label>
+                        <input type="text" id="booking-number" required placeholder="VD: 276081838, SGN3452548, PO-889..." 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-mono font-bold text-indigo-700 text-sm transition-all uppercase">
+                    </div>
+                </div>
+            </div>
+
+            <!-- KHỐI 2: HÃNG TÀU, PHƯƠNG TIỆN & SẢN LƯỢNG CONTAINER -->
+            <div class="space-y-3">
+                <div class="flex items-center space-x-2 pb-1.5 border-b border-slate-100 text-teal-800 font-bold uppercase tracking-wider text-xs">
+                    <i class="ph-fill ph-truck text-base"></i>
+                    <span>2. Hãng Tàu & Sản Lượng Container / Chuyến Xe Đặt</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <!-- Hãng Tàu -->
+                    <div id="wrapper-shipping-line">
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">
+                            Hãng Tàu (Shipping Line)
+                        </label>
+                        <input type="text" id="booking-shipping-line" placeholder="MAERSK, ONE, CMA, HMM, COSCO..." 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-bold text-slate-800 text-sm transition-all uppercase">
+                    </div>
+
+                    <!-- Tàu / Chuyến -->
+                    <div id="wrapper-vessel">
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">
+                            Tên Tàu & Số Chuyến (Vessel/Voyage)
+                        </label>
+                        <input type="text" id="booking-vessel" placeholder="VD: CAP SAN LAZARO / 001N" 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-medium text-slate-800 text-sm transition-all">
+                    </div>
+
+                    <!-- Loại Phương Tiện / Cont -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">
+                            Loại Phương Tiện / Cont <span class="text-rose-600">*</span>
+                        </label>
+                        <select id="booking-container-size" 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-bold text-slate-800 text-sm transition-all">
+                            <option value="40HC">Cont 40HC (Cao 9ft6)</option>
+                            <option value="20GP">Cont 20GP (Thường)</option>
+                            <option value="45G1">Cont 45 Feet</option>
+                            <option value="40GP">Cont 40GP (Thường)</option>
+                            <option value="XE_TAI_15T">Xe Tải 15 Tấn</option>
+                            <option value="XE_TAI_8T">Xe Tải 8 Tấn</option>
+                            <option value="XE_TAI_5T">Xe Tải 5 Tấn</option>
+                        </select>
+                    </div>
+
+                    <!-- Tổng Số Lượng Khách Đặt -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">
+                            Tổng Số Cont / Chuyến Đặt <span class="text-rose-600">*</span>
+                        </label>
+                        <input type="text" inputmode="numeric" id="booking-total-containers" required value="1" placeholder="VD: 1" 
+                            class="input-number-vn w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-black text-teal-800 text-sm tabular-nums transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <!-- KHỐI 3: HÀNG HÓA & LỘ TRÌNH 3 ĐIỂM -->
+            <div class="space-y-3">
+                <div class="flex items-center space-x-2 pb-1.5 border-b border-slate-100 text-teal-800 font-bold uppercase tracking-wider text-xs">
+                    <i class="ph-fill ph-map-pin text-base"></i>
+                    <span>3. Hàng Hóa & Lộ Trình Vận Chuyển 3 Điểm</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Tên Hàng Hóa Thực Tế</label>
+                        <input type="text" id="booking-commodity" placeholder="VD: Máy cắt cỏ, Dụng cụ Ryobi, Hạt nhựa, Bao bì..." 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-medium text-slate-800 text-sm transition-all">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Mã HS Code</label>
+                        <input type="text" id="booking-hs-code" placeholder="VD: 8433.11, 8414.59..." 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-mono font-medium text-slate-800 text-sm transition-all">
+                    </div>
+
+                    <!-- Lộ trình 3 điểm -->
+                    <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block font-bold text-teal-800 mb-1 text-xs uppercase tracking-wider">1. Điểm Lấy / Cấp Rỗng <span class="text-rose-600">*</span></label>
+                            <input type="text" id="booking-pickup" required placeholder="VD: SOLOG DEPOT, SOWATCO, KHO A..." 
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900 uppercase focus:border-teal-600">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-800 mb-1 text-xs uppercase tracking-wider">2. Kho Đóng / Dỡ Hàng <span class="text-rose-600">*</span></label>
+                            <input type="text" id="booking-delivery" required placeholder="VD: NHÀ MÁY TTI CỦ CHI (DOCK D2)..." 
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900 uppercase focus:border-teal-600">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-indigo-800 mb-1 text-xs uppercase tracking-wider">3. Điểm Hạ Cảng / Trả Rỗng <span class="text-rose-600">*</span></label>
+                            <input type="text" id="booking-dropoff" required placeholder="VD: CẢNG GEMALINK, ICD PHƯỚC LONG..." 
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900 uppercase focus:border-teal-600">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KHỐI 4: LỊCH HẸN ĐÓNG HÀNG & MỐC CUT-OFF CHỨNG TỪ -->
+            <div class="space-y-3">
+                <div class="flex items-center space-x-2 pb-1.5 border-b border-slate-100 text-teal-800 font-bold uppercase tracking-wider text-xs">
+                    <i class="ph-fill ph-clock-countdown text-base"></i>
+                    <span>4. Kế Hoạch Đóng Hàng & Hạn Cut-Off Hãng Tàu</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Ngày Hẹn Đóng / Bốc <span class="text-rose-600">*</span></label>
+                        <input type="date" id="booking-loading-date" required 
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-sm">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Giờ Hẹn Tại Kho</label>
+                        <input type="text" id="booking-loading-time" value="8H" placeholder="8H, 14H..." 
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-sm">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Hạn Cắt Máng CY</label>
+                        <input type="text" id="booking-closing-time" placeholder="VD: 24/09 17:00" 
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-rose-700 text-sm">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Hạn Chót SI Cut-off</label>
+                        <input type="text" id="booking-si-cutoff" placeholder="VD: 23/09 12:00" 
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-medium text-slate-700 text-sm">
+                    </div>
+
+                    <!-- Free time DET & DEM -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Free time Lưu Vỏ (DET)</label>
+                        <input type="text" inputmode="numeric" id="booking-det" value="7" placeholder="VD: 7"
+                            class="input-number-vn w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-sm tabular-nums">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Free time Lưu Bãi (DEM)</label>
+                        <input type="text" inputmode="numeric" id="booking-dem" value="7" placeholder="VD: 7"
+                            class="input-number-vn w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-sm tabular-nums">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Cước Vận Chuyển (VNĐ) <span class="text-rose-600">*</span></label>
+                        <input type="text" inputmode="numeric" id="booking-price" required value="4.000.000" placeholder="VD: 4.000.000"
+                            class="input-number-vn w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-black text-emerald-700 text-sm tabular-nums">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Trạng Thái Đơn Hàng <span class="text-rose-600">*</span></label>
+                        <select id="booking-status" 
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-sm">
+                            <option value="PENDING_DISPATCH">Chờ điều xe (Chưa gán xe)</option>
+                            <option value="PARTIALLY_DISPATCHED">Đang điều xe (Đang kéo cont từng đợt)</option>
+                            <option value="COMPLETED">Đã điều đủ cont (Hoàn thành)</option>
+                            <option value="CANCELLED">Đã hủy đơn</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5 text-xs uppercase tracking-wider">Ghi Chú / Yêu Cầu Đặc Biệt Từ Khách Hàng</label>
+                    <textarea id="booking-notes" rows="2" placeholder="VD: Yêu cầu tài xế có bảo hộ lao động, gọi kho trước 1h, kiểm tra seal kỹ..." 
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 text-slate-800 text-sm"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Footer Buttons -->
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+                <button type="button" onclick="closeModal('modal-booking')" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-sm transition-all">
+                    Đóng
+                </button>
+                <button type="submit" id="btn-submit-booking" class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold font-heading text-sm shadow-md transition-all flex items-center gap-1.5">
+                    <i class="ph-fill ph-check-circle text-base"></i>
+                    <span id="btn-save-booking-text">Tiếp Nhận Đơn Hàng</span>
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>

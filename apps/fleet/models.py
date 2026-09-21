@@ -14,9 +14,14 @@ class VehicleStatus(models.TextChoices):
     MAINTENANCE = 'MAINTENANCE', 'Hư hỏng / Bảo trì'
     DECOMMISSIONED = 'DECOMMISSIONED', 'Ngừng sử dụng'
 
+class VehicleOwnership(models.TextChoices):
+    OWNED = 'OWNED', 'Xe nhà (Đội xe công ty)'
+    SUBCONTRACTOR = 'SUBCONTRACTOR', 'Xe bạn (Thuê ngoài / 3PL)'
+
 class Vehicle(TimeStampedModel, SoftDeleteModel):
     license_plate = models.CharField(max_length=20, unique=True, db_index=True) # 51C-123.45, 61C-393.29...
     vehicle_type = models.CharField(max_length=20, choices=VehicleType.choices, default=VehicleType.TRACTOR)
+    ownership_type = models.CharField(max_length=20, choices=VehicleOwnership.choices, default=VehicleOwnership.OWNED, help_text="Xe nhà hay Xe bạn/3PL")
     brand = models.CharField(max_length=50, blank=True) # Freightliner, Hyundai, Hino...
     payload_capacity_kg = models.IntegerField(default=30000, help_text="Tải trọng cho phép (kg)")
     registration_expiry = models.DateField(help_text="Hạn đăng kiểm định kỳ")

@@ -1,22 +1,25 @@
 <!-- 4. XE & BÃI -->
 <div id="view-xe-bai" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
-    <h2 class="text-2xl font-black text-slate-800 mb-6 font-heading">Quản lý Xe & Bãi</h2>
+    <div class="mb-6">
+        <h2 class="text-2xl font-black text-slate-800 font-heading">Xe & Bãi</h2>
+        <p class="text-slate-500 text-sm mt-0.5 font-medium">Quản lý xe và các bãi xe: Giám sát đội đầu kéo, rơ-moóc, bãi bốc dỡ và cảnh báo đăng kiểm/bảo trì</p>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng Đầu kéo</p>
-            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading" id="fleet-stat-tractors">19</p>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-teal-600">
+            <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Tổng Đầu kéo</p>
+            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-tractors">19</p>
         </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng Rơ-moóc</p>
-            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading" id="fleet-stat-trailers">25</p>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-indigo-600">
+            <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Tổng Rơ-moóc</p>
+            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-trailers">25</p>
         </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-rose-200 bg-rose-50/50">
-            <p class="text-xs text-rose-600 font-bold uppercase tracking-wider">Cảnh báo Đăng kiểm</p>
-            <p class="text-3xl font-black text-rose-700 mt-1 tabular-nums font-heading" id="fleet-stat-reg">2</p>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-rose-200 bg-rose-50/30 border-l-4 border-l-rose-500">
+            <p class="text-[13px] text-rose-600 font-bold uppercase tracking-wider">Cảnh báo Đăng kiểm</p>
+            <p class="text-3xl font-black text-rose-700 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-reg">2</p>
         </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-200 bg-amber-50/50">
-            <p class="text-xs text-amber-700 font-bold uppercase tracking-wider">Đến hạn Bảo trì</p>
-            <p class="text-3xl font-black text-amber-700 mt-1 tabular-nums font-heading" id="fleet-stat-maint">4</p>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-200 bg-amber-50/30 border-l-4 border-l-amber-500">
+            <p class="text-[13px] text-amber-700 font-bold uppercase tracking-wider">Đến hạn Bảo trì</p>
+            <p class="text-3xl font-black text-amber-700 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-maint">4</p>
         </div>
     </div>
     

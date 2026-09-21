@@ -5,17 +5,21 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
 
-/* ── 1. GLOBAL TYPOGRAPHY & SCALE SYSTEM ── */
+/* ── 1. GLOBAL TYPOGRAPHY & SCALE SYSTEM (Chuẩn Quốc Tế TMS & Enterprise ERP) ── */
 :root {
     --font-family-primary: 'Plus Jakarta Sans', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-heading: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Be Vietnam Pro', sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
-    --font-size-title-lg: 21px;   /* Tiêu đề trang, Header chính */
-    --font-size-title-md: 17px;   /* Tiêu đề phân hệ, Section card */
-    --font-size-main: 14px;       /* Nội dung chính, Nhãn, Bảng, Input */
-    --font-size-sub: 13px;        /* Mục con, Ghi chú, Sub-text */
-    --font-size-caption: 12px;    /* Badge, Tag trạng thái, Footnote */
+    /* Thang đo kích thước Typography chuẩn 7 cấp độ */
+    --font-hero: 30px;            /* Hero KPI Number: 30px - 32px */
+    --font-h1: 23px;              /* Page Title H1: 22px - 24px */
+    --font-h2: 17px;              /* Section Title H2: 16px - 18px */
+    --font-h3: 15px;              /* Card / Modal Title H3: 14px - 15px */
+    --font-body-main: 14px;       /* Primary Table / Input / Button: 13.5px - 14px */
+    --font-body-sub: 13px;        /* Secondary / Route / Meta: 12.5px - 13px */
+    --font-caption: 11.5px;       /* Badges, Tags, Pill Indicators: 11px - 12px */
 
     /* Bảng màu Brand Tokens đồng bộ BIM ERP */
     --color-primary: #0d9488;      /* Teal 600 */
@@ -38,8 +42,13 @@
     --sidebar-border: rgba(255, 255, 255, 0.1);
 }
 
-*, ::before, ::after, body, input, select, textarea, button, table, th, td {
-    font-family: var(--font-family-primary) !important;
+body, input, select, textarea, button, table, th, td {
+    font-family: var(--font-family-primary);
+}
+
+/* Đảm bảo Font Phosphor Icons không bao giờ bị ghi đè font-family */
+i[class*="ph-"], i[class*="ph"], [class*="ph-"]::before, [class*="ph"]::before {
+    font-family: "Phosphor", "Phosphor-Fill", "Phosphor-Bold", "Phosphor-Thin", "Phosphor-Light" !important;
 }
 
 body {
@@ -64,6 +73,118 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .tabular-nums {
     font-variant-numeric: tabular-nums;
     font-family: var(--font-heading) !important;
+}
+
+/* ── BỘ CLASS CHUẨN HÓA TYPOGRAPHY TOÀN HỆ THỐNG ── */
+.app-page-title {
+    font-family: var(--font-heading) !important;
+    font-size: var(--font-h1) !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.025em !important;
+    color: #0f172a;
+    line-height: 1.25;
+}
+
+.app-page-subtitle {
+    font-size: var(--font-body-sub) !important;
+    color: #64748b;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.app-section-title {
+    font-family: var(--font-heading) !important;
+    font-size: var(--font-h2) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    color: #1e293b;
+    line-height: 1.35;
+}
+
+.app-card-title {
+    font-family: var(--font-heading) !important;
+    font-size: var(--font-h3) !important;
+    font-weight: 700 !important;
+    color: #334155;
+    line-height: 1.4;
+}
+
+.app-kpi-value {
+    font-family: var(--font-heading) !important;
+    font-size: var(--font-hero) !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.03em !important;
+    line-height: 1.15;
+}
+
+.app-table-header {
+    font-family: var(--font-heading) !important;
+    font-size: var(--font-caption) !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+}
+
+.app-table-cell {
+    font-size: var(--font-body-main) !important;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.4;
+}
+
+.app-table-meta {
+    font-size: var(--font-body-sub) !important;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.35;
+}
+
+.app-form-label {
+    font-family: var(--font-heading) !important;
+    font-size: var(--font-body-sub) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.app-form-control {
+    font-size: var(--font-body-main) !important;
+    font-weight: 600 !important;
+    padding: 8px 13px !important;
+    color: #0f172a;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.app-form-control:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.app-status-badge {
+    font-family: var(--font-heading) !important;
+    font-size: var(--font-caption) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.02em;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.25;
+}
+
+.app-mono {
+    font-family: var(--font-mono) !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em;
 }
 
 /* ── 2. SIDEBAR CONTRAST THEME (280px / 17.5rem chuẩn Bim ERP) ── */

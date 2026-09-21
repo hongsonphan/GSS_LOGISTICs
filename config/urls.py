@@ -9,11 +9,21 @@ from apps.dispatch.api_views import (
     TripListCreateAPIView,
     TripDetailAPIView,
     TripAddExpenseAPIView,
+    TripExpenseDetailAPIView,
+    TripSettleExpensesAPIView,
+    TripUnsettleExpensesAPIView,
+    TripDriverMilestoneAPIView,
     TripAddDocumentAPIView,
     PersonnelPayrollAPIView,
     FleetAPIView,
+    BookingActiveAPIView,
     SalesAPIView,
+    QuotationDetailAPIView,
+    QuotationStatusAPIView,
+    BookingOrderDetailAPIView,
+    BookingOrderStatusAPIView,
     CustomsAPIView,
+    AccountingAPIView,
 )
 
 urlpatterns = [
@@ -27,12 +37,22 @@ urlpatterns = [
     path('api/trips/', TripListCreateAPIView.as_view(), name='api-trips'),
     path('api/trips/<str:trip_code>/', TripDetailAPIView.as_view(), name='api-trip-detail'),
     path('api/trips/<str:trip_code>/expenses/', TripAddExpenseAPIView.as_view(), name='api-trip-add-expense'),
+    path('api/trips/<str:trip_code>/expenses/<int:expense_id>/', TripExpenseDetailAPIView.as_view(), name='api-trip-expense-detail'),
+    path('api/trips/<str:trip_code>/settle-expenses/', TripSettleExpensesAPIView.as_view(), name='api-trip-settle-expenses'),
+    path('api/trips/<str:trip_code>/unsettle-expenses/', TripUnsettleExpensesAPIView.as_view(), name='api-trip-unsettle-expenses'),
+    path('api/trips/<str:trip_code>/milestones/', TripDriverMilestoneAPIView.as_view(), name='api-trip-milestones'),
     path('api/trips/<str:trip_code>/documents/', TripAddDocumentAPIView.as_view(), name='api-trip-add-document'),
     
     path('api/personnel/', PersonnelPayrollAPIView.as_view(), name='api-personnel'),
     path('api/fleet/', FleetAPIView.as_view(), name='api-fleet'),
+    path('api/bookings/active/', BookingActiveAPIView.as_view(), name='api-bookings-active'),
     path('api/sales/', SalesAPIView.as_view(), name='api-sales'),
+    path('api/quotations/<int:pk>/', QuotationDetailAPIView.as_view(), name='api-quotation-detail'),
+    path('api/quotations/<int:pk>/status/', QuotationStatusAPIView.as_view(), name='api-quotation-status'),
+    path('api/bookings/<int:pk>/', BookingOrderDetailAPIView.as_view(), name='api-booking-detail'),
+    path('api/bookings/<int:pk>/status/', BookingOrderStatusAPIView.as_view(), name='api-booking-status'),
     path('api/customs/', CustomsAPIView.as_view(), name='api-customs'),
+    path('api/accounting/', AccountingAPIView.as_view(), name='api-accounting'),
 ]
 
 if settings.DEBUG:

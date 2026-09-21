@@ -26,6 +26,7 @@ class Command(BaseCommand):
             {'code': 'TX004', 'full_name': 'Phạm Sơn', 'nickname': '3S', 'phone': '0904567890', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 6000000, 'current_advance': 2000000},
             {'code': 'TX005', 'full_name': 'Hoàng Hải', 'nickname': 'HẢI ĐĂNG', 'phone': '0905678901', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 6000000, 'current_advance': 0},
             {'code': 'TX006', 'full_name': 'Trần Sắt', 'nickname': '61S', 'phone': '0906789012', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 5000000, 'current_advance': 1000000},
+            {'code': 'TX007', 'full_name': 'Nguyễn Văn Phong', 'nickname': 'Phong', 'phone': '0904776978', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 6000000, 'current_advance': 1500000},
         ]
         emp_map = {}
         for ed in employees_data:
@@ -53,6 +54,7 @@ class Command(BaseCommand):
             {'plate': '50E-745.02', 'type': VehicleType.TRUCK_10T, 'brand': 'Hino 500', 'reg': datetime.date(2026, 12, 12), 'maint': datetime.date(2026, 9, 17), 'status': VehicleStatus.ACTIVE, 'driver': emp_map['3S']},
             {'plate': '50E-112.34', 'type': VehicleType.TRUCK_2T, 'brand': 'Isuzu QKR', 'reg': datetime.date(2026, 11, 20), 'maint': datetime.date(2026, 9, 25), 'status': VehicleStatus.IDLE, 'driver': emp_map['HẢI ĐĂNG']},
             {'plate': '61S-999.00', 'type': VehicleType.TRACTOR, 'brand': 'MaxxForce', 'reg': datetime.date(2026, 10, 30), 'maint': datetime.date(2026, 9, 15), 'status': VehicleStatus.ACTIVE, 'driver': emp_map['61S']},
+            {'plate': '50H-896.50', 'type': VehicleType.TRACTOR, 'brand': 'Freightliner Cascadia', 'reg': datetime.date(2026, 12, 31), 'maint': datetime.date(2026, 9, 16), 'status': VehicleStatus.ACTIVE, 'driver': emp_map['Phong']},
         ]
         veh_map = {}
         for vd in vehicles_data:
@@ -81,7 +83,7 @@ class Command(BaseCommand):
                 }
             )
 
-        # 3. Khách hàng & Tuyến cước
+        # 3. Khách hàng & Tuyến cước (Bổ sung CÔNG TY TNHH SẢN XUẤT - THƯƠNG MẠI - DỊCH VỤ AN DI VN từ chứng từ thực tế)
         customers_data = [
             {'code': 'TDA_VICACO', 'name': 'TĐÁ - VICACO', 'address': 'Bình Dương - TP.HCM'},
             {'code': 'OASIS', 'name': 'OASIS - HƯƠNG LỘ 2', 'address': 'Bình Tân, TP.HCM'},
@@ -90,6 +92,7 @@ class Command(BaseCommand):
             {'code': 'POLIFILM', 'name': 'POLIFILM (MP3)', 'address': 'KCN Mỹ Phước 3, Bình Dương'},
             {'code': 'GPF', 'name': 'GPF', 'address': 'KCN Sóng Thần, Bình Dương'},
             {'code': 'TAN_UYEN', 'name': 'TÂN UYÊN - TÂY NINH', 'address': 'Tân Uyên, Bình Dương -> Tây Ninh'},
+            {'code': 'ANDI', 'name': 'AN DI VN (0312256832)', 'address': '540/5 Nguyễn Văn Khối, P. Thông Tây Hội, TP.HCM'},
         ]
         cust_map = {}
         for cd in customers_data:
@@ -109,6 +112,8 @@ class Command(BaseCommand):
             {'cust': 'POLIFILM', 'from': 'MP3', 'to': 'VSIP 3', 'drop': 'MP3', 'price': 2500000, 'pay': 450000},
             {'cust': 'GPF', 'from': 'GPF', 'to': 'VSIP 3', 'drop': 'GPF', 'price': 3500000, 'pay': 500000},
             {'cust': 'TAN_UYEN', 'from': 'TÂN UYÊN', 'to': 'TÂY NINH', 'drop': '-', 'price': 4095000, 'pay': 600000},
+            {'cust': 'ANDI', 'from': 'ICD TÂY NAM', 'to': 'KHO AN DI', 'drop': 'CÁT LÁI', 'price': 3800000, 'pay': 550000},
+            {'cust': 'ANDI', 'from': 'AP-622 DEPOT', 'to': 'KHO AN DI', 'drop': 'CÁT LÁI', 'price': 4200000, 'pay': 600000},
         ]
         for td in tariffs_data:
             RouteTariff.objects.update_or_create(
@@ -241,6 +246,80 @@ class Command(BaseCommand):
                 'docs': [
                     {'type': DocumentType.POD, 'title': 'Biên bản giao nhận hàng', 'raw': 'Đã ký nhận đủ 10T', 'time': '13:15 01/07'}
                 ]
+            },
+            {
+                'code': 'TVL-0916-007', 'cust': 'ANDI', 'type': ShipmentType.EXPORT,
+                'pickup': 'ICD TÂY NAM (TANAMEXCO - QK7)', 'wh': 'Kho An Di (540/5 Nguyễn Văn Khối)', 'drop': 'Cảng Cát Lái',
+                'pickup_depot': 'Tây Nam', 'dropoff_depot': 'Cát Lái', 'wh_name': 'Kho An Di - Thông Tây Hội',
+                'status': TripStatus.COMPLETED, 'driver': emp_map['Phong'], 'veh': veh_map['50H-896.50'],
+                'cont': 'MRKU6074874', 'cont_type': '40HC', 'seal': 'MLVN1739611', 'booking': '276039921', 'cutoff': '10:44 16/09',
+                'eir_no': '1955', 'shipping_line': 'MAE (Maersk)', 'vessel_voyage': 'USAL-UMM SALAL / 637E', 'dest_port': 'NEWARK', 'vgm': '10.93 D26C',
+                'notes': 'Chuyến cont 40HC xuất Newark - Lấy Tây Nam, hạ Cát Lái (Khớp chứng từ 16/09/2026)',
+                'rev': 3800000, 'exp': 1548000,
+                'timeline': [
+                    {'step': 1, 'title': 'Điều độ phát lệnh Zalo', 'time': '07:30 16/09', 'done': True},
+                    {'step': 2, 'title': 'Tài xế Phong nhận lệnh', 'time': '07:45 16/09', 'done': True},
+                    {'step': 3, 'title': 'Lấy Cont tại ICD Tây Nam (EIR 1955)', 'time': '10:44 16/09', 'done': True},
+                    {'step': 4, 'title': 'Đóng hàng tại Kho An Di', 'time': '13:00 16/09', 'done': True},
+                    {'step': 5, 'title': 'Hạ Cont cảng Cát Lái', 'time': '16:00 16/09', 'done': True},
+                ],
+                'expenses': [
+                    {
+                        'cat': ExpenseCategory.LIFT_OFF, 'amt': 1518000, 'status': ApprovalStatus.APPROVED, 'time': '10:44 16/09',
+                        'doc_type': 'EINVOICE', 'issuer': 'CÔNG TY TNHH MTV CẢNG ICD TÂY NAM', 'inv_no': '138001',
+                        'lookup_code': 'HD11202609-06654', 'lookup_url': 'https://icdtanamexco-tt78.vnpt-invoice.com.vn/',
+                        'amount_before': 1405556, 'tax_rate': 8, 'tax_amt': 112444,
+                        'notes': 'Hạ cont 40HC xuất bãi - Biên nhận HĐ 138001'
+                    },
+                    {
+                        'cat': ExpenseCategory.TOLL_FEE, 'amt': 30000, 'status': ApprovalStatus.APPROVED, 'time': '11:15 16/09',
+                        'doc_type': 'TOLL_TICKET', 'issuer': 'Trạm BOT Xa Lộ Hà Nội', 'inv_no': 'BOT-30K',
+                        'lookup_code': '', 'lookup_url': '',
+                        'amount_before': 30000, 'tax_rate': 0, 'tax_amt': 0,
+                        'notes': 'Vé cầu đường Xa Lộ Hà Nội'
+                    }
+                ],
+                'docs': [
+                    {'type': DocumentType.EIR_PICKUP, 'title': 'Phiếu EIR Giao Nhận Container No 1955', 'raw': 'Cont: MRKU6074874 - Seal: MLVN1739611 - MAE - Tàu USAL-UMM SALAL 637E', 'time': '10:44 16/09'},
+                    {'type': DocumentType.INVOICE, 'title': 'Biên Nhận Điện Tử ICD Tây Nam 138001', 'raw': 'HD11202609-06654 - Tiền: 1.518.000 đ', 'time': '10:45 16/09'},
+                ]
+            },
+            {
+                'code': 'TVL-0916-008', 'cust': 'ANDI', 'type': ShipmentType.EXPORT,
+                'pickup': 'AP-622 DEPOT (429/4 XL Song Hành)', 'wh': 'Kho An Di (540/5 Nguyễn Văn Khối)', 'drop': 'Cảng Cát Lái',
+                'pickup_depot': 'AP622', 'dropoff_depot': 'Cát Lái', 'wh_name': 'Kho An Di',
+                'status': TripStatus.COMPLETED, 'driver': emp_map['Phong'], 'veh': veh_map['50H-896.50'],
+                'cont': 'CSNU8011022', 'cont_type': '40HC', 'seal': '34192379', 'booking': '6466005230', 'cutoff': '04:28 16/09',
+                'eir_no': '0034976', 'shipping_line': 'COS (Cosco) / CMA CGM', 'vessel_voyage': 'CMA CGM J MADISON / E19', 'dest_port': 'WORLDWIDE', 'vgm': '40HC',
+                'notes': 'Chuyến cont 40HC lấy vỏ rỗng tại AP-622 Depot theo phiếu EIR 0034976',
+                'rev': 4200000, 'exp': 2025000,
+                'timeline': [
+                    {'step': 1, 'title': 'Điều độ phát lệnh Zalo', 'time': '03:30 16/09', 'done': True},
+                    {'step': 2, 'title': 'Tài xế Phong nhận lệnh', 'time': '03:45 16/09', 'done': True},
+                    {'step': 3, 'title': 'Lấy Cont rỗng AP-622 (EIR 0034976)', 'time': '04:28 16/09', 'done': True},
+                    {'step': 4, 'title': 'Đóng hàng tại Kho An Di', 'time': '08:00 16/09', 'done': True},
+                    {'step': 5, 'title': 'Hạ Cont cảng Cát Lái', 'time': '11:30 16/09', 'done': True},
+                ],
+                'expenses': [
+                    {
+                        'cat': ExpenseCategory.LIFT_ON, 'amt': 1925000, 'status': ApprovalStatus.APPROVED, 'time': '04:29 16/09',
+                        'doc_type': 'EINVOICE', 'issuer': 'CÔNG TY TNHH DỊCH VỤ VẬN TẢI ANH PHONG', 'inv_no': '0060962',
+                        'lookup_code': 'QXC39QWL4H9', 'lookup_url': 'http://solog.ehoadon.vn',
+                        'amount_before': 1782407, 'tax_rate': 8, 'tax_amt': 142593,
+                        'notes': 'Phí nâng rỗng, phụ phí nâng hạ container - HĐ 0060962'
+                    },
+                    {
+                        'cat': ExpenseCategory.TOLL_FEE, 'amt': 100000, 'status': ApprovalStatus.APPROVED, 'time': '05:30 16/09',
+                        'doc_type': 'TOLL_TICKET', 'issuer': 'Trạm BOT Phú Mỹ - Cát Lái', 'inv_no': 'BOT-100K',
+                        'lookup_code': '', 'lookup_url': '',
+                        'amount_before': 100000, 'tax_rate': 0, 'tax_amt': 0,
+                        'notes': 'Vé cầu đường khứ hồi Phú Mỹ'
+                    }
+                ],
+                'docs': [
+                    {'type': DocumentType.EIR_PICKUP, 'title': 'Phiếu EIR Lấy Cont Rỗng AP-622 No 0034976', 'raw': 'Cont: CSNU 8011022 - Seal: 34192379 - COS - Tàu CMA CGM J MADISON E19', 'time': '04:28 16/09'},
+                    {'type': DocumentType.INVOICE, 'title': 'Phiếu Tra Cứu HĐĐT Anh Phong 0060962', 'raw': 'QXC39QWL4H9 - Tiền: 1.925.000 đ', 'time': '04:29 16/09'},
+                ]
             }
         ]
 
@@ -256,12 +335,21 @@ class Command(BaseCommand):
                     'driver': trd['driver'],
                     'dispatcher': emp_map['DD001'],
                     'container_number': trd['cont'],
+                    'container_type': trd.get('cont_type', '40HC'),
                     'seal_number': trd['seal'],
                     'booking_or_bill': trd['booking'],
                     'cutoff_time': trd['cutoff'],
                     'pickup_location': trd['pickup'],
                     'warehouse_location': trd['wh'],
                     'dropoff_location': trd['drop'],
+                    'pickup_depot': trd.get('pickup_depot', ''),
+                    'dropoff_depot': trd.get('dropoff_depot', ''),
+                    'delivery_warehouse': trd.get('wh_name', ''),
+                    'eir_number': trd.get('eir_no', ''),
+                    'shipping_line': trd.get('shipping_line', ''),
+                    'vessel_voyage': trd.get('vessel_voyage', ''),
+                    'destination_port': trd.get('dest_port', ''),
+                    'vgm_weight': trd.get('vgm', ''),
                     'status': trd['status'],
                     'special_notes': trd['notes'],
                     'cached_revenue': trd['rev'],
@@ -285,13 +373,21 @@ class Command(BaseCommand):
 
             # Chi phí
             if 'expenses' in trd:
+                TripExpense.objects.filter(trip=trip).delete()
                 for exp in trd['expenses']:
                     TripExpense.objects.create(
                         trip=trip,
                         category=exp['cat'],
                         amount=exp['amt'],
                         status=exp['status'],
-                        notes=f"Phát sinh lúc {exp['time']}"
+                        invoice_issuer=exp.get('issuer', ''),
+                        invoice_number=exp.get('inv_no', ''),
+                        invoice_lookup_code=exp.get('lookup_code', ''),
+                        invoice_lookup_url=exp.get('lookup_url', ''),
+                        amount_before_tax=exp.get('amount_before', exp['amt']),
+                        tax_rate=exp.get('tax_rate', 0),
+                        tax_amount=exp.get('tax_amt', 0),
+                        notes=exp.get('notes', f"Phát sinh lúc {exp.get('time', '')}")
                     )
 
             # Chứng từ

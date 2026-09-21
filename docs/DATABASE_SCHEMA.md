@@ -42,14 +42,14 @@ Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
 - `customers.Quotation`: Quản lý báo giá và phễu khách hàng (CRM).
 
 ### E. Phân hệ Điều độ Vận tải (`apps/dispatch`)
-- `dispatch.DispatchTrip`: Bảng hạt nhân điều hành chuyến xe. Chứa toàn bộ thông tin về loại hình (Nhập/Xuất/Nội địa), số Cont, số Seal, Booking/Bill, giờ cắt máng SI, free time lưu cont, 3 điểm lộ trình và máy trạng thái 10 bước.
+- `dispatch.DispatchTrip`: Bảng hạt nhân điều hành chuyến xe. Chứa toàn bộ thông tin về loại hình (Nhập/Xuất/Nội địa), số Cont, loại Cont/Xe (`45G1`, `40HC`, `40GP`, `22GP`, xe tải `1T` - `15T`), số Seal, Booking/Bill, hạn Cắt Máng CY / Giờ SI, thông tin phiếu EIR (`eir_number`), hãng tàu (`shipping_line`), tên tàu/số chuyến (`vessel_voyage`), cảng đích (`destination_port`), trọng lượng VGM (`vgm_weight`), vị trí bãi cont (`bay_location`), free time lưu cont, 3 điểm lộ trình chuẩn (Cảng lấy cont $\to$ Kho giao hàng $\to$ Cảng hạ cont) và máy trạng thái 10 bước.
 - `dispatch.TripTimelineItem`: Chi tiết các mốc tiến độ thực tế theo thời gian.
 
 ### F. Phân hệ Chứng từ Số & OCR (`apps/documents`)
 - `documents.TripDocument`: Lưu trữ ảnh chụp phiếu EIR lấy cont, EIR hạ cont, biên bản giao nhận hàng (POD), phiếu cân xe, hóa đơn nâng hạ kèm kết quả nhận diện OCR AI.
 
 ### G. Phân hệ Chi phí & Đối chiếu (`apps/billing`)
-- `billing.TripExpense`: Chi phí phát sinh thực tế (BOT, nâng hạ cont, neo xe, bồi dưỡng kho, bốc xếp) do tài xế báo về kèm trạng thái duyệt của điều phối viên.
+- `billing.TripExpense`: Chi phí phát sinh hiện trường khớp chuẩn 8 danh mục Bảng Kê Chi Phí Triền Võ (`HĐ điện tử`, `Nâng`, `Hạ`, `Cược cont`, `Cân xe`, `Bốc xếp`, `Vé cầu đường`, `Chi phí khác`). Lưu trữ đầy đủ metadata hóa đơn điện tử: đơn vị phát hành (`invoice_issuer`), số hóa đơn (`invoice_number`), mã tra cứu (`invoice_lookup_code`), link tra cứu online (`invoice_lookup_url`), tiền trước thuế, thuế suất và tiền thuế GTGT. Tự động tính tổng chi phí và cập nhật P&L chuyến xe.
 
 ### H. Phân hệ Xử lý Sự cố (`apps/exceptions`)
 - `exceptions.TripException`: Ghi nhận sự cố kẹt cảng, kẹt kho, vỏ cont hư hỏng, va chạm tai nạn kèm mức độ nghiêm trọng và phương án xử lý.
