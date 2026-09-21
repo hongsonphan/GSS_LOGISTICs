@@ -1,0 +1,78 @@
+<!-- 2. PHÒNG ĐIỀU VẬN (DANH SÁCH CHUYẾN XE) -->
+<div id="view-dieu-van" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight font-heading">Bảng Điều Độ Vận Tải</h2>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Giám sát và vận hành chuyến xe theo sát quy trình 10 bước thực tế</p>
+        </div>
+        <button onclick="openModal('modal-create-trip')" class="bg-teal-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-teal-800 transition-all flex items-center shadow-lg shadow-teal-950/20 active:scale-95 font-heading">
+            <i class="ph ph-plus text-lg mr-2"></i> Tạo Lệnh Điều Động
+        </button>
+    </div>
+
+    <!-- KPI Cards for Dispatch -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-sm flex items-center">
+            <div class="bg-blue-100 p-3 rounded-xl mr-4"><i class="ph-fill ph-truck text-blue-600 text-2xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng chuyến (Tháng)</p>
+                <p class="text-2xl font-black text-slate-800 tabular-nums font-heading" id="stat-total-trips">128</p>
+            </div>
+        </div>
+        <div class="bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-sm flex items-center">
+            <div class="bg-amber-100 p-3 rounded-xl mr-4"><i class="ph-fill ph-navigation-arrow text-amber-600 text-2xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Đang chạy h.nay</p>
+                <p class="text-2xl font-black text-slate-800 tabular-nums font-heading" id="stat-transit">0</p>
+            </div>
+        </div>
+        <div class="bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-sm flex items-center">
+            <div class="bg-orange-100 p-3 rounded-xl mr-4"><i class="ph-fill ph-warning-circle text-orange-600 text-2xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Chờ duyệt phí</p>
+                <p class="text-2xl font-black text-orange-600 tabular-nums font-heading" id="stat-pending-expenses">0</p>
+            </div>
+        </div>
+        <div class="bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-sm flex items-center">
+            <div class="bg-rose-100 p-3 rounded-xl mr-4"><i class="ph-fill ph-siren text-rose-600 text-2xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Cảnh báo Cắt Máng</p>
+                <p class="text-2xl font-black text-rose-600 tabular-nums font-heading">1</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm flex-1 overflow-hidden flex flex-col">
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 items-center justify-between">
+            <div class="flex space-x-2">
+                <div class="relative">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input id="table-search-input" onkeyup="handleSearch(event)" type="text" placeholder="Tìm Booking, Số Cont..." class="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium w-64 placeholder:text-slate-400" />
+                </div>
+                <select id="status-filter-select" onchange="loadTripsData()" class="border border-slate-300 text-sm font-semibold rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-teal-500">
+                    <option value="Tất cả trạng thái">Tất cả trạng thái</option>
+                    <option value="Đang di chuyển">Đang di chuyển</option>
+                    <option value="Đã hoàn tất">Đã hoàn tất</option>
+                    <option value="Chờ duyệt / Nháp">Chờ nhận lệnh</option>
+                </select>
+            </div>
+        </div>
+        <div class="overflow-x-auto flex-1">
+            <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                        <th class="px-4 py-4">Mã / Ngày</th>
+                        <th class="px-4 py-4">Tuyến / Khách hàng</th>
+                        <th class="px-4 py-4">Booking / Cont / Seal</th>
+                        <th class="px-4 py-4">Loại hình / Nơi Hạ</th>
+                        <th class="px-4 py-4">Lộ trình & Tài xế</th>
+                        <th class="px-4 py-4">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="trips-tbody">
+                    <!-- Dữ liệu được render bằng API -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

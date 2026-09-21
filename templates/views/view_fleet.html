@@ -1,0 +1,44 @@
+<!-- 4. XE & BÃI -->
+<div id="view-xe-bai" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
+    <h2 class="text-2xl font-black text-slate-800 mb-6 font-heading">Quản lý Xe & Bãi</h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng Đầu kéo</p>
+            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading" id="fleet-stat-tractors">19</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng Rơ-moóc</p>
+            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading" id="fleet-stat-trailers">25</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-rose-200 bg-rose-50/50">
+            <p class="text-xs text-rose-600 font-bold uppercase tracking-wider">Cảnh báo Đăng kiểm</p>
+            <p class="text-3xl font-black text-rose-700 mt-1 tabular-nums font-heading" id="fleet-stat-reg">2</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-200 bg-amber-50/50">
+            <p class="text-xs text-amber-700 font-bold uppercase tracking-wider">Đến hạn Bảo trì</p>
+            <p class="text-3xl font-black text-amber-700 mt-1 tabular-nums font-heading" id="fleet-stat-maint">4</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="font-bold text-slate-800 font-heading">Danh sách Phương tiện (Cảnh báo thông minh từ DB)</h3>
+        </div>
+        <div class="overflow-x-auto flex-1">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b tracking-wider">
+                        <th class="p-4">Biển số</th>
+                        <th class="p-4">Loại</th>
+                        <th class="p-4">Tài xế mặc định</th>
+                        <th class="p-4">Hạn Đăng kiểm</th>
+                        <th class="p-4">Lịch Bảo trì (Dự kiến)</th>
+                        <th class="p-4">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="fleet-tbody">
+                    <!-- Rendered via API -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

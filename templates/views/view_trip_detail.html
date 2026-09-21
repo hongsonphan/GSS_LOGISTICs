@@ -1,0 +1,129 @@
+<!-- 2.1 TRIP DETAIL VIEW (Chi tiết chuyến + Giả lập App Tài xế) -->
+<div id="view-trip-detail" class="view hidden-view h-full flex flex-col bg-slate-50 overflow-hidden relative">
+    <div class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+        <div class="flex items-center">
+            <button onclick="backToTrips()" class="mr-4 p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors bg-slate-50 border border-slate-200">
+                <i class="ph ph-arrow-left text-xl"></i>
+            </button>
+            <div>
+                <div class="flex items-center space-x-3">
+                    <h2 class="text-2xl font-black text-slate-800 font-heading" id="detail-id">TVL-XXX</h2>
+                    <span id="detail-status-badge" class="px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-slate-100 font-heading">STATUS</span>
+                </div>
+                <p class="text-sm font-semibold text-slate-500 mt-1 flex items-center uppercase tracking-wider">
+                    <span id="detail-type">Type</span> | <strong class="ml-1 text-slate-800" id="detail-customer">Customer</strong>
+                </p>
+            </div>
+        </div>
+        <button class="px-4 py-2 bg-[#0068FF] text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-sm flex items-center transition-all font-heading">
+            <i class="ph-fill ph-telegram-logo mr-2 text-lg"></i> Nhắn Zalo Tài Xế
+        </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 flex flex-col xl:flex-row gap-6">
+        <!-- Trái: Thông tin Lô hàng & Timeline Quy trình -->
+        <div class="xl:w-2/3 flex flex-col gap-6">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest mb-5 flex items-center font-heading">
+                    <i class="ph-fill ph-package mr-2 text-teal-600 text-lg"></i> Thông tin Chứng từ & Vận chuyển
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tài xế / Xe</p>
+                        <p class="font-bold text-slate-800 text-[15px]" id="detail-driver"></p>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Số Container</p>
+                        <p class="font-black text-teal-700 text-[15px] font-heading" id="detail-cont"></p>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Booking / B/L</p>
+                        <p class="font-bold text-slate-800 text-[15px]" id="detail-booking"></p>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Số Seal</p>
+                        <p class="font-bold text-slate-800 text-[15px]" id="detail-seal"></p>
+                    </div>
+                    
+                    <div class="md:col-span-2 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
+                        <p class="text-[11px] font-bold text-teal-800 uppercase tracking-wider mb-1 font-heading">Nơi Lấy (Cảng/Bãi)</p>
+                        <p class="font-black text-slate-800 text-base font-heading" id="detail-pickup"></p>
+                    </div>
+                    <div class="md:col-span-2 bg-amber-50/50 p-4 rounded-xl border border-amber-100">
+                        <p class="text-[11px] font-bold text-amber-800 uppercase tracking-wider mb-1 font-heading">Nơi Đóng/Trả (Kho KH)</p>
+                        <p class="font-black text-slate-800 text-base font-heading" id="detail-warehouse"></p>
+                        <p class="text-xs text-amber-700 font-bold mt-1" id="detail-cutoff"></p>
+                    </div>
+                    
+                    <div class="col-span-2 md:col-span-4 bg-yellow-50 p-3.5 rounded-xl border border-yellow-200">
+                        <p class="text-[11px] font-bold text-yellow-800 uppercase tracking-wider mb-1 flex items-center font-heading">
+                            <i class="ph-fill ph-warning-circle mr-1.5 text-base"></i> Ghi chú & Phí Cty Chịu
+                        </p>
+                        <p class="font-semibold text-slate-800 text-sm" id="detail-notes"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chứng từ & Phí phát sinh (Admin view) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center font-heading">
+                        <i class="ph-fill ph-images mr-2 text-teal-600 text-lg"></i> Chứng từ gốc & Chi phí phát sinh
+                    </h3>
+                    <span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-heading">Đồng bộ Real-time từ DB</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="detail-documents">
+                    <!-- Documents injected here by JS -->
+                </div>
+            </div>
+
+            <!-- Timeline 10 Bước -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex-1">
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest mb-6 flex items-center font-heading">
+                    <i class="ph-fill ph-check-circle mr-2 text-teal-600 text-lg"></i> Tiến độ (Quy trình Điều vận 10 Bước)
+                </h3>
+                <div class="pl-2 space-y-0" id="detail-timeline">
+                    <!-- Timeline injected here by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Phải: Giả lập App Mobile Tài Xế (Mobile Simulator) -->
+        <div class="xl:w-1/3 flex flex-col gap-6 items-center">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-[-10px] font-heading">Giao diện App Tài xế (Live Interaction)</p>
+            <div class="bg-slate-900 rounded-[2.5rem] p-1.5 shadow-2xl flex flex-col relative overflow-hidden h-[650px] w-[320px] border-[6px] border-slate-800 shrink-0">
+                <!-- Fake Notch -->
+                <div class="absolute top-0 inset-x-0 h-7 bg-slate-900 rounded-b-2xl z-20 w-1/3 mx-auto flex items-center justify-center space-x-2">
+                    <div class="w-1.5 h-1.5 bg-slate-700 rounded-full"></div><div class="w-12 h-1.5 bg-slate-700 rounded-full"></div>
+                </div>
+                <!-- App Header -->
+                <div class="bg-gradient-to-r from-teal-700 to-teal-900 pt-10 pb-4 px-4 text-white z-10 shadow-md">
+                    <p class="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-widest inline-block mb-1 font-heading">Triền Võ Driver App</p>
+                    <h3 class="font-black text-lg leading-tight truncate mt-1 font-heading" id="app-title">Route</h3>
+                </div>
+                <!-- App Body -->
+                <div class="bg-slate-50 flex-1 overflow-y-auto z-10 pb-24 p-3 space-y-3">
+                    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 font-heading">Chi phí / Yêu cầu đã báo</p>
+                        <div id="app-expenses-list" class="space-y-3">
+                            <!-- Expenses injected here -->
+                        </div>
+                    </div>
+                </div>
+                <!-- App Footer/Action -->
+                <div class="absolute bottom-0 inset-x-0 bg-white p-4 border-t border-slate-200 z-20 pb-6">
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="openOcrApp('phi-ton')" class="w-full bg-[#0a1128] text-white font-bold py-3 rounded-xl shadow-md hover:bg-slate-800 transition-all flex flex-col items-center justify-center space-y-1 active:scale-95">
+                            <i class="ph-fill ph-receipt text-xl"></i>
+                            <span class="text-[11px] font-heading">Báo Phát sinh</span>
+                        </button>
+                        <button onclick="openOcrApp('chung-tu')" class="w-full bg-teal-700 text-white font-bold py-3 rounded-xl shadow-md hover:bg-teal-800 transition-all flex flex-col items-center justify-center space-y-1 active:scale-95">
+                            <i class="ph-fill ph-file-text text-xl"></i>
+                            <span class="text-[11px] font-heading">Trả Chứng Từ</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

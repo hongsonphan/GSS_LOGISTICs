@@ -1,0 +1,90 @@
+<!-- MODAL CAMERA OCR (APP TÀI XẾ GIẢ LẬP) -->
+<div id="modal-ocr" class="fixed inset-0 bg-slate-900/80 z-50 hidden-view flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col animate-slide-up">
+        <div class="flex justify-between items-center p-4 border-b bg-slate-50">
+            <h3 class="font-bold text-slate-800 flex items-center font-heading" id="ocr-modal-title">
+                <i class="ph-fill ph-camera text-teal-700 text-xl mr-2"></i> Báo Cáo Phí (AI OCR)
+            </h3>
+            <button onclick="closeModal('modal-ocr')" class="p-1 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                <i class="ph ph-x text-xl"></i>
+            </button>
+        </div>
+        <div class="p-5" style="min-height: 350px;">
+            
+            <!-- OCR Step 1: Upload / Chụp hình -->
+            <div id="ocr-step-1" class="space-y-4">
+                <div onclick="startOcrScan()" class="border-2 border-dashed border-teal-400 rounded-2xl p-10 flex flex-col items-center justify-center text-slate-500 hover:bg-teal-50/50 cursor-pointer transition-colors group">
+                    <div class="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <i class="ph-fill ph-camera text-4xl text-teal-600"></i>
+                    </div>
+                    <p class="font-bold text-teal-950 font-heading text-base" id="ocr-upload-text">Mở Camera Chụp Vé/Hóa Đơn</p>
+                    <p class="text-xs text-center text-slate-500 mt-1" id="ocr-upload-sub">Hệ thống AI OCR sẽ trích xuất số tiền tự động.</p>
+                </div>
+            </div>
+
+            <!-- OCR Step 2: Quét AI -->
+            <div id="ocr-step-2" class="hidden-view flex-col items-center justify-center py-12">
+                <div class="spinner mb-4"></div>
+                <p class="font-bold text-slate-800 font-heading">AI OCR đang xử lý hình ảnh...</p>
+                <p class="text-xs text-slate-400 mt-1">Đang trích xuất mã hóa đơn & nhận diện số tiền</p>
+            </div>
+
+            <!-- OCR Step 3: Xem lại & Gửi DB -->
+            <div id="ocr-step-3" class="hidden-view space-y-4 animate-fade-in">
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5">
+                    <p class="text-emerald-800 font-bold text-sm flex items-center font-heading">
+                        <i class="ph-fill ph-check-circle mr-1.5 text-base"></i> Quét thành công (Độ chính xác 98.5%)
+                    </p>
+                    <p class="text-emerald-700 text-xs mt-1 italic font-medium" id="ocr-raw-text">Dữ liệu gốc OCR: "Trạm thu phí Cầu Đồng Nai - 120.000 VNĐ"</p>
+                </div>
+                
+                <!-- Form Chi Phí Phát Sinh -->
+                <div id="ocr-form-expense" class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Loại chi phí (Chuẩn Danh mục)</label>
+                        <select id="ocr-expense-type" class="w-full p-3 bg-teal-50/70 border border-teal-200 rounded-xl font-bold text-teal-950 mt-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="Phí BOT / Cầu đường" selected>Phí BOT / Cầu đường</option>
+                            <option value="Phí nâng / hạ Cont">Phí nâng / hạ Cont</option>
+                            <option value="Phí neo xe / Lưu bãi">Phí neo xe / Lưu bãi</option>
+                            <option value="Cước phí bốc xếp">Cước phí bốc xếp</option>
+                            <option value="Phí bồi dưỡng kho">Phí bồi dưỡng kho</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Số tiền trích xuất (VNĐ)</label>
+                        <input id="ocr-amount" type="number" value="120000" class="w-full p-3 border border-slate-300 rounded-xl font-black text-rose-600 text-xl mt-1.5 tabular-nums focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    </div>
+                </div>
+
+                <!-- Form Chứng Từ Hoàn Thành -->
+                <div id="ocr-form-document" class="space-y-4 hidden-view">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Loại Chứng Từ Số</label>
+                        <select id="ocr-doc-type" class="w-full p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl font-bold text-emerald-950 mt-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="Phiếu EIR Hạ Cont" selected>Phiếu EIR Hạ Cont</option>
+                            <option value="Biên bản giao nhận hàng">Biên bản giao nhận hàng (POD)</option>
+                            <option value="Phiếu cân xe">Phiếu cân xe</option>
+                            <option value="Hóa đơn GTGT">Hóa đơn GTGT nâng hạ</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">Số Cont nhận diện</label>
+                            <input id="ocr-doc-cont" type="text" class="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-slate-800 text-sm mt-1 uppercase focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">Số Seal nhận diện</label>
+                            <input id="ocr-doc-seal" type="text" class="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-slate-800 text-sm mt-1 uppercase focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="submitOcrData()" class="w-full py-3.5 font-bold rounded-xl shadow-md text-white bg-teal-700 hover:bg-teal-800 mt-4 flex justify-center items-center font-heading transition-all active:scale-95">
+                    <i class="ph-fill ph-check-circle mr-2 text-lg"></i> Xác nhận & Lưu Database Thật
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>

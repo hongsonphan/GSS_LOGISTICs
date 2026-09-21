@@ -1,0 +1,99 @@
+/* ==========================================================================
+   BIM LOGISTICS — DESIGN TOKENS & INTERNATIONAL TYPOGRAPHY
+   Font: Plus Jakarta Sans (Headers & Financial Figures) + Be Vietnam Pro (Body)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+    --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: #f8fafc;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+}
+
+/* Số liệu tài chính hiển thị theo kiểu Tabular Numbers để thẳng hàng */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-heading);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-slide-up {
+    animation: slideInBottom 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInBottom {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.spinner {
+    border: 3.5px solid rgba(15, 118, 110, 0.2);
+    border-left-color: #0f766e;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hidden-view {
+    display: none !important;
+}
+
+/* Timeline 10 Bước Điều Vận */
+.timeline-line::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 24px;
+    bottom: -24px;
+    width: 2px;
+    background-color: #e2e8f0;
+    z-index: 0;
+}
+.timeline-item:last-child .timeline-line::before {
+    display: none;
+}
