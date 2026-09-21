@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: bim_logistics_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bim_logistics_db
+      POSTGRES_USER: bim_logistics_user
+      POSTGRES_PASSWORD: bim_logistics_secret_2026
+    ports:
+      - "5435:5432" # Tránh cổng 5433 đang dùng bởi bim_erp_postgres
+    volumes:
+      - bim_logistics_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bim_logistics_user -d bim_logistics_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: bim_logistics_web
+    restart: unless-stopped
+    environment:
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: bim_logistics_db
+      DB_USER: bim_logistics_user
+      DB_PASSWORD: bim_logistics_secret_2026
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: config.settings
+    ports:
+      - "8085:8000" # Tránh cổng 8080 đang dùng bởi Paperless
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed_data &&
+             python manage.py runserver 0.0.0.0:8000"
+
+volumes:
+  bim_logistics_postgres_data:

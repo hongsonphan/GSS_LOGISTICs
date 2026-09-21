@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.dispatch.models import DispatchTrip, TripTimelineItem, ShipmentType, TripStatus
-from apps.fleet.models import Vehicle, Trailer, VehicleStatus
+from apps.fleet.models import Vehicle, Trailer, VehicleStatus, VehicleType
 from apps.personnel.models import Employee, Department, EmployeeRole
 from apps.customers.models import Customer, Quotation, RouteTariff
 from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus
