@@ -19,7 +19,14 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 - Áp dụng nguyên tắc bất khả xâm phạm dữ liệu vận tải (**No Hard-Delete**), toàn bộ khóa ngoại dùng `PROTECT`.
 - Tạo thành công toàn bộ migration và nạp bộ dữ liệu mẫu thực tế chuẩn xác (`seed_data`) khớp 100% tài liệu điều vận.
 
-### Chuẩn Hóa Typography Quốc Tế & Cấu Trúc UI/UX Modular:
+### Chuẩn Hóa Typography Quốc Tế & Cấu Trúc UI/UX Modular (Bim_ERP-Solutions Standard):
+- **Đồng bộ hóa 100% triết lý UI/UX từ `Bim_ERP-Solutions` (MISA AMIS Enterprise Standard):**
+  - **Sidebar Contrast Theme:** Áp dụng kích thước chuẩn `280px` (`17.5rem`), màu nền `#253147` (header `#1a2334`), menu active phủ nền `rgba(13, 148, 136, 0.25)` với viền nhấn `#2dd4bf`.
+  - **MISA ERP Table System:** Toàn bộ bảng dữ liệu chuyển sang chuẩn `.erp-table-container` và `.erp-table` với padding `10px 14px`, header `#f8fafc`, hỗ trợ `tabular-nums` căn thẳng hàng số liệu cước và tiền lương.
+  - **Button Design System:** Chuẩn hóa `.btn-amis-primary` (Teal `#0d9488`, hover `#0f766e`, bo góc 8px) và `.btn-amis-secondary` (nền trắng viền `#cbd5e1`).
+  - **Graceful Notification & Defensive UI (Tuyệt đối không để crash 500):**
+    - Tích hợp hệ thống Toast cảnh báo nổi `#toast-container` góc trên phải màn hình với 3 trạng thái thân thiện (thành công, cảnh báo, lỗi kết nối).
+    - **Inline Field Validation:** Đổi viền ô nhập sang đỏ (`.input-error`), hiển thị giải thích nhỏ `.field-error-msg`, tự động xóa lỗi thời gian thực ngay khi người dùng bắt đầu gõ phím (`input event`).
 - Nâng cấp Typography chuẩn doanh nghiệp quốc tế:
   - **Plus Jakarta Sans**: Phông chữ hình học hiện đại (Geometric Sans) cho hệ thống tiêu đề (`h1-h6`), thẻ KPI và bảng phân tích số liệu tài chính (`tabular-nums`).
   - **Be Vietnam Pro**: Phông chữ được tối ưu hóa đặc biệt cho tiếng Việt với tỉ lệ vàng dấu thanh, độ tương phản cao, mang lại trải nghiệm đọc mượt mà cho nội dung vận tải và bảng biểu.
