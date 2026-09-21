@@ -1,38 +1,332 @@
-/* ==========================================================================
-   BIM LOGISTICS — DESIGN TOKENS & INTERNATIONAL TYPOGRAPHY
-   Font: Plus Jakarta Sans (Headers & Financial Figures) + Be Vietnam Pro (Body)
-   ========================================================================== */
+/* ═══════════════════════════════════════════════════════════════════════════
+   BIM LOGISTICS — UI/UX ENTERPRISE DESIGN SYSTEM
+   Kế thừa & Đồng bộ 100% từ Triết lý Bim_ERP-Solutions (MISA AMIS V2.0 Standard)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
 
+/* ── 1. GLOBAL TYPOGRAPHY & SCALE SYSTEM ── */
 :root {
-    --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-body: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-family-primary: 'Plus Jakarta Sans', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Be Vietnam Pro', sans-serif;
+
+    --font-size-title-lg: 21px;   /* Tiêu đề trang, Header chính */
+    --font-size-title-md: 17px;   /* Tiêu đề phân hệ, Section card */
+    --font-size-main: 14px;       /* Nội dung chính, Nhãn, Bảng, Input */
+    --font-size-sub: 13px;        /* Mục con, Ghi chú, Sub-text */
+    --font-size-caption: 12px;    /* Badge, Tag trạng thái, Footnote */
+
+    /* Bảng màu Brand Tokens đồng bộ BIM ERP */
+    --color-primary: #0d9488;      /* Teal 600 */
+    --color-primary-hover: #0f766e;/* Teal 700 */
+    --color-primary-dark: #115e59; /* Teal 800 */
+    --color-accent: #2dd4bf;       /* Teal 400 */
+    
+    --color-success: #059669;      /* Emerald 600 */
+    --color-warning: #d97706;      /* Amber 600 */
+    --color-danger: #e11d48;       /* Rose 600 */
+    --color-info: #2563eb;         /* Blue 600 */
+
+    /* Sidebar Contrast Colors chuẩn MISA AMIS (Bim_ERP-Solutions) */
+    --sidebar-bg: #253147;
+    --sidebar-header-bg: #1a2334;
+    --sidebar-text: #e2e8f0;
+    --sidebar-subtext: #94a3b8;
+    --sidebar-hover: rgba(255, 255, 255, 0.08);
+    --sidebar-active: rgba(13, 148, 136, 0.25);
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+}
+
+*, ::before, ::after, body, input, select, textarea, button, table, th, td {
+    font-family: var(--font-family-primary) !important;
 }
 
 body {
-    font-family: var(--font-body);
+    font-size: var(--font-size-main) !important;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    color: #1e293b;
     background-color: #f8fafc;
     margin: 0;
     padding: 0;
     overflow: hidden;
-    color: #0f172a;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
-    font-family: var(--font-heading);
+    font-family: var(--font-heading) !important;
     letter-spacing: -0.02em;
 }
 
-/* Số liệu tài chính hiển thị theo kiểu Tabular Numbers để thẳng hàng */
+/* Số liệu tài chính, Mã đơn, Biển số hiển thị Tabular Numbers để thẳng hàng */
 .tabular-nums {
     font-variant-numeric: tabular-nums;
-    font-family: var(--font-heading);
+    font-family: var(--font-heading) !important;
 }
 
-/* Custom Scrollbar */
+/* ── 2. SIDEBAR CONTRAST THEME (280px / 17.5rem chuẩn Bim ERP) ── */
+.app-sidebar {
+    width: 17.5rem !important; /* 280px width: tiêu đề không bao giờ bị rớt dòng */
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    border-right: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+    z-index: 20;
+    flex-shrink: 0;
+}
+
+.app-sidebar-header {
+    background-color: var(--sidebar-header-bg);
+    border-bottom: 1px solid var(--sidebar-border);
+    padding: 1rem 1.25rem;
+}
+
+.sidebar-item-main {
+    font-size: var(--font-size-main) !important;
+    font-weight: 600;
+    color: #cbd5e1;
+    padding: 9px 14px !important;
+    border-radius: 8px;
+    white-space: nowrap;
+    line-height: 1.4 !important;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.sidebar-item-main:hover {
+    color: #ffffff !important;
+    background-color: var(--sidebar-hover) !important;
+}
+
+.sidebar-item-main.active {
+    color: #ffffff !important;
+    background-color: var(--sidebar-active) !important;
+    border-left: 3px solid var(--color-accent) !important;
+    font-weight: 700;
+}
+
+/* ── 3. BUTTON DESIGN SYSTEM (MISA AMIS Standard) ── */
+.btn-amis-primary {
+    background-color: var(--color-primary);
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: var(--font-size-main) !important;
+    padding: 7px 16px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-amis-primary:hover {
+    background-color: var(--color-primary-hover);
+    box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.2);
+}
+
+.btn-amis-primary:active {
+    transform: scale(0.97);
+}
+
+.btn-amis-secondary {
+    background-color: #ffffff;
+    color: #334155 !important;
+    font-weight: 600;
+    font-size: var(--font-size-main) !important;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.btn-amis-secondary:hover {
+    background-color: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a !important;
+}
+
+.btn-amis-secondary:active {
+    transform: scale(0.97);
+}
+
+/* ── 4. UNIFIED FORM CONTROLS & DEFENSIVE VALIDATION ── */
+.form-label {
+    display: block;
+    font-size: var(--font-size-main) !important;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 5px;
+}
+
+.form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-size: var(--font-size-main) !important;
+    line-height: 1.5;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+/* Inline Field Validation (Đỏ khi lỗi, tự xóa khi gõ) */
+.input-error {
+    border-color: var(--color-danger) !important;
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15) !important;
+    background-color: #fff1f2 !important;
+}
+
+.field-error-msg {
+    font-size: var(--font-size-caption) !important;
+    color: var(--color-danger);
+    font-weight: 600;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.currency-input {
+    font-size: var(--font-size-main) !important;
+    font-weight: 700 !important;
+    color: var(--color-warning) !important;
+}
+
+/* ── 5. MISA ERP TABLE SYSTEM ── */
+.erp-table-container {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background-color: #ffffff;
+    overflow-x: auto;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.erp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-main) !important;
+}
+
+.erp-table thead th {
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-size: 13px !important;
+    font-weight: 700;
+    padding: 11px 14px;
+    border-bottom: 1px solid #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.erp-table tbody td {
+    padding: 10px 14px;
+    font-size: var(--font-size-main) !important;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.erp-table tbody tr {
+    transition: background-color 0.12s ease;
+}
+
+.erp-table tbody tr:hover {
+    background-color: rgba(13, 148, 136, 0.04);
+}
+
+.erp-table-subtext {
+    font-size: var(--font-size-sub) !important;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* ── 6. GRACEFUL TOAST NOTIFICATION SYSTEM ── */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast-notification {
+    pointer-events: auto;
+    min-width: 320px;
+    max-width: 440px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    animation: slideInToast 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    border: 1px solid;
+    font-size: var(--font-size-main);
+}
+
+@keyframes slideInToast {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.toast-warning {
+    background-color: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+.toast-success {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.toast-danger {
+    background-color: #fff1f2;
+    border-color: #fecdd3;
+    color: #9f1239;
+}
+
+/* ── 7. TIMELINE & UTILITIES ── */
+.timeline-line::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 24px;
+    bottom: -24px;
+    width: 2px;
+    background-color: #e2e8f0;
+    z-index: 0;
+}
+.timeline-item:last-child .timeline-line::before {
+    display: none;
+}
+
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -48,27 +342,9 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     background: #94a3b8;
 }
 
-/* Animations */
-.animate-fade-in {
-    animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-.animate-slide-up {
-    animation: slideInBottom 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideInBottom {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 .spinner {
-    border: 3.5px solid rgba(15, 118, 110, 0.2);
-    border-left-color: #0f766e;
+    border: 3.5px solid rgba(13, 148, 136, 0.2);
+    border-left-color: var(--color-primary);
     border-radius: 50%;
     width: 38px;
     height: 38px;
@@ -81,19 +357,4 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
 .hidden-view {
     display: none !important;
-}
-
-/* Timeline 10 Bước Điều Vận */
-.timeline-line::before {
-    content: '';
-    position: absolute;
-    left: 9px;
-    top: 24px;
-    bottom: -24px;
-    width: 2px;
-    background-color: #e2e8f0;
-    z-index: 0;
-}
-.timeline-item:last-child .timeline-line::before {
-    display: none;
 }

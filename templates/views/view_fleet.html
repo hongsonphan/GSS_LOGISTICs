@@ -19,20 +19,21 @@
             <p class="text-3xl font-black text-amber-700 mt-1 tabular-nums font-heading" id="fleet-stat-maint">4</p>
         </div>
     </div>
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
-        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 class="font-bold text-slate-800 font-heading">Danh sách Phương tiện (Cảnh báo thông minh từ DB)</h3>
+    
+    <div class="erp-table-container flex-1 flex flex-col">
+        <div class="p-4 border-b border-slate-200 bg-slate-50/50">
+            <h3 class="font-bold text-slate-800 font-heading text-[15px]">Danh sách Phương tiện (Cảnh báo thông minh từ DB)</h3>
         </div>
         <div class="overflow-x-auto flex-1">
-            <table class="w-full text-left text-sm whitespace-nowrap">
+            <table class="erp-table whitespace-nowrap">
                 <thead>
-                    <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b tracking-wider">
-                        <th class="p-4">Biển số</th>
-                        <th class="p-4">Loại</th>
-                        <th class="p-4">Tài xế mặc định</th>
-                        <th class="p-4">Hạn Đăng kiểm</th>
-                        <th class="p-4">Lịch Bảo trì (Dự kiến)</th>
-                        <th class="p-4">Trạng thái</th>
+                    <tr>
+                        <th>Biển số</th>
+                        <th>Loại</th>
+                        <th>Tài xế mặc định</th>
+                        <th>Hạn Đăng kiểm</th>
+                        <th>Lịch Bảo trì (Dự kiến)</th>
+                        <th>Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100" id="fleet-tbody">

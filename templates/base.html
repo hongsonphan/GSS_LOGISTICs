@@ -55,7 +55,10 @@
     {% include 'components/modal_create_trip.html' %}
     {% include 'components/modal_ocr.html' %}
 
-    <!-- 4. MODULAR JAVASCRIPT -->
+    <!-- 4. GRACEFUL TOAST NOTIFICATION CONTAINER (Bim_ERP-Solutions Standard) -->
+    <div id="toast-container"></div>
+
+    <!-- 5. MODULAR JAVASCRIPT -->
     <script src="{% static 'js/app.js' %}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>

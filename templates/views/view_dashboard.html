@@ -107,22 +107,22 @@
     </div>
 
     <!-- Analysis Table -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex-1 flex flex-col min-h-[300px]">
-        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 class="font-bold text-slate-800 flex items-center font-heading">
+    <div class="erp-table-container flex-1 flex flex-col min-h-[300px]">
+        <div class="p-4 border-b border-slate-200 bg-slate-50/50">
+            <h3 class="font-bold text-slate-800 flex items-center font-heading text-[15px]">
                 <i class="ph ph-trend-up mr-2 text-teal-700 text-lg"></i> Phân Tích Lợi Nhuận Chuyến Xe Gần Nhất (Từ Database)
             </h3>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="erp-table min-w-[800px]">
                 <thead>
-                    <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                        <th class="p-4">Mã Chuyến</th>
-                        <th class="p-4">Khách hàng / Tuyến</th>
-                        <th class="p-4 text-right">Doanh thu cước</th>
-                        <th class="p-4 text-right">Tổng Chi phí</th>
-                        <th class="p-4 text-right">Lợi Nhuận Gộp</th>
-                        <th class="p-4 text-center">Biên LN (%)</th>
+                    <tr>
+                        <th>Mã Chuyến</th>
+                        <th>Khách hàng / Tuyến</th>
+                        <th class="text-right">Doanh thu cước</th>
+                        <th class="text-right">Tổng Chi phí</th>
+                        <th class="text-right">Lợi Nhuận Gộp</th>
+                        <th class="text-center">Biên LN (%)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100" id="bgd-pnl-tbody">

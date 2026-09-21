@@ -1,6 +1,8 @@
 /**
  * ==========================================================================
  * BIM LOGISTICS — FRONTEND APPLICATION LOGIC (TMS & FLEET)
+ * Triết lý: Graceful Notification, Defensive UI & MISA AMIS Table Standard
+ * Kế thừa từ Bim_ERP-Solutions
  * ==========================================================================
  */
 
@@ -16,10 +18,48 @@ const STATUS_STYLE_MAP = {
     'DRAFT': 'bg-slate-100 text-slate-700 border-slate-300',
 };
 
+// --- GRACEFUL TOAST NOTIFICATION (Bim_ERP-Solutions Standard) ---
+function showToast(type, message, title = '') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    const typeClass = type === 'success' ? 'toast-success' :
+                      type === 'danger' ? 'toast-danger' : 'toast-warning';
+    
+    const icon = type === 'success' ? 'ph-fill ph-check-circle text-emerald-600' :
+                 type === 'danger' ? 'ph-fill ph-x-circle text-rose-600' : 'ph-fill ph-warning-circle text-amber-600';
+
+    toast.className = `toast-notification ${typeClass}`;
+    toast.innerHTML = `
+        <i class="${icon} text-2xl shrink-0 mt-0.5"></i>
+        <div class="flex-1 min-w-0">
+            ${title ? `<h5 class="font-bold text-[14px] leading-snug font-heading mb-0.5">${title}</h5>` : ''}
+            <p class="text-[13px] leading-relaxed font-medium">${message}</p>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1 shrink-0">
+            <i class="ph ph-x text-base"></i>
+        </button>
+    `;
+
+    container.appendChild(toast);
+
+    // Tự động đóng sau 4.5 giây
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(30px)';
+            toast.style.transition = 'all 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 4500);
+}
+
 // --- 1. TẢI DỮ LIỆU BAN GIÁM ĐỐC (P&L, QUỸ, NĂNG SUẤT) ---
 async function loadDashboardData() {
     try {
         const res = await fetch('/api/dashboard/');
+        if (!res.ok) throw new Error('Không thể kết nối máy chủ');
         const data = await res.json();
 
         document.getElementById('bgd-cash').innerText = new Intl.NumberFormat('vi-VN').format(data.funds.cash_on_hand) + ' đ';
@@ -61,6 +101,7 @@ async function loadDashboardData() {
         });
     } catch (err) {
         console.error('Error loading dashboard data:', err);
+        showToast('warning', 'Không thể tải dữ liệu Ban Giám Đốc. Vui lòng kiểm tra lại kết nối.', 'Cảnh báo');
     }
 }
 
@@ -75,6 +116,7 @@ async function loadTripsData() {
         let url = `/api/trips/?q=${encodeURIComponent(searchVal)}&status=${encodeURIComponent(statusVal)}`;
 
         const res = await fetch(url);
+        if (!res.ok) throw new Error('Lỗi tải danh sách chuyến');
         const data = await res.json();
 
         // Cập nhật stats
@@ -130,6 +172,7 @@ async function viewTripDetail(tripCode) {
     currentActiveTripCode = tripCode;
     try {
         const res = await fetch(`/api/trips/${tripCode}/`);
+        if (!res.ok) throw new Error('Không tìm thấy chuyến');
         const trip = await res.json();
 
         document.getElementById('view-dieu-van').classList.add('hidden-view');
@@ -257,6 +300,7 @@ async function viewTripDetail(tripCode) {
 
     } catch (err) {
         console.error('Error fetching trip detail:', err);
+        showToast('danger', 'Không thể mở chi tiết chuyến xe.', 'Lỗi');
     }
 }
 
@@ -266,8 +310,49 @@ function backToTrips() {
     loadTripsData();
 }
 
-// --- 4. TẠO LỆNH ĐIỀU ĐỘNG MỚI (LƯU VÀO DB THẬT) ---
+// --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (Bim_ERP Standard) ---
 async function submitNewTrip() {
+    // Reset lỗi cũ
+    const requiredFields = [
+        { id: 'inp-customer', errId: 'err-customer', label: 'Khách hàng' },
+        { id: 'inp-pickup', errId: 'err-pickup', label: 'Nơi lấy cont/hàng' },
+        { id: 'inp-warehouse', errId: 'err-warehouse', label: 'Nơi đóng/trả hàng' },
+        { id: 'inp-driver', errId: 'err-driver', label: 'Tài xế nhận lệnh' }
+    ];
+
+    let hasError = false;
+    let firstErrorEl = null;
+
+    requiredFields.forEach(f => {
+        const inputEl = document.getElementById(f.id);
+        const errEl = document.getElementById(f.errId);
+        
+        if (!inputEl.value.trim()) {
+            hasError = true;
+            inputEl.classList.add('input-error');
+            if (errEl) {
+                errEl.innerHTML = `<i class="ph-fill ph-warning-circle"></i> Vui lòng nhập ${f.label.toLowerCase()}`;
+                errEl.classList.remove('hidden');
+            }
+            if (!firstErrorEl) firstErrorEl = inputEl;
+
+            // Cơ chế tự động xóa viền đỏ khi người dùng bắt đầu nhập (Bim ERP Rule)
+            inputEl.addEventListener('input', () => {
+                inputEl.classList.remove('input-error');
+                if (errEl) errEl.classList.add('hidden');
+            }, { once: true });
+        } else {
+            inputEl.classList.remove('input-error');
+            if (errEl) errEl.classList.add('hidden');
+        }
+    });
+
+    if (hasError) {
+        showToast('warning', 'Vui lòng kiểm tra lại các trường thông tin bắt buộc còn thiếu!', 'Dữ liệu chưa hợp lệ');
+        if (firstErrorEl) firstErrorEl.focus();
+        return;
+    }
+
     const customer = document.getElementById('inp-customer').value;
     const type = document.getElementById('inp-type').value;
     const container = document.getElementById('inp-cont').value;
@@ -294,13 +379,13 @@ async function submitNewTrip() {
             closeModal('modal-create-trip');
             document.getElementById('form-create-trip').reset();
             loadTripsData();
-            alert(result.message);
+            showToast('success', result.message, 'Thành công');
         } else {
-            alert('Lỗi tạo lệnh: ' + (result.error || 'Vui lòng kiểm tra lại thông tin'));
+            showToast('danger', result.error || 'Vui lòng kiểm tra lại dữ liệu nhập.', 'Lỗi nghiệp vụ');
         }
     } catch (err) {
         console.error('Error submitting trip:', err);
-        alert('Có lỗi xảy ra khi kết nối máy chủ.');
+        showToast('danger', 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.', 'Lỗi kết nối');
     }
 }
 
@@ -359,30 +444,40 @@ async function submitOcrData() {
         const amount = document.getElementById('ocr-amount').value;
         const raw_ocr = document.getElementById('ocr-raw-text').innerText;
 
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ category, amount, raw_ocr })
-        });
-        const resData = await res.json();
-        if (resData.success) {
-            closeModal('modal-ocr');
-            viewTripDetail(currentActiveTripCode);
+        try {
+            const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category, amount, raw_ocr })
+            });
+            const resData = await res.json();
+            if (resData.success) {
+                closeModal('modal-ocr');
+                viewTripDetail(currentActiveTripCode);
+                showToast('success', resData.message, 'Đã ghi nhận chi phí');
+            }
+        } catch (err) {
+            showToast('danger', 'Lỗi khi gửi báo cáo chi phí.');
         }
     } else {
         const doc_type = document.getElementById('ocr-doc-type').value;
         const container_no = document.getElementById('ocr-doc-cont').value;
         const seal_no = document.getElementById('ocr-doc-seal').value;
 
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/documents/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ doc_type, container_no, seal_no })
-        });
-        const resData = await res.json();
-        if (resData.success) {
-            closeModal('modal-ocr');
-            viewTripDetail(currentActiveTripCode);
+        try {
+            const res = await fetch(`/api/trips/${currentActiveTripCode}/documents/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ doc_type, container_no, seal_no })
+            });
+            const resData = await res.json();
+            if (resData.success) {
+                closeModal('modal-ocr');
+                viewTripDetail(currentActiveTripCode);
+                showToast('success', resData.message, 'Đã nghiệm thu chứng từ');
+            }
+        } catch (err) {
+            showToast('danger', 'Lỗi khi gửi chứng từ hoàn tất.');
         }
     }
 }
@@ -391,6 +486,7 @@ async function submitOcrData() {
 async function loadHRData() {
     try {
         const res = await fetch('/api/personnel/');
+        if (!res.ok) throw new Error('Lỗi tải nhân sự');
         const data = await res.json();
         const tbody = document.getElementById('hr-tbody');
         tbody.innerHTML = '';
@@ -417,6 +513,7 @@ async function loadHRData() {
 async function loadFleetData() {
     try {
         const res = await fetch('/api/fleet/');
+        if (!res.ok) throw new Error('Lỗi tải đội xe');
         const data = await res.json();
 
         document.getElementById('fleet-stat-tractors').innerText = data.total_tractors;
@@ -454,6 +551,7 @@ async function loadFleetData() {
 async function loadSalesData() {
     try {
         const res = await fetch('/api/sales/');
+        if (!res.ok) throw new Error('Lỗi tải báo giá');
         const data = await res.json();
         const tbody = document.getElementById('sales-tbody');
         tbody.innerHTML = '';
@@ -484,18 +582,21 @@ async function loadSalesData() {
 
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN ---
 function switchTab(tabId) {
-    document.querySelectorAll('.sidebar-btn').forEach(btn => {
-        btn.classList.remove('bg-teal-700', 'text-white', 'shadow-md', 'shadow-teal-950/40');
-        btn.classList.add('hover:bg-slate-800/60', 'hover:text-white', 'text-slate-400');
+    document.querySelectorAll('.sidebar-item-main').forEach(btn => {
+        btn.classList.remove('active');
         const badge = btn.querySelector('span:last-child');
-        if (badge) badge.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-slate-800 text-slate-500';
+        if (badge) badge.className = 'text-[11px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400';
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = icon.className.replace('text-teal-300', 'text-slate-400');
     });
+
     const activeBtn = document.querySelector(`[data-target="${tabId}"]`);
     if (activeBtn) {
-        activeBtn.classList.remove('hover:bg-slate-800/60', 'hover:text-white', 'text-slate-400');
-        activeBtn.classList.add('bg-teal-700', 'text-white', 'shadow-md', 'shadow-teal-950/40');
+        activeBtn.classList.add('active');
         const badge = activeBtn.querySelector('span:last-child');
-        if (badge) badge.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-teal-900 text-teal-100';
+        if (badge) badge.className = 'text-[11px] px-2 py-0.5 rounded font-bold bg-teal-900/80 text-teal-200';
+        const icon = activeBtn.querySelector('i');
+        if (icon) icon.className = icon.className.replace('text-slate-400', 'text-teal-300');
     }
 
     document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
