@@ -4018,15 +4018,18 @@ async function deleteMasterDataItem(id) {
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.app-sidebar');
-    const arrow = document.getElementById('icon-sidebar-arrow');
+    const arrowIn = document.getElementById('icon-sidebar-arrow-in');
+    const arrowOut = document.getElementById('icon-sidebar-arrow-out');
     if (!sidebar) return;
     sidebar.classList.toggle('collapsed');
     const isCollapsed = sidebar.classList.contains('collapsed');
-    if (arrow) {
+    if (arrowIn && arrowOut) {
         if (isCollapsed) {
-            arrow.classList.remove('hidden');
+            arrowIn.classList.add('hidden');
+            arrowOut.classList.remove('hidden');
         } else {
-            arrow.classList.add('hidden');
+            arrowIn.classList.remove('hidden');
+            arrowOut.classList.add('hidden');
         }
     }
     try {
@@ -4084,9 +4087,11 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         if (localStorage.getItem('bim_sidebar_collapsed') === 'true') {
             const sidebar = document.querySelector('.app-sidebar');
-            const arrow = document.getElementById('icon-sidebar-arrow');
+            const arrowIn = document.getElementById('icon-sidebar-arrow-in');
+            const arrowOut = document.getElementById('icon-sidebar-arrow-out');
             if (sidebar) sidebar.classList.add('collapsed');
-            if (arrow) arrow.classList.remove('hidden');
+            if (arrowIn) arrowIn.classList.add('hidden');
+            if (arrowOut) arrowOut.classList.remove('hidden');
         }
     } catch (e) {}
 

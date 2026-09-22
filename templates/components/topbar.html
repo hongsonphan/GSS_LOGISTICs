@@ -3,10 +3,13 @@
     <div class="flex items-center text-slate-500 w-1/2 md:w-1/3">
         <!-- Nút Ẩn / Hiện Sidebar (Duy nhất 1 nút trên Topbar) -->
         <button id="btn-toggle-sidebar" onclick="toggleSidebar()" class="p-2 mr-3 text-slate-700 hover:text-teal-700 hover:bg-slate-100 rounded-xl border border-slate-300 shadow-2xs transition-all active:scale-95 shrink-0 flex items-center justify-center bg-white" title="Ẩn / Mở thanh điều hướng Sidebar">
-            <svg id="icon-sidebar-svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg id="icon-sidebar-svg" class="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect width="18" height="18" x="3" y="3" rx="3"></rect>
                 <path d="M9 3v18"></path>
-                <path id="icon-sidebar-arrow" d="m14 9 3 3-3 3" class="hidden"></path>
+                <!-- Mũi tên hướng vô (trái): khi sidebar đang mở -->
+                <path id="icon-sidebar-arrow-in" d="m16 9-3 3 3 3"></path>
+                <!-- Mũi tên hướng ra (phải): khi sidebar đang đóng -->
+                <path id="icon-sidebar-arrow-out" d="m13.5 9 3 3-3 3" class="hidden"></path>
             </svg>
         </button>
         <div class="relative w-full max-w-md hidden md:block">
