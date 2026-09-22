@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    BIM LOGISTICS — UI/UX ENTERPRISE DESIGN SYSTEM
-   Kế thừa & Đồng bộ 100% từ Triết lý Bim_ERP-Solutions (MISA AMIS V2.0 Standard)
+   Chuẩn hóa Giao diện Vận hành Chuỗi Cung ứng & Logistics Enterprise
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
@@ -12,14 +12,17 @@
     --font-body: 'Be Vietnam Pro', sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
-    /* Thang đo kích thước Typography chuẩn 7 cấp độ */
+    /* Thang đo kích thước Typography chuẩn Enterprise */
     --font-hero: 30px;            /* Hero KPI Number: 30px - 32px */
-    --font-h1: 23px;              /* Page Title H1: 22px - 24px */
+    --font-h1: 22px;              /* Page Title H1: 22px - 24px */
     --font-h2: 17px;              /* Section Title H2: 16px - 18px */
     --font-h3: 15px;              /* Card / Modal Title H3: 14px - 15px */
-    --font-body-main: 14px;       /* Primary Table / Input / Button: 13.5px - 14px */
-    --font-body-sub: 13px;        /* Secondary / Route / Meta: 12.5px - 13px */
-    --font-caption: 11.5px;       /* Badges, Tags, Pill Indicators: 11px - 12px */
+    --font-body-main: 13px;       /* Primary Table / Input / Button: 13px */
+    --font-body-sub: 11.5px;      /* Secondary / Sub-text / Route: 11.5px */
+    --font-caption: 11px;         /* Badges, Tags, Pill Indicators: 11px */
+    --font-size-main: 13px;
+    --font-size-sub: 11.5px;
+    --font-size-caption: 11px;
 
     /* Bảng màu Brand Tokens đồng bộ BIM ERP */
     --color-primary: #0d9488;      /* Teal 600 */
@@ -32,7 +35,7 @@
     --color-danger: #e11d48;       /* Rose 600 */
     --color-info: #2563eb;         /* Blue 600 */
 
-    /* Sidebar Contrast Colors chuẩn MISA AMIS (Bim_ERP-Solutions) */
+    /* Sidebar Contrast Colors chuẩn Bim_ERP-Solutions */
     --sidebar-bg: #253147;
     --sidebar-header-bg: #1a2334;
     --sidebar-text: #e2e8f0;
@@ -232,13 +235,13 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     font-weight: 700;
 }
 
-/* ── 3. BUTTON DESIGN SYSTEM (MISA AMIS Standard) ── */
-.btn-amis-primary {
+/* ── 3. BUTTON DESIGN SYSTEM (Bim Enterprise Standard) ── */
+.btn-bim-primary {
     background-color: var(--color-primary);
     color: #ffffff !important;
     font-weight: 600;
     font-size: var(--font-size-main) !important;
-    padding: 7px 16px;
+    padding: 6px 14px;
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
@@ -250,21 +253,21 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-.btn-amis-primary:hover {
+.btn-bim-primary:hover {
     background-color: var(--color-primary-hover);
     box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.2);
 }
 
-.btn-amis-primary:active {
+.btn-bim-primary:active {
     transform: scale(0.97);
 }
 
-.btn-amis-secondary {
+.btn-bim-secondary {
     background-color: #ffffff;
     color: #334155 !important;
     font-weight: 600;
     font-size: var(--font-size-main) !important;
-    padding: 7px 14px;
+    padding: 6px 13px;
     border-radius: 8px;
     border: 1px solid #cbd5e1;
     display: inline-flex;
@@ -275,13 +278,13 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     cursor: pointer;
 }
 
-.btn-amis-secondary:hover {
+.btn-bim-secondary:hover {
     background-color: #f8fafc;
     border-color: #94a3b8;
     color: #0f172a !important;
 }
 
-.btn-amis-secondary:active {
+.btn-bim-secondary:active {
     transform: scale(0.97);
 }
 
@@ -296,7 +299,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
 .form-input, .form-select, .form-textarea {
     width: 100%;
-    padding: 8px 12px;
+    padding: 7px 12px;
     border-radius: 8px;
     border: 1px solid #cbd5e1;
     background-color: #ffffff;
@@ -335,7 +338,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     color: var(--color-warning) !important;
 }
 
-/* ── 5. MISA ERP TABLE SYSTEM ── */
+/* ── 5. BIM LOGISTICS ENTERPRISE TABLE SYSTEM ── */
 .erp-table-container {
     border: 1px solid #cbd5e1;
     border-radius: 8px;
@@ -344,43 +347,99 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
-.erp-table {
+.erp-table, .bim-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--font-size-main) !important;
+    font-size: 13px !important;
 }
 
-.erp-table thead th {
-    background-color: #f8fafc;
-    color: #0f172a;
-    font-size: 13px !important;
+.erp-table thead th, .bim-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f2f5f8;
+    color: #334155;
+    font-size: 12.5px !important;
     font-weight: 700;
-    padding: 11px 14px;
+    padding: 7px 12px;
+    height: 36px;
     border-bottom: 1px solid #cbd5e1;
+    border-right: 1px solid #e2e8f0;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     white-space: nowrap;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    vertical-align: middle;
 }
 
-.erp-table tbody td {
-    padding: 10px 14px;
-    font-size: var(--font-size-main) !important;
+.erp-table thead th:last-child, .bim-table thead th:last-child {
+    border-right: none;
+}
+
+/* Hàng dữ liệu đơn (Single-line row): chiều cao chuẩn ~34px - 36px */
+.erp-table tbody td, .bim-table tbody td {
+    padding: 6px 12px;
+    font-size: 13px !important;
+    line-height: 1.4;
     color: #1e293b;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid #edf2f7;
+    vertical-align: middle;
 }
 
-.erp-table tbody tr {
+/* Hàng dữ liệu đa tầng có sub-text (Multi-line row): chiều cao chuẩn ~46px - 48px */
+.erp-table tbody tr.row-multiline td,
+.erp-table tbody td.cell-multiline,
+.bim-table tbody tr.row-multiline td {
+    padding: 7px 12px;
+    vertical-align: middle;
+}
+
+.erp-table tbody tr, .bim-table tbody tr {
     transition: background-color 0.12s ease;
 }
 
-.erp-table tbody tr:hover {
-    background-color: rgba(13, 148, 136, 0.04);
+.erp-table tbody tr:hover, .bim-table tbody tr:hover {
+    background-color: rgba(13, 148, 136, 0.035);
 }
 
-.erp-table-subtext {
-    font-size: var(--font-size-sub) !important;
+/* Định dạng dòng phụ (Sub-text) */
+.erp-subtext,
+.erp-table-subtext,
+.bim-subtext {
+    font-size: 11.5px !important;
     color: #64748b;
     font-weight: 500;
+    line-height: 1.25;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Cột số liệu tiền tệ căn phải */
+.erp-number-cell, .bim-number-cell {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-heading) !important;
+    font-weight: 800;
+}
+
+/* Nút chức năng thao tác chuẩn */
+.erp-action-link, .bim-action-link {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: color 0.15s;
+    text-decoration: none;
+}
+
+.erp-action-link:hover, .bim-action-link:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
 }
 
 /* ── 6. GRACEFUL TOAST NOTIFICATION SYSTEM ── */

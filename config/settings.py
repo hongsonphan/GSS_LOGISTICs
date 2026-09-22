@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'apps.documents',
     'apps.billing',
     'apps.exceptions',
+    'apps.master_data',
 ]
 
 MIDDLEWARE = [

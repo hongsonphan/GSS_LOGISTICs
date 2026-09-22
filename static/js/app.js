@@ -1,7 +1,7 @@
 /**
  * ==========================================================================
  * BIM LOGISTICS — FRONTEND APPLICATION LOGIC (TMS & FLEET)
- * Triết lý: Graceful Notification, Defensive UI & MISA AMIS Table Standard
+ * Triết lý: Graceful Notification, Defensive UI & Bim Enterprise Table Standard
  * Kế thừa từ Bim_ERP-Solutions
  * ==========================================================================
  */
@@ -33,6 +33,11 @@ function parseNumberVN(val) {
     if (val === null || val === undefined || val === '') return 0;
     const clean = String(val).replace(/\D/g, '');
     return parseInt(clean, 10) || 0;
+}
+
+function formatMoney(n) {
+    if (n === null || n === undefined || isNaN(Number(n))) return '0 đ';
+    return new Intl.NumberFormat('vi-VN').format(Math.round(Number(n))) + ' đ';
 }
 
 function attachAutoNumberFormat(inputEl, onChangeCallback) {
@@ -221,52 +226,52 @@ async function loadDashboardData() {
             pnlTbody.innerHTML = '';
             data.trips_pnl.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-teal-50/50 transition-colors cursor-pointer group';
+                tr.className = 'hover:bg-teal-50/40 transition-colors cursor-pointer group row-multiline border-b border-slate-200/70';
                 tr.title = `Bấm để xem chi tiết hồ sơ chuyến [${item.trip_code}]`;
                 tr.onclick = () => {
                     viewTripDetail(item.trip_code);
                 };
 
-                let statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 font-heading">${item.status_label || item.status}</span>`;
+                let statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 font-heading">${item.status_label || item.status}</span>`;
                 if (item.status === 'COMPLETED') {
-                    statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading">Đã hoàn tất</span>`;
+                    statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading">Đã hoàn tất</span>`;
                 } else if (['IN_TRANSIT', 'ACCEPTED', 'CONTAINER_PICKED', 'AT_WAREHOUSE', 'UNLOADING', 'RETURNING_EMPTY'].includes(item.status)) {
-                    statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-heading">Đang vận hành</span>`;
+                    statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-heading">Đang vận hành</span>`;
                 }
 
                 const marginVal = item.margin_percent || 0;
                 const barColor = marginVal >= 50 ? 'bg-emerald-500' : (marginVal >= 25 ? 'bg-amber-500' : 'bg-rose-500');
 
                 tr.innerHTML = `
-                    <td class="p-3.5 pl-5 font-black text-teal-800 font-heading">
-                        <div class="flex items-center space-x-1.5">
+                    <td class="py-1.5 px-3 border-r border-slate-200/70 font-black text-teal-800 font-heading text-[13px]">
+                        <div class="flex items-center space-x-1">
                             <span>${item.trip_code}</span>
-                            <i class="ph ph-arrow-square-out text-slate-400 group-hover:text-teal-600 transition-colors text-sm"></i>
+                            <i class="ph ph-arrow-square-out text-slate-400 group-hover:text-teal-600 transition-colors text-xs"></i>
                         </div>
                     </td>
-                    <td class="p-3.5">
-                        <p class="font-bold text-slate-800">${item.customer_name}</p>
-                        <p class="text-[11px] text-slate-500 truncate max-w-xs mt-0.5">${item.route}</p>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70">
+                        <p class="font-bold text-slate-900 text-[13px] leading-tight">${item.customer_name}</p>
+                        <p class="text-[11.5px] text-slate-500 font-medium truncate max-w-xs mt-0.5 leading-tight">${item.route}</p>
                     </td>
-                    <td class="p-3.5">
-                        <p class="font-bold text-slate-800">${item.driver_name}</p>
-                        <p class="text-[11px] text-teal-700 font-mono font-bold">${item.license_plate}</p>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70">
+                        <p class="font-bold text-slate-900 text-[13px] leading-tight">${item.driver_name}</p>
+                        <p class="text-[11.5px] text-teal-700 font-mono font-bold mt-0.5 leading-tight">${item.license_plate}</p>
                     </td>
-                    <td class="p-3.5 font-mono text-slate-700 font-bold">${item.container_number}</td>
-                    <td class="p-3.5 text-right font-bold text-slate-800 tabular-nums">${new Intl.NumberFormat('vi-VN').format(item.revenue)} đ</td>
-                    <td class="p-3.5 text-right font-medium text-amber-600 tabular-nums">-${new Intl.NumberFormat('vi-VN').format(item.expense)} đ</td>
-                    <td class="p-3.5 text-right font-black text-emerald-600 tabular-nums font-heading">${new Intl.NumberFormat('vi-VN').format(item.profit)} đ</td>
-                    <td class="p-3.5">
-                        <div class="flex items-center justify-center space-x-2">
-                            <span class="text-[11px] font-bold text-slate-700 w-10 text-right tabular-nums">${marginVal}%</span>
-                            <div class="w-14 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <td class="py-1.5 px-3 border-r border-slate-200/70 font-mono text-slate-800 font-bold text-[12.5px]">${item.container_number}</td>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-bold text-slate-900 tabular-nums font-mono text-[13px]">${new Intl.NumberFormat('vi-VN').format(item.revenue)} đ</td>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-medium text-amber-700 tabular-nums font-mono text-[13px]">-${new Intl.NumberFormat('vi-VN').format(item.expense)} đ</td>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-bold text-emerald-700 tabular-nums font-mono text-[13px] font-heading">${new Intl.NumberFormat('vi-VN').format(item.profit)} đ</td>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-center">
+                        <div class="flex items-center justify-center space-x-1.5">
+                            <span class="text-[11.5px] font-bold text-slate-700 w-9 text-right tabular-nums">${marginVal}%</span>
+                            <div class="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                 <div class="h-full ${barColor}" style="width: ${Math.min(100, Math.max(0, marginVal))}%"></div>
                             </div>
                         </div>
                     </td>
-                    <td class="p-3.5 text-center">${statusBadge}</td>
-                    <td class="p-3.5 text-center pr-5" onclick="event.stopPropagation();">
-                        <button onclick="viewTripDetail('${item.trip_code}')" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-600 hover:text-white text-teal-700 text-xs font-bold font-heading transition-colors border border-teal-200 shadow-2xs">
+                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-center">${statusBadge}</td>
+                    <td class="py-1.5 px-3 text-center" onclick="event.stopPropagation();">
+                        <button onclick="viewTripDetail('${item.trip_code}')" class="px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 hover:bg-teal-700 hover:text-white text-teal-700 font-heading border border-teal-200 transition-colors shadow-2xs">
                             Chi Tiết
                         </button>
                     </td>
@@ -518,92 +523,92 @@ async function loadTripsData() {
             const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
 
             const tr = document.createElement('tr');
-            tr.className = 'hover:bg-teal-50/30 transition-colors cursor-pointer group';
+            tr.className = 'hover:bg-teal-50/40 transition-colors cursor-pointer group row-multiline border-b border-slate-200/80';
             tr.onclick = () => viewTripDetail(trip.id);
             
             tr.innerHTML = `
-                <td class="px-4 py-3.5">
+                <td class="px-3 py-2 border-r border-slate-200/70">
                     <div class="flex items-center space-x-2">
-                        <span class="font-black text-teal-800 font-heading text-sm">${trip.id}</span>
+                        <span class="font-bold text-teal-800 font-heading text-[13px]">${trip.id}</span>
                     </div>
-                    <div class="flex items-center space-x-1.5 text-xs font-semibold text-slate-600 mt-1">
-                        <i class="ph ph-calendar text-slate-400 text-sm"></i>
+                    <div class="flex items-center space-x-1.5 text-[11.5px] font-medium text-slate-500 mt-0.5">
+                        <i class="ph ph-calendar text-slate-400 text-xs"></i>
                         <span>${trip.loading_date}</span>
-                        ${trip.loading_time ? `<span class="text-teal-800 bg-teal-100/80 px-1.5 py-0.5 rounded font-bold">${trip.loading_time}</span>` : ''}
+                        ${trip.loading_time ? `<span class="text-teal-800 bg-teal-100/80 px-1 py-0.2 rounded font-bold text-[11px]">${trip.loading_time}</span>` : ''}
                     </div>
                 </td>
-                <td class="px-4 py-3.5">
-                    <p class="font-bold text-slate-900 text-sm leading-snug" title="${trip.customer}">${trip.customer}</p>
-                    <p class="text-[13px] text-slate-600 font-medium mt-1 flex items-center gap-1.5" title="${trip.warehouse}">
-                        <i class="ph ph-warehouse text-slate-400 text-sm shrink-0"></i>
+                <td class="px-3 py-2 border-r border-slate-200/70">
+                    <p class="font-bold text-slate-900 text-[13px] leading-snug truncate" title="${trip.customer}">${trip.customer}</p>
+                    <p class="text-[11.5px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 truncate" title="${trip.warehouse}">
+                        <i class="ph ph-warehouse text-slate-400 text-xs shrink-0"></i>
                         <span>${trip.warehouse}</span>
                     </p>
                 </td>
-                <td class="px-4 py-3.5">
-                    <div class="flex items-center space-x-1.5 font-mono font-bold text-slate-900 text-sm">
-                        <i class="ph ph-barcode text-teal-600 text-base"></i>
+                <td class="px-3 py-2 border-r border-slate-200/70">
+                    <div class="flex items-center space-x-1.5 font-mono font-bold text-slate-900 text-[13px]">
+                        <i class="ph ph-barcode text-teal-600 text-sm"></i>
                         <span>${trip.container}</span>
                     </div>
-                    <div class="text-[13px] text-slate-600 mt-1 flex items-center space-x-2 font-medium">
+                    <div class="text-[11.5px] text-slate-500 mt-0.5 flex items-center space-x-1.5 font-medium">
                         <span>B/L: <strong class="text-slate-800 font-mono font-bold">${trip.booking}</strong></span>
                         ${trip.seal && trip.seal !== '-' ? `<span class="text-slate-300">|</span> <span>Seal: <strong class="text-slate-800 font-mono font-bold">${trip.seal}</strong></span>` : ''}
                     </div>
                 </td>
-                <td class="px-4 py-3.5">
+                <td class="px-3 py-2 border-r border-slate-200/70">
                     <div class="flex items-center space-x-1.5">
                         ${trip.commercial_invoice && trip.commercial_invoice !== '-' ? `
-                            <span class="font-mono text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded shadow-2xs" title="Hóa đơn thương mại">
+                            <span class="font-mono text-[11.5px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded shadow-2xs" title="Hóa đơn thương mại">
                                 <i class="ph ph-file-text"></i> ${trip.commercial_invoice}
                             </span>
-                        ` : `<span class="text-slate-400 text-xs italic">-</span>`}
+                        ` : `<span class="text-slate-400 text-[11.5px] italic">-</span>`}
                     </div>
-                    <div class="mt-1">
+                    <div class="mt-0.5">
                         ${trip.warehouse_dock && trip.warehouse_dock !== '-' ? `
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200 font-heading">
+                            <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 font-heading">
                                 DOCK: ${trip.warehouse_dock}
                             </span>
-                        ` : `<span class="text-xs text-slate-400 font-medium">Chưa chỉ định dock</span>`}
+                        ` : `<span class="text-[11.5px] text-slate-400 font-medium">Chưa chỉ định dock</span>`}
                     </div>
                 </td>
-                <td class="px-4 py-3.5">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-bold text-slate-900 font-mono text-sm">${trip.vehicle}</span>
+                <td class="px-3 py-2 border-r border-slate-200/70">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="font-bold text-slate-900 font-mono text-[13px]">${trip.vehicle}</span>
                         ${trip.vehicle_ownership_code === 'OWNED' 
-                            ? `<span class="px-2 py-0.5 text-[11px] font-black uppercase rounded bg-teal-100 text-teal-800 border border-teal-200">Xe Nhà</span>`
-                            : `<span class="px-2 py-0.5 text-[11px] font-black uppercase rounded bg-amber-100 text-amber-800 border border-amber-200">Xe Bạn</span>`
+                            ? `<span class="px-1.5 py-0.2 text-[10.5px] font-black uppercase rounded bg-teal-100 text-teal-800 border border-teal-200">Xe Nhà</span>`
+                            : `<span class="px-1.5 py-0.2 text-[10.5px] font-black uppercase rounded bg-amber-100 text-amber-800 border border-amber-200">Xe Bạn</span>`
                         }
                     </div>
-                    <div class="text-[13px] text-slate-600 mt-1 flex items-center space-x-2">
+                    <div class="text-[11.5px] text-slate-500 mt-0.5 flex items-center space-x-1.5">
                         <span>Tài xế: <strong class="text-slate-900 font-bold">${trip.driver}</strong></span>
                         ${trip.dropoff_vehicle && trip.dropoff_vehicle !== '-' && trip.dropoff_vehicle !== trip.vehicle ? `
                             <span class="text-slate-300">|</span>
-                            <span class="text-indigo-700 font-bold font-mono text-xs" title="Xe hạ bãi">Hạ: ${trip.dropoff_vehicle}</span>
+                            <span class="text-indigo-700 font-bold font-mono text-[11.5px]" title="Xe hạ bãi">Hạ: ${trip.dropoff_vehicle}</span>
                         ` : ''}
                     </div>
                 </td>
-                <td class="px-4 py-3.5">
-                    <div class="mb-1">
-                        <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${trip.cont_location_type === 'BÃI TVL' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
+                <td class="px-3 py-2 border-r border-slate-200/70">
+                    <div class="flex items-center">
+                        <span class="px-1.5 py-0.2 rounded text-[10.5px] font-bold uppercase tracking-wider ${trip.cont_location_type === 'BÃI TVL' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
                             <i class="ph ph-map-pin"></i> ${trip.cont_location_type}
                         </span>
                     </div>
-                    <p class="text-xs text-slate-600 font-medium italic line-clamp-1 max-w-[200px]" title="${trip.cargo_notes || 'Không có lưu ý'}">
+                    <p class="text-[11.5px] text-slate-500 font-medium italic line-clamp-1 max-w-[200px] mt-0.5" title="${trip.cargo_notes || 'Không có lưu ý'}">
                         ${trip.cargo_notes ? `<i class="ph ph-info text-amber-600"></i> ${trip.cargo_notes}` : '<span class="text-slate-400 font-normal">Không có lưu ý</span>'}
                     </p>
                 </td>
-                <td class="px-4 py-3.5">
-                    <div class="text-[13px] font-bold text-slate-800 flex items-center space-x-1.5" title="${trip.pickup} ➔ ${trip.dropoff || 'Hạ bãi'}">
+                <td class="px-3 py-2 border-r border-slate-200/70">
+                    <div class="text-[13px] font-bold text-slate-800 flex items-center space-x-1.5 truncate" title="${trip.pickup} ➔ ${trip.dropoff || 'Hạ bãi'}">
                         <span class="text-teal-700">${trip.pickup}</span>
                         <i class="ph ph-arrow-right text-slate-400 text-xs shrink-0"></i>
                         <span class="text-indigo-700">${trip.dropoff || 'Bãi rỗng'}</span>
                     </div>
-                    <div class="mt-1 flex items-center space-x-2 text-xs">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase font-heading ${typeColor}">${trip.type}</span>
-                        <span class="text-rose-600 font-mono font-bold text-[13px]">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
+                    <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
+                        <span class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase font-heading ${typeColor}">${trip.type}</span>
+                        <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                     </div>
                 </td>
-                <td class="px-4 py-3.5">
-                    <span class="px-3 py-1.5 rounded-full text-xs font-black border uppercase tracking-wider font-heading ${statusCls}">
+                <td class="px-3 py-2 text-center">
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider font-heading inline-block ${statusCls}">
                         ${trip.status_label}
                     </span>
                 </td>
@@ -774,56 +779,126 @@ async function viewTripDetail(tripCode) {
 
         // --- RENDER TIMELINE 10 BƯỚC ---
         const tContainer = document.getElementById('detail-timeline');
-        tContainer.innerHTML = '';
-        trip.timeline.forEach(item => {
-            let borderClass = 'border-slate-300';
-            let dotHtml = '';
-            let textClass = 'text-slate-400';
-            
-            if (item.active) {
-                borderClass = 'border-teal-600 ring-4 ring-teal-100';
-                dotHtml = '<div class="w-2.5 h-2.5 bg-teal-600 rounded-full animate-pulse"></div>';
-                textClass = 'text-teal-700 font-bold';
-            } else if (item.done) {
-                borderClass = 'border-emerald-500';
-                dotHtml = '<div class="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>';
-                textClass = 'text-slate-800';
-            }
-
-            tContainer.innerHTML += `
-                <div class="relative py-1.5 timeline-item">
-                    <div class="timeline-line"></div>
-                    <div class="absolute left-0 top-[10px] w-5 h-5 rounded-full border-[3px] bg-white flex items-center justify-center z-10 ${borderClass}">
-                        ${dotHtml}
-                    </div>
-                    <div class="pl-10">
-                        <p class="font-bold text-[14px] tracking-wide ${textClass}">${item.title}</p>
-                        ${item.time ? `<p class="text-[11px] mt-0.5 font-semibold text-slate-500">${item.time}</p>` : ''}
-                    </div>
-                </div>
-            `;
-        });
-
-        // --- RENDER DANH SÁCH CHỨNG TỪ GỐC ---
-        const docContainer = document.getElementById('detail-documents');
-        docContainer.innerHTML = '';
-        if (!trip.documents || trip.documents.length === 0) {
-            docContainer.innerHTML = `<p class="text-xs text-slate-400 italic md:col-span-2">Chưa có chứng từ đính kèm.</p>`;
-        } else {
-            trip.documents.forEach(doc => {
-                docContainer.innerHTML += `
-                    <div class="flex items-center p-3 border border-slate-200 rounded-xl bg-slate-50/70 hover:bg-slate-100/80 transition-colors">
-                        <div class="w-10 h-10 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center mr-3 shrink-0">
-                            <i class="ph-fill ph-file-text text-xl"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-[13px] font-bold text-slate-800 truncate">${doc.name}</p>
-                            <p class="text-[11px] font-medium text-slate-500 truncate">${doc.details} <span class="text-slate-400 ml-1">• ${doc.time}</span></p>
-                        </div>
-                        <span class="text-[10.5px] px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-md font-bold font-heading shrink-0">Đã Nghiệm Thu</span>
+        if (tContainer) {
+            tContainer.innerHTML = '';
+            const timelineList = trip.timeline || [];
+            if (timelineList.length === 0) {
+                tContainer.innerHTML = `
+                    <div class="py-6 text-center text-slate-400 text-xs italic">
+                        <i class="ph ph-clock-counter-clockwise text-xl text-slate-300 block mb-1"></i>
+                        Đang khởi tạo các mốc tiến độ điều vận...
                     </div>
                 `;
-            });
+            } else {
+                timelineList.forEach(item => {
+                    let borderClass = 'border-slate-300 bg-white';
+                    let dotHtml = `<span class="text-[9.5px] font-bold text-slate-400">${item.step}</span>`;
+                    let textClass = 'text-slate-500 font-medium';
+                    let badgeHtml = '';
+                    
+                    if (item.active) {
+                        borderClass = 'border-teal-600 ring-4 ring-teal-100 bg-teal-50';
+                        dotHtml = '<div class="w-2.5 h-2.5 bg-teal-600 rounded-full animate-pulse"></div>';
+                        textClass = 'text-teal-900 font-bold';
+                        badgeHtml = '<span class="ml-2 px-2 py-0.5 rounded text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300 whitespace-nowrap animate-pulse">ĐANG THỰC HIỆN</span>';
+                    } else if (item.done) {
+                        borderClass = 'border-emerald-500 bg-emerald-50';
+                        dotHtml = '<i class="ph-bold ph-check text-[11px] text-emerald-600"></i>';
+                        textClass = 'text-slate-800 font-bold';
+                        badgeHtml = '<span class="ml-2 px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">Hoàn thành</span>';
+                    }
+
+                    tContainer.innerHTML += `
+                        <div class="relative py-2 timeline-item">
+                            <div class="timeline-line"></div>
+                            <div class="absolute left-0 top-[10px] w-6 h-6 rounded-full border-2 flex items-center justify-center z-10 transition-all shadow-2xs ${borderClass}">
+                                ${dotHtml}
+                            </div>
+                            <div class="pl-10">
+                                <div class="flex items-center flex-wrap gap-1">
+                                    <span class="text-[13.5px] tracking-tight ${textClass}">${item.title}</span>
+                                    ${badgeHtml}
+                                </div>
+                                ${item.time ? `
+                                    <p class="text-[11px] mt-0.5 font-medium text-slate-500 flex items-center">
+                                        <i class="ph ph-clock mr-1 text-slate-400 text-xs"></i>
+                                        <span>${item.time}</span>
+                                    </p>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // --- RENDER DANH SÁCH CHỨNG TỪ GỐC & HÓA ĐƠN ĐIỆN TỬ ---
+        const docContainer = document.getElementById('detail-documents');
+        if (docContainer) {
+            docContainer.innerHTML = '';
+            const docList = trip.documents || [];
+            if (docList.length === 0) {
+                docContainer.innerHTML = `
+                    <div class="py-4 text-center text-slate-400 text-xs italic md:col-span-2">
+                        <i class="ph ph-file-dashed text-xl text-slate-300 block mb-1"></i>
+                        Chưa có chứng từ đính kèm cho chuyến xe này.
+                    </div>
+                `;
+            } else {
+                docList.forEach(doc => {
+                    // Xác định icon, màu sắc và danh mục chứng từ
+                    let iconClass = 'ph-fill ph-file-text text-teal-600';
+                    let iconBg = 'bg-teal-50 border-teal-200';
+                    let tagLabel = doc.type_label || 'Chứng từ';
+
+                    if (doc.type === 'EIR_PICKUP') {
+                        iconClass = 'ph-fill ph-truck text-blue-600';
+                        iconBg = 'bg-blue-50 border-blue-200';
+                        tagLabel = 'Phiếu EIR Lấy Cont';
+                    } else if (doc.type === 'EIR_DROPOFF') {
+                        iconClass = 'ph-fill ph-arrow-down-left text-indigo-600';
+                        iconBg = 'bg-indigo-50 border-indigo-200';
+                        tagLabel = 'Phiếu EIR Hạ Cont';
+                    } else if (doc.type === 'POD') {
+                        iconClass = 'ph-fill ph-signature text-emerald-600';
+                        iconBg = 'bg-emerald-50 border-emerald-200';
+                        tagLabel = 'Biên bản POD';
+                    } else if (doc.type === 'INVOICE') {
+                        iconClass = 'ph-fill ph-receipt text-amber-600';
+                        iconBg = 'bg-amber-50 border-amber-200';
+                        tagLabel = 'Hóa đơn / Biên nhận';
+                    } else if (doc.type === 'WEIGHT_TICKET') {
+                        iconClass = 'ph-fill ph-scales text-purple-600';
+                        iconBg = 'bg-purple-50 border-purple-200';
+                        tagLabel = 'Phiếu cân';
+                    } else if (doc.type === 'CONTAINER_CHECK') {
+                        iconClass = 'ph-fill ph-shield-check text-cyan-600';
+                        iconBg = 'bg-cyan-50 border-cyan-200';
+                        tagLabel = 'Giám định vỏ cont';
+                    }
+
+                    docContainer.innerHTML += `
+                        <div class="flex items-center p-3 border border-slate-200 rounded-xl bg-slate-50/70 hover:bg-slate-100/90 transition-all shadow-2xs">
+                            <div class="w-10 h-10 rounded-lg ${iconBg} border flex items-center justify-center mr-3 shrink-0">
+                                <i class="${iconClass} text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
+                                    <span class="text-[10px] font-black uppercase px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 font-heading">${tagLabel}</span>
+                                    <p class="text-[13px] font-bold text-slate-900 truncate" title="${doc.name}">${doc.name}</p>
+                                </div>
+                                <p class="text-[11px] font-medium text-slate-600 truncate mt-0.5">${doc.details}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5 flex items-center font-mono">
+                                    <i class="ph ph-clock mr-1 text-[10px]"></i>${doc.time}
+                                </p>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 ${doc.is_verified ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300'} border rounded-md font-bold font-heading shrink-0">
+                                ${doc.is_verified ? 'Đã Nghiệm Thu' : 'Chờ Đối Chiếu'}
+                            </span>
+                        </div>
+                    `;
+                });
+            }
         }
 
     } catch (err) {
@@ -871,35 +946,35 @@ function renderCostSheetTable(trip) {
         if (item.key === 'fee_einvoice') {
             const einvInfo = item.getVal(trip);
             tbody.innerHTML += `
-                <tr class="hover:bg-slate-50/80 transition-colors">
-                    <td class="p-3 text-center text-slate-400 font-bold">${item.stt}</td>
-                    <td class="p-3">
-                        <span class="font-bold text-slate-900 text-sm">${item.title}</span>
-                        <p class="text-xs text-slate-400">${item.sub}</p>
+                <tr class="hover:bg-slate-50/80 transition-colors border-b border-slate-200/70">
+                    <td class="py-1.5 px-3 text-center text-slate-400 font-bold border-r border-slate-200/70">${item.stt}</td>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70">
+                        <span class="font-bold text-slate-900 text-[13px]">${item.title}</span>
+                        <p class="text-[11.5px] text-slate-400 mt-0.5">${item.sub}</p>
                     </td>
-                    <td class="p-3 text-right text-slate-400 font-medium">-</td>
-                    <td class="p-3" colspan="2">
+                    <td class="py-1.5 px-3 text-right text-slate-400 font-medium border-r border-slate-200/70">-</td>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70" colspan="2">
                         ${einvInfo.hasInv ? `
                             <div class="flex items-center space-x-2">
-                                <span class="text-xs font-mono font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded border border-teal-200">
+                                <span class="text-[11.5px] font-mono font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                                     ${einvInfo.text}
                                 </span>
                                 ${einvInfo.lookup_url ? `
-                                    <a href="${einvInfo.lookup_url}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center bg-blue-50 px-2 py-1 rounded">
+                                    <a href="${einvInfo.lookup_url}" target="_blank" class="text-[11.5px] font-bold text-blue-600 hover:text-blue-800 flex items-center bg-blue-50 px-2 py-0.5 rounded">
                                         <i class="ph ph-arrow-square-out mr-1"></i> Tra cứu online
                                     </a>
                                 ` : ''}
                             </div>
                         ` : `
-                            <span class="text-xs text-slate-400 italic">Chưa phát sinh hóa đơn</span>
+                            <span class="text-[11.5px] text-slate-400 italic">Chưa phát sinh hóa đơn</span>
                         `}
                     </td>
-                    <td class="p-3 text-center">
+                    <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
                         ${einvInfo.hasInv 
-                            ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">Đã Liên Kết</span>`
-                            : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-500">Trống</span>`}
+                            ? `<span class="px-2 py-0.2 rounded text-[10.5px] font-bold bg-emerald-100 text-emerald-800">Đã Liên Kết</span>`
+                            : `<span class="px-2 py-0.2 rounded text-[10.5px] font-bold bg-slate-100 text-slate-500">Trống</span>`}
                     </td>
-                    <td class="p-3 text-center text-slate-300">-</td>
+                    <td class="py-1.5 px-3 text-center text-slate-300">-</td>
                 </tr>
             `;
         } else {
@@ -925,40 +1000,40 @@ function renderCostSheetTable(trip) {
                 tbody.innerHTML += `
                     <!-- DÒNG TỔNG GỘP (Clickable Accordion) -->
                     <tr onclick="toggleExpenseDetail('${item.code}')" class="hover:bg-teal-50/50 cursor-pointer transition-colors bg-slate-50/40 border-b border-slate-200/80">
-                        <td class="p-3 text-center text-teal-800 font-bold">${item.stt}</td>
-                        <td class="p-3">
+                        <td class="py-2 px-3 text-center text-teal-800 font-bold border-r border-slate-200/70">${item.stt}</td>
+                        <td class="py-2 px-3 border-r border-slate-200/70">
                             <div class="flex items-center space-x-2">
-                                <span class="font-black text-slate-900 text-sm">${item.title}</span>
-                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-teal-100 text-teal-900 text-xs font-bold font-heading hover:bg-teal-200 transition-colors">
+                                <span class="font-bold text-slate-900 text-[13px]">${item.title}</span>
+                                <span class="inline-flex items-center space-x-1 px-2 py-0.2 rounded-full bg-teal-100 text-teal-900 text-[10.5px] font-bold font-heading hover:bg-teal-200 transition-colors">
                                     <i class="ph-fill ph-list-numbers"></i>
                                     <span>${matchedExps.length} khoản chi</span>
                                     <i id="icon-toggle-${item.code}" class="ph ph-caret-down text-xs transition-transform duration-200"></i>
                                 </span>
                             </div>
-                            <p class="text-xs text-teal-700 font-semibold mt-0.5 flex items-center">
+                            <p class="text-[11.5px] text-teal-700 font-semibold mt-0.5 flex items-center">
                                 <i class="ph ph-hand-pointing mr-1"></i> Bấm để xem/ẩn chi tiết từng vé (${matchedExps.length} dòng con)
                             </p>
                         </td>
-                        <td class="p-3 text-right font-black text-sm tabular-nums text-rose-600">
+                        <td class="py-2 px-3 text-right font-black text-[13px] tabular-nums text-rose-600 font-mono border-r border-slate-200/70">
                             <span class="border-b-2 border-dotted border-rose-400 pb-0.5" title="Tổng cộng ${matchedExps.length} khoản">
                                 ${formatMoney(amountSum)}
                             </span>
                         </td>
-                        <td class="p-3">
-                            <span class="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded border border-slate-200 inline-block">
+                        <td class="py-2 px-3 border-r border-slate-200/70">
+                            <span class="text-[11.5px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 inline-block">
                                 ${summaryInvText ? `Gồm các HĐ: ${summaryInvText}` : `Tổng hợp ${matchedExps.length} chứng từ`}
                             </span>
                         </td>
-                        <td class="p-3 text-slate-600 text-xs">
+                        <td class="py-2 px-3 text-slate-600 text-[11.5px] border-r border-slate-200/70">
                             <span class="text-teal-800 font-semibold">Xem chi tiết các khoản bên dưới</span>
                         </td>
-                        <td class="p-3 text-center">
-                            <button type="button" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center space-x-1 shadow-sm font-heading">
+                        <td class="py-2 px-3 text-center border-r border-slate-200/70">
+                            <button type="button" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center space-x-1 shadow-sm font-heading">
                                 <span>Chi tiết</span>
                                 <i class="ph ph-caret-down text-xs"></i>
                             </button>
                         </td>
-                        <td class="p-3 text-center text-slate-400 text-xs font-semibold">
+                        <td class="py-2 px-3 text-center text-slate-400 text-[11px] font-semibold">
                             Tập hợp
                         </td>
                     </tr>
@@ -966,20 +1041,20 @@ function renderCostSheetTable(trip) {
                     <!-- CÁC DÒNG CON CHI TIẾT (Sub-rows) -->
                     ${matchedExps.map((subExp, sIdx) => `
                         <tr class="sub-row-${item.code} hidden bg-teal-50/30 border-l-4 border-l-teal-600 border-b border-slate-100 transition-all text-xs">
-                            <td class="p-2.5 text-center text-teal-800 font-mono font-bold text-xs">${item.stt}.${sIdx + 1}</td>
-                            <td class="p-2.5 pl-6">
+                            <td class="py-1.5 px-2.5 text-center text-teal-800 font-mono font-bold text-[11.5px] border-r border-slate-200/70">${item.stt}.${sIdx + 1}</td>
+                            <td class="py-1.5 px-2.5 pl-6 border-r border-slate-200/70">
                                 <div class="flex items-center space-x-2">
                                     <i class="ph ph-arrow-elbow-down-right text-teal-700 font-black text-sm"></i>
-                                    <span class="font-bold text-slate-900 text-sm">${subExp.notes || (item.title + ' #' + (sIdx + 1))}</span>
+                                    <span class="font-bold text-slate-900 text-[12.5px]">${subExp.notes || (item.title + ' #' + (sIdx + 1))}</span>
                                 </div>
-                                ${subExp.time ? `<p class="text-xs text-slate-400 pl-5 font-normal mt-0.5">${subExp.time}</p>` : ''}
+                                ${subExp.time ? `<p class="text-[11px] text-slate-400 pl-5 font-normal mt-0.5">${subExp.time}</p>` : ''}
                             </td>
-                            <td class="p-2.5 text-right font-black text-rose-600 tabular-nums text-sm">
+                            <td class="py-1.5 px-2.5 text-right font-black text-rose-600 tabular-nums font-mono text-[13px] border-r border-slate-200/70">
                                 ${formatMoney(subExp.amount)}
                             </td>
-                            <td class="p-2.5">
+                            <td class="py-1.5 px-2.5 border-r border-slate-200/70">
                                 ${subExp.invoice_number ? `
-                                    <div class="inline-flex items-center space-x-1 font-mono text-xs font-bold text-teal-900 bg-teal-100/70 px-2 py-0.5 rounded border border-teal-200">
+                                    <div class="inline-flex items-center space-x-1 font-mono text-[11.5px] font-bold text-teal-900 bg-teal-100/70 px-2 py-0.5 rounded border border-teal-200">
                                         <span>HĐ: ${subExp.invoice_number}${subExp.invoice_lookup_code ? ' / ' + subExp.invoice_lookup_code : ''}</span>
                                         ${subExp.invoice_lookup_url ? `
                                             <a href="${subExp.invoice_lookup_url}" target="_blank" class="text-blue-600 hover:text-blue-800 ml-1 font-bold" title="Tra cứu online">
@@ -987,22 +1062,29 @@ function renderCostSheetTable(trip) {
                                             </a>
                                         ` : ''}
                                     </div>
-                                ` : '<span class="text-slate-400 text-xs">Vé trạm / Biên nhận</span>'}
+                                ` : '<span class="text-slate-400 text-[11.5px]">Vé trạm / Biên nhận</span>'}
                             </td>
-                            <td class="p-2.5 text-slate-700 text-xs font-medium">
-                                ${subExp.invoice_issuer || subExp.notes || '<span class="text-slate-400">-</span>'}
+                            <td class="py-1.5 px-2.5 text-slate-700 text-[11.5px] font-medium border-r border-slate-200/70">
+                                <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                                    <span>${subExp.invoice_issuer || subExp.notes || '<span class="text-slate-400">-</span>'}</span>
+                                    ${subExp.is_on_behalf_of_customer ? `
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>CHI HỘ KH
+                                        </span>
+                                    ` : ''}
+                                </div>
                             </td>
-                            <td class="p-2.5 text-center">
-                                <span class="px-2 py-0.5 rounded text-xs font-bold ${
+                            <td class="py-1.5 px-2.5 text-center border-r border-slate-200/70">
+                                <span class="px-2 py-0.2 rounded text-[10.5px] font-bold ${
                                     subExp.status === 'SETTLED' ? 'bg-purple-100 text-purple-800' :
                                     subExp.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                                 }">
                                     ${subExp.status_label || (subExp.status === 'SETTLED' ? 'Đã chốt sổ' : (subExp.status === 'APPROVED' ? 'Đã duyệt' : 'Chờ duyệt'))}
                                 </span>
                             </td>
-                            <td class="p-2.5 text-center">
+                            <td class="py-1.5 px-2.5 text-center">
                                 ${trip.is_expenses_settled || !subExp.can_edit ? `
-                                    <span class="inline-flex items-center text-purple-700 font-bold text-xs bg-purple-50 px-2 py-0.5 rounded border border-purple-200" title="Đã chốt sổ Kế toán, không thể chỉnh sửa">
+                                    <span class="inline-flex items-center text-purple-700 font-bold text-[10.5px] bg-purple-50 px-2 py-0.5 rounded border border-purple-200" title="Đã chốt sổ Kế toán, không thể chỉnh sửa">
                                         <i class="ph-fill ph-lock mr-1"></i> Khóa
                                     </span>
                                 ` : `
@@ -1028,17 +1110,17 @@ function renderCostSheetTable(trip) {
                 const issuerText = singleExp ? (singleExp.invoice_issuer || singleExp.notes) : '';
 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50/80 transition-colors ${amountSum > 0 ? 'bg-amber-50/20' : ''}">
-                        <td class="p-3 text-center text-slate-400 font-bold">${item.stt}</td>
-                        <td class="p-3">
-                            <span class="font-bold text-slate-900 text-sm">${item.title}</span>
+                    <tr class="hover:bg-slate-50/80 transition-colors border-b border-slate-200/70 ${amountSum > 0 ? 'bg-amber-50/20' : ''}">
+                        <td class="py-1.5 px-3 text-center text-slate-400 font-bold border-r border-slate-200/70">${item.stt}</td>
+                        <td class="py-1.5 px-3 border-r border-slate-200/70">
+                            <span class="font-bold text-slate-900 text-[13px]">${item.title}</span>
                         </td>
-                        <td class="p-3 text-right font-black text-sm tabular-nums ${amountSum > 0 ? 'text-rose-600' : 'text-slate-400'}">
+                        <td class="py-1.5 px-3 text-right font-black text-[13px] tabular-nums font-mono border-r border-slate-200/70 ${amountSum > 0 ? 'text-rose-600' : 'text-slate-400'}">
                             ${amountSum > 0 ? formatMoney(amountSum) : '-'}
                         </td>
-                        <td class="p-3">
+                        <td class="py-1.5 px-3 border-r border-slate-200/70">
                             ${invNoText ? `
-                                <div class="inline-flex items-center space-x-1 font-mono text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                                <div class="inline-flex items-center space-x-1 font-mono text-[11.5px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                                     <span>${invNoText}</span>
                                     ${singleExp.invoice_lookup_url ? `
                                         <a href="${singleExp.invoice_lookup_url}" target="_blank" class="text-blue-600 hover:text-blue-800 ml-1 font-bold" title="Tra cứu online">
@@ -1046,19 +1128,26 @@ function renderCostSheetTable(trip) {
                                         </a>
                                     ` : ''}
                                 </div>
-                            ` : '<span class="text-slate-400 text-xs">-</span>'}
+                            ` : '<span class="text-slate-400 text-[11.5px]">-</span>'}
                         </td>
-                        <td class="p-3 text-slate-600 text-xs">
-                            ${issuerText || '<span class="text-slate-400">-</span>'}
+                        <td class="py-1.5 px-3 text-slate-600 text-[11.5px] border-r border-slate-200/70">
+                            <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                                <span>${issuerText || '<span class="text-slate-400">-</span>'}</span>
+                                ${(singleExp && singleExp.is_on_behalf_of_customer) ? `
+                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                                        <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>CHI HỘ KH
+                                    </span>
+                                ` : ''}
+                            </div>
                         </td>
-                        <td class="p-3 text-center">
+                        <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
                             ${amountSum > 0 
-                                ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                                ? `<span class="px-2 py-0.2 rounded text-[10.5px] font-bold ${
                                     (singleExp && singleExp.status === 'SETTLED') ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'
                                 }">${(singleExp && singleExp.status_label) || 'Đã Ghi Nhận'}</span>` 
-                                : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-400">-</span>`}
+                                : `<span class="px-2 py-0.2 rounded text-[10.5px] font-bold bg-slate-100 text-slate-400">-</span>`}
                         </td>
-                        <td class="p-3 text-center">
+                        <td class="py-1.5 px-3 text-center">
                             ${singleExp ? (
                                 trip.is_expenses_settled || !singleExp.can_edit ? `
                                     <span class="inline-flex items-center text-purple-700 font-bold text-[10.5px] bg-purple-50 px-2 py-0.5 rounded border border-purple-200" title="Đã chốt sổ Kế toán, không thể chỉnh sửa">
@@ -1074,7 +1163,7 @@ function renderCostSheetTable(trip) {
                                         </button>
                                     </div>
                                 `
-                            ) : `<span class="text-slate-300">-</span>`}
+                            ) : '<span class="text-slate-300">-</span>'}
                         </td>
                     </tr>
                 `;
@@ -1084,6 +1173,28 @@ function renderCostSheetTable(trip) {
 
     const totalEl = document.getElementById('cost-sheet-total');
     if (totalEl) totalEl.innerText = formatMoney(totalCalculated);
+
+    // Hiển thị dòng Tổng Chi Hộ KH nếu có (cất riêng khỏi chi phí vận hành)
+    const reimbursableTotal = trip.cost_sheet?.total_reimbursable || 0;
+    const reimbursableItems = trip.cost_sheet?.reimbursable_items || [];
+    const reimbursableRow = document.getElementById('cost-sheet-reimbursable-row');
+    const reimbursableTotalEl = document.getElementById('cost-sheet-reimbursable-total');
+    if (reimbursableRow) {
+        reimbursableRow.style.display = reimbursableTotal > 0 ? '' : 'none';
+    }
+    if (reimbursableTotalEl) {
+        const itemsText = reimbursableItems.map(it => `${it.category}: ${formatMoney(it.amount)}`).join(' · ');
+        reimbursableTotalEl.innerHTML = `
+            <td colspan="2" class="p-3 text-right text-xs font-bold text-amber-800">
+                <i class="ph-bold ph-arrow-up-right mr-1"></i>Tổng Khoản Chi Hộ Khách Hàng
+                <p class="text-[10px] font-normal text-amber-600 mt-0.5">${itemsText || 'Công ty ứng chi trước, thu lại khi quyết toán với KH'}</p>
+            </td>
+            <td class="p-3 text-right font-black text-amber-700 tabular-nums">${formatMoney(reimbursableTotal)}</td>
+            <td colspan="4" class="p-3 text-xs text-amber-600">
+                <span class="px-2 py-0.5 rounded bg-amber-100 border border-amber-300 font-bold text-amber-800 text-[10px]">Không tính vào chi phí công ty</span>
+            </td>
+        `;
+    }
 
     // ĐỒNG BỘ TUYỆT ĐỐI VỚI BOX P&L VÀ APP MOBILE (SINGLE SOURCE OF TRUTH)
     const pnlExpenseEl = document.getElementById('pnl-expense');
@@ -1197,11 +1308,76 @@ function openModalAddExpense() {
     if (modal) modal.classList.remove('hidden-view');
 }
 
+/**
+ * Toggle switch cho ô Chi hộ KH — dùng chung cho cả Add và Edit modal.
+ * @param {string} checkboxId   - id của <input type="checkbox" class="sr-only">
+ * @param {string} wrapId       - id của div container (background highlight)
+ * @param {string} dotId        - id của nút tròn trượt
+ * @param {string} trackId      - id của dải track background
+ */
+function toggleBehalfCheckbox(checkboxId, wrapId, dotId, trackId) {
+    const cb = document.getElementById(checkboxId);
+    const wrap = document.getElementById(wrapId);
+    const dot = document.getElementById(dotId);
+    const track = document.getElementById(trackId);
+    if (!cb) return;
+
+    cb.checked = !cb.checked;
+    const isOn = cb.checked;
+
+    // Hiệu ứng track (background)
+    if (track) {
+        track.style.backgroundColor = isOn ? '#0f766e' : ''; // teal-700
+        track.className = track.className.replace(/bg-\S+/, isOn ? 'bg-teal-700' : 'bg-slate-300');
+    }
+    // Hiệu ứng dot trượt
+    if (dot) {
+        dot.style.transform = isOn ? 'translateX(20px)' : 'translateX(0px)';
+    }
+    // Highlight vùng wrap khi bật
+    if (wrap) {
+        if (isOn) {
+            wrap.classList.remove('bg-amber-50', 'border-amber-200');
+            wrap.classList.add('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
+        } else {
+            wrap.classList.remove('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
+            wrap.classList.add('bg-amber-50', 'border-amber-200');
+        }
+    }
+}
+
+/** Reset toggle về mặc định (OFF) */
+function resetBehalfToggle(checkboxId, wrapId, dotId, trackId) {
+    const cb = document.getElementById(checkboxId);
+    const wrap = document.getElementById(wrapId);
+    const dot = document.getElementById(dotId);
+    const track = document.getElementById(trackId);
+    if (cb) cb.checked = false;
+    if (track) { track.style.backgroundColor = ''; track.className = track.className.replace(/bg-teal-700|bg-slate-300/, 'bg-slate-300'); }
+    if (dot) dot.style.transform = 'translateX(0px)';
+    if (wrap) {
+        wrap.classList.remove('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
+        wrap.classList.add('bg-amber-50', 'border-amber-200');
+    }
+}
+
+/** Đặt toggle sang ON (khi mở modal edit và giá trị là true) */
+function setBehalfToggle(value, checkboxId, wrapId, dotId, trackId) {
+    const cb = document.getElementById(checkboxId);
+    if (!cb) return;
+    if (cb.checked !== !!value) {
+        // Chỉ gọi toggle nếu cần thay đổi trạng thái
+        if (!!value) toggleBehalfCheckbox(checkboxId, wrapId, dotId, trackId);
+    }
+}
+
 function closeModalAddExpense() {
     const modal = document.getElementById('modal-add-expense');
     if (modal) modal.classList.add('hidden-view');
     const form = document.getElementById('form-add-expense');
     if (form) form.reset();
+    // Reset toggle về OFF
+    resetBehalfToggle('expense-on-behalf-checkbox', 'expense-behalf-toggle-wrap', 'expense-behalf-toggle-dot', 'expense-behalf-toggle-track');
 }
 
 async function submitAddExpense(e) {
@@ -1215,6 +1391,7 @@ async function submitAddExpense(e) {
     const invoice_issuer = document.getElementById('expense-inv-issuer').value.trim();
     const invoice_lookup_url = document.getElementById('expense-inv-lookup-url').value.trim();
     const notes = document.getElementById('expense-notes-input').value.trim();
+    const is_on_behalf_of_customer = document.getElementById('expense-on-behalf-checkbox')?.checked || false;
 
     try {
         const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/`, {
@@ -1227,14 +1404,16 @@ async function submitAddExpense(e) {
                 invoice_lookup_code,
                 invoice_issuer,
                 invoice_lookup_url,
-                notes
+                notes,
+                is_on_behalf_of_customer
             })
         });
 
         const data = await res.json();
         if (data.success) {
             closeModalAddExpense();
-            showToast('success', data.message, 'Ghi nhận chi phí thành công');
+            const chiHoLabel = is_on_behalf_of_customer ? ' [Chi hộ KH]' : '';
+            showToast('success', data.message + chiHoLabel, 'Ghi nhận chi phí thành công');
             viewTripDetail(currentActiveTripCode);
         } else {
             showToast('danger', data.error || 'Có lỗi xảy ra');
@@ -1259,6 +1438,12 @@ function openModalEditExpense(exp) {
     document.getElementById('edit-expense-inv-lookup-url').value = exp.invoice_lookup_url || '';
     document.getElementById('edit-expense-notes-input').value = exp.notes || '';
 
+    // Đồng bộ toggle Chi hộ KH với giá trị hiện tại của expense
+    resetBehalfToggle('edit-expense-on-behalf-checkbox', 'edit-expense-behalf-toggle-wrap', 'edit-expense-behalf-toggle-dot', 'edit-expense-behalf-toggle-track');
+    if (exp.is_on_behalf_of_customer) {
+        toggleBehalfCheckbox('edit-expense-on-behalf-checkbox', 'edit-expense-behalf-toggle-wrap', 'edit-expense-behalf-toggle-dot', 'edit-expense-behalf-toggle-track');
+    }
+
     initAllNumberInputs();
     modal.classList.remove('hidden-view');
 }
@@ -1268,6 +1453,8 @@ function closeModalEditExpense() {
     if (modal) modal.classList.add('hidden-view');
     const form = document.getElementById('form-edit-expense');
     if (form) form.reset();
+    // Reset toggle về OFF
+    resetBehalfToggle('edit-expense-on-behalf-checkbox', 'edit-expense-behalf-toggle-wrap', 'edit-expense-behalf-toggle-dot', 'edit-expense-behalf-toggle-track');
 }
 
 function editExpensePrompt(expenseId) {
@@ -1296,6 +1483,7 @@ async function submitEditExpense(e) {
     const invoice_issuer = document.getElementById('edit-expense-inv-issuer').value.trim();
     const invoice_lookup_url = document.getElementById('edit-expense-inv-lookup-url').value.trim();
     const notes = document.getElementById('edit-expense-notes-input').value.trim();
+    const is_on_behalf_of_customer = document.getElementById('edit-expense-on-behalf-checkbox')?.checked || false;
 
     try {
         const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/${expenseId}/`, {
@@ -1308,7 +1496,8 @@ async function submitEditExpense(e) {
                 invoice_lookup_code,
                 invoice_issuer,
                 invoice_lookup_url,
-                notes
+                notes,
+                is_on_behalf_of_customer
             })
         });
 
@@ -2460,6 +2649,7 @@ function switchTab(tabId) {
     if (tabId === 'xe-bai') loadFleetData();
     if (tabId === 'kinh-doanh') loadSalesData();
     if (tabId === 'ke-toan') loadAccountingData();
+    if (tabId === 'cai-dat') loadMasterData();
 }
 
 function handleSearch(e) {
@@ -2792,7 +2982,1038 @@ async function toggleSettleTrip(tripCode, isCurrentlySettled) {
     }
 }
 
+// ==============================================================================
+// 10. PHÂN HỆ CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA CONTROLLER)
+// ==============================================================================
+let currentMasterDataTab = 'driver_tariffs';
+let masterDataCache = {
+    driver_tariffs: [],
+    allowances: [],
+    locations: [],
+    tariffs: [],
+    customers: [],
+    expenses: [],
+    containers: [],
+    vehicles: []
+};
+
+let masterDataPagination = {
+    currentPage: 1,
+    pageSize: 20,
+    filteredItems: []
+};
+
+async function loadMasterData() {
+    try {
+        const res = await fetch('/api/master-data/summary/');
+        const data = await res.json();
+        if (data.stats) {
+            const s = data.stats;
+            const el = id => document.getElementById(id);
+            if (el('md-stat-driver-tariffs')) el('md-stat-driver-tariffs').innerText = s.driver_tariffs_count || 0;
+            if (el('md-stat-allowances')) el('md-stat-allowances').innerText = s.allowances_count || 0;
+            if (el('md-stat-locations')) el('md-stat-locations').innerText = s.locations_count || 0;
+            if (el('md-stat-tariffs')) el('md-stat-tariffs').innerText = s.tariffs_count || 0;
+            if (el('md-stat-customers')) el('md-stat-customers').innerText = s.customers_count || 0;
+            if (el('md-stat-expenses')) el('md-stat-expenses').innerText = s.expense_items_count || 0;
+            if (el('md-stat-containers')) el('md-stat-containers').innerText = s.container_types_count || 0;
+            if (el('md-stat-vehicles')) el('md-stat-vehicles').innerText = s.vehicles_count || 0;
+        }
+    } catch (err) {
+        console.error('Lỗi tải tóm tắt Cài đặt:', err);
+    }
+    loadActiveMasterDataTab();
+}
+
+function switchMasterDataTab(tabKey) {
+    currentMasterDataTab = tabKey;
+    masterDataPagination.currentPage = 1;
+
+    document.querySelectorAll('.md-tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'border-teal-600', 'text-teal-800');
+        btn.classList.add('border-transparent', 'text-slate-500');
+    });
+    const activeBtn = document.querySelector(`[data-md-tab="${tabKey}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active', 'border-teal-600', 'text-teal-800');
+        activeBtn.classList.remove('border-transparent', 'text-slate-500');
+    }
+
+    const labels = {
+        'driver_tariffs': '+ Thêm Mới Tuyến Lương',
+        'allowances': '+ Thêm Mới Phụ Cấp',
+        'locations': '+ Thêm Mới Cảng / Kho',
+        'tariffs': '+ Thêm Mới Biểu Cước Khách',
+        'customers': '+ Thêm Mới Khách Hàng',
+        'expenses': '+ Thêm Mới Khoản Chi',
+        'containers': '+ Thêm Mới Quy Cách',
+        'vehicles': '+ Thêm Mới Phương Tiện'
+    };
+    const createBtnLabel = document.getElementById('md-create-btn-label');
+    if (createBtnLabel) createBtnLabel.innerText = labels[tabKey] || '+ Thêm Mới';
+
+    const searchInput = document.getElementById('md-search-input');
+    if (searchInput) searchInput.value = '';
+
+    loadActiveMasterDataTab();
+}
+
+function reloadActiveMasterDataTab() {
+    loadActiveMasterDataTab();
+}
+
+async function loadActiveMasterDataTab() {
+    const tableBody = document.getElementById('md-table-body');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>Đang tải dữ liệu...</td></tr>`;
+
+    const endpoints = {
+        'driver_tariffs': '/api/master-data/driver-tariffs/',
+        'allowances': '/api/master-data/allowances/',
+        'locations': '/api/master-data/locations/',
+        'tariffs': '/api/master-data/tariffs/',
+        'customers': '/api/master-data/customers/',
+        'expenses': '/api/master-data/expense-items/',
+        'containers': '/api/master-data/container-types/',
+        'vehicles': '/api/master-data/vehicles/'
+    };
+
+    try {
+        const url = endpoints[currentMasterDataTab];
+        if (!url) throw new Error('Không tìm thấy API tương ứng với danh mục này.');
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`Máy chủ phản hồi lỗi ${res.status}: ${res.statusText}`);
+        }
+        const data = await res.json();
+        const items = data.results || [];
+        masterDataCache[currentMasterDataTab] = items;
+        masterDataPagination.filteredItems = items;
+        masterDataPagination.currentPage = 1;
+
+        setupMasterDataSecondaryFilter(items);
+        renderMasterDataPagedView();
+    } catch (err) {
+        console.error('Lỗi tải danh mục:', err);
+        tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}</td></tr>`;
+        renderMasterDataPagination(0, 0, 0, 1, 1);
+    }
+}
+
+function setupMasterDataSecondaryFilter(items) {
+    const select = document.getElementById('md-secondary-filter');
+    if (!select) return;
+
+    let optionsHtml = '<option value="ALL">Tất cả</option>';
+    if (currentMasterDataTab === 'driver_tariffs') {
+        const areas = [...new Set(items.map(i => i.area_group))];
+        areas.forEach(a => { optionsHtml += `<option value="${a}">${a}</option>`; });
+    } else if (currentMasterDataTab === 'allowances') {
+        const cats = [...new Set(items.map(i => i.category_label || i.category))];
+        cats.forEach(c => { optionsHtml += `<option value="${c}">${c}</option>`; });
+    } else if (currentMasterDataTab === 'locations') {
+        const types = [...new Set(items.map(i => i.location_type_label || i.location_type))];
+        types.forEach(t => { optionsHtml += `<option value="${t}">${t}</option>`; });
+    } else if (currentMasterDataTab === 'expenses') {
+        const groups = [...new Set(items.map(i => i.group_type_label || i.group_type))];
+        groups.forEach(g => { optionsHtml += `<option value="${g}">${g}</option>`; });
+    } else if (currentMasterDataTab === 'containers') {
+        const cats = [...new Set(items.map(i => i.category_label || i.category))];
+        cats.forEach(c => { optionsHtml += `<option value="${c}">${c}</option>`; });
+    } else if (currentMasterDataTab === 'vehicles') {
+        const owns = [...new Set(items.map(i => i.ownership_type_label || i.ownership_type))];
+        owns.forEach(o => { optionsHtml += `<option value="${o}">${o}</option>`; });
+    }
+    select.innerHTML = optionsHtml;
+}
+
+function filterMasterDataTable() {
+    const q = (document.getElementById('md-search-input')?.value || '').trim().toLowerCase();
+    const subFilter = document.getElementById('md-secondary-filter')?.value || 'ALL';
+    const allItems = masterDataCache[currentMasterDataTab] || [];
+
+    const filtered = allItems.filter(item => {
+        // Text match
+        const str = JSON.stringify(item).toLowerCase();
+        const matchesQuery = !q || str.includes(q);
+
+        // Subfilter match
+        let matchesSub = true;
+        if (subFilter !== 'ALL') {
+            if (currentMasterDataTab === 'driver_tariffs') matchesSub = item.area_group === subFilter;
+            else if (currentMasterDataTab === 'allowances') matchesSub = (item.category_label === subFilter || item.category === subFilter);
+            else if (currentMasterDataTab === 'locations') matchesSub = (item.location_type_label === subFilter || item.location_type === subFilter);
+            else if (currentMasterDataTab === 'expenses') matchesSub = (item.group_type_label === subFilter || item.group_type === subFilter);
+            else if (currentMasterDataTab === 'containers') matchesSub = (item.category_label === subFilter || item.category === subFilter);
+            else if (currentMasterDataTab === 'vehicles') matchesSub = (item.ownership_type_label === subFilter || item.ownership_type === subFilter);
+        }
+        return matchesQuery && matchesSub;
+    });
+
+    masterDataPagination.filteredItems = filtered;
+    masterDataPagination.currentPage = 1;
+    renderMasterDataPagedView();
+}
+
+function changeMasterDataPageSize(newSize) {
+    masterDataPagination.pageSize = parseInt(newSize, 10) || 20;
+    masterDataPagination.currentPage = 1;
+    renderMasterDataPagedView();
+}
+
+function goToMasterDataPage(pageNumber) {
+    const total = masterDataPagination.filteredItems.length;
+    const totalPages = Math.max(1, Math.ceil(total / masterDataPagination.pageSize));
+    if (pageNumber < 1 || pageNumber > totalPages) return;
+    masterDataPagination.currentPage = pageNumber;
+    renderMasterDataPagedView();
+
+    const container = document.getElementById('md-table-container');
+    if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderMasterDataPagedView() {
+    const all = masterDataPagination.filteredItems || [];
+    const total = all.length;
+    const pageSize = masterDataPagination.pageSize;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    if (masterDataPagination.currentPage > totalPages) {
+        masterDataPagination.currentPage = totalPages;
+    }
+    if (masterDataPagination.currentPage < 1) {
+        masterDataPagination.currentPage = 1;
+    }
+
+    const currentPage = masterDataPagination.currentPage;
+    const startIdx = (currentPage - 1) * pageSize;
+    const endIdx = Math.min(startIdx + pageSize, total);
+    const pagedItems = all.slice(startIdx, endIdx);
+
+    renderMasterDataTable(pagedItems, total);
+    renderMasterDataPagination(startIdx, endIdx, total, totalPages, currentPage);
+}
+
+function renderMasterDataPagination(startIdx, endIdx, total, totalPages, currentPage) {
+    const rangeStart = document.getElementById('md-range-start');
+    const rangeEnd = document.getElementById('md-range-end');
+    const countDisplay = document.getElementById('md-count-display');
+    const controls = document.getElementById('md-pagination-controls');
+    const pageSizeSelect = document.getElementById('md-page-size');
+
+    if (rangeStart) rangeStart.innerText = total === 0 ? 0 : (startIdx + 1);
+    if (rangeEnd) rangeEnd.innerText = endIdx;
+    if (countDisplay) countDisplay.innerText = total;
+    if (pageSizeSelect && pageSizeSelect.value !== String(masterDataPagination.pageSize)) {
+        pageSizeSelect.value = String(masterDataPagination.pageSize);
+    }
+
+    if (!controls) return;
+
+    if (total === 0 || totalPages <= 1) {
+        controls.innerHTML = `
+            <button disabled class="p-1.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed flex items-center justify-center"><i class="ph-bold ph-caret-double-left text-sm"></i></button>
+            <button disabled class="p-1.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed flex items-center justify-center"><i class="ph-bold ph-caret-left text-sm"></i></button>
+            <button class="px-2.5 min-w-[32px] h-[32px] rounded-lg text-xs font-black bg-teal-700 text-white border border-teal-700 shadow-2xs flex items-center justify-center">1</button>
+            <button disabled class="p-1.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed flex items-center justify-center"><i class="ph-bold ph-caret-right text-sm"></i></button>
+            <button disabled class="p-1.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed flex items-center justify-center"><i class="ph-bold ph-caret-double-right text-sm"></i></button>
+        `;
+        return;
+    }
+
+    let html = '';
+
+    // First page button
+    const isFirstDisabled = currentPage <= 1;
+    html += `
+        <button onclick="goToMasterDataPage(1)" ${isFirstDisabled ? 'disabled' : ''} title="Trang đầu" class="p-1.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border flex items-center justify-center ${isFirstDisabled ? 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-teal-700 cursor-pointer transition-colors shadow-2xs'}">
+            <i class="ph-bold ph-caret-double-left text-sm"></i>
+        </button>
+    `;
+
+    // Prev page button
+    html += `
+        <button onclick="goToMasterDataPage(${currentPage - 1})" ${isFirstDisabled ? 'disabled' : ''} title="Trang trước" class="p-1.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border flex items-center justify-center ${isFirstDisabled ? 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-teal-700 cursor-pointer transition-colors shadow-2xs'}">
+            <i class="ph-bold ph-caret-left text-sm"></i>
+        </button>
+    `;
+
+    // Numeric Pages with intelligent windowing
+    let pages = [];
+    if (totalPages <= 7) {
+        for (let p = 1; p <= totalPages; p++) pages.push(p);
+    } else {
+        if (currentPage <= 4) {
+            pages = [1, 2, 3, 4, 5, '...', totalPages];
+        } else if (currentPage >= totalPages - 3) {
+            pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        } else {
+            pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+        }
+    }
+
+    pages.forEach(p => {
+        if (p === '...') {
+            html += `<span class="px-2 py-1 text-slate-400 font-bold select-none text-xs flex items-center justify-center">...</span>`;
+        } else {
+            const isActive = p === currentPage;
+            html += `
+                <button onclick="goToMasterDataPage(${p})" class="px-2.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center cursor-pointer ${isActive ? 'bg-teal-700 border-teal-700 text-white shadow-xs font-black' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-teal-700 shadow-2xs'}">
+                    ${p}
+                </button>
+            `;
+        }
+    });
+
+    // Next page button
+    const isLastDisabled = currentPage >= totalPages;
+    html += `
+        <button onclick="goToMasterDataPage(${currentPage + 1})" ${isLastDisabled ? 'disabled' : ''} title="Trang sau" class="p-1.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border flex items-center justify-center ${isLastDisabled ? 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-teal-700 cursor-pointer transition-colors shadow-2xs'}">
+            <i class="ph-bold ph-caret-right text-sm"></i>
+        </button>
+    `;
+
+    // Last page button
+    html += `
+        <button onclick="goToMasterDataPage(${totalPages})" ${isLastDisabled ? 'disabled' : ''} title="Trang cuối" class="p-1.5 min-w-[32px] h-[32px] rounded-lg text-xs font-bold border flex items-center justify-center ${isLastDisabled ? 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-teal-700 cursor-pointer transition-colors shadow-2xs'}">
+            <i class="ph-bold ph-caret-double-right text-sm"></i>
+        </button>
+    `;
+
+    controls.innerHTML = html;
+}
+
+function renderMasterDataTable(items, total = items.length) {
+    const tableHead = document.getElementById('md-table-head');
+    const tableBody = document.getElementById('md-table-body');
+    if (!tableHead || !tableBody) return;
+
+    if (total === 0 || items.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy bản ghi nào phù hợp.</td></tr>`;
+        return;
+    }
+
+    // 1. BIỂU PHÍ LƯƠNG CHUYẾN
+    if (currentMasterDataTab === 'driver_tariffs') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Khu Vực Kho</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Tuyến / KCN / Nhà Máy</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trục Lấy / Hạ Cont Chuẩn</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Lương Chuyến (VNĐ)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Ghi Chú Nghiệp Vụ</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">${item.area_group}</span></td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.route_name}</td>
+                <td class="py-1.5 px-3 text-[12px] text-slate-500 font-medium max-w-xs truncate border-r border-slate-200/70">${item.pickup_drop_area}</td>
+                <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.salary_rate)}</td>
+                <td class="py-1.5 px-3 text-[11.5px] text-amber-700 font-medium border-r border-slate-200/70">${item.notes || '—'}</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
+                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
+                        ${item.is_active ? 'ĐANG DÙNG' : 'TẠM NGƯNG'}
+                    </span>
+                </td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 2. PHỤ CẤP CẢNG XA & KIỂM HÓA
+    else if (currentMasterDataTab === 'allowances') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Phụ Cấp / Tác Nghiệp</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Phân Loại</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mức Phụ Cấp (VNĐ)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Điều Kiện Áp Dụng</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[12px] font-mono font-bold text-teal-800 border-r border-slate-200/70">${item.code}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
+                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">${item.category_label || item.category}</span></td>
+                <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">+${formatMoney(item.amount)}</td>
+                <td class="py-1.5 px-3 text-[11.5px] text-slate-600 font-medium border-r border-slate-200/70">${item.notes || '—'}</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
+                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
+                        ${item.is_active ? 'ĐANG DÙNG' : 'TẠM NGƯNG'}
+                    </span>
+                </td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 3. ĐỊA ĐIỂM / CẢNG / KHO BÃI
+    else if (currentMasterDataTab === 'locations') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Điểm</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Địa Điểm / Cảng / Kho</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Phân Loại</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Địa Chỉ</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Liên Hệ / SĐT</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[12px] font-mono font-bold text-teal-800 border-r border-slate-200/70">${item.code}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
+                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">${item.location_type_label || item.location_type}</span></td>
+                <td class="py-1.5 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200/70">${item.address || '—'}</td>
+                <td class="py-1.5 px-3 text-[11.5px] text-slate-700 font-medium border-r border-slate-200/70">${item.contact_phone || item.contact_person || '—'}</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
+                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
+                        ${item.is_active ? 'ĐANG DÙNG' : 'TẠM NGƯNG'}
+                    </span>
+                </td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 4. BIỂU CƯỚC KHÁCH HÀNG
+    else if (currentMasterDataTab === 'tariffs') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Khách Hàng</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nơi Lấy Cont</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Kho Giao Nhận</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nơi Hạ Cont</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Đơn Giá Cước (HĐ)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức Lương</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.customer_name}</td>
+                <td class="py-1.5 px-3 text-[12.5px] font-bold text-teal-800 border-r border-slate-200/70">${item.pickup_location}</td>
+                <td class="py-1.5 px-3 text-[12.5px] font-bold text-slate-800 border-r border-slate-200/70">${item.delivery_location}</td>
+                <td class="py-1.5 px-3 text-[11.5px] font-medium text-slate-500 border-r border-slate-200/70">${item.dropoff_location || 'Hạ bãi'}</td>
+                <td class="py-1.5 px-3 text-[13px] font-black text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.freight_price)}</td>
+                <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.driver_trip_pay)}</td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 5. KHÁCH HÀNG
+    else if (currentMasterDataTab === 'customers') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Khách</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Khách Hàng / Doanh Nghiệp</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Số Thuế</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Địa Chỉ</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Người Liên Hệ / SĐT</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Số Biểu Cước</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[12px] font-mono font-bold text-teal-800 border-r border-slate-200/70">${item.code}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
+                <td class="py-1.5 px-3 text-[12px] font-mono text-slate-600 border-r border-slate-200/70">${item.tax_code || '—'}</td>
+                <td class="py-1.5 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200/70">${item.address || '—'}</td>
+                <td class="py-1.5 px-3 text-[11.5px] text-slate-700 font-medium border-r border-slate-200/70">${item.contact_person || item.phone || '—'}</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70"><span class="px-2 py-0.2 bg-slate-100 rounded text-[11px] font-bold text-slate-700">${item.tariffs_count || 0} tuyến</span></td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 6. KHOẢN MỤC CHI PHÍ
+    else if (currentMasterDataTab === 'expenses') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Khoản Chi</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Khoản Mục</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nhóm Chi Phí</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức Tiền (VNĐ)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Yêu Cầu HĐĐT</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Ghi Chú</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[12px] font-mono font-bold text-rose-800 border-r border-slate-200/70">${item.code}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
+                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200">${item.group_type_label || item.group_type}</span></td>
+                <td class="py-1.5 px-3 text-[13px] font-black text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${item.default_amount > 0 ? formatMoney(item.default_amount) : 'Theo thực tế'}</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
+                    <span class="px-2 py-0.2 rounded text-[10.5px] font-bold ${item.requires_invoice ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}">
+                        ${item.requires_invoice ? 'BẮT BUỘC' : 'TÙY CHỌN'}
+                    </span>
+                </td>
+                <td class="py-1.5 px-3 text-[11.5px] text-slate-500 border-r border-slate-200/70">${item.notes || '—'}</td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 7. QUY CÁCH CONT & XE
+    else if (currentMasterDataTab === 'containers') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Quy Cách</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Quy Cách / Loại Thùng</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Phân Loại</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hệ Số TEU</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tải Trọng Tối Đa (kg)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Thể Tích (CBM)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[12.5px] font-mono font-black text-indigo-800 border-r border-slate-200/70">${item.code}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
+                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">${item.category_label || item.category}</span></td>
+                <td class="py-1.5 px-3 text-center font-bold text-slate-800 font-mono text-[13px] border-r border-slate-200/70">${item.teu_factor > 0 ? item.teu_factor : '—'}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.max_payload_kg).replace(' đ', '')} kg</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${item.cbm_capacity} m³</td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 8. ĐỘI XE & PHƯƠNG TIỆN
+    else if (currentMasterDataTab === 'vehicles') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Biển Số Xe</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Loại Phương Tiện</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nguồn Sở Hữu</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hãng Sản Xuất</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tài Xế Mặc Định</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hạn Đăng Kiểm</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[13px] font-mono font-black text-slate-900 border-r border-slate-200/70">${item.license_plate}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-800 border-r border-slate-200/70">${item.vehicle_type_label || item.vehicle_type}</td>
+                <td class="py-1.5 px-3 border-r border-slate-200/70">
+                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold uppercase tracking-wider font-heading ${item.ownership_type === 'OWNED' ? 'bg-teal-100 text-teal-800 border border-teal-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}">
+                        ${item.ownership_type_label || item.ownership_type}
+                    </span>
+                </td>
+                <td class="py-1.5 px-3 text-[11.5px] font-semibold text-slate-600 border-r border-slate-200/70">${item.brand || '—'}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-800 border-r border-slate-200/70">${item.driver_name || '—'}</td>
+                <td class="py-1.5 px-3 text-[11.5px] text-center font-mono font-bold text-slate-700 border-r border-slate-200/70">${item.registration_expiry}</td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+}
+
+// Open Create Modal with Dynamic Form Fields
+function openCreateMasterDataModal() {
+    document.getElementById('md-edit-id').value = '';
+    document.getElementById('md-catalog-key').value = currentMasterDataTab;
+
+    const titles = {
+        'driver_tariffs': 'Thêm Tuyến Lương Chuyến Mới',
+        'allowances': 'Thêm Phụ Cấp / Kiểm Hóa Mới',
+        'locations': 'Thêm Cảng / Kho Bãi Mới',
+        'tariffs': 'Thêm Biểu Cước Khách Hàng',
+        'customers': 'Thêm Khách Hàng Mới',
+        'expenses': 'Thêm Khoản Mục Chi Phí',
+        'containers': 'Thêm Quy Cách Cont & Xe',
+        'vehicles': 'Thêm Phương Tiện Mới'
+    };
+    document.getElementById('md-modal-title').innerText = titles[currentMasterDataTab] || 'Thêm Mới Bản Ghi';
+    document.getElementById('md-modal-subtitle').innerText = 'Khai báo thông tin chuẩn vào hệ thống Cài đặt';
+
+    injectMasterDataModalFields(null);
+    document.getElementById('modal-master-data').classList.remove('hidden');
+}
+
+// Open Edit Modal with Current Data
+function openEditMasterDataModal(id) {
+    const items = masterDataCache[currentMasterDataTab] || [];
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    document.getElementById('md-edit-id').value = id;
+    document.getElementById('md-catalog-key').value = currentMasterDataTab;
+
+    const titles = {
+        'driver_tariffs': 'Chỉnh Sửa Tuyến Lương Chuyến',
+        'allowances': 'Chỉnh Sửa Phụ Cấp / Kiểm Hóa',
+        'locations': 'Chỉnh Sửa Cảng / Kho Bãi',
+        'tariffs': 'Chỉnh Sửa Biểu Cước Khách Hàng',
+        'customers': 'Chỉnh Sửa Khách Hàng',
+        'expenses': 'Chỉnh Sửa Khoản Mục Chi Phí',
+        'containers': 'Chỉnh Sửa Quy Cách Cont & Xe',
+        'vehicles': 'Chỉnh Sửa Phương Tiện'
+    };
+    document.getElementById('md-modal-title').innerText = titles[currentMasterDataTab] || 'Chỉnh Sửa Bản Ghi';
+    document.getElementById('md-modal-subtitle').innerText = `ID #${id} • Cập nhật thông tin chuẩn`;
+
+    injectMasterDataModalFields(item);
+    document.getElementById('modal-master-data').classList.remove('hidden');
+}
+
+function closeMasterDataModal() {
+    const modal = document.getElementById('modal-master-data');
+    if (modal) modal.classList.add('hidden');
+}
+
+function injectMasterDataModalFields(data) {
+    const container = document.getElementById('md-modal-fields-container');
+    if (!container) return;
+
+    const d = data || {};
+
+    if (currentMasterDataTab === 'driver_tariffs') {
+        const areas = ['Khu Vực Củ Chi', 'Khu Vực Long An', 'Khu Vực Tây Ninh', 'Khu Vực Bình Dương', 'Khu Vực Đồng Nai', 'Khu Vực TP.HCM', 'Khu Vực Vũng Tàu', 'Tuyến Đặc Thù'];
+        container.innerHTML = `
+            <div>
+                <label class="app-form-label">Khu Vực Kho <span class="text-rose-500">*</span></label>
+                <select id="mdf-area-group" class="app-form-control">
+                    ${areas.map(a => `<option value="${a}" ${d.area_group === a ? 'selected' : ''}>${a}</option>`).join('')}
+                </select>
+            </div>
+            <div>
+                <label class="app-form-label">Tên Tuyến / KCN / Nhà Máy <span class="text-rose-500">*</span></label>
+                <input type="text" id="mdf-route-name" value="${d.route_name || ''}" placeholder="VD: KCN Phước Đông, KCN Bàu Bàng..." class="app-form-control" required>
+            </div>
+            <div>
+                <label class="app-form-label">Mức Lương Chuyến (VNĐ) <span class="text-rose-500">*</span></label>
+                <input type="number" id="mdf-salary-rate" value="${d.salary_rate || 600000}" step="10000" class="app-form-control font-mono font-bold" required>
+            </div>
+            <div>
+                <label class="app-form-label">Ghi Chú Điều Kiện Áp Dụng</label>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="VD: Lấy/hạ Cát Lái + 50k..." class="app-form-control">
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'allowances') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Mã Phụ Cấp <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CANG_HIEP_PHUOC" class="app-form-control uppercase font-mono" required ${d.code ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Phân Loại</label>
+                    <select id="mdf-category" class="app-form-control">
+                        <option value="PORT" ${d.category === 'PORT' ? 'selected' : ''}>Phụ Thêm Cảng Xa</option>
+                        <option value="INSPECTION" ${d.category === 'INSPECTION' ? 'selected' : ''}>Phụ Thu Kiểm Hóa</option>
+                        <option value="OPERATION" ${d.category === 'OPERATION' ? 'selected' : ''}>Phụ Cấp Tác Nghiệp Đặc Thù</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Tên Phụ Cấp / Tác Nghiệp <span class="text-rose-500">*</span></label>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phụ thêm Cảng Cái Mép..." class="app-form-control" required>
+            </div>
+            <div>
+                <label class="app-form-label">Số Tiền Phụ Cấp (VNĐ) <span class="text-rose-500">*</span></label>
+                <input type="number" id="mdf-amount" value="${d.amount || 0}" step="10000" class="app-form-control font-mono font-bold" required>
+            </div>
+            <div>
+                <label class="app-form-label">Điều Kiện Áp Dụng</label>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="VD: Lấy hoặc hạ cont tại Cảng..." class="app-form-control">
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'locations') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Mã Địa Điểm <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CAT_LAI, KHO_WCA..." class="app-form-control uppercase font-mono" required ${d.code ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Phân Loại</label>
+                    <select id="mdf-location-type" class="app-form-control">
+                        <option value="PORT" ${d.location_type === 'PORT' ? 'selected' : ''}>Cảng Biển</option>
+                        <option value="ICD" ${d.location_type === 'ICD' ? 'selected' : ''}>Cảng Cạn (ICD)</option>
+                        <option value="DEPOT" ${d.location_type === 'DEPOT' ? 'selected' : ''}>Bãi Rỗng / Depot</option>
+                        <option value="WAREHOUSE" ${d.location_type === 'WAREHOUSE' ? 'selected' : ''}>Kho Hàng / Nhà Máy</option>
+                        <option value="YARD" ${d.location_type === 'YARD' ? 'selected' : ''}>Bãi Đỗ Xe Công Ty</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Tên Địa Điểm <span class="text-rose-500">*</span></label>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Cảng Cát Lái, Kho WCA Tân Vạn..." class="app-form-control" required>
+            </div>
+            <div>
+                <label class="app-form-label">Địa Chỉ Chi Tiết</label>
+                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Số nhà, đường, phường, quận/huyện..." class="app-form-control">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Tỉnh / Thành Phố</label>
+                    <input type="text" id="mdf-province" value="${d.province || 'TP. Hồ Chí Minh'}" class="app-form-control">
+                </div>
+                <div>
+                    <label class="app-form-label">Số Điện Thoại Liên Hệ</label>
+                    <input type="text" id="mdf-contact-phone" value="${d.contact_phone || ''}" placeholder="SĐT điều độ cảng/kho..." class="app-form-control font-mono">
+                </div>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'customers') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Mã Khách Hàng</label>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống" class="app-form-control uppercase font-mono" ${d.code ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Mã Số Thuế</label>
+                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="app-form-control font-mono">
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Tên Khách Hàng / Công Ty <span class="text-rose-500">*</span></label>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo hóa đơn..." class="app-form-control" required>
+            </div>
+            <div>
+                <label class="app-form-label">Địa Chỉ Giao Nhận Hóa Đơn</label>
+                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Địa chỉ đăng ký kinh doanh..." class="app-form-control">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Người Liên Hệ</label>
+                    <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="app-form-control">
+                </div>
+                <div>
+                    <label class="app-form-label">Số Điện Thoại</label>
+                    <input type="text" id="mdf-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ..." class="app-form-control font-mono">
+                </div>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'tariffs') {
+        const customers = masterDataCache['customers'] || [];
+        container.innerHTML = `
+            <div>
+                <label class="app-form-label">Khách Hàng <span class="text-rose-500">*</span></label>
+                <select id="mdf-customer-id" class="app-form-control" required>
+                    ${customers.map(c => `<option value="${c.id}" ${d.customer_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                </select>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <label class="app-form-label">Nơi Lấy <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-pickup" value="${d.pickup_location || ''}" placeholder="CÁT LÁI, SPITC..." class="app-form-control uppercase" required>
+                </div>
+                <div>
+                    <label class="app-form-label">Kho Nhận <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-delivery" value="${d.delivery_location || ''}" placeholder="KHO WCA, VSIP 2..." class="app-form-control uppercase" required>
+                </div>
+                <div>
+                    <label class="app-form-label">Nơi Hạ Cont</label>
+                    <input type="text" id="mdf-dropoff" value="${d.dropoff_location || ''}" placeholder="HẠ BÃI, SOLOG..." class="app-form-control uppercase">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Đơn Giá Cước Xuất HĐ (VNĐ) <span class="text-rose-500">*</span></label>
+                    <input type="number" id="mdf-price" value="${d.freight_price || 4000000}" step="50000" class="app-form-control font-mono font-bold" required>
+                </div>
+                <div>
+                    <label class="app-form-label">Định Mức Lương Tài Xế (VNĐ) <span class="text-rose-500">*</span></label>
+                    <input type="number" id="mdf-pay" value="${d.driver_trip_pay || 600000}" step="50000" class="app-form-control font-mono font-bold text-emerald-700" required>
+                </div>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'expenses') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Mã Khoản Chi <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: LIFT_ON, TOLL_FEE..." class="app-form-control uppercase font-mono" required ${d.code ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Nhóm Chi Phí</label>
+                    <select id="mdf-group-type" class="app-form-control">
+                        <option value="TOLL" ${d.group_type === 'TOLL' ? 'selected' : ''}>Vé Cầu Đường / BOT</option>
+                        <option value="LIFT_ON" ${d.group_type === 'LIFT_ON' ? 'selected' : ''}>Nâng Cont</option>
+                        <option value="LIFT_OFF" ${d.group_type === 'LIFT_OFF' ? 'selected' : ''}>Hạ Cont</option>
+                        <option value="DEPOSIT" ${d.group_type === 'DEPOSIT' ? 'selected' : ''}>Cược Container</option>
+                        <option value="WEIGHING" ${d.group_type === 'WEIGHING' ? 'selected' : ''}>Cân Xe</option>
+                        <option value="LABOR" ${d.group_type === 'LABOR' ? 'selected' : ''}>Bốc Xếp / Bồi Dưỡng</option>
+                        <option value="EINVOICE" ${d.group_type === 'EINVOICE' ? 'selected' : ''}>Hóa Đơn Điện Tử Cảng</option>
+                        <option value="OTHER" ${d.group_type === 'OTHER' ? 'selected' : ''}>Chi Phí Khác</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Tên Khoản Mục Chi Phí <span class="text-rose-500">*</span></label>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phí nâng cont, Vé BOT..." class="app-form-control" required>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Định Mức Tiền Ngầm Định (VNĐ)</label>
+                    <input type="number" id="mdf-default-amount" value="${d.default_amount || 0}" step="10000" class="app-form-control font-mono font-bold">
+                </div>
+                <div class="flex items-center pt-6 space-x-2">
+                    <input type="checkbox" id="mdf-requires-invoice" ${d.requires_invoice ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                    <label for="mdf-requires-invoice" class="text-xs font-bold text-slate-700">Bắt buộc có HĐĐT / Mã tra cứu</label>
+                </div>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'containers') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Mã Quy Cách <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: 40HC, 20DC, TAI_10T..." class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Phân Loại</label>
+                    <select id="mdf-category" class="app-form-control">
+                        <option value="CONTAINER" ${d.category === 'CONTAINER' ? 'selected' : ''}>Container Đường Biển</option>
+                        <option value="TRUCK" ${d.category === 'TRUCK' ? 'selected' : ''}>Xe Tải Thùng / Đường Bộ</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Tên Quy Cách / Tên Loại Thùng <span class="text-rose-500">*</span></label>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Container 40ft Cao (40HC)..." class="app-form-control" required>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <label class="app-form-label">Hệ Số TEU</label>
+                    <input type="number" id="mdf-teu" value="${d.teu_factor !== undefined ? d.teu_factor : 2.0}" step="0.25" class="app-form-control font-mono">
+                </div>
+                <div>
+                    <label class="app-form-label">Tải Trọng (kg)</label>
+                    <input type="number" id="mdf-payload" value="${d.max_payload_kg || 30000}" step="500" class="app-form-control font-mono">
+                </div>
+                <div>
+                    <label class="app-form-label">Thể Tích (CBM)</label>
+                    <input type="number" id="mdf-cbm" value="${d.cbm_capacity || 67}" step="0.5" class="app-form-control font-mono">
+                </div>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'vehicles') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Biển Số Xe <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-license-plate" value="${d.license_plate || ''}" placeholder="VD: 51H-123.45..." class="app-form-control uppercase font-mono font-black" required ${d.license_plate ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Nguồn Sở Hữu</label>
+                    <select id="mdf-ownership" class="app-form-control">
+                        <option value="OWNED" ${d.ownership_type === 'OWNED' ? 'selected' : ''}>Xe Nhà (Đội Xe Công Ty)</option>
+                        <option value="SUBCONTRACTOR" ${d.ownership_type === 'SUBCONTRACTOR' ? 'selected' : ''}>Xe Bạn (Thuê Ngoài / 3PL)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Loại Phương Tiện</label>
+                    <select id="mdf-vehicle-type" class="app-form-control">
+                        <option value="TRACTOR" ${d.vehicle_type === 'TRACTOR' ? 'selected' : ''}>Đầu kéo Container</option>
+                        <option value="TRUCK_10T" ${d.vehicle_type === 'TRUCK_10T' ? 'selected' : ''}>Xe tải 10 Tấn</option>
+                        <option value="TRUCK_2T" ${d.vehicle_type === 'TRUCK_2T' ? 'selected' : ''}>Xe tải 2 Tấn</option>
+                        <option value="VAN" ${d.vehicle_type === 'VAN' ? 'selected' : ''}>Xe tải nhỏ / Van</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="app-form-label">Hãng Sản Xuất / Dòng Xe</label>
+                    <input type="text" id="mdf-brand" value="${d.brand || 'Freightliner'}" placeholder="VD: Freightliner, Hino..." class="app-form-control">
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Tải Trọng Cho Phép (kg)</label>
+                <input type="number" id="mdf-payload" value="${d.payload_capacity_kg || 30000}" step="1000" class="app-form-control font-mono">
+            </div>
+        `;
+    }
+}
+
+// Submit Create or Edit Form
+async function submitMasterDataForm(e) {
+    e.preventDefault();
+    const editId = document.getElementById('md-edit-id').value;
+    const tabKey = document.getElementById('md-catalog-key').value;
+    const isEdit = !!editId;
+
+    const endpoints = {
+        'driver_tariffs': isEdit ? `/api/master-data/driver-tariffs/${editId}/` : '/api/master-data/driver-tariffs/',
+        'allowances': isEdit ? `/api/master-data/allowances/${editId}/` : '/api/master-data/allowances/',
+        'locations': isEdit ? `/api/master-data/locations/${editId}/` : '/api/master-data/locations/',
+        'tariffs': isEdit ? `/api/master-data/tariffs/${editId}/` : '/api/master-data/tariffs/',
+        'customers': isEdit ? `/api/master-data/customers/${editId}/` : '/api/master-data/customers/',
+        'expenses': isEdit ? `/api/master-data/expense-items/${editId}/` : '/api/master-data/expense-items/',
+        'containers': isEdit ? `/api/master-data/container-types/${editId}/` : '/api/master-data/container-types/',
+        'vehicles': isEdit ? `/api/master-data/vehicles/${editId}/` : '/api/master-data/vehicles/'
+    };
+
+    let payload = {};
+    if (tabKey === 'driver_tariffs') {
+        payload = {
+            area_group: document.getElementById('mdf-area-group').value,
+            route_name: document.getElementById('mdf-route-name').value,
+            salary_rate: parseInt(document.getElementById('mdf-salary-rate').value),
+            notes: document.getElementById('mdf-notes').value
+        };
+    } else if (tabKey === 'allowances') {
+        payload = {
+            code: document.getElementById('mdf-code').value,
+            category: document.getElementById('mdf-category').value,
+            name: document.getElementById('mdf-name').value,
+            amount: parseInt(document.getElementById('mdf-amount').value),
+            notes: document.getElementById('mdf-notes').value
+        };
+    } else if (tabKey === 'locations') {
+        payload = {
+            code: document.getElementById('mdf-code').value,
+            location_type: document.getElementById('mdf-location-type').value,
+            name: document.getElementById('mdf-name').value,
+            address: document.getElementById('mdf-address').value,
+            province: document.getElementById('mdf-province').value,
+            contact_phone: document.getElementById('mdf-contact-phone').value
+        };
+    } else if (tabKey === 'customers') {
+        payload = {
+            code: document.getElementById('mdf-code').value,
+            tax_code: document.getElementById('mdf-tax-code').value,
+            name: document.getElementById('mdf-name').value,
+            address: document.getElementById('mdf-address').value,
+            contact_person: document.getElementById('mdf-contact-person').value,
+            phone: document.getElementById('mdf-phone').value
+        };
+    } else if (tabKey === 'tariffs') {
+        payload = {
+            customer_id: document.getElementById('mdf-customer-id').value,
+            pickup_location: document.getElementById('mdf-pickup').value,
+            delivery_location: document.getElementById('mdf-delivery').value,
+            dropoff_location: document.getElementById('mdf-dropoff').value,
+            freight_price: parseInt(document.getElementById('mdf-price').value),
+            driver_trip_pay: parseInt(document.getElementById('mdf-pay').value)
+        };
+    } else if (tabKey === 'expenses') {
+        payload = {
+            code: document.getElementById('mdf-code').value,
+            group_type: document.getElementById('mdf-group-type').value,
+            name: document.getElementById('mdf-name').value,
+            default_amount: parseInt(document.getElementById('mdf-default-amount').value),
+            requires_invoice: document.getElementById('mdf-requires-invoice').checked
+        };
+    } else if (tabKey === 'containers') {
+        payload = {
+            code: document.getElementById('mdf-code').value,
+            category: document.getElementById('mdf-category').value,
+            name: document.getElementById('mdf-name').value,
+            teu_factor: parseFloat(document.getElementById('mdf-teu').value),
+            max_payload_kg: parseInt(document.getElementById('mdf-payload').value),
+            cbm_capacity: parseFloat(document.getElementById('mdf-cbm').value)
+        };
+    } else if (tabKey === 'vehicles') {
+        payload = {
+            license_plate: document.getElementById('mdf-license-plate').value,
+            ownership_type: document.getElementById('mdf-ownership').value,
+            vehicle_type: document.getElementById('mdf-vehicle-type').value,
+            brand: document.getElementById('mdf-brand').value,
+            payload_capacity_kg: parseInt(document.getElementById('mdf-payload').value)
+        };
+    }
+
+    try {
+        const res = await fetch(endpoints[tabKey], {
+            method: isEdit ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && (data.success || data.id)) {
+            showToast('success', data.message || 'Lưu bản ghi thành công!');
+            closeMasterDataModal();
+            loadMasterData();
+        } else {
+            showToast('danger', data.error || 'Có lỗi xảy ra khi lưu dữ liệu!');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ!');
+    }
+}
+
+// Delete Item (Soft-delete)
+async function deleteMasterDataItem(id) {
+    if (!confirm('Bạn có chắc chắn muốn xóa bản ghi này khỏi danh mục không?')) return;
+
+    const endpoints = {
+        'driver_tariffs': `/api/master-data/driver-tariffs/${id}/`,
+        'allowances': `/api/master-data/allowances/${id}/`,
+        'locations': `/api/master-data/locations/${id}/`,
+        'tariffs': `/api/master-data/tariffs/${id}/`,
+        'customers': `/api/master-data/customers/${id}/`,
+        'expenses': `/api/master-data/expense-items/${id}/`,
+        'containers': `/api/master-data/container-types/${id}/`,
+        'vehicles': `/api/master-data/vehicles/${id}/`
+    };
+
+    try {
+        const res = await fetch(endpoints[currentMasterDataTab], { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || 'Đã xóa bản ghi thành công!');
+            loadMasterData();
+        } else {
+            showToast('danger', data.error || 'Không thể xóa bản ghi!');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ!');
+    }
+}
+
 // Khởi chạy khi DOM sẵn sàng
+
 document.addEventListener('DOMContentLoaded', () => {
     initAllNumberInputs();
     const dateEl = document.getElementById('current-date');
@@ -2802,7 +4023,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Mặc định luôn hiển thị về Dashboard trang chủ khi vào hệ thống hoặc bấm logo trang chủ
     const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
-    const validTabs = ['dashboard', 'kinh-doanh', 'dieu-van', 'xe-bai', 'nhan-su', 'ke-toan', 'hai-quan'];
+    const validTabs = ['dashboard', 'kinh-doanh', 'dieu-van', 'xe-bai', 'nhan-su', 'ke-toan', 'hai-quan', 'cai-dat'];
     if (hash && validTabs.includes(hash)) {
         switchTab(hash);
     } else {

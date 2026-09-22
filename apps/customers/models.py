@@ -22,6 +22,20 @@ class RouteTariff(TimeStampedModel, SoftDeleteModel):
     pickup_location = models.CharField(max_length=150) # CÁT LÁI, SPITC, VSIP 2...
     delivery_location = models.CharField(max_length=150) # KHO WCA, MACSTAR TÂN VẠN, VSIP 3...
     dropoff_location = models.CharField(max_length=150, blank=True) # SOLOG LIBRA, HẠ BÃI...
+    
+    # FK chuẩn hoá quan hệ tới Master Data Location (Sprint 1)
+    pickup_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.PROTECT, null=True, blank=True, related_name='pickup_tariffs',
+        help_text="Địa điểm lấy cont/hàng (Master Data)"
+    )
+    delivery_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.PROTECT, null=True, blank=True, related_name='delivery_tariffs',
+        help_text="Địa điểm giao hàng/kho khách (Master Data)"
+    )
+    dropoff_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='dropoff_tariffs',
+        help_text="Địa điểm hạ rỗng/bãi cont (Master Data)"
+    )
     container_size = models.CharField(max_length=20, default='40HC') # 20DC, 40HC, XE_TAI_10T...
     freight_price = models.DecimalField(max_digits=12, decimal_places=0, help_text="Đơn giá cước xuất hóa đơn")
     driver_trip_pay = models.DecimalField(max_digits=12, decimal_places=0, default=500000, help_text="Định mức lương chuyến tài xế")
@@ -98,6 +112,20 @@ class BookingOrder(TimeStampedModel, SoftDeleteModel):
     pickup_location = models.CharField(max_length=150, help_text="1. Nơi cấp rỗng / bãi lấy cont")
     delivery_location = models.CharField(max_length=150, help_text="2. Nơi đóng / dỡ hàng (Kho khách)")
     dropoff_location = models.CharField(max_length=150, blank=True, help_text="3. Nơi hạ bãi / cảng xuất / trả rỗng")
+    
+    # FK chuẩn hoá quan hệ tới Master Data Location (Sprint 1)
+    pickup_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='pickup_bookings',
+        help_text="Địa điểm lấy cont/hàng (Master Data)"
+    )
+    delivery_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='delivery_bookings',
+        help_text="Địa điểm đóng/dỡ hàng kho khách (Master Data)"
+    )
+    dropoff_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='dropoff_bookings',
+        help_text="Địa điểm hạ rỗng/cảng xuất (Master Data)"
+    )
 
     # 3 Mốc Cut-off & Thời hạn Hãng tàu
     si_cutoff = models.CharField(max_length=100, blank=True, help_text="Hạn chót gửi chi tiết vận đơn SI")

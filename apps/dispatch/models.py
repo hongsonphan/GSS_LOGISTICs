@@ -56,6 +56,20 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     warehouse_location = models.CharField(max_length=150, help_text="2. Nơi đóng/trả hàng (Kho KH: Tân Vạn, WCA...)")
     dropoff_location = models.CharField(max_length=150, blank=True, help_text="3. Nơi hạ vỏ cont / bãi rỗng")
     
+    # FK chuẩn hoá quan hệ tới Master Data Location (Sprint 1)
+    pickup_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.PROTECT, null=True, blank=True, related_name='pickup_trips',
+        help_text="1. Nơi lấy cont/hàng (Master Data Location)"
+    )
+    warehouse_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.PROTECT, null=True, blank=True, related_name='warehouse_trips',
+        help_text="2. Nơi đóng/trả hàng kho KH (Master Data Location)"
+    )
+    dropoff_loc = models.ForeignKey(
+        'master_data.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='dropoff_trips',
+        help_text="3. Nơi hạ vỏ cont / bãi rỗng (Master Data Location)"
+    )
+    
     # Chi tiết Bãi/Depot & Kho theo Bảng kê chi phí thực tế
     pickup_depot = models.CharField(max_length=100, blank=True, help_text="Cảng lấy / Depot lấy cont (vd: Tây Nam, AP622)")
     dropoff_depot = models.CharField(max_length=100, blank=True, help_text="Cảng hạ / Depot hạ cont (vd: Cát Lái, Tân Cảng)")
@@ -84,6 +98,10 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     actual_gate_in_time = models.CharField(max_length=50, blank=True, help_text="Giờ xe vào cổng kho thực tế (Cột F)")
     warehouse_call_out_time = models.CharField(max_length=50, blank=True, help_text="Giờ kho gọi kéo cont ra (Cột G)")
     actual_gate_out_time = models.CharField(max_length=50, blank=True, help_text="Giờ xe kéo ra cổng thực tế (Cột H)")
+
+    # Mốc thời gian chuẩn hóa DateTimeField (Sprint 1)
+    actual_gate_in_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm xe vào cổng kho thực tế (ISO DateTime)")
+    actual_gate_out_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm xe kéo ra cổng thực tế (ISO DateTime)")
 
     planned_start_time = models.DateTimeField(null=True, blank=True)
     actual_start_time = models.DateTimeField(null=True, blank=True)
@@ -119,10 +137,17 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
         """Tính toán tự động và cache P&L của chuyến xe."""
         # Lấy cước theo tariff nếu cached_revenue chưa gán
         if self.cached_revenue <= 0:
-            tariff = self.customer.tariffs.filter(
-                pickup_location__iexact=self.pickup_location,
-                delivery_location__iexact=self.warehouse_location
-            ).first()
+            tariff = None
+            if self.pickup_loc_id and self.warehouse_loc_id:
+                tariff = self.customer.tariffs.filter(
+                    pickup_loc=self.pickup_loc,
+                    delivery_loc=self.warehouse_loc
+                ).first()
+            if not tariff:
+                tariff = self.customer.tariffs.filter(
+                    pickup_location__iexact=self.pickup_location,
+                    delivery_location__iexact=self.warehouse_location
+                ).first()
             if tariff:
                 self.cached_revenue = tariff.freight_price
 

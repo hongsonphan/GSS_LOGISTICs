@@ -108,3 +108,38 @@ Hệ thống kế thừa chuẩn mực bảng màu thương hiệu của BIM Eco
 2. **Tuân thủ Pháp lý & Thuế Việt Nam:**
    - Vận đơn (BOL) và Biên bản giao nhận (POD) phải đầy đủ trường thông tin theo quy định của Luật Thương mại 2005.
    - Luồng tính phí vận tải, phụ phí xăng dầu và lưu kho bãi phải khớp đúng với quy định hóa đơn điện tử dịch vụ logistics (Nghị định 123/2020/NĐ-CP) để sẵn sàng kết nối sang phân hệ Kế toán của `Bim_ERP-Solutions`.
+
+---
+
+## VI. QUY CHUẨN TRÌNH BÀY BẢNG DỮ LIỆU ENTERPRISE (BIM TABLE STANDARD)
+
+Toàn bộ bảng dữ liệu danh mục, điều vận, đối soát và kế toán trên hệ thống BIM Logistics bắt buộc tuân thủ quy chuẩn thiết kế gọn gàng, giãn dòng chuẩn như Excel, tối ưu hóa không gian hiển thị (hiển thị trọn vẹn 20 dòng trên màn hình tiêu chuẩn):
+
+### 1. Kích Thước & Giãn Dòng Chuẩn (Dimensions & Density)
+- **Tiêu đề bảng (Header `<th>`):**
+  - Chiều cao dòng: Cố định `36px` (`sticky top-0 bg-slate-100 z-10`).
+  - Padding: `py-2 px-3` (hoặc `padding: 7px 12px` trong CSS).
+  - Phông chữ: `12.5px`, `font-bold text-slate-700 uppercase tracking-wider`.
+  - Đường kẻ: Viền dưới `border-b border-slate-300`, đường kẻ ngăn cột dọc `border-r border-slate-200/90 last:border-r-0`.
+- **Dòng dữ liệu đơn hàng (Single-line `<tr>` / Master Data):**
+  - Chiều cao dòng: `34px - 36px` (chuẩn mật độ cao như Excel, không để khoảng trống thừa).
+  - Padding ô dữ liệu `<td>`: `py-1.5 px-3` (hoặc `padding: 6px 12px`).
+  - Phông chữ chính: `13px` (`text-[13px] text-slate-900`).
+  - Phân cách dòng: Viền dưới `border-b border-slate-200/70`, viền cột `border-r border-slate-200/70 last:border-r-0`.
+- **Dòng dữ liệu đa tầng (Multiline `<tr>` / Dispatch Trips / Accordion):**
+  - Chiều cao dòng: `46px - 48px` (chứa dòng thông tin chính và dòng phụ).
+  - Padding ô dữ liệu `<td>`: `py-2 px-3` (hoặc `padding: 7px 12px`).
+  - Khoảng cách dòng chính và sub-text: Cố định `mt-0.5` (`margin-top: 2px`, `line-height: 1.25`), tuyệt đối không dùng `mt-1` hay `mt-2` gây loãng layout.
+  - Phông chữ chính: `text-[13px] font-bold text-slate-900 leading-snug`.
+  - Phông chữ phụ (Subtext): `text-[11.5px] font-medium text-slate-500 leading-tight`.
+
+### 2. Canh Chỉnh & Kiểu Dữ Liệu Ô (Cell Alignment & Formats)
+- **Cột Số & Tiền tệ:** Luôn canh phải (`text-right font-mono tabular-nums text-[13px] font-bold`).
+- **Mã định danh / Biển số / Container:** Phông đơn cách (`font-mono font-bold text-[12.5px] text-slate-900` hoặc `text-teal-800`).
+- **Trạng thái & Nhãn (Pill Badges):** Kích thước siêu gọn `text-[10.5px] - 11px`, padding `px-2 py-0.2 rounded-full font-bold uppercase`.
+- **Thao tác nhanh (Action Buttons):** Nút biểu tượng nhỏ `p-1 text-sm rounded hover:bg-slate-100`.
+
+### 3. Quy Ước Lớp CSS (Immutable Classes)
+- Bắt buộc gắn class `.erp-table` hoặc `.bim-table` trên thẻ `<table>`.
+- Sử dụng `.erp-table-container` để bọc bảng có scroll dọc, giữ Header `sticky`.
+- Class tiện ích: `.row-multiline`, `.erp-subtext` / `.bim-subtext`, `.erp-number-cell`.

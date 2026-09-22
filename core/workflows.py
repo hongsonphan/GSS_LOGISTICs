@@ -72,4 +72,11 @@ def transition_trip(trip, target_status, actor=None, description='', metadata=No
         metadata=metadata or {}
     )
 
+    # Đồng bộ 10 bước tiến độ điều vận theo trạng thái mới
+    try:
+        from apps.dispatch.timeline_service import sync_trip_10_step_timeline
+        sync_trip_10_step_timeline(trip)
+    except Exception:
+        pass
+
     return trip

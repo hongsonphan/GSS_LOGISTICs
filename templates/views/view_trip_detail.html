@@ -193,22 +193,26 @@
 
                 <!-- Bảng chi phí 8 mục chuẩn thực tế -->
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table class="w-full text-left text-xs border-collapse">
+                    <table class="w-full text-left border-collapse erp-table">
                         <thead>
-                            <tr class="bg-slate-100/80 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200 font-heading">
-                                <th class="p-3 w-12 text-center">STT</th>
-                                <th class="p-3">Khoản mục chi phí</th>
-                                <th class="p-3 text-right">Thành tiền (VNĐ)</th>
-                                <th class="p-3">Số Hóa Đơn / Mã Tra Cứu HĐĐT</th>
-                                <th class="p-3">Đơn vị phát hành / Ghi chú</th>
-                                <th class="p-3 text-center w-28">Trạng thái</th>
-                                <th class="p-3 text-center w-24">Thao tác</th>
+                            <tr class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-300 font-heading">
+                                <th class="py-2 px-3 w-12 text-center text-[12.5px] border-r border-slate-200/90">STT</th>
+                                <th class="py-2 px-3 text-[12.5px] border-r border-slate-200/90">Khoản mục chi phí</th>
+                                <th class="py-2 px-3 text-right text-[12.5px] border-r border-slate-200/90">Thành tiền (VNĐ)</th>
+                                <th class="py-2 px-3 text-[12.5px] border-r border-slate-200/90">Số Hóa Đơn / Mã Tra Cứu HĐĐT</th>
+                                <th class="py-2 px-3 text-[12.5px] border-r border-slate-200/90">Đơn vị phát hành / Ghi chú</th>
+                                <th class="py-2 px-3 text-center w-28 text-[12.5px] border-r border-slate-200/90">Trạng thái</th>
+                                <th class="py-2 px-3 text-center w-24 text-[12.5px]">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="cost-sheet-tbody" class="divide-y divide-slate-100">
                             <!-- Injected by JavaScript renderCostSheetTable() -->
                         </tbody>
                         <tfoot>
+                            <!-- Dòng tổng Chi hộ KH (ẩn mặc định, JS bật khi có dữ liệu) -->
+                            <tr id="cost-sheet-reimbursable-row" style="display:none;" class="bg-amber-50/60 border-t border-amber-300 font-heading">
+                                <td id="cost-sheet-reimbursable-total" colspan="7"></td>
+                            </tr>
                             <tr class="bg-teal-50/70 border-t-2 border-teal-600 font-heading font-black text-slate-900">
                                 <td colspan="2" class="p-3 text-right uppercase tracking-wider text-[13px] text-teal-950">
                                     TỔNG CHI PHÍ CHUYẾN XE (THỰC TẾ):
@@ -447,6 +451,26 @@
                 <input type="text" id="expense-notes-input" placeholder="Ghi chú chi tiết cho kế toán đối soát..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
             </div>
 
+            <!-- TOGGLE: Chi hộ Khách hàng -->
+            <div id="expense-behalf-toggle-wrap" class="flex items-start space-x-3 bg-amber-50 border border-amber-200 rounded-xl p-3.5 cursor-pointer hover:bg-amber-100/70 transition-colors"
+                 onclick="toggleBehalfCheckbox('expense-on-behalf-checkbox', 'expense-behalf-toggle-wrap', 'expense-behalf-toggle-dot', 'expense-behalf-toggle-track')">
+                <div class="flex-shrink-0 mt-0.5">
+                    <div id="expense-behalf-toggle-track" class="relative inline-block w-10 h-5 bg-slate-300 rounded-full transition-colors duration-200">
+                        <div id="expense-behalf-toggle-dot" class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"></div>
+                    </div>
+                    <input type="checkbox" id="expense-on-behalf-checkbox" class="sr-only">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-black text-amber-900 font-heading flex items-center">
+                        <i class="ph-bold ph-arrow-up-right mr-1.5 text-amber-700"></i>
+                        Chi hộ Khách hàng
+                    </p>
+                    <p class="text-xs text-amber-700 mt-0.5">
+                        Công ty ứng chi trước, sau đó quyết toán thu lại từ KH — khoản này <strong>không tính vào chi phí vận hành</strong> của chuyến xe
+                    </p>
+                </div>
+            </div>
+
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
                 <button type="button" onclick="closeModalAddExpense()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 text-sm font-bold hover:bg-slate-50 font-heading">
                     Hủy bỏ
@@ -535,6 +559,26 @@
                     Ghi chú chi phí
                 </label>
                 <input type="text" id="edit-expense-notes-input" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+
+            <!-- TOGGLE: Chi hộ Khách hàng (Edit Modal) -->
+            <div id="edit-expense-behalf-toggle-wrap" class="flex items-start space-x-3 bg-amber-50 border border-amber-200 rounded-xl p-3.5 cursor-pointer hover:bg-amber-100/70 transition-colors"
+                 onclick="toggleBehalfCheckbox('edit-expense-on-behalf-checkbox', 'edit-expense-behalf-toggle-wrap', 'edit-expense-behalf-toggle-dot', 'edit-expense-behalf-toggle-track')">
+                <div class="flex-shrink-0 mt-0.5">
+                    <div id="edit-expense-behalf-toggle-track" class="relative inline-block w-10 h-5 bg-slate-300 rounded-full transition-colors duration-200">
+                        <div id="edit-expense-behalf-toggle-dot" class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"></div>
+                    </div>
+                    <input type="checkbox" id="edit-expense-on-behalf-checkbox" class="sr-only">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-black text-amber-900 font-heading flex items-center">
+                        <i class="ph-bold ph-arrow-up-right mr-1.5 text-amber-700"></i>
+                        Chi hộ Khách hàng
+                    </p>
+                    <p class="text-xs text-amber-700 mt-0.5">
+                        Công ty ứng chi trước, sau đó quyết toán thu lại từ KH — khoản này <strong>không tính vào chi phí vận hành</strong> của chuyến xe
+                    </p>
+                </div>
             </div>
 
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">

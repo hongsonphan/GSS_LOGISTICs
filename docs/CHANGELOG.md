@@ -2,7 +2,176 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [1.6.3] - 2026-09-22 (Chuẩn Hóa & Tối Ưu Hóa Giao Diện Dashboard Ban Giám Đốc — Executive Command Center)
+
+### 1. Tối Giản Header & Loại Bỏ Thông Tin Thừa (Header Simplification):
+- **Loại bỏ dải banner phụ cấp trên:** Gỡ bỏ hoàn toàn dòng badge `[BAN GIÁM ĐỐC (BGD)] | EXECUTIVE COMMAND CENTER • TMS & CUSTOMS | • OTD SLA: 98.2%` để phần đầu trang tinh gọn, tập trung ngay vào tiêu đề và mô tả chính của Dashboard.
+- **Tiêu đề phân tích chuẩn mực:** Đổi tên thẻ phân tích thành **"Phân tích Hiệu suất Chuyến xe"** và lược bỏ dòng mô tả phụ không cần thiết (*"Nhấp chuột vào bất kỳ chuyến xe nào để xem ngay Hồ sơ chuyến..."*), giải phóng thêm khoảng trống quý giá cho phần hiển thị dữ liệu bảng.
+
+### 2. Tái Cân Bằng Tỷ Lệ & Tăng Mật Độ Dữ Liệu Dashboard (Harmonized Proportions & High Data Density):
+- **Thu gọn KPI Cards & Biểu đồ BI:**
+  - Tối ưu khoảng cách tổng thể (`space-y-4`, padding `p-4 md:p-5`), giảm padding các thẻ KPI xuống `p-4` để cân đối nhịp thị giác.
+  - Điều chỉnh chiều cao khung biểu đồ xu hướng doanh thu/chi phí xuống `h-[195px]` và biểu đồ donut xuống `h-[165px]`. Do Chart.js hỗ trợ `maintainAspectRatio: false`, biểu đồ tự động co giãn sắc nét mà không bị méo tỷ lệ.
+- **Tối đa hóa số lượng dòng hiển thị tại Bảng Hiệu Suất P&L Chuyến Xe:**
+  - Nâng giới hạn API trả về từ `8` lên `20` chuyến xe gần nhất (`apps/dispatch/api_views.py`).
+  - Áp dụng triệt để **Bim Enterprise Table Standard** cho bảng phân tích hiệu suất chuyến (`static/js/app.js` & `templates/views/view_dashboard.html`):
+    - Padding ô dữ liệu `py-1.5 px-3`, phân cách cột dọc rõ nét `border-r border-slate-200/70`.
+    - Text tiêu đề/tên khách hàng/tài xế: `text-[13px] font-bold text-slate-900`.
+    - Subtext tuyến đường/biển số: `text-[11.5px] text-slate-500 mt-0.5`.
+    - Các ô số tiền (Doanh thu, Chi phí, Lợi nhuận): `font-mono tabular-nums text-[13px]`.
+    - Thanh biên lợi nhuận thu gọn `w-12 h-1.5`, nút thao tác `py-0.5 px-2 text-[11px]`.
+  - Khung bảng có thanh cuộn mượt `max-h-[520px] overflow-y-auto` với `sticky top-0 thead`, cho phép hiển thị đồng thời từ 8 - 10 dòng trên một màn hình chuẩn mà không cần cuộn trang và xem dễ dàng toàn bộ 20 dòng.
+
+---
+
+## [1.6.2] - 2026-09-22 (Chuẩn Hóa Toàn Cục UI/UX Bảng Dữ Liệu Enterprise — BIM Table Standard)
+
+### 1. Chuẩn Hóa Typography & Kích Thước Bảng Doanh Nghiệp (Bim Enterprise Table Standard):
+- **Phân loại dòng bảng hai cấp độ (Dual-Density Architecture):**
+  - **Dòng dữ liệu đơn (Single-line Rows - Danh Mục Master Data):** Chiều cao cố định `34px - 36px`, padding ô dữ liệu `py-1.5 px-3` (`padding: 6px 12px`), font chữ chính `13px` (`text-[13px] text-slate-900`), hiển thị trọn vẹn 20 dòng trên 1 màn hình chuẩn như bảng tính Excel.
+  - **Dòng dữ liệu đa tầng (Multiline Rows - Điều Vận & Bảng Kê Chi Phí):** Chiều cao cố định `46px - 48px`, padding ô `py-2 px-3`, giảm triệt để khoảng cách giữa text chính và sub-text xuống `mt-0.5` (2px, `line-height: 1.25`) thay cho khoảng cách loãng trước đây. Font tiêu đề: `text-[13px] font-bold text-slate-900`, Subtext: `text-[11.5px] font-medium text-slate-500`.
+- **Tiêu đề bảng (Sticky Header `<th>`):** Chiều cao cố định `36px`, nền `#f2f5f8`, font `12.5px font-bold text-slate-700 uppercase tracking-wider`, viền đáy `border-b border-slate-300`, đường chia cột dọc `border-r border-slate-200/90`.
+
+### 2. Loại Bỏ Hoàn Toàn Tên Thương Hiệu Bên Thứ Ba:
+- Đổi toàn bộ các class và bình luận từ thương hiệu ngoài sang định danh bản quyền của hệ thống: `.btn-bim-primary`, `.btn-bim-secondary`, `.bim-table`, `.erp-table`.
+- Cập nhật chuẩn giao diện kế toán trong các thông báo và modal.
+
+### 3. Đồng Bộ Hóa Hệ Thống Mã Nguồn & Tài Liệu:
+- Cập nhật `static/css/main.css`: Thiết lập bộ CSS Tokens `--font-body-main: 13px;`, `--font-body-sub: 11.5px;`, `.erp-table`, `.bim-table`, `.row-multiline`.
+- Cập nhật `static/js/app.js`: Đồng bộ toàn bộ 8 tabs Danh mục cài đặt (`renderMasterDataTable`), Bảng chuyến điều vận (`renderTripsTable`), và Bảng kê chi phí (`renderCostSheetTable`).
+- Cập nhật `templates/`: Bổ sung `.erp-table` và điều chỉnh `<th>` trên `view_master_data.html`, `view_dispatch.html`, `view_trip_detail.html`.
+- Cập nhật tài liệu kỹ thuật: Thêm phần **VI. QUY CHUẨN TRÌNH BÀY BẢNG DỮ LIỆU ENTERPRISE (BIM TABLE STANDARD)** vào `CODING_STANDARDS.md`.
+
+---
+
+## [1.6.1] - 2026-09-22 (Khôi Phục & Chuẩn Hóa Toàn Diện: Quy Trình Tiến Độ 10 Bước & Bộ Chứng Từ Gốc Số Hóa)
+
+### 1. Khôi Phục & Tự Động Hóa Tiến Độ Quy Trình 10 Bước Điều Vận (TMS 10-Step SOP):
+- **Nguyên nhân cốt lõi (Root Cause Fixed):** Các chuyến xe tạo mới hoặc seed thiếu dữ liệu `TripTimelineItem`, dẫn đến mảng `timeline` rỗng khiến thẻ giao diện *"Tiến độ Thực Hiện (Quy trình 10 Bước)"* không hiển thị nội dung.
+- **Xây dựng `apps/dispatch/timeline_service.py`:**
+  - Chuẩn hóa chuẩn mực 10 bước vận hành thực tế theo SOP Triền Võ:
+    1. Tiếp nhận & Chuẩn bị lệnh điều động (DRAFT)
+    2. Phát lệnh điều xe Zalo / App tài xế (DISPATCHED)
+    3. Tài xế xác nhận nhận chuyến trên App (ACCEPTED)
+    4. Lấy Cont / Hàng tại Cảng/Depot (CONTAINER_PICKED)
+    5. Vận chuyển theo tuyến duyệt (IN_TRANSIT)
+    6. Giao nhận tại kho khách hàng (AT_WAREHOUSE)
+    7. Đóng / Trút hàng tại dock kho (UNLOADING)
+    8. Hoàn tất chứng từ giao nhận & Ký POD (DELIVERED)
+    9. Kéo vỏ cont hạ bãi / Trả rỗng (RETURNING_EMPTY)
+    10. Tổng hợp chi phí & Đối chiếu thanh toán kế toán (COMPLETED)
+  - **Tự động đồng bộ (Auto-Sync on Demand):** Khi truy xuất chi tiết bất kỳ chuyến xe nào (`TripDetailAPIView`), hệ thống tự động kiểm tra và đảm bảo đủ 10 bước tiến độ khớp chính xác với máy trạng thái (State Machine).
+  - **Tự động chuyển mốc thời gian:** Tích hợp `sync_trip_10_step_timeline()` vào `transition_trip()` trong `core/workflows.py`.
+- **Nâng cấp UI/UX Timeline (`static/js/app.js`):**
+  - Trạng thái `ĐANG THỰC HIỆN`: Đèn tín hiệu Teal nhấp nháy (Pulsing Dot) kèm huy hiệu `ĐANG THỰC HIỆN`.
+  - Trạng thái `HOÀN THÀNH`: Nút xanh lục Emerald kèm icon tích v và huy hiệu `Hoàn thành`.
+  - Các bước chờ: Đánh số thứ tự tròn gọn gàng.
+
+### 2. Số Hóa & Bổ Sung Đầy Đủ Chứng Từ Gốc Chuyến Xe (Trip Documents):
+- **Phân loại chứng từ chuẩn hóa với Icon & Badge chuyên nghiệp:**
+  - 📄 **Phiếu EIR Lấy Cont (`EIR_PICKUP`):** Ghi rõ số Cont, Seal, vị trí bãi và hãng tàu.
+  - 📄 **Phiếu EIR Hạ Cont (`EIR_DROPOFF`):** Bãi hạ rỗng, tình trạng vỏ cont.
+  - ✍️ **Biên bản giao nhận có chữ ký (`POD`):** Xác nhận số lượng kiện hàng, người nhận, ký đóng dấu.
+  - 🧾 **Hóa đơn điện tử nâng hạ / cước cảng (`INVOICE`):** Số HĐĐT, mã tra cứu trực tuyến VNPT/Viettel/ePort.
+  - ⚖️ **Phiếu cân tải trọng xe & hàng (`WEIGHT_TICKET`):** Tải trọng tịnh, tổng tải xe.
+  - 🛡️ **Giám định vỏ cont (`CONTAINER_CHECK`):** Tình trạng vỏ cont, sàn gỗ.
+- **Nạp dữ liệu mẫu thực tế 100%:** Nạp đầy đủ từ 2 - 4 chứng từ gốc pháp lý cho tất cả 16 chuyến xe hiện hành.
+
+---
+
+## [1.6.0] - 2026-09-22 (Sprint 1: Hoàn Thành Critical Database Fixes — Chuẩn Hóa Quan Hệ Master Data 3NF)
+
+### 1. Chuẩn Hóa Quan Hệ Khóa Ngoại (Foreign Keys) Tới Master Data:
+- **`apps/customers.RouteTariff` & `BookingOrder`:**
+  - Bổ sung `pickup_loc`, `delivery_loc`, `dropoff_loc` liên kết ForeignKey tới `master_data.Location` (`on_delete=models.PROTECT`).
+  - Duy trì các trường text cũ phục vụ tương thích ngược (Backward Compatibility) và tìm kiếm tự do.
+- **`apps/dispatch.DispatchTrip`:**
+  - Bổ sung `pickup_loc`, `warehouse_loc`, `dropoff_loc` liên kết ForeignKey tới `master_data.Location`.
+  - Tự động hóa hàm `update_financials()`: Ưu tiên tra cứu biểu cước hợp đồng theo cặp khóa ngoại `(pickup_loc, delivery_loc)`, fallback sang chuỗi văn bản nếu chưa gán khóa ngoại.
+- **`apps/billing.TripExpense`:**
+  - Bổ sung `expense_item` liên kết ForeignKey tới `master_data.ExpenseItem` (`on_delete=models.PROTECT`).
+  - Giải quyết xung đột ngữ nghĩa `DocumentType` giữa billing và documents bằng cách chuẩn hóa sang `ExpenseReceiptType` (kèm backward-compatible alias).
+  - Tự động map và đồng bộ `ExpenseItem` trong API tạo và sửa chi phí hiện trường (`TripExpensesAPIView`, `TripExpenseDetailAPIView`).
+
+### 2. Chuẩn Hóa Các Mốc Thời Gian Vận Hành Sang ISO DateTime:
+- Bổ sung `actual_gate_in_at` và `actual_gate_out_at` (`DateTimeField`) trên model `DispatchTrip`.
+- Tự động phân tích và chuyển đổi chuỗi giờ tác nghiệp cổng kho (vd: "8H", "16H30") kết hợp với ngày hẹn đóng hàng `loading_date` thành mốc thời gian chuẩn hóa có timezone.
+
+### 3. Data Migration & Backfill Toàn Vẹn:
+- Hoàn thành tạo và apply 3 tệp migration trên PostgreSQL container:
+  - `billing.0006_tripexpense_expense_item_and_more`
+  - `customers.0005_bookingorder_delivery_loc_bookingorder_dropoff_loc_and_more`
+  - `dispatch.0006_dispatchtrip_actual_gate_in_at_and_more`
+- Ánh xạ tự động và thành công 100% dữ liệu thực tế:
+  - 9/9 biểu cước `RouteTariff` đã liên kết `Location`.
+  - 8/8 đơn hàng `BookingOrder` đã liên kết `Location`.
+  - 16/16 chuyến xe `DispatchTrip` đã liên kết `Location` và chuẩn hóa mốc thời gian.
+  - 8/8 khoản chi phí `TripExpense` đã liên kết `ExpenseItem`.
+- Xác thực thị giác trực tiếp trên trình duyệt Browser tại `http://localhost:8085/` đạt 100% tiêu chuẩn UI/UX và dữ liệu không sai lệch.
+
+---
+
+## [1.5.2] - 2026-09-22 (Chuẩn Hóa Thuật Ngữ Kế Toán Vận Tải: 'CHI HỘ KH' Thay Cho 'THU HỘ KH')
+
+### 1. Chuẩn Hóa Khái Niệm Vận Hành & Kế Toán Triền Võ:
+- **Bản chất nghiệp vụ:** Khi phát sinh các chi phí nâng/hạ cảng, kiểm hóa, bến bãi mà hợp đồng quy định khách hàng chịu, doanh nghiệp vận tải là đơn vị **ứng tiền chi trước tại hiện trường (Chi hộ KH)**. Doanh nghiệp chỉ thu lại tiền sau khi lập bảng kê quyết toán với khách hàng ở chu kỳ đối soát tiếp theo.
+- **Chuẩn hóa nhãn giao diện & chứng từ:** Thay thế toàn diện nhãn `THU HỘ KH` và `Thu hộ / Chi hộ` sang **`CHI HỘ KH`** / **`Chi hộ Khách hàng`**:
+  - **Huy hiệu trên bảng kê chi phí:** `[CHI HỘ KH]` với icon mũi tên chi ra `ph-bold ph-arrow-up-right` nền màu hổ phách (`bg-amber-100 text-amber-800 border-amber-300`).
+  - **Dòng tổng kết chi hộ chân bảng:** `Tổng Khoản Chi Hộ Khách Hàng` kèm diễn giải: *"Công ty ứng chi trước, thu lại khi quyết toán với KH — Không tính vào chi phí công ty"*.
+  - **Modal Thêm & Chỉnh sửa chi phí:** Toggle switch được cập nhật thành *"Chi hộ Khách hàng — Công ty ứng chi trước, sau đó quyết toán thu lại từ KH (khoản này không tính vào chi phí vận hành của chuyến xe)"*.
+  - **Model Backend (`TripExpense`):** Chuẩn hóa `help_text` và nhãn hiển thị `__str__` thành `[CHI HỘ KH]`.
+
+---
+
+## [1.5.1] - 2026-09-22 (Chuẩn Hóa UI/UX Enterprise: Độ Dày Hàng Bảng Dữ Liệu Gọn Nhẹ Chuẩn ERP, Vừa Vặn 20 Dòng/Trang Không Tràn Khung)
+
+### 1. Chuẩn Hóa Cỡ Chữ Hệ Thống & Giãn Dòng Tiêu Chuẩn Như Excel (Excel Row Spacing Standard):
+- **Khôi phục nguyên bản kích thước Typography Scale thống nhất (Phiên bản 1.4.8):**
+  - Tiêu đề cột `<th>`: `text-xs font-bold text-slate-700 uppercase tracking-wider` (12px đậm nét).
+  - Tên Tuyến, Tên Phụ Cấp, Tên Điểm/Cảng, Tên Khách Hàng, Tên Khoản Mục, Tên Quy Cách, Biển Số Xe: `text-sm font-bold text-slate-900` (14px to rõ, sắc nét).
+  - Số tiền (Lương chuyến, Phụ cấp, Cước khách, Định mức chi): `text-sm font-black text-emerald-700 / text-slate-900 font-mono` (14px nổi bật).
+  - Lộ trình, Trục lấy hạ cont, Địa chỉ: `text-[13px] font-medium text-slate-600` (13px dễ tra cứu).
+  - Huy hiệu (Badges) trạng thái & Tag nhóm: `px-2.5 py-0.5 rounded-full text-xs font-bold` (12px cân đối).
+  - Nút bấm thao tác (Sửa/Xóa): `p-1.5 text-base` vùng bấm thuận tiện.
+- **Giãn dòng tiêu chuẩn kiểu Excel (Excel Row Spacing):**
+  - Áp dụng padding `py-2 px-3.5` với đường viền mỏng `border-b border-slate-200/70`.
+  - Loại bỏ hoàn toàn các khoảng trống thừa giữa các dòng text, giữ khoảng cách giữa 2 dòng vừa vặn, sát sao, thanh thoát như một bảng tính Excel chuyên nghiệp.
+
+### 2. Thiết Kế Bố Cục Tràn Màn Hình Không Trượt Khung (Full-Height Flexbox Layout):
+- Container `#view-cai-dat` chuyển sang kiến trúc `h-full flex flex-col space-y-2.5 overflow-hidden`.
+- Thẻ danh mục chính: `flex-1 min-h-0 flex flex-col`.
+- Container bảng dữ liệu: `flex-1 min-h-0 overflow-y-auto overflow-x-auto relative`.
+- **Thanh phân trang (Footer Pagination) luôn ghim đáy (Pinned Footer with `shrink-0`):**
+  - Hiển thị trọn vẹn 20 dòng trên Trang 1 cùng lúc với thanh phân trang mà không bị trượt mất khỏi màn hình hay phải cuộn trang chính.
+  - Cho phép tùy chọn linh hoạt số dòng: `20 dòng (mặc định)`, `30 dòng`, `50 dòng`, `100 dòng`.
+  - Đồng bộ số bản ghi hiển thị chính xác theo dải: `Hiển thị 1 - 20 trong 36 bản ghi`.
+
+---
+
+## [1.5.0] - 2026-09-22 (Phân Hệ Cài Đặt / Master Data & Chuẩn Hóa Biểu Phí Tính Lương Triền Võ)
+
+### 1. Phân Hệ "Cài Đặt" (Master Data Management) Chuẩn ERP:
+- **Vị trí Menu Sidebar:** Đặt ngay bên dưới phân hệ **"Dịch vụ Hải quan"** với icon `ph-gear`.
+- **Cấu trúc 8 Tabs Quản Trị Tập Trung (kèm tính năng CRUD đầy đủ):**
+  1. 📑 **Biểu Phí Lương Chuyến (Driver Salary Tariffs):** Quản lý 36 tuyến đường định mức lương từ 400.000đ đến 1.400.000đ.
+  2. 📑 **Phụ Cấp & Kiểm Hóa (Driver Allowances):** Quản lý phụ cấp cảng xa (Hiệp Phước +350k, Cái Mép +500k, Nhơn Trạch +400k, kéo rỗng +300k), kiểm hóa (Thủ Dầu Một +500k, VSIP 1 +200k), cắt kéo bãi (250k), kéo moóc không (+100k).
+  3. 📍 **Địa Điểm & Cảng Bãi (Locations):** 18 điểm cảng biển, ICD, depot rỗng, kho khách hàng và bãi xe công ty.
+  4. 🛣️ **Biểu Cước Khách Hàng (Customer Tariffs):** Biểu giá cước xuất hóa đơn theo tuyến đường.
+  5. 🏢 **Danh Mục Khách Hàng (Customers):** Danh bạ đối tác, MST, địa chỉ, số điện thoại liên hệ.
+  6. 💰 **Khoản Mục Chi Phí (Expense Items):** 8 nhóm chi phí phát sinh chuẩn Triền Võ.
+  7. 📦 **Quy Cách Cont & Xe (Container & Truck Types):** 40HC, 20DC, 45G1, Xe tải 2T - 10T kèm hệ số TEU, tải trọng và CBM.
+  8. 🚛 **Đội Xe & Rơ-moóc (Vehicles & Trailers):** Quản lý phương tiện, nguồn xe nhà / xe bạn, hạn đăng kiểm và bảo trì.
+
+### 2. Chuẩn Hóa Cơ Chế Tính Lương Tài Xế Theo Văn Bản Thực Tế Triền Võ:
+- **Lương Cơ Bản:** Chuẩn hóa xe mới `7.500.000đ` và xe cũ `8.500.000đ` (thay vì mức 5.000.000đ cũ).
+- **Thưởng Vượt Mốc 40 Chuyến/Tháng:** Tự động tính thưởng `(Số chuyến - 40) × 50.000đ` cho các chuyến thứ 41 trở lên.
+- **Công Thức Tính Lương Minh Bạch:**
+  $$\text{Lương Thực Lãnh} = \text{Lương Cơ Bản} + \sum (\text{Lương Chuyến} + \text{Phụ Cấp}) + \text{Thưởng Vượt Mốc 40 Chuyến} - \text{Tạm Ứng}$$
+
+---
+
 ## [1.4.9] - 2026-09-21 (Sửa Lỗi Nghiêm Trọng: Công Thức Chi Phí Không Khớp — Chi Tiết 0đ / Tổng Hợp 1.200.000đ)
+
 
 ### Vấn Đề Cốt Lõi Được Xử Lý (Root Cause Fixed):
 - **Lỗi Zero Variance vi phạm nguyên tắc kế toán ERP:** Chuyến `TVL-0917-007` (Takigawa VSIP) và 6 chuyến `0917` khác có `cached_expense = 1.200.000đ` được gán cứng trong quá trình seed data, nhưng bảng `TripExpense` không có bản ghi chi phí nào tương ứng. Gây ra hiện tượng **chi tiết bảng kê hiển thị `0 đ` nhưng khối P&L và App tài xế báo `1.200.000 đ`** — nghiêm trọng về độ chính xác dữ liệu tài chính vận tải.

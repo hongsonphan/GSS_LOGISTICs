@@ -20,13 +20,13 @@ class Command(BaseCommand):
         employees_data = [
             {'code': 'DD001', 'full_name': 'Trần Điều Độ', 'nickname': 'ĐIỀU ĐỘ CHÍNH', 'phone': '0908111222', 'dept': Department.DISPATCH, 'role': EmployeeRole.DISPATCHER},
             {'code': 'BGD01', 'full_name': 'Triền Võ Giám Đốc', 'nickname': 'BGD', 'phone': '0909000111', 'dept': Department.MANAGEMENT, 'role': EmployeeRole.DIRECTOR},
-            {'code': 'TX001', 'full_name': 'Nguyễn Văn Bụi', 'nickname': 'BỤI 94', 'phone': '0901234567', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 5000000, 'current_advance': 3000000},
-            {'code': 'TX002', 'full_name': 'Trần Văn Li', 'nickname': 'LIBRA', 'phone': '0902345678', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 5000000, 'current_advance': 0},
-            {'code': 'TX003', 'full_name': 'Lê Hòa', 'nickname': 'HÒA PHÁT', 'phone': '0903456789', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 5000000, 'current_advance': 5000000},
-            {'code': 'TX004', 'full_name': 'Phạm Sơn', 'nickname': '3S', 'phone': '0904567890', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 6000000, 'current_advance': 2000000},
-            {'code': 'TX005', 'full_name': 'Hoàng Hải', 'nickname': 'HẢI ĐĂNG', 'phone': '0905678901', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 6000000, 'current_advance': 0},
-            {'code': 'TX006', 'full_name': 'Trần Sắt', 'nickname': '61S', 'phone': '0906789012', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 5000000, 'current_advance': 1000000},
-            {'code': 'TX007', 'full_name': 'Nguyễn Văn Phong', 'nickname': 'Phong', 'phone': '0904776978', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 6000000, 'current_advance': 1500000},
+            {'code': 'TX001', 'full_name': 'Nguyễn Văn Bụi', 'nickname': 'BỤI 94', 'phone': '0901234567', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 7500000, 'current_advance': 3000000},
+            {'code': 'TX002', 'full_name': 'Trần Văn Li', 'nickname': 'LIBRA', 'phone': '0902345678', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 8500000, 'current_advance': 0},
+            {'code': 'TX003', 'full_name': 'Lê Hòa', 'nickname': 'HÒA PHÁT', 'phone': '0903456789', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 7500000, 'current_advance': 5000000},
+            {'code': 'TX004', 'full_name': 'Phạm Sơn', 'nickname': '3S', 'phone': '0904567890', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 8500000, 'current_advance': 2000000},
+            {'code': 'TX005', 'full_name': 'Hoàng Hải', 'nickname': 'HẢI ĐĂNG', 'phone': '0905678901', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 7500000, 'current_advance': 0},
+            {'code': 'TX006', 'full_name': 'Trần Sắt', 'nickname': '61S', 'phone': '0906789012', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 8500000, 'current_advance': 1000000},
+            {'code': 'TX007', 'full_name': 'Nguyễn Văn Phong', 'nickname': 'Phong', 'phone': '0904776978', 'dept': Department.FLEET, 'role': EmployeeRole.DRIVER, 'base_salary': 7500000, 'current_advance': 1500000},
         ]
         emp_map = {}
         for ed in employees_data:

@@ -1,0 +1,177 @@
+<!-- 8. PHÂN HỆ CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA & SETTINGS) -->
+<div id="view-cai-dat" class="view hidden-view p-3.5 md:p-4 h-full flex flex-col space-y-2.5 overflow-hidden bg-slate-100">
+    <!-- Top Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 shrink-0">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black font-heading bg-teal-100 text-teal-800 border border-teal-200 uppercase tracking-wider">
+                    Cài đặt • Master Data
+                </span>
+                <span class="text-sm font-semibold text-slate-500">Khai báo & Quản trị tập trung toàn bộ danh mục</span>
+            </div>
+            <h2 class="text-xl md:text-2xl font-black text-slate-900 mt-0.5 tracking-tight font-heading">Cài Đặt Hệ Thống</h2>
+        </div>
+
+        <!-- 8 KPI Pills Counter -->
+        <div class="flex items-center flex-wrap gap-2 text-xs font-bold font-heading">
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('driver_tariffs')">
+                <i class="ph-bold ph-money text-emerald-600 text-sm"></i>
+                <span class="text-slate-600">Lương:</span>
+                <span id="md-stat-driver-tariffs" class="text-slate-900 font-black">36</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('allowances')">
+                <i class="ph-bold ph-plus-circle text-amber-600 text-sm"></i>
+                <span class="text-slate-600">Phụ cấp:</span>
+                <span id="md-stat-allowances" class="text-slate-900 font-black">8</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('locations')">
+                <i class="ph-bold ph-map-pin text-teal-600 text-sm"></i>
+                <span class="text-slate-600">Cảng/Kho:</span>
+                <span id="md-stat-locations" class="text-slate-900 font-black">18</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('tariffs')">
+                <i class="ph-bold ph-path text-blue-600 text-sm"></i>
+                <span class="text-slate-600">Cước khách:</span>
+                <span id="md-stat-tariffs" class="text-slate-900 font-black">9</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('customers')">
+                <i class="ph-bold ph-buildings text-purple-600 text-sm"></i>
+                <span class="text-slate-600">Khách:</span>
+                <span id="md-stat-customers" class="text-slate-900 font-black">19</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('expenses')">
+                <i class="ph-bold ph-receipt text-rose-600 text-sm"></i>
+                <span class="text-slate-600">Chi phí:</span>
+                <span id="md-stat-expenses" class="text-slate-900 font-black">8</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('containers')">
+                <i class="ph-bold ph-package text-indigo-600 text-sm"></i>
+                <span class="text-slate-600">Quy cách:</span>
+                <span id="md-stat-containers" class="text-slate-900 font-black">8</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('vehicles')">
+                <i class="ph-bold ph-truck text-slate-700 text-sm"></i>
+                <span class="text-slate-600">Đội xe:</span>
+                <span id="md-stat-vehicles" class="text-slate-900 font-black">8</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Master Data Container -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col flex-1 min-h-0">
+        <!-- Sub-Navigation 8 Tabs -->
+        <div class="border-b border-slate-200 px-3 md:px-4 pt-2 flex items-center justify-between flex-wrap gap-2 bg-slate-50/80 shrink-0">
+            <div class="flex items-center space-x-1 overflow-x-auto pb-px" id="master-data-tabs">
+                <button onclick="switchMasterDataTab('driver_tariffs')" data-md-tab="driver_tariffs" class="md-tab-btn active px-3.5 py-2 text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-money text-base"></i>
+                    <span>Biểu Phí Lương Chuyến</span>
+                </button>
+                <button onclick="switchMasterDataTab('allowances')" data-md-tab="allowances" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-plus-circle text-base"></i>
+                    <span>Phụ Cấp & Kiểm Hóa</span>
+                </button>
+                <button onclick="switchMasterDataTab('locations')" data-md-tab="locations" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-map-pin text-base"></i>
+                    <span>Cảng & Kho Bãi</span>
+                </button>
+                <button onclick="switchMasterDataTab('tariffs')" data-md-tab="tariffs" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-path text-base"></i>
+                    <span>Biểu Cước Khách Hàng</span>
+                </button>
+                <button onclick="switchMasterDataTab('customers')" data-md-tab="customers" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-buildings text-base"></i>
+                    <span>Khách Hàng</span>
+                </button>
+                <button onclick="switchMasterDataTab('expenses')" data-md-tab="expenses" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-receipt text-base"></i>
+                    <span>Khoản Mục Chi Phí</span>
+                </button>
+                <button onclick="switchMasterDataTab('containers')" data-md-tab="containers" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-package text-base"></i>
+                    <span>Quy Cách Cont & Xe</span>
+                </button>
+                <button onclick="switchMasterDataTab('vehicles')" data-md-tab="vehicles" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-truck text-base"></i>
+                    <span>Đội Xe & Moóc</span>
+                </button>
+            </div>
+
+            <!-- Action Button: Open Create Modal -->
+            <div class="pb-1.5">
+                <button onclick="openCreateMasterDataModal()" class="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-plus-circle text-base"></i>
+                    <span id="md-create-btn-label">+ Thêm Mới Tuyến Lương</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="p-2.5 px-4 border-b border-slate-200/80 bg-white flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
+            <div class="relative w-full sm:w-80">
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+                <input type="text" id="md-search-input" onkeyup="filterMasterDataTable()" placeholder="Tìm kiếm nhanh trong bảng..."
+                       class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+            </div>
+
+            <!-- Dynamic Sub-Filter -->
+            <div class="flex items-center space-x-2 w-full sm:w-auto" id="md-secondary-filter-container">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Bộ lọc:</label>
+                <select id="md-secondary-filter" onchange="filterMasterDataTable()"
+                        class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
+                    <option value="ALL">Tất cả</option>
+                </select>
+                <button onclick="reloadActiveMasterDataTab()" title="Làm mới dữ liệu" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer">
+                    <i class="ph-bold ph-arrows-clockwise text-base"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamic Data Table Container (Sticky Header & Scrollable Body) -->
+        <div id="md-table-container" class="flex-1 min-h-0 overflow-x-auto overflow-y-auto relative border-b border-slate-200">
+            <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="md-main-table">
+                <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200/90 shadow-2xs" id="md-table-head">
+                    <!-- Populated dynamically based on active tab -->
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium" id="md-table-body">
+                    <tr>
+                        <td colspan="7" class="p-8 text-center text-slate-400">
+                            <i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>
+                            Đang tải danh mục cài đặt...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer Pagination / Record Counter (UI/UX Chuẩn Quốc Tế) -->
+        <div class="p-2 px-4 bg-slate-50/90 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-600 select-none shrink-0" id="md-pagination-container">
+            <!-- Left: Range info and Rows per page selector -->
+            <div class="flex items-center flex-wrap gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div id="md-pagination-info" class="text-slate-600 font-medium flex items-center space-x-1">
+                    <span>Hiển thị</span>
+                    <span id="md-range-start" class="font-bold text-slate-900">0</span>
+                    <span>-</span>
+                    <span id="md-range-end" class="font-bold text-slate-900">0</span>
+                    <span>trong</span>
+                    <span id="md-count-display" class="font-black text-teal-800">0</span>
+                    <span>bản ghi</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs text-slate-500 font-medium whitespace-nowrap">Số dòng / trang:</span>
+                    <select id="md-page-size" onchange="changeMasterDataPageSize(this.value)" class="bg-white border border-slate-200 text-slate-700 text-xs rounded-lg px-2.5 py-1 font-bold focus:ring-2 focus:ring-teal-500 focus:outline-hidden cursor-pointer shadow-2xs">
+                        <option value="20" selected>20 dòng</option>
+                        <option value="30">30 dòng</option>
+                        <option value="50">50 dòng</option>
+                        <option value="100">100 dòng</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Right: Navigation Controls (First, Prev, Page numbers, Next, Last) -->
+            <div class="flex items-center space-x-1" id="md-pagination-controls">
+                <!-- Injected dynamically via JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -27,12 +27,15 @@ class ApprovalStatus(models.TextChoices):
     REJECTED = 'REJECTED', 'Từ chối'
     SETTLED = 'SETTLED', 'Đã chốt sổ Kế toán'
 
-class DocumentType(models.TextChoices):
+class ExpenseReceiptType(models.TextChoices):
     EINVOICE = 'EINVOICE', 'Hóa đơn điện tử'
     EIR_RECEIPT = 'EIR_RECEIPT', 'Phiếu EIR giao nhận cont'
     TOLL_TICKET = 'TOLL_TICKET', 'Vé cầu đường / BOT'
     WEIGHING_TICKET = 'WEIGHING_TICKET', 'Phiếu cân xe'
     OTHER_RECEIPT = 'OTHER_RECEIPT', 'Chứng từ / Biên lai khác'
+
+# Alias tương thích ngược để không xung đột namespace với documents.DocumentType
+DocumentType = ExpenseReceiptType
 
 class TripExpense(TimeStampedModel, SoftDeleteModel):
     """
@@ -40,11 +43,21 @@ class TripExpense(TimeStampedModel, SoftDeleteModel):
     Lưu vết đầy đủ hóa đơn điện tử, mã tra cứu, link tra cứu, tiền thuế VAT và ảnh chứng từ.
     """
     trip = models.ForeignKey('dispatch.DispatchTrip', on_delete=models.PROTECT, related_name='expenses')
+    
+    # Chuẩn hoá danh mục chi phí (Sprint 1)
+    expense_item = models.ForeignKey(
+        'master_data.ExpenseItem',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='trip_expenses',
+        help_text="Khoản mục chi phí từ Master Data (Dynamic Catalog)"
+    )
     category = models.CharField(max_length=30, choices=ExpenseCategory.choices, default=ExpenseCategory.TOLL_FEE)
     amount = models.DecimalField(max_digits=12, decimal_places=0, help_text="Thành tiền thực thanh toán (đã gồm VAT nếu có)")
     
     # Quản lý Hóa đơn điện tử & Chứng từ đối soát
-    document_type = models.CharField(max_length=30, choices=DocumentType.choices, default=DocumentType.EINVOICE)
+    document_type = models.CharField(max_length=30, choices=ExpenseReceiptType.choices, default=ExpenseReceiptType.EINVOICE)
     invoice_issuer = models.CharField(max_length=200, blank=True, help_text="Đơn vị phát hành (ICD Tây Nam, VT Anh Phong, AP622...)")
     invoice_number = models.CharField(max_length=50, blank=True, help_text="Số hóa đơn (138001, 0060962...)")
     invoice_lookup_code = models.CharField(max_length=100, blank=True, help_text="Mã tra cứu HĐĐT (HD11202609-06654, QXC39QWL4H9...)")
@@ -61,18 +74,25 @@ class TripExpense(TimeStampedModel, SoftDeleteModel):
     approved_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm phê duyệt / chốt sổ")
     company_borne = models.BooleanField(default=True, help_text="Công ty chịu (True) hay trừ lương tài xế (False)")
+    is_on_behalf_of_customer = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Chi hộ Khách hàng: Công ty ứng chi trước, sau đó quyết toán thu lại từ KH (không tính vào chi phí vận hành)"
+    )
     notes = models.CharField(max_length=255, blank=True, help_text="Ghi chú thêm của tài xế hoặc kế toán")
 
     class Meta:
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['trip', 'category']),
+            models.Index(fields=['trip', 'expense_item']),
             models.Index(fields=['invoice_number']),
             models.Index(fields=['invoice_lookup_code']),
         ]
 
     def __str__(self):
-        return f"{self.trip.trip_code} - {self.get_category_display()}: {self.amount:,} đ ({self.get_status_display()})"
+        chi_ho_label = " [CHI HỘ KH]" if self.is_on_behalf_of_customer else ""
+        return f"{self.trip.trip_code} - {self.get_category_display()}: {self.amount:,} đ ({self.get_status_display()}){chi_ho_label}"
 
     def clean(self):
         from django.core.exceptions import ValidationError

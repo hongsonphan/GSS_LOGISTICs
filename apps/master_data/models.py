@@ -1,0 +1,134 @@
+from django.db import models
+from core.models import TimeStampedModel, SoftDeleteModel
+
+class LocationType(models.TextChoices):
+    PORT = 'PORT', 'Cảng Biển'
+    ICD = 'ICD', 'Cảng Cạn (ICD)'
+    DEPOT = 'DEPOT', 'Bãi Rỗng / Depot'
+    WAREHOUSE = 'WAREHOUSE', 'Kho Hàng / Nhà Máy'
+    YARD = 'YARD', 'Bãi Đỗ Xe Công Ty'
+
+class Location(TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Địa điểm, Cảng, ICD, Depot cont rỗng và Kho khách hàng.
+    Chuẩn hóa lộ trình 3 điểm (Nơi lấy -> Kho giao -> Nơi hạ).
+    """
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    name = models.CharField(max_length=150)
+    location_type = models.CharField(max_length=20, choices=LocationType.choices, default=LocationType.PORT)
+    address = models.CharField(max_length=255, blank=True)
+    province = models.CharField(max_length=50, blank=True, default='TP. Hồ Chí Minh')
+    contact_person = models.CharField(max_length=100, blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    notes = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['location_type', 'name']
+        verbose_name = 'Địa điểm / Cảng bãi'
+        verbose_name_plural = 'Danh mục Địa điểm / Cảng bãi'
+
+    def __str__(self):
+        return f"[{self.get_location_type_display()}] {self.name} ({self.code})"
+
+class ContainerCategory(models.TextChoices):
+    CONTAINER = 'CONTAINER', 'Container Đường Biển'
+    TRUCK = 'TRUCK', 'Xe Tải Thùng / Đường Bộ'
+
+class ContainerType(TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Quy cách Container và Thùng Xe tải chở hàng.
+    Chuẩn hóa thông số TEU, tải trọng và thể tích CBM.
+    """
+    code = models.CharField(max_length=30, unique=True, db_index=True) # 40HC, 20DC, 45G1, 40GP...
+    name = models.CharField(max_length=100) # Container 40ft Cao (40HC)...
+    category = models.CharField(max_length=20, choices=ContainerCategory.choices, default=ContainerCategory.CONTAINER)
+    teu_factor = models.DecimalField(max_digits=4, decimal_places=2, default=1.0, help_text="Hệ số TEU quy đổi (20DC=1, 40HC=2, 45G1=2.25)")
+    max_payload_kg = models.IntegerField(default=30000, help_text="Tải trọng cho phép chở (kg)")
+    cbm_capacity = models.DecimalField(max_digits=6, decimal_places=2, default=67.0, help_text="Thể tích chứa hàng (CBM)")
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['category', 'code']
+        verbose_name = 'Quy cách Cont & Xe'
+        verbose_name_plural = 'Danh mục Quy cách Cont & Xe'
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+class ExpenseCategoryGroup(models.TextChoices):
+    LIFT_ON = 'LIFT_ON', 'Nâng Cont'
+    LIFT_OFF = 'LIFT_OFF', 'Hạ Cont'
+    TOLL = 'TOLL', 'Vé Cầu Đường / BOT'
+    DEPOSIT = 'DEPOSIT', 'Cược Container'
+    WEIGHING = 'WEIGHING', 'Cân Xe'
+    LABOR = 'LABOR', 'Bốc Xếp / Bồi Dưỡng Kho'
+    EINVOICE = 'EINVOICE', 'Hóa Đơn Điện Tử Cảng'
+    OTHER = 'OTHER', 'Chi Phí Khác'
+
+class ExpenseItem(TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Khoản mục Chi phí phát sinh hiện trường.
+    Cho phép quản lý động các khoản chi mà không cần sửa cứng code.
+    """
+    code = models.CharField(max_length=30, unique=True, db_index=True) # LIFT_ON, TOLL_FEE...
+    name = models.CharField(max_length=100) # Phí nâng cont, Vé BOT...
+    group_type = models.CharField(max_length=30, choices=ExpenseCategoryGroup.choices, default=ExpenseCategoryGroup.TOLL)
+    default_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Định mức tiền ngầm định (VNĐ)")
+    requires_invoice = models.BooleanField(default=False, help_text="Bắt buộc có hóa đơn điện tử / mã tra cứu")
+    notes = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['group_type', 'name']
+        verbose_name = 'Khoản mục chi phí'
+        verbose_name_plural = 'Danh mục Khoản mục chi phí'
+
+    def __str__(self):
+        return f"[{self.get_group_type_display()}] {self.name} ({self.code})"
+
+class DriverSalaryTariff(TimeStampedModel, SoftDeleteModel):
+    """
+    Biểu phí Lương chuyến Lái xe Container tính theo lộ trình vận chuyển hàng hóa.
+    (Áp dụng chuẩn theo Thông báo lương chính thức của Triền Võ Logistics)
+    """
+    area_group = models.CharField(max_length=100, db_index=True, help_text="Nhóm khu vực kho: Củ Chi, Long An, Tây Ninh, Bình Dương, Đồng Nai, TP.HCM, Vũng Tàu, Tuyến đặc thù")
+    route_name = models.CharField(max_length=200, help_text="Tên chi tiết tuyến / KCN / Nhà máy (vd: KCN Phước Đông, KCN Tân Phú Trung...)")
+    pickup_drop_area = models.CharField(max_length=255, default='Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7', help_text="Khu vực lấy / hạ cont chuẩn")
+    salary_rate = models.DecimalField(max_digits=12, decimal_places=0, help_text="Mức lương chuyến tài xế được hưởng (VNĐ)")
+    notes = models.CharField(max_length=255, blank=True, help_text="Ghi chú điều kiện đặc biệt (vd: Lấy/hạ Cát Lái +50k...)")
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['area_group', 'route_name']
+        verbose_name = 'Biểu phí lương chuyến tài xế'
+        verbose_name_plural = 'Danh mục Biểu phí lương chuyến tài xế'
+
+    def __str__(self):
+        return f"[{self.area_group}] {self.route_name} - {self.salary_rate:,.0f} đ"
+
+class AllowanceCategory(models.TextChoices):
+    PORT = 'PORT', 'Phụ Thêm Cảng Xa'
+    INSPECTION = 'INSPECTION', 'Phụ Thu Kiểm Hóa'
+    OPERATION = 'OPERATION', 'Phụ Cấp Tác Nghiệp Đặc Thù'
+
+class DriverAllowanceCatalog(TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Phụ cấp cảng xa, Kiểm hóa và Tác nghiệp vận chuyển.
+    (Chuẩn theo văn bản Triền Võ Logistics: Hiệp Phước, Cái Mép, Nhơn Trạch, TTI cắt kéo...)
+    """
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    name = models.CharField(max_length=150)
+    category = models.CharField(max_length=30, choices=AllowanceCategory.choices, default=AllowanceCategory.PORT)
+    amount = models.DecimalField(max_digits=12, decimal_places=0, help_text="Số tiền phụ cấp tài xế (VNĐ)")
+    notes = models.CharField(max_length=255, blank=True, help_text="Điều kiện áp dụng phụ cấp")
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['category', 'name']
+        verbose_name = 'Phụ cấp & Kiểm hóa'
+        verbose_name_plural = 'Danh mục Phụ cấp & Kiểm hóa'
+
+    def __str__(self):
+        return f"[{self.get_category_display()}] {self.name}: +{self.amount:,.0f} đ"
+

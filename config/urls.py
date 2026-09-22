@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -53,6 +53,7 @@ urlpatterns = [
     path('api/bookings/<int:pk>/status/', BookingOrderStatusAPIView.as_view(), name='api-booking-status'),
     path('api/customs/', CustomsAPIView.as_view(), name='api-customs'),
     path('api/accounting/', AccountingAPIView.as_view(), name='api-accounting'),
+    path('api/master-data/', include('apps.master_data.urls')),
 ]
 
 if settings.DEBUG:

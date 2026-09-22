@@ -1,14 +1,12 @@
-<!-- SIDEBAR NAVIGATION (Chuẩn MISA AMIS - Bim_ERP-Solutions Standard) -->
+<!-- SIDEBAR NAVIGATION (Bim_ERP-Solutions Enterprise Standard) -->
 <aside class="app-sidebar select-none">
     <!-- Brand Logo Header (Homepage Link -> Dashboard) -->
     <a href="/" onclick="event.preventDefault(); switchTab('dashboard');" class="app-sidebar-header flex items-center space-x-3 cursor-pointer hover:bg-slate-900/40 transition-colors group select-none block" title="Về trang chủ Dashboard">
-        <div class="flex items-center space-x-3">
-            <div class="bg-teal-600 p-2.5 rounded-xl shadow-md shadow-teal-950/40 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <i class="ph-fill ph-anchor text-white text-2xl"></i>
-            </div>
-            <div class="overflow-hidden">
-                <h1 class="text-[17px] font-black text-white leading-tight tracking-tight font-heading truncate group-hover:text-teal-200 transition-colors">BIM Logistics</h1>
-                <p class="text-[11px] text-teal-300 uppercase tracking-wider font-bold truncate">Triền Võ • TMS & Fleet</p>
+        <div class="flex items-center space-x-2.5">
+            <img src="/static/images/logo_clean.png" alt="BIM" class="h-10 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-sm">
+            <div class="overflow-hidden flex flex-col justify-center">
+                <span class="text-[11px] font-extrabold text-teal-400 uppercase tracking-wider font-heading leading-tight">BIM SOLUTIONS</span>
+                <h1 class="text-[17px] font-black text-white uppercase tracking-tight font-heading leading-tight mt-0.5 truncate group-hover:text-teal-200 transition-colors">BIM LOGISTICS</h1>
             </div>
         </div>
     </a>
@@ -65,6 +63,13 @@
                     <i class="ph ph-file-text text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Dịch vụ Hải quan</span>
                     <span class="text-[9.5px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded ml-1">Phát triển sau</span>
+                </button>
+            </li>
+            <!-- 8. Cài đặt -->
+            <li>
+                <button onclick="switchTab('cai-dat')" class="sidebar-item-main" data-target="cai-dat">
+                    <i class="ph ph-gear text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Cài đặt</span>
                 </button>
             </li>
         </ul>
