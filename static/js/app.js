@@ -4018,9 +4018,17 @@ async function deleteMasterDataItem(id) {
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.app-sidebar');
+    const arrow = document.getElementById('icon-sidebar-arrow');
     if (!sidebar) return;
     sidebar.classList.toggle('collapsed');
     const isCollapsed = sidebar.classList.contains('collapsed');
+    if (arrow) {
+        if (isCollapsed) {
+            arrow.classList.remove('hidden');
+        } else {
+            arrow.classList.add('hidden');
+        }
+    }
     try {
         localStorage.setItem('bim_sidebar_collapsed', isCollapsed ? 'true' : 'false');
     } catch (e) {}
@@ -4076,7 +4084,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         if (localStorage.getItem('bim_sidebar_collapsed') === 'true') {
             const sidebar = document.querySelector('.app-sidebar');
+            const arrow = document.getElementById('icon-sidebar-arrow');
             if (sidebar) sidebar.classList.add('collapsed');
+            if (arrow) arrow.classList.remove('hidden');
         }
     } catch (e) {}
 
