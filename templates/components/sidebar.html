@@ -1,15 +1,18 @@
 <!-- SIDEBAR NAVIGATION (Bim_ERP-Solutions Enterprise Standard) -->
 <aside class="app-sidebar select-none">
     <!-- Brand Logo Header (Homepage Link -> Dashboard) -->
-    <a href="/" onclick="event.preventDefault(); switchTab('dashboard');" class="app-sidebar-header flex items-center space-x-3 cursor-pointer hover:bg-slate-900/40 transition-colors group select-none block" title="Về trang chủ Dashboard">
-        <div class="flex items-center space-x-2.5">
+    <div class="app-sidebar-header flex items-center justify-between">
+        <a href="/" onclick="event.preventDefault(); switchTab('dashboard');" class="flex items-center space-x-2.5 cursor-pointer hover:opacity-95 transition-opacity group select-none overflow-hidden flex-1" title="Về trang chủ Dashboard">
             <img src="/static/images/logo_clean.png" alt="BIM" class="h-10 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-sm">
             <div class="overflow-hidden flex flex-col justify-center">
                 <span class="text-[11px] font-extrabold text-teal-400 uppercase tracking-wider font-heading leading-tight">BIM SOLUTIONS</span>
-                <h1 class="text-[17px] font-black text-white uppercase tracking-tight font-heading leading-tight mt-0.5 truncate group-hover:text-teal-200 transition-colors">BIM LOGISTICS</h1>
+                <h1 class="text-[16px] font-black text-white uppercase tracking-tight font-heading leading-tight mt-0.5 truncate group-hover:text-teal-200 transition-colors">BIM LOGISTICS</h1>
             </div>
-        </div>
-    </a>
+        </a>
+        <button onclick="toggleSidebar()" class="p-1.5 ml-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors shrink-0" title="Thu gọn Sidebar">
+            <i class="ph ph-caret-left text-lg font-bold"></i>
+        </button>
+    </div>
     
     <!-- Navigation Items -->
     <div class="p-3 flex-1 overflow-y-auto space-y-1">

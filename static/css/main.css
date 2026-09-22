@@ -198,9 +198,15 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     border-right: 1px solid var(--sidebar-border);
     display: flex;
     flex-direction: column;
-    transition: all 0.2s ease;
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, width 0.25s ease;
     z-index: 20;
     flex-shrink: 0;
+}
+
+.app-sidebar.collapsed {
+    margin-left: -17.5rem !important;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .app-sidebar-header {

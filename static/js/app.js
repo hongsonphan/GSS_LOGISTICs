@@ -4012,6 +4012,57 @@ async function deleteMasterDataItem(id) {
     }
 }
 
+// =========================================================================
+// TIỆN ÍCH GIAO DIỆN: ẨN / HIỆN SIDEBAR & BIỂU ĐỒ DASHBOARD
+// =========================================================================
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.app-sidebar');
+    if (!sidebar) return;
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    try {
+        localStorage.setItem('bim_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+    } catch (e) {}
+}
+
+function toggleDashboardCharts() {
+    const rowPillars = document.getElementById('dashboard-row-pillars');
+    const rowCharts = document.getElementById('dashboard-row-charts');
+    const iconToggle = document.getElementById('icon-toggle-charts');
+    const textToggle = document.getElementById('text-toggle-charts');
+    const iconTableExpand = document.getElementById('icon-table-expand');
+    const textTableExpand = document.getElementById('text-table-expand');
+
+    if (!rowPillars || !rowCharts) return;
+
+    const isHidden = rowPillars.classList.contains('hidden');
+
+    if (isHidden) {
+        // Hiện lại 2 hàng biểu đồ & trụ cột
+        rowPillars.classList.remove('hidden');
+        rowCharts.classList.remove('hidden');
+        if (iconToggle) iconToggle.className = 'ph ph-eye-slash text-base text-teal-700';
+        if (textToggle) textToggle.innerText = 'Ẩn Biểu Đồ';
+        if (iconTableExpand) iconTableExpand.className = 'ph ph-arrows-out-simple text-teal-700';
+        if (textTableExpand) textTableExpand.innerText = 'Toàn Màn Hình';
+        try {
+            localStorage.setItem('bim_dashboard_charts_collapsed', 'false');
+        } catch (e) {}
+    } else {
+        // Ẩn 2 hàng biểu đồ để bung toàn màn hình Bảng Kê Hiệu Suất P&L
+        rowPillars.classList.add('hidden');
+        rowCharts.classList.add('hidden');
+        if (iconToggle) iconToggle.className = 'ph ph-eye text-base text-teal-700';
+        if (textToggle) textToggle.innerText = 'Hiện Biểu Đồ';
+        if (iconTableExpand) iconTableExpand.className = 'ph ph-arrows-in-simple text-teal-700';
+        if (textTableExpand) textTableExpand.innerText = 'Thu Gọn Bảng';
+        try {
+            localStorage.setItem('bim_dashboard_charts_collapsed', 'true');
+        } catch (e) {}
+    }
+}
+
 // Khởi chạy khi DOM sẵn sàng
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -4020,6 +4071,32 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dateEl) {
         dateEl.innerText = new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
     }
+
+    // Khôi phục trạng thái thu gọn Sidebar từ localStorage
+    try {
+        if (localStorage.getItem('bim_sidebar_collapsed') === 'true') {
+            const sidebar = document.querySelector('.app-sidebar');
+            if (sidebar) sidebar.classList.add('collapsed');
+        }
+    } catch (e) {}
+
+    // Khôi phục trạng thái ẩn biểu đồ từ localStorage
+    try {
+        if (localStorage.getItem('bim_dashboard_charts_collapsed') === 'true') {
+            const rowPillars = document.getElementById('dashboard-row-pillars');
+            const rowCharts = document.getElementById('dashboard-row-charts');
+            const iconToggle = document.getElementById('icon-toggle-charts');
+            const textToggle = document.getElementById('text-toggle-charts');
+            const iconTableExpand = document.getElementById('icon-table-expand');
+            const textTableExpand = document.getElementById('text-table-expand');
+            if (rowPillars) rowPillars.classList.add('hidden');
+            if (rowCharts) rowCharts.classList.add('hidden');
+            if (iconToggle) iconToggle.className = 'ph ph-eye text-base text-teal-700';
+            if (textToggle) textToggle.innerText = 'Hiện Biểu Đồ';
+            if (iconTableExpand) iconTableExpand.className = 'ph ph-arrows-in-simple text-teal-700';
+            if (textTableExpand) textTableExpand.innerText = 'Thu Gọn Bảng';
+        }
+    } catch (e) {}
     
     // Mặc định luôn hiển thị về Dashboard trang chủ khi vào hệ thống hoặc bấm logo trang chủ
     const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
@@ -4030,3 +4107,4 @@ document.addEventListener('DOMContentLoaded', () => {
         switchTab('dashboard');
     }
 });
+
