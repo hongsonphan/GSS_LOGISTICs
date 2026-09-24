@@ -392,6 +392,7 @@ class Command(BaseCommand):
 
             # Chứng từ
             if 'docs' in trd:
+                TripDocument.all_objects.filter(trip=trip).hard_delete()
                 for doc in trd['docs']:
                     TripDocument.objects.create(
                         trip=trip,
@@ -403,6 +404,7 @@ class Command(BaseCommand):
                     )
 
             # Tracking Event Log
+            TrackingEventLog.objects.filter(trip=trip, event_type='SEED_DATA').delete()
             TrackingEventLog.objects.create(
                 trip=trip,
                 actor=emp_map['DD001'],

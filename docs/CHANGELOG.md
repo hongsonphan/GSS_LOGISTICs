@@ -1,6 +1,26 @@
 # CHANGELOG — BIM LOGISTICS PLATFORM
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
+## [1.6.4] - 2026-09-22 (Khử Trùng Lặp Chứng Từ Số & Hóa Đơn Điện Tử, Chấm Dứt Auto-Seed & Đối Chiếu Chéo Nghiệp Vụ)
+
+### 1. Khắc Phục Nguyên Nhân Gây Trùng Lặp Dữ Liệu:
+- **Chấm dứt Auto-Seed tại `docker-compose.yml`:** Gỡ bỏ lệnh `python manage.py seed_data` trong tiến trình khởi động container web. Tránh việc mỗi lần container khởi động lại tự ý nạp thêm dữ liệu.
+- **Chuẩn hóa Idempotency tại `core/management/commands/seed_data.py`:** Thêm cơ chế dọn dẹp trước khi nạp (`TripDocument.all_objects.filter(trip=trip).hard_delete()` và xóa log khởi tạo `SEED_DATA`), đảm bảo nếu có chạy lại lệnh seed thủ công thì cũng không bao giờ sinh bản ghi rác trùng lặp.
+
+### 2. Xây Dựng Công Cụ Rà Soát & Đối Chiếu Chéo Toàn Diện (`deduplicate_data`):
+- **Khởi tạo Management Command `python manage.py deduplicate_data`:**
+  - **Khử trùng Chứng từ (`TripDocument`):** Nhóm theo `(document_type, title)`, ưu tiên giữ lại bản ghi chuẩn (đã nghiệm thu, có dữ liệu OCR, id gốc), loại bỏ triệt để các bản ghi nhân bản.
+  - **Khử trùng Chi phí (`TripExpense`):** Nhóm theo `(category, amount, invoice_number)`, giữ lại bản ghi được duyệt chuẩn.
+  - **Khử trùng Tiến độ (`TripTimelineItem`) & Event Logs (`TrackingEventLog`):** Giữ đúng 1 bản ghi duy nhất cho mỗi mốc.
+  - **Đối chiếu chéo (Cross-check Audit):** 
+    - Đối chiếu 1:1 giữa khoản chi phí nâng hạ/cầu đường với HĐĐT (ví dụ: HĐ 0060962 giá trị 1.925.000 đ tương ứng chính xác 1 bản ghi HĐĐT ở danh sách chứng từ, không còn tình trạng 1 khoản chi nhưng có 7 hóa đơn trùng lặp).
+    - Tự động kiểm tra và đồng bộ lại các chỉ số P&L chuyến xe (`cached_expense`, `cached_profit`, `cached_margin_percent`).
+
+### 3. Phòng Thủ Hai Lớp Tại API Layer (`TripDetailAPIView`):
+- Thêm lớp lọc phòng thủ (*Defensive Deduplication*) tại `apps/dispatch/api_views.py`: Ngay cả khi dữ liệu thô trong cơ sở dữ liệu có bản ghi trùng lặp chưa kịp dọn, API vẫn tự động gộp và chỉ trả về các chứng từ duy nhất cho frontend, bảo đảm trải nghiệm người dùng không bao giờ bị rối loạn.
+- Bổ sung Unit Test `test_document_deduplication_and_cross_check` tại `core/tests.py`, nâng tổng số ca kiểm thử tự động lên 6/6 tests passed (100% OK).
+
+---
 
 ## [1.6.3] - 2026-09-22 (Chuẩn Hóa & Tối Ưu Hóa Giao Diện Dashboard Ban Giám Đốc — Executive Command Center)
 

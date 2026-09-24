@@ -132,3 +132,34 @@ class BimLogisticsCoreTestCase(TestCase):
         data = response.json()
         self.assertTrue(data['success'])
         self.assertTrue(DispatchTrip.objects.filter(container_number='CONT1234567').exists())
+
+    def test_document_deduplication_and_cross_check(self):
+        """Kiểm tra tính năng khử trùng lặp chứng từ/chi phí và đối chiếu chéo."""
+        from django.core.management import call_command
+        from apps.documents.models import TripDocument, DocumentType
+
+        # Tạo 3 chứng từ giống hệt nhau (mô phỏng seed bị lặp)
+        for _ in range(3):
+            TripDocument.objects.create(
+                trip=self.trip,
+                document_type=DocumentType.EIR_PICKUP,
+                title="Phiếu EIR Lấy Cont Rỗng AP-622 No 0034976",
+                ocr_raw_text="Cont: CSNU 8011022 - Seal: 34192379",
+                is_verified=True
+            )
+
+        # Kiểm tra trước khi dọn: có 3 chứng từ
+        self.assertEqual(TripDocument.objects.filter(trip=self.trip).count(), 3)
+
+        # Kiểm tra API defensive deduplication: chỉ trả về 1 chứng từ
+        response = self.client.get(f'/api/trips/{self.trip.trip_code}/')
+        self.assertEqual(response.status_code, 200)
+        docs_in_api = response.json().get('documents', [])
+        self.assertEqual(len(docs_in_api), 1)
+
+        # Chạy command dọn dẹp DB
+        call_command('deduplicate_data')
+
+        # Sau khi dọn dẹp: DB chỉ còn đúng 1 chứng từ
+        self.assertEqual(TripDocument.objects.filter(trip=self.trip).count(), 1)
+

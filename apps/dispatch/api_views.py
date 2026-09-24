@@ -360,7 +360,16 @@ class TripDetailAPIView(APIView):
             timeline_items = trip.timeline_items.all().order_by('step_number')
 
         expenses = trip.expenses.filter(is_deleted=False)
-        documents = trip.documents.all().order_by('created_at')
+        # Defensive deduplication: đảm bảo trên giao diện không bao giờ hiển thị chứng từ trùng lặp
+        raw_documents = trip.documents.all().order_by('created_at')
+        seen_doc_keys = set()
+        unique_documents = []
+        for doc in raw_documents:
+            doc_key = (doc.document_type, (doc.title or '').strip())
+            if doc_key not in seen_doc_keys:
+                seen_doc_keys.add(doc_key)
+                unique_documents.append(doc)
+        documents = unique_documents
 
         timeline_data = [
             {
