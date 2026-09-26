@@ -47,14 +47,18 @@ Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
 - `customers.Customer`: Danh bạ khách hàng doanh nghiệp, mã số thuế, địa chỉ, người liên hệ.
 - `customers.RouteTariff`: Biểu cước theo từng tuyến đường, chuẩn hóa liên kết ForeignKey tới `master_data.Location` (`pickup_loc`, `delivery_loc`, `dropoff_loc`), đơn giá cước xuất hóa đơn và định mức lương chuyến tài xế.
 - `customers.Quotation`: Quản lý báo giá và phễu khách hàng (CRM).
-- `customers.BookingOrder`: Đơn hàng đặt xe / Booking tiếp nhận từ Sales/CS; chuẩn hóa lộ trình 3 điểm với ForeignKey `master_data.Location`.
+- `customers.BookingOrder`: Đơn hàng đặt xe / Booking tiếp nhận từ Sales/CS; chuẩn hóa lộ trình 3 điểm với ForeignKey `master_data.Location`. Đính kèm tệp tin gốc `booking_file` (`FileField` hỗ trợ PDF/Ảnh $\le 5\text{MB}$ có kiểm tra Magic Bytes và Pillow).
 
 ### F. Phân hệ Điều độ Vận tải (`apps/dispatch`)
-- `dispatch.DispatchTrip`: Bảng hạt nhân điều hành chuyến xe. Chứa toàn bộ thông tin về loại hình (Nhập/Xuất/Nội địa), số Cont, loại Cont/Xe (`45G1`, `40HC`, `40GP`, `22GP`, xe tải `1T` - `15T`), số Seal, Booking/Bill, hạn Cắt Máng CY / Giờ SI, thông tin phiếu EIR (`eir_number`), hãng tàu (`shipping_line`), tên tàu/số chuyến (`vessel_voyage`), cảng đích (`destination_port`), trọng lượng VGM (`vgm_weight`), vị trí bãi cont (`bay_location`), free time lưu cont, 3 điểm lộ trình chuẩn hóa liên kết ForeignKey tới `master_data.Location` (`pickup_loc`, `warehouse_loc`, `dropoff_loc`), các mốc thời gian chuẩn hóa `DateTimeField` (`actual_gate_in_at`, `actual_gate_out_at`), và máy trạng thái 10 bước.
+- `dispatch.DispatchTrip`: Bảng hạt nhân điều hành chuyến xe. Chứa toàn bộ thông tin về loại hình (Nhập/Xuất/Nội địa), số Cont, loại Cont/Xe (`45G1`, `40HC`, `40GP`, `22GP`, `2x20DC`, xe tải `1T` - `15T`), số Seal, Booking/Bill, hạn Cắt Máng CY / Giờ SI, thông tin phiếu EIR (`eir_number`), hãng tàu (`shipping_line`), tên tàu/số chuyến (`vessel_voyage`), cảng đích (`destination_port`), trọng lượng VGM (`vgm_weight`), vị trí bãi cont (`bay_location`), 3 điểm lộ trình chuẩn hóa liên kết ForeignKey tới `master_data.Location` (`pickup_loc`, `warehouse_loc`, `dropoff_loc`), các mốc thời gian chuẩn hóa `DateTimeField` (`actual_gate_in_at`, `actual_gate_out_at`), và máy trạng thái 10 bước.
+  - **Tệp tin đính kèm Booking (`booking_file`):** Lưu trữ file booking / lệnh cấp rỗng từ khách hàng hoặc kế thừa từ `BookingOrder`.
+  - **Nghiệp vụ Cắt Kéo (Drop & Hook):** `is_split_trip`, `dropoff_driver`, `dropoff_vehicle`, `dropoff_trailer`, `driver_split_ratio`, `driver_allowance`, `dropoff_driver_allowance`.
+  - **Nghiệp vụ Chở Ghép 2 Cont 20ft (Twin 20ft Drayage):** `is_twin_container`, `container_number_2`, `seal_number_2`, `booking_or_bill_2`, `vgm_weight_2`, `cargo_notes_2`.
+  - **Quản lý Hạn Free DEM/DET & Giám định EIR:** `det_free_days`, `dem_free_days`, `det_expiry_date`, `dem_expiry_date`, `container_condition` (`GOOD`, `DAMAGED`, `CLEANING_REQUIRED`), `damage_description`.
 - `dispatch.TripTimelineItem`: Chi tiết các mốc tiến độ thực tế theo thời gian.
 
 ### G. Phân hệ Chứng từ Số & OCR (`apps/documents`)
-- `documents.TripDocument`: Lưu trữ ảnh chụp phiếu EIR lấy cont, EIR hạ cont, biên bản giao nhận hàng (POD), phiếu cân xe, hóa đơn nâng hạ kèm kết quả nhận diện OCR AI.
+- `documents.TripDocument`: Lưu trữ ảnh chụp phiếu EIR lấy cont, EIR hạ cont, biên bản giao nhận hàng (POD), phiếu cân xe, hóa đơn nâng hạ, và file Booking / Lệnh cấp rỗng (`BOOKING_NOTE`) kèm kết quả nhận diện OCR AI. Tự động sinh bản ghi chứng từ khi chuyến xe có file booking đính kèm.
 
 ### H. Phân hệ Chi phí & Đối chiếu (`apps/billing`)
 - `billing.TripExpense`: Chi phí phát sinh hiện trường liên kết trực tiếp tới `master_data.ExpenseItem` (`expense_item`) và tương thích ngược với 8 danh mục Bảng Kê Chi Phí Triền Võ (`category`). Hỗ trợ phân loại chứng từ theo `ExpenseReceiptType` (tránh xung đột với documents app), cờ thu hộ/chi hộ khách hàng `is_on_behalf_of_customer`, lưu trữ đầy đủ metadata hóa đơn điện tử: đơn vị phát hành (`invoice_issuer`), số hóa đơn (`invoice_number`), mã tra cứu (`invoice_lookup_code`), link tra cứu online (`invoice_lookup_url`), tiền trước thuế, thuế suất và tiền thuế GTGT. Tự động tính tổng chi phí và cập nhật P&L chuyến xe.

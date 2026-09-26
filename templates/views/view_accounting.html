@@ -1,4 +1,4 @@
-<!-- 6. PHÂN HỆ QUẢN LÝ KẾ TOÁN & ĐỐI SOÁT CHI PHÍ CHUYẾN XE -->
+<!-- 6. PHÂN HỆ QUẢN LÝ KẾ TOÁN & ĐỐI SOÁT CHI PHÍ, TẠM ỨNG & HOÀN ỨNG -->
 <div id="view-ke-toan" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-6">
     
     <!-- Header Phân Hệ -->
@@ -9,11 +9,11 @@
                     Phòng Kế Toán & Tài Chính
                 </span>
                 <span class="text-xs text-slate-400 font-medium">|</span>
-                <span class="text-xs text-slate-500 font-medium">TMS Accounting, Trip Settlement & P&L Reporting</span>
+                <span class="text-xs text-slate-500 font-medium">TMS Accounting, Trip Settlement, Advances & Funds</span>
             </div>
-            <h2 class="text-2xl font-black text-slate-800 tracking-tight font-heading mt-1">Quản lý Kế toán</h2>
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight font-heading mt-1">Quản Lý Kế Toán & Tạm Ứng - Hoàn Ứng</h2>
             <p class="text-slate-500 text-sm mt-0.5 font-medium">
-                Quản lý Kế toán & Đối soát Chi phí,... Báo cáo Kế toán, kiểm tra chứng từ hóa đơn và chốt sổ chi phí chuyến xe (Khóa sửa/xóa)
+                Kiểm soát đối soát chi phí chuyến, quản lý luồng tạm ứng tài xế phát sinh/chi hộ và cấp quỹ điều vận toàn diện
             </p>
         </div>
         <div class="flex items-center space-x-2.5">
@@ -21,125 +21,903 @@
                 <i class="ph ph-arrows-clockwise text-sm"></i>
                 <span>Làm Mới</span>
             </button>
-            <button onclick="showToast('info', 'Tính năng xuất bảng kê Excel đối soát chi phí đang chuẩn hóa định dạng kết nối Kế toán', 'Xuất Excel')" 
-                class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
+            <button onclick="exportAccountingToExcel()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
                 <i class="ph-fill ph-file-xls text-sm"></i>
                 <span>Xuất Báo Cáo Kế Toán</span>
             </button>
         </div>
     </div>
 
-    <!-- Cụm 4 Thẻ KPI Kế Toán & Đối Soát -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- KPI 1: Doanh Thu Cước Vận Tải -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Cước (Tháng)</span>
-                <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
-                    <i class="ph-fill ph-currency-circle-dollar"></i>
-                </span>
-            </div>
-            <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-revenue">-- đ</p>
-            <p class="text-xs text-teal-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-trips-count">
-                <i class="ph-fill ph-check-circle text-xs"></i> Tính trên các chuyến xe đã phát sinh
-            </p>
-        </div>
-
-        <!-- KPI 2: Tổng Chi Phí Chuyến Đã Phát Sinh -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chi Phí Chuyến</span>
-                <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
-                    <i class="ph-fill ph-receipt"></i>
-                </span>
-            </div>
-            <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-expense">-- đ</p>
-            <p class="text-xs text-slate-500 font-medium mt-1.5">Dầu, BOT, nâng hạ, cân xe, bồi dưỡng kho...</p>
-        </div>
-
-        <!-- KPI 3: Lợi Nhuận Gộp Vận Tải -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Lợi Nhuận Gộp Vận Tải</span>
-                <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
-                    <i class="ph-fill ph-chart-line-up"></i>
-                </span>
-            </div>
-            <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-profit">-- đ</p>
-            <p class="text-xs text-emerald-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-margin">
-                <i class="ph-bold ph-trend-up text-xs"></i> Biên lợi nhuận gộp: --%
-            </p>
-        </div>
-
-        <!-- KPI 4: Chuyến Chờ Chốt Sổ -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chờ Kế Toán Chốt Sổ</span>
-                <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
-                    <i class="ph-fill ph-lock-key-open"></i>
-                </span>
-            </div>
-            <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-pending">-- chuyến</p>
-            <p class="text-xs text-amber-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-settled">
-                <i class="ph-fill ph-lock-key text-xs"></i> Đã chốt sổ: -- chuyến
-            </p>
-        </div>
+    <!-- THANH SUBTABS KẾ TOÁN 7 TRỤ CỘT TÀI CHÍNH VẬN TẢI -->
+    <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap gap-1.5">
+        <button id="acct-tab-btn-1" onclick="switchAccountingSubTab('acct-settlements')" class="acct-subtab-btn active px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all bg-emerald-700 text-white shadow-sm">
+            <i class="ph-fill ph-receipt text-sm"></i>
+            <span>1. Đối Soát & Khóa Sổ Chuyến</span>
+        </button>
+        <button id="acct-tab-btn-2" onclick="switchAccountingSubTab('acct-driver-advances')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-hand-coins text-sm"></i>
+            <span>2. Tạm Ứng - Hoàn Ứng Tài Xế</span>
+            <span id="badge-acct-driver-advances" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">0</span>
+        </button>
+        <button id="acct-tab-btn-3" onclick="switchAccountingSubTab('acct-dispatcher-funds')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-wallet text-sm"></i>
+            <span>3. Quỹ Tạm Ứng Điều Vận</span>
+            <span id="badge-acct-dispatcher-funds" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800">0</span>
+        </button>
+        <button id="acct-tab-btn-4" onclick="switchAccountingSubTab('acct-reimbursables')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-file-text text-sm"></i>
+            <span>4. Chi Hộ & Debit Note</span>
+            <span id="badge-acct-reimbursables" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">0</span>
+        </button>
+        <button id="acct-tab-btn-5" onclick="switchAccountingSubTab('acct-cashbook')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-bank text-sm"></i>
+            <span>5. Sổ Quỹ Thu - Chi</span>
+        </button>
+        <button id="acct-tab-btn-6" onclick="switchAccountingSubTab('acct-subcontractors')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-truck text-sm"></i>
+            <span>6. Quyết Toán Xe Bạn (3PL)</span>
+            <span id="badge-acct-subcontractors" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">0</span>
+        </button>
+        <button id="acct-tab-btn-7" onclick="switchAccountingSubTab('acct-bot-audit')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-barcode text-sm"></i>
+            <span>7. Đối Soát BOT Tuyến</span>
+        </button>
     </div>
 
-    <!-- Bảng Đối Soát Chi Phí & Chốt Sổ Chuyến Xe -->
-    <div class="erp-table-container flex flex-col shadow-sm">
-        <!-- Thanh Tìm Kiếm & Bộ Lọc Kế Toán -->
-        <div class="p-4 border-b border-slate-200 bg-slate-50/70 flex flex-wrap gap-3 items-center justify-between">
-            <div class="flex flex-wrap items-center gap-2.5">
-                <div class="relative">
-                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="acct-search-input" onkeyup="filterAccountingTable()" type="text" 
-                        placeholder="Tìm chuyến, tài xế, khách hàng, số HĐ..." 
-                        class="form-input pl-9 pr-3.5 py-1.5 text-xs w-64 bg-white border-slate-200 rounded-xl" />
+    <!-- ========================================================================= -->
+    <!-- SUBTAB 1: ĐỐI SOÁT CHI PHÍ & CHỐT SỔ CHUYẾN XE -->
+    <!-- ========================================================================= -->
+    <div id="subtab-acct-settlements" class="acct-subtab-content space-y-6">
+        <!-- Cụm 4 Thẻ KPI Kế Toán & Đối Soát -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- KPI 1: Doanh Thu Cước Vận Tải -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Cước (Tháng)</span>
+                    <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-currency-circle-dollar"></i>
+                    </span>
                 </div>
-                <select id="acct-filter-settle" onchange="filterAccountingTable()" 
-                    class="form-select text-xs font-bold py-1.5 bg-white border-slate-200 rounded-xl text-slate-700">
-                    <option value="ALL">Tất cả tình trạng chốt sổ</option>
-                    <option value="PENDING">Chờ Kế toán đối soát & chốt</option>
-                    <option value="SETTLED">Đã chốt sổ chi phí (Khóa)</option>
-                </select>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-revenue">-- đ</p>
+                <p class="text-xs text-teal-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-trips-count">
+                    <i class="ph-fill ph-check-circle text-xs"></i> Tính trên các chuyến xe đã phát sinh
+                </p>
             </div>
-            <div class="text-xs text-slate-500 font-medium flex items-center gap-2">
-                <span class="inline-flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> Chờ chốt sổ
-                </span>
-                <span class="inline-flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Đã khóa sổ chi phí
-                </span>
+
+            <!-- KPI 2: Tổng Chi Phí Chuyến Đã Phát Sinh -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chi Phí Chuyến</span>
+                    <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-receipt"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-expense">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Dầu, BOT, nâng hạ, cân xe, bồi dưỡng kho...</p>
+            </div>
+
+            <!-- KPI 3: Lợi Nhuận Gộp Vận Tải -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Lợi Nhuận Gộp Vận Tải</span>
+                    <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-chart-line-up"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-profit">-- đ</p>
+                <p class="text-xs text-emerald-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-margin">
+                    <i class="ph-bold ph-trend-up text-xs"></i> Biên lợi nhuận gộp: --%
+                </p>
+            </div>
+
+            <!-- KPI 4: Chuyến Chờ Chốt Sổ -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chờ Kế Toán Chốt Sổ</span>
+                    <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-lock-key-open"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-pending">-- chuyến</p>
+                <p class="text-xs text-amber-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-settled">
+                    <i class="ph-fill ph-lock-key text-xs"></i> Đã chốt sổ: -- chuyến
+                </p>
             </div>
         </div>
 
-        <!-- Bảng Dữ Liệu Chi Tiết -->
-        <div class="overflow-x-auto">
-            <table class="erp-table whitespace-nowrap">
-                <thead>
-                    <tr>
-                        <th>Mã Chuyến & Ngày Chạy</th>
-                        <th>Khách Hàng & Tuyến Vận Tải</th>
-                        <th>Tài Xế & Biển Số</th>
-                        <th class="text-right">Doanh Thu Cước</th>
-                        <th class="text-right">Tổng Chi Phí</th>
-                        <th class="text-right">Lợi Nhuận Gộp</th>
-                        <th class="text-center">Chứng Từ / HĐĐT</th>
-                        <th class="text-center">Trạng Thái Sổ Sách</th>
-                        <th class="text-center">Thao Tác Kế Toán</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100" id="acct-tbody">
-                    <!-- Rendered by JS -->
-                    <tr>
-                        <td colspan="9" class="p-8 text-center text-slate-400 font-medium">
-                            <i class="ph ph-spinner-gap animate-spin text-2xl mb-2 inline-block text-emerald-600"></i>
-                            <p>Đang tải dữ liệu đối soát chi phí & báo cáo kế toán...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Bảng Đối Soát Chi Phí & Chốt Sổ Chuyến Xe -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <!-- Header thông tin & Bộ lọc đa cột thông minh cho Kế Toán -->
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-fill ph-funnel text-teal-700 text-sm"></i>
+                        <span>Bộ Lọc & Sắp Xếp: <strong>Đối soát chi phí, lợi nhuận & chốt sổ chuyến xe</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
+                            Hiển thị: <strong id="acct-filtered-count">0</strong> / <span id="acct-total-count">0</span> chuyến xe
+                        </span>
+                        <button type="button" onclick="resetAccountingFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
+                            <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Thanh lọc theo từng cột (Column Filters Bar) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-1 text-xs">
+                    <!-- 1. Lọc Khách hàng -->
+                    <div>
+                        <select id="acct-filter-customer" onchange="filterAccountingTable()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="">-- Tất cả Khách hàng --</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. Lọc Tài xế / Xe -->
+                    <div>
+                        <select id="acct-filter-driver" onchange="filterAccountingTable()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="">-- Tất cả Tài xế / Xe --</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. Lọc Tình trạng chốt sổ -->
+                    <div>
+                        <select id="acct-filter-settle" onchange="filterAccountingTable()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="ALL">-- Tất cả tình trạng sổ sách --</option>
+                            <option value="PENDING">Chờ Kế toán đối soát & chốt</option>
+                            <option value="SETTLED">Đã chốt sổ chi phí (Khóa)</option>
+                        </select>
+                    </div>
+
+                    <!-- 4. Tìm kiếm từ khóa đa năng -->
+                    <div>
+                        <div class="relative">
+                            <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input id="acct-search-input" oninput="filterAccountingTable()" type="text" 
+                                placeholder="Tìm mã chuyến, HĐĐT, tuyến..." 
+                                class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500" />
+                            <button type="button" onclick="clearAccountingSearch()" id="btn-clear-acct-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="ph-bold ph-x text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng Dữ Liệu Chi Tiết Kèm Sắp Xếp Cột -->
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <!-- 1. Mã Chuyến & Ngày Chạy -->
+                            <th onclick="toggleAccountingSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã Chuyến">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Mã Chuyến & Ngày Chạy</span>
+                                    <i id="sort-icon-acct-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 2. Khách Hàng & Tuyến Vận Tải -->
+                            <th onclick="toggleAccountingSort('customer_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách Hàng">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Khách Hàng & Tuyến Vận Tải</span>
+                                    <i id="sort-icon-acct-customer_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 3. Tài Xế & Biển Số -->
+                            <th onclick="toggleAccountingSort('driver_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tài Xế">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Tài Xế & Biển Số</span>
+                                    <i id="sort-icon-acct-driver_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 4. Doanh Thu Cước -->
+                            <th onclick="toggleAccountingSort('revenue')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Doanh Thu">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Doanh Thu Cước</span>
+                                    <i id="sort-icon-acct-revenue" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 5. Tổng Chi Phí -->
+                            <th onclick="toggleAccountingSort('expense')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Tổng Chi Phí">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Tổng Chi Phí</span>
+                                    <i id="sort-icon-acct-expense" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 6. Lợi Nhuận Gộp -->
+                            <th onclick="toggleAccountingSort('profit')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lợi Nhuận Gộp">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Lợi Nhuận Gộp</span>
+                                    <i id="sort-icon-acct-profit" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 7. Hóa Đơn / Chứng Từ -->
+                            <th onclick="toggleAccountingSort('invoices_count')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Số Hóa Đơn">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <span>Chứng Từ / HĐĐT</span>
+                                    <i id="sort-icon-acct-invoices_count" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 8. Trạng Thái Sổ Sách -->
+                            <th onclick="toggleAccountingSort('is_settled')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Trạng Thái">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <span>Trạng Thái Sổ Sách</span>
+                                    <i id="sort-icon-acct-is_settled" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <th class="text-center">Thao Tác Kế Toán</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="acct-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <!-- ========================================================================= -->
+    <!-- SUBTAB 2: TẠM ỨNG & HOÀN ỨNG TÀI XẾ (THEO CHUYẾN XE) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-acct-driver-advances" class="acct-subtab-content space-y-6 hidden">
+        <!-- 4 KPI Cards Tạm Ứng Tài Xế -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Tạm Ứng Đang Chờ Quyết Toán</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="acct-adv-stat-total">0 đ</p>
+                <p class="text-xs text-amber-700 font-medium mt-1.5" id="acct-adv-stat-pending-count">0 phiếu đang lưu hành</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chi Phí Thực Tế Đã Chi</span>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="acct-adv-stat-spent">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Gồm chi phí cty và chi hộ có hóa đơn</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-blue-600">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tiền Thừa Thu Hồi Từ Tài Xế</span>
+                <p class="text-3xl font-black text-blue-700 tabular-nums font-heading mt-1" id="acct-adv-stat-refund">0 đ</p>
+                <p class="text-xs text-blue-700 font-medium mt-1.5">Khi Tạm ứng &gt; Thực chi</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tiền Cần Chi Bù Cho Tài Xế</span>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading mt-1" id="acct-adv-stat-reimburse">0 đ</p>
+                <p class="text-xs text-rose-600 font-medium mt-1.5">Khi Thực chi &gt; Tạm ứng</p>
+            </div>
+        </div>
+
+        <!-- Bảng Tạm Ứng Chuyến Cho Tài Xế -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-fill ph-hand-coins text-amber-600 text-sm"></i>
+                        <span>Bảng Quản Lý: <strong>Tạm Ứng & Đối Soát Hoàn Ứng Chuyến Cho Tài Xế</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="openDriverAdvanceModal()" class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                            <i class="ph-bold ph-plus text-xs"></i>
+                            <span>Cấp Tạm Ứng Chuyến</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bộ lọc bảng tạm ứng tài xế -->
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1 text-xs">
+                    <div>
+                        <select id="filter-adv-driver" onchange="applyDriverAdvancesFilter()" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                            <option value="">-- Tất cả Tài xế --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="filter-adv-status" onchange="applyDriverAdvancesFilter()" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                            <option value="ALL">-- Tất cả Tình trạng --</option>
+                            <option value="ADVANCED">Đang tạm ứng (Chờ quyết toán)</option>
+                            <option value="SETTLED">Đã hoàn ứng quyết toán</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="filter-adv-source" onchange="applyDriverAdvancesFilter()" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                            <option value="ALL">-- Tất cả Nguồn tiền --</option>
+                            <option value="DISPATCHER_FUND">Trích Quỹ Điều Vận</option>
+                            <option value="COMPANY_DIRECT">Công ty chi trực tiếp</option>
+                        </select>
+                    </div>
+                    <div>
+                        <input id="filter-adv-search" oninput="applyDriverAdvancesFilter()" type="text" placeholder="Tìm mã phiếu, mã chuyến, xe..."
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Phiếu Ứng</th>
+                            <th>Mã Chuyến & Ngày</th>
+                            <th>Khách Hàng</th>
+                            <th>Tài Xế & Xe</th>
+                            <th class="text-right">Tiền Tạm Ứng</th>
+                            <th>Nguồn Tiền</th>
+                            <th class="text-right">Thực Chi Đối Soát</th>
+                            <th class="text-center">Chênh Lệch Hoàn Ứng</th>
+                            <th class="text-center">Trạng Thái</th>
+                            <th class="text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="acct-adv-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SUBTAB 3: QUỸ TẠM ỨNG ĐIỀU VẬN (CÔNG TY ➔ ĐIỀU VẬN) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-acct-dispatcher-funds" class="acct-subtab-content space-y-6 hidden">
+        <!-- 4 KPI Cards Quỹ Điều Vận -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Quỹ Cty Cấp Cho Điều Vận</span>
+                <p class="text-3xl font-black text-indigo-800 tabular-nums font-heading mt-1" id="acct-fund-stat-total">0 đ</p>
+                <p class="text-xs text-indigo-700 font-medium mt-1.5">Các phiếu quỹ đang lưu hành</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Xuất Cấp Cho Tài Xế</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="acct-fund-stat-disbursed">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Tạm ứng cho các chuyến xe đi đường</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Hoàn Ứng Về Công Ty</span>
+                <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading mt-1" id="acct-fund-stat-settled">0 đ</p>
+                <p class="text-xs text-emerald-700 font-medium mt-1.5">Chi phí có hóa đơn hợp lệ đã nộp</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Số Dư Quỹ Khả Dụng Hiện Hành</span>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="acct-fund-stat-remaining">0 đ</p>
+                <p class="text-xs text-teal-700 font-medium mt-1.5">Sẵn sàng cấp cho các chuyến tiếp theo</p>
+            </div>
+        </div>
+
+        <!-- Bảng Quản Lý Quỹ Tạm Ứng Điều Vận -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between text-xs flex-wrap gap-2">
+                <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                    <i class="ph-fill ph-wallet text-indigo-600 text-sm"></i>
+                    <span>Bảng Theo Dõi: <strong>Quỹ Tạm Ứng Công Ty Cho Bộ Phận Điều Phối Đội Xe</strong></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openDispatcherFundModal()" class="px-3.5 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                        <i class="ph-bold ph-plus text-xs"></i>
+                        <span>+ Yêu Cầu Tạm Ứng Quỹ Từ Cty</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Quỹ</th>
+                            <th>Điều Phối Viên Nhận</th>
+                            <th>Ngày Tạm Ứng</th>
+                            <th class="text-right">Tiền Cty Tạm Ứng</th>
+                            <th class="text-right">Đã Cấp Tài Xế</th>
+                            <th class="text-right">Đã Hoàn Ứng Về Cty</th>
+                            <th class="text-right">Số Dư Khả Dụng</th>
+                            <th class="text-center">Trạng Thái</th>
+                            <th>Người Duyệt</th>
+                            <th class="text-center">Thao Tác Kế Toán</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="acct-fund-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SUBTAB 4: ĐỐI SOÁT & THU HỒI CHI HỘ KHÁCH HÀNG (DEBIT NOTE / REIMBURSABLES) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-acct-reimbursables" class="acct-subtab-content hidden space-y-6">
+        <!-- Cụm 4 Thẻ KPI Chi Hộ -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Đã Chi Hộ KH</span>
+                    <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-hand-coins"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="reimburse-stat-total">-- đ</p>
+                <p class="text-xs text-teal-700 font-medium mt-1.5 flex items-center gap-1" id="reimburse-stat-count">
+                    <i class="ph-fill ph-check-circle text-xs"></i> 0 khoản chi hộ
+                </p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Thu Hồi Từ KH</span>
+                    <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-check-circle"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1" id="reimburse-stat-collected">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Đã hoàn tiền vào quỹ / tài khoản cty</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Còn Phải Thu Hồi</span>
+                    <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-hourglass-high"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="reimburse-stat-pending">-- đ</p>
+                <p class="text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1" id="reimburse-stat-pending-count">
+                    <i class="ph-fill ph-warning-circle text-xs"></i> Chờ khách hàng hoàn ứng
+                </p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Lập Debit Note</span>
+                    <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-file-text"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="reimburse-stat-billed">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Đã gửi bảng kê chi hộ cho kế toán KH</p>
+            </div>
+        </div>
+
+        <!-- Bảng Danh Sách Khoản Chi Hộ & Thao Tác Debit Note -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-fill ph-file-text text-teal-700 text-sm"></i>
+                        <span>Bảng Kê Chi Hộ & Debit Note: <strong>Nâng hạ, cược vỏ cont, cân xe, kiểm dịch, bồi dưỡng kho</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="openCreateDebitNoteModal()" class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                            <i class="ph-bold ph-files text-xs"></i>
+                            <span>+ Gom Nhóm Lập Debit Note</span>
+                        </button>
+                        <button type="button" onclick="openSettleDebitNoteModal()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                            <i class="ph-bold ph-check-circle text-xs"></i>
+                            <span>Xác Nhận KH Hoàn Tiền 1-Chạm</span>
+                        </button>
+                        <button type="button" onclick="exportReimbursablesToExcel()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold font-heading border border-slate-200 shadow-2xs flex items-center gap-1.5 transition-all">
+                            <i class="ph-fill ph-file-xls text-emerald-700 text-xs"></i>
+                            <span>Xuất Debit Note Excel</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bộ lọc bảng chi hộ -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-1 text-xs">
+                    <div>
+                        <select id="reimburse-filter-status" onchange="loadReimbursablesData()" 
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="ALL">-- Tất cả trạng thái thu hồi --</option>
+                            <option value="PENDING" selected>Chờ thu / Chưa gửi Debit Note</option>
+                            <option value="BILLED">Đã xuất Debit Note</option>
+                            <option value="COLLECTED">Đã thu hồi tiền từ khách</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="reimburse-filter-customer" onchange="loadReimbursablesData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <option value="">-- Tất cả Khách hàng --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <input type="text" id="reimburse-search" oninput="debounce(loadReimbursablesData, 300)()" placeholder="Tìm số HĐ, mã tra cứu, vỏ cont, chuyến..."
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
+                            Đã chọn: <strong id="reimburse-selected-badge">0</strong> khoản
+                        </span>
+                        <button type="button" onclick="selectAllReimbursables(true)" class="text-xs text-teal-700 hover:underline font-bold">Chọn tất cả</button>
+                        <button type="button" onclick="selectAllReimbursables(false)" class="text-xs text-slate-500 hover:underline">Bỏ chọn</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="w-8 text-center">
+                                <input type="checkbox" id="reimburse-check-all" onchange="toggleCheckAllReimbursables(this)" class="rounded text-teal-600 focus:ring-teal-500">
+                            </th>
+                            <th>Mã Chuyến / Ngày</th>
+                            <th>Khách Hàng</th>
+                            <th>Số Cont / Booking</th>
+                            <th>Khoản Mục Chi Hộ</th>
+                            <th class="text-right">Số Tiền (VNĐ)</th>
+                            <th>Hóa Đơn / Tra Cứu</th>
+                            <th>Số Debit Note</th>
+                            <th class="text-center">Trạng Thái</th>
+                            <th>Ngày Hoàn Tiền</th>
+                            <th class="text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="acct-reimburse-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SUBTAB 5: SỔ QUỸ THU - CHI & DÒNG TIỀN VẬN TẢI (CASH & BANK BOOK) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-acct-cashbook" class="acct-subtab-content hidden space-y-6">
+        <!-- Cụm 4 Thẻ KPI Sổ Quỹ -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tồn Quỹ Tiền Mặt</span>
+                    <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-money"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1" id="cash-stat-cash-balance">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Tiền mặt tại két công ty</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Số Dư Tài Khoản Ngân Hàng</span>
+                    <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-bank"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1" id="cash-stat-bank-balance">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Tài khoản thanh toán ngân hàng</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Tồn Quỹ Toàn Cty</span>
+                    <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-wallet"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="cash-stat-total-balance">-- đ</p>
+                <p class="text-xs text-indigo-700 font-medium mt-1.5">Tiền mặt + Số dư ngân hàng</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Dòng Tiền Thuần Trong Kỳ</span>
+                    <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-chart-line-up"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="cash-stat-period-net">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5" id="cash-stat-in-out-summary">Thu: -- | Chi: --</p>
+            </div>
+        </div>
+
+        <!-- Bảng Sổ Quỹ Thu - Chi Mẫu S03a-DN -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-fill ph-bank text-emerald-700 text-sm"></i>
+                        <span>Sổ Quỹ Thu - Chi: <strong>Hạch toán minh bạch dòng tiền Tiền mặt & Ngân hàng (Mẫu S03a-DN)</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="openCreateCashTransactionModal('INFLOW')" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                            <i class="ph-bold ph-plus text-xs"></i>
+                            <span>+ Lập Phiếu Thu</span>
+                        </button>
+                        <button type="button" onclick="openCreateCashTransactionModal('OUTFLOW')" class="px-3.5 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                            <i class="ph-bold ph-minus text-xs"></i>
+                            <span>- Lập Phiếu Chi</span>
+                        </button>
+                        <button type="button" onclick="exportCashBookToExcel()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold font-heading border border-slate-200 shadow-2xs flex items-center gap-1.5 transition-all">
+                            <i class="ph-fill ph-file-xls text-emerald-700 text-xs"></i>
+                            <span>Xuất Sổ Quỹ Excel</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bộ lọc Sổ quỹ -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-1 text-xs">
+                    <div>
+                        <select id="cash-filter-method" onchange="loadCashBookData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500">
+                            <option value="ALL">-- Tất cả Quỹ (Tiền mặt & NH) --</option>
+                            <option value="CASH">Quỹ Tiền Mặt</option>
+                            <option value="BANK">Tài Khoản Ngân Hàng</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="cash-filter-type" onchange="loadCashBookData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500">
+                            <option value="ALL">-- Tất cả giao dịch (Thu & Chi) --</option>
+                            <option value="INFLOW">➕ Chỉ hiển thị Phiếu Thu</option>
+                            <option value="OUTFLOW">➖ Chỉ hiển thị Phiếu Chi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="cash-filter-category" onchange="loadCashBookData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500">
+                            <option value="ALL">-- Tất cả khoản mục thu/chi --</option>
+                            <option value="FREIGHT_REVENUE">Thu cước vận tải từ khách hàng</option>
+                            <option value="REIMBURSABLE_COLLECTION">Thu hồi chi hộ (Debit Note)</option>
+                            <option value="ADVANCE_REFUND">Thu hoàn ứng tiền thừa</option>
+                            <option value="DISPATCHER_FUND_ADVANCE">Chi tạm ứng Quỹ Điều vận</option>
+                            <option value="DRIVER_TRIP_ADVANCE">Chi tạm ứng Chuyến xe (Tài xế)</option>
+                            <option value="SUBCONTRACTOR_PAYMENT">Chi thanh toán Thầu phụ / Xe bạn</option>
+                            <option value="FUEL_PAYMENT">Chi mua xăng dầu</option>
+                            <option value="ETC_TOPUP">Chi nạp tiền tài khoản BOT/ETC</option>
+                            <option value="VEHICLE_MAINTENANCE">Chi bảo dưỡng sửa xe</option>
+                        </select>
+                    </div>
+                    <div>
+                        <input type="text" id="cash-search" oninput="debounce(loadCashBookData, 300)()" placeholder="Tìm số phiếu, đối tác, số tham chiếu..."
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Phiếu</th>
+                            <th>Ngày Hạch Toán</th>
+                            <th class="text-center">Loại</th>
+                            <th>Kênh Quỹ</th>
+                            <th>Khoản Mục Thu / Chi</th>
+                            <th>Đối Tác Giao Dịch</th>
+                            <th>Số Tham Chiếu</th>
+                            <th class="text-right">Số Tiền (VNĐ)</th>
+                            <th>Người Lập</th>
+                            <th>Diễn Giải Lý Do</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="acct-cash-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SUBTAB 6: QUYẾT TOÁN XE BẠN / THẦU PHỤ 3PL (SUBCONTRACTOR SETTLEMENTS) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-acct-subcontractors" class="acct-subtab-content hidden space-y-6">
+        <!-- Cụm 4 Thẻ KPI Quyết Toán Xe Bạn -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-slate-700 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chuyến Xe Bạn Chạy</span>
+                    <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-truck"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="subcon-stat-trips">-- chuyến</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Đội xe thuê ngoài / Thầu phụ 3PL</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Cước Trả Xe Bạn</span>
+                    <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-currency-circle-dollar"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="subcon-stat-cost">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Cước thuê xe ngoài thỏa thuận</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Tạm Ứng Cước</span>
+                    <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-hand-coins"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="subcon-stat-advance">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Đã chi trước cho chủ xe bạn</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Còn Phải Quyết Toán</span>
+                    <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-scales"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="subcon-stat-remaining">-- đ</p>
+                <p class="text-xs text-emerald-700 font-medium mt-1.5" id="subcon-stat-settled-info">Đã quyết toán: -- chuyến</p>
+            </div>
+        </div>
+
+        <!-- Bảng Quyết Toán Xe Bạn -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-fill ph-truck text-slate-800 text-sm"></i>
+                        <span>Bảng Quyết Toán Thầu Phụ 3PL: <strong>Đối soát cước thuê xe ngoài, tạm ứng và chênh lệch cty hưởng</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="exportSubcontractorToExcel()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                            <i class="ph-fill ph-file-xls text-sm"></i>
+                            <span>Xuất Bảng Kê Xe Bạn Excel</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bộ lọc Quyết toán xe bạn -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 text-xs">
+                    <div>
+                        <select id="subcon-filter-status" onchange="loadSubcontractorData()"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700">
+                            <option value="ALL">-- Tất cả trạng thái quyết toán --</option>
+                            <option value="PENDING" selected>Chờ thanh toán / Còn nợ thầu phụ</option>
+                            <option value="PARTIAL">Thanh toán một phần</option>
+                            <option value="SETTLED">Đã quyết toán xong</option>
+                        </select>
+                    </div>
+                    <div>
+                        <input type="text" id="subcon-search" oninput="debounce(loadSubcontractorData, 300)()" placeholder="Tìm biển số xe, mã chuyến, số cont..."
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700">
+                    </div>
+                    <div class="flex items-center text-xs text-slate-500 font-medium justify-end">
+                        <span id="subcon-filtered-badge">Hiển thị: 0 chuyến xe bạn</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Chuyến</th>
+                            <th>Biển Số Xe Bạn</th>
+                            <th>Tài Xế</th>
+                            <th>Khách Hàng & Tuyến Vận Chuyển</th>
+                            <th class="text-right">Cước Thu Khách</th>
+                            <th class="text-right">Cước Trả Xe Bạn</th>
+                            <th class="text-right">Chênh Lệch Cty Hưởng</th>
+                            <th class="text-right">Đã Tạm Ứng</th>
+                            <th class="text-right">Còn Phải Trả</th>
+                            <th class="text-center">Trạng Thái</th>
+                            <th>Ghi Chú</th>
+                            <th class="text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="acct-subcon-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SUBTAB 7: ĐỐI SOÁT CHUYÊN SÂU VÉ CẦU ĐƯỜNG BOT / ETC VS ĐỊNH MỨC TUYẾN -->
+    <!-- ========================================================================= -->
+    <div id="subtab-acct-bot-audit" class="acct-subtab-content hidden space-y-6">
+        <!-- Cụm 4 Thẻ KPI Đối Soát BOT -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chuyến Xe Có Vé BOT</span>
+                    <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-barcode"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="bot-stat-trips">-- chuyến</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Đã quét OCR & phát sinh vé trạm</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Tiền Vé BOT Thực Tế</span>
+                    <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-receipt"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="bot-stat-actual">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Tổng chi phí vé BOT tài xế đã chi</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Định Mức Tuyến Chuẩn</span>
+                    <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-compass"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="bot-stat-standard">-- đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5">Theo biểu cước RouteTariff</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Cảnh Báo Vượt Định Mức</span>
+                    <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                        <i class="ph-fill ph-warning"></i>
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="bot-stat-variance">-- chuyến</p>
+                <p class="text-xs text-amber-700 font-medium mt-1.5">Chuyến xe có chi BOT vượt > 15%</p>
+            </div>
+        </div>
+
+        <!-- Bảng Đối Soát Vé Cầu Đường BOT Thực Tế vs Định Mức -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between text-xs flex-wrap gap-2">
+                <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                    <i class="ph-fill ph-barcode text-teal-700 text-sm"></i>
+                    <span>Bảng Đối Chiếu: <strong>Vé Cầu Đường BOT Hiện Trường vs Định Mức Tuyến Đường</strong></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="loadBotAuditData()" class="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold font-heading border border-slate-200 shadow-2xs flex items-center gap-1.5 transition-all">
+                        <i class="ph ph-arrows-clockwise text-xs"></i>
+                        <span>Làm Mới</span>
+                    </button>
+                    <button type="button" onclick="exportBotAuditToExcel()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                        <i class="ph-fill ph-file-xls text-sm"></i>
+                        <span>Xuất Báo Cáo BOT</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Chuyến</th>
+                            <th>Đầu Kéo</th>
+                            <th>Tài Xế</th>
+                            <th>Lộ Trình Vận Chuyển</th>
+                            <th class="text-center">Số Vé BOT</th>
+                            <th class="text-right">Thực Chi BOT (VNĐ)</th>
+                            <th class="text-right">Định Mức Tuyến (VNĐ)</th>
+                            <th class="text-right">Chênh Lệch</th>
+                            <th class="text-center">Đánh Giá Kiểm Soát</th>
+                            <th>Chi Tiết Vé & Hóa Đơn Trích Xuất</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="acct-bot-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>

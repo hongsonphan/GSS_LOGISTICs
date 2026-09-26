@@ -1,0 +1,114 @@
+<!-- MODAL THỎA THUẬN CƯỚC & QUYẾT TOÁN XE BẠN / THẦU PHỤ 3PL -->
+<div id="modal-subcontractor-settle" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs hidden p-4 animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-slate-800 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-lg text-amber-400">
+                    <i class="ph-fill ph-truck"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base tracking-tight font-heading" id="subcon-modal-title">Đối Soát & Quyết Toán Xe Bạn</h3>
+                    <p class="text-slate-300 text-xs mt-0.5">Thầu Phụ Vận Tải 3PL • Chốt cước thuê ngoài & thanh toán</p>
+                </div>
+            </div>
+            <button onclick="closeSubcontractorModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition-colors">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Form Body -->
+        <form id="form-subcontractor-settle" onsubmit="handleSaveSubcontractor(event)" class="p-6 space-y-4 text-xs font-semibold text-slate-700">
+            <input type="hidden" id="subcon-trip-id" value="">
+            <input type="hidden" id="subcon-action-type" value="update_cost">
+
+            <!-- Card Tóm tắt chuyến xe -->
+            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-bold">Chuyến xe:</span>
+                    <span id="subcon-trip-code" class="font-black text-slate-800 text-sm">--</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-bold">Biển số xe & Tài xế:</span>
+                    <span id="subcon-vehicle-driver" class="font-bold text-slate-800">--</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-bold">Lộ trình vận chuyển:</span>
+                    <span id="subcon-route" class="font-medium text-slate-700">--</span>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1 border-t border-slate-200">
+                    <span class="text-slate-500 font-bold">Doanh thu cước thu khách:</span>
+                    <span id="subcon-revenue" class="font-black text-emerald-700 text-sm">0 đ</span>
+                </div>
+            </div>
+
+            <!-- Các ô nhập tiền cước & tạm ứng -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-slate-600 mb-1">Cước Thỏa Thuận Trả Xe Bạn (VNĐ) <span class="text-rose-500">*</span></label>
+                    <input type="number" id="subcon-cost" min="0" step="10000" required placeholder="vd: 3500000"
+                        oninput="calculateSubcontractorMargin()"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700">
+                </div>
+                <div>
+                    <label class="block text-slate-600 mb-1">Đã Tạm Ứng Trước (VNĐ)</label>
+                    <input type="number" id="subcon-advance" min="0" step="10000" placeholder="vd: 1000000"
+                        oninput="calculateSubcontractorMargin()"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700">
+                </div>
+            </div>
+
+            <!-- Phân tích Chênh lệch & Công nợ còn lại -->
+            <div class="grid grid-cols-2 gap-3 p-3 bg-amber-50/60 rounded-xl border border-amber-200 text-xs">
+                <div>
+                    <span class="text-slate-500 block text-[11px]">Chênh lệch cty hưởng (Gross Margin):</span>
+                    <span id="subcon-calc-margin" class="font-black text-teal-800 text-sm">0 đ</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[11px]">Số tiền còn phải trả xe bạn:</span>
+                    <span id="subcon-calc-remaining" class="font-black text-rose-700 text-sm">0 đ</span>
+                </div>
+            </div>
+
+            <!-- Cụm trường khi thực hiện Quyết toán hoàn tất (Settle) -->
+            <div id="subcon-settle-section" class="space-y-3 hidden">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-600 mb-1">Hình Thức Chi Trả <span class="text-rose-500">*</span></label>
+                        <select id="subcon-payment-method" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white">
+                            <option value="BANK">Chuyển khoản Ngân hàng</option>
+                            <option value="CASH">Tiền mặt</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-600 mb-1">STK & Ngân Hàng Nhận</label>
+                        <input type="text" id="subcon-bank-info" placeholder="vd: MB Bank - 123456789"
+                            class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
+                    </div>
+                </div>
+                <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 flex items-center gap-2">
+                    <i class="ph-fill ph-check-circle text-emerald-600 text-sm"></i>
+                    <span>Hệ thống sẽ tự động lập 01 Phiếu Chi Sổ Quỹ cho số tiền còn lại phải thanh toán.</span>
+                </div>
+            </div>
+
+            <!-- Ghi chú đối soát -->
+            <div>
+                <label class="block text-slate-600 mb-1">Ghi Chú Thỏa Thuận & Đối Soát</label>
+                <textarea id="subcon-notes" rows="2" placeholder="Ghi chú về hoa hồng, trừ hao dầu hoặc phụ phí phát sinh..."
+                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700"></textarea>
+            </div>
+
+            <!-- Buttons -->
+            <div class="pt-2 border-t border-slate-200 flex justify-end space-x-2">
+                <button type="button" onclick="closeSubcontractorModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-colors">
+                    Hủy Bỏ
+                </button>
+                <button type="submit" id="btn-save-subcon" class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                    <i class="ph-bold ph-check text-sm"></i>
+                    <span id="btn-save-subcon-label">Lưu Thỏa Thuận Cước</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,431 @@
+<!-- 8. PHÂN HỆ BÁO CÁO & PHÂN TÍCH QUẢN TRỊ TMS (BI ANALYTICS) -->
+<div id="view-bao-cao" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-6">
+    
+    <!-- HEADER PHÂN HỆ: TIÊU ĐỀ & THANH ĐIỀU KHIỂN KỲ BÁO CÁO -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-100 text-teal-800 border border-teal-200 uppercase font-heading flex items-center gap-1">
+                    <i class="ph-fill ph-chart-polar"></i> TMS Business Intelligence
+                </span>
+                <span class="text-xs text-slate-400 font-medium">Báo cáo kiểm toán & Phân tích chuyên sâu</span>
+            </div>
+            <h2 class="text-2xl font-black text-slate-900 font-heading tracking-tight mt-1">Báo Cáo Quản Trị Vận Tải & Phân Tích Hiệu Suất</h2>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">Giám sát 6 trụ cột cốt lõi: Hiệu suất xe, Cảnh báo DEM/DET, Tỷ lệ OTP, Thu hồi chi hộ, Cắt kéo/Lưu xe sau 0h và Sự cố hàng hóa</p>
+        </div>
+
+        <!-- Cụm Bộ Lọc Kỳ Báo Cáo & Nút Xuất Dữ Liệu -->
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Bộ chọn kỳ -->
+            <div class="bg-white p-1 rounded-xl border border-slate-200 shadow-2xs flex items-center text-xs font-bold font-heading">
+                <button type="button" onclick="changeReportPeriod('today')" id="btn-period-today" class="report-period-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors">Hôm Nay</button>
+                <button type="button" onclick="changeReportPeriod('week')" id="btn-period-week" class="report-period-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors">Tuần Này</button>
+                <button type="button" onclick="changeReportPeriod('month')" id="btn-period-month" class="report-period-btn px-3 py-1.5 rounded-lg bg-teal-700 text-white shadow-xs transition-colors">Tháng Này</button>
+                <button type="button" onclick="changeReportPeriod('quarter')" id="btn-period-quarter" class="report-period-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors">Quý Này</button>
+                <button type="button" onclick="changeReportPeriod('all')" id="btn-period-all" class="report-period-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors">Tất Cả</button>
+            </div>
+
+            <!-- Nút Xuất Excel -->
+            <button type="button" onclick="exportReportToExcel()" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all" title="Xuất dữ liệu báo cáo sang tệp Excel/CSV">
+                <i class="ph-bold ph-microsoft-excel-logo text-base"></i>
+                <span>Xuất Excel</span>
+            </button>
+
+            <!-- Nút In Phiếu -->
+            <button type="button" onclick="printReportDocument()" class="px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold font-heading border border-slate-200 shadow-xs flex items-center gap-1.5 transition-all">
+                <i class="ph-bold ph-printer text-base"></i>
+                <span>In Báo Cáo</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- THANH SUBTABS: 6 BÁO CÁO QUẢN TRỊ CHUẨN TMS -->
+    <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap gap-2">
+        <button id="report-tab-btn-1" onclick="switchReportSubTab('report-1')" class="report-subtab-btn active px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all bg-teal-700 text-white shadow-sm">
+            <i class="ph-fill ph-truck text-sm"></i>
+            <span>1. Hiệu Suất Đội Xe & P&L Đầu Xe</span>
+        </button>
+        <button id="report-tab-btn-2" onclick="switchReportSubTab('report-2')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-warning text-sm"></i>
+            <span>2. Chu Trình Vỏ Cont & DEM/DET</span>
+            <span id="badge-report-det-warning" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-100 text-rose-700">0</span>
+        </button>
+        <button id="report-tab-btn-3" onclick="switchReportSubTab('report-3')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-clock text-sm"></i>
+            <span>3. Đúng Giờ & Chất Lượng OTP</span>
+        </button>
+        <button id="report-tab-btn-4" onclick="switchReportSubTab('report-4')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-receipt text-sm"></i>
+            <span>4. Chi Phí Tuyến & Hoàn Chi Hộ</span>
+        </button>
+        <button id="report-tab-btn-5" onclick="switchReportSubTab('report-5')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-moon-stars text-sm"></i>
+            <span>5. Cắt Kéo & Lưu Xe Sau 0H</span>
+            <span id="badge-report-layover" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">0</span>
+        </button>
+        <button id="report-tab-btn-6" onclick="switchReportSubTab('report-6')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-shield-warning text-sm"></i>
+            <span>6. Ngoại Lệ & Sự Cố (OS&D)</span>
+        </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 1: HIỆU SUẤT ĐỘI XE & TÀI XẾ (FLEET & DRIVER UTILIZATION) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-1" class="report-subtab-content space-y-4">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Xe Nhà Khai Thác</span>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="rep1-stat-owned-ratio">0.0%</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep1-note-owned">Xe Nhà: 0 chuyến · Xe Bạn: 0 chuyến</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Doanh Thu Vận Tải</span>
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep1-stat-revenue">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Cước hợp đồng vận chuyển</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chi Phí Vận Hành Đội Xe</span>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading mt-1" id="rep1-stat-expense">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Lương tài xế, dầu, BOT, bồi dưỡng</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Lợi Nhuận Gộp & Biên LN</span>
+                <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading mt-1" id="rep1-stat-profit">0 đ</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1" id="rep1-stat-margin">Biên LN gộp: 0.0%</p>
+            </div>
+        </div>
+
+        <!-- Bảng P&L Từng Đầu Xe -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                    <i class="ph-fill ph-chart-bar text-teal-700"></i>
+                    Bảng P&L Chi Tiết Từng Đầu Xe (Vehicle Profit Center)
+                </h3>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep1-search" oninput="applyReport1Filters()" placeholder="Tìm biển số, tài xế..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-52 focus:border-teal-600">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th onclick="toggleReport1Sort('plate')" class="cursor-pointer">Biển Số Xe</th>
+                            <th onclick="toggleReport1Sort('vehicle_type')" class="cursor-pointer">Loại Phương Tiện</th>
+                            <th onclick="toggleReport1Sort('ownership')" class="cursor-pointer">Sở Hữu</th>
+                            <th onclick="toggleReport1Sort('driver')" class="cursor-pointer">Tài Xế Mặc Định</th>
+                            <th onclick="toggleReport1Sort('trips_count')" class="cursor-pointer text-center">Số Chuyến</th>
+                            <th onclick="toggleReport1Sort('revenue')" class="cursor-pointer text-right">Doanh Thu</th>
+                            <th onclick="toggleReport1Sort('expense')" class="cursor-pointer text-right">Chi Phí</th>
+                            <th onclick="toggleReport1Sort('profit')" class="cursor-pointer text-right">Lợi Nhuận Gộp</th>
+                            <th onclick="toggleReport1Sort('margin_percent')" class="cursor-pointer text-center">Biên LN (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep1-pnl-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 2: CHU TRÌNH VỎ CONTAINER & CẢNH BÁO PHẠT HÃNG TÀU (DEM/DET) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-2" class="report-subtab-content space-y-4 hidden">
+        <!-- 3 Thẻ Đèn Giao Thông Cảnh Báo -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs border-l-4 border-l-emerald-600">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">🟢 An Toàn (Free-Time &gt; 2 Ngày)</span>
+                    <i class="ph-fill ph-shield-check text-emerald-600 text-xl"></i>
+                </div>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep2-stat-safe">0 Cont</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Đang bốc/dỡ trong thời hạn cho phép</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-amber-200 bg-amber-50/20 shadow-xs border-l-4 border-l-amber-500">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-amber-800 uppercase tracking-wider">🟡 Cảnh Báo Hết Hạn (&le; 1 Ngày)</span>
+                    <i class="ph-fill ph-clock-countdown text-amber-600 text-xl"></i>
+                </div>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep2-stat-warning">0 Cont</p>
+                <p class="text-xs text-amber-700 font-medium mt-1">Ưu tiên điều xe hạ rỗng ngay hôm nay</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-rose-200 bg-rose-50/30 shadow-xs border-l-4 border-l-rose-600">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-rose-800 uppercase tracking-wider">🔴 Nguy Cấp Quá Hạn (Phạt Hãng Tàu)</span>
+                    <i class="ph-fill ph-warning-octagon text-rose-600 text-xl"></i>
+                </div>
+                <p class="text-3xl font-black text-rose-700 tabular-nums font-heading mt-1" id="rep2-stat-overdue">0 Cont</p>
+                <p class="text-xs text-rose-600 font-bold mt-1" id="rep2-stat-fines">Ước tính tiền phạt: 0 đ</p>
+            </div>
+        </div>
+
+        <!-- Bảng Chi Tiết Vỏ Cont & DEM/DET -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                    <i class="ph-fill ph-barcode text-teal-700"></i>
+                    Bảng Giám Sát Vỏ Container & Theo Dõi Phạt Lưu Cont Hãng Tàu
+                </h3>
+                <input type="text" id="filter-rep2-search" oninput="applyReport2Filters()" placeholder="Tìm số cont, khách, hãng tàu..." 
+                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Số Container</th>
+                            <th>Mã Chuyến</th>
+                            <th>Khách Hàng</th>
+                            <th>Hãng Tàu</th>
+                            <th>Vị Trí Hiện Tại</th>
+                            <th class="text-center">Free DET (Ngày)</th>
+                            <th>Hạn Trả Vỏ</th>
+                            <th class="text-center">Trạng Thái Hạn</th>
+                            <th class="text-right">Tiền Phạt Ước Tính</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep2-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 3: ĐÚNG GIỜ & CHẤT LƯỢNG DỊCH VỤ CAM KẾT (OTP / SLA) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-3" class="report-subtab-content space-y-4 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Đúng Giờ Tổng Thể (OTP)</span>
+                <p class="text-3xl font-black text-teal-700 tabular-nums font-heading mt-1" id="rep3-stat-otp">0.0%</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Cam kết SLA với chủ hàng</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-blue-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Lấy Cont Đúng Giờ</span>
+                <p class="text-3xl font-black text-blue-700 tabular-nums font-heading mt-1" id="rep3-stat-pickup">0 Chuyến</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Đúng giờ mở bãi cảng/depot</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đến Kho Khách Đúng Hẹn</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep3-stat-arrival">0 Chuyến</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Không bị phạt xếp hàng cửa dock</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Hạ Bãi Trước Giờ Cắt Máng</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep3-stat-closing">100%</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1">Triệt tiêu rủi ro rớt tàu (Rolled)</p>
+            </div>
+        </div>
+
+        <!-- Bảng Chi Tiết Các Chuyến & Phân Tích Nguyên Nhân Trễ -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                    <i class="ph-fill ph-timer text-teal-700"></i>
+                    Bảng Nhật Ký Tuân Thủ Mốc Giờ Vận Chuyển & Phân Loại Sự Cố Trễ Chuyến
+                </h3>
+                <input type="text" id="filter-rep3-search" oninput="applyReport3Filters()" placeholder="Tìm mã chuyến, tuyến, nguyên nhân..." 
+                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Chuyến</th>
+                            <th>Khách Hàng</th>
+                            <th>Tuyến Vận Tải</th>
+                            <th>Tài Xế & Biển Số</th>
+                            <th>Giờ Hẹn Kho</th>
+                            <th>Giờ Vào Cổng Thực Tế</th>
+                            <th>Hạn Cắt Máng</th>
+                            <th class="text-center">Đúng Giờ?</th>
+                            <th>Nguyên Nhân Trễ (Nếu có)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep3-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 4: ĐỐI SOÁT CHI PHÍ TUYẾN & THU HỒI KHOẢN CHI HỘ (REIMBURSEMENT) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-4" class="report-subtab-content space-y-4 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Vé Cầu Đường (BOT)</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep4-stat-bot">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">ePass / VETC điện tử</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-blue-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nhiên Liệu Dầu DO</span>
+                <p class="text-3xl font-black text-blue-700 tabular-nums font-heading mt-1" id="rep4-stat-fuel">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Định mức tiêu hao chuyến</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Khoản Chi Hộ Khách</span>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="rep4-stat-reimbursable">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Nâng hạ phụ, cẩu bãi, vệ sinh, kiểm dịch</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chi Hộ Chưa Thu Hồi</span>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading mt-1" id="rep4-stat-pending-reimb">0 đ</p>
+                <p class="text-xs text-rose-600 font-bold mt-1">Cần lập bảng kê phụ phí gửi khách</p>
+            </div>
+        </div>
+
+        <!-- Bảng Kê Các Khoản Chi Hộ Chờ Thu Hồi Từ Khách Hàng -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                    <i class="ph-fill ph-hand-coins text-teal-700"></i>
+                    Bảng Kê Chi Phí Chi Hộ Khách Hàng Chờ Hoàn Ứng (Reimbursable Ledger)
+                </h3>
+                <input type="text" id="filter-rep4-search" oninput="applyReport4Filters()" placeholder="Tìm khách hàng, số HĐ, loại phí..." 
+                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Chuyến</th>
+                            <th>Khách Hàng</th>
+                            <th>Khoản Mục Chi Hộ</th>
+                            <th>Phân Loại</th>
+                            <th class="text-right">Số Tiền (VNĐ)</th>
+                            <th>Số Hóa Đơn / Chứng Từ</th>
+                            <th>Ngày Phát Sinh</th>
+                            <th class="text-center">Tình Trạng Thu Hồi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep4-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 5: BÀN GIAO CẮT KÉO & LƯU MOOC / LƯU XE CHỜ HẠ CONT SAU 0H -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-5" class="report-subtab-content space-y-4 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chuyến Chờ Hạ Cont Sau 0H / Neo Đêm</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep5-stat-overnight-count">0 Chuyến</p>
+                <p class="text-xs text-amber-700 font-medium mt-1">Xe đã ra kho nhưng phải chờ bãi cảng mở lúc 0h</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Phụ Phí Lưu Xe Thu Từ Khách</span>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="rep5-stat-detention-fees">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Tính theo giờ neo xe & lưu ca đêm</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Phụ Cấp Trực Đêm Trả Tài Xế</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep5-stat-allowances">0 đ</p>
+                <p class="text-xs text-indigo-700 font-medium mt-1">Bù đắp tài xế trực xe qua đêm</p>
+            </div>
+        </div>
+
+        <!-- Bảng Chi Tiết Cắt Kéo & Neo Xe Sau 0H -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                    <i class="ph-fill ph-arrows-split text-teal-700"></i>
+                    Bảng Giám Sát Cắt Kéo (Drop & Hook) & Nhật Ký Xe Chờ Hạ Sau 0H
+                </h3>
+                <input type="text" id="filter-rep5-search" oninput="applyReport5Filters()" placeholder="Tìm mã chuyến, cont, xe..." 
+                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Chuyến</th>
+                            <th>Khách Hàng</th>
+                            <th>Container</th>
+                            <th>Hình Thức</th>
+                            <th>Tài / Xe Chặng 1</th>
+                            <th>Tài / Xe Chặng 2</th>
+                            <th>Giờ Ra Kho</th>
+                            <th>Hẹn Hạ (Sau 0H)</th>
+                            <th>Hạ Thực Tế</th>
+                            <th class="text-center">Số Giờ Chờ</th>
+                            <th class="text-right">Phí Thu Khách</th>
+                            <th class="text-right">Phụ Cấp TX</th>
+                            <th>Lý Do Chờ / Ghi Chú</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep5-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 6: NGOẠI LỆ & BỒI THƯỜNG HÀNG HÓA HIỆN TRƯỜNG (OS&D) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-6" class="report-subtab-content space-y-4 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Vỏ Container Hư Hỏng / Rách Bạt</span>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading mt-1" id="rep6-stat-damaged">0 Trường hợp</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Lập biên bản bất thường EIR tại cảng</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Bất Thường Seal / Niêm Phong</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep6-stat-seal">0 Vụ việc</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Sai số ký hiệu hoặc đứt chì</p>
+            </div>
+        </div>
+
+        <!-- Bảng Chi Tiết Sự Cố Hiện Trường -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                    <i class="ph-fill ph-first-aid text-rose-600"></i>
+                    Bảng Ghi Nhận Sự Cố & Biên Bản Hiện Trường (OS&D Registry)
+                </h3>
+                <input type="text" id="filter-rep6-search" oninput="applyReport6Filters()" placeholder="Tìm số cont, mã chuyến, mô tả..." 
+                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Mã Chuyến</th>
+                            <th>Ngày</th>
+                            <th>Khách Hàng</th>
+                            <th>Số Container</th>
+                            <th>Số Seal</th>
+                            <th>Phân Loại Sự Cố</th>
+                            <th>Mô Tả Chi Tiết</th>
+                            <th class="text-right">Thiệt Hại Ước Tính</th>
+                            <th class="text-center">Biên Bản & Ảnh POD</th>
+                            <th>Tình Trạng Giải Quyết</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep6-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>

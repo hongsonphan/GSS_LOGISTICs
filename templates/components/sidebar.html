@@ -17,60 +17,68 @@
         <ul class="space-y-1" id="sidebar-menu">
             <!-- 1. Tổng quan Dashboard -->
             <li>
-                <button onclick="switchTab('dashboard')" class="sidebar-item-main active" data-target="dashboard">
+                <a href="/" onclick="event.preventDefault(); switchTab('dashboard');" class="sidebar-item-main active flex items-center" data-target="dashboard">
                     <i class="ph ph-squares-four text-xl mr-3 text-teal-300"></i>
                     <span class="flex-1 text-left tracking-wide">Tổng quan Dashboard</span>
-                </button>
+                </a>
             </li>
             <!-- 2. Sale & Booking -->
             <li>
-                <button onclick="switchTab('kinh-doanh')" class="sidebar-item-main" data-target="kinh-doanh">
+                <a href="/sales" onclick="event.preventDefault(); switchTab('kinh-doanh');" class="sidebar-item-main flex items-center" data-target="kinh-doanh">
                     <i class="ph ph-handshake text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Sale & Booking</span>
-                </button>
+                </a>
             </li>
             <!-- 3. Điều vận -->
             <li>
-                <button onclick="switchTab('dieu-van')" class="sidebar-item-main" data-target="dieu-van">
+                <a href="/dispatch" onclick="event.preventDefault(); switchTab('dieu-van');" class="sidebar-item-main flex items-center" data-target="dieu-van">
                     <i class="ph ph-truck text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Điều vận</span>
-                </button>
+                </a>
             </li>
             <!-- 4. Xe & Bãi -->
             <li>
-                <button onclick="switchTab('xe-bai')" class="sidebar-item-main" data-target="xe-bai">
+                <a href="/fleet" onclick="event.preventDefault(); switchTab('xe-bai');" class="sidebar-item-main flex items-center" data-target="xe-bai">
                     <i class="ph ph-garage text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Xe & Bãi</span>
-                </button>
+                </a>
             </li>
             <!-- 5. Hành chính & Nhân sự -->
             <li>
-                <button onclick="switchTab('nhan-su')" class="sidebar-item-main" data-target="nhan-su">
+                <a href="/hr" onclick="event.preventDefault(); switchTab('nhan-su');" class="sidebar-item-main flex items-center" data-target="nhan-su">
                     <i class="ph ph-users text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Hành chính & Nhân sự</span>
-                </button>
+                </a>
             </li>
             <!-- 6. Quản lý Kế toán -->
             <li>
-                <button onclick="switchTab('ke-toan')" class="sidebar-item-main" data-target="ke-toan">
+                <a href="/accounting" onclick="event.preventDefault(); switchTab('ke-toan');" class="sidebar-item-main flex items-center" data-target="ke-toan">
                     <i class="ph ph-calculator text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Quản lý Kế toán</span>
-                </button>
+                </a>
             </li>
             <!-- 7. Dịch vụ Hải quan -->
             <li>
-                <button onclick="switchTab('hai-quan')" class="sidebar-item-main" data-target="hai-quan">
+                <a href="/customs" onclick="event.preventDefault(); switchTab('hai-quan');" class="sidebar-item-main flex items-center" data-target="hai-quan">
                     <i class="ph ph-file-text text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Dịch vụ Hải quan</span>
                     <span class="text-[9.5px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded ml-1">Phát triển sau</span>
-                </button>
+                </a>
             </li>
-            <!-- 8. Cài đặt -->
+            <!-- 8. Báo cáo & Thống kê -->
             <li>
-                <button onclick="switchTab('cai-dat')" class="sidebar-item-main" data-target="cai-dat">
+                <a href="/reports" onclick="event.preventDefault(); switchTab('bao-cao');" class="sidebar-item-main flex items-center" data-target="bao-cao">
+                    <i class="ph ph-chart-bar text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide font-medium">Báo cáo & Thống kê</span>
+                    <span class="text-[9.5px] font-bold text-emerald-300 bg-teal-900/80 border border-teal-600/60 px-1.5 py-0.2 rounded ml-1">TMS BI</span>
+                </a>
+            </li>
+            <!-- 9. Cài đặt -->
+            <li>
+                <a href="/settings" onclick="event.preventDefault(); switchTab('cai-dat');" class="sidebar-item-main flex items-center" data-target="cai-dat">
                     <i class="ph ph-gear text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Cài đặt</span>
-                </button>
+                </a>
             </li>
         </ul>
     </div>
@@ -81,7 +89,7 @@
             <div class="w-9 h-9 rounded-full bg-teal-800 flex items-center justify-center text-sm font-bold text-white border border-teal-600 shadow-inner">AD</div>
             <div class="flex-1 overflow-hidden">
                 <p class="text-[13.5px] font-bold text-white truncate font-heading">Admin Triền Võ</p>
-                <p class="text-[11.5px] text-teal-400 truncate">PostgreSQL 16 Live</p>
+                <p class="text-[11.5px] text-teal-400 truncate">Hệ Thống Trực Tuyến</p>
             </div>
         </div>
     </div>

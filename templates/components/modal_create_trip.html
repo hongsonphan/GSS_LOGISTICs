@@ -13,7 +13,7 @@
         class="text-[17px] font-bold text-slate-800 flex items-center font-heading"
       >
         <i class="ph-fill ph-plus-circle text-teal-600 text-2xl mr-2.5"></i> Tạo
-        Lệnh Điều Động Mới (Lưu Vào Database Thật)
+        Lệnh Điều Động Mới
       </h3>
       <button
         onclick="closeModal('modal-create-trip')"
@@ -55,26 +55,37 @@
         </div>
 
         <!-- Section 1: Chứng từ & Phân loại -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h4
-            class="font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center font-heading text-[15px]"
-          >
-            <i class="ph-fill ph-file-text text-teal-600 mr-2"></i> 1. Thông Tin
-            Khách Hàng & Vận Đơn
-          </h4>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100 flex-wrap gap-2">
+            <h4
+              class="font-bold text-slate-800 flex items-center font-heading text-[15px] mb-0"
+            >
+              <i class="ph-fill ph-file-text text-teal-600 mr-2"></i> 1. Thông Tin Khách Hàng & Vận Đơn
+            </h4>
+            
+            <!-- Toggle Ghép 2 Cont 20ft (Twin 20ft) -->
+            <label class="inline-flex items-center cursor-pointer select-none">
+              <input type="checkbox" id="chk-twin-cont" onchange="toggleTwinContMode(this.checked)" class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600 relative"></div>
+              <span class="ml-2.5 text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                <i class="ph-bold ph-stack text-teal-600"></i> Chế độ Ghép 2 Cont 20ft (Twin 20ft)
+              </span>
+            </label>
+          </div>
+
+          <!-- Thông tin Khách hàng, Loại hình, Quy cách cont -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="md:col-span-2">
               <label class="form-label" for="inp-customer"
-                >Khách hàng / Chủ hàng
+                >Khách hàng / Chủ hàng (Chọn từ Danh Mục)
                 <span class="text-rose-500">*</span></label
               >
-              <input
+              <select
                 id="inp-customer"
-                type="text"
-                placeholder="VD: TĐÁ - VICACO, AN DI, WCA - TTI..."
-                class="form-input uppercase"
-                required
-              />
+                class="form-select font-bold text-slate-800"
+              >
+                <option value="">-- Chọn Khách Hàng Trong Danh Mục --</option>
+              </select>
               <div id="err-customer" class="field-error-msg hidden"></div>
             </div>
             <div>
@@ -102,6 +113,7 @@
                   <option value="40GP">Cont 40GP (General Purpose)</option>
                   <option value="45G1">Cont 45G1 (Cont 45 Feet)</option>
                   <option value="22GP">Cont 22GP (Cont 20 Feet)</option>
+                  <option value="2x20DC">Kẹp 2x20ft (Twin 20ft)</option>
                 </optgroup>
                 <optgroup label="── Đội Xe Tải ──">
                   <option value="1T">Xe tải 1T</option>
@@ -115,42 +127,159 @@
                 </optgroup>
               </select>
             </div>
-            <div>
-              <label class="form-label" for="inp-booking"
-                >Số Booking / B/L</label
-              >
-              <input
-                id="inp-booking"
-                type="text"
-                placeholder="VD: 235601091589, 6466005230"
-                class="form-input uppercase"
-              />
+          </div>
+
+          <!-- Thông tin Container 1 & Container 2 -->
+          <div class="grid grid-cols-1 gap-3" id="section-containers-wrapper">
+            <!-- Box Container #1 -->
+            <div class="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200">
+              <div class="flex items-center justify-between mb-2.5 border-b border-slate-200 pb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5" id="label-cont-1-title">
+                  <i class="ph-bold ph-cube text-teal-600"></i> Thông Tin Vỏ Cont / Chì
+                </span>
+                <span class="text-[11px] text-slate-500 font-medium">Cont chính</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                  <label class="form-label" for="inp-booking">Số Booking / B/L</label>
+                  <input
+                    id="inp-booking"
+                    type="text"
+                    placeholder="VD: 235601091589, 6466005230"
+                    class="form-input uppercase"
+                  />
+                </div>
+                <div>
+                  <label class="form-label" for="inp-cont">Số Container</label>
+                  <input
+                    id="inp-cont"
+                    type="text"
+                    placeholder="VD: MRKU6074874, CSNU8011022"
+                    class="form-input uppercase"
+                  />
+                </div>
+                <div>
+                  <label class="form-label" for="inp-seal">Số Chì (Seal)</label>
+                  <input
+                    id="inp-seal"
+                    type="text"
+                    placeholder="VD: MLVN1739611, 34192379"
+                    class="form-input uppercase"
+                  />
+                </div>
+                <div>
+                  <label class="form-label" for="inp-vgm">Trọng Lượng VGM (Tấn)</label>
+                  <input
+                    id="inp-vgm"
+                    type="text"
+                    placeholder="VD: 24.5 Tấn, 26,800 KGS"
+                    class="form-input uppercase font-mono font-bold"
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="form-label" for="inp-cont">Số Container</label>
-              <input
-                id="inp-cont"
-                type="text"
-                placeholder="VD: MRKU6074874, CSNU8011022"
-                class="form-input uppercase"
-              />
+
+            <!-- Box Container #2 (Ẩn mặc định, hiện khi check Ghép 2 Cont 20ft) -->
+            <div id="section-twin-cont-2" class="hidden-view p-3.5 bg-teal-50/70 rounded-xl border border-teal-200 space-y-2.5">
+              <div class="flex items-center justify-between border-b border-teal-200 pb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-teal-900 flex items-center gap-1.5 font-heading">
+                  <i class="ph-fill ph-stack text-teal-700"></i> Container #2 (20ft Ghép Cùng Chuyến)
+                </span>
+                <span class="text-[11px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-full font-heading">Kẹp 20ft</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                  <label class="form-label text-teal-950" for="inp-booking-2">Số Booking / B/L Cont 2</label>
+                  <input
+                    id="inp-booking-2"
+                    type="text"
+                    placeholder="VD: 235601091590 (nếu khác)"
+                    class="form-input uppercase bg-white border-teal-200"
+                  />
+                </div>
+                <div>
+                  <label class="form-label text-teal-950" for="inp-cont-2">Số Container 2 (20ft)</label>
+                  <input
+                    id="inp-cont-2"
+                    type="text"
+                    placeholder="VD: TCLU2987114"
+                    class="form-input uppercase bg-white border-teal-200 font-bold"
+                  />
+                </div>
+                <div>
+                  <label class="form-label text-teal-950" for="inp-seal-2">Số Chì (Seal) Cont 2</label>
+                  <input
+                    id="inp-seal-2"
+                    type="text"
+                    placeholder="VD: MLVN1739612"
+                    class="form-input uppercase bg-white border-teal-200"
+                  />
+                </div>
+                <div>
+                  <label class="form-label text-teal-950" for="inp-vgm-2">Trọng Lượng VGM Cont 2</label>
+                  <input
+                    id="inp-vgm-2"
+                    type="text"
+                    placeholder="VD: 22.0 Tấn"
+                    class="form-input uppercase bg-white border-teal-200 font-mono font-bold"
+                  />
+                </div>
+              </div>
+              <div>
+                <label class="form-label text-teal-950" for="inp-cargo-notes-2">Ghi Chú Hàng Hóa / Yêu Cầu Cont 2</label>
+                <input
+                  id="inp-cargo-notes-2"
+                  type="text"
+                  placeholder="VD: Hàng hạt nhựa, giao cùng kho nhưng dỡ sau Cont 1..."
+                  class="form-input bg-white border-teal-200 text-xs text-teal-900"
+                />
+              </div>
             </div>
-            <div>
-              <label class="form-label" for="inp-seal">Số Chì (Seal)</label>
-              <input
-                id="inp-seal"
-                type="text"
-                placeholder="VD: MLVN1739611, 34192379"
-                class="form-input uppercase"
-              />
+          </div>
+
+          <!-- Đính Kèm File Booking / Lệnh Cấp Rỗng Từ Khách Hàng (Ảnh hoặc PDF) -->
+          <div class="p-3.5 bg-blue-50/60 rounded-xl border border-blue-200 space-y-2.5">
+            <div class="flex items-center justify-between border-b border-blue-200 pb-1.5 flex-wrap gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-950 flex items-center gap-1.5 font-heading">
+                <i class="ph-fill ph-file-arrow-up text-blue-600 text-base"></i> Đính Kèm File Booking / Lệnh Cấp Rỗng (Ảnh hoặc PDF)
+              </span>
+              <span class="text-[11px] font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full font-heading">Hỗ trợ JPG, PNG, PDF (Tối đa 5MB)</span>
             </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+              <!-- Nút chọn File hoặc Drag-and-drop -->
+              <div class="md:col-span-2">
+                <div class="space-y-2">
+                  <div class="flex items-center gap-3">
+                    <label class="cursor-pointer px-4 py-2 bg-white border border-blue-300 hover:border-blue-500 rounded-xl text-xs font-bold text-blue-800 hover:bg-blue-50/80 transition-all flex items-center gap-2 shadow-2xs shrink-0">
+                      <i class="ph-bold ph-upload-simple text-base text-blue-600"></i>
+                      <span>Chọn Tệp Đính Kèm</span>
+                      <input type="file" id="inp-booking-file" multiple accept="image/*,.pdf" class="sr-only" onchange="handleBookingFilesSelect(this)">
+                    </label>
+                    <span id="booking-file-summary" class="text-xs text-slate-500 italic flex items-center gap-1">
+                      <i class="ph ph-info text-blue-500"></i> Chưa có tệp nào được đính kèm (hoặc kế thừa từ Booking)
+                    </span>
+                  </div>
+
+                  <!-- Danh sách hiển thị Multi-files -->
+                  <div id="booking-files-list-area" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <!-- Render dynamically via JS -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gợi ý nghiệp vụ -->
+              <div class="text-[11px] text-slate-500 font-medium">
+                Tài liệu này sẽ tự động lưu vào <strong class="text-blue-900">Chứng từ chuyến xe</strong> để Tài xế xem trên App & Điều phối đối chiếu bãi lấy cont.
+              </div>
+            </div>
+          </div>
+
+          <!-- Thông tin Cắt CY, Invoice, Cửa Dock, Thời gian & Vị trí -->
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 pt-1">
             <div>
-              <label
-                class="form-label font-bold text-rose-700 flex items-center"
-                for="inp-cutoff"
-              >
-                <i class="ph-fill ph-clock-countdown mr-1 text-rose-600"></i>
-                Cắt Máng CY / Giờ SI
+              <label class="form-label font-bold text-rose-700 flex items-center" for="inp-cutoff">
+                <i class="ph-fill ph-clock-countdown mr-1 text-rose-600"></i> Cắt Máng CY / Giờ SI
               </label>
               <input
                 id="inp-cutoff"
@@ -159,16 +288,12 @@
                 class="form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold focus:ring-rose-500"
               />
             </div>
-
-            <!-- Bổ sung từ Bảng Excel thực tế: Invoice & Dock -->
             <div>
-              <label class="form-label" for="inp-invoice"
-                >Hóa Đơn Thương Mại (Invoice)</label
-              >
+              <label class="form-label" for="inp-invoice">Hóa Đơn TM (Invoice)</label>
               <input
                 id="inp-invoice"
                 type="text"
-                placeholder="VD: VCC33970, VCC33077..."
+                placeholder="VD: VCC33970..."
                 class="form-input uppercase font-mono font-bold text-teal-800"
               />
             </div>
@@ -182,25 +307,70 @@
               />
             </div>
             <div>
-              <label class="form-label" for="inp-load-time"
-                >Ngày & Giờ Đóng Hàng</label
-              >
+              <label class="form-label" for="inp-load-time">Giờ Hẹn Đóng Hàng</label>
               <input
                 id="inp-load-time"
-                type="text"
-                placeholder="VD: 17/09 - 8H hoặc 16H30"
+                type="time"
+                value="08:00"
                 class="form-input font-bold text-slate-800"
               />
             </div>
             <div>
-              <label class="form-label" for="inp-cont-loc"
-                >Vị Trí Vỏ / Cont Hiện Tại</label
-              >
+              <label class="form-label" for="inp-cont-loc">Vị Trí Vỏ Hiện Tại</label>
               <select id="inp-cont-loc" class="form-select font-semibold text-slate-800">
                 <option value="NHÀ MÁY" selected>Tại Nhà Máy Khách Hàng</option>
                 <option value="BÃI TVL">Tại Bãi Triền Võ</option>
                 <option value="CẢNG / DEPOT">Tại Cảng / Bãi Cont</option>
               </select>
+            </div>
+          </div>
+
+          <!-- Quản lý Hạn Free-time DEM/DET Cảng & Giám Định Vỏ Cont (EIR) -->
+          <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2.5">
+            <div class="flex items-center justify-between border-b border-amber-200 pb-1">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-950 flex items-center gap-1.5 font-heading">
+                <i class="ph-fill ph-hourglass-high text-amber-700"></i> Quản Lý Hạn Free DEM/DET Cảng & Giám Định Vỏ Cont Hiện Trường
+              </span>
+              <span class="text-[11px] font-bold text-amber-800">Phòng ngừa rủi ro phạt lưu bãi/vỏ cont</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div>
+                <label class="form-label text-amber-950" for="inp-det-free-days">Free Mượn Vỏ (DET - Ngày)</label>
+                <input
+                  id="inp-det-free-days"
+                  type="number"
+                  min="0"
+                  max="30"
+                  value="3"
+                  class="form-input font-bold text-slate-800 bg-white"
+                  onchange="onFreeDaysChange()"
+                />
+              </div>
+              <div>
+                <label class="form-label text-amber-950" for="inp-det-expiry">Hạn Chót Trả Vỏ (DET Expiry)</label>
+                <input
+                  id="inp-det-expiry"
+                  type="date"
+                  class="form-input font-bold text-amber-900 bg-white border-amber-300"
+                />
+              </div>
+              <div>
+                <label class="form-label text-amber-950" for="select-container-condition">Giám Định Vỏ (Phiếu EIR)</label>
+                <select id="select-container-condition" class="form-select font-bold text-slate-800 bg-white">
+                  <option value="GOOD" selected>Nguyên Vẹn / Đạt Chuẩn</option>
+                  <option value="DAMAGED">Có Hư Hỏng Từ Trước (Biên bản EIR)</option>
+                  <option value="CLEANING_REQUIRED">Bẩn / Cần Vệ Sinh Bãi</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label text-amber-950" for="inp-damage-desc">Ghi Chú Hư Hỏng / EIR Hiện Trường</label>
+                <input
+                  id="inp-damage-desc"
+                  type="text"
+                  placeholder="VD: Rách nóc cont 10cm có xác nhận bãi..."
+                  class="form-input bg-white text-slate-800 text-xs"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -216,91 +386,164 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-teal-50/40 p-4 rounded-xl border border-teal-100">
               <label class="form-label text-teal-900" for="inp-pickup"
-                >1. Nơi Lấy (Cảng / Bãi)
+                >1. Nơi Lấy (Cảng / ICD / Depot)
                 <span class="text-rose-500">*</span></label
               >
-              <input
+              <select
                 id="inp-pickup"
-                type="text"
-                placeholder="VD: SPITC, CÁT LÁI, TĐÁ..."
-                class="form-input uppercase mb-1"
-                required
-              />
+                class="form-select font-bold text-teal-900 uppercase mb-1"
+              >
+                <option value="">-- Chọn Cảng / Depot Lấy --</option>
+              </select>
               <div id="err-pickup" class="field-error-msg hidden"></div>
             </div>
             <div class="bg-amber-50/40 p-4 rounded-xl border border-amber-100">
               <label class="form-label text-amber-900" for="inp-warehouse"
-                >2. Nơi Đóng/Trả (Kho KH)
+                >2. Nơi Đóng/Trả (Kho KH / Nhà Máy)
                 <span class="text-rose-500">*</span></label
               >
-              <input
+              <select
                 id="inp-warehouse"
-                type="text"
-                placeholder="VD: MACSTAR TÂN VẠN, KHO WCA..."
-                class="form-input uppercase mb-1"
-                required
-              />
+                class="form-select font-bold text-amber-900 uppercase mb-1"
+              >
+                <option value="">-- Chọn Kho Khách Hàng --</option>
+              </select>
               <div id="err-warehouse" class="field-error-msg hidden"></div>
             </div>
             <div
               class="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100"
             >
               <label class="form-label text-emerald-900" for="inp-dropoff"
-                >3. Nơi Hạ (Bãi Rỗng)</label
+                >3. Nơi Hạ (Bãi Rỗng / Cảng Xuất)</label
               >
-              <input
+              <select
                 id="inp-dropoff"
-                type="text"
-                placeholder="VD: SOLOG LIBRA, VSIP 3..."
-                class="form-input uppercase mb-1"
-              />
+                class="form-select font-bold text-emerald-900 uppercase mb-1"
+              >
+                <option value="">-- Chọn Nơi Hạ Cont --</option>
+              </select>
             </div>
           </div>
         </div>
 
-        <!-- Section 3: Phân công & Ghi chú -->
+        <!-- Section 3: Phân công & Nghiệp vụ Cắt Kéo (Drop & Hook) -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h4
-            class="font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center font-heading text-[15px]"
-          >
-            <i class="ph-fill ph-users text-teal-600 mr-2"></i> 3. Phân Công Tài
-            Xế & Ghi Chú Chi phí
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="flex items-center justify-between pb-2 mb-4 border-b border-slate-100 flex-wrap gap-2">
+            <h4 class="font-bold text-slate-800 flex items-center font-heading text-[15px] mb-0">
+              <i class="ph-fill ph-users text-teal-600 mr-2"></i> 3. Phân Công Tài Xế & Cấu Hình Chặng
+            </h4>
+            
+            <!-- Toggle Cắt Kéo -->
+            <label class="inline-flex items-center cursor-pointer select-none">
+              <input type="checkbox" id="chk-drop-hook" onchange="toggleDropHookMode(this.checked)" class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600 relative"></div>
+              <span class="ml-2.5 text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                <i class="ph-bold ph-arrows-split text-amber-600"></i> Chế độ Cắt Kéo / Cắt Mooc (2 Tài)
+              </span>
+            </label>
+          </div>
+
+          <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
+          <div id="section-direct-dispatch" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="form-label" for="inp-driver"
-                >Tài xế nhận lệnh <span class="text-rose-500">*</span></label
-              >
-              <select
-                id="inp-driver"
-                class="form-select font-bold text-slate-800"
-                required
-              >
+              <label class="form-label" for="inp-driver">
+                Tài xế nhận lệnh (Toàn trình) <span class="text-rose-500">*</span>
+              </label>
+              <select id="inp-driver" class="form-select font-bold text-slate-800">
                 <option value="">-- Chọn tài xế điều động --</option>
-                <option value="Phong" selected>
-                  PHONG (Đầu kéo 50H-896.50 - Tân Nam / AP622)
-                </option>
-                <option value="61S">61S (BỘT SẮT - Đầu kéo 61S-999.00)</option>
-                <option value="BỤI 94">BỤI 94 (Đầu kéo 51C-123.45)</option>
-                <option value="LIBRA">LIBRA (Đầu kéo 51C-888.99)</option>
-                <option value="HÒA PHÁT">HÒA PHÁT (Đầu kéo 61C-393.29)</option>
-                <option value="3S">TÀI XẾ 3S (Xe tải 10T - 50E-745.02)</option>
-                <option value="HẢI ĐĂNG">
-                  HẢI ĐĂNG (Xe tải 2T - 50E-112.34)
-                </option>
               </select>
               <div id="err-driver" class="field-error-msg hidden"></div>
             </div>
             <div>
-              <label class="form-label" for="inp-notes"
-                >Ghi chú phí Công ty chịu / Lưu ý Điều độ</label
-              >
+              <label class="form-label" for="inp-notes">Ghi chú phí Công ty chịu / Lưu ý Điều độ</label>
               <input
                 id="inp-notes"
                 type="text"
                 placeholder="VD: Xin trái tuyến Đồng An 320k TVL chịu, Free time 3 ngày..."
                 class="form-input bg-amber-50/40 border-amber-200 text-amber-950 font-medium"
               />
+            </div>
+          </div>
+
+          <!-- Mode 2: Chế độ Cắt Kéo / 2 Chặng (Ẩn mặc định, hiện khi bật toggle) -->
+          <div id="section-drop-hook-dispatch" class="hidden-view space-y-4 pt-1">
+            <div class="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+              <i class="ph-fill ph-info text-amber-600 text-base shrink-0 mt-0.5"></i>
+              <div>
+                <strong>Nghiệp vụ Cắt Kéo (Drop & Hook):</strong> Tài xế Chặng 1 lấy cont kéo về kho cắt mooc để kho đóng/dỡ hàng. Tài xế Chặng 2 móc mooc tại kho kéo đi hạ bãi/cảng. Hệ thống tự động ghi nhận phân định trách nhiệm vỏ cont và chia lương theo tỷ lệ.
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- CHẶNG 1: LẤY CONT -> KHO -->
+              <div class="p-4 bg-teal-50/50 border border-teal-200 rounded-xl space-y-3">
+                <div class="flex items-center justify-between text-teal-900 font-bold text-xs uppercase tracking-wider border-b border-teal-200 pb-1.5">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[10px]">1</span>
+                    Chặng 1: Lấy Cont ➔ Giao Kho
+                  </span>
+                  <span class="text-[11px] text-teal-700 font-bold" id="badge-ratio-leg1">Tỷ lệ: 50%</span>
+                </div>
+                <div>
+                  <label class="form-label text-teal-950" for="inp-driver-leg1">Tài xế Lấy Cont <span class="text-rose-500">*</span></label>
+                  <select id="inp-driver-leg1" onchange="onDriverLeg1Change(this.value)" class="form-select font-bold text-slate-800">
+                    <option value="">-- Chọn tài xế lấy cont --</option>
+                  </select>
+                  <div id="err-driver-leg1" class="field-error-msg hidden"></div>
+                </div>
+                <div>
+                  <label class="form-label text-teal-950" for="inp-vehicle-leg1">Đầu Kéo Lấy Cont</label>
+                  <select id="inp-vehicle-leg1" class="form-select font-semibold text-slate-800">
+                    <option value="">-- Tự động theo tài xế --</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- CHẶNG 2: KHO -> CẢNG HẠ -->
+              <div class="p-4 bg-indigo-50/50 border border-indigo-200 rounded-xl space-y-3">
+                <div class="flex items-center justify-between text-indigo-900 font-bold text-xs uppercase tracking-wider border-b border-indigo-200 pb-1.5">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full bg-indigo-700 text-white flex items-center justify-center text-[10px]">2</span>
+                    Chặng 2: Móc Mooc ➔ Hạ Cảng/Depot
+                  </span>
+                  <span class="text-[11px] text-indigo-700 font-bold" id="badge-ratio-leg2">Tỷ lệ: 50%</span>
+                </div>
+                <div>
+                  <label class="form-label text-indigo-950" for="inp-dropoff-driver">Tài xế Hạ Cont <span class="text-rose-500">*</span></label>
+                  <select id="inp-dropoff-driver" onchange="onDriverLeg2Change(this.value)" class="form-select font-bold text-slate-800">
+                    <option value="">-- Chọn tài xế hạ cont --</option>
+                  </select>
+                  <div id="err-dropoff-driver" class="field-error-msg hidden"></div>
+                </div>
+                <div>
+                  <label class="form-label text-indigo-950" for="inp-dropoff-vehicle">Đầu Kéo Hạ Cont</label>
+                  <select id="inp-dropoff-vehicle" class="form-select font-semibold text-slate-800">
+                    <option value="">-- Tự động theo tài xế --</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tỷ lệ phân chia lương tài xế -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div>
+                <label class="form-label" for="inp-driver-split-ratio">Tỷ lệ phân chia thù lao (Chặng 1 / Chặng 2)</label>
+                <select id="inp-driver-split-ratio" onchange="onSplitRatioChange(this.value)" class="form-select font-bold text-slate-800">
+                  <option value="50">Chia đều 50% - 50% (Định mức tiêu chuẩn)</option>
+                  <option value="60">Chặng 1: 60% (Lấy xa) - Chặng 2: 40%</option>
+                  <option value="40">Chặng 1: 40% - Chặng 2: 60% (Hạ xa/chờ cảng)</option>
+                  <option value="70">Chặng 1: 70% - Chặng 2: 30%</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="inp-notes-drop-hook">Ghi chú bàn giao mooc tại kho</label>
+                <input
+                  id="inp-notes-drop-hook"
+                  type="text"
+                  placeholder="VD: Cắt mooc lúc 18H tại Kho Tân Vạn D2, chụp ảnh số seal trước khi bàn giao..."
+                  class="form-input bg-amber-50/40 border-amber-200 text-amber-950 font-medium"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -313,9 +556,8 @@
           >
             <i class="ph ph-x"></i> Hủy
           </button>
-          <button type="submit" class="btn-bim-primary px-6 py-2.5">
-            <i class="ph-fill ph-paper-plane-right text-lg"></i> Lưu Vào DB &
-            Phát Lệnh Zalo
+          <button type="button" id="btn-submit-trip" onclick="submitNewTrip()" class="btn-bim-primary px-6 py-2.5">
+            <i class="ph-fill ph-paper-plane-right text-lg"></i> Xác Nhận & Phát Lệnh Zalo
           </button>
         </div>
       </form>

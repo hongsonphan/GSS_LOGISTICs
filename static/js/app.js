@@ -10,6 +10,89 @@ let currentActiveTripCode = null;
 let currentActiveTripData = null;
 let currentOcrMode = 'phi-ton';
 
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
+ * Chuẩn hóa Header xác thực kép cho toàn bộ Client:
+ * 1. JWT Bearer Token (kiểm tra hạn dùng exp, tự động dọn sạch nếu hết hạn)
+ * 2. CSRF Token (nạp từ thẻ meta hoặc cookie csrftoken của Django Session)
+ */
+function getAuthHeaders(extraHeaders = {}) {
+    const headers = {
+        'Content-Type': 'application/json',
+        ...extraHeaders
+    };
+    
+    // Kiểm tra tính hợp lệ của JWT token trước khi gửi
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+                const payload = JSON.parse(atob(parts[1]));
+                const nowSec = Math.floor(Date.now() / 1000);
+                // Nếu token đã hết hạn hoặc sắp hết hạn trong 5 giây
+                if (payload.exp && payload.exp <= nowSec + 5) {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                } else {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+            } else {
+                localStorage.removeItem('access_token');
+            }
+        } catch (e) {
+            localStorage.removeItem('access_token');
+        }
+    }
+
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta && csrfMeta.content) {
+        headers['X-CSRFToken'] = csrfMeta.content;
+    } else {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        if (match) headers['X-CSRFToken'] = match[1];
+    }
+    return headers;
+}
+
+/**
+ * Wrapper gọi fetch có xác thực kép thông minh:
+ * - Gửi JWT Bearer Token + Django Session Cookie + CSRF
+ * - Nếu token JWT hết hạn (401), tự động dọn sạch token hỏng và fallback sang Session Cookie
+ */
+async function fetchWithAuth(url, options = {}) {
+    const headers = getAuthHeaders(options.headers || {});
+    if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+    }
+    const fetchOptions = {
+        ...options,
+        headers,
+        credentials: 'include'
+    };
+    let res = await fetch(url, fetchOptions);
+    if (res.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        if (headers['Authorization']) {
+            const fallbackHeaders = { ...headers };
+            delete fallbackHeaders['Authorization'];
+            fetchOptions.headers = fallbackHeaders;
+            res = await fetch(url, fetchOptions);
+        }
+    }
+    return res;
+}
+
 const STATUS_STYLE_MAP = {
     'COMPLETED': 'bg-emerald-100 text-emerald-800 border-emerald-300',
     'IN_TRANSIT': 'bg-amber-100 text-amber-800 border-amber-300',
@@ -160,7 +243,7 @@ let previousActiveTab = 'dashboard';
 // --- 1. TẢI DỮ LIỆU BAN GIÁM ĐỐC (CHUẨN QUỐC TẾ TMS & HẢI QUAN) ---
 async function loadDashboardData() {
     try {
-        const res = await fetch('/api/dashboard/');
+        const res = await fetchWithAuth('/api/dashboard/');
         if (!res.ok) throw new Error('Không thể kết nối máy chủ');
         const data = await res.json();
         bgdDataCache = data;
@@ -220,69 +303,201 @@ async function loadDashboardData() {
             renderBgdDonutChart(currentDonutType);
         }
 
-        // 3. Render Bảng P&L Chuyến Xe Hỗ Trợ Click Mở Chi Tiết Chuyến
-        const pnlTbody = document.getElementById('bgd-pnl-tbody');
-        if (pnlTbody && data.trips_pnl) {
-            pnlTbody.innerHTML = '';
-            data.trips_pnl.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-teal-50/40 transition-colors cursor-pointer group row-multiline border-b border-slate-200/70';
-                tr.title = `Bấm để xem chi tiết hồ sơ chuyến [${item.trip_code}]`;
-                tr.onclick = () => {
-                    viewTripDetail(item.trip_code);
-                };
-
-                let statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 font-heading">${item.status_label || item.status}</span>`;
-                if (item.status === 'COMPLETED') {
-                    statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading">Đã hoàn tất</span>`;
-                } else if (['IN_TRANSIT', 'ACCEPTED', 'CONTAINER_PICKED', 'AT_WAREHOUSE', 'UNLOADING', 'RETURNING_EMPTY'].includes(item.status)) {
-                    statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-heading">Đang vận hành</span>`;
-                }
-
-                const marginVal = item.margin_percent || 0;
-                const barColor = marginVal >= 50 ? 'bg-emerald-500' : (marginVal >= 25 ? 'bg-amber-500' : 'bg-rose-500');
-
-                tr.innerHTML = `
-                    <td class="py-1.5 px-3 border-r border-slate-200/70 font-black text-teal-800 font-heading text-[13px]">
-                        <div class="flex items-center space-x-1">
-                            <span>${item.trip_code}</span>
-                            <i class="ph ph-arrow-square-out text-slate-400 group-hover:text-teal-600 transition-colors text-xs"></i>
-                        </div>
-                    </td>
-                    <td class="py-1.5 px-3 border-r border-slate-200/70">
-                        <p class="font-bold text-slate-900 text-[13px] leading-tight">${item.customer_name}</p>
-                        <p class="text-[11.5px] text-slate-500 font-medium truncate max-w-xs mt-0.5 leading-tight">${item.route}</p>
-                    </td>
-                    <td class="py-1.5 px-3 border-r border-slate-200/70">
-                        <p class="font-bold text-slate-900 text-[13px] leading-tight">${item.driver_name}</p>
-                        <p class="text-[11.5px] text-teal-700 font-mono font-bold mt-0.5 leading-tight">${item.license_plate}</p>
-                    </td>
-                    <td class="py-1.5 px-3 border-r border-slate-200/70 font-mono text-slate-800 font-bold text-[12.5px]">${item.container_number}</td>
-                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-bold text-slate-900 tabular-nums font-mono text-[13px]">${new Intl.NumberFormat('vi-VN').format(item.revenue)} đ</td>
-                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-medium text-amber-700 tabular-nums font-mono text-[13px]">-${new Intl.NumberFormat('vi-VN').format(item.expense)} đ</td>
-                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-bold text-emerald-700 tabular-nums font-mono text-[13px] font-heading">${new Intl.NumberFormat('vi-VN').format(item.profit)} đ</td>
-                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-center">
-                        <div class="flex items-center justify-center space-x-1.5">
-                            <span class="text-[11.5px] font-bold text-slate-700 w-9 text-right tabular-nums">${marginVal}%</span>
-                            <div class="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                <div class="h-full ${barColor}" style="width: ${Math.min(100, Math.max(0, marginVal))}%"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-center">${statusBadge}</td>
-                    <td class="py-1.5 px-3 text-center" onclick="event.stopPropagation();">
-                        <button onclick="viewTripDetail('${item.trip_code}')" class="px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 hover:bg-teal-700 hover:text-white text-teal-700 font-heading border border-teal-200 transition-colors shadow-2xs">
-                            Chi Tiết
-                        </button>
-                    </td>
-                `;
-                pnlTbody.appendChild(tr);
-            });
-        }
+        // 3. Render Bảng P&L Chuyến Xe Hỗ Trợ Click Mở Chi Tiết Chuyến, Lọc & Sắp Xếp
+        rawDashboardTripsPnl = data.trips_pnl || [];
+        applyDashboardPnlFilters();
     } catch (err) {
         console.error('Error loading dashboard data:', err);
         showToast('warning', 'Không thể tải dữ liệu Ban Giám Đốc. Vui lòng kiểm tra lại kết nối.', 'Cảnh báo');
     }
+}
+
+// --- BỘ LỌC & SẮP XẾP BẢNG P&L CHUYẾN XE DASHBOARD ---
+let rawDashboardTripsPnl = [];
+let dashboardPnlSortColumn = null;
+let dashboardPnlSortDirection = 'asc';
+
+function clearDashboardPnlSearch() {
+    const input = document.getElementById('dashboard-pnl-search');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('btn-clear-dashboard-pnl-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    applyDashboardPnlFilters();
+}
+
+function resetDashboardPnlFilters() {
+    const status = document.getElementById('dashboard-pnl-filter-status');
+    if (status) status.value = '';
+    const search = document.getElementById('dashboard-pnl-search');
+    if (search) search.value = '';
+    const clearBtn = document.getElementById('btn-clear-dashboard-pnl-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    dashboardPnlSortColumn = null;
+    dashboardPnlSortDirection = 'asc';
+    applyDashboardPnlFilters();
+}
+
+function toggleDashboardPnlSort(col) {
+    if (dashboardPnlSortColumn === col) {
+        dashboardPnlSortDirection = dashboardPnlSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        dashboardPnlSortColumn = col;
+        dashboardPnlSortDirection = 'asc';
+    }
+    applyDashboardPnlFilters();
+}
+
+function applyDashboardPnlFilters() {
+    if (!rawDashboardTripsPnl || !Array.isArray(rawDashboardTripsPnl)) return;
+
+    const filterStatus = document.getElementById('dashboard-pnl-filter-status')?.value?.trim() || '';
+    const filterSearch = document.getElementById('dashboard-pnl-search')?.value?.trim().toLowerCase() || '';
+
+    const clearBtn = document.getElementById('btn-clear-dashboard-pnl-search');
+    if (clearBtn) {
+        if (filterSearch) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    let list = rawDashboardTripsPnl.filter(item => {
+        if (filterStatus) {
+            if (filterStatus === 'COMPLETED' && item.status !== 'COMPLETED') return false;
+            if (filterStatus === 'TRANSIT') {
+                if (!['IN_TRANSIT', 'ACCEPTED', 'CONTAINER_PICKED', 'AT_WAREHOUSE', 'UNLOADING', 'RETURNING_EMPTY'].includes(item.status)) return false;
+            }
+        }
+
+        if (filterSearch) {
+            const combinedText = [
+                item.trip_code,
+                item.customer_name,
+                item.route,
+                item.driver_name,
+                item.license_plate,
+                item.container_number,
+                item.status_label
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            if (!combinedText.includes(filterSearch)) return false;
+        }
+
+        return true;
+    });
+
+    // Cập nhật số đếm
+    const filteredCountEl = document.getElementById('dashboard-pnl-filtered-count');
+    if (filteredCountEl) filteredCountEl.innerText = list.length;
+    const totalCountEl = document.getElementById('dashboard-pnl-total-count');
+    if (totalCountEl) totalCountEl.innerText = rawDashboardTripsPnl.length;
+
+    // Sắp xếp
+    if (dashboardPnlSortColumn) {
+        list.sort((a, b) => {
+            let valA = a[dashboardPnlSortColumn];
+            let valB = b[dashboardPnlSortColumn];
+
+            if (['revenue', 'expense', 'profit', 'margin_percent'].includes(dashboardPnlSortColumn)) {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return dashboardPnlSortDirection === 'asc' ? valA - valB : valB - valA;
+            }
+
+            valA = (valA || '').toString();
+            valB = (valB || '').toString();
+            const cmp = valA.localeCompare(valB, 'vi');
+            return dashboardPnlSortDirection === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    // Cập nhật icon sort thead
+    const sortCols = ['trip_code', 'customer_name', 'driver_name', 'container_number', 'revenue', 'expense', 'profit', 'margin_percent', 'status'];
+    sortCols.forEach(col => {
+        const iconEl = document.getElementById(`sort-icon-pnl-${col}`);
+        if (iconEl) {
+            if (dashboardPnlSortColumn === col) {
+                iconEl.className = dashboardPnlSortDirection === 'asc' 
+                    ? 'ph-bold ph-arrow-up text-teal-600 text-xs' 
+                    : 'ph-bold ph-arrow-down text-teal-600 text-xs';
+            } else {
+                iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+            }
+        }
+    });
+
+    renderDashboardPnlTable(list);
+}
+
+function renderDashboardPnlTable(trips) {
+    const pnlTbody = document.getElementById('bgd-pnl-tbody');
+    if (!pnlTbody) return;
+    pnlTbody.innerHTML = '';
+
+    if (!trips || trips.length === 0) {
+        pnlTbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center py-8 text-slate-400">
+                    <p class="font-medium text-xs text-slate-500">Không tìm thấy chuyến xe nào phù hợp</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    trips.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-teal-50/40 transition-colors cursor-pointer group row-multiline border-b border-slate-200/70';
+        tr.title = `Bấm để xem chi tiết hồ sơ chuyến [${item.trip_code}]`;
+        tr.onclick = () => {
+            viewTripDetail(item.trip_code);
+        };
+
+        let statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 font-heading">${escapeHtml(item.status_label || item.status)}</span>`;
+        if (item.status === 'COMPLETED') {
+            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading">Đã hoàn tất</span>`;
+        } else if (['IN_TRANSIT', 'ACCEPTED', 'CONTAINER_PICKED', 'AT_WAREHOUSE', 'UNLOADING', 'RETURNING_EMPTY'].includes(item.status)) {
+            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-heading">Đang vận hành</span>`;
+        }
+
+        const marginVal = item.margin_percent || 0;
+        const barColor = marginVal >= 50 ? 'bg-emerald-500' : (marginVal >= 25 ? 'bg-amber-500' : 'bg-rose-500');
+
+        tr.innerHTML = `
+            <td class="py-1.5 px-3 border-r border-slate-200/70 font-black text-teal-800 font-heading text-[13px]">
+                <div class="flex items-center space-x-1">
+                    <span>${escapeHtml(item.trip_code)}</span>
+                    <i class="ph ph-arrow-square-out text-slate-400 group-hover:text-teal-600 transition-colors text-xs"></i>
+                </div>
+            </td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70">
+                <p class="font-bold text-slate-900 text-[13px] leading-tight">${escapeHtml(item.customer_name)}</p>
+                <p class="text-[11.5px] text-slate-500 font-medium truncate max-w-xs mt-0.5 leading-tight">${escapeHtml(item.route)}</p>
+            </td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70">
+                <p class="font-bold text-slate-900 text-[13px] leading-tight">${escapeHtml(item.driver_name)}</p>
+                <p class="text-[11.5px] text-teal-700 font-mono font-bold mt-0.5 leading-tight">${escapeHtml(item.license_plate)}</p>
+            </td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70 font-mono text-slate-800 font-bold text-[12.5px]">${escapeHtml(item.container_number)}</td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-bold text-slate-900 tabular-nums font-mono text-[13px]">${new Intl.NumberFormat('vi-VN').format(item.revenue)} đ</td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-medium text-amber-700 tabular-nums font-mono text-[13px]">-${new Intl.NumberFormat('vi-VN').format(item.expense)} đ</td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70 text-right font-bold text-emerald-700 tabular-nums font-mono text-[13px] font-heading">${new Intl.NumberFormat('vi-VN').format(item.profit)} đ</td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70 text-center">
+                <div class="flex items-center justify-center space-x-1.5">
+                    <span class="text-[11.5px] font-bold text-slate-700 w-9 text-right tabular-nums">${marginVal}%</span>
+                    <div class="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full ${barColor}" style="width: ${Math.min(100, Math.max(0, marginVal))}%"></div>
+                    </div>
+                </div>
+            </td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70 text-center">${statusBadge}</td>
+            <td class="py-1.5 px-3 text-center" onclick="event.stopPropagation();">
+                <button onclick="viewTripDetail('${item.trip_code}')" class="px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 hover:bg-teal-700 hover:text-white text-teal-700 font-heading border border-teal-200 transition-colors shadow-2xs">
+                    Chi Tiết
+                </button>
+            </td>
+        `;
+        pnlTbody.appendChild(tr);
+    });
 }
 
 // Biểu đồ Cột & Đường Doanh thu, Chi phí, Lợi nhuận gộp
@@ -493,16 +708,375 @@ function switchDonutChart(type) {
 }
 
 // --- 2. TẢI DỮ LIỆU PHÒNG ĐIỀU VẬN (TRIPS) ---
+let rawDispatchTrips = [];
+let dispatchSortColumn = null;
+let dispatchSortDirection = 'asc';
+
+function populateDispatchFilterDropdowns(trips) {
+    if (!trips || !Array.isArray(trips)) return;
+    
+    // 1. Khách hàng
+    const custSelect = document.getElementById('filter-dispatch-customer');
+    if (custSelect) {
+        const curCust = custSelect.value;
+        const customers = [...new Set(trips.map(t => (t.customer || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+        custSelect.innerHTML = '<option value="">-- Tất cả Khách hàng --</option>' + 
+            customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        if (customers.includes(curCust)) custSelect.value = curCust;
+    }
+
+    // 2. Tài xế / Xe
+    const drvSelect = document.getElementById('filter-dispatch-driver');
+    if (drvSelect) {
+        const curDrv = drvSelect.value;
+        const drivers = [...new Set(trips.map(t => (t.driver || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+        const vehicles = [...new Set(trips.map(t => (t.vehicle || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+        
+        let options = '<option value="">-- Tất cả Tài xế / Xe --</option>';
+        if (drivers.length > 0) {
+            options += '<optgroup label="Tài xế">' + drivers.map(d => `<option value="DRIVER:${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('') + '</optgroup>';
+        }
+        if (vehicles.length > 0) {
+            options += '<optgroup label="Xe / Đầu kéo">' + vehicles.map(v => `<option value="VEHICLE:${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('') + '</optgroup>';
+        }
+        drvSelect.innerHTML = options;
+        if (curDrv) drvSelect.value = curDrv;
+    }
+}
+
+function clearDispatchSearch() {
+    const input = document.getElementById('filter-dispatch-search');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('btn-clear-dispatch-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    applyDispatchFilters();
+}
+
+function resetDispatchFilters() {
+    const cust = document.getElementById('filter-dispatch-customer');
+    if (cust) cust.value = '';
+    const drv = document.getElementById('filter-dispatch-driver');
+    if (drv) drv.value = '';
+    const status = document.getElementById('filter-dispatch-status');
+    if (status) status.value = '';
+    const type = document.getElementById('filter-dispatch-type');
+    if (type) type.value = '';
+    const search = document.getElementById('filter-dispatch-search');
+    if (search) search.value = '';
+    const clearBtn = document.getElementById('btn-clear-dispatch-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    dispatchSortColumn = null;
+    dispatchSortDirection = 'asc';
+    applyDispatchFilters();
+}
+
+function toggleDispatchSort(col) {
+    if (dispatchSortColumn === col) {
+        dispatchSortDirection = dispatchSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        dispatchSortColumn = col;
+        dispatchSortDirection = 'asc';
+    }
+    applyDispatchFilters();
+}
+
+function applyDispatchFilters() {
+    if (!rawDispatchTrips || !Array.isArray(rawDispatchTrips)) return;
+
+    const filterCust = document.getElementById('filter-dispatch-customer')?.value?.trim().toLowerCase() || '';
+    const filterDrv = document.getElementById('filter-dispatch-driver')?.value?.trim() || '';
+    const filterStatus = document.getElementById('filter-dispatch-status')?.value?.trim() || '';
+    const filterType = document.getElementById('filter-dispatch-type')?.value?.trim().toUpperCase() || '';
+    const filterSearch = document.getElementById('filter-dispatch-search')?.value?.trim().toLowerCase() || '';
+
+    const clearBtn = document.getElementById('btn-clear-dispatch-search');
+    if (clearBtn) {
+        if (filterSearch) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    let list = rawDispatchTrips.filter(trip => {
+        if (filterCust && (trip.customer || '').toLowerCase() !== filterCust) return false;
+        
+        if (filterDrv) {
+            if (filterDrv.startsWith('DRIVER:')) {
+                const targetDrv = filterDrv.replace('DRIVER:', '');
+                if (trip.driver !== targetDrv) return false;
+            } else if (filterDrv.startsWith('VEHICLE:')) {
+                const targetVeh = filterDrv.replace('VEHICLE:', '');
+                if (trip.vehicle !== targetVeh) return false;
+            }
+        }
+
+        if (filterStatus) {
+            if (filterStatus === 'DROP_HOOK') {
+                if (!trip.is_split_trip) return false;
+            } else if (filterStatus === 'TWIN_CONT') {
+                if (!trip.is_twin_container) return false;
+            } else if (filterStatus === 'DET_WARNING') {
+                if (!trip.det_status || !['OVERDUE', 'TODAY', 'WARNING'].includes(trip.det_status.status)) return false;
+            } else if (filterStatus === 'TRANSIT') {
+                if (trip.status !== 'In Transit' && trip.status_raw !== 'TRANSIT') return false;
+            } else if (filterStatus === 'DELIVERED') {
+                if (trip.status !== 'Delivered' && trip.status_raw !== 'DELIVERED') return false;
+            } else if (filterStatus === 'PENDING') {
+                if (!['Dispatched', 'Picked Up', 'Draft'].includes(trip.status)) return false;
+            } else if (trip.status !== filterStatus && trip.status_raw !== filterStatus) {
+                return false;
+            }
+        }
+
+        if (filterType && (trip.type_raw || '').toUpperCase() !== filterType) {
+            return false;
+        }
+
+        if (filterSearch) {
+            const combinedText = [
+                trip.id,
+                trip.container,
+                trip.container_2,
+                trip.booking,
+                trip.seal,
+                trip.seal_2,
+                trip.commercial_invoice,
+                trip.customer,
+                trip.warehouse,
+                trip.driver,
+                trip.vehicle,
+                trip.pickup,
+                trip.dropoff
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            if (!combinedText.includes(filterSearch)) return false;
+        }
+
+        return true;
+    });
+
+    // Cập nhật số đếm
+    const filteredCountEl = document.getElementById('dispatch-filtered-count');
+    if (filteredCountEl) filteredCountEl.innerText = list.length;
+    const totalCountEl = document.getElementById('dispatch-total-count');
+    if (totalCountEl) totalCountEl.innerText = rawDispatchTrips.length;
+
+    // Sắp xếp
+    if (dispatchSortColumn) {
+        list.sort((a, b) => {
+            let valA = a[dispatchSortColumn];
+            let valB = b[dispatchSortColumn];
+
+            if (dispatchSortColumn === 'expense') {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return dispatchSortDirection === 'asc' ? valA - valB : valB - valA;
+            }
+
+            valA = (valA || '').toString();
+            valB = (valB || '').toString();
+            const cmp = valA.localeCompare(valB, 'vi');
+            return dispatchSortDirection === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    // Cập nhật icon sort thead
+    const sortCols = ['loading_date', 'customer', 'container', 'vehicle', 'expense', 'status'];
+    sortCols.forEach(col => {
+        const iconEl = document.getElementById(`sort-icon-dispatch-${col}`);
+        if (iconEl) {
+            if (dispatchSortColumn === col) {
+                iconEl.className = dispatchSortDirection === 'asc' 
+                    ? 'ph-bold ph-arrow-up text-teal-600 text-xs' 
+                    : 'ph-bold ph-arrow-down text-teal-600 text-xs';
+            } else {
+                iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+            }
+        }
+    });
+
+    renderDispatchTable(list);
+}
+
+function renderDispatchTable(trips) {
+    const tbody = document.getElementById('trips-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!trips || trips.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-12 text-slate-400">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="ph ph-magnifying-glass text-4xl mb-2 text-slate-300"></i>
+                        <p class="font-medium text-sm text-slate-500">Không tìm thấy chuyến xe nào phù hợp với bộ lọc</p>
+                        <p class="text-xs text-slate-400 mt-1">Thử xóa từ khóa tìm kiếm hoặc chọn "Đặt lại bộ lọc"</p>
+                        <button onclick="resetDispatchFilters()" class="mt-3 px-3 py-1.5 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg text-xs font-bold transition-colors">
+                            Đặt lại bộ lọc
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    trips.forEach(trip => {
+        const typeColor = trip.type_raw === 'IMPORT' ? 'bg-blue-100 text-blue-700' : 
+                          trip.type_raw === 'EXPORT' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700';
+        const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
+        const tripIdentifier = trip.hashid || trip.id;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-teal-50/40 transition-colors cursor-pointer group row-multiline border-b border-slate-200/80';
+        tr.onclick = (e) => {
+            if (!e.target.closest('button, a, input, select')) {
+                viewTripDetail(tripIdentifier);
+            }
+        };
+        
+        tr.innerHTML = `
+            <td class="px-3 py-2 border-r border-slate-200/70">
+                <div class="flex items-center space-x-2">
+                    <a href="/dispatch/trips/${tripIdentifier}" 
+                       onclick="event.preventDefault(); event.stopPropagation(); viewTripDetail('${tripIdentifier}');" 
+                       class="font-bold text-teal-700 hover:text-teal-900 hover:underline font-heading text-[13.5px] inline-flex items-center gap-1 group/link"
+                       title="Xem chi tiết lệnh điều động ${trip.id}">
+                        <span>${escapeHtml(trip.id)}</span>
+                        <i class="ph ph-arrow-up-right text-[11px] opacity-0 group-hover/link:opacity-100 transition-opacity text-teal-600"></i>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-1.5 text-[11.5px] font-medium text-slate-500 mt-0.5">
+                    <i class="ph ph-calendar text-slate-400 text-xs"></i>
+                    <span>${escapeHtml(trip.loading_date)}</span>
+                    ${trip.loading_time ? `<span class="text-teal-800 bg-teal-100/80 px-1 py-0.2 rounded font-bold text-[11px]">${escapeHtml(trip.loading_time)}</span>` : ''}
+                </div>
+            </td>
+            <td class="px-3 py-2 border-r border-slate-200/70">
+                <p class="font-bold text-slate-900 text-[13px] leading-snug truncate" title="${escapeHtml(trip.customer)}">${escapeHtml(trip.customer)}</p>
+                <p class="text-[11.5px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 truncate" title="${escapeHtml(trip.warehouse)}">
+                    <i class="ph ph-warehouse text-slate-400 text-xs shrink-0"></i>
+                    <span>${escapeHtml(trip.warehouse)}</span>
+                </p>
+            </td>
+            <td class="px-3 py-2 border-r border-slate-200/70">
+                <div class="flex items-center space-x-1.5 font-mono font-bold text-slate-900 text-[13px]">
+                    <i class="ph ph-barcode text-teal-600 text-sm"></i>
+                    <span>${escapeHtml(trip.container)}</span>
+                    ${trip.is_twin_container ? `
+                        <span class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase bg-teal-100 text-teal-800 border border-teal-300 inline-flex items-center gap-0.5" title="Chế độ Ghép 2 Cont 20ft">
+                            <i class="ph-bold ph-stack"></i> 2x20ft
+                        </span>
+                    ` : ''}
+                </div>
+                <div class="text-[11.5px] text-slate-500 mt-0.5 flex items-center space-x-1.5 font-medium flex-wrap gap-y-0.5">
+                    <span>B/L: <strong class="text-slate-800 font-mono font-bold">${escapeHtml(trip.booking)}</strong></span>
+                    ${trip.seal && trip.seal !== '-' ? `<span class="text-slate-300">|</span> <span>Seal: <strong class="text-slate-800 font-mono font-bold">${escapeHtml(trip.seal)}</strong></span>` : ''}
+                </div>
+                ${trip.is_twin_container && trip.container_2 ? `
+                    <div class="text-[11px] font-mono text-slate-600 mt-0.5 flex items-center gap-1">
+                        <span class="text-slate-400 font-normal">Cont 2:</span>
+                        <strong class="text-teal-900 font-bold">${escapeHtml(trip.container_2)}</strong>
+                        ${trip.seal_2 && trip.seal_2 !== '-' ? `<span class="text-slate-300">|</span> <span class="text-slate-500">${escapeHtml(trip.seal_2)}</span>` : ''}
+                    </div>
+                ` : ''}
+                ${trip.det_status && (trip.det_status.status === 'OVERDUE' || trip.det_status.status === 'TODAY' || trip.det_status.status === 'WARNING') ? `
+                    <div class="mt-1">
+                        ${trip.det_status.status === 'OVERDUE' 
+                            ? `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300 inline-flex items-center gap-0.5 animate-pulse" title="Quá hạn Free DET ${Math.abs(trip.det_status.days_remaining)} ngày">
+                                <i class="ph-bold ph-warning"></i> Quá Hạn DET (${Math.abs(trip.det_status.days_remaining)}N)
+                               </span>`
+                            : trip.det_status.status === 'TODAY'
+                            ? `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-0.5" title="Hôm nay hết hạn trả vỏ">
+                                <i class="ph-bold ph-clock"></i> DET Hết Hôm Nay
+                               </span>`
+                            : `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-bold uppercase bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-0.5" title="Còn 1 ngày Free DET">
+                                <i class="ph-bold ph-clock-countdown"></i> DET Còn 1N
+                               </span>`
+                        }
+                    </div>
+                ` : ''}
+                ${trip.customs_info && trip.customs_info.has_declaration ? `
+                    <div class="mt-1 flex items-center space-x-1">
+                        ${trip.customs_info.customs_lane === 'GREEN'
+                            ? `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-0.5" title="Tờ khai ${escapeHtml(trip.customs_info.declaration_number)}: Thông quan tự động"><i class="ph-bold ph-check"></i> Luồng Xanh</span>`
+                            : trip.customs_info.customs_lane === 'YELLOW'
+                            ? `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-0.5" title="Tờ khai ${escapeHtml(trip.customs_info.declaration_number)}: Thẩm định hồ sơ"><i class="ph-bold ph-file-search"></i> Luồng Vàng</span>`
+                            : `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300 inline-flex items-center gap-0.5" title="Tờ khai ${escapeHtml(trip.customs_info.declaration_number)}: Kiểm tra thực tế/Soi chiếu"><i class="ph-bold ph-magnifying-glass"></i> Luồng Đỏ</span>`
+                        }
+                        <span class="text-[10px] font-mono text-slate-500 font-bold">${escapeHtml(trip.customs_info.declaration_number)}</span>
+                    </div>
+                ` : ''}
+            </td>
+            <td class="px-3 py-2 border-r border-slate-200/70">
+                <div class="flex items-center space-x-1.5">
+                    ${trip.commercial_invoice && trip.commercial_invoice !== '-' ? `
+                        <span class="font-mono text-[11.5px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded shadow-2xs" title="Hóa đơn thương mại">
+                            <i class="ph ph-file-text"></i> ${escapeHtml(trip.commercial_invoice)}
+                        </span>
+                    ` : `<span class="text-slate-400 text-[11.5px] italic">-</span>`}
+                </div>
+                <div class="mt-0.5">
+                    ${trip.warehouse_dock && trip.warehouse_dock !== '-' ? `
+                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 font-heading">
+                            DOCK: ${escapeHtml(trip.warehouse_dock)}
+                        </span>
+                    ` : `<span class="text-[11.5px] text-slate-400 font-medium">Chưa chỉ định dock</span>`}
+                </div>
+            </td>
+            <td class="px-3 py-2 border-r border-slate-200/70">
+                <div class="flex items-center space-x-1.5">
+                    <span class="font-bold text-slate-900 font-mono text-[13px]">${escapeHtml(trip.vehicle)}</span>
+                    ${trip.vehicle_ownership_code === 'OWNED' 
+                        ? `<span class="px-1.5 py-0.2 text-[10.5px] font-black uppercase rounded bg-teal-100 text-teal-800 border border-teal-200">Xe Nhà</span>`
+                        : `<span class="px-1.5 py-0.2 text-[10.5px] font-black uppercase rounded bg-amber-100 text-amber-800 border border-amber-200">Xe Bạn</span>`
+                    }
+                </div>
+                <div class="text-[11.5px] text-slate-500 mt-0.5 flex items-center space-x-1.5 flex-wrap gap-y-0.5">
+                    <span>Tài: <strong class="text-slate-900 font-bold">${escapeHtml(trip.driver)}</strong></span>
+                    ${trip.is_split_trip ? `
+                        <span class="text-amber-800 bg-amber-100 border border-amber-300 px-1 py-0.2 rounded font-black text-[10px] uppercase inline-flex items-center gap-0.5" title="Cắt kéo: Chặng 2 hạ do ${escapeHtml(trip.dropoff_driver || 'Tài khác')} đảm nhiệm">
+                            <i class="ph-bold ph-arrows-split"></i> Hạ: ${escapeHtml(trip.dropoff_driver || trip.dropoff_vehicle || 'Tài 2')}
+                        </span>
+                    ` : (trip.dropoff_vehicle && trip.dropoff_vehicle !== '-' && trip.dropoff_vehicle !== trip.vehicle ? `
+                        <span class="text-slate-300">|</span>
+                        <span class="text-indigo-700 font-bold font-mono text-[11.5px]" title="Xe hạ bãi">Hạ: ${escapeHtml(trip.dropoff_vehicle)}</span>
+                    ` : '')}
+                </div>
+            </td>
+            <td class="px-3 py-2 border-r border-slate-200/70">
+                <div class="flex items-center">
+                    <span class="px-1.5 py-0.2 rounded text-[10.5px] font-bold uppercase tracking-wider ${trip.cont_location_type === 'BÃI TVL' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
+                        <i class="ph ph-map-pin"></i> ${escapeHtml(trip.cont_location_type)}
+                    </span>
+                </div>
+                <p class="text-[11.5px] text-slate-500 font-medium italic line-clamp-1 max-w-[200px] mt-0.5" title="${escapeHtml(trip.cargo_notes || 'Không có lưu ý')}">
+                    ${trip.cargo_notes ? `<i class="ph ph-info text-amber-600"></i> ${escapeHtml(trip.cargo_notes)}` : '<span class="text-slate-400 font-normal">Không có lưu ý</span>'}
+                </p>
+            </td>
+            <td class="px-3 py-2 border-r border-slate-200/70">
+                <div class="text-[13px] font-bold text-slate-800 flex items-center space-x-1.5 truncate" title="${escapeHtml(trip.pickup)} ➔ ${escapeHtml(trip.dropoff || 'Hạ bãi')}">
+                    <span class="text-teal-700">${escapeHtml(trip.pickup)}</span>
+                    <i class="ph ph-arrow-right text-slate-400 text-xs shrink-0"></i>
+                    <span class="text-indigo-700">${escapeHtml(trip.dropoff || 'Bãi rỗng')}</span>
+                </div>
+                <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase font-heading ${typeColor}">${escapeHtml(trip.type)}</span>
+                    <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
+                </div>
+            </td>
+            <td class="px-3 py-2 text-center">
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider font-heading inline-block ${statusCls}">
+                    ${escapeHtml(trip.status_label)}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
 async function loadTripsData() {
     try {
-        const searchInput = document.getElementById('table-search-input');
-        const searchVal = searchInput ? searchInput.value : '';
-        const statusSelect = document.getElementById('status-filter-select');
-        const statusVal = statusSelect ? statusSelect.value : 'Tất cả trạng thái';
-        
-        let url = `/api/trips/?q=${encodeURIComponent(searchVal)}&status=${encodeURIComponent(statusVal)}`;
-
-        const res = await fetch(url);
+        const res = await fetchWithAuth('/api/trips/');
         if (!res.ok) throw new Error('Lỗi tải danh sách chuyến');
         const data = await res.json();
 
@@ -514,119 +1088,40 @@ async function loadTripsData() {
         const pendExpEl = document.getElementById('stat-pending-expenses');
         if (pendExpEl) pendExpEl.innerText = new Intl.NumberFormat('vi-VN').format(data.stats.pending_expenses_count || 0);
 
-        const tbody = document.getElementById('trips-tbody');
-        tbody.innerHTML = '';
-
-        data.trips.forEach(trip => {
-            const typeColor = trip.type_raw === 'IMPORT' ? 'bg-blue-100 text-blue-700' : 
-                              trip.type_raw === 'EXPORT' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700';
-            const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
-
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-teal-50/40 transition-colors cursor-pointer group row-multiline border-b border-slate-200/80';
-            tr.onclick = () => viewTripDetail(trip.id);
-            
-            tr.innerHTML = `
-                <td class="px-3 py-2 border-r border-slate-200/70">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-bold text-teal-800 font-heading text-[13px]">${trip.id}</span>
-                    </div>
-                    <div class="flex items-center space-x-1.5 text-[11.5px] font-medium text-slate-500 mt-0.5">
-                        <i class="ph ph-calendar text-slate-400 text-xs"></i>
-                        <span>${trip.loading_date}</span>
-                        ${trip.loading_time ? `<span class="text-teal-800 bg-teal-100/80 px-1 py-0.2 rounded font-bold text-[11px]">${trip.loading_time}</span>` : ''}
-                    </div>
-                </td>
-                <td class="px-3 py-2 border-r border-slate-200/70">
-                    <p class="font-bold text-slate-900 text-[13px] leading-snug truncate" title="${trip.customer}">${trip.customer}</p>
-                    <p class="text-[11.5px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 truncate" title="${trip.warehouse}">
-                        <i class="ph ph-warehouse text-slate-400 text-xs shrink-0"></i>
-                        <span>${trip.warehouse}</span>
-                    </p>
-                </td>
-                <td class="px-3 py-2 border-r border-slate-200/70">
-                    <div class="flex items-center space-x-1.5 font-mono font-bold text-slate-900 text-[13px]">
-                        <i class="ph ph-barcode text-teal-600 text-sm"></i>
-                        <span>${trip.container}</span>
-                    </div>
-                    <div class="text-[11.5px] text-slate-500 mt-0.5 flex items-center space-x-1.5 font-medium">
-                        <span>B/L: <strong class="text-slate-800 font-mono font-bold">${trip.booking}</strong></span>
-                        ${trip.seal && trip.seal !== '-' ? `<span class="text-slate-300">|</span> <span>Seal: <strong class="text-slate-800 font-mono font-bold">${trip.seal}</strong></span>` : ''}
-                    </div>
-                </td>
-                <td class="px-3 py-2 border-r border-slate-200/70">
-                    <div class="flex items-center space-x-1.5">
-                        ${trip.commercial_invoice && trip.commercial_invoice !== '-' ? `
-                            <span class="font-mono text-[11.5px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded shadow-2xs" title="Hóa đơn thương mại">
-                                <i class="ph ph-file-text"></i> ${trip.commercial_invoice}
-                            </span>
-                        ` : `<span class="text-slate-400 text-[11.5px] italic">-</span>`}
-                    </div>
-                    <div class="mt-0.5">
-                        ${trip.warehouse_dock && trip.warehouse_dock !== '-' ? `
-                            <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 font-heading">
-                                DOCK: ${trip.warehouse_dock}
-                            </span>
-                        ` : `<span class="text-[11.5px] text-slate-400 font-medium">Chưa chỉ định dock</span>`}
-                    </div>
-                </td>
-                <td class="px-3 py-2 border-r border-slate-200/70">
-                    <div class="flex items-center space-x-1.5">
-                        <span class="font-bold text-slate-900 font-mono text-[13px]">${trip.vehicle}</span>
-                        ${trip.vehicle_ownership_code === 'OWNED' 
-                            ? `<span class="px-1.5 py-0.2 text-[10.5px] font-black uppercase rounded bg-teal-100 text-teal-800 border border-teal-200">Xe Nhà</span>`
-                            : `<span class="px-1.5 py-0.2 text-[10.5px] font-black uppercase rounded bg-amber-100 text-amber-800 border border-amber-200">Xe Bạn</span>`
-                        }
-                    </div>
-                    <div class="text-[11.5px] text-slate-500 mt-0.5 flex items-center space-x-1.5">
-                        <span>Tài xế: <strong class="text-slate-900 font-bold">${trip.driver}</strong></span>
-                        ${trip.dropoff_vehicle && trip.dropoff_vehicle !== '-' && trip.dropoff_vehicle !== trip.vehicle ? `
-                            <span class="text-slate-300">|</span>
-                            <span class="text-indigo-700 font-bold font-mono text-[11.5px]" title="Xe hạ bãi">Hạ: ${trip.dropoff_vehicle}</span>
-                        ` : ''}
-                    </div>
-                </td>
-                <td class="px-3 py-2 border-r border-slate-200/70">
-                    <div class="flex items-center">
-                        <span class="px-1.5 py-0.2 rounded text-[10.5px] font-bold uppercase tracking-wider ${trip.cont_location_type === 'BÃI TVL' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
-                            <i class="ph ph-map-pin"></i> ${trip.cont_location_type}
-                        </span>
-                    </div>
-                    <p class="text-[11.5px] text-slate-500 font-medium italic line-clamp-1 max-w-[200px] mt-0.5" title="${trip.cargo_notes || 'Không có lưu ý'}">
-                        ${trip.cargo_notes ? `<i class="ph ph-info text-amber-600"></i> ${trip.cargo_notes}` : '<span class="text-slate-400 font-normal">Không có lưu ý</span>'}
-                    </p>
-                </td>
-                <td class="px-3 py-2 border-r border-slate-200/70">
-                    <div class="text-[13px] font-bold text-slate-800 flex items-center space-x-1.5 truncate" title="${trip.pickup} ➔ ${trip.dropoff || 'Hạ bãi'}">
-                        <span class="text-teal-700">${trip.pickup}</span>
-                        <i class="ph ph-arrow-right text-slate-400 text-xs shrink-0"></i>
-                        <span class="text-indigo-700">${trip.dropoff || 'Bãi rỗng'}</span>
-                    </div>
-                    <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
-                        <span class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase font-heading ${typeColor}">${trip.type}</span>
-                        <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
-                    </div>
-                </td>
-                <td class="px-3 py-2 text-center">
-                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider font-heading inline-block ${statusCls}">
-                        ${trip.status_label}
-                    </span>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        rawDispatchTrips = data.trips || [];
+        populateDispatchFilterDropdowns(rawDispatchTrips);
+        applyDispatchFilters();
     } catch (err) {
         console.error('Error loading trips data:', err);
     }
 }
 
 // --- 3. XEM CHI TIẾT CHUYẾN XE & BẢNG KÊ CHI PHÍ TRIỀN VÕ ---
-async function viewTripDetail(tripCode) {
+async function viewTripDetail(tripCode, updateHistory = true) {
     currentActiveTripCode = tripCode;
     try {
-        const res = await fetch(`/api/trips/${tripCode}/`);
-        if (!res.ok) throw new Error('Không tìm thấy chuyến');
+        const res = await fetchWithAuth(`/api/trips/${tripCode}/`);
+        if (!res.ok) {
+            let errorMsg = 'Không tìm thấy chuyến xe.';
+            try {
+                const errData = await res.json();
+                errorMsg = errData.error || errData.detail || `Lỗi máy chủ (${res.status})`;
+            } catch (e) {}
+            throw new Error(errorMsg);
+        }
         const trip = await res.json();
+        currentActiveTripData = trip;
+        const tripHash = trip.hashid || trip.id;
+        currentActiveTripCode = trip.id; // Luôn dùng trip_code gốc cho các API con
+
+        // Cập nhật URL chuẩn Semantic Path kèm HashID bảo mật: /dispatch/trips/<hashid>
+        if (updateHistory && window.history && window.history.pushState) {
+            const tripPath = `/dispatch/trips/${tripHash}`;
+            if (window.location.pathname !== tripPath) {
+                window.history.pushState({ view: 'trip-detail', tripIdentifier: tripHash }, '', tripPath);
+            }
+        }
+
         // Lưu vết tab trước đó để nút Quay lại hoạt động chuẩn xác
         const currentActiveView = document.querySelector('.view:not(.hidden-view)');
         if (currentActiveView && currentActiveView.id !== 'view-trip-detail') {
@@ -635,15 +1130,22 @@ async function viewTripDetail(tripCode) {
 
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
         const detailView = document.getElementById('view-trip-detail');
-        detailView.classList.remove('hidden-view');
+        if (detailView) detailView.classList.remove('hidden-view');
+
+        window.currentTripDetail = trip;
+
+        // Helper gán text an toàn chống crash DOM
+        const setText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = (val !== undefined && val !== null) ? val : '-';
+        };
 
         // Thông tin chung
-        document.getElementById('detail-id').innerText = trip.id;
-        document.getElementById('detail-type').innerText = trip.type;
-        document.getElementById('detail-customer').innerText = trip.customer;
-        document.getElementById('detail-driver').innerText = trip.driver;
-        const vehPlateEl = document.getElementById('detail-vehicle-plate');
-        if (vehPlateEl) vehPlateEl.innerText = trip.vehicle;
+        setText('detail-id', trip.id);
+        setText('detail-type', trip.type);
+        setText('detail-customer', trip.customer);
+        setText('detail-driver', trip.driver);
+        setText('detail-vehicle-plate', trip.vehicle);
 
         // Phân loại nguồn xe
         const ownerBadge = document.getElementById('detail-ownership-badge');
@@ -657,10 +1159,25 @@ async function viewTripDetail(tripCode) {
             }
         }
 
-        // Xe hạ
+        // Cấu hình Chặng & Xe hạ (Nghiệp vụ Cắt Kéo)
         const dropoffVehEl = document.getElementById('detail-dropoff-vehicle-info');
         if (dropoffVehEl) {
-            if (trip.dropoff_vehicle && trip.dropoff_vehicle !== '-' && trip.dropoff_vehicle !== trip.vehicle) {
+            if (trip.is_split_trip) {
+                dropoffVehEl.innerHTML = `
+                    <div class="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-950 space-y-1">
+                        <div class="flex items-center justify-between font-bold text-amber-900 border-b border-amber-200 pb-1">
+                            <span class="flex items-center gap-1">
+                                <i class="ph-bold ph-arrows-split text-amber-700"></i>
+                                Chế độ Cắt Kéo (Drop & Hook)
+                            </span>
+                            <span class="text-[10.5px] bg-amber-200/80 px-1.5 py-0.2 rounded font-black">2 Chặng</span>
+                        </div>
+                        <p class="pt-0.5">• <strong>Chặng 1 (Lấy Cont):</strong> ${trip.driver} (Xe: ${trip.vehicle}) · Chia lương: ${trip.driver_split_ratio}%</p>
+                        <p>• <strong>Chặng 2 (Hạ Bãi):</strong> ${trip.dropoff_driver || 'Chưa gán tài xế'} (Xe: ${trip.dropoff_vehicle || '-'}) · Chia lương: ${100 - trip.driver_split_ratio}%</p>
+                    </div>
+                `;
+                dropoffVehEl.classList.remove('hidden');
+            } else if (trip.dropoff_vehicle && trip.dropoff_vehicle !== '-' && trip.dropoff_vehicle !== trip.vehicle) {
                 dropoffVehEl.innerText = `Xe hạ: ${trip.dropoff_vehicle}`;
                 dropoffVehEl.classList.remove('hidden');
             } else {
@@ -669,16 +1186,104 @@ async function viewTripDetail(tripCode) {
             }
         }
         
-        document.getElementById('detail-cont').innerText = trip.container;
+        setText('detail-cont', trip.container);
         const contTypeEl = document.getElementById('detail-cont-type');
-        if (contTypeEl) contTypeEl.innerText = trip.vgm_weight !== '-' ? `Loại: Cont 40 | VGM: ${trip.vgm_weight}` : 'Loại: Cont 40';
+        if (contTypeEl) {
+            if (trip.is_twin_container) {
+                contTypeEl.innerText = 'Chế độ: Ghép 2x20ft';
+            } else if (trip.vgm_weight && trip.vgm_weight !== '-') {
+                contTypeEl.innerText = `Loại: ${trip.container_type || 'Cont 40'} | VGM: ${trip.vgm_weight}`;
+            } else {
+                contTypeEl.innerText = `Loại: ${trip.container_type || 'Cont 40'}`;
+            }
+        }
+
+        // Cập nhật Box Ghép 2 Cont 20ft
+        const twinCard = document.getElementById('detail-twin-container-card');
+        if (twinCard) {
+            if (trip.is_twin_container) {
+                twinCard.classList.remove('hidden');
+                setText('detail-cont-1-no', trip.container || '-');
+                setText('detail-cont-1-seal', trip.seal || '-');
+                setText('detail-cont-1-booking', trip.booking || '-');
+                const vgm1El = document.getElementById('detail-cont-1-vgm');
+                if (vgm1El) vgm1El.innerText = trip.vgm_weight && trip.vgm_weight !== '-' ? `VGM: ${trip.vgm_weight}` : 'VGM: -';
+
+                setText('detail-cont-2-no', trip.container_2 || 'Chưa cập nhật');
+                setText('detail-cont-2-seal', trip.seal_2 || '-');
+                setText('detail-cont-2-booking', trip.booking_2 || trip.booking || '-');
+                const vgm2El = document.getElementById('detail-cont-2-vgm');
+                if (vgm2El) vgm2El.innerText = trip.vgm_weight_2 ? `VGM: ${trip.vgm_weight_2}` : 'VGM: -';
+                setText('detail-cont-2-notes', trip.cargo_notes_2 || 'Không có ghi chú riêng');
+            } else {
+                twinCard.classList.add('hidden');
+            }
+        }
+
+        // Cập nhật Box Quản lý DEM/DET & Giám định Vỏ Cont (EIR)
+        setText('detail-det-days', `${trip.det_free_days || 3} ngày`);
+        setText('detail-det-expiry', trip.det_expiry_date || 'Chưa thiết lập');
+        setText('detail-dem-days', `${trip.dem_free_days || 3} ngày`);
+        setText('detail-dem-expiry', trip.dem_expiry_date || 'Chưa thiết lập');
+        setText('detail-condition-label', trip.container_condition_label || 'Nguyên Vẹn / Đạt Chuẩn');
+        setText('detail-damage-desc', trip.damage_description || (trip.container_condition === 'GOOD' ? 'Vỏ cont sạch sẽ, nguyên vẹn, không hư hỏng' : 'Không có ghi chú thêm'));
+
+        const condBadge = document.getElementById('detail-condition-badge');
+        if (condBadge) {
+            if (trip.container_condition === 'DAMAGED') {
+                condBadge.className = 'text-[10.5px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 border border-rose-200';
+                condBadge.innerText = 'Hư hỏng (EIR)';
+            } else if (trip.container_condition === 'CLEANING_REQUIRED') {
+                condBadge.className = 'text-[10.5px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200';
+                condBadge.innerText = 'Cần vệ sinh';
+            } else {
+                condBadge.className = 'text-[10.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200';
+                condBadge.innerText = 'Đạt chuẩn';
+            }
+        }
+
+        const detBadgeEl = document.getElementById('detail-det-status-badge');
+        const detCountdownEl = document.getElementById('detail-det-countdown');
+        if (trip.det_status) {
+            const ds = trip.det_status;
+            if (detBadgeEl) {
+                if (ds.status === 'OVERDUE') {
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-heading bg-rose-100 text-rose-800 border border-rose-300 animate-pulse';
+                    detBadgeEl.innerHTML = `<i class="ph-bold ph-warning-circle mr-1"></i> Quá Hạn Phạt Tiền (${Math.abs(ds.days_remaining)} ngày)`;
+                } else if (ds.status === 'TODAY') {
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-heading bg-rose-50 text-rose-700 border border-rose-300';
+                    detBadgeEl.innerHTML = `<i class="ph-bold ph-clock mr-1"></i> Hạn Chót Hôm Nay`;
+                } else if (ds.status === 'WARNING') {
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-amber-100 text-amber-800 border border-amber-300';
+                    detBadgeEl.innerHTML = `<i class="ph-bold ph-hourglass mr-1"></i> Sắp Hết Hạn (1 ngày)`;
+                } else if (ds.status === 'ATTENTION') {
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-amber-50 text-amber-700 border border-amber-200';
+                    detBadgeEl.innerHTML = `<i class="ph-bold ph-hourglass-low mr-1"></i> Còn 2 ngày Free DET`;
+                } else {
+                    detBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase font-heading bg-emerald-100 text-emerald-800 border border-emerald-200';
+                    detBadgeEl.innerHTML = `<i class="ph-bold ph-check-circle mr-1"></i> Trong Hạn Free-time (${ds.days_remaining} ngày)`;
+                }
+            }
+            if (detCountdownEl) {
+                if (ds.status === 'OVERDUE') {
+                    detCountdownEl.innerText = `Cảnh báo: Đã vượt quá hạn mượn vỏ ${Math.abs(ds.days_remaining)} ngày! Đang phát sinh phí lưu vỏ của hãng tàu.`;
+                    detCountdownEl.className = 'text-[11px] text-rose-700 mt-1 font-bold';
+                } else if (ds.status === 'TODAY') {
+                    detCountdownEl.innerText = `Lưu ý: Hạn trả rỗng hạ bãi là ngày hôm nay. Cần ưu tiên xếp xe hạ cont trước 17H.`;
+                    detCountdownEl.className = 'text-[11px] text-rose-700 mt-1 font-bold';
+                } else {
+                    detCountdownEl.innerText = `Thời gian mượn vỏ còn lại: ${ds.days_remaining} ngày an toàn.`;
+                    detCountdownEl.className = 'text-[11px] text-amber-800 mt-1 font-medium';
+                }
+            }
+        }
 
         // Vị trí cont
         const contLocBadge = document.getElementById('detail-cont-location-badge');
         if (contLocBadge) contLocBadge.innerText = trip.cont_location_type || 'Nhà máy';
 
-        document.getElementById('detail-booking').innerText = trip.booking !== '-' ? `B/L: ${trip.booking}` : 'B/L: Chưa có';
-        document.getElementById('detail-seal').innerText = trip.seal !== '-' ? `Seal: ${trip.seal}` : 'Seal: Chưa cập nhật';
+        setText('detail-booking', trip.booking !== '-' ? `B/L: ${trip.booking}` : 'B/L: Chưa có');
+        setText('detail-seal', trip.seal !== '-' ? `Seal: ${trip.seal}` : 'Seal: Chưa cập nhật');
         
         // Commercial Invoice & Dock
         const invoiceEl = document.getElementById('detail-invoice');
@@ -698,6 +1303,42 @@ async function viewTripDetail(tripCode) {
         const actualOutEl = document.getElementById('detail-actual-out-time');
         if (actualOutEl) actualOutEl.innerText = trip.actual_gate_out_time || '-';
 
+        // 2 Mốc bổ sung thực tiễn: Hẹn hạ sau 0h & Hạ bãi thực tế
+        const dropoffAppointEl = document.getElementById('detail-dropoff-appointment-time');
+        if (dropoffAppointEl) dropoffAppointEl.innerText = trip.dropoff_appointment_time || '-';
+        const actualDropoffEl = document.getElementById('detail-actual-dropoff-time');
+        if (actualDropoffEl) actualDropoffEl.innerText = trip.actual_dropoff_time || '-';
+
+        // Cập nhật Cảnh báo Neo Xe & Lưu Cont Qua Đêm
+        const overnightBadge = document.getElementById('detail-overnight-badge');
+        const detentionBadgeStatus = document.getElementById('detail-detention-badge-status');
+        const detentionInfoText = document.getElementById('detail-detention-info-text');
+        const gateoutSummary = document.getElementById('detail-gateout-summary');
+
+        if (gateoutSummary) gateoutSummary.innerText = trip.actual_gate_out_time && trip.actual_gate_out_time !== '-' ? trip.actual_gate_out_time : 'chưa xác nhận';
+
+        if (trip.is_overnight_detention || (trip.dropoff_appointment_time && trip.dropoff_appointment_time.toLowerCase().includes('00:00'))) {
+            if (overnightBadge) overnightBadge.classList.remove('hidden');
+            if (detentionBadgeStatus) {
+                detentionBadgeStatus.className = 'px-2 py-0.2 rounded font-black text-[10.5px] bg-amber-200 text-amber-950 uppercase border border-amber-300';
+                detentionBadgeStatus.innerText = `Lưu Xe Qua Đêm (${trip.overnight_wait_hours || 'Chờ sau 0h'})`;
+            }
+            if (detentionInfoText) {
+                const feeCustStr = trip.detention_fee_customer > 0 ? `Thu KH: ${new Intl.NumberFormat('vi-VN').format(trip.detention_fee_customer)} đ` : 'Chưa định giá';
+                const allowDrvStr = trip.detention_driver_allowance > 0 ? `Chi TX: ${new Intl.NumberFormat('vi-VN').format(trip.detention_driver_allowance)} đ` : 'Chưa tính phụ cấp';
+                detentionInfoText.innerHTML = `Lý do: <strong>${trip.detention_reason || 'Kho yêu cầu chờ sau 0h mới hạ bãi'}</strong>. Mốc hẹn: <strong class="text-amber-950 font-mono">${trip.dropoff_appointment_time}</strong>. Đã hạch toán: <strong class="text-teal-900">${feeCustStr}</strong> | <strong class="text-indigo-900">${allowDrvStr}</strong>.`;
+            }
+        } else {
+            if (overnightBadge) overnightBadge.classList.add('hidden');
+            if (detentionBadgeStatus) {
+                detentionBadgeStatus.className = 'px-2 py-0.2 rounded font-bold text-[10.5px] bg-slate-100 text-slate-700';
+                detentionBadgeStatus.innerText = 'Bình thường';
+            }
+            if (detentionInfoText) {
+                detentionInfoText.innerHTML = `Xe kéo cont ra khỏi kho lúc <strong>${trip.actual_gate_out_time || '-'}</strong>. Nếu kho yêu cầu chờ sau 0h mới hạ bãi, vui lòng bấm cập nhật để tự động tính phụ phí.`;
+            }
+        }
+
         // Lịch đóng hàng & Cắt máng
         const loadSchedEl = document.getElementById('detail-loading-schedule');
         if (loadSchedEl) loadSchedEl.innerText = `${trip.loading_date} (Giờ: ${trip.loading_time || '8H'})`;
@@ -707,11 +1348,17 @@ async function viewTripDetail(tripCode) {
         if (notesEl) notesEl.innerText = trip.cargo_notes || 'Không có lưu ý đặc biệt';
 
         // Hành trình 3 điểm
-        document.getElementById('detail-pickup').innerText = trip.pickup;
-        document.getElementById('detail-warehouse').innerText = trip.warehouse;
-        document.getElementById('detail-dropoff').innerText = trip.dropoff || 'Hạ bãi rỗng';
+        setText('detail-pickup', trip.pickup);
+        setText('detail-warehouse', trip.warehouse);
+        setText('detail-dropoff', trip.dropoff || 'Hạ bãi rỗng');
 
-        // Link Zalo tài xế
+        // Link Zalo và Màn hình Tài xế Mobile
+        const driverPortalUrl = `${window.location.origin}/driver/${trip.hashid || trip.id || trip.trip_code}/`;
+        const driverPortalBtn = document.getElementById('driver-portal-btn');
+        if (driverPortalBtn) {
+            driverPortalBtn.href = driverPortalUrl;
+        }
+
         const zaloLink = document.getElementById('zalo-driver-link');
         if (zaloLink) {
             zaloLink.href = trip.driver_phone ? `https://zalo.me/${trip.driver_phone}` : '#';
@@ -720,8 +1367,10 @@ async function viewTripDetail(tripCode) {
         // Status Badge
         const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
         const badge = document.getElementById('detail-status-badge');
-        badge.className = `px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
-        badge.innerText = trip.status_label;
+        if (badge) {
+            badge.className = `px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
+            badge.innerText = trip.status_label;
+        }
 
         // Trạng thái Chốt Sổ Kế Toán (Settlement Controls)
         const settleCont = document.getElementById('settlement-status-container');
@@ -851,7 +1500,11 @@ async function viewTripDetail(tripCode) {
                     let iconBg = 'bg-teal-50 border-teal-200';
                     let tagLabel = doc.type_label || 'Chứng từ';
 
-                    if (doc.type === 'EIR_PICKUP') {
+                    if (doc.type === 'BOOKING_NOTE') {
+                        iconClass = 'ph-fill ph-file-pdf text-rose-600';
+                        iconBg = 'bg-rose-50 border-rose-200';
+                        tagLabel = 'Lệnh Booking / Cấp Rỗng';
+                    } else if (doc.type === 'EIR_PICKUP') {
                         iconClass = 'ph-fill ph-truck text-blue-600';
                         iconBg = 'bg-blue-50 border-blue-200';
                         tagLabel = 'Phiếu EIR Lấy Cont';
@@ -892,9 +1545,17 @@ async function viewTripDetail(tripCode) {
                                     <i class="ph ph-clock mr-1 text-[10px]"></i>${doc.time}
                                 </p>
                             </div>
-                            <span class="text-[10px] px-2 py-0.5 ${doc.is_verified ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300'} border rounded-md font-bold font-heading shrink-0">
-                                ${doc.is_verified ? 'Đã Nghiệm Thu' : 'Chờ Đối Chiếu'}
-                            </span>
+                            <div class="flex items-center space-x-1.5 shrink-0 ml-2">
+                                <span class="text-[10px] px-2 py-0.5 ${doc.is_verified ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300'} border rounded-md font-bold font-heading">
+                                    ${doc.is_verified ? 'Đã Nghiệm Thu' : 'Chờ Đối Chiếu'}
+                                </span>
+                                ${doc.file_url ? `
+                                    <a href="${doc.file_url}" target="_blank" rel="noopener noreferrer" 
+                                       class="px-2 py-0.5 text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 rounded-md hover:bg-teal-100 flex items-center gap-1 transition-colors" title="Xem / Tải chứng từ">
+                                        <i class="ph-bold ph-eye"></i> Xem
+                                    </a>
+                                ` : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -903,7 +1564,7 @@ async function viewTripDetail(tripCode) {
 
     } catch (err) {
         console.error('Error fetching trip detail:', err);
-        showToast('danger', 'Không thể mở chi tiết chuyến xe.', 'Lỗi');
+        showToast('danger', err.message || 'Không thể mở chi tiết chuyến xe.', 'Lỗi');
     }
 }
 
@@ -942,6 +1603,51 @@ function renderCostSheetTable(trip) {
 
     let totalCalculated = 0;
 
+    function renderExpenseDriverLegBadge(exp, t) {
+        if (!exp) return '<span class="text-slate-300 text-xs">-</span>';
+        const leg = exp.trip_leg || 'ENTIRE';
+        if (leg === 'LEG_1') {
+            const dName = exp.driver_name || t.driver || 'Tài xế 1';
+            const vPlate = exp.vehicle_plate || t.vehicle || 'Xe 1';
+            return `
+                <div class="flex items-center space-x-1.5 flex-wrap">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-teal-100 text-teal-900 border border-teal-300 shrink-0">
+                        <i class="ph-bold ph-arrow-circle-right text-teal-700 mr-1"></i>Chặng 1
+                    </span>
+                    <span class="font-bold text-slate-800 text-[12px]">${dName}</span>
+                    <span class="text-[11px] text-slate-500 font-mono">(${vPlate})</span>
+                </div>
+            `;
+        } else if (leg === 'LEG_2') {
+            const dName = exp.driver_name || t.dropoff_driver || 'Tài xế 2';
+            const vPlate = exp.vehicle_plate || t.dropoff_vehicle || 'Xe 2';
+            return `
+                <div class="flex items-center space-x-1.5 flex-wrap">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-indigo-100 text-indigo-900 border border-indigo-300 shrink-0">
+                        <i class="ph-bold ph-arrow-circle-down text-indigo-700 mr-1"></i>Chặng 2
+                    </span>
+                    <span class="font-bold text-slate-800 text-[12px]">${dName}</span>
+                    <span class="text-[11px] text-slate-500 font-mono">(${vPlate})</span>
+                </div>
+            `;
+        } else if (leg === 'COMPANY') {
+            return `
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                    <i class="ph ph-buildings mr-1 text-slate-500"></i>Công ty chi chung
+                </span>
+            `;
+        } else {
+            const dName = exp.driver_name || t.driver || 'Tài xế';
+            const vPlate = exp.vehicle_plate || t.vehicle || 'Đầu kéo';
+            return `
+                <div class="flex items-center space-x-1.5 flex-wrap">
+                    <span class="font-bold text-slate-800 text-[12px]">${dName}</span>
+                    <span class="text-[11px] text-slate-500 font-mono">(${vPlate})</span>
+                </div>
+            `;
+        }
+    }
+
     costItems.forEach(item => {
         if (item.key === 'fee_einvoice') {
             const einvInfo = item.getVal(trip);
@@ -951,6 +1657,9 @@ function renderCostSheetTable(trip) {
                     <td class="py-1.5 px-3 border-r border-slate-200/70">
                         <span class="font-bold text-slate-900 text-[13px]">${item.title}</span>
                         <p class="text-[11.5px] text-slate-400 mt-0.5">${item.sub}</p>
+                    </td>
+                    <td class="py-1.5 px-3 border-r border-slate-200/70 text-slate-400 text-xs italic">
+                        Cảng / Depot
                     </td>
                     <td class="py-1.5 px-3 text-right text-slate-400 font-medium border-r border-slate-200/70">-</td>
                     <td class="py-1.5 px-3 border-r border-slate-200/70" colspan="2">
@@ -996,6 +1705,11 @@ function renderCostSheetTable(trip) {
             if (matchedExps.length > 1) {
                 // TRƯỜNG HỢP CÓ TỪ 2 KHOẢN CHI TRỞ LÊN: HỖ TRỢ BẤM VÀO ĐỂ XỔ XUỐNG XEM CHI TIẾT TỪNG DÒNG
                 const summaryInvText = matchedExps.map(e => e.invoice_number ? e.invoice_number : '').filter(Boolean).join(', ');
+                const hasLeg1 = matchedExps.some(e => e.trip_leg === 'LEG_1');
+                const hasLeg2 = matchedExps.some(e => e.trip_leg === 'LEG_2');
+                const legSummaryBadge = (hasLeg1 && hasLeg2)
+                    ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300"><i class="ph-bold ph-arrows-split mr-1 text-amber-700"></i>Chặng 1 & 2</span>`
+                    : (hasLeg1 ? `<span class="text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">Chặng 1</span>` : (hasLeg2 ? `<span class="text-xs font-bold text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">Chặng 2</span>` : `<span class="text-xs font-bold text-slate-700">${trip.driver || '-'}</span>`));
                 
                 tbody.innerHTML += `
                     <!-- DÒNG TỔNG GỘP (Clickable Accordion) -->
@@ -1013,6 +1727,9 @@ function renderCostSheetTable(trip) {
                             <p class="text-[11.5px] text-teal-700 font-semibold mt-0.5 flex items-center">
                                 <i class="ph ph-hand-pointing mr-1"></i> Bấm để xem/ẩn chi tiết từng vé (${matchedExps.length} dòng con)
                             </p>
+                        </td>
+                        <td class="py-2 px-3 border-r border-slate-200/70">
+                            ${legSummaryBadge}
                         </td>
                         <td class="py-2 px-3 text-right font-black text-[13px] tabular-nums text-rose-600 font-mono border-r border-slate-200/70">
                             <span class="border-b-2 border-dotted border-rose-400 pb-0.5" title="Tổng cộng ${matchedExps.length} khoản">
@@ -1048,6 +1765,9 @@ function renderCostSheetTable(trip) {
                                     <span class="font-bold text-slate-900 text-[12.5px]">${subExp.notes || (item.title + ' #' + (sIdx + 1))}</span>
                                 </div>
                                 ${subExp.time ? `<p class="text-[11px] text-slate-400 pl-5 font-normal mt-0.5">${subExp.time}</p>` : ''}
+                            </td>
+                            <td class="py-1.5 px-2.5 border-r border-slate-200/70">
+                                ${renderExpenseDriverLegBadge(subExp, trip)}
                             </td>
                             <td class="py-1.5 px-2.5 text-right font-black text-rose-600 tabular-nums font-mono text-[13px] border-r border-slate-200/70">
                                 ${formatMoney(subExp.amount)}
@@ -1114,6 +1834,9 @@ function renderCostSheetTable(trip) {
                         <td class="py-1.5 px-3 text-center text-slate-400 font-bold border-r border-slate-200/70">${item.stt}</td>
                         <td class="py-1.5 px-3 border-r border-slate-200/70">
                             <span class="font-bold text-slate-900 text-[13px]">${item.title}</span>
+                        </td>
+                        <td class="py-1.5 px-3 border-r border-slate-200/70">
+                            ${singleExp ? renderExpenseDriverLegBadge(singleExp, trip) : '<span class="text-slate-300 text-xs">-</span>'}
                         </td>
                         <td class="py-1.5 px-3 text-right font-black text-[13px] tabular-nums font-mono border-r border-slate-200/70 ${amountSum > 0 ? 'text-rose-600' : 'text-slate-400'}">
                             ${amountSum > 0 ? formatMoney(amountSum) : '-'}
@@ -1212,6 +1935,27 @@ function renderCostSheetTable(trip) {
     if (appTotal) appTotal.innerText = formatMoney(totalCalculated);
 }
 
+// Sao chép Lệnh điều xe kèm link Mobile Driver Portal gửi tài xế qua Zalo/SMS
+window.copyDriverPortalLink = function() {
+    const trip = window.currentTripDetail;
+    if (!trip) {
+        alert('Chưa có thông tin chi tiết chuyến xe để sao chép!');
+        return;
+    }
+    const portalUrl = `${window.location.origin}/driver/${trip.hashid || trip.id || trip.trip_code}/`;
+    const message = `LỆNH ĐIỀU XE BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nXe: ${trip.vehicle || '-'} | Mooc: ${trip.trailer || '-'}\nCont: ${trip.container || '-'} | Seal: ${trip.seal || '-'}\nĐiểm 1 (Lấy cont): ${trip.pickup || '-'}\nĐiểm 2 (Giao kho): ${trip.warehouse || '-'}\nĐiểm 3 (Hạ cont): ${trip.dropoff || '-'}\n👉 Mở link mobile báo mốc & kê chi phí: ${portalUrl}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(message).then(() => {
+            alert('✓ Đã sao chép Lệnh điều xe kèm link Mobile Driver Portal vào bộ nhớ tạm!\nBạn có thể dán (Paste) ngay vào Zalo gửi cho tài xế.');
+        }).catch(err => {
+            prompt('Sao chép liên kết gửi tài xế:', portalUrl);
+        });
+    } else {
+        prompt('Sao chép liên kết gửi tài xế:', portalUrl);
+    }
+};
+
 // Hàm mở / đóng chi tiết các dòng chi phí con khi người dùng click
 function toggleExpenseDetail(code) {
     const subRows = document.querySelectorAll(`.sub-row-${code}`);
@@ -1224,7 +1968,7 @@ function toggleExpenseDetail(code) {
     }
 }
 
-// Render dữ liệu vào App di động giả lập
+// Đồng bộ dữ liệu hiện trường sang Mobile Driver Sync
 function renderDriverMobileApp(trip) {
     const appTitle = document.getElementById('app-title');
     if (appTitle) appTitle.innerText = trip.customer;
@@ -1302,10 +2046,184 @@ function renderDriverMobileApp(trip) {
     });
 }
 
+// Helper đổ dữ liệu Chặng / Tài xế / Đầu kéo vào dropdown chi phí (Hỗ trợ Tài xế đăng nhập & Admin văn phòng)
+function populateExpenseLegOptions(selectElId, selectedVal = null) {
+    const select = document.getElementById(selectElId);
+    if (!select || !currentActiveTripData) return;
+
+    const t = currentActiveTripData;
+    let html = '';
+
+    // Xác định thông tin người dùng đang đăng nhập
+    const currentUser = window.CURRENT_USER || {};
+    const isCurrentUserDriver = currentUser.role === 'DRIVER';
+    const currentEmpId = currentUser.employee_id;
+
+    // Xác định giá trị mặc định được chọn
+    let targetVal = selectedVal;
+    if (!targetVal) {
+        if (isCurrentUserDriver && currentEmpId) {
+            if (t.is_split_trip && t.dropoff_driver_id === currentEmpId) {
+                targetVal = 'LEG_2';
+            } else if (t.driver_id === currentEmpId) {
+                targetVal = t.is_split_trip ? 'LEG_1' : 'ENTIRE';
+            } else {
+                targetVal = `DRIVER_${currentEmpId}`;
+            }
+        } else {
+            // Mặc định cho Admin / Điều phối văn phòng
+            targetVal = t.is_split_trip ? 'LEG_1' : 'ENTIRE';
+        }
+    }
+
+    // Nhóm 1: Chặng vận chuyển & Tài xế Chuyến xe
+    html += `<optgroup label="Tài xế & Chặng theo Chuyến xe">`;
+    if (t.is_split_trip) {
+        const driver1 = t.driver || 'Tài xế Chặng 1';
+        const veh1 = t.vehicle || 'Xe 1';
+        const driver2 = t.dropoff_driver || 'Tài xế Chặng 2';
+        const veh2 = t.dropoff_vehicle || 'Xe 2';
+
+        html += `<option value="LEG_1" data-driver-id="${t.driver_id || ''}" data-vehicle-id="${t.vehicle_id || ''}" ${targetVal === 'LEG_1' ? 'selected' : ''}>Chặng 1 (Lấy cont ➔ Kho): ${driver1} (${veh1})</option>`;
+        html += `<option value="LEG_2" data-driver-id="${t.dropoff_driver_id || ''}" data-vehicle-id="${t.dropoff_vehicle_id || ''}" ${targetVal === 'LEG_2' ? 'selected' : ''}>Chặng 2 (Kho ➔ Hạ bãi): ${driver2} (${veh2})</option>`;
+        html += `<option value="ENTIRE" data-driver-id="${t.driver_id || ''}" data-vehicle-id="${t.vehicle_id || ''}" ${targetVal === 'ENTIRE' ? 'selected' : ''}>Toàn trình: ${driver1} (${veh1})</option>`;
+        html += `<option value="COMPANY" ${targetVal === 'COMPANY' ? 'selected' : ''}>Công ty chi chung (Cược cont, nâng hạ chuyển khoản VP...)</option>`;
+    } else {
+        const driver = t.driver || 'Tài xế';
+        const veh = t.vehicle || 'Đầu kéo';
+        html += `<option value="ENTIRE" data-driver-id="${t.driver_id || ''}" data-vehicle-id="${t.vehicle_id || ''}" ${targetVal === 'ENTIRE' || targetVal === 'LEG_1' ? 'selected' : ''}>Toàn trình: ${driver} (${veh})</option>`;
+        html += `<option value="COMPANY" ${targetVal === 'COMPANY' ? 'selected' : ''}>Công ty chi chung (Cược cont, nâng hạ chuyển khoản VP...)</option>`;
+    }
+    html += `</optgroup>`;
+
+    // Nhóm 2: Chọn tài xế khác trong Đội xe (Admin / Điều phối văn phòng có thể chọn tài khác)
+    if (t.available_drivers && t.available_drivers.length > 0) {
+        html += `<optgroup label="Tất cả Tài xế Đội xe (Admin / Điều phối chọn)">`;
+        t.available_drivers.forEach(d => {
+            const val = `DRIVER_${d.id}`;
+            const isSelected = (targetVal === val || targetVal === d.id);
+            const vehPlate = d.vehicle ? ` - Xe: ${d.vehicle}` : '';
+            html += `<option value="${val}" data-driver-id="${d.id}" data-vehicle-id="${d.vehicle_id || ''}" ${isSelected ? 'selected' : ''}>${d.name} [${d.code}]${vehPlate}</option>`;
+        });
+        html += `</optgroup>`;
+    }
+
+    select.innerHTML = html;
+}
+
+// --- QUẢN LÝ MỐC CHỜ HẠ CONT SAU 0H & TÍNH PHÍ LƯU XE ---
+function openModalDetention() {
+    if (!currentActiveTripData) return;
+    const t = currentActiveTripData;
+    const modal = document.getElementById('modal-detention');
+    if (!modal) return;
+
+    const gateoutEl = document.getElementById('detention-modal-gateout-time');
+    if (gateoutEl) gateoutEl.innerText = t.actual_gate_out_time || t.loading_time || 'Chưa ghi nhận mốc ra cổng';
+
+    const inpAppoint = document.getElementById('detention-inp-appointment');
+    if (inpAppoint) inpAppoint.value = (t.dropoff_appointment_time && t.dropoff_appointment_time !== '-') ? t.dropoff_appointment_time : 'Sau 00:00';
+
+    const inpActual = document.getElementById('detention-inp-actual');
+    if (inpActual) inpActual.value = (t.actual_dropoff_time && t.actual_dropoff_time !== '-') ? t.actual_dropoff_time : '';
+
+    const inpReason = document.getElementById('detention-inp-reason');
+    if (inpReason && t.detention_reason) inpReason.value = t.detention_reason;
+
+    const inpHours = document.getElementById('detention-inp-hours');
+    if (inpHours) inpHours.value = t.overnight_wait_hours > 0 ? t.overnight_wait_hours : 8.0;
+
+    const chkOvernight = document.getElementById('detention-chk-overnight');
+    if (chkOvernight) chkOvernight.checked = t.is_overnight_detention || true;
+
+    const inpFeeCust = document.getElementById('detention-inp-fee-customer');
+    if (inpFeeCust) {
+        inpFeeCust.value = t.detention_fee_customer > 0 ? new Intl.NumberFormat('vi-VN').format(t.detention_fee_customer) : '800.000';
+    }
+
+    const inpAllowDrv = document.getElementById('detention-inp-allowance-driver');
+    if (inpAllowDrv) {
+        inpAllowDrv.value = t.detention_driver_allowance > 0 ? new Intl.NumberFormat('vi-VN').format(t.detention_driver_allowance) : '250.000';
+    }
+
+    modal.classList.remove('hidden-view');
+}
+
+function closeModalDetention() {
+    const modal = document.getElementById('modal-detention');
+    if (modal) modal.classList.add('hidden-view');
+}
+
+function setQuickAppointment(val) {
+    const inp = document.getElementById('detention-inp-appointment');
+    if (inp) inp.value = val;
+}
+
+function setCurrentTimeToDropoff() {
+    const inp = document.getElementById('detention-inp-actual');
+    if (!inp) return;
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth() + 1)}`;
+    inp.value = timeStr;
+}
+
+async function submitDetentionUpdate() {
+    if (!currentActiveTripData) return;
+    const tripCode = currentActiveTripData.trip_code || currentActiveTripData.id;
+    
+    const appointmentTime = document.getElementById('detention-inp-appointment')?.value?.trim();
+    const actualTime = document.getElementById('detention-inp-actual')?.value?.trim();
+    const reason = document.getElementById('detention-inp-reason')?.value?.trim();
+    const hours = parseFloat(document.getElementById('detention-inp-hours')?.value || 0);
+    const isOvernight = document.getElementById('detention-chk-overnight')?.checked ?? true;
+    
+    const parseMoney = (id) => {
+        const val = document.getElementById(id)?.value?.replace(/\./g, '').replace(/,/g, '').trim();
+        return parseInt(val) || 0;
+    };
+    
+    const feeCustomer = parseMoney('detention-inp-fee-customer');
+    const allowanceDriver = parseMoney('detention-inp-allowance-driver');
+    const autoCreateExpense = document.getElementById('detention-chk-auto-expense')?.checked ?? true;
+
+    try {
+        const res = await fetchWithAuth(`/api/trips/${tripCode}/`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                dropoff_appointment_time: appointmentTime,
+                actual_dropoff_time: actualTime,
+                detention_reason: reason,
+                overnight_wait_hours: hours,
+                is_overnight_detention: isOvernight,
+                detention_fee_customer: feeCustomer,
+                detention_driver_allowance: allowanceDriver,
+                auto_create_driver_allowance: autoCreateExpense
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Cập nhật thất bại');
+
+        closeModalDetention();
+        showToast('success', 'Đã lưu mốc hẹn hạ sau 0h và tính phí lưu xe thành công!', 'Tiến Độ Hạ Cont');
+
+        // Tải lại chi tiết chuyến xe
+        if (typeof openTripDetail === 'function') {
+            await openTripDetail(tripCode);
+        }
+    } catch (err) {
+        showToast('danger', err.message || 'Lỗi khi cập nhật mốc lưu xe', 'Thất bại');
+    }
+}
+
 // Các hàm Modal Thêm Chi Phí Phát Sinh
 function openModalAddExpense() {
     const modal = document.getElementById('modal-add-expense');
-    if (modal) modal.classList.remove('hidden-view');
+    if (modal) {
+        populateExpenseLegOptions('expense-leg-select');
+        modal.classList.remove('hidden-view');
+    }
 }
 
 /**
@@ -1385,6 +2303,31 @@ async function submitAddExpense(e) {
     if (!currentActiveTripCode) return;
 
     const category = document.getElementById('expense-category-select').value;
+    const legSelect = document.getElementById('expense-leg-select');
+    const selectedOption = legSelect?.options[legSelect.selectedIndex];
+    const legVal = selectedOption?.value || 'ENTIRE';
+
+    let trip_leg = 'ENTIRE';
+    let driver_id = null;
+    let vehicle_id = null;
+
+    if (legVal.startsWith('DRIVER_')) {
+        driver_id = parseInt(legVal.replace('DRIVER_', ''), 10);
+        const dataVehId = selectedOption?.getAttribute('data-vehicle-id');
+        vehicle_id = dataVehId ? parseInt(dataVehId, 10) : null;
+        trip_leg = 'ENTIRE';
+    } else if (legVal === 'COMPANY') {
+        trip_leg = 'COMPANY';
+        driver_id = null;
+        vehicle_id = null;
+    } else {
+        trip_leg = legVal; // 'LEG_1', 'LEG_2', 'ENTIRE'
+        const rawDriverId = selectedOption?.getAttribute('data-driver-id');
+        const rawVehId = selectedOption?.getAttribute('data-vehicle-id');
+        driver_id = rawDriverId ? parseInt(rawDriverId, 10) : null;
+        vehicle_id = rawVehId ? parseInt(rawVehId, 10) : null;
+    }
+
     const amount = parseNumberVN(document.getElementById('expense-amount-input').value) || 0;
     const invoice_number = document.getElementById('expense-inv-number').value.trim();
     const invoice_lookup_code = document.getElementById('expense-inv-lookup-code').value.trim();
@@ -1393,30 +2336,34 @@ async function submitAddExpense(e) {
     const notes = document.getElementById('expense-notes-input').value.trim();
     const is_on_behalf_of_customer = document.getElementById('expense-on-behalf-checkbox')?.checked || false;
 
+    const payload = {
+        category,
+        trip_leg,
+        amount,
+        invoice_number,
+        invoice_lookup_code,
+        invoice_issuer,
+        invoice_lookup_url,
+        notes,
+        is_on_behalf_of_customer
+    };
+    if (driver_id) payload.driver_id = driver_id;
+    if (vehicle_id) payload.vehicle_id = vehicle_id;
+
     try {
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/`, {
+        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/expenses/`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                category,
-                amount,
-                invoice_number,
-                invoice_lookup_code,
-                invoice_issuer,
-                invoice_lookup_url,
-                notes,
-                is_on_behalf_of_customer
-            })
+            body: JSON.stringify(payload)
         });
 
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             closeModalAddExpense();
             const chiHoLabel = is_on_behalf_of_customer ? ' [Chi hộ KH]' : '';
             showToast('success', data.message + chiHoLabel, 'Ghi nhận chi phí thành công');
             viewTripDetail(currentActiveTripCode);
         } else {
-            showToast('danger', data.error || 'Có lỗi xảy ra');
+            showToast('danger', data.message || data.error || data.detail || 'Có lỗi xảy ra');
         }
     } catch (err) {
         console.error('Error adding expense:', err);
@@ -1431,6 +2378,20 @@ function openModalEditExpense(exp) {
     
     document.getElementById('edit-expense-id').value = exp.id;
     document.getElementById('edit-expense-category-select').value = exp.category_code;
+    
+    const t = currentActiveTripData;
+    let selectedLeg = exp.trip_leg || 'ENTIRE';
+    if (exp.driver_id) {
+        if (t && exp.driver_id === t.driver_id) {
+            selectedLeg = t.is_split_trip ? (exp.trip_leg || 'LEG_1') : 'ENTIRE';
+        } else if (t && t.is_split_trip && exp.driver_id === t.dropoff_driver_id) {
+            selectedLeg = 'LEG_2';
+        } else {
+            selectedLeg = `DRIVER_${exp.driver_id}`;
+        }
+    }
+    populateExpenseLegOptions('edit-expense-leg-select', selectedLeg);
+    
     document.getElementById('edit-expense-amount-input').value = formatNumberVN(exp.amount);
     document.getElementById('edit-expense-inv-number').value = exp.invoice_number || '';
     document.getElementById('edit-expense-inv-lookup-code').value = exp.invoice_lookup_code || '';
@@ -1477,6 +2438,31 @@ async function submitEditExpense(e) {
 
     const expenseId = document.getElementById('edit-expense-id').value;
     const category = document.getElementById('edit-expense-category-select').value;
+    const legSelect = document.getElementById('edit-expense-leg-select');
+    const selectedOption = legSelect?.options[legSelect.selectedIndex];
+    const legVal = selectedOption?.value || 'ENTIRE';
+
+    let trip_leg = 'ENTIRE';
+    let driver_id = null;
+    let vehicle_id = null;
+
+    if (legVal.startsWith('DRIVER_')) {
+        driver_id = parseInt(legVal.replace('DRIVER_', ''), 10);
+        const dataVehId = selectedOption?.getAttribute('data-vehicle-id');
+        vehicle_id = dataVehId ? parseInt(dataVehId, 10) : null;
+        trip_leg = 'ENTIRE';
+    } else if (legVal === 'COMPANY') {
+        trip_leg = 'COMPANY';
+        driver_id = null;
+        vehicle_id = null;
+    } else {
+        trip_leg = legVal; // 'LEG_1', 'LEG_2', 'ENTIRE'
+        const rawDriverId = selectedOption?.getAttribute('data-driver-id');
+        const rawVehId = selectedOption?.getAttribute('data-vehicle-id');
+        driver_id = rawDriverId ? parseInt(rawDriverId, 10) : null;
+        vehicle_id = rawVehId ? parseInt(rawVehId, 10) : null;
+    }
+
     const amount = parseNumberVN(document.getElementById('edit-expense-amount-input').value) || 0;
     const invoice_number = document.getElementById('edit-expense-inv-number').value.trim();
     const invoice_lookup_code = document.getElementById('edit-expense-inv-lookup-code').value.trim();
@@ -1485,29 +2471,33 @@ async function submitEditExpense(e) {
     const notes = document.getElementById('edit-expense-notes-input').value.trim();
     const is_on_behalf_of_customer = document.getElementById('edit-expense-on-behalf-checkbox')?.checked || false;
 
+    const payload = {
+        category,
+        trip_leg,
+        amount,
+        invoice_number,
+        invoice_lookup_code,
+        invoice_issuer,
+        invoice_lookup_url,
+        notes,
+        is_on_behalf_of_customer,
+        driver_id,
+        vehicle_id
+    };
+
     try {
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/${expenseId}/`, {
+        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/expenses/${expenseId}/`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                category,
-                amount,
-                invoice_number,
-                invoice_lookup_code,
-                invoice_issuer,
-                invoice_lookup_url,
-                notes,
-                is_on_behalf_of_customer
-            })
+            body: JSON.stringify(payload)
         });
 
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             closeModalEditExpense();
             showToast('success', data.message, 'Cập nhật thành công');
             viewTripDetail(currentActiveTripCode);
         } else {
-            showToast('danger', data.error || 'Không thể cập nhật khoản chi phí');
+            showToast('danger', data.message || data.error || data.detail || 'Không thể cập nhật khoản chi phí');
         }
     } catch (err) {
         console.error('Error updating expense:', err);
@@ -1526,17 +2516,16 @@ async function deleteExpensePrompt(expenseId, categoryName) {
     if (!confirmDelete) return;
 
     try {
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/${expenseId}/`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/expenses/${expenseId}/`, {
+            method: 'DELETE'
         });
 
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast('success', data.message, 'Đã xóa chi phí');
             viewTripDetail(currentActiveTripCode);
         } else {
-            showToast('danger', data.error || 'Không thể xóa khoản chi phí');
+            showToast('danger', data.message || data.error || data.detail || 'Không thể xóa khoản chi phí');
         }
     } catch (err) {
         console.error('Error deleting expense:', err);
@@ -1557,17 +2546,16 @@ async function settleTripExpenses() {
     if (!confirmSettle) return;
 
     try {
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/settle-expenses/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/settle-expenses/`, {
+            method: 'POST'
         });
 
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast('success', data.message, 'Khóa Sổ Kế Toán Thành Công');
             viewTripDetail(currentActiveTripCode);
         } else {
-            showToast('danger', data.error || 'Có lỗi khi chốt sổ');
+            showToast('danger', data.message || data.error || data.detail || 'Có lỗi khi chốt sổ');
         }
     } catch (err) {
         console.error('Error settling expenses:', err);
@@ -1585,17 +2573,16 @@ async function unsettleTripExpenses() {
     if (!confirmUnsettle) return;
 
     try {
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/unsettle-expenses/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/unsettle-expenses/`, {
+            method: 'POST'
         });
 
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast('warning', data.message, 'Đã Mở Khóa Sổ Kế Toán');
             viewTripDetail(currentActiveTripCode);
         } else {
-            showToast('danger', data.error || 'Không thể mở khóa');
+            showToast('danger', data.message || data.error || data.detail || 'Không thể mở khóa');
         }
     } catch (err) {
         console.error('Error unsettling expenses:', err);
@@ -1630,16 +2617,15 @@ async function driverDeleteExpense(expenseId) {
     if (!ok) return;
 
     try {
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/${expenseId}/`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/expenses/${expenseId}/`, {
+            method: 'DELETE'
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast('success', 'Đã hủy khoản chi nhập nhầm', 'Tài xế xóa thành công');
             viewTripDetail(currentActiveTripCode);
         } else {
-            showToast('danger', data.error || 'Không thể xóa');
+            showToast('danger', data.message || data.error || data.detail || 'Không thể xóa');
         }
     } catch (err) {
         console.error('Error driver deleting expense:', err);
@@ -1652,18 +2638,17 @@ async function driverReportMilestone(milestoneCode) {
     if (!currentActiveTripCode) return;
 
     try {
-        const res = await fetch(`/api/trips/${currentActiveTripCode}/milestones/`, {
+        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/milestones/`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ milestone: milestoneCode })
         });
 
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast('success', data.message, 'Cập nhật tiến độ kho');
             viewTripDetail(currentActiveTripCode);
         } else {
-            showToast('danger', data.error || 'Không thể cập nhật mốc');
+            showToast('danger', data.message || data.error || data.detail || 'Không thể cập nhật mốc');
         }
     } catch (err) {
         console.error('Error reporting milestone:', err);
@@ -1675,43 +2660,341 @@ async function driverReportMilestone(milestoneCode) {
 function backToTrips() {
     document.getElementById('view-trip-detail').classList.add('hidden-view');
     if (previousActiveTab && previousActiveTab !== 'trip-detail') {
-        switchTab(previousActiveTab);
+        switchTab(previousActiveTab, true);
     } else {
-        switchTab('dieu-van');
+        switchTab('dieu-van', true);
     }
+}
+
+// --- XỬ LÝ ĐÍNH KÈM FILE BOOKING / LỆNH CẤP RỖNG (TRIP DISPATCH & SALE) ---
+let currentInheritedBookingFile = null;
+let tripBookingFilesList = [];
+let saleBookingFilesList = [];
+let saleBookingExistingDocs = [];
+let currentEditingBookingId = null;
+
+function setBookingTime(timeStr) {
+    const el = document.getElementById('booking-loading-time');
+    if (el) {
+        el.value = timeStr;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+// 1. Quản lý file đính kèm cho Lệnh điều động (Trip modal)
+function handleBookingFilesSelect(input) {
+    if (!input || !input.files || input.files.length === 0) return;
+    
+    for (let i = 0; i < input.files.length; i++) {
+        const file = input.files[i];
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('warning', `File "${file.name}" vượt quá 5MB. Vui lòng chọn file nhẹ hơn.`, 'File Quá Dung Lượng');
+            continue;
+        }
+        // Tránh trùng tên & kích thước
+        const isDuplicate = tripBookingFilesList.some(f => f.name === file.name && f.size === file.size);
+        if (!isDuplicate) {
+            tripBookingFilesList.push(file);
+        }
+    }
+    input.value = '';
+    renderTripBookingFilesList();
+}
+
+function removeTripBookingFile(index) {
+    if (index >= 0 && index < tripBookingFilesList.length) {
+        tripBookingFilesList.splice(index, 1);
+        renderTripBookingFilesList();
+    }
+}
+
+function renderTripBookingFilesList() {
+    const area = document.getElementById('booking-files-list-area');
+    const summary = document.getElementById('booking-file-summary');
+    if (!area) return;
+
+    let itemsHtml = '';
+    let totalCount = tripBookingFilesList.length;
+
+    // Nếu có file kế thừa từ booking cha
+    if (currentInheritedBookingFile && currentInheritedBookingFile.url) {
+        totalCount += 1;
+        const isPdf = currentInheritedBookingFile.url.toLowerCase().endsWith('.pdf');
+        itemsHtml += `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 border border-teal-200 text-xs">
+                <div class="flex items-center space-x-2 truncate pr-2">
+                    <i class="${isPdf ? 'ph-fill ph-file-pdf text-rose-600' : 'ph-fill ph-file-image text-teal-600'} text-base shrink-0"></i>
+                    <div class="truncate">
+                        <p class="font-bold text-teal-900 truncate" title="${currentInheritedBookingFile.name || 'File Booking'}">${currentInheritedBookingFile.name || 'File Booking'}</p>
+                        <span class="text-[10px] text-teal-700 italic font-medium">(Kế thừa từ Booking)</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1 shrink-0">
+                    <a href="${currentInheritedBookingFile.url}" target="_blank" rel="noopener noreferrer" 
+                        class="p-1 rounded text-teal-700 hover:text-teal-900 hover:bg-teal-100 transition-colors" title="Mở xem file">
+                        <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    tripBookingFilesList.forEach((file, idx) => {
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+        const sizeKb = (file.size / 1024).toFixed(0);
+        const sizeStr = file.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
+        const tempUrl = URL.createObjectURL(file);
+
+        itemsHtml += `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 shadow-2xs text-xs">
+                <div class="flex items-center space-x-2 truncate pr-2">
+                    <i class="${isPdf ? 'ph-fill ph-file-pdf text-rose-600' : 'ph-fill ph-file-image text-blue-600'} text-base shrink-0"></i>
+                    <div class="truncate">
+                        <p class="font-bold text-slate-800 truncate" title="${file.name}">${file.name}</p>
+                        <span class="text-[10px] text-slate-400 font-medium">(${sizeStr})</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1 shrink-0">
+                    <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
+                        class="p-1 rounded text-blue-700 hover:text-blue-900 hover:bg-blue-50 transition-colors" title="Xem trước">
+                        <i class="ph-bold ph-eye text-sm"></i>
+                    </a>
+                    <button type="button" onclick="removeTripBookingFile(${idx})" 
+                        class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors" title="Xóa file">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    area.innerHTML = itemsHtml;
+    if (summary) {
+        if (totalCount > 0) {
+            summary.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-600"></i> <strong class="text-emerald-800">${totalCount}</strong> tệp đính kèm`;
+        } else {
+            summary.innerHTML = `<i class="ph ph-info text-blue-500"></i> Chưa có tệp nào được đính kèm (hoặc kế thừa từ Booking)`;
+        }
+    }
+}
+
+function clearBookingFileSelection() {
+    const input = document.getElementById('inp-booking-file');
+    if (input) input.value = '';
+    tripBookingFilesList = [];
+    currentInheritedBookingFile = null;
+    renderTripBookingFilesList();
+}
+
+function showInheritedBookingFile(fileUrl, fileName) {
+    if (!fileUrl) {
+        currentInheritedBookingFile = null;
+    } else {
+        currentInheritedBookingFile = { url: fileUrl, name: fileName || 'File_Booking_Dinh_Kem' };
+    }
+    renderTripBookingFilesList();
+}
+
+// 2. Quản lý multi-files cho Sale / Booking Order
+function handleSaleBookingFilesSelect(input) {
+    if (!input || !input.files || input.files.length === 0) return;
+
+    for (let i = 0; i < input.files.length; i++) {
+        const file = input.files[i];
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('warning', `File "${file.name}" vượt quá 5MB. Vui lòng chọn file nhẹ hơn.`, 'File Quá Dung Lượng');
+            continue;
+        }
+        const isDuplicate = saleBookingFilesList.some(f => f.name === file.name && f.size === file.size);
+        if (!isDuplicate) {
+            saleBookingFilesList.push(file);
+        }
+    }
+    input.value = '';
+    renderSaleBookingFilesList();
+}
+
+function removeSaleBookingNewFile(index) {
+    if (index >= 0 && index < saleBookingFilesList.length) {
+        saleBookingFilesList.splice(index, 1);
+        renderSaleBookingFilesList();
+    }
+}
+
+async function deleteSaleBookingExistingDoc(docId) {
+    if (!currentEditingBookingId || !docId) {
+        saleBookingExistingDocs = saleBookingExistingDocs.filter(d => d.id !== docId);
+        renderSaleBookingFilesList();
+        return;
+    }
+
+    if (!confirm('Bạn có chắc chắn muốn xóa tài liệu này khỏi Booking?')) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/bookings/${currentEditingBookingId}/documents/${docId}/`, {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || 'Lỗi khi xóa tài liệu');
+
+        saleBookingExistingDocs = saleBookingExistingDocs.filter(d => d.id !== docId);
+        renderSaleBookingFilesList();
+        showToast('success', 'Đã xóa tài liệu đính kèm', 'Thành Công');
+    } catch (err) {
+        console.error('Lỗi xóa document:', err);
+        showToast('error', err.message || 'Không thể xóa tài liệu đính kèm', 'Lỗi');
+    }
+}
+
+function renderSaleBookingFilesList() {
+    const listArea = document.getElementById('booking-order-files-list');
+    const summary = document.getElementById('booking-order-files-summary');
+    if (!listArea) return;
+
+    let itemsHtml = '';
+    const totalCount = saleBookingExistingDocs.length + saleBookingFilesList.length;
+
+    // Render các file đã lưu trong CSDL
+    saleBookingExistingDocs.forEach(doc => {
+        const isPdf = (doc.name || doc.url || '').toLowerCase().endsWith('.pdf');
+        itemsHtml += `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 border border-teal-200 shadow-2xs text-xs">
+                <div class="flex items-center space-x-2 truncate pr-2">
+                    <i class="${isPdf ? 'ph-fill ph-file-pdf text-rose-600' : 'ph-fill ph-file-image text-teal-600'} text-base shrink-0"></i>
+                    <div class="truncate">
+                        <p class="font-bold text-teal-900 truncate" title="${doc.name || 'File Booking'}">${doc.name || 'File Booking'}</p>
+                        <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'}</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1 shrink-0">
+                    <a href="${doc.url}" target="_blank" rel="noopener noreferrer" 
+                        class="p-1 rounded text-teal-700 hover:text-teal-900 hover:bg-teal-100 transition-colors" title="Mở file">
+                        <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                    </a>
+                    ${doc.id ? `
+                        <button type="button" onclick="deleteSaleBookingExistingDoc(${doc.id})" 
+                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors" title="Xóa tài liệu này">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    // Render các file mới chọn chưa lưu
+    saleBookingFilesList.forEach((file, idx) => {
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+        const sizeKb = (file.size / 1024).toFixed(0);
+        const sizeStr = file.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
+        const tempUrl = URL.createObjectURL(file);
+
+        itemsHtml += `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-blue-200 shadow-2xs text-xs">
+                <div class="flex items-center space-x-2 truncate pr-2">
+                    <i class="${isPdf ? 'ph-fill ph-file-pdf text-rose-600' : 'ph-fill ph-file-image text-blue-600'} text-base shrink-0"></i>
+                    <div class="truncate">
+                        <p class="font-bold text-slate-800 truncate" title="${file.name}">${file.name}</p>
+                        <span class="text-[10px] text-blue-600 font-medium">Mới: (${sizeStr})</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1 shrink-0">
+                    <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
+                        class="p-1 rounded text-blue-700 hover:text-blue-900 hover:bg-blue-50 transition-colors" title="Xem trước">
+                        <i class="ph-bold ph-eye text-sm"></i>
+                    </a>
+                    <button type="button" onclick="removeSaleBookingNewFile(${idx})" 
+                        class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors" title="Bỏ file này">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    listArea.innerHTML = itemsHtml;
+    if (summary) {
+        if (totalCount > 0) {
+            summary.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-600"></i> <strong class="text-emerald-800">${totalCount}</strong> tệp đính kèm`;
+        } else {
+            summary.innerHTML = `<i class="ph ph-info text-blue-500"></i> Chưa có tệp nào được đính kèm`;
+        }
+    }
+}
+
+function clearSaleBookingFileSelection() {
+    const input = document.getElementById('booking-order-file');
+    if (input) input.value = '';
+    saleBookingFilesList = [];
+    saleBookingExistingDocs = [];
+    currentEditingBookingId = null;
+    renderSaleBookingFilesList();
+}
+
+function showSaleExistingBookingFile(fileUrl, fileName, docs = []) {
+    saleBookingFilesList = [];
+    if (docs && docs.length > 0) {
+        saleBookingExistingDocs = [...docs];
+    } else if (fileUrl) {
+        saleBookingExistingDocs = [{
+            id: null,
+            name: fileName || 'File_Booking_Dinh_Kem',
+            url: fileUrl,
+            size_formatted: ''
+        }];
+    } else {
+        saleBookingExistingDocs = [];
+    }
+    renderSaleBookingFilesList();
 }
 
 // --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (Bim_ERP Standard) ---
 async function submitNewTrip() {
-    // Reset lỗi cũ
+    const is_split_trip = document.getElementById('chk-drop-hook')?.checked || false;
+
+    // Reset lỗi cũ & cấu hình danh sách trường bắt buộc theo chế độ chạy
     const requiredFields = [
         { id: 'inp-customer', errId: 'err-customer', label: 'Khách hàng' },
         { id: 'inp-pickup', errId: 'err-pickup', label: 'Nơi lấy cont/hàng' },
-        { id: 'inp-warehouse', errId: 'err-warehouse', label: 'Nơi đóng/trả hàng' },
-        { id: 'inp-driver', errId: 'err-driver', label: 'Tài xế nhận lệnh' }
+        { id: 'inp-warehouse', errId: 'err-warehouse', label: 'Nơi đóng/trả hàng' }
     ];
+
+    if (is_split_trip) {
+        requiredFields.push({ id: 'inp-driver-leg1', errId: 'err-driver-leg1', label: 'Tài xế lấy cont (Chặng 1)' });
+        requiredFields.push({ id: 'inp-dropoff-driver', errId: 'err-dropoff-driver', label: 'Tài xế hạ cont (Chặng 2)' });
+    } else {
+        requiredFields.push({ id: 'inp-driver', errId: 'err-driver', label: 'Tài xế nhận lệnh' });
+    }
 
     let hasError = false;
     let firstErrorEl = null;
+    const missingLabels = [];
 
     requiredFields.forEach(f => {
         const inputEl = document.getElementById(f.id);
         const errEl = document.getElementById(f.errId);
+        if (!inputEl) return;
         
-        if (!inputEl.value.trim()) {
+        if (!inputEl.value || !inputEl.value.trim()) {
             hasError = true;
+            missingLabels.push(f.label);
             inputEl.classList.add('input-error');
             if (errEl) {
-                errEl.innerHTML = `<i class="ph-fill ph-warning-circle"></i> Vui lòng nhập ${f.label.toLowerCase()}`;
+                errEl.innerHTML = `<i class="ph-fill ph-warning-circle"></i> Vui lòng chọn/nhập ${f.label.toLowerCase()}`;
                 errEl.classList.remove('hidden');
             }
             if (!firstErrorEl) firstErrorEl = inputEl;
 
-            // Cơ chế tự động xóa viền đỏ khi người dùng bắt đầu nhập (Bim ERP Rule)
-            inputEl.addEventListener('input', () => {
+            // Tự động xóa viền đỏ khi người dùng bắt đầu nhập hoặc chọn option
+            const clearError = () => {
                 inputEl.classList.remove('input-error');
                 if (errEl) errEl.classList.add('hidden');
-            }, { once: true });
+            };
+            inputEl.addEventListener('input', clearError, { once: true });
+            inputEl.addEventListener('change', clearError, { once: true });
         } else {
             inputEl.classList.remove('input-error');
             if (errEl) errEl.classList.add('hidden');
@@ -1719,57 +3002,165 @@ async function submitNewTrip() {
     });
 
     if (hasError) {
-        showToast('warning', 'Vui lòng kiểm tra lại các trường thông tin bắt buộc còn thiếu!', 'Dữ liệu chưa hợp lệ');
-        if (firstErrorEl) firstErrorEl.focus();
+        showToast('warning', `Vui lòng chọn/nhập các thông tin bắt buộc: ${missingLabels.join(', ')}`, 'Thiếu dữ liệu');
+        if (firstErrorEl) {
+            firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                try { firstErrorEl.focus(); } catch (e) {}
+            }, 250);
+        }
         return;
     }
 
     const bookingOrderEl = document.getElementById('select-booking-order');
     const booking_order_id = bookingOrderEl && bookingOrderEl.value ? parseInt(bookingOrderEl.value) : null;
-    const customer = document.getElementById('inp-customer').value;
-    const type = document.getElementById('inp-type').value;
-    const container_type = document.getElementById('inp-cont-type') ? document.getElementById('inp-cont-type').value : '40HC';
-    const container = document.getElementById('inp-cont').value;
-    const booking = document.getElementById('inp-booking').value;
-    const seal = document.getElementById('inp-seal').value;
-    const cutoff = document.getElementById('inp-cutoff').value;
+    const customer = document.getElementById('inp-customer')?.value || '';
+    const type = document.getElementById('inp-type')?.value || 'Nhập';
+    const is_twin_container = document.getElementById('chk-twin-cont')?.checked || false;
+    let container_type = document.getElementById('inp-cont-type') ? document.getElementById('inp-cont-type').value : (is_twin_container ? '2x20DC' : '40HC');
+    if (is_twin_container && (!container_type || container_type === '40HC')) {
+        container_type = '2x20DC';
+    }
+    const container = document.getElementById('inp-cont')?.value || '';
+    const booking = document.getElementById('inp-booking')?.value || '';
+    const seal = document.getElementById('inp-seal')?.value || '';
+    const vgm_weight = document.getElementById('inp-vgm')?.value || '';
+    const cutoff = document.getElementById('inp-cutoff')?.value || '';
     const commercial_invoice = document.getElementById('inp-invoice') ? document.getElementById('inp-invoice').value.trim() : '';
     const warehouse_dock = document.getElementById('inp-dock') ? document.getElementById('inp-dock').value.trim() : '';
     const loading_time = document.getElementById('inp-load-time') ? document.getElementById('inp-load-time').value.trim() : '8H';
     const cont_location_type = document.getElementById('inp-cont-loc') ? document.getElementById('inp-cont-loc').value.trim() : 'NHÀ MÁY';
-    const pickup = document.getElementById('inp-pickup').value;
-    const warehouse = document.getElementById('inp-warehouse').value;
-    const dropoff = document.getElementById('inp-dropoff').value;
-    const driver = document.getElementById('inp-driver').value;
-    const notes = document.getElementById('inp-notes').value;
+
+    // Trường Cont thứ 2 (Kẹp 20ft)
+    const container_2 = is_twin_container ? (document.getElementById('inp-cont-2')?.value || '').trim() : '';
+    const seal_2 = is_twin_container ? (document.getElementById('inp-seal-2')?.value || '').trim() : '';
+    const booking_2 = is_twin_container ? (document.getElementById('inp-booking-2')?.value || '').trim() : '';
+    const vgm_weight_2 = is_twin_container ? (document.getElementById('inp-vgm-2')?.value || '').trim() : '';
+    const cargo_notes_2 = is_twin_container ? (document.getElementById('inp-cargo-notes-2')?.value || '').trim() : '';
+
+    // Nghiệp vụ Cảng: Quản lý Hạn Free DEM/DET & Giám định EIR
+    const det_free_days = parseInt(document.getElementById('inp-det-free-days')?.value) || 3;
+    const dem_free_days = parseInt(document.getElementById('inp-dem-free-days')?.value) || 3;
+    const det_expiry_date = document.getElementById('inp-det-expiry')?.value || '';
+    const dem_expiry_date = document.getElementById('inp-dem-expiry')?.value || '';
+    const container_condition = document.getElementById('select-container-condition')?.value || 'GOOD';
+    const damage_description = (document.getElementById('inp-damage-desc')?.value || '').trim();
+
+    const pickup = document.getElementById('inp-pickup')?.value || '';
+    const warehouse = document.getElementById('inp-warehouse')?.value || '';
+    const dropoff = document.getElementById('inp-dropoff')?.value || '';
+    let driver = '';
+    let vehicle = '';
+    let dropoff_driver = '';
+    let dropoff_vehicle = '';
+    let driver_split_ratio = 50;
+
+    if (is_split_trip) {
+        driver = document.getElementById('inp-driver-leg1')?.value || '';
+        vehicle = document.getElementById('inp-vehicle-leg1')?.value || '';
+        dropoff_driver = document.getElementById('inp-dropoff-driver')?.value || '';
+        dropoff_vehicle = document.getElementById('inp-dropoff-vehicle')?.value || '';
+        driver_split_ratio = parseFloat(document.getElementById('inp-driver-split-ratio')?.value) || 50;
+    } else {
+        driver = document.getElementById('inp-driver')?.value || '';
+    }
+
+    const notes = is_split_trip 
+        ? (document.getElementById('inp-notes-drop-hook')?.value || document.getElementById('inp-notes')?.value || '')
+        : (document.getElementById('inp-notes')?.value || '');
+
+    // Hiệu ứng Visual Feedback trên nút Lưu
+    const submitBtn = document.getElementById('btn-submit-trip') || document.querySelector('#form-create-trip button');
+    let originalBtnHtml = '';
+    if (submitBtn) {
+        originalBtnHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg mr-1.5"></i> Đang lưu & phát lệnh Zalo...';
+    }
 
     try {
-        const res = await fetch('/api/trips/', {
+        const formData = new FormData();
+        if (booking_order_id) formData.append('booking_order_id', booking_order_id);
+        formData.append('customer', customer);
+        formData.append('type', type);
+        formData.append('container_type', container_type);
+        formData.append('container', container);
+        formData.append('booking', booking);
+        formData.append('seal', seal);
+        formData.append('cutoff', cutoff);
+        formData.append('vgm_weight', vgm_weight);
+        formData.append('commercial_invoice', commercial_invoice);
+        formData.append('warehouse_dock', warehouse_dock);
+        formData.append('loading_time', loading_time);
+        formData.append('cont_location_type', cont_location_type);
+        formData.append('pickup', pickup);
+        formData.append('warehouse', warehouse);
+        formData.append('dropoff', dropoff);
+        formData.append('driver', driver);
+        formData.append('vehicle', vehicle);
+        formData.append('notes', notes);
+        formData.append('cargo_notes', notes);
+        formData.append('is_split_trip', is_split_trip ? 'true' : 'false');
+        formData.append('dropoff_driver', dropoff_driver);
+        formData.append('dropoff_vehicle', dropoff_vehicle);
+        formData.append('driver_split_ratio', driver_split_ratio);
+        formData.append('is_twin_container', is_twin_container ? 'true' : 'false');
+        formData.append('container_2', container_2);
+        formData.append('seal_2', seal_2);
+        formData.append('booking_2', booking_2);
+        formData.append('vgm_weight_2', vgm_weight_2);
+        formData.append('cargo_notes_2', cargo_notes_2);
+        formData.append('det_free_days', det_free_days);
+        formData.append('dem_free_days', dem_free_days);
+        formData.append('det_expiry_date', det_expiry_date);
+        formData.append('dem_expiry_date', dem_expiry_date);
+        formData.append('container_condition', container_condition);
+        formData.append('damage_description', damage_description);
+
+        const fileInput = document.getElementById('inp-booking-file');
+        if (tripBookingFilesList && tripBookingFilesList.length > 0) {
+            formData.append('booking_file', tripBookingFilesList[0]);
+            tripBookingFilesList.forEach(file => {
+                formData.append('booking_files', file);
+            });
+        } else if (fileInput && fileInput.files && fileInput.files[0]) {
+            formData.append('booking_file', fileInput.files[0]);
+        }
+
+        const res = await fetchWithAuth('/api/trips/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                booking_order_id,
-                customer, type, container_type, container, booking, seal, cutoff,
-                commercial_invoice, warehouse_dock, loading_time, cont_location_type,
-                pickup, warehouse, dropoff, driver, notes, cargo_notes: notes
-            })
+            body: formData
         });
-        const result = await res.json();
-        if (result.success) {
+        const result = await res.json().catch(() => ({}));
+        if (res.ok && result.success) {
             closeModal('modal-create-trip');
             document.getElementById('form-create-trip').reset();
+            clearBookingFileSelection();
             loadTripsData();
-            showToast('success', result.message, 'Thành công');
+            showToast('success', result.message || 'Tạo lệnh điều động thành công!', 'Thành công');
         } else {
-            showToast('danger', result.error || 'Vui lòng kiểm tra lại dữ liệu nhập.', 'Lỗi nghiệp vụ');
+            let errorMsg = result.message || result.error || result.detail;
+            if (!errorMsg && typeof result === 'object' && Object.keys(result).length > 0) {
+                const fieldErrors = Object.entries(result)
+                    .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+                    .join(' | ');
+                if (fieldErrors) errorMsg = fieldErrors;
+            }
+            errorMsg = errorMsg || 'Vui lòng kiểm tra lại dữ liệu nhập.';
+            showToast('danger', errorMsg, 'Lỗi nghiệp vụ');
         }
     } catch (err) {
         console.error('Error submitting trip:', err);
         showToast('danger', 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.', 'Lỗi kết nối');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
     }
 }
 
-// --- 5. GIẢ LẬP CAMERA OCR (APP TÀI XẾ) ---
+// --- 5. CAMERA OCR QUÉT CHỨNG TỪ & PHÍ PHÁT SINH (APP TÀI XẾ) ---
 function openOcrApp(mode) {
     currentOcrMode = mode;
     if (mode === 'phi-ton') {
@@ -1825,16 +3216,17 @@ async function submitOcrData() {
         const raw_ocr = document.getElementById('ocr-raw-text').innerText;
 
         try {
-            const res = await fetch(`/api/trips/${currentActiveTripCode}/expenses/`, {
+            const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/expenses/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ category, amount, raw_ocr })
             });
             const resData = await res.json();
-            if (resData.success) {
+            if (res.ok && resData.success) {
                 closeModal('modal-ocr');
                 viewTripDetail(currentActiveTripCode);
                 showToast('success', resData.message, 'Đã ghi nhận chi phí');
+            } else {
+                showToast('danger', resData.message || resData.error || resData.detail || 'Lỗi khi gửi báo cáo chi phí.');
             }
         } catch (err) {
             showToast('danger', 'Lỗi khi gửi báo cáo chi phí.');
@@ -1845,16 +3237,17 @@ async function submitOcrData() {
         const seal_no = document.getElementById('ocr-doc-seal').value;
 
         try {
-            const res = await fetch(`/api/trips/${currentActiveTripCode}/documents/`, {
+            const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/documents/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ doc_type, container_no, seal_no })
             });
             const resData = await res.json();
-            if (resData.success) {
+            if (res.ok && resData.success) {
                 closeModal('modal-ocr');
                 viewTripDetail(currentActiveTripCode);
                 showToast('success', resData.message, 'Đã nghiệm thu chứng từ');
+            } else {
+                showToast('danger', resData.message || resData.error || resData.detail || 'Lỗi khi gửi chứng từ hoàn tất.');
             }
         } catch (err) {
             showToast('danger', 'Lỗi khi gửi chứng từ hoàn tất.');
@@ -1863,36 +3256,354 @@ async function submitOcrData() {
 }
 
 // --- 6. NHÂN SỰ & LƯƠNG ---
+let rawHRData = [];
+let hrSortColumn = null;
+let hrSortDirection = 'asc';
+
+function clearHRSearch() {
+    const input = document.getElementById('filter-hr-search');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('btn-clear-hr-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    applyHRFilters();
+}
+
+function resetHRFilters() {
+    const search = document.getElementById('filter-hr-search');
+    if (search) search.value = '';
+    const clearBtn = document.getElementById('btn-clear-hr-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    hrSortColumn = null;
+    hrSortDirection = 'asc';
+    applyHRFilters();
+}
+
+function toggleHRSort(col) {
+    if (hrSortColumn === col) {
+        hrSortDirection = hrSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        hrSortColumn = col;
+        hrSortDirection = 'asc';
+    }
+    applyHRFilters();
+}
+
+function applyHRFilters() {
+    if (!rawHRData || !Array.isArray(rawHRData)) return;
+
+    const filterSearch = document.getElementById('filter-hr-search')?.value?.trim().toLowerCase() || '';
+
+    const clearBtn = document.getElementById('btn-clear-hr-search');
+    if (clearBtn) {
+        if (filterSearch) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    let list = rawHRData.filter(nv => {
+        if (filterSearch) {
+            const combinedText = [
+                nv.code,
+                nv.name
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            if (!combinedText.includes(filterSearch)) return false;
+        }
+
+        return true;
+    });
+
+    // Cập nhật số đếm
+    const filteredCountEl = document.getElementById('hr-filtered-count');
+    if (filteredCountEl) filteredCountEl.innerText = list.length;
+    const totalCountEl = document.getElementById('hr-total-count');
+    if (totalCountEl) totalCountEl.innerText = rawHRData.length;
+
+    // Sắp xếp
+    if (hrSortColumn) {
+        list.sort((a, b) => {
+            let valA = a[hrSortColumn];
+            let valB = b[hrSortColumn];
+
+            if (['trips', 'base_salary', 'trip_salary', 'advance', 'net_salary'].includes(hrSortColumn)) {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return hrSortDirection === 'asc' ? valA - valB : valB - valA;
+            }
+
+            valA = (valA || '').toString();
+            valB = (valB || '').toString();
+            const cmp = valA.localeCompare(valB, 'vi');
+            return hrSortDirection === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    // Cập nhật icons thead
+    const sortCols = ['code', 'name', 'trips', 'base_salary', 'trip_salary', 'advance', 'net_salary'];
+    sortCols.forEach(col => {
+        const iconEl = document.getElementById(`sort-icon-hr-${col}`);
+        if (iconEl) {
+            if (hrSortColumn === col) {
+                iconEl.className = hrSortDirection === 'asc' 
+                    ? 'ph-bold ph-arrow-up text-teal-600 text-xs' 
+                    : 'ph-bold ph-arrow-down text-teal-600 text-xs';
+            } else {
+                iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+            }
+        }
+    });
+
+    renderHRTable(list);
+}
+
+function renderHRTable(data) {
+    const tbody = document.getElementById('hr-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-10 text-slate-400">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="ph ph-users text-3xl mb-2 text-slate-300"></i>
+                        <p class="font-medium text-sm text-slate-500">Không tìm thấy nhân sự nào phù hợp với từ khóa</p>
+                        <button onclick="resetHRFilters()" class="mt-2.5 px-3 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg text-xs font-bold transition-colors">
+                            Đặt lại bộ lọc
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    data.forEach(nv => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors';
+        tr.innerHTML = `
+            <td class="p-4 font-black text-teal-800 font-heading text-sm">${escapeHtml(nv.code)}</td>
+            <td class="p-4 font-bold text-slate-900 text-sm">${escapeHtml(nv.name)}</td>
+            <td class="p-4 text-center font-bold text-slate-700 tabular-nums text-sm">${nv.trips}</td>
+            <td class="p-4 text-right font-medium text-slate-600 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(nv.base_salary)} đ</td>
+            <td class="p-4 text-right font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(nv.trip_salary)} đ</td>
+            <td class="p-4 text-right font-medium text-rose-600 tabular-nums text-sm">-${new Intl.NumberFormat('vi-VN').format(nv.advance)} đ</td>
+            <td class="p-4 text-right font-black text-emerald-600 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(nv.net_salary)} đ</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
 async function loadHRData() {
     try {
-        const res = await fetch('/api/personnel/');
+        const res = await fetchWithAuth('/api/personnel/');
         if (!res.ok) throw new Error('Lỗi tải nhân sự');
         const data = await res.json();
-        const tbody = document.getElementById('hr-tbody');
-        tbody.innerHTML = '';
-        data.forEach(nv => {
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-slate-50 transition-colors';
-            tr.innerHTML = `
-                <td class="p-4 font-black text-teal-800 font-heading text-sm">${nv.code}</td>
-                <td class="p-4 font-bold text-slate-900 text-sm">${nv.name}</td>
-                <td class="p-4 text-center font-bold text-slate-700 tabular-nums text-sm">${nv.trips}</td>
-                <td class="p-4 text-right font-medium text-slate-600 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(nv.base_salary)} đ</td>
-                <td class="p-4 text-right font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(nv.trip_salary)} đ</td>
-                <td class="p-4 text-right font-medium text-rose-600 tabular-nums text-sm">-${new Intl.NumberFormat('vi-VN').format(nv.advance)} đ</td>
-                <td class="p-4 text-right font-black text-emerald-600 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(nv.net_salary)} đ</td>
-            `;
-            tbody.appendChild(tr);
-        });
+        rawHRData = data || [];
+        applyHRFilters();
     } catch (err) {
         console.error('Error loading HR data:', err);
     }
 }
 
 // --- 7. ĐỘI XE & BÃI ---
+let rawFleetVehicles = [];
+let fleetSortColumn = null;
+let fleetSortDirection = 'asc';
+
+function populateFleetFilterDropdowns(vehicles) {
+    if (!vehicles || !Array.isArray(vehicles)) return;
+    const typeSelect = document.getElementById('filter-fleet-type');
+    if (typeSelect) {
+        const curVal = typeSelect.value;
+        const types = [...new Set(vehicles.map(v => (v.type || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+        typeSelect.innerHTML = '<option value="">-- Tất cả Loại phương tiện --</option>' + 
+            types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+        if (types.includes(curVal)) typeSelect.value = curVal;
+    }
+}
+
+function clearFleetSearch() {
+    const input = document.getElementById('filter-fleet-search');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('btn-clear-fleet-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    applyFleetFilters();
+}
+
+function resetFleetFilters() {
+    const type = document.getElementById('filter-fleet-type');
+    if (type) type.value = '';
+    const status = document.getElementById('filter-fleet-status');
+    if (status) status.value = '';
+    const search = document.getElementById('filter-fleet-search');
+    if (search) search.value = '';
+    const clearBtn = document.getElementById('btn-clear-fleet-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    fleetSortColumn = null;
+    fleetSortDirection = 'asc';
+    applyFleetFilters();
+}
+
+function toggleFleetSort(col) {
+    if (fleetSortColumn === col) {
+        fleetSortDirection = fleetSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        fleetSortColumn = col;
+        fleetSortDirection = 'asc';
+    }
+    applyFleetFilters();
+}
+
+function applyFleetFilters() {
+    if (!rawFleetVehicles || !Array.isArray(rawFleetVehicles)) return;
+
+    const filterType = document.getElementById('filter-fleet-type')?.value?.trim().toLowerCase() || '';
+    const filterStatus = document.getElementById('filter-fleet-status')?.value?.trim() || '';
+    const filterSearch = document.getElementById('filter-fleet-search')?.value?.trim().toLowerCase() || '';
+
+    const clearBtn = document.getElementById('btn-clear-fleet-search');
+    if (clearBtn) {
+        if (filterSearch) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    let list = rawFleetVehicles.filter(v => {
+        if (filterType && (v.type || '').toLowerCase() !== filterType) return false;
+
+        if (filterStatus) {
+            if (filterStatus === 'REG_WARNING') {
+                if (!v.is_reg_warning) return false;
+            } else if (filterStatus === 'MAINT_WARNING') {
+                if (!v.is_maint_warning) return false;
+            } else if (v.status !== filterStatus) {
+                return false;
+            }
+        }
+
+        if (filterSearch) {
+            const combinedText = [
+                v.plate,
+                v.type,
+                v.driver,
+                v.reg_expiry,
+                v.maint_date,
+                v.status
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            if (!combinedText.includes(filterSearch)) return false;
+        }
+
+        return true;
+    });
+
+    // Cập nhật số đếm
+    const filteredCountEl = document.getElementById('fleet-filtered-count');
+    if (filteredCountEl) filteredCountEl.innerText = list.length;
+    const totalCountEl = document.getElementById('fleet-total-count');
+    if (totalCountEl) totalCountEl.innerText = rawFleetVehicles.length;
+
+    // Sắp xếp
+    if (fleetSortColumn) {
+        list.sort((a, b) => {
+            let valA = (a[fleetSortColumn] || '').toString();
+            let valB = (b[fleetSortColumn] || '').toString();
+            const cmp = valA.localeCompare(valB, 'vi');
+            return fleetSortDirection === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    // Cập nhật icon thead
+    const sortCols = ['plate', 'type', 'driver', 'reg_expiry', 'maint_date', 'status'];
+    sortCols.forEach(col => {
+        const iconEl = document.getElementById(`sort-icon-fleet-${col}`);
+        if (iconEl) {
+            if (fleetSortColumn === col) {
+                iconEl.className = fleetSortDirection === 'asc' 
+                    ? 'ph-bold ph-arrow-up text-teal-600 text-xs' 
+                    : 'ph-bold ph-arrow-down text-teal-600 text-xs';
+            } else {
+                iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+            }
+        }
+    });
+
+    renderFleetTable(list);
+}
+
+function renderFleetTable(vehicles) {
+    const tbody = document.getElementById('fleet-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!vehicles || vehicles.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-10 text-slate-400">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="ph ph-truck text-3xl mb-2 text-slate-300"></i>
+                        <p class="font-medium text-sm text-slate-500">Không tìm thấy phương tiện nào phù hợp với bộ lọc</p>
+                        <p class="text-xs text-slate-400 mt-1">Thử đổi điều kiện lọc hoặc bấm "Đặt lại"</p>
+                        <button onclick="resetFleetFilters()" class="mt-2.5 px-3 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg text-xs font-bold transition-colors">
+                            Đặt lại bộ lọc
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    vehicles.forEach(v => {
+        let statusCls = 'bg-emerald-100 text-emerald-800';
+        if (v.is_reg_expired) statusCls = 'bg-rose-100 text-rose-700 font-black';
+        else if (v.is_reg_warning || v.is_maint_warning || v.is_ins_warning) statusCls = 'bg-amber-100 text-amber-700 font-bold';
+
+        let regBadge = '';
+        if (v.is_reg_expired) {
+            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-300 mt-0.5"><i class="ph-bold ph-warning-circle mr-1"></i>Hết hạn (${Math.abs(v.reg_days_left)}N)</span>`;
+        } else if (v.is_reg_warning) {
+            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 mt-0.5"><i class="ph-bold ph-clock mr-1"></i>Còn ${v.reg_days_left} ngày</span>`;
+        } else if (v.reg_days_left !== null && v.reg_days_left !== undefined) {
+            regBadge = `<span class="text-[10.5px] text-emerald-600 font-bold mt-0.5 block">Hợp lệ (${v.reg_days_left}N)</span>`;
+        }
+
+        let maintBadge = '';
+        if (v.is_maint_warning) {
+            maintBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 mt-0.5"><i class="ph-bold ph-wrench mr-1"></i>Đến hạn (${v.maint_days_left}N)</span>`;
+        } else if (v.maint_days_left !== null && v.maint_days_left !== undefined) {
+            maintBadge = `<span class="text-[10.5px] text-slate-400 font-medium mt-0.5 block">Còn ${v.maint_days_left}N</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors border-b border-slate-200/80';
+        tr.innerHTML = `
+            <td class="p-4 font-black text-slate-900 font-heading text-sm">${escapeHtml(v.plate)}</td>
+            <td class="p-4 font-medium text-slate-700 text-sm">
+                <div>${escapeHtml(v.type)}</div>
+                <span class="text-[10.5px] font-bold ${v.ownership_code === 'OWNED' ? 'text-teal-700' : 'text-amber-700'}">${escapeHtml(v.ownership_type)}</span>
+            </td>
+            <td class="p-4 font-bold text-slate-800 text-sm">${escapeHtml(v.driver)}</td>
+            <td class="p-4 text-sm font-medium">
+                <div class="${v.is_reg_expired ? 'text-rose-700 font-black' : v.is_reg_warning ? 'text-amber-700 font-bold' : 'text-slate-700'}">${escapeHtml(v.reg_expiry)}</div>
+                ${regBadge}
+            </td>
+            <td class="p-4 text-sm font-medium">
+                <div class="${v.is_maint_warning ? 'text-amber-600 font-bold' : 'text-slate-600'}">${escapeHtml(v.maint_date)}</div>
+                ${maintBadge}
+            </td>
+            <td class="p-4">
+                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(v.status)}</span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
 async function loadFleetData() {
     try {
-        const res = await fetch('/api/fleet/');
+        const res = await fetchWithAuth('/api/fleet/');
         if (!res.ok) throw new Error('Lỗi tải đội xe');
         const data = await res.json();
 
@@ -1901,27 +3612,9 @@ async function loadFleetData() {
         document.getElementById('fleet-stat-reg').innerText = data.reg_warning_count;
         document.getElementById('fleet-stat-maint').innerText = data.maint_warning_count;
 
-        const tbody = document.getElementById('fleet-tbody');
-        tbody.innerHTML = '';
-        data.vehicles.forEach(v => {
-            let statusCls = 'bg-emerald-100 text-emerald-800';
-            if (v.is_reg_warning) statusCls = 'bg-rose-100 text-rose-700 font-black';
-            if (v.is_maint_warning) statusCls = 'bg-amber-100 text-amber-700 font-bold';
-
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-slate-50 transition-colors';
-            tr.innerHTML = `
-                <td class="p-4 font-black text-slate-900 font-heading text-sm">${v.plate}</td>
-                <td class="p-4 font-medium text-slate-700 text-sm">${v.type}</td>
-                <td class="p-4 font-bold text-slate-800 text-sm">${v.driver}</td>
-                <td class="p-4 text-sm font-medium ${v.is_reg_warning ? 'text-rose-600 font-black' : 'text-slate-600'}">${v.reg_expiry}</td>
-                <td class="p-4 text-sm font-medium ${v.is_maint_warning ? 'text-amber-600 font-bold' : 'text-slate-600'}">${v.maint_date}</td>
-                <td class="p-4">
-                    <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${v.status}</span>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        rawFleetVehicles = data.vehicles || [];
+        populateFleetFilterDropdowns(rawFleetVehicles);
+        applyFleetFilters();
     } catch (err) {
         console.error('Error loading fleet data:', err);
     }
@@ -1938,6 +3631,9 @@ function calculateQuoteExpectedRevenue() {
 }
 
 async function openModalQuotation(quoteId = null, isReadOnly = false) {
+    await loadMasterDataFormOptions();
+    populateMasterDataDropdowns();
+
     const form = document.getElementById('form-quotation');
     if (form) {
         form.reset();
@@ -1968,7 +3664,7 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
         if (btnText) btnText.innerText = 'Cập Nhật Báo Giá';
 
         try {
-            const res = await fetch(`/api/quotations/${quoteId}/`);
+            const res = await fetchWithAuth(`/api/quotations/${quoteId}/`);
             if (!res.ok) throw new Error('Không thể tải báo giá');
             const q = await res.json();
 
@@ -1978,7 +3674,7 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
                     : `Hiệu Chỉnh Báo Giá [${q.quotation_code}]`;
             }
             const custEl = document.getElementById('quote-customer');
-            if (custEl) custEl.value = q.customer_name;
+            if (custEl) setSelectValueCaseInsensitive(custEl, q.customer_name);
             const routeEl = document.getElementById('quote-route');
             if (routeEl) routeEl.value = q.route_description;
             const priceEl = document.getElementById('quote-unit-price');
@@ -2001,7 +3697,9 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
 }
 
 async function saveQuotation(e) {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
     const id = document.getElementById('quote-id')?.value;
     const customer = document.getElementById('quote-customer')?.value?.trim();
     const route = document.getElementById('quote-route')?.value?.trim();
@@ -2014,12 +3712,18 @@ async function saveQuotation(e) {
         return;
     }
 
+    const submitBtn = document.getElementById('btn-submit-quote');
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-base"></i> <span>Đang lưu...</span>';
+    }
+
     try {
         let res;
         if (id) {
-            res = await fetch(`/api/quotations/${id}/`, {
+            res = await fetchWithAuth(`/api/quotations/${id}/`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     customer: customer,
                     route_description: route,
@@ -2029,9 +3733,8 @@ async function saveQuotation(e) {
                 })
             });
         } else {
-            res = await fetch('/api/sales/', {
+            res = await fetchWithAuth('/api/sales/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'create_quotation',
                     customer: customer,
@@ -2043,8 +3746,8 @@ async function saveQuotation(e) {
             });
         }
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Lỗi lưu báo giá');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi lưu báo giá');
 
         showToast('success', data.message || 'Lưu báo giá thành công!', 'Thành Công');
         closeModal('modal-quotation');
@@ -2052,19 +3755,23 @@ async function saveQuotation(e) {
     } catch (err) {
         console.error('Error saving quotation:', err);
         showToast('error', err.message || 'Không thể lưu báo giá', 'Lỗi');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
     }
 }
 
 async function changeQuotationStatus(quoteId, newStatus) {
     if (!newStatus) return;
     try {
-        const res = await fetch(`/api/quotations/${quoteId}/status/`, {
+        const res = await fetchWithAuth(`/api/quotations/${quoteId}/status/`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Lỗi chuyển trạng thái');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi chuyển trạng thái');
 
         showToast('success', data.message || 'Đã cập nhật trạng thái báo giá', 'Thành Công');
         loadSalesData();
@@ -2077,9 +3784,11 @@ async function changeQuotationStatus(quoteId, newStatus) {
 async function deleteQuotation(quoteId) {
     if (!confirm('Bạn có chắc chắn muốn xóa báo giá này không? Dữ liệu lịch sử sẽ được bảo lưu an toàn.')) return;
     try {
-        const res = await fetch(`/api/quotations/${quoteId}/`, { method: 'DELETE' });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Lỗi xóa báo giá');
+        const res = await fetchWithAuth(`/api/quotations/${quoteId}/`, {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi xóa báo giá');
 
         showToast('success', data.message || 'Đã xóa báo giá', 'Thành Công');
         loadSalesData();
@@ -2111,6 +3820,9 @@ function onBookingTypeChange() {
 }
 
 async function openModalBooking(bookingId = null, isReadOnly = false) {
+    await loadMasterDataFormOptions();
+    populateMasterDataDropdowns();
+
     const form = document.getElementById('form-booking');
     if (form) {
         form.reset();
@@ -2129,11 +3841,14 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
     const todayStr = new Date().toISOString().split('T')[0];
 
     if (!bookingId) {
+        currentEditingBookingId = null;
         if (idInput) idInput.value = '';
         if (titleEl) titleEl.innerText = 'Tiếp Nhận Đơn Đặt Hàng / Booking Mới Từ Khách Hàng';
         if (btnText) btnText.innerText = 'Tiếp Nhận Đơn Hàng';
         const dateInput = document.getElementById('booking-loading-date');
         if (dateInput) dateInput.value = todayStr;
+        const timeInput = document.getElementById('booking-loading-time');
+        if (timeInput) timeInput.value = '08:00';
         const totalInput = document.getElementById('booking-total-containers');
         if (totalInput) totalInput.value = formatNumberVN(1);
         const detInput = document.getElementById('booking-det');
@@ -2142,14 +3857,16 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
         if (demInput) demInput.value = formatNumberVN(7);
         const priceInput = document.getElementById('booking-price');
         if (priceInput) priceInput.value = formatNumberVN(4000000);
+        clearSaleBookingFileSelection();
         onBookingTypeChange();
     } else {
+        currentEditingBookingId = bookingId;
         if (idInput) idInput.value = bookingId;
         if (titleEl) titleEl.innerText = isReadOnly ? 'Đang tải chi tiết đơn hàng / booking...' : 'Đang tải thông tin đơn hàng / booking...';
         if (btnText) btnText.innerText = 'Cập Nhật Đơn Hàng';
 
         try {
-            const res = await fetch(`/api/bookings/${bookingId}/`);
+            const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);
             if (!res.ok) throw new Error('Không thể tải chi tiết đơn hàng / booking');
             const b = await res.json();
 
@@ -2162,7 +3879,7 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
             const typeEl = document.getElementById('booking-type');
             if (typeEl) typeEl.value = b.booking_type || 'EXPORT_FCL';
             const custEl = document.getElementById('booking-customer');
-            if (custEl) custEl.value = b.customer_name || '';
+            if (custEl) setSelectValueCaseInsensitive(custEl, b.customer_name);
             const numEl = document.getElementById('booking-number');
             if (numEl) numEl.value = b.booking_number || '';
             const shipEl = document.getElementById('booking-shipping-line');
@@ -2170,7 +3887,7 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
             const vesEl = document.getElementById('booking-vessel');
             if (vesEl) vesEl.value = b.vessel_voyage || '';
             const sizeEl = document.getElementById('booking-container-size');
-            if (sizeEl) sizeEl.value = b.container_size || '40HC';
+            if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '40HC');
             const totalEl = document.getElementById('booking-total-containers');
             if (totalEl) totalEl.value = formatNumberVN(b.total_containers || 1);
             const comEl = document.getElementById('booking-commodity');
@@ -2178,15 +3895,15 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
             const hsEl = document.getElementById('booking-hs-code');
             if (hsEl) hsEl.value = b.hs_code || '';
             const pickEl = document.getElementById('booking-pickup');
-            if (pickEl) pickEl.value = b.pickup_location || '';
+            if (pickEl) setSelectValueCaseInsensitive(pickEl, b.pickup_location);
             const delEl = document.getElementById('booking-delivery');
-            if (delEl) delEl.value = b.delivery_location || '';
+            if (delEl) setSelectValueCaseInsensitive(delEl, b.delivery_location);
             const dropEl = document.getElementById('booking-dropoff');
-            if (dropEl) dropEl.value = b.dropoff_location || '';
+            if (dropEl) setSelectValueCaseInsensitive(dropEl, b.dropoff_location);
             const dateEl = document.getElementById('booking-loading-date');
             if (dateEl) dateEl.value = b.loading_date || todayStr;
             const timeEl = document.getElementById('booking-loading-time');
-            if (timeEl) timeEl.value = b.loading_time || '8H';
+            if (timeEl) timeEl.value = b.loading_time || '08:00';
             const closingEl = document.getElementById('booking-closing-time');
             if (closingEl) closingEl.value = b.closing_time || '';
             const siEl = document.getElementById('booking-si-cutoff');
@@ -2202,6 +3919,74 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
             const notesEl = document.getElementById('booking-notes');
             if (notesEl) notesEl.value = b.notes || '';
 
+            // Hiển thị file booking đính kèm (nếu có hoặc danh sách documents)
+            showSaleExistingBookingFile(b.booking_file_url, b.booking_file_name, b.documents);
+
+            // Render danh sách container của Booking & Theo dõi Cắt Kéo
+            const tripsTbody = document.getElementById('booking-trips-tbody');
+            const tripsCountBadge = document.getElementById('booking-trips-count-badge');
+            if (tripsTbody) {
+                if (b.trips && b.trips.length > 0) {
+                    if (tripsCountBadge) {
+                        tripsCountBadge.innerText = `${b.trips.length} / ${b.total_containers} Container`;
+                    }
+                    tripsTbody.innerHTML = b.trips.map(t => {
+                        const modeBadge = t.is_split_trip
+                            ? `<span class="px-2 py-0.5 rounded font-black text-[10px] uppercase bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-1" title="Chế độ Cắt Kéo (Drop & Hook) - Tài lấy & Tài hạ khác nhau">
+                                <i class="ph-bold ph-arrows-split"></i> Cắt Kéo (${t.driver_split_ratio}%/${100 - t.driver_split_ratio}%)
+                               </span>`
+                            : `<span class="px-2 py-0.5 rounded font-black text-[10px] uppercase bg-teal-50 text-teal-700 border border-teal-200 inline-flex items-center gap-1">
+                                <i class="ph-bold ph-arrow-right"></i> Chạy Thẳng
+                               </span>`;
+                        
+                        const statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-800 border border-slate-200">${t.status_label || t.status}</span>`;
+
+                        const locBadge = `<span class="px-1.5 py-0.5 rounded text-[11px] font-bold ${t.cont_location_type === 'NHÀ MÁY' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}">${t.cont_location_type || 'NHÀ MÁY'}</span>`;
+
+                        return `
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-2.5">
+                                    <p class="font-bold text-slate-900 font-mono text-xs">${t.trip_code}</p>
+                                    <p class="text-[11px] font-mono text-indigo-700 font-bold">${t.container_number}</p>
+                                </td>
+                                <td class="p-2.5">${modeBadge}</td>
+                                <td class="p-2.5">
+                                    <p class="font-bold text-slate-900">${t.driver}</p>
+                                    <p class="text-[11px] text-slate-500 font-medium">Xe: ${t.vehicle}</p>
+                                </td>
+                                <td class="p-2.5">
+                                    ${t.is_split_trip ? `
+                                        <p class="font-bold text-amber-900">${t.dropoff_driver || 'Chưa gán'}</p>
+                                        <p class="text-[11px] text-slate-500 font-medium">Xe: ${t.dropoff_vehicle || '-'}</p>
+                                    ` : `
+                                        <span class="text-slate-400 italic text-[11px]">(Tài xế chặng 1)</span>
+                                    `}
+                                </td>
+                                <td class="p-2.5">${locBadge}</td>
+                                <td class="p-2.5">${statusBadge}</td>
+                                <td class="p-2.5 text-center">
+                                    <button type="button" onclick="closeModal('modal-booking'); viewTripDetail('${t.trip_code}')" 
+                                        class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold transition-colors inline-flex items-center gap-1 font-heading" title="Xem chi tiết chuyến xe">
+                                        <i class="ph-bold ph-arrow-square-out"></i> Xem
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    if (tripsCountBadge) {
+                        tripsCountBadge.innerText = `0 / ${b.total_containers} Container`;
+                    }
+                    tripsTbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="p-4 text-center text-slate-400 italic">
+                                Chưa có container nào được phát lệnh điều xe từ Booking này. Bấm "Điều Xe" bên ngoài để phát lệnh.
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+
             onBookingTypeChange();
         } catch (err) {
             console.error('Lỗi tải chi tiết booking:', err);
@@ -2215,7 +4000,9 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
 }
 
 async function saveBooking(e) {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
     const id = document.getElementById('booking-id')?.value;
     const bookingType = document.getElementById('booking-type')?.value || 'EXPORT_FCL';
     const customer = document.getElementById('booking-customer')?.value?.trim();
@@ -2230,7 +4017,7 @@ async function saveBooking(e) {
     const delivery = document.getElementById('booking-delivery')?.value?.trim();
     const dropoff = document.getElementById('booking-dropoff')?.value?.trim();
     const loadingDate = document.getElementById('booking-loading-date')?.value;
-    const loadingTime = document.getElementById('booking-loading-time')?.value?.trim() || '8H';
+    const loadingTime = document.getElementById('booking-loading-time')?.value?.trim() || '08:00';
     const closingTime = document.getElementById('booking-closing-time')?.value?.trim();
     const siCutoff = document.getElementById('booking-si-cutoff')?.value?.trim();
     const det = parseNumberVN(document.getElementById('booking-det')?.value) || 7;
@@ -2244,70 +4031,91 @@ async function saveBooking(e) {
         return;
     }
 
+    const submitBtn = document.getElementById('btn-submit-booking');
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-base"></i> <span>Đang lưu...</span>';
+    }
+
     try {
-        const payload = {
-            action: 'create_booking',
-            booking_type: bookingType,
-            customer: customer,
-            booking_number: bookingNumber,
-            shipping_line: shippingLine,
-            vessel_voyage: vessel,
-            container_size: containerSize,
-            total_containers: totalContainers,
-            commodity: commodity,
-            hs_code: hsCode,
-            pickup_location: pickup,
-            delivery_location: delivery,
-            dropoff_location: dropoff,
-            loading_date: loadingDate,
-            loading_time: loadingTime,
-            closing_time: closingTime,
-            si_cutoff: siCutoff,
-            free_time_detention: det,
-            free_time_demurrage: dem,
-            selling_freight_price: price,
-            status: statusVal,
-            notes: notes
-        };
+        const saleFileInput = document.getElementById('booking-order-file');
+        const hasSaleFile = saleFileInput && saleFileInput.files && saleFileInput.files[0];
+
+        const formData = new FormData();
+        formData.append('action', 'create_booking');
+        formData.append('booking_type', bookingType);
+        formData.append('customer', customer);
+        formData.append('booking_number', bookingNumber);
+        formData.append('shipping_line', shippingLine);
+        formData.append('vessel_voyage', vessel);
+        formData.append('container_size', containerSize);
+        formData.append('total_containers', totalContainers);
+        formData.append('commodity', commodity);
+        formData.append('hs_code', hsCode);
+        formData.append('pickup_location', pickup);
+        formData.append('delivery_location', delivery);
+        formData.append('dropoff_location', dropoff);
+        formData.append('loading_date', loadingDate || '');
+        formData.append('loading_time', loadingTime);
+        formData.append('closing_time', closingTime || '');
+        formData.append('si_cutoff', siCutoff || '');
+        formData.append('free_time_detention', det);
+        formData.append('free_time_demurrage', dem);
+        formData.append('selling_freight_price', price);
+        formData.append('status', statusVal);
+        formData.append('notes', notes || '');
+
+        if (saleBookingFilesList && saleBookingFilesList.length > 0) {
+            formData.append('booking_file', saleBookingFilesList[0]);
+            saleBookingFilesList.forEach(file => {
+                formData.append('booking_files', file);
+            });
+        } else if (hasSaleFile) {
+            formData.append('booking_file', saleFileInput.files[0]);
+        }
 
         let res;
         if (id) {
-            res = await fetch(`/api/bookings/${id}/`, {
+            res = await fetchWithAuth(`/api/bookings/${id}/`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: formData
             });
         } else {
-            res = await fetch('/api/sales/', {
+            res = await fetchWithAuth('/api/sales/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: formData
             });
         }
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Lỗi lưu đơn hàng / booking');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi lưu đơn hàng / booking');
 
         showToast('success', data.message || 'Tiếp nhận đơn hàng thành công!', 'Thành Công');
         closeModal('modal-booking');
+        clearSaleBookingFileSelection();
         loadSalesData();
         loadActiveBookingsForModal();
     } catch (err) {
         console.error('Error saving booking:', err);
         showToast('error', err.message || 'Không thể lưu đơn hàng / booking', 'Lỗi');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
     }
 }
 
 async function changeBookingStatus(bookingId, newStatus) {
     if (!newStatus) return;
     try {
-        const res = await fetch(`/api/bookings/${bookingId}/status/`, {
+        const res = await fetchWithAuth(`/api/bookings/${bookingId}/status/`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Lỗi chuyển trạng thái');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi chuyển trạng thái');
 
         showToast('success', data.message || 'Đã cập nhật trạng thái đơn hàng', 'Thành Công');
         loadSalesData();
@@ -2321,9 +4129,11 @@ async function changeBookingStatus(bookingId, newStatus) {
 async function deleteBooking(bookingId) {
     if (!confirm('Bạn có chắc chắn muốn xóa / hủy đơn hàng này không? Dữ liệu lịch sử sẽ được bảo lưu an toàn.')) return;
     try {
-        const res = await fetch(`/api/bookings/${bookingId}/`, { method: 'DELETE' });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Lỗi xóa đơn hàng');
+        const res = await fetchWithAuth(`/api/bookings/${bookingId}/`, {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi xóa đơn hàng');
 
         showToast('success', data.message || 'Đã xóa đơn hàng / booking', 'Thành Công');
         loadSalesData();
@@ -2378,9 +4188,333 @@ function switchSalesSubTab(tabName) {
     }
 }
 
+// --- BỘ LỌC TỪNG CỘT & SẮP XẾP BẢNG BOOKINGS (SALE / CS) ---
+let rawSalesBookings = [];
+let bookingSortColumn = 'loading_date';
+let bookingSortDirection = 'asc'; // 'asc' | 'desc'
+
+function populateBookingFilterDropdowns(bookings) {
+    if (!bookings || !Array.isArray(bookings)) return;
+
+    // 1. Dropdown Khách hàng
+    const custSelect = document.getElementById('filter-bk-customer');
+    if (custSelect) {
+        const currentVal = custSelect.value;
+        const customers = [...new Set(bookings.map(b => b.customer).filter(Boolean))].sort();
+        let html = '<option value="">-- Tất cả Khách hàng --</option>';
+        customers.forEach(c => {
+            html += `<option value="${escapeHtml(c)}" ${c === currentVal ? 'selected' : ''}>${escapeHtml(c)}</option>`;
+        });
+        custSelect.innerHTML = html;
+    }
+
+    // 2. Dropdown Hãng tàu
+    const shipSelect = document.getElementById('filter-bk-shipping-line');
+    if (shipSelect) {
+        const currentVal = shipSelect.value;
+        const shippingLines = [...new Set(bookings.map(b => b.shipping_line).filter(Boolean))].sort();
+        let html = '<option value="">-- Tất cả Hãng tàu --</option>';
+        shippingLines.forEach(s => {
+            html += `<option value="${escapeHtml(s)}" ${s === currentVal ? 'selected' : ''}>${escapeHtml(s)}</option>`;
+        });
+        shipSelect.innerHTML = html;
+    }
+
+    // 3. Dropdown Loại Cont
+    const sizeSelect = document.getElementById('filter-bk-cont-size');
+    if (sizeSelect) {
+        const currentVal = sizeSelect.value;
+        const sizes = [...new Set(bookings.map(b => b.container_size).filter(Boolean))].sort();
+        let html = '<option value="">-- Tất cả Loại Cont --</option>';
+        sizes.forEach(s => {
+            html += `<option value="${escapeHtml(s)}" ${s === currentVal ? 'selected' : ''}>Cont ${escapeHtml(s)}</option>`;
+        });
+        sizeSelect.innerHTML = html;
+    }
+}
+
+function toggleBookingSort(column) {
+    if (bookingSortColumn === column) {
+        bookingSortDirection = bookingSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        bookingSortColumn = column;
+        bookingSortDirection = (column === 'loading_date' || column === 'closing_time') ? 'asc' : 'desc';
+    }
+    applyBookingFilters();
+}
+
+function resetBookingFilters() {
+    const cust = document.getElementById('filter-bk-customer');
+    if (cust) cust.value = '';
+    const ship = document.getElementById('filter-bk-shipping-line');
+    if (ship) ship.value = '';
+    const size = document.getElementById('filter-bk-cont-size');
+    if (size) size.value = '';
+    const status = document.getElementById('filter-bk-status');
+    if (status) status.value = '';
+    const search = document.getElementById('filter-bk-search');
+    if (search) search.value = '';
+    const clearBtn = document.getElementById('btn-clear-bk-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    bookingSortColumn = 'loading_date';
+    bookingSortDirection = 'asc';
+    applyBookingFilters();
+}
+
+function clearBookingSearch() {
+    const search = document.getElementById('filter-bk-search');
+    if (search) search.value = '';
+    const clearBtn = document.getElementById('btn-clear-bk-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    applyBookingFilters();
+}
+
+function applyBookingFilters() {
+    if (!rawSalesBookings || !Array.isArray(rawSalesBookings)) return;
+
+    const filterCust = document.getElementById('filter-bk-customer')?.value?.trim().toLowerCase() || '';
+    const filterShip = document.getElementById('filter-bk-shipping-line')?.value?.trim().toLowerCase() || '';
+    const filterSize = document.getElementById('filter-bk-cont-size')?.value?.trim().toUpperCase() || '';
+    const filterStatus = document.getElementById('filter-bk-status')?.value?.trim() || '';
+    const filterSearch = document.getElementById('filter-bk-search')?.value?.trim().toLowerCase() || '';
+
+    const clearBtn = document.getElementById('btn-clear-bk-search');
+    if (clearBtn) {
+        if (filterSearch) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    // Tiến hành lọc
+    let list = rawSalesBookings.filter(b => {
+        if (filterCust && (b.customer || '').toLowerCase() !== filterCust) return false;
+        if (filterShip && (b.shipping_line || '').toLowerCase() !== filterShip) return false;
+        if (filterSize && (b.container_size || '').toUpperCase() !== filterSize) return false;
+
+        if (filterStatus) {
+            if (filterStatus === 'URGENT') {
+                if (!b.is_urgent) return false;
+            } else if (filterStatus === 'DROP_HOOK') {
+                if (!b.has_drop_hook) return false;
+            } else if (b.status !== filterStatus) {
+                return false;
+            }
+        }
+
+        if (filterSearch) {
+            const combinedText = [
+                b.booking_code,
+                b.booking_number,
+                b.customer,
+                b.shipping_line,
+                b.vessel_voyage,
+                b.pickup,
+                b.delivery,
+                b.dropoff,
+                b.commodity
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            if (!combinedText.includes(filterSearch)) return false;
+        }
+
+        return true;
+    });
+
+    // Cập nhật số đếm
+    const filteredCountEl = document.getElementById('booking-filtered-count');
+    if (filteredCountEl) filteredCountEl.innerText = list.length;
+    const totalCountEl = document.getElementById('booking-total-count');
+    if (totalCountEl) totalCountEl.innerText = rawSalesBookings.length;
+
+    // Sắp xếp
+    list.sort((a, b) => {
+        let valA = a[bookingSortColumn];
+        let valB = b[bookingSortColumn];
+
+        if (bookingSortColumn === 'price') {
+            valA = parseFloat(valA) || 0;
+            valB = parseFloat(valB) || 0;
+            return bookingSortDirection === 'asc' ? valA - valB : valB - valA;
+        }
+
+        if (bookingSortColumn === 'progress_percent') {
+            valA = parseFloat(valA) || 0;
+            valB = parseFloat(valB) || 0;
+            return bookingSortDirection === 'asc' ? valA - valB : valB - valA;
+        }
+
+        // Mặc định so sánh chuỗi / ngày giờ
+        valA = (valA || '').toString();
+        valB = (valB || '').toString();
+        const cmp = valA.localeCompare(valB, 'vi');
+        return bookingSortDirection === 'asc' ? cmp : -cmp;
+    });
+
+    // Cập nhật visual icons trên thead
+    const sortIcons = {
+        'loading_date': document.getElementById('sort-icon-loading_date'),
+        'progress_percent': document.getElementById('sort-icon-progress_percent'),
+        'closing_time': document.getElementById('sort-icon-closing_time'),
+        'price': document.getElementById('sort-icon-price')
+    };
+
+    Object.entries(sortIcons).forEach(([col, icon]) => {
+        if (!icon) return;
+        if (col === bookingSortColumn) {
+            icon.className = bookingSortDirection === 'asc' 
+                ? 'ph-bold ph-arrow-up text-teal-700 text-xs font-black' 
+                : 'ph-bold ph-arrow-down text-teal-700 text-xs font-black';
+        } else {
+            icon.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+        }
+    });
+
+    renderBookingsTable(list);
+}
+
+function renderBookingsTable(bookings) {
+    const bkBody = document.getElementById('sales-bookings-tbody');
+    if (!bkBody) return;
+    bkBody.innerHTML = '';
+
+    if (!bookings || bookings.length === 0) {
+        bkBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="p-8 text-center text-slate-400 italic">
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                        <i class="ph-bold ph-magnifying-glass text-3xl text-slate-300"></i>
+                        <p class="font-medium text-sm">Không tìm thấy đơn hàng / booking nào phù hợp với bộ lọc hiện tại.</p>
+                        <button type="button" onclick="resetBookingFilters()" class="text-xs text-teal-700 hover:text-teal-900 font-bold underline">
+                            Đặt lại toàn bộ bộ lọc
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    bookings.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.className = b.is_urgent 
+            ? 'hover:bg-amber-50/70 bg-amber-50/25 transition-colors' 
+            : 'hover:bg-slate-50 transition-colors';
+        
+        const statusBadge = b.status === 'PENDING_DISPATCH' 
+            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-block">Chờ điều xe</span>'
+            : b.status === 'PARTIALLY_DISPATCHED'
+            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-teal-100 text-teal-800 border border-teal-200 inline-block">Đang điều xe</span>'
+            : b.status === 'COMPLETED'
+            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block">Đã đủ cont</span>'
+            : '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-rose-100 text-rose-800 border border-rose-200 inline-block">Đã hủy</span>';
+
+        const urgentBadge = b.is_urgent ? `
+            <span class="ml-1 px-1.5 py-0.2 rounded text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200 inline-flex items-center gap-0.5">
+                <i class="ph-bold ph-warning-circle text-[11px]"></i> GẤP
+            </span>
+        ` : '';
+
+        const dropHookBadge = b.has_drop_hook ? `
+            <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-0.5" title="Có ${b.drop_hook_count} cont chạy chế độ cắt kéo (đổi tài)">
+                <i class="ph-bold ph-arrows-split"></i> CẮT KÉO (${b.drop_hook_count})
+            </span>
+        ` : '';
+
+        // Phân loại nhãn dịch vụ gọn gàng
+        const svcTag = b.booking_type === 'DOMESTIC' ? 'Nội Địa FTL' : (b.booking_type === 'IMPORT_FCL' ? 'Nhập FCL' : 'Xuất FCL');
+        const svcCls = b.booking_type === 'DOMESTIC' ? 'bg-amber-50 text-amber-800 border-amber-200' : (b.booking_type === 'IMPORT_FCL' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-teal-50 text-teal-800 border-teal-200');
+
+        // Hàm rút gọn địa điểm loại bỏ ngoặc rườm rà
+        const cleanLoc = (s) => (s || '-').replace(/\([^)]*\)/g, '').trim();
+
+        tr.innerHTML = `
+            <td class="p-3.5">
+                <div class="flex items-center flex-wrap gap-1">
+                    <span class="font-black text-slate-900 font-heading text-sm">${b.booking_code}</span>
+                    ${urgentBadge}
+                    ${dropHookBadge}
+                </div>
+                <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                    <i class="ph-bold ph-calendar-blank text-slate-400"></i> ${b.loading_date} · ${b.loading_time}
+                </p>
+            </td>
+            <td class="p-3.5">
+                <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${b.customer}">${b.customer}</p>
+                <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
+                    <span class="px-1.5 py-0.5 rounded font-bold border text-[11px] ${svcCls}">${svcTag}</span>
+                    <span class="font-bold text-teal-800 truncate max-w-[120px]">${b.shipping_line}</span>
+                </p>
+            </td>
+            <td class="p-3.5 font-mono text-sm">
+                <p class="font-black text-indigo-900">${b.booking_number || '-'}</p>
+                <p class="text-xs text-slate-400 font-normal truncate max-w-[120px]">${b.vessel_voyage || '-'}</p>
+            </td>
+            <td class="p-3.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="px-1.5 py-0.5 rounded font-black text-xs bg-slate-100 text-slate-800 border border-slate-200 uppercase">${b.container_size}</span>
+                    <span class="text-sm font-semibold text-slate-800 truncate max-w-[130px]" title="${b.commodity || 'Hàng hóa'}">${b.commodity || 'Hàng hóa'}</span>
+                </div>
+            </td>
+            <td class="p-3.5">
+                <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="font-black text-slate-900 text-sm tabular-nums">${b.progress}</span>
+                    <div class="w-12 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-teal-600 h-1.5 rounded-full" style="width: ${b.progress_percent}%"></div>
+                    </div>
+                </div>
+                <div>${statusBadge}</div>
+            </td>
+            <td class="p-3.5">
+                <div class="text-[13px] leading-snug space-y-0.5 max-w-[220px]">
+                    <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
+                    <p class="truncate text-slate-900 font-semibold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
+                    ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
+                </div>
+            </td>
+            <td class="p-3.5 font-mono text-sm">
+                <p class="font-bold text-rose-700">${b.closing_time || '-'}</p>
+                ${b.si_cutoff ? `<p class="text-[11px] text-slate-400 mt-0.5 font-sans">SI: ${b.si_cutoff}</p>` : ''}
+            </td>
+            <td class="p-3.5 text-right font-black text-slate-900 text-sm tabular-nums">
+                ${new Intl.NumberFormat('vi-VN').format(b.price)} đ
+            </td>
+            <td class="p-3.5 text-center">
+                <div class="flex items-center justify-center space-x-1.5">
+                    ${b.status !== 'COMPLETED' && b.status !== 'CANCELLED' ? `
+                        <button onclick="dispatchFromBooking(${b.id})" class="px-2.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1 font-heading" title="Điều xe ngay">
+                            <i class="ph-fill ph-paper-plane-tilt text-xs"></i>
+                            <span>Điều Xe</span>
+                        </button>
+                    ` : `
+                        <span class="px-2 py-1 text-xs text-emerald-700 font-bold flex items-center gap-0.5">
+                            <i class="ph-fill ph-check"></i> Đủ xe
+                        </span>
+                    `}
+                    <!-- 1. Xem chi tiết Booking (Chế độ chỉ đọc) -->
+                    <button onclick="openModalBooking(${b.id}, true)" title="Xem chi tiết đơn hàng" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors">
+                        <i class="ph-bold ph-eye text-sm"></i>
+                    </button>
+                    <!-- 2. Sửa Booking (Chế độ chỉnh sửa) -->
+                    <button onclick="openModalBooking(${b.id}, false)" title="Hiệu chỉnh đơn hàng" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-700 transition-colors">
+                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                    </button>
+                    <!-- 3. Xóa Booking -->
+                    <button onclick="deleteBooking(${b.id})" title="Xóa đơn hàng" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        bkBody.appendChild(tr);
+    });
+}
+
 async function loadSalesData() {
     try {
-        const res = await fetch('/api/sales/');
+        const res = await fetchWithAuth('/api/sales/');
         if (!res.ok) throw new Error('Lỗi tải dữ liệu kinh doanh');
         const data = await res.json();
 
@@ -2454,173 +4588,246 @@ async function loadSalesData() {
             }
         }
 
-        // Render Bookings Table (Tinh gọn, giảm bớt chữ thừa, cân bằng typography)
-        const bkBody = document.getElementById('sales-bookings-tbody');
-        if (bkBody && data.bookings) {
-            bkBody.innerHTML = '';
-            data.bookings.forEach(b => {
-                const tr = document.createElement('tr');
-                tr.className = b.is_urgent 
-                    ? 'hover:bg-amber-50/70 bg-amber-50/25 transition-colors' 
-                    : 'hover:bg-slate-50 transition-colors';
-                
-                const statusBadge = b.status === 'PENDING_DISPATCH' 
-                    ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-block">Chờ điều xe</span>'
-                    : b.status === 'PARTIALLY_DISPATCHED'
-                    ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-teal-100 text-teal-800 border border-teal-200 inline-block">Đang điều xe</span>'
-                    : b.status === 'COMPLETED'
-                    ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block">Đã đủ cont</span>'
-                    : '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-rose-100 text-rose-800 border border-rose-200 inline-block">Đã hủy</span>';
+        // Cập nhật danh sách Bookings với bộ lọc & sắp xếp theo ngày/cột
+        rawSalesBookings = data.bookings || [];
+        populateBookingFilterDropdowns(rawSalesBookings);
+        applyBookingFilters();
 
-                const urgentBadge = b.is_urgent ? `
-                    <span class="ml-1 px-1.5 py-0.2 rounded text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200 inline-flex items-center gap-0.5">
-                        <i class="ph-bold ph-warning-circle text-[11px]"></i> GẤP
-                    </span>
-                ` : '';
 
-                // Phân loại nhãn dịch vụ gọn gàng
-                const svcTag = b.booking_type === 'DOMESTIC' ? 'Nội Địa FTL' : (b.booking_type === 'IMPORT_FCL' ? 'Nhập FCL' : 'Xuất FCL');
-                const svcCls = b.booking_type === 'DOMESTIC' ? 'bg-amber-50 text-amber-800 border-amber-200' : (b.booking_type === 'IMPORT_FCL' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-teal-50 text-teal-800 border-teal-200');
-
-                // Hàm rút gọn địa điểm loại bỏ ngoặc rườm rà
-                const cleanLoc = (s) => (s || '-').replace(/\([^)]*\)/g, '').trim();
-
-                tr.innerHTML = `
-                    <td class="p-3.5">
-                        <div class="flex items-center">
-                            <span class="font-black text-slate-900 font-heading text-sm">${b.booking_code}</span>
-                            ${urgentBadge}
-                        </div>
-                        <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                            <i class="ph-bold ph-calendar-blank text-slate-400"></i> ${b.loading_date} · ${b.loading_time}
-                        </p>
-                    </td>
-                    <td class="p-3.5">
-                        <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${b.customer}">${b.customer}</p>
-                        <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
-                            <span class="px-1.5 py-0.5 rounded font-bold border text-[11px] ${svcCls}">${svcTag}</span>
-                            <span class="font-bold text-teal-800 truncate max-w-[120px]">${b.shipping_line}</span>
-                        </p>
-                    </td>
-                    <td class="p-3.5 font-mono text-sm">
-                        <p class="font-black text-indigo-900">${b.booking_number || '-'}</p>
-                        <p class="text-xs text-slate-400 font-normal truncate max-w-[120px]">${b.vessel_voyage || '-'}</p>
-                    </td>
-                    <td class="p-3.5">
-                        <div class="flex items-center gap-1.5">
-                            <span class="px-1.5 py-0.5 rounded font-black text-xs bg-slate-100 text-slate-800 border border-slate-200 uppercase">${b.container_size}</span>
-                            <span class="text-sm font-semibold text-slate-800 truncate max-w-[130px]" title="${b.commodity || 'Hàng hóa'}">${b.commodity || 'Hàng hóa'}</span>
-                        </div>
-                    </td>
-                    <td class="p-3.5">
-                        <div class="flex items-center space-x-1.5 mb-1">
-                            <span class="font-black text-slate-900 text-sm tabular-nums">${b.progress}</span>
-                            <div class="w-12 bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                                <div class="bg-teal-600 h-1.5 rounded-full" style="width: ${b.progress_percent}%"></div>
-                            </div>
-                        </div>
-                        <div>${statusBadge}</div>
-                    </td>
-                    <td class="p-3.5">
-                        <div class="text-[13px] leading-snug space-y-0.5 max-w-[220px]">
-                            <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
-                            <p class="truncate text-slate-900 font-semibold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
-                            ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
-                        </div>
-                    </td>
-                    <td class="p-3.5 font-mono text-sm">
-                        <p class="font-bold text-rose-700">${b.closing_time || '-'}</p>
-                        ${b.si_cutoff ? `<p class="text-[11px] text-slate-400 mt-0.5 font-sans">SI: ${b.si_cutoff}</p>` : ''}
-                    </td>
-                    <td class="p-3.5 text-right font-black text-slate-900 text-sm tabular-nums">
-                        ${new Intl.NumberFormat('vi-VN').format(b.price)} đ
-                    </td>
-                    <td class="p-3.5 text-center">
-                        <div class="flex items-center justify-center space-x-1.5">
-                            ${b.status !== 'COMPLETED' && b.status !== 'CANCELLED' ? `
-                                <button onclick="dispatchFromBooking(${b.id})" class="px-2.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1 font-heading" title="Điều xe ngay">
-                                    <i class="ph-fill ph-paper-plane-tilt text-xs"></i>
-                                    <span>Điều Xe</span>
-                                </button>
-                            ` : `
-                                <span class="px-2 py-1 text-xs text-emerald-700 font-bold flex items-center gap-0.5">
-                                    <i class="ph-fill ph-check"></i> Đủ xe
-                                </span>
-                            `}
-                            <!-- 1. Xem chi tiết Booking (Chế độ chỉ đọc) -->
-                            <button onclick="openModalBooking(${b.id}, true)" title="Xem chi tiết đơn hàng" 
-                                class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors">
-                                <i class="ph-bold ph-eye text-sm"></i>
-                            </button>
-                            <!-- 2. Sửa Booking (Chế độ chỉnh sửa) -->
-                            <button onclick="openModalBooking(${b.id}, false)" title="Hiệu chỉnh đơn hàng" 
-                                class="p-1.5 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-700 transition-colors">
-                                <i class="ph-bold ph-pencil-simple text-sm"></i>
-                            </button>
-                            <!-- 3. Xóa Booking -->
-                            <button onclick="deleteBooking(${b.id})" title="Xóa đơn hàng" 
-                                class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors">
-                                <i class="ph-bold ph-trash text-sm"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                bkBody.appendChild(tr);
-            });
-        }
-
-        // Render Quotations Table
-        const tbody = document.getElementById('sales-tbody');
-        if (tbody && data.quotations) {
-            tbody.innerHTML = '';
-            data.quotations.forEach(s => {
-                let statusCls = 'bg-teal-100 text-teal-800';
-                if (s.status.includes('Đã duyệt')) statusCls = 'bg-emerald-100 text-emerald-800';
-                if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'bg-amber-100 text-amber-800';
-                if (s.status.includes('Từ chối') || s.status.includes('hết hiệu lực')) statusCls = 'bg-rose-100 text-rose-800';
-
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition-colors';
-                tr.innerHTML = `
-                    <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">${s.code}</td>
-                    <td class="p-3.5 font-bold text-slate-900 text-sm">${s.customer}</td>
-                    <td class="p-3.5 font-medium text-slate-700 text-[13.5px]">${s.route}</td>
-                    <td class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>
-                    <td class="p-3.5 text-center font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(s.monthly_trips || 0)} <span class="text-xs text-slate-400 font-normal">chuyến</span></td>
-                    <td class="p-3.5 text-right font-black text-emerald-700 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(s.expected_revenue)} đ</td>
-                    <td class="p-3.5">
-                        <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${s.status}</span>
-                    </td>
-                    <td class="p-3.5 text-center">
-                        <div class="flex items-center justify-center space-x-1.5">
-                            <!-- 1. Xem chi tiết Báo Giá (Chế độ chỉ đọc) -->
-                            <button onclick="openModalQuotation(${s.id}, true)" title="Xem chi tiết báo giá" 
-                                class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors">
-                                <i class="ph-bold ph-eye text-sm"></i>
-                            </button>
-                            <!-- 2. Sửa Báo Giá (Chế độ chỉnh sửa) -->
-                            <button onclick="openModalQuotation(${s.id}, false)" title="Chỉnh sửa báo giá" 
-                                class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 transition-colors">
-                                <i class="ph-bold ph-pencil-simple text-sm"></i>
-                            </button>
-                            <!-- 3. Xóa Báo Giá -->
-                            <button onclick="deleteQuotation(${s.id})" title="Xóa báo giá" 
-                                class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors">
-                                <i class="ph-bold ph-trash text-sm"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+        // Cập nhật danh sách Báo Giá Tuyến Cước với bộ lọc & sắp xếp
+        rawSalesQuotations = data.quotations || [];
+        populateQuoteFilterDropdowns(rawSalesQuotations);
+        applyQuoteFilters();
     } catch (err) {
         console.error('Error loading sales data:', err);
     }
 }
 
-// --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN ---
-function switchTab(tabId) {
+// --- BỘ LỌC & SẮP XẾP BẢNG BÁO GIÁ TUYẾN CƯỚC (CRM) ---
+let rawSalesQuotations = [];
+let quoteSortColumn = null;
+let quoteSortDirection = 'asc';
+
+function populateQuoteFilterDropdowns(quotes) {
+    if (!quotes || !Array.isArray(quotes)) return;
+    const custSelect = document.getElementById('filter-quote-customer');
+    if (custSelect) {
+        const curVal = custSelect.value;
+        const customers = [...new Set(quotes.map(q => (q.customer || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+        custSelect.innerHTML = '<option value="">-- Tất cả Khách hàng --</option>' + 
+            customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        if (customers.includes(curVal)) custSelect.value = curVal;
+    }
+}
+
+function clearQuoteSearch() {
+    const input = document.getElementById('filter-quote-search');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('btn-clear-quote-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    applyQuoteFilters();
+}
+
+function resetQuoteFilters() {
+    const cust = document.getElementById('filter-quote-customer');
+    if (cust) cust.value = '';
+    const status = document.getElementById('filter-quote-status');
+    if (status) status.value = '';
+    const search = document.getElementById('filter-quote-search');
+    if (search) search.value = '';
+    const clearBtn = document.getElementById('btn-clear-quote-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    quoteSortColumn = null;
+    quoteSortDirection = 'asc';
+    applyQuoteFilters();
+}
+
+function toggleQuoteSort(col) {
+    if (quoteSortColumn === col) {
+        quoteSortDirection = quoteSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        quoteSortColumn = col;
+        quoteSortDirection = 'asc';
+    }
+    applyQuoteFilters();
+}
+
+function applyQuoteFilters() {
+    if (!rawSalesQuotations || !Array.isArray(rawSalesQuotations)) return;
+
+    const filterCust = document.getElementById('filter-quote-customer')?.value?.trim().toLowerCase() || '';
+    const filterStatus = document.getElementById('filter-quote-status')?.value?.trim().toLowerCase() || '';
+    const filterSearch = document.getElementById('filter-quote-search')?.value?.trim().toLowerCase() || '';
+
+    const clearBtn = document.getElementById('btn-clear-quote-search');
+    if (clearBtn) {
+        if (filterSearch) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    let list = rawSalesQuotations.filter(q => {
+        if (filterCust && (q.customer || '').toLowerCase() !== filterCust) return false;
+        
+        if (filterStatus) {
+            const st = (q.status || '').toLowerCase();
+            if (!st.includes(filterStatus)) return false;
+        }
+
+        if (filterSearch) {
+            const combinedText = [
+                q.code,
+                q.customer,
+                q.route,
+                q.status,
+                q.unit_price,
+                q.monthly_trips,
+                q.expected_revenue
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            if (!combinedText.includes(filterSearch)) return false;
+        }
+
+        return true;
+    });
+
+    // Cập nhật số đếm
+    const filteredCountEl = document.getElementById('quote-filtered-count');
+    if (filteredCountEl) filteredCountEl.innerText = list.length;
+    const totalCountEl = document.getElementById('quote-total-count');
+    if (totalCountEl) totalCountEl.innerText = rawSalesQuotations.length;
+
+    // Sắp xếp
+    if (quoteSortColumn) {
+        list.sort((a, b) => {
+            let valA = a[quoteSortColumn];
+            let valB = b[quoteSortColumn];
+
+            if (['unit_price', 'monthly_trips', 'expected_revenue'].includes(quoteSortColumn)) {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return quoteSortDirection === 'asc' ? valA - valB : valB - valA;
+            }
+
+            valA = (valA || '').toString();
+            valB = (valB || '').toString();
+            const cmp = valA.localeCompare(valB, 'vi');
+            return quoteSortDirection === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    // Cập nhật icons thead
+    const sortCols = ['code', 'customer', 'route', 'unit_price', 'monthly_trips', 'expected_revenue', 'status'];
+    sortCols.forEach(col => {
+        const iconEl = document.getElementById(`sort-icon-quote-${col}`);
+        if (iconEl) {
+            if (quoteSortColumn === col) {
+                iconEl.className = quoteSortDirection === 'asc' 
+                    ? 'ph-bold ph-arrow-up text-indigo-600 text-xs' 
+                    : 'ph-bold ph-arrow-down text-indigo-600 text-xs';
+            } else {
+                iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+            }
+        }
+    });
+
+    renderQuotationsTable(list);
+}
+
+function renderQuotationsTable(quotations) {
+    const tbody = document.getElementById('sales-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!quotations || quotations.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-10 text-slate-400">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="ph ph-magnifying-glass text-3xl mb-2 text-slate-300"></i>
+                        <p class="font-medium text-sm text-slate-500">Không tìm thấy báo giá nào phù hợp với bộ lọc</p>
+                        <p class="text-xs text-slate-400 mt-1">Thử đổi điều kiện lọc hoặc bấm "Đặt lại"</p>
+                        <button onclick="resetQuoteFilters()" class="mt-2.5 px-3 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors">
+                            Đặt lại bộ lọc
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    quotations.forEach(s => {
+        let statusCls = 'bg-teal-100 text-teal-800';
+        if (s.status.includes('Đã duyệt')) statusCls = 'bg-emerald-100 text-emerald-800';
+        if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'bg-amber-100 text-amber-800';
+        if (s.status.includes('Từ chối') || s.status.includes('hết hiệu lực')) statusCls = 'bg-rose-100 text-rose-800';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors';
+        tr.innerHTML = `
+            <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">${escapeHtml(s.code)}</td>
+            <td class="p-3.5 font-bold text-slate-900 text-sm">${escapeHtml(s.customer)}</td>
+            <td class="p-3.5 font-medium text-slate-700 text-[13.5px]">${escapeHtml(s.route)}</td>
+            <td class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>
+            <td class="p-3.5 text-center font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(s.monthly_trips || 0)} <span class="text-xs text-slate-400 font-normal">chuyến</span></td>
+            <td class="p-3.5 text-right font-black text-emerald-700 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(s.expected_revenue)} đ</td>
+            <td class="p-3.5">
+                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(s.status)}</span>
+            </td>
+            <td class="p-3.5 text-center">
+                <div class="flex items-center justify-center space-x-1.5">
+                    <!-- 1. Xem chi tiết Báo Giá (Chế độ chỉ đọc) -->
+                    <button onclick="openModalQuotation(${s.id}, true)" title="Xem chi tiết báo giá" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors">
+                        <i class="ph-bold ph-eye text-sm"></i>
+                    </button>
+                    <!-- 2. Sửa Báo Giá (Chế độ chỉnh sửa) -->
+                    <button onclick="openModalQuotation(${s.id}, false)" title="Chỉnh sửa báo giá" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 transition-colors">
+                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                    </button>
+                    <!-- 3. Xóa Báo Giá -->
+                    <button onclick="deleteQuotation(${s.id})" title="Xóa báo giá" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Bảng ánh xạ Clean Semantic Routes chuẩn Quốc Tế (SaaS TMS / ERP Standard)
+const ROUTE_TAB_MAP = {
+    '': 'dashboard',
+    '/': 'dashboard',
+    '/dashboard': 'dashboard',
+    '/dispatch': 'dieu-van',
+    '/sales': 'kinh-doanh',
+    '/fleet': 'xe-bai',
+    '/hr': 'nhan-su',
+    '/accounting': 'ke-toan',
+    '/customs': 'hai-quan',
+    '/reports': 'bao-cao',
+    '/settings': 'cai-dat'
+};
+
+const TAB_ROUTE_MAP = {
+    'dashboard': '/',
+    'dieu-van': '/dispatch',
+    'kinh-doanh': '/sales',
+    'xe-bai': '/fleet',
+    'nhan-su': '/hr',
+    'ke-toan': '/accounting',
+    'hai-quan': '/customs',
+    'bao-cao': '/reports',
+    'cai-dat': '/settings'
+};
+
+// --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
+function switchTab(tabId, updateHistory = true) {
     document.querySelectorAll('.sidebar-item-main').forEach(btn => {
         btn.classList.remove('active');
         const icon = btn.querySelector('i');
@@ -2634,13 +4841,20 @@ function switchTab(tabId) {
         if (icon) icon.className = icon.className.replace('text-slate-400', 'text-teal-300');
     }
 
+    // Ẩn view chi tiết chuyến xe nếu đang mở
+    const detailView = document.getElementById('view-trip-detail');
+    if (detailView) detailView.classList.add('hidden-view');
+
     document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
     const targetView = document.getElementById(`view-${tabId}`);
     if (targetView) targetView.classList.remove('hidden-view');
 
-    // Cập nhật trạng thái URL: nếu về dashboard thì giữ nguyên link gốc '/'
-    if (window.history && window.history.replaceState) {
-        window.history.replaceState(null, null, tabId === 'dashboard' ? window.location.pathname : `#${tabId}`);
+    // Cập nhật URL sạch trên thanh địa chỉ trình duyệt (Loại bỏ hoàn toàn dấu #)
+    if (updateHistory && window.history && window.history.pushState) {
+        const routePath = TAB_ROUTE_MAP[tabId] || '/';
+        if (window.location.pathname !== routePath || window.location.hash) {
+            window.history.pushState({ tabId }, '', routePath);
+        }
     }
 
     if (tabId === 'dashboard') loadDashboardData();
@@ -2649,6 +4863,8 @@ function switchTab(tabId) {
     if (tabId === 'xe-bai') loadFleetData();
     if (tabId === 'kinh-doanh') loadSalesData();
     if (tabId === 'ke-toan') loadAccountingData();
+    if (tabId === 'hai-quan') fetchCustomsDeclarations();
+    if (tabId === 'bao-cao') loadReportsData();
     if (tabId === 'cai-dat') loadMasterData();
 }
 
@@ -2664,6 +4880,213 @@ function handleSearch(e) {
     }
 }
 
+// --- MASTER DATA FORM OPTIONS CACHE & POPULATION (Anti-Garbage Master Data Standard) ---
+let masterDataFormOptionsCache = null;
+
+async function loadMasterDataFormOptions(forceReload = false) {
+    if (masterDataFormOptionsCache && !forceReload) {
+        return masterDataFormOptionsCache;
+    }
+    try {
+        const res = await fetchWithAuth('/api/master-data/form-options/');
+        if (res.ok) {
+            masterDataFormOptionsCache = await res.json();
+            return masterDataFormOptionsCache;
+        }
+    } catch (err) {
+        console.error('Lỗi tải danh mục Master Data form-options:', err);
+    }
+    return masterDataFormOptionsCache;
+}
+
+function setSelectValueCaseInsensitive(selectEl, value, label = null) {
+    if (!selectEl || value === undefined || value === null) return;
+    const strVal = String(value).trim();
+    if (!strVal) {
+        selectEl.value = '';
+        return;
+    }
+    for (let i = 0; i < selectEl.options.length; i++) {
+        if (selectEl.options[i].value.toLowerCase() === strVal.toLowerCase() ||
+            selectEl.options[i].text.toLowerCase() === strVal.toLowerCase()) {
+            selectEl.selectedIndex = i;
+            return;
+        }
+    }
+    const opt = document.createElement('option');
+    opt.value = strVal;
+    opt.innerText = label || strVal;
+    selectEl.appendChild(opt);
+    selectEl.value = strVal;
+}
+
+function populateMasterDataDropdowns() {
+    if (!masterDataFormOptionsCache) return;
+    const { customers, locations, drivers, vehicles } = masterDataFormOptionsCache;
+
+    function fillSelect(elId, items, placeholder, valueKey = 'name', textKey = 'label') {
+        const sel = document.getElementById(elId);
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = `<option value="">${placeholder}</option>`;
+        if (Array.isArray(items)) {
+            items.forEach(item => {
+                const val = typeof item === 'object' ? item[valueKey] : item;
+                const txt = typeof item === 'object' ? (item[textKey] || item.name || item.code) : item;
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.innerText = txt;
+                sel.appendChild(opt);
+            });
+        }
+        if (currentVal) {
+            setSelectValueCaseInsensitive(sel, currentVal);
+        }
+    }
+
+    // Modal Điều Vận (modal-create-trip)
+    fillSelect('inp-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
+    fillSelect('inp-pickup', locations?.pickup_options, '-- Chọn Cảng / Depot Lấy --', 'name', 'label');
+    fillSelect('inp-warehouse', locations?.warehouse_options, '-- Chọn Kho Khách Hàng --', 'name', 'label');
+    fillSelect('inp-dropoff', locations?.dropoff_options, '-- Chọn Nơi Hạ Cont --', 'name', 'label');
+    fillSelect('inp-driver', drivers, '-- Chọn tài xế điều động --', 'nickname', 'label');
+
+    // Chế độ Cắt Kéo (Drop & Hook)
+    fillSelect('inp-driver-leg1', drivers, '-- Chọn tài xế lấy cont --', 'nickname', 'label');
+    fillSelect('inp-dropoff-driver', drivers, '-- Chọn tài xế hạ cont --', 'nickname', 'label');
+    fillSelect('inp-vehicle-leg1', vehicles, '-- Tự động theo tài xế --', 'plate', 'label');
+    fillSelect('inp-dropoff-vehicle', vehicles, '-- Tự động theo tài xế --', 'plate', 'label');
+
+    // Modal Booking (modal-booking)
+    fillSelect('booking-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
+    fillSelect('booking-pickup', locations?.pickup_options, '-- Chọn Điểm Lấy --', 'name', 'label');
+    fillSelect('booking-delivery', locations?.warehouse_options, '-- Chọn Kho Khách --', 'name', 'label');
+    fillSelect('booking-dropoff', locations?.dropoff_options, '-- Chọn Điểm Hạ --', 'name', 'label');
+
+    // Modal Báo Giá (modal-quotation)
+    fillSelect('quote-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
+}
+
+// --- NGHIỆP VỤ GHÉP 2 CONT 20FT (TWIN 20FT DRAYAGE TMS STANDARD) ---
+function toggleTwinContMode(isTwin) {
+    const twinSection = document.getElementById('section-twin-cont-2');
+    const contTypeSel = document.getElementById('inp-cont-type');
+    const cont1Title = document.getElementById('label-cont-1-title');
+
+    if (isTwin) {
+        if (twinSection) twinSection.classList.remove('hidden-view');
+        if (cont1Title) cont1Title.innerHTML = '<i class="ph-bold ph-cube text-teal-600"></i> Container #1 (20ft)';
+        if (contTypeSel) {
+            setSelectValueCaseInsensitive(contTypeSel, '2x20DC');
+        }
+    } else {
+        if (twinSection) twinSection.classList.add('hidden-view');
+        if (cont1Title) cont1Title.innerHTML = '<i class="ph-bold ph-cube text-teal-600"></i> Thông Tin Vỏ Cont / Chì';
+        // Reset dữ liệu Cont 2
+        const cont2 = document.getElementById('inp-cont-2');
+        const seal2 = document.getElementById('inp-seal-2');
+        const booking2 = document.getElementById('inp-booking-2');
+        const vgm2 = document.getElementById('inp-vgm-2');
+        const notes2 = document.getElementById('inp-cargo-notes-2');
+        if (cont2) cont2.value = '';
+        if (seal2) seal2.value = '';
+        if (booking2) booking2.value = '';
+        if (vgm2) vgm2.value = '';
+        if (notes2) notes2.value = '';
+    }
+}
+
+function onFreeDaysChange() {
+    const daysInput = document.getElementById('inp-det-free-days');
+    const expiryInput = document.getElementById('inp-det-expiry');
+    if (!daysInput || !expiryInput) return;
+    const days = parseInt(daysInput.value) || 0;
+    if (days > 0) {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        expiryInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+}
+
+// --- NGHIỆP VỤ CẮT KÉO / CẮT MOOC (DROP & HOOK TMS STANDARD) ---
+function toggleDropHookMode(isDropHook) {
+    const directSection = document.getElementById('section-direct-dispatch');
+    const dropHookSection = document.getElementById('section-drop-hook-dispatch');
+    const mainDriver = document.getElementById('inp-driver');
+    const leg1Driver = document.getElementById('inp-driver-leg1');
+    const leg2Driver = document.getElementById('inp-dropoff-driver');
+
+    // Xóa trạng thái báo lỗi cũ của các trường tài xế
+    ['inp-driver', 'inp-driver-leg1', 'inp-dropoff-driver'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('input-error');
+    });
+    ['err-driver', 'err-driver-leg1', 'err-dropoff-driver'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    if (isDropHook) {
+        if (directSection) directSection.classList.add('hidden-view');
+        if (dropHookSection) dropHookSection.classList.remove('hidden-view');
+        if (mainDriver) mainDriver.removeAttribute('required');
+        if (leg1Driver) leg1Driver.setAttribute('required', 'required');
+        if (leg2Driver) leg2Driver.setAttribute('required', 'required');
+        
+        // Kế thừa giá trị tài xế nếu đã chọn ở direct
+        if (mainDriver && mainDriver.value && leg1Driver && !leg1Driver.value) {
+            setSelectValueCaseInsensitive(leg1Driver, mainDriver.value);
+            onDriverLeg1Change(mainDriver.value);
+        }
+    } else {
+        if (directSection) directSection.classList.remove('hidden-view');
+        if (dropHookSection) dropHookSection.classList.add('hidden-view');
+        if (mainDriver) mainDriver.setAttribute('required', 'required');
+        if (leg1Driver) leg1Driver.removeAttribute('required');
+        if (leg2Driver) leg2Driver.removeAttribute('required');
+
+        // Kế thừa ngược lại nếu đã chọn ở leg1
+        if (leg1Driver && leg1Driver.value && mainDriver) {
+            setSelectValueCaseInsensitive(mainDriver, leg1Driver.value);
+        }
+    }
+}
+
+function onDriverLeg1Change(driverNickname) {
+    if (!masterDataFormOptionsCache) return;
+    const { drivers, vehicles } = masterDataFormOptionsCache;
+    const driver = (drivers || []).find(d => (d.nickname === driverNickname || d.full_name === driverNickname || d.code === driverNickname));
+    const vehSel = document.getElementById('inp-vehicle-leg1');
+    if (!vehSel || !driver) return;
+    const matchedVeh = (vehicles || []).find(v => v.driver_id === driver.id || v.driver_name === driver.nickname);
+    if (matchedVeh) {
+        setSelectValueCaseInsensitive(vehSel, matchedVeh.plate);
+    }
+}
+
+function onDriverLeg2Change(driverNickname) {
+    if (!masterDataFormOptionsCache) return;
+    const { drivers, vehicles } = masterDataFormOptionsCache;
+    const driver = (drivers || []).find(d => (d.nickname === driverNickname || d.full_name === driverNickname || d.code === driverNickname));
+    const vehSel = document.getElementById('inp-dropoff-vehicle');
+    if (!vehSel || !driver) return;
+    const matchedVeh = (vehicles || []).find(v => v.driver_id === driver.id || v.driver_name === driver.nickname);
+    if (matchedVeh) {
+        setSelectValueCaseInsensitive(vehSel, matchedVeh.plate);
+    }
+}
+
+function onSplitRatioChange(ratio) {
+    const r = parseInt(ratio) || 50;
+    const badgeLeg1 = document.getElementById('badge-ratio-leg1');
+    const badgeLeg2 = document.getElementById('badge-ratio-leg2');
+    if (badgeLeg1) badgeLeg1.innerText = `Tỷ lệ: ${r}%`;
+    if (badgeLeg2) badgeLeg2.innerText = `Tỷ lệ: ${100 - r}%`;
+}
+
 let activeBookingsCache = [];
 
 async function loadActiveBookingsForModal(selectedBookingId = null) {
@@ -2671,7 +5094,7 @@ async function loadActiveBookingsForModal(selectedBookingId = null) {
     if (!sel) return;
     sel.innerHTML = '<option value="">-- Đang tải danh sách Booking từ Sale... --</option>';
     try {
-        const res = await fetch('/api/bookings/active/');
+        const res = await fetchWithAuth('/api/bookings/active/');
         if (!res.ok) throw new Error('Lỗi tải booking');
         activeBookingsCache = await res.json();
         
@@ -2696,16 +5119,22 @@ async function loadActiveBookingsForModal(selectedBookingId = null) {
 }
 
 function onBookingSelected(bookingId) {
-    if (!bookingId) return;
+    if (!bookingId) {
+        const fileInput = document.getElementById('inp-booking-file');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            clearBookingFileSelection();
+        }
+        return;
+    }
     const b = activeBookingsCache.find(item => String(item.id) === String(bookingId));
     if (!b) return;
 
     // Tự động điền 9 trường dữ liệu kế thừa từ Booking của Sale
     const custEl = document.getElementById('inp-customer');
-    if (custEl) custEl.value = b.customer_name;
+    if (custEl) setSelectValueCaseInsensitive(custEl, b.customer_name);
     
     const contTypeEl = document.getElementById('inp-cont-type');
-    if (contTypeEl) contTypeEl.value = b.container_size || '40HC';
+    if (contTypeEl) setSelectValueCaseInsensitive(contTypeEl, b.container_size || '40HC');
 
     const bookingEl = document.getElementById('inp-booking');
     if (bookingEl) bookingEl.value = b.booking_number || '';
@@ -2717,16 +5146,38 @@ function onBookingSelected(bookingId) {
     if (loadTimeEl) loadTimeEl.value = `${b.loading_date_display || ''} - ${b.loading_time || '8H'}`.trim();
 
     const pickupEl = document.getElementById('inp-pickup');
-    if (pickupEl) pickupEl.value = b.pickup_location || '';
+    if (pickupEl) setSelectValueCaseInsensitive(pickupEl, b.pickup_location);
 
     const warehouseEl = document.getElementById('inp-warehouse');
-    if (warehouseEl) warehouseEl.value = b.delivery_location || '';
+    if (warehouseEl) setSelectValueCaseInsensitive(warehouseEl, b.delivery_location);
 
     const dropoffEl = document.getElementById('inp-dropoff');
-    if (dropoffEl) dropoffEl.value = b.dropoff_location || '';
+    if (dropoffEl) setSelectValueCaseInsensitive(dropoffEl, b.dropoff_location);
 
     const notesEl = document.getElementById('inp-notes');
     if (notesEl && b.notes) notesEl.value = b.notes;
+
+    if (b.free_time_detention) {
+        const detEl = document.getElementById('inp-det-free-days');
+        if (detEl) {
+            detEl.value = b.free_time_detention;
+            onFreeDaysChange();
+        }
+    }
+    if (b.free_time_demurrage) {
+        const demEl = document.getElementById('inp-dem-free-days');
+        if (demEl) demEl.value = b.free_time_demurrage;
+    }
+
+    // Tự động kế thừa file Booking / Lệnh cấp rỗng nếu có
+    if (b.booking_file_url) {
+        showInheritedBookingFile(b.booking_file_url, b.booking_file_name || `Booking_${b.booking_number}`);
+    } else {
+        const fileInput = document.getElementById('inp-booking-file');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            clearBookingFileSelection();
+        }
+    }
 
     // Xóa cảnh báo viền đỏ (nếu có)
     ['inp-customer', 'inp-pickup', 'inp-warehouse'].forEach(id => {
@@ -2738,20 +5189,33 @@ function onBookingSelected(bookingId) {
         if (el) el.classList.add('hidden');
     });
 
-    showToast('success', `Đã kế thừa 9 trường dữ liệu từ Booking [${b.booking_code}] - Khách hàng: ${b.customer_name}`, 'Kế Thừa Thành Công');
+    showToast('success', `Đã kế thừa 9 trường dữ liệu và file booking từ [${b.booking_code}] - Khách hàng: ${b.customer_name}`, 'Kế Thừa Thành Công');
 }
 
-function dispatchFromBooking(bookingId) {
-    openModal('modal-create-trip');
-    loadActiveBookingsForModal(bookingId);
+async function dispatchFromBooking(bookingId) {
+    await openModal('modal-create-trip', bookingId);
 }
 
-function openModal(id) { 
+async function openModal(id, extraParam = null) { 
     const el = document.getElementById(id);
     if (el) el.classList.remove('hidden-view'); 
     initAllNumberInputs();
     if (id === 'modal-create-trip') {
-        loadActiveBookingsForModal();
+        clearBookingFileSelection();
+        const chk = document.getElementById('chk-drop-hook');
+        if (chk) {
+            chk.checked = false;
+            toggleDropHookMode(false);
+        }
+        const chkTwin = document.getElementById('chk-twin-cont');
+        if (chkTwin) {
+            chkTwin.checked = false;
+            toggleTwinContMode(false);
+        }
+        onFreeDaysChange();
+        await loadMasterDataFormOptions();
+        populateMasterDataDropdowns();
+        await loadActiveBookingsForModal(extraParam);
     }
 }
 
@@ -2759,6 +5223,8 @@ function closeModal(id) {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden-view'); 
     if (id === 'modal-ocr') resetOcr();
+    if (id === 'modal-create-trip') clearBookingFileSelection();
+    if (id === 'modal-booking') clearSaleBookingFileSelection();
 }
 
 // =========================================================================
@@ -2780,7 +5246,7 @@ async function loadAccountingData() {
     }
 
     try {
-        const res = await fetch('/api/accounting/');
+        const res = await fetchWithAuth('/api/accounting/');
         if (!res.ok) throw new Error('Lỗi tải dữ liệu kế toán');
         const data = await res.json();
 
@@ -2805,7 +5271,8 @@ async function loadAccountingData() {
 
         // 2. Lưu cache và hiển thị bảng
         accountingDataCache = data.settlements || [];
-        renderAccountingTable(accountingDataCache);
+        populateAccountingFilterDropdowns(accountingDataCache);
+        filterAccountingTable();
 
     } catch (err) {
         console.error('Lỗi tải dữ liệu kế toán:', err);
@@ -2923,24 +5390,168 @@ function renderAccountingTable(list) {
     });
 }
 
+// --- BỘ LỌC & SẮP XẾP BẢNG ĐỐI SOÁT KẾ TOÁN ---
+let acctSortColumn = null;
+let acctSortDirection = 'asc';
+
+function populateAccountingFilterDropdowns(list) {
+    if (!list || !Array.isArray(list)) return;
+
+    // 1. Khách hàng
+    const custSelect = document.getElementById('acct-filter-customer');
+    if (custSelect) {
+        const curVal = custSelect.value;
+        const customers = [...new Set(list.map(i => (i.customer_name || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+        custSelect.innerHTML = '<option value="">-- Tất cả Khách hàng --</option>' + 
+            customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        if (customers.includes(curVal)) custSelect.value = curVal;
+    }
+
+    // 2. Tài xế / Xe
+    const drvSelect = document.getElementById('acct-filter-driver');
+    if (drvSelect) {
+        const curVal = drvSelect.value;
+        const drivers = [...new Set(list.map(i => (i.driver_name || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+        const vehicles = [...new Set(list.map(i => (i.license_plate || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+
+        let opts = '<option value="">-- Tất cả Tài xế / Xe --</option>';
+        if (drivers.length > 0) {
+            opts += '<optgroup label="Tài xế">' + drivers.map(d => `<option value="DRIVER:${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('') + '</optgroup>';
+        }
+        if (vehicles.length > 0) {
+            opts += '<optgroup label="Biển số xe">' + vehicles.map(v => `<option value="VEHICLE:${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('') + '</optgroup>';
+        }
+        drvSelect.innerHTML = opts;
+        if (curVal) drvSelect.value = curVal;
+    }
+}
+
+function clearAccountingSearch() {
+    const input = document.getElementById('acct-search-input');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('btn-clear-acct-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    filterAccountingTable();
+}
+
+function resetAccountingFilters() {
+    const cust = document.getElementById('acct-filter-customer');
+    if (cust) cust.value = '';
+    const drv = document.getElementById('acct-filter-driver');
+    if (drv) drv.value = '';
+    const settle = document.getElementById('acct-filter-settle');
+    if (settle) settle.value = 'ALL';
+    const search = document.getElementById('acct-search-input');
+    if (search) search.value = '';
+    const clearBtn = document.getElementById('btn-clear-acct-search');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    acctSortColumn = null;
+    acctSortDirection = 'asc';
+    filterAccountingTable();
+}
+
+function toggleAccountingSort(col) {
+    if (acctSortColumn === col) {
+        acctSortDirection = acctSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        acctSortColumn = col;
+        acctSortDirection = 'asc';
+    }
+    filterAccountingTable();
+}
+
 function filterAccountingTable() {
+    if (!accountingDataCache || !Array.isArray(accountingDataCache)) return;
+
     const query = document.getElementById('acct-search-input')?.value?.toLowerCase().trim() || '';
+    const custFilter = document.getElementById('acct-filter-customer')?.value?.trim().toLowerCase() || '';
+    const drvFilter = document.getElementById('acct-filter-driver')?.value?.trim() || '';
     const settleFilter = document.getElementById('acct-filter-settle')?.value || 'ALL';
 
-    const filtered = accountingDataCache.filter(item => {
-        const matchesQuery = !query || 
-            item.trip_code.toLowerCase().includes(query) ||
-            item.customer_name.toLowerCase().includes(query) ||
-            item.driver_name.toLowerCase().includes(query) ||
-            item.license_plate.toLowerCase().includes(query) ||
-            (item.sample_invoice && item.sample_invoice.toLowerCase().includes(query));
+    const clearBtn = document.getElementById('btn-clear-acct-search');
+    if (clearBtn) {
+        if (query) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
 
-        const matchesSettle = 
-            settleFilter === 'ALL' ||
-            (settleFilter === 'SETTLED' && item.is_settled) ||
-            (settleFilter === 'PENDING' && !item.is_settled);
+    let filtered = accountingDataCache.filter(item => {
+        if (custFilter && (item.customer_name || '').toLowerCase() !== custFilter) return false;
 
-        return matchesQuery && matchesSettle;
+        if (drvFilter) {
+            if (drvFilter.startsWith('DRIVER:')) {
+                const targetDrv = drvFilter.replace('DRIVER:', '');
+                if (item.driver_name !== targetDrv) return false;
+            } else if (drvFilter.startsWith('VEHICLE:')) {
+                const targetVeh = drvFilter.replace('VEHICLE:', '');
+                if (item.license_plate !== targetVeh) return false;
+            }
+        }
+
+        if (settleFilter === 'SETTLED' && !item.is_settled) return false;
+        if (settleFilter === 'PENDING' && item.is_settled) return false;
+
+        if (query) {
+            const combinedText = [
+                item.trip_code,
+                item.customer_name,
+                item.route,
+                item.driver_name,
+                item.license_plate,
+                item.sample_invoice,
+                item.settled_by
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            if (!combinedText.includes(query)) return false;
+        }
+
+        return true;
+    });
+
+    // Cập nhật số đếm
+    const filteredCountEl = document.getElementById('acct-filtered-count');
+    if (filteredCountEl) filteredCountEl.innerText = filtered.length;
+    const totalCountEl = document.getElementById('acct-total-count');
+    if (totalCountEl) totalCountEl.innerText = accountingDataCache.length;
+
+    // Sắp xếp
+    if (acctSortColumn) {
+        filtered.sort((a, b) => {
+            let valA = a[acctSortColumn];
+            let valB = b[acctSortColumn];
+
+            if (['revenue', 'expense', 'profit', 'invoices_count'].includes(acctSortColumn)) {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return acctSortDirection === 'asc' ? valA - valB : valB - valA;
+            }
+
+            if (acctSortColumn === 'is_settled') {
+                valA = valA ? 1 : 0;
+                valB = valB ? 1 : 0;
+                return acctSortDirection === 'asc' ? valA - valB : valB - valA;
+            }
+
+            valA = (valA || '').toString();
+            valB = (valB || '').toString();
+            const cmp = valA.localeCompare(valB, 'vi');
+            return acctSortDirection === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    // Cập nhật icon sort thead
+    const sortCols = ['trip_code', 'customer_name', 'driver_name', 'revenue', 'expense', 'profit', 'invoices_count', 'is_settled'];
+    sortCols.forEach(col => {
+        const iconEl = document.getElementById(`sort-icon-acct-${col}`);
+        if (iconEl) {
+            if (acctSortColumn === col) {
+                iconEl.className = acctSortDirection === 'asc' 
+                    ? 'ph-bold ph-arrow-up text-teal-600 text-xs' 
+                    : 'ph-bold ph-arrow-down text-teal-600 text-xs';
+            } else {
+                iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+            }
+        }
     });
 
     renderAccountingTable(filtered);
@@ -2952,13 +5563,15 @@ async function toggleSettleTrip(tripCode, isCurrentlySettled) {
             return;
         }
         try {
-            const res = await fetch(`/api/trips/${tripCode}/unsettle-expenses/`, { method: 'POST' });
-            const data = await res.json();
+            const res = await fetchWithAuth(`/api/trips/${tripCode}/unsettle-expenses/`, {
+                method: 'POST'
+            });
+            const data = await res.json().catch(() => ({}));
             if (data.success) {
                 showToast('warning', data.message, 'Đã Mở Khóa Sổ');
                 loadAccountingData();
             } else {
-                showToast('danger', data.error || 'Có lỗi xảy ra');
+                showToast('danger', data.message || data.error || data.detail || 'Có lỗi xảy ra');
             }
         } catch (err) {
             showToast('danger', 'Lỗi kết nối máy chủ');
@@ -2968,19 +5581,1592 @@ async function toggleSettleTrip(tripCode, isCurrentlySettled) {
             return;
         }
         try {
-            const res = await fetch(`/api/trips/${tripCode}/settle-expenses/`, { method: 'POST' });
-            const data = await res.json();
+            const res = await fetchWithAuth(`/api/trips/${tripCode}/settle-expenses/`, {
+                method: 'POST'
+            });
+            const data = await res.json().catch(() => ({}));
             if (data.success) {
                 showToast('success', data.message, 'Chốt Sổ Thành Công');
                 loadAccountingData();
             } else {
-                showToast('danger', data.error || 'Có lỗi xảy ra');
+                showToast('danger', data.message || data.error || data.detail || 'Có lỗi xảy ra');
             }
         } catch (err) {
             showToast('danger', 'Lỗi kết nối máy chủ');
         }
     }
 }
+
+// =========================================================================
+// 10.1 PHÂN HỆ TẠM ỨNG & HOÀN ỨNG (DISPATCHER FUND & DRIVER ADVANCES)
+// =========================================================================
+
+let currentAccountingSubTab = 'acct-settlements';
+let accountingAdvancesData = null;
+let rawDriverAdvancesList = [];
+let rawDispatcherFundsList = [];
+
+function switchAccountingSubTab(subtabId) {
+    currentAccountingSubTab = subtabId;
+
+    // Ẩn tất cả subtab contents
+    document.querySelectorAll('.acct-subtab-content').forEach(el => el.classList.add('hidden'));
+
+    // Bỏ active tất cả buttons
+    document.querySelectorAll('.acct-subtab-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-700', 'text-white', 'shadow-sm', 'active');
+        btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+    });
+
+    // Mở subtab được chọn
+    const targetContent = document.getElementById(`subtab-${subtabId}`);
+    if (targetContent) targetContent.classList.remove('hidden');
+
+    // Active button tương ứng
+    let btnId = 'acct-tab-btn-1';
+    if (subtabId === 'acct-driver-advances') btnId = 'acct-tab-btn-2';
+    if (subtabId === 'acct-dispatcher-funds') btnId = 'acct-tab-btn-3';
+    if (subtabId === 'acct-reimbursables') btnId = 'acct-tab-btn-4';
+    if (subtabId === 'acct-cashbook') btnId = 'acct-tab-btn-5';
+    if (subtabId === 'acct-subcontractors') btnId = 'acct-tab-btn-6';
+    if (subtabId === 'acct-bot-audit') btnId = 'acct-tab-btn-7';
+
+    const activeBtn = document.getElementById(btnId);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+        activeBtn.classList.add('bg-emerald-700', 'text-white', 'shadow-sm', 'active');
+    }
+
+    if (subtabId === 'acct-driver-advances' || subtabId === 'acct-dispatcher-funds') {
+        loadAccountingAdvancesData();
+    } else if (subtabId === 'acct-reimbursables') {
+        loadReimbursablesData();
+    } else if (subtabId === 'acct-cashbook') {
+        loadCashBookData();
+    } else if (subtabId === 'acct-subcontractors') {
+        loadSubcontractorData();
+    } else if (subtabId === 'acct-bot-audit') {
+        loadBotAuditData();
+    } else {
+        loadAccountingData();
+    }
+}
+
+async function loadAccountingAdvancesData() {
+    try {
+        const res = await fetchWithAuth('/api/accounting/advances/');
+        if (!res.ok) throw new Error('Không thể tải dữ liệu tạm ứng hoàn ứng');
+        const data = await res.json();
+        accountingAdvancesData = data;
+
+        // Cập nhật badges trên Subtab Bar
+        const badgeAdv = document.getElementById('badge-acct-driver-advances');
+        if (badgeAdv && data.stats) {
+            badgeAdv.innerText = data.stats.pending_advances_count || 0;
+        }
+
+        const badgeFund = document.getElementById('badge-acct-dispatcher-funds');
+        if (badgeFund && data.dispatcher_funds) {
+            const activeCount = data.dispatcher_funds.filter(f => f.status === 'APPROVED').length;
+            badgeFund.innerText = activeCount;
+        }
+
+        // Render KPI cards Tạm ứng tài xế
+        if (data.stats) {
+            const st = data.stats;
+            const elAdvTotal = document.getElementById('acct-adv-stat-total');
+            if (elAdvTotal) elAdvTotal.innerText = formatMoneyVND(st.total_driver_advance_amount);
+
+            const elAdvSpent = document.getElementById('acct-adv-stat-spent');
+            if (elAdvSpent) elAdvSpent.innerText = formatMoneyVND(st.total_driver_actual_spent);
+
+            const elAdvRefund = document.getElementById('acct-adv-stat-refund');
+            if (elAdvRefund) elAdvRefund.innerText = formatMoneyVND(st.total_refund_due);
+
+            const elAdvReimburse = document.getElementById('acct-adv-stat-reimburse');
+            if (elAdvReimburse) elAdvReimburse.innerText = formatMoneyVND(st.total_reimburse_due);
+
+            const elAdvCount = document.getElementById('acct-adv-stat-pending-count');
+            if (elAdvCount) elAdvCount.innerText = `${st.pending_advances_count} phiếu đang lưu hành`;
+
+            // KPI cards Quỹ điều vận
+            const elFundTotal = document.getElementById('acct-fund-stat-total');
+            if (elFundTotal) elFundTotal.innerText = formatMoneyVND(st.total_dispatcher_funds);
+
+            const elFundDisbursed = document.getElementById('acct-fund-stat-disbursed');
+            if (elFundDisbursed) elFundDisbursed.innerText = formatMoneyVND(st.total_fund_disbursed);
+
+            const elFundSettled = document.getElementById('acct-fund-stat-settled');
+            if (elFundSettled) elFundSettled.innerText = formatMoneyVND(st.total_fund_settled);
+
+            const elFundRem = document.getElementById('acct-fund-stat-remaining');
+            if (elFundRem) elFundRem.innerText = formatMoneyVND(st.total_fund_remaining);
+        }
+
+        // Render bảng Tạm ứng tài xế
+        rawDriverAdvancesList = data.driver_advances || [];
+        populateDriverAdvanceFilterDropdowns(data.drivers || []);
+        applyDriverAdvancesFilter();
+
+        // Render bảng Quỹ điều vận
+        rawDispatcherFundsList = data.dispatcher_funds || [];
+        applyDispatcherFundsFilter();
+
+        // Nạp options cho các modal
+        populateAdvanceModalOptions(data);
+
+    } catch (err) {
+        console.error('Lỗi khi nạp dữ liệu tạm ứng:', err);
+        showToast('danger', 'Không thể kết nối máy chủ để tải dữ liệu tạm ứng', 'Lỗi Kế Toán');
+    }
+}
+
+// -------------------------------------------------------------
+// RENDER & FILTER BẢNG TẠM ỨNG CHUYẾN CHO TÀI XẾ
+// -------------------------------------------------------------
+function populateDriverAdvanceFilterDropdowns(drivers) {
+    const drvSelect = document.getElementById('filter-adv-driver');
+    if (!drvSelect) return;
+    const cur = drvSelect.value;
+    drvSelect.innerHTML = '<option value="">-- Tất cả Tài xế --</option>' +
+        drivers.map(d => `<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('');
+    if (cur) drvSelect.value = cur;
+}
+
+function applyDriverAdvancesFilter() {
+    const drvFilter = document.getElementById('filter-adv-driver')?.value || '';
+    const statusFilter = document.getElementById('filter-adv-status')?.value || 'ALL';
+    const sourceFilter = document.getElementById('filter-adv-source')?.value || 'ALL';
+    const searchVal = (document.getElementById('filter-adv-search')?.value || '').toLowerCase().trim();
+
+    let list = rawDriverAdvancesList.filter(item => {
+        if (drvFilter && item.driver_name !== drvFilter) return false;
+        if (statusFilter !== 'ALL' && item.status !== statusFilter) return false;
+        if (sourceFilter !== 'ALL' && item.advance_source !== sourceFilter) return false;
+
+        if (searchVal) {
+            const combined = [
+                item.code,
+                item.trip_code,
+                item.customer_name,
+                item.driver_name,
+                item.license_plate,
+                item.purpose
+            ].filter(Boolean).join(' ').toLowerCase();
+            if (!combined.includes(searchVal)) return false;
+        }
+        return true;
+    });
+
+    renderDriverAdvancesTable(list);
+}
+
+function renderDriverAdvancesTable(list) {
+    const tbody = document.getElementById('acct-adv-tbody');
+    if (!tbody) return;
+
+    if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy phiếu tạm ứng chuyến nào phù hợp</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const isSettled = item.status === 'SETTLED';
+        const statusBadge = isSettled
+            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đã Hoàn Ứng</span>`
+            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Đang Tạm Ứng</span>`;
+
+        let diffBadge = '';
+        if (isSettled) {
+            if (item.settlement_diff_type === 'DRIVER_REFUND') {
+                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800" title="Tài xế đã hoàn trả tiền thừa">TX Hoàn +${formatMoneyVND(item.refund_amount)}</span>`;
+            } else if (item.settlement_diff_type === 'COMPANY_REIMBURSE') {
+                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800" title="Công ty chi bù thêm">Cty Bù -${formatMoneyVND(item.reimburse_amount)}</span>`;
+            } else {
+                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Khớp Đúng 100%</span>`;
+            }
+        } else {
+            const diff = item.difference || 0;
+            if (diff > 0) {
+                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200" title="Dự kiến hoàn trả cty">+${formatMoneyVND(diff)} (Dư)</span>`;
+            } else if (diff < 0) {
+                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200" title="Dự kiến cty chi bù">${formatMoneyVND(diff)} (Thiếu)</span>`;
+            } else {
+                diffBadge = `<span class="text-xs text-slate-400 font-medium">Khớp tạm tính</span>`;
+            }
+        }
+
+        const sourceBadge = item.advance_source === 'DISPATCHER_FUND'
+            ? `<span class="text-xs text-indigo-700 font-semibold flex items-center gap-1"><i class="ph-bold ph-wallet"></i> ${escapeHtml(item.fund_code)}</span>`
+            : `<span class="text-xs text-slate-600 font-medium">Cty trực tiếp</span>`;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.code)}</td>
+                <td>
+                    <a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(item.trip_code)}</a>
+                    <p class="text-[11px] text-slate-400">${item.advance_date}</p>
+                </td>
+                <td class="text-xs font-semibold text-slate-800 max-w-[170px] truncate" title="${escapeHtml(item.customer_name)}">${escapeHtml(item.customer_name)}</td>
+                <td class="text-xs text-slate-800">
+                    <p class="font-bold">${escapeHtml(item.driver_name)}</p>
+                    <p class="font-mono text-slate-400">${escapeHtml(item.license_plate)}</p>
+                </td>
+                <td class="text-right font-black text-teal-800 text-xs tabular-nums">${formatMoneyVND(item.amount)}</td>
+                <td>${sourceBadge}</td>
+                <td class="text-right font-semibold text-slate-800 text-xs tabular-nums">${formatMoneyVND(item.actual_spent)}</td>
+                <td class="text-center">${diffBadge}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">
+                    <div class="flex items-center justify-center space-x-1.5">
+                        ${!isSettled ? `
+                            <button onclick="openSettleAdvanceModal(${item.id})" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1 transition-all">
+                                <i class="ph-bold ph-calculator text-xs"></i>
+                                <span>Quyết Toán</span>
+                            </button>
+                        ` : `
+                            <span class="text-xs text-slate-400 italic">Đã chốt sổ</span>
+                        `}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// -------------------------------------------------------------
+// RENDER & FILTER BẢNG QUỸ ĐIỀU VẬN (COMPANY ➔ DISPATCHER)
+// -------------------------------------------------------------
+function applyDispatcherFundsFilter() {
+    renderDispatcherFundsTable(rawDispatcherFundsList);
+}
+
+function renderDispatcherFundsTable(list) {
+    const tbody = document.getElementById('acct-fund-tbody');
+    if (!tbody) return;
+
+    if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu Quỹ tạm ứng điều vận nào</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        let statusBadge = '';
+        if (item.status === 'APPROVED') {
+            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đang Lưu Hành</span>`;
+        } else if (item.status === 'PENDING') {
+            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Chờ Cty Duyệt</span>`;
+        } else if (item.status === 'SETTLED') {
+            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Đã Hoàn Ứng Xong</span>`;
+        } else {
+            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">Từ Chối</span>`;
+        }
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.code)}</td>
+                <td class="text-xs font-bold text-indigo-900">${escapeHtml(item.dispatcher_name)}</td>
+                <td class="text-xs text-slate-600 tabular-nums">${item.advance_date}</td>
+                <td class="text-right font-black text-slate-900 text-xs tabular-nums">${formatMoneyVND(item.amount)}</td>
+                <td class="text-right font-semibold text-amber-700 text-xs tabular-nums">${formatMoneyVND(item.disbursed_amount)}</td>
+                <td class="text-right font-semibold text-emerald-700 text-xs tabular-nums">${formatMoneyVND(item.settled_amount)}</td>
+                <td class="text-right font-black text-teal-800 text-xs tabular-nums">${formatMoneyVND(item.remaining_balance)}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-xs text-slate-500">${escapeHtml(item.approved_by || '-')}</td>
+                <td class="text-center">
+                    <div class="flex items-center justify-center space-x-1.5">
+                        ${item.status === 'PENDING' ? `
+                            <button onclick="approveDispatcherFund(${item.id})" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1 transition-all">
+                                <i class="ph-bold ph-check text-xs"></i>
+                                <span>Duyệt Cấp Quỹ</span>
+                            </button>
+                        ` : ''}
+                        ${item.status === 'APPROVED' ? `
+                            <button onclick="settleDispatcherFund(${item.id})" class="px-2.5 py-1 bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1 transition-all">
+                                <i class="ph-bold ph-lock-key text-xs"></i>
+                                <span>Quyết Toán Về Cty</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// -------------------------------------------------------------
+// MODAL CẤP TẠM ỨNG CHUYẾN CHO TÀI XẾ
+// -------------------------------------------------------------
+function populateAdvanceModalOptions(data) {
+    // Dropdown Chuyến xe
+    const tripSelect = document.getElementById('adv-inp-trip');
+    if (tripSelect && data.available_trips) {
+        tripSelect.innerHTML = '<option value="">-- Chọn chuyến xe cần cấp tạm ứng --</option>' +
+            data.available_trips.map(t => `<option value="${t.id}" data-driver="${t.driver_id || ''}" data-driver-name="${escapeHtml(t.driver_name)}" data-plate="${escapeHtml(t.license_plate)}" data-route="${escapeHtml(t.route)}">[${t.trip_code}] ${escapeHtml(t.customer_name)} (${escapeHtml(t.license_plate)})</option>`).join('');
+    }
+
+    // Dropdown Tài xế
+    const driverSelect = document.getElementById('adv-inp-driver');
+    if (driverSelect && data.drivers) {
+        driverSelect.innerHTML = '<option value="">-- Chọn tài xế nhận tạm ứng --</option>' +
+            data.drivers.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+    }
+
+    // Dropdown Quỹ điều vận khả dụng
+    const fundSelect = document.getElementById('adv-inp-fund');
+    if (fundSelect && data.active_funds) {
+        fundSelect.innerHTML = '<option value="">-- Chọn Quỹ Điều Vận khả dụng --</option>' +
+            data.active_funds.map(f => `<option value="${f.id}" data-balance="${f.remaining_balance}">${escapeHtml(f.code)} - ${escapeHtml(f.dispatcher_name)} (Còn: ${formatMoneyVND(f.remaining_balance)})</option>`).join('');
+    }
+
+    // Dropdown Điều phối viên nhận quỹ
+    const dispSelect = document.getElementById('fund-inp-dispatcher');
+    if (dispSelect && data.dispatchers) {
+        dispSelect.innerHTML = '<option value="">-- Chọn nhân viên điều phối nhận quỹ --</option>' +
+            data.dispatchers.map(dp => `<option value="${dp.id}">${escapeHtml(dp.name)}</option>`).join('');
+    }
+}
+
+function openDriverAdvanceModal(tripCode = null) {
+    const modal = document.getElementById('modal-driver-advance');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const dateInp = document.getElementById('adv-inp-date');
+    if (dateInp) dateInp.value = new Date().toISOString().slice(0, 10);
+
+    const amountInp = document.getElementById('adv-inp-amount');
+    if (amountInp) amountInp.value = '1.500.000';
+
+    if (tripCode && accountingAdvancesData && accountingAdvancesData.available_trips) {
+        const found = accountingAdvancesData.available_trips.find(t => t.trip_code === tripCode);
+        if (found) {
+            const tripSelect = document.getElementById('adv-inp-trip');
+            if (tripSelect) {
+                tripSelect.value = found.id;
+                onAdvanceTripChange();
+            }
+        }
+    }
+}
+
+function closeDriverAdvanceModal() {
+    const modal = document.getElementById('modal-driver-advance');
+    if (modal) modal.classList.add('hidden');
+}
+
+function onAdvanceTripChange() {
+    const tripSelect = document.getElementById('adv-inp-trip');
+    const selectedOption = tripSelect.options[tripSelect.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+        document.getElementById('adv-trip-info').classList.add('hidden');
+        return;
+    }
+
+    const driverId = selectedOption.getAttribute('data-driver');
+    const driverName = selectedOption.getAttribute('data-driver-name');
+    const plate = selectedOption.getAttribute('data-plate');
+    const route = selectedOption.getAttribute('data-route');
+
+    if (driverId) {
+        const drvSelect = document.getElementById('adv-inp-driver');
+        if (drvSelect) drvSelect.value = driverId;
+    }
+
+    const infoEl = document.getElementById('adv-trip-info');
+    if (infoEl) {
+        infoEl.innerHTML = `<i class="ph-bold ph-truck"></i> Xe: <strong>${plate}</strong> | Tuyến: ${route}`;
+        infoEl.classList.remove('hidden');
+    }
+}
+
+function toggleAdvanceSourceType() {
+    const sourceVal = document.querySelector('input[name="adv_source"]:checked')?.value;
+    const boxFund = document.getElementById('adv-box-dispatcher-fund');
+    if (!boxFund) return;
+    if (sourceVal === 'DISPATCHER_FUND') {
+        boxFund.classList.remove('hidden');
+    } else {
+        boxFund.classList.add('hidden');
+    }
+}
+
+async function submitDriverAdvanceForm(e) {
+    e.preventDefault();
+    const tripId = document.getElementById('adv-inp-trip')?.value;
+    const driverId = document.getElementById('adv-inp-driver')?.value;
+    const amountStr = document.getElementById('adv-inp-amount')?.value;
+    const advanceDate = document.getElementById('adv-inp-date')?.value;
+    const sourceVal = document.querySelector('input[name="adv_source"]:checked')?.value || 'DISPATCHER_FUND';
+    const fundId = document.getElementById('adv-inp-fund')?.value;
+    const purpose = document.getElementById('adv-inp-purpose')?.value;
+    const notes = document.getElementById('adv-inp-notes')?.value;
+
+    const payload = {
+        trip_id: tripId,
+        driver_id: driverId,
+        amount: amountStr,
+        advance_date: advanceDate,
+        advance_source: sourceVal,
+        dispatcher_fund_id: (sourceVal === 'DISPATCHER_FUND' && fundId) ? fundId : null,
+        purpose: purpose,
+        notes: notes
+    };
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/driver-advances/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Cấp Tạm Ứng Thành Công');
+            closeDriverAdvanceModal();
+            loadAccountingAdvancesData();
+        } else {
+            showToast('danger', data.error || 'Không thể tạo phiếu tạm ứng');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+// -------------------------------------------------------------
+// MODAL ĐỐI SOÁT & QUYẾT TOÁN HOÀN ỨNG CHUYẾN
+// -------------------------------------------------------------
+let currentActiveAdvance = null;
+
+function openSettleAdvanceModal(advanceId) {
+    const advance = rawDriverAdvancesList.find(a => a.id === advanceId);
+    if (!advance) return;
+    currentActiveAdvance = advance;
+
+    const modal = document.getElementById('modal-settle-advance');
+    if (!modal) return;
+
+    document.getElementById('settle-adv-id').value = advance.id;
+    document.getElementById('settle-adv-code').innerText = advance.code;
+    document.getElementById('settle-adv-trip-info').innerText = `[${advance.trip_code}] ${advance.customer_name} (${advance.license_plate})`;
+    document.getElementById('settle-adv-driver-name').innerText = advance.driver_name;
+    document.getElementById('settle-adv-amount-display').innerText = formatMoneyVND(advance.amount);
+
+    const spentInp = document.getElementById('settle-adv-actual-spent');
+    if (spentInp) {
+        spentInp.value = new Intl.NumberFormat('vi-VN').format(advance.actual_spent || advance.amount);
+    }
+
+    calculateSettlementDiff();
+    modal.classList.remove('hidden');
+}
+
+function closeSettleAdvanceModal() {
+    const modal = document.getElementById('modal-settle-advance');
+    if (modal) modal.classList.add('hidden');
+}
+
+function calculateSettlementDiff() {
+    if (!currentActiveAdvance) return;
+    const spentStr = document.getElementById('settle-adv-actual-spent')?.value || '0';
+    const spent = parseInt(spentStr.replace(/\D/g, ''), 10) || 0;
+    const advance = parseInt(currentActiveAdvance.amount, 10) || 0;
+    const diff = advance - spent;
+
+    const box = document.getElementById('settle-adv-diff-box');
+    const titleEl = document.getElementById('settle-adv-diff-title');
+    const badgeEl = document.getElementById('settle-adv-diff-badge');
+    const descEl = document.getElementById('settle-adv-diff-desc');
+    const amountEl = document.getElementById('settle-adv-diff-amount');
+
+    if (diff > 0) {
+        // Tạm ứng > Thực chi: Tài xế nộp lại
+        box.className = 'p-4 rounded-2xl border bg-blue-50/70 border-blue-200 text-blue-900';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-200 text-blue-900';
+        badgeEl.innerText = 'TÀI XẾ HOÀN LẠI TIỀN THỪA';
+        descEl.innerText = 'Số tiền tài xế nộp lại vào quỹ:';
+        amountEl.className = 'text-xl font-black tabular-nums font-heading text-blue-800';
+        amountEl.innerText = `+${formatMoneyVND(diff)}`;
+    } else if (diff < 0) {
+        // Thực chi > Tạm ứng: Công ty chi bù
+        box.className = 'p-4 rounded-2xl border bg-rose-50/70 border-rose-200 text-rose-900';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-200 text-rose-900';
+        badgeEl.innerText = 'CÔNG TY CHI TRẢ BÙ';
+        descEl.innerText = 'Số tiền công ty/điều vận chi bù cho tài xế:';
+        amountEl.className = 'text-xl font-black tabular-nums font-heading text-rose-700';
+        amountEl.innerText = `-${formatMoneyVND(Math.abs(diff))}`;
+    } else {
+        box.className = 'p-4 rounded-2xl border bg-emerald-50/70 border-emerald-200 text-emerald-900';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-200 text-emerald-900';
+        badgeEl.innerText = 'KHỚP ĐÚNG 100%';
+        descEl.innerText = 'Không phát sinh chênh lệch:';
+        amountEl.className = 'text-xl font-black tabular-nums font-heading text-emerald-800';
+        amountEl.innerText = '0 đ';
+    }
+}
+
+function recalculateActualExpensesFromTrip() {
+    if (!currentActiveAdvance) return;
+    const spentInp = document.getElementById('settle-adv-actual-spent');
+    if (spentInp) {
+        spentInp.value = new Intl.NumberFormat('vi-VN').format(currentActiveAdvance.actual_spent);
+        calculateSettlementDiff();
+    }
+}
+
+async function submitSettleAdvanceForm(e) {
+    e.preventDefault();
+    if (!currentActiveAdvance) return;
+
+    const spentStr = document.getElementById('settle-adv-actual-spent')?.value || '0';
+    const spent = parseInt(spentStr.replace(/\D/g, ''), 10) || 0;
+    const notes = document.getElementById('settle-adv-notes')?.value || '';
+
+    try {
+        const res = await fetchWithAuth(`/api/accounting/driver-advances/${currentActiveAdvance.id}/settle/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                actual_spent: spent,
+                settlement_notes: notes
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Quyết Toán Hoàn Ứng Thành Công');
+            closeSettleAdvanceModal();
+            loadAccountingAdvancesData();
+        } else {
+            showToast('danger', data.error || 'Không thể quyết toán');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+// -------------------------------------------------------------
+// MODAL TẠO QUỸ TẠM ỨNG ĐIỀU VẬN (COMPANY ➔ DISPATCHER)
+// -------------------------------------------------------------
+function openDispatcherFundModal() {
+    const modal = document.getElementById('modal-dispatcher-fund');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const dateInp = document.getElementById('fund-inp-date');
+    if (dateInp) dateInp.value = new Date().toISOString().slice(0, 10);
+
+    const amountInp = document.getElementById('fund-inp-amount');
+    if (amountInp) amountInp.value = '20.000.000';
+}
+
+function closeDispatcherFundModal() {
+    const modal = document.getElementById('modal-dispatcher-fund');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function submitDispatcherFundForm(e) {
+    e.preventDefault();
+    const dispatcherId = document.getElementById('fund-inp-dispatcher')?.value;
+    const amountStr = document.getElementById('fund-inp-amount')?.value;
+    const advanceDate = document.getElementById('fund-inp-date')?.value;
+    const purpose = document.getElementById('fund-inp-purpose')?.value;
+    const notes = document.getElementById('fund-inp-notes')?.value;
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/dispatcher-funds/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                dispatcher_id: dispatcherId,
+                amount: amountStr,
+                advance_date: advanceDate,
+                purpose: purpose,
+                notes: notes
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Tạo Quỹ Điều Vận Thành Công');
+            closeDispatcherFundModal();
+            loadAccountingAdvancesData();
+        } else {
+            showToast('danger', data.error || 'Không thể tạo phiếu tạm ứng quỹ');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+async function approveDispatcherFund(fundId) {
+    if (!confirm('Xác nhận Kế toán / Ban Giám Đốc DUYỆT XUẤT QUỸ tạm ứng này cho bộ phận Điều vận?')) return;
+    try {
+        const res = await fetchWithAuth(`/api/accounting/dispatcher-funds/${fundId}/action/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'approve' })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Duyệt Quỹ Thành Công');
+            loadAccountingAdvancesData();
+        } else {
+            showToast('danger', data.error || 'Có lỗi xảy ra');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+async function settleDispatcherFund(fundId) {
+    const notes = prompt('Nhập ghi chú quyết toán quỹ điều vận về công ty (vd: Kế toán đã thu đủ chứng từ & số dư hoàn quỹ):');
+    if (notes === null) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/accounting/dispatcher-funds/${fundId}/action/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'settle', notes: notes })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Quyết Toán Quỹ Thành Công');
+            loadAccountingAdvancesData();
+        } else {
+            showToast('danger', data.error || 'Có lỗi xảy ra');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+// -------------------------------------------------------------
+// XUẤT BÁO CÁO EXCEL KẾ TOÁN & TẠM ỨNG
+// -------------------------------------------------------------
+function exportAccountingToExcel() {
+    const activeSubtab = document.querySelector('.acct-subtab-content:not(.hidden)');
+    if (!activeSubtab) {
+        showToast('warning', 'Không tìm thấy bảng dữ liệu kế toán đang mở');
+        return;
+    }
+
+    const table = activeSubtab.querySelector('table');
+    if (!table) {
+        showToast('warning', 'Bảng dữ liệu kế toán trống');
+        return;
+    }
+
+    const rows = table.querySelectorAll('tr');
+    let csvContent = '\uFEFF';
+
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        const rowData = [];
+        cols.forEach(col => {
+            let text = col.innerText.replace(/"/g, '""').trim();
+            text = text.replace(/[\n\r]+/g, ' ');
+            rowData.push(`"${text}"`);
+        });
+        if (rowData.length > 0) {
+            csvContent += rowData.join(',') + '\r\n';
+        }
+    });
+
+    const subtabId = activeSubtab.id.replace('subtab-', '');
+    const filename = `BIM_Logistics_KeToan_${subtabId}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('success', `Đã xuất dữ liệu "${filename}" thành công!`, 'Xuất Excel Thành Công');
+}
+
+
+// ==============================================================================
+// 9.4. SUBTAB 4: ĐỐI SOÁT & THU HỒI CHI HỘ KHÁCH HÀNG (DEBIT NOTE CONTROLLER)
+// ==============================================================================
+let rawReimbursablesList = [];
+let selectedReimbursableIds = new Set();
+
+async function loadReimbursablesData() {
+    try {
+        const statusFilter = document.getElementById('reimburse-filter-status')?.value || 'ALL';
+        const customerId = document.getElementById('reimburse-filter-customer')?.value || '';
+        const search = document.getElementById('reimburse-search')?.value || '';
+
+        let url = `/api/accounting/reimbursables/?reimbursement_status=${statusFilter}`;
+        if (customerId) url += `&customer_id=${customerId}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error('Không thể tải dữ liệu chi hộ');
+        const data = await res.json();
+
+        rawReimbursablesList = data.items || [];
+
+        // Cập nhật KPIs
+        if (data.kpis) {
+            const kp = data.kpis;
+            const elTotal = document.getElementById('reimburse-stat-total');
+            if (elTotal) elTotal.innerText = formatMoneyVND(kp.total_amount);
+
+            const elCollected = document.getElementById('reimburse-stat-collected');
+            if (elCollected) elCollected.innerText = formatMoneyVND(kp.collected_amount);
+
+            const elPending = document.getElementById('reimburse-stat-pending');
+            if (elPending) elPending.innerText = formatMoneyVND(kp.pending_amount);
+
+            const elBilled = document.getElementById('reimburse-stat-billed');
+            if (elBilled) elBilled.innerText = formatMoneyVND(kp.billed_amount);
+
+            const elCount = document.getElementById('reimburse-stat-count');
+            if (elCount) elCount.innerText = `${kp.total_items_count} khoản chi hộ`;
+
+            const elPCount = document.getElementById('reimburse-stat-pending-count');
+            if (elPCount) elPCount.innerText = `${kp.pending_items_count} khoản chờ thu`;
+
+            const badge = document.getElementById('badge-acct-reimbursables');
+            if (badge) badge.innerText = kp.pending_items_count;
+        }
+
+        // Cập nhật dropdown Khách hàng (nếu chưa có hoặc lần đầu)
+        const custSelect = document.getElementById('reimburse-filter-customer');
+        if (custSelect && data.by_customer && custSelect.options.length <= 1) {
+            data.by_customer.forEach(c => {
+                if (c.customer_id) {
+                    const opt = document.createElement('option');
+                    opt.value = c.customer_id;
+                    opt.textContent = `${c.customer_name} (${formatMoneyVND(c.pending_amount)} chờ thu)`;
+                    custSelect.appendChild(opt);
+                }
+            });
+        }
+
+        renderReimbursablesTable(rawReimbursablesList);
+    } catch (err) {
+        console.error('Lỗi tải bảng kê chi hộ:', err);
+        showToast('danger', 'Không thể kết nối máy chủ để tải bảng kê chi hộ', 'Lỗi Chi Hộ');
+    }
+}
+
+function renderReimbursablesTable(list) {
+    const tbody = document.getElementById('acct-reimburse-tbody');
+    if (!tbody) return;
+
+    if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy khoản chi hộ nào phù hợp</td></tr>`;
+        updateSelectedReimbursablesUI();
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const isChecked = selectedReimbursableIds.has(item.id) ? 'checked' : '';
+        const isCollected = item.reimbursement_status === 'COLLECTED';
+        const isBilled = item.reimbursement_status === 'BILLED';
+
+        let statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Chờ Thu</span>`;
+        if (isBilled) {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">Đã Lập Debit Note</span>`;
+        } else if (isCollected) {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đã Thu Hồi</span>`;
+        }
+
+        let invoiceInfo = '<span class="text-slate-400">Không có HĐ</span>';
+        if (item.invoice_number) {
+            invoiceInfo = `<div class="font-bold text-slate-800">Số: ${escapeHtml(item.invoice_number)}</div>`;
+            if (item.invoice_lookup_code) {
+                invoiceInfo += `<div class="text-[10px] text-teal-700 font-mono">Tra cứu: ${escapeHtml(item.invoice_lookup_code)}</div>`;
+            }
+        }
+
+        let dnBadge = item.debit_note_number 
+            ? `<span class="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">${escapeHtml(item.debit_note_number)}</span>`
+            : '<span class="text-slate-400 text-xs">-</span>';
+
+        return `
+            <tr class="hover:bg-teal-50/30 transition-colors">
+                <td class="text-center">
+                    <input type="checkbox" value="${item.id}" ${isChecked} onchange="toggleReimbursableCheck(${item.id}, this)" class="rounded text-teal-600 focus:ring-teal-500">
+                </td>
+                <td>
+                    <div class="font-bold text-teal-800 font-heading">[${escapeHtml(item.trip_code)}]</div>
+                    <div class="text-[11px] text-slate-400 font-medium">${item.created_at}</div>
+                </td>
+                <td>
+                    <div class="font-bold text-slate-800 max-w-[180px] truncate" title="${escapeHtml(item.customer_name)}">${escapeHtml(item.customer_name)}</div>
+                    <div class="text-[11px] text-slate-500">TX: ${escapeHtml(item.driver_name)} (${escapeHtml(item.vehicle_plate)})</div>
+                </td>
+                <td>
+                    <div class="font-mono font-bold text-slate-700">${escapeHtml(item.container_number || '-')}</div>
+                    <div class="text-[11px] text-slate-400">BK: ${escapeHtml(item.booking_or_bill || '-')}</div>
+                </td>
+                <td>
+                    <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        ${escapeHtml(item.expense_item_name)}
+                    </span>
+                    ${item.notes ? `<div class="text-[10px] text-slate-400 italic mt-0.5">${escapeHtml(item.notes)}</div>` : ''}
+                </td>
+                <td class="text-right font-black text-slate-900 tabular-nums text-sm font-heading">
+                    ${formatMoneyVND(item.amount)}
+                </td>
+                <td>${invoiceInfo}</td>
+                <td>${dnBadge}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-xs text-slate-500 font-medium">
+                    ${item.reimbursed_at ? `<div class="text-emerald-700 font-bold">${item.reimbursed_at}</div><div class="text-[10px] text-slate-400">${escapeHtml(item.reimbursed_by_name)}</div>` : '-'}
+                </td>
+                <td class="text-center">
+                    <div class="flex items-center justify-center gap-1.5">
+                        ${!isCollected ? `
+                            <button type="button" onclick="settleSingleReimbursement(${item.id})" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors" title="Xác nhận khách đã hoàn trả tiền">
+                                <i class="ph-bold ph-check text-xs"></i> Thu Tiền
+                            </button>
+                        ` : `
+                            <span class="text-xs text-emerald-600 font-bold flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Đã Thu</span>
+                        `}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    updateSelectedReimbursablesUI();
+}
+
+function toggleReimbursableCheck(id, checkbox) {
+    if (checkbox.checked) {
+        selectedReimbursableIds.add(id);
+    } else {
+        selectedReimbursableIds.delete(id);
+    }
+    updateSelectedReimbursablesUI();
+}
+
+function toggleCheckAllReimbursables(masterCheckbox) {
+    const isChecked = masterCheckbox.checked;
+    rawReimbursablesList.forEach(item => {
+        if (isChecked) {
+            selectedReimbursableIds.add(item.id);
+        } else {
+            selectedReimbursableIds.delete(item.id);
+        }
+    });
+    renderReimbursablesTable(rawReimbursablesList);
+}
+
+function selectAllReimbursables(state) {
+    const master = document.getElementById('reimburse-check-all');
+    if (master) master.checked = state;
+    toggleCheckAllReimbursables({ checked: state });
+}
+
+function updateSelectedReimbursablesUI() {
+    const count = selectedReimbursableIds.size;
+    const badge = document.getElementById('reimburse-selected-badge');
+    if (badge) badge.innerText = count;
+
+    const master = document.getElementById('reimburse-check-all');
+    if (master) {
+        master.checked = count > 0 && count === rawReimbursablesList.length;
+    }
+}
+
+function openCreateDebitNoteModal() {
+    if (selectedReimbursableIds.size === 0) {
+        showToast('warning', 'Vui lòng tích chọn ít nhất 1 khoản chi hộ để gom nhóm lập Debit Note!');
+        return;
+    }
+
+    const modal = document.getElementById('modal-debit-note');
+    if (!modal) return;
+
+    document.getElementById('dn-action-type').value = 'create_debit_note';
+    document.getElementById('dn-expense-ids').value = Array.from(selectedReimbursableIds).join(',');
+
+    // Tính tổng tiền
+    let totalAmt = 0;
+    const custNames = new Set();
+    rawReimbursablesList.forEach(item => {
+        if (selectedReimbursableIds.has(item.id)) {
+            totalAmt += item.amount;
+            if (item.customer_name) custNames.add(item.customer_name);
+        }
+    });
+
+    document.getElementById('dn-selected-count').innerText = `${selectedReimbursableIds.size} khoản chi hộ`;
+    document.getElementById('dn-selected-amount').innerText = formatMoneyVND(totalAmt);
+    document.getElementById('dn-selected-customer').innerText = `Khách hàng: ${Array.from(custNames).join(', ') || 'Nhiều khách hàng'}`;
+
+    // Auto generate DN code
+    const now = new Date();
+    const dStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const tStr = String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('dn-number').value = `DN-${dStr}-${tStr}`;
+
+    // UI state for create
+    document.getElementById('debit-modal-title').innerText = 'Gom Nhóm & Lập Debit Note Chi Hộ';
+    document.getElementById('dn-code-container').classList.remove('hidden');
+    document.getElementById('dn-settle-fields').classList.add('hidden');
+    document.getElementById('btn-submit-debit-note-label').innerText = 'Xác Nhận Lập Debit Note';
+
+    modal.classList.remove('hidden');
+}
+
+function openSettleDebitNoteModal() {
+    if (selectedReimbursableIds.size === 0) {
+        showToast('warning', 'Vui lòng tích chọn các khoản chi hộ muốn xác nhận khách hàng đã hoàn tiền!');
+        return;
+    }
+
+    const modal = document.getElementById('modal-debit-note');
+    if (!modal) return;
+
+    document.getElementById('dn-action-type').value = 'settle_reimbursement';
+    document.getElementById('dn-expense-ids').value = Array.from(selectedReimbursableIds).join(',');
+
+    let totalAmt = 0;
+    const custNames = new Set();
+    rawReimbursablesList.forEach(item => {
+        if (selectedReimbursableIds.has(item.id)) {
+            totalAmt += item.amount;
+            if (item.customer_name) custNames.add(item.customer_name);
+        }
+    });
+
+    document.getElementById('dn-selected-count').innerText = `${selectedReimbursableIds.size} khoản chi hộ`;
+    document.getElementById('dn-selected-amount').innerText = formatMoneyVND(totalAmt);
+    document.getElementById('dn-selected-customer').innerText = `Khách hàng hoàn tiền: ${Array.from(custNames).join(', ')}`;
+
+    // UI state for settle
+    document.getElementById('debit-modal-title').innerText = 'Xác Nhận Thu Hồi Chi Hộ (1-Chạm)';
+    document.getElementById('dn-code-container').classList.add('hidden');
+    document.getElementById('dn-settle-fields').classList.remove('hidden');
+    document.getElementById('btn-submit-debit-note-label').innerText = 'Xác Nhận Đã Thu Tiền & Ghi Sổ Quỹ';
+
+    modal.classList.remove('hidden');
+}
+
+function closeDebitNoteModal() {
+    const modal = document.getElementById('modal-debit-note');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function handleSaveDebitNote(e) {
+    e.preventDefault();
+    const actionType = document.getElementById('dn-action-type').value;
+    const expIdsStr = document.getElementById('dn-expense-ids').value;
+    const expenseIds = expIdsStr ? expIdsStr.split(',').map(Number) : [];
+    const dnNumber = document.getElementById('dn-number')?.value || '';
+    const paymentMethod = document.getElementById('dn-payment-method')?.value || 'BANK';
+    const bankName = document.getElementById('dn-bank-name')?.value || '';
+    const notes = document.getElementById('dn-notes')?.value || '';
+
+    try {
+        let payload = { action: actionType, expense_ids: expenseIds, notes: notes };
+        if (actionType === 'create_debit_note') {
+            payload.debit_note_number = dnNumber;
+        } else if (actionType === 'settle_reimbursement') {
+            payload.payment_method = paymentMethod;
+            payload.bank_name = bankName;
+        }
+
+        const res = await fetchWithAuth('/api/accounting/reimbursables/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Thành Công');
+            closeDebitNoteModal();
+            selectedReimbursableIds.clear();
+            loadReimbursablesData();
+        } else {
+            showToast('danger', data.error || 'Thao tác không thành công');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+async function settleSingleReimbursement(expenseId) {
+    if (!confirm('Xác nhận Khách hàng đã hoàn tiền cho khoản chi hộ này và tự động ghi vào Sổ Quỹ?')) return;
+    try {
+        const res = await fetchWithAuth('/api/accounting/reimbursables/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'settle_reimbursement',
+                expense_ids: [expenseId],
+                payment_method: 'BANK',
+                notes: 'Thu hoàn ứng chi hộ trực tiếp'
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Đã Thu Tiền Hoàn Ứng');
+            loadReimbursablesData();
+        } else {
+            showToast('danger', data.error || 'Có lỗi xảy ra');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+function exportReimbursablesToExcel() {
+    exportAccountingToExcel();
+}
+
+
+// ==============================================================================
+// 9.5. SUBTAB 5: SỔ QUỸ THU - CHI & DÒNG TIỀN VẬN TẢI (CASH & BANK BOOK)
+// ==============================================================================
+let rawCashTransactionsList = [];
+
+async function loadCashBookData() {
+    try {
+        const method = document.getElementById('cash-filter-method')?.value || 'ALL';
+        const type = document.getElementById('cash-filter-type')?.value || 'ALL';
+        const category = document.getElementById('cash-filter-category')?.value || 'ALL';
+        const search = document.getElementById('cash-search')?.value || '';
+
+        let url = `/api/accounting/cashbook/?payment_method=${method}&transaction_type=${type}&category=${category}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error('Không thể tải Sổ Quỹ');
+        const data = await res.json();
+
+        rawCashTransactionsList = data.transactions || [];
+
+        // Cập nhật KPIs
+        if (data.kpis) {
+            const kp = data.kpis;
+            const elCash = document.getElementById('cash-stat-cash-balance');
+            if (elCash) elCash.innerText = formatMoneyVND(kp.cash_balance);
+
+            const elBank = document.getElementById('cash-stat-bank-balance');
+            if (elBank) elBank.innerText = formatMoneyVND(kp.bank_balance);
+
+            const elTotal = document.getElementById('cash-stat-total-balance');
+            if (elTotal) elTotal.innerText = formatMoneyVND(kp.total_balance);
+
+            const elNet = document.getElementById('cash-stat-period-net');
+            if (elNet) {
+                elNet.innerText = (kp.period_net >= 0 ? '+' : '') + formatMoneyVND(kp.period_net);
+                elNet.className = `text-3xl font-black tabular-nums font-heading tracking-tight mt-1 ${kp.period_net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+            }
+
+            const elInOut = document.getElementById('cash-stat-in-out-summary');
+            if (elInOut) {
+                elInOut.innerText = `Thu: +${formatMoneyVND(kp.period_inflow)} | Chi: -${formatMoneyVND(kp.period_outflow)}`;
+            }
+        }
+
+        renderCashBookTable(rawCashTransactionsList);
+    } catch (err) {
+        console.error('Lỗi tải Sổ Quỹ:', err);
+        showToast('danger', 'Không thể kết nối máy chủ để tải Sổ Quỹ Thu - Chi', 'Lỗi Sổ Quỹ');
+    }
+}
+
+function renderCashBookTable(list) {
+    const tbody = document.getElementById('acct-cash-tbody');
+    if (!tbody) return;
+
+    if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy giao dịch thu chi nào phù hợp</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const isInflow = item.transaction_type === 'INFLOW';
+        const typeBadge = isInflow
+            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">➕ Thu Tiền</span>`
+            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">➖ Chi Tiền</span>`;
+
+        const methodBadge = item.payment_method === 'BANK'
+            ? `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200"><i class="ph-fill ph-bank"></i> Ngân Hàng</span>`
+            : `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200"><i class="ph-fill ph-money"></i> Tiền Mặt</span>`;
+
+        const amountClass = isInflow ? 'text-emerald-700' : 'text-rose-700';
+        const sign = isInflow ? '+' : '-';
+
+        return `
+            <tr class="hover:bg-slate-50/80 transition-colors">
+                <td>
+                    <div class="font-bold text-slate-800 font-mono text-xs">${escapeHtml(item.code)}</div>
+                </td>
+                <td class="text-xs text-slate-600 font-medium">${item.transaction_date}</td>
+                <td class="text-center">${typeBadge}</td>
+                <td>${methodBadge}</td>
+                <td>
+                    <span class="font-bold text-slate-800 text-xs">${escapeHtml(item.category_label)}</span>
+                </td>
+                <td>
+                    <div class="font-bold text-slate-800">${escapeHtml(item.partner_name || '-')}</div>
+                    ${item.partner_type_label ? `<div class="text-[10px] text-slate-400">${escapeHtml(item.partner_type_label)}</div>` : ''}
+                </td>
+                <td>
+                    ${item.ref_code ? `<span class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-bold">${escapeHtml(item.ref_code)}</span>` : '<span class="text-slate-400">-</span>'}
+                </td>
+                <td class="text-right font-black tabular-nums text-sm font-heading ${amountClass}">
+                    ${sign}${formatMoneyVND(item.amount)}
+                </td>
+                <td class="text-xs text-slate-500">${escapeHtml(item.created_by || '-')}</td>
+                <td class="text-xs text-slate-600 max-w-[220px] truncate" title="${escapeHtml(item.notes || '')}">
+                    ${escapeHtml(item.notes || '-')}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function openCreateCashTransactionModal(defaultType = 'INFLOW') {
+    const modal = document.getElementById('modal-cash-transaction');
+    if (!modal) return;
+
+    document.getElementById('cash-tx-type').value = defaultType;
+    document.getElementById('cash-tx-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('cash-tx-amount').value = '';
+    document.getElementById('cash-tx-partner-name').value = '';
+    document.getElementById('cash-tx-ref').value = '';
+    document.getElementById('cash-tx-notes').value = '';
+
+    onCashTypeChange();
+    onPaymentMethodChange();
+
+    modal.classList.remove('hidden');
+}
+
+function closeCashTransactionModal() {
+    const modal = document.getElementById('modal-cash-transaction');
+    if (modal) modal.classList.add('hidden');
+}
+
+function onCashTypeChange() {
+    const type = document.getElementById('cash-tx-type')?.value;
+    const catSelect = document.getElementById('cash-tx-category');
+    if (!catSelect) return;
+
+    if (type === 'INFLOW') {
+        catSelect.innerHTML = `
+            <option value="FREIGHT_REVENUE">Thu cước vận tải từ khách hàng</option>
+            <option value="REIMBURSABLE_COLLECTION">Thu hồi chi hộ (Debit Note)</option>
+            <option value="ADVANCE_REFUND">Thu hoàn ứng tiền thừa (Tài xế/Điều vận)</option>
+            <option value="OTHER_INFLOW">Thu khác</option>
+        `;
+        document.getElementById('cash-modal-title').innerText = 'Lập Phiếu Thu (Tiền Vào Quỹ)';
+    } else {
+        catSelect.innerHTML = `
+            <option value="DISPATCHER_FUND_ADVANCE">Chi tạm ứng Quỹ Điều vận</option>
+            <option value="DRIVER_TRIP_ADVANCE">Chi tạm ứng Chuyến xe (Tài xế)</option>
+            <option value="ADVANCE_REIMBURSE">Chi bù vượt ứng (Hoàn ứng tài xế)</option>
+            <option value="SUBCONTRACTOR_PAYMENT">Chi thanh toán Thầu phụ / Xe bạn</option>
+            <option value="FUEL_PAYMENT">Chi mua xăng dầu</option>
+            <option value="ETC_TOPUP">Chi nạp tiền tài khoản BOT/ETC</option>
+            <option value="VEHICLE_MAINTENANCE">Chi bảo dưỡng sửa xe</option>
+            <option value="OTHER_OUTFLOW">Chi phí khác</option>
+        `;
+        document.getElementById('cash-modal-title').innerText = 'Lập Phiếu Chi (Tiền Ra Khỏi Quỹ)';
+    }
+}
+
+function onPaymentMethodChange() {
+    const method = document.getElementById('cash-tx-method')?.value;
+    const bankFields = document.getElementById('cash-bank-fields');
+}
+
+async function handleSaveCashTransaction(e) {
+    e.preventDefault();
+    const type = document.getElementById('cash-tx-type').value;
+    const method = document.getElementById('cash-tx-method').value;
+    const category = document.getElementById('cash-tx-category').value;
+    const amount = document.getElementById('cash-tx-amount').value;
+    const date = document.getElementById('cash-tx-date').value;
+    const partnerType = document.getElementById('cash-tx-partner-type').value;
+    const partnerName = document.getElementById('cash-tx-partner-name').value;
+    const refCode = document.getElementById('cash-tx-ref').value;
+    const bankName = document.getElementById('cash-tx-bank').value;
+    const notes = document.getElementById('cash-tx-notes').value;
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/cashbook/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                transaction_type: type,
+                payment_method: method,
+                category: category,
+                amount: amount,
+                transaction_date: date,
+                partner_type: partnerType,
+                partner_name: partnerName,
+                ref_code: refCode,
+                bank_name: bankName,
+                notes: notes
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Lập Phiếu Thành Công');
+            closeCashTransactionModal();
+            loadCashBookData();
+        } else {
+            showToast('danger', data.error || 'Có lỗi xảy ra');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+function exportCashBookToExcel() {
+    exportAccountingToExcel();
+}
+
+
+// ==============================================================================
+// 9.6. SUBTAB 6: QUYẾT TOÁN XE BẠN / THẦU PHỤ 3PL (SUBCONTRACTOR CONTROLLER)
+// ==============================================================================
+let rawSubcontractorList = [];
+
+async function loadSubcontractorData() {
+    try {
+        const status = document.getElementById('subcon-filter-status')?.value || 'ALL';
+        const search = document.getElementById('subcon-search')?.value || '';
+
+        let url = `/api/accounting/subcontractor-settlements/?status=${status}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error('Không thể tải quyết toán xe bạn');
+        const data = await res.json();
+
+        rawSubcontractorList = data.trips || [];
+
+        // Cập nhật KPIs
+        if (data.kpis) {
+            const kp = data.kpis;
+            const elTrips = document.getElementById('subcon-stat-trips');
+            if (elTrips) elTrips.innerText = `${kp.total_trips} chuyến`;
+
+            const elCost = document.getElementById('subcon-stat-cost');
+            if (elCost) elCost.innerText = formatMoneyVND(kp.total_cost);
+
+            const elAdv = document.getElementById('subcon-stat-advance');
+            if (elAdv) elAdv.innerText = formatMoneyVND(kp.total_advance);
+
+            const elRem = document.getElementById('subcon-stat-remaining');
+            if (elRem) elRem.innerText = formatMoneyVND(kp.total_remaining);
+
+            const elInfo = document.getElementById('subcon-stat-settled-info');
+            if (elInfo) elInfo.innerText = `Đã quyết toán: ${kp.settled_count} / ${kp.total_trips} chuyến`;
+
+            const badge = document.getElementById('badge-acct-subcontractors');
+            if (badge) badge.innerText = kp.pending_count;
+
+            const badgeFiltered = document.getElementById('subcon-filtered-badge');
+            if (badgeFiltered) badgeFiltered.innerText = `Hiển thị: ${rawSubcontractorList.length} chuyến xe bạn`;
+        }
+
+        renderSubcontractorTable(rawSubcontractorList);
+    } catch (err) {
+        console.error('Lỗi tải quyết toán xe bạn:', err);
+        showToast('danger', 'Không thể kết nối máy chủ để tải quyết toán xe bạn', 'Lỗi Thầu Phụ 3PL');
+    }
+}
+
+function renderSubcontractorTable(list) {
+    const tbody = document.getElementById('acct-subcon-tbody');
+    if (!tbody) return;
+
+    if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe bạn nào phù hợp</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const isSettled = item.subcontractor_settlement_status === 'SETTLED';
+        const isPartial = item.subcontractor_settlement_status === 'PARTIAL';
+
+        let statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">Chờ Quyết Toán</span>`;
+        if (isPartial) {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Đã Trả Một Phần</span>`;
+        } else if (isSettled) {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đã Quyết Toán</span>`;
+        }
+
+        const marginClass = item.gross_company_margin >= 0 ? 'text-teal-700' : 'text-rose-600';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td>
+                    <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
+                    <div class="text-[11px] text-slate-400">${item.created_at}</div>
+                </td>
+                <td>
+                    <div class="font-bold text-slate-800 font-mono bg-slate-100 px-2 py-0.5 rounded inline-block">${escapeHtml(item.vehicle_plate)}</div>
+                </td>
+                <td>
+                    <div class="font-semibold text-slate-800">${escapeHtml(item.driver_name)}</div>
+                </td>
+                <td>
+                    <div class="font-bold text-slate-800 truncate max-w-[160px]" title="${escapeHtml(item.customer_name)}">${escapeHtml(item.customer_name)}</div>
+                    <div class="text-[11px] text-slate-500">${escapeHtml(item.route_name)}</div>
+                </td>
+                <td class="text-right font-bold text-slate-700 tabular-nums">
+                    ${formatMoneyVND(item.cached_revenue)}
+                </td>
+                <td class="text-right font-black text-rose-700 tabular-nums font-heading">
+                    ${formatMoneyVND(item.subcontractor_cost)}
+                </td>
+                <td class="text-right font-bold tabular-nums ${marginClass}">
+                    ${formatMoneyVND(item.gross_company_margin)}
+                </td>
+                <td class="text-right font-semibold text-amber-700 tabular-nums">
+                    ${formatMoneyVND(item.subcontractor_advance)}
+                </td>
+                <td class="text-right font-black text-slate-900 tabular-nums font-heading text-sm">
+                    ${formatMoneyVND(item.remaining_payable)}
+                </td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-xs text-slate-500 max-w-[140px] truncate" title="${escapeHtml(item.subcontractor_notes)}">
+                    ${escapeHtml(item.subcontractor_notes || '-')}
+                </td>
+                <td class="text-center">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'update_cost')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors" title="Sửa thỏa thuận cước & tạm ứng">
+                            <i class="ph-bold ph-pencil text-xs"></i>
+                        </button>
+                        ${!isSettled ? `
+                            <button type="button" onclick="openSubcontractorModal(${item.trip_id}, 'settle')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors" title="Quyết toán cước xe bạn & lập phiếu chi">
+                                <i class="ph-bold ph-check text-xs"></i> Quyết Toán
+                            </button>
+                        ` : `
+                            <span class="text-xs text-emerald-600 font-bold"><i class="ph-fill ph-check-circle"></i> Đã Xong</span>
+                        `}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+let activeSubcontractorTrip = null;
+
+function openSubcontractorModal(tripId, mode = 'update_cost') {
+    const trip = rawSubcontractorList.find(t => t.trip_id === tripId);
+    if (!trip) return;
+    activeSubcontractorTrip = trip;
+
+    const modal = document.getElementById('modal-subcontractor-settle');
+    if (!modal) return;
+
+    document.getElementById('subcon-trip-id').value = trip.trip_id;
+    document.getElementById('subcon-action-type').value = mode;
+
+    document.getElementById('subcon-trip-code').innerText = trip.trip_code;
+    document.getElementById('subcon-vehicle-driver').innerText = `${trip.vehicle_plate} • ${trip.driver_name}`;
+    document.getElementById('subcon-route').innerText = `${trip.customer_name} (${trip.route_name})`;
+    document.getElementById('subcon-revenue').innerText = formatMoneyVND(trip.cached_revenue);
+
+    document.getElementById('subcon-cost').value = trip.subcontractor_cost || '';
+    document.getElementById('subcon-advance').value = trip.subcontractor_advance || '';
+    document.getElementById('subcon-notes').value = trip.subcontractor_notes || '';
+
+    const settleSection = document.getElementById('subcon-settle-section');
+    const titleEl = document.getElementById('subcon-modal-title');
+    const labelEl = document.getElementById('btn-save-subcon-label');
+
+    if (mode === 'settle') {
+        settleSection.classList.remove('hidden');
+        titleEl.innerText = 'Quyết Toán Cước Xe Bạn & Xuất Phiếu Chi';
+        labelEl.innerText = 'Xác Nhận Quyết Toán & Ghi Sổ Quỹ';
+    } else {
+        settleSection.classList.add('hidden');
+        titleEl.innerText = 'Thỏa Thuận Cước & Tạm Ứng Xe Bạn';
+        labelEl.innerText = 'Lưu Thỏa Thuận Cước';
+    }
+
+    calculateSubcontractorMargin();
+    modal.classList.remove('hidden');
+}
+
+function closeSubcontractorModal() {
+    const modal = document.getElementById('modal-subcontractor-settle');
+    if (modal) modal.classList.add('hidden');
+}
+
+function calculateSubcontractorMargin() {
+    if (!activeSubcontractorTrip) return;
+    const cost = parseInt(document.getElementById('subcon-cost')?.value || '0', 10) || 0;
+    const adv = parseInt(document.getElementById('subcon-advance')?.value || '0', 10) || 0;
+    const rev = activeSubcontractorTrip.cached_revenue || 0;
+
+    const margin = rev - cost;
+    const rem = Math.max(0, cost - adv);
+
+    const marginEl = document.getElementById('subcon-calc-margin');
+    if (marginEl) {
+        marginEl.innerText = formatMoneyVND(margin);
+        marginEl.className = `font-black text-sm ${margin >= 0 ? 'text-teal-800' : 'text-rose-700'}`;
+    }
+
+    const remEl = document.getElementById('subcon-calc-remaining');
+    if (remEl) {
+        remEl.innerText = formatMoneyVND(rem);
+    }
+}
+
+async function handleSaveSubcontractor(e) {
+    e.preventDefault();
+    if (!activeSubcontractorTrip) return;
+
+    const action = document.getElementById('subcon-action-type').value;
+    const tripId = document.getElementById('subcon-trip-id').value;
+    const cost = document.getElementById('subcon-cost').value;
+    const advance = document.getElementById('subcon-advance').value;
+    const notes = document.getElementById('subcon-notes').value;
+    const paymentMethod = document.getElementById('subcon-payment-method')?.value || 'BANK';
+    const bankInfo = document.getElementById('subcon-bank-info')?.value || '';
+
+    try {
+        let payload = { action: action, trip_id: tripId, notes: notes };
+        if (action === 'update_cost') {
+            payload.subcontractor_cost = cost;
+            payload.subcontractor_advance = advance;
+        } else if (action === 'settle') {
+            payload.payment_method = paymentMethod;
+            payload.bank_name = bankInfo;
+        }
+
+        const res = await fetchWithAuth('/api/accounting/subcontractor-settlements/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Thành Công');
+            closeSubcontractorModal();
+            loadSubcontractorData();
+        } else {
+            showToast('danger', data.error || 'Có lỗi xảy ra');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+function exportSubcontractorToExcel() {
+    exportAccountingToExcel();
+}
+
+
+// ==============================================================================
+// 9.7. SUBTAB 7: ĐỐI SOÁT VÉ CẦU ĐƯỜNG BOT / ETC (BOT AUDIT CONTROLLER)
+// ==============================================================================
+async function loadBotAuditData() {
+    try {
+        const res = await fetchWithAuth('/api/accounting/bot-audit/');
+        if (!res.ok) throw new Error('Không thể tải đối soát vé BOT');
+        const data = await res.json();
+
+        // Cập nhật KPIs
+        if (data.kpis) {
+            const kp = data.kpis;
+            const elTrips = document.getElementById('bot-stat-trips');
+            if (elTrips) elTrips.innerText = `${kp.total_trips_with_toll} chuyến`;
+
+            const elActual = document.getElementById('bot-stat-actual');
+            if (elActual) elActual.innerText = formatMoneyVND(kp.total_actual_toll);
+
+            const elStd = document.getElementById('bot-stat-standard');
+            if (elStd) elStd.innerText = formatMoneyVND(kp.total_standard_toll);
+
+            const elVar = document.getElementById('bot-stat-variance');
+            if (elVar) elVar.innerText = `${kp.variance_count} chuyến`;
+        }
+
+        renderBotAuditTable(data.items || []);
+    } catch (err) {
+        console.error('Lỗi tải đối soát BOT:', err);
+        showToast('danger', 'Không thể kết nối máy chủ để tải đối soát vé BOT', 'Lỗi Đối Soát BOT');
+    }
+}
+
+function renderBotAuditTable(list) {
+    const tbody = document.getElementById('acct-bot-tbody');
+    if (!tbody) return;
+
+    if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu vé cầu đường BOT nào</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        let badge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">Bình thường</span>';
+        if (item.warning_level === 'HIGH') {
+            badge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">⚠️ Vượt định mức (+${item.variance_percent}%)</span>`;
+        } else if (item.warning_level === 'SAVING') {
+            badge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">✅ Tiết kiệm (${item.variance_percent}%)</span>`;
+        } else if (item.warning_level === 'NO_STANDARD') {
+            badge = '<span class="text-xs text-slate-400 italic">Chưa có định mức</span>';
+        }
+
+        const diffClass = item.variance_amount > 0 ? 'text-rose-600' : (item.variance_amount < 0 ? 'text-emerald-600' : 'text-slate-600');
+        const diffSign = item.variance_amount > 0 ? '+' : '';
+
+        // Tóm tắt các vé
+        const ticketsDesc = (item.tickets_detail || []).map(tk => 
+            `<span class="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 mr-1" title="${escapeHtml(tk.invoice_issuer || '')}">${formatMoneyVND(tk.amount)}</span>`
+        ).join('');
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td>
+                    <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
+                </td>
+                <td>
+                    <div class="font-bold text-slate-800 font-mono bg-slate-100 px-2 py-0.5 rounded inline-block">${escapeHtml(item.vehicle_plate)}</div>
+                </td>
+                <td>
+                    <div class="font-semibold text-slate-800">${escapeHtml(item.driver_name)}</div>
+                </td>
+                <td>
+                    <div class="font-medium text-slate-700 text-xs">${escapeHtml(item.route_name)}</div>
+                </td>
+                <td class="text-center font-bold text-slate-800">${item.tickets_count} vé</td>
+                <td class="text-right font-black text-rose-700 tabular-nums font-heading">
+                    ${formatMoneyVND(item.actual_toll)}
+                </td>
+                <td class="text-right font-bold text-indigo-700 tabular-nums">
+                    ${item.standard_toll > 0 ? formatMoneyVND(item.standard_toll) : '<span class="text-slate-400">-</span>'}
+                </td>
+                <td class="text-right font-black tabular-nums ${diffClass}">
+                    ${item.standard_toll > 0 ? `${diffSign}${formatMoneyVND(item.variance_amount)}` : '<span class="text-slate-400">-</span>'}
+                </td>
+                <td class="text-center">${badge}</td>
+                <td>
+                    <div class="flex flex-wrap gap-1 items-center">
+                        ${ticketsDesc || '<span class="text-slate-400">-</span>'}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function exportBotAuditToExcel() {
+    exportAccountingToExcel();
+}
+
 
 // ==============================================================================
 // 10. PHÂN HỆ CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA CONTROLLER)
@@ -3005,7 +7191,7 @@ let masterDataPagination = {
 
 async function loadMasterData() {
     try {
-        const res = await fetch('/api/master-data/summary/');
+        const res = await fetchWithAuth('/api/master-data/summary/');
         const data = await res.json();
         if (data.stats) {
             const s = data.stats;
@@ -3082,7 +7268,7 @@ async function loadActiveMasterDataTab() {
     try {
         const url = endpoints[currentMasterDataTab];
         if (!url) throw new Error('Không tìm thấy API tương ứng với danh mục này.');
-        const res = await fetch(url);
+        const res = await fetchWithAuth(url);
         if (!res.ok) {
             throw new Error(`Máy chủ phản hồi lỗi ${res.status}: ${res.statusText}`);
         }
@@ -3406,6 +7592,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nơi Hạ Cont</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Đơn Giá Cước (HĐ)</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức Lương</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức BOT</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
@@ -3417,6 +7604,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-1.5 px-3 text-[11.5px] font-medium text-slate-500 border-r border-slate-200/70">${item.dropoff_location || 'Hạ bãi'}</td>
                 <td class="py-1.5 px-3 text-[13px] font-black text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.freight_price)}</td>
                 <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.driver_trip_pay)}</td>
+                <td class="py-1.5 px-3 text-[13px] font-black text-amber-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.toll_standard_fee || 0)}</td>
                 <td class="py-1.5 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
                         <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
@@ -3557,7 +7745,8 @@ function renderMasterDataTable(items, total = items.length) {
 }
 
 // Open Create Modal with Dynamic Form Fields
-function openCreateMasterDataModal() {
+async function openCreateMasterDataModal() {
+    await loadMasterDataFormOptions();
     document.getElementById('md-edit-id').value = '';
     document.getElementById('md-catalog-key').value = currentMasterDataTab;
 
@@ -3579,7 +7768,8 @@ function openCreateMasterDataModal() {
 }
 
 // Open Edit Modal with Current Data
-function openEditMasterDataModal(id) {
+async function openEditMasterDataModal(id) {
+    await loadMasterDataFormOptions();
     const items = masterDataCache[currentMasterDataTab] || [];
     const item = items.find(i => i.id === id);
     if (!item) return;
@@ -3735,29 +7925,42 @@ function injectMasterDataModalFields(data) {
             </div>
         `;
     } else if (currentMasterDataTab === 'tariffs') {
-        const customers = masterDataCache['customers'] || [];
+        const customers = masterDataFormOptionsCache?.customers || masterDataCache['customers'] || [];
+        const pickupOpts = masterDataFormOptionsCache?.locations?.pickup_options || masterDataCache['locations'] || [];
+        const warehouseOpts = masterDataFormOptionsCache?.locations?.warehouse_options || masterDataCache['locations'] || [];
+        const dropoffOpts = masterDataFormOptionsCache?.locations?.dropoff_options || masterDataCache['locations'] || [];
         container.innerHTML = `
             <div>
                 <label class="app-form-label">Khách Hàng <span class="text-rose-500">*</span></label>
                 <select id="mdf-customer-id" class="app-form-control" required>
+                    <option value="">-- Chọn Khách Hàng --</option>
                     ${customers.map(c => `<option value="${c.id}" ${d.customer_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
                 </select>
             </div>
             <div class="grid grid-cols-3 gap-2">
                 <div>
-                    <label class="app-form-label">Nơi Lấy <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-pickup" value="${d.pickup_location || ''}" placeholder="CÁT LÁI, SPITC..." class="app-form-control uppercase" required>
+                    <label class="app-form-label">Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span></label>
+                    <select id="mdf-pickup" class="app-form-control uppercase" required>
+                        <option value="">-- Chọn Nơi Lấy --</option>
+                        ${pickupOpts.map(l => `<option value="${l.name}" ${d.pickup_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
+                    </select>
                 </div>
                 <div>
-                    <label class="app-form-label">Kho Nhận <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-delivery" value="${d.delivery_location || ''}" placeholder="KHO WCA, VSIP 2..." class="app-form-control uppercase" required>
+                    <label class="app-form-label">Kho Nhận (Nhà Máy / Kho) <span class="text-rose-500">*</span></label>
+                    <select id="mdf-delivery" class="app-form-control uppercase" required>
+                        <option value="">-- Chọn Kho Nhận --</option>
+                        ${warehouseOpts.map(l => `<option value="${l.name}" ${d.delivery_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
+                    </select>
                 </div>
                 <div>
-                    <label class="app-form-label">Nơi Hạ Cont</label>
-                    <input type="text" id="mdf-dropoff" value="${d.dropoff_location || ''}" placeholder="HẠ BÃI, SOLOG..." class="app-form-control uppercase">
+                    <label class="app-form-label">Nơi Hạ Cont (Bãi / Cảng)</label>
+                    <select id="mdf-dropoff" class="app-form-control uppercase">
+                        <option value="">-- Chọn Nơi Hạ --</option>
+                        ${dropoffOpts.map(l => `<option value="${l.name}" ${d.dropoff_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
+                    </select>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label class="app-form-label">Đơn Giá Cước Xuất HĐ (VNĐ) <span class="text-rose-500">*</span></label>
                     <input type="number" id="mdf-price" value="${d.freight_price || 4000000}" step="50000" class="app-form-control font-mono font-bold" required>
@@ -3766,8 +7969,15 @@ function injectMasterDataModalFields(data) {
                     <label class="app-form-label">Định Mức Lương Tài Xế (VNĐ) <span class="text-rose-500">*</span></label>
                     <input type="number" id="mdf-pay" value="${d.driver_trip_pay || 600000}" step="50000" class="app-form-control font-mono font-bold text-emerald-700" required>
                 </div>
+                <div>
+                    <label class="app-form-label">Định Mức Vé BOT Tuyến (VNĐ)</label>
+                    <input type="number" id="mdf-toll" value="${d.toll_standard_fee || 0}" step="10000" class="app-form-control font-mono font-bold text-amber-700" placeholder="0">
+                </div>
             </div>
         `;
+        if (d.pickup_location) setSelectValueCaseInsensitive(document.getElementById('mdf-pickup'), d.pickup_location);
+        if (d.delivery_location) setSelectValueCaseInsensitive(document.getElementById('mdf-delivery'), d.delivery_location);
+        if (d.dropoff_location) setSelectValueCaseInsensitive(document.getElementById('mdf-dropoff'), d.dropoff_location);
     } else if (currentMasterDataTab === 'expenses') {
         container.innerHTML = `
             <div class="grid grid-cols-2 gap-3">
@@ -3935,7 +8145,8 @@ async function submitMasterDataForm(e) {
             delivery_location: document.getElementById('mdf-delivery').value,
             dropoff_location: document.getElementById('mdf-dropoff').value,
             freight_price: parseInt(document.getElementById('mdf-price').value),
-            driver_trip_pay: parseInt(document.getElementById('mdf-pay').value)
+            driver_trip_pay: parseInt(document.getElementById('mdf-pay').value),
+            toll_standard_fee: parseInt(document.getElementById('mdf-toll')?.value || 0)
         };
     } else if (tabKey === 'expenses') {
         payload = {
@@ -3965,18 +8176,17 @@ async function submitMasterDataForm(e) {
     }
 
     try {
-        const res = await fetch(endpoints[tabKey], {
+        const res = await fetchWithAuth(endpoints[tabKey], {
             method: isEdit ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok && (data.success || data.id)) {
             showToast('success', data.message || 'Lưu bản ghi thành công!');
             closeMasterDataModal();
             loadMasterData();
         } else {
-            showToast('danger', data.error || 'Có lỗi xảy ra khi lưu dữ liệu!');
+            showToast('danger', data.message || data.error || data.detail || 'Có lỗi xảy ra khi lưu dữ liệu!');
         }
     } catch (err) {
         showToast('danger', 'Lỗi kết nối máy chủ!');
@@ -3999,13 +8209,15 @@ async function deleteMasterDataItem(id) {
     };
 
     try {
-        const res = await fetch(endpoints[currentMasterDataTab], { method: 'DELETE' });
-        const data = await res.json();
+        const res = await fetchWithAuth(endpoints[currentMasterDataTab], {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.success) {
             showToast('success', data.message || 'Đã xóa bản ghi thành công!');
             loadMasterData();
         } else {
-            showToast('danger', data.error || 'Không thể xóa bản ghi!');
+            showToast('danger', data.message || data.error || data.detail || 'Không thể xóa bản ghi!');
         }
     } catch (err) {
         showToast('danger', 'Lỗi kết nối máy chủ!');
@@ -4113,13 +8325,1074 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } catch (e) {}
     
-    // Mặc định luôn hiển thị về Dashboard trang chủ khi vào hệ thống hoặc bấm logo trang chủ
-    const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
-    const validTabs = ['dashboard', 'kinh-doanh', 'dieu-van', 'xe-bai', 'nhan-su', 'ke-toan', 'hai-quan', 'cai-dat'];
-    if (hash && validTabs.includes(hash)) {
-        switchTab(hash);
+    // Tải danh mục Master Data chuẩn bị sẵn cho tất cả modal form
+    loadMasterDataFormOptions().then(() => populateMasterDataDropdowns());
+
+    // Khởi tạo điều hướng Clean Semantic URL & Deep-link HashID (Chuẩn Quốc Tế SaaS)
+    resolveInitialRoute();
+});
+
+// =========================================================================
+// 8. PHÂN HỆ BÁO CÁO & PHÂN TÍCH QUẢN TRỊ TMS (BI ANALYTICS LOGIC)
+// =========================================================================
+
+let currentReportPeriod = 'month';
+let rawReportsData = null;
+let rep1DataCache = [];
+let rep2DataCache = [];
+let rep3DataCache = [];
+let rep4DataCache = [];
+let rep5DataCache = [];
+let rep6DataCache = [];
+let rep1SortCol = 'revenue';
+let rep1SortAsc = false;
+
+function formatMoneyVND(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) return '0 đ';
+    return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' đ';
+}
+
+function switchReportSubTab(subtabId) {
+    // Ẩn tất cả subtab content
+    document.querySelectorAll('.report-subtab-content').forEach(el => el.classList.add('hidden'));
+
+    // Bỏ active tất cả tab buttons
+    document.querySelectorAll('.report-subtab-btn').forEach(btn => {
+        btn.classList.remove('bg-teal-700', 'text-white', 'shadow-sm', 'active');
+        btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+    });
+
+    // Mở subtab được chọn
+    const targetContent = document.getElementById(`subtab-${subtabId}`);
+    if (targetContent) targetContent.classList.remove('hidden');
+
+    // Kích hoạt button tương ứng
+    const tabNum = subtabId.replace('report-', '');
+    const activeBtn = document.getElementById(`report-tab-btn-${tabNum}`);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+        activeBtn.classList.add('bg-teal-700', 'text-white', 'shadow-sm', 'active');
+    }
+}
+
+function changeReportPeriod(period) {
+    currentReportPeriod = period;
+
+    // Cập nhật giao diện nút kỳ
+    const periodButtons = ['today', 'week', 'month', 'quarter', 'all'];
+    periodButtons.forEach(p => {
+        const btn = document.getElementById(`btn-period-${p}`);
+        if (!btn) return;
+        if (p === period) {
+            btn.className = 'report-period-btn px-3 py-1.5 rounded-lg bg-teal-700 text-white shadow-xs transition-colors';
+        } else {
+            btn.className = 'report-period-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors';
+        }
+    });
+
+    loadReportsData();
+}
+
+async function loadReportsData() {
+    try {
+        const res = await fetchWithAuth(`/api/reports/?period=${currentReportPeriod}`);
+        if (!res.ok) throw new Error('Không thể tải dữ liệu báo cáo');
+        const data = await res.json();
+        rawReportsData = data;
+
+        // Cập nhật số huy hiệu (Badges) trên Subtab bar
+        const detWarningBadge = document.getElementById('badge-report-det-warning');
+        if (detWarningBadge && data.report2_container_dem_det) {
+            const warnCount = (data.report2_container_dem_det.warning_count || 0) + (data.report2_container_dem_det.overdue_count || 0);
+            detWarningBadge.innerText = warnCount;
+            detWarningBadge.className = warnCount > 0 
+                ? 'px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-100 text-rose-700'
+                : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
+        }
+
+        const layoverBadge = document.getElementById('badge-report-layover');
+        if (layoverBadge && data.report5_drop_hook_and_layover) {
+            const layoverCount = data.report5_drop_hook_and_layover.overnight_trips_count || 0;
+            layoverBadge.innerText = layoverCount;
+            layoverBadge.className = layoverCount > 0
+                ? 'px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800'
+                : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
+        }
+
+        // Render Báo cáo 1
+        renderReport1(data);
+
+        // Render Báo cáo 2
+        renderReport2(data);
+
+        // Render Báo cáo 3
+        renderReport3(data);
+
+        // Render Báo cáo 4
+        renderReport4(data);
+
+        // Render Báo cáo 5
+        renderReport5(data);
+
+        // Render Báo cáo 6
+        renderReport6(data);
+
+    } catch (err) {
+        console.error('Lỗi khi tải dữ liệu báo cáo TMS:', err);
+        showToast('danger', 'Không thể nạp dữ liệu phân tích báo cáo: ' + err.message, 'Lỗi Báo Cáo');
+    }
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 1: HIỆU SUẤT ĐỘI XE & P&L ĐẦU XE
+// -------------------------------------------------------------
+function renderReport1(data) {
+    const s = data.summary || {};
+    const r1 = data.report1_fleet_utilization || {};
+
+    const elOwnedRatio = document.getElementById('rep1-stat-owned-ratio');
+    if (elOwnedRatio) elOwnedRatio.innerText = `${s.owned_ratio || 0.0}%`;
+
+    const elNoteOwned = document.getElementById('rep1-note-owned');
+    if (elNoteOwned) elNoteOwned.innerText = `Xe Nhà: ${r1.owned_trips || 0} chuyến · Xe Bạn: ${r1.partner_trips || 0} chuyến`;
+
+    const elRev = document.getElementById('rep1-stat-revenue');
+    if (elRev) elRev.innerText = formatMoneyVND(s.total_revenue || 0);
+
+    const elExp = document.getElementById('rep1-stat-expense');
+    if (elExp) elExp.innerText = formatMoneyVND(s.total_expense || 0);
+
+    const elProfit = document.getElementById('rep1-stat-profit');
+    if (elProfit) elProfit.innerText = formatMoneyVND(s.total_profit || 0);
+
+    const elMargin = document.getElementById('rep1-stat-margin');
+    if (elMargin) elMargin.innerText = `Biên LN gộp: ${s.margin_avg || 0.0}%`;
+
+    rep1DataCache = r1.fleet_pnl || [];
+    applyReport1Filters();
+}
+
+function applyReport1Filters() {
+    const searchVal = (document.getElementById('filter-rep1-search')?.value || '').toLowerCase().trim();
+    let list = rep1DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.plate || '').toLowerCase().includes(searchVal) ||
+               (item.driver || '').toLowerCase().includes(searchVal) ||
+               (item.vehicle_type || '').toLowerCase().includes(searchVal) ||
+               (item.ownership || '').toLowerCase().includes(searchVal);
+    });
+
+    // Sắp xếp
+    list.sort((a, b) => {
+        let valA = a[rep1SortCol];
+        let valB = b[rep1SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep1SortAsc ? -1 : 1;
+        if (valA > valB) return rep1SortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const tbody = document.getElementById('rep1-pnl-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu đầu xe phù hợp với kỳ và bộ lọc này</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const isOwned = item.ownership_code === 'OWNED';
+        const ownershipBadge = isOwned
+            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Xe Nhà</span>`
+            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Xe Bạn / 3PL</span>`;
+        
+        const profitColor = item.profit >= 0 ? 'text-emerald-700' : 'text-rose-600';
+        const marginColor = item.margin_percent >= 20 ? 'bg-emerald-100 text-emerald-800' :
+                            (item.margin_percent >= 10 ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800');
+
+        return `
+            <tr class="hover:bg-teal-50/30 transition-colors">
+                <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.plate)}</td>
+                <td class="text-xs text-slate-600">${escapeHtml(item.vehicle_type)}</td>
+                <td>${ownershipBadge}</td>
+                <td class="text-xs font-medium text-slate-700">${escapeHtml(item.driver)}</td>
+                <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
+                <td class="text-right font-semibold text-slate-800 text-xs tabular-nums">${formatMoneyVND(item.revenue)}</td>
+                <td class="text-right font-medium text-rose-600 text-xs tabular-nums">${formatMoneyVND(item.expense)}</td>
+                <td class="text-right font-black ${profitColor} text-xs tabular-nums">${formatMoneyVND(item.profit)}</td>
+                <td class="text-center">
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-black ${marginColor} tabular-nums">
+                        ${item.margin_percent}%
+                    </span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleReport1Sort(col) {
+    if (rep1SortCol === col) {
+        rep1SortAsc = !rep1SortAsc;
     } else {
-        switchTab('dashboard');
+        rep1SortCol = col;
+        rep1SortAsc = false;
+    }
+    applyReport1Filters();
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 2: CHU TRÌNH VỎ CONTAINER & DEM/DET
+// -------------------------------------------------------------
+function renderReport2(data) {
+    const r2 = data.report2_container_dem_det || {};
+
+    const elSafe = document.getElementById('rep2-stat-safe');
+    if (elSafe) elSafe.innerText = `${r2.safe_count || 0} Cont`;
+
+    const elWarn = document.getElementById('rep2-stat-warning');
+    if (elWarn) elWarn.innerText = `${r2.warning_count || 0} Cont`;
+
+    const elOverdue = document.getElementById('rep2-stat-overdue');
+    if (elOverdue) elOverdue.innerText = `${r2.overdue_count || 0} Cont`;
+
+    const elFines = document.getElementById('rep2-stat-fines');
+    if (elFines) elFines.innerText = `Ước tính tiền phạt: ${formatMoneyVND(r2.estimated_fines || 0)}`;
+
+    rep2DataCache = r2.containers || [];
+    applyReport2Filters();
+}
+
+function applyReport2Filters() {
+    const searchVal = (document.getElementById('filter-rep2-search')?.value || '').toLowerCase().trim();
+    const list = rep2DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.container_number || '').toLowerCase().includes(searchVal) ||
+               (item.trip_code || '').toLowerCase().includes(searchVal) ||
+               (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.shipping_line || '').toLowerCase().includes(searchVal) ||
+               (item.location_type || '').toLowerCase().includes(searchVal);
+    });
+
+    const tbody = document.getElementById('rep2-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy vỏ container nào trong kỳ theo dõi này</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        let statusBadge = '';
+        if (item.det_status === 'OVERDUE') {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">Quá hạn (${Math.abs(item.days_left)} ngày)</span>`;
+        } else if (item.det_status === 'WARNING') {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Còn ${item.days_left} ngày</span>`;
+        } else {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">An toàn</span>`;
+        }
+
+        const finesFormatted = item.estimated_fines > 0
+            ? `<span class="font-black text-rose-600 text-xs tabular-nums">${formatMoneyVND(item.estimated_fines)}</span>`
+            : `<span class="text-slate-400 text-xs">-</span>`;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.container_number)} <span class="text-[10px] text-slate-400 font-normal">(${item.container_type})</span></td>
+                <td><a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(item.trip_code)}</a></td>
+                <td class="text-xs font-semibold text-slate-800">${escapeHtml(item.customer_name)}</td>
+                <td class="text-xs font-medium text-slate-600">${escapeHtml(item.shipping_line)}</td>
+                <td class="text-xs text-slate-600">${escapeHtml(item.location_type)}</td>
+                <td class="text-center font-bold text-slate-700 text-xs tabular-nums">${item.det_free_days || 5} ngày</td>
+                <td class="text-xs font-medium text-slate-700 tabular-nums">${escapeHtml(item.det_expiry_date)}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-right">${finesFormatted}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 3: ĐÚNG GIỜ & CHẤT LƯỢNG DỊCH VỤ (OTP / SLA)
+// -------------------------------------------------------------
+function renderReport3(data) {
+    const r3 = data.report3_on_time_performance || {};
+
+    const elOtp = document.getElementById('rep3-stat-otp');
+    if (elOtp) elOtp.innerText = `${r3.otp_rate || 0.0}%`;
+
+    const elPickup = document.getElementById('rep3-stat-pickup');
+    if (elPickup) elPickup.innerText = `${r3.pickup_on_time || 0} Chuyến`;
+
+    const elArrival = document.getElementById('rep3-stat-arrival');
+    if (elArrival) elArrival.innerText = `${r3.arrival_on_time || 0} Chuyến`;
+
+    const elClosing = document.getElementById('rep3-stat-closing');
+    if (elClosing) elClosing.innerText = `${r3.closing_on_time || 0} Chuyến`;
+
+    rep3DataCache = r3.trips || [];
+    applyReport3Filters();
+}
+
+function applyReport3Filters() {
+    const searchVal = (document.getElementById('filter-rep3-search')?.value || '').toLowerCase().trim();
+    const list = rep3DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.trip_code || '').toLowerCase().includes(searchVal) ||
+               (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.route || '').toLowerCase().includes(searchVal) ||
+               (item.driver_name || '').toLowerCase().includes(searchVal) ||
+               (item.delay_reason || '').toLowerCase().includes(searchVal);
+    });
+
+    const tbody = document.getElementById('rep3-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu vận hành trong kỳ đã chọn</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const onTimeBadge = item.is_on_time
+            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">ĐÚNG HẸN</span>`
+            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">TRỄ HẸN</span>`;
+
+        const reasonText = !item.is_on_time
+            ? `<span class="text-xs font-semibold text-rose-700">${escapeHtml(item.delay_reason)}</span>`
+            : `<span class="text-slate-400 text-xs">-</span>`;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td><a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(item.trip_code)}</a></td>
+                <td class="text-xs font-semibold text-slate-800">${escapeHtml(item.customer_name)}</td>
+                <td class="text-xs text-slate-600 max-w-xs truncate" title="${escapeHtml(item.route)}">${escapeHtml(item.route)}</td>
+                <td class="text-xs text-slate-700">${escapeHtml(item.driver_name)} <span class="font-mono text-slate-400 font-normal">(${escapeHtml(item.vehicle)})</span></td>
+                <td class="text-xs font-mono text-slate-800">${escapeHtml(item.loading_time)}</td>
+                <td class="text-xs font-mono font-bold text-slate-900">${escapeHtml(item.gate_in_time)}</td>
+                <td class="text-xs font-mono text-slate-500">${escapeHtml(item.closing_time)}</td>
+                <td class="text-center">${onTimeBadge}</td>
+                <td>${reasonText}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 4: ĐỐI SOÁT CHI PHÍ TUYẾN & HOÀN CHI HỘ
+// -------------------------------------------------------------
+function renderReport4(data) {
+    const r4 = data.report4_expenses_reimbursement || {};
+
+    const elBot = document.getElementById('rep4-stat-bot');
+    if (elBot) elBot.innerText = formatMoneyVND(r4.total_bot || 0);
+
+    const elFuel = document.getElementById('rep4-stat-fuel');
+    if (elFuel) elFuel.innerText = formatMoneyVND(r4.total_fuel || 0);
+
+    const elReimb = document.getElementById('rep4-stat-reimbursable');
+    if (elReimb) elReimb.innerText = formatMoneyVND(r4.total_reimbursable || 0);
+
+    const elPending = document.getElementById('rep4-stat-pending-reimb');
+    if (elPending) elPending.innerText = formatMoneyVND(r4.pending_reimbursement || 0);
+
+    rep4DataCache = r4.items || [];
+    applyReport4Filters();
+}
+
+function applyReport4Filters() {
+    const searchVal = (document.getElementById('filter-rep4-search')?.value || '').toLowerCase().trim();
+    const list = rep4DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.trip_code || '').toLowerCase().includes(searchVal) ||
+               (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.expense_name || '').toLowerCase().includes(searchVal) ||
+               (item.expense_type || '').toLowerCase().includes(searchVal) ||
+               (item.invoice_number || '').toLowerCase().includes(searchVal);
+    });
+
+    const tbody = document.getElementById('rep4-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Không có khoản chi hộ nào phát sinh trong kỳ này</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const settleBadge = item.is_settled
+            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Đã thu hồi</span>`
+            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">Chờ khách trả</span>`;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td><a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(item.trip_code)}</a></td>
+                <td class="text-xs font-semibold text-slate-800">${escapeHtml(item.customer_name)}</td>
+                <td class="text-xs font-bold text-slate-900">${escapeHtml(item.expense_name)}</td>
+                <td class="text-xs text-slate-600">${escapeHtml(item.expense_type)}</td>
+                <td class="text-right font-black text-slate-900 text-xs tabular-nums">${formatMoneyVND(item.amount)}</td>
+                <td class="text-xs font-mono text-slate-600">${escapeHtml(item.invoice_number)}</td>
+                <td class="text-xs text-slate-600 tabular-nums">${escapeHtml(item.date)}</td>
+                <td class="text-center">${settleBadge}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 5: BÀN GIAO CẮT KÉO & LƯU XE SAU 0H
+// -------------------------------------------------------------
+function renderReport5(data) {
+    const r5 = data.report5_drop_hook_and_layover || {};
+
+    const elCount = document.getElementById('rep5-stat-overnight-count');
+    if (elCount) elCount.innerText = `${r5.overnight_trips_count || 0} Chuyến`;
+
+    const elFees = document.getElementById('rep5-stat-detention-fees');
+    if (elFees) elFees.innerText = formatMoneyVND(r5.total_detention_fees || 0);
+
+    const elAllow = document.getElementById('rep5-stat-allowances');
+    if (elAllow) elAllow.innerText = formatMoneyVND(r5.total_overnight_allowances || 0);
+
+    rep5DataCache = r5.records || [];
+    applyReport5Filters();
+}
+
+function applyReport5Filters() {
+    const searchVal = (document.getElementById('filter-rep5-search')?.value || '').toLowerCase().trim();
+    const list = rep5DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.trip_code || '').toLowerCase().includes(searchVal) ||
+               (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.container_number || '').toLowerCase().includes(searchVal) ||
+               (item.driver_leg1 || '').toLowerCase().includes(searchVal) ||
+               (item.driver_leg2 || '').toLowerCase().includes(searchVal) ||
+               (item.reason || '').toLowerCase().includes(searchVal);
+    });
+
+    const tbody = document.getElementById('rep5-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không có chuyến cắt kéo hoặc neo xe qua đêm nào trong kỳ</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const typeBadge = item.is_split_trip
+            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">Cắt Kéo Đổi Xe</span>`
+            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Lưu Xe Sau 0H</span>`;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td><a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(item.trip_code)}</a></td>
+                <td class="text-xs font-semibold text-slate-800">${escapeHtml(item.customer_name)}</td>
+                <td class="text-xs font-mono font-bold text-slate-900">${escapeHtml(item.container_number)}</td>
+                <td>${typeBadge}</td>
+                <td class="text-xs text-slate-700">${escapeHtml(item.driver_leg1)} <span class="font-mono text-slate-400">(${escapeHtml(item.vehicle_leg1)})</span></td>
+                <td class="text-xs text-slate-700">${escapeHtml(item.driver_leg2)} <span class="font-mono text-slate-400">(${escapeHtml(item.vehicle_leg2)})</span></td>
+                <td class="text-xs font-mono text-slate-700">${escapeHtml(item.gate_out_time)}</td>
+                <td class="text-xs font-mono font-bold text-amber-700">${escapeHtml(item.appointment_dropoff)}</td>
+                <td class="text-xs font-mono text-slate-700">${escapeHtml(item.actual_dropoff)}</td>
+                <td class="text-center font-black text-slate-900 text-xs tabular-nums">${item.wait_hours}h</td>
+                <td class="text-right font-black text-teal-800 text-xs tabular-nums">${formatMoneyVND(item.detention_fee)}</td>
+                <td class="text-right font-black text-indigo-700 text-xs tabular-nums">${formatMoneyVND(item.driver_allowance)}</td>
+                <td class="text-xs text-slate-600 max-w-xs truncate" title="${escapeHtml(item.reason)}">${escapeHtml(item.reason)}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 6: NGOẠI LỆ & SỰ CỐ HIỆN TRƯỜNG (OS&D)
+// -------------------------------------------------------------
+function renderReport6(data) {
+    const r6 = data.report6_osd_exceptions || {};
+
+    const elDamaged = document.getElementById('rep6-stat-damaged');
+    if (elDamaged) elDamaged.innerText = `${r6.damaged_cont_count || 0} Trường hợp`;
+
+    const elSeal = document.getElementById('rep6-stat-seal');
+    if (elSeal) elSeal.innerText = `${r6.broken_seal_count || 0} Vụ việc`;
+
+    rep6DataCache = r6.incidents || [];
+    applyReport6Filters();
+}
+
+function applyReport6Filters() {
+    const searchVal = (document.getElementById('filter-rep6-search')?.value || '').toLowerCase().trim();
+    const list = rep6DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.trip_code || '').toLowerCase().includes(searchVal) ||
+               (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.container_number || '').toLowerCase().includes(searchVal) ||
+               (item.seal_number || '').toLowerCase().includes(searchVal) ||
+               (item.incident_type || '').toLowerCase().includes(searchVal) ||
+               (item.description || '').toLowerCase().includes(searchVal);
+    });
+
+    const tbody = document.getElementById('rep6-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không có sự cố hoặc ngoại lệ OS&D nào được ghi nhận</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const podLink = item.has_pod_photo
+            ? `<span class="inline-flex items-center gap-1 text-teal-700 font-bold text-xs"><i class="ph-bold ph-image"></i> Đã chụp ảnh</span>`
+            : `<span class="text-slate-400 text-xs">Chưa có</span>`;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td><a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(item.trip_code)}</a></td>
+                <td class="text-xs text-slate-600 tabular-nums">${escapeHtml(item.date)}</td>
+                <td class="text-xs font-semibold text-slate-800">${escapeHtml(item.customer_name)}</td>
+                <td class="text-xs font-mono font-bold text-slate-900">${escapeHtml(item.container_number)}</td>
+                <td class="text-xs font-mono text-slate-600">${escapeHtml(item.seal_number || '-')}</td>
+                <td class="text-xs font-bold text-rose-700">${escapeHtml(item.incident_type)}</td>
+                <td class="text-xs text-slate-600 max-w-sm truncate" title="${escapeHtml(item.description)}">${escapeHtml(item.description)}</td>
+                <td class="text-right font-black text-rose-600 text-xs tabular-nums">${formatMoneyVND(item.estimated_damage)}</td>
+                <td class="text-center">${podLink}</td>
+                <td class="text-xs font-medium text-amber-700">${escapeHtml(item.settlement_status)}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// -------------------------------------------------------------
+// XUẤT BÁO CÁO RA TỆP CSV / EXCEL CHUẨN UTF-8 VỚI BOM
+// -------------------------------------------------------------
+function exportReportToExcel() {
+    // Xác định subtab đang hiển thị
+    const activeSubtab = document.querySelector('.report-subtab-content:not(.hidden)');
+    if (!activeSubtab) {
+        showToast('warning', 'Không tìm thấy bảng dữ liệu báo cáo nào đang mở');
+        return;
+    }
+
+    const table = activeSubtab.querySelector('table');
+    if (!table) {
+        showToast('warning', 'Bảng dữ liệu báo cáo trống');
+        return;
+    }
+
+    const rows = table.querySelectorAll('tr');
+    let csvContent = '\uFEFF'; // Thêm BOM UTF-8 để Microsoft Excel mở trực tiếp không lỗi tiếng Việt
+
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        const rowData = [];
+        cols.forEach(col => {
+            // Lấy text và làm sạch dấu nháy kép
+            let text = col.innerText.replace(/"/g, '""').trim();
+            // Xóa các biểu tượng font icon nếu có
+            text = text.replace(/[\n\r]+/g, ' ');
+            rowData.push(`"${text}"`);
+        });
+        if (rowData.length > 0) {
+            csvContent += rowData.join(',') + '\r\n';
+        }
+    });
+
+    const subtabId = activeSubtab.id.replace('subtab-', '');
+    const filename = `BIM_Logistics_Bao_Cao_${subtabId}_${currentReportPeriod}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('success', `Đã xuất báo cáo "${filename}" thành công!`, 'Xuất Excel Thành Công');
+}
+
+// -------------------------------------------------------------
+// IN ẤN BÁO CÁO CHUYÊN NGHIỆP
+// -------------------------------------------------------------
+function printReportDocument() {
+    window.print();
+}
+
+// Hàm phân giải URL khi tải trang lần đầu (Hỗ trợ Clean Semantic URL & Deep-link HashID)
+function resolveInitialRoute() {
+    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+    const hash = window.location.hash ? window.location.hash.replace('#', '').replace(/^\/+/, '') : '';
+
+    // 1. Kiểm tra deep-link chi tiết chuyến xe: /dispatch/trips/<hashid> hoặc legacy #/trip/<hashid>
+    const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/) || (hash.startsWith('trip/') ? hash.match(/^trip\/([a-zA-Z0-9_-]+)/) : null);
+    if (tripMatch && tripMatch[1]) {
+        const tripIdentifier = tripMatch[1];
+        switchTab('dieu-van', false);
+        viewTripDetail(tripIdentifier, false);
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'trip-detail', tripIdentifier }, '', `/dispatch/trips/${tripIdentifier}`);
+        }
+        return;
+    }
+
+    // 2. Chuyển đổi tương thích ngược: nếu người dùng vào từ link cũ có hash (#dieu-van, #kinh-doanh...)
+    if (hash) {
+        const cleanHash = hash.replace(/^\/+/, '');
+        const validLegacyTabs = {
+            'dashboard': 'dashboard',
+            'dieu-van': 'dieu-van',
+            'kinh-doanh': 'kinh-doanh',
+            'xe-bai': 'xe-bai',
+            'nhan-su': 'nhan-su',
+            'ke-toan': 'ke-toan',
+            'hai-quan': 'hai-quan',
+            'bao-cao': 'bao-cao',
+            'cai-dat': 'cai-dat'
+        };
+        if (validLegacyTabs[cleanHash]) {
+            const mappedTab = validLegacyTabs[cleanHash];
+            switchTab(mappedTab, true);
+            return;
+        }
+    }
+
+    // 3. Điều hướng theo Clean Semantic URL pathname
+    const targetTab = ROUTE_TAB_MAP[pathname];
+    if (targetTab) {
+        switchTab(targetTab, false);
+    } else {
+        switchTab('dashboard', false);
+    }
+}
+
+// Lắng nghe sự kiện Back/Forward của trình duyệt để chuyển view mượt mà
+window.addEventListener('popstate', (event) => {
+    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+    const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/);
+    if (tripMatch && tripMatch[1]) {
+        switchTab('dieu-van', false);
+        viewTripDetail(tripMatch[1], false);
+    } else {
+        const targetTab = ROUTE_TAB_MAP[pathname] || 'dashboard';
+        const detailView = document.getElementById('view-trip-detail');
+        if (detailView && !detailView.classList.contains('hidden-view')) {
+            detailView.classList.add('hidden-view');
+        }
+        switchTab(targetTab, false);
     }
 });
+
+// ==============================================================================
+// 10. PHÂN HỆ DỊCH VỤ HẢI QUAN & THÔNG QUAN ĐIỆN TỬ (VNACCS/VCIS CONTROLLER)
+// ==============================================================================
+let customsDeclarationsCache = [];
+let customsSearchDebounceTimeout = null;
+
+function debounceCustomsSearch() {
+    clearTimeout(customsSearchDebounceTimeout);
+    customsSearchDebounceTimeout = setTimeout(() => {
+        fetchCustomsDeclarations();
+    }, 300);
+}
+
+async function fetchCustomsDeclarations() {
+    const q = document.getElementById('customs-filter-q')?.value?.trim() || '';
+    const lane = document.getElementById('customs-filter-lane')?.value || '';
+    const status = document.getElementById('customs-filter-status')?.value || '';
+    const direction = document.getElementById('customs-filter-direction')?.value || '';
+    const tax = document.getElementById('customs-filter-tax')?.value || '';
+
+    const tbody = document.getElementById('customs-table-body');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="py-12 text-center text-slate-400">
+                    <i class="ph-bold ph-spinner animate-spin text-2xl text-teal-600 mb-2"></i>
+                    <p class="text-xs font-medium">Đang tải dữ liệu tờ khai hải quan VNACCS...</p>
+                </td>
+            </tr>
+        `;
+    }
+
+    try {
+        const params = new URLSearchParams();
+        if (q) params.append('q', q);
+        if (lane) params.append('lane', lane);
+        if (status) params.append('status', status);
+        if (direction) params.append('direction', direction);
+        if (tax !== '') params.append('is_tax_paid', tax);
+
+        const res = await fetchWithAuth(`/api/customs/declarations/?${params.toString()}`);
+        if (!res.ok) throw new Error('Không thể tải dữ liệu hải quan');
+        const data = await res.json();
+        
+        customsDeclarationsCache = data.results || [];
+        renderCustomsKPIs(data.stats || {});
+        renderCustomsTable(customsDeclarationsCache);
+    } catch (err) {
+        console.error('Error fetching customs data:', err);
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="py-8 text-center text-rose-500 text-xs font-bold">
+                        <i class="ph-bold ph-warning-circle text-xl mb-1"></i>
+                        <p>Không thể kết nối đến máy chủ hải quan: ${err.message}</p>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
+function renderCustomsKPIs(stats) {
+    const totalEl = document.getElementById('customs-kpi-total');
+    const greenEl = document.getElementById('customs-kpi-green');
+    const yellowEl = document.getElementById('customs-kpi-yellow');
+    const redEl = document.getElementById('customs-kpi-red');
+    const rateEl = document.getElementById('customs-kpi-rate');
+
+    if (totalEl) totalEl.innerText = stats.total || 0;
+    if (greenEl) greenEl.innerText = stats.green_count || 0;
+    if (yellowEl) yellowEl.innerText = stats.yellow_count || 0;
+    if (redEl) redEl.innerText = stats.red_count || 0;
+    if (rateEl) rateEl.innerText = `Tỷ lệ thông quan: ${stats.clearance_rate || 0}%`;
+}
+
+function renderCustomsTable(list) {
+    const tbody = document.getElementById('customs-table-body');
+    const footerCount = document.getElementById('customs-footer-count');
+    if (!tbody) return;
+
+    if (footerCount) footerCount.innerText = `Hiển thị ${list.length} tờ khai`;
+
+    if (!list || list.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="py-12 text-center text-slate-400">
+                    <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                        <i class="ph-bold ph-file-x text-2xl"></i>
+                    </div>
+                    <p class="text-xs font-medium text-slate-600">Không tìm thấy tờ khai hải quan phù hợp</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Bấm nút "Đăng Ký Tờ Khai Mới" để tạo hồ sơ thông quan</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const laneBadges = {
+        'GREEN': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 Luồng Xanh</span>',
+        'YELLOW': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">🟡 Luồng Vàng</span>',
+        'RED': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">🔴 Luồng Đỏ</span>',
+    };
+
+    const statusBadges = {
+        'DRAFT': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600">Chờ truyền TK</span>',
+        'SUBMITTED': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700">Đã đăng ký</span>',
+        'PROCESSING': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700">Đang thẩm định</span>',
+        'INSPECTION': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-700">Kiểm hóa bãi/cảng</span>',
+        'CLEARED': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700">Đã thông quan</span>',
+        'RELEASED': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-teal-100 text-teal-800">Đã qua giám sát</span>',
+        'CANCELLED': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700">Hủy tờ khai</span>',
+    };
+
+    tbody.innerHTML = list.map((d, index) => {
+        const laneHtml = laneBadges[d.customs_lane] || d.customs_lane;
+        const statusHtml = statusBadges[d.status] || d.status;
+        const taxBadge = d.is_tax_paid 
+            ? `<button onclick="quickToggleCustomsTax(${d.id})" class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer" title="Bấm để đổi trạng thái thuế">Đã nộp</button>`
+            : `<button onclick="quickToggleCustomsTax(${d.id})" class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer" title="Bấm để đổi trạng thái thuế">Chưa nộp</button>`;
+        
+        const docBtn = d.document_url
+            ? `<a href="${d.document_url}" target="_blank" class="p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-50 rounded transition-colors" title="Xem tệp tờ khai"><i class="ph-bold ph-file-pdf text-sm"></i></a>`
+            : '';
+
+        const tripBadge = d.trip_code 
+            ? `<a href="javascript:void(0)" onclick="viewTripDetail('${d.trip_code}')" class="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-teal-50 text-teal-800 font-mono font-bold text-[11px] hover:bg-teal-100 border border-teal-200">
+                <i class="ph-bold ph-truck text-xs"></i>
+                <span>${d.trip_code}</span>
+               </a>`
+            : `<span class="text-slate-400 text-xs italic">Chưa gán xe</span>`;
+
+        const clearBtn = (d.status !== 'CLEARED' && d.status !== 'RELEASED')
+            ? `<button onclick="quickSetCustomsStatus(${d.id}, 'set_cleared')" class="p-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded transition-colors cursor-pointer" title="Xác nhận Thông quan nhanh"><i class="ph-bold ph-check-circle text-sm"></i></button>`
+            : '';
+
+        return `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/80">
+                <td class="py-2.5 px-3 text-center text-xs font-bold text-slate-500 border-r border-slate-200">${index + 1}</td>
+                <td class="py-2.5 px-3 border-r border-slate-200">
+                    <div class="font-mono font-bold text-teal-900 text-xs">${d.declaration_number}</div>
+                    <div class="flex items-center space-x-1.5 mt-0.5">
+                        <span class="px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 text-[10px] font-bold">${d.declaration_type}</span>
+                        <span class="text-[11px] text-slate-400 font-medium">${d.declaration_date}</span>
+                        <span class="text-[10px] font-bold ${d.direction === 'IMPORT' ? 'text-blue-600' : 'text-amber-600'}">${d.direction === 'IMPORT' ? 'NHẬP' : 'XUẤT'}</span>
+                    </div>
+                </td>
+                <td class="py-2.5 px-3 border-r border-slate-200">
+                    <div class="text-xs font-bold text-slate-800">${d.customer_name}</div>
+                    <div class="text-[11px] text-slate-500 truncate max-w-[200px]" title="${d.customs_office_name}">${d.customs_office_code} - ${d.customs_office_name}</div>
+                </td>
+                <td class="py-2.5 px-3 text-center border-r border-slate-200">
+                    <div class="inline-block relative">
+                        ${laneHtml}
+                    </div>
+                </td>
+                <td class="py-2.5 px-3 text-center border-r border-slate-200">${statusHtml}</td>
+                <td class="py-2.5 px-3 border-r border-slate-200 font-mono text-xs">
+                    <div class="font-bold text-slate-700">${d.bill_of_lading || '-'}</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5 truncate max-w-[150px]" title="${d.container_numbers || ''}">${d.container_numbers || '-'}</div>
+                </td>
+                <td class="py-2.5 px-3 border-r border-slate-200">${tripBadge}</td>
+                <td class="py-2.5 px-3 text-right border-r border-slate-200">
+                    <div class="font-mono font-bold text-xs text-slate-800">${formatMoney(d.tax_amount_vnd)}</div>
+                    <div class="mt-0.5">${taxBadge}</div>
+                </td>
+                <td class="py-2.5 px-3 text-right border-r border-slate-200 font-mono font-bold text-xs text-amber-700">
+                    ${formatMoney(d.reimbursable_fee)}
+                </td>
+                <td class="py-2.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        ${clearBtn}
+                        ${docBtn}
+                        <button onclick="openCustomsModal(${d.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteCustomsDeclaration(${d.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa tờ khai"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function onCustomsOfficeChange(selectEl) {
+    const val = selectEl.value;
+    const names = {
+        '02CI': 'Chi cục HQ Cửa khẩu Cảng Sài Gòn KV4 (Cát Lái)',
+        '51CB': 'Chi cục HQ Cửa khẩu Cảng Cái Mép (BR-VT)',
+        '43BA': 'Chi cục Hải quan Sóng Thần (Bình Dương)',
+        '43BD': 'Chi cục HQ Quản lý Hàng XNK Ngoài KCN Bình Dương',
+        '47PA': 'Chi cục Hải quan Long An',
+        '02IK': 'Chi cục Hải quan Chuyển Phát Nhanh TP.HCM',
+        '01NV': 'Chi cục Hải quan Cửa khẩu Sân bay Quốc tế Nội Bài',
+        '03EE': 'Chi cục Hải quan Cửa khẩu Cảng Đình Vũ (Hải Phòng)',
+    };
+    selectEl.setAttribute('data-office-name', names[val] || 'Chi cục Hải quan');
+}
+
+async function openCustomsModal(id = null) {
+    const modal = document.getElementById('modal-customs-declaration');
+    if (!modal) return;
+
+    // Reset form
+    document.getElementById('customs-edit-id').value = id || '';
+    document.getElementById('form-customs-declaration').reset();
+    document.getElementById('cust-decl-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('cust-current-doc-link').classList.add('hidden');
+
+    const titleEl = document.getElementById('customs-modal-title');
+    const submitBtn = document.getElementById('cust-submit-btn');
+
+    // Nạp danh sách khách hàng vào dropdown
+    const custSelect = document.getElementById('cust-customer-id');
+    if (custSelect) {
+        custSelect.innerHTML = '<option value="">-- Đang tải danh sách khách hàng... --</option>';
+        try {
+            const res = await fetchWithAuth('/api/master-data/customers/');
+            const d = await res.json();
+            const customers = d.results || [];
+            custSelect.innerHTML = '<option value="">-- Chọn Doanh Nghiệp / Chủ Hàng --</option>' +
+                customers.map(c => `<option value="${c.id}">${c.name} (${c.code || 'KH'})</option>`).join('');
+        } catch (e) {
+            custSelect.innerHTML = '<option value="">-- Không thể tải khách hàng --</option>';
+        }
+    }
+
+    // Nạp danh sách chuyến xe vào dropdown
+    const tripSelect = document.getElementById('cust-trip-id');
+    if (tripSelect) {
+        tripSelect.innerHTML = '<option value="">-- Chưa gán chuyến xe --</option>';
+        try {
+            const res = await fetchWithAuth('/api/trips/?page_size=30');
+            const d = await res.json();
+            const trips = d.results || [];
+            tripSelect.innerHTML = '<option value="">-- Chưa gán chuyến xe --</option>' +
+                trips.map(t => `<option value="${t.id}">${t.trip_code} - ${t.driver_name || 'TX'} (${t.container_number || 'No Cont'})</option>`).join('');
+        } catch (e) {
+            console.warn('Could not load trips for customs modal', e);
+        }
+    }
+
+    if (id) {
+        if (titleEl) titleEl.innerText = 'Cập Nhật Tờ Khai Hải Quan';
+        if (submitBtn) submitBtn.innerHTML = '<i class="ph-bold ph-check text-base"></i><span>Cập Nhật Tờ Khai</span>';
+        try {
+            const res = await fetchWithAuth(`/api/customs/declarations/${id}/`);
+            if (!res.ok) throw new Error('Không thể tải chi tiết tờ khai');
+            const item = await res.json();
+
+            document.getElementById('cust-decl-number').value = item.declaration_number || '';
+            document.getElementById('cust-decl-number').readOnly = true;
+            document.getElementById('cust-decl-date').value = item.declaration_date || '';
+            if (custSelect) custSelect.value = item.customer_id || '';
+            document.getElementById('cust-direction').value = item.direction || 'IMPORT';
+            document.getElementById('cust-decl-type').value = item.declaration_type || 'A11';
+            document.getElementById('cust-office-code').value = item.customs_office_code || '02CI';
+            document.getElementById('cust-lane').value = item.customs_lane || 'GREEN';
+            document.getElementById('cust-status').value = item.status || 'SUBMITTED';
+            document.getElementById('cust-bl-number').value = item.bill_of_lading || '';
+            document.getElementById('cust-container-numbers').value = item.container_numbers || '';
+            if (tripSelect) tripSelect.value = item.dispatch_trip_id || '';
+            document.getElementById('cust-is-tax-paid').checked = !!item.is_tax_paid;
+            document.getElementById('cust-tax-amount').value = item.tax_amount_vnd || 0;
+            document.getElementById('cust-service-fee').value = item.customs_service_fee || 0;
+            document.getElementById('cust-reimbursable-fee').value = item.reimbursable_fee || 0;
+            document.getElementById('cust-inspection-notes').value = item.inspection_notes || '';
+
+            if (item.document_url) {
+                const docLinkDiv = document.getElementById('cust-current-doc-link');
+                const docLinkA = docLinkDiv.querySelector('a');
+                docLinkA.href = item.document_url;
+                docLinkDiv.classList.remove('hidden');
+            }
+        } catch (err) {
+            showToast('Lỗi: ' + err.message, 'error');
+            return;
+        }
+    } else {
+        if (titleEl) titleEl.innerText = 'Khai Báo Tờ Khai Hải Quan Điện Tử';
+        if (submitBtn) submitBtn.innerHTML = '<i class="ph-bold ph-check text-base"></i><span>Lưu Tờ Khai Hải Quan</span>';
+        document.getElementById('cust-decl-number').readOnly = false;
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closeCustomsModal() {
+    const modal = document.getElementById('modal-customs-declaration');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function submitCustomsDeclarationForm(e) {
+    e.preventDefault();
+    const id = document.getElementById('customs-edit-id').value;
+    const isEdit = !!id;
+
+    const officeSelect = document.getElementById('cust-office-code');
+    const officeCode = officeSelect.value;
+    const officeName = officeSelect.getAttribute('data-office-name') || officeSelect.options[officeSelect.selectedIndex]?.text || '';
+
+    const formData = new FormData();
+    formData.append('declaration_number', document.getElementById('cust-decl-number').value.trim());
+    formData.append('declaration_date', document.getElementById('cust-decl-date').value);
+    formData.append('customer_id', document.getElementById('cust-customer-id').value);
+    formData.append('direction', document.getElementById('cust-direction').value);
+    formData.append('declaration_type', document.getElementById('cust-decl-type').value);
+    formData.append('customs_office_code', officeCode);
+    formData.append('customs_office_name', officeName);
+    formData.append('customs_lane', document.getElementById('cust-lane').value);
+    formData.append('status', document.getElementById('cust-status').value);
+    formData.append('bill_of_lading', document.getElementById('cust-bl-number').value.trim());
+    formData.append('container_numbers', document.getElementById('cust-container-numbers').value.trim());
+    
+    const tripId = document.getElementById('cust-trip-id').value;
+    if (tripId) formData.append('dispatch_trip_id', tripId);
+
+    formData.append('is_tax_paid', document.getElementById('cust-is-tax-paid').checked);
+    formData.append('tax_amount_vnd', document.getElementById('cust-tax-amount').value || 0);
+    formData.append('customs_service_fee', document.getElementById('cust-service-fee').value || 0);
+    formData.append('reimbursable_fee', document.getElementById('cust-reimbursable-fee').value || 0);
+    formData.append('inspection_notes', document.getElementById('cust-inspection-notes').value.trim());
+
+    const fileInput = document.getElementById('cust-document-file');
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+        formData.append('declaration_document', fileInput.files[0]);
+    }
+
+    const url = isEdit ? `/api/customs/declarations/${id}/` : '/api/customs/declarations/';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch(url, {
+            method: method,
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || 'Lỗi khi lưu tờ khai hải quan!');
+        }
+
+        showToast(data.message || 'Lưu tờ khai thành công!', 'success');
+        closeCustomsModal();
+        fetchCustomsDeclarations();
+    } catch (err) {
+        showToast('Lỗi: ' + err.message, 'error');
+    }
+}
+
+async function quickSetCustomsStatus(id, action) {
+    try {
+        const res = await fetchWithAuth(`/api/customs/declarations/${id}/action/`, {
+            method: 'POST',
+            body: JSON.stringify({ action })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Lỗi khi cập nhật trạng thái');
+
+        showToast(data.message || 'Đã cập nhật trạng thái thông quan!', 'success');
+        fetchCustomsDeclarations();
+    } catch (err) {
+        showToast('Lỗi: ' + err.message, 'error');
+    }
+}
+
+async function quickToggleCustomsTax(id) {
+    try {
+        const res = await fetchWithAuth(`/api/customs/declarations/${id}/action/`, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'toggle_tax' })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Lỗi khi cập nhật trạng thái thuế');
+
+        showToast(data.message, 'success');
+        fetchCustomsDeclarations();
+    } catch (err) {
+        showToast('Lỗi: ' + err.message, 'error');
+    }
+}
+
+async function deleteCustomsDeclaration(id) {
+    if (!confirm('Bạn có chắc chắn muốn xóa tờ khai hải quan này vào thùng rác không?')) return;
+    try {
+        const res = await fetchWithAuth(`/api/customs/declarations/${id}/`, {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Lỗi khi xóa tờ khai');
+
+        showToast(data.message || 'Đã xóa tờ khai hải quan.', 'success');
+        fetchCustomsDeclarations();
+    } catch (err) {
+        showToast('Lỗi: ' + err.message, 'error');
+    }
+}
+
+function exportCustomsExcel() {
+    const q = document.getElementById('customs-filter-q')?.value?.trim() || '';
+    const lane = document.getElementById('customs-filter-lane')?.value || '';
+    const status = document.getElementById('customs-filter-status')?.value || '';
+
+    const params = new URLSearchParams();
+    if (q) params.append('q', q);
+    if (lane) params.append('lane', lane);
+    if (status) params.append('status', status);
+
+    window.open(`/api/customs/declarations/export-excel/?${params.toString()}`, '_blank');
+}
+
 

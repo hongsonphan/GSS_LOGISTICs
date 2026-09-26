@@ -1,0 +1,89 @@
+<!-- MODAL LẬP DEBIT NOTE & XÁC NHẬN THU HỒI CHI HỘ KHÁCH HÀNG -->
+<div id="modal-debit-note" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs hidden p-4 animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-teal-700 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-teal-800/80 flex items-center justify-center text-lg">
+                    <i class="ph-fill ph-file-text"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base tracking-tight font-heading" id="debit-modal-title">Lập Debit Note Chi Hộ</h3>
+                    <p class="text-teal-100 text-xs mt-0.5">Bảng Kê Chi Hộ Khách Hàng • Gom nhóm xuất Excel & Thu hồi tiền</p>
+                </div>
+            </div>
+            <button onclick="closeDebitNoteModal()" class="text-teal-200 hover:white p-1 rounded-lg hover:bg-teal-600 transition-colors">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Form Body -->
+        <form id="form-debit-note" onsubmit="handleSaveDebitNote(event)" class="p-6 space-y-4 text-xs font-semibold text-slate-700">
+            <input type="hidden" id="dn-action-type" value="create">
+            <input type="hidden" id="dn-expense-ids" value="">
+
+            <!-- Thông tin tóm tắt -->
+            <div class="bg-teal-50/70 p-3.5 rounded-xl border border-teal-200 space-y-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-teal-900 font-bold">Số lượng khoản chi hộ được chọn:</span>
+                    <span id="dn-selected-count" class="font-black text-teal-800 text-sm">0 khoản</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-teal-900 font-bold">Tổng tiền chi hộ cần thu hồi:</span>
+                    <span id="dn-selected-amount" class="font-black text-emerald-700 text-base">0 đ</span>
+                </div>
+                <div class="text-[11px] text-teal-700 font-medium" id="dn-selected-customer">
+                    Khách hàng: Đang cập nhật...
+                </div>
+            </div>
+
+            <!-- Mã Debit Note -->
+            <div id="dn-code-container">
+                <label class="block text-slate-600 mb-1">Mã Số Debit Note (Bảng Kê) <span class="text-rose-500">*</span></label>
+                <input type="text" id="dn-number" required placeholder="vd: DN-2026-KH01-001"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 uppercase">
+                <p class="text-[10px] text-slate-400 mt-1">Mã số này sẽ in trên Bảng kê gửi phòng kế toán khách hàng để đối soát thanh toán.</p>
+            </div>
+
+            <!-- Trường dành riêng cho Xác nhận thu hồi tiền (Settle Mode) -->
+            <div id="dn-settle-fields" class="space-y-3 hidden">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-600 mb-1">Kênh Thu Tiền Hoàn Ứng <span class="text-rose-500">*</span></label>
+                        <select id="dn-payment-method" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 bg-white">
+                            <option value="BANK">Tài khoản Ngân hàng (Chuyển khoản)</option>
+                            <option value="CASH">Tiền mặt tại quỹ công ty</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-600 mb-1">Ngân Hàng Nhận Tiền</label>
+                        <input type="text" id="dn-bank-name" placeholder="vd: VCB - CN Tân Bình"
+                            class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                    </div>
+                </div>
+                <div class="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-800 flex items-center gap-2 font-medium">
+                    <i class="ph-fill ph-info text-amber-600 text-sm"></i>
+                    <span>Xác nhận thu hồi sẽ tự động ghi tăng một khoản Thu tương ứng vào Sổ Quỹ Thu - Chi (Mẫu S03a-DN).</span>
+                </div>
+            </div>
+
+            <!-- Ghi chú đối soát -->
+            <div>
+                <label class="block text-slate-600 mb-1">Ghi Chú Đối Soát</label>
+                <textarea id="dn-notes" rows="2" placeholder="Ghi chú chứng từ, ngày hẹn thanh toán hoặc người gửi..."
+                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500"></textarea>
+            </div>
+
+            <!-- Buttons -->
+            <div class="pt-2 border-t border-slate-200 flex justify-end space-x-2">
+                <button type="button" onclick="closeDebitNoteModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-colors">
+                    Hủy Bỏ
+                </button>
+                <button type="submit" id="btn-submit-debit-note" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                    <i class="ph-bold ph-check text-sm"></i>
+                    <span id="btn-submit-debit-note-label">Xác Nhận Lập Debit Note</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,117 @@
+<!-- MODAL CẤP TẠM ỨNG CHUYẾN CHO TÀI XẾ (BIM ADVANCE DISPATCH) -->
+<div id="modal-driver-advance" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden transform transition-all">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-teal-800 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-xl bg-teal-700/80 flex items-center justify-center text-teal-200">
+                    <i class="ph-fill ph-hand-coins text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold font-heading">Cấp Tạm Ứng Chuyến Cho Tài Xế</h3>
+                    <p class="text-xs text-teal-200 font-medium">Trích Quỹ Điều Vận hoặc Công ty chuyển khoản trực tiếp</p>
+                </div>
+            </div>
+            <button onclick="closeDriverAdvanceModal()" class="w-8 h-8 rounded-full bg-teal-700/50 hover:bg-teal-700 text-white flex items-center justify-center transition-colors">
+                <i class="ph-bold ph-x text-sm"></i>
+            </button>
+        </div>
+
+        <!-- Modal Form -->
+        <form id="form-driver-advance" onsubmit="submitDriverAdvanceForm(event)" class="p-6 space-y-4 text-xs font-medium text-slate-700">
+            <!-- Chọn Chuyến xe -->
+            <div>
+                <label class="block font-bold text-slate-800 mb-1">
+                    Chọn Chuyến Xe Vận Chuyển <span class="text-rose-600">*</span>
+                </label>
+                <select id="adv-inp-trip" onchange="onAdvanceTripChange()" required
+                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                    <option value="">-- Chọn chuyến xe cần cấp tạm ứng --</option>
+                </select>
+                <p id="adv-trip-info" class="text-[11px] text-teal-700 font-semibold mt-1 hidden"></p>
+            </div>
+
+            <!-- Tài xế nhận tiền -->
+            <div>
+                <label class="block font-bold text-slate-800 mb-1">
+                    Tài Xế Nhận Tiền <span class="text-rose-600">*</span>
+                </label>
+                <select id="adv-inp-driver" required
+                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                    <option value="">-- Chọn tài xế nhận tạm ứng --</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Số tiền tạm ứng -->
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Số Tiền Tạm Ứng (VNĐ) <span class="text-rose-600">*</span>
+                    </label>
+                    <input type="text" id="adv-inp-amount" required placeholder="ví dụ: 1.500.000"
+                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-teal-800 text-right tabular-nums focus:border-teal-600 focus:ring-1 focus:ring-teal-500 input-number-vn" />
+                </div>
+
+                <!-- Ngày tạm ứng -->
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Ngày Cấp Tiền <span class="text-rose-600">*</span>
+                    </label>
+                    <input type="date" id="adv-inp-date" required
+                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500" />
+                </div>
+            </div>
+
+            <!-- Nguồn tiền tạm ứng -->
+            <div>
+                <label class="block font-bold text-slate-800 mb-1">
+                    Nguồn Tiền Tạm Ứng <span class="text-rose-600">*</span>
+                </label>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-teal-50/50">
+                        <input type="radio" name="adv_source" value="DISPATCHER_FUND" checked onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
+                        <span class="font-bold text-slate-800">Trích Quỹ Điều Vận</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-teal-50/50">
+                        <input type="radio" name="adv_source" value="COMPANY_DIRECT" onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
+                        <span class="font-bold text-slate-800">Cty Chi Trực Tiếp</span>
+                    </label>
+                </div>
+
+                <!-- Dropdown chọn Quỹ điều vận -->
+                <div id="adv-box-dispatcher-fund">
+                    <select id="adv-inp-fund"
+                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Chọn Quỹ Điều Vận khả dụng --</option>
+                    </select>
+                    <p id="adv-fund-balance-hint" class="text-[11px] text-slate-500 mt-1"></p>
+                </div>
+            </div>
+
+            <!-- Mục đích tạm ứng -->
+            <div>
+                <label class="block font-bold text-slate-800 mb-1">Mục Đích Tạm Ứng & Chi Phát Sinh</label>
+                <input type="text" id="adv-inp-purpose" value="Chi phí cầu đường BOT, nâng hạ cảng, cược vỏ cont, kiểm dịch"
+                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500" />
+            </div>
+
+            <!-- Ghi chú thêm -->
+            <div>
+                <label class="block font-bold text-slate-800 mb-1">Ghi Chú Thêm (Nếu có)</label>
+                <textarea id="adv-inp-notes" rows="2" placeholder="Ghi chú điều chuyển, số biên lai, phương thức giao tiền..."
+                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500"></textarea>
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+                <button type="button" onclick="closeDriverAdvanceModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold font-heading transition-colors">
+                    Hủy Bỏ
+                </button>
+                <button type="submit" id="btn-submit-driver-advance" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
+                    <i class="ph-bold ph-check text-sm"></i>
+                    <span>Xác Nhận Cấp Tạm Ứng</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

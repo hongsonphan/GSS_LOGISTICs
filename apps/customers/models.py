@@ -39,6 +39,7 @@ class RouteTariff(TimeStampedModel, SoftDeleteModel):
     container_size = models.CharField(max_length=20, default='40HC') # 20DC, 40HC, XE_TAI_10T...
     freight_price = models.DecimalField(max_digits=12, decimal_places=0, help_text="Đơn giá cước xuất hóa đơn")
     driver_trip_pay = models.DecimalField(max_digits=12, decimal_places=0, default=500000, help_text="Định mức lương chuyến tài xế")
+    toll_standard_fee = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Định mức vé cầu đường / BOT chuẩn theo tuyến (VNĐ)")
 
     class Meta:
         ordering = ['customer', 'pickup_location']
@@ -138,11 +139,37 @@ class BookingOrder(TimeStampedModel, SoftDeleteModel):
 
     # Thương mại
     selling_freight_price = models.DecimalField(max_digits=12, decimal_places=0, default=4000000, help_text="Đơn giá cước thỏa thuận với khách (VNĐ)")
+    booking_file = models.FileField(
+        upload_to='booking_files/%Y/%m/', 
+        null=True, 
+        blank=True, 
+        help_text="File Booking / Lệnh cấp cont từ khách hàng (Ảnh hoặc PDF)"
+    )
     status = models.CharField(max_length=30, choices=BookingStatus.choices, default=BookingStatus.PENDING_DISPATCH)
     notes = models.TextField(blank=True, help_text="Yêu cầu đặc biệt của khách hàng")
+
+    @property
+    def remaining_containers(self):
+        return max(0, self.total_containers - self.dispatched_containers)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
         return f"[{self.booking_code}] {self.customer.name} - {self.booking_number} ({self.dispatched_containers}/{self.total_containers} Cont)"
+
+
+class BookingDocument(TimeStampedModel, SoftDeleteModel):
+    """
+    Quản lý đa tệp đính kèm cho Đơn Đặt Hàng / Booking (Ảnh lệnh cấp vỏ, PDF Booking confirmation...).
+    """
+    booking = models.ForeignKey(BookingOrder, on_delete=models.CASCADE, related_name='documents')
+    file = models.FileField(upload_to='booking_files/%Y/%m/', help_text="File tài liệu đính kèm (Ảnh hoặc PDF)")
+    file_name = models.CharField(max_length=255, blank=True)
+    file_size = models.IntegerField(default=0, help_text="Kích thước tệp (bytes)")
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"[{self.booking.booking_code}] {self.file_name or self.file.name}"

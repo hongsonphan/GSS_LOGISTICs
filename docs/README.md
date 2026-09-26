@@ -1,8 +1,8 @@
 # TÀI LIỆU DỰ ÁN BIM LOGISTICS (TMS & WMS PLATFORM)
 
 > **Dự án:** BIM Logistics Platform (Triền Võ Logistics)  
-> **Phiên bản:** 1.4.9 (Production Demo)  
-> **Cập nhật:** 21/09/2026  
+> **Phiên bản:** 1.8.1 (Production Demo)  
+> **Cập nhật:** 25/09/2026  
 > **Mô hình tài liệu:** Documentation-as-Code
 
 Thư mục `docs/` chứa toàn bộ tài liệu kỹ thuật, đặc tả tính năng, quy chuẩn giao diện UI/UX, sơ đồ kiến trúc và nhật ký phát triển của hệ thống BIM Logistics.

@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from core.models import TimeStampedModel, SoftDeleteModel
 
 class Department(models.TextChoices):
@@ -19,6 +20,7 @@ class EmployeeRole(models.TextChoices):
     MECHANIC = 'MECHANIC', 'Kỹ thuật viên bãi xe'
 
 class Employee(TimeStampedModel, SoftDeleteModel):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee')
     code = models.CharField(max_length=20, unique=True, db_index=True) # TX001, DD001, BGD01...
     full_name = models.CharField(max_length=100)
     nickname = models.CharField(max_length=50, blank=True, help_text="Biệt danh hiện trường: BỤI 94, LIBRA, 61S...")

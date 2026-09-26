@@ -1,6 +1,867 @@
 # CHANGELOG — BIM LOGISTICS PLATFORM
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
+
+## [1.9.2] - 2026-09-26 (Trang Mobile Driver Portal & Tối Ưu Thao Tác Hiện Trường Cho Tài Xế)
+
+### 1. Bối Cảnh Nghiệp Vụ:
+- Thay vì bắt tài xế tải app native phức tạp từ App Store/Google Play (khó cài đặt, cần tạo tài khoản/mật khẩu rườm rà), giải pháp Mobile-First WebApp truy cập trực tiếp qua Capability Token HashID (`/driver/<trip_hash>/`) qua link Zalo/SMS giúp tài xế mở ngay trên mọi smartphone (iOS, Android).
+- Tối ưu thao tác hiện trường "2-chạm": Báo mốc kho tức thì, kê khai chi phí phát sinh kèm chụp ảnh biên lai BOT, chụp ảnh chứng từ giao nhận (POD) và phiếu EIR hạ cont ngay từ camera điện thoại.
+
+### 2. Nội Dung Triển Khai Chi Tiết:
+- **Cơ chế Xác thực Capability Token (Chống IDOR - Tiêu chuẩn 10):**
+  - Cập nhật `core/permissions.py` (`IsTripDriverOrDispatcher`): Nhận diện unguessable HashID từ URL (`/driver/<trip_hash>/`) hoặc header `X-Trip-Hash`, cho phép tài xế thao tác báo mốc, kê chi phí và upload chứng từ của đúng chuyến xe mà không cần đăng nhập session.
+  - Tuyệt đối không để lộ dữ liệu nhạy cảm nội bộ (doanh thu bán khách, tỷ suất biên lợi nhuận P&L).
+- **Trang Mobile Driver Portal (`templates/driver_portal.html` & `templates/driver_portal_404.html`):**
+  - Giao diện 100% Mobile-first thuần chuẩn quốc tế, nút bấm to $\ge 48$px, độ tương phản cao dễ đọc dưới trời nắng.
+  - Thẻ tóm tắt Chuyến xe: Mã chuyến, Tên tài xế, Biển số đầu kéo và rơ-moóc, Trạng thái chuyến xe thời gian thực.
+  - Thẻ Container & Vận đơn: Số Cont, Số Seal, Loại cont, Số Booking/Bill, Hãng tàu, Cảnh báo hạn Free DET và Cắt máng. Hỗ trợ hiển thị cả Cont 2 khi chạy kẹp đôi 20ft (`twin_container`).
+  - Huy hiệu liên thông Hải quan: Trực quan 🟢 Luồng Xanh / 🟡 Luồng Vàng / 🔴 Luồng Đỏ.
+  - Lộ trình 3 điểm & Tích hợp Google Maps 1-chạm:
+    - Điểm 1: Nơi lấy cont/hàng (kèm nút Maps chỉ đường).
+    - Điểm 2: Kho đóng/trả hàng (Giờ hẹn, Cửa dock, Lưu ý đóng hàng, kèm nút Maps chỉ đường).
+    - Điểm 3: Nơi hạ bãi cont rỗng (Giờ hẹn sau 0h, kèm nút Maps chỉ đường).
+  - Lưới 6 nút Báo Mốc Kho 1-Chạm (SOP Bước 6):
+    - [📍 Sắp đến kho (30p)]
+    - [🏢 Đến cổng kho - Check in]
+    - [📦 Bắt đầu đóng/dỡ]
+    - [✅ Đóng hàng xong]
+    - [🌙 Chờ qua đêm (>0h)]
+    - [⚓ Đã hạ cont xong]
+  - Modal Kê Khai Chi Phí Hiện Trường:
+    - Chọn nhanh danh mục (BOT, Nâng/Hạ, Cược vỏ, Cân xe, Bốc xếp...).
+    - Phím chọn nhanh số tiền (35k, 50k, 100k, 200k, 500k) hoặc nhập tự do.
+    - Chụp/Đính kèm ảnh vé BOT hoặc hóa đơn trực tiếp từ camera.
+  - Modal Chụp & Trả Chứng Từ (POD, EIR):
+    - Tích hợp `capture="camera"` mở trực tiếp ống kính máy ảnh điện thoại.
+    - Xem trước ảnh (preview), đối chiếu số cont/seal, gửi nghiệm thu tức thì.
+  - Thanh tác vụ cố định đáy màn hình (Bottom Sticky Bar):
+    - Nút 1-chạm gọi Hotline Điều độ (`tel:`).
+    - Nút mở nhanh Kê Chi Phí & Chụp POD.
+    - Nút làm mới dữ liệu.
+- **Tích hợp Web Văn Phòng (`view_trip_detail.html` & `static/js/app.js`):**
+  - Bổ sung nút **"Màn Hình Tài Xế"** mở trực tiếp `/driver/<hashid>/`.
+  - Bổ sung nút **"Copy Link Tài Xế"**: Tự động định dạng tin nhắn hoàn chỉnh kèm đầy đủ thông tin chuyến xe và đường dẫn thao tác di động để điều độ viên chỉ cần 1 click là dán (Paste) gửi Zalo cho tài xế.
+- **Sửa Lỗi Tương Thích & Tối Ưu Báo Cáo (`reports_api.py` & `views.py`):**
+  - Sửa lỗi truy cập `category` và `get_category_display()` thay vì thuộc tính cũ `expense_type` trong `ReportsAPIView`.
+  - Khắc phục câu truy vấn liên kết tờ khai hải quan `bill_of_lading` và `container_numbers` trong `driver_portal_view`.
+- **Kiểm Thử Toàn Diện Hệ Thống (Full System Verification):**
+  - Viết Unit Test `test_driver_portal_view_and_capability_access` trong `core/tests.py`.
+  - Toàn bộ **43/43 unit tests PASSED 100%** trong 14.27s.
+  - Script kiểm thử E2E độc lập (`run_full_system_audit.py`):
+    - 11/11 Web Pages & Clean Semantic Routes: HTTP 200/302 (HỢP LỆ).
+    - 16/16 RESTful APIs: HTTP 200 (HỢP LỆ).
+    - Mobile Driver Portal (Báo mốc, Kê chi phí, Chụp POD, 404 handler): HỢP LỆ 100%.
+  - Nâng cấp Cache Buster lên `?v=1.9.2.0`.
+
+---
+
+## [1.9.1] - 2026-09-26 (Tinh Chỉnh Trực Quan Điều Vận & Cảnh Báo Đăng Kiểm Đội Xe)
+
+### 1. Nội Dung Triển Khai Chi Tiết:
+- **Trực quan hóa Hải quan trên Bảng Điều Vận (`view_dispatch.html` & `TripListCreateAPIView`):**
+  - Tự động truy vấn tờ khai hải quan liên kết (`prefetch_related('customs_declarations')`).
+  - Hiển thị Badge Phân Luồng Hải Quan trực quan (🟢 Luồng Xanh, 🟡 Luồng Vàng, 🔴 Luồng Đỏ) kèm số tờ khai ngay trên ô Container của Bảng Chuyến Xe.
+  - Giúp điều độ viên nắm bắt tức thì tình trạng thông quan trước khi phát lệnh cho xe vào cảng/ICD lấy cont.
+- **Hệ thống Cảnh báo Đăng kiểm & Bảo hiểm Đội Xe (`view_fleet.html` & `FleetAPIView`):**
+  - Tính toán số ngày còn lại đến hạn đăng kiểm (`reg_days_left`) và bảo hiểm TNDS (`ins_days_left`).
+  - Hiển thị Badge trực quan:
+    - 🔴 Đã hết hạn (kèm số ngày trễ hạn, ví dụ: *Hết hạn (2N)*).
+    - 🟡 Cảnh báo khẩn cấp (kèm số ngày còn lại nếu $\le 15$ ngày).
+    - 🟢 Hợp lệ (nếu $> 15$ ngày).
+  - Tương tự cho mốc bảo trì định kỳ của đầu kéo.
+- **Kiểm thử & Nâng cấp Cache:**
+  - 39/39 tests PASS 100%.
+  - Nâng cấp Cache Buster lên `?v=1.9.1.0`.
+
+---
+
+## [1.9.0] - 2026-09-26 (Hoàn Thiện Phân Hệ Dịch Vụ Hải Quan VNACCS/VCIS & Tối Ưu Master Data Vận Tải Cont)
+
+### 1. Bối Cảnh & Rà Soát Nghiệp Vụ Toàn Diện (Expert Audit Findings):
+- **Phân hệ Hải Quan (`view_customs.html`):** Trước đây là trang tĩnh mô phỏng ("Phát Triển Sau" với số mockup). Trong thực tế quản trị vận tải container và dịch vụ giao nhận (freight forwarding), thủ tục hải quan điện tử VNACCS/VCIS là mấu chốt để điều xe lấy cont hàng nhập hoặc hạ cont xuất đúng hạn, chống lưu xe, lưu bãi (DEM/DET).
+- **Master Data Biểu Cước (`RouteTariff`):** Trường `toll_standard_fee` (Định mức vé BOT tuyến) đã có trong database nhưng form nhập liệu và bảng danh mục chưa hỗ trợ.
+
+---
+
+### 2. Nội Dung Triển Khai Chi Tiết:
+
+#### 🟢 1. Xây Dựng Trọn Vẹn Phân Hệ Dịch Vụ Hải Quan (Customs Brokerage Module):
+- **Ứng dụng mới `apps.customs`:** Đăng ký vào hệ thống Modular Monolith của BIM Logistics.
+- **Model chuẩn hóa `CustomsDeclaration` (apps/customs/models.py):**
+  - Kế thừa `TimeStampedModel` và `SoftDeleteModel` (bảo toàn chứng từ pháp lý, tuyệt đối không hard-delete).
+  - Quản lý thông số VNACCS/VCIS:
+    - `declaration_number`: Số tờ khai 12 chữ số (khóa chính nghiệp vụ).
+    - `declaration_date`, `customer`, `customs_office_code`, `customs_office_name`.
+    - `declaration_type`: A11, A12, B11, E21, E31, E62, G11...
+    - `direction`: Nhập khẩu (`IMPORT`) / Xuất khẩu (`EXPORT`).
+    - `customs_lane`: Phân luồng 3 màu (🟢 `GREEN` - Tự động thông quan, 🟡 `YELLOW` - Thẩm định hồ sơ, 🔴 `RED` - Kiểm tra thực tế/soi chiếu).
+    - `status`: Vòng đời tờ khai (`DRAFT` $\rightarrow$ `SUBMITTED` $\rightarrow$ `PROCESSING` $\rightarrow$ `INSPECTION` $\rightarrow$ `CLEARED` $\rightarrow$ `RELEASED` $\rightarrow$ `CANCELLED`).
+    - `bill_of_lading`, `container_numbers`.
+    - `tax_amount_vnd` (Tiền thuế XNK & VAT) và `is_tax_paid` (Tình trạng hoàn tất nộp thuế).
+    - `customs_service_fee` (Phí dịch vụ khai thuê HQ) và `reimbursable_fee` (Chi hộ kiểm hóa).
+    - `dispatch_trip`: Liên kết trực tiếp với Chuyến xe vận chuyển container.
+    - `declaration_document`: Lưu trữ tệp scan/ảnh tờ khai thông quan.
+- **Tự động liên thông tài chính:** Khi khai báo chi phí chi hộ kiểm hóa (`reimbursable_fee > 0`) và có gán chuyến xe, hệ thống tự động ghi nhận vào `TripExpense (is_on_behalf_of_customer=True)` để tự động lập Debit Note thu hồi.
+- **Hệ thống RESTful APIs (`apps/customs/api_views.py`):**
+  - `CustomsDeclarationListCreateAPIView`: Danh sách kèm bộ lọc đa tiêu chí, tính toán 4 KPIs phân luồng và tỷ lệ thông quan.
+  - `CustomsDeclarationDetailAPIView`: Xem chi tiết, cập nhật và xóa mềm.
+  - `CustomsQuickActionAPIView`: Thao tác 1-chạm (Đổi luồng, Xác nhận Thông quan tức thì, Bật/tắt trạng thái nộp thuế).
+  - `CustomsExportExcelAPIView`: Xuất Sổ Bảng Kê Tờ Khai Hải Quan & Thông Quan ra file Excel định dạng chuẩn quốc tế.
+- **Giao diện Người Dùng (`templates/views/view_customs.html` & `modal_customs_declaration.html`):**
+  - 4 Thẻ KPI: Tổng Tờ Khai (kèm Tỷ lệ thông quan), Luồng Xanh, Luồng Vàng, Luồng Đỏ.
+  - Thanh công cụ tìm kiếm và bộ lọc đa năng: Tìm kiếm tức thì, lọc theo Phân Luồng, Trạng Thái, Chiều Vận Chuyển, Tình Trạng Thuế.
+  - Bảng dữ liệu tương tác cao: Cho phép thao tác nhanh 1-chạm xác nhận thông quan hoặc đổi luồng ngay trên danh sách.
+
+#### 🟢 2. Đồng Bộ Số Liệu Hải Quan Thực Tế Vào Dashboard BGD:
+- Nâng cấp `DashboardBGDAPIView` (`apps/dispatch/api_views.py`): Tự động tổng hợp số liệu thực tế từ `CustomsDeclaration` thay thế hoàn toàn các con số giả lập trước đây.
+
+#### 🟢 3. Hoàn Thiện CRUD Master Data Biểu Cước Tuyến Tuyến Vận Tải:
+- Bổ sung ô nhập "Định Mức Vé BOT Tuyến (VNĐ)" vào form Biểu Cước (`injectMasterDataModalFields` & `submitMasterDataForm`).
+- Hiển thị cột "Định Mức BOT" trên Bảng Biểu Cước Khách Hàng.
+- Cập nhật API `TariffMasterListCreateAPIView` & `TariffMasterDetailAPIView` nhận và lưu `toll_standard_fee`.
+
+---
+
+### 3. Kết Quả Kiểm Thử (Verification):
+- Bổ sung Unit Tests toàn diện cho Customs Module và Master Data RouteTariff trong `core/tests.py`.
+- Toàn bộ **39/39 tests PASSED 100%** (Vòng đời tờ khai, thao tác nhanh, xuất Excel, soft delete, CRUD biểu cước có định mức BOT).
+- Kiểm tra cú pháp JavaScript: `node -c static/js/app.js` đạt chuẩn không lỗi.
+- Nâng cấp Cache Buster lên `?v=1.9.0.0`.
+
+---
+
+## [1.8.9] - 2026-09-26 (Báo Cáo & Quản Trị Tài Chính Ngành Vận Tải: Giai Đoạn 1 & Giai Đoạn 2 Toàn Diện)
+
+### 1. Bối Cảnh & Ràng Buộc Kỹ Thuật (Architecture Decision Record):
+- **Yêu cầu người dùng:** Triển khai toàn bộ Giai đoạn 1 và Giai đoạn 2 của Kế hoạch Quản trị Tài chính Ngành Vận tải.
+- **Ràng buộc cốt lõi:**
+  - *Tính chuẩn hóa của Modeling và các bảng:* Tuyệt đối không sinh bảng rác hoặc dữ liệu rác không đồng bộ.
+  - *Ưu tiên tối ưu hóa & khai thác tối đa nguồn dữ liệu input đã có:* Tận dụng triệt để `TripExpense`, `DispatchTrip`, `RouteTariff`, `Vehicle`, `DispatcherAdvanceFund`, `DriverTripAdvance`.
+  - *Tự động liên thông dòng tiền (Cross-Module Audit Trail):* Mọi hành động thu hồi chi hộ, hoàn ứng tiền thừa, quyết toán xe bạn đều tự động hạch toán vào Sổ Quỹ Thu - Chi mà không đòi hỏi thao tác nhập liệu kép.
+
+---
+
+### 2. Nội Dung Triển Khai Chi Tiết:
+
+#### 🟢 GIAI ĐOẠN 1: QUẢN TRỊ CHI HỘ & SỔ QUỸ DÒNG TIỀN VẬN TẢI
+1. **Báo Cáo & Quản Trị Đối Soát & Thu Hồi Chi Hộ Khách Hàng (Customer Reimbursables / Debit Note):**
+   - **Tận dụng `TripExpense`:** Bổ sung trường vòng đời thu hồi chi hộ:
+     - `reimbursement_status`: `PENDING` (Chờ thu / Chưa lập Debit Note), `BILLED` (Đã xuất Debit Note), `COLLECTED` (Đã thu hồi tiền từ KH).
+     - `debit_note_number`: Số hiệu Bảng kê Debit Note gửi khách hàng (vd: `DN-2026-0926-001`).
+     - `reimbursed_at`, `reimbursed_by`, `reimbursement_notes`.
+     - Tự động gán trạng thái `PENDING` khi tạo khoản chi hộ (`is_on_behalf_of_customer=True`).
+   - **Chức năng nghiệp vụ hiện đại:**
+     - Gom nhóm nhiều khoản chi hộ của 1 khách hàng thành 1 Debit Note duy nhất.
+     - Xác nhận khách hàng thanh toán hoàn ứng 1-chạm: Tự động chuyển trạng thái `COLLECTED`, đồng thời **tự động sinh Phiếu Thu (`PT-DN-...`)** vào Sổ Quỹ Thu - Chi!
+     - Xuất Bảng kê Debit Note chi hộ sang Excel/CSV (UTF-8 BOM).
+
+2. **Báo Cáo Sổ Quỹ Thu - Chi & Dòng Tiền Vận Tải (Cash & Bank Book — Chuẩn Mẫu S03a-DN):**
+   - **Model `CashTransaction` (apps/billing/models.py):** Quản lý dòng tiền 2 quỹ song song:
+     - Quỹ Tiền Mặt (`CASH`) và Tài Khoản Ngân Hàng (`BANK`).
+     - Danh mục thu/chi đặc thù logistics: `FREIGHT_REVENUE` (Thu cước), `REIMBURSABLE_COLLECTION` (Thu chi hộ), `ADVANCE_REFUND` (Thu hoàn ứng), `DISPATCHER_FUND_ADVANCE` (Chi quỹ điều vận), `DRIVER_TRIP_ADVANCE` (Chi tạm ứng chuyến), `SUBCONTRACTOR_PAYMENT` (Chi xe bạn), `FUEL_PAYMENT` (Chi dầu), `ETC_TOPUP` (Chi nạp BOT/ETC), `VEHICLE_MAINTENANCE` (Chi bảo dưỡng).
+   - **KPIs Sổ Quỹ:** Tồn Quỹ Tiền Mặt, Số Dư Ngân Hàng, Tổng Tồn Quỹ Toàn Cty, Dòng Tiền Thuần Trong Kỳ.
+   - Hỗ trợ lập Phiếu Thu / Chi thủ công và tích hợp tự động từ các phân hệ vận hành.
+
+---
+
+#### 🟢 GIAI ĐOẠN 2: QUYẾT TOÁN THẦU PHỤ 3PL & ĐỐI SOÁT VÉ BOT TUYẾN
+3. **Báo Cáo Quyết Toán & Đối Soát Nhà Xe Bạn / Thầu Phụ 3PL (Subcontractor Payables):**
+   - **Tận dụng `DispatchTrip` & `Vehicle.ownership_type == 'SUBCONTRACTOR'`:**
+     - Bổ sung các trường: `subcontractor_cost` (Cước thỏa thuận trả xe bạn), `subcontractor_advance` (Đã tạm ứng cho xe bạn), `subcontractor_settlement_status` (`PENDING`, `PARTIAL`, `SETTLED`), `subcontractor_settled_at`, `subcontractor_notes`.
+   - **Nghiệp vụ đối soát:**
+     - Giám sát: Doanh thu thu khách $\rightarrow$ Cước trả xe bạn $\rightarrow$ Chênh lệch công ty hưởng (Gross Margin) $\rightarrow$ Đã tạm ứng $\rightarrow$ Còn phải thanh toán cho thầu phụ.
+     - Nút "Quyết Toán": Đánh dấu `SETTLED` và **tự động sinh Phiếu Chi (`PC-3PL-...`)** thanh toán số tiền còn lại vào Sổ Quỹ Thu - Chi.
+
+4. **Báo Cáo Đối Soát Chuyên Sâu Vé Cầu Đường BOT/ETC vs Định Mức Tuyến:**
+   - **Tận dụng `RouteTariff` & `TripExpense` (`category='TOLL_FEE'`):**
+     - Thêm trường `toll_standard_fee` vào `RouteTariff` (Định mức BOT chuẩn theo từng cặp Tuyến vận chuyển).
+     - Tự động gom nhóm các vé BOT phát sinh theo từng chuyến xe, đối chiếu với định mức tuyến.
+     - Đánh giá cảnh báo 3 cấp độ:
+       - 🟢 *Tiết kiệm:* Thực chi < Định mức tuyến (> 15%).
+       - ⚪ *Bình thường:* Thực chi dao động trong khoảng $\pm 15\%$ định mức.
+       - 🔴 *Cảnh báo vượt định mức:* Thực chi > Định mức (> 15%) để phòng Kế toán & Điều độ kiểm soát gian lận hoặc tài xế đi sai lộ trình.
+
+---
+
+### 3. Cập Nhật UI/UX & Giao Diện Người Dùng:
+- Nâng cấp thanh điều hướng Kế toán lên **7 Trụ Cột Tài Chính Vận Tải**:
+  1. *1. Đối Soát & Khóa Sổ Chuyến*
+  2. *2. Tạm Ứng - Hoàn Ứng Tài Xế*
+  3. *3. Quỹ Tạm Ứng Điều Vận*
+  4. *4. Chi Hộ & Debit Note*
+  5. *5. Sổ Quỹ Thu - Chi*
+  6. *6. Quyết Toán Xe Bạn (3PL)*
+  7. *7. Đối Soát BOT Tuyến*
+- Bổ sung 3 Modals chuyên nghiệp tại `templates/components/`:
+  - [`modal_cash_transaction.html`](file:///E:/Bim_Logistics/templates/components/modal_cash_transaction.html): Lập Phiếu Thu / Chi vào Sổ Quỹ.
+  - [`modal_debit_note.html`](file:///E:/Bim_Logistics/templates/components/modal_debit_note.html): Gom nhóm lập Debit Note & Xác nhận hoàn ứng chi hộ.
+  - [`modal_subcontractor_settle.html`](file:///E:/Bim_Logistics/templates/components/modal_subcontractor_settle.html): Thỏa thuận cước & Quyết toán xe bạn.
+- Cập nhật Cache Buster: `?v=1.8.9.0` trong `templates/base.html`.
+
+---
+
+### 4. Kết Quả Kiểm Thử (Verification):
+- `python manage.py makemigrations` & `migrate`: Hoàn thành xuất sắc migrations:
+  - `billing.0009_cashtransaction_tripexpense_debit_note_number_and_more`
+  - `customers.0008_routetariff_toll_standard_fee`
+  - `dispatch.0012_dispatchtrip_subcontractor_advance_and_more`
+- `python manage.py test`: **40/40 tests PASSED 100%** (trong đó có 4 test cases chuyên sâu kiểm toán Giai đoạn 1 & Giai đoạn 2).
+
+---
+
+### 1. Bối Cảnh & Yêu Cầu Nghiệp Vụ Vận Tải:
+- **Yêu cầu người dùng:** Phát triển theo dõi Tạm ứng và Hoàn ứng trên phân hệ Kế toán:
+  1. **Tài xế:** Được tạm ứng chuyến để xử lý chi phát sinh đi đường (vé cầu đường BOT, đổ dầu, phí nâng/hạ cảng, cân xe, bồi dưỡng kho) hoặc chi hộ khách hàng (tiền cược vỏ cont hãng tàu, vệ sinh sửa chữa cont, kiểm dịch...). Sau chuyến đối soát hoàn ứng chi phí về công ty.
+  2. **Điều vận:** Được công ty tạm ứng một khoản Quỹ Điều Vận (Dispatcher Fund) để chủ động chi tạm ứng cho các tài xế trong đội xe. Sau đó thu thập hóa đơn chứng từ hợp lệ để hoàn ứng quyết toán quỹ về công ty.
+- **Giải pháp thiết kế 2 tầng (2-Tier Advance & Settlement Engine):**
+  - **Tầng 1 (Công ty $\leftrightarrow$ Điều vận):** Quỹ Tạm Ứng Điều Vận (`DispatcherAdvanceFund`). Giám sát tiền Cty cấp, tiền đã xuất cho tài xế, tiền đã hoàn ứng nộp chứng từ, và số dư quỹ khả dụng.
+  - **Tầng 2 (Điều vận / Cty $\leftrightarrow$ Tài xế):** Tạm Ứng Chuyến Cho Tài Xế (`DriverTripAdvance`). Tự động đối chiếu giữa Tiền tạm ứng và Thực chi có hóa đơn chứng từ. Tự động tính chênh lệch:
+    - Nếu Tạm ứng > Thực chi: Tài xế hoàn nộp lại tiền thừa (`DRIVER_REFUND`).
+    - Nếu Thực chi > Tạm ứng: Công ty / Điều vận chi bù thêm cho tài xế (`COMPANY_REIMBURSE`).
+    - Nếu Tạm ứng = Thực chi: Cân bằng chính xác (`BALANCED`).
+
+### 2. Chi Tiết Kỹ Thuật Đã Triển Khai:
+- **Cơ sở dữ liệu & Models (`apps/billing/models.py` & `apps/dispatch/models.py`):**
+  - Model `DispatcherAdvanceFund`: Quản lý Quỹ điều vận, các mốc duyệt xuất quỹ, quyết toán hoàn ứng về công ty, tính toán số dư khả dụng (`remaining_balance`).
+  - Model `DriverTripAdvance`: Quản lý phiếu tạm ứng chuyến, liên kết ForeignKey với `DispatchTrip`, `Employee` (Tài xế) và `DispatcherAdvanceFund`. Lưu vết thực chi, chênh lệch hoàn ứng, tiền thừa nộp lại, tiền chi bù.
+  - Cập nhật `DispatchTrip`: Thêm trường `driver_advance_amount` (Tổng tiền tạm ứng chuyến) và `advance_settlement_status` (`NO_ADVANCE`, `ADVANCED`, `SETTLED`).
+  - Migrations: `billing.0008_dispatcheradvancefund_drivertripadvance` và `dispatch.0011_dispatchtrip_advance_settlement_status_and_more`.
+- **Tầng Backend RESTful APIs (`apps/billing/advance_views.py` & `config/urls.py`):**
+  - `GET /api/accounting/advances/`: Tổng hợp số liệu thống kê quỹ, danh sách tạm ứng tài xế, danh mục chuyến xe và quỹ khả dụng.
+  - `POST /api/accounting/dispatcher-funds/`: Tạo yêu cầu tạm ứng quỹ từ công ty cho điều vận.
+  - `POST /api/accounting/dispatcher-funds/<id>/action/`: Kế toán duyệt cấp quỹ (`approve`), quyết toán hoàn ứng (`settle`), từ chối (`reject`).
+  - `POST /api/accounting/driver-advances/`: Cấp tạm ứng chuyến cho tài xế (trích Quỹ điều vận hoặc Cty chi trực tiếp).
+  - `POST /api/accounting/driver-advances/<id>/settle/`: Đối soát quyết toán hoàn ứng chuyến, tự động tính chênh lệch thu hồi / chi bù.
+- **Tầng Giao Diện Người Dùng (`templates/views/view_accounting.html`):**
+  - Tái cấu trúc phân hệ Kế toán thành 3 Subtabs chuẩn mực:
+    1. *1. Đối Soát Chi Phí & Khóa Sổ Chuyến Xe* (`subtab-acct-settlements`).
+    2. *2. Tạm Ứng & Hoàn Ứng Tài Xế (Theo Chuyến)* (`subtab-acct-driver-advances`) kèm huy hiệu đếm số phiếu đang lưu hành.
+    3. *3. Quỹ Tạm Ứng Điều Vận (Cty ➔ Điều Vận)* (`subtab-acct-dispatcher-funds`) kèm huy hiệu đếm số quỹ đang hoạt động.
+  - Khối 4 KPI Cards chuyên biệt cho từng subtab: Tổng tạm ứng, Thực chi, Tiền thừa nộp lại, Tiền thiếu chi bù.
+  - Tích hợp 3 Modals chuyên nghiệp:
+    - [`modal_driver_advance.html`](file:///E:/Bim_Logistics/templates/components/modal_driver_advance.html): Cấp tạm ứng chuyến, tự động điền tài xế & biển số theo chuyến xe.
+    - [`modal_settle_advance.html`](file:///E:/Bim_Logistics/templates/components/modal_settle_advance.html): Đối soát thực chi, tự động tính tiền nộp lại / chi bù.
+    - [`modal_dispatcher_fund.html`](file:///E:/Bim_Logistics/templates/components/modal_dispatcher_fund.html): Đề xuất cấp Quỹ điều vận.
+- **Tầng Frontend JavaScript (`static/js/app.js`):**
+  - Xây dựng module hoàn chỉnh điều phối nạp dữ liệu, bộ lọc đa trường, chuyển đổi subtabs, mở modal và xử lý AJAX có bảo mật kép.
+  - Tích hợp hàm `exportAccountingToExcel()` xuất báo cáo CSV UTF-8 với BOM tương thích 100% với Excel tiếng Việt.
+- **Cache Busting (`templates/base.html`):** Nâng cấp lên `?v=1.8.8.0`.
+
+### 3. Kết Quả Kiểm Thử (Verification):
+- `node -c static/js/app.js`: Cú pháp JavaScript hợp lệ 100%, không phát sinh lỗi.
+- `python manage.py check`: 0 cảnh báo.
+- `core/tests.py`: Bổ sung test case toàn diện `test_accounting_advance_and_settlement_workflow` mô phỏng đầy đủ luồng Cty cấp quỹ $\rightarrow$ Điều vận tạm ứng tài xế $\rightarrow$ Đối soát thu tiền thừa $\rightarrow$ Hoàn ứng về công ty $\rightarrow$ **PASS 100%**.
+
+---
+
+## [1.8.7] - 2026-09-26 (Phân Hệ Báo Cáo & Phân Tích Quản Trị Vận Tải Chuẩn TMS BI — Tích Hợp Menu Báo Cáo Trên Sidebar)
+
+### 1. Bối Cảnh & Yêu Cầu Nhiệm Vụ (/goal):
+- **Yêu cầu người dùng:** Đọc file kế hoạch (`docs/DEVELOPMENT_PLAN.md` & `ke_hoach_theo_doi_luu_xe_sau_0h.md`) để triển khai các phần trong kế hoạch. Cái nào là báo cáo thì làm thành báo cáo chuyên nghiệp. Bổ sung thêm **Menu Báo cáo** trong Sidebar, nằm **phía trên Cài đặt**.
+- **Mục tiêu triển khai:**
+  - Bổ sung menu điều hướng cấp 1 "Báo cáo & Thống kê" (`/reports`, tab `bao-cao`, icon `ph-chart-bar`) ngay phía trên "Cài đặt" trên Sidebar máy tính & di động.
+  - Chuẩn hóa 6 phân hệ báo cáo quản trị vận tải chuyên sâu theo đúng tài liệu đặc tả:
+    1. **Báo Cáo 1: Hiệu Suất Đội Xe & P&L Từng Đầu Xe (Fleet Utilization & Vehicle Profit Center):** Giám sát tỷ lệ xe nhà vs xe bạn/3PL, doanh thu, chi phí vận hành, lợi nhuận gộp và biên lợi nhuận (%) từng đầu xe, xếp hạng tài xế.
+    2. **Báo Cáo 2: Chu Trình Vỏ Container & Cảnh Báo Phạt Hãng Tàu (DEM/DET Monitoring):** 3 trạng thái đèn giao thông (🟢 An toàn > 2 ngày, 🟡 Cảnh báo hết hạn $\le$ 1 ngày, 🔴 Quá hạn phạt hãng tàu) kèm số tiền phạt ước tính.
+    3. **Báo Cáo 3: Đúng Giờ & Chất Lượng Dịch Vụ Cam Kết (OTP / SLA):** Tỷ lệ đúng giờ tổng thể (OTP), lấy cont đúng giờ, đến kho khách đúng hẹn, hạ bãi trước giờ cắt máng cảng, phân loại nguyên nhân chậm trễ.
+    4. **Báo Cáo 4: Đối Soát Chi Phí Tuyến & Thu Hồi Khoản Chi Hộ (Reimbursement Ledger):** Đối soát BOT, dầu DO, cẩu bãi, vệ sinh cont; tách bạch khoản chi hộ khách hàng và tình trạng thu hồi hoàn ứng.
+    5. **Báo Cáo 5: Bàn Giao Cắt Kéo & Lưu Mooc / Lưu Xe Chờ Hạ Cont Sau 0H (Drop & Hook & Layover):** Theo dõi các chuyến hạ bãi ca đêm sau 0h, ghi nhận số giờ neo xe, phụ phí lưu xe thu từ khách và phụ cấp trực đêm chi trả tài xế.
+    6. **Báo Cáo 6: Ngoại Lệ & Bồi Thường Hàng Hóa Hiện Trường (OS&D Registry):** Giám sát tình trạng rách bạt, móp vách vỏ cont, đứt niêm phong chì seal, lập biên bản hiện trường kèm ảnh POD.
+
+### 2. Chi Tiết Kỹ Thuật Đã Triển Khai:
+- **Tầng Giao Diện Điều Hướng & Routing (Sidebar & Clean Semantic URLs):**
+  - `templates/components/sidebar.html`: Thêm mục điều hướng `Báo cáo & Thống kê` với icon `ph-chart-bar`, liên kết `/reports`, gắn `data-target="bao-cao"`, đặt ngay phía trên `Cài đặt`.
+  - `config/urls.py`: Đăng ký SPA route `path('reports/', index_view, name='spa-reports')` và API endpoint `path('api/reports/', ReportsAPIView.as_view(), name='api-reports')`.
+  - `templates/index.html`: Nhúng `templates/views/view_reports.html` vào kiến trúc SPA đa tầng.
+  - `static/js/app.js`: Đăng ký Clean Semantic Route trong `ROUTE_TAB_MAP` (`'/reports': 'bao-cao'`), `TAB_ROUTE_MAP` (`'bao-cao': '/reports'`), hỗ trợ back/forward browser history và hash tương thích ngược `#bao-cao`.
+- **Tầng Backend API Phân Tích Dữ Liệu (`apps/dispatch/reports_api.py`):**
+  - Xây dựng lớp `ReportsAPIView` kế thừa `APIView` với bảo mật xác thực kép (`GracefulJWTAuthentication`, `SessionAuthentication`).
+  - Hỗ trợ lọc theo 5 khung thời gian: Hôm nay (`today`), Tuần này (`week`), Tháng này (`month`), Quý này (`quarter`) và Toàn bộ (`all`).
+  - Tổng hợp số liệu từ các Model cốt lõi: `DispatchTrip`, `TripExpense`, `Vehicle`, `Trailer`, `Employee`, `Customer`.
+  - Tối ưu hóa truy vấn bằng `select_related`, `prefetch_related`, giảm thiểu truy vấn N+1.
+- **Tầng Frontend Views & Trải Nghiệm Người Dùng (`templates/views/view_reports.html`):**
+  - Thiết kế Header với huy hiệu `TMS Business Intelligence`, bộ nút chuyển kỳ 1-chạm (Hôm nay, Tuần này, Tháng này, Quý này, Tất cả), nút "Xuất Excel" và "In Báo Cáo".
+  - Thanh chuyển 6 Subtabs trực quan kèm các Badges đếm số lượng cảnh báo thời gian thực (Cảnh báo phạt DEM/DET, Chuyến lưu xe sau 0h).
+  - Khối KPI Metric Cards phân cấp màu sắc chuẩn BIM Design Tokens (Teal, Indigo, Rose, Emerald, Amber).
+  - 6 bảng dữ liệu chi tiết có ô tìm kiếm độc lập và click-to-sort trên thẻ tiêu đề cột.
+- **Tầng Frontend JavaScript Logic (`static/js/app.js`):**
+  - Hàm `loadReportsData()`: Nạp dữ liệu bất đồng bộ từ `/api/reports/` và điều phối render vào 6 bảng chuyên biệt.
+  - Hàm `switchReportSubTab(subtabId)` & `changeReportPeriod(period)`: Chuyển đổi tab con và tải lại kỳ báo cáo mượt mà.
+  - Hàm `exportReportToExcel()`: Trích xuất bảng báo cáo đang xem sang tệp CSV UTF-8 kèm ký tự BOM (`\uFEFF`), giúp Microsoft Excel trên Windows mở trực tiếp không bao giờ bị lỗi font tiếng Việt.
+  - Hàm `printReportDocument()`: Tự động kích hoạt hộp thoại in ấn tiêu chuẩn trình duyệt.
+  - Toàn bộ các hàm tìm kiếm lọc đa điều kiện (`applyReport1Filters` -> `applyReport6Filters`) và sắp xếp P&L đầu xe hai chiều (`toggleReport1Sort`).
+- **Cache Busting (`templates/base.html`):**
+  - Nâng cấp phiên bản cache buster lên `?v=1.8.7.0`.
+
+### 3. Kết Quả Kiểm Thử (Verification):
+- `node -c static/js/app.js`: Cú pháp JavaScript hợp lệ 100%, không phát sinh cảnh báo lỗi syntax.
+- `python manage.py check`: Hệ thống Django hoạt động bình thường, 0 lỗi cảnh báo.
+- Giao diện báo cáo phản hồi nhanh, mượt mà trên mọi kích cỡ màn hình.
+
+---
+
+## [1.8.6] - 2026-09-26 (Bổ Sung Hệ Thống Bộ Lọc Đa Cột & Sắp Xếp Tương Tác Hai Chiều Trên Toàn Bộ Các Bảng Nghiệp Vụ)
+
+### 1. Bối Cảnh & Mục Tiêu Nhiệm Vụ (/goal):
+- **Yêu cầu người dùng:** Bổ sung các ô lọc vào các bảng để thuận tiện sắp xếp và lọc khi cần tìm dữ liệu, bao gồm số lượng hiển thị, tìm kiếm từ khóa đa trường, lọc theo từng cột riêng biệt và click-to-sort trên thẻ tiêu đề cột (`thead`).
+- **Phạm vi triển khai đồng bộ trên 6 phân hệ cốt lõi:**
+  1. **Bảng Điều Vận Chuyến Xe (Dispatch Trips - `view_dispatch.html`):** Lọc theo Khách hàng, Tài xế/Xe, Trạng thái (Đang chạy, Đã giao, Chờ nhận lệnh, Cắt kéo, Ghép 2 cont 20ft, Cảnh báo DET), Loại hình (Nhập, Xuất, Nội địa), Tìm kiếm đa trường (Mã chuyến, Cont, Seal, Booking, Invoice, Kho). Click sắp xếp theo: Mã/Lịch đóng, Khách hàng, Container, Xe kéo, Chi phí, Trạng thái.
+  2. **Bảng Báo Giá Tuyến Cước CRM (Sales Quotations - `view_sales.html` Subtab 1):** Lọc theo Khách hàng, Trạng thái hợp đồng (Đã duyệt, Chờ duyệt, Thương lượng, Từ chối), Tìm kiếm mã/tuyến/giá. Click sắp xếp theo: Mã báo giá, Khách hàng, Tuyến đường, Đơn giá cước, Sản lượng dự kiến, Doanh thu kế hoạch, Trạng thái.
+  3. **Bảng Đối Soát Chi Phí Kế Toán (Accounting Settlements - `view_accounting.html`):** Lọc theo Khách hàng, Tài xế/Xe, Tình trạng sổ sách (Chờ chốt sổ, Đã khóa sổ), Tìm kiếm từ khóa đa trường. Click sắp xếp theo: Mã chuyến, Khách hàng, Tài xế, Doanh thu, Tổng chi phí, Lợi nhuận gộp, Số lượng hóa đơn HĐĐT, Trạng thái sổ sách.
+  4. **Bảng Quản Lý Xe & Bãi Xe (Fleet Management - `view_fleet.html`):** Lọc theo Loại phương tiện (Đầu kéo, Rơ-moóc), Trạng thái kỹ thuật (Cảnh báo hết hạn đăng kiểm, Đến hạn bảo trì, Hoạt động), Tìm kiếm biển số/tài xế. Click sắp xếp theo: Biển số, Loại, Tài xế, Hạn đăng kiểm, Lịch bảo trì, Trạng thái.
+  5. **Bảng Lương & Nhân Sự Hành Chính (Personnel & Payroll - `view_personnel.html`):** Tìm kiếm theo Mã nhân viên, Họ tên tài xế. Click sắp xếp theo: Mã NV, Tên tài xế, Số chuyến trong tháng, Lương cơ bản, Lương chuyến tạm tính, Tạm ứng, Thực lãnh dự kiến.
+  6. **Bảng P&L Chuyến Xe Trên Dashboard (Executive BI Dashboard - `view_dashboard.html`):** Lọc theo Trạng thái vận hành (Hoàn tất, Đang chạy), Tìm kiếm mã chuyến/khách/xe/cont. Click sắp xếp theo: Mã chuyến, Khách hàng, Tài xế, Container, Doanh thu, Chi phí, Lợi nhuận gộp, Biên lợi nhuận (%), Trạng thái.
+  *(Bảng Đơn Hàng Booking Subtab 2 đã hoàn thiện ở phiên bản 1.8.5)*.
+
+### 2. Chi Tiết Kỹ Thuật Đã Triển Khai:
+- **Tầng Frontend Templates (HTML Toolbar & Accessible Headers):**
+  - Đồng bộ thiết kế Toolbar chuẩn BIM Design Tokens: Nền `bg-slate-50/90`, viền `border-slate-200`, bo góc `rounded-xl`/`rounded-lg`, nhãn trực quan, nút "Đặt lại bộ lọc" kèm icon xoay, huy hiệu hiển thị số lượng bản ghi thực tế: `<strong id="...-filtered-count">X</strong> / <span id="...-total-count">Y</span>`.
+  - Nút Xóa nhanh từ khóa tìm kiếm (Clear search icon `ph-x`) tự động hiển thị khi người dùng nhập dữ liệu và ẩn khi rỗng.
+  - Các cột tiêu đề bảng `thead` hỗ trợ click sắp xếp với con trỏ `cursor-pointer select-none hover:bg-slate-100 transition-colors` kèm icon Phosphor Icons hai chiều (`ph-arrows-down-up`, `ph-arrow-up`, `ph-arrow-down`).
+- **Tầng Frontend JavaScript (`static/js/app.js`):**
+  - Triển khai cấu trúc module hóa độc lập cho từng bảng: mảng cache dữ liệu gốc `raw...`, biến cột đang sắp xếp `...SortColumn`, hướng sắp xếp `...SortDirection` ('asc'/'desc').
+  - Hàm tự động trích xuất danh mục lọc không trùng lặp `populate...FilterDropdowns()` bằng Set và sắp xếp chuẩn tiếng Việt `localeCompare('vi')`, bảo toàn lựa chọn hiện tại của người dùng.
+  - Bộ lọc đa điều kiện kết hợp (AND logic) giữa các dropdowns và ô tìm kiếm từ khóa toàn văn (Full-text keyword matching).
+  - Thuật toán sắp xếp đa kiểu dữ liệu: tự động nhận diện so sánh số (`parseFloat`), so sánh chuỗi tiếng Việt (`localeCompare`), so sánh ngày tháng chuẩn ISO/chuỗi và boolean.
+  - Cập nhật hiệu ứng trực quan icon `thead` theo trạng thái sort hiện hành.
+  - Cập nhật hàm `escapeHtml(text)` chống lỗ hổng Cross-Site Scripting (XSS) khi render dữ liệu bảng.
+- **Cache Busting (`templates/base.html`):** Nâng cấp tham số nạp script lên `?v=1.8.6.0` đảm bảo tất cả trình duyệt người dùng nhận diện ngay mã nguồn mới nhất.
+
+### 3. Kết Quả Kiểm Thử (Verification):
+- `node -c static/js/app.js`: Cú pháp JavaScript hợp lệ 100%, không phát sinh lỗi syntax.
+- `python manage.py test`: **34/34 tests PASS 100% (Ran 34 tests in 12.8s, OK)**.
+- Toàn bộ 6 bảng nghiệp vụ hoạt động ổn định, mượt mà và trực quan.
+
+---
+
+## [1.8.5] - 2026-09-25 (Chuẩn Hóa Nhập Giờ 24h, Khắc Phục Layout Vỡ Cột, Hỗ Trợ Đính Kèm Đa File & Bộ Lọc Cột / Sắp Xếp Bảng Booking)
+
+### 1. Bối Cảnh & 4 Yêu Cầu Nâng Cấp Trải Nghiệm Người Dùng:
+1. **Chuẩn hóa định dạng ô giờ hẹn kho:** Thay thế trường text tự do bằng trường nhập giờ chuẩn 24h (`<input type="time">`) kèm danh sách nút chọn nhanh giờ phổ biến (08:00, 10:00, 13:30, 15:00, 20:00).
+2. **Khắc phục triệt để lỗi rớt dòng & vỡ bố cục Form Booking:** Chuyển đổi khối thông tin container & tàu từ grid 4 cột chia đều sang grid 12 cột co giãn linh hoạt (`sm:col-span-3`, `sm:col-span-4`, `sm:col-span-3`, `sm:col-span-2`), nhãn không rớt dòng chữ `*`, đồng bộ chiều cao và khoảng cách hiển thị.
+3. **Nâng cấp đính kèm đa tệp (Multi-file Support):** Hỗ trợ tải lên nhiều file (PDF, hình ảnh) cùng lúc trên cả Đơn hàng Sale (Booking) và Lệnh điều động (Trip); có danh sách hiển thị thẻ file dạng badges, xem trước và xóa lẻ từng file.
+4. **Bộ lọc thông minh theo từng cột & Sắp xếp theo ngày/cột:** Bổ sung thanh công cụ lọc trực quan (Khách hàng, Hãng tàu, Loại cont, Trạng thái/Gấp/Cắt kéo, Tìm kiếm từ khóa) và click tiêu đề cột để sắp xếp đa chiều (Ngày hẹn đóng, Tiến độ điều xe, Hạn cắt máng CY, Cước thỏa thuận) kèm icon đảo chiều trực quan.
+
+### 2. Chi Tiết Kỹ Thuật Đã Triển Khai:
+- **Cơ sở dữ liệu & Models (`apps/customers/models.py` & Migration `customers.0007_bookingdocument`):**
+  - Thêm model `BookingDocument` kế thừa `TimeStampedModel`, `SoftDeleteModel` liên kết ForeignKey với `BookingOrder`.
+  - Quản lý tệp đính kèm với `file`, `file_name`, `file_size`, `content_type`, bảo vệ an toàn dữ liệu và tuân thủ nguyên tắc không hard-delete.
+- **Backend APIs (`apps/dispatch/api_views.py` & `config/urls.py`):**
+  - Cập nhật `SalesAPIView.post` và `BookingOrderDetailAPIView.put`: Tiếp nhận `request.FILES.getlist('booking_files')`, kiểm tra tính hợp lệ an ninh tệp với `validate_uploaded_document()`, lưu trữ tự động vào `BookingDocument` đồng thời duy trì trường `booking_file` để tương thích ngược.
+  - Cập nhật `BookingOrderDetailAPIView.get`: Trả về mảng `documents` gồm danh sách file chi tiết kèm kích thước định dạng.
+  - Thêm API `BookingDocumentDeleteAPIView` (`/api/bookings/<int:pk>/documents/<int:doc_id>/`): Cho phép xóa mềm từng tài liệu đính kèm lẻ.
+- **Frontend Templates & UI Layout:**
+  - `templates/components/modal_booking.html`: Tái cấu trúc grid 12 cột, chuyển `booking-loading-time` sang `type="time"` (mặc định 08:00) kèm các button chọn nhanh, cấu hình `<input type="file" multiple>` kèm container `#booking-order-files-list`.
+  - `templates/components/modal_create_trip.html`: Đổi `inp-load-time` sang `type="time"` và hỗ trợ đính kèm đa tệp.
+  - `templates/views/view_sales.html`: Tích hợp Toolbar bộ lọc đa cột (`#filter-bk-customer`, `#filter-bk-shipping-line`, `#filter-bk-cont-size`, `#filter-bk-status`, `#filter-bk-search`) và các tiêu đề cột có thể bấm sắp xếp với `toggleBookingSort()`.
+- **Frontend JavaScript Logic (`static/js/app.js`):**
+  - Bổ sung hàm tiện ích `setBookingTime(timeStr)` cho phép 1-chạm thiết lập giờ hẹn kho.
+  - Xây dựng hệ thống quản lý danh sách file `saleBookingFilesList`, `saleBookingExistingDocs`, `tripBookingFilesList` với các thao tác thêm, xóa lẻ, render badge hiển thị kích thước và xem trực tiếp.
+  - Tích hợp logic lọc dữ liệu tức thì `applyBookingFilters()`, đếm số đơn hiển thị (`#booking-filtered-count`), tự động trích xuất danh mục lọc `populateBookingFilterDropdowns()`.
+  - Xây dựng thuật toán sắp xếp động `toggleBookingSort()` hỗ trợ so sánh ngày tháng, chuỗi và số thực (`price`, `progress_percent`).
+
+### 3. Kết Quả Kiểm Thử (Verification):
+- `python manage.py test`: **34/34 tests PASS 100% (Ran 34 tests in 11.6s, OK)**.
+- Giao diện đáp ứng đầy đủ tiêu chuẩn UI/UX quốc tế hiện đại, khoảng cách và độ tương phản đạt chuẩn.
+
+---
+
+## [1.8.4] - 2026-09-25 (Kiểm Thử Giả Lập Toàn Diện E2E & Khắc Phục Lỗi Xác Thực Token, Hoàn Thiện Sửa Lệnh Điều Động & Chuẩn Hóa Chi Phí Chi Hộ)
+
+### 1. Bối Cảnh & Mục Tiêu Nhiệm Vụ (Autonomous QA & Simulation Loop):
+- **Vai trò:** Kiểm thử viên độc lập (Tester / QA), chạy giả lập tất cả tình huống và luồng nghiệp vụ trên nền tảng (Báo giá, Đơn hàng/Booking, Lệnh điều động, Sửa điều động, Chi phí vận hành, Chi hộ khách hàng, Khóa sổ kế toán, Mốc lưu xe sau 0h, Danh mục cài đặt Master Data).
+- **Phát hiện và xử lý lỗi gốc (Root Causes):**
+  - Khắc phục triệt để lỗi Toast thông báo `Given token not valid for any token type` xuất hiện khi token JWT trong `localStorage` hết hạn nhưng người dùng vẫn đang có phiên làm việc (Session) hợp lệ trên trình duyệt.
+  - Hoàn thiện tính năng Sửa Lệnh Điều Động (`PATCH`/`PUT`) cho phép điều phối viên và quản trị viên cập nhật thông tin chuyến xe đã phát lệnh mà không làm đứt gãy dữ liệu.
+  - Sửa lỗi tính toán P&L chi phí vận hành: Khoản chi hộ khách hàng (`is_on_behalf_of_customer=True`) trước đây bị tính nhầm vào chi phí công ty (`cached_expense`), dẫn đến biên lợi nhuận bị sai lệch.
+
+### 2. Chi Tiết Khắc Phục Lỗi & Nâng Cấp Kỹ Thuật:
+- **Xác thực linh hoạt & Chống lỗi Token hết hạn (Authentication Resilience):**
+  - **Tầng Backend (`core/security.py` & `config/settings.py`):** Xây dựng `GracefulJWTAuthentication` kế thừa SimpleJWT. Khi JWT token trong header bị hỏng hoặc hết hạn, cơ chế này tự động kiểm tra xem request có phiên Session đăng nhập hợp lệ không. Nếu có, hệ thống graceful fallback sang Session User thay vì ngắt luồng và ném mã lỗi HTTP 401.
+  - **Tầng Frontend (`static/js/app.js`):**
+    - Nâng cấp `getAuthHeaders()` tự động giải mã `exp` của JWT token. Nếu token đã hết hạn, hệ thống tự động dọn dẹp `localStorage` và không gửi header hỏng lên server.
+    - Nâng cấp `fetchWithAuth()` bắt mã lỗi 401, tự xóa token lỗi và tự động thử lại (retry) một lần nữa với Session cookie.
+    - Chuẩn hóa toàn bộ 26 lệnh `fetch(...)` rời rạc trên toàn bộ các phân hệ sang hàm trung tâm `fetchWithAuth(...)`.
+- **API Sửa Lệnh Điều Động Toàn Diện (`apps/dispatch/api_views.py`):**
+  - Mở rộng method `patch()` và bổ sung method `put()` cho `TripDetailAPIView` (`/api/trips/<str:trip_code>/`).
+  - Hỗ trợ cập nhật đầy đủ các trường: `container_number`, `seal_number`, `booking_or_bill`, `pickup_location`, `warehouse_location`, `dropoff_location`, `driver_id`, `vehicle_id`, `dropoff_driver_id`, `dropoff_vehicle_id`, `special_notes`, `vgm_weight`, `container_condition`, `damage_description`, `is_twin_container`, cùng các mốc thời gian và trạng thái chuyến xe.
+- **Tách Bạch Chi Phí Chi Hộ Khách Hàng (Freight Accounting Sanctity):**
+  - Cập nhật phương thức `update_financials()` trong `apps/dispatch/models.py` và API `TripDetailAPIView.get`: Chỉ tổng hợp các khoản chi thực tế do công ty chi trả (`is_on_behalf_of_customer=False`) vào `cached_expense` và tỷ suất lợi nhuận `cached_profit`/`cached_margin_percent`.
+  - Tách riêng mục `total_reimbursable` và danh sách `reimbursable_items` để kế toán dễ dàng theo dõi và đối soát thu lại từ khách hàng.
+- **Hỗ Trợ Đa Định Dạng Dữ Liệu Parser Classes (`apps/dispatch/api_views.py`):**
+  - Khai báo đầy đủ `parser_classes = (MultiPartParser, FormParser, JSONParser)` trên các view tiếp nhận form upload: `BookingOrderDetailAPIView`, `SalesAPIView`, đảm bảo nhận trơn tru cả `application/json` lẫn `multipart/form-data` qua các phương thức `POST`, `PUT`, `PATCH`.
+  - Bổ sung property tiện ích `remaining_containers` cho model `BookingOrder`.
+
+### 3. Bộ Kiểm Thử Giả Lập E2E Toàn Diện (`core/tests.py`):
+Xây dựng và tích hợp 6 kịch bản giả lập nghiệp vụ quy mô lớn:
+1. `test_simulation_sales_and_booking_full_flow`: Tạo báo giá -> Sửa báo giá -> Chốt duyệt -> Tạo Booking -> Sửa Booking kèm đính kèm file PDF -> Chuyển trạng thái -> Xóa mềm an toàn.
+2. `test_simulation_dispatch_trip_and_editing`: Tạo lệnh điều động -> Sửa thông tin cont, seal, tuyến, ghi chú -> Chuyển đổi trạng thái theo máy trạng thái chuẩn logistics -> Báo mốc cổng kho 1-chạm.
+3. `test_simulation_expenses_and_settlement_workflow`: Thêm chi phí nâng cont -> Thêm chi phí cược cont chi hộ KH -> Sửa chi phí -> Khóa sổ kế toán -> Kiểm tra cơ chế phòng thủ chặn sửa/xóa khi đã khóa sổ -> Mở khóa sổ -> Xóa chi phí soft-delete.
+4. `test_simulation_overnight_detention_and_auto_allowance`: Cập nhật mốc chờ hạ cont sau 0h -> Tự động tính phí lưu xe cho khách & tự động sinh chi phí phụ cấp tài xế trực xe đêm.
+5. `test_simulation_master_data_full_crud`: Giả lập quy trình CRUD danh mục Cảng/Kho (Location), Khách Hàng (Customer), Phương Tiện Đầu Kéo (Vehicle).
+6. `test_simulation_graceful_jwt_and_session_resilience`: Giả lập tình huống client gửi token hỏng kèm Session cookie -> Hệ thống phục hồi trả về 200 OK.
+
+### 4. Kết Quả Xác Minh (Verification):
+- `python manage.py test`: **34/34 tests PASS 100% (Ran 34 tests in 10.3s, OK)**.
+- Dữ liệu vận chuyển và chuỗi truy vết POD được bảo toàn tuyệt đối theo chuẩn `AGENTS.md`.
+
+---
+
+## [1.8.3] - 2026-09-25 (Đính Kèm File Booking / Lệnh Cấp Rỗng Từ Khách Hàng - Ảnh Hoặc PDF & Kế Thừa Tự Động Sang Điều Vận)
+
+### 1. Bối Cảnh Nghiệp Vụ & Nhu Cầu Thực Tế:
+- Khi khách hàng đặt đơn vận chuyển (hàng xuất hoặc hàng nhập), khách hàng thường gửi file Booking confirmation từ hãng tàu hoặc Lệnh cấp vỏ rỗng dưới dạng file PDF hoặc hình ảnh chụp/scan.
+- Điều phối viên và Tài xế cần file gốc này để xuất trình tại bãi/depot/cảng khi lấy vỏ rỗng hoặc đối chiếu số booking, hãng tàu, hạn hạ CY.
+- Cần có cơ chế đính kèm tệp trực tiếp tại bước Tạo Lệnh Điều Động (`modal_create_trip.html`) hoặc bước Tiếp nhận Đơn hàng Sale (`modal_booking.html`), đồng thời tự động kế thừa và tạo chứng từ pháp lý trong hồ sơ chuyến xe.
+
+### 2. Thiết Kế Cơ Sở Dữ Liệu & Kiến Trúc Backend:
+- **Mở rộng Model `DispatchTrip` (`apps/dispatch/models.py`):**
+  - Bổ sung trường `booking_file = models.FileField(upload_to='booking_files/%Y/%m/', null=True, blank=True)` (Migration: `dispatch.0009_dispatchtrip_booking_file`).
+- **Mở rộng Model `BookingOrder` (`apps/customers/models.py`):**
+  - Bổ sung trường `booking_file = models.FileField(upload_to='booking_files/%Y/%m/', null=True, blank=True)` (Migration: `customers.0006_bookingorder_booking_file`).
+- **Bổ sung Danh mục Chứng từ Pháp lý `TripDocument` (`apps/documents/models.py`):**
+  - Thêm loại chứng từ `BOOKING_NOTE = 'BOOKING_NOTE', 'File Booking / Lệnh cấp rỗng'` (Migration: `documents.0002_alter_tripdocument_document_type`).
+- **Bảo Mật & Xác Thực An Ninh Tệp (Defensive Security Validation):**
+  - Áp dụng `validate_uploaded_document` (Tiêu chuẩn 7 & 8 `SECURITY_AUDIT.md`): giới hạn dung lượng $\le 5\text{MB}$, chống giả mạo đuôi tệp qua Magic Bytes (`%PDF`, `\x89PNG`, `\xff\xd8\xff`), xác thực cấu trúc ảnh thực tế bằng Pillow `Image.verify()`.
+- **Tự Động Sinh Chứng Từ Pháp Lý Khép Kín:**
+  - Khi chuyến xe được tạo với file upload mới HOẶC kế thừa từ `BookingOrder`, backend tự động tạo 1 bản ghi `TripDocument` loại `BOOKING_NOTE`, gắn cờ `is_verified=True`.
+- **Kế Thừa 2 Chiều (Dual Inheritance):**
+  - Nếu Sale đã upload file khi tiếp nhận Booking, Điều phối viên chọn Booking trong dropdown sẽ tự động kế thừa file Booking mà không cần upload lại. Nếu chuyến tạo thủ công, Điều phối viên có thể chọn file trực tiếp từ máy tính.
+
+### 3. Nâng Cấp Giao Diện & Tương Tác Người Dùng (Frontend UX/UI):
+- **Modal Tạo Lệnh Điều Động (`modal_create_trip.html`):**
+  - Khu vực tải file trực quan, hỗ trợ chọn file, hiển thị file badge (icon PDF/Image, tên file, kích thước định dạng KB/MB), link "Xem" mở file trong tab mới và nút "Hủy" file đã chọn.
+  - Tự động hiển thị file badge kế thừa khi người dùng chọn một Booking đã có sẵn file.
+- **Modal Tiếp Nhận Đơn Hàng / Booking Sale (`modal_booking.html`):**
+  - Thêm khu vực tải file booking cho Sale Admin / CS khi tạo hoặc chỉnh sửa đơn hàng.
+- **Trang Chi Tiết Chuyến Xe (`view_trip_detail.html` & `renderTripDetail` trong `app.js`):**
+  - Hiển thị chứng từ `Lệnh Booking / Cấp Rỗng` với icon PDF màu đỏ/hồng nổi bật, huy hiệu `Đã Nghiệm Thu` và nút `Xem / Tải chứng từ` (`<a target="_blank">`) mở trực tiếp file chứng từ gốc.
+
+---
+
+## [1.8.2] - 2026-09-25 (Khắc Phục & Nâng Cấp Dropdown Chọn Tài Xế Trong Bảng Kê Chi Phí: Mặc Định Tài Xế Đang Đăng Nhập & Hỗ Trợ Admin Chọn Tài Xế Khác)
+
+### 1. Khắc Phục Lỗi Dropdown Chọn Tài Xế & Chặng Bị Kẹt:
+- **Nguyên nhân cốt lõi:** Biến trạng thái toàn cục `currentActiveTripData` được khai báo nhưng chưa được gán giá trị sau khi gọi API xem chi tiết chuyến xe trong hàm `viewTripDetail` (`static/js/app.js`), dẫn đến hàm `populateExpenseLegOptions` thoát sớm và giữ nguyên nhãn `-- Đang tải thông tin xe & tài xế --`.
+- **Giải pháp xử lý:** Gán tức thời `currentActiveTripData = trip;` ngay sau khi nhận phản hồi từ endpoint `/api/trips/<tripCode>/`, kích hoạt quá trình render danh sách tài xế chuẩn xác 100%.
+
+### 2. Tự Động Nhận Diện Tài Xế Đăng Nhập & Linh Hoạt Cho Admin:
+- **Tiêm Ngữ Cảnh Người Dùng Hiện Tại (`window.CURRENT_USER`):**
+  - Tại `templates/base.html`, tiêm biến ngữ cảnh `window.CURRENT_USER` chứa đầy đủ: `id`, `username`, `role`, `department`, `employee_id`, `full_name`, `nickname`.
+- **Cơ chế Phân Quyền & Tự Động Chọn (Auto-Select):**
+  - **Trường hợp Tài xế hiện trường đăng nhập (`role === 'DRIVER'`):** Dropdown chi phí tự động nhận diện và chọn đúng chặng/tài xế tương ứng với ID nhân viên hiện tại (`LEG_1`, `LEG_2` nếu chuyến cắt kéo hoặc `DRIVER_<id>`).
+  - **Trường hợp Admin / Điều phối viên văn phòng:** Hệ thống mặc định chọn chặng chính của chuyến xe (`LEG_1` hoặc `ENTIRE`), đồng thời hiển thị nhóm `<optgroup>` toàn bộ Tài xế Đội xe (`available_drivers`) để Admin có thể chỉ định bất kỳ tài xế nào phát sinh chi phí.
+- **Tổ Chức Giao Diện Chuẩn UX `<optgroup>`:**
+  - Nhóm 1: `Tài xế & Chặng theo Chuyến xe` (`LEG_1`, `LEG_2`, `ENTIRE`, `COMPANY`).
+  - Nhóm 2: `Tất cả Tài xế Đội xe (Admin / Điều phối chọn)` (Hiển thị đầy đủ Họ tên, Biệt danh, Mã nhân viên và Biển số xe gán).
+
+### 3. Đồng Bộ Dữ Liệu Chi Phí Backend (Post & Put API):
+- **Phía Frontend (`submitAddExpense` & `submitEditExpense`):**
+  - Bóc tách chính xác `driver_id` và `vehicle_id` từ thuộc tính `data-*` của option được chọn và gửi kèm payload JSON.
+- **Phía Backend (`TripAddExpenseAPIView` & `TripExpenseDetailAPIView`):**
+  - Đã tích hợp sẵn logic gán đích danh `driver` và `vehicle` theo `driver_id` và `vehicle_id`, tự động suy luận phương tiện gán sẵn nếu không chỉ định biển số xe riêng biệt.
+  - Hỗ trợ lưu trữ và hiển thị chính xác trên Bảng kê chi phí đối soát chuyến xe.
+
+---
+
+## [1.8.1] - 2026-09-25 (Bổ Sung 2 Mốc Thời Gian: Theo Dõi Xe Chờ Hạ Cont Sau 0H, Tính Phí Lưu Xe & Phụ Cấp Tài Xế)
+
+### 1. Nâng Cấp Chuỗi Tiến Độ Vận Chuyển Từ 5 Mốc Lên 7 Mốc Khép Kín:
+- **Bối cảnh nghiệp vụ thực tiễn:**
+  - Xe đã lấy cont ra khỏi kho khách hàng (Mốc 5: Ra thực tế), nhưng kho hoặc khách hàng yêu cầu chờ đến sau 0h đêm (qua ngày hôm sau) mới được hạ cont tại cảng/depot (do chờ mở bãi CY cảng xuất lúc 0h, cấm tải giờ cao điểm, hoặc chờ thủ tục thông quan hải quan).
+  - Nghiệp vụ này gây giam xe, phát sinh rủi ro neo đầu kéo, tài xế phải trực cabin đêm và tiềm ẩn nguy cơ phạt vượt hạn Free DET của hãng tàu.
+- **Bổ sung 2 mốc thời gian chuẩn hóa:**
+  - **Mốc 6: `6. HẸN HẠ BÃI (SAU 0H)`** (`dropoff_appointment_time` / `dropoff_appointment_at`): Ghi nhận thời điểm kho/khách hàng cho phép hạ cont (VD: `Sau 00:00` hoặc `01:00 ngày N+1`).
+  - **Mốc 7: `7. HẠ BÃI THỰC TẾ`** (`actual_dropoff_time` / `actual_dropoff_at`): Ghi nhận thời điểm cẩu hạ cont xuống cảng/depot hoàn tất (có phiếu EIR hạ xác nhận).
+- **Giao diện trực quan trên Màn hình Chi tiết Chuyến xe (`view_trip_detail.html`):**
+  - Chuyển đổi grid tiến độ từ 5 ô sang 7 ô (`grid-cols-2 sm:grid-cols-7`).
+  - Phối màu chuẩn BIM Tokens: Mốc 6 màu vàng hổ phách (`amber-50/border-amber-300`), Mốc 7 màu ngọc teal (`teal-50/border-teal-300`).
+  - Bổ sung Huy hiệu cảnh báo nổi bật: `🚨 Neo xe chờ hạ sau 0h` (`#detail-overnight-badge`).
+
+### 2. Tự Động Hóa 2 Chiều Tài Chính (Tính Phí Lưu Xe & Phụ Cấp Tài Xế):
+- **Phát hiện Neo xe qua đêm (Overnight Detection):**
+  - Tự động gắn cờ `is_overnight_detention=True` và tính số giờ chờ (`overnight_wait_hours`) khi mốc hạ cont vượt qua 00:00 hoặc cách mốc ra kho $\ge 6$ tiếng.
+- **Chiều Thu Khách Hàng (Receivable Billing):**
+  - Lưu trữ định mức phụ phí lưu xe/neo cont tính cho khách hàng (`detention_fee_customer`, mặc định đề xuất 800.000đ/đêm) làm cơ sở xuất hóa đơn phụ thu.
+- **Chiều Chi Trả Tài Xế (Driver Allowance):**
+  - Lưu trữ phụ cấp trực đêm cho tài xế (`detention_driver_allowance`, mặc định đề xuất 250.000đ/đêm).
+  - Tùy chọn tự động tạo khoản `TripExpense` ("Phụ cấp lưu đêm trực xe sau 0h") vào Bảng kê chi phí chuyến xe, tự động đồng bộ P&L và kết nối phân hệ Kế toán/Lương.
+- **Hộp thoại Cập nhật Nhanh (`#modal-detention`):**
+  - Cho phép Điều độ viên và Tài xế cập nhật nhanh mốc hẹn hạ, mốc hạ thực tế, số giờ neo xe và lý do neo xe chỉ với 1 thao tác.
+- **Tích hợp Giả lập App Tài xế Hiện trường (Driver Simulator):**
+  - Bổ sung 2 nút bấm thao tác nhanh 1-chạm cho tài xế: `🌙 Chờ sau 0h` (`OVERNIGHT_WAIT`) và `⚓ Đã hạ cont` (`DROPOFF_COMPLETED`), đồng bộ trạng thái ngay lập tức về trung tâm điều hành.
+
+---
+
+## [1.8.0] - 2026-09-25 (Khắc Phục Lỗi Nút Lưu Báo Giá / Đơn Hàng & Phân Giải Khách Hàng Thông Minh)
+
+### 1. Khắc Phục Lỗi Nút Lưu Báo Giá & Đơn Hàng (Modal Báo Giá & Booking):
+- **Phân giải định dạng Khách Hàng thông minh (`resolve_customer`):**
+  - Trước đây, khi dropdown hiển thị định dạng `Tên Khách Hàng (Mã Code)` như `ABC (CUST_20260921094535)`, backend tìm kiếm trực tiếp chuỗi này trong trường `Customer.name` hoặc `Customer.code` dẫn đến không khớp, gây sai lệch hoặc lỗi 400.
+  - Xây dựng hàm `resolve_customer` bóc tách linh hoạt bằng regex `^(.*?)\s*\((.*?)\)$`, hỗ trợ tra cứu chính xác theo Customer ID, Code, Name hoặc định dạng kết hợp `Name (Code)`.
+  - Áp dụng đồng bộ cho toàn bộ các endpoint: Tạo Lệnh Điều Động (`TripListCreateAPIView`), Tạo Báo Giá & Đơn Hàng (`SalesAPIView`), Cập nhật Báo Giá (`QuotationDetailAPIView`) và Cập nhật Đơn Hàng (`BookingOrderDetailAPIView`).
+- **Khắc phục lỗi xác thực JWT hết hạn (Authentication Fallback):**
+  - Chuyển đổi toàn bộ các hàm gọi API trong phân hệ Sales (`saveQuotation`, `changeQuotationStatus`, `deleteQuotation`, `saveBooking`, `changeBookingStatus`, `deleteBooking`, `loadSalesData`) từ `fetch` trực tiếp sang wrapper `fetchWithAuth`.
+  - Cơ chế tự động fallback: Khi `access_token` trong `localStorage` hết hạn, `fetchWithAuth` tự động gỡ bỏ header `Authorization` bị lỗi và xác thực liên tục qua Django Session Cookie, ngăn chặn triệt để mã lỗi HTTP 401 Unauthorized.
+- **Sửa lỗi cú pháp Backend trong `BookingOrderDetailAPIView.put`:**
+  - Bổ sung định nghĩa biến `data = request.data` bị thiếu trước khi đọc các thuộc tính request, loại bỏ hoàn toàn lỗi tiềm ẩn `NameError: name 'data' is not defined`.
+- **Cải thiện trải nghiệm người dùng & Chống xung đột Form (UX/UI):**
+  - Bổ sung thuộc tính `novalidate` vào `<form id="form-quotation">` và `<form id="form-booking">`.
+  - Chuyển nút bấm submit sang `type="button"` với sự kiện `onclick` trực tiếp, đi kèm hiệu ứng loading spinner và tự động vô hiệu hóa (`disabled`) khi đang gửi yêu cầu để tránh bấm trùng lặp (double submit).
+
+### 2. Kiểm Thử Tự Động & Kiểm Chứng (Goal Verification):
+- Bổ sung test case toàn diện `test_resolve_customer_and_quotation_booking_crud` trong `core/tests.py`.
+- Toàn bộ 24/24 bài test hệ thống đã chạy và vượt qua 100% (`Ran 24 tests in 7.636s - OK`).
+- Các phân hệ `apps.dispatch`, `apps.billing`, `apps.customers`, `apps.master_data` đều đạt chuẩn chất lượng vận hành.
+
+---
+
+## [1.7.9] - 2026-09-25 (Chế Độ Ghép 2 Cont 20ft, Quản Lý Hạn Free DEM/DET Cảng & Giám Định Vỏ Cont EIR)
+
+### 1. Nghiệp Vụ Chở Ghép 2 Container 20ft (Twin 20ft Drayage / Kẹp 20ft):
+- **Cơ chế Toggle kích hoạt linh hoạt (UX Chuẩn TMS):**
+  - Bổ sung nút toggle kiểm soát `#chk-twin-cont` tại Section 1 của Modal Tạo Lệnh Điều Động (`templates/components/modal_create_trip.html`).
+  - Mặc định ở trạng thái tắt (chạy 1 cont tiêu chuẩn 40HC/40GP/20ft). Khi người dùng bật toggle, hệ thống kích hoạt hàm `toggleTwinContMode(true)`:
+    - Tự động chuyển đổi phân loại container thành `2x20DC` (Kẹp 2x20ft).
+    - Mở khối form container thứ 2 (`#section-twin-cont-2`) với hiệu ứng mượt mà.
+    - Cung cấp đầy đủ các trường dữ liệu độc lập cho Cont 2: Số Cont (`inp-cont-2`), Số Chì (`inp-seal-2`), Số Booking/BL (`inp-booking-2`), Trọng lượng VGM (`inp-vgm-2`) và Ghi chú giao nhận Cont 2 (`inp-cargo-notes-2`).
+  - Phòng chống lỗi validation ngầm của trình duyệt bằng cách không dùng thuộc tính HTML5 `required` trên các trường bị ẩn.
+- **Hiển thị trực quan tại Bảng Điều Vận & Chi Tiết Chuyến Xe:**
+  - Bảng danh sách chuyến (`trips-tbody`): Hiển thị badge nhận diện `2x20ft` kèm chi tiết số vỏ Cont 2 và số seal 2 ngay dưới dòng Cont chính.
+  - Màn hình chi tiết chuyến xe (`view_trip_detail.html`): Tự động hiển thị thẻ card chuyên dụng `#detail-twin-container-card` với 2 cột đối sánh rõ ràng giữa Cont 1 và Cont 2.
+
+### 2. Quản Lý Hạn Miễn Phí DEM/DET Cảng & Hãng Tàu (Port & Carrier Free-time Tracking):
+- **Cấu hình & Tự động tính toán hạn chót:**
+  - Bổ sung trường dữ liệu `det_free_days` (mặc định 3 ngày mượn vỏ) và `dem_free_days` (mặc định 3 ngày lưu bãi) trên `DispatchTrip`.
+  - Tự động kế thừa số ngày Free DET/DEM từ Booking khi chọn đơn hàng từ phân hệ Kinh Doanh.
+  - Tự động đề xuất ngày hết hạn (`det_expiry_date = today + free_days`) qua hàm `onFreeDaysChange()`.
+- **Hệ thống cảnh báo rủi ro 5 cấp độ (`calculate_dem_det_status`):**
+  - `SAFE`: Còn > 2 ngày mượn vỏ (Xanh lá).
+  - `ATTENTION`: Còn 2 ngày Free DET (Vàng cảnh báo).
+  - `WARNING`: Còn 1 ngày Free DET (Cam nguy cơ).
+  - `TODAY`: Hôm nay đến hạn cuối hạ rỗng (Đỏ cam nhấp nháy).
+  - `OVERDUE`: ĐÃ QUÁ HẠN PHẠT TIỀN (Đỏ đậm animate-pulse kèm số ngày vượt hạn).
+  - Cảnh báo trực tiếp trên bảng điều vận giúp điều phối viên ưu tiên xếp xe hạ cont trước 17H.
+
+### 3. Giám Định Tình Trạng Vỏ Cont Hiện Trường (EIR Inspection & Damage Log):
+- **Bảo vệ quyền lợi pháp lý vận tải:**
+  - Ghi nhận trạng thái vỏ cont ngay khi bốc tại Cảng/Depot: `GOOD` (Nguyên vẹn / Đạt chuẩn), `DAMAGED` (Có hư hỏng từ trước / Lập biên bản EIR), `CLEANING_REQUIRED` (Bẩn / Cần vệ sinh).
+  - Cho phép nhập chi tiết mô tả tổn thất (`damage_description`) làm bằng chứng miễn trừ trách nhiệm bồi thường khi giao vào kho khách hoặc hạ rỗng.
+  - Tích hợp đồng bộ lên màn hình chi tiết chuyến xe (`#detail-dem-det-eir-card`).
+
+### 4. Cơ Sở Dữ Liệu & Kiểm Thử Tự Động (Migration & Verification):
+- **Cơ sở dữ liệu:** Tạo migration `0008_dispatchtrip_booking_or_bill_2_and_more.py` bổ sung 12 trường mới cho `DispatchTrip`.
+- **API Backend:** Cập nhật `TripListCreateAPIView` (hỗ trợ lọc/tìm kiếm theo số Cont 2) và `TripDetailAPIView`.
+- **Kiểm thử tự động:** Bổ sung `test_twin_container_creation_and_detail` và `test_dem_det_status_calculation` vào `core/tests.py`.
+- **Kết quả kiểm thử:** Toàn bộ 23/23 bài test tự động vượt qua 100% (`Ran 23 tests in 7.797s - OK`).
+
+---
+
+## [1.7.8] - 2026-09-25 (Chuẩn Hóa Ngôn Ngữ Sản Phẩm Production, Sửa Nút Phát Lệnh & Hoàn Thiện Liên Kết Ngữ Nghĩa)
+
+### 1. Rà Soát & Chuẩn Hóa Ngôn Ngữ Doanh Nghiệp (Production-Ready Language Standard):
+- **Loại bỏ triệt để từ ngữ dev/mock/thử nghiệm:**
+  - Rà soát toàn bộ hệ thống HTML/JS, xóa sạch các cụm từ kỹ thuật mang tính thử nghiệm như `"(Lưu Vào Database Thật)"`, `"Lưu Vào DB & Phát Lệnh Zalo"`, `"PostgreSQL 16 Live"`, `"Đăng nhập nhanh (Demo Roles)"` và các ghi chú debug.
+  - Chuẩn hóa thành ngôn ngữ giao diện nghiệp vụ TMS vận tải chuyên nghiệp:
+    - Tiêu đề modal: **"Tạo Lệnh Điều Động Mới"**.
+    - Nút phát lệnh: **"Xác Nhận & Phát Lệnh Zalo"**.
+    - Modal OCR: **"Xác Nhận & Lưu Chứng Từ"**.
+    - Footer Sidebar: **"Hệ Thống Trực Tuyến"**.
+    - Cổng đăng nhập: **"Chọn vai trò truy cập nhanh"**.
+
+### 2. Xử Lý Triệt Để Nút "Xác Nhận & Phát Lệnh" Trong Modal Tạo Chuyến (Hình 2):
+- **Nguyên nhân sự cố:**
+  - Thẻ form ban đầu chứa các thuộc tính HTML5 `required` trên các dropdown (`inp-customer`, `inp-pickup`, `inp-warehouse`, `inp-driver`). Khi người dùng kích hoạt Toggle "Cắt Kéo (Drop & Hook)", khối trực tiếp bị ẩn (`display: none`), khiến trình duyệt Chrome/Edge kích hoạt lỗi ngầm *"An invalid form control with name='' is not focusable"* và hủy bỏ sự kiện submit mà không có phản hồi thị giác.
+- **Giải pháp xử lý:**
+  - Loại bỏ các thuộc tính HTML5 `required` thừa, bàn giao toàn bộ quy trình kiểm tra cho cơ chế **Defensive Form Validation** của JavaScript (`submitNewTrip()`).
+  - Đổi nút submit thành `<button type="button" id="btn-submit-trip" onclick="submitNewTrip()" class="btn-bim-primary px-6 py-2.5">` giúp loại bỏ hoàn toàn nguy cơ bị trình duyệt chặn sự kiện submit.
+  - Tích hợp thêm tham số `vehicle` từ dropdown đầu kéo Chặng 1 (`inp-vehicle-leg1`) vào payload gửi lên API `/api/trips/`, giúp backend lưu chính xác xe được chỉ định.
+  - Bổ sung hiệu ứng loading spinner và vô hiệu hóa nút trong khi gửi request để chống nhấn đúp (double-submission).
+
+### 3. Xử Lý Lỗi Nhấn Dòng Chuyến Xe Không Mở Chi Tiết & Chuẩn Hóa Toàn Bộ Liên Kết (Hình 3):
+- **Nguyên nhân sự cố:**
+  - Cột mã chuyến xe ban đầu chỉ là thẻ `<span>` tĩnh, thiếu trải nghiệm liên kết trực quan.
+  - Hàm `viewTripDetail()` lấy JWT Bearer token trực tiếp từ `localStorage`. Nếu token đã hết hạn, DRF trả về HTTP 401 khiến request bị ném Exception và gián đoạn luồng hiển thị view chi tiết, mặc dù Django Session Cookie của người dùng vẫn hoàn toàn hợp lệ.
+  - Một số thao tác gán `innerText` trực tiếp vào DOM không có cơ chế bắt lỗi an toàn (defensive check).
+- **Giải pháp xử lý:**
+  - Xây dựng wrapper `fetchWithAuth(url, options)`: Tự động gửi JWT + Session Cookie + CSRF; nếu gặp HTTP 401 từ token cũ, tự động fallback 1 lần sang Session Auth mà không làm gián đoạn người dùng.
+  - Bọc mã chuyến xe thành thẻ link ngữ nghĩa chuẩn:
+    `<a href="/dispatch/trips/${trip.hashid || trip.id}" onclick="event.preventDefault(); event.stopPropagation(); viewTripDetail('${trip.hashid || trip.id}');">` kèm icon mũi tên vi mô và hiệu ứng hover.
+  - Bổ sung sự kiện click trên toàn dòng `<tr>` có điều kiện loại trừ các interactive controls.
+  - Chuẩn hóa toàn bộ Sidebar (`templates/components/sidebar.html`): Thay thế toàn bộ `<button onclick="switchTab(...)">` bằng thẻ `<a href="/..." onclick="event.preventDefault(); switchTab('...');">` chuẩn Clean Semantic URL (`/`, `/sales`, `/dispatch`, `/fleet`, `/hr`, `/accounting`, `/customs`, `/settings`).
+  - Chuẩn hóa nút quay lại trong `view_trip_detail.html`: Đổi sang thẻ `<a href="/dispatch" onclick="event.preventDefault(); backToTrips();">`.
+  - Bọc toàn bộ các thao tác gán dữ liệu DOM trong `viewTripDetail()` bằng helper `setText()` an toàn chống crash.
+
+### 4. Kiểm Thử Hệ Thống (Automated Testing & Verification):
+- Bổ sung test case `test_trip_create_with_specific_leg_vehicles` vào `core/tests.py` kiểm chứng việc tạo lệnh Cắt Kéo và tra cứu chi tiết bằng HashID.
+- **Kết quả kiểm thử:** Toàn bộ 21/21 bài test tự động vượt qua 100% (`Ran 21 tests in 7.572s - OK`).
+
+---
+
+## [1.7.7] - 2026-09-25 (Chuẩn Hóa Clean Semantic URL & Bảo Mật HashID Chống Lộ Dữ Liệu IDOR)
+
+### 1. Bối Cảnh Nghiệp Vụ & Tiêu Chuẩn Quốc Tế:
+- **Loại bỏ URL dạng hash cũ (`domain/#dieu-van`):**
+  - Trước đây, việc chuyển tab sử dụng hash routing tạo ra các đường link như `/#dieu-van`, `/#kinh-doanh`, `/#ke-toan`, vừa bộc lộ cấu trúc phân hệ nội bộ, vừa lỗi thời theo tiêu chuẩn web hiện đại (W3C / Nielsen Norman Group).
+  - Áp dụng chuẩn công nghiệp quốc tế (tương tự SAP S/4HANA, Flexport, Samsara, Stripe): **Clean Semantic URLs (HTML5 History API)** kết hợp **Mã hóa HashID cho thực thể dữ liệu**.
+- **Phòng chống lỗ hổng an ninh IDOR (Tiêu chuẩn 10 - SECURITY_AUDIT.md):**
+  - Triệt tiêu việc để lộ ID số nguyên tuần tự (`1, 2, 3...`) hoặc mã chuyến tuần tự trên URL.
+  - Sử dụng thuật toán HashID với Salt bí mật nội bộ (`BIM_LOGISTICS_SECURE_SALT_2026`) để sinh ra mã định danh không thể đoán được (non-sequential, opaque identifier) cho mỗi chuyến xe.
+
+### 2. Cải Tiến Backend & Cơ Sở Dữ Liệu (`core/security.py`, `apps/dispatch`, `config/urls.py`):
+- **Xây dựng module `core/security.py`:**
+  - Tích hợp thư viện `hashids` với độ dài tối thiểu 8 ký tự và salt riêng biệt theo domain (`TRIP`, `BOOKING`, `QUOTATION`, `EXPENSE`).
+  - Cung cấp hàm `encode_id`, `decode_id`, `get_trip_hashid`, `decode_trip_hashid`.
+  - Cập nhật `requirements.txt` bổ sung `hashids>=1.3.1`.
+- **Nâng cấp model `DispatchTrip` (`apps/dispatch/models.py`):**
+  - Bổ sung property `@property def hashid(self)` tự động mã hóa ID chuyến xe.
+- **Tối ưu hóa các API (`apps/dispatch/api_views.py`):**
+  - Xây dựng helper `get_trip_by_code_or_hash`: Cho phép tra cứu chuyến xe linh hoạt bằng cả `trip_code` gốc hoặc chuỗi `hashid`.
+  - Cập nhật `TripListCreateAPIView` và `TripDetailAPIView` serialize thêm trường `hashid`.
+  - Cập nhật các API con (Chi phí, Chốt sổ, Mở sổ, Mốc kho, Chứng từ) nhận diện an toàn cả 2 định dạng mã.
+- **Cấu hình Django URL Routing (`config/urls.py` & `apps/dispatch/views.py`):**
+  - Định nghĩa các Clean Semantic SPA Routes: `/dashboard/`, `/dispatch/`, `/dispatch/trips/<str:trip_hash>/`, `/sales/`, `/fleet/`, `/hr/`, `/accounting/`, `/customs/`, `/settings/`.
+  - Cập nhật `index_view(request, *args, **kwargs)` để phục vụ SPA mượt mà, chống lỗi 404 khi người dùng tải lại trang (F5).
+
+### 3. Nâng Cấp Frontend & Trải Nghiệm Điều Hướng (`static/js/app.js`):
+- **Module `switchTab(tabId, updateHistory)`:**
+  - Bảng ánh xạ `ROUTE_TAB_MAP` và `TAB_ROUTE_MAP`: Tự động đồng bộ đường dẫn thanh địa chỉ bằng `window.history.pushState()`.
+  - Chuyển tab lập tức thay đổi URL thành `/dispatch`, `/sales`, `/fleet`, `/accounting`... mà không reload trang.
+- **Deep-linking chi tiết chuyến xe:**
+  - Khi mở xem chuyến xe (`viewTripDetail`), URL tự động chuyển sang `/dispatch/trips/<hashid>` (ví dụ: `/dispatch/trips/346OYy0b`).
+  - Hỗ trợ người dùng copy link gửi cho đồng nghiệp: Khi truy cập trực tiếp, hệ thống tự động nhận diện `hashid`, mở đúng phân hệ Điều vận và hiển thị chi tiết chuyến xe đó.
+  - Khi bấm quay lại (`backToTrips`), URL tự động khôi phục về `/dispatch`.
+- **Lắng nghe sự kiện `popstate`:**
+  - Hỗ trợ nút Back / Forward trên chuột và trình duyệt điều hướng mượt mà giữa các tab và màn hình chi tiết.
+- **Tương thích ngược (Backward Compatibility):**
+  - Nếu người dùng truy cập từ link cũ có hash (như `/#dieu-van`), hàm `resolveInitialRoute()` tự động nhận diện và chuyển đổi sang Clean URL mới.
+
+### 4. Kiểm Thử Hệ Thống (Verification):
+- Bổ sung test case `test_security_hashids_and_clean_urls` trong `core/tests.py`.
+- **Kết quả:** 20/20 test cases vượt qua 100% (`Ran 20 tests in 6.674s - OK`).
+
+---
+
+## [1.7.6] - 2026-09-24 (Bổ Sung Cột "Tài Xế & Đầu Kéo (Chặng)" Cho Bảng Kê Chi Phí & BOT Khi Cắt Kéo)
+
+### 1. Nghiệp Vụ Thực Tế & Yêu Cầu Kế Toán - Điều Vận (TMS Field Expenses):
+- **Phân tách chi phí hiện trường theo tài xế & đầu kéo:**
+  - Trong nghiệp vụ vận tải container Cắt Kéo (Drop & Hook), Chặng 1 (Lấy cont ➔ Kho) và Chặng 2 (Kho ➔ Hạ bãi) do 2 tài xế và 2 đầu kéo độc lập đảm nhiệm. Do đó, vé cầu đường BOT (ePass/VETC), phí nâng/hạ, tiền bốc xếp, lưu bãi hoặc cân xe phát sinh ở chặng nào sẽ do tài xế chặng đó chi trả hoặc ứng tiền trước.
+  - Ngoài ra, các khoản chi như tiền cược cont, nâng hạ chuyển khoản ngân hàng do Công ty thanh toán tập trung, không thuộc tài xế nào.
+  - Do đó, Bảng kê chi phí phát sinh chuyến xe bắt buộc phải có cột phân định rõ ràng: **Tài xế - Biển số xe - Chặng phát sinh** để phục vụ quyết toán tạm ứng, đối soát vé BOT và tính lương/thưởng minh bạch.
+
+### 2. Cải Tiến Backend & Cơ Sở Dữ Liệu (`apps/billing`, `apps/dispatch`):
+- **Cấu trúc Model `TripExpense` (`apps/billing/models.py`):**
+  - Bổ sung `TripLegChoice`: `LEG_1` (Chặng 1: Lấy Cont ➔ Kho), `LEG_2` (Chặng 2: Kho ➔ Hạ bãi), `ENTIRE` (Toàn trình chuyến xe), `COMPANY` (Công ty chi chung).
+  - Bổ sung 3 trường liên kết: `driver` (`ForeignKey(Employee)`), `vehicle` (`ForeignKey(Vehicle)`), `trip_leg` (`CharField`).
+  - Thực thi migration `0007_tripexpense_driver_tripexpense_trip_leg_and_more.py` an toàn trên hệ thống cơ sở dữ liệu PostgreSQL.
+- **Tối ưu hóa APIs (`apps/dispatch/api_views.py`):**
+  - `TripDetailAPIView`: Bổ sung `select_related('driver', 'vehicle', 'expense_item')`; trả về `trip_leg`, `trip_leg_label`, `driver_name`, `vehicle_plate`.
+  - `TripAddExpenseAPIView`: Tiếp nhận tham số `trip_leg`; tự động suy luận tài xế và đầu kéo theo cấu hình Chặng 1 (tài lấy + xe lấy) hoặc Chặng 2 (tài hạ + xe hạ) hoặc Công ty chi chung mà không bắt người dùng nhập thủ công ID.
+  - `TripExpenseDetailAPIView`: Cho phép sửa đổi chặng chi phí và tài xế/xe liên quan linh hoạt khi chuyến chưa khóa sổ kế toán.
+
+### 3. Nâng Cấp Giao Diện & Trải Nghiệm Người Dùng (UI/UX Accessibility):
+- **Bảng Kê Chi Phí Hiện Trường (`templates/views/view_trip_detail.html` & `static/js/app.js`):**
+  - Bổ sung cột thứ 8: `<th class="py-2 px-3 text-[12.5px] border-r border-slate-200/90 font-heading">Tài xế & Đầu kéo (Chặng)</th>`.
+  - Hiển thị nhãn trực quan theo Design Token hệ thống BIM:
+    - **Chặng 1:** Badge Teal `<span class="bg-teal-50 text-teal-800 border-teal-200">Chặng 1</span>` kèm Tên tài xế & Biển số xe lấy cont.
+    - **Chặng 2:** Badge Indigo `<span class="bg-indigo-50 text-indigo-800 border-indigo-200">Chặng 2</span>` kèm Tên tài xế & Biển số xe hạ bãi.
+    - **Toàn trình:** Tên tài xế và xe chính của chuyến xe.
+    - **Công ty chi chung:** Badge Slate `<span class="bg-slate-100 text-slate-700">Công ty chi chung (CK)</span>`.
+    - **Dòng Accordion tổng gộp:** Tự động phát hiện chi phí phát sinh ở cả 2 chặng và hiển thị badge tổng hợp `Chặng 1 & 2`.
+- **Modal Thêm & Hiệu Chỉnh Chi Phí (`modal-add-expense` & `modal-edit-expense`):**
+  - Tích hợp dropdown chọn Chặng & Tài xế: tự động điều chỉnh danh sách lựa chọn tùy theo chuyến xe là Cắt Kéo hay Chạy Thẳng, mang lại thao tác nhanh gọn "chuẩn 2 chạm" cho nhân viên điều vận và kế toán.
+
+### 4. Kiểm Thử Hệ Thống (Verification):
+- Chạy toàn bộ 19 unit test của hệ thống (`test core apps.dispatch apps.billing`): Vượt qua 100% không phát sinh lỗi ngoại lệ hay xung đột hồi quy (`Ran 19 tests in 5.778s - OK`).
+- Bảo toàn nguyên tắc Audit Trail: Duy trì Soft-Delete và lịch sử kiểm toán cho mọi thao tác chi phí.
+
+---
+
+## [1.7.5] - 2026-09-24 (Khắc Phục Triệt Để Lỗi Nút Lưu Điều Xe & Nâng Cấp UX Phản Hồi Tức Thì)
+
+### 1. Nguyên Nhân Gốc Rễ (Root Cause Analysis):
+- **Lỗi 1 (Chính): 500 Server Error tại API `/api/master-data/form-options/`:**
+  - Trong `MasterDataFormOptionsAPIView`, khi serialize danh sách Rơ-moóc (`Trailer`), code gọi `tr.get_trailer_type_display()`. Tuy nhiên trong model `Trailer` (`apps/fleet/models.py`), trường `trailer_type` là `CharField` tự do không có `choices`, khiến Django ném ngoại lệ `AttributeError: 'Trailer' object has no attribute 'get_trailer_type_display'`.
+  - Hậu quả: Khi mở Modal Điều Động, lệnh gọi API form-options bị lỗi 500 khiến biến `masterDataFormOptionsCache` bị `null`. Hàm `populateMasterDataDropdowns()` bị ngắt sớm, danh sách Tài xế (`#inp-driver`) không được nạp dữ liệu (trống rỗng). Khi người dùng bấm Lưu, hàm validate chặn lại do chưa chọn tài xế, nhưng do dropdown rỗng nên người dùng không có tài xế để chọn và nút bấm tạo cảm giác "vô hiệu".
+- **Lỗi 2: Logic Validate tĩnh trong `submitNewTrip()` không tương thích chế độ Cắt Kéo (Drop & Hook):**
+  - Mảng `requiredFields` trước đó cố định kiểm tra `#inp-driver`. Khi bật chế độ Cắt Kéo (`is_split_trip = true`), ô `#inp-driver` bị ẩn đi để nhường chỗ cho `#inp-driver-leg1` và `#inp-dropoff-driver`. Việc vẫn kiểm tra `#inp-driver` khiến form luôn bị lỗi validate ngầm trên phần tử bị ẩn.
+- **Lỗi 3: Thiếu Visual Loading State & Cuộn mượt (Smooth Scroll) tới ô thiếu:**
+  - Nút bấm *"Lưu Vào DB & Phát Lệnh Zalo"* không có trạng thái disable/spinner khi bấm. Khi modal dài và bị cuộn xuống đáy, nếu có trường phía trên bị thiếu, người dùng không nhận biết được ô nào đang báo đỏ.
+
+### 2. Giải Pháp Kỹ Thuật Đã Triển Khai:
+- **Sửa Backend (`apps/master_data/api_views.py`):**
+  - Đổi `tr.get_trailer_type_display()` thành `tr.trailer_type` an toàn tuyệt đối.
+  - API `/api/master-data/form-options/` đã phản hồi HTTP 200, trả về đầy đủ 20 khách hàng, 7 tài xế, 8 đầu kéo và 3 rơ-moóc.
+- **Nâng Cấp Frontend & Validation (`static/js/app.js` & `modal_create_trip.html`):**
+  - Thiết kế mảng `requiredFields` động theo ngữ cảnh: Chạy thẳng thì kiểm tra `inp-driver`, Cắt kéo thì kiểm tra `inp-driver-leg1` và `inp-dropoff-driver`.
+  - Bổ sung `missingLabels` để hiển thị tên chính xác từng trường còn thiếu trong Toast: *"Vui lòng chọn/nhập các thông tin bắt buộc: [Tên trường]"*.
+  - Tích hợp `scrollIntoView({ behavior: 'smooth', block: 'center' })` tự động cuộn màn hình ngay vào ô thiếu và kích hoạt `focus()`.
+  - Bổ sung hiệu ứng nút bấm: Tự động `disabled` và chuyển sang spinner `<i class="ph ph-spinner animate-spin"></i> Đang lưu & phát lệnh Zalo...` để chống double-click và phản hồi trực quan ngay lập tức.
+  - Tự động xóa viền đỏ lỗi trên cả sự kiện `input` và `change` của các dropdown `<select>`.
+  - Khắc phục luồng bất đồng bộ: `dispatchFromBooking` và `openModal` chuyển sang `async/await` đồng bộ 100%, đảm bảo dropdown nạp xong trước khi kế thừa booking.
+
+### 3. Kiểm Thử Hệ Thống (Verification):
+- Thêm test case `test_master_data_form_options_api` trong `core/tests.py`.
+- **Kết quả:** 22/22 ca kiểm thử vượt qua 100% (`Ran 22 tests in 5.865s - OK`).
+- Kiểm thử tạo lệnh thành công ở cả 2 kịch bản Chạy Thẳng (Direct Trip) và Cắt Kéo (Drop & Hook Trip) trả về HTTP 201 Created.
+
+---
+
+## [1.7.4] - 2026-09-24 (Triển Khai Nghiệp Vụ Cắt Kéo / Cắt Mooc "Drop & Hook" Theo Chuẩn TMS)
+
+### 1. Kiến Trúc Nghiệp Vụ Vận Tải (TMS Logistics Architecture):
+- **Chuẩn hóa Mô hình Chu Trình Container (Container Cycle):**
+  - Giữ nguyên quan hệ thương mại: 1 Container trong Booking tương ứng 1 Lệnh điều động `DispatchTrip`, bảo toàn 100% doanh thu cước của đơn hàng và không làm xé lẻ số lượng cont của Booking.
+  - Mở rộng hỗ trợ **2 Chặng Điều Động (2-Leg Transport)** khi phát sinh nghiệp vụ Cắt Kéo (Drop & Hook):
+    - **Chặng 1 (Lấy Cont ➔ Kho đóng/dỡ):** Quản lý bởi Tài xế chính (`driver`) và Đầu kéo lấy (`vehicle`). Cắt mooc bàn giao tại kho khách hàng.
+    - **Chặng 2 (Kho đóng/dỡ ➔ Hạ Cảng/Depot):** Quản lý bởi Tài xế hạ (`dropoff_driver`) và Đầu kéo hạ (`dropoff_vehicle`). Móc mooc kéo đi hạ bãi, lấy phiếu EIR hạ.
+- **Phân Định Trách Nhiệm Vỏ & Thù Lao Chuyến:**
+  - Bổ sung trường `is_split_trip`, `dropoff_driver`, `dropoff_trailer`, `driver_split_ratio`, `driver_allowance`, `dropoff_driver_allowance` vào `DispatchTrip`.
+  - Tự động chia lương thù lao tài xế theo tỷ lệ cấu hình (mặc định 50% - 50%, 60% - 40%,...).
+
+### 2. Cải Tiến Backend & APIs:
+- **Migration Schema Database:**
+  - Tạo và thực thi migration `0007_dispatchtrip_driver_allowance_and_more` trên cả Docker PostgreSQL và môi trường kiểm thử.
+- **Cập Nhật `TripListCreateAPIView` & `TripDetailAPIView`:**
+  - Tiếp nhận và lưu trữ toàn bộ tham số nghiệp vụ Cắt Kéo khi phát lệnh điều xe mới.
+  - Trả về chi tiết đầy đủ 2 chặng: Tài xế lấy & Xe lấy, Tài xế hạ & Xe hạ, Tỷ lệ chia thù lao, Ghi chú bàn giao mooc tại kho.
+- **Cập Nhật `BookingOrderDetailAPIView` & `SalesAPIView`:**
+  - API Chi tiết Booking (`/api/bookings/<id>/`) tự động truy vấn và trả về danh sách toàn bộ container đã điều (`trips`), phân định rõ chuyến nào chạy thẳng, chuyến nào cắt kéo, vị trí hiện tại của cont và trạng thái hành trình.
+  - Bảng kê CRM Bán Hàng (`/api/sales/`) tự động gắn cờ `has_drop_hook` và số lượng `drop_hook_count` cho mỗi booking.
+- **Cập Nhật `MasterDataFormOptionsAPIView`:**
+  - Bổ sung danh sách phương tiện (`vehicles`) và rơ-moóc (`trailers`) vào dropdown để frontend tự động gán xe theo tài xế.
+
+### 3. Cải Tiến Giao Diện Người Dùng (UI/UX Accessibility):
+- **Modal Tạo Lệnh Điều Động (`modal_create_trip.html`):**
+  - Bổ sung Toggle switch mượt mà: *"Chế độ Cắt Kéo / Cắt Mooc (2 Tài)"*.
+  - Khi bật toggle: Tự động chuyển sang giao diện cấu hình 2 Chặng (Chặng 1 Lấy cont & Chặng 2 Hạ cont) với màu sắc phân biệt trực quan (Teal cho chặng 1, Indigo cho chặng 2, Amber cho cảnh báo cắt mooc).
+  - Tự động gợi ý đầu kéo khi chọn tài xế (`onDriverLeg1Change`, `onDriverLeg2Change`).
+- **Modal Chi Tiết Đơn Hàng / Booking (`modal_booking.html`):**
+  - Tích hợp Khối 4: *"Tiến Độ Container Thuộc Booking & Theo Dõi Cắt Kéo (Drop & Hook)"* hiển thị bảng chi tiết từng container, số seal, tài xế lấy/hạ, vị trí cont và nút bấm xem chi tiết chuyến xe ngay tức thì.
+- **Danh Sách Điều Vận & Đơn Hàng (`static/js/app.js`):**
+  - Thẻ chuyến xe và bảng Booking hiển thị badge nổi bật: `CẮT KÉO (Drop & Hook)` màu hổ phách để điều độ và CS nhận diện ngay tình trạng vận hành.
+
+### 4. Kiểm Thử Tự Động (Verification):
+- Bổ sung test case `test_drop_and_hook_split_trip_tracking_in_booking` trong `core/tests.py`.
+- **Kết quả:** 18/18 ca kiểm thử vượt qua 100% (`Ran 18 tests in 5.522s - OK`).
+
+---
+
+### 1. Nguyên Nhân Gốc Rễ Của Lỗi (Root Cause Analysis):
+- **Nguyên nhân 1: Xung đột CSRF trong môi trường Web Session (HTTP 403 Forbidden):**
+  - Khi người dùng đăng nhập bằng tài khoản Web trên trình duyệt, Django sử dụng cơ chế `SessionAuthentication`. Cơ chế này của DRF yêu cầu bắt buộc phải có header `X-CSRFToken` cho mọi phương thức thay đổi dữ liệu (`POST`, `PUT`, `PATCH`, `DELETE`).
+  - Hàm `submitNewTrip()` trước đó chỉ gửi `fetch('/api/trips/')` với header thông thường mà không đính kèm `X-CSRFToken` và không cho phép đọc cookie (`CSRF_COOKIE_HTTPONLY = True`), dẫn tới việc request bị DRF chặn lại với lỗi `403 Forbidden: CSRF Failed: CSRF token missing`.
+- **Nguyên nhân 2: Trùng lặp mã chuyến xe khi có bản ghi xóa mềm (HTTP 500 Duplicate Key):**
+  - Bộ sinh mã tự động trước đó dùng `DispatchTrip.objects.count() + 1`. Do `objects` tự động loại bỏ các bản ghi đã xóa mềm (`is_deleted=True`), nên khi trong cơ sở dữ liệu có các bản ghi cũ bị xóa mềm, hàm `count()` trả về số thứ tự đã từng tồn tại trong bảng (ví dụ `TVL-0924-018`), vi phạm ràng buộc duy nhất `UNIQUE constraint "dispatch_dispatchtrip_trip_code_key"`.
+- **Nguyên nhân 3: Thông báo Toast chưa phản ánh đúng lỗi máy chủ:**
+  - Client chỉ kiểm tra thuộc tính `result.error`. Khi backend trả về `result.detail` (từ DRF PermissionDenied) hoặc mảng lỗi trường, frontend bị fallback về câu thông báo mặc định: *"Vui lòng kiểm tra lại dữ liệu nhập."* gây hiểu nhầm cho người dùng.
+
+### 2. Các Biện Pháp Xử Lý Kỹ Thuật Đã Thực Hiện:
+- **Thiết lập Cơ Chế Xác Thực Kép Kèm CSRF (`getAuthHeaders`):**
+  - Cập nhật `CSRF_COOKIE_HTTPONLY = False` trong `config/settings.py` để script client có thể đọc token bảo mật.
+  - Thêm thẻ `<meta name="csrf-token" content="{{ csrf_token }}">` vào `<head>` của `templates/base.html`.
+  - Xây dựng hàm tập trung `getAuthHeaders(extraHeaders)` tự động tiêm cả `Authorization: Bearer <token>` (từ localStorage) và `X-CSRFToken` (từ meta tag/cookie), đi kèm `credentials: 'include'` cho toàn bộ các lời gọi API thay đổi dữ liệu:
+    - Tạo chuyến xe mới (`submitNewTrip`).
+    - Thêm / Sửa / Xóa chi phí chuyến xe (`submitExpense`, `submitEditExpense`, `deleteExpensePrompt`).
+    - Chốt sổ / Mở khóa sổ kế toán (`settleTripExpenses`, `unsettleTripExpenses`, `toggleSettleTrip`).
+    - Thao tác tài xế trên mobile simulator: báo mốc hành trình (`driverReportMilestone`), gửi hóa đơn/chứng từ OCR (`submitOcrData`).
+    - Quản lý báo giá & đơn hàng (`saveQuotation`, `changeQuotationStatus`, `deleteQuotation`, `saveBooking`, `changeBookingStatus`, `deleteBooking`).
+    - Quản lý danh mục Master Data (`submitMasterDataForm`, `deleteMasterDataItem`).
+- **Nâng Cấp Bộ Sinh Mã Chống Trùng Lặp 100% (Collision-Proof Unique Generator):**
+  - Tại `apps/dispatch/api_views.py`: Thay đổi bộ sinh mã `trip_code`, `booking_code`, `quotation_code` sang dùng `all_objects` kèm vòng lặp `while ...exists(): counter += 1` để đảm bảo không bao giờ bị đụng độ mã định danh ngay cả khi cơ sở dữ liệu đã có bản ghi xóa mềm.
+- **Chuẩn Hóa Thông Báo Lỗi Trực Quan:**
+  - Cập nhật logic trích xuất thông báo lỗi trong `submitNewTrip` để hiển thị rõ ràng thông điệp từ máy chủ (`result.message || result.error || result.detail || fieldErrors`), loại bỏ hoàn toàn thông báo lỗi mơ hồ.
+
+### 3. Kiểm Thử & Xác Nhận Hiện Trường:
+- **Unit Test:** Toàn bộ 17/17 test suites vượt qua 100% (`Ran 17 tests in 5.165s - OK`).
+- **Live CSRF Session Test:** Giả lập trực tiếp phiên đăng nhập Session kèm `HTTP_X_CSRFTOKEN` tạo lệnh điều động thành công rực rỡ với mã HTTP 201 Created. Thêm khoản chi thành công với mã HTTP 200 OK.
+- Đã dọn dẹp sạch sẽ dữ liệu mock thử nghiệm.
+
+---
+
+### 1. Triệt Tiêu Nhập Liệu Tự Do (Zero Free-Text on Master Data):
+- **Thay thế toàn bộ `<input type="text">` bằng `<select>`:**
+  - **Modal Điều Động Chuyến Xe (`modal_create_trip.html`):** Khách hàng (`inp-customer`), Nơi lấy cont/hàng (`inp-pickup`), Kho nhận/nhà máy (`inp-warehouse`), Nơi hạ cont rỗng/hàng (`inp-dropoff`), Tài xế điều động (`inp-driver`).
+  - **Modal Đơn Hàng / Booking (`modal_booking.html`):** Khách hàng đặt đơn (`booking-customer`), Điểm lấy (`booking-pickup`), Kho đóng/dỡ (`booking-delivery`), Điểm hạ (`booking-dropoff`).
+  - **Modal Báo Giá Tuyến Cước (`modal_quotation.html`):** Khách hàng đối tác (`quote-customer`).
+  - **Modal Khai Báo Biểu Cước Khách Hàng (`modal_master_data.html`):** Nơi lấy (`mdf-pickup`), Kho nhận (`mdf-delivery`), Nơi hạ cont (`mdf-dropoff`).
+- **Endpoint Chuẩn Hóa Cung Cấp Tùy Chọn (`/api/master-data/form-options/`):**
+  - Cung cấp danh sách Khách hàng (`customers`), Tài xế (`drivers`), Quy cách cont/xe (`container_types`) và Địa điểm phân nhóm logic: `pickup_options` (Cảng biển, ICD, Depot rỗng), `warehouse_options` (Kho hàng, Nhà máy), `dropoff_options` (Bãi rỗng, Cảng xuất).
+
+### 2. Loại Bỏ Triệt Để Bộ Sinh Dữ Liệu Rác (Anti-Garbage Backend Hardening):
+- **Xóa bỏ các đoạn mã tự sinh Khách hàng giả lập (`Customer.objects.create`):**
+  - Trước đây khi người dùng gõ sai lệch chuỗi ký tự, hệ thống tự động sinh khách hàng mã `CUST_YYYYMMDD...` gây ô nhiễm Master Data. Đã gỡ bỏ toàn bộ tại `TripListCreateAPIView`, `SalesAPIView` (`create_booking`, `create_quotation`), `QuotationDetailAPIView.put` và `BookingOrderDetailAPIView.put`.
+  - Ép buộc liên kết chính xác với Khách hàng có sẵn trong Master Data.
+- **Tự động liên kết khóa ngoại (`pickup_loc`, `warehouse_loc`, `dropoff_loc` / `delivery_loc`):**
+  - Cả `DispatchTrip` và `BookingOrder` được liên kết tự động tới bản ghi `master_data.Location` thông qua tên chuẩn từ dropdown.
+
+### 3. Tương Thích Ngược & Cơ Chế Khôi Phục Dữ Liệu (Defensive Frontend Engine):
+- **Hàm hỗ trợ gán giá trị không phân biệt hoa thường (`setSelectValueCaseInsensitive`):**
+  - Hỗ trợ kế thừa dữ liệu từ Booking sang Điều vận (`onBookingSelected`), khôi phục dữ liệu cũ khi xem/sửa chi tiết Booking và Báo giá.
+  - Tự động nạp tùy chọn dự phòng nếu bản ghi lịch sử cũ có biến thể tên chưa được chuẩn hóa, đảm bảo không bao giờ lỗi UI hoặc mất dữ liệu.
+- **Kiểm định:** 17/17 ca kiểm thử tự động đạt 100% Passed. Kiểm chứng trực tiếp trên server: 0 bản ghi khách hàng rác phát sinh khi tạo chuyến xe và booking.
+
+---
+
+## [1.7.1] - 2026-09-24 (Khắc Phục Dứt Điểm Sự Cố Mở Chi Tiết Chuyến Xe & Củng Cố Defensive Backend)
+
+### 1. Nguyên Nhân Gốc Rễ & Xử Lý Triệt Để:
+- **Lỗi Migration trên PostgreSQL (`column personnel_employee.user_id does not exist`):** 
+  - Trong Phase 2, migration `0002_employee_user` mới chỉ được chạy trên SQLite3 nhưng hệ thống nghiệp vụ thực tế chạy trên PostgreSQL (`bim_logistics_postgres` port 5435 chứa 19 chuyến xe nghiệp vụ).
+  - Khi API `TripDetailAPIView` query `select_related('driver', 'dispatcher')`, PostgreSQL báo lỗi `ProgrammingError: column personnel_employee.user_id does not exist` dẫn đến HTTP 500.
+  - **Khắc phục:** Đã thực thi `python manage.py migrate` trên PostgreSQL, đồng bộ toàn bộ schema và nạp 4 tài khoản người dùng chuẩn (`admin`, `dieudo`, `ketoan`, `taixe`) qua `setup_auth_users`.
+- **Cấu hình Môi trường Local (`.env`):**
+  - Cập nhật `.env` trỏ trực tiếp vào PostgreSQL `127.0.0.1:5435` để môi trường máy chủ và command line luôn nhất quán dữ liệu.
+  - Rebuild Docker container `bim_logistics_web` với đầy đủ các package mới (`djangorestframework-simplejwt`, `argon2-cffi`, `python-dotenv`).
+
+### 2. Tinh Chỉnh Phân Quyền IDOR (`IsTripDriverOrDispatcher`):
+- **Phân tách Rõ Quyền Đọc (GET) và Quyền Ghi (POST/PUT/PATCH/DELETE):**
+  - **Quyền Đọc (`SAFE_METHODS`):** Mọi nhân sự nội bộ đã xác thực (bao gồm tài xế, điều độ, kế toán) đều được phép xem chi tiết chuyến xe để tra cứu thông tin vận tải, kho bãi, số seal.
+  - **Quyền Ghi (Mutation):** Chống IDOR nghiêm ngặt — chỉ tài xế được phân công (`trip.driver == employee`) hoặc Điều phối viên/Giám đốc/Kế toán mới có quyền cập nhật mốc tiến độ hoặc tải lên chứng từ.
+  - Test case IDOR đã kiểm chứng: Tài xế khác gửi cập nhật mốc hành trình bị từ chối chính xác bằng mã HTTP 403 Forbidden.
+
+### 3. Phòng Thủ Hai Lớp (Defensive Backend & Frontend Safety):
+- **Null-safety trên `TripDetailAPIView`:** Bọc bảo vệ các quan hệ `customer`, `driver`, `vehicle`, `dropoff_vehicle`. Chuyến xe ở trạng thái nháp (Draft) hoặc chưa gán tài xế/xe không bao giờ bị crash `AttributeError` 500.
+- **Frontend Fetch Resilience (`static/js/app.js`):**
+  - Bổ sung header `Authorization: Bearer <token>` vào hàm `viewTripDetail`.
+  - Trích xuất thông báo lỗi chính xác từ backend (401/403/404) thay vì nuốt lỗi.
+  - Áp dụng helper gán DOM an toàn tránh crash giao diện.
+- **Test Suite:** Toàn bộ 17/17 ca kiểm thử tự động đạt 100% Passed.
+
+---
+
+## [1.7.0] - 2026-09-24 (Triển khai Kiến Trúc Bảo Mật Toàn Diện 5 Giai Đoạn theo SECURITY_AUDIT.md)
+
+### 1. Khắc Phục Sự Cố Khẩn Cấp & Quản Trị Bí Mật (Emergency Remediation):
+- **Di dời Private SSH Key:** Chuyển tệp khóa riêng RSA `ssh-key-2026-06-15.key` ra khỏi thư mục gốc dự án vào thư mục được bảo vệ `.secrets/` và thêm vào danh mục chặn của `.gitignore`.
+- **Thiết lập Quản trị Biến Môi Trường (.env):** Khởi tạo `.env.example` và `.env` nạp qua `python-dotenv`. Cách ly toàn bộ `SECRET_KEY`, `DEBUG`, mật khẩu database và whitelist domain khỏi mã nguồn.
+- **Khóa Cổng Database ra ngoài Internet:** Sửa `docker-compose.yml` giới hạn cổng PostgreSQL chỉ bind vào `127.0.0.1:5435:5432` nội bộ máy chủ thay vì mở toàn mạng `0.0.0.0`.
+- **Cấu hình Strict CORS:** Tắt cờ mở toàn bộ `CORS_ALLOW_ALL_ORIGINS = False`, chỉ định danh sách trắng tên miền chính thức của BIM Logistics.
+
+### 2. Kiến Trúc Xác Thực JWT & Phân Quyền RBAC (Authentication & Authorization):
+- **Tích hợp `rest_framework_simplejwt`:** Cung cấp các endpoint `/api/auth/token/`, `/api/auth/token/refresh/`, `/api/auth/token/verify/`, `/api/auth/token/blacklist/` và `/api/auth/me/`. Hỗ trợ luồng token rotation và thu hồi token khi tài xế hết ca.
+- **Mã Hóa Mật Khẩu Chuẩn Quốc Tế:** Kích hoạt thuật toán Argon2 (`Argon2PasswordHasher`) kết hợp PBKDF2 của Django cho toàn bộ tài khoản tài xế, điều độ và quản trị viên.
+- **Liên kết Employee với Django User:** Thêm trường `user = OneToOneField(User)` vào model `Employee`.
+- **Xây Dựng Bộ Quyền DRF Permissions (`core/permissions.py`):** `IsAdminOrDirector`, `IsDispatcher`, `IsAccountant`, `IsDriver`, `IsTripDriverOrDispatcher`.
+
+### 3. Phòng Chống IDOR & Kiểm Soát Chặt Chẽ Máy Trạng Thái (State Machine & Audit):
+- **Chống Lỗ Hổng IDOR:** Áp dụng Object-Level Permissions trên các endpoint chi tiết chuyến xe (`TripDetailAPIView`). Tài xế chỉ xem và cập nhật chuyến được phân công; Kế toán mới có quyền chốt sổ (`TripSettleExpensesAPIView`).
+- **Ép Buộc Vòng Đời Vận Tải Qua State Machine:** Cập nhật `TripDriverMilestoneAPIView` và `TripAddDocumentAPIView` chuyển trạng thái qua `transition_trip()` trong `core.workflows`, đảm bảo 100% sự kiện đều được ghi vết bất biến vào `TrackingEventLog`.
+
+### 4. Kiểm Định Tệp Chứng Từ POD & Giới Hạn Tần Suất (Upload Security & Throttling):
+- **Module Kiểm Tra Tệp Tải Lên (`core/validators.py`):** Xác thực định dạng qua chữ ký Magic Bytes (`.jpg`, `.jpeg`, `.png`, `.pdf`), kiểm tra tính toàn vẹn ảnh qua `Pillow`, chống tấn công Directory Traversal bằng `sanitize_filename`, giới hạn dung lượng tải lên tối đa 5MB.
+- **DRF Rate Limiting (Throttling):** Áp dụng AnonRateThrottle (120 req/phút) và UserRateThrottle (600 req/phút), chuẩn bị sẵn cấu hình tracking/gps rate limit.
+- **Custom Exception Handler (`core/exceptions.py`):** Chuẩn hóa định dạng phản hồi lỗi JSON đồng nhất `{"success": false, "error_code": "...", "message": "..."}`, triệt tiêu nguy cơ lộ traceback hệ thống ra ngoài.
+
+### 5. Củng Cố Hạ Tầng & Bảo Mật Cookies (Security Headers & Cookies):
+- Bật đầy đủ cờ bảo mật cookie `SESSION_COOKIE_HTTPONLY = True`, `CSRF_COOKIE_HTTPONLY = True`, `SameSite = 'Lax'`.
+- Bật Security Headers `SECURE_CONTENT_TYPE_NOSNIFF = True`, `SECURE_BROWSER_XSS_FILTER = True`, `X_FRAME_OPTIONS = 'DENY'`.
+- Nâng cấp bộ Test Suite (`core/tests.py`) lên 13 ca kiểm thử tự động (100% Passed) bao gồm kiểm thử chặn truy cập trái phép, phân quyền RBAC và kiểm định tệp tải lên.
+
+---
+
 ## [1.6.4] - 2026-09-22 (Khử Trùng Lặp Chứng Từ Số & Hóa Đơn Điện Tử, Chấm Dứt Auto-Seed & Đối Chiếu Chéo Nghiệp Vụ)
 
 ### 1. Khắc Phục Nguyên Nhân Gây Trùng Lặp Dữ Liệu:

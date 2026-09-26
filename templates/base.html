@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Hệ Thống Quản Lý Điều Vận - BIM Logistics (Triền Võ){% endblock %}</title>
     
     <!-- Tailwind CSS CDN -->
@@ -63,12 +64,32 @@
     {% include 'components/modal_quotation.html' %}
     {% include 'components/modal_booking.html' %}
     {% include 'components/modal_master_data.html' %}
+    {% include 'components/modal_driver_advance.html' %}
+    {% include 'components/modal_settle_advance.html' %}
+    {% include 'components/modal_dispatcher_fund.html' %}
+    {% include 'components/modal_cash_transaction.html' %}
+    {% include 'components/modal_debit_note.html' %}
+    {% include 'components/modal_subcontractor_settle.html' %}
+    {% include 'components/modal_customs_declaration.html' %}
 
     <!-- 4. GRACEFUL TOAST NOTIFICATION CONTAINER (Bim_ERP-Solutions Standard) -->
     <div id="toast-container"></div>
 
-    <!-- 5. MODULAR JAVASCRIPT -->
-    <script src="{% static 'js/app.js' %}"></script>
+    <!-- 5. MODULAR JAVASCRIPT & CURRENT USER CONTEXT -->
+    <script>
+        window.CURRENT_USER = {
+            id: {{ request.user.id|default:"null" }},
+            username: "{{ request.user.username|default:''|escapejs }}",
+            role: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.role|escapejs }}{% else %}{% endif %}",
+            department: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.department|escapejs }}{% else %}{% endif %}",
+            employee_id: {% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.id }}{% else %}null{% endif %},
+            full_name: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.full_name|escapejs }}{% else %}{{ request.user.username|escapejs }}{% endif %}",
+            nickname: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.nickname|escapejs }}{% else %}{% endif %}",
+            is_staff: {{ request.user.is_staff|yesno:"true,false" }},
+            is_superuser: {{ request.user.is_superuser|yesno:"true,false" }}
+        };
+    </script>
+    <script src="{% static 'js/app.js' %}?v=1.9.2.0"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

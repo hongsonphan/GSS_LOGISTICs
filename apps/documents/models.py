@@ -8,6 +8,7 @@ class DocumentType(models.TextChoices):
     WEIGHT_TICKET = 'WEIGHT_TICKET', 'Phiếu Cân Hàng/Xe'
     CONTAINER_CHECK = 'CONTAINER_CHECK', 'Ảnh giám định vỏ Cont'
     INVOICE = 'INVOICE', 'Hóa đơn GTGT nâng hạ / cước'
+    BOOKING_NOTE = 'BOOKING_NOTE', 'File Booking / Lệnh cấp rỗng'
 
 class TripDocument(TimeStampedModel, SoftDeleteModel):
     """

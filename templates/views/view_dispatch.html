@@ -42,33 +42,137 @@
         </div>
     </div>
 
-    <div class="erp-table-container flex-1 overflow-hidden flex flex-col">
-        <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-wrap gap-3 items-center justify-between">
-            <div class="flex space-x-2">
-                <div class="relative">
-                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                    <input id="table-search-input" onkeyup="handleSearch(event)" type="text" placeholder="Tìm Booking, Số Cont..." class="form-input pl-9 pr-4 py-1.5 text-sm w-64" />
+    <div class="erp-table-container flex-1 overflow-hidden flex flex-col shadow-sm">
+        <!-- Toolbar Bộ Lọc Đa Cột & Sắp Xếp Chuyến Xe (Bim TMS Standard) -->
+        <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+            <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                    <i class="ph-fill ph-funnel text-teal-700 text-sm"></i>
+                    <span>Bộ Lọc & Sắp Xếp: <strong>Theo dõi tiến độ chuyến xe vận hành</strong></span>
                 </div>
-                <select id="status-filter-select" onchange="loadTripsData()" class="form-select text-sm font-semibold py-1.5 w-auto">
-                    <option value="Tất cả trạng thái">Tất cả trạng thái</option>
-                    <option value="Đang di chuyển">Đang di chuyển</option>
-                    <option value="Đã hoàn tất">Đã hoàn tất</option>
-                    <option value="Chờ duyệt / Nháp">Chờ nhận lệnh</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
+                        Hiển thị: <strong id="dispatch-filtered-count">0</strong> / <span id="dispatch-total-count">0</span> chuyến xe
+                    </span>
+                    <button type="button" onclick="resetDispatchFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
+                        <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thanh lọc theo từng cột (Column Filters Bar) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-1 text-xs">
+                <!-- 1. Lọc Khách hàng -->
+                <div>
+                    <select id="filter-dispatch-customer" onchange="applyDispatchFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Tất cả Khách hàng --</option>
+                    </select>
+                </div>
+
+                <!-- 2. Lọc Tài xế / Đầu kéo -->
+                <div>
+                    <select id="filter-dispatch-driver" onchange="applyDispatchFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Tất cả Tài xế / Xe --</option>
+                    </select>
+                </div>
+
+                <!-- 3. Lọc Trạng thái vận hành -->
+                <div>
+                    <select id="filter-dispatch-status" onchange="applyDispatchFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Tất cả Trạng thái --</option>
+                        <option value="TRANSIT">Đang vận chuyển (Trên đường)</option>
+                        <option value="DELIVERED">Đã giao hàng / Hoàn tất</option>
+                        <option value="PENDING">Chờ nhận lệnh / Khởi hành</option>
+                        <option value="DROP_HOOK">Chạy Cắt Kéo (Drop & Hook)</option>
+                        <option value="TWIN_CONT">Ghép 2 Cont 20ft (Kẹp 20)</option>
+                        <option value="DET_WARNING">Cảnh báo Quá hạn Free DET</option>
+                    </select>
+                </div>
+
+                <!-- 4. Lọc Loại hình vận chuyển -->
+                <div>
+                    <select id="filter-dispatch-type" onchange="applyDispatchFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <option value="">-- Tất cả Loại hình --</option>
+                        <option value="IMPORT">Hàng Nhập FCL</option>
+                        <option value="EXPORT">Hàng Xuất FCL</option>
+                        <option value="DOMESTIC">Nội Địa / Phân Phối</option>
+                    </select>
+                </div>
+
+                <!-- 5. Tìm kiếm từ khóa đa năng -->
+                <div class="col-span-2">
+                    <div class="relative">
+                        <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="filter-dispatch-search" oninput="applyDispatchFilters()" placeholder="Tìm số cont, seal, booking, mã chuyến, invoice..." 
+                            class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <button type="button" onclick="clearDispatchSearch()" id="btn-clear-dispatch-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <i class="ph-bold ph-x text-xs"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Bảng Dữ Liệu Chuyến Xe Kèm Sắp Xếp Cột -->
         <div class="overflow-x-auto flex-1">
             <table class="erp-table whitespace-nowrap">
                 <thead>
                     <tr>
-                        <th>Mã / Lịch Đóng</th>
-                        <th>Khách hàng & Kho</th>
-                        <th>Booking / Cont / Seal</th>
+                        <!-- 1. Mã / Lịch Đóng (Có sắp xếp) -->
+                        <th onclick="toggleDispatchSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Lịch Đóng / Khởi hành">
+                            <div class="flex items-center gap-1.5">
+                                <span>Mã / Lịch Đóng</span>
+                                <i id="sort-icon-dispatch-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 2. Khách hàng & Kho (Có sắp xếp) -->
+                        <th onclick="toggleDispatchSort('customer')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách hàng">
+                            <div class="flex items-center gap-1.5">
+                                <span>Khách hàng & Kho</span>
+                                <i id="sort-icon-dispatch-customer" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 3. Container / Booking (Có sắp xếp) -->
+                        <th onclick="toggleDispatchSort('container')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Số Container">
+                            <div class="flex items-center gap-1.5">
+                                <span>Booking / Cont / Seal</span>
+                                <i id="sort-icon-dispatch-container" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
                         <th>Invoice / Dock</th>
-                        <th>Xe Kéo & Xe Hạ</th>
+
+                        <!-- 5. Xe Kéo & Xe Hạ (Có sắp xếp) -->
+                        <th onclick="toggleDispatchSort('vehicle')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Biển Số Xe">
+                            <div class="flex items-center gap-1.5">
+                                <span>Xe Kéo & Xe Hạ</span>
+                                <i id="sort-icon-dispatch-vehicle" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
                         <th>Lưu Ý & Vị Trí Cont</th>
-                        <th>Nơi Lấy ➔ Nơi Hạ</th>
-                        <th>Trạng thái</th>
+
+                        <!-- 7. Tuyến & Chi phí (Có sắp xếp theo chi phí) -->
+                        <th onclick="toggleDispatchSort('expense')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Chi Phí">
+                            <div class="flex items-center gap-1.5">
+                                <span>Nơi Lấy ➔ Nơi Hạ</span>
+                                <i id="sort-icon-dispatch-expense" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 8. Trạng thái (Có sắp xếp) -->
+                        <th onclick="toggleDispatchSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Trạng Thái">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <span>Trạng thái</span>
+                                <i id="sort-icon-dispatch-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100" id="trips-tbody">

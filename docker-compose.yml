@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: bim_logistics_user
       POSTGRES_PASSWORD: bim_logistics_secret_2026
     ports:
-      - "5435:5432" # Tránh cổng 5433 đang dùng bởi bim_erp_postgres
+      - "127.0.0.1:5435:5432" # Chỉ mở trên localhost nội bộ máy chủ, không mở ra Internet
     volumes:
       - bim_logistics_postgres_data:/var/lib/postgresql/data
     healthcheck:

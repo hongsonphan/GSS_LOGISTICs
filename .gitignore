@@ -10,6 +10,7 @@ __pycache__/
 ssh-key*
 id_rsa*
 id_ed25519*
+.secrets/
 .env
 .env.*
 !.env.example
@@ -17,6 +18,7 @@ id_ed25519*
 # Database
 *.sqlite3
 *.db
+*.dump
 
 # Static & Media
 staticfiles/

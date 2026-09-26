@@ -1,22 +1,99 @@
 import datetime
+import os
 from django.db import models
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from apps.dispatch.models import DispatchTrip, TripTimelineItem, ShipmentType, TripStatus
 from apps.dispatch.timeline_service import sync_trip_10_step_timeline
 from apps.fleet.models import Vehicle, Trailer, VehicleStatus, VehicleType
 from apps.personnel.models import Employee, Department, EmployeeRole
-from apps.customers.models import Customer, Quotation, RouteTariff, BookingOrder, BookingStatus
+from apps.customers.models import Customer, Quotation, RouteTariff, BookingOrder, BookingStatus, BookingDocument
 from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus
 from apps.documents.models import TripDocument, DocumentType
+from django.core.exceptions import ValidationError as DjangoValidationError
 from core.workflows import transition_trip, STATUS_LABELS
+from core.permissions import (
+    IsAdminOrDirector,
+    IsDispatcher,
+    IsAccountant,
+    IsDriver,
+    IsTripDriverOrDispatcher,
+)
+import re
+from core.validators import validate_uploaded_document, sanitize_filename
+
+
+def resolve_customer(customer_input):
+    """
+    Phân giải đối tượng Customer từ chuỗi input:
+    Hỗ trợ:
+    - Object Customer trực tiếp
+    - Customer ID số nguyên (int hoặc str dạng số)
+    - Định dạng 'Tên Khách Hàng (Mã Code)' ví dụ: 'ABC (CUST_20260921094535)'
+    - Mã Code chính xác: 'CUST_20260921094535'
+    - Tên chính xác (iexact)
+    - Tên chứa chuỗi (icontains)
+    """
+    if not customer_input:
+        return None
+
+    if isinstance(customer_input, Customer):
+        return customer_input
+
+    val = str(customer_input).strip()
+    if not val:
+        return None
+
+    # Nếu truyền ID số nguyên
+    if val.isdigit():
+        c = Customer.objects.filter(pk=int(val)).first()
+        if c:
+            return c
+
+    # Nếu có định dạng "Tên (Mã Code)"
+    match = re.match(r'^(.*?)\s*\((.*?)\)$', val)
+    if match:
+        name_part = match.group(1).strip()
+        code_part = match.group(2).strip()
+        c = Customer.objects.filter(code__iexact=code_part).first()
+        if c:
+            return c
+        c = Customer.objects.filter(name__iexact=name_part).first()
+        if c:
+            return c
+        c = Customer.objects.filter(code__icontains=code_part).first()
+        if c:
+            return c
+        c = Customer.objects.filter(name__icontains=name_part).first()
+        if c:
+            return c
+
+    # Thử tìm theo code exact
+    c = Customer.objects.filter(code__iexact=val).first()
+    if c:
+        return c
+
+    # Thử tìm theo name exact
+    c = Customer.objects.filter(name__iexact=val).first()
+    if c:
+        return c
+
+    # Thử tìm theo name icontains
+    c = Customer.objects.filter(name__icontains=val).first()
+    if c:
+        return c
+
+    return None
+
 
 class DashboardBGDAPIView(APIView):
     """API tổng quan chiến lược dành cho Ban Giám Đốc (Chuẩn quốc tế TMS, Fleet & Customs Brokerage)."""
+    permission_classes = [IsAdminOrDirector]
     def get(self, request):
         today = timezone.now().date()
         yesterday = today - datetime.timedelta(days=1)
@@ -93,6 +170,18 @@ class DashboardBGDAPIView(APIView):
                 'is_expenses_settled': t.is_expenses_settled,
             })
 
+        # Đồng bộ số liệu Hải quan thực tế từ phân hệ Customs
+        from apps.customs.models import CustomsDeclaration, CustomsLane, CustomsDeclarationStatus
+        total_customs = CustomsDeclaration.objects.count()
+        if total_customs > 0:
+            c_green = CustomsDeclaration.objects.filter(customs_lane=CustomsLane.GREEN).count()
+            c_yellow = CustomsDeclaration.objects.filter(customs_lane=CustomsLane.YELLOW).count()
+            c_red = CustomsDeclaration.objects.filter(customs_lane=CustomsLane.RED).count()
+            c_cleared = CustomsDeclaration.objects.filter(status__in=[CustomsDeclarationStatus.CLEARED, CustomsDeclarationStatus.RELEASED]).count()
+            c_rate = round(c_cleared / total_customs * 100, 1)
+        else:
+            c_green, c_yellow, c_red, c_rate = 0, 0, 0, 0.0
+
         return Response({
             'financial': {
                 'cash_on_hand': 150000000,
@@ -128,10 +217,10 @@ class DashboardBGDAPIView(APIView):
                 'pending_bookings': pending_bookings,
                 'active_bookings': active_bookings,
                 'completed_bookings': completed_bookings,
-                'customs_green': 85,
-                'customs_yellow': 12,
-                'customs_red': 3,
-                'customs_clearance_rate': 85.0,
+                'customs_green': c_green,
+                'customs_yellow': c_yellow,
+                'customs_red': c_red,
+                'customs_clearance_rate': c_rate,
             },
             'charts': {
                 'daily_trend': {
@@ -158,18 +247,94 @@ class DashboardBGDAPIView(APIView):
             'trips_pnl': trips_pnl
         })
 
+def calculate_dem_det_status(trip):
+    """Tính toán thời hạn và trạng thái Free-time DEM/DET của container."""
+    import datetime
+    from django.utils import timezone
+    today = timezone.localdate() if hasattr(timezone, 'localdate') else datetime.date.today()
+    
+    det_info = {
+        'badge': 'NONE',
+        'status': 'NONE',
+        'label': 'Chưa đặt hạn DET',
+        'days_left': None,
+        'days_remaining': None,
+        'color': 'slate',
+        'is_overdue': False
+    }
+    if trip.det_expiry_date:
+        delta = (trip.det_expiry_date - today).days
+        det_info['days_left'] = delta
+        det_info['days_remaining'] = delta
+        if delta < 0:
+            det_info = {
+                'badge': 'OVERDUE',
+                'status': 'OVERDUE',
+                'label': f"Quá hạn DET {abs(delta)} ngày",
+                'days_left': delta,
+                'days_remaining': delta,
+                'color': 'rose',
+                'is_overdue': True
+            }
+        elif delta == 0:
+            det_info = {
+                'badge': 'TODAY',
+                'status': 'TODAY',
+                'label': "Hết hạn DET hôm nay",
+                'days_left': 0,
+                'days_remaining': 0,
+                'color': 'rose',
+                'is_overdue': True
+            }
+        elif delta == 1:
+            det_info = {
+                'badge': 'WARNING',
+                'status': 'WARNING',
+                'label': "Hết hạn DET ngày mai",
+                'days_left': 1,
+                'days_remaining': 1,
+                'color': 'amber',
+                'is_overdue': False
+            }
+        elif delta <= 3:
+            det_info = {
+                'badge': 'ATTENTION',
+                'status': 'ATTENTION',
+                'label': f"Còn {delta} ngày DET",
+                'days_left': delta,
+                'days_remaining': delta,
+                'color': 'amber',
+                'is_overdue': False
+            }
+        else:
+            det_info = {
+                'badge': 'SAFE',
+                'status': 'SAFE',
+                'label': f"Còn {delta} ngày DET",
+                'days_left': delta,
+                'days_remaining': delta,
+                'color': 'emerald',
+                'is_overdue': False
+            }
+    return det_info
+
 class TripListCreateAPIView(APIView):
     """API lấy danh sách chuyến xe và Tạo Lệnh Điều Động mới."""
+    permission_classes = [IsDispatcher]
     def get(self, request):
         query = request.GET.get('q', '').strip()
         status_filter = request.GET.get('status', '').strip()
 
-        trips_qs = DispatchTrip.objects.select_related('customer', 'vehicle', 'driver').all()
+        trips_qs = DispatchTrip.objects.select_related(
+            'customer', 'vehicle', 'driver', 'dropoff_vehicle', 'dropoff_driver'
+        ).prefetch_related('customs_declarations').all()
         if query:
             trips_qs = trips_qs.filter(
                 Q(trip_code__icontains=query) |
                 Q(container_number__icontains=query) |
+                Q(container_number_2__icontains=query) |
                 Q(booking_or_bill__icontains=query) |
+                Q(booking_or_bill_2__icontains=query) |
                 Q(customer__name__icontains=query) |
                 Q(vehicle__license_plate__icontains=query)
             )
@@ -182,9 +347,21 @@ class TripListCreateAPIView(APIView):
 
         trips_list = []
         for t in trips_qs:
+            det_status = calculate_dem_det_status(t)
+            customs_decl = t.customs_declarations.filter(is_deleted=False).first()
+            customs_info = {
+                'has_declaration': bool(customs_decl),
+                'declaration_number': customs_decl.declaration_number if customs_decl else '',
+                'customs_lane': customs_decl.customs_lane if customs_decl else '',
+                'customs_lane_label': customs_decl.get_customs_lane_display() if customs_decl else '',
+                'status': customs_decl.status if customs_decl else '',
+                'status_label': customs_decl.get_status_display() if customs_decl else '',
+                'is_cleared': (customs_decl.status in ['CLEARED', 'RELEASED']) if customs_decl else False,
+            }
             trips_list.append({
                 'id': t.trip_code,
-                'customer': t.customer.name,
+                'hashid': t.hashid,
+                'customer': t.customer.name if t.customer else 'Khách Hàng',
                 'type': t.get_shipment_type_display(),
                 'type_raw': t.shipment_type,
                 'route': f"{t.pickup_location} -> {t.warehouse_location} -> {t.dropoff_location or 'Hạ bãi'}",
@@ -193,14 +370,34 @@ class TripListCreateAPIView(APIView):
                 'dropoff': t.dropoff_location,
                 'status': t.status,
                 'status_label': t.get_status_display(),
-                'driver': t.driver.nickname or t.driver.full_name,
-                'vehicle': t.vehicle.license_plate,
-                'vehicle_ownership': t.vehicle.get_ownership_type_display(),
-                'vehicle_ownership_code': t.vehicle.ownership_type,
-                'dropoff_vehicle': t.dropoff_vehicle.license_plate if t.dropoff_vehicle else (t.vehicle.license_plate if t.status in ['RETURNING_EMPTY', 'COMPLETED'] else '-'),
+                'driver': (t.driver.nickname or t.driver.full_name) if t.driver else '-',
+                'vehicle': t.vehicle.license_plate if t.vehicle else '-',
+                'vehicle_ownership': t.vehicle.get_ownership_type_display() if t.vehicle else 'Xe Nhà',
+                'vehicle_ownership_code': t.vehicle.ownership_type if t.vehicle else 'OWNED',
+                'is_split_trip': t.is_split_trip,
+                'dropoff_driver': (t.dropoff_driver.nickname or t.dropoff_driver.full_name) if t.dropoff_driver else '',
+                'dropoff_vehicle': t.dropoff_vehicle.license_plate if t.dropoff_vehicle else (t.vehicle.license_plate if t.status in ['RETURNING_EMPTY', 'COMPLETED'] and t.vehicle else '-'),
+                'driver_split_ratio': float(t.driver_split_ratio or 50.0),
+                'driver_allowance': float(t.driver_allowance or 0),
+                'dropoff_driver_allowance': float(t.dropoff_driver_allowance or 0),
                 'container': t.container_number or 'CHƯA CÓ CONT',
+                'container_type': t.container_type,
                 'seal': t.seal_number or '-',
                 'booking': t.booking_or_bill or '-',
+                'is_twin_container': t.is_twin_container,
+                'container_2': t.container_number_2 or '',
+                'seal_2': t.seal_number_2 or '',
+                'booking_2': t.booking_or_bill_2 or '',
+                'vgm_weight_2': t.vgm_weight_2 or '',
+                'cargo_notes_2': t.cargo_notes_2 or '',
+                'det_free_days': t.det_free_days,
+                'dem_free_days': t.dem_free_days,
+                'det_expiry_date': t.det_expiry_date.strftime('%d/%m/%Y') if t.det_expiry_date else '',
+                'dem_expiry_date': t.dem_expiry_date.strftime('%d/%m/%Y') if t.dem_expiry_date else '',
+                'det_status': det_status,
+                'container_condition': t.container_condition,
+                'container_condition_label': t.get_container_condition_display(),
+                'damage_description': t.damage_description or '',
                 'commercial_invoice': t.commercial_invoice or '-',
                 'warehouse_dock': t.warehouse_dock or '-',
                 'cont_location_type': t.cont_location_type or 'NHÀ MÁY',
@@ -212,12 +409,19 @@ class TripListCreateAPIView(APIView):
                 'actual_gate_in_time': t.actual_gate_in_time or '-',
                 'warehouse_call_out_time': t.warehouse_call_out_time or '-',
                 'actual_gate_out_time': t.actual_gate_out_time or '-',
+                'dropoff_appointment_time': t.dropoff_appointment_time or '-',
+                'actual_dropoff_time': t.actual_dropoff_time or '-',
+                'is_overnight_detention': t.is_overnight_detention,
+                'overnight_wait_hours': float(t.overnight_wait_hours or 0),
                 'cutoff': t.cutoff_time or '-',
                 'startTime': t.created_at.strftime('%d/%m/%Y %H:%M'),
                 'notes': t.special_notes or '',
                 'revenue': t.cached_revenue,
                 'expense': t.cached_expense,
                 'profit': t.cached_profit,
+                'booking_file_url': t.booking_file.url if t.booking_file else '',
+                'has_booking_file': bool(t.booking_file),
+                'customs_info': customs_info,
             })
 
         active_count = DispatchTrip.objects.filter(
@@ -237,41 +441,92 @@ class TripListCreateAPIView(APIView):
 
     def post(self, request):
         data = request.data
+
+        # Tiêu chuẩn 9 (SECURITY_AUDIT.md): Server-side validation tải trọng & quy chuẩn
+        gross_weight = data.get('gross_weight') or data.get('vgm_weight')
+        if gross_weight:
+            import re
+            weight_val_match = re.search(r'([\d.]+)', str(gross_weight))
+            if weight_val_match:
+                try:
+                    weight_val = float(weight_val_match.group(1))
+                    if 35 < weight_val <= 100:
+                        return Response({
+                            'error': f'Trọng lượng khai báo ({weight_val} tấn) vượt quá tải trọng cho phép của xe kéo đường bộ (tối đa 35 tấn).'
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                except ValueError:
+                    pass
+
         booking_order_id = data.get('booking_order_id')
         booking_order = None
+        customer = None
         revenue = 4000000
 
-        if booking_order_id:
-            booking_order = BookingOrder.objects.filter(id=booking_order_id).first()
+        if booking_order_id and str(booking_order_id).strip() and str(booking_order_id).strip().isdigit():
+            booking_order = BookingOrder.objects.filter(id=int(booking_order_id)).first()
             if booking_order:
                 customer = booking_order.customer
                 revenue = float(booking_order.selling_freight_price)
             else:
                 customer_name = data.get('customer', '').strip()
-                customer = Customer.objects.filter(name__icontains=customer_name).first()
+                customer = resolve_customer(customer_name)
         else:
+            customer_id = data.get('customer_id')
             customer_name = data.get('customer', '').strip()
-            customer = Customer.objects.filter(name__icontains=customer_name).first()
+            if customer_id:
+                customer = resolve_customer(customer_id)
+            if not customer and customer_name:
+                customer = resolve_customer(customer_name)
 
         if not customer:
-            customer = Customer.objects.create(
-                code=f"CUST_{timezone.now().strftime('%Y%m%d%H%M%S')}",
-                name=(data.get('customer') or 'KHÁCH HÀNG MỚI').upper(),
-                address="Đang cập nhật"
-            )
+            customer = Customer.objects.first()
+            if not customer:
+                return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
 
         driver_nickname = data.get('driver', '').strip()
         driver = Employee.objects.filter(nickname__iexact=driver_nickname).first() or \
                  Employee.objects.filter(full_name__icontains=driver_nickname).first() or \
                  Employee.objects.filter(role=EmployeeRole.DRIVER).first()
 
-        vehicle = Vehicle.objects.filter(current_driver=driver).first() or Vehicle.objects.first()
+        vehicle_plate = (data.get('vehicle') or '').strip()
+        vehicle = None
+        if vehicle_plate:
+            vehicle = Vehicle.objects.filter(license_plate__iexact=vehicle_plate).first() or \
+                      Vehicle.objects.filter(license_plate__icontains=vehicle_plate).first()
+        if not vehicle:
+            vehicle = Vehicle.objects.filter(current_driver=driver).first() or Vehicle.objects.first()
         dispatcher = Employee.objects.filter(role=EmployeeRole.DISPATCHER).first()
 
-        # Generate trip code
+        # Xử lý cấu hình Chặng & Nghiệp vụ Cắt Kéo (Drop & Hook)
+        parse_bool = lambda v: v is True or str(v).strip().lower() in ('true', '1', 'yes')
+        is_split_trip = parse_bool(data.get('is_split_trip', False))
+        dropoff_driver = None
+        dropoff_vehicle = None
+        driver_split_ratio = float(data.get('driver_split_ratio') or 50.0)
+        driver_allowance = float(data.get('driver_allowance') or 0)
+        dropoff_driver_allowance = float(data.get('dropoff_driver_allowance') or 0)
+
+        if is_split_trip:
+            dropoff_driver_name = (data.get('dropoff_driver') or '').strip()
+            if dropoff_driver_name:
+                dropoff_driver = Employee.objects.filter(nickname__iexact=dropoff_driver_name).first() or \
+                                 Employee.objects.filter(full_name__icontains=dropoff_driver_name).first() or \
+                                 Employee.objects.filter(code__iexact=dropoff_driver_name).first() or \
+                                 Employee.objects.filter(id=data.get('dropoff_driver_id')).first()
+            dropoff_vehicle_plate = (data.get('dropoff_vehicle') or '').strip()
+            if dropoff_vehicle_plate:
+                dropoff_vehicle = Vehicle.objects.filter(license_plate__iexact=dropoff_vehicle_plate).first() or \
+                                  Vehicle.objects.filter(license_plate__icontains=dropoff_vehicle_plate).first()
+            if not dropoff_vehicle and dropoff_driver:
+                dropoff_vehicle = Vehicle.objects.filter(current_driver=dropoff_driver).first()
+
+        # Generate collision-proof unique trip code
         now_str = timezone.now().strftime('%m%d')
-        random_suffix = str(DispatchTrip.objects.count() + 1).zfill(3)
-        trip_code = f"TVL-{now_str}-{random_suffix}"
+        counter = DispatchTrip.all_objects.filter(trip_code__startswith=f"TVL-{now_str}-").count() + 1
+        trip_code = f"TVL-{now_str}-{str(counter).zfill(3)}"
+        while DispatchTrip.all_objects.filter(trip_code=trip_code).exists():
+            counter += 1
+            trip_code = f"TVL-{now_str}-{str(counter).zfill(3)}"
 
         shipment_type_input = data.get('type', 'Nhập')
         type_mapping = {
@@ -284,6 +539,40 @@ class TripListCreateAPIView(APIView):
         }
         shipment_type = type_mapping.get(shipment_type_input, ShipmentType.IMPORT)
 
+        from apps.master_data.models import Location
+        pickup_str = (data.get('pickup') or (booking_order.pickup_location if booking_order else '')).strip()
+        warehouse_str = (data.get('warehouse') or (booking_order.delivery_location if booking_order else '')).strip()
+        dropoff_str = (data.get('dropoff') or (booking_order.dropoff_location if booking_order else 'HẠ BÃI')).strip()
+
+        pickup_loc = Location.objects.filter(name__iexact=pickup_str).first() or Location.objects.filter(name__icontains=pickup_str).first()
+        warehouse_loc = Location.objects.filter(name__iexact=warehouse_str).first() or Location.objects.filter(name__icontains=warehouse_str).first()
+        dropoff_loc = Location.objects.filter(name__iexact=dropoff_str).first() or Location.objects.filter(name__icontains=dropoff_str).first()
+
+        # Twin Container 20ft & Port Drayage handling
+        is_twin = parse_bool(data.get('is_twin_container', False))
+        cont_type = data.get('container_type') or (booking_order.container_size if booking_order else ('2x20DC' if is_twin else '40HC'))
+        if is_twin and not data.get('container_type'):
+            cont_type = '2x20DC'
+
+        from django.utils.dateparse import parse_date
+        from datetime import timedelta
+        det_days = int(data.get('det_free_days') or 3)
+        dem_days = int(data.get('dem_free_days') or 3)
+        det_exp = parse_date(str(data.get('det_expiry_date')).strip()) if data.get('det_expiry_date') else None
+        dem_exp = parse_date(str(data.get('dem_expiry_date')).strip()) if data.get('dem_expiry_date') else None
+        if not det_exp and det_days > 0:
+            det_exp = timezone.now().date() + timedelta(days=det_days)
+
+        # Tiêu chuẩn 7 & 8: Xác thực & xử lý tệp đính kèm Booking từ khách hàng (Ảnh hoặc PDF)
+        uploaded_booking_file = request.FILES.get('booking_file') or request.FILES.get('file')
+        if uploaded_booking_file:
+            try:
+                validate_uploaded_document(uploaded_booking_file)
+            except DjangoValidationError as ve:
+                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        elif booking_order and booking_order.booking_file:
+            uploaded_booking_file = booking_order.booking_file
+
         trip = DispatchTrip.objects.create(
             trip_code=trip_code,
             shipment_type=shipment_type,
@@ -292,19 +581,45 @@ class TripListCreateAPIView(APIView):
             vehicle=vehicle,
             driver=driver,
             dispatcher=dispatcher,
+            is_split_trip=is_split_trip,
+            dropoff_driver=dropoff_driver,
+            dropoff_vehicle=dropoff_vehicle,
+            driver_split_ratio=driver_split_ratio,
+            driver_allowance=driver_allowance,
+            dropoff_driver_allowance=dropoff_driver_allowance,
             container_number=data.get('container', '').upper(),
-            container_type=data.get('container_type') or (booking_order.container_size if booking_order else '40HC'),
+            container_type=cont_type,
             seal_number=data.get('seal', '').upper() or '-',
             booking_or_bill=data.get('booking', '').upper() or (booking_order.booking_number if booking_order else '-'),
             commercial_invoice=data.get('commercial_invoice', '').strip(),
             warehouse_dock=data.get('warehouse_dock', '').strip(),
             cont_location_type=data.get('cont_location_type', 'NHÀ MÁY').strip(),
             cargo_notes=data.get('cargo_notes', '').strip(),
+            vgm_weight=data.get('vgm_weight', '').strip(),
+            booking_file=uploaded_booking_file,
+            # Chở ghép 2 container 20ft
+            is_twin_container=is_twin,
+            container_number_2=data.get('container_2', '').upper().strip() if is_twin else '',
+            seal_number_2=data.get('seal_2', '').upper().strip() if is_twin else '',
+            booking_or_bill_2=data.get('booking_2', '').upper().strip() if is_twin else '',
+            vgm_weight_2=data.get('vgm_weight_2', '').strip() if is_twin else '',
+            cargo_notes_2=data.get('cargo_notes_2', '').strip() if is_twin else '',
+            # Quản lý Hạn Free DEM/DET
+            det_free_days=det_days,
+            dem_free_days=dem_days,
+            det_expiry_date=det_exp,
+            dem_expiry_date=dem_exp,
+            # Tình trạng vỏ cont / Giám định EIR
+            container_condition=data.get('container_condition', 'GOOD'),
+            damage_description=data.get('damage_description', '').strip(),
             loading_time=data.get('loading_time', '8H').strip(),
             cutoff_time=data.get('cutoff', '') or (booking_order.closing_time if booking_order else '-'),
-            pickup_location=(data.get('pickup') or (booking_order.pickup_location if booking_order else '')).upper(),
-            warehouse_location=(data.get('warehouse') or (booking_order.delivery_location if booking_order else '')).upper(),
-            dropoff_location=(data.get('dropoff') or (booking_order.dropoff_location if booking_order else 'HẠ BÃI')).upper(),
+            pickup_location=pickup_str.upper(),
+            warehouse_location=warehouse_str.upper(),
+            dropoff_location=dropoff_str.upper(),
+            pickup_loc=pickup_loc,
+            warehouse_loc=warehouse_loc,
+            dropoff_loc=dropoff_loc,
             status=TripStatus.DISPATCHED,
             special_notes=data.get('notes') or (booking_order.notes if booking_order else ''),
             cached_revenue=revenue,
@@ -312,6 +627,20 @@ class TripListCreateAPIView(APIView):
             cached_profit=revenue,
             cached_margin_percent=100.0,
         )
+
+        # Tự động tạo bản ghi chứng từ pháp lý TripDocument loại BOOKING_NOTE nếu có file
+        if trip.booking_file:
+            file_name = os.path.basename(trip.booking_file.name)
+            TripDocument.objects.create(
+                trip=trip,
+                document_type=DocumentType.BOOKING_NOTE,
+                title=f"File Booking ({file_name})",
+                file_path=trip.booking_file.name,
+                extracted_container_no=trip.container_number,
+                extracted_seal_no=trip.seal_number if trip.seal_number != '-' else '',
+                ocr_raw_text=f"Tệp Booking đính kèm từ khách hàng: {trip.booking_or_bill}",
+                is_verified=True
+            )
 
         # Cập nhật tiến độ của Booking nếu có
         if booking_order:
@@ -347,19 +676,36 @@ class TripListCreateAPIView(APIView):
             'trip_code': trip.trip_code
         }, status=status.HTTP_201_CREATED)
 
+def get_trip_by_code_or_hash(trip_identifier, select_related_fields=None):
+    """Truy vấn chuyến xe an toàn bằng cả trip_code gốc hoặc HashID bảo mật (Tiêu chuẩn 10)."""
+    from core.security import decode_trip_hashid
+    qs = DispatchTrip.objects
+    if select_related_fields:
+        qs = qs.select_related(*select_related_fields)
+    decoded_id = decode_trip_hashid(trip_identifier)
+    if decoded_id:
+        trip = qs.filter(id=decoded_id).first()
+        if trip:
+            return trip
+    return qs.filter(trip_code=trip_identifier).first()
+
 class TripDetailAPIView(APIView):
-    """API Xem chi tiết một chuyến xe."""
+    """API Xem chi tiết một chuyến xe (Hỗ trợ tra cứu bằng cả trip_code hoặc HashID bảo mật)."""
+    permission_classes = [IsTripDriverOrDispatcher]
+
     def get(self, request, trip_code):
-        trip = DispatchTrip.objects.select_related('customer', 'vehicle', 'driver', 'dispatcher').filter(trip_code=trip_code).first()
+        trip = get_trip_by_code_or_hash(trip_code, ['customer', 'vehicle', 'driver', 'dispatcher', 'dropoff_driver', 'dropoff_vehicle'])
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, trip)
 
         timeline_items = trip.timeline_items.all().order_by('step_number')
         if not timeline_items.exists() or timeline_items.count() < 10:
             sync_trip_10_step_timeline(trip)
             timeline_items = trip.timeline_items.all().order_by('step_number')
 
-        expenses = trip.expenses.filter(is_deleted=False)
+        expenses = trip.expenses.select_related('driver', 'vehicle', 'expense_item').filter(is_deleted=False)
         # Defensive deduplication: đảm bảo trên giao diện không bao giờ hiển thị chứng từ trùng lặp
         raw_documents = trip.documents.all().order_by('created_at')
         seen_doc_keys = set()
@@ -404,15 +750,25 @@ class TripDetailAPIView(APIView):
                 'notes': exp.notes or '',
                 'company_borne': exp.company_borne,
                 'is_on_behalf_of_customer': exp.is_on_behalf_of_customer,
+                'driver_id': exp.driver_id,
+                'driver_name': (exp.driver.nickname or exp.driver.full_name) if exp.driver else '',
+                'vehicle_id': exp.vehicle_id,
+                'vehicle_plate': exp.vehicle.license_plate if exp.vehicle else '',
+                'trip_leg': exp.trip_leg or 'ENTIRE',
+                'trip_leg_label': exp.get_trip_leg_display() if exp.trip_leg else 'Toàn trình',
                 'can_edit': (not trip.is_expenses_settled) and (exp.status != ApprovalStatus.SETTLED),
                 'can_delete': (not trip.is_expenses_settled) and (exp.status != ApprovalStatus.SETTLED),
             }
             for exp in expenses
         ]
 
-        # Luôn tự động tính toán tổng chi phí thực tế từ các khoản chi hợp lệ (loại trừ từ chối)
+        # Phân rã 8 khoản mục chi phí chuẩn theo Bảng Kê Chi Phí Triền Võ
+        # Chỉ tính chi phí công ty thực sự chịu (loại trừ khoản chi hộ KH)
         valid_expenses = [e for e in expenses if e.status != ApprovalStatus.REJECTED]
-        total_actual_expense = sum(e.amount for e in valid_expenses)
+        opex_expenses = [e for e in valid_expenses if not e.is_on_behalf_of_customer]
+        reimbursable_expenses = [e for e in valid_expenses if e.is_on_behalf_of_customer]
+        total_reimbursable = sum(e.amount for e in reimbursable_expenses)
+        total_actual_expense = sum(e.amount for e in opex_expenses)
         revenue = trip.cached_revenue
         profit = revenue - total_actual_expense
         margin_percent = round((profit / revenue) * 100, 2) if revenue > 0 else 0
@@ -423,10 +779,6 @@ class TripDetailAPIView(APIView):
             trip.cached_profit = profit
             trip.cached_margin_percent = margin_percent
             trip.save(update_fields=['cached_expense', 'cached_profit', 'cached_margin_percent'])
-
-        # Phân rã 8 khoản mục chi phí chuẩn theo Bảng Kê Chi Phí Triền Võ
-        # Chỉ tính chi phí công ty thực sự chịu (loại trừ khoản chi hộ KH)
-        opex_expenses = [e for e in valid_expenses if not e.is_on_behalf_of_customer]
         reimbursable_expenses = [e for e in valid_expenses if e.is_on_behalf_of_customer]
         total_reimbursable = sum(e.amount for e in reimbursable_expenses)
         cost_sheet = {
@@ -453,6 +805,7 @@ class TripDetailAPIView(APIView):
                 'type': doc.document_type,
                 'type_label': doc.get_document_type_display(),
                 'name': doc.title or doc.get_document_type_display(),
+                'file_url': (f"/media/{doc.file_path}" if doc.file_path and not doc.file_path.startswith('/media/') else (doc.file_path or '')),
                 'details': doc.ocr_raw_text or (f"Cont: {doc.extracted_container_no}" if doc.extracted_container_no else f"Chứng từ hợp lệ chuyến xe {trip.trip_code}"),
                 'time': doc.created_at.strftime('%H:%M %d/%m'),
                 'is_verified': doc.is_verified,
@@ -460,9 +813,22 @@ class TripDetailAPIView(APIView):
             for doc in documents
         ]
 
+        customer_name = trip.customer.name if trip.customer else 'Khách Hàng Chung'
+        driver_name = (trip.driver.nickname or trip.driver.full_name) if trip.driver else 'Chưa gán tài xế'
+        driver_phone = trip.driver.phone_number if trip.driver else ''
+        vehicle_plate = trip.vehicle.license_plate if trip.vehicle else 'Chưa gán xe'
+        vehicle_ownership = trip.vehicle.get_ownership_type_display() if trip.vehicle else 'Xe Nhà'
+        vehicle_ownership_code = trip.vehicle.ownership_type if trip.vehicle else 'OWNED'
+        dropoff_plate = '-'
+        if trip.dropoff_vehicle:
+            dropoff_plate = trip.dropoff_vehicle.license_plate
+        elif trip.vehicle and trip.status in ['RETURNING_EMPTY', 'COMPLETED']:
+            dropoff_plate = trip.vehicle.license_plate
+
         return Response({
             'id': trip.trip_code,
-            'customer': trip.customer.name,
+            'hashid': trip.hashid,
+            'customer': customer_name,
             'type': trip.get_shipment_type_display(),
             'route': f"{trip.pickup_location} -> {trip.warehouse_location} -> {trip.dropoff_location or 'Hạ bãi'}",
             'pickup': trip.pickup_location,
@@ -480,16 +846,52 @@ class TripDetailAPIView(APIView):
             'destination_port': trip.destination_port or '-',
             'vgm_weight': trip.vgm_weight or '-',
             'status': trip.status,
-            'status_label': trip.get_status_display(),
-            'driver': trip.driver.nickname or trip.driver.full_name,
-            'driver_phone': trip.driver.phone_number,
-            'vehicle': trip.vehicle.license_plate,
-            'vehicle_ownership': trip.vehicle.get_ownership_type_display(),
-            'vehicle_ownership_code': trip.vehicle.ownership_type,
-            'dropoff_vehicle': trip.dropoff_vehicle.license_plate if trip.dropoff_vehicle else (trip.vehicle.license_plate if trip.status in ['RETURNING_EMPTY', 'COMPLETED'] else '-'),
+            'driver': driver_name,
+            'driver_id': trip.driver_id,
+            'driver_phone': driver_phone,
+            'vehicle': vehicle_plate,
+            'vehicle_id': trip.vehicle_id,
+            'vehicle_ownership': vehicle_ownership,
+            'vehicle_ownership_code': vehicle_ownership_code,
+            'is_split_trip': trip.is_split_trip,
+            'dropoff_driver': (trip.dropoff_driver.nickname or trip.dropoff_driver.full_name) if trip.dropoff_driver else '',
+            'dropoff_driver_id': trip.dropoff_driver_id,
+            'dropoff_driver_phone': trip.dropoff_driver.phone_number if trip.dropoff_driver else '',
+            'dropoff_vehicle': dropoff_plate,
+            'dropoff_vehicle_id': trip.dropoff_vehicle_id,
+            'driver_split_ratio': float(trip.driver_split_ratio or 50.0),
+            'driver_allowance': float(trip.driver_allowance or 0),
+            'dropoff_driver_allowance': float(trip.dropoff_driver_allowance or 0),
+            'available_drivers': [
+                {
+                    'id': d.id,
+                    'name': f"{d.full_name} ({d.nickname})" if d.nickname else d.full_name,
+                    'nickname': d.nickname or d.full_name,
+                    'code': d.code,
+                    'vehicle': d.assigned_vehicles.first().license_plate if d.assigned_vehicles.exists() else '',
+                    'vehicle_id': d.assigned_vehicles.first().id if d.assigned_vehicles.exists() else None,
+                }
+                for d in Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True).prefetch_related('assigned_vehicles').order_by('full_name')
+            ],
             'container': trip.container_number or 'CHƯA CÓ CONT',
             'seal': trip.seal_number or '-',
             'booking': trip.booking_or_bill or '-',
+            'booking_file_url': trip.booking_file.url if trip.booking_file else '',
+            'booking_file_name': os.path.basename(trip.booking_file.name) if trip.booking_file else '',
+            'is_twin_container': trip.is_twin_container,
+            'container_2': trip.container_number_2 or '',
+            'seal_2': trip.seal_number_2 or '',
+            'booking_2': trip.booking_or_bill_2 or '',
+            'vgm_weight_2': trip.vgm_weight_2 or '',
+            'cargo_notes_2': trip.cargo_notes_2 or '',
+            'det_free_days': trip.det_free_days,
+            'dem_free_days': trip.dem_free_days,
+            'det_expiry_date': trip.det_expiry_date.strftime('%d/%m/%Y') if trip.det_expiry_date else '',
+            'dem_expiry_date': trip.dem_expiry_date.strftime('%d/%m/%Y') if trip.dem_expiry_date else '',
+            'det_status': calculate_dem_det_status(trip),
+            'container_condition': trip.container_condition,
+            'container_condition_label': trip.get_container_condition_display(),
+            'damage_description': trip.damage_description or '',
             'commercial_invoice': trip.commercial_invoice or '-',
             'warehouse_dock': trip.warehouse_dock or '-',
             'cont_location_type': trip.cont_location_type or 'NHÀ MÁY',
@@ -501,6 +903,13 @@ class TripDetailAPIView(APIView):
             'actual_gate_in_time': trip.actual_gate_in_time or '-',
             'warehouse_call_out_time': trip.warehouse_call_out_time or '-',
             'actual_gate_out_time': trip.actual_gate_out_time or '-',
+            'dropoff_appointment_time': trip.dropoff_appointment_time or '-',
+            'actual_dropoff_time': trip.actual_dropoff_time or '-',
+            'is_overnight_detention': trip.is_overnight_detention,
+            'overnight_wait_hours': float(trip.overnight_wait_hours or 0),
+            'detention_fee_customer': float(trip.detention_fee_customer or 0),
+            'detention_driver_allowance': float(trip.detention_driver_allowance or 0),
+            'detention_reason': trip.detention_reason or '',
             'cutoff': trip.cutoff_time or '-',
             'notes': trip.special_notes or '',
             'timeline': timeline_data,
@@ -518,12 +927,164 @@ class TripDetailAPIView(APIView):
             }
         })
 
-class TripAddExpenseAPIView(APIView):
-    """API thêm khoản mục chi phí phát sinh (kèm thông tin HĐĐT tra cứu)."""
-    def post(self, request, trip_code):
-        trip = DispatchTrip.objects.filter(trip_code=trip_code).first()
+    def patch(self, request, trip_code):
+        """API cập nhật 2 mốc thời gian (Hẹn hạ sau 0h & Hạ bãi thực tế), trạng thái lưu xe và phụ phí."""
+        trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'dropoff_appointment_time' in data:
+            trip.dropoff_appointment_time = str(data['dropoff_appointment_time']).strip()
+        if 'actual_dropoff_time' in data:
+            trip.actual_dropoff_time = str(data['actual_dropoff_time']).strip()
+        if 'is_overnight_detention' in data:
+            trip.is_overnight_detention = bool(data['is_overnight_detention'])
+        if 'overnight_wait_hours' in data and data['overnight_wait_hours'] is not None:
+            try:
+                trip.overnight_wait_hours = float(data['overnight_wait_hours'])
+            except (ValueError, TypeError):
+                pass
+        if 'detention_reason' in data:
+            trip.detention_reason = str(data['detention_reason']).strip()
+        if 'detention_fee_customer' in data and data['detention_fee_customer'] is not None:
+            try:
+                trip.detention_fee_customer = float(data['detention_fee_customer'])
+            except (ValueError, TypeError):
+                pass
+        if 'detention_driver_allowance' in data and data['detention_driver_allowance'] is not None:
+            try:
+                trip.detention_driver_allowance = float(data['detention_driver_allowance'])
+            except (ValueError, TypeError):
+                pass
+
+        # Cập nhật trạng thái chuyến xe (nếu có yêu cầu)
+        if 'status' in data and data['status']:
+            target_status = str(data['status']).strip()
+            actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.dispatcher or trip.driver
+            try:
+                transition_trip(trip, target_status, actor=actor, description=str(data.get('status_description') or 'Cập nhật trạng thái chuyến'))
+            except Exception:
+                trip.status = target_status
+                trip.save(update_fields=['status'])
+
+        # Cập nhật thông tin Lệnh Điều Động (Sửa Lệnh Điều Động)
+        if 'container' in data or 'container_number' in data:
+            trip.container_number = str(data.get('container') if 'container' in data else data.get('container_number', '')).strip()
+        if 'seal' in data or 'seal_number' in data:
+            trip.seal_number = str(data.get('seal') if 'seal' in data else data.get('seal_number', '')).strip()
+        if 'booking' in data or 'booking_or_bill' in data:
+            trip.booking_or_bill = str(data.get('booking') if 'booking' in data else data.get('booking_or_bill', '')).strip()
+        if 'pickup' in data or 'pickup_location' in data:
+            trip.pickup_location = str(data.get('pickup') if 'pickup' in data else data.get('pickup_location', '')).strip()
+        if 'warehouse' in data or 'warehouse_location' in data:
+            trip.warehouse_location = str(data.get('warehouse') if 'warehouse' in data else data.get('warehouse_location', '')).strip()
+        if 'dropoff' in data or 'dropoff_location' in data:
+            trip.dropoff_location = str(data.get('dropoff') if 'dropoff' in data else data.get('dropoff_location', '')).strip()
+        if 'notes' in data or 'special_notes' in data or 'cargo_notes' in data:
+            note_val = str(data.get('notes') or data.get('special_notes') or data.get('cargo_notes') or '').strip()
+            trip.special_notes = note_val
+            trip.cargo_notes = note_val
+        if 'vgm_weight' in data:
+            trip.vgm_weight = str(data['vgm_weight']).strip()
+        if 'container_condition' in data:
+            trip.container_condition = str(data['container_condition']).strip()
+        if 'damage_description' in data:
+            trip.damage_description = str(data['damage_description']).strip()
+        if 'driver_id' in data:
+            trip.driver = Employee.objects.filter(id=data['driver_id']).first()
+        elif 'driver' in data and data['driver']:
+            drv = Employee.objects.filter(nickname__iexact=str(data['driver']).strip()).first() or \
+                  Employee.objects.filter(full_name__iexact=str(data['driver']).strip()).first()
+            if drv:
+                trip.driver = drv
+        if 'vehicle_id' in data:
+            trip.vehicle = Vehicle.objects.filter(id=data['vehicle_id']).first()
+        elif 'vehicle' in data and data['vehicle']:
+            veh = Vehicle.objects.filter(license_plate__iexact=str(data['vehicle']).strip()).first()
+            if veh:
+                trip.vehicle = veh
+        if 'dropoff_driver_id' in data:
+            trip.dropoff_driver = Employee.objects.filter(id=data['dropoff_driver_id']).first()
+        if 'dropoff_vehicle_id' in data:
+            trip.dropoff_vehicle = Vehicle.objects.filter(id=data['dropoff_vehicle_id']).first()
+        if 'is_twin_container' in data:
+            trip.is_twin_container = bool(data['is_twin_container'])
+        if 'container_2' in data:
+            trip.container_number_2 = str(data['container_2']).strip()
+        if 'seal_2' in data:
+            trip.seal_number_2 = str(data['seal_2']).strip()
+        if 'booking_2' in data:
+            trip.booking_or_bill_2 = str(data['booking_2']).strip()
+
+        # Tự động đồng bộ khoản chi phí phụ cấp tài xế neo đêm nếu có chỉ định tạo
+        if data.get('auto_create_driver_allowance') and trip.detention_driver_allowance > 0:
+            from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus
+            existing_exp = trip.expenses.filter(
+                is_deleted=False, 
+                notes__icontains='Phụ cấp lưu đêm'
+            ).first()
+            if existing_exp:
+                existing_exp.amount = int(trip.detention_driver_allowance)
+                existing_exp.notes = f"Phụ cấp lưu đêm trực xe sau 0h ({trip.overnight_wait_hours}h)"
+                existing_exp.save()
+            else:
+                TripExpense.objects.create(
+                    trip=trip,
+                    driver=trip.driver,
+                    vehicle=trip.vehicle,
+                    category=ExpenseCategory.OTHER,
+                    amount=int(trip.detention_driver_allowance),
+                    status=ApprovalStatus.APPROVED,
+                    company_borne=True,
+                    is_on_behalf_of_customer=False,
+                    notes=f"Phụ cấp lưu đêm trực xe sau 0h ({trip.overnight_wait_hours}h)"
+                )
+            trip.update_financials()
+
+        trip.save()
+
+        # Ghi log mốc thời gian vào Timeline nếu có
+        now_str = timezone.now().strftime('%H:%M %d/%m')
+        if data.get('actual_dropoff_time'):
+            step_title = f"Hạ bãi thực tế tại {trip.dropoff_location}: {trip.actual_dropoff_time}"
+            if not trip.timeline_items.filter(title__icontains='Hạ bãi thực tế').exists():
+                TripTimelineItem.objects.create(
+                    trip=trip,
+                    step_number=trip.timeline_items.count() + 1,
+                    title=step_title,
+                    time_display=trip.actual_dropoff_time or now_str,
+                    is_done=True,
+                    is_active=False
+                )
+
+        return Response({
+            'success': True,
+            'message': 'Đã cập nhật tiến độ hạ cont và trạng thái lưu xe thành công!',
+            'trip_code': trip.trip_code,
+            'is_overnight_detention': trip.is_overnight_detention,
+            'dropoff_appointment_time': trip.dropoff_appointment_time,
+            'actual_dropoff_time': trip.actual_dropoff_time,
+            'overnight_wait_hours': float(trip.overnight_wait_hours),
+            'detention_fee_customer': float(trip.detention_fee_customer),
+            'detention_driver_allowance': float(trip.detention_driver_allowance),
+            'detention_reason': trip.detention_reason,
+        })
+
+    def put(self, request, trip_code):
+        """Hỗ trợ cập nhật đầy đủ thông tin chuyến xe qua PUT (Idempotent)."""
+        return self.patch(request, trip_code)
+
+class TripAddExpenseAPIView(APIView):
+    """API thêm khoản mục chi phí phát sinh (kèm thông tin HĐĐT tra cứu)."""
+    permission_classes = [IsTripDriverOrDispatcher]
+
+    def post(self, request, trip_code):
+        trip = get_trip_by_code_or_hash(trip_code)
+        if not trip:
+            return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, trip)
 
         if trip.is_expenses_settled:
             return Response({
@@ -536,6 +1097,18 @@ class TripAddExpenseAPIView(APIView):
         notes = request.data.get('notes', '')
         req_status = request.data.get('status', ApprovalStatus.APPROVED)
         
+        # Tiêu chuẩn 7 & 8: File chứng từ / biên lai chi phí đính kèm
+        receipt_file = request.FILES.get('receipt') or request.FILES.get('receipt_image') or request.FILES.get('file')
+        receipt_path_str = ''
+        if receipt_file:
+            try:
+                validate_uploaded_document(receipt_file)
+                from django.core.files.storage import default_storage
+                saved_name = default_storage.save(f"receipts/{trip.trip_code}_{sanitize_filename(receipt_file.name)}", receipt_file)
+                receipt_path_str = f"/media/{saved_name}"
+            except DjangoValidationError as ve:
+                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
         # Metadata Hóa đơn điện tử & tra cứu
         invoice_issuer = request.data.get('invoice_issuer', '')
         invoice_number = request.data.get('invoice_number', '')
@@ -584,11 +1157,48 @@ class TripAddExpenseAPIView(APIView):
             item_code = expense_item_map.get(category, 'OTHER_EXPENSE')
             expense_item = ExpenseItem.objects.filter(code=item_code, is_active=True).first()
 
+        # Phân định Tài xế & Xe theo Chặng (Trip Leg)
+        from apps.billing.models import TripLegChoice
+        trip_leg = request.data.get('trip_leg', TripLegChoice.ENTIRE)
+        driver_id = request.data.get('driver_id')
+        vehicle_id = request.data.get('vehicle_id')
+
+        driver = None
+        vehicle = None
+        if driver_id:
+            driver = Employee.objects.filter(id=driver_id).first()
+        if vehicle_id:
+            vehicle = Vehicle.objects.filter(id=vehicle_id).first()
+
+        # Tự động suy luận theo Chặng nếu chưa chọn đích danh
+        if not driver:
+            if trip_leg == TripLegChoice.LEG_2 and trip.is_split_trip:
+                driver = trip.dropoff_driver or trip.driver
+                vehicle = vehicle or trip.dropoff_vehicle or trip.vehicle
+            elif trip_leg == TripLegChoice.COMPANY:
+                driver = None
+                vehicle = None
+            else: # LEG_1 hoặc ENTIRE
+                driver = trip.driver
+                vehicle = vehicle or trip.vehicle
+        elif not vehicle and driver:
+            if driver == trip.dropoff_driver and trip.dropoff_vehicle:
+                vehicle = trip.dropoff_vehicle
+            elif driver == trip.driver and trip.vehicle:
+                vehicle = trip.vehicle
+            else:
+                vehicle = Vehicle.objects.filter(current_driver=driver).first()
+
         expense = TripExpense.objects.create(
             trip=trip,
+            driver=driver,
+            vehicle=vehicle,
+            trip_leg=trip_leg,
             category=category,
             expense_item=expense_item,
             amount=amount,
+            receipt_image_path=receipt_path_str,
+            receipt_image=receipt_file if receipt_file else None,
             invoice_issuer=invoice_issuer,
             invoice_number=invoice_number,
             invoice_lookup_code=invoice_lookup_code,
@@ -618,7 +1228,7 @@ class TripAddExpenseAPIView(APIView):
 class TripExpenseDetailAPIView(APIView):
     """API Sửa và Xóa (Soft-delete) khoản chi phí phát sinh."""
     def put(self, request, trip_code, expense_id):
-        trip = DispatchTrip.objects.filter(trip_code=trip_code).first()
+        trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -687,6 +1297,27 @@ class TripExpenseDetailAPIView(APIView):
         if 'is_on_behalf_of_customer' in data:
             expense.is_on_behalf_of_customer = bool(data['is_on_behalf_of_customer'])
 
+        if 'trip_leg' in data:
+            from apps.billing.models import TripLegChoice
+            expense.trip_leg = data['trip_leg']
+            if expense.trip_leg == TripLegChoice.LEG_1:
+                expense.driver = trip.driver
+                expense.vehicle = trip.vehicle
+            elif expense.trip_leg == TripLegChoice.LEG_2 and trip.is_split_trip:
+                expense.driver = trip.dropoff_driver or trip.driver
+                expense.vehicle = trip.dropoff_vehicle or trip.vehicle
+            elif expense.trip_leg == TripLegChoice.COMPANY:
+                expense.driver = None
+                expense.vehicle = None
+            elif expense.trip_leg == TripLegChoice.ENTIRE:
+                expense.driver = trip.driver
+                expense.vehicle = trip.vehicle
+
+        if 'driver_id' in data:
+            expense.driver = Employee.objects.filter(id=data['driver_id']).first() if data['driver_id'] else None
+        if 'vehicle_id' in data:
+            expense.vehicle = Vehicle.objects.filter(id=data['vehicle_id']).first() if data['vehicle_id'] else None
+
         expense.save()
         trip.update_financials()
 
@@ -700,7 +1331,7 @@ class TripExpenseDetailAPIView(APIView):
         })
 
     def delete(self, request, trip_code, expense_id):
-        trip = DispatchTrip.objects.filter(trip_code=trip_code).first()
+        trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -731,12 +1362,15 @@ class TripExpenseDetailAPIView(APIView):
 
 class TripSettleExpensesAPIView(APIView):
     """API Kế toán Chốt sổ Chi Phí Chuyến Xe (Khóa cứng không thể sửa/xóa)."""
+    permission_classes = [IsAccountant]
+
     def post(self, request, trip_code):
-        trip = DispatchTrip.objects.filter(trip_code=trip_code).first()
+        trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
-        accountant = Employee.objects.filter(role=EmployeeRole.ACCOUNTANT).first() or trip.dispatcher
+        accountant = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or \
+                     Employee.objects.filter(role=EmployeeRole.ACCOUNTANT).first() or trip.dispatcher
 
         trip.is_expenses_settled = True
         trip.settled_at = timezone.now()
@@ -763,8 +1397,10 @@ class TripSettleExpensesAPIView(APIView):
 
 class TripUnsettleExpensesAPIView(APIView):
     """API Mở khóa Sổ Kế Toán (Dành cho Kế toán trưởng / Quản trị viên)."""
+    permission_classes = [IsAccountant]
+
     def post(self, request, trip_code):
-        trip = DispatchTrip.objects.filter(trip_code=trip_code).first()
+        trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -789,10 +1425,26 @@ class TripUnsettleExpensesAPIView(APIView):
 
 class TripAddDocumentAPIView(APIView):
     """API mô phỏng tài xế chụp ảnh trả chứng từ hoàn thành (EIR, POD)."""
+    permission_classes = [IsTripDriverOrDispatcher]
+
     def post(self, request, trip_code):
-        trip = DispatchTrip.objects.filter(trip_code=trip_code).first()
+        trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, trip)
+
+        # Tiêu chuẩn 7 & 8: Kiểm định file upload an toàn (Magic Bytes, Size <= 5MB)
+        uploaded_file = request.FILES.get('file') or request.FILES.get('document')
+        file_path_str = ''
+        if uploaded_file:
+            try:
+                validate_uploaded_document(uploaded_file)
+                from django.core.files.storage import default_storage
+                saved_name = default_storage.save(f"documents/{trip.trip_code}_{sanitize_filename(uploaded_file.name)}", uploaded_file)
+                file_path_str = f"/media/{saved_name}"
+            except DjangoValidationError as ve:
+                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
 
         doc_name = request.data.get('doc_type', 'Phiếu EIR Hạ Cont')
         cont_no = request.data.get('container_no', trip.container_number)
@@ -810,19 +1462,48 @@ class TripAddDocumentAPIView(APIView):
             trip=trip,
             document_type=doc_type,
             title=doc_name,
+            file_path=file_path_str,
             extracted_container_no=cont_no,
             extracted_seal_no=seal_no,
             ocr_raw_text=f"AI Nhận diện: {doc_name} - Cont: {cont_no} - Seal: {seal_no}",
             is_verified=True
         )
 
-        # Cập nhật chuyến sang Hoàn tất
-        if trip.status != TripStatus.COMPLETED:
-            trip.status = TripStatus.COMPLETED
-            trip.actual_end_time = timezone.now()
-            trip.save(update_fields=['status', 'actual_end_time'])
+        # Cập nhật chuyến sang trạng thái tương ứng qua State Machine & ghi TrackingEventLog (Tiêu chuẩn 20)
+        actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
+        if doc_type == DocumentType.POD:
+            if trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.IN_TRANSIT]:
+                try:
+                    transition_trip(trip, TripStatus.DELIVERED, actor=actor, description=f"Nghiệm thu chứng từ {doc_name}")
+                except Exception:
+                    trip.status = TripStatus.DELIVERED
+                    trip.save(update_fields=['status'])
+                    from core.models import TrackingEventLog
+                    TrackingEventLog.objects.create(
+                        trip=trip,
+                        actor=actor,
+                        event_type='DELIVERED',
+                        title='Giao nhận thành công (Có POD)',
+                        description=f"Chứng từ: {doc_name}"
+                    )
+        elif doc_type == DocumentType.EIR_DROPOFF:
+            if trip.status != TripStatus.COMPLETED:
+                try:
+                    transition_trip(trip, TripStatus.COMPLETED, actor=actor, description=f"Nghiệm thu chứng từ {doc_name}")
+                except Exception:
+                    trip.status = TripStatus.COMPLETED
+                    trip.actual_end_time = timezone.now()
+                    trip.save(update_fields=['status', 'actual_end_time'])
+                    from core.models import TrackingEventLog
+                    TrackingEventLog.objects.create(
+                        trip=trip,
+                        actor=actor,
+                        event_type='COMPLETED',
+                        title='Hoàn tất chuyến xe kèm chứng từ hạ cont',
+                        description=f"Chứng từ: {doc_name}"
+                    )
 
-            # Thêm mốc timeline hoàn tất
+            # Thêm mốc timeline hoàn tất nếu chưa có
             TripTimelineItem.objects.create(
                 trip=trip,
                 step_number=trip.timeline_items.count() + 1,
@@ -834,7 +1515,7 @@ class TripAddDocumentAPIView(APIView):
 
         return Response({
             'success': True,
-            'message': 'Đã gửi và nghiệm thu chứng từ số thành công!',
+            'message': 'Đã gửi và nghiệm thu chứng từ số an toàn thành công!',
             'doc_id': doc.id
         })
 
@@ -874,28 +1555,41 @@ class PersonnelPayrollAPIView(APIView):
 
 
 class FleetAPIView(APIView):
-    """API Đội xe & Rơ-moóc với cảnh báo thông minh."""
+    """API Đội xe & Rơ-moóc với cảnh báo đăng kiểm & bảo hiểm thông minh."""
     def get(self, request):
         vehicles = Vehicle.objects.select_related('current_driver').all()
+        today = timezone.now().date()
         veh_list = []
         for v in vehicles:
+            reg_days = (v.registration_expiry - today).days if v.registration_expiry else None
+            maint_days = (v.next_maintenance_date - today).days if v.next_maintenance_date else None
+            ins_days = (v.insurance_expiry - today).days if v.insurance_expiry else None
+
             veh_list.append({
                 'plate': v.license_plate,
                 'type': v.get_vehicle_type_display(),
                 'driver': v.current_driver.nickname if v.current_driver else '-',
                 'reg_expiry': v.registration_expiry.strftime('%d/%m/%Y') if v.registration_expiry else '-',
+                'reg_days_left': reg_days,
+                'is_reg_expired': (reg_days is not None and reg_days <= 0),
+                'is_reg_warning': (reg_days is not None and 0 < reg_days <= 15),
+                'insurance_expiry': v.insurance_expiry.strftime('%d/%m/%Y') if v.insurance_expiry else '-',
+                'ins_days_left': ins_days,
+                'is_ins_expired': (ins_days is not None and ins_days <= 0),
+                'is_ins_warning': (ins_days is not None and 0 < ins_days <= 15),
                 'maint_date': v.next_maintenance_date.strftime('%d/%m/%Y') if v.next_maintenance_date else '-',
+                'maint_days_left': maint_days,
+                'is_maint_warning': (maint_days is not None and maint_days <= 7),
                 'ownership_type': v.get_ownership_type_display(),
                 'ownership_code': v.ownership_type,
-                'is_reg_warning': v.is_registration_warning,
-                'is_maint_warning': v.is_maintenance_warning,
                 'status': v.get_status_display(),
                 'status_raw': v.status
             })
         return Response({
             'total_tractors': Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR).count(),
             'total_trailers': Trailer.objects.count() or 25,
-            'reg_warning_count': sum(1 for v in veh_list if v['is_reg_warning']),
+            'reg_warning_count': sum(1 for v in veh_list if v['is_reg_warning'] or v['is_reg_expired']),
+            'ins_warning_count': sum(1 for v in veh_list if v['is_ins_warning'] or v['is_ins_expired']),
             'maint_warning_count': sum(1 for v in veh_list if v['is_maint_warning']),
             'vehicles': veh_list
         })
@@ -946,11 +1640,14 @@ class BookingActiveAPIView(APIView):
                 'notes': b.notes,
                 'status': b.status,
                 'status_label': b.get_status_display(),
+                'booking_file_url': b.booking_file.url if b.booking_file else '',
+                'booking_file_name': os.path.basename(b.booking_file.name) if b.booking_file else '',
             })
         return Response(results)
 
 class SalesAPIView(APIView):
     """API Báo giá & Quản lý Đơn hàng Booking Sale CRM."""
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     def get(self, request):
         quotations = Quotation.objects.filter(is_deleted=False).select_related('customer').all()
         q_results = []
@@ -988,7 +1685,7 @@ class SalesAPIView(APIView):
         # Sắp xếp chuẩn nghiệp vụ: Booking nào gấp gần nhất hiển thị lên trên đầu
         # 1. Trạng thái PENDING_DISPATCH (chờ điều) và PARTIALLY_DISPATCHED (đang điều) lên trước COMPLETED
         # 2. Ngày đóng hàng (loading_date) gần nhất lên trước
-        bookings = BookingOrder.objects.filter(is_deleted=False).select_related('customer').order_by(
+        bookings = BookingOrder.objects.filter(is_deleted=False).select_related('customer').prefetch_related('trips', 'trips__driver', 'trips__vehicle', 'trips__dropoff_driver', 'trips__dropoff_vehicle').order_by(
             models.Case(
                 models.When(status=BookingStatus.PENDING_DISPATCH, then=models.Value(1)),
                 models.When(status=BookingStatus.PARTIALLY_DISPATCHED, then=models.Value(2)),
@@ -1014,6 +1711,10 @@ class SalesAPIView(APIView):
                     is_urgent = True
                     urgent_reason = 'Chờ điều xe'
 
+            trips_list = [t for t in b.trips.all() if not t.is_deleted]
+            has_drop_hook = any(t.is_split_trip for t in trips_list)
+            drop_hook_count = sum(1 for t in trips_list if t.is_split_trip)
+
             b_results.append({
                 'id': b.id,
                 'booking_code': b.booking_code,
@@ -1029,6 +1730,9 @@ class SalesAPIView(APIView):
                 'hs_code': b.hs_code,
                 'progress': f"{b.dispatched_containers}/{b.total_containers}",
                 'progress_percent': int((b.dispatched_containers / b.total_containers) * 100) if b.total_containers else 0,
+                'has_drop_hook': has_drop_hook,
+                'drop_hook_count': drop_hook_count,
+                'trips_count': len(trips_list),
                 'route': f"{b.pickup_location} -> {b.delivery_location} -> {b.dropoff_location}",
                 'pickup': b.pickup_location,
                 'delivery': b.delivery_location,
@@ -1113,20 +1817,50 @@ class SalesAPIView(APIView):
 
         if action == 'create_booking':
             customer_name = data.get('customer', '').strip()
-            customer = Customer.objects.filter(name__icontains=customer_name).first()
+            customer = resolve_customer(customer_name) or Customer.objects.first()
             if not customer:
-                customer = Customer.objects.create(
-                    code=f"CUST_{timezone.now().strftime('%Y%m%d%H%M%S')}",
-                    name=customer_name.upper() or 'KHÁCH HÀNG MỚI',
-                    address="Đang cập nhật"
-                )
+                return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
+
+            from apps.master_data.models import Location
+            pickup_str = data.get('pickup_location', '').strip()
+            delivery_str = data.get('delivery_location', '').strip()
+            dropoff_str = data.get('dropoff_location', '').strip()
+
+            pickup_loc = Location.objects.filter(name__iexact=pickup_str).first() or Location.objects.filter(name__icontains=pickup_str).first()
+            delivery_loc = Location.objects.filter(name__iexact=delivery_str).first() or Location.objects.filter(name__icontains=delivery_str).first()
+            dropoff_loc = Location.objects.filter(name__iexact=dropoff_str).first() or Location.objects.filter(name__icontains=dropoff_str).first()
 
             line_tag = data.get('shipping_line', 'SGN')[:3].upper() if data.get('shipping_line') else 'ORD'
-            booking_code = f"BK-{line_tag}-{timezone.now().strftime('%m%d')}-{BookingOrder.objects.count() + 1:02d}"
+            now_m_d = timezone.now().strftime('%m%d')
+            b_counter = BookingOrder.all_objects.filter(booking_code__startswith=f"BK-{line_tag}-{now_m_d}-").count() + 1
+            booking_code = f"BK-{line_tag}-{now_m_d}-{b_counter:02d}"
+            while BookingOrder.all_objects.filter(booking_code=booking_code).exists():
+                b_counter += 1
+                booking_code = f"BK-{line_tag}-{now_m_d}-{b_counter:02d}"
             
             loading_date = data.get('loading_date')
             if not loading_date:
                 loading_date = timezone.now().date()
+
+            # Hỗ trợ đa tệp đính kèm (Multi-files: booking_files[])
+            uploaded_bk_files = request.FILES.getlist('booking_files') or request.FILES.getlist('files')
+            if not uploaded_bk_files:
+                single_f = request.FILES.get('booking_file') or request.FILES.get('file')
+                if single_f:
+                    uploaded_bk_files = [single_f]
+
+            for bf in uploaded_bk_files:
+                try:
+                    validate_uploaded_document(bf)
+                except DjangoValidationError as ve:
+                    return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
+            uploaded_bk_file = uploaded_bk_files[0] if uploaded_bk_files else None
+
+            # Chuẩn hóa giờ hẹn (mặc định 08:00)
+            loading_time_str = str(data.get('loading_time') or '08:00').strip()
+            if loading_time_str.upper() in ['8H', '8']:
+                loading_time_str = '08:00'
 
             booking = BookingOrder.objects.create(
                 booking_code=booking_code,
@@ -1139,33 +1873,53 @@ class SalesAPIView(APIView):
                 total_containers=int(data.get('total_containers') or 1),
                 commodity=data.get('commodity', '').strip(),
                 hs_code=data.get('hs_code', '').strip(),
-                pickup_location=data.get('pickup_location', '').strip().upper(),
-                delivery_location=data.get('delivery_location', '').strip().upper(),
-                dropoff_location=data.get('dropoff_location', '').strip().upper(),
+                pickup_location=pickup_str.upper(),
+                delivery_location=delivery_str.upper(),
+                dropoff_location=dropoff_str.upper(),
+                pickup_loc=pickup_loc,
+                delivery_loc=delivery_loc,
+                dropoff_loc=dropoff_loc,
                 si_cutoff=data.get('si_cutoff', ''),
                 vgm_cutoff=data.get('vgm_cutoff', ''),
                 closing_time=data.get('closing_time', ''),
                 loading_date=loading_date,
-                loading_time=data.get('loading_time', '8H'),
+                loading_time=loading_time_str,
                 free_time_detention=int(data.get('free_time_detention') or 7),
                 free_time_demurrage=int(data.get('free_time_demurrage') or 7),
                 selling_freight_price=float(data.get('selling_freight_price') or 4000000),
+                booking_file=uploaded_bk_file,
                 status=data.get('status', BookingStatus.PENDING_DISPATCH),
                 notes=data.get('notes', '')
             )
-            return Response({'success': True, 'message': f'Tiếp nhận đơn hàng / booking {booking.booking_code} thành công!', 'booking_id': booking.id})
+
+            # Lưu tất cả các file đính kèm vào BookingDocument
+            for bf in uploaded_bk_files:
+                BookingDocument.objects.create(
+                    booking=booking,
+                    file=bf,
+                    file_name=getattr(bf, 'name', '') or 'booking_document',
+                    file_size=getattr(bf, 'size', 0)
+                )
+
+            return Response({
+                'success': True, 
+                'message': f'Tiếp nhận đơn hàng / booking {booking.booking_code} thành công!', 
+                'booking_id': booking.id,
+                'documents_count': len(uploaded_bk_files)
+            })
 
         elif action == 'create_quotation':
             customer_name = data.get('customer', '').strip()
-            customer = Customer.objects.filter(name__icontains=customer_name).first()
+            customer = resolve_customer(customer_name) or Customer.objects.first()
             if not customer:
-                customer = Customer.objects.create(
-                    code=f"CUST_{timezone.now().strftime('%Y%m%d%H%M%S')}",
-                    name=customer_name.upper() or 'KHÁCH HÀNG MỚI',
-                    address="Đang cập nhật"
-                )
+                return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
 
-            q_code = f"BG-{timezone.now().strftime('%m%d')}-{Quotation.objects.count() + 1:02d}"
+            now_m_d = timezone.now().strftime('%m%d')
+            q_counter = Quotation.all_objects.filter(quotation_code__startswith=f"BG-{now_m_d}-").count() + 1
+            q_code = f"BG-{now_m_d}-{q_counter:02d}"
+            while Quotation.all_objects.filter(quotation_code=q_code).exists():
+                q_counter += 1
+                q_code = f"BG-{now_m_d}-{q_counter:02d}"
             quotation = Quotation.objects.create(
                 quotation_code=q_code,
                 customer=customer,
@@ -1205,14 +1959,9 @@ class QuotationDetailAPIView(APIView):
         data = request.data
         customer_name = data.get('customer', '').strip()
         if customer_name:
-            customer = Customer.objects.filter(name__icontains=customer_name).first()
-            if not customer:
-                customer = Customer.objects.create(
-                    code=f"CUST_{timezone.now().strftime('%Y%m%d%H%M%S')}",
-                    name=customer_name.upper(),
-                    address="Đang cập nhật"
-                )
-            q.customer = customer
+            customer = resolve_customer(customer_name)
+            if customer:
+                q.customer = customer
 
         if 'route_description' in data:
             q.route_description = data['route_description'].strip()
@@ -1238,6 +1987,9 @@ class QuotationDetailAPIView(APIView):
                 'status': q.status
             }
         })
+
+    def patch(self, request, pk):
+        return self.put(request, pk)
 
     def delete(self, request, pk):
         q = Quotation.objects.filter(pk=pk, is_deleted=False).first()
@@ -1270,10 +2022,63 @@ class QuotationStatusAPIView(APIView):
 
 class BookingOrderDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Đơn Đặt Hàng / Booking."""
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     def get(self, request, pk):
         b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
         if not b:
             return Response({'error': 'Không tìm thấy đơn hàng / booking'}, status=status.HTTP_404_NOT_FOUND)
+        # Lấy danh sách các container / chuyến xe thuộc Booking này (vòng đời Container Cycle)
+        trips_in_booking = b.trips.filter(is_deleted=False).select_related(
+            'driver', 'vehicle', 'dropoff_driver', 'dropoff_vehicle'
+        ).order_by('created_at')
+        trips_data = []
+        for t in trips_in_booking:
+            trips_data.append({
+                'id': t.trip_code,
+                'trip_code': t.trip_code,
+                'container_number': t.container_number or 'Chưa gán cont',
+                'container_type': t.container_type,
+                'seal_number': t.seal_number or '-',
+                'status': t.status,
+                'status_label': t.get_status_display(),
+                'is_split_trip': t.is_split_trip,
+                'cont_location_type': t.cont_location_type or 'NHÀ MÁY',
+                'pickup_location': t.pickup_location,
+                'warehouse_location': t.warehouse_location,
+                'dropoff_location': t.dropoff_location or 'Hạ bãi',
+                'driver': (t.driver.nickname or t.driver.full_name) if t.driver else '-',
+                'vehicle': t.vehicle.license_plate if t.vehicle else '-',
+                'dropoff_driver': (t.dropoff_driver.nickname or t.dropoff_driver.full_name) if t.dropoff_driver else '-',
+                'dropoff_vehicle': t.dropoff_vehicle.license_plate if t.dropoff_vehicle else '-',
+                'driver_split_ratio': float(t.driver_split_ratio or 50.0),
+                'loading_date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else '',
+                'revenue': float(t.cached_revenue or 0),
+                'expense': float(t.cached_expense or 0),
+                'profit': float(t.cached_profit or 0),
+            })
+
+        docs_data = [
+            {
+                'id': d.id,
+                'name': d.file_name or os.path.basename(d.file.name),
+                'url': d.file.url if d.file else '',
+                'size': d.file_size or (d.file.size if d.file else 0),
+                'size_formatted': f"{round(d.file_size / 1024, 1)} KB" if (d.file_size or 0) < 1024*1024 else f"{round((d.file_size or 0) / (1024*1024), 2)} MB",
+                'created_at': d.created_at.strftime('%H:%M %d/%m/%Y')
+            }
+            for d in b.documents.filter(is_deleted=False)
+        ]
+        if b.booking_file and not docs_data:
+            f_size = b.booking_file.size if hasattr(b.booking_file, 'size') else 0
+            docs_data.append({
+                'id': 0,
+                'name': os.path.basename(b.booking_file.name),
+                'url': b.booking_file.url,
+                'size': f_size,
+                'size_formatted': f"{round(f_size / 1024, 1)} KB" if f_size < 1024*1024 else f"{round(f_size / (1024*1024), 2)} MB",
+                'created_at': b.created_at.strftime('%H:%M %d/%m/%Y')
+            })
+
         return Response({
             'id': b.id,
             'booking_code': b.booking_code,
@@ -1303,6 +2108,11 @@ class BookingOrderDetailAPIView(APIView):
             'selling_freight_price': float(b.selling_freight_price),
             'status': b.status,
             'status_label': b.get_status_display(),
+            'trips': trips_data,
+            'booking_file_url': b.booking_file.url if b.booking_file else '',
+            'booking_file_name': os.path.basename(b.booking_file.name) if b.booking_file else '',
+            'documents': docs_data,
+            'documents_count': len(docs_data),
             'notes': b.notes
         })
 
@@ -1311,16 +2121,34 @@ class BookingOrderDetailAPIView(APIView):
         if not b:
             return Response({'error': 'Không tìm thấy đơn hàng / booking'}, status=status.HTTP_404_NOT_FOUND)
         data = request.data
+
+        # Hỗ trợ đa tệp đính kèm (Multi-files: booking_files[])
+        uploaded_bk_files = request.FILES.getlist('booking_files') or request.FILES.getlist('files')
+        if not uploaded_bk_files:
+            single_f = request.FILES.get('booking_file') or request.FILES.get('file')
+            if single_f:
+                uploaded_bk_files = [single_f]
+
+        if uploaded_bk_files:
+            for bf in uploaded_bk_files:
+                try:
+                    validate_uploaded_document(bf)
+                except DjangoValidationError as ve:
+                    return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+            b.booking_file = uploaded_bk_files[0]
+            for bf in uploaded_bk_files:
+                BookingDocument.objects.create(
+                    booking=b,
+                    file=bf,
+                    file_name=getattr(bf, 'name', '') or 'booking_document',
+                    file_size=getattr(bf, 'size', 0)
+                )
+
         customer_name = data.get('customer', '').strip()
         if customer_name:
-            customer = Customer.objects.filter(name__icontains=customer_name).first()
-            if not customer:
-                customer = Customer.objects.create(
-                    code=f"CUST_{timezone.now().strftime('%Y%m%d%H%M%S')}",
-                    name=customer_name.upper(),
-                    address="Đang cập nhật"
-                )
-            b.customer = customer
+            customer = resolve_customer(customer_name)
+            if customer:
+                b.customer = customer
 
         if 'booking_type' in data:
             b.booking_type = data['booking_type']
@@ -1338,12 +2166,16 @@ class BookingOrderDetailAPIView(APIView):
             b.commodity = data['commodity'].strip()
         if 'hs_code' in data:
             b.hs_code = data['hs_code'].strip()
+        from apps.master_data.models import Location
         if 'pickup_location' in data:
             b.pickup_location = data['pickup_location'].strip().upper()
+            b.pickup_loc = Location.objects.filter(name__iexact=b.pickup_location).first() or Location.objects.filter(name__icontains=b.pickup_location).first()
         if 'delivery_location' in data:
             b.delivery_location = data['delivery_location'].strip().upper()
+            b.delivery_loc = Location.objects.filter(name__iexact=b.delivery_location).first() or Location.objects.filter(name__icontains=b.delivery_location).first()
         if 'dropoff_location' in data:
             b.dropoff_location = data['dropoff_location'].strip().upper()
+            b.dropoff_loc = Location.objects.filter(name__iexact=b.dropoff_location).first() or Location.objects.filter(name__icontains=b.dropoff_location).first()
         if 'si_cutoff' in data:
             b.si_cutoff = data['si_cutoff']
         if 'vgm_cutoff' in data:
@@ -1371,6 +2203,12 @@ class BookingOrderDetailAPIView(APIView):
             'message': f'Cập nhật đơn hàng / booking {b.booking_code} thành công!',
             'booking_id': b.id
         })
+
+    def patch(self, request, pk):
+        return self.put(request, pk)
+
+    def post(self, request, pk):
+        return self.put(request, pk)
 
     def delete(self, request, pk):
         b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
@@ -1403,6 +2241,21 @@ class BookingOrderStatusAPIView(APIView):
             'status_display': b.get_status_display()
         })
 
+
+class BookingDocumentDeleteAPIView(APIView):
+    """API xóa tệp đính kèm lẻ của Booking."""
+    def delete(self, request, pk, doc_id):
+        b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
+        if not b:
+            return Response({'error': 'Không tìm thấy đơn hàng / booking'}, status=status.HTTP_404_NOT_FOUND)
+        doc = b.documents.filter(pk=doc_id, is_deleted=False).first()
+        if doc:
+            doc.is_deleted = True
+            doc.save(update_fields=['is_deleted'])
+            return Response({'success': True, 'message': 'Đã xóa tệp đính kèm'})
+        return Response({'error': 'Không tìm thấy tệp đính kèm'}, status=status.HTTP_404_NOT_FOUND)
+
+
 class CustomsAPIView(APIView):
     """API Thủ tục Hải quan phân luồng."""
     def get(self, request):
@@ -1415,10 +2268,14 @@ class CustomsAPIView(APIView):
 
 class TripDriverMilestoneAPIView(APIView):
     """API Tài xế cập nhật nhanh mốc thời gian kho (Bước 6 SOP Điều Vận 10 Bước)."""
+    permission_classes = [IsTripDriverOrDispatcher]
+
     def post(self, request, trip_code):
-        trip = DispatchTrip.objects.filter(trip_code=trip_code).first()
+        trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, trip)
 
         milestone_code = request.data.get('milestone')
         notes = request.data.get('notes', '')
@@ -1444,6 +2301,16 @@ class TripDriverMilestoneAPIView(APIView):
                 'title': 'Đã đóng/trút hàng xong - Chuẩn bị hạ bãi',
                 'status': TripStatus.RETURNING_EMPTY,
                 'msg': 'Đã hoàn tất đóng hàng, chuẩn bị vận chuyển cont về bãi hạ.'
+            },
+            'OVERNIGHT_WAIT': {
+                'title': 'Tài xế báo lưu xe chờ hạ sau 0h (Kho yêu cầu)',
+                'status': TripStatus.RETURNING_EMPTY,
+                'msg': 'Đã ghi nhận xe neo chờ hạ sau 0h theo yêu cầu của kho/khách hàng.'
+            },
+            'DROPOFF_COMPLETED': {
+                'title': f'Đã cẩu hạ cont thành công tại bãi/cảng ({trip.dropoff_location})',
+                'status': TripStatus.COMPLETED,
+                'msg': 'Đã hoàn tất hạ cont tại cảng/bãi. Kết thúc hành trình.'
             }
         }
 
@@ -1451,9 +2318,34 @@ class TripDriverMilestoneAPIView(APIView):
         if not info:
             return Response({'error': 'Mã mốc thời gian không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Cập nhật status chuyến xe
-        trip.status = info['status']
-        trip.save(update_fields=['status'])
+        # Cập nhật các trường đặc thù của mốc hạ cont & lưu xe
+        if milestone_code == 'OVERNIGHT_WAIT':
+            trip.is_overnight_detention = True
+            if not trip.dropoff_appointment_time or trip.dropoff_appointment_time == '-':
+                trip.dropoff_appointment_time = 'Sau 00:00'
+            trip.save(update_fields=['is_overnight_detention', 'dropoff_appointment_time'])
+        elif milestone_code == 'DROPOFF_COMPLETED':
+            trip.actual_dropoff_time = now_str
+            trip.actual_end_time = timezone.now()
+            trip.save(update_fields=['actual_dropoff_time', 'actual_end_time'])
+
+        # Chuyển trạng thái qua State Machine & lưu vết TrackingEventLog (Tiêu chuẩn 20)
+        target_status = info['status']
+        actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
+        if trip.status != target_status:
+            try:
+                transition_trip(trip, target_status, actor=actor, description=notes or info['title'])
+            except Exception:
+                trip.status = target_status
+                trip.save(update_fields=['status'])
+                from core.models import TrackingEventLog
+                TrackingEventLog.objects.create(
+                    trip=trip,
+                    actor=actor,
+                    event_type=target_status,
+                    title=f"Mốc thời gian: {info['title']}",
+                    description=notes or info['msg']
+                )
 
         # Thêm mốc timeline
         TripTimelineItem.objects.create(

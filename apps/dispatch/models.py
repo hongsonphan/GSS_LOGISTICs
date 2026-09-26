@@ -86,9 +86,130 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     # Thông tin Hóa đơn thương mại & Cửa Dock kho theo Excel thực tế
     commercial_invoice = models.CharField(max_length=100, blank=True, help_text="Số Invoice thương mại hàng hóa (VCC33970...)")
     warehouse_dock = models.CharField(max_length=50, blank=True, help_text="Cửa Dock bốc hàng tại kho (D2, DP...)")
-    dropoff_vehicle = models.ForeignKey('fleet.Vehicle', on_delete=models.SET_NULL, null=True, blank=True, related_name='dropoff_trips', help_text="Xe hạ cont (Cột R Excel)")
+
+    # Cấu hình Chặng Điều Động & Nghiệp vụ Cắt Kéo (Drop & Hook)
+    is_split_trip = models.BooleanField(default=False, db_index=True, help_text="Chế độ Cắt Kéo / Cắt Mooc (Tài xế & Đầu kéo chặng lấy và hạ khác nhau)")
+    dropoff_driver = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='dropoff_driver_trips',
+        help_text="Tài xế hạ cont / Chặng 2 (Cắt kéo - Drop & Hook)"
+    )
+    dropoff_vehicle = models.ForeignKey(
+        'fleet.Vehicle',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='dropoff_trips',
+        help_text="Xe hạ cont (Cột R Excel / Chặng 2)"
+    )
+    dropoff_trailer = models.ForeignKey(
+        'fleet.Trailer',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='dropoff_trailer_trips',
+        help_text="Rơ-mooc hạ cont (nếu đổi mooc)"
+    )
+    driver_split_ratio = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=50.00,
+        help_text="Tỷ lệ phân chia lương tài xế chặng 1 (%)"
+    )
+    driver_allowance = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        help_text="Lương/thù lao tài xế chặng 1 (VNĐ)"
+    )
+    dropoff_driver_allowance = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        help_text="Lương/thù lao tài xế chặng 2 hạ cont (VNĐ)"
+    )
+
     cont_location_type = models.CharField(max_length=50, blank=True, default='NHÀ MÁY', help_text="Vị trí cont (NHÀ MÁY, BÃI, CẢNG...)")
     cargo_notes = models.CharField(max_length=255, blank=True, help_text="Lưu ý đóng/hạ cont (Cột T trong Excel)")
+
+    # Nghiệp vụ Chở Ghép 2 Cont 20ft (Twin 20ft Drayage)
+    is_twin_container = models.BooleanField(
+        default=False, 
+        db_index=True, 
+        help_text="Chế độ chở ghép 2 container 20ft trên cùng 1 chuyến"
+    )
+    container_number_2 = models.CharField(
+        max_length=50, 
+        blank=True, 
+        help_text="Số vỏ Container thứ 2 (khi chạy kẹp 20ft)"
+    )
+    seal_number_2 = models.CharField(
+        max_length=50, 
+        blank=True, 
+        help_text="Số chì / Seal Container thứ 2"
+    )
+    booking_or_bill_2 = models.CharField(
+        max_length=100, 
+        blank=True, 
+        help_text="Số B/L hoặc Booking của Container thứ 2"
+    )
+    vgm_weight_2 = models.CharField(
+        max_length=50, 
+        blank=True, 
+        help_text="Trọng lượng VGM cont thứ 2"
+    )
+    cargo_notes_2 = models.CharField(
+        max_length=255, 
+        blank=True, 
+        help_text="Ghi chú hàng hóa cho Container thứ 2"
+    )
+
+    # Quản lý Hạn Free-time DEM/DET Cảng & Hãng Tàu
+    det_free_days = models.IntegerField(
+        default=3, 
+        help_text="Số ngày miễn phí mượn vỏ cont (Free DET)"
+    )
+    dem_free_days = models.IntegerField(
+        default=3, 
+        help_text="Số ngày miễn phí lưu bãi cảng (Free DEM)"
+    )
+    det_expiry_date = models.DateField(
+        null=True, 
+        blank=True, 
+        db_index=True, 
+        help_text="Hạn cuối trả vỏ cont rỗng không bị phạt (Free DET Expiry)"
+    )
+    dem_expiry_date = models.DateField(
+        null=True, 
+        blank=True, 
+        db_index=True, 
+        help_text="Hạn cuối lưu bãi cảng không bị phạt (Free DEM Expiry)"
+    )
+
+    # Giám định Tình trạng Vỏ Cont Hiện trường (EIR / CIR Condition)
+    container_condition = models.CharField(
+        max_length=50, 
+        default='GOOD', 
+        choices=[
+            ('GOOD', 'Nguyên vẹn / Đạt chuẩn'),
+            ('DAMAGED', 'Có hư hỏng từ trước (Lập biên bản)'),
+            ('CLEANING_REQUIRED', 'Bẩn / Cần vệ sinh')
+        ], 
+        help_text="Tình trạng vỏ cont khi nhận tại cảng/depot"
+    )
+    damage_description = models.TextField(
+        blank=True, 
+        help_text="Chi tiết hư hỏng vỏ cont (Rách bạt, móp vách, thủng nóc, mục sàn...)"
+    )
+    booking_file = models.FileField(
+        upload_to='booking_files/%Y/%m/', 
+        null=True, 
+        blank=True, 
+        help_text="File Booking / Lệnh cấp cont từ khách hàng (Ảnh hoặc PDF)"
+    )
 
     # Theo dõi chi tiết 5 mốc thời gian tại kho khách hàng (Cột B, C, D, E, F, G, H)
     loading_date = models.DateField(null=True, blank=True, help_text="Ngày hẹn đóng hàng (Cột B)")
@@ -98,6 +219,19 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     actual_gate_in_time = models.CharField(max_length=50, blank=True, help_text="Giờ xe vào cổng kho thực tế (Cột F)")
     warehouse_call_out_time = models.CharField(max_length=50, blank=True, help_text="Giờ kho gọi kéo cont ra (Cột G)")
     actual_gate_out_time = models.CharField(max_length=50, blank=True, help_text="Giờ xe kéo ra cổng thực tế (Cột H)")
+
+    # 2 Mốc bổ sung thực tiễn: Theo dõi xe chờ hạ cont sau 0h & Hạ bãi thực tế (Mốc 6 & Mốc 7)
+    dropoff_appointment_time = models.CharField(max_length=50, blank=True, help_text="Mốc 6: Giờ hẹn hạ bãi / Yêu cầu chờ hạ sau 0h (Cột I)")
+    actual_dropoff_time = models.CharField(max_length=50, blank=True, help_text="Mốc 7: Giờ hạ bãi thực tế / Phiếu EIR hạ cont (Cột K)")
+    dropoff_appointment_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm hẹn hạ bãi (ISO DateTime)")
+    actual_dropoff_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm hạ bãi thực tế (ISO DateTime)")
+
+    # Nghiệp vụ Lưu xe & Lưu cont chờ hạ qua đêm (Overnight Detention & Demurrage)
+    is_overnight_detention = models.BooleanField(default=False, db_index=True, help_text="Xác nhận xe lưu đêm / neo chờ hạ sau 0h")
+    overnight_wait_hours = models.DecimalField(max_digits=5, decimal_places=1, default=0, help_text="Số giờ neo xe chờ hạ qua đêm")
+    detention_fee_customer = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Phụ phí lưu xe / neo cont tính cho khách hàng (VNĐ)")
+    detention_driver_allowance = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Phụ cấp lưu đêm cho tài xế trực xe (VNĐ)")
+    detention_reason = models.CharField(max_length=255, blank=True, help_text="Lý do neo xe (Chờ mở CY cảng lúc 0h, kho yêu cầu, kẹt tải...)")
 
     # Mốc thời gian chuẩn hóa DateTimeField (Sprint 1)
     actual_gate_in_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm xe vào cổng kho thực tế (ISO DateTime)")
@@ -116,10 +250,57 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     cached_profit = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Lợi nhuận gộp")
     cached_margin_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Biên lợi nhuận %")
 
-    # Khóa sổ Kế toán (Bảo vệ tính bất khả xâm phạm)
+    # Khóa sổ Kế toán & Quản lý Tạm ứng - Hoàn ứng
     is_expenses_settled = models.BooleanField(default=False, help_text="Kế toán đã chốt sổ chi phí (Khóa sửa/xóa)")
     settled_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm chốt sổ chi phí")
     settled_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='settled_trips')
+    
+    driver_advance_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Tổng tiền tạm ứng chuyến cho tài xế (VNĐ)")
+    advance_settlement_status = models.CharField(
+        max_length=20,
+        default='NO_ADVANCE',
+        choices=[
+            ('NO_ADVANCE', 'Chưa tạm ứng'),
+            ('ADVANCED', 'Đang tạm ứng'),
+            ('SETTLED', 'Đã hoàn ứng quyết toán')
+        ],
+        help_text="Trạng thái hoàn ứng chuyến"
+    )
+
+    # Quyết toán & Đối soát Nhà Xe Bạn / Thầu Phụ 3PL (Giai đoạn 2)
+    subcontractor_cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        help_text="Cước thỏa thuận trả xe bạn / thầu phụ 3PL (VNĐ)"
+    )
+    subcontractor_advance = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        help_text="Số tiền cước đã tạm ứng trước cho nhà xe bạn (VNĐ)"
+    )
+    subcontractor_settlement_status = models.CharField(
+        max_length=20,
+        default='PENDING',
+        choices=[
+            ('PENDING', 'Chờ quyết toán'),
+            ('PARTIAL', 'Thanh toán 1 phần'),
+            ('SETTLED', 'Đã quyết toán xong')
+        ],
+        db_index=True,
+        help_text="Tình trạng quyết toán tiền cước với nhà xe bạn"
+    )
+    subcontractor_settled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Thời điểm kế toán chốt quyết toán cước xe bạn"
+    )
+    subcontractor_notes = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Ghi chú thỏa thuận cước và đối soát xe bạn"
+    )
 
     class Meta:
         ordering = ['-created_at']
@@ -127,11 +308,18 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
             models.Index(fields=['trip_code', 'status']),
             models.Index(fields=['container_number']),
             models.Index(fields=['booking_or_bill']),
+            models.Index(fields=['subcontractor_settlement_status']),
             models.Index(fields=['created_at']),
         ]
 
     def __str__(self):
         return f"[{self.trip_code}] {self.customer.name} - {self.get_status_display()}"
+
+    @property
+    def hashid(self):
+        """Mã hóa ID chuyến xe thành chuỗi HashID bảo mật chống IDOR (Tiêu chuẩn 10)."""
+        from core.security import get_trip_hashid
+        return get_trip_hashid(self.id)
 
     def update_financials(self):
         """Tính toán tự động và cache P&L của chuyến xe."""
@@ -151,11 +339,12 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
             if tariff:
                 self.cached_revenue = tariff.freight_price
 
-        # Tính tổng chi phí thực tế phát sinh từ bảng TripExpense (loại trừ các khoản bị xóa hoặc từ chối)
+        # Tính tổng chi phí thực tế phát sinh từ bảng TripExpense (loại trừ các khoản bị xóa, từ chối hoặc chi hộ KH)
         from apps.billing.models import TripExpense, ApprovalStatus
         total_expenses = TripExpense.objects.filter(
             trip=self, 
-            is_deleted=False
+            is_deleted=False,
+            is_on_behalf_of_customer=False
         ).exclude(
             status=ApprovalStatus.REJECTED
         ).aggregate(

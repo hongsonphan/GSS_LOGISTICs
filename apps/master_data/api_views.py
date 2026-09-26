@@ -30,6 +30,126 @@ class MasterDataSummaryAPIView(APIView):
             }
         })
 
+class MasterDataFormOptionsAPIView(APIView):
+    """
+    API cung cấp toàn bộ danh mục lựa chọn (Dropdown Options) cho các Form điều vận,
+    Booking và Báo giá: Khách hàng, Địa điểm lấy/đóng/hạ (theo phân nhóm), Tài xế, Loại cont.
+    Loại bỏ triệt để việc nhập tự do (free text).
+    """
+    def get(self, request):
+        # 1. Khách hàng
+        customers = [
+            {
+                'id': c.id,
+                'code': c.code,
+                'name': c.name,
+                'label': f"{c.name} ({c.code})" if c.code else c.name
+            }
+            for c in Customer.objects.all().order_by('name')
+        ]
+
+        # 2. Địa điểm (Location)
+        locations_qs = Location.objects.all().order_by('name')
+        
+        ports = []
+        icds = []
+        depots = []
+        warehouses = []
+        all_locations = []
+
+        for loc in locations_qs:
+            loc_dict = {
+                'id': loc.id,
+                'code': loc.code,
+                'name': loc.name,
+                'type': loc.location_type,
+                'type_label': loc.get_location_type_display(),
+                'address': loc.address,
+                'label': f"{loc.name} ({loc.get_location_type_display()})" if loc.location_type != LocationType.WAREHOUSE else loc.name
+            }
+            all_locations.append(loc_dict)
+            if loc.location_type == LocationType.PORT:
+                ports.append(loc_dict)
+            elif loc.location_type == LocationType.ICD:
+                icds.append(loc_dict)
+            elif loc.location_type in [LocationType.DEPOT, LocationType.YARD]:
+                depots.append(loc_dict)
+            elif loc.location_type == LocationType.WAREHOUSE:
+                warehouses.append(loc_dict)
+            else:
+                warehouses.append(loc_dict)
+
+        # 3. Tài xế & Xe được gán
+        from apps.personnel.models import EmployeeRole
+        drivers = []
+        for drv in Employee.objects.filter(role=EmployeeRole.DRIVER).order_by('nickname', 'full_name'):
+            veh = getattr(drv, 'assigned_vehicle', None)
+            if not veh and hasattr(drv, 'vehicles'):
+                veh = drv.vehicles.first()
+            plate_info = f" - Xe: {veh.license_plate}" if veh else ""
+            drivers.append({
+                'id': drv.id,
+                'code': drv.code,
+                'nickname': drv.nickname or drv.full_name,
+                'full_name': drv.full_name,
+                'phone': drv.phone_number,
+                'label': f"{drv.nickname or drv.full_name} ({drv.code}){plate_info}"
+            })
+
+        # 4. Quy cách container / Xe
+        container_types = [
+            {
+                'code': ct.code,
+                'name': ct.name,
+                'category': ct.category,
+                'teu_factor': float(ct.teu_factor),
+                'label': f"{ct.code} - {ct.name}"
+            }
+            for ct in ContainerType.objects.all().order_by('category', 'code')
+        ]
+
+        # 5. Danh sách Đầu Kéo & Rơ-mooc
+        vehicles = [
+            {
+                'id': v.id,
+                'plate': v.license_plate,
+                'ownership': v.get_ownership_type_display(),
+                'ownership_code': v.ownership_type,
+                'driver_id': v.current_driver_id,
+                'driver_name': (v.current_driver.nickname or v.current_driver.full_name) if v.current_driver else '',
+                'label': f"{v.license_plate} ({v.get_ownership_type_display()})"
+            }
+            for v in Vehicle.objects.all().order_by('license_plate')
+        ]
+
+        trailers = [
+            {
+                'id': tr.id,
+                'plate': tr.license_plate,
+                'type': tr.trailer_type,
+                'label': f"{tr.license_plate} ({tr.trailer_type})"
+            }
+            for tr in Trailer.objects.all().order_by('license_plate')
+        ]
+
+        return Response({
+            'customers': customers,
+            'locations': {
+                'all': all_locations,
+                'ports': ports,
+                'icds': icds,
+                'depots': depots,
+                'warehouses': warehouses,
+                'pickup_options': ports + icds + depots,
+                'warehouse_options': warehouses,
+                'dropoff_options': depots + ports + icds,
+            },
+            'drivers': drivers,
+            'vehicles': vehicles,
+            'trailers': trailers,
+            'container_types': container_types,
+        })
+
 # ==============================================================================
 # 1. DANH MỤC ĐỊA ĐIỂM / CẢNG / DEPOT / KHO BÃI
 # ==============================================================================
@@ -347,6 +467,7 @@ class TariffMasterListCreateAPIView(APIView):
                 'container_size': t.container_size,
                 'freight_price': float(t.freight_price),
                 'driver_trip_pay': float(t.driver_trip_pay),
+                'toll_standard_fee': float(getattr(t, 'toll_standard_fee', 0) or 0),
             })
         return Response({'results': data, 'total': len(data)})
 
@@ -365,6 +486,7 @@ class TariffMasterListCreateAPIView(APIView):
             container_size=data.get('container_size', '40HC').strip(),
             freight_price=int(data.get('freight_price', 0)),
             driver_trip_pay=int(data.get('driver_trip_pay', 500000)),
+            toll_standard_fee=int(data.get('toll_standard_fee', 0)),
         )
         return Response({'success': True, 'message': 'Đã thêm biểu cước tuyến đường thành công!', 'id': tariff.id}, status=status.HTTP_201_CREATED)
 
@@ -383,6 +505,7 @@ class TariffMasterDetailAPIView(APIView):
         if 'container_size' in data: tariff.container_size = data['container_size'].strip()
         if 'freight_price' in data: tariff.freight_price = int(data['freight_price'])
         if 'driver_trip_pay' in data: tariff.driver_trip_pay = int(data['driver_trip_pay'])
+        if 'toll_standard_fee' in data: tariff.toll_standard_fee = int(data['toll_standard_fee'])
         tariff.save()
         return Response({'success': True, 'message': 'Đã cập nhật biểu cước thành công!'})
 

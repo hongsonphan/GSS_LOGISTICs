@@ -1,6 +1,7 @@
 from django.urls import path
 from apps.master_data.api_views import (
     MasterDataSummaryAPIView,
+    MasterDataFormOptionsAPIView,
     LocationListCreateAPIView, LocationDetailAPIView,
     ContainerTypeListCreateAPIView, ContainerTypeDetailAPIView,
     ExpenseItemListCreateAPIView, ExpenseItemDetailAPIView,
@@ -13,6 +14,7 @@ from apps.master_data.api_views import (
 
 urlpatterns = [
     path('summary/', MasterDataSummaryAPIView.as_view(), name='master-summary'),
+    path('form-options/', MasterDataFormOptionsAPIView.as_view(), name='master-form-options'),
     
     # 1. Địa điểm / Cảng bãi
     path('locations/', LocationListCreateAPIView.as_view(), name='master-locations'),
