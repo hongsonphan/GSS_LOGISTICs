@@ -1452,9 +1452,22 @@ class TripAddDocumentAPIView(APIView):
 
         doc_map = {
             'Phiếu EIR Hạ Cont': DocumentType.EIR_DROPOFF,
+            'EIR_DROPOFF': DocumentType.EIR_DROPOFF,
             'Biên bản giao nhận hàng': DocumentType.POD,
+            'Biên bản giao nhận có chữ ký (POD)': DocumentType.POD,
+            'POD': DocumentType.POD,
+            'Ảnh giám định vỏ Cont': DocumentType.CONTAINER_CHECK,
+            'CONTAINER_CHECK': DocumentType.CONTAINER_CHECK,
+            'Ảnh Niêm Phong Chì (Seal)': DocumentType.SEAL_IMAGE,
+            'SEAL_IMAGE': DocumentType.SEAL_IMAGE,
+            'Ảnh Hiện Trường Sự Cố': DocumentType.INCIDENT_PHOTO,
+            'INCIDENT_PHOTO': DocumentType.INCIDENT_PHOTO,
+            'Phiếu EIR Lấy Cont': DocumentType.EIR_PICKUP,
+            'EIR_PICKUP': DocumentType.EIR_PICKUP,
             'Phiếu cân xe': DocumentType.WEIGHT_TICKET,
+            'WEIGHT_TICKET': DocumentType.WEIGHT_TICKET,
             'Hóa đơn GTGT': DocumentType.INVOICE,
+            'INVOICE': DocumentType.INVOICE,
         }
         doc_type = doc_map.get(doc_name, DocumentType.EIR_DROPOFF)
 
@@ -1468,6 +1481,46 @@ class TripAddDocumentAPIView(APIView):
             ocr_raw_text=f"AI Nhận diện: {doc_name} - Cont: {cont_no} - Seal: {seal_no}",
             is_verified=True
         )
+
+        # Xử lý nghiệp vụ đặc thù theo loại chứng từ
+        now_str = timezone.now().strftime('%H:%M %d/%m')
+        if doc_type == DocumentType.CONTAINER_CHECK:
+            cond = request.data.get('container_condition', '').strip()
+            notes = request.data.get('notes', '').strip()
+            if cond == 'DAMAGED':
+                trip.container_condition = 'DAMAGED'
+                trip.damage_description = notes or 'Có hư hỏng ghi nhận lúc nhận vỏ tại cảng/bãi'
+            elif cond == 'GOOD':
+                trip.container_condition = 'GOOD'
+                trip.damage_description = notes or ''
+            else:
+                if any(k in notes.lower() for k in ['bị rách', 'bị thủng', 'bị móp', 'hư hỏng', 'mục sàn']):
+                    trip.container_condition = 'DAMAGED'
+                    trip.damage_description = notes
+                else:
+                    trip.container_condition = 'GOOD'
+            trip.save(update_fields=['container_condition', 'damage_description'])
+
+            TripTimelineItem.objects.create(
+                trip=trip,
+                step_number=trip.timeline_items.count() + 1,
+                title=f"Giám định vỏ cont lúc nhận: {trip.get_container_condition_display()}" + (f" ({notes})" if notes else ""),
+                time_display=now_str,
+                is_done=True,
+                is_active=False
+            )
+        elif doc_type == DocumentType.SEAL_IMAGE:
+            if seal_no:
+                trip.seal_number = seal_no
+                trip.save(update_fields=['seal_number'])
+            TripTimelineItem.objects.create(
+                trip=trip,
+                step_number=trip.timeline_items.count() + 1,
+                title=f"Đã chụp ảnh bấm chì niêm phong (Seal: {seal_no or trip.seal_number})",
+                time_display=now_str,
+                is_done=True,
+                is_active=False
+            )
 
         # Cập nhật chuyến sang trạng thái tương ứng qua State Machine & ghi TrackingEventLog (Tiêu chuẩn 20)
         actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
@@ -2362,6 +2415,97 @@ class TripDriverMilestoneAPIView(APIView):
             'message': info['msg'],
             'new_status': trip.status,
             'new_status_label': trip.get_status_display(),
+            'time': now_str
+        })
+
+
+class TripDriverIncidentAPIView(APIView):
+    """API Tài xế báo sự cố dọc đường khẩn cấp (Hỏng xe, CSGT, kẹt đường, kho từ chối)."""
+    permission_classes = [IsTripDriverOrDispatcher]
+
+    def post(self, request, trip_code):
+        trip = get_trip_by_code_or_hash(trip_code)
+        if not trip:
+            return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, trip)
+
+        incident_type = request.data.get('incident_type', 'OTHER')
+        notes = request.data.get('notes', '').strip()
+        location_text = request.data.get('location', '').strip()
+        now_str = timezone.now().strftime('%H:%M %d/%m')
+
+        type_labels = {
+            'VEHICLE_BREAKDOWN': 'Hỏng xe / Nổ lốp / Sự cố kỹ thuật',
+            'TRAFFIC_JAM': 'Kẹt đường / Cháy giờ SI / Trễ giờ kho',
+            'POLICE_CHECK': 'Kiểm tra tải trọng / CSGT',
+            'WAREHOUSE_ISSUE': 'Kho từ chối / Quá tải dock bốc hàng',
+            'ACCIDENT': 'Va quẹt / Sự cố giao thông',
+            'OTHER': 'Sự cố phát sinh khác'
+        }
+        label = type_labels.get(incident_type, 'Sự cố phát sinh')
+
+        # Lưu ảnh hiện trường nếu có
+        uploaded_file = request.FILES.get('photo') or request.FILES.get('file') or request.FILES.get('document')
+        file_path_str = ''
+        if uploaded_file:
+            try:
+                validate_uploaded_document(uploaded_file)
+                from django.core.files.storage import default_storage
+                saved_name = default_storage.save(f"incidents/{trip.trip_code}_{sanitize_filename(uploaded_file.name)}", uploaded_file)
+                file_path_str = f"/media/{saved_name}"
+                TripDocument.objects.create(
+                    trip=trip,
+                    document_type=DocumentType.INCIDENT_PHOTO,
+                    title=f"Ảnh sự cố: {label}",
+                    file_path=file_path_str,
+                    extracted_container_no=trip.container_number,
+                    ocr_raw_text=f"Sự cố: {label} - {notes}",
+                    is_verified=False
+                )
+            except DjangoValidationError as ve:
+                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ghi nhận vào TrackingEventLog
+        actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
+        from core.models import TrackingEventLog
+
+        desc = f"[{label}] {notes}"
+        if location_text:
+            desc += f" (Vị trí: {location_text})"
+
+        TrackingEventLog.objects.create(
+            trip=trip,
+            actor=actor,
+            event_type='INCIDENT',
+            title=f"CẢNH BÁO SỰ CỐ: {label}",
+            description=desc,
+            metadata={'incident_type': incident_type, 'location': location_text, 'photo_url': file_path_str}
+        )
+
+        # Thêm mốc cảnh báo vào Timeline
+        TripTimelineItem.objects.create(
+            trip=trip,
+            step_number=trip.timeline_items.count() + 1,
+            title=f"⚠️ CẢNH BÁO: {label}" + (f" - {notes}" if notes else ""),
+            time_display=now_str,
+            is_done=True,
+            is_active=False
+        )
+
+        # Cập nhật ghi chú chuyến xe
+        warning_line = f"[⚠️ CẢNH BÁO {now_str}]: {label} - {notes}"
+        if trip.special_notes:
+            trip.special_notes = f"{warning_line}\n{trip.special_notes}"
+        else:
+            trip.special_notes = warning_line
+        trip.save(update_fields=['special_notes'])
+
+        return Response({
+            'success': True,
+            'message': 'Đã gửi cảnh báo khẩn cấp tới Điều độ viên thành công! Điều độ sẽ liên hệ hỗ trợ bác tài ngay.',
+            'incident_type': incident_type,
+            'label': label,
             'time': now_str
         })
 

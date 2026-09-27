@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [1.9.3] - 2026-09-27 (Nâng Cấp Giao Diện Tài Xế: Smart Next-Action Flow, Giám Định Vỏ Cont, Ảnh Seal & Nút SOS Khẩn Cấp)
+
+### 1. Bối Cảnh & Nỗi Đau Thực Tế Hiện Trường:
+- **Nguy cơ đền tiền vỏ cont:** Khi nhận vỏ tại cảng/depot, nếu cont bị móp vách, rách bạt, thủng nóc mà tài xế không chụp ảnh làm chứng thì khi hạ bãi hãng tàu sẽ phạt từ 2-15 triệu đồng/cont.
+- **Rủi ro mất chì / sai hàng:** Khi đóng hàng xuất xong, thiếu ảnh cây chì (Seal) đã bấm vào then cửa cont dễ dẫn đến tranh chấp pháp lý nếu xảy ra thất thoát hàng trên đường vận chuyển.
+- **Áp lực bấm nhầm mốc:** Việc hiển thị 6 nút mốc đồng cấp khiến tài xế dễ chạm nhầm khi đang lái xe hoặc trời nắng chói.
+- **Sự cố dọc đường không kịp xử lý:** Bác tài gặp sự cố nổ lốp, CSGT kiểm tra, kẹt xe phà Cát Lái, kho từ chối nhận hàng không có kênh 1-chạm báo về văn phòng điều độ.
+
+### 2. Nội Dung Cải Tiến Chi Tiết:
+- **Thẻ Hành Động Tiếp Theo (Smart Next-Action Hero Card):**
+  - Tự động thay đổi nội dung và màu sắc nổi bật nhất theo trạng thái thực tế của chuyến xe (`DISPATCHED` -> `IN_TRANSIT` -> `AT_WAREHOUSE` -> `UNLOADING` -> `DELIVERED/RETURNING_EMPTY` -> `COMPLETED`).
+  - Nút bấm to bản, thông điệp rõ ràng, giúp bác tài chỉ cần 1 chạm đúng hành động cần làm tiếp theo mà không sợ bấm lộn.
+  - Thu gọn danh sách 6 mốc vào dạng Accordion (mở ra khi cần chọn mốc khác).
+- **Nghiệp Vụ Giám Định Vỏ Cont & Ảnh Chì (Seal):**
+  - Mở rộng `DocumentType` trong `apps/documents/models.py`: bổ sung `CONTAINER_CHECK` và `SEAL_IMAGE`.
+  - Bổ sung 2 nút nhanh: **"📸 Giám Định Vỏ (Chống đền cont)"** và **"🔒 Chụp Cây Chì (Seal niêm phong)"**.
+  - Khi tài xế ghi nhận vỏ có hư hỏng, hệ thống tự động cập nhật `trip.container_condition = 'DAMAGED'` kèm mô tả chi tiết hư hỏng.
+- **Nút Báo Sự Cố Dọc Đường Khẩn Cấp (SOS):**
+  - Nút đỏ nổi bật ở cả thanh App Bar và Bottom Sticky Bar.
+  - Modal SOS 1-chạm: Chọn nhanh nổ lốp/hỏng xe, kẹt đường trễ giờ SI, CSGT kiểm tra, kho từ chối nhận hàng, kèm ảnh hiện trường.
+  - Endpoint API mới: `POST /api/trips/<str:trip_code>/incidents/` (`TripDriverIncidentAPIView`).
+  - Tự động tạo `TrackingEventLog` (event_type='INCIDENT'), ghim cảnh báo đỏ vào `trip.special_notes` và đẩy thông báo cho điều độ viên.
+- **Hỗ Trợ Ngoại Tuyến (Offline Indicator):**
+  - Bổ sung cảnh báo trạng thái mạng khi tài xế lùi vào kho xưởng tôn kín hoặc góc cảng bị rớt sóng 4G.
+- **Kiểm Thử Giả Lập Toàn Trình (13/13 Bước PASSED):**
+  - Cập nhật kịch bản `test_driver_simulation.py`: kiểm thử thêm giám định vỏ cont, báo SOS và chụp seal.
+  - Toàn bộ **40/40 unit tests PASSED 100%**.
+- Nâng cấp Cache Buster lên `?v=1.9.3.0`.
+
+---
+
 ## [1.9.2] - 2026-09-26 (Trang Mobile Driver Portal & Tối Ưu Thao Tác Hiện Trường Cho Tài Xế)
 
 ### 1. Bối Cảnh Nghiệp Vụ:

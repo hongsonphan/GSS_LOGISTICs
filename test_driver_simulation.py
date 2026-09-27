@@ -91,6 +91,25 @@ def run_simulation():
     assert vehicle.license_plate.encode() in resp.content
     print("[PASS] 2. Màn hình Driver Portal hiển thị chuẩn xác (HTTP 200)")
 
+    # 2b. Chụp ảnh giám định vỏ Cont lúc nhận tại bãi (Chống đền vỏ)
+    mock_inspection = create_mock_image("giam_dinh_vo_cont.jpg")
+    ins_resp = client.post(
+        f"/api/trips/{trip_hash}/documents/",
+        data={
+            "doc_type": "Ảnh giám định vỏ Cont",
+            "container_no": "BIMU1234567",
+            "seal_no": "ML-VN98765",
+            "container_condition": "GOOD",
+            "notes": "Vỏ cont sạch đẹp, không móp méo",
+            "document": mock_inspection
+        },
+        HTTP_X_TRIP_HASH=trip_hash
+    )
+    assert ins_resp.status_code == 200, f"Lỗi giám định vỏ: {ins_resp.content}"
+    trip.refresh_from_db()
+    assert trip.container_condition == "GOOD"
+    print(f"[PASS] 2b. Giám định vỏ cont lúc nhận: Thành công -> Condition: {trip.container_condition}")
+
     # 3. Báo mốc 1: Sắp đến kho (30p trước)
     m1_resp = client.post(
         f"/api/trips/{trip_hash}/milestones/",
@@ -145,6 +164,22 @@ def run_simulation():
     assert latest_exp.category == "TOLL_FEE"
     print(f"[PASS] 6. Kê chi phí: BOT 35,000đ -> TripExpense ID {latest_exp.id} lưu thành công kèm ảnh.")
 
+    # 6b. Báo sự cố dọc đường khẩn cấp (SOS): Nổ lốp hoặc kẹt đường
+    mock_incident_photo = create_mock_image("su_co_hien_truong.jpg")
+    sos_resp = client.post(
+        f"/api/trips/{trip_hash}/incidents/",
+        data={
+            "incident_type": "VEHICLE_BREAKDOWN",
+            "notes": "Bể lốp phụ trên đường Quốc lộ 1K, đang chờ đội vá lưu động đến",
+            "photo": mock_incident_photo
+        },
+        HTTP_X_TRIP_HASH=trip_hash
+    )
+    assert sos_resp.status_code == 200, f"Lỗi báo sự cố: {sos_resp.content}"
+    trip.refresh_from_db()
+    assert "CẢNH BÁO" in trip.special_notes
+    print(f"[PASS] 6b. Báo sự cố khẩn cấp (SOS): Thành công -> Cảnh báo ghi nhận: {trip.special_notes[:50]}...")
+
     # 7. Chụp nghiệm thu chứng từ số POD (Thủ kho ký nhận)
     mock_pod = create_mock_image("bien_ban_pod_signed.jpg")
     pod_resp = client.post(
@@ -162,6 +197,21 @@ def run_simulation():
     trip.refresh_from_db()
     assert trip.status == "DELIVERED"
     print(f"[PASS] 7. Nghiệm thu POD: Đã upload chứng từ ID {latest_doc.id} -> Status: {trip.status}")
+
+    # 7b. Chụp ảnh niêm phong chì (Seal) sau khi đóng hàng xong
+    mock_seal = create_mock_image("chup_anh_seal_lock.jpg")
+    seal_resp = client.post(
+        f"/api/trips/{trip_hash}/documents/",
+        data={
+            "doc_type": "Ảnh Niêm Phong Chì (Seal)",
+            "container_no": "BIMU1234567",
+            "seal_no": "ML-VN98765",
+            "document": mock_seal
+        },
+        HTTP_X_TRIP_HASH=trip_hash
+    )
+    assert seal_resp.status_code == 200, f"Lỗi upload Seal: {seal_resp.content}"
+    print(f"[PASS] 7b. Chụp ảnh Seal niêm phong: Đã lưu chứng từ Seal ID {seal_resp.json().get('doc_id')}")
 
     # 8. Báo mốc đóng hàng xong / chuẩn bị kéo cont ra cổng
     m4_resp = client.post(

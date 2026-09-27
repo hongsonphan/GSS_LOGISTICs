@@ -7,6 +7,8 @@ class DocumentType(models.TextChoices):
     POD = 'POD', 'Biên bản giao nhận có chữ ký (POD)'
     WEIGHT_TICKET = 'WEIGHT_TICKET', 'Phiếu Cân Hàng/Xe'
     CONTAINER_CHECK = 'CONTAINER_CHECK', 'Ảnh giám định vỏ Cont'
+    SEAL_IMAGE = 'SEAL_IMAGE', 'Ảnh Niêm Phong Chì (Seal)'
+    INCIDENT_PHOTO = 'INCIDENT_PHOTO', 'Ảnh Hiện Trường Sự Cố'
     INVOICE = 'INVOICE', 'Hóa đơn GTGT nâng hạ / cước'
     BOOKING_NOTE = 'BOOKING_NOTE', 'File Booking / Lệnh cấp rỗng'
 

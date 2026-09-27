@@ -13,6 +13,7 @@ from apps.dispatch.api_views import (
     TripSettleExpensesAPIView,
     TripUnsettleExpensesAPIView,
     TripDriverMilestoneAPIView,
+    TripDriverIncidentAPIView,
     TripAddDocumentAPIView,
     PersonnelPayrollAPIView,
     FleetAPIView,
@@ -91,6 +92,7 @@ urlpatterns = [
     path('api/trips/<str:trip_code>/unsettle-expenses/', TripUnsettleExpensesAPIView.as_view(), name='api-trip-unsettle-expenses'),
     path('api/trips/<str:trip_code>/milestones/', TripDriverMilestoneAPIView.as_view(), name='api-trip-milestones'),
     path('api/trips/<str:trip_code>/documents/', TripAddDocumentAPIView.as_view(), name='api-trip-add-document'),
+    path('api/trips/<str:trip_code>/incidents/', TripDriverIncidentAPIView.as_view(), name='api-trip-incidents'),
     
     path('api/personnel/', PersonnelPayrollAPIView.as_view(), name='api-personnel'),
     path('api/fleet/', FleetAPIView.as_view(), name='api-fleet'),
