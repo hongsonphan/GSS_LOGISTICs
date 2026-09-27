@@ -1908,6 +1908,77 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertEqual(self.client.get('/api/sales/').status_code, 200)
         self.assertEqual(self.client.get('/api/fleet/').status_code, 200)
 
+    def test_public_tracking_portal(self):
+        """Khách hàng tra cứu vận đơn công khai qua /tracking/<hashid>/ không cần đăng nhập."""
+        self.client.logout()
+
+        # Tạo chuyến xe mẫu
+        trip = DispatchTrip.objects.create(
+            trip_code="TRACK-TEST-001",
+            customer=self.customer,
+            driver=self.driver,
+            vehicle=self.vehicle,
+            container_number="MSKU-1234567",
+            container_type="40HC",
+            pickup_location="Cảng Cát Lái",
+            dropoff_location="Depot Tây Nam",
+            cached_revenue=5500000
+        )
+
+        # 1. Truy cập qua HashID công khai
+        res = self.client.get(f'/tracking/{trip.hashid}/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "TRACK-TEST-001")
+        self.assertContains(res, "MSKU-1234567")
+        self.assertContains(res, self.customer.name)
+        # Đảm bảo KHÔNG rò rỉ dữ liệu doanh thu nội bộ
+        self.assertNotContains(res, "5500000")
+        self.assertNotContains(res, "5,500,000")
+
+        # 2. Truy cập qua mã không tồn tại -> 404
+        res_404 = self.client.get('/tracking/INVALIDHASH999/')
+        self.assertEqual(res_404.status_code, 404)
+
+    def test_touchpad_esignature_submission(self):
+        """Kiểm thử tài xế tải lên chữ ký cảm ứng điện tử E-Signature chuyển trạng thái DELIVERED."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.documents.models import DocumentType
+
+        trip = DispatchTrip.objects.create(
+            trip_code="ESIGN-TEST-001",
+            customer=self.customer,
+            driver=self.driver,
+            vehicle=self.vehicle,
+            container_number="ONEU-9988776",
+            status=TripStatus.UNLOADING
+        )
+
+        # Tạo ảnh PNG hợp lệ vượt qua validate_uploaded_document và Pillow
+        from io import BytesIO
+        from PIL import Image
+        bio = BytesIO()
+        img = Image.new('RGB', (100, 100), color='white')
+        img.save(bio, format='PNG')
+        bio.seek(0)
+        sig_file = SimpleUploadedFile("e_pod_signature.png", bio.read(), content_type="image/png")
+
+        # Đăng nhập tài xế hoặc gửi qua Capability Token X-Trip-Hash
+        self.client.force_login(self.driver_user)
+        res = self.client.post(f'/api/trips/{trip.trip_code}/documents/', data={
+            'doc_type': 'Biên bản giao nhận hàng',
+            'document': sig_file,
+            'signer_name': 'Nguyễn Văn Tuấn (Thủ kho)',
+            'notes': 'Ký điện tử bởi: Nguyễn Văn Tuấn lúc 14:30 27/09'
+        }, format='multipart')
+
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.json().get('success'))
+
+        trip.refresh_from_db()
+        self.assertEqual(trip.status, TripStatus.DELIVERED)
+        self.assertTrue(trip.documents.filter(document_type=DocumentType.POD).exists())
+
+
 
 
 

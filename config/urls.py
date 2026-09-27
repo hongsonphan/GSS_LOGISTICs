@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view
+from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view
 from apps.dispatch.api_views import (
     DashboardBGDAPIView,
     TripListCreateAPIView,
@@ -74,6 +74,10 @@ urlpatterns = [
     # Mobile Portal dành riêng cho Tài xế xe đầu kéo (Capability Token HashID)
     path('driver/<str:trip_hash>/', driver_portal_view, name='driver-portal'),
     path('driver/<str:trip_hash>', driver_portal_view, name='driver-portal-noslash'),
+
+    # Cổng Tra Cứu Vận Đơn Công Khai Cho Khách Hàng (Public Tracking Portal)
+    path('tracking/<str:trip_hash>/', public_tracking_view, name='public-tracking'),
+    path('tracking/<str:trip_hash>', public_tracking_view, name='public-tracking-noslash'),
 
     # Xác thực người dùng & Mobile JWT Authentication (Tiêu chuẩn 1 & 3)
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token-obtain-pair'),

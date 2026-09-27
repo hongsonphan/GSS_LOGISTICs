@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [1.9.7] - 2026-09-27 (Nâng Cấp Đơn Giản & Hiệu Quả: Chữ Ký Cảm Ứng E-Signature Cho Tài Xế & Cổng Tra Cứu Vận Đơn Công Khai Cho Khách Hàng)
+
+### 1. Bối Cảnh & Mục Tiêu Nâng Cấp Tinh Gọn (Simplicity First):
+- Tuân thủ nguyên tắc *Simplicity & Operational Reliability*: Tránh các giải pháp ôm đồm phức tạp, tập trung giải quyết 2 bài toán nhức nhối nhất của hiện trường vận tải:
+  1. **Thủ kho ký nhận bàn giao hàng (E-POD):** Trước đây tài xế phải đợi in giấy và ký bút mực rồi chụp ảnh. Nhiều trường hợp giấy mờ, rách hoặc tài xế quên chụp.
+  2. **Khách hàng gọi điện hỏi tiến độ chuyến xe liên tục:** Điều độ viên mất nhiều thời gian tra cứu và trả lời thủ công từng khách hàng xem xe đang ở đâu, cont đã hạ chưa.
+
+### 2. Các Cải Tiến Kỹ Thuật Đã Triển Khai:
+- **Ký Nhận Cảm Ứng Điện Tử Trên Mobile Tài Xế (Touchpad E-Signature for E-POD):**
+  - Bổ sung nút **"✍️ Ký Cảm Ứng"** trực tiếp tại chặng đóng/dỡ hàng (`UNLOADING`) và trong Modal Nghiệm thu chứng từ trên `templates/driver_portal.html`.
+  - Khung Canvas cảm ứng siêu nhạy (`signatureCanvas`) hỗ trợ ngón tay vẽ trên điện thoại hoặc chuột máy tính; tích hợp nút "Xóa ký lại".
+  - Nhập họ tên người nhận/thủ kho ký và số điện thoại liên hệ.
+  - Tự động chuyển đổi chữ ký sang định dạng ảnh PNG Base64, nộp trực tiếp vào API `/api/trips/<trip_code>/documents/` với loại chứng từ `Biên bản giao nhận hàng (POD)`, gắn dấu thời gian và người ký.
+  - Chuyến xe tự động chuyển trạng thái `DELIVERED` ngay khi lưu chữ ký thành công.
+- **Cổng Tra Cứu Vận Đơn & Container Công Khai (Public Shipment Tracking Portal):**
+  - Xây dựng view `public_tracking_view` (`apps/dispatch/views.py`) và template `templates/public_tracking.html` với tuyến đường chuẩn: `/tracking/<trip_hash>/`.
+  - **Không yêu cầu đăng nhập:** Khách hàng chỉ cần đường link hoặc mã QR để tra cứu trực tuyến.
+  - Hiển thị đầy đủ: Mã vận đơn, Số Container, Loại cont, Hãng tàu, Biển số xe, Lộ trình 3 điểm (Nơi lấy ➔ Kho giao ➔ Bãi hạ cont), và Tiến độ 5 mốc hành trình thời gian thực.
+  - Hiển thị Biên bản bàn giao hàng (E-POD) và ảnh Chữ ký điện tử của kho để khách hàng an tâm kiểm tra.
+  - Tích hợp nút **"Sao chép liên kết"** và **"Sao chép mã vận đơn"** tiện lợi.
+  - **Bảo Mật Nghiêm Ngặt:** Tự động giấu sạch 100% thông tin tài chính, giá cước, doanh thu, lương tài xế và chi phí nội bộ.
+- **Tích Hợp Trên Web ERP Quản Trị:**
+  - Bổ sung nút **"Link Gửi Khách Hàng"** (`btn-copy-customer-tracking-link`) trên Header chi tiết chuyến xe (`templates/views/view_trip_detail.html`).
+  - Hàm `copyCustomerTrackingLink()` trong `static/js/app.js`: Tự động định dạng tin nhắn chuyên nghiệp gửi qua Zalo/Email cho chủ hàng chỉ với 1 click.
+- **Bộ Kiểm Thử Tự Động (Unit Tests):**
+  - Thêm 2 test cases mới: `test_public_tracking_portal` và `test_touchpad_esignature_submission` trong `core/tests.py`.
+  - Toàn bộ **54/54 tests PASSED 100%**.
+  - Kịch bản mô phỏng tài xế `test_driver_simulation.py` **100% tiêu chuẩn**.
+
+---
+
 ## [1.9.6] - 2026-09-27 (Nâng Cấp & Xây Dựng Hoàn Chỉnh Hệ Thống 9 Báo Cáo Chuẩn Quản Trị Vận Tải, Đối Soát Thầu Phụ 3PL & Lương Chuyến)
 
 ### 1. Bối Cảnh & Nhu Cầu Mở Rộng Hệ Thống Báo Cáo Chuẩn:

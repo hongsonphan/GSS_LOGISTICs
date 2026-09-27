@@ -188,3 +188,52 @@ def driver_portal_view(request, trip_hash):
         'timelines': timelines,
     }
     return render(request, 'driver_portal.html', context)
+
+
+def public_tracking_view(request, trip_hash):
+    """
+    Cổng Tra Cứu Vận Đơn Công Khai Dành Cho Khách Hàng (Public Shipment Tracking Portal).
+    - Khách hàng không cần đăng nhập, chỉ cần đường link hoặc mã QR.
+    - Hiển thị tiến độ container thời gian thực, lộ trình 3 điểm và ảnh POD / Chữ ký điện tử.
+    - BẢO MẬT: Giấu 100% doanh thu, giá cước, chi phí xe và lương tài xế.
+    """
+    from core.security import decode_trip_hashid
+    from apps.dispatch.models import DispatchTrip
+    from apps.documents.models import DocumentType
+
+    decoded_id = decode_trip_hashid(trip_hash)
+    trip = None
+    if decoded_id:
+        trip = DispatchTrip.objects.filter(id=decoded_id).select_related(
+            'customer', 'vehicle', 'trailer', 'driver',
+            'pickup_loc', 'warehouse_loc', 'dropoff_loc'
+        ).first()
+
+    if not trip:
+        trip = DispatchTrip.objects.filter(trip_code=trip_hash).select_related(
+            'customer', 'vehicle', 'trailer', 'driver',
+            'pickup_loc', 'warehouse_loc', 'dropoff_loc'
+        ).first()
+
+    if not trip:
+        return render(request, 'driver_portal_404.html', {'trip_hash': trip_hash}, status=404)
+
+    # Lấy các mốc tiến độ
+    timelines = trip.timeline_items.all().order_by('step_number')
+
+    # Chỉ hiển thị các chứng từ bàn giao hàng (POD, Chữ ký số, EIR hạ cont) cho khách hàng xem
+    public_documents = trip.documents.filter(
+        is_deleted=False,
+        document_type__in=[DocumentType.POD, DocumentType.EIR_DROPOFF]
+    ).order_by('-created_at')
+
+    context = {
+        'trip': trip,
+        'trip_hash': trip.hashid,
+        'customer_name': trip.customer.name if trip.customer else 'Khách hàng',
+        'timelines': timelines,
+        'documents': public_documents,
+        'share_url': request.build_absolute_uri(),
+    }
+    return render(request, 'public_tracking.html', context)
+

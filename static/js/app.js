@@ -1956,6 +1956,26 @@ window.copyDriverPortalLink = function() {
     }
 };
 
+window.copyCustomerTrackingLink = function() {
+    const trip = window.currentTripDetail;
+    if (!trip) {
+        alert('Chưa có thông tin chuyến xe để sao chép!');
+        return;
+    }
+    const trackingUrl = `${window.location.origin}/tracking/${trip.hashid || trip.id || trip.trip_code}/`;
+    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nLộ trình: ${trip.pickup || '-'} ➔ ${trip.warehouse || '-'} ➔ ${trip.dropoff || '-'}\n👉 Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(message).then(() => {
+            alert('✓ Đã sao chép liên kết tra cứu tiến độ chuyến xe dành cho khách hàng!\nBạn có thể dán (Paste) gửi qua Zalo / Email cho chủ hàng.');
+        }).catch(err => {
+            prompt('Sao chép liên kết gửi khách hàng:', trackingUrl);
+        });
+    } else {
+        prompt('Sao chép liên kết gửi khách hàng:', trackingUrl);
+    }
+};
+
 // Hàm mở / đóng chi tiết các dòng chi phí con khi người dùng click
 function toggleExpenseDetail(code) {
     const subRows = document.querySelectorAll(`.sub-row-${code}`);
