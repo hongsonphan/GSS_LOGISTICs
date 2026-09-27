@@ -8690,6 +8690,14 @@ let rep3DataCache = [];
 let rep4DataCache = [];
 let rep5DataCache = [];
 let rep6DataCache = [];
+let rep7DataCache = [];
+let rep7SortCol = 'total_teu';
+let rep7SortAsc = false;
+let rep8SubcontractorsCache = [];
+let rep8TripsCache = [];
+let rep9DataCache = [];
+let rep9SortCol = 'base_trip_salary';
+let rep9SortAsc = false;
 let rep1SortCol = 'revenue';
 let rep1SortAsc = false;
 
@@ -8782,6 +8790,15 @@ async function loadReportsData() {
 
         // Render Báo cáo 6
         renderReport6(data);
+
+        // Render Báo cáo 7: Phân Tích Doanh Thu Khách & TEU
+        renderReport7(data);
+
+        // Render Báo cáo 8: Quyết Toán Xe Thầu Phụ 3PL
+        renderReport8(data);
+
+        // Render Báo cáo 9: Bảng Lương Chuyến & Năng Suất Tài Xế
+        renderReport9(data);
 
     } catch (err) {
         console.error('Lỗi khi tải dữ liệu báo cáo TMS:', err);
@@ -8912,6 +8929,29 @@ function renderReport2(data) {
 
     const elFines = document.getElementById('rep2-stat-fines');
     if (elFines) elFines.innerText = `Ước tính tiền phạt: ${formatMoneyVND(r2.estimated_fines || 0)}`;
+
+    // Render Bảng Ma trận Hãng Tàu (Shipping Lines Summary)
+    const slTbody = document.getElementById('rep2-shipping-lines-tbody');
+    if (slTbody) {
+        const slList = r2.shipping_lines_summary || [];
+        if (slList.length === 0) {
+            slTbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-medium">Chưa có dữ liệu hãng tàu trong kỳ này</td></tr>`;
+        } else {
+            slTbody.innerHTML = slList.map(sl => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="font-bold text-slate-800 text-xs flex items-center gap-2">
+                        <i class="ph-bold ph-boat text-teal-700"></i>
+                        <span>${escapeHtml(sl.shipping_line)}</span>
+                    </td>
+                    <td class="text-center font-mono font-bold text-slate-900 text-xs">${sl.total_containers}</td>
+                    <td class="text-center font-mono font-bold text-emerald-700 text-xs">${sl.safe_count}</td>
+                    <td class="text-center font-mono font-bold text-amber-700 text-xs">${sl.warning_count > 0 ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">${sl.warning_count}</span>` : '0'}</td>
+                    <td class="text-center font-mono font-bold text-rose-700 text-xs">${sl.overdue_count > 0 ? `<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-black">${sl.overdue_count}</span>` : '0'}</td>
+                    <td class="text-right font-black text-rose-600 text-xs tabular-nums">${formatMoneyVND(sl.estimated_fines)}</td>
+                </tr>
+            `).join('');
+        }
+    }
 
     rep2DataCache = r2.containers || [];
     applyReport2Filters();
@@ -9213,6 +9253,304 @@ function applyReport6Filters() {
             </tr>
         `;
     }).join('');
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 7: PHÂN TÍCH DOANH THU KHÁCH HÀNG & SẢN LƯỢNG TEU
+// -------------------------------------------------------------
+function renderReport7(data) {
+    const r7 = data.report7_customer_analytics || {};
+    const canViewFinance = (data.can_view_finance !== false);
+
+    const elTeu = document.getElementById('rep7-stat-teu');
+    if (elTeu) elTeu.innerText = `${r7.total_system_teu || 0.0} TEU`;
+
+    const elRev = document.getElementById('rep7-stat-rev');
+    if (elRev) elRev.innerText = canViewFinance ? formatMoneyVND(r7.total_customer_revenue || 0) : '*** (Bảo mật)';
+
+    const elTop = document.getElementById('rep7-stat-top');
+    if (elTop) elTop.innerText = r7.top_key_account || '-';
+
+    const elTopShare = document.getElementById('rep7-stat-top-share');
+    if (elTopShare) elTopShare.innerText = canViewFinance ? `Đóng góp ${r7.top_key_account_share || 0.0}% doanh thu` : 'Tỷ trọng: Nội bộ BGD';
+
+    const elAvg = document.getElementById('rep7-stat-avg');
+    if (elAvg) elAvg.innerText = `${r7.avg_teu_per_trip || 0.0} TEU`;
+
+    rep7DataCache = r7.customers || [];
+    rep7DataCache._can_view_finance = canViewFinance;
+    applyReport7Filters();
+}
+
+function applyReport7Filters() {
+    const canViewFinance = (rep7DataCache._can_view_finance !== false);
+    const searchVal = (document.getElementById('filter-rep7-search')?.value || '').toLowerCase().trim();
+
+    let list = rep7DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.customer_code || '').toLowerCase().includes(searchVal) ||
+               (item.top_route || '').toLowerCase().includes(searchVal);
+    });
+
+    list.sort((a, b) => {
+        let valA = a[rep7SortCol];
+        let valB = b[rep7SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep7SortAsc ? -1 : 1;
+        if (valA > valB) return rep7SortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const tbody = document.getElementById('rep7-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu khách hàng phù hợp</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const revDisplay = canViewFinance ? formatMoneyVND(item.revenue) : '***';
+        const shareDisplay = canViewFinance ? `${item.revenue_share}%` : '***';
+        const marginDisplay = canViewFinance ? `${item.margin_percent}%` : '***';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-bold text-slate-900 text-xs">${escapeHtml(item.customer_name)}</td>
+                <td class="font-mono text-slate-500 text-xs">${escapeHtml(item.customer_code)}</td>
+                <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
+                <td class="text-center font-black text-teal-800 text-xs tabular-nums bg-teal-50/50">${item.total_teu}</td>
+                <td class="text-center text-slate-600 text-xs tabular-nums">${item.teu_20_count}</td>
+                <td class="text-center text-slate-600 text-xs tabular-nums">${item.teu_40_count}</td>
+                <td class="text-center text-slate-600 text-xs tabular-nums">${item.teu_45_count}</td>
+                <td class="text-xs text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
+                <td class="text-right font-black text-indigo-700 text-xs tabular-nums">${revDisplay}</td>
+                <td class="text-center font-bold text-slate-700 text-xs tabular-nums">${shareDisplay}</td>
+                <td class="text-center text-xs tabular-nums font-bold ${item.margin_percent >= 20 ? 'text-emerald-700' : 'text-slate-600'}">${marginDisplay}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleReport7Sort(col) {
+    if (rep7SortCol === col) {
+        rep7SortAsc = !rep7SortAsc;
+    } else {
+        rep7SortCol = col;
+        rep7SortAsc = false;
+    }
+    applyReport7Filters();
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 8: QUYẾT TOÁN & CÔNG NỢ NHÀ XE THẦU PHỤ 3PL
+// -------------------------------------------------------------
+function renderReport8(data) {
+    const r8 = data.report8_subcontractor_settlements || {};
+    const canViewFinance = (data.can_view_finance !== false);
+
+    const elTrips = document.getElementById('rep8-stat-trips');
+    if (elTrips) elTrips.innerText = `${r8.total_subcontractor_trips || 0} Chuyến`;
+
+    const elGross = document.getElementById('rep8-stat-gross');
+    if (elGross) elGross.innerText = canViewFinance ? formatMoneyVND(r8.total_gross_payable || 0) : '*** (Bảo mật)';
+
+    const elSettled = document.getElementById('rep8-stat-settled');
+    if (elSettled) elSettled.innerText = canViewFinance ? formatMoneyVND(r8.total_subcontractor_settled || 0) : '*** (Bảo mật)';
+
+    const elBalance = document.getElementById('rep8-stat-balance');
+    if (elBalance) elBalance.innerText = canViewFinance ? formatMoneyVND(r8.total_balance_due || 0) : '*** (Bảo mật)';
+
+    rep8SubcontractorsCache = r8.subcontractors || [];
+    rep8SubcontractorsCache._can_view_finance = canViewFinance;
+    rep8TripsCache = r8.trips || [];
+    rep8TripsCache._can_view_finance = canViewFinance;
+
+    applyReport8Filters();
+}
+
+function applyReport8Filters() {
+    const canViewFinance = (rep8SubcontractorsCache._can_view_finance !== false);
+    const searchVal = (document.getElementById('filter-rep8-search')?.value || '').toLowerCase().trim();
+
+    // 1. Render Bảng Nhà xe thầu phụ
+    const subList = rep8SubcontractorsCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.subcontractor_name || '').toLowerCase().includes(searchVal) ||
+               (item.contact_info || '').toLowerCase().includes(searchVal) ||
+               (item.bank_info || '').toLowerCase().includes(searchVal);
+    });
+
+    const subTbody = document.getElementById('rep8-subcontractors-tbody');
+    if (subTbody) {
+        if (subList.length === 0) {
+            subTbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy nhà xe thầu phụ nào trong kỳ</td></tr>`;
+        } else {
+            subTbody.innerHTML = subList.map(s => {
+                const grossDisp = canViewFinance ? formatMoneyVND(s.gross_payable) : '***';
+                const advDisp = canViewFinance ? formatMoneyVND(s.advance_amount) : '***';
+                const settledDisp = canViewFinance ? formatMoneyVND(s.settled_amount) : '***';
+                const balDisp = canViewFinance ? formatMoneyVND(s.balance_due) : '***';
+
+                let statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">${escapeHtml(s.settlement_status)}</span>`;
+                if (s.balance_due <= 0) {
+                    statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Đã quyết toán</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                            <i class="ph-bold ph-handshake text-indigo-600"></i>
+                            <span>${escapeHtml(s.subcontractor_name)}</span>
+                        </td>
+                        <td class="text-xs text-slate-600">${escapeHtml(s.contact_info || '-')}</td>
+                        <td class="text-xs font-mono text-slate-700 max-w-xs truncate" title="${escapeHtml(s.bank_info)}">${escapeHtml(s.bank_info || '-')}</td>
+                        <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${s.trips_count}</td>
+                        <td class="text-right font-black text-slate-800 text-xs tabular-nums">${grossDisp}</td>
+                        <td class="text-right text-xs text-slate-600 tabular-nums">${advDisp}</td>
+                        <td class="text-right text-xs font-bold text-emerald-700 tabular-nums">${settledDisp}</td>
+                        <td class="text-right font-black text-rose-700 text-xs tabular-nums bg-rose-50/40">${balDisp}</td>
+                        <td class="text-center">${statusBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    // 2. Render Bảng chi tiết chuyến xe ngoài
+    const tripsTbody = document.getElementById('rep8-trips-tbody');
+    if (tripsTbody) {
+        const tripList = rep8TripsCache.filter(item => {
+            if (!searchVal) return true;
+            return (item.trip_code || '').toLowerCase().includes(searchVal) ||
+                   (item.subcontractor_name || '').toLowerCase().includes(searchVal) ||
+                   (item.vehicle || '').toLowerCase().includes(searchVal) ||
+                   (item.driver || '').toLowerCase().includes(searchVal) ||
+                   (item.route || '').toLowerCase().includes(searchVal) ||
+                   (item.container_number || '').toLowerCase().includes(searchVal);
+        });
+
+        if (tripList.length === 0) {
+            tripsTbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không có chuyến xe ngoài nào được tìm thấy</td></tr>`;
+        } else {
+            tripsTbody.innerHTML = tripList.map(t => {
+                const costDisp = canViewFinance ? formatMoneyVND(t.gross_cost) : '***';
+                const advDisp = canViewFinance ? formatMoneyVND(t.advance) : '***';
+                const balDisp = canViewFinance ? formatMoneyVND(t.balance) : '***';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td><a href="javascript:void(0)" onclick="viewTripDetail('${t.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(t.trip_code)}</a></td>
+                        <td class="text-xs text-slate-600 tabular-nums">${escapeHtml(t.date)}</td>
+                        <td class="text-xs font-semibold text-slate-800">${escapeHtml(t.subcontractor_name)}</td>
+                        <td class="text-xs font-mono font-bold text-slate-900">${escapeHtml(t.vehicle)}</td>
+                        <td class="text-xs text-slate-700">${escapeHtml(t.driver)}</td>
+                        <td class="text-xs text-slate-600 max-w-xs truncate" title="${escapeHtml(t.route)}">${escapeHtml(t.route)}</td>
+                        <td class="text-xs font-mono text-slate-700">${escapeHtml(t.container_number)}</td>
+                        <td class="text-right font-black text-slate-800 text-xs tabular-nums">${costDisp}</td>
+                        <td class="text-right text-xs text-slate-600 tabular-nums">${advDisp}</td>
+                        <td class="text-right font-black text-rose-700 text-xs tabular-nums">${balDisp}</td>
+                        <td class="text-center text-xs font-medium text-slate-700">${escapeHtml(t.status)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 9: BẢNG LƯƠNG CHUYẾN & NĂNG SUẤT TÀI XẾ
+// -------------------------------------------------------------
+function renderReport9(data) {
+    const r9 = data.report9_driver_payroll_performance || {};
+    const canViewFinance = (data.can_view_finance !== false);
+
+    const elFund = document.getElementById('rep9-stat-fund');
+    if (elFund) elFund.innerText = canViewFinance ? formatMoneyVND(r9.total_payroll_fund || 0) : '*** (Bảo mật)';
+
+    const elDrivers = document.getElementById('rep9-stat-drivers');
+    if (elDrivers) elDrivers.innerText = `${r9.active_drivers_count || 0} Tài xế`;
+
+    const elAvg = document.getElementById('rep9-stat-avg');
+    if (elAvg) elAvg.innerText = canViewFinance ? `${formatMoneyVND(r9.avg_salary_per_driver || 0)}/TX` : '*** / TX';
+
+    const elTop = document.getElementById('rep9-stat-top');
+    if (elTop) elTop.innerText = r9.top_driver_name || '-';
+
+    rep9DataCache = r9.drivers || [];
+    rep9DataCache._can_view_finance = canViewFinance;
+
+    applyReport9Filters();
+}
+
+function applyReport9Filters() {
+    const canViewFinance = (rep9DataCache._can_view_finance !== false);
+    const searchVal = (document.getElementById('filter-rep9-search')?.value || '').toLowerCase().trim();
+
+    let list = rep9DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.driver_name || '').toLowerCase().includes(searchVal) ||
+               (item.driver_code || '').toLowerCase().includes(searchVal) ||
+               (item.phone || '').toLowerCase().includes(searchVal);
+    });
+
+    list.sort((a, b) => {
+        let valA = a[rep9SortCol];
+        let valB = b[rep9SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep9SortAsc ? -1 : 1;
+        if (valA > valB) return rep9SortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const tbody = document.getElementById('rep9-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy tài xế nào trong kỳ</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const baseDisp = canViewFinance ? formatMoneyVND(item.base_trip_salary) : '***';
+        const layoverDisp = canViewFinance ? formatMoneyVND(item.layover_allowance) : '***';
+        const specialDisp = canViewFinance ? formatMoneyVND(item.special_allowances) : '***';
+        const advDisp = canViewFinance ? formatMoneyVND(item.total_advances) : '***';
+        const netDisp = canViewFinance ? formatMoneyVND(item.net_salary) : '***';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                    <i class="ph-bold ph-identification-badge text-teal-700"></i>
+                    <span>${escapeHtml(item.driver_name)}</span>
+                </td>
+                <td class="font-mono text-slate-500 text-xs">${escapeHtml(item.driver_code)}</td>
+                <td class="text-xs font-mono text-slate-600">${escapeHtml(item.phone)}</td>
+                <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
+                <td class="text-center text-slate-600 text-xs tabular-nums">${item.split_trips_count > 0 ? `<span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold">${item.split_trips_count}</span>` : '0'}</td>
+                <td class="text-right text-xs font-bold text-slate-800 tabular-nums">${baseDisp}</td>
+                <td class="text-right text-xs text-amber-700 tabular-nums">${layoverDisp}</td>
+                <td class="text-right text-xs text-slate-600 tabular-nums">${specialDisp}</td>
+                <td class="text-right text-xs text-rose-600 tabular-nums">${advDisp}</td>
+                <td class="text-right font-black text-emerald-700 text-xs tabular-nums bg-emerald-50/50">${netDisp}</td>
+                <td class="text-center font-bold text-xs tabular-nums ${item.otp_rate >= 90 ? 'text-emerald-700' : 'text-amber-700'}">${item.otp_rate}%</td>
+                <td class="text-center text-xs tabular-nums ${item.incident_count > 0 ? 'text-rose-700 font-bold' : 'text-slate-400'}">${item.incident_count}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleReport9Sort(col) {
+    if (rep9SortCol === col) {
+        rep9SortAsc = !rep9SortAsc;
+    } else {
+        rep9SortCol = col;
+        rep9SortAsc = false;
+    }
+    applyReport9Filters();
 }
 
 // -------------------------------------------------------------

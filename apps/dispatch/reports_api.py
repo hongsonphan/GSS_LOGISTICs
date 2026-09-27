@@ -130,13 +130,16 @@ class ReportsAPIView(APIView):
         driver_scorecards.sort(key=lambda x: x['trips_count'], reverse=True)
 
         # -------------------------------------------------------------
-        # Dữ liệu phục vụ Báo cáo 2: Chu trình Vỏ Container & DEM/DET
+        # Dữ liệu phục vụ Báo cáo 2: Chu trình Vỏ Container & DEM/DET (kèm Hãng Tàu)
         # -------------------------------------------------------------
         dem_det_list = []
         det_safe_count = 0
         det_warning_count = 0
         det_overdue_count = 0
         estimated_fines_total = 0
+
+        # Thống kê theo Hãng Tàu (Shipping Lines Summary)
+        shipping_line_dict = {}
 
         for t in trips_qs:
             if not t.container_number:
@@ -162,12 +165,31 @@ class ReportsAPIView(APIView):
             else:
                 det_safe_count += 1
 
+            sline_name = (t.shipping_line or 'Chưa rõ').strip()
+            if sline_name not in shipping_line_dict:
+                shipping_line_dict[sline_name] = {
+                    'shipping_line': sline_name,
+                    'total_containers': 0,
+                    'safe_count': 0,
+                    'warning_count': 0,
+                    'overdue_count': 0,
+                    'estimated_fines': 0
+                }
+            shipping_line_dict[sline_name]['total_containers'] += 1
+            if status_det == 'SAFE':
+                shipping_line_dict[sline_name]['safe_count'] += 1
+            elif status_det == 'WARNING':
+                shipping_line_dict[sline_name]['warning_count'] += 1
+            elif status_det == 'OVERDUE':
+                shipping_line_dict[sline_name]['overdue_count'] += 1
+                shipping_line_dict[sline_name]['estimated_fines'] += fines
+
             dem_det_list.append({
                 'trip_code': t.trip_code,
                 'container_number': t.container_number,
                 'container_type': t.container_type or '40HC',
                 'customer_name': t.customer.name if t.customer else 'Khách lẻ',
-                'shipping_line': t.shipping_line or 'Chưa rõ',
+                'shipping_line': sline_name,
                 'location_type': t.cont_location_type or 'KHO KHÁCH',
                 'det_free_days': t.det_free_days,
                 'det_expiry_date': t.det_expiry_date.strftime('%d/%m/%Y') if t.det_expiry_date else 'Không có',
@@ -176,6 +198,8 @@ class ReportsAPIView(APIView):
                 'estimated_fines': fines,
                 'trip_status': t.get_status_display()
             })
+
+        shipping_lines_summary = sorted(list(shipping_line_dict.values()), key=lambda x: x['total_containers'], reverse=True)
 
         # -------------------------------------------------------------
         # Dữ liệu phục vụ Báo cáo 3: Đúng Giờ & Chất Lượng OTP (SLA)
@@ -307,7 +331,6 @@ class ReportsAPIView(APIView):
 
         for t in trips_qs:
             is_damaged = t.container_condition in ['DAMAGED', 'CLEANING_REQUIRED'] or bool(t.damage_description)
-            # Thêm demo dữ liệu nếu chưa có chuyến hư hại thực tế
             if is_damaged:
                 damaged_cont_count += 1
                 osd_list.append({
@@ -323,7 +346,270 @@ class ReportsAPIView(APIView):
                     'has_pod_photo': True
                 })
 
+        # =============================================================
+        # BÁO CÁO 7: PHÂN TÍCH DOANH THU KHÁCH HÀNG & SẢN LƯỢNG TEU
+        # =============================================================
+        customer_analytics_dict = {}
+        total_system_teu = 0.0
+
+        for t in trips_qs:
+            c_name = t.customer.name if t.customer else 'Khách vãng lai'
+            c_code = t.customer.code if t.customer else 'CUST_WALKIN'
+
+            # Tính TEU quy đổi cho chuyến
+            c_type = (t.container_type or '40HC').upper()
+            teu_factor = 2.0
+            is_20 = False
+            is_40 = False
+            is_45 = False
+
+            if t.is_twin_container:
+                teu_factor = 2.0
+                is_20 = True # Ghép 2 cont 20
+            elif '20' in c_type:
+                teu_factor = 1.0
+                is_20 = True
+            elif '45' in c_type:
+                teu_factor = 2.25
+                is_45 = True
+            else:
+                teu_factor = 2.0
+                is_40 = True
+
+            total_system_teu += teu_factor
+
+            if c_name not in customer_analytics_dict:
+                customer_analytics_dict[c_name] = {
+                    'customer_name': c_name,
+                    'customer_code': c_code,
+                    'trips_count': 0,
+                    'total_teu': 0.0,
+                    'teu_20_count': 0,
+                    'teu_40_count': 0,
+                    'teu_45_count': 0,
+                    'revenue': 0,
+                    'expense': 0,
+                    'profit': 0,
+                    'margin_percent': 0.0,
+                    'revenue_share': 0.0,
+                    'routes_dict': {},
+                    'top_route': '-'
+                }
+
+            row = customer_analytics_dict[c_name]
+            row['trips_count'] += 1
+            row['total_teu'] += teu_factor
+            if is_20:
+                row['teu_20_count'] += (2 if t.is_twin_container else 1)
+            elif is_45:
+                row['teu_45_count'] += 1
+            else:
+                row['teu_40_count'] += 1
+
+            row['revenue'] += int(t.cached_revenue)
+            row['expense'] += int(t.cached_expense)
+            row['profit'] += int(t.cached_profit)
+
+            # Thống kê tuyến đường phổ biến nhất của khách
+            route_name = f"{t.pickup_location} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}"
+            row['routes_dict'][route_name] = row['routes_dict'].get(route_name, 0) + 1
+
+        customer_analytics_list = list(customer_analytics_dict.values())
+        for c in customer_analytics_list:
+            c['total_teu'] = round(c['total_teu'], 2)
+            if c['revenue'] > 0:
+                c['margin_percent'] = round(c['profit'] / c['revenue'] * 100, 1)
+                c['revenue_share'] = round(c['revenue'] / total_revenue * 100, 1) if total_revenue > 0 else 0.0
+            # Tìm tuyến có tần suất cao nhất
+            if c['routes_dict']:
+                c['top_route'] = max(c['routes_dict'], key=c['routes_dict'].get)
+            del c['routes_dict']
+
+        customer_analytics_list.sort(key=lambda x: x['revenue'], reverse=True)
+        top_key_account = customer_analytics_list[0]['customer_name'] if customer_analytics_list else '-'
+        top_key_account_share = customer_analytics_list[0]['revenue_share'] if customer_analytics_list else 0.0
+        avg_teu_per_trip = round(total_system_teu / total_trips, 2) if total_trips > 0 else 0.0
+
+        # =============================================================
+        # BÁO CÁO 8: QUYẾT TOÁN & CÔNG NỢ NHÀ XE THẦU PHỤ 3PL
+        # =============================================================
+        from apps.master_data.models import Subcontractor
+        subcontractors_master = {s.name.lower(): s for s in Subcontractor.objects.filter(is_active=True, is_deleted=False)}
+
+        subcontractor_dict = {}
+        subcontractor_trips_data = []
+        total_subcontractor_trips = 0
+        total_gross_payable = 0
+        total_subcontractor_advance = 0
+        total_subcontractor_settled = 0
+
+        for t in trips_qs:
+            is_sub = (t.vehicle and t.vehicle.ownership_type == 'SUBCONTRACTOR') or (t.subcontractor_cost > 0)
+            if not is_sub:
+                continue
+
+            total_subcontractor_trips += 1
+            cost = int(t.subcontractor_cost or t.cached_expense or 0)
+            advance = int(t.subcontractor_advance or 0)
+            settled = cost if t.subcontractor_settlement_status == 'SETTLED' else advance
+            balance = max(0, cost - settled)
+
+            total_gross_payable += cost
+            total_subcontractor_advance += advance
+            total_subcontractor_settled += settled
+
+            # Xác định tên nhà xe
+            sub_name = (t.subcontractor_notes or '').split('-')[0].strip() if t.subcontractor_notes else ''
+            if not sub_name and t.vehicle:
+                sub_name = f"Nhà xe {t.vehicle.brand or 'Đối tác'}"
+            if not sub_name:
+                sub_name = 'Xe Thuê Ngoài / Vãng lai'
+
+            # Tra cứu master data
+            m_sub = subcontractors_master.get(sub_name.lower())
+            bank_info = '-'
+            contact_info = '-'
+            if m_sub:
+                sub_name = m_sub.name
+                if m_sub.bank_account_number:
+                    bank_info = f"{m_sub.bank_account_number} - {m_sub.bank_name or ''} ({m_sub.bank_account_holder or ''})".strip()
+                if m_sub.phone or m_sub.contact_person:
+                    contact_info = f"{m_sub.contact_person or ''} - {m_sub.phone or ''}".strip(' -')
+
+            if sub_name not in subcontractor_dict:
+                subcontractor_dict[sub_name] = {
+                    'subcontractor_name': sub_name,
+                    'contact_info': contact_info,
+                    'bank_info': bank_info,
+                    'trips_count': 0,
+                    'gross_payable': 0,
+                    'advance_amount': 0,
+                    'settled_amount': 0,
+                    'balance_due': 0,
+                    'settlement_status': 'Chờ quyết toán'
+                }
+
+            s_row = subcontractor_dict[sub_name]
+            s_row['trips_count'] += 1
+            s_row['gross_payable'] += cost
+            s_row['advance_amount'] += advance
+            s_row['settled_amount'] += settled
+            s_row['balance_due'] += balance
+
+            subcontractor_trips_data.append({
+                'trip_code': t.trip_code,
+                'date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else '-',
+                'subcontractor_name': sub_name,
+                'vehicle': t.vehicle.license_plate if t.vehicle else 'Xe ngoài',
+                'driver': t.driver.full_name if t.driver else '-',
+                'route': f"{t.pickup_location} ➔ {t.dropoff_location or 'Kho KH'}",
+                'container_number': t.container_number or '-',
+                'gross_cost': cost,
+                'advance': advance,
+                'balance': balance,
+                'status': t.get_subcontractor_settlement_status_display() if hasattr(t, 'get_subcontractor_settlement_status_display') else t.subcontractor_settlement_status,
+                'bank_info': bank_info
+            })
+
+        subcontractors_summary = list(subcontractor_dict.values())
+        for s in subcontractors_summary:
+            if s['balance_due'] <= 0:
+                s['settlement_status'] = 'Đã quyết toán xong'
+            elif s['advance_amount'] > 0:
+                s['settlement_status'] = 'Đã tạm ứng 1 phần'
+            else:
+                s['settlement_status'] = 'Chờ xuất UNC thanh toán'
+        subcontractors_summary.sort(key=lambda x: x['balance_due'], reverse=True)
+
+        total_balance_due = max(0, total_gross_payable - total_subcontractor_settled)
+
+        # =============================================================
+        # BÁO CÁO 9: BẢNG LƯƠNG CHUYẾN & NĂNG SUẤT TÀI XẾ
+        # =============================================================
+        driver_payroll_dict = {}
+        total_payroll_fund = 0
+
+        for t in trips_qs:
+            # Chặng chính 1
+            if t.driver:
+                d_name = t.driver.full_name
+                if d_name not in driver_payroll_dict:
+                    driver_payroll_dict[d_name] = {
+                        'driver_name': d_name,
+                        'driver_code': t.driver.code or '-',
+                        'phone': getattr(t.driver, 'phone_number', '') or '-',
+                        'trips_count': 0,
+                        'split_trips_count': 0,
+                        'base_trip_salary': 0,
+                        'layover_allowance': 0,
+                        'special_allowances': 0,
+                        'total_advances': 0,
+                        'net_salary': 0,
+                        'on_time_trips': 0,
+                        'otp_rate': 100.0,
+                        'incident_count': 0
+                    }
+
+                d_row = driver_payroll_dict[d_name]
+                d_row['trips_count'] += 1
+                if t.is_split_trip:
+                    d_row['split_trips_count'] += 1
+
+                b_sal = int(t.driver_allowance or 0)
+                l_sal = int(t.detention_driver_allowance or 0)
+                adv = int(t.driver_advance_amount or 0)
+
+                d_row['base_trip_salary'] += b_sal
+                d_row['layover_allowance'] += l_sal
+                d_row['total_advances'] += adv
+                total_payroll_fund += (b_sal + l_sal)
+
+                if t.status in [TripStatus.DELIVERED, TripStatus.IN_TRANSIT]:
+                    d_row['on_time_trips'] += 1
+                if t.container_condition in ['DAMAGED', 'CLEANING_REQUIRED']:
+                    d_row['incident_count'] += 1
+
+            # Nếu chuyến cắt kéo có tài xế chặng 2 khác
+            if t.is_split_trip and t.dropoff_driver and t.dropoff_driver != t.driver:
+                d2_name = t.dropoff_driver.full_name
+                if d2_name not in driver_payroll_dict:
+                    driver_payroll_dict[d2_name] = {
+                        'driver_name': d2_name,
+                        'driver_code': t.dropoff_driver.code or '-',
+                        'phone': getattr(t.dropoff_driver, 'phone_number', '') or '-',
+                        'trips_count': 0,
+                        'split_trips_count': 0,
+                        'base_trip_salary': 0,
+                        'layover_allowance': 0,
+                        'special_allowances': 0,
+                        'total_advances': 0,
+                        'net_salary': 0,
+                        'on_time_trips': 0,
+                        'otp_rate': 100.0,
+                        'incident_count': 0
+                    }
+                d2_row = driver_payroll_dict[d2_name]
+                d2_row['trips_count'] += 1
+                d2_row['split_trips_count'] += 1
+                d2_sal = int(t.dropoff_driver_allowance or 0)
+                d2_row['base_trip_salary'] += d2_sal
+                total_payroll_fund += d2_sal
+                d2_row['on_time_trips'] += 1
+
+        driver_payroll_list = list(driver_payroll_dict.values())
+        for dp in driver_payroll_list:
+            dp['net_salary'] = (dp['base_trip_salary'] + dp['layover_allowance'] + dp['special_allowances']) - dp['total_advances']
+            if dp['trips_count'] > 0:
+                dp['otp_rate'] = round(dp['on_time_trips'] / dp['trips_count'] * 100, 1)
+
+        driver_payroll_list.sort(key=lambda x: x['base_trip_salary'], reverse=True)
+        active_drivers_count = len(driver_payroll_list)
+        avg_salary_per_driver = int(total_payroll_fund / active_drivers_count) if active_drivers_count > 0 else 0
+        top_driver_name = driver_payroll_list[0]['driver_name'] if driver_payroll_list else '-'
+
+        # -------------------------------------------------------------
         # Kiểm tra thẩm quyền xem số liệu tài chính P&L (Bảo vệ thông tin kinh doanh)
+        # -------------------------------------------------------------
         emp = getattr(request.user, 'employee', None)
         can_view_finance = request.user.is_superuser or request.user.is_staff or (
             emp and emp.role in [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT]
@@ -350,7 +636,41 @@ class ReportsAPIView(APIView):
             total_reimbursable_collected = 0
             reimbursable_expenses = []
 
-        # Phản hồi JSON hoàn chỉnh cho 6 Báo Cáo
+            # Mask Report 7 (Khách hàng)
+            for c in customer_analytics_list:
+                c['revenue'] = 0
+                c['expense'] = 0
+                c['profit'] = 0
+                c['margin_percent'] = 0.0
+                c['revenue_share'] = 0.0
+            top_key_account_share = 0.0
+
+            # Mask Report 8 (Thầu phụ 3PL)
+            total_gross_payable = 0
+            total_subcontractor_advance = 0
+            total_subcontractor_settled = 0
+            total_balance_due = 0
+            for s in subcontractors_summary:
+                s['gross_payable'] = 0
+                s['advance_amount'] = 0
+                s['settled_amount'] = 0
+                s['balance_due'] = 0
+            for st in subcontractor_trips_data:
+                st['gross_cost'] = 0
+                st['advance'] = 0
+                st['balance'] = 0
+
+            # Mask Report 9 (Lương chuyến)
+            total_payroll_fund = 0
+            avg_salary_per_driver = 0
+            for dp in driver_payroll_list:
+                dp['base_trip_salary'] = 0
+                dp['layover_allowance'] = 0
+                dp['special_allowances'] = 0
+                dp['total_advances'] = 0
+                dp['net_salary'] = 0
+
+        # Phản hồi JSON hoàn chỉnh cho 9 Báo Cáo Chuẩn Kế Hoạch
         data = {
             'period': period,
             'can_view_finance': can_view_finance,
@@ -367,7 +687,10 @@ class ReportsAPIView(APIView):
                 'otp_rate': otp_rate,
                 'overnight_trips_count': overnight_trips_count,
                 'total_reimbursable': total_reimbursable,
-                'estimated_fines_total': estimated_fines_total
+                'estimated_fines_total': estimated_fines_total,
+                'total_system_teu': round(total_system_teu, 2),
+                'total_subcontractor_trips': total_subcontractor_trips,
+                'total_payroll_fund': total_payroll_fund
             },
             'report1_fleet_utilization': {
                 'total_tractors': Vehicle.objects.filter(is_deleted=False).count(),
@@ -382,7 +705,8 @@ class ReportsAPIView(APIView):
                 'warning_count': det_warning_count,
                 'overdue_count': det_overdue_count,
                 'estimated_fines': estimated_fines_total,
-                'containers': dem_det_list
+                'containers': dem_det_list,
+                'shipping_lines_summary': shipping_lines_summary
             },
             'report3_on_time_performance': {
                 'otp_rate': otp_rate,
@@ -411,7 +735,32 @@ class ReportsAPIView(APIView):
                 'damaged_cont_count': damaged_cont_count,
                 'broken_seal_count': broken_seal_count,
                 'incidents': osd_list
+            },
+            'report7_customer_analytics': {
+                'total_system_teu': round(total_system_teu, 2),
+                'total_customer_revenue': total_revenue,
+                'top_key_account': top_key_account,
+                'top_key_account_share': top_key_account_share,
+                'avg_teu_per_trip': avg_teu_per_trip,
+                'customers': customer_analytics_list
+            },
+            'report8_subcontractor_settlements': {
+                'total_subcontractor_trips': total_subcontractor_trips,
+                'total_gross_payable': total_gross_payable,
+                'total_subcontractor_advance': total_subcontractor_advance,
+                'total_subcontractor_settled': total_subcontractor_settled,
+                'total_balance_due': total_balance_due,
+                'subcontractors': subcontractors_summary,
+                'trips': subcontractor_trips_data
+            },
+            'report9_driver_payroll_performance': {
+                'total_payroll_fund': total_payroll_fund,
+                'active_drivers_count': active_drivers_count,
+                'avg_salary_per_driver': avg_salary_per_driver,
+                'top_driver_name': top_driver_name,
+                'drivers': driver_payroll_list
             }
         }
 
         return Response(data)
+

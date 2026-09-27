@@ -2,6 +2,48 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [1.9.6] - 2026-09-27 (Nâng Cấp & Xây Dựng Hoàn Chỉnh Hệ Thống 9 Báo Cáo Chuẩn Quản Trị Vận Tải, Đối Soát Thầu Phụ 3PL & Lương Chuyến)
+
+### 1. Bối Cảnh & Nhu Cầu Mở Rộng Hệ Thống Báo Cáo Chuẩn:
+- Sau khi rà soát và củng cố toàn diện danh mục `ShippingLine` (Hãng tàu) và `Subcontractor` (Nhà xe thầu phụ 3PL) ở phiên bản v1.9.5, hệ thống TMS BI chỉ mới có 6 báo cáo vận hành.
+- Còn thiếu 3 báo cáo tài chính - vận tải trọng yếu theo chuẩn vận hành container & logistics quốc tế:
+  1. **Báo cáo Phân Tích Doanh Thu Khách Hàng & Sản Lượng TEU:** Thiếu cơ chế quy đổi tự động sản lượng TEU (Cont 20=1, 40=2, 45=2.25, ghép 2 cont 20ft=2 TEU), phân tích tỷ trọng đóng góp doanh thu của từng khách hàng và nhận diện tuyến vận chuyển chủ lực.
+  2. **Báo cáo Quyết Toán & Công Nợ Nhà Xe Thầu Phụ 3PL:** Chưa có báo cáo đối soát tổng hợp cước thầu phụ thỏa thuận, tạm ứng dọc đường, số tiền đã chi trả và số dư công nợ còn lại phải thanh toán kèm thông tin số tài khoản / ngân hàng để Kế toán lập Ủy nhiệm chi (UNC).
+  3. **Báo cáo Bảng Lương Chuyến & Năng Suất Tài Xế:** Chưa có bảng quyết toán lương chuyến chuẩn ngành (theo mô hình Triền Võ): tổng hợp lương định mức tuyến, phụ cấp neo xe sau 0h, phụ cấp hạ cảng xa/kiểm hóa, tạm ứng chuyến và thực lĩnh từng tài xế; kèm chỉ số đánh giá OTP% và số vụ sự cố hàng hóa (OS&D).
+  4. **Báo cáo 2 (DEM/DET) chưa gắn kết với Hãng tàu:** Chưa có bảng tổng hợp ma trận phân bổ container theo từng Hãng tàu để đối soát hạn Free DEM/DET và tiền phạt ước tính.
+
+### 2. Các Cải Tiến Kỹ Thuật Đã Triển Khai:
+- **Nâng Cấp Backend `ReportsAPIView` (`apps/dispatch/reports_api.py`):**
+  - **Báo cáo 7 (`report7_customer_analytics`):**
+    - Quy đổi TEU chuẩn: `20ft = 1.0`, `40ft = 2.0`, `45ft = 2.25`, chở ghép 2 cont 20ft (`is_twin_container`) = `2.0 TEU`.
+    - Gom nhóm theo từng khách hàng: Đếm số chuyến, tổng TEU, cơ cấu cont (20ft, 40ft, 45ft), tuyến chạy nhiều nhất (`top_route`), doanh thu, lợi nhuận gộp, biên lợi nhuận % và tỷ trọng đóng góp doanh thu (`revenue_share%`).
+    - 4 Thẻ KPI: Tổng sản lượng TEU, Doanh thu khách hàng, Khách hàng trọng tâm (Key Account) & % tỷ trọng, Sản lượng bình quân/chuyến (Avg TEU/trip).
+  - **Báo cáo 8 (`report8_subcontractor_settlements`):**
+    - Liên kết trực tiếp danh mục `Subcontractor` (`apps/master_data/models.py`).
+    - Tính toán: Số chuyến thuê ngoài, tổng cước thỏa thuận (`subcontractor_cost`), tạm ứng chuyến (`subcontractor_advance`), đã quyết toán, công nợ còn lại phải thanh toán (`balance_due`), tài khoản thụ hưởng phục vụ xuất UNC.
+    - 4 Thẻ KPI: Tổng chuyến xe ngoài, Tổng cước thầu phụ phát sinh, Đã thanh toán & tạm ứng, Công nợ còn lại chờ chi.
+    - 2 Bảng ERP: Bảng đối soát công nợ theo nhà xe & Bảng kê chi tiết từng chuyến xe thuê chạy.
+  - **Báo cáo 9 (`report9_driver_payroll_performance`):**
+    - Gom nhóm theo tài xế: Số chuyến hoàn thành, chuyến cắt kéo (`is_split_trip`), lương chuyến cơ bản chặng 1 (`driver_allowance`) & chặng 2 (`dropoff_driver_allowance`), phụ cấp lưu xe sau 0h (`detention_driver_allowance`), phụ cấp đặc thù, tạm ứng chuyến (`driver_advance_amount`), thực lĩnh (`net_salary`), tỷ lệ OTP% và số vụ vi phạm OS&D.
+    - 4 Thẻ KPI: Tổng quỹ lương chuyến phát sinh, Số tài xế tham gia vận hành, Lương chuyến bình quân/TX, Tài xế năng suất nhất kỳ.
+  - **Nâng Cấp Báo cáo 2 (`report2_container_dem_det`):**
+    - Bổ sung `shipping_lines_summary`: Tổng hợp số lượng vỏ cont, số cont an toàn, số cont cảnh báo, số cont quá hạn và tiền phạt ước tính theo từng Hãng tàu (Maersk, ONE, COSCO, SITC, Evergreen...).
+  - **Bảo Vệ Dữ Liệu Tài Chính Nghiêm Ngặt (Data Masking RBAC):**
+    - Nếu người dùng là Điều độ viên (`DISPATCHER`) hoặc không có thẩm quyền tài chính (`not can_view_finance`): Toàn bộ trường Doanh thu, Lợi nhuận, Cước thầu phụ, và Lương chuyến tài xế tại Report 7, 8, 9 được tự động MASK về 0 hoặc `'***'`. Điều phối viên vẫn xem được sản lượng TEU, số chuyến, tình trạng giao hàng, và hiệu suất vận hành.
+- **Nâng Cấp Giao Diện Web SPA (`templates/views/view_reports.html`):**
+  - Mở rộng Subtab Bar từ 6 tabs lên **9 Tabs Báo Cáo Chuẩn**.
+  - Bổ sung bảng Ma trận Hãng tàu trong Subtab 2.
+  - Xây dựng 3 Subtab hoàn chỉnh cho Báo cáo 7, 8, 9 với 12 thẻ Metric Cards và 4 bảng dữ liệu chuẩn ERP.
+- **Nâng Cấp Logic Frontend (`static/js/app.js`):**
+  - Viết các hàm render, bộ lọc tìm kiếm thời gian thực và sắp xếp linh hoạt cho Báo cáo 7, 8, 9 (`renderReport7`, `renderReport8`, `renderReport9`).
+  - Hỗ trợ xuất Excel/CSV chuẩn UTF-8 có BOM (`\uFEFF`) cho từng báo cáo đang mở.
+- **Kiểm Thử Toàn Diện & Tự Động:**
+  - Cập nhật test case `test_reports_api_simulation` trong `core/tests.py`.
+  - Toàn bộ **52/52 unit tests PASSED 100%**.
+  - Kịch bản mô phỏng tài xế `test_driver_simulation.py` **100% tiêu chuẩn**.
+
+---
+
 ## [1.9.5] - 2026-09-27 (Rà Soát & Bổ Sung Toàn Diện Hệ Thống Danh Mục: Hãng Tàu Biển, Rơ-Moóc Container & Nhà Xe Thầu Phụ 3PL với Đầy Đủ CRUD)
 
 ### 1. Bối Cảnh & Các Danh Mục Trọng Yếu Bị Thiếu Trước Đây:

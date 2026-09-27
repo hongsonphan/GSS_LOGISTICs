@@ -1226,7 +1226,7 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertEqual(res_rep_month.status_code, 200)
         data = res_rep_month.json()
 
-        # Kiểm tra cấu trúc phản hồi 6 báo cáo chuẩn TMS BI
+        # Kiểm tra cấu trúc phản hồi 9 báo cáo chuẩn TMS BI
         self.assertIn('summary', data)
         self.assertIn('report1_fleet_utilization', data)
         self.assertIn('report2_container_dem_det', data)
@@ -1234,17 +1234,38 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertIn('report4_expenses_reimbursement', data)
         self.assertIn('report5_drop_hook_and_layover', data)
         self.assertIn('report6_osd_exceptions', data)
+        self.assertIn('report7_customer_analytics', data)
+        self.assertIn('report8_subcontractor_settlements', data)
+        self.assertIn('report9_driver_payroll_performance', data)
 
-        # Kiểm tra tính toàn vẹn của Báo cáo 1 & 5
+        # Kiểm tra tính toàn vẹn của Báo cáo 1, 2, 5, 7, 8, 9
         self.assertIn('fleet_pnl', data['report1_fleet_utilization'])
         self.assertIn('driver_scorecards', data['report1_fleet_utilization'])
+        self.assertIn('shipping_lines_summary', data['report2_container_dem_det'])
         self.assertIn('records', data['report5_drop_hook_and_layover'])
+        self.assertIn('customers', data['report7_customer_analytics'])
+        self.assertIn('subcontractors', data['report8_subcontractor_settlements'])
+        self.assertIn('drivers', data['report9_driver_payroll_performance'])
 
         # 2. Gọi API với các kỳ khác nhau: today, week, quarter, all
         for p in ['today', 'week', 'quarter', 'all']:
             res = self.client.get(f'/api/reports/?period={p}')
             self.assertEqual(res.status_code, 200)
             self.assertEqual(res.json()['period'], p)
+
+        # 3. Kiểm tra cơ chế Data Masking với vai trò Điều Độ Viên (DISPATCHER)
+        self.client.force_login(self.dispatcher_user)
+        res_dispatcher = self.client.get('/api/reports/?period=month')
+        self.assertEqual(res_dispatcher.status_code, 200)
+        disp_data = res_dispatcher.json()
+        self.assertFalse(disp_data['can_view_finance'])
+        self.assertEqual(disp_data['summary']['total_revenue'], 0)
+        self.assertEqual(disp_data['summary']['total_profit'], 0)
+        # Các số liệu tài chính của Report 7, 8, 9 phải được MASK về 0
+        self.assertEqual(disp_data['report7_customer_analytics']['total_customer_revenue'], 0)
+        self.assertEqual(disp_data['report8_subcontractor_settlements']['total_gross_payable'], 0)
+        self.assertEqual(disp_data['report9_driver_payroll_performance']['total_payroll_fund'], 0)
+
 
     def test_accounting_advance_and_settlement_workflow(self):
         """Giả lập toàn diện luồng Tạm ứng và Hoàn ứng 2 cấp:
