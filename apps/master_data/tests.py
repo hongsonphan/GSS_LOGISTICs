@@ -10,7 +10,10 @@ from apps.master_data.models import (
 
 class MasterDataAPITestCase(TestCase):
     def setUp(self):
+        from django.contrib.auth.models import User
         self.client = APIClient()
+        self.admin_user = User.objects.create_superuser(username='master_admin', email='admin@test.com', password='password123')
+        self.client.force_authenticate(user=self.admin_user)
         self.location = Location.objects.create(
             code='TEST_CAT_LAI',
             name='Cảng Test Cát Lái',

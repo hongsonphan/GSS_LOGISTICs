@@ -2,6 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Q
+from core.permissions import CanManageMasterData
+
+class MasterDataBaseAPIView(APIView):
+    permission_classes = [CanManageMasterData]
+
 
 from apps.master_data.models import (
     Location, LocationType,
@@ -153,7 +158,7 @@ class MasterDataFormOptionsAPIView(APIView):
 # ==============================================================================
 # 1. DANH MỤC ĐỊA ĐIỂM / CẢNG / DEPOT / KHO BÃI
 # ==============================================================================
-class LocationListCreateAPIView(APIView):
+class LocationListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         l_type = request.GET.get('type', '').strip()
@@ -207,7 +212,7 @@ class LocationListCreateAPIView(APIView):
             'id': location.id
         }, status=status.HTTP_201_CREATED)
 
-class LocationDetailAPIView(APIView):
+class LocationDetailAPIView(MasterDataBaseAPIView):
     def put(self, request, pk):
         location = Location.objects.filter(id=pk).first()
         if not location:
@@ -236,7 +241,7 @@ class LocationDetailAPIView(APIView):
 # ==============================================================================
 # 2. DANH MỤC QUY CÁCH CONTAINER & XE TẢI
 # ==============================================================================
-class ContainerTypeListCreateAPIView(APIView):
+class ContainerTypeListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         qs = ContainerType.objects.all()
@@ -279,7 +284,7 @@ class ContainerTypeListCreateAPIView(APIView):
         )
         return Response({'success': True, 'message': f'Đã thêm quy cách [{cont.code}] thành công!', 'id': cont.id}, status=status.HTTP_201_CREATED)
 
-class ContainerTypeDetailAPIView(APIView):
+class ContainerTypeDetailAPIView(MasterDataBaseAPIView):
     def put(self, request, pk):
         item = ContainerType.objects.filter(id=pk).first()
         if not item:
@@ -304,7 +309,7 @@ class ContainerTypeDetailAPIView(APIView):
 # ==============================================================================
 # 3. DANH MỤC KHOẢN MỤC CHI PHÍ
 # ==============================================================================
-class ExpenseItemListCreateAPIView(APIView):
+class ExpenseItemListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         group = request.GET.get('group', '').strip()
@@ -350,7 +355,7 @@ class ExpenseItemListCreateAPIView(APIView):
         )
         return Response({'success': True, 'message': f'Đã thêm khoản chi [{exp.name}] thành công!', 'id': exp.id}, status=status.HTTP_201_CREATED)
 
-class ExpenseItemDetailAPIView(APIView):
+class ExpenseItemDetailAPIView(MasterDataBaseAPIView):
     def put(self, request, pk):
         item = ExpenseItem.objects.filter(id=pk).first()
         if not item:
@@ -375,7 +380,7 @@ class ExpenseItemDetailAPIView(APIView):
 # ==============================================================================
 # 4. DANH MỤC KHÁCH HÀNG (CRUD TẬP TRUNG)
 # ==============================================================================
-class CustomerMasterListCreateAPIView(APIView):
+class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         qs = Customer.objects.all()
@@ -420,7 +425,7 @@ class CustomerMasterListCreateAPIView(APIView):
         )
         return Response({'success': True, 'message': f'Đã thêm khách hàng [{cust.name}] thành công!', 'id': cust.id}, status=status.HTTP_201_CREATED)
 
-class CustomerMasterDetailAPIView(APIView):
+class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
     def put(self, request, pk):
         cust = Customer.objects.filter(id=pk).first()
         if not cust:
@@ -445,7 +450,7 @@ class CustomerMasterDetailAPIView(APIView):
 # ==============================================================================
 # 5. DANH MỤC BIỂU CƯỚC TUYẾN ĐƯỜNG (CRUD TẬP TRUNG)
 # ==============================================================================
-class TariffMasterListCreateAPIView(APIView):
+class TariffMasterListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         cust_id = request.GET.get('customer_id')
@@ -490,7 +495,7 @@ class TariffMasterListCreateAPIView(APIView):
         )
         return Response({'success': True, 'message': 'Đã thêm biểu cước tuyến đường thành công!', 'id': tariff.id}, status=status.HTTP_201_CREATED)
 
-class TariffMasterDetailAPIView(APIView):
+class TariffMasterDetailAPIView(MasterDataBaseAPIView):
     def put(self, request, pk):
         tariff = RouteTariff.objects.filter(id=pk).first()
         if not tariff:
@@ -519,7 +524,7 @@ class TariffMasterDetailAPIView(APIView):
 # ==============================================================================
 # 6. DANH MỤC PHƯƠNG TIỆN & RƠ-MOÓC (CRUD TẬP TRUNG)
 # ==============================================================================
-class VehicleMasterListCreateAPIView(APIView):
+class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         ownership = request.GET.get('ownership', '').strip()
@@ -572,7 +577,7 @@ class VehicleMasterListCreateAPIView(APIView):
         )
         return Response({'success': True, 'message': f'Đã thêm xe [{veh.license_plate}] thành công!', 'id': veh.id}, status=status.HTTP_201_CREATED)
 
-class VehicleMasterDetailAPIView(APIView):
+class VehicleMasterDetailAPIView(MasterDataBaseAPIView):
     def put(self, request, pk):
         veh = Vehicle.objects.filter(id=pk).first()
         if not veh:
@@ -596,7 +601,7 @@ class VehicleMasterDetailAPIView(APIView):
 # ==============================================================================
 # 7. DANH MỤC BIỂU PHÍ LƯƠNG CHUYẾN TÀI XẾ (DRIVER SALARY TARIFFS)
 # ==============================================================================
-class DriverSalaryTariffListCreateAPIView(APIView):
+class DriverSalaryTariffListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         area = request.GET.get('area', '').strip()
@@ -636,7 +641,7 @@ class DriverSalaryTariffListCreateAPIView(APIView):
         )
         return Response({'success': True, 'message': f'Đã thêm tuyến lương [{tariff.route_name}] thành công!', 'id': tariff.id}, status=status.HTTP_201_CREATED)
 
-class DriverSalaryTariffDetailAPIView(APIView):
+class DriverSalaryTariffDetailAPIView(MasterDataBaseAPIView):
     def put(self, request, pk):
         tariff = DriverSalaryTariff.objects.filter(id=pk).first()
         if not tariff:
@@ -660,7 +665,7 @@ class DriverSalaryTariffDetailAPIView(APIView):
 # ==============================================================================
 # 8. DANH MỤC PHỤ CẤP CẢNG XA & KIỂM HÓA (DRIVER ALLOWANCES)
 # ==============================================================================
-class DriverAllowanceListCreateAPIView(APIView):
+class DriverAllowanceListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         cat = request.GET.get('category', '').strip()
@@ -705,7 +710,7 @@ class DriverAllowanceListCreateAPIView(APIView):
         )
         return Response({'success': True, 'message': f'Đã thêm phụ cấp [{allowance.name}] thành công!', 'id': allowance.id}, status=status.HTTP_201_CREATED)
 
-class DriverAllowanceDetailAPIView(APIView):
+class DriverAllowanceDetailAPIView(MasterDataBaseAPIView):
     def put(self, request, pk):
         item = DriverAllowanceCatalog.objects.filter(id=pk).first()
         if not item:

@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 
 from core.security import GracefulJWTAuthentication
+from core.permissions import IsAccountant
 from apps.billing.models import (
     TripExpense,
     ReimbursementStatus,
@@ -35,7 +36,7 @@ class CustomerReimbursablesAPIView(APIView):
     cho phép gom nhóm xuất Debit Note và chốt hoàn tiền 1-chạm.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAccountant]
 
     def get(self, request):
         status_filter = request.GET.get('reimbursement_status', 'ALL')
@@ -274,7 +275,7 @@ class CashBookAPIView(APIView):
     Hạch toán minh bạch dòng tiền Tiền mặt và Ngân hàng.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAccountant]
 
     def get(self, request):
         method_filter = request.GET.get('payment_method', 'ALL')
@@ -440,7 +441,7 @@ class SubcontractorSettlementsAPIView(APIView):
     Theo dõi cước thuê xe ngoài, tạm ứng chi phí và công nợ còn phải thanh toán cho thầu phụ.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAccountant]
 
     def get(self, request):
         status_filter = request.GET.get('status', 'ALL')
@@ -641,7 +642,7 @@ class BotTollAuditAPIView(APIView):
     Đối chiếu chi phí vé BOT thực tế tài xế nộp/quét OCR với định mức trong bảng giá cước RouteTariff.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAccountant]
 
     def get(self, request):
         from_date = request.GET.get('from_date')

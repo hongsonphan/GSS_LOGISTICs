@@ -13,6 +13,7 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
 from core.models import SoftDeleteModel
+from core.permissions import IsCustomsOrDirector
 from apps.customers.models import Customer, BookingOrder
 from apps.dispatch.models import DispatchTrip
 from apps.billing.models import TripExpense
@@ -25,6 +26,7 @@ class CustomsDeclarationListCreateAPIView(APIView):
     API Quản lý Danh Sách và Đăng Ký Tờ Khai Hải Quan VNACCS/VCIS.
     Hỗ trợ lọc đa tiêu chí, tính toán KPI phân luồng và thuế XNK.
     """
+    permission_classes = [IsCustomsOrDirector]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
@@ -212,6 +214,7 @@ class CustomsDeclarationListCreateAPIView(APIView):
 
 class CustomsDeclarationDetailAPIView(APIView):
     """API Xem chi tiết, cập nhật và xóa tờ khai hải quan."""
+    permission_classes = [IsCustomsOrDirector]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self, pk):
@@ -310,6 +313,7 @@ class CustomsDeclarationDetailAPIView(APIView):
 
 class CustomsQuickActionAPIView(APIView):
     """API Thao tác nhanh 1-chạm (Đổi luồng, Thông quan, Đổi trạng thái nộp thuế)."""
+    permission_classes = [IsCustomsOrDirector]
     def post(self, request, pk):
         declaration = CustomsDeclaration.objects.filter(id=pk).first()
         if not declaration:
@@ -349,6 +353,7 @@ class CustomsQuickActionAPIView(APIView):
 
 class CustomsExportExcelAPIView(APIView):
     """API Xuất Sổ Bảng Kê Tờ Khai Hải Quan & Theo Dõi Thông Quan Excel."""
+    permission_classes = [IsCustomsOrDirector]
     def get(self, request):
         q = request.GET.get('q', '').strip()
         lane = request.GET.get('lane', '').strip()

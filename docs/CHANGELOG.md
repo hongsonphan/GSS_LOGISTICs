@@ -2,6 +2,49 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [1.9.4] - 2026-09-27 (Rà Soát & Củng Cố Toàn Diện Hệ Thống Phân Quyền RBAC, Bảo Mật Báo Cáo P&L & Data Masking)
+
+### 1. Bối Cảnh & Các Lỗ Hổng Bảo Mật Được Phát Hiện Trong Quá Trình Rà Soát:
+- **Lỗ hổng Default AllowAny:** Cấu hình `REST_FRAMEWORK` trước đây thiếu `DEFAULT_PERMISSION_CLASSES`, dẫn đến việc các API View không khai báo `permission_classes` sẽ mặc định cho phép truy cập công khai không cần đăng nhập.
+- **Rò rỉ bảng lương tài xế:** `PersonnelPayrollAPIView` (/api/personnel/) thiếu permission class, khiến dữ liệu tiền lương, mức tạm ứng và thưởng sản lượng có thể bị lộ nếu người dùng biết URL.
+- **Rò rỉ báo cáo P&L và lợi nhuận công ty:** `ReportsAPIView` (/api/reports/) chỉ kiểm tra `IsAuthenticated`, khiến bất kỳ nhân viên nào (kể cả Tài xế, Kỹ thuật bãi) khi đăng nhập đều có thể xem toàn bộ doanh thu, chi phí và biên lợi nhuận (margin%) của công ty.
+- **Các phân hệ tài chính nhạy cảm chưa giới hạn vai trò:** Các API Sổ quỹ tiền mặt (`CashBookAPIView`), Bảng kê thu hồi chi hộ (`CustomerReimbursablesAPIView`), Quyết toán thầu phụ (`SubcontractorSettlementsAPIView`) và Quỹ tạm ứng điều vận chưa chặn triệt để vai trò ngoài Kế toán và Ban Giám Đốc.
+- **Giao diện Web SPA hiển thị menu không theo phân quyền:** Sidebar hiển thị toàn bộ 9 menu bất kể người đăng nhập là Điều độ, Kế toán hay Kinh doanh.
+
+### 2. Giải Pháp Kỹ Thuật & Cải Tiến Kiến Trúc:
+- **Thiết Lập Mặc Định Bắt Buộc Xác Thực (`DEFAULT_PERMISSION_CLASSES`):**
+  - Bổ sung `'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated']` vào `config/settings.py`. Toàn bộ REST API đều bắt buộc phải đăng nhập.
+- **Xây Dựng 12 Permission Classes Chuyên Biệt (`core/permissions.py`):**
+  - `IsAdminOrDirector`: Toàn quyền quản trị cấp Ban Giám Đốc.
+  - `IsDispatcher`: Điều phối viên & Ban Giám Đốc (tạo/quản lý chuyến xe, gán xe/tài xế).
+  - `IsAccountant`: Kế toán & Ban Giám Đốc (chốt/mở sổ chuyến, đối soát chi phí, quản lý quỹ).
+  - `IsDispatcherOrAccountant`: Phối hợp giữa Điều phối và Kế toán (cấp quỹ điều vận, tạm ứng chuyến tài xế).
+  - `IsSalesOrDirector`: Phân hệ Sale & Booking. Hỗ trợ `SAFE_METHODS` (GET) cho Điều độ và Kế toán xem booking/báo giá để kế thừa thông tin.
+  - `IsCustomsOrDirector`: Phân hệ Tờ khai hải quan VNACCS/VCIS (Nhân sự Hải quan, Điều độ, BGD).
+  - `CanManageFleet`: Quản lý Đội xe, rơ-moóc, bảo dưỡng & đăng kiểm (Kỹ thuật bãi, Điều độ, BGD).
+  - `CanViewPayroll`: Bảo mật bảng lương (Chỉ Kế toán và Ban Giám Đốc; chặn Tài xế, Điều độ, Thợ máy).
+  - `CanViewFinancialReports`: Báo cáo tài chính, Sổ quỹ, P&L, Thu hồi chi hộ, Quyết toán thầu phụ (Kế toán & BGD).
+  - `CanViewOperationalReports`: Báo cáo quản trị vận hành TMS (Điều phối, Kế toán, BGD).
+  - `CanManageMasterData`: Xem & cấu hình Master Data. GET cho nhân sự nội bộ, Ghi/sửa chỉ Kế toán/Điều độ/BGD.
+  - `IsTripDriverOrDispatcher`: Quyền xem/cập nhật chuyến xe chống IDOR, hỗ trợ Capability Token cho Tài xế Mobile.
+  - **Loại bỏ triệt để bypass `settings.DEBUG`** trong các permission classes nhằm đảm bảo tính toàn vẹn bảo mật ở cả môi trường test lẫn production.
+- **Cơ Chế Làm Mờ Dữ Liệu Tài Chính (Data Masking) Cho Điều Độ Viên:**
+  - Trong `ReportsAPIView`: Nếu người dùng là `DISPATCHER`, hệ thống cho phép xem toàn bộ chỉ số vận hành (sản lượng chuyến, tỷ lệ đúng giờ OTP, chu trình vỏ cont DEM/DET, cắt kéo & lưu bãi sau 0h, biên bản sự cố OS&D) nhưng **tự động MASK (ẩn về 0 và hiển thị '***')** toàn bộ doanh thu, chi phí, lợi nhuận gộp và margin%.
+- **Nâng Cấp Giao Diện Sidebar Phân Quyền Linh Hoạt (`templates/components/sidebar.html`):**
+  - Tự động ẩn các tab không thuộc phạm vi chuyên môn của từng vai trò (ví dụ: Điều độ không thấy menu "Hành chính & Nhân sự", "Quản lý Kế toán"; Kỹ thuật bãi chỉ thấy "Xe & Bãi" và "Điều vận").
+  - Chân Sidebar hiển thị chính xác họ tên thật, role tiếng Việt và avatar viết tắt của nhân viên đang đăng nhập.
+  - Client-side navigation (`static/js/app.js`): Hàm `switchTab` kiểm tra role để chặn truy cập đường dẫn trực tiếp và hiển thị thông báo toast cảnh báo nếu không có quyền.
+- **Bổ Sung 5 Test Case Kiểm Toán Phân Quyền (`core/tests.py`):**
+  - `test_rbac_driver_blocked_from_sensitive_financial_and_payroll_apis` (PASS)
+  - `test_rbac_dispatcher_access_with_financial_data_masking` (PASS)
+  - `test_rbac_accountant_full_financial_and_payroll_access` (PASS)
+  - `test_rbac_salesman_access_and_restrictions` (PASS)
+  - `test_rbac_director_full_access` (PASS)
+  - Toàn bộ **48/48 unit tests PASSED 100%**.
+  - Kịch bản giả lập tài xế `test_driver_simulation.py` **13/13 bước PASSED 100%**.
+
+---
+
 ## [1.9.3] - 2026-09-27 (Nâng Cấp Giao Diện Tài Xế: Smart Next-Action Flow, Giám Định Vỏ Cont, Ảnh Seal & Nút SOS Khẩn Cấp)
 
 ### 1. Bối Cảnh & Nỗi Đau Thực Tế Hiện Trường:

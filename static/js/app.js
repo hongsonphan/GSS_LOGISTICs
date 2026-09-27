@@ -4828,6 +4828,32 @@ const TAB_ROUTE_MAP = {
 
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
 function switchTab(tabId, updateHistory = true) {
+    const curUser = window.CURRENT_USER || {};
+    const role = curUser.role || '';
+    const isAdmin = curUser.is_superuser || curUser.is_staff;
+
+    // RBAC: Chặn các tab không có thẩm quyền truy cập
+    if (!isAdmin && role) {
+        if ((tabId === 'nhan-su' || tabId === 'ke-toan') && !['DIRECTOR', 'ACCOUNTANT'].includes(role)) {
+            if (typeof showToast === 'function') {
+                showToast('warning', 'Phân hệ Nhân sự tiền lương và Kế toán tài chính chỉ dành cho Kế toán viên và Ban Giám Đốc!', 'Hạn Chế Quyền');
+            }
+            return;
+        }
+        if (tabId === 'xe-bai' && !['DIRECTOR', 'DISPATCHER', 'MECHANIC'].includes(role)) {
+            if (typeof showToast === 'function') {
+                showToast('warning', 'Phân hệ Xe & Bãi chỉ dành cho Điều độ viên và Kỹ thuật bãi!', 'Hạn Chế Quyền');
+            }
+            return;
+        }
+        if (tabId === 'kinh-doanh' && !['DIRECTOR', 'SALESMAN', 'DISPATCHER', 'ACCOUNTANT'].includes(role)) {
+            if (typeof showToast === 'function') {
+                showToast('warning', 'Phân hệ Sale & Booking dành cho Nhân viên Kinh doanh và Điều độ!', 'Hạn Chế Quyền');
+            }
+            return;
+        }
+    }
+
     document.querySelectorAll('.sidebar-item-main').forEach(btn => {
         btn.classList.remove('active');
         const icon = btn.querySelector('i');
@@ -8449,6 +8475,7 @@ async function loadReportsData() {
 function renderReport1(data) {
     const s = data.summary || {};
     const r1 = data.report1_fleet_utilization || {};
+    const canViewFinance = (data.can_view_finance !== false);
 
     const elOwnedRatio = document.getElementById('rep1-stat-owned-ratio');
     if (elOwnedRatio) elOwnedRatio.innerText = `${s.owned_ratio || 0.0}%`;
@@ -8457,22 +8484,24 @@ function renderReport1(data) {
     if (elNoteOwned) elNoteOwned.innerText = `Xe Nhà: ${r1.owned_trips || 0} chuyến · Xe Bạn: ${r1.partner_trips || 0} chuyến`;
 
     const elRev = document.getElementById('rep1-stat-revenue');
-    if (elRev) elRev.innerText = formatMoneyVND(s.total_revenue || 0);
+    if (elRev) elRev.innerText = canViewFinance ? formatMoneyVND(s.total_revenue || 0) : '*** (Bảo mật)';
 
     const elExp = document.getElementById('rep1-stat-expense');
-    if (elExp) elExp.innerText = formatMoneyVND(s.total_expense || 0);
+    if (elExp) elExp.innerText = canViewFinance ? formatMoneyVND(s.total_expense || 0) : '*** (Bảo mật)';
 
     const elProfit = document.getElementById('rep1-stat-profit');
-    if (elProfit) elProfit.innerText = formatMoneyVND(s.total_profit || 0);
+    if (elProfit) elProfit.innerText = canViewFinance ? formatMoneyVND(s.total_profit || 0) : '*** (Bảo mật)';
 
     const elMargin = document.getElementById('rep1-stat-margin');
-    if (elMargin) elMargin.innerText = `Biên LN gộp: ${s.margin_avg || 0.0}%`;
+    if (elMargin) elMargin.innerText = canViewFinance ? `Biên LN gộp: ${s.margin_avg || 0.0}%` : 'Biên LN: Nội bộ BGD';
 
     rep1DataCache = r1.fleet_pnl || [];
+    rep1DataCache._can_view_finance = canViewFinance;
     applyReport1Filters();
 }
 
 function applyReport1Filters() {
+    const canViewFinance = (rep1DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep1-search')?.value || '').toLowerCase().trim();
     let list = rep1DataCache.filter(item => {
         if (!searchVal) return true;
@@ -8511,6 +8540,11 @@ function applyReport1Filters() {
         const marginColor = item.margin_percent >= 20 ? 'bg-emerald-100 text-emerald-800' :
                             (item.margin_percent >= 10 ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800');
 
+        const revDisplay = canViewFinance ? formatMoneyVND(item.revenue) : '***';
+        const expDisplay = canViewFinance ? formatMoneyVND(item.expense) : '***';
+        const profitDisplay = canViewFinance ? formatMoneyVND(item.profit) : '***';
+        const marginDisplay = canViewFinance ? `${item.margin_percent}%` : '***';
+
         return `
             <tr class="hover:bg-teal-50/30 transition-colors">
                 <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.plate)}</td>
@@ -8518,12 +8552,12 @@ function applyReport1Filters() {
                 <td>${ownershipBadge}</td>
                 <td class="text-xs font-medium text-slate-700">${escapeHtml(item.driver)}</td>
                 <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
-                <td class="text-right font-semibold text-slate-800 text-xs tabular-nums">${formatMoneyVND(item.revenue)}</td>
-                <td class="text-right font-medium text-rose-600 text-xs tabular-nums">${formatMoneyVND(item.expense)}</td>
-                <td class="text-right font-black ${profitColor} text-xs tabular-nums">${formatMoneyVND(item.profit)}</td>
+                <td class="text-right font-semibold text-slate-800 text-xs tabular-nums">${revDisplay}</td>
+                <td class="text-right font-medium text-rose-600 text-xs tabular-nums">${expDisplay}</td>
+                <td class="text-right font-black ${profitColor} text-xs tabular-nums">${profitDisplay}</td>
                 <td class="text-center">
                     <span class="px-2 py-0.5 rounded-md text-[11px] font-black ${marginColor} tabular-nums">
-                        ${item.margin_percent}%
+                        ${marginDisplay}
                     </span>
                 </td>
             </tr>

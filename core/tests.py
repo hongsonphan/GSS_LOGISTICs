@@ -673,6 +673,8 @@ class BimLogisticsCoreTestCase(TestCase):
         from apps.dispatch.api_views import resolve_customer
         from apps.customers.models import Quotation, BookingOrder
 
+        self.client.force_login(self.director_user)
+
         # 1. Tạo thêm khách hàng thứ hai để đối chứng
         cust2 = Customer.objects.create(
             code="CUST_20260921094535",
@@ -754,6 +756,8 @@ class BimLogisticsCoreTestCase(TestCase):
         """Kiểm tra đính kèm file Booking (PDF/Ảnh) khi Tạo lệnh điều động & Kế thừa từ BookingOrder."""
         from apps.customers.models import BookingOrder, BookingStatus
         from apps.documents.models import TripDocument, DocumentType
+
+        self.client.force_login(self.director_user)
 
         # 1. Tạo chuyến mới kèm file PDF booking
         pdf_content = b"%PDF-1.4\n%test pdf content for booking file\n%%EOF"
@@ -1761,6 +1765,128 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertTrue(doc_res.json()['success'])
         self.trip.refresh_from_db()
         self.assertEqual(self.trip.status, TripStatus.DELIVERED)
+
+    # ==========================================================================
+    # RBAC & PERMISSION AUDIT TEST SUITE (KIỂM TOÁN PHÂN QUYỀN TOÀN HỆ THỐNG)
+    # ==========================================================================
+    def test_rbac_driver_blocked_from_sensitive_financial_and_payroll_apis(self):
+        """Tài xế bị chặn hoàn toàn khi truy cập P&L, bảng lương và sổ quỹ (HTTP 403)."""
+        self.client.force_login(self.driver_user)
+
+        # 1. Báo cáo TMS BI
+        res_rep = self.client.get('/api/reports/')
+        self.assertEqual(res_rep.status_code, 403)
+
+        # 2. Bảng lương tài xế
+        res_pay = self.client.get('/api/personnel/')
+        self.assertEqual(res_pay.status_code, 403)
+
+        # 3. Phân hệ kế toán
+        res_acc = self.client.get('/api/accounting/')
+        self.assertEqual(res_acc.status_code, 403)
+
+        # 4. Sổ quỹ tiền mặt
+        res_cash = self.client.get('/api/accounting/cashbook/')
+        self.assertEqual(res_cash.status_code, 403)
+
+        # 5. Thu hồi chi hộ (Debit Note)
+        res_debit = self.client.get('/api/accounting/reimbursables/')
+        self.assertEqual(res_debit.status_code, 403)
+
+        # 6. Quyết toán thầu phụ xe bạn
+        res_sub = self.client.get('/api/accounting/subcontractor-settlements/')
+        self.assertEqual(res_sub.status_code, 403)
+
+    def test_rbac_dispatcher_access_with_financial_data_masking(self):
+        """Điều độ viên xem được báo cáo vận hành nhưng bị MASK toàn bộ số liệu P&L."""
+        self.client.force_login(self.dispatcher_user)
+
+        # Điều độ gọi Báo cáo TMS BI: HTTP 200 OK nhưng can_view_finance = False
+        res = self.client.get('/api/reports/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertFalse(data.get('can_view_finance'))
+
+        # Dữ liệu tài chính P&L bị làm mờ (Masking về 0)
+        summary = data.get('summary', {})
+        self.assertEqual(summary.get('total_revenue'), 0)
+        self.assertEqual(summary.get('total_expense'), 0)
+        self.assertEqual(summary.get('total_profit'), 0)
+        self.assertEqual(summary.get('margin_avg'), 0.0)
+
+        # Nhưng các chỉ số vận hành vẫn hiển thị đầy đủ
+        self.assertIn('total_trips', summary)
+        self.assertIn('owned_ratio', summary)
+        self.assertIn('otp_rate', summary)
+
+        # Điều độ bị chặn xem bảng lương (PersonnelPayrollAPIView)
+        res_pay = self.client.get('/api/personnel/')
+        self.assertEqual(res_pay.status_code, 403)
+
+        # Điều độ bị chặn truy cập Sổ quỹ (CashBookAPIView)
+        res_cash = self.client.get('/api/accounting/cashbook/')
+        self.assertEqual(res_cash.status_code, 403)
+
+    def test_rbac_accountant_full_financial_and_payroll_access(self):
+        """Kế toán viên có toàn quyền xem P&L tài chính, bảng lương và sổ quỹ."""
+        self.client.force_login(self.accountant_user)
+
+        # 1. Báo cáo TMS BI: Xem đầy đủ số liệu tài chính P&L
+        res_rep = self.client.get('/api/reports/')
+        self.assertEqual(res_rep.status_code, 200)
+        self.assertTrue(res_rep.json().get('can_view_finance'))
+
+        # 2. Bảng lương nhân sự
+        res_pay = self.client.get('/api/personnel/')
+        self.assertEqual(res_pay.status_code, 200)
+
+        # 3. Phân hệ kế toán
+        res_acc = self.client.get('/api/accounting/')
+        self.assertEqual(res_acc.status_code, 200)
+
+        # 4. Sổ quỹ
+        res_cash = self.client.get('/api/accounting/cashbook/')
+        self.assertEqual(res_cash.status_code, 200)
+
+    def test_rbac_salesman_access_and_restrictions(self):
+        """Nhân viên Kinh doanh truy cập CRM/Báo giá nhưng bị chặn truy cập Sổ quỹ và Bảng lương."""
+        sale_user = User.objects.create_user(username="sales_audit", password="Password@2026")
+        Employee.objects.create(
+            user=sale_user,
+            code="SALE_AUDIT",
+            full_name="Nguyễn Kinh Doanh",
+            department=Department.SALES,
+            role=EmployeeRole.SALESMAN
+        )
+        self.client.force_login(sale_user)
+
+        # Xem CRM Sale & Báo giá: HTTP 200 OK
+        res_sales = self.client.get('/api/sales/')
+        self.assertEqual(res_sales.status_code, 200)
+
+        # Bị chặn xem bảng lương: HTTP 403
+        res_pay = self.client.get('/api/personnel/')
+        self.assertEqual(res_pay.status_code, 403)
+
+        # Bị chặn xem sổ quỹ: HTTP 403
+        res_cash = self.client.get('/api/accounting/cashbook/')
+        self.assertEqual(res_cash.status_code, 403)
+
+        # Bị chặn xem báo cáo TMS BI: HTTP 403
+        res_rep = self.client.get('/api/reports/')
+        self.assertEqual(res_rep.status_code, 403)
+
+    def test_rbac_director_full_access(self):
+        """Ban Giám Đốc có toàn quyền trên toàn bộ các phân hệ và API."""
+        self.client.force_login(self.director_user)
+
+        self.assertEqual(self.client.get('/api/dashboard/').status_code, 200)
+        self.assertEqual(self.client.get('/api/reports/').status_code, 200)
+        self.assertEqual(self.client.get('/api/personnel/').status_code, 200)
+        self.assertEqual(self.client.get('/api/accounting/').status_code, 200)
+        self.assertEqual(self.client.get('/api/sales/').status_code, 200)
+        self.assertEqual(self.client.get('/api/fleet/').status_code, 200)
+
 
 
 

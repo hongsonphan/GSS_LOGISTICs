@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 
 from core.security import GracefulJWTAuthentication
+from core.permissions import IsAccountant, IsDispatcher, IsDispatcherOrAccountant
 from apps.billing.models import (
     DispatcherAdvanceFund,
     DriverTripAdvance,
@@ -30,7 +31,7 @@ class AccountingAdvancesAPIView(APIView):
     2. Tạm Ứng & Hoàn Ứng Theo Chuyến Cho Tài Xế.
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAccountant]
 
     def get(self, request):
         today = timezone.now().date()
@@ -207,7 +208,7 @@ class AccountingAdvancesAPIView(APIView):
 class DispatcherFundCreateAPIView(APIView):
     """API Tạo mới yêu cầu Tạm Ứng Quỹ từ Công ty cho Điều vận."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsDispatcherOrAccountant]
 
     def post(self, request):
         dispatcher_id = request.data.get('dispatcher_id')
@@ -272,7 +273,7 @@ class DispatcherFundCreateAPIView(APIView):
 class DispatcherFundActionAPIView(APIView):
     """API Phê duyệt hoặc Quyết toán hoàn ứng Quỹ Điều Vận."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAccountant]
 
     def post(self, request, pk):
         fund = DispatcherAdvanceFund.objects.filter(id=pk, is_deleted=False).first()
@@ -313,7 +314,7 @@ class DispatcherFundActionAPIView(APIView):
 class DriverAdvanceCreateAPIView(APIView):
     """API Cấp Tạm Ứng Chuyến Cho Tài Xế (Từ Quỹ Điều Vận hoặc Công Ty Chi Trực Tiếp)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsDispatcherOrAccountant]
 
     def post(self, request):
         trip_id = request.data.get('trip_id')
@@ -401,7 +402,7 @@ class DriverAdvanceCreateAPIView(APIView):
 class DriverAdvanceSettleAPIView(APIView):
     """API Quyết Toán Hoàn Ứng Chuyến Cho Tài Xế (Đối Soát Thực Chi & Chênh Lệch)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAccountant]
 
     def post(self, request, pk):
         advance = DriverTripAdvance.objects.filter(id=pk, is_deleted=False).select_related('trip', 'driver', 'dispatcher_fund').first()

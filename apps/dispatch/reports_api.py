@@ -9,20 +9,25 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.security import GracefulJWTAuthentication
+from core.permissions import CanViewOperationalReports
 from apps.dispatch.models import DispatchTrip, TripStatus, ShipmentType
 from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus
 from apps.fleet.models import Vehicle, Trailer
 from apps.customers.models import Customer
-from apps.personnel.models import Employee
+from apps.personnel.models import Employee, EmployeeRole
 
 
 class ReportsAPIView(APIView):
     """
     API Báo Cáo Quản Trị & Thống Kê TMS Đa Chiều (6 Báo Cáo Chuẩn Kế Hoạch).
     Hỗ trợ lọc theo Kỳ (Hôm nay, Tuần này, Tháng này, Quý này, Tất cả), Khách hàng, Xe.
+    Phân quyền:
+    - Ban Giám Đốc (DIRECTOR) & Kế Toán (ACCOUNTANT): Toàn quyền xem P&L, doanh thu, lợi nhuận, chi phí.
+    - Điều Phối (DISPATCHER): Xem toàn bộ chỉ số vận hành nhưng BẢO MẬT (MASK) doanh thu, lợi nhuận và P&L.
+    - Tài Xế (DRIVER) & Thợ Máy (MECHANIC): Bị từ chối (403 Forbidden).
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanViewOperationalReports]
 
     def get(self, request):
         period = request.GET.get('period', 'month') # today, week, month, quarter, all
@@ -318,9 +323,37 @@ class ReportsAPIView(APIView):
                     'has_pod_photo': True
                 })
 
+        # Kiểm tra thẩm quyền xem số liệu tài chính P&L (Bảo vệ thông tin kinh doanh)
+        emp = getattr(request.user, 'employee', None)
+        can_view_finance = request.user.is_superuser or request.user.is_staff or (
+            emp and emp.role in [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT]
+        )
+
+        if not can_view_finance:
+            # Mask toàn bộ dữ liệu tài chính nhạy cảm với Điều độ viên
+            total_revenue = 0
+            total_expense = 0
+            total_profit = 0
+            margin_avg = 0.0
+            total_reimbursable = 0
+            for f in fleet_pnl:
+                f['revenue'] = 0
+                f['expense'] = 0
+                f['profit'] = 0
+                f['margin_percent'] = 0.0
+            for d in driver_scorecards:
+                d['revenue'] = 0
+                d['allowance'] = 0
+            total_bot = 0
+            total_fuel = 0
+            total_port_lift = 0
+            total_reimbursable_collected = 0
+            reimbursable_expenses = []
+
         # Phản hồi JSON hoàn chỉnh cho 6 Báo Cáo
         data = {
             'period': period,
+            'can_view_finance': can_view_finance,
             'summary': {
                 'total_trips': total_trips,
                 'total_revenue': total_revenue,

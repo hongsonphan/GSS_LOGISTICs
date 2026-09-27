@@ -22,6 +22,10 @@ from core.permissions import (
     IsDispatcher,
     IsAccountant,
     IsDriver,
+    IsSalesOrDirector,
+    IsCustomsOrDirector,
+    CanManageFleet,
+    CanViewPayroll,
     IsTripDriverOrDispatcher,
 )
 import re
@@ -1227,6 +1231,7 @@ class TripAddExpenseAPIView(APIView):
 
 class TripExpenseDetailAPIView(APIView):
     """API Sửa và Xóa (Soft-delete) khoản chi phí phát sinh."""
+    permission_classes = [IsTripDriverOrDispatcher]
     def put(self, request, trip_code, expense_id):
         trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
@@ -1574,6 +1579,7 @@ class TripAddDocumentAPIView(APIView):
 
 class PersonnelPayrollAPIView(APIView):
     """API Bảng lương tài xế theo đúng Thông Báo Lương Triền Võ Logistics."""
+    permission_classes = [CanViewPayroll]
     def get(self, request):
         drivers = Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True)
         results = []
@@ -1609,6 +1615,7 @@ class PersonnelPayrollAPIView(APIView):
 
 class FleetAPIView(APIView):
     """API Đội xe & Rơ-moóc với cảnh báo đăng kiểm & bảo hiểm thông minh."""
+    permission_classes = [CanManageFleet]
     def get(self, request):
         vehicles = Vehicle.objects.select_related('current_driver').all()
         today = timezone.now().date()
@@ -1649,6 +1656,7 @@ class FleetAPIView(APIView):
 
 class BookingActiveAPIView(APIView):
     """API lấy danh sách các Booking đang hoạt động để Điều độ viên chọn kế thừa khi tạo lệnh."""
+    permission_classes = [IsDispatcher]
     def get(self, request):
         # Sắp xếp theo ngày đóng hàng gấp gần nhất lên trên đầu
         bookings = BookingOrder.objects.select_related('customer').filter(
@@ -1701,6 +1709,7 @@ class BookingActiveAPIView(APIView):
 class SalesAPIView(APIView):
     """API Báo giá & Quản lý Đơn hàng Booking Sale CRM."""
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+    permission_classes = [IsSalesOrDirector]
     def get(self, request):
         quotations = Quotation.objects.filter(is_deleted=False).select_related('customer').all()
         q_results = []
@@ -1988,6 +1997,7 @@ class SalesAPIView(APIView):
 
 class QuotationDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Báo Giá."""
+    permission_classes = [IsSalesOrDirector]
     def get(self, request, pk):
         q = Quotation.objects.filter(pk=pk, is_deleted=False).first()
         if not q:
@@ -2055,6 +2065,7 @@ class QuotationDetailAPIView(APIView):
 
 class QuotationStatusAPIView(APIView):
     """API Cập nhật nhanh trạng thái chu trình Báo Giá (Sales Funnel)."""
+    permission_classes = [IsSalesOrDirector]
     def patch(self, request, pk):
         q = Quotation.objects.filter(pk=pk, is_deleted=False).first()
         if not q:
@@ -2076,6 +2087,7 @@ class QuotationStatusAPIView(APIView):
 class BookingOrderDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Đơn Đặt Hàng / Booking."""
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+    permission_classes = [IsSalesOrDirector]
     def get(self, request, pk):
         b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
         if not b:
@@ -2277,6 +2289,7 @@ class BookingOrderDetailAPIView(APIView):
 
 class BookingOrderStatusAPIView(APIView):
     """API Đổi nhanh trạng thái chu trình Đơn Hàng / Booking."""
+    permission_classes = [IsSalesOrDirector]
     def patch(self, request, pk):
         b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
         if not b:
@@ -2297,6 +2310,7 @@ class BookingOrderStatusAPIView(APIView):
 
 class BookingDocumentDeleteAPIView(APIView):
     """API xóa tệp đính kèm lẻ của Booking."""
+    permission_classes = [IsSalesOrDirector]
     def delete(self, request, pk, doc_id):
         b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
         if not b:
@@ -2311,6 +2325,7 @@ class BookingDocumentDeleteAPIView(APIView):
 
 class CustomsAPIView(APIView):
     """API Thủ tục Hải quan phân luồng."""
+    permission_classes = [IsCustomsOrDirector]
     def get(self, request):
         return Response({
             'green_lane': 85,
@@ -2512,6 +2527,7 @@ class TripDriverIncidentAPIView(APIView):
 
 class AccountingAPIView(APIView):
     """API Phân hệ Quản lý Kế toán: Đối soát Chi phí, Hóa đơn chứng từ và Chốt sổ chuyến xe."""
+    permission_classes = [IsAccountant]
     def get(self, request):
         trips = DispatchTrip.objects.select_related('customer', 'driver', 'vehicle', 'settled_by', 'booking_order').prefetch_related('expenses').all().order_by('-created_at')
 

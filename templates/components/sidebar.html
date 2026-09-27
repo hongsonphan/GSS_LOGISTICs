@@ -1,3 +1,4 @@
+{% with role=current_employee.role is_admin=request.user.is_superuser|default:request.user.is_staff %}
 <!-- SIDEBAR NAVIGATION (Bim_ERP-Solutions Enterprise Standard) -->
 <aside class="app-sidebar select-none">
     <!-- Brand Logo Header (Homepage Link -> Dashboard) -->
@@ -22,50 +23,70 @@
                     <span class="flex-1 text-left tracking-wide">Tổng quan Dashboard</span>
                 </a>
             </li>
-            <!-- 2. Sale & Booking -->
+
+            <!-- 2. Sale & Booking (Kinh doanh, Điều phối, Kế toán, BGD) -->
+            {% if is_admin or not role or role in 'DIRECTOR,SALESMAN,DISPATCHER,ACCOUNTANT' %}
             <li>
                 <a href="/sales" onclick="event.preventDefault(); switchTab('kinh-doanh');" class="sidebar-item-main flex items-center" data-target="kinh-doanh">
                     <i class="ph ph-handshake text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Sale & Booking</span>
                 </a>
             </li>
-            <!-- 3. Điều vận -->
+            {% endif %}
+
+            <!-- 3. Điều vận (Điều phối, Kế toán, Kinh doanh, Bãi xe, BGD) -->
+            {% if is_admin or not role or role in 'DIRECTOR,DISPATCHER,ACCOUNTANT,SALESMAN,MECHANIC' %}
             <li>
                 <a href="/dispatch" onclick="event.preventDefault(); switchTab('dieu-van');" class="sidebar-item-main flex items-center" data-target="dieu-van">
                     <i class="ph ph-truck text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Điều vận</span>
                 </a>
             </li>
-            <!-- 4. Xe & Bãi -->
+            {% endif %}
+
+            <!-- 4. Xe & Bãi (Bãi xe, Điều phối, BGD) -->
+            {% if is_admin or not role or role in 'DIRECTOR,DISPATCHER,MECHANIC' %}
             <li>
                 <a href="/fleet" onclick="event.preventDefault(); switchTab('xe-bai');" class="sidebar-item-main flex items-center" data-target="xe-bai">
                     <i class="ph ph-garage text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Xe & Bãi</span>
                 </a>
             </li>
-            <!-- 5. Hành chính & Nhân sự -->
+            {% endif %}
+
+            <!-- 5. Hành chính & Nhân sự (BẢO MẬT TIỀN LƯƠNG: Chỉ Giám Đốc & Kế Toán) -->
+            {% if is_admin or not role or role in 'DIRECTOR,ACCOUNTANT' %}
             <li>
                 <a href="/hr" onclick="event.preventDefault(); switchTab('nhan-su');" class="sidebar-item-main flex items-center" data-target="nhan-su">
                     <i class="ph ph-users text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Hành chính & Nhân sự</span>
                 </a>
             </li>
-            <!-- 6. Quản lý Kế toán -->
+            {% endif %}
+
+            <!-- 6. Quản lý Kế toán (BẢO MẬT TÀI CHÍNH: Chỉ Giám Đốc & Kế Toán) -->
+            {% if is_admin or not role or role in 'DIRECTOR,ACCOUNTANT' %}
             <li>
                 <a href="/accounting" onclick="event.preventDefault(); switchTab('ke-toan');" class="sidebar-item-main flex items-center" data-target="ke-toan">
                     <i class="ph ph-calculator text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Quản lý Kế toán</span>
                 </a>
             </li>
+            {% endif %}
+
             <!-- 7. Dịch vụ Hải quan -->
+            {% if is_admin or not role or role in 'DIRECTOR,DISPATCHER,SALESMAN' %}
             <li>
                 <a href="/customs" onclick="event.preventDefault(); switchTab('hai-quan');" class="sidebar-item-main flex items-center" data-target="hai-quan">
                     <i class="ph ph-file-text text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Dịch vụ Hải quan</span>
-                    <span class="text-[9.5px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded ml-1">Phát triển sau</span>
+                    <span class="text-[9.5px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded ml-1">VNACCS</span>
                 </a>
             </li>
-            <!-- 8. Báo cáo & Thống kê -->
+            {% endif %}
+
+            <!-- 8. Báo cáo & Thống kê (Ban Giám Đốc, Kế Toán, Điều Phối) -->
+            {% if is_admin or not role or role in 'DIRECTOR,ACCOUNTANT,DISPATCHER' %}
             <li>
                 <a href="/reports" onclick="event.preventDefault(); switchTab('bao-cao');" class="sidebar-item-main flex items-center" data-target="bao-cao">
                     <i class="ph ph-chart-bar text-xl mr-3 text-slate-400"></i>
@@ -73,24 +94,47 @@
                     <span class="text-[9.5px] font-bold text-emerald-300 bg-teal-900/80 border border-teal-600/60 px-1.5 py-0.2 rounded ml-1">TMS BI</span>
                 </a>
             </li>
-            <!-- 9. Cài đặt -->
+            {% endif %}
+
+            <!-- 9. Cài đặt Danh Mục (Ban Giám Đốc, Kế Toán, Điều Phối) -->
+            {% if is_admin or not role or role in 'DIRECTOR,ACCOUNTANT,DISPATCHER' %}
             <li>
                 <a href="/settings" onclick="event.preventDefault(); switchTab('cai-dat');" class="sidebar-item-main flex items-center" data-target="cai-dat">
                     <i class="ph ph-gear text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Cài đặt</span>
                 </a>
             </li>
+            {% endif %}
         </ul>
     </div>
 
     <!-- User Profile Footer -->
     <div class="p-3 border-t border-slate-700/60">
         <div class="flex items-center space-x-3 px-3 py-2.5 bg-slate-800/60 rounded-xl hover:bg-slate-800 cursor-pointer transition-colors border border-slate-700/40">
-            <div class="w-9 h-9 rounded-full bg-teal-800 flex items-center justify-center text-sm font-bold text-white border border-teal-600 shadow-inner">AD</div>
+            <div class="w-9 h-9 rounded-full bg-teal-800 flex items-center justify-center text-sm font-bold text-white border border-teal-600 shadow-inner">
+                {% if current_employee and current_employee.nickname %}
+                    {{ current_employee.nickname|slice:":2"|upper }}
+                {% elif current_employee %}
+                    {{ current_employee.full_name|slice:":2"|upper }}
+                {% else %}
+                    AD
+                {% endif %}
+            </div>
             <div class="flex-1 overflow-hidden">
-                <p class="text-[13.5px] font-bold text-white truncate font-heading">Admin Triền Võ</p>
-                <p class="text-[11.5px] text-teal-400 truncate">Hệ Thống Trực Tuyến</p>
+                <p class="text-[13.5px] font-bold text-white truncate font-heading">
+                    {{ current_employee.full_name|default:request.user.username }}
+                </p>
+                <p class="text-[11.5px] text-teal-400 truncate">
+                    {% if current_employee %}
+                        {{ current_employee.get_role_display }}
+                    {% elif is_admin %}
+                        Quản trị viên Hệ thống
+                    {% else %}
+                        Nhân viên Nội bộ
+                    {% endif %}
+                </p>
             </div>
         </div>
     </div>
 </aside>
+{% endwith %}

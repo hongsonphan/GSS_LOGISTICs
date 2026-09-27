@@ -180,6 +180,9 @@ else:
 
 # 2 & 6. DRF Settings: Throttling, Authentication & Custom Error Handler (Tiêu chuẩn 2, 3, 6)
 REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'core.security.GracefulJWTAuthentication',
         'core.security.CsrfExemptSessionAuthentication',
