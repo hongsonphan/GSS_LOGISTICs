@@ -670,12 +670,34 @@
   </div>
 
   <!-- CLIENT-SIDE SCRIPT FOR MOBILE DRIVER PORTAL -->
+  <div class="hidden">{% csrf_token %}</div>
   <script>
     const TRIP_HASH = "{{ trip_hash }}";
     const TRIP_CODE = "{{ trip.trip_code }}";
 
+    // Helper: Read CSRF cookie or DOM token
+    function getCsrfToken() {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, 10) === ('csrftoken=')) {
+            cookieValue = decodeURIComponent(cookie.substring(10));
+            break;
+          }
+        }
+      }
+      if (!cookieValue) {
+        const tokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (tokenInput) cookieValue = tokenInput.value;
+      }
+      return cookieValue || '';
+    }
+
     // 1. BÁO MỐC 1-CHẠM (SOP BƯỚC 6)
     async function reportMilestone(milestoneCode, title) {
+      if (navigator.vibrate) navigator.vibrate(30);
       if (!confirm(`Xác nhận cập nhật mốc: "${title}"?`)) {
         return;
       }
@@ -683,12 +705,16 @@
       showToast("Đang gửi báo cáo mốc...", false);
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = {
+          'Content-Type': 'application/json',
+          'X-Trip-Hash': TRIP_HASH
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
         const response = await fetch(`/api/trips/${TRIP_HASH}/milestones/`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Trip-Hash': TRIP_HASH
-          },
+          headers: headers,
           body: JSON.stringify({
             milestone: milestoneCode,
             notes: ''
@@ -697,6 +723,7 @@
 
         const data = await response.json();
         if (response.ok && data.success) {
+          if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
           showToast(`✓ ${data.message}`, true);
           if (data.new_status_label) {
             const badge = document.getElementById('headerStatusBadge');
@@ -774,16 +801,21 @@
       }
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = {
+          'X-Trip-Hash': TRIP_HASH
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
         const response = await fetch(`/api/trips/${TRIP_HASH}/expenses/`, {
           method: 'POST',
-          headers: {
-            'X-Trip-Hash': TRIP_HASH
-          },
+          headers: headers,
           body: formData
         });
 
         const data = await response.json();
         if (response.ok && data.success) {
+          if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
           alert(`Đã kê khai chi phí ${Number(amount).toLocaleString('vi-VN')} đ thành công!`);
           closeExpenseModal();
           window.location.reload();
@@ -844,16 +876,21 @@
       formData.append('document', fileInput.files[0]);
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = {
+          'X-Trip-Hash': TRIP_HASH
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
         const response = await fetch(`/api/trips/${TRIP_HASH}/documents/`, {
           method: 'POST',
-          headers: {
-            'X-Trip-Hash': TRIP_HASH
-          },
+          headers: headers,
           body: formData
         });
 
         const data = await response.json();
         if (response.ok && data.success) {
+          if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
           alert("Đã gửi ảnh chứng từ nghiệm thu thành công!");
           closeDocModal();
           window.location.reload();

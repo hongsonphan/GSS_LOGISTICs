@@ -45,14 +45,14 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 - **Sửa Lỗi Tương Thích & Tối Ưu Báo Cáo (`reports_api.py` & `views.py`):**
   - Sửa lỗi truy cập `category` và `get_category_display()` thay vì thuộc tính cũ `expense_type` trong `ReportsAPIView`.
   - Khắc phục câu truy vấn liên kết tờ khai hải quan `bill_of_lading` và `container_numbers` trong `driver_portal_view`.
-- **Kiểm Thử Toàn Diện Hệ Thống (Full System Verification):**
+- **Kiểm Thử Toàn Diện Hệ Thống & Giả Lập Màn Hình Di Động:**
   - Viết Unit Test `test_driver_portal_view_and_capability_access` trong `core/tests.py`.
-  - Toàn bộ **43/43 unit tests PASSED 100%** trong 14.27s.
-  - Script kiểm thử E2E độc lập (`run_full_system_audit.py`):
-    - 11/11 Web Pages & Clean Semantic Routes: HTTP 200/302 (HỢP LỆ).
-    - 16/16 RESTful APIs: HTTP 200 (HỢP LỆ).
-    - Mobile Driver Portal (Báo mốc, Kê chi phí, Chụp POD, 404 handler): HỢP LỆ 100%.
-  - Nâng cấp Cache Buster lên `?v=1.9.2.0`.
+  - Toàn bộ **43/43 unit tests PASSED 100%**.
+  - **Kịch bản Giả lập Toàn trình Hiện trường Di động (`test_driver_simulation.py`):**
+    - Giả lập 100% chu trình trên smartphone: Báo mốc 1 (Sắp đến kho) -> Mốc 2 (Đến cổng kho) -> Mốc 3 (Vào dock dỡ hàng) -> Kê khai chi phí BOT (kèm ảnh hóa đơn) -> Chụp nghiệm thu POD (chữ ký thủ kho) -> Mốc 4 (Đóng hàng xong) -> Báo lưu xe sau 0h (`is_overnight_detention`) -> Chụp chứng từ hạ cont EIR & Báo hạ cont hoàn tất -> Chuyến xe tự động hoàn tất `COMPLETED`.
+    - Tích hợp `CsrfExemptSessionAuthentication` cho các Capability requests (`X-Trip-Hash`) đảm bảo không bị chặn 403 CSRF khi mở trình duyệt di động có session cookie cũ.
+    - Bổ sung helper `getCsrfToken()` và haptic feedback (`navigator.vibrate`) trên `templates/driver_portal.html` tạo cảm giác chạm rung chân thực trên smartphone.
+- Nâng cấp Cache Buster lên `?v=1.9.2.1`.
 
 ---
 

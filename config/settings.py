@@ -182,7 +182,7 @@ else:
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'core.security.GracefulJWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        'core.security.CsrfExemptSessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_THROTTLE_CLASSES': [
