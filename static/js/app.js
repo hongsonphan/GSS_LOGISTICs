@@ -7230,6 +7230,9 @@ async function loadMasterData() {
             if (el('md-stat-expenses')) el('md-stat-expenses').innerText = s.expense_items_count || 0;
             if (el('md-stat-containers')) el('md-stat-containers').innerText = s.container_types_count || 0;
             if (el('md-stat-vehicles')) el('md-stat-vehicles').innerText = s.vehicles_count || 0;
+            if (el('md-stat-trailers')) el('md-stat-trailers').innerText = s.trailers_count || 0;
+            if (el('md-stat-shipping-lines')) el('md-stat-shipping-lines').innerText = s.shipping_lines_count || 0;
+            if (el('md-stat-subcontractors')) el('md-stat-subcontractors').innerText = s.subcontractors_count || 0;
         }
     } catch (err) {
         console.error('Lỗi tải tóm tắt Cài đặt:', err);
@@ -7259,7 +7262,10 @@ function switchMasterDataTab(tabKey) {
         'customers': '+ Thêm Mới Khách Hàng',
         'expenses': '+ Thêm Mới Khoản Chi',
         'containers': '+ Thêm Mới Quy Cách',
-        'vehicles': '+ Thêm Mới Phương Tiện'
+        'vehicles': '+ Thêm Mới Đầu Kéo / Xe',
+        'trailers': '+ Thêm Mới Rơ-Moóc',
+        'shipping_lines': '+ Thêm Mới Hãng Tàu',
+        'subcontractors': '+ Thêm Mới Xe Thầu Phụ'
     };
     const createBtnLabel = document.getElementById('md-create-btn-label');
     if (createBtnLabel) createBtnLabel.innerText = labels[tabKey] || '+ Thêm Mới';
@@ -7278,7 +7284,7 @@ async function loadActiveMasterDataTab() {
     const tableBody = document.getElementById('md-table-body');
     if (!tableBody) return;
 
-    tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>Đang tải dữ liệu...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>Đang tải dữ liệu...</td></tr>`;
 
     const endpoints = {
         'driver_tariffs': '/api/master-data/driver-tariffs/',
@@ -7288,7 +7294,10 @@ async function loadActiveMasterDataTab() {
         'customers': '/api/master-data/customers/',
         'expenses': '/api/master-data/expense-items/',
         'containers': '/api/master-data/container-types/',
-        'vehicles': '/api/master-data/vehicles/'
+        'vehicles': '/api/master-data/vehicles/',
+        'trailers': '/api/master-data/trailers/',
+        'shipping_lines': '/api/master-data/shipping-lines/',
+        'subcontractors': '/api/master-data/subcontractors/'
     };
 
     try {
@@ -7308,7 +7317,7 @@ async function loadActiveMasterDataTab() {
         renderMasterDataPagedView();
     } catch (err) {
         console.error('Lỗi tải danh mục:', err);
-        tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}</td></tr>`;
         renderMasterDataPagination(0, 0, 0, 1, 1);
     }
 }
@@ -7336,6 +7345,13 @@ function setupMasterDataSecondaryFilter(items) {
     } else if (currentMasterDataTab === 'vehicles') {
         const owns = [...new Set(items.map(i => i.ownership_type_label || i.ownership_type))];
         owns.forEach(o => { optionsHtml += `<option value="${o}">${o}</option>`; });
+    } else if (currentMasterDataTab === 'trailers') {
+        const types = [...new Set(items.map(i => i.trailer_type))];
+        types.forEach(t => { optionsHtml += `<option value="${t}">${t}</option>`; });
+    } else if (currentMasterDataTab === 'shipping_lines') {
+        optionsHtml += '<option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Ngừng hoạt động</option>';
+    } else if (currentMasterDataTab === 'subcontractors') {
+        optionsHtml += '<option value="ACTIVE">Đang hợp tác</option><option value="INACTIVE">Tạm ngưng</option>';
     }
     select.innerHTML = optionsHtml;
 }
@@ -7359,6 +7375,9 @@ function filterMasterDataTable() {
             else if (currentMasterDataTab === 'expenses') matchesSub = (item.group_type_label === subFilter || item.group_type === subFilter);
             else if (currentMasterDataTab === 'containers') matchesSub = (item.category_label === subFilter || item.category === subFilter);
             else if (currentMasterDataTab === 'vehicles') matchesSub = (item.ownership_type_label === subFilter || item.ownership_type === subFilter);
+            else if (currentMasterDataTab === 'trailers') matchesSub = item.trailer_type === subFilter;
+            else if (currentMasterDataTab === 'shipping_lines') matchesSub = (subFilter === 'ACTIVE' ? item.is_active : !item.is_active);
+            else if (currentMasterDataTab === 'subcontractors') matchesSub = (subFilter === 'ACTIVE' ? item.is_active : !item.is_active);
         }
         return matchesQuery && matchesSub;
     });
@@ -7768,6 +7787,123 @@ function renderMasterDataTable(items, total = items.length) {
             </tr>
         `).join('');
     }
+    // 9. RƠ-MOÓC CONTAINER
+    else if (currentMasterDataTab === 'trailers') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Biển Số Moóc</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Quy Cách / Loại Moóc</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hãng Sản Xuất</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tải Trọng Cho Phép (kg)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hạn Đăng Kiểm</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[13px] font-mono font-black text-sky-900 border-r border-slate-200/70">${item.license_plate}</td>
+                <td class="py-1.5 px-3 text-[12.5px] font-bold text-slate-800 border-r border-slate-200/70">${item.trailer_type}</td>
+                <td class="py-1.5 px-3 text-[12px] font-medium text-slate-600 border-r border-slate-200/70">${item.brand || '—'}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
+                <td class="py-1.5 px-3 text-[11.5px] text-center font-mono font-bold ${item.is_registration_warning ? 'text-rose-600 bg-rose-50 rounded' : 'text-slate-700'} border-r border-slate-200/70">${item.registration_expiry}</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
+                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.status === 'IDLE' ? 'bg-slate-100 text-slate-700' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}">
+                        ${item.status === 'IDLE' ? 'NẰM BÃI' : (item.status === 'ACTIVE' ? 'ĐANG KÉO' : item.status)}
+                    </span>
+                </td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 10. HÃNG TÀU (SHIPPING LINES)
+    else if (currentMasterDataTab === 'shipping_lines') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Hãng Tàu</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Đầy Đủ Hãng Vận Chuyển</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hotline / CSKH</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Email & Cổng e-DO / Web</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Free DEM (Bãi)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Free DET (Vỏ)</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[13px] font-mono font-black text-cyan-800 border-r border-slate-200/70">${item.code}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">
+                    <div>${item.name}</div>
+                    ${item.notes ? `<div class="text-[11px] text-slate-500 font-normal italic truncate max-w-xs">${item.notes}</div>` : ''}
+                </td>
+                <td class="py-1.5 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200/70">${item.contact_phone || '—'}</td>
+                <td class="py-1.5 px-3 text-[12px] text-slate-600 border-r border-slate-200/70">
+                    <div>${item.contact_email || '—'}</div>
+                    ${item.website ? `<a href="${item.website}" target="_blank" class="text-teal-700 hover:underline text-[11px] flex items-center space-x-0.5"><i class="ph ph-globe"></i><span>${item.website.replace('https://', '')}</span></a>` : ''}
+                </td>
+                <td class="py-1.5 px-3 text-center font-bold text-teal-800 font-mono text-[13px] border-r border-slate-200/70">${item.free_dem_days} ngày</td>
+                <td class="py-1.5 px-3 text-center font-bold text-amber-800 font-mono text-[13px] border-r border-slate-200/70">${item.free_det_days} ngày</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
+                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
+                        ${item.is_active ? 'ĐANG DÙNG' : 'TẠM NGƯNG'}
+                    </span>
+                </td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 11. NHÀ XE THẦU PHỤ / XE BẠN 3PL
+    else if (currentMasterDataTab === 'subcontractors') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Nhà Xe</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Đơn Vị / Đối Tác Vận Tải</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Số Thuế</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Người Điều Hành & SĐT</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Thông Tin Thanh Toán / Ngân Hàng</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tuyến Thế Mạnh / Ghi Chú</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
+                <td class="py-1.5 px-3 text-[12.5px] font-mono font-bold text-orange-800 border-r border-slate-200/70">${item.code}</td>
+                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">
+                    <div>${item.name}</div>
+                    ${item.address ? `<div class="text-[11px] text-slate-500 font-normal truncate max-w-xs">${item.address}</div>` : ''}
+                </td>
+                <td class="py-1.5 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200/70">${item.tax_code || '—'}</td>
+                <td class="py-1.5 px-3 text-[12px] text-slate-800 border-r border-slate-200/70">
+                    <div class="font-bold">${item.contact_person || '—'}</div>
+                    <div class="font-mono text-teal-700 font-bold">${item.phone || '—'}</div>
+                </td>
+                <td class="py-1.5 px-3 text-[12px] border-r border-slate-200/70">
+                    ${item.bank_account_number ? `
+                        <div class="font-mono font-bold text-slate-900">${item.bank_account_number}</div>
+                        <div class="text-[11px] text-slate-600">${item.bank_name || ''} ${item.bank_account_holder ? '• ' + item.bank_account_holder : ''}</div>
+                    ` : '<span class="text-slate-400 italic">Chưa khai báo TK</span>'}
+                </td>
+                <td class="py-1.5 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200/70">${item.notes || '—'}</td>
+                <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
 }
 
 // Open Create Modal with Dynamic Form Fields
@@ -7784,7 +7920,10 @@ async function openCreateMasterDataModal() {
         'customers': 'Thêm Khách Hàng Mới',
         'expenses': 'Thêm Khoản Mục Chi Phí',
         'containers': 'Thêm Quy Cách Cont & Xe',
-        'vehicles': 'Thêm Phương Tiện Mới'
+        'vehicles': 'Thêm Đầu Kéo / Xe Tải Mới',
+        'trailers': 'Thêm Rơ-Moóc Mới',
+        'shipping_lines': 'Thêm Hãng Tàu Biển Mới',
+        'subcontractors': 'Thêm Đối Tác Xe Thầu Phụ Mới'
     };
     document.getElementById('md-modal-title').innerText = titles[currentMasterDataTab] || 'Thêm Mới Bản Ghi';
     document.getElementById('md-modal-subtitle').innerText = 'Khai báo thông tin chuẩn vào hệ thống Cài đặt';
@@ -7811,7 +7950,10 @@ async function openEditMasterDataModal(id) {
         'customers': 'Chỉnh Sửa Khách Hàng',
         'expenses': 'Chỉnh Sửa Khoản Mục Chi Phí',
         'containers': 'Chỉnh Sửa Quy Cách Cont & Xe',
-        'vehicles': 'Chỉnh Sửa Phương Tiện'
+        'vehicles': 'Chỉnh Sửa Đầu Kéo / Xe Tải',
+        'trailers': 'Chỉnh Sửa Rơ-Moóc',
+        'shipping_lines': 'Chỉnh Sửa Hãng Tàu Biển',
+        'subcontractors': 'Chỉnh Sửa Đối Tác Xe Thầu Phụ'
     };
     document.getElementById('md-modal-title').innerText = titles[currentMasterDataTab] || 'Chỉnh Sửa Bản Ghi';
     document.getElementById('md-modal-subtitle').innerText = `ID #${id} • Cập nhật thông tin chuẩn`;
@@ -8109,6 +8251,145 @@ function injectMasterDataModalFields(data) {
                 <input type="number" id="mdf-payload" value="${d.payload_capacity_kg || 30000}" step="1000" class="app-form-control font-mono">
             </div>
         `;
+    } else if (currentMasterDataTab === 'trailers') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Biển Số Rơ-Moóc <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-trailer-plate" value="${d.license_plate || ''}" placeholder="VD: 51R-123.45" class="app-form-control uppercase font-mono font-black" required ${d.license_plate ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Loại Rơ-Moóc <span class="text-rose-500">*</span></label>
+                    <select id="mdf-trailer-type" class="app-form-control">
+                        <option value="MOOC_XUONG_40" ${d.trailer_type === 'MOOC_XUONG_40' ? 'selected' : ''}>Moóc Xương 40ft (3 Trục)</option>
+                        <option value="MOOC_CO_CO_40" ${d.trailer_type === 'MOOC_CO_CO_40' ? 'selected' : ''}>Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)</option>
+                        <option value="MOOC_XUONG_20" ${d.trailer_type === 'MOOC_XUONG_20' ? 'selected' : ''}>Moóc Xương 20ft (3 Trục)</option>
+                        <option value="MOOC_SAN_45" ${d.trailer_type === 'MOOC_SAN_45' ? 'selected' : ''}>Moóc Sàn 45ft</option>
+                        <option value="MOOC_LUN" ${d.trailer_type === 'MOOC_LUN' ? 'selected' : ''}>Moóc Lùn / Chuyên Dụng</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Hãng Sản Xuất</label>
+                    <input type="text" id="mdf-trailer-brand" value="${d.brand || 'Tân Thanh'}" placeholder="VD: Tân Thanh, CIMC, Doosung..." class="app-form-control">
+                </div>
+                <div>
+                    <label class="app-form-label">Tải Trọng Thiết Kế (kg)</label>
+                    <input type="number" id="mdf-trailer-payload" value="${d.payload_capacity_kg || 32000}" step="500" class="app-form-control font-mono">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Hạn Đăng Kiểm Định Kỳ</label>
+                    <input type="date" id="mdf-trailer-expiry" value="${d.registration_expiry ? (d.registration_expiry.includes('/') ? d.registration_expiry.split('/').reverse().join('-') : d.registration_expiry) : ''}" class="app-form-control font-mono">
+                </div>
+                <div>
+                    <label class="app-form-label">Trạng Thái Hoạt Động</label>
+                    <select id="mdf-trailer-status" class="app-form-control">
+                        <option value="IDLE" ${d.status === 'IDLE' ? 'selected' : ''}>Nằm bãi (Chờ kéo)</option>
+                        <option value="ACTIVE" ${d.status === 'ACTIVE' ? 'selected' : ''}>Đang gắn xe kéo</option>
+                        <option value="MAINTENANCE" ${d.status === 'MAINTENANCE' ? 'selected' : ''}>Bảo trì / Sửa chữa</option>
+                    </select>
+                </div>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'shipping_lines') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Mã Hãng Tàu <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-sl-code" value="${d.code || ''}" placeholder="VD: MAEU, ONE, COSCO..." class="app-form-control uppercase font-mono font-black" required ${d.code ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Tên Hãng Tàu / Hãng Vận Chuyển <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-sl-name" value="${d.name || ''}" placeholder="VD: Ocean Network Express..." class="app-form-control" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Hotline CSKH / Cấp Vỏ</label>
+                    <input type="text" id="mdf-sl-phone" value="${d.contact_phone || ''}" placeholder="VD: 028-3827-0100" class="app-form-control font-mono">
+                </div>
+                <div>
+                    <label class="app-form-label">Email Tiếp Nhận</label>
+                    <input type="email" id="mdf-sl-email" value="${d.contact_email || ''}" placeholder="cs@shipping.com" class="app-form-control">
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Website Lấy e-DO / Tra Cứu Container</label>
+                <input type="url" id="mdf-sl-web" value="${d.website || ''}" placeholder="https://..." class="app-form-control">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Free DEM Chuẩn (Ngày)</label>
+                    <input type="number" id="mdf-sl-dem" value="${d.free_dem_days || 7}" class="app-form-control font-mono font-bold text-teal-800">
+                </div>
+                <div>
+                    <label class="app-form-label">Free DET Chuẩn (Ngày)</label>
+                    <input type="number" id="mdf-sl-det" value="${d.free_det_days || 5}" class="app-form-control font-mono font-bold text-amber-800">
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Ghi Chú Quy Định Cấp Vỏ / Hạ Rỗng</label>
+                <input type="text" id="mdf-sl-notes" value="${d.notes || ''}" placeholder="Depot chỉ định hạ rỗng, lưu ý hãng..." class="app-form-control">
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'subcontractors') {
+        container.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Mã Đối Tác / Nhà Xe</label>
+                    <input type="text" id="mdf-sc-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống (NX_...)" class="app-form-control uppercase font-mono font-bold" ${d.code ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="app-form-label">Mã Số Thuế (MST)</label>
+                    <input type="text" id="mdf-sc-tax" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="app-form-control font-mono">
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Tên Nhà Xe / Đơn Vị Vận Tải 3PL <span class="text-rose-500">*</span></label>
+                <input type="text" id="mdf-sc-name" value="${d.name || ''}" placeholder="VD: Công ty TNHH Vận tải Hoàng Nam..." class="app-form-control" required>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Người Điều Hành Xe</label>
+                    <input type="text" id="mdf-sc-person" value="${d.contact_person || ''}" placeholder="Tên điều độ / chủ xe..." class="app-form-control">
+                </div>
+                <div>
+                    <label class="app-form-label">Số Điện Thoại Điều Xe <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-sc-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ gấp..." class="app-form-control font-mono font-bold text-teal-800" required>
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Địa Chỉ Bãi / Văn Phòng</label>
+                <input type="text" id="mdf-sc-address" value="${d.address || ''}" placeholder="Địa chỉ..." class="app-form-control">
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1">
+                    <i class="ph-bold ph-bank text-teal-700"></i>
+                    <span>Tài Khoản Ngân Hàng Thanh Toán Cước</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500">Số Tài Khoản</label>
+                        <input type="text" id="mdf-sc-acc" value="${d.bank_account_number || ''}" placeholder="Số TK..." class="app-form-control font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500">Tên Ngân Hàng</label>
+                        <input type="text" id="mdf-sc-bank" value="${d.bank_name || ''}" placeholder="VD: VCB, MB, Tech..." class="app-form-control">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500">Chủ Tài Khoản</label>
+                        <input type="text" id="mdf-sc-holder" value="${d.bank_account_holder || ''}" placeholder="Tên in hoa..." class="app-form-control uppercase">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Tuyến Thế Mạnh & Ghi Chú Đơn Giá</label>
+                <input type="text" id="mdf-sc-notes" value="${d.notes || ''}" placeholder="VD: Chuyên tuyến Long An, 10 xe đầu kéo..." class="app-form-control">
+            </div>
+        `;
     }
 }
 
@@ -8127,7 +8408,10 @@ async function submitMasterDataForm(e) {
         'customers': isEdit ? `/api/master-data/customers/${editId}/` : '/api/master-data/customers/',
         'expenses': isEdit ? `/api/master-data/expense-items/${editId}/` : '/api/master-data/expense-items/',
         'containers': isEdit ? `/api/master-data/container-types/${editId}/` : '/api/master-data/container-types/',
-        'vehicles': isEdit ? `/api/master-data/vehicles/${editId}/` : '/api/master-data/vehicles/'
+        'vehicles': isEdit ? `/api/master-data/vehicles/${editId}/` : '/api/master-data/vehicles/',
+        'trailers': isEdit ? `/api/master-data/trailers/${editId}/` : '/api/master-data/trailers/',
+        'shipping_lines': isEdit ? `/api/master-data/shipping-lines/${editId}/` : '/api/master-data/shipping-lines/',
+        'subcontractors': isEdit ? `/api/master-data/subcontractors/${editId}/` : '/api/master-data/subcontractors/'
     };
 
     let payload = {};
@@ -8199,6 +8483,39 @@ async function submitMasterDataForm(e) {
             brand: document.getElementById('mdf-brand').value,
             payload_capacity_kg: parseInt(document.getElementById('mdf-payload').value)
         };
+    } else if (tabKey === 'trailers') {
+        payload = {
+            license_plate: document.getElementById('mdf-trailer-plate').value,
+            trailer_type: document.getElementById('mdf-trailer-type').value,
+            brand: document.getElementById('mdf-trailer-brand').value,
+            payload_capacity_kg: parseInt(document.getElementById('mdf-trailer-payload').value),
+            registration_expiry: document.getElementById('mdf-trailer-expiry').value || null,
+            status: document.getElementById('mdf-trailer-status').value
+        };
+    } else if (tabKey === 'shipping_lines') {
+        payload = {
+            code: document.getElementById('mdf-sl-code').value,
+            name: document.getElementById('mdf-sl-name').value,
+            contact_phone: document.getElementById('mdf-sl-phone').value,
+            contact_email: document.getElementById('mdf-sl-email').value,
+            website: document.getElementById('mdf-sl-web').value,
+            free_dem_days: parseInt(document.getElementById('mdf-sl-dem').value || 7),
+            free_det_days: parseInt(document.getElementById('mdf-sl-det').value || 5),
+            notes: document.getElementById('mdf-sl-notes').value
+        };
+    } else if (tabKey === 'subcontractors') {
+        payload = {
+            code: document.getElementById('mdf-sc-code').value,
+            tax_code: document.getElementById('mdf-sc-tax').value,
+            name: document.getElementById('mdf-sc-name').value,
+            contact_person: document.getElementById('mdf-sc-person').value,
+            phone: document.getElementById('mdf-sc-phone').value,
+            address: document.getElementById('mdf-sc-address').value,
+            bank_account_number: document.getElementById('mdf-sc-acc').value,
+            bank_name: document.getElementById('mdf-sc-bank').value,
+            bank_account_holder: document.getElementById('mdf-sc-holder').value,
+            notes: document.getElementById('mdf-sc-notes').value
+        };
     }
 
     try {
@@ -8231,7 +8548,10 @@ async function deleteMasterDataItem(id) {
         'customers': `/api/master-data/customers/${id}/`,
         'expenses': `/api/master-data/expense-items/${id}/`,
         'containers': `/api/master-data/container-types/${id}/`,
-        'vehicles': `/api/master-data/vehicles/${id}/`
+        'vehicles': `/api/master-data/vehicles/${id}/`,
+        'trailers': `/api/master-data/trailers/${id}/`,
+        'shipping_lines': `/api/master-data/shipping-lines/${id}/`,
+        'subcontractors': `/api/master-data/subcontractors/${id}/`
     };
 
     try {

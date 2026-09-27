@@ -10,6 +10,9 @@ from apps.master_data.api_views import (
     VehicleMasterListCreateAPIView, VehicleMasterDetailAPIView,
     DriverSalaryTariffListCreateAPIView, DriverSalaryTariffDetailAPIView,
     DriverAllowanceListCreateAPIView, DriverAllowanceDetailAPIView,
+    ShippingLineListCreateAPIView, ShippingLineDetailAPIView,
+    TrailerMasterListCreateAPIView, TrailerMasterDetailAPIView,
+    SubcontractorListCreateAPIView, SubcontractorDetailAPIView,
 )
 
 urlpatterns = [
@@ -36,7 +39,7 @@ urlpatterns = [
     path('tariffs/', TariffMasterListCreateAPIView.as_view(), name='master-tariffs'),
     path('tariffs/<int:pk>/', TariffMasterDetailAPIView.as_view(), name='master-tariff-detail'),
     
-    # 6. Phương tiện
+    # 6. Phương tiện (Đầu kéo & Xe tải)
     path('vehicles/', VehicleMasterListCreateAPIView.as_view(), name='master-vehicles'),
     path('vehicles/<int:pk>/', VehicleMasterDetailAPIView.as_view(), name='master-vehicle-detail'),
 
@@ -47,4 +50,16 @@ urlpatterns = [
     # 8. Phụ Cấp Cảng Xa & Kiểm Hóa
     path('allowances/', DriverAllowanceListCreateAPIView.as_view(), name='master-allowances'),
     path('allowances/<int:pk>/', DriverAllowanceDetailAPIView.as_view(), name='master-allowance-detail'),
+
+    # 9. Hãng Tàu Biển
+    path('shipping-lines/', ShippingLineListCreateAPIView.as_view(), name='master-shipping-lines'),
+    path('shipping-lines/<int:pk>/', ShippingLineDetailAPIView.as_view(), name='master-shipping-line-detail'),
+
+    # 10. Rơ-Moóc Container
+    path('trailers/', TrailerMasterListCreateAPIView.as_view(), name='master-trailers'),
+    path('trailers/<int:pk>/', TrailerMasterDetailAPIView.as_view(), name='master-trailer-detail'),
+
+    # 11. Nhà Xe Thầu Phụ / 3PL
+    path('subcontractors/', SubcontractorListCreateAPIView.as_view(), name='master-subcontractors'),
+    path('subcontractors/<int:pk>/', SubcontractorDetailAPIView.as_view(), name='master-subcontractor-detail'),
 ]

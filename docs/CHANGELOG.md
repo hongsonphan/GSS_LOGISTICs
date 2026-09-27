@@ -2,6 +2,39 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [1.9.5] - 2026-09-27 (Rà Soát & Bổ Sung Toàn Diện Hệ Thống Danh Mục: Hãng Tàu Biển, Rơ-Moóc Container & Nhà Xe Thầu Phụ 3PL với Đầy Đủ CRUD)
+
+### 1. Bối Cảnh & Các Danh Mục Trọng Yếu Bị Thiếu Trước Đây:
+- **Hãng tàu (Shipping Lines) nhập tự do (free-text):** Trong `BookingOrder`, `DispatchTrip` và `CustomsDeclaration`, trường `shipping_line` trước đây được nhập chuỗi tự do (ví dụ: "MAERSK", "Maersk", "ONE", "One Line"...), dẫn đến sai lệch dữ liệu, không thống nhất hạn miễn phí lưu bãi/lưu vỏ (DEM/DET) và thiếu đầu mối hỗ trợ cấp vỏ/e-DO tại các cảng/depot.
+- **Rơ-moóc (Trailers) chưa có giao diện quản lý riêng:** Model `Trailer` đã có trong database nhưng phân hệ Cài đặt Master Data chỉ hiển thị và hỗ trợ CRUD cho Đầu kéo (`Vehicle`), hoàn toàn thiếu CRUD cho Rơ-moóc (`51R-xxx`), gây khó khăn trong việc theo dõi hạn đăng kiểm rơ-moóc và phân loại quy cách moóc (xương 40, cổ cò 40, xương 20, sàn 45...).
+- **Nhà xe thầu phụ 3PL (Subcontractors) thiếu danh mục đối tác pháp lý:** Trong phân hệ đối soát quyết toán xe ngoài (`SubcontractorSettlementsAPIView`), hệ thống chỉ nhận diện qua `VehicleOwnership = SUBCONTRACTOR`. Chưa có danh mục đối tác vận tải riêng biệt lưu trữ Mã số thuế, người điều hành, số điện thoại khẩn cấp và thông tin tài khoản ngân hàng thụ hưởng phục vụ chuyển khoản cước xe ngoài.
+
+### 2. Các Cải Tiến Kỹ Thuật Đã Triển Khai:
+- **Bổ Sung 3 Thực Thể Danh Mục Mới:**
+  - **`ShippingLine` (`apps/master_data/models.py`):**
+    - Mã hãng tàu (SCAC / Code: MAEU, ONE, COSCO, EVERGREEN, SITC, CMA, MSC, YANGMING, KMTC, BIENDONG...), Tên đầy đủ, Hotline CSKH, Email tiếp nhận, Website tra cứu cont/e-DO, Hạn DEM chuẩn (mặc định 7 ngày), Hạn DET chuẩn (mặc định 5 ngày), Ghi chú bãi chỉ định cấp/hạ vỏ. Kế thừa `TimeStampedModel, SoftDeleteModel`.
+  - **`Trailer` (`apps/fleet/models.py`):**
+    - Biển số rơ-moóc, Loại moóc (`MOOC_XUONG_40`, `MOOC_CO_CO_40`, `MOOC_XUONG_20`, `MOOC_SAN_45`, `MOOC_LUN`), Hãng sản xuất (`brand`), Tải trọng thiết kế (kg), Hạn đăng kiểm định kỳ, Trạng thái (`IDLE`, `ACTIVE`, `MAINTENANCE`), Cảnh báo đăng kiểm (`is_registration_warning`).
+  - **`Subcontractor` (`apps/master_data/models.py`):**
+    - Mã nhà xe (`NX_...`), Tên doanh nghiệp/Chủ xe, MST, Người điều hành, SĐT liên hệ, Địa chỉ bãi xe/văn phòng, Thông tin tài khoản ngân hàng (Số TK, Tên ngân hàng, Chủ tài khoản thụ hưởng), Tuyến thế mạnh & chính sách giá thương lượng.
+- **Xây Dựng REST API CRUD Đầy Đủ & An Toàn (`apps/master_data/api_views.py` & `urls.py`):**
+  - `ShippingLineListCreateAPIView` & `ShippingLineDetailAPIView` (`/api/master-data/shipping-lines/`)
+  - `TrailerMasterListCreateAPIView` & `TrailerMasterDetailAPIView` (`/api/master-data/trailers/`)
+  - `SubcontractorListCreateAPIView` & `SubcontractorDetailAPIView` (`/api/master-data/subcontractors/`)
+  - Cập nhật `MasterDataSummaryAPIView` trả về đầy đủ 11 chỉ số danh mục.
+  - Cập nhật `MasterDataFormOptionsAPIView` bổ sung `shipping_lines` và `subcontractors` cho toàn bộ dropdowns hệ thống.
+  - Áp dụng Soft-delete (`.delete()`) bảo vệ tính toàn vẹn chuỗi truy vết vận tải theo `AGENTS.md`.
+- **Nâng Cấp Giao Diện Master Data Đạt Chuẩn Quốc Tế:**
+  - Mở rộng từ 8 tabs lên **11 Sub-Navigation Tabs** (`templates/views/view_master_data.html`): Lương chuyến, Phụ cấp, Cảng & Kho, Biểu cước, Khách hàng, Hãng tàu, Đầu kéo, Rơ-moóc, Nhà xe thầu phụ, Khoản chi, Quy cách cont.
+  - 11 KPI Pills Counter tương tác 1 chạm trực quan trên đầu trang.
+  - Modal khai báo thông minh (`templates/components/modal_master_data.html` & `static/js/app.js`): Tự động đổi form, validate trường bắt buộc, hỗ trợ tra cứu ngân hàng và liên kết website hãng tàu.
+- **Bộ Kiểm Thử Toàn Diện (Unit Tests):**
+  - Thêm 4 test cases kiểm thử CRUD chuyên sâu trong `apps/master_data/tests.py`.
+  - Toàn bộ **52/52 tests PASSED 100%**.
+  - Kịch bản mô phỏng tài xế `test_driver_simulation.py` **13/13 bước PASSED 100%**.
+
+---
+
 ## [1.9.4] - 2026-09-27 (Rà Soát & Củng Cố Toàn Diện Hệ Thống Phân Quyền RBAC, Bảo Mật Báo Cáo P&L & Data Masking)
 
 ### 1. Bối Cảnh & Các Lỗ Hổng Bảo Mật Được Phát Hiện Trong Quá Trình Rà Soát:

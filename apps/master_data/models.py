@@ -132,3 +132,51 @@ class DriverAllowanceCatalog(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"[{self.get_category_display()}] {self.name}: +{self.amount:,.0f} đ"
 
+class ShippingLine(TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Hãng Tàu / Hãng Vận Chuyển Biển Quốc Tế & Nội Địa.
+    Chuẩn hóa hãng tàu, đầu mối hỗ trợ cấp vỏ, e-DO và thời hạn DEM/DET mặc định.
+    """
+    code = models.CharField(max_length=30, unique=True, db_index=True) # MAEU, ONE, COSCO, SITC, EVERGREEN, CMA, MSC...
+    name = models.CharField(max_length=150) # Maersk Line, Ocean Network Express...
+    contact_phone = models.CharField(max_length=50, blank=True)
+    contact_email = models.CharField(max_length=100, blank=True)
+    website = models.CharField(max_length=255, blank=True, help_text="Cổng tra cứu cont / lệnh giao hàng điện tử (eDO)")
+    free_dem_days = models.IntegerField(default=7, help_text="Số ngày miễn phí lưu bãi mặc định (DEM)")
+    free_det_days = models.IntegerField(default=5, help_text="Số ngày miễn phí lưu vỏ mặc định (DET)")
+    notes = models.TextField(blank=True, help_text="Ghi chú điều kiện cấp cont / hạ rỗng đặc thù")
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['code']
+        verbose_name = 'Hãng Tàu'
+        verbose_name_plural = 'Danh mục Hãng Tàu'
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+class Subcontractor(TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Nhà Xe Thầu Phụ / Đối Tác Vận Tải 3PL (Xe Bạn).
+    Quản lý thông tin nhà xe, người điều hành và tài khoản ngân hàng phục vụ đối soát cước.
+    """
+    code = models.CharField(max_length=50, unique=True, db_index=True) # NX_HOANGNAM, NX_MINHTHU...
+    name = models.CharField(max_length=200) # Công ty TNHH Vận tải Hoàng Nam...
+    tax_code = models.CharField(max_length=30, blank=True)
+    contact_person = models.CharField(max_length=100, blank=True) # Người phụ trách điều xe
+    phone = models.CharField(max_length=50, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    bank_account_number = models.CharField(max_length=50, blank=True, help_text="Số tài khoản ngân hàng")
+    bank_name = models.CharField(max_length=100, blank=True, help_text="Tên ngân hàng thụ hưởng")
+    bank_account_holder = models.CharField(max_length=150, blank=True, help_text="Tên chủ tài khoản")
+    notes = models.TextField(blank=True, help_text="Tuyến thế mạnh, chính sách công nợ")
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Nhà Xe Thầu Phụ'
+        verbose_name_plural = 'Danh mục Nhà Xe Thầu Phụ'
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+

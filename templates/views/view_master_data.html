@@ -12,7 +12,7 @@
             <h2 class="text-xl md:text-2xl font-black text-slate-900 mt-0.5 tracking-tight font-heading">Cài Đặt Hệ Thống</h2>
         </div>
 
-        <!-- 8 KPI Pills Counter -->
+        <!-- 11 KPI Pills Counter -->
         <div class="flex items-center flex-wrap gap-2 text-xs font-bold font-heading">
             <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('driver_tariffs')">
                 <i class="ph-bold ph-money text-emerald-600 text-sm"></i>
@@ -51,48 +51,75 @@
             </div>
             <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('vehicles')">
                 <i class="ph-bold ph-truck text-slate-700 text-sm"></i>
-                <span class="text-slate-600">Đội xe:</span>
+                <span class="text-slate-600">Đầu kéo:</span>
                 <span id="md-stat-vehicles" class="text-slate-900 font-black">8</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('trailers')">
+                <i class="ph-bold ph-arrows-horizontal text-sky-600 text-sm"></i>
+                <span class="text-slate-600">Rơ-moóc:</span>
+                <span id="md-stat-trailers" class="text-slate-900 font-black">8</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('shipping_lines')">
+                <i class="ph-bold ph-anchor-simple text-cyan-600 text-sm"></i>
+                <span class="text-slate-600">Hãng tàu:</span>
+                <span id="md-stat-shipping-lines" class="text-slate-900 font-black">10</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('subcontractors')">
+                <i class="ph-bold ph-handshake text-orange-600 text-sm"></i>
+                <span class="text-slate-600">Xe ngoài/3PL:</span>
+                <span id="md-stat-subcontractors" class="text-slate-900 font-black">3</span>
             </div>
         </div>
     </div>
 
     <!-- Main Master Data Container -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col flex-1 min-h-0">
-        <!-- Sub-Navigation 8 Tabs -->
+        <!-- Sub-Navigation 11 Tabs -->
         <div class="border-b border-slate-200 px-3 md:px-4 pt-2 flex items-center justify-between flex-wrap gap-2 bg-slate-50/80 shrink-0">
             <div class="flex items-center space-x-1 overflow-x-auto pb-px" id="master-data-tabs">
-                <button onclick="switchMasterDataTab('driver_tariffs')" data-md-tab="driver_tariffs" class="md-tab-btn active px-3.5 py-2 text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                <button onclick="switchMasterDataTab('driver_tariffs')" data-md-tab="driver_tariffs" class="md-tab-btn active px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
                     <i class="ph-bold ph-money text-base"></i>
                     <span>Biểu Phí Lương Chuyến</span>
                 </button>
-                <button onclick="switchMasterDataTab('allowances')" data-md-tab="allowances" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                <button onclick="switchMasterDataTab('allowances')" data-md-tab="allowances" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
                     <i class="ph-bold ph-plus-circle text-base"></i>
                     <span>Phụ Cấp & Kiểm Hóa</span>
                 </button>
-                <button onclick="switchMasterDataTab('locations')" data-md-tab="locations" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                <button onclick="switchMasterDataTab('locations')" data-md-tab="locations" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
                     <i class="ph-bold ph-map-pin text-base"></i>
                     <span>Cảng & Kho Bãi</span>
                 </button>
-                <button onclick="switchMasterDataTab('tariffs')" data-md-tab="tariffs" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                <button onclick="switchMasterDataTab('tariffs')" data-md-tab="tariffs" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
                     <i class="ph-bold ph-path text-base"></i>
-                    <span>Biểu Cước Khách Hàng</span>
+                    <span>Biểu Cước Khách</span>
                 </button>
-                <button onclick="switchMasterDataTab('customers')" data-md-tab="customers" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                <button onclick="switchMasterDataTab('customers')" data-md-tab="customers" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
                     <i class="ph-bold ph-buildings text-base"></i>
                     <span>Khách Hàng</span>
                 </button>
-                <button onclick="switchMasterDataTab('expenses')" data-md-tab="expenses" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
-                    <i class="ph-bold ph-receipt text-base"></i>
-                    <span>Khoản Mục Chi Phí</span>
+                <button onclick="switchMasterDataTab('shipping_lines')" data-md-tab="shipping_lines" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-anchor-simple text-base text-cyan-600"></i>
+                    <span>Hãng Tàu</span>
                 </button>
-                <button onclick="switchMasterDataTab('containers')" data-md-tab="containers" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
-                    <i class="ph-bold ph-package text-base"></i>
-                    <span>Quy Cách Cont & Xe</span>
-                </button>
-                <button onclick="switchMasterDataTab('vehicles')" data-md-tab="vehicles" class="md-tab-btn px-3.5 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                <button onclick="switchMasterDataTab('vehicles')" data-md-tab="vehicles" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
                     <i class="ph-bold ph-truck text-base"></i>
-                    <span>Đội Xe & Moóc</span>
+                    <span>Đầu Kéo & Xe</span>
+                </button>
+                <button onclick="switchMasterDataTab('trailers')" data-md-tab="trailers" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-arrows-horizontal text-base text-sky-600"></i>
+                    <span>Rơ-Moóc</span>
+                </button>
+                <button onclick="switchMasterDataTab('subcontractors')" data-md-tab="subcontractors" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-handshake text-base text-orange-600"></i>
+                    <span>Nhà Xe Thầu Phụ</span>
+                </button>
+                <button onclick="switchMasterDataTab('expenses')" data-md-tab="expenses" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-receipt text-base"></i>
+                    <span>Khoản Chi</span>
+                </button>
+                <button onclick="switchMasterDataTab('containers')" data-md-tab="containers" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap">
+                    <i class="ph-bold ph-package text-base"></i>
+                    <span>Quy Cách</span>
                 </button>
             </div>
 

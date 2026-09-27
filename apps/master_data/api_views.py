@@ -12,7 +12,8 @@ from apps.master_data.models import (
     Location, LocationType,
     ContainerType, ContainerCategory,
     ExpenseItem, ExpenseCategoryGroup,
-    DriverSalaryTariff, DriverAllowanceCatalog, AllowanceCategory
+    DriverSalaryTariff, DriverAllowanceCatalog, AllowanceCategory,
+    ShippingLine, Subcontractor
 )
 from apps.customers.models import Customer, RouteTariff
 from apps.fleet.models import Vehicle, Trailer, VehicleType, VehicleOwnership, VehicleStatus
@@ -32,6 +33,8 @@ class MasterDataSummaryAPIView(APIView):
                 'container_types_count': ContainerType.objects.count(),
                 'vehicles_count': Vehicle.objects.count(),
                 'trailers_count': Trailer.objects.count(),
+                'shipping_lines_count': ShippingLine.objects.count(),
+                'subcontractors_count': Subcontractor.objects.count(),
             }
         })
 
@@ -137,6 +140,32 @@ class MasterDataFormOptionsAPIView(APIView):
             for tr in Trailer.objects.all().order_by('license_plate')
         ]
 
+        # 6. Hãng Tàu Biển
+        shipping_lines = [
+            {
+                'id': sl.id,
+                'code': sl.code,
+                'name': sl.name,
+                'free_dem_days': sl.free_dem_days,
+                'free_det_days': sl.free_det_days,
+                'label': f"{sl.code} - {sl.name}"
+            }
+            for sl in ShippingLine.objects.filter(is_active=True).order_by('code')
+        ]
+
+        # 7. Nhà Xe Thầu Phụ / 3PL
+        subcontractors = [
+            {
+                'id': sc.id,
+                'code': sc.code,
+                'name': sc.name,
+                'phone': sc.phone,
+                'contact_person': sc.contact_person,
+                'label': f"{sc.name} ({sc.code})"
+            }
+            for sc in Subcontractor.objects.filter(is_active=True).order_by('name')
+        ]
+
         return Response({
             'customers': customers,
             'locations': {
@@ -152,6 +181,8 @@ class MasterDataFormOptionsAPIView(APIView):
             'drivers': drivers,
             'vehicles': vehicles,
             'trailers': trailers,
+            'shipping_lines': shipping_lines,
+            'subcontractors': subcontractors,
             'container_types': container_types,
         })
 
@@ -730,4 +761,275 @@ class DriverAllowanceDetailAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy phụ cấp!'}, status=status.HTTP_404_NOT_FOUND)
         item.delete()
         return Response({'success': True, 'message': f'Đã xóa phụ cấp [{item.name}].'})
+
+# ==============================================================================
+# 9. DANH MỤC HÃNG TÀU (SHIPPING LINES)
+# ==============================================================================
+class ShippingLineListCreateAPIView(MasterDataBaseAPIView):
+    def get(self, request):
+        q = request.GET.get('q', '').strip()
+        qs = ShippingLine.objects.all()
+        if q:
+            qs = qs.filter(Q(code__icontains=q) | Q(name__icontains=q) | Q(notes__icontains=q))
+
+        data = []
+        for sl in qs:
+            data.append({
+                'id': sl.id,
+                'code': sl.code,
+                'name': sl.name,
+                'contact_phone': sl.contact_phone,
+                'contact_email': sl.contact_email,
+                'website': sl.website,
+                'free_dem_days': sl.free_dem_days,
+                'free_det_days': sl.free_det_days,
+                'notes': sl.notes,
+                'is_active': sl.is_active,
+            })
+        return Response({'results': data, 'total': len(data)})
+
+    def post(self, request):
+        data = request.data
+        code = data.get('code', '').strip().upper()
+        name = data.get('name', '').strip()
+        if not code or not name:
+            return Response({'error': 'Mã và Tên hãng tàu không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if ShippingLine.objects.filter(code=code).exists():
+            return Response({'error': f'Mã hãng tàu [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        sl = ShippingLine.objects.create(
+            code=code,
+            name=name,
+            contact_phone=data.get('contact_phone', '').strip(),
+            contact_email=data.get('contact_email', '').strip(),
+            website=data.get('website', '').strip(),
+            free_dem_days=int(data.get('free_dem_days', 7)),
+            free_det_days=int(data.get('free_det_days', 5)),
+            notes=data.get('notes', '').strip(),
+            is_active=bool(data.get('is_active', True)),
+        )
+        return Response({
+            'success': True,
+            'message': f'Đã thêm hãng tàu [{sl.name}] thành công!',
+            'id': sl.id
+        }, status=status.HTTP_201_CREATED)
+
+class ShippingLineDetailAPIView(MasterDataBaseAPIView):
+    def put(self, request, pk):
+        sl = ShippingLine.objects.filter(id=pk).first()
+        if not sl:
+            return Response({'error': 'Không tìm thấy hãng tàu!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'name' in data: sl.name = data['name'].strip()
+        if 'contact_phone' in data: sl.contact_phone = data['contact_phone'].strip()
+        if 'contact_email' in data: sl.contact_email = data['contact_email'].strip()
+        if 'website' in data: sl.website = data['website'].strip()
+        if 'free_dem_days' in data: sl.free_dem_days = int(data['free_dem_days'])
+        if 'free_det_days' in data: sl.free_det_days = int(data['free_det_days'])
+        if 'notes' in data: sl.notes = data['notes'].strip()
+        if 'is_active' in data: sl.is_active = bool(data['is_active'])
+        sl.save()
+
+        return Response({'success': True, 'message': f'Đã cập nhật hãng tàu [{sl.name}] thành công!'})
+
+    def delete(self, request, pk):
+        sl = ShippingLine.objects.filter(id=pk).first()
+        if not sl:
+            return Response({'error': 'Không tìm thấy hãng tàu!'}, status=status.HTTP_404_NOT_FOUND)
+        sl.delete()
+        return Response({'success': True, 'message': f'Đã xóa hãng tàu [{sl.name}].'})
+
+# ==============================================================================
+# 10. DANH MỤC RƠ-MOÓC (TRAILERS)
+# ==============================================================================
+class TrailerMasterListCreateAPIView(MasterDataBaseAPIView):
+    def get(self, request):
+        q = request.GET.get('q', '').strip()
+        t_type = request.GET.get('trailer_type', '').strip()
+        qs = Trailer.objects.all()
+        if q:
+            qs = qs.filter(Q(license_plate__icontains=q) | Q(brand__icontains=q) | Q(trailer_type__icontains=q))
+        if t_type and t_type != 'ALL':
+            qs = qs.filter(trailer_type=t_type)
+
+        data = []
+        for tr in qs:
+            data.append({
+                'id': tr.id,
+                'license_plate': tr.license_plate,
+                'trailer_type': tr.trailer_type,
+                'brand': tr.brand,
+                'payload_capacity_kg': tr.payload_capacity_kg,
+                'registration_expiry': tr.registration_expiry.strftime('%d/%m/%Y') if tr.registration_expiry else '-',
+                'status': tr.status,
+                'is_registration_warning': tr.is_registration_warning,
+            })
+        return Response({'results': data, 'total': len(data)})
+
+    def post(self, request):
+        data = request.data
+        plate = data.get('license_plate', '').strip().upper()
+        if not plate:
+            return Response({'error': 'Biển số rơ-moóc không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if Trailer.objects.filter(license_plate=plate).exists():
+            return Response({'error': f'Biển số moóc [{plate}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        reg_expiry = data.get('registration_expiry')
+        if reg_expiry:
+            from datetime import datetime
+            try:
+                if '/' in reg_expiry:
+                    reg_expiry = datetime.strptime(reg_expiry, '%d/%m/%Y').date()
+                else:
+                    reg_expiry = datetime.strptime(reg_expiry, '%Y-%m-%d').date()
+            except ValueError:
+                reg_expiry = None
+
+        tr = Trailer.objects.create(
+            license_plate=plate,
+            trailer_type=data.get('trailer_type', 'MOOC_XUONG_40').strip(),
+            brand=data.get('brand', '').strip(),
+            payload_capacity_kg=int(data.get('payload_capacity_kg', 32000)),
+            registration_expiry=reg_expiry,
+            status=data.get('status', 'IDLE').strip(),
+        )
+        return Response({
+            'success': True,
+            'message': f'Đã thêm rơ-moóc [{tr.license_plate}] thành công!',
+            'id': tr.id
+        }, status=status.HTTP_201_CREATED)
+
+class TrailerMasterDetailAPIView(MasterDataBaseAPIView):
+    def put(self, request, pk):
+        tr = Trailer.objects.filter(id=pk).first()
+        if not tr:
+            return Response({'error': 'Không tìm thấy rơ-moóc!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'trailer_type' in data: tr.trailer_type = data['trailer_type'].strip()
+        if 'brand' in data: tr.brand = data['brand'].strip()
+        if 'payload_capacity_kg' in data: tr.payload_capacity_kg = int(data['payload_capacity_kg'])
+        if 'status' in data: tr.status = data['status'].strip()
+        if 'registration_expiry' in data:
+            reg_expiry = data['registration_expiry']
+            if reg_expiry:
+                from datetime import datetime
+                try:
+                    if '/' in reg_expiry:
+                        tr.registration_expiry = datetime.strptime(reg_expiry, '%d/%m/%Y').date()
+                    else:
+                        tr.registration_expiry = datetime.strptime(reg_expiry, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+        tr.save()
+
+        return Response({'success': True, 'message': f'Đã cập nhật rơ-moóc [{tr.license_plate}] thành công!'})
+
+    def delete(self, request, pk):
+        tr = Trailer.objects.filter(id=pk).first()
+        if not tr:
+            return Response({'error': 'Không tìm thấy rơ-moóc!'}, status=status.HTTP_404_NOT_FOUND)
+        tr.delete()
+        return Response({'success': True, 'message': f'Đã xóa rơ-moóc [{tr.license_plate}].'})
+
+# ==============================================================================
+# 11. DANH MỤC NHÀ XE THẦU PHỤ / ĐỐI TÁC VẬN TẢI (SUBCONTRACTORS)
+# ==============================================================================
+class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
+    def get(self, request):
+        q = request.GET.get('q', '').strip()
+        qs = Subcontractor.objects.all()
+        if q:
+            qs = qs.filter(
+                Q(code__icontains=q) |
+                Q(name__icontains=q) |
+                Q(contact_person__icontains=q) |
+                Q(phone__icontains=q) |
+                Q(tax_code__icontains=q)
+            )
+
+        data = []
+        for sc in qs:
+            data.append({
+                'id': sc.id,
+                'code': sc.code,
+                'name': sc.name,
+                'tax_code': sc.tax_code,
+                'contact_person': sc.contact_person,
+                'phone': sc.phone,
+                'address': sc.address,
+                'bank_account_number': sc.bank_account_number,
+                'bank_name': sc.bank_name,
+                'bank_account_holder': sc.bank_account_holder,
+                'notes': sc.notes,
+                'is_active': sc.is_active,
+            })
+        return Response({'results': data, 'total': len(data)})
+
+    def post(self, request):
+        data = request.data
+        code = data.get('code', '').strip().upper()
+        name = data.get('name', '').strip()
+        if not name:
+            return Response({'error': 'Tên nhà xe không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not code:
+            import unidecode
+            clean = unidecode.unidecode(name).upper().replace(' ', '_')
+            import re
+            clean = re.sub(r'[^A-Z0-9_]', '', clean)[:15]
+            code = f"NX_{clean}"
+
+        if Subcontractor.objects.filter(code=code).exists():
+            return Response({'error': f'Mã nhà xe [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        sc = Subcontractor.objects.create(
+            code=code,
+            name=name,
+            tax_code=data.get('tax_code', '').strip(),
+            contact_person=data.get('contact_person', '').strip(),
+            phone=data.get('phone', '').strip(),
+            address=data.get('address', '').strip(),
+            bank_account_number=data.get('bank_account_number', '').strip(),
+            bank_name=data.get('bank_name', '').strip(),
+            bank_account_holder=data.get('bank_account_holder', '').strip(),
+            notes=data.get('notes', '').strip(),
+            is_active=bool(data.get('is_active', True)),
+        )
+        return Response({
+            'success': True,
+            'message': f'Đã thêm nhà xe thầu phụ [{sc.name}] thành công!',
+            'id': sc.id
+        }, status=status.HTTP_201_CREATED)
+
+class SubcontractorDetailAPIView(MasterDataBaseAPIView):
+    def put(self, request, pk):
+        sc = Subcontractor.objects.filter(id=pk).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'name' in data: sc.name = data['name'].strip()
+        if 'tax_code' in data: sc.tax_code = data['tax_code'].strip()
+        if 'contact_person' in data: sc.contact_person = data['contact_person'].strip()
+        if 'phone' in data: sc.phone = data['phone'].strip()
+        if 'address' in data: sc.address = data['address'].strip()
+        if 'bank_account_number' in data: sc.bank_account_number = data['bank_account_number'].strip()
+        if 'bank_name' in data: sc.bank_name = data['bank_name'].strip()
+        if 'bank_account_holder' in data: sc.bank_account_holder = data['bank_account_holder'].strip()
+        if 'notes' in data: sc.notes = data['notes'].strip()
+        if 'is_active' in data: sc.is_active = bool(data['is_active'])
+        sc.save()
+
+        return Response({'success': True, 'message': f'Đã cập nhật nhà xe thầu phụ [{sc.name}] thành công!'})
+
+    def delete(self, request, pk):
+        sc = Subcontractor.objects.filter(id=pk).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+        sc.delete()
+        return Response({'success': True, 'message': f'Đã xóa nhà xe thầu phụ [{sc.name}].'})
 

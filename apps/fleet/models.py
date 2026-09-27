@@ -59,8 +59,9 @@ class Vehicle(TimeStampedModel, SoftDeleteModel):
 class Trailer(TimeStampedModel, SoftDeleteModel):
     license_plate = models.CharField(max_length=20, unique=True, db_index=True) # 51R-444.22
     trailer_type = models.CharField(max_length=30, default='MOOC_XUONG_40', help_text="Moóc xương 40, Moóc cổ cò...")
+    brand = models.CharField(max_length=50, blank=True)
     payload_capacity_kg = models.IntegerField(default=32000)
-    registration_expiry = models.DateField()
+    registration_expiry = models.DateField(null=True, blank=True, help_text="Hạn đăng kiểm định kỳ")
     status = models.CharField(max_length=20, default='IDLE')
 
     class Meta:
@@ -68,3 +69,11 @@ class Trailer(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"Rơ-moóc {self.license_plate}"
+
+    @property
+    def is_registration_warning(self):
+        """Cảnh báo nếu hạn đăng kiểm dưới 15 ngày hoặc đã quá hạn."""
+        if not self.registration_expiry:
+            return False
+        delta = (self.registration_expiry - timezone.now().date()).days
+        return delta <= 15
