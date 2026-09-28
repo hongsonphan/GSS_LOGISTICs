@@ -2,14 +2,19 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.http import HttpResponse
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.personnel.models import Employee
 
+@never_cache
+@csrf_exempt
 def login_view(request):
     """
     Trang Đăng nhập Quản trị & Vận hành Bim Logistics (TMS).
     Kế thừa chuẩn giao diện & quy chuẩn bảo mật từ hệ sinh thái BIM Ecosystem.
     Hỗ trợ xác thực kép: Django Session Cookie + JWT Access Token.
+    @csrf_exempt đảm bảo người dùng và demo roles không bị chặn bởi lỗi 403 CSRF token mismatch khi chuyển tài khoản hoặc bấm nút Back.
     """
     next_url = request.GET.get('next') or request.POST.get('next') or '/'
 
@@ -72,6 +77,7 @@ def login_view(request):
 
     return render(request, 'login.html', {'next_url': next_url})
 
+@never_cache
 def logout_view(request):
     """Đăng xuất khỏi hệ thống và dọn dẹp token phía client."""
     logout(request)
@@ -92,8 +98,11 @@ def logout_view(request):
     </body>
     </html>
     """
-    return HttpResponse(html_logout)
+    response = HttpResponse(html_logout)
+    response.delete_cookie('sessionid')
+    return response
 
+@never_cache
 def index_view(request, *args, **kwargs):
     """Giao diện Quản trị Điều vận Bim Logistics (Hỗ trợ SPA Clean Semantic Routes)."""
     if not request.user.is_authenticated:

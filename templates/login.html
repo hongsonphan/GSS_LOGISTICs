@@ -280,6 +280,20 @@
 
   <!-- JavaScript Interactions -->
   <script>
+    // ===== Lấy Cookie Giá Trị =====
+    function getCsrfCookie() {
+      const match = document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/);
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    function syncCsrfToken() {
+      const token = getCsrfCookie();
+      if (token) {
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (input) input.value = token;
+      }
+    }
+
     // ===== Quick Fill Credentials for Demo Roles =====
     function fillCredentials(username, password, roleName) {
       document.getElementById('id_username').value = username;
@@ -288,14 +302,26 @@
       const submitBtn = document.getElementById('login-submit-btn');
       const btnText = document.getElementById('btn-text');
       btnText.textContent = `Đăng nhập (${roleName})`;
+
+      // Đồng bộ token CSRF mới nhất từ cookie nếu có
+      syncCsrfToken();
       
       // Auto submit after a brief visual cue
       setTimeout(() => {
         document.getElementById('login-form').submit();
-      }, 300);
+      }, 250);
     }
 
+    // ===== BFCache (Tránh trang bị cache khi người dùng bấm nút Back trình duyệt) =====
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted || (window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation')[0] && window.performance.getEntriesByType('navigation')[0].type === 'back_forward')) {
+        window.location.reload();
+      }
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
+      syncCsrfToken();
+
       // ===== Toggle Password Visibility =====
       const toggleBtn = document.getElementById('toggle-password');
       const passwordInput = document.getElementById('id_password');
@@ -320,6 +346,7 @@
 
       if (form && submitBtn) {
         form.addEventListener('submit', function () {
+          syncCsrfToken();
           submitBtn.disabled = true;
           submitBtn.classList.add('opacity-80', 'cursor-wait');
           btnText.textContent = 'Đang xác thực...';

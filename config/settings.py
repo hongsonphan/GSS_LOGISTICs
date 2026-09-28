@@ -228,6 +228,27 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
+# Cấu hình Reverse Proxy SSL Header cho Nginx / Docker
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Danh sách nguồn tin cậy cho CSRF (Bắt buộc từ Django 4.0+ khi chạy HTTPS qua domain)
+CSRF_TRUSTED_ORIGINS = [
+    'https://logistics.bim.info.vn',
+    'http://logistics.bim.info.vn',
+    'https://bim.info.vn',
+    'http://149.118.60.194:8085',
+    'http://149.118.60.194',
+    'http://localhost:8085',
+    'http://127.0.0.1:8085',
+]
+
+csrf_trusted_raw = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if csrf_trusted_raw:
+    for origin in csrf_trusted_raw.split(','):
+        cleaned = origin.strip()
+        if cleaned and cleaned not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(cleaned)
+
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = 'Lax'
@@ -239,7 +260,7 @@ SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower()
 CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False').lower() in ('true', '1')
 
 if not DEBUG and SECURE_SSL_REDIRECT:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
