@@ -321,6 +321,18 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
         from core.security import get_trip_hashid
         return get_trip_hashid(self.id)
 
+    @property
+    def driver_hashid(self):
+        """Mã hóa Capability Token riêng cho Cổng Tài Xế Mobile (Driver Portal)."""
+        from core.security import get_driver_hashid
+        return get_driver_hashid(self.id)
+
+    @property
+    def tracking_hashid(self):
+        """Mã hóa Capability Token riêng cho Cổng Tra Cứu Khách Hàng (Customer Tracking)."""
+        from core.security import get_tracking_hashid
+        return get_tracking_hashid(self.id)
+
     def update_financials(self):
         """Tính toán tự động và cache P&L của chuyến xe."""
         # Lấy cước theo tariff nếu cached_revenue chưa gán

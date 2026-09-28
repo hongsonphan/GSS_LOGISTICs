@@ -1353,7 +1353,8 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         setText('detail-dropoff', trip.dropoff || 'Hạ bãi rỗng');
 
         // Link Zalo và Màn hình Tài xế Mobile
-        const driverPortalUrl = `${window.location.origin}/driver/${trip.hashid || trip.id || trip.trip_code}/`;
+        const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
+        const driverPortalUrl = `${window.location.origin}/driver/${driverToken}/`;
         const driverPortalBtn = document.getElementById('driver-portal-btn');
         if (driverPortalBtn) {
             driverPortalBtn.href = driverPortalUrl;
@@ -1942,7 +1943,8 @@ window.copyDriverPortalLink = function() {
         alert('Chưa có thông tin chi tiết chuyến xe để sao chép!');
         return;
     }
-    const portalUrl = `${window.location.origin}/driver/${trip.hashid || trip.id || trip.trip_code}/`;
+    const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
+    const portalUrl = `${window.location.origin}/driver/${driverToken}/`;
     const message = `LỆNH ĐIỀU XE BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nXe: ${trip.vehicle || '-'} | Mooc: ${trip.trailer || '-'}\nCont: ${trip.container || '-'} | Seal: ${trip.seal || '-'}\nĐiểm 1 (Lấy cont): ${trip.pickup || '-'}\nĐiểm 2 (Giao kho): ${trip.warehouse || '-'}\nĐiểm 3 (Hạ cont): ${trip.dropoff || '-'}\n👉 Mở link mobile báo mốc & kê chi phí: ${portalUrl}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1962,8 +1964,10 @@ window.copyCustomerTrackingLink = function() {
         alert('Chưa có thông tin chuyến xe để sao chép!');
         return;
     }
-    const trackingUrl = `${window.location.origin}/tracking/${trip.hashid || trip.id || trip.trip_code}/`;
-    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nLộ trình: ${trip.pickup || '-'} ➔ ${trip.warehouse || '-'} ➔ ${trip.dropoff || '-'}\n👉 Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
+    const trackingToken = trip.tracking_hashid || trip.hashid || trip.trip_code;
+    const trackingUrl = `${window.location.origin}/tracking/${trackingToken}/`;
+    const destWarehouse = trip.delivery_warehouse || trip.warehouse || 'Kho Khách Hàng';
+    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nSố Chì (Seal): ${trip.seal || 'Chưa bấm'}\nKho Giao Hàng: ${destWarehouse}\n👉 Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {

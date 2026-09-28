@@ -373,6 +373,8 @@ class TripListCreateAPIView(APIView):
             trips_list.append({
                 'id': t.trip_code,
                 'hashid': t.hashid,
+                'driver_hashid': t.driver_hashid,
+                'tracking_hashid': t.tracking_hashid,
                 'customer': t.customer.name if t.customer else 'Khách Hàng',
                 'type': t.get_shipment_type_display(),
                 'type_raw': t.shipment_type,
@@ -690,11 +692,11 @@ class TripListCreateAPIView(APIView):
 
 def get_trip_by_code_or_hash(trip_identifier, select_related_fields=None):
     """Truy vấn chuyến xe an toàn bằng cả trip_code gốc hoặc HashID bảo mật (Tiêu chuẩn 10)."""
-    from core.security import decode_trip_hashid
+    from core.security import decode_driver_hashid, decode_trip_hashid
     qs = DispatchTrip.objects
     if select_related_fields:
         qs = qs.select_related(*select_related_fields)
-    decoded_id = decode_trip_hashid(trip_identifier)
+    decoded_id = decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier)
     if decoded_id:
         trip = qs.filter(id=decoded_id).first()
         if trip:
@@ -840,6 +842,8 @@ class TripDetailAPIView(APIView):
         return Response({
             'id': trip.trip_code,
             'hashid': trip.hashid,
+            'driver_hashid': trip.driver_hashid,
+            'tracking_hashid': trip.tracking_hashid,
             'customer': customer_name,
             'type': trip.get_shipment_type_display(),
             'route': f"{trip.pickup_location} -> {trip.warehouse_location} -> {trip.dropoff_location or 'Hạ bãi'}",

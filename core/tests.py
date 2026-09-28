@@ -1729,8 +1729,7 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertEqual(t_item['toll_standard_fee'], 210000.0)
 
     def test_driver_portal_view_and_capability_access(self):
-        """Kiểm thử Trang Mobile Driver Portal và truy cập an toàn qua Capability Token HashID."""
-        trip_hash = self.trip.hashid
+        trip_hash = self.trip.driver_hashid
         self.assertTrue(len(trip_hash) >= 8)
 
         # 1. Truy cập trang Mobile của tài xế không cần đăng nhập session
@@ -2069,6 +2068,58 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertEqual(test_trip_report['difference'], 900000)
         self.assertEqual(test_trip_report['settlement_action'], 'REFUND')
         self.assertEqual(test_trip_report['status_label'], 'Đang tạm ứng')
+
+    def test_driver_and_tracking_tokens_isolation_and_customer_view(self):
+        """Kiểm thử bảo mật: Phân tách độc lập Driver Token vs Tracking Token và View Khách Hàng tinh gọn."""
+        trip = DispatchTrip.objects.create(
+            trip_code="SIM-TEST-SECURE-001",
+            customer=self.customer,
+            pickup_location="Cảng Cát Lái",
+            warehouse_location="Kho Tân Tạo, Lô 12",
+            dropoff_location="ICD Phước Long 3",
+            vehicle=self.vehicle,
+            driver=self.driver,
+            dispatcher=self.dispatcher,
+            container_number="BIMU9998881",
+            seal_number="ML-TEST-9988",
+            status=TripStatus.IN_TRANSIT
+        )
+
+        driver_token = trip.driver_hashid
+        tracking_token = trip.tracking_hashid
+
+        # Đăng xuất để kiểm tra hành vi truy cập công khai (Không có quyền nhân viên nội bộ)
+        self.client.logout()
+
+        # 1. Hai token phải hoàn toàn khác biệt về giá trị hash (khác domain/salt)
+        self.assertNotEqual(driver_token, tracking_token)
+        self.assertTrue(len(driver_token) >= 8)
+        self.assertTrue(len(tracking_token) >= 8)
+
+        # 2. Khách hàng dùng tracking_token truy cập Cổng Tài Xế -> Phải bị chặn 404
+        res_cross_role = self.client.get(f"/driver/{tracking_token}/")
+        self.assertEqual(res_cross_role.status_code, 404)
+
+        # 3. Kẻ xấu dùng trip_code thô truy cập cổng công cộng (chưa đăng nhập) -> Phải bị chặn 404
+        res_raw_code_driver = self.client.get(f"/driver/{trip.trip_code}/")
+        self.assertEqual(res_raw_code_driver.status_code, 404)
+        res_raw_code_tracking = self.client.get(f"/tracking/{trip.trip_code}/")
+        self.assertEqual(res_raw_code_tracking.status_code, 404)
+
+        # 4. Tài xế dùng đúng driver_token truy cập Cổng Tài Xế -> Thành công 200
+        res_driver = self.client.get(f"/driver/{driver_token}/")
+        self.assertEqual(res_driver.status_code, 200)
+
+        # 5. Khách hàng dùng đúng tracking_token truy cập Cổng Tra Cứu -> Thành công 200
+        res_tracking = self.client.get(f"/tracking/{tracking_token}/")
+        self.assertEqual(res_tracking.status_code, 200)
+        self.assertIn('customer_milestones', res_tracking.context)
+        # Chỉ có 3 mốc cốt lõi cho khách hàng, không đưa 10 bước tracklog nội bộ
+        self.assertEqual(len(res_tracking.context['customer_milestones']), 3)
+        self.assertEqual(res_tracking.context['customer_milestones'][0]['title'], 'Tiếp nhận & Vận chuyển')
+        self.assertEqual(res_tracking.context['customer_milestones'][1]['title'], 'Đã đến kho giao hàng')
+        self.assertEqual(res_tracking.context['customer_milestones'][2]['title'], 'Giao hàng thành công (Ký nhận POD)')
+
 
 
 

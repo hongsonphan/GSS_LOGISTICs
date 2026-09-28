@@ -115,17 +115,22 @@ def index_view(request, *args, **kwargs):
 def driver_portal_view(request, trip_hash):
     """
     Trang Mobile Portal dành riêng cho Tài xế xe đầu kéo / xe tải.
-    - Truy cập không cần mật khẩu phức tạp qua Capability URL (HashID an toàn chống IDOR).
-    - Giao diện 100% Mobile-first, nút chạm lớn, trực quan dưới trời nắng.
-    - Nghiệp vụ: Báo 6 mốc kho SOP, Kê khai chi phí dọc đường, Chụp ảnh POD/EIR, Gọi điều độ 1-chạm, Chỉ đường Google Maps.
+    - Truy cập an toàn qua Capability URL riêng của Tài xế (Driver Token chống IDOR).
+    - Phân tách bảo mật: Khách hàng cầm Tracking Token không thể truy cập cổng này.
+    - Nghiệp vụ: Báo 6 mốc kho SOP, Kê khai chi phí dọc đường, Chụp ảnh POD/EIR, Gọi điều độ 1-chạm.
     - Bảo mật tuyệt đối: Không để lộ doanh thu bán khách hay tỷ suất lợi nhuận nội bộ.
     """
-    from core.security import decode_trip_hashid
+    from core.security import decode_driver_hashid, decode_trip_hashid
     from apps.dispatch.models import DispatchTrip
     from apps.customs.models import CustomsDeclaration
     import urllib.parse
 
-    decoded_id = decode_trip_hashid(trip_hash)
+    # 1. Giải mã token riêng của Driver Portal
+    decoded_id = decode_driver_hashid(trip_hash)
+    if not decoded_id and request.user.is_authenticated:
+        # Hỗ trợ nhân viên nội bộ đăng nhập mở nhanh bằng trip hashid
+        decoded_id = decode_trip_hashid(trip_hash)
+
     trip = None
     if decoded_id:
         trip = DispatchTrip.objects.filter(id=decoded_id).select_related(
@@ -134,7 +139,8 @@ def driver_portal_view(request, trip_hash):
             'pickup_loc', 'warehouse_loc', 'dropoff_loc'
         ).first()
 
-    if not trip:
+    # Chỉ cho phép tìm kiếm bằng trip_code công khai nếu nhân viên đã ĐĂNG NHẬP hệ thống
+    if not trip and request.user.is_authenticated:
         trip = DispatchTrip.objects.filter(trip_code=trip_hash).select_related(
             'customer', 'vehicle', 'trailer', 'driver', 'dispatcher',
             'dropoff_driver', 'dropoff_vehicle', 'dropoff_trailer',
@@ -181,7 +187,7 @@ def driver_portal_view(request, trip_hash):
 
     context = {
         'trip': trip,
-        'trip_hash': trip.hashid,
+        'trip_hash': trip.driver_hashid,
         'driver': trip.driver,
         'vehicle': trip.vehicle,
         'trailer': trip.trailer,
@@ -201,46 +207,86 @@ def driver_portal_view(request, trip_hash):
 
 def public_tracking_view(request, trip_hash):
     """
-    Cổng Tra Cứu Vận Đơn Công Khai Dành Cho Khách Hàng (Public Shipment Tracking Portal).
-    - Khách hàng không cần đăng nhập, chỉ cần đường link hoặc mã QR.
-    - Hiển thị tiến độ container thời gian thực, lộ trình 3 điểm và ảnh POD / Chữ ký điện tử.
-    - BẢO MẬT: Giấu 100% doanh thu, giá cước, chi phí xe và lương tài xế.
+    Cổng Tra Cứu Vận Đơn Dành Cho Khách Hàng (Customer Tracking Portal).
+    - Khách hàng không cần đăng nhập, truy cập qua Capability Tracking Token riêng biệt.
+    - BẢO MẬT:
+      + Phân tách độc lập với Driver Portal (không thể đổi URL sang /driver/ để xem thông tin nội bộ).
+      + Chặn hoàn toàn tra cứu bằng mã chuyến thô (chống quét dữ liệu IDOR).
+      + Giấu 100% chi phí, cước nội bộ, lương tài xế, tờ khai hải quan.
+      + KHÔNG đưa tracklog nội bộ 10 bước hay lộ trình bãi rỗng vào trang khách hàng.
+    - Trải nghiệm Khách hàng: Hiển thị đúng 3 mốc cốt lõi (Vận chuyển -> Đến kho -> Ký nhận POD) kèm ảnh POD.
     """
-    from core.security import decode_trip_hashid
+    from core.security import decode_tracking_hashid, decode_trip_hashid
     from apps.dispatch.models import DispatchTrip
     from apps.documents.models import DocumentType
 
-    decoded_id = decode_trip_hashid(trip_hash)
+    # 1. Giải mã token riêng của Customer Tracking Portal (Hỗ trợ graceful cả hashid cũ)
+    decoded_id = decode_tracking_hashid(trip_hash) or decode_trip_hashid(trip_hash)
     trip = None
     if decoded_id:
         trip = DispatchTrip.objects.filter(id=decoded_id).select_related(
             'customer', 'vehicle', 'trailer', 'driver',
-            'pickup_loc', 'warehouse_loc', 'dropoff_loc'
+            'warehouse_loc'
         ).first()
 
-    if not trip:
+    # Chỉ cho phép tìm bằng trip_code công khai nếu nhân viên đã ĐĂNG NHẬP hệ thống
+    if not trip and request.user.is_authenticated:
         trip = DispatchTrip.objects.filter(trip_code=trip_hash).select_related(
             'customer', 'vehicle', 'trailer', 'driver',
-            'pickup_loc', 'warehouse_loc', 'dropoff_loc'
+            'warehouse_loc'
         ).first()
 
     if not trip:
         return render(request, 'driver_portal_404.html', {'trip_hash': trip_hash}, status=404)
 
-    # Lấy các mốc tiến độ
-    timelines = trip.timeline_items.all().order_by('step_number')
+    # 2. Xây dựng 3 mốc giao nhận chuẩn hoá B2B Logistics cho Khách Hàng (Tối giản, chuyên nghiệp)
+    step1_done = True
+    step2_done = trip.status in ['AT_WAREHOUSE', 'UNLOADING', 'DELIVERED', 'RETURNING_EMPTY', 'COMPLETED']
+    step2_active = trip.status in ['DISPATCHED', 'IN_TRANSIT']
+    step3_done = trip.status in ['DELIVERED', 'RETURNING_EMPTY', 'COMPLETED'] or trip.documents.filter(is_deleted=False, document_type=DocumentType.POD).exists()
+    step3_active = trip.status in ['AT_WAREHOUSE', 'UNLOADING'] and not step3_done
 
-    # Chỉ hiển thị các chứng từ bàn giao hàng (POD, Chữ ký số, EIR hạ cont) cho khách hàng xem
+    destination_wh = trip.delivery_warehouse or trip.warehouse_location or 'Kho Khách Hàng'
+
+    customer_milestones = [
+        {
+            'step': 1,
+            'title': 'Tiếp nhận & Vận chuyển',
+            'desc': 'Đơn hàng đã được tiếp nhận và phương tiện đang vận chuyển trên tuyến',
+            'is_done': step1_done,
+            'is_active': False,
+            'time': trip.created_at.strftime('%H:%M %d/%m') if trip.created_at else ''
+        },
+        {
+            'step': 2,
+            'title': 'Đã đến kho giao hàng',
+            'desc': f"Xe đã có mặt tại: {destination_wh}",
+            'is_done': step2_done,
+            'is_active': step2_active,
+            'time': trip.actual_gate_in_at.strftime('%H:%M %d/%m') if trip.actual_gate_in_at else (trip.actual_gate_in_time or '')
+        },
+        {
+            'step': 3,
+            'title': 'Giao hàng thành công (Ký nhận POD)',
+            'desc': 'Đã hoàn tất dỡ hàng và bàn giao chứng từ có chữ ký xác nhận của thủ kho',
+            'is_done': step3_done,
+            'is_active': step3_active,
+            'time': trip.actual_gate_out_at.strftime('%H:%M %d/%m') if trip.actual_gate_out_at else (trip.actual_gate_out_time or '')
+        }
+    ]
+
+    # Chỉ hiển thị Biên bản bàn giao hàng (POD) có chữ ký xác nhận cho Khách hàng
     public_documents = trip.documents.filter(
         is_deleted=False,
-        document_type__in=[DocumentType.POD, DocumentType.EIR_DROPOFF]
+        document_type=DocumentType.POD
     ).order_by('-created_at')
 
     context = {
         'trip': trip,
-        'trip_hash': trip.hashid,
+        'trip_hash': trip.tracking_hashid,
         'customer_name': trip.customer.name if trip.customer else 'Khách hàng',
-        'timelines': timelines,
+        'destination_warehouse': destination_wh,
+        'customer_milestones': customer_milestones,
         'documents': public_documents,
         'share_url': request.build_absolute_uri(),
     }

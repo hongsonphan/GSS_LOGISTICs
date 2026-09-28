@@ -2,6 +2,55 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.2.0] - 2026-09-28 (Nâng Cấp Bảo Mật Toàn Diện Cổng Tra Cứu Khách Hàng & Mobile Tài Xế: Phân Tách Capability Token & Tinh Giản Mốc Giao Nhận B2B)
+
+### 1. Bối Cảnh Nghiệp Vụ & Phát Hiện Bảo Mật:
+- **Yêu cầu & Phản hồi Người dùng:**
+  1. Khách hàng không cần và không nên đọc hết các tracklog nội bộ (lấy vỏ, hạ rỗng, các bước điều độ...). Chỉ nên hiển thị phần thông tin Khách hàng cần biết (Số cont, số seal, kho nhận hàng, 3 mốc giao nhận cốt lõi và ảnh biên bản giao nhận POD có chữ ký).
+  2. Rà soát và vá lỗ hổng dùng chung mã HashID (`trip_hash`) giữa link Tài xế (`/driver/<hash>/`) và link Khách hàng (`/tracking/<hash>/`), ngăn chặn triệt để nguy cơ khách hàng hoặc người ngoài đổi URL sang `/driver/` để xem thông tin nội bộ, số điện thoại tài xế, tờ khai hải quan, hoặc can thiệp kê khống chi phí/báo mốc giả.
+
+### 2. Các Thay Đổi Kiến Trúc Kỹ Thuật Đã Triển Khai:
+- **`core/security.py`:**
+  - Khởi tạo 2 Singleton Hashids riêng biệt với salt độc lập:
+    + `_DRIVER_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_DRIVER", min_length=8, alphabet=ALPHABET)`
+    + `_TRACKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TRACKING", min_length=8, alphabet=ALPHABET)`
+  - Bổ sung helper functions: `get_driver_hashid()`, `decode_driver_hashid()`, `get_tracking_hashid()`, `decode_tracking_hashid()`.
+  - Cập nhật `CsrfExemptSessionAuthentication`: Xác thực an toàn Capability Token của tài xế.
+- **`core/permissions.py`:**
+  - Cập nhật `IsTripDriverOrDispatcher`: Khi nhận Capability Token từ thiết bị di động, **chỉ chấp nhận `decode_driver_hashid`**. Tuyệt đối từ chối nếu người dùng truyền `tracking_token`, ngăn chặn hoàn toàn việc gọi API ghi dữ liệu (milestone, expense, document, incident) từ link khách hàng.
+- **`apps/dispatch/models.py`:**
+  - Bổ sung 2 dynamic properties trên `DispatchTrip`:
+    + `trip.driver_hashid`: Mã hóa Capability Token riêng cho tài xế (`/driver/<driver_token>/`).
+    + `trip.tracking_hashid`: Mã hóa Capability Token riêng cho khách hàng (`/tracking/<tracking_token>/`).
+- **`apps/dispatch/views.py`:**
+  - `driver_portal_view(request, trip_hash)`:
+    + Chỉ giải mã bằng `decode_driver_hashid`. Nếu không khớp, trả về HTTP 404 Not Found.
+    + **Chặn hoàn toàn** việc dùng mã chuyến xe thô `trip_code` công khai (chống IDOR Enumeration Scraping).
+  - `public_tracking_view(request, trip_hash)`:
+    + Chỉ giải mã bằng `decode_tracking_hashid`. Khách hàng cầm tracking token đổi sang `/driver/` sẽ bị chặn 404.
+    + **Loại bỏ hoàn toàn tracklog 10 bước nội bộ và các lộ trình bãi rỗng**.
+    + Chuẩn hóa **3 mốc giao nhận B2B cốt lõi**:
+      1. *Tiếp nhận & Vận chuyển:* Xe đang di chuyển trên tuyến.
+      2. *Đã đến kho giao hàng:* Xe đã cập bãi/cổng kho khách hàng (`destination_warehouse`).
+      3. *Giao hàng thành công (Ký nhận POD):* Hoàn tất dỡ hàng và bàn giao chứng từ có chữ ký xác nhận của thủ kho.
+    + Chỉ hiển thị chứng từ `DocumentType.POD` (Biên bản bàn giao hàng có chữ ký số/ảnh chụp).
+- **`templates/public_tracking.html`:**
+  - Tái thiết kế giao diện theo tiêu chuẩn B2B Cargo Tracking quốc tế:
+    + Thông tin định danh: Số Container, Loại Cont (40HC/20GP), Số Chì (Seal), Xe Giao Hàng (Biển số xe đầu kéo để bảo vệ đối chiếu), Kho Giao Nhận.
+    + Thẻ Tiến Độ 3 mốc trực quan kèm thời gian thực tế.
+    + Khối Bằng chứng giao hàng điện tử (E-POD) kèm ảnh gốc phóng to.
+    + Ẩn hoàn toàn các thông tin nội bộ: Hãng tàu, bãi rỗng, cảng lấy vỏ, chi phí, doanh thu.
+- **`static/js/app.js`:**
+  - Tách biệt 2 hàm sinh link:
+    + `copyDriverPortalLink`: Tạo URL dạng `/driver/<driver_hashid>/`.
+    + `copyCustomerTrackingLink`: Tạo URL dạng `/tracking/<tracking_hashid>/`.
+  - Tinh giản bản tin sao chép gửi Khách hàng qua Zalo/Email: Chỉ cung cấp Mã chuyến, Số Container, Số Chì, Kho Giao Hàng và Link tra cứu, loại bỏ hoàn toàn các điểm lấy/hạ vỏ cont nội bộ.
+- **Kiểm Thử Đơn Vị (`core/tests.py`):**
+  - Bổ sung unit test `test_driver_and_tracking_tokens_isolation_and_customer_view`.
+  - Bộ kiểm thử toàn diện: **56/56 unit tests PASSED 100%**.
+
+---
+
 ## [2.1.0] - 2026-09-28 (Chuẩn Hóa Trọng Tâm Nghiệp Vụ Kế Toán: Đưa Sổ Quỹ Thu - Chi Lên Vị Trí Số 1)
 
 ### 1. Bối Cảnh Nghiệp Vụ:

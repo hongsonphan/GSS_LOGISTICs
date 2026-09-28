@@ -213,11 +213,11 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
         if request.user and request.user.is_authenticated:
             return True
 
-        # Hỗ trợ Capability Token từ URL hoặc Header cho Trang Tài Xế Mobile
+        # Hỗ trợ Capability Token từ URL hoặc Header cho Trang Tài Xế Mobile (Chỉ chấp nhận Driver Token)
         trip_identifier = view.kwargs.get('trip_code') or request.headers.get('X-Trip-Hash') or request.GET.get('trip_hash')
         if trip_identifier:
-            from core.security import decode_trip_hashid
-            decoded_id = decode_trip_hashid(trip_identifier)
+            from core.security import decode_driver_hashid, decode_trip_hashid
+            decoded_id = decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier)
             if decoded_id:
                 return True
         return False
@@ -241,11 +241,11 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
                 return True
             return False
 
-        # Kiểm tra Capability Token chống IDOR cho tài xế truy cập trực tiếp
+        # Kiểm tra Capability Token chống IDOR cho tài xế truy cập trực tiếp (Tuyệt đối không nhận Tracking Token)
         trip_identifier = view.kwargs.get('trip_code') or request.headers.get('X-Trip-Hash') or request.GET.get('trip_hash')
         if trip_identifier:
-            from core.security import decode_trip_hashid
-            decoded_id = decode_trip_hashid(trip_identifier)
+            from core.security import decode_driver_hashid, decode_trip_hashid
+            decoded_id = decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier)
             if decoded_id and decoded_id == obj.id:
                 return True
 

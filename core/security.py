@@ -7,8 +7,10 @@ DEFAULT_SALT = getattr(settings, 'HASHIDS_SALT', 'BIM_LOGISTICS_SECURE_SALT_2026
 ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
 MIN_LENGTH = 8
 
-# Singleton Hashids instances theo domain nghiệp vụ
+# Singleton Hashids instances theo domain nghiệp vụ (Phân tách bảo mật đa phân hệ)
 _TRIP_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TRIP", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_DRIVER_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_DRIVER", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_TRACKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TRACKING", min_length=MIN_LENGTH, alphabet=ALPHABET)
 _BOOKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_BOOKING", min_length=MIN_LENGTH, alphabet=ALPHABET)
 _QUOTATION_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_QUOTATION", min_length=MIN_LENGTH, alphabet=ALPHABET)
 _EXPENSE_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_EXPENSE", min_length=MIN_LENGTH, alphabet=ALPHABET)
@@ -18,7 +20,11 @@ def encode_id(number: int, domain: str = 'TRIP') -> str:
     """Mã hóa số nguyên ID thành chuỗi HashID bảo mật chống IDOR."""
     if not isinstance(number, int) or number < 0:
         return ''
-    if domain == 'BOOKING':
+    if domain == 'DRIVER':
+        return _DRIVER_HASHIDS.encode(number)
+    elif domain == 'TRACKING':
+        return _TRACKING_HASHIDS.encode(number)
+    elif domain == 'BOOKING':
         return _BOOKING_HASHIDS.encode(number)
     elif domain == 'QUOTATION':
         return _QUOTATION_HASHIDS.encode(number)
@@ -32,7 +38,11 @@ def decode_id(hashid_str: str, domain: str = 'TRIP') -> int | None:
     if not hashid_str or not isinstance(hashid_str, str):
         return None
     try:
-        if domain == 'BOOKING':
+        if domain == 'DRIVER':
+            numbers = _DRIVER_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'TRACKING':
+            numbers = _TRACKING_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'BOOKING':
             numbers = _BOOKING_HASHIDS.decode(hashid_str.strip())
         elif domain == 'QUOTATION':
             numbers = _QUOTATION_HASHIDS.decode(hashid_str.strip())
@@ -49,13 +59,33 @@ def decode_id(hashid_str: str, domain: str = 'TRIP') -> int | None:
 
 
 def get_trip_hashid(trip_id: int) -> str:
-    """Helper mã hóa ID chuyến xe."""
+    """Helper mã hóa ID chuyến xe chung (Internal)."""
     return encode_id(trip_id, domain='TRIP')
 
 
 def decode_trip_hashid(hashid_str: str) -> int | None:
-    """Helper giải mã HashID chuyến xe."""
+    """Helper giải mã HashID chuyến xe chung."""
     return decode_id(hashid_str, domain='TRIP')
+
+
+def get_driver_hashid(trip_id: int) -> str:
+    """Helper mã hóa Capability Token dành riêng cho Cổng Tài Xế Mobile (Driver Portal)."""
+    return encode_id(trip_id, domain='DRIVER')
+
+
+def decode_driver_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã Capability Token Cổng Tài Xế Mobile."""
+    return decode_id(hashid_str, domain='DRIVER')
+
+
+def get_tracking_hashid(trip_id: int) -> str:
+    """Helper mã hóa Capability Token dành riêng cho Khách Hàng Tra Cứu (Customer Tracking)."""
+    return encode_id(trip_id, domain='TRACKING')
+
+
+def decode_tracking_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã Capability Token Khách Hàng Tra Cứu."""
+    return decode_id(hashid_str, domain='TRACKING')
 
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -100,7 +130,7 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         trip_identifier = request.headers.get('X-Trip-Hash') or request.META.get('HTTP_X_TRIP_HASH') or request.GET.get('trip_hash')
         if trip_identifier:
-            if decode_trip_hashid(trip_identifier):
+            if decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier):
                 return
         return super().enforce_csrf(request)
 
