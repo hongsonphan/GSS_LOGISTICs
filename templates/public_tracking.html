@@ -123,19 +123,23 @@
             {% endif %}
           </div>
           <div class="flex-1">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-              <div>
-                <h3 class="text-xs sm:text-sm font-bold {% if m.is_done %}text-slate-900{% elif m.is_active %}text-amber-800 font-extrabold{% else %}text-slate-400{% endif %}">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="pr-2">
+                <h3 class="text-sm sm:text-base font-bold {% if m.is_done %}text-slate-900{% elif m.is_active %}text-amber-800 font-extrabold{% else %}text-slate-400{% endif %}">
                   {{ m.title }}
                 </h3>
-                <p class="text-[11px] {% if m.is_done %}text-slate-500{% elif m.is_active %}text-amber-700 font-medium{% else %}text-slate-400{% endif %} mt-0.5">
+                <p class="text-xs {% if m.is_done %}text-slate-500{% elif m.is_active %}text-amber-700 font-medium{% else %}text-slate-400{% endif %} mt-0.5">
                   {{ m.desc }}
                 </p>
               </div>
               {% if m.time %}
-              <span class="text-[11px] font-mono font-medium {% if m.is_done %}text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md{% elif m.is_active %}text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md font-bold{% else %}text-slate-400{% endif %}">
-                {{ m.time }}
-              </span>
+              <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-black font-mono tracking-tight shrink-0 self-start sm:self-center shadow-2xs border
+                {% if m.is_done %}bg-teal-50 text-teal-900 border-teal-200
+                {% elif m.is_active %}bg-amber-50 text-amber-900 border-amber-300 font-black animate-pulse
+                {% else %}bg-slate-100 text-slate-400 border-slate-200{% endif %}">
+                <i class="ph-bold ph-clock text-sm text-teal-600"></i>
+                <span>{{ m.time }}</span>
+              </div>
               {% endif %}
             </div>
           </div>

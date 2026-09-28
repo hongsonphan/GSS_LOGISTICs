@@ -2,21 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [2.2.0] - 2026-09-28 (Nâng Cấp Bảo Mật Toàn Diện Cổng Tra Cứu Khách Hàng & Mobile Tài Xế: Phân Tách Capability Token & Chuẩn Hóa 6 Mốc Giao Nhận B2B)
+## [2.2.0] - 2026-09-28 (Nâng Cấp Bảo Mật Cổng Tra Cứu Khách Hàng & Mobile Tài Xế: Phân Tách Capability Token, Chuẩn Hóa 6 Mốc B2B, Định Dạng Phần Ngàn & Phóng To Giờ Hành Trình)
 
 ### 1. Bối Cảnh Nghiệp Vụ & Phát Hiện Bảo Mật:
 - **Yêu cầu & Phản hồi Người dùng:**
   1. Rà soát và vá lỗ hổng dùng chung mã HashID (`trip_hash`) giữa link Tài xế (`/driver/<hash>/`) và link Khách hàng (`/tracking/<hash>/`), ngăn chặn triệt để nguy cơ khách hàng hoặc người ngoài đổi URL sang `/driver/` để xem thông tin nội bộ, số điện thoại tài xế, tờ khai hải quan, hoặc can thiệp kê khống chi phí/báo mốc giả.
   2. Tinh giản nhưng phải đầy đủ thông tin để Khách hàng an tâm theo dõi lô hàng: Không quá chi tiết như tài xế (bỏ 10 bước tracklog nội bộ: lấy vỏ, hạ rỗng, trút hàng lên dock, chốt sổ kế toán...) nhưng không được quá gọn khiến thiếu thông tin.
-  3. Chuẩn hóa bộ **6 mốc tiến độ B2B chuyên nghiệp**, linh hoạt theo từng tình huống vận chuyển (Hàng Nhập, Hàng Xuất, Nội Địa):
-     - *1. Tiếp nhận đơn*
-     - *2. Đã điều xe*
-     - *3. Đã nhận hàng / Đã đến kho hàng* (Linh hoạt: Nhập lấy hàng tại cảng; Xuất/Nội địa đến kho bốc hàng)
-     - *4. Đang vận chuyển / Đã nhận hàng*
-     - *5. Đã đến kho hàng / Đang vận chuyển*
-     - *6. Đã giao thành công (Ký nhận POD)*
+  3. Chuẩn hóa bộ **6 mốc tiến độ B2B chuyên nghiệp**, linh hoạt theo từng tình huống vận chuyển (Hàng Nhập, Hàng Xuất, Nội Địa).
+  4. **Chuẩn hóa định dạng số tiền có phân cách hàng ngàn (Hình 1, 2, 3):**
+     - Sửa toàn bộ số tiền chi phí (`1265000 đ` ➔ `1.265.000 đ`, `200000 đ` ➔ `200.000 đ`, `550000 đ` ➔ `550.000 đ`...)
+     - Sửa số tiền tạm ứng chuyến (`2000000 đ` ➔ `2.000.000 đ`).
+     - Chuẩn hóa form kê khai: placeholder `Ví dụ: 35.000`, live preview số tiền khi tài xế gõ, các nút chọn nhanh `35.000 đ`, `50.000 đ`, `100.000 đ`, `200.000 đ`, `500.000 đ`.
+  5. **Phóng to thông tin giờ hành trình (Hình 4, 5):**
+     - Tiến độ giao nhận khách hàng (`public_tracking.html`): Chữ giờ phóng to (`text-xs sm:text-sm font-black font-mono`), badge có viền tương phản cao và icon đồng hồ.
+     - Nhật ký mốc tài xế (`driver_portal.html`): Chữ giờ phóng to (`text-xs sm:text-sm font-bold font-mono`), màu teal nổi bật, dễ đọc khi đang lái xe.
 
 ### 2. Các Thay Đổi Kiến Trúc Kỹ Thuật Đã Triển Khai:
+- **`core/templatetags/currency_filters.py`:**
+  - Khởi tạo bộ lọc `format_money` và `money_vnd` hỗ trợ format số tiền phân cách hàng ngàn bằng dấu chấm chuẩn Việt Nam (`1.265.000 đ`, `2.000.000 đ`, `35.000 đ`).
 - **`core/security.py`:**
   - Khởi tạo 2 Singleton Hashids riêng biệt với salt độc lập:
     + `_DRIVER_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_DRIVER", min_length=8, alphabet=ALPHABET)`
@@ -31,6 +34,7 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
     + `trip.tracking_hashid`: Mã hóa Capability Token riêng cho khách hàng (`/tracking/<tracking_token>/`).
 - **`apps/dispatch/timeline_service.py`:**
   - Bổ sung hàm `build_customer_milestones(trip)`: Xây dựng chuẩn xác 6 mốc tiến độ theo đúng ngữ cảnh thực tế của chuyến hàng (Import, Export, Domestic), tự động tính toán trạng thái `is_done`, `is_active` và thời gian từng mốc dựa trên máy trạng thái và các mốc thực tế.
+  - Sắp xếp ưu tiên thời gian mốc giao thành công theo thứ tự hợp lý (`t_gate_out or t_map.get(8) or t_pod`).
 - **`apps/dispatch/views.py`:**
   - `driver_portal_view(request, trip_hash)`:
     + Chỉ giải mã bằng `decode_driver_hashid`. Nếu không khớp, trả về HTTP 404 Not Found.
@@ -39,12 +43,15 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
     + Chỉ giải mã bằng `decode_tracking_hashid`. Khách hàng cầm tracking token đổi sang `/driver/` sẽ bị chặn 404.
     + Tích hợp `build_customer_milestones(trip)` hiển thị 6 mốc tiến độ trực quan.
     + Chỉ hiển thị chứng từ `DocumentType.POD` (Biên bản bàn giao hàng có chữ ký số/ảnh chụp).
+- **`templates/driver_portal.html`:**
+  - Áp dụng `format_money` cho Tạm ứng chuyến (`2.000.000 đ`), Tổng chi phí (`1.265.000 đ`), từng khoản mục chi phí (`200.000 đ`, `550.000 đ`, `480.000 đ`, `35.000 đ`).
+  - Nâng cấp modal kê chi phí: placeholder `Ví dụ: 35.000`, live preview `👉 35.000 đ`, nút chọn tiền nhanh có định dạng phần ngàn.
+  - Phóng to chữ giờ trong Nhật ký mốc thời gian (`text-xs sm:text-sm font-bold font-mono`).
 - **`templates/public_tracking.html`:**
-  - Tái thiết kế giao diện theo tiêu chuẩn B2B Cargo Tracking quốc tế:
-    + Thông tin định danh: Số Container, Loại Cont (40HC/20GP), Số Chì (Seal), Xe Vận Chuyển, Kho Giao Nhận.
-    + Thẻ Tiến Độ 6 mốc trực quan kèm thời gian thực tế và icon trạng thái (xong, đang chạy, chờ).
-    + Khối Bằng chứng giao hàng điện tử (E-POD) kèm ảnh gốc phóng to.
-    + Ẩn hoàn toàn các thông tin nội bộ: Hãng tàu, bãi rỗng, cảng lấy vỏ, chi phí, doanh thu.
+  - Phóng to chữ giờ trong Tiến độ vận chuyển & giao nhận (`text-xs sm:text-sm font-black font-mono`), badge có viền tương phản cao và icon đồng hồ trực quan.
+- **Kiểm Thử Đơn Vị (`core/tests.py`):**
+  - Bổ sung unit test `test_currency_filters_thousands_separator` và cập nhật kiểm thử 6 mốc khách hàng.
+  - Bộ kiểm thử toàn diện: **57/57 unit tests PASSED 100%**.
 - **`static/js/app.js`:**
   - Tách biệt 2 hàm sinh link:
     + `copyDriverPortalLink`: Tạo URL dạng `/driver/<driver_hashid>/`.

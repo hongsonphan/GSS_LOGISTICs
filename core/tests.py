@@ -2123,6 +2123,18 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertEqual(milestones[4]['title'], 'Đã đến kho hàng')
         self.assertEqual(milestones[5]['title'], 'Đã giao thành công')
 
+    def test_currency_filters_thousands_separator(self):
+        """Kiểm tra bộ lọc định dạng số có phần ngàn chuẩn Việt Nam."""
+        from core.templatetags.currency_filters import format_money, money_vnd
+        self.assertEqual(format_money(1265000), '1.265.000')
+        self.assertEqual(format_money(2000000), '2.000.000')
+        self.assertEqual(format_money(35000), '35.000')
+        self.assertEqual(format_money(0), '0')
+        self.assertEqual(format_money(None), '0')
+        self.assertEqual(format_money('550000'), '550.000')
+        self.assertEqual(money_vnd(35000), '35.000 đ')
+
+
 
 
 

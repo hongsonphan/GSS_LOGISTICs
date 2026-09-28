@@ -305,7 +305,7 @@ def build_customer_milestones(trip: DispatchTrip):
 
         m6_done = (trip.status in [TripStatus.DELIVERED, TripStatus.COMPLETED]) or has_pod
         m6_active = (trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING]) and not m6_done
-        m6_time = t_pod or t_gate_out or t_map.get(8) or ''
+        m6_time = t_gate_out or t_map.get(8) or t_pod or ''
 
         milestones = [
             {
@@ -382,7 +382,7 @@ def build_customer_milestones(trip: DispatchTrip):
 
         m6_done = (trip.status in [TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]) or has_pod
         m6_active = (trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING]) and not m6_done
-        m6_time = t_pod or t_gate_out or t_map.get(8) or ''
+        m6_time = t_gate_out or t_map.get(8) or t_pod or ''
 
         milestones = [
             {
