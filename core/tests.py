@@ -1978,6 +1978,98 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertEqual(trip.status, TripStatus.DELIVERED)
         self.assertTrue(trip.documents.filter(document_type=DocumentType.POD).exists())
 
+    def test_reports_10_and_11_advances_and_expenses(self):
+        """
+        Kiểm tra tính năng Báo Cáo 10 (Quỹ Tạm Ứng Điều Vận - Kế toán QL) 
+        và Báo Cáo 11 (Tạm Ứng & Chi Phí Phát Sinh Tài Xế - Điều Vận QL).
+        """
+        from apps.billing.models import (
+            DispatcherAdvanceFund, DriverTripAdvance, FundStatus,
+            DriverAdvanceStatus, AdvanceSourceType, SettlementDiffType,
+            ExpenseCategory, ApprovalStatus, TripExpense
+        )
+
+        today = datetime.date.today()
+
+        # 1. Tạo gói Quỹ Điều Vận (Cấp 1)
+        fund = DispatcherAdvanceFund.objects.create(
+            code="TUDV-TEST-0001",
+            dispatcher=self.dispatcher,
+            amount=10000000,
+            advance_date=today,
+            purpose="Quỹ điều vận test kiểm thử",
+            status=FundStatus.APPROVED,
+            approved_by=self.director
+        )
+
+        # 2. Tạo Chuyến Xe & Tạm Ứng Chuyến Cho Tài Xế (Cấp 2)
+        trip = DispatchTrip.objects.create(
+            trip_code="TRIP-ADV-TEST-001",
+            customer=self.customer,
+            driver=self.driver,
+            vehicle=self.vehicle,
+            loading_date=today,
+            status=TripStatus.DISPATCHED,
+            driver_advance_amount=2000000,
+            advance_settlement_status='ADVANCED'
+        )
+
+        advance = DriverTripAdvance.objects.create(
+            code="TUTX-TEST-0001",
+            trip=trip,
+            driver=self.driver,
+            dispatcher_fund=fund,
+            advance_source=AdvanceSourceType.DISPATCHER_FUND,
+            amount=2000000,
+            advance_date=today,
+            status=DriverAdvanceStatus.ADVANCED
+        )
+
+        # 3. Tạo Chi Phí Phát Sinh Hiện Trường (TripExpense: BOT + Hạ Cont)
+        TripExpense.objects.create(
+            trip=trip,
+            driver=self.driver,
+            category=ExpenseCategory.TOLL_FEE,
+            amount=500000,
+            notes="Vé BOT kiểm thử",
+            status=ApprovalStatus.APPROVED
+        )
+        TripExpense.objects.create(
+            trip=trip,
+            driver=self.driver,
+            category=ExpenseCategory.LIFT_OFF,
+            amount=600000,
+            notes="Hạ cont kiểm thử",
+            status=ApprovalStatus.APPROVED
+        )
+
+        # 4. Kiểm tra gọi API Báo Cáo
+        self.client.force_login(self.director_user)
+        res = self.client.get('/api/reports/?period=all')
+        self.assertEqual(res.status_code, 200)
+
+        data = res.json()
+        self.assertIn('report10_dispatcher_funds', data)
+        self.assertIn('report11_driver_advances_expenses', data)
+
+        # Kiểm tra Báo Cáo 10
+        r10 = data['report10_dispatcher_funds']
+        self.assertGreaterEqual(r10['total_funds_granted'], 10000000)
+        self.assertGreaterEqual(len(r10['funds']), 1)
+        found_fund = any(f['code'] == 'TUDV-TEST-0001' for f in r10['funds'])
+        self.assertTrue(found_fund)
+
+        # Kiểm tra Báo Cáo 11
+        r11 = data['report11_driver_advances_expenses']
+        self.assertGreaterEqual(len(r11['trips']), 1)
+        test_trip_report = next((t for t in r11['trips'] if t['trip_code'] == 'TRIP-ADV-TEST-001'), None)
+        self.assertIsNotNone(test_trip_report)
+        self.assertEqual(test_trip_report['advance_amount'], 2000000)
+        self.assertEqual(test_trip_report['actual_expenses'], 1100000)
+        self.assertEqual(test_trip_report['difference'], 900000)
+        self.assertEqual(test_trip_report['settlement_action'], 'REFUND')
+        self.assertEqual(test_trip_report['status_label'], 'Đang tạm ứng')
+
 
 
 

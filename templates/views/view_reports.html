@@ -11,7 +11,7 @@
                 <span class="text-xs text-slate-400 font-medium">Báo cáo kiểm toán & Phân tích chuyên sâu</span>
             </div>
             <h2 class="text-2xl font-black text-slate-900 font-heading tracking-tight mt-1">Báo Cáo Quản Trị Vận Tải & Phân Tích Hiệu Suất</h2>
-            <p class="text-xs text-slate-500 font-medium mt-0.5">Giám sát 9 trụ cột cốt lõi: Hiệu suất xe, Cảnh báo DEM/DET & Hãng tàu, Tỷ lệ OTP, Thu hồi chi hộ, Cắt kéo/Lưu xe sau 0h, Sự cố OS&D, Phân tích Doanh thu Khách/TEU, Quyết toán Xe Thầu Phụ 3PL và Bảng Lương Chuyến Tài Xế</p>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">Giám sát 11 trụ cột cốt lõi: Hiệu suất xe, Cảnh báo DEM/DET & Hãng tàu, Tỷ lệ OTP, Thu hồi chi hộ, Cắt kéo/Lưu xe sau 0h, Sự cố OS&D, Phân tích Doanh thu Khách/TEU, Quyết toán Thầu Phụ 3PL, Lương Chuyến Tài Xế, Quỹ Tạm Ứng Điều Vận (Kế Toán QL) và Tạm Ứng & Chi Phí Tài Xế (Điều Vận QL)</p>
         </div>
 
         <!-- Cụm Bộ Lọc Kỳ Báo Cáo & Nút Xuất Dữ Liệu -->
@@ -39,7 +39,7 @@
         </div>
     </div>
 
-    <!-- THANH SUBTABS: 9 BÁO CÁO QUẢN TRỊ CHUẨN TMS -->
+    <!-- THANH SUBTABS: 11 BÁO CÁO QUẢN TRỊ CHUẨN TMS -->
     <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap gap-2">
         <button id="report-tab-btn-1" onclick="switchReportSubTab('report-1')" class="report-subtab-btn active px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all bg-teal-700 text-white shadow-sm">
             <i class="ph-fill ph-truck text-sm"></i>
@@ -78,6 +78,16 @@
         <button id="report-tab-btn-9" onclick="switchReportSubTab('report-9')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
             <i class="ph-fill ph-identification-badge text-sm"></i>
             <span>9. Lương Chuyến & Tài Xế</span>
+        </button>
+        <button id="report-tab-btn-10" onclick="switchReportSubTab('report-10')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-wallet text-sm"></i>
+            <span>10. Quỹ Tạm Ứng Điều Vận (Kế Toán QL)</span>
+            <span id="badge-report-fund-count" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-700">0</span>
+        </button>
+        <button id="report-tab-btn-11" onclick="switchReportSubTab('report-11')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-fill ph-hand-coins text-sm"></i>
+            <span>11. Tạm Ứng & Chi Phí Tài Xế (Điều Vận QL)</span>
+            <span id="badge-report-driver-adv-pending" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">0</span>
         </button>
     </div>
 
@@ -683,6 +693,155 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep9-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 10: QUỸ TẠM ỨNG ĐIỀU VẬN - DO KẾ TOÁN QUẢN LÝ (DISPATCHER FUNDS) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-10" class="report-subtab-content space-y-4 hidden">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Quỹ Công Ty Cấp</span>
+                <p class="text-3xl font-black text-indigo-800 tabular-nums font-heading mt-1" id="rep10-stat-funds-granted">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep10-stat-funds-count">0 gói quỹ đang lưu hành</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Trích Cấp Cho Xe</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep10-stat-disbursed">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Đã giải ngân tạm ứng cho các chuyến xe</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Quyết Toán / Hoàn Ứng</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep10-stat-settled">0 đ</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1" id="rep10-stat-refunds">Thu hồi tiền thừa: 0 đ</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Số Dư Quỹ Khả Dụng Còn Lại</span>
+                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="rep10-stat-balance">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Sẵn sàng điều vận & cấp tạm ứng tài xế</p>
+            </div>
+        </div>
+
+        <!-- Bảng Quản Trị Quỹ Tạm Ứng Điều Vận -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                        <i class="ph-fill ph-wallet text-indigo-700"></i>
+                        Sổ Theo Dõi Tạm Ứng & Hoàn Ứng Quỹ Điều Vận (Kế Toán Quản Lý)
+                    </h3>
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        Cấp 1: Cty ➔ Điều Vận
+                    </span>
+                </div>
+                <input type="text" id="filter-rep10-search" oninput="applyReport10Filters()" placeholder="Tìm điều phối viên, mã phiếu quỹ, ghi chú..." 
+                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th onclick="toggleReport10Sort('code')" class="cursor-pointer">Mã Phiếu Quỹ</th>
+                            <th onclick="toggleReport10Sort('dispatcher_name')" class="cursor-pointer">Điều Phối Viên</th>
+                            <th onclick="toggleReport10Sort('advance_date')" class="cursor-pointer text-center">Ngày Cấp</th>
+                            <th onclick="toggleReport10Sort('amount')" class="cursor-pointer text-right">Hạn Mức Quỹ (VNĐ)</th>
+                            <th onclick="toggleReport10Sort('disbursed_amount')" class="cursor-pointer text-right">Đã Trích Cho Xe</th>
+                            <th class="text-center w-28">Tỷ Lệ Giải Ngân</th>
+                            <th class="text-right">Đã Quyết Toán</th>
+                            <th class="text-right">Tiền Thừa Trả Lại</th>
+                            <th onclick="toggleReport10Sort('remaining_balance')" class="cursor-pointer text-right font-black text-teal-800">Số Dư Còn Lại</th>
+                            <th class="text-center">Trạng Thái</th>
+                            <th>Người Duyệt</th>
+                            <th>Ghi Chú</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep10-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 11: TẠM ỨNG & CHI PHÍ PHÁT SINH TÀI XẾ - ĐIỀU VẬN QUẢN LÝ -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-11" class="report-subtab-content space-y-4 hidden">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Tạm Ứng Cấp Tài Xế</span>
+                <p class="text-3xl font-black text-indigo-800 tabular-nums font-heading mt-1" id="rep11-stat-advances">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep11-stat-pending-trips">0 chuyến đang tạm ứng</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chi Phí Phát Sinh Hiện Trường</span>
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading mt-1" id="rep11-stat-actual-expenses">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Vé BOT, nâng/hạ cont, cược vỏ, cân xe</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiền Thừa Tài Xế Phải Nộp</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep11-stat-refund-due">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Khoản tạm ứng nhiều hơn thực chi</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiền Vượt Ứng Cần Chi Bù</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep11-stat-reimburse-due">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Thực chi nhiều hơn tạm ứng</p>
+            </div>
+        </div>
+
+        <!-- Bảng Đối Soát Chi Tiết Tạm Ứng & Chi Phí Chuyến Xe -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                        <i class="ph-fill ph-hand-coins text-amber-600"></i>
+                        Bảng Đối Soát Tạm Ứng & Chi Phí Phát Sinh Từng Chuyến Xe (Điều Vận Quản Lý)
+                    </h3>
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        Cấp 2: Điều Vận ➔ Tài Xế
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="filter-rep11-status" onchange="applyReport11Filters()" class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 focus:border-teal-600">
+                        <option value="ALL">-- Tất cả trạng thái --</option>
+                        <option value="PENDING" selected>Đang tạm ứng (Chưa chốt)</option>
+                        <option value="SETTLED">Đã hoàn ứng quyết toán</option>
+                    </select>
+                    <input type="text" id="filter-rep11-search" oninput="applyReport11Filters()" placeholder="Tìm tài xế, biển số xe, mã chuyến, khách..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th onclick="toggleReport11Sort('trip_code')" class="cursor-pointer">Mã Chuyến / TUTX</th>
+                            <th onclick="toggleReport11Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
+                            <th>Tuyến Đường</th>
+                            <th onclick="toggleReport11Sort('driver_name')" class="cursor-pointer">Tài Xế & Biển Số</th>
+                            <th onclick="toggleReport11Sort('advance_date')" class="cursor-pointer text-center">Ngày Nhận</th>
+                            <th>Nguồn Tiền</th>
+                            <th onclick="toggleReport11Sort('advance_amount')" class="cursor-pointer text-right">Tạm Ứng (VNĐ)</th>
+                            <th onclick="toggleReport11Sort('actual_expenses')" class="cursor-pointer text-right">Chi Phí Thực Tế (VNĐ)</th>
+                            <th class="text-right">Phân Bổ Chi Phí (BOT / Nâng Hạ / Cược Cont)</th>
+                            <th onclick="toggleReport11Sort('difference')" class="cursor-pointer text-right font-black">Chênh Lệch Đối Soát</th>
+                            <th class="text-center">Phương Án</th>
+                            <th class="text-center">Trạng Thái</th>
+                            <th class="text-center">Chứng Từ</th>
+                            <th>Thời Điểm Hoàn Ứng</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep11-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
                 </table>

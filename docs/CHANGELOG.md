@@ -2,6 +2,45 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.0.0] - 2026-09-28 (Triển Khai Bộ Đôi Báo Cáo Quản Trị Tạm Ứng 2 Cấp: Báo Cáo 10 Quỹ Điều Vận & Báo Cáo 11 Tạm Ứng - Chi Phí Tài Xế)
+
+### 1. Bối Cảnh & Nhu Cầu Quản Trị Vận Tải:
+- **Yêu cầu người dùng:** Rà soát và thiết lập quy trình theo dõi tạm ứng & hoàn ứng 2 cấp chuẩn logistics:
+  1. *Cấp 1 - Quỹ Tạm Ứng Điều Vận:* Do Kế toán & Ban Giám đốc quản lý, giám sát các gói quỹ tiền mặt công ty cấp cho Điều phối viên, hạn mức cấp, số tiền đã trích giải ngân cho các chuyến xe, hoàn ứng quyết toán và số dư tiền mặt khả dụng hiện tại.
+  2. *Cấp 2 - Tạm Ứng & Chi Phí Phát Sinh Tài Xế:* Do Điều phối viên trực tiếp theo dõi & quản lý hàng ngày trên từng chuyến xe, đối soát chi tiết tiền tạm ứng đã phát vs chi phí phát sinh thực tế hiện trường (`TripExpense`: vé BOT, nâng hạ bãi cảng, cược vỏ cont, bồi dưỡng, cân xe...) vs chênh lệch thừa nộp lại hoặc thiếu bù thêm.
+- **Rà soát hiện trạng:**
+  - Hệ thống đã có model `DispatcherAdvanceFund` và `DriverTripAdvance` trong `apps/billing/models.py`.
+  - Phân hệ Báo cáo Quản trị BI (`ReportsAPIView` và `view_reports.html`) trước đây chỉ có 9 báo cáo, chưa hề có Báo Cáo 10 và Báo Cáo 11.
+  - Phân quyền API Tạm ứng trước đây (`AccountingAdvancesAPIView`) bị khóa chỉ cho `IsAccountant`, khiến Điều phối viên (`DISPATCHER`) bị chặn 403 không thể theo dõi hoặc hoàn ứng tài xế.
+
+### 2. Các Cải Tiến & Giải Pháp Kỹ Thuật Đã Triển Khai:
+- **`apps/dispatch/reports_api.py`:**
+  - Tích hợp **Báo Cáo 10 (`report10_dispatcher_funds`)**:
+    + Query `DispatcherAdvanceFund`, hỗ trợ lọc theo kỳ (Hôm nay, Tuần này, Tháng này, Quý này, Tất cả).
+    + Tính toán 4 KPIs: Tổng Quỹ Công Ty Cấp, Đã Trích Cấp Cho Xe, Đã Quyết Toán Hoàn Ứng, Số Dư Quỹ Khả Dụng Còn Lại.
+    + Bảo mật phân quyền: Kế toán & Giám đốc xem toàn bộ; Điều phối viên xem quỹ của chính mình để biết hạn mức số dư.
+  - Tích hợp **Báo Cáo 11 (`report11_driver_advances_expenses`)**:
+    + Query tất cả chuyến xe trong kỳ có phát sinh tạm ứng hoặc chi phí hiện trường (`TripExpense`).
+    + Tính toán 4 KPIs: Tổng Tạm Ứng Cấp Tài Xế, Chi Phí Phát Sinh Hiện Trường, Tiền Thừa Tài Xế Phải Nộp Lại (`diff > 0`), Tiền Vượt Ứng Cần Chi Bù Thêm (`diff < 0`).
+    + Bóc tách cơ cấu chi phí (Breakdown): BOT, Phí nâng/hạ cảng, Cược vỏ cont, Chi phí khác.
+    + Ghi nhận phương án xử lý đối soát (`REFUND`, `REIMBURSE`, `BALANCED`) và trạng thái hoàn ứng (`Đang tạm ứng`, `Đã hoàn ứng`).
+- **`apps/billing/advance_views.py`:**
+  - Cập nhật phân quyền cho `AccountingAdvancesAPIView` và `DriverAdvanceSettleAPIView` từ `IsAccountant` sang `IsDispatcherOrAccountant`, cho phép Điều phối viên có toàn quyền xem và chốt đối soát hoàn ứng chuyến xe cho tài xế.
+- **Giao diện Báo Cáo `templates/views/view_reports.html`:**
+  - Bổ sung 2 nút Subtabs: `report-tab-btn-10` (Icon `ph-wallet`, badge số quỹ) và `report-tab-btn-11` (Icon `ph-hand-coins`, badge số chuyến chờ hoàn ứng).
+  - Thiết kế bảng và 4 thẻ KPIs cho `subtab-report-10` và `subtab-report-11` theo tiêu chuẩn quốc tế ERP/BI hiện đại.
+- **JavaScript `static/js/app.js`:**
+  - Bổ sung hàm `renderReport10(data)`, `applyReport10Filters()`, `toggleReport10Sort(col)`.
+  - Bổ sung hàm `renderReport11(data)`, `applyReport11Filters()`, `toggleReport11Sort(col)`.
+  - Tự động đồng bộ với tính năng Xuất Excel UTF-8 BOM và In ấn báo cáo.
+- **Lệnh Khởi Tạo Dữ Liệu `seed_advances_data`:**
+  - Xây dựng command `python manage.py seed_advances_data` tạo dữ liệu thật 100% cho 2 gói Quỹ Điều Vận (25tr và 20tr), 6 phiếu tạm ứng chuyến TUTX và 18 khoản chi phí phát sinh thực tế.
+- **Bộ Kiểm Thử Đơn Vị:**
+  - Bổ sung `test_reports_10_and_11_advances_and_expenses` trong `core/tests.py`.
+  - Toàn bộ **55/55 unit tests PASSED 100%**.
+
+---
+
 ## [1.9.9] - 2026-09-28 (Rà Soát & Chuẩn Hóa 100% Số Liệu Thật Trên Tất Cả Báo Cáo TMS BI, Dashboard & Bảng Lương)
 
 ### 1. Bối Cảnh & Rà Soát Toàn Diện:

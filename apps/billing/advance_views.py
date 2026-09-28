@@ -27,11 +27,11 @@ from apps.personnel.models import Employee, Department, EmployeeRole
 class AccountingAdvancesAPIView(APIView):
     """
     API Tổng Hợp & Quản Trị Tạm Ứng - Hoàn Ứng 2 Cấp:
-    1. Quỹ Tạm Ứng Điều Vận (Công ty cấp cho Điều vận).
-    2. Tạm Ứng & Hoàn Ứng Theo Chuyến Cho Tài Xế.
+    1. Quỹ Tạm Ứng Điều Vận (Kế toán & Giám đốc quản lý).
+    2. Tạm Ứng & Hoàn Ứng Theo Chuyến Cho Tài Xế (Điều vận & Kế toán quản lý).
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [IsDispatcherOrAccountant]
 
     def get(self, request):
         today = timezone.now().date()
@@ -400,9 +400,9 @@ class DriverAdvanceCreateAPIView(APIView):
 
 
 class DriverAdvanceSettleAPIView(APIView):
-    """API Quyết Toán Hoàn Ứng Chuyến Cho Tài Xế (Đối Soát Thực Chi & Chênh Lệch)."""
+    """API Quyết Toán Hoàn Ứng Chuyến Cho Tài Xế (Điều Vận hoặc Kế Toán Đối Soát Thực Chi & Chênh Lệch)."""
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [IsDispatcherOrAccountant]
 
     def post(self, request, pk):
         advance = DriverTripAdvance.objects.filter(id=pk, is_deleted=False).select_related('trip', 'driver', 'dispatcher_fund').first()

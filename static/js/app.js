@@ -8793,6 +8793,24 @@ async function loadReportsData() {
                 : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
         }
 
+        const fundBadge = document.getElementById('badge-report-fund-count');
+        if (fundBadge && data.report10_dispatcher_funds) {
+            const activeFunds = data.report10_dispatcher_funds.active_funds_count || 0;
+            fundBadge.innerText = activeFunds;
+            fundBadge.className = activeFunds > 0
+                ? 'px-1.5 py-0.2 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-700'
+                : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
+        }
+
+        const drvAdvBadge = document.getElementById('badge-report-driver-adv-pending');
+        if (drvAdvBadge && data.report11_driver_advances_expenses) {
+            const pendingTrips = data.report11_driver_advances_expenses.pending_settlement_count || 0;
+            drvAdvBadge.innerText = pendingTrips;
+            drvAdvBadge.className = pendingTrips > 0
+                ? 'px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800'
+                : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
+        }
+
         // Render Báo cáo 1
         renderReport1(data);
 
@@ -8819,6 +8837,12 @@ async function loadReportsData() {
 
         // Render Báo cáo 9: Bảng Lương Chuyến & Năng Suất Tài Xế
         renderReport9(data);
+
+        // Render Báo cáo 10: Quỹ Tạm Ứng Điều Vận (Kế Toán Quản Lý)
+        renderReport10(data);
+
+        // Render Báo cáo 11: Tạm Ứng & Chi Phí Phát Sinh Tài Xế (Điều Vận Quản Lý)
+        renderReport11(data);
 
     } catch (err) {
         console.error('Lỗi khi tải dữ liệu báo cáo TMS:', err);
@@ -9571,6 +9595,278 @@ function toggleReport9Sort(col) {
         rep9SortAsc = false;
     }
     applyReport9Filters();
+}
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 10: QUỸ TẠM ỨNG ĐIỀU VẬN (KẾ TOÁN QUẢN LÝ)
+// -------------------------------------------------------------
+let rep10DataCache = [];
+let rep10SortCol = 'code';
+let rep10SortAsc = false;
+
+function renderReport10(data) {
+    const r10 = data.report10_dispatcher_funds || {};
+
+    const elGranted = document.getElementById('rep10-stat-funds-granted');
+    if (elGranted) elGranted.innerText = formatMoneyVND(r10.total_funds_granted || 0);
+
+    const elCount = document.getElementById('rep10-stat-funds-count');
+    if (elCount) elCount.innerText = `${r10.active_funds_count || 0} gói quỹ đang lưu hành · ${r10.settled_funds_count || 0} đã quyết toán`;
+
+    const elDisbursed = document.getElementById('rep10-stat-disbursed');
+    if (elDisbursed) elDisbursed.innerText = formatMoneyVND(r10.total_disbursed || 0);
+
+    const elSettled = document.getElementById('rep10-stat-settled');
+    if (elSettled) elSettled.innerText = formatMoneyVND(r10.total_settled_spent || 0);
+
+    const elRefunds = document.getElementById('rep10-stat-refunds');
+    if (elRefunds) elRefunds.innerText = `Thu hồi tiền thừa: ${formatMoneyVND(r10.total_refunds_returned || 0)}`;
+
+    const elBalance = document.getElementById('rep10-stat-balance');
+    if (elBalance) elBalance.innerText = formatMoneyVND(r10.remaining_balance_total || 0);
+
+    rep10DataCache = r10.funds || [];
+    applyReport10Filters();
+}
+
+function applyReport10Filters() {
+    const searchVal = (document.getElementById('filter-rep10-search')?.value || '').toLowerCase().trim();
+
+    let list = rep10DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.code || '').toLowerCase().includes(searchVal) ||
+               (item.dispatcher_name || '').toLowerCase().includes(searchVal) ||
+               (item.dispatcher_code || '').toLowerCase().includes(searchVal) ||
+               (item.notes || '').toLowerCase().includes(searchVal);
+    });
+
+    list.sort((a, b) => {
+        let valA = a[rep10SortCol];
+        let valB = b[rep10SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep10SortAsc ? -1 : 1;
+        if (valA > valB) return rep10SortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const tbody = document.getElementById('rep10-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy gói Quỹ Điều Vận nào trong kỳ</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        let statusBadge = '';
+        if (item.status === 'APPROVED') {
+            statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Đang lưu hành</span>';
+        } else if (item.status === 'SETTLED') {
+            statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã quyết toán</span>';
+        } else if (item.status === 'PENDING') {
+            statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Chờ duyệt xuất</span>';
+        } else {
+            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">${escapeHtml(item.status_label)}</span>`;
+        }
+
+        const utilPercent = Math.min(100, Math.max(0, item.utilization_rate || 0));
+        let barColor = 'bg-teal-600';
+        if (utilPercent > 85) barColor = 'bg-rose-500';
+        else if (utilPercent > 60) barColor = 'bg-amber-500';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-mono font-bold text-indigo-800 text-xs flex items-center gap-1.5">
+                    <i class="ph-bold ph-wallet text-indigo-600"></i>
+                    <span>${escapeHtml(item.code)}</span>
+                </td>
+                <td class="font-bold text-slate-800 text-xs">
+                    <div>${escapeHtml(item.dispatcher_name)}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.dispatcher_code)}</div>
+                </td>
+                <td class="text-center text-xs font-mono text-slate-600">${escapeHtml(item.advance_date)}</td>
+                <td class="text-right text-xs font-bold text-slate-900 tabular-nums">${formatMoneyVND(item.amount)}</td>
+                <td class="text-right text-xs font-bold text-amber-700 tabular-nums">${formatMoneyVND(item.disbursed_amount)}</td>
+                <td class="text-center align-middle">
+                    <div class="flex items-center gap-2 justify-center">
+                        <div class="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div class="${barColor} h-1.5 rounded-full" style="width: ${utilPercent}%"></div>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tabular-nums">${item.utilization_rate}%</span>
+                    </div>
+                </td>
+                <td class="text-right text-xs text-slate-700 tabular-nums">${formatMoneyVND(item.settled_amount)}</td>
+                <td class="text-right text-xs text-emerald-700 tabular-nums font-medium">${formatMoneyVND(item.refunds_returned)}</td>
+                <td class="text-right font-black text-teal-800 text-xs tabular-nums bg-teal-50/50">${formatMoneyVND(item.remaining_balance)}</td>
+                <td class="text-center text-xs">${statusBadge}</td>
+                <td class="text-xs text-slate-600">
+                    <div>${escapeHtml(item.approved_by || '-')}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.approved_at)}</div>
+                </td>
+                <td class="text-xs text-slate-500 max-w-xs truncate" title="${escapeHtml(item.notes || item.settlement_notes || '')}">
+                    ${escapeHtml(item.settlement_notes || item.notes || '-')}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleReport10Sort(col) {
+    if (rep10SortCol === col) {
+        rep10SortAsc = !rep10SortAsc;
+    } else {
+        rep10SortCol = col;
+        rep10SortAsc = false;
+    }
+    applyReport10Filters();
+}
+
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 11: TẠM ỨNG & CHI PHÍ PHÁT SINH TÀI XẾ (ĐIỀU VẬN QUẢN LÝ)
+// -------------------------------------------------------------
+let rep11DataCache = [];
+let rep11SortCol = 'trip_code';
+let rep11SortAsc = false;
+
+function renderReport11(data) {
+    const r11 = data.report11_driver_advances_expenses || {};
+
+    const elAdvances = document.getElementById('rep11-stat-advances');
+    if (elAdvances) elAdvances.innerText = formatMoneyVND(r11.total_driver_advances || 0);
+
+    const elPendingTrips = document.getElementById('rep11-stat-pending-trips');
+    if (elPendingTrips) elPendingTrips.innerText = `${r11.pending_settlement_count || 0} chuyến đang chờ hoàn ứng · ${r11.settled_count || 0} đã chốt`;
+
+    const elActualExp = document.getElementById('rep11-stat-actual-expenses');
+    if (elActualExp) elActualExp.innerText = formatMoneyVND(r11.total_actual_expenses || 0);
+
+    const elRefund = document.getElementById('rep11-stat-refund-due');
+    if (elRefund) elRefund.innerText = formatMoneyVND(r11.total_refund_due || 0);
+
+    const elReimburse = document.getElementById('rep11-stat-reimburse-due');
+    if (elReimburse) elReimburse.innerText = formatMoneyVND(r11.total_reimburse_due || 0);
+
+    rep11DataCache = r11.trips || [];
+    applyReport11Filters();
+}
+
+function applyReport11Filters() {
+    const searchVal = (document.getElementById('filter-rep11-search')?.value || '').toLowerCase().trim();
+    const statusVal = document.getElementById('filter-rep11-status')?.value || 'ALL';
+
+    let list = rep11DataCache.filter(item => {
+        // Lọc trạng thái
+        if (statusVal === 'PENDING' && item.is_settled) return false;
+        if (statusVal === 'SETTLED' && !item.is_settled) return false;
+
+        // Tìm kiếm từ khóa
+        if (!searchVal) return true;
+        return (item.trip_code || '').toLowerCase().includes(searchVal) ||
+               (item.advance_code || '').toLowerCase().includes(searchVal) ||
+               (item.driver_name || '').toLowerCase().includes(searchVal) ||
+               (item.license_plate || '').toLowerCase().includes(searchVal) ||
+               (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.route || '').toLowerCase().includes(searchVal);
+    });
+
+    list.sort((a, b) => {
+        let valA = a[rep11SortCol];
+        let valB = b[rep11SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep11SortAsc ? -1 : 1;
+        if (valA > valB) return rep11SortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const tbody = document.getElementById('rep11-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="14" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe nào phát sinh tạm ứng hoặc chi phí trong kỳ</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        let diffColor = 'text-slate-600';
+        let diffText = '0 đ';
+        if (item.difference > 0) {
+            diffColor = 'text-emerald-700 bg-emerald-50/70 font-black';
+            diffText = `+ ${formatMoneyVND(item.difference)}`;
+        } else if (item.difference < 0) {
+            diffColor = 'text-rose-700 bg-rose-50/70 font-black';
+            diffText = `- ${formatMoneyVND(item.difference_abs)}`;
+        }
+
+        let actionBadge = '';
+        if (item.settlement_action === 'REFUND') {
+            actionBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Tài xế nộp lại</span>';
+        } else if (item.settlement_action === 'REIMBURSE') {
+            actionBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Cty/ĐV chi bù</span>';
+        } else {
+            actionBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">Khớp đúng</span>';
+        }
+
+        const statusBadge = item.is_settled
+            ? '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 justify-center"><i class="ph-fill ph-check-circle"></i> Đã hoàn ứng</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 justify-center"><i class="ph-fill ph-clock"></i> Đang tạm ứng</span>';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-bold text-xs">
+                    <a href="javascript:void(0)" onclick="viewTripDetail('${escapeHtml(item.trip_code)}')" class="font-mono text-teal-800 hover:text-teal-900 underline flex items-center gap-1">
+                        <i class="ph-bold ph-truck"></i>
+                        <span>${escapeHtml(item.trip_code)}</span>
+                    </a>
+                    ${item.advance_code && item.advance_code !== '-' ? `<div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.advance_code)}</div>` : ''}
+                </td>
+                <td class="font-bold text-slate-800 text-xs">${escapeHtml(item.customer_name)}</td>
+                <td class="text-xs text-slate-600 max-w-[180px] truncate" title="${escapeHtml(item.route)}">${escapeHtml(item.route)}</td>
+                <td class="text-xs">
+                    <div class="font-bold text-slate-900 flex items-center gap-1">
+                        <i class="ph-fill ph-steering-wheel text-slate-500"></i>
+                        <span>${escapeHtml(item.driver_name)}</span>
+                    </div>
+                    <div class="text-[10px] font-mono font-bold text-teal-800 mt-0.5">${escapeHtml(item.license_plate)}</div>
+                </td>
+                <td class="text-center text-xs font-mono text-slate-600">${escapeHtml(item.advance_date)}</td>
+                <td class="text-xs text-slate-600">
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">${escapeHtml(item.advance_source)}</span>
+                </td>
+                <td class="text-right text-xs font-bold text-indigo-800 tabular-nums">${formatMoneyVND(item.advance_amount)}</td>
+                <td class="text-right text-xs font-bold text-rose-700 tabular-nums">${formatMoneyVND(item.actual_expenses)}</td>
+                <td class="text-right text-[11px] text-slate-600 tabular-nums">
+                    <span title="Vé cầu đường BOT" class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-medium">BOT: ${formatMoneyVND(item.bot_expense)}</span>
+                    <span title="Nâng / hạ bãi cảng" class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-medium ml-1">Cảng: ${formatMoneyVND(item.port_lift_expense)}</span>
+                    ${item.deposit_expense > 0 ? `<span title="Cược vỏ cont" class="px-1.5 py-0.5 bg-amber-50 rounded text-amber-800 font-medium ml-1">Cược: ${formatMoneyVND(item.deposit_expense)}</span>` : ''}
+                </td>
+                <td class="text-right text-xs tabular-nums ${diffColor} p-2 rounded">${diffText}</td>
+                <td class="text-center text-xs">${actionBadge}</td>
+                <td class="text-center text-xs">${statusBadge}</td>
+                <td class="text-center text-xs font-bold tabular-nums">
+                    ${item.documents_count > 0 
+                        ? `<span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 inline-flex items-center gap-1"><i class="ph-bold ph-receipt"></i> ${item.documents_count}</span>` 
+                        : '<span class="text-slate-300">-</span>'}
+                </td>
+                <td class="text-xs text-slate-500">
+                    <div>${escapeHtml(item.settled_by || '-')}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.settled_at)}</div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleReport11Sort(col) {
+    if (rep11SortCol === col) {
+        rep11SortAsc = !rep11SortAsc;
+    } else {
+        rep11SortCol = col;
+        rep11SortAsc = false;
+    }
+    applyReport11Filters();
 }
 
 // -------------------------------------------------------------

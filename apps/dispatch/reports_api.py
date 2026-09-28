@@ -11,7 +11,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.security import GracefulJWTAuthentication
 from core.permissions import CanViewOperationalReports
 from apps.dispatch.models import DispatchTrip, TripStatus, ShipmentType
-from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus
+from apps.billing.models import (
+    TripExpense, ExpenseCategory, ApprovalStatus,
+    DispatcherAdvanceFund, DriverTripAdvance, FundStatus,
+    DriverAdvanceStatus, AdvanceSourceType, SettlementDiffType
+)
 from apps.fleet.models import Vehicle, Trailer
 from apps.customers.models import Customer
 from apps.personnel.models import Employee, EmployeeRole
@@ -19,11 +23,11 @@ from apps.personnel.models import Employee, EmployeeRole
 
 class ReportsAPIView(APIView):
     """
-    API Báo Cáo Quản Trị & Thống Kê TMS Đa Chiều (6 Báo Cáo Chuẩn Kế Hoạch).
+    API Báo Cáo Quản Trị & Thống Kê TMS Đa Chiều (11 Báo Cáo Chuẩn Kế Hoạch).
     Hỗ trợ lọc theo Kỳ (Hôm nay, Tuần này, Tháng này, Quý này, Tất cả), Khách hàng, Xe.
     Phân quyền:
-    - Ban Giám Đốc (DIRECTOR) & Kế Toán (ACCOUNTANT): Toàn quyền xem P&L, doanh thu, lợi nhuận, chi phí.
-    - Điều Phối (DISPATCHER): Xem toàn bộ chỉ số vận hành nhưng BẢO MẬT (MASK) doanh thu, lợi nhuận và P&L.
+    - Ban Giám Đốc (DIRECTOR) & Kế Toán (ACCOUNTANT): Toàn quyền xem P&L, doanh thu, lợi nhuận, chi phí, quỹ điều vận.
+    - Điều Phối (DISPATCHER): Xem toàn bộ chỉ số vận hành, quản lý tạm ứng/chi phí tài xế, nhưng BẢO MẬT (MASK) doanh thu, lợi nhuận và P&L công ty.
     - Tài Xế (DRIVER) & Thợ Máy (MECHANIC): Bị từ chối (403 Forbidden).
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
@@ -52,17 +56,27 @@ class ReportsAPIView(APIView):
                     Q(loading_date__isnull=True, created_at__date=start_d)
                 )
 
+        start_d = None
+        end_d = None
         if period == 'today':
+            start_d = today
+            end_d = today
             date_filter &= make_date_range_q(today)
         elif period == 'week':
             start_week = today - datetime.timedelta(days=today.weekday())
+            start_d = start_week
+            end_d = today
             date_filter &= make_date_range_q(start_week, today)
         elif period == 'month':
             start_month = today.replace(day=1)
+            start_d = start_month
+            end_d = today
             date_filter &= make_date_range_q(start_month, today)
         elif period == 'quarter':
             quarter_start_month = ((today.month - 1) // 3) * 3 + 1
             start_quarter = today.replace(month=quarter_start_month, day=1)
+            start_d = start_quarter
+            end_d = today
             date_filter &= make_date_range_q(start_quarter, today)
 
         if customer_id:
@@ -72,7 +86,7 @@ class ReportsAPIView(APIView):
 
         trips_qs = DispatchTrip.objects.filter(date_filter).select_related(
             'customer', 'vehicle', 'driver', 'trailer', 'dropoff_driver', 'dropoff_vehicle', 'booking_order'
-        ).prefetch_related('expenses', 'event_logs', 'timeline_items', 'documents')
+        ).prefetch_related('expenses', 'event_logs', 'timeline_items', 'documents', 'driver_advances', 'driver_advances__settled_by')
 
         # Helper tính doanh thu / chi phí thực tế cho từng chuyến nếu cache chưa cập nhật
         def get_trip_financials(t):
@@ -770,9 +784,180 @@ class ReportsAPIView(APIView):
                 dp['layover_allowance'] = 0
                 dp['special_allowances'] = 0
                 dp['total_advances'] = 0
-                dp['net_salary'] = 0
+        # =============================================================
+        # 10. BÁO CÁO QUỸ TẠM ỨNG ĐIỀU VẬN (KẾ TOÁN & GIÁM ĐỐC QUẢN LÝ)
+        # =============================================================
+        fund_date_q = Q(is_deleted=False)
+        if start_d and end_d:
+            fund_date_q &= Q(advance_date__gte=start_d, advance_date__lte=end_d)
 
-        # Phản hồi JSON hoàn chỉnh cho 9 Báo Cáo Chuẩn Kế Hoạch
+        funds_qs = DispatcherAdvanceFund.objects.filter(fund_date_q).select_related(
+            'dispatcher', 'approved_by', 'settled_by'
+        ).prefetch_related('trip_advances').order_by('-advance_date', '-id')
+
+        # Nếu không có quyền tài chính toàn quyền (tức là Điều phối viên), chỉ xem quỹ cấp cho chính mình
+        if not can_view_finance and emp:
+            funds_qs = funds_qs.filter(dispatcher=emp)
+
+        total_funds_granted = 0
+        total_disbursed_funds = 0
+        total_settled_funds = 0
+        total_refunds_funds = 0
+        total_remaining_funds = 0
+        active_funds_count = 0
+        settled_funds_count = 0
+
+        funds_list = []
+        for f in funds_qs:
+            disbursed = int(f.total_disbursed)
+            settled_spent = int(f.total_settled_spent)
+            refunds = int(f.total_refunds_returned)
+            bal = int(f.remaining_balance)
+            f_amt = int(f.amount)
+
+            if f.status == FundStatus.APPROVED:
+                active_funds_count += 1
+                total_funds_granted += f_amt
+                total_disbursed_funds += disbursed
+                total_settled_funds += settled_spent
+                total_refunds_funds += refunds
+                total_remaining_funds += bal
+            elif f.status == FundStatus.SETTLED:
+                settled_funds_count += 1
+                total_funds_granted += f_amt
+                total_settled_funds += settled_spent
+
+            util_rate = round(disbursed / f_amt * 100, 1) if f_amt > 0 else 0.0
+
+            funds_list.append({
+                'id': f.id,
+                'code': f.code,
+                'dispatcher_name': (f.dispatcher.nickname or f.dispatcher.full_name) if f.dispatcher else 'Chưa gán',
+                'dispatcher_code': f.dispatcher.code if f.dispatcher else '-',
+                'amount': f_amt,
+                'advance_date': f.advance_date.strftime('%d/%m/%Y') if f.advance_date else '',
+                'purpose': f.purpose,
+                'status': f.status,
+                'status_label': f.get_status_display(),
+                'disbursed_amount': disbursed,
+                'settled_amount': settled_spent,
+                'refunds_returned': refunds,
+                'remaining_balance': bal,
+                'utilization_rate': util_rate,
+                'approved_by': (f.approved_by.nickname or f.approved_by.full_name) if f.approved_by else '',
+                'approved_at': f.approved_at.strftime('%d/%m/%Y %H:%M') if f.approved_at else '',
+                'settled_by': (f.settled_by.nickname or f.settled_by.full_name) if f.settled_by else '',
+                'settled_at': f.settled_at.strftime('%d/%m/%Y %H:%M') if f.settled_at else '',
+                'settlement_notes': f.settlement_notes or '',
+                'notes': f.notes or ''
+            })
+
+        # =============================================================
+        # 11. BÁO CÁO TẠM ỨNG & CHI PHÍ PHÁT SINH TÀI XẾ (ĐIỀU VẬN QUẢN LÝ)
+        # =============================================================
+        driver_advances_trips_data = []
+        total_driver_advances = 0
+        total_driver_actual_expenses = 0
+        total_driver_refund_due = 0
+        total_driver_reimburse_due = 0
+        pending_driver_settlement_count = 0
+        settled_driver_advances_count = 0
+
+        for t in trips_qs:
+            adv_records = list(t.driver_advances.filter(is_deleted=False))
+            adv_amount = sum(int(a.amount) for a in adv_records) if adv_records else int(t.driver_advance_amount or 0)
+
+            valid_expenses = [e for e in t.expenses.all() if not e.is_deleted and e.status != ApprovalStatus.REJECTED]
+            actual_exp = sum(int(e.amount) for e in valid_expenses)
+
+            # Bỏ qua nếu chuyến xe không có cả tạm ứng lẫn chi phí phát sinh
+            if adv_amount == 0 and actual_exp == 0:
+                continue
+
+            # Phân tách chi phí theo danh mục chuẩn Logistics
+            bot_exp = sum(int(e.amount) for e in valid_expenses if e.category in [ExpenseCategory.TOLL_FEE, ExpenseCategory.BOT_TOLL])
+            port_lift_exp = sum(int(e.amount) for e in valid_expenses if e.category in [ExpenseCategory.LIFT_ON, ExpenseCategory.LIFT_OFF, ExpenseCategory.LIFT_ON_OFF, ExpenseCategory.PORT_STORAGE])
+            deposit_exp = sum(int(e.amount) for e in valid_expenses if e.category == ExpenseCategory.CONTAINER_DEPOSIT)
+            other_exp = actual_exp - bot_exp - port_lift_exp - deposit_exp
+
+            diff = adv_amount - actual_exp
+
+            is_settled = False
+            adv_status = 'PENDING'
+            adv_code = '-'
+            adv_source_label = 'Quỹ Điều Vận'
+            fund_code = '-'
+            settled_at_str = ''
+            settled_by_name = ''
+
+            if adv_records:
+                primary_adv = adv_records[0]
+                adv_code = primary_adv.code
+                adv_source_label = primary_adv.get_advance_source_display()
+                if primary_adv.dispatcher_fund:
+                    fund_code = primary_adv.dispatcher_fund.code
+                adv_status = primary_adv.status
+                is_settled = (primary_adv.status == DriverAdvanceStatus.SETTLED)
+                if primary_adv.settled_at:
+                    settled_at_str = primary_adv.settled_at.strftime('%d/%m/%Y %H:%M')
+                if primary_adv.settled_by:
+                    settled_by_name = primary_adv.settled_by.nickname or primary_adv.settled_by.full_name
+            elif t.advance_settlement_status == 'SETTLED':
+                is_settled = True
+                adv_status = 'SETTLED'
+            elif adv_amount > 0:
+                adv_status = 'ADVANCED'
+
+            if is_settled:
+                settled_driver_advances_count += 1
+            else:
+                pending_driver_settlement_count += 1
+                total_driver_advances += adv_amount
+                total_driver_actual_expenses += actual_exp
+                if diff > 0:
+                    total_driver_refund_due += diff
+                elif diff < 0:
+                    total_driver_reimburse_due += abs(diff)
+
+            driver_name = t.driver.nickname or t.driver.full_name if t.driver else 'Chưa gán'
+            driver_code = t.driver.code if t.driver else '-'
+            driver_phone = getattr(t.driver, 'phone_number', '') or '-'
+            plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán'
+            cust_name = t.customer.name if t.customer else '-'
+
+            driver_advances_trips_data.append({
+                'trip_id': t.id,
+                'trip_code': t.trip_code,
+                'advance_code': adv_code,
+                'fund_code': fund_code,
+                'customer_name': cust_name,
+                'route': f"{t.pickup_location or t.pickup_loc or 'Kho nhận'} ➔ {t.warehouse_location or t.warehouse_loc or 'Kho giao'}",
+                'driver_name': driver_name,
+                'driver_code': driver_code,
+                'driver_phone': driver_phone,
+                'license_plate': plate,
+                'advance_date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else t.created_at.strftime('%d/%m/%Y'),
+                'advance_source': adv_source_label,
+                'advance_amount': adv_amount,
+                'actual_expenses': actual_exp,
+                'bot_expense': bot_exp,
+                'port_lift_expense': port_lift_exp,
+                'deposit_expense': deposit_exp,
+                'other_expense': other_exp,
+                'difference': diff,
+                'difference_abs': abs(diff),
+                'settlement_action': 'REFUND' if diff > 0 else ('REIMBURSE' if diff < 0 else 'BALANCED'),
+                'settlement_action_label': 'Tài xế nộp lại' if diff > 0 else ('Cty/ĐV bù thêm' if diff < 0 else 'Khớp đúng'),
+                'status': adv_status,
+                'status_label': 'Đã hoàn ứng' if is_settled else 'Đang tạm ứng',
+                'is_settled': is_settled,
+                'settled_at': settled_at_str,
+                'settled_by': settled_by_name,
+                'documents_count': t.documents.count() + len([e for e in valid_expenses if e.receipt_image]),
+                'notes': (t.special_notes or t.cargo_notes or '')
+            })
+
+        # Phản hồi JSON hoàn chỉnh cho 11 Báo Cáo Chuẩn Kế Hoạch
         data = {
             'period': period,
             'can_view_finance': can_view_finance,
@@ -792,7 +977,12 @@ class ReportsAPIView(APIView):
                 'estimated_fines_total': estimated_fines_total,
                 'total_system_teu': round(total_system_teu, 2),
                 'total_subcontractor_trips': total_subcontractor_trips,
-                'total_payroll_fund': total_payroll_fund
+                'total_payroll_fund': total_payroll_fund,
+                'total_dispatcher_funds': total_funds_granted,
+                'total_dispatcher_balance': total_remaining_funds,
+                'total_driver_advances': total_driver_advances,
+                'total_driver_actual_expenses': total_driver_actual_expenses,
+                'pending_driver_settlement_count': pending_driver_settlement_count
             },
             'report1_fleet_utilization': {
                 'total_tractors': Vehicle.objects.filter(is_deleted=False).count(),
@@ -861,6 +1051,25 @@ class ReportsAPIView(APIView):
                 'avg_salary_per_driver': avg_salary_per_driver,
                 'top_driver_name': top_driver_name,
                 'drivers': driver_payroll_list
+            },
+            'report10_dispatcher_funds': {
+                'total_funds_granted': total_funds_granted,
+                'total_disbursed': total_disbursed_funds,
+                'total_settled_spent': total_settled_funds,
+                'total_refunds_returned': total_refunds_funds,
+                'remaining_balance_total': total_remaining_funds,
+                'active_funds_count': active_funds_count,
+                'settled_funds_count': settled_funds_count,
+                'funds': funds_list
+            },
+            'report11_driver_advances_expenses': {
+                'total_driver_advances': total_driver_advances,
+                'total_actual_expenses': total_driver_actual_expenses,
+                'total_refund_due': total_driver_refund_due,
+                'total_reimburse_due': total_driver_reimburse_due,
+                'pending_settlement_count': pending_driver_settlement_count,
+                'settled_count': settled_driver_advances_count,
+                'trips': driver_advances_trips_data
             }
         }
 
