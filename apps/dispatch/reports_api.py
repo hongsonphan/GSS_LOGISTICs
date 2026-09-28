@@ -34,23 +34,36 @@ class ReportsAPIView(APIView):
         customer_id = request.GET.get('customer_id', '')
         vehicle_id = request.GET.get('vehicle_id', '')
 
-        # 1. Xác định khung thời gian lọc
+        # 1. Xác định khung thời gian lọc (Ưu tiên loading_date, fallback created_at__date)
         now = timezone.now()
         today = now.date()
 
         date_filter = Q(is_deleted=False)
+
+        def make_date_range_q(start_d, end_d=None):
+            if end_d:
+                return (
+                    Q(loading_date__gte=start_d, loading_date__lte=end_d) |
+                    Q(loading_date__isnull=True, created_at__date__gte=start_d, created_at__date__lte=end_d)
+                )
+            else:
+                return (
+                    Q(loading_date=start_d) |
+                    Q(loading_date__isnull=True, created_at__date=start_d)
+                )
+
         if period == 'today':
-            date_filter &= Q(loading_date=today)
+            date_filter &= make_date_range_q(today)
         elif period == 'week':
             start_week = today - datetime.timedelta(days=today.weekday())
-            date_filter &= Q(loading_date__gte=start_week, loading_date__lte=today)
+            date_filter &= make_date_range_q(start_week, today)
         elif period == 'month':
             start_month = today.replace(day=1)
-            date_filter &= Q(loading_date__gte=start_month, loading_date__lte=today)
+            date_filter &= make_date_range_q(start_month, today)
         elif period == 'quarter':
             quarter_start_month = ((today.month - 1) // 3) * 3 + 1
             start_quarter = today.replace(month=quarter_start_month, day=1)
-            date_filter &= Q(loading_date__gte=start_quarter, loading_date__lte=today)
+            date_filter &= make_date_range_q(start_quarter, today)
 
         if customer_id:
             date_filter &= Q(customer_id=customer_id)
@@ -58,8 +71,33 @@ class ReportsAPIView(APIView):
             date_filter &= Q(vehicle_id=vehicle_id)
 
         trips_qs = DispatchTrip.objects.filter(date_filter).select_related(
-            'customer', 'vehicle', 'driver', 'trailer', 'dropoff_driver', 'dropoff_vehicle'
-        ).prefetch_related('expenses')
+            'customer', 'vehicle', 'driver', 'trailer', 'dropoff_driver', 'dropoff_vehicle', 'booking_order'
+        ).prefetch_related('expenses', 'event_logs', 'timeline_items', 'documents')
+
+        # Helper tính doanh thu / chi phí thực tế cho từng chuyến nếu cache chưa cập nhật
+        def get_trip_financials(t):
+            rev = int(t.cached_revenue or 0)
+            if rev <= 0:
+                if t.booking_order and t.booking_order.selling_freight_price > 0:
+                    rev = int(t.booking_order.selling_freight_price)
+                elif t.customer:
+                    tariff = t.customer.tariffs.filter(
+                        pickup_loc=t.pickup_loc, delivery_loc=t.warehouse_loc
+                    ).first()
+                    if tariff:
+                        rev = int(tariff.freight_price)
+
+            exp = int(t.cached_expense or 0)
+            if exp <= 0 and t.expenses.exists():
+                direct_exp = sum(
+                    int(e.amount) for e in t.expenses.all() 
+                    if not e.is_deleted and not e.is_on_behalf_of_customer and e.status != ApprovalStatus.REJECTED
+                )
+                drv_pay = int(t.driver_allowance or 0) + int(t.detention_driver_allowance or 0) + int(t.dropoff_driver_allowance or 0)
+                exp = direct_exp + drv_pay
+
+            profit = rev - exp
+            return rev, exp, profit
 
         # Dữ liệu phục vụ Báo cáo 1: Hiệu suất Đội xe & P&L Đầu Xe
         total_trips = trips_qs.count()
@@ -69,14 +107,20 @@ class ReportsAPIView(APIView):
 
         split_trips_count = trips_qs.filter(is_split_trip=True).count()
         twin_trips_count = trips_qs.filter(is_twin_container=True).count()
-        total_revenue = sum(t.cached_revenue for t in trips_qs)
-        total_expense = sum(t.cached_expense for t in trips_qs)
-        total_profit = sum(t.cached_profit for t in trips_qs)
-        margin_avg = round(float(total_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0
+        
+        # Tổng hợp tài chính chuẩn xác từ các record trong database
+        total_revenue = 0
+        total_expense = 0
+        total_profit = 0
 
         # Gom nhóm P&L theo đầu xe
         vehicles_dict = {}
         for t in trips_qs:
+            rev, exp, prof = get_trip_financials(t)
+            total_revenue += rev
+            total_expense += exp
+            total_profit += prof
+
             plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán'
             if plate not in vehicles_dict:
                 vehicles_dict[plate] = {
@@ -92,9 +136,11 @@ class ReportsAPIView(APIView):
                     'margin_percent': 0.0
                 }
             vehicles_dict[plate]['trips_count'] += 1
-            vehicles_dict[plate]['revenue'] += int(t.cached_revenue)
-            vehicles_dict[plate]['expense'] += int(t.cached_expense)
-            vehicles_dict[plate]['profit'] += int(t.cached_profit)
+            vehicles_dict[plate]['revenue'] += rev
+            vehicles_dict[plate]['expense'] += exp
+            vehicles_dict[plate]['profit'] += prof
+
+        margin_avg = round(float(total_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0
 
         fleet_pnl = list(vehicles_dict.values())
         for f in fleet_pnl:
@@ -105,6 +151,7 @@ class ReportsAPIView(APIView):
         # Xếp hạng tài xế
         driver_dict = {}
         for t in trips_qs:
+            rev, _, _ = get_trip_financials(t)
             drv = t.driver.full_name if t.driver else 'Chưa gán'
             if drv not in driver_dict:
                 driver_dict[drv] = {
@@ -117,10 +164,9 @@ class ReportsAPIView(APIView):
                     'otp_rate': 100.0
                 }
             driver_dict[drv]['trips_count'] += 1
-            driver_dict[drv]['revenue'] += int(t.cached_revenue)
-            driver_dict[drv]['allowance'] += int(t.driver_allowance)
-            # Giả định OTP nếu trạng thái DELIVERED hoặc không quá hạn
-            if t.status in [TripStatus.DELIVERED, TripStatus.IN_TRANSIT]:
+            driver_dict[drv]['revenue'] += rev
+            driver_dict[drv]['allowance'] += int(t.driver_allowance or 0)
+            if t.status in [TripStatus.DELIVERED, TripStatus.COMPLETED, TripStatus.RETURNING_EMPTY]:
                 driver_dict[drv]['on_time_trips'] += 1
 
         driver_scorecards = list(driver_dict.values())
@@ -145,14 +191,22 @@ class ReportsAPIView(APIView):
             if not t.container_number:
                 continue
             
-            # Tính trạng thái Free DET
+            # Tính trạng thái Free DET dựa trên dữ liệu thực tế
             status_det = 'SAFE'
             days_left = 99
             fines = 0
+
+            # Nếu chuyến đã hoàn tất hoặc đã hạ cont xong: Không tính quá hạn nữa
+            is_dropped_off = t.status in [TripStatus.COMPLETED, TripStatus.RETURNING_EMPTY]
+
             if t.det_expiry_date:
                 delta_days = (t.det_expiry_date - today).days
                 days_left = delta_days
-                if delta_days < 0:
+
+                if is_dropped_off:
+                    status_det = 'SAFE'
+                    det_safe_count += 1
+                elif delta_days < 0:
                     status_det = 'OVERDUE'
                     det_overdue_count += 1
                     fines = abs(delta_days) * 750000 # 750k/ngày ước tính
@@ -161,6 +215,7 @@ class ReportsAPIView(APIView):
                     status_det = 'WARNING'
                     det_warning_count += 1
                 else:
+                    status_det = 'SAFE'
                     det_safe_count += 1
             else:
                 det_safe_count += 1
@@ -202,7 +257,7 @@ class ReportsAPIView(APIView):
         shipping_lines_summary = sorted(list(shipping_line_dict.values()), key=lambda x: x['total_containers'], reverse=True)
 
         # -------------------------------------------------------------
-        # Dữ liệu phục vụ Báo cáo 3: Đúng Giờ & Chất Lượng OTP (SLA)
+        # Dữ liệu phục vụ Báo cáo 3: Đúng Giờ & Chất Lượng OTP (SLA) TỪ RECORD THỰC TẾ
         # -------------------------------------------------------------
         otp_pickup_on_time = 0
         otp_arrival_on_time = 0
@@ -212,28 +267,43 @@ class ReportsAPIView(APIView):
             'Cảng / Depot lấy hàng ùn tắc': 0,
             'Kho khách bốc dỡ chậm': 0,
             'Thủ tục Hải quan kiểm hóa': 0,
-            'Sự cố kỹ thuật xe': 0
+            'Sự cố kỹ thuật xe': 0,
+            'Lưu bãi chờ mở CY qua đêm': 0
         }
 
         otp_trips_data = []
-        for idx, t in enumerate(trips_qs):
-            # Tính toán OTP dựa trên mốc thực tế và trạng thái
+        for t in trips_qs:
             is_on_time = True
             delay_reason = '-'
-            # Chuyến thứ 3 hoặc 7 mock nguyên nhân trễ thực tế
-            if idx % 5 == 3:
+
+            # Truy xuất sự cố thật từ TrackingEventLog (event_logs)
+            incident_log = next((log for log in t.event_logs.all() if log.event_type == 'INCIDENT'), None)
+            
+            if incident_log:
                 is_on_time = False
-                delay_reason = 'Kẹt xe / Phân luồng cầu cảng'
-                delay_reasons['Kẹt xe / Phân luồng cầu cảng'] += 1
-            elif idx % 7 == 4:
+                desc = incident_log.description or incident_log.title
+                delay_reason = desc
+                desc_lower = desc.lower()
+                if any(k in desc_lower for k in ['hỏng xe', 'nổ lốp', 'sự cố kỹ thuật', 'va quẹt']):
+                    delay_reasons['Sự cố kỹ thuật xe'] += 1
+                elif any(k in desc_lower for k in ['kẹt xe', 'kẹt đường', 'phân luồng', 'csgt']):
+                    delay_reasons['Kẹt xe / Phân luồng cầu cảng'] += 1
+                elif any(k in desc_lower for k in ['kho từ chối', 'bốc dỡ', 'dock', 'chậm']):
+                    delay_reasons['Kho khách bốc dỡ chậm'] += 1
+                elif any(k in desc_lower for k in ['hải quan', 'kiểm hóa']):
+                    delay_reasons['Thủ tục Hải quan kiểm hóa'] += 1
+                else:
+                    delay_reasons['Cảng / Depot lấy hàng ùn tắc'] += 1
+            elif t.is_overnight_detention or (t.overnight_wait_hours and t.overnight_wait_hours > 0):
                 is_on_time = False
-                delay_reason = 'Cảng / Depot lấy hàng ùn tắc'
-                delay_reasons['Cảng / Depot lấy hàng ùn tắc'] += 1
-            elif idx % 9 == 2:
+                delay_reason = t.detention_reason or 'Neo xe chờ hạ sau 0h / Chờ mở CY'
+                delay_reasons['Lưu bãi chờ mở CY qua đêm'] += 1
+            elif t.status == TripStatus.CANCELLED:
                 is_on_time = False
-                delay_reason = 'Kho khách bốc dỡ chậm'
+                delay_reason = 'Hủy chuyến theo yêu cầu khách hàng'
                 delay_reasons['Kho khách bốc dỡ chậm'] += 1
             else:
+                # Chuyến vận hành bình thường đúng giờ
                 otp_pickup_on_time += 1
                 otp_arrival_on_time += 1
                 otp_closing_on_time += 1
@@ -241,11 +311,11 @@ class ReportsAPIView(APIView):
             otp_trips_data.append({
                 'trip_code': t.trip_code,
                 'customer_name': t.customer.name if t.customer else 'Khách lẻ',
-                'route': f"{t.pickup_location} ➔ {t.dropoff_location or 'Bãi rỗng'}",
+                'route': f"{t.pickup_location} ➔ {t.dropoff_location or t.delivery_warehouse or 'Kho KH'}",
                 'driver_name': t.driver.full_name if t.driver else '-',
                 'vehicle': t.vehicle.license_plate if t.vehicle else '-',
                 'loading_time': t.loading_time or '08:00',
-                'gate_in_time': t.actual_gate_in_time or t.loading_time or '08:15',
+                'gate_in_time': t.actual_gate_in_time or t.loading_time or '08:00',
                 'closing_time': t.cutoff_time or 'Không yêu cầu',
                 'is_on_time': is_on_time,
                 'delay_reason': delay_reason,
@@ -257,7 +327,7 @@ class ReportsAPIView(APIView):
         # -------------------------------------------------------------
         # Dữ liệu phục vụ Báo cáo 4: Đối Soát Chi Phí & Hoàn Ứng Chi Hộ
         # -------------------------------------------------------------
-        all_expenses = TripExpense.objects.filter(trip__in=trips_qs).select_related('trip', 'trip__customer')
+        all_expenses = TripExpense.objects.filter(trip__in=trips_qs, is_deleted=False).select_related('trip', 'trip__customer')
         reimbursable_expenses = []
         total_reimbursable = 0
         total_reimbursable_collected = 0
@@ -271,7 +341,7 @@ class ReportsAPIView(APIView):
                 reimbursable_expenses.append({
                     'id': exp.id,
                     'trip_code': exp.trip.trip_code,
-                    'customer_name': exp.trip.customer.name,
+                    'customer_name': exp.trip.customer.name if exp.trip.customer else 'Khách lẻ',
                     'expense_name': exp.notes or exp.get_category_display(),
                     'expense_type': exp.get_category_display(),
                     'amount': int(exp.amount),
@@ -323,27 +393,58 @@ class ReportsAPIView(APIView):
                 })
 
         # -------------------------------------------------------------
-        # Dữ liệu phục vụ Báo cáo 6: Ngoại Lệ & Bồi Thường Hàng Hóa (OS&D)
+        # Dữ liệu phục vụ Báo cáo 6: Ngoại Lệ & Bồi Thường Hàng Hóa (OS&D) TỪ RECORD THẬT
         # -------------------------------------------------------------
         osd_list = []
         damaged_cont_count = 0
         broken_seal_count = 0
 
         for t in trips_qs:
-            is_damaged = t.container_condition in ['DAMAGED', 'CLEANING_REQUIRED'] or bool(t.damage_description)
-            if is_damaged:
-                damaged_cont_count += 1
+            has_condition_issue = t.container_condition in ['DAMAGED', 'CLEANING_REQUIRED'] or bool(t.damage_description)
+            incident_log = next((log for log in t.event_logs.all() if log.event_type == 'INCIDENT'), None)
+            incident_doc = next((d for d in t.documents.all() if 'INCIDENT' in str(d.document_type).upper()), None)
+            has_pod = any('POD' in str(d.document_type).upper() or 'biên bản' in str(d.title).lower() for d in t.documents.all())
+
+            if has_condition_issue or incident_log or incident_doc:
+                if t.container_condition == 'DAMAGED' or (incident_log and 'hỏng' in incident_log.description.lower()):
+                    damaged_cont_count += 1
+
+                # Xác định loại sự cố
+                if incident_log:
+                    inc_type = incident_log.title.replace('CẢNH BÁO SỰ CỐ: ', '')
+                    inc_desc = incident_log.description
+                elif t.container_condition == 'DAMAGED':
+                    inc_type = 'Hư hỏng vỏ container'
+                    inc_desc = t.damage_description or 'Hư hỏng vỏ cont ghi nhận khi nhận cont'
+                elif t.container_condition == 'CLEANING_REQUIRED':
+                    inc_type = 'Vỏ cont bẩn cần vệ sinh'
+                    inc_desc = t.damage_description or 'Vỏ cont bẩn, cần xịt rửa/vệ sinh'
+                else:
+                    inc_type = 'Sự cố hiện trường'
+                    inc_desc = t.damage_description or 'Biên bản sự cố ghi nhận tại cảng'
+
+                if 'seal' in inc_desc.lower() or 'chì' in inc_desc.lower():
+                    broken_seal_count += 1
+
+                # Tìm chi phí thực tế phát sinh từ bảng chi phí
+                real_repair_cost = sum(
+                    int(e.amount) for e in t.expenses.all() 
+                    if not e.is_deleted and (e.category in ['REPAIR_TIRE', 'OTHER'] or 'sửa' in (e.notes or '').lower() or 'vá' in (e.notes or '').lower())
+                )
+
+                settlement_txt = 'Đã chốt quyết toán' if t.is_expenses_settled else ('Đã có E-POD / Chờ đối soát' if has_pod else 'Chờ biên bản hiện trường')
+
                 osd_list.append({
                     'trip_code': t.trip_code,
-                    'date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else '-',
-                    'customer_name': t.customer.name,
-                    'container_number': t.container_number,
-                    'seal_number': t.seal_number,
-                    'incident_type': 'Hư hỏng vỏ container' if t.container_condition == 'DAMAGED' else 'Vỏ cont bẩn cần vệ sinh',
-                    'description': t.damage_description or 'Rách bạt, móp vách khi cẩu cont tại depot',
-                    'estimated_damage': 1500000 if t.container_condition == 'DAMAGED' else 350000,
-                    'settlement_status': 'Chờ hãng tàu duyệt biên bản',
-                    'has_pod_photo': True
+                    'date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else t.created_at.strftime('%d/%m/%Y'),
+                    'customer_name': t.customer.name if t.customer else 'Khách lẻ',
+                    'container_number': t.container_number or '-',
+                    'seal_number': t.seal_number or '-',
+                    'incident_type': inc_type,
+                    'description': inc_desc,
+                    'estimated_damage': real_repair_cost,
+                    'settlement_status': settlement_txt,
+                    'has_pod_photo': has_pod
                 })
 
         # =============================================================
@@ -406,9 +507,10 @@ class ReportsAPIView(APIView):
             else:
                 row['teu_40_count'] += 1
 
-            row['revenue'] += int(t.cached_revenue)
-            row['expense'] += int(t.cached_expense)
-            row['profit'] += int(t.cached_profit)
+            rev, exp, prof = get_trip_financials(t)
+            row['revenue'] += rev
+            row['expense'] += exp
+            row['profit'] += prof
 
             # Thống kê tuyến đường phổ biến nhất của khách
             route_name = f"{t.pickup_location} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}"

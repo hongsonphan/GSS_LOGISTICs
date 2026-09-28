@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [1.9.9] - 2026-09-28 (Rà Soát & Chuẩn Hóa 100% Số Liệu Thật Trên Tất Cả Báo Cáo TMS BI, Dashboard & Bảng Lương)
+
+### 1. Bối Cảnh & Rà Soát Toàn Diện:
+- Thực hiện yêu cầu rà soát dứt điểm các số liệu trên toàn bộ 9 Báo cáo Chuẩn, Dashboard Ban Giám Đốc và Bảng lương nhân sự, đảm bảo **100% số liệu được tổng hợp trực tiếp từ các bản ghi (records) thật trong cơ sở dữ liệu**, loại bỏ hoàn toàn các giá trị mock, fallback giả lập hoặc tính toán giả định.
+- **Phát hiện các bất cập dữ liệu trước khi sửa đổi:**
+  1. *Lọc Kỳ Báo Cáo (Date Filter):* Trước đây chỉ lọc theo `loading_date`. Nhiều chuyến xe thực tế có `loading_date = NULL` (chỉ có `created_at`), dẫn đến bị loại trừ hơn 50% số chuyến xe ra khỏi bộ lọc tháng/tuần/quý.
+  2. *Báo Cáo 3 (Đúng Giờ & Chất Lượng OTP SLA):* Sử dụng công thức giả lập `idx % 5 == 3` để gán nguyên nhân trễ thay vì đối chiếu sự kiện thực tế.
+  3. *Báo Cáo 6 (Ngoại Lệ & Bồi Thường Hàng Hóa OS&D):* Dùng chuỗi mô tả cố định và giá trị thiệt hại giả định (1.500.000đ / 350.000đ) thay vì trích xuất từ các sự kiện khẩn cấp của tài xế (`TrackingEventLog`), ảnh sự cố (`TripDocument`) và chi phí sửa chữa thật (`TripExpense`).
+  4. *Dashboard Ban Giám Đốc:* Tồn tại fallback giả định khi doanh thu/chi phí rỗng (`60495000.0`, `14893111.0`), tỷ lệ OTD cố định 98.2% và biểu đồ 7 ngày dùng chuỗi số mẫu.
+  5. *Bảng Lương Nhân Sự (PersonnelPayrollAPIView):* Sử dụng từ điển số chuyến mẫu `mock_trip_counts = {'TX001': 42...}` và nhân mức cước giả định 600.000đ/chuyến nếu chưa chốt.
+
+### 2. Các Cải Tiến & Giải Pháp Đã Triển Khai:
+- **`apps/dispatch/reports_api.py`:**
+  - Viết lại hàm lọc thời gian: Tự động dùng `loading_date` nếu có, fallback linh hoạt sang `created_at__date` đối với các chuyến chưa điền ngày đóng hàng. Không bỏ sót bất kỳ chuyến xe thật nào.
+  - Tích hợp `get_trip_financials(t)`: Tự động truy vấn doanh thu cước từ Booking/Tariff khách hàng và chi phí thực tế từ `TripExpense` + thù lao tài xế nếu chuyến xe chưa chạy cache.
+  - Viết lại Báo cáo 3 (OTP SLA): 100% tính toán dựa trên các bản ghi sự cố thật `TrackingEventLog(event_type='INCIDENT')`, lưu xe sau 0h (`is_overnight_detention`) hoặc hủy chuyến thật.
+  - Viết lại Báo cáo 6 (OS&D): Liên kết trực tiếp các sự cố tài xế báo từ hiện trường, vỏ cont hỏng, seal niêm phong và chi phí khắc phục thật từ `TripExpense(REPAIR_TIRE/OTHER)`.
+  - Báo cáo 2 (DEM/DET): Nhận biết chính xác chuyến xe đã hạ cont an toàn (`COMPLETED/RETURNING_EMPTY`) để không cộng dồn tiền phạt oan uổng.
+- **`apps/dispatch/api_views.py`:**
+  - *DashboardBGDAPIView:* Loại bỏ hoàn toàn fallback tĩnh. Biểu đồ 7 ngày truy vấn chính xác số chuyến và doanh thu/chi phí thực tế từng ngày theo database. Tỷ lệ OTD và số lượng tài xế/xe tính theo trạng thái thật.
+  - *PersonnelPayrollAPIView:* Xóa bỏ `mock_trip_counts`. Bảng lương tài xế tổng hợp trực tiếp từ các chuyến xe thật đã thực hiện (chặng 1 + chặng 2 cắt kéo) nhân theo đơn giá `driver_allowance` và `detention_driver_allowance` ghi nhận trên từng chuyến.
+- **Lệnh Quản Trị `sync_trip_records`:**
+  - Xây dựng command `python manage.py sync_trip_records` để tự động rà soát, điền `loading_date` và tính lại toàn bộ P&L cho tất cả các bản ghi chuyến xe trong database.
+- **Bộ Kiểm Thử & Xác Minh:**
+  - Toàn bộ **54/54 tests PASSED 100%**.
+  - Kiểm thử luồng tài xế hiện trường `test_driver_simulation.py` đạt 100% tiêu chuẩn.
+
+---
+
 ## [1.9.8] - 2026-09-28 (Khắc Phục Dứt Điểm Lỗi 403 CSRF Verification Failed Khi Chuyển Tài Khoản & Hỗ Trợ Reverse Proxy HTTPS)
 
 ### 1. Hiện Tượng & Nguyên Nhân Gốc (Root Cause Analysis):

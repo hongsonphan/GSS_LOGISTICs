@@ -102,57 +102,65 @@ class DashboardBGDAPIView(APIView):
         today = timezone.now().date()
         yesterday = today - datetime.timedelta(days=1)
 
-        # 1. Doanh thu, Chi phí & Quỹ tiền
-        agg_revenue = float(DispatchTrip.objects.aggregate(total=Sum('cached_revenue'))['total'] or 60495000.0)
-        agg_expense = float(DispatchTrip.objects.aggregate(total=Sum('cached_expense'))['total'] or 14893111.0)
+        # 1. Doanh thu, Chi phí & Quỹ tiền thực tế từ database
+        trips_all = DispatchTrip.objects.filter(is_deleted=False)
+        agg_revenue = float(trips_all.aggregate(total=Sum('cached_revenue'))['total'] or 0.0)
+        agg_expense = float(trips_all.aggregate(total=Sum('cached_expense'))['total'] or 0.0)
         agg_profit = agg_revenue - agg_expense
-        profit_margin = round((agg_profit / agg_revenue * 100), 1) if agg_revenue > 0 else 75.4
-        operating_ratio = round((agg_expense / agg_revenue * 100), 1) if agg_revenue > 0 else 24.6
-        pending_settle_count = DispatchTrip.objects.filter(is_expenses_settled=False).count()
+        profit_margin = round((agg_profit / agg_revenue * 100), 1) if agg_revenue > 0 else 0.0
+        operating_ratio = round((agg_expense / agg_revenue * 100), 1) if agg_revenue > 0 else 0.0
+        pending_settle_count = trips_all.filter(is_expenses_settled=False).count()
 
-        # 2. Vận hành chuyến & Năng suất (Productivity & SLA)
-        completed_trips = DispatchTrip.objects.filter(status='COMPLETED').count()
-        today_active_trips = DispatchTrip.objects.filter(
+        # 2. Vận hành chuyến & Năng suất (Productivity & SLA) thực tế
+        completed_trips_qs = trips_all.filter(status__in=['DELIVERED', 'COMPLETED'])
+        completed_trips = completed_trips_qs.count()
+        today_active_trips = trips_all.filter(
             status__in=['ACCEPTED', 'CONTAINER_PICKED', 'IN_TRANSIT', 'AT_WAREHOUSE', 'UNLOADING', 'RETURNING_EMPTY']
         ).count()
-        total_trips = DispatchTrip.objects.count()
-        ontime_rate = 98.2  # On-Time Delivery (OTD SLA chuẩn quốc tế)
+        total_trips = trips_all.count()
 
-        # 3. Đội xe & Khả dụng tài sản (Fleet Utilization)
-        vehicles_active = Vehicle.objects.filter(status=VehicleStatus.ACTIVE).count() or 5
-        vehicles_idle = Vehicle.objects.filter(status=VehicleStatus.IDLE).count() or 3
-        vehicles_maint = Vehicle.objects.filter(status=VehicleStatus.MAINTENANCE).count() or 0
+        delayed_count = completed_trips_qs.filter(
+            Q(is_overnight_detention=True) | Q(event_logs__event_type='INCIDENT')
+        ).distinct().count()
+        ontime_rate = round(((completed_trips - delayed_count) / completed_trips * 100), 1) if completed_trips > 0 else 100.0
+
+        # 3. Đội xe & Khả dụng tài sản (Fleet Utilization) thực tế
+        vehicles_active = Vehicle.objects.filter(status=VehicleStatus.ACTIVE, is_deleted=False).count()
+        vehicles_idle = Vehicle.objects.filter(status=VehicleStatus.IDLE, is_deleted=False).count()
+        vehicles_maint = Vehicle.objects.filter(status=VehicleStatus.MAINTENANCE, is_deleted=False).count()
         total_vehicles = vehicles_active + vehicles_idle + vehicles_maint
-        utilization_rate = round((vehicles_active / total_vehicles * 100), 1) if total_vehicles > 0 else 62.5
+        utilization_rate = round((vehicles_active / total_vehicles * 100), 1) if total_vehicles > 0 else 0.0
 
-        # 4. Nhân sự & Tài xế
-        drivers_working = Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True).count() or 7
-        drivers_on_leave = 3
+        # 4. Nhân sự & Tài xế thực tế
+        drivers_working = Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True, is_deleted=False).count()
+        drivers_on_leave = Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=False, is_deleted=False).count()
 
-        # 5. Khách hàng, Booking & Tờ khai Hải quan
-        pending_bookings = BookingOrder.objects.filter(status=BookingStatus.PENDING_DISPATCH).count()
-        active_bookings = BookingOrder.objects.filter(status=BookingStatus.PARTIALLY_DISPATCHED).count()
-        completed_bookings = BookingOrder.objects.filter(status=BookingStatus.COMPLETED).count()
+        # 5. Khách hàng, Booking & Tờ khai Hải quan thực tế
+        pending_bookings = BookingOrder.objects.filter(status=BookingStatus.PENDING_DISPATCH, is_deleted=False).count()
+        active_bookings = BookingOrder.objects.filter(status=BookingStatus.PARTIALLY_DISPATCHED, is_deleted=False).count()
+        completed_bookings = BookingOrder.objects.filter(status=BookingStatus.COMPLETED, is_deleted=False).count()
         
-        # 6. Chuỗi dữ liệu biểu đồ 7 ngày gần nhất (7-Day Performance Trend)
+        # 6. Chuỗi dữ liệu biểu đồ 7 ngày gần nhất (Dữ liệu thực tế từng ngày)
         chart_days = []
         chart_revenue = []
         chart_expense = []
         chart_profit = []
         
-        # Tạo chuỗi 7 ngày từ 6 ngày trước đến hôm nay
-        daily_revenue_base = [14200000, 18500000, 15200000, 22000000, 16800000, 24500000, 19800000]
-        daily_expense_base = [3800000, 4900000, 3950000, 5600000, 4200000, 6100000, 5200000]
-        
         for i in range(6, -1, -1):
             day_date = today - datetime.timedelta(days=i)
             chart_days.append(day_date.strftime("%d/%m"))
-            idx = 6 - i
-            rev = daily_revenue_base[idx]
-            exp = daily_expense_base[idx]
-            chart_revenue.append(rev)
-            chart_expense.append(exp)
-            chart_profit.append(rev - exp)
+            
+            day_trips = DispatchTrip.objects.filter(
+                Q(loading_date=day_date) | Q(loading_date__isnull=True, created_at__date=day_date),
+                is_deleted=False
+            )
+            day_rev = int(day_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+            day_exp = int(day_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+            day_profit = day_rev - day_exp
+
+            chart_revenue.append(day_rev)
+            chart_expense.append(day_exp)
+            chart_profit.append(day_profit)
 
         # 7. Danh sách chuyến xe phân tích P&L gần nhất kèm trạng thái (chuẩn 20 chuyến)
         recent_trips = DispatchTrip.objects.select_related('customer', 'driver', 'vehicle').order_by('-id')[:20]
@@ -1578,36 +1586,48 @@ class TripAddDocumentAPIView(APIView):
         })
 
 class PersonnelPayrollAPIView(APIView):
-    """API Bảng lương tài xế theo đúng Thông Báo Lương Triền Võ Logistics."""
+    """API Bảng lương tài xế theo đúng dữ liệu chuyến xe thực tế trong cơ sở dữ liệu."""
     permission_classes = [CanViewPayroll]
     def get(self, request):
         drivers = Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True)
         results = []
-        # Sample trip counts to demonstrate real operations & bonus over 40 trips
-        mock_trip_counts = {'TX001': 42, 'TX002': 38, 'TX003': 45, 'TX004': 30, 'TX005': 28, 'TX006': 41, 'TX007': 35}
 
         for d in drivers:
-            actual_completed = DispatchTrip.objects.filter(driver=d, status='COMPLETED').count()
-            trips_count = actual_completed if actual_completed > 0 else mock_trip_counts.get(d.code, 35)
+            # Lấy toàn bộ chuyến xe thực tế mà tài xế đã thực hiện (Chặng chính hoặc Chặng 2 hạ cont)
+            driver_trips = DispatchTrip.objects.filter(
+                Q(driver=d) | Q(dropoff_driver=d),
+                status__in=[TripStatus.DELIVERED, TripStatus.COMPLETED, TripStatus.RETURNING_EMPTY],
+                is_deleted=False
+            )
+            trips_count = driver_trips.count()
 
-            # Lương chuyến trung bình theo lộ trình thực tế (~600.000đ/chuyến)
-            avg_trip_pay = 600000
-            trip_salary = trips_count * avg_trip_pay
+            # Tính lương chuyến thực tế theo từng record trong database
+            trip_salary = 0
+            for t in driver_trips:
+                if t.driver == d:
+                    trip_salary += int(t.driver_allowance or 0)
+                    trip_salary += int(t.detention_driver_allowance or 0)
+                if t.is_split_trip and t.dropoff_driver == d:
+                    trip_salary += int(t.dropoff_driver_allowance or 0)
 
             # Thưởng sản lượng vượt mốc 40 chuyến/tháng (+50.000đ/chuyến từ chuyến thứ 41)
             bonus_over_40 = (trips_count - 40) * 50000 if trips_count > 40 else 0
 
-            total_gross = d.base_salary + trip_salary + bonus_over_40
-            total_net = total_gross - d.current_advance
+            # Tạm ứng thực tế từ Employee.current_advance
+            actual_advance = int(d.current_advance or 0)
+            base_sal = int(d.base_salary or 0)
+
+            total_gross = base_sal + trip_salary + bonus_over_40
+            total_net = total_gross - actual_advance
 
             results.append({
                 'code': d.code,
-                'name': f"{d.full_name} ({d.nickname})",
+                'name': f"{d.full_name} ({d.nickname})" if d.nickname else d.full_name,
                 'trips': trips_count,
-                'base_salary': d.base_salary,
+                'base_salary': base_sal,
                 'trip_salary': trip_salary,
                 'bonus_over_40': bonus_over_40,
-                'advance': d.current_advance,
+                'advance': actual_advance,
                 'net_salary': total_net
             })
         return Response(results)
