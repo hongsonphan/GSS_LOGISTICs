@@ -4908,7 +4908,7 @@ function switchTab(tabId, updateHistory = true) {
     if (tabId === 'nhan-su') loadHRData();
     if (tabId === 'xe-bai') loadFleetData();
     if (tabId === 'kinh-doanh') loadSalesData();
-    if (tabId === 'ke-toan') loadAccountingData();
+    if (tabId === 'ke-toan') switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
     if (tabId === 'hai-quan') fetchCustomsDeclarations();
     if (tabId === 'bao-cao') loadReportsData();
     if (tabId === 'cai-dat') loadMasterData();
@@ -5647,7 +5647,7 @@ async function toggleSettleTrip(tripCode, isCurrentlySettled) {
 // 10.1 PHÂN HỆ TẠM ỨNG & HOÀN ỨNG (DISPATCHER FUND & DRIVER ADVANCES)
 // =========================================================================
 
-let currentAccountingSubTab = 'acct-settlements';
+let currentAccountingSubTab = 'acct-cashbook';
 let accountingAdvancesData = null;
 let rawDriverAdvancesList = [];
 let rawDispatcherFundsList = [];
@@ -5668,12 +5668,12 @@ function switchAccountingSubTab(subtabId) {
     const targetContent = document.getElementById(`subtab-${subtabId}`);
     if (targetContent) targetContent.classList.remove('hidden');
 
-    // Active button tương ứng
+    // Active button tương ứng (Thứ tự mới: 1. Cashbook, 2. Driver Adv, 3. Dispatcher Fund, 4. Settlements, 5. Reimbursables, 6. Subcontractors, 7. BOT)
     let btnId = 'acct-tab-btn-1';
     if (subtabId === 'acct-driver-advances') btnId = 'acct-tab-btn-2';
     if (subtabId === 'acct-dispatcher-funds') btnId = 'acct-tab-btn-3';
-    if (subtabId === 'acct-reimbursables') btnId = 'acct-tab-btn-4';
-    if (subtabId === 'acct-cashbook') btnId = 'acct-tab-btn-5';
+    if (subtabId === 'acct-settlements') btnId = 'acct-tab-btn-4';
+    if (subtabId === 'acct-reimbursables') btnId = 'acct-tab-btn-5';
     if (subtabId === 'acct-subcontractors') btnId = 'acct-tab-btn-6';
     if (subtabId === 'acct-bot-audit') btnId = 'acct-tab-btn-7';
 
@@ -5683,18 +5683,20 @@ function switchAccountingSubTab(subtabId) {
         activeBtn.classList.add('bg-emerald-700', 'text-white', 'shadow-sm', 'active');
     }
 
-    if (subtabId === 'acct-driver-advances' || subtabId === 'acct-dispatcher-funds') {
+    if (subtabId === 'acct-cashbook') {
+        loadCashBookData();
+    } else if (subtabId === 'acct-driver-advances' || subtabId === 'acct-dispatcher-funds') {
         loadAccountingAdvancesData();
+    } else if (subtabId === 'acct-settlements') {
+        loadAccountingData();
     } else if (subtabId === 'acct-reimbursables') {
         loadReimbursablesData();
-    } else if (subtabId === 'acct-cashbook') {
-        loadCashBookData();
     } else if (subtabId === 'acct-subcontractors') {
         loadSubcontractorData();
     } else if (subtabId === 'acct-bot-audit') {
         loadBotAuditData();
     } else {
-        loadAccountingData();
+        loadCashBookData();
     }
 }
 

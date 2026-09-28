@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.1.0] - 2026-09-28 (Chuẩn Hóa Trọng Tâm Nghiệp Vụ Kế Toán: Đưa Sổ Quỹ Thu - Chi Lên Vị Trí Số 1)
+
+### 1. Bối Cảnh Nghiệp Vụ:
+- **Yêu cầu từ người dùng:** Nghiệp vụ kế toán cốt lõi hàng ngày bắt đầu từ quản lý Thu - Chi (dòng tiền ra/vào), sau đó mới tới theo dõi các bảng đối soát và báo cáo chuyến. Do đó, cần đưa tab **Sổ Quỹ Thu - Chi (Cash & Bank Book)** lên vị trí số 1 trong phân hệ Kế toán (`templates/views/view_accounting.html`), đồng thời nạp và hiển thị ngay khi người dùng truy cập.
+- **Tái cấu trúc 7 Trụ cột Tài chính Kế toán:**
+  1. `1. Sổ Quỹ Thu - Chi` (Mẫu S03a-DN): Quản lý tồn quỹ tiền mặt & ngân hàng, lập phiếu thu, lập phiếu chi, theo dõi dòng tiền thuần. (Active mặc định).
+  2. `2. Tạm Ứng - Hoàn Ứng Tài Xế`: Cấp tạm ứng chuyến xe và đối soát thực chi, thu hồi tiền thừa / bù tiền thiếu.
+  3. `3. Quỹ Tạm Ứng Điều Vận`: Theo dõi các gói quỹ cấp vốn đi đường cho bộ phận điều vận.
+  4. `4. Đối Soát & Khóa Sổ Chuyến`: Tổng hợp doanh thu, chi phí, lợi nhuận gộp và khóa sổ chuyến xe đã chạy xong.
+  5. `5. Chi Hộ & Debit Note`: Theo dõi các khoản chi hộ khách hàng (nâng hạ, cược cont...) và lập Debit Note thu hồi.
+  6. `6. Quyết Toán Xe Bạn (3PL)`: Quản lý công nợ, đối soát và thanh toán các chuyến xe thầu phụ chạy ngoài.
+  7. `7. Đối Soát BOT Tuyến`: Tra cứu và đối chiếu giao dịch vé trạm BOT / VETC / ePass.
+
+### 2. Các Thay Đổi Kỹ Thuật:
+- **`templates/views/view_accounting.html`:**
+  - Sắp xếp lại thứ tự 7 nút subtab bar theo đúng logic kế toán thực tế: Sổ quỹ thu chi số 1, Tạm ứng tài xế số 2, Quỹ điều vận số 3, Đối soát khóa sổ số 4, Chi hộ số 5, Quyết toán xe bạn số 6, BOT số 7.
+  - Di chuyển khối HTML `subtab-acct-cashbook` lên vị trí đầu tiên, bỏ class `hidden` để hiển thị mặc định.
+  - Di chuyển khối HTML `subtab-acct-settlements` xuống vị trí thứ 4, thêm class `hidden`.
+- **`static/js/app.js`:**
+  - Cập nhật biến khởi tạo `let currentAccountingSubTab = 'acct-cashbook';`.
+  - Cập nhật hàm `switchTab('ke-toan')` để kích hoạt `switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook')`.
+  - Cập nhật hàm `switchAccountingSubTab(subtabId)`: điều chỉnh mapping `btnId` tương ứng (`acct-cashbook` -> `acct-tab-btn-1`, ..., `acct-settlements` -> `acct-tab-btn-4`) và ưu tiên gọi `loadCashBookData()` mặc định.
+- **Kiểm Thử:**
+  - Chạy `python manage.py test`: **55/55 tests PASSED 100%**.
+
+---
+
 ## [2.0.0] - 2026-09-28 (Triển Khai Bộ Đôi Báo Cáo Quản Trị Tạm Ứng 2 Cấp: Báo Cáo 10 Quỹ Điều Vận & Báo Cáo 11 Tạm Ứng - Chi Phí Tài Xế)
 
 ### 1. Bối Cảnh & Nhu Cầu Quản Trị Vận Tải:
