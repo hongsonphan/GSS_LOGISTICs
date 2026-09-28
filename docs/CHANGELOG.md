@@ -2,12 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [2.2.0] - 2026-09-28 (Nâng Cấp Bảo Mật Toàn Diện Cổng Tra Cứu Khách Hàng & Mobile Tài Xế: Phân Tách Capability Token & Tinh Giản Mốc Giao Nhận B2B)
+## [2.2.0] - 2026-09-28 (Nâng Cấp Bảo Mật Toàn Diện Cổng Tra Cứu Khách Hàng & Mobile Tài Xế: Phân Tách Capability Token & Chuẩn Hóa 6 Mốc Giao Nhận B2B)
 
 ### 1. Bối Cảnh Nghiệp Vụ & Phát Hiện Bảo Mật:
 - **Yêu cầu & Phản hồi Người dùng:**
-  1. Khách hàng không cần và không nên đọc hết các tracklog nội bộ (lấy vỏ, hạ rỗng, các bước điều độ...). Chỉ nên hiển thị phần thông tin Khách hàng cần biết (Số cont, số seal, kho nhận hàng, 3 mốc giao nhận cốt lõi và ảnh biên bản giao nhận POD có chữ ký).
-  2. Rà soát và vá lỗ hổng dùng chung mã HashID (`trip_hash`) giữa link Tài xế (`/driver/<hash>/`) và link Khách hàng (`/tracking/<hash>/`), ngăn chặn triệt để nguy cơ khách hàng hoặc người ngoài đổi URL sang `/driver/` để xem thông tin nội bộ, số điện thoại tài xế, tờ khai hải quan, hoặc can thiệp kê khống chi phí/báo mốc giả.
+  1. Rà soát và vá lỗ hổng dùng chung mã HashID (`trip_hash`) giữa link Tài xế (`/driver/<hash>/`) và link Khách hàng (`/tracking/<hash>/`), ngăn chặn triệt để nguy cơ khách hàng hoặc người ngoài đổi URL sang `/driver/` để xem thông tin nội bộ, số điện thoại tài xế, tờ khai hải quan, hoặc can thiệp kê khống chi phí/báo mốc giả.
+  2. Tinh giản nhưng phải đầy đủ thông tin để Khách hàng an tâm theo dõi lô hàng: Không quá chi tiết như tài xế (bỏ 10 bước tracklog nội bộ: lấy vỏ, hạ rỗng, trút hàng lên dock, chốt sổ kế toán...) nhưng không được quá gọn khiến thiếu thông tin.
+  3. Chuẩn hóa bộ **6 mốc tiến độ B2B chuyên nghiệp**, linh hoạt theo từng tình huống vận chuyển (Hàng Nhập, Hàng Xuất, Nội Địa):
+     - *1. Tiếp nhận đơn*
+     - *2. Đã điều xe*
+     - *3. Đã nhận hàng / Đã đến kho hàng* (Linh hoạt: Nhập lấy hàng tại cảng; Xuất/Nội địa đến kho bốc hàng)
+     - *4. Đang vận chuyển / Đã nhận hàng*
+     - *5. Đã đến kho hàng / Đang vận chuyển*
+     - *6. Đã giao thành công (Ký nhận POD)*
 
 ### 2. Các Thay Đổi Kiến Trúc Kỹ Thuật Đã Triển Khai:
 - **`core/security.py`:**
@@ -22,22 +29,20 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   - Bổ sung 2 dynamic properties trên `DispatchTrip`:
     + `trip.driver_hashid`: Mã hóa Capability Token riêng cho tài xế (`/driver/<driver_token>/`).
     + `trip.tracking_hashid`: Mã hóa Capability Token riêng cho khách hàng (`/tracking/<tracking_token>/`).
+- **`apps/dispatch/timeline_service.py`:**
+  - Bổ sung hàm `build_customer_milestones(trip)`: Xây dựng chuẩn xác 6 mốc tiến độ theo đúng ngữ cảnh thực tế của chuyến hàng (Import, Export, Domestic), tự động tính toán trạng thái `is_done`, `is_active` và thời gian từng mốc dựa trên máy trạng thái và các mốc thực tế.
 - **`apps/dispatch/views.py`:**
   - `driver_portal_view(request, trip_hash)`:
     + Chỉ giải mã bằng `decode_driver_hashid`. Nếu không khớp, trả về HTTP 404 Not Found.
     + **Chặn hoàn toàn** việc dùng mã chuyến xe thô `trip_code` công khai (chống IDOR Enumeration Scraping).
   - `public_tracking_view(request, trip_hash)`:
     + Chỉ giải mã bằng `decode_tracking_hashid`. Khách hàng cầm tracking token đổi sang `/driver/` sẽ bị chặn 404.
-    + **Loại bỏ hoàn toàn tracklog 10 bước nội bộ và các lộ trình bãi rỗng**.
-    + Chuẩn hóa **3 mốc giao nhận B2B cốt lõi**:
-      1. *Tiếp nhận & Vận chuyển:* Xe đang di chuyển trên tuyến.
-      2. *Đã đến kho giao hàng:* Xe đã cập bãi/cổng kho khách hàng (`destination_warehouse`).
-      3. *Giao hàng thành công (Ký nhận POD):* Hoàn tất dỡ hàng và bàn giao chứng từ có chữ ký xác nhận của thủ kho.
+    + Tích hợp `build_customer_milestones(trip)` hiển thị 6 mốc tiến độ trực quan.
     + Chỉ hiển thị chứng từ `DocumentType.POD` (Biên bản bàn giao hàng có chữ ký số/ảnh chụp).
 - **`templates/public_tracking.html`:**
   - Tái thiết kế giao diện theo tiêu chuẩn B2B Cargo Tracking quốc tế:
-    + Thông tin định danh: Số Container, Loại Cont (40HC/20GP), Số Chì (Seal), Xe Giao Hàng (Biển số xe đầu kéo để bảo vệ đối chiếu), Kho Giao Nhận.
-    + Thẻ Tiến Độ 3 mốc trực quan kèm thời gian thực tế.
+    + Thông tin định danh: Số Container, Loại Cont (40HC/20GP), Số Chì (Seal), Xe Vận Chuyển, Kho Giao Nhận.
+    + Thẻ Tiến Độ 6 mốc trực quan kèm thời gian thực tế và icon trạng thái (xong, đang chạy, chờ).
     + Khối Bằng chứng giao hàng điện tử (E-POD) kèm ảnh gốc phóng to.
     + Ẩn hoàn toàn các thông tin nội bộ: Hãng tàu, bãi rỗng, cảng lấy vỏ, chi phí, doanh thu.
 - **`static/js/app.js`:**
@@ -46,7 +51,7 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
     + `copyCustomerTrackingLink`: Tạo URL dạng `/tracking/<tracking_hashid>/`.
   - Tinh giản bản tin sao chép gửi Khách hàng qua Zalo/Email: Chỉ cung cấp Mã chuyến, Số Container, Số Chì, Kho Giao Hàng và Link tra cứu, loại bỏ hoàn toàn các điểm lấy/hạ vỏ cont nội bộ.
 - **Kiểm Thử Đơn Vị (`core/tests.py`):**
-  - Bổ sung unit test `test_driver_and_tracking_tokens_isolation_and_customer_view`.
+  - Cập nhật unit test `test_driver_and_tracking_tokens_isolation_and_customer_view` kiểm tra phân tách token và xác thực cấu trúc 6 mốc khách hàng.
   - Bộ kiểm thử toàn diện: **56/56 unit tests PASSED 100%**.
 
 ---

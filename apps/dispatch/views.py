@@ -239,41 +239,10 @@ def public_tracking_view(request, trip_hash):
     if not trip:
         return render(request, 'driver_portal_404.html', {'trip_hash': trip_hash}, status=404)
 
-    # 2. Xây dựng 3 mốc giao nhận chuẩn hoá B2B Logistics cho Khách Hàng (Tối giản, chuyên nghiệp)
-    step1_done = True
-    step2_done = trip.status in ['AT_WAREHOUSE', 'UNLOADING', 'DELIVERED', 'RETURNING_EMPTY', 'COMPLETED']
-    step2_active = trip.status in ['DISPATCHED', 'IN_TRANSIT']
-    step3_done = trip.status in ['DELIVERED', 'RETURNING_EMPTY', 'COMPLETED'] or trip.documents.filter(is_deleted=False, document_type=DocumentType.POD).exists()
-    step3_active = trip.status in ['AT_WAREHOUSE', 'UNLOADING'] and not step3_done
-
+    # 2. Xây dựng 6 mốc giao nhận chuẩn hoá B2B Logistics cho Khách Hàng (An tâm, minh bạch, không lộ tác nghiệp nội bộ)
+    from apps.dispatch.timeline_service import build_customer_milestones
+    customer_milestones = build_customer_milestones(trip)
     destination_wh = trip.delivery_warehouse or trip.warehouse_location or 'Kho Khách Hàng'
-
-    customer_milestones = [
-        {
-            'step': 1,
-            'title': 'Tiếp nhận & Vận chuyển',
-            'desc': 'Đơn hàng đã được tiếp nhận và phương tiện đang vận chuyển trên tuyến',
-            'is_done': step1_done,
-            'is_active': False,
-            'time': trip.created_at.strftime('%H:%M %d/%m') if trip.created_at else ''
-        },
-        {
-            'step': 2,
-            'title': 'Đã đến kho giao hàng',
-            'desc': f"Xe đã có mặt tại: {destination_wh}",
-            'is_done': step2_done,
-            'is_active': step2_active,
-            'time': trip.actual_gate_in_at.strftime('%H:%M %d/%m') if trip.actual_gate_in_at else (trip.actual_gate_in_time or '')
-        },
-        {
-            'step': 3,
-            'title': 'Giao hàng thành công (Ký nhận POD)',
-            'desc': 'Đã hoàn tất dỡ hàng và bàn giao chứng từ có chữ ký xác nhận của thủ kho',
-            'is_done': step3_done,
-            'is_active': step3_active,
-            'time': trip.actual_gate_out_at.strftime('%H:%M %d/%m') if trip.actual_gate_out_at else (trip.actual_gate_out_time or '')
-        }
-    ]
 
     # Chỉ hiển thị Biên bản bàn giao hàng (POD) có chữ ký xác nhận cho Khách hàng
     public_documents = trip.documents.filter(

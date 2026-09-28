@@ -2113,12 +2113,15 @@ class BimLogisticsCoreTestCase(TestCase):
         # 5. Khách hàng dùng đúng tracking_token truy cập Cổng Tra Cứu -> Thành công 200
         res_tracking = self.client.get(f"/tracking/{tracking_token}/")
         self.assertEqual(res_tracking.status_code, 200)
-        self.assertIn('customer_milestones', res_tracking.context)
-        # Chỉ có 3 mốc cốt lõi cho khách hàng, không đưa 10 bước tracklog nội bộ
-        self.assertEqual(len(res_tracking.context['customer_milestones']), 3)
-        self.assertEqual(res_tracking.context['customer_milestones'][0]['title'], 'Tiếp nhận & Vận chuyển')
-        self.assertEqual(res_tracking.context['customer_milestones'][1]['title'], 'Đã đến kho giao hàng')
-        self.assertEqual(res_tracking.context['customer_milestones'][2]['title'], 'Giao hàng thành công (Ký nhận POD)')
+        # 6 mốc chuẩn B2B khách hàng an tâm theo dõi, không đưa 10 bước tracklog nội bộ
+        milestones = res_tracking.context['customer_milestones']
+        self.assertEqual(len(milestones), 6)
+        self.assertEqual(milestones[0]['title'], 'Tiếp nhận đơn')
+        self.assertEqual(milestones[1]['title'], 'Đã điều xe')
+        self.assertEqual(milestones[2]['title'], 'Đã nhận hàng')
+        self.assertEqual(milestones[3]['title'], 'Đang vận chuyển')
+        self.assertEqual(milestones[4]['title'], 'Đã đến kho hàng')
+        self.assertEqual(milestones[5]['title'], 'Đã giao thành công')
 
 
 
