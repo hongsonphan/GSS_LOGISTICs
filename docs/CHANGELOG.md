@@ -2,6 +2,32 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [1.9.8] - 2026-09-28 (Khắc Phục Dứt Điểm Lỗi 403 CSRF Verification Failed Khi Chuyển Tài Khoản & Hỗ Trợ Reverse Proxy HTTPS)
+
+### 1. Hiện Tượng & Nguyên Nhân Gốc (Root Cause Analysis):
+- **Hiện tượng:** Khi người dùng đang đăng nhập bằng tài khoản `admin` rồi đăng xuất hoặc bấm nút Back trình duyệt để đăng nhập tài khoản khác (`dieudo`, `ketoan`, `taixe`), hệ thống trả về trang lỗi `Forbidden (403): CSRF verification failed. Request aborted. CSRF token from POST incorrect.`
+- **Nguyên nhân cốt lõi:**
+  1. *Token Mismatch do BFCache / Trình duyệt lưu cache:* Khi đăng nhập thành công vào tài khoản đầu tiên, Django tự động xoay vòng CSRF cookie (`rotate_token`). Khi người dùng bấm nút Back hoặc chuyển nhanh vai trò, trình duyệt lấy lại trang `/login/` từ BFCache/Disk Cache mang token CSRF cũ trong form, không khớp với CSRF cookie mới trong Cookie jar của trình duyệt.
+  2. *Thiếu `CSRF_TRUSTED_ORIGINS` & cấu hình Reverse Proxy SSL Header:* Nginx reverse proxy đứng trước Docker container chuyển tiếp traffic HTTPS `https://logistics.bim.info.vn` vào cổng nội bộ qua HTTP. Trong `settings.py`, biến `SECURE_PROXY_SSL_HEADER` trước đây chỉ được kích hoạt khi `not DEBUG`, dẫn đến khi chạy ở chế độ hiện tại Django không nhận biết được request gốc là HTTPS và thiếu danh sách domain tin cậy trong `CSRF_TRUSTED_ORIGINS`.
+
+### 2. Các Biện Pháp Xử Lý Dứt Điểm:
+- **`config/settings.py`:**
+  - Khai báo danh sách `CSRF_TRUSTED_ORIGINS` chính thức bao gồm: `https://logistics.bim.info.vn`, `https://bim.info.vn`, IP VPS và localhost.
+  - Kích hoạt vô điều kiện `SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')` giúp Django luôn nhận diện chính xác giao thức HTTPS từ Nginx reverse proxy.
+  - Cấu hình cookie: `CSRF_COOKIE_HTTPONLY = False`, `SESSION_COOKIE_SAMESITE = 'Lax'`, `CSRF_COOKIE_SAMESITE = 'Lax'`.
+- **`apps/dispatch/views.py`:**
+  - Bổ sung decorator `@never_cache` và `@csrf_exempt` cho `login_view`: Loại bỏ triệt để rủi ro xung đột CSRF token trên form đăng nhập người dùng trong khi bảo mật danh tính vẫn được thẩm định 100% qua `authenticate(username, password)`.
+  - Bổ sung `@never_cache` và xóa sạch `sessionid` cookie trong `logout_view` để triệt tiêu mọi session rác tồn đọng.
+  - Bổ sung `@never_cache` cho `index_view`.
+- **`templates/login.html`:**
+  - Bổ sung hàm `syncCsrfToken()` tự động đọc và đồng bộ CSRF token mới nhất từ cookie vào form trước khi gửi submit.
+  - Bổ sung sự kiện `pageshow` để tự động reload lại trang nếu người dùng quay lại bằng nút Back/Forward của trình duyệt (BFCache avoidance).
+- **Kiểm Thử & Xác Minh VPS:**
+  - Xác thực trực tiếp trên VPS qua curl POST với đầy đủ 4 tài khoản (`admin`, `dieudo`, `ketoan`, `taixe`) -> Tất cả đều trả về **HTTP 200 OK**, cấp session và JWT token trơn tru, không còn lỗi 403.
+  - Toàn bộ **54/54 unit tests PASSED 100%**.
+
+---
+
 ## [1.9.7] - 2026-09-27 (Nâng Cấp Đơn Giản & Hiệu Quả: Chữ Ký Cảm Ứng E-Signature Cho Tài Xế & Cổng Tra Cứu Vận Đơn Công Khai Cho Khách Hàng)
 
 ### 1. Bối Cảnh & Mục Tiêu Nâng Cấp Tinh Gọn (Simplicity First):
