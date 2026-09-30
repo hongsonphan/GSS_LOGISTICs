@@ -49,7 +49,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div>
           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mã Vận Đơn Chuyến</span>
-          <div class="text-xl sm:text-2xl font-black text-slate-900 font-mono tracking-tight flex items-center gap-2">
+          <div class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
             <span>{{ trip.trip_code }}</span>
             <button type="button" onclick="copyTripCode('{{ trip.trip_code }}')" class="text-slate-400 hover:text-teal-700 text-sm" title="Sao chép mã">
               <i class="ph-bold ph-copy"></i>
@@ -76,17 +76,17 @@
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
         <div>
           <div class="text-[10px] text-slate-400 uppercase font-bold">Số Container</div>
-          <div class="font-mono font-black text-slate-900 text-sm mt-0.5">{{ trip.container_number|default:"Đang cập nhật" }}</div>
+          <div class="font-black text-slate-900 text-sm mt-0.5">{{ trip.container_number|default:"Đang cập nhật" }}</div>
           <div class="text-[10px] text-teal-700 font-bold mt-0.5">{{ trip.container_type|default:"40HC" }}</div>
         </div>
         <div>
           <div class="text-[10px] text-slate-400 uppercase font-bold">Số Chì (Seal)</div>
-          <div class="font-mono font-bold text-slate-900 text-sm mt-0.5">{{ trip.seal_number|default:"Chưa bấm chì" }}</div>
+          <div class="font-bold text-slate-900 text-sm mt-0.5">{{ trip.seal_number|default:"Chưa bấm chì" }}</div>
           <div class="text-[10px] text-slate-500 mt-0.5">Niêm phong kẹp chì</div>
         </div>
         <div>
           <div class="text-[10px] text-slate-400 uppercase font-bold">Xe Giao Hàng</div>
-          <div class="font-mono font-bold text-slate-900 text-sm mt-0.5">{{ trip.vehicle.license_plate|default:"Đang điều xe" }}</div>
+          <div class="font-bold text-slate-900 text-sm mt-0.5">{{ trip.vehicle.license_plate|default:"Đang điều xe" }}</div>
           <div class="text-[10px] text-slate-500 mt-0.5">Đầu kéo container</div>
         </div>
         <div>
@@ -133,7 +133,7 @@
                 </p>
               </div>
               {% if m.time %}
-              <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-black font-mono tracking-tight shrink-0 self-start sm:self-center shadow-2xs border
+              <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold shrink-0 self-start sm:self-center shadow-2xs border
                 {% if m.is_done %}bg-teal-50 text-teal-900 border-teal-200
                 {% elif m.is_active %}bg-amber-50 text-amber-900 border-amber-300 font-black animate-pulse
                 {% else %}bg-slate-100 text-slate-400 border-slate-200{% endif %}">
@@ -164,7 +164,7 @@
         <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80 transition-colors space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-slate-800 truncate" title="{{ doc.title }}">{{ doc.title }}</span>
-            <span class="text-[10px] font-mono text-slate-500">{{ doc.created_at|date:"H:i d/m" }}</span>
+            <span class="text-[10px] font-medium text-slate-500">{{ doc.created_at|date:"H:i d/m" }}</span>
           </div>
 
           {% if doc.file_path %}

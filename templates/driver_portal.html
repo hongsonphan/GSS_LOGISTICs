@@ -44,7 +44,7 @@
         </div>
         <div>
           <div class="text-[10px] uppercase tracking-wider text-teal-200 font-bold">LỆNH ĐIỀU ĐỘ XE</div>
-          <div class="text-sm font-black text-white flex items-center gap-1.5 font-mono">
+          <div class="text-sm font-black text-white flex items-center gap-1.5">
             {{ trip.trip_code }}
           </div>
         </div>
@@ -183,16 +183,16 @@
       <div class="grid grid-cols-2 gap-2 text-xs">
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
           <div class="text-slate-600 text-[10px] font-medium">Số Container 1:</div>
-          <div class="font-black text-slate-900 font-mono text-sm mt-0.5 break-all">
+          <div class="font-black text-slate-900 text-sm mt-0.5 break-all">
             {{ trip.container_number|default:'Chưa gán Cont' }}
           </div>
           <div class="text-[11px] text-slate-600 mt-1">Loại: <strong class="text-slate-800">{{ trip.container_type }}</strong></div>
-          <div class="text-[11px] text-slate-600">Seal: <span class="font-mono font-semibold text-slate-800">{{ trip.seal_number|default:'-' }}</span></div>
+          <div class="text-[11px] text-slate-600">Seal: <span class="font-semibold text-slate-800">{{ trip.seal_number|default:'-' }}</span></div>
         </div>
 
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
           <div class="text-slate-600 text-[10px] font-medium">Số Booking / Bill:</div>
-          <div class="font-black text-slate-900 font-mono text-sm mt-0.5 break-all">
+          <div class="font-black text-slate-900 text-sm mt-0.5 break-all">
             {{ trip.booking_or_bill|default:'-' }}
           </div>
           <div class="text-[11px] text-slate-600 mt-1">Khách: <strong class="text-slate-800 truncate block">{{ trip.customer.name }}</strong></div>
@@ -208,9 +208,9 @@
           <span class="text-[10px] bg-indigo-200 text-indigo-900 px-1.5 py-0.2 rounded">KẸP 20FT</span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-[11px] text-indigo-900">
-          <div>Số Cont: <strong class="font-mono text-xs">{{ trip.container_number_2 }}</strong></div>
-          <div>Số Seal: <span class="font-mono">{{ trip.seal_number_2|default:'-' }}</span></div>
-          {% if trip.booking_or_bill_2 %}<div class="col-span-2">Booking 2: <span class="font-mono">{{ trip.booking_or_bill_2 }}</span></div>{% endif %}
+          <div>Số Cont: <strong class="font-bold text-xs">{{ trip.container_number_2 }}</strong></div>
+          <div>Số Seal: <span>{{ trip.seal_number_2|default:'-' }}</span></div>
+          {% if trip.booking_or_bill_2 %}<div class="col-span-2">Booking 2: <span>{{ trip.booking_or_bill_2 }}</span></div>{% endif %}
         </div>
       </div>
       {% endif %}
@@ -327,7 +327,7 @@
           <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
           BƯỚC TIẾP THEO CẦN LÀM
         </span>
-        <span class="text-[10px] text-slate-300 font-mono">Trạng thái: <strong class="text-white">{{ trip.get_status_display }}</strong></span>
+        <span class="text-[10px] text-slate-300">Trạng thái: <strong class="text-white">{{ trip.get_status_display }}</strong></span>
       </div>
 
       <!-- Action Content Based on Trip Status -->
@@ -590,7 +590,7 @@
             {% endif %}
           </div>
           <div class="text-right">
-            <div class="font-black text-slate-900 font-mono">{{ exp.amount|format_money }} đ</div>
+            <div class="font-black text-slate-900">{{ exp.amount|format_money }} đ</div>
             <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full inline-block mt-0.5
               {% if exp.status == 'APPROVED' or exp.status == 'SETTLED' %}bg-emerald-100 text-emerald-800
               {% elif exp.status == 'REJECTED' %}bg-rose-100 text-rose-800
@@ -652,19 +652,40 @@
         <span>Nhật Ký Mốc Thời Gian</span>
       </div>
 
-      <div id="timelineContainer" class="relative pl-6 space-y-3.5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+      <div id="timelineContainer" class="relative pl-7 space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
         {% for item in timelines %}
         <div class="relative">
-          <div class="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full bg-teal-600 border-2 border-white shadow-sm"></div>
-          <div class="font-bold text-slate-900 text-xs sm:text-sm leading-tight">{{ item.title }}</div>
-          <div class="flex items-center gap-1.5 mt-1 text-xs sm:text-sm font-mono font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md inline-flex border border-teal-200/70 shadow-2xs">
-            <i class="ph-bold ph-clock text-xs text-teal-600"></i>
+          <!-- Dot chỉ báo trạng thái -->
+          <div class="absolute -left-7 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shadow-xs
+            {% if item.is_done %}bg-teal-600 text-white ring-4 ring-teal-100
+            {% elif item.is_active %}bg-amber-500 text-white ring-4 ring-amber-100 animate-pulse
+            {% else %}bg-slate-100 text-slate-400 border border-slate-300{% endif %}">
+            {% if item.is_done %}<i class="ph-bold ph-check text-[10px]"></i>
+            {% elif item.is_active %}<i class="ph-bold ph-spinner-gap animate-spin text-[10px]"></i>
+            {% else %}{{ item.step_number }}{% endif %}
+          </div>
+          <!-- Tiêu đề mốc -->
+          <div class="font-bold text-xs sm:text-sm leading-tight
+            {% if item.is_done %}text-slate-900
+            {% elif item.is_active %}text-amber-800 font-extrabold
+            {% else %}text-slate-400{% endif %}">{{ item.title }}</div>
+          <!-- Badge thời gian (chỉ hiện khi có nội dung) -->
+          {% if item.time_display %}
+          <div class="flex items-center gap-1.5 mt-1 text-xs font-bold px-2 py-0.5 rounded-md inline-flex border shadow-2xs
+            {% if item.is_done %}text-teal-800 bg-teal-50 border-teal-200/70
+            {% elif item.is_active %}text-amber-900 bg-amber-50 border-amber-300 animate-pulse
+            {% else %}text-slate-400 bg-slate-50 border-slate-200{% endif %}">
+            <i class="ph-bold ph-clock text-xs
+              {% if item.is_done %}text-teal-600{% elif item.is_active %}text-amber-600{% else %}text-slate-400{% endif %}"></i>
             <span>{{ item.time_display }}</span>
           </div>
+          {% endif %}
         </div>
         {% empty %}
-        <div class="relative text-xs text-slate-500">
-          <div class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-slate-300 border-2 border-white"></div>
+        <div class="relative text-xs text-slate-500 pl-1">
+          <div class="absolute -left-7 top-0 w-5 h-5 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center">
+            <i class="ph-bold ph-clock text-[10px] text-slate-400"></i>
+          </div>
           Chuyến xe đã được khởi tạo và phát lệnh điều vận.
         </div>
         {% endfor %}
@@ -742,10 +763,10 @@
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-xs font-bold text-slate-700">Số tiền (VNĐ) <span class="text-rose-500">*</span></label>
-            <span id="expAmountPreview" class="text-xs font-mono font-bold text-teal-700"></span>
+            <span id="expAmountPreview" class="text-xs font-bold text-teal-700"></span>
           </div>
           <input type="number" id="expAmount" required min="1000" step="1000" placeholder="Ví dụ: 35.000" oninput="formatExpAmountPreview(this.value)"
-            class="w-full text-base font-black font-mono text-slate-900 rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
+            class="w-full text-base font-black text-slate-900 rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
           
           <!-- Phím chọn tiền nhanh có định dạng phần ngàn -->
           <div class="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 text-xs">
@@ -1093,9 +1114,11 @@
       const el = document.createElement('div');
       el.className = "relative";
       el.innerHTML = `
-        <div class="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full bg-emerald-600 border-2 border-white shadow-sm"></div>
+        <div class="absolute -left-7 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shadow-xs bg-teal-600 text-white ring-4 ring-teal-100">
+          <i class="ph-bold ph-check text-[10px]"></i>
+        </div>
         <div class="font-bold text-slate-900 text-xs sm:text-sm leading-tight">${title}</div>
-        <div class="flex items-center gap-1.5 mt-1 text-xs sm:text-sm font-mono font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-md inline-flex border border-teal-200/70 shadow-2xs">
+        <div class="flex items-center gap-1.5 mt-1 text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md inline-flex border border-teal-200/70 shadow-2xs">
           <i class="ph-bold ph-clock text-xs text-teal-600"></i>
           <span>${timeStr}</span>
         </div>
