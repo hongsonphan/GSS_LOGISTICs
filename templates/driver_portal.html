@@ -665,10 +665,10 @@
             {% else %}{{ item.step_number }}{% endif %}
           </div>
           <!-- Tiêu đề mốc -->
-          <div class="font-bold text-xs sm:text-sm leading-tight
-            {% if item.is_done %}text-slate-900
-            {% elif item.is_active %}text-amber-800 font-extrabold
-            {% else %}text-slate-400{% endif %}">{{ item.title }}</div>
+          <div class="leading-tight
+            {% if item.is_done %}text-xs sm:text-sm font-bold text-slate-800
+            {% elif item.is_active %}text-sm sm:text-base font-bold text-amber-800
+            {% else %}text-xs sm:text-sm font-normal text-slate-400{% endif %}">{{ item.title }}</div>
           <!-- Badge thời gian (chỉ hiện khi có nội dung) -->
           {% if item.time_display %}
           <div class="flex items-center gap-1.5 mt-1 text-xs font-bold px-2 py-0.5 rounded-md inline-flex border shadow-2xs
@@ -1117,7 +1117,7 @@
         <div class="absolute -left-7 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shadow-xs bg-teal-600 text-white ring-4 ring-teal-100">
           <i class="ph-bold ph-check text-[10px]"></i>
         </div>
-        <div class="font-bold text-slate-900 text-xs sm:text-sm leading-tight">${title}</div>
+        <div class="text-xs sm:text-sm font-bold text-slate-800 leading-tight">${title}</div>
         <div class="flex items-center gap-1.5 mt-1 text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md inline-flex border border-teal-200/70 shadow-2xs">
           <i class="ph-bold ph-clock text-xs text-teal-600"></i>
           <span>${timeStr}</span>
