@@ -635,6 +635,7 @@ class TripListCreateAPIView(APIView):
             warehouse_loc=warehouse_loc,
             dropoff_loc=dropoff_loc,
             status=TripStatus.DISPATCHED,
+            dispatched_at=timezone.now(),
             special_notes=data.get('notes') or (booking_order.notes if booking_order else ''),
             cached_revenue=revenue,
             cached_expense=0,
@@ -2403,7 +2404,27 @@ class TripDriverMilestoneAPIView(APIView):
                 'title': f'Đã cẩu hạ cont thành công tại bãi/cảng ({trip.dropoff_location})',
                 'status': TripStatus.COMPLETED,
                 'msg': 'Đã hoàn tất hạ cont tại cảng/bãi. Kết thúc hành trình.'
-            }
+            },
+            'ACCEPTED_TRIP': {
+                'title': 'Tài xế xác nhận nhận chuyến',
+                'status': TripStatus.ACCEPTED,
+                'msg': 'Tài xế đã xác nhận nhận chuyến trên App.'
+            },
+            'DEPARTED': {
+                'title': 'Tài xế xuất phát đi lấy cont/hàng',
+                'status': TripStatus.CONTAINER_PICKED,
+                'msg': 'Tài xế đã xuất phát từ bãi lấy cont.'
+            },
+            'DEPART_TO_DROPOFF': {
+                'title': f'Kéo cont rời kho — Vận chuyển về bãi hạ',
+                'status': TripStatus.RETURNING_EMPTY,
+                'msg': 'Xe đã ra cổng kho, đang kéo về bãi hạ cont.'
+            },
+            'DECLINED_TRIP': {
+                'title': 'Tài xế từ chối chuyến — Cần phân xe lại',
+                'status': TripStatus.DISPATCHED,  # revert về DISPATCHED để điều độ phân lại
+                'msg': 'Tài xế đã từ chối nhận chuyến. Vui lòng liên hệ điều độ để phân xe lại.'
+            },
         }
 
         info = mapping.get(milestone_code)
@@ -2420,6 +2441,44 @@ class TripDriverMilestoneAPIView(APIView):
             trip.actual_dropoff_time = now_str
             trip.actual_end_time = timezone.now()
             trip.save(update_fields=['actual_dropoff_time', 'actual_end_time'])
+        elif milestone_code == 'ACCEPTED_TRIP':
+            trip.accepted_at = timezone.now()
+            trip.save(update_fields=['accepted_at'])
+        elif milestone_code == 'DEPARTED':
+            trip.actual_start_time = timezone.now()
+            trip.save(update_fields=['actual_start_time'])
+        elif milestone_code == 'START_UNLOADING':
+            trip.unloading_started_at = timezone.now()
+            trip.save(update_fields=['unloading_started_at'])
+        elif milestone_code == 'DEPART_TO_DROPOFF':
+            now = timezone.now()
+            trip.actual_gate_out_time = now.strftime('%H:%M %d/%m')
+            trip.actual_gate_out_at = now
+            trip.save(update_fields=['actual_gate_out_time', 'actual_gate_out_at'])
+        elif milestone_code == 'FINISHED_UNLOADING':
+            # Ghi nhận POD time = giờ hàng xong, sau đó driver sẽ upload POD riêng
+            pass
+
+        # Xử lý DECLINED_TRIP đặc biệt: chỉ revert status và ghi log, không tạo timeline item
+        if milestone_code == 'DECLINED_TRIP':
+            actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
+            trip.status = TripStatus.DISPATCHED
+            trip.save(update_fields=['status'])
+            from core.models import TrackingEventLog
+            TrackingEventLog.objects.create(
+                trip=trip,
+                actor=actor,
+                event_type=TripStatus.DISPATCHED,
+                title=f"Mốc thời gian: {info['title']}",
+                description=notes or info['msg']
+            )
+            return Response({
+                'success': True,
+                'message': info['msg'],
+                'new_status': trip.status,
+                'new_status_label': trip.get_status_display(),
+                'time': now_str
+            })
 
         # Chuyển trạng thái qua State Machine & lưu vết TrackingEventLog (Tiêu chuẩn 20)
         target_status = info['status']

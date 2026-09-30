@@ -33,14 +33,21 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
 
     date_str = trip.loading_date.strftime('%d/%m') if trip.loading_date else trip.created_at.strftime('%d/%m')
     t_create = trip.created_at.strftime('%H:%M %d/%m') if trip.created_at else f"17:00 {date_str}"
-    t_dispatch = f"18:00 {date_str}"
-    t_accept = f"18:15 {date_str}"
-    t_pickup = f"08:00 {date_str}"
+    t_dispatch = trip.dispatched_at.strftime('%H:%M %d/%m') if trip.dispatched_at else f"18:00 {date_str}"
+    t_accept = trip.accepted_at.strftime('%H:%M %d/%m') if trip.accepted_at else f"18:15 {date_str}"
+    t_pickup = trip.actual_start_time.strftime('%H:%M %d/%m') if trip.actual_start_time else f"08:00 {date_str}"
     t_transit = f"09:30 {date_str}"
+    # Bước 6: Vào cổng kho — dùng actual_gate_in_time (CharField) fallback eta_warehouse_time
     t_wh_in = trip.actual_gate_in_time or trip.eta_warehouse_time or f"11:00 {date_str}"
-    t_unload = trip.loading_time or f"13:30 {date_str}"
+    # Bước 7: Đóng/trút hàng — dùng unloading_started_at (DateTimeField mới) fallback loading_time (giờ hẹn đóng hàng)
+    t_unload = (trip.unloading_started_at.strftime('%H:%M %d/%m') if trip.unloading_started_at
+                else (trip.loading_time or f"Hẹn: {date_str}"))
+    # Bước 8: Ký POD — dùng actual_gate_out_time (timestamp ra cổng / POD)
     t_wh_out = trip.actual_gate_out_time or f"15:00 {date_str}"
-    t_dropoff = f"16:30 {date_str}"
+    # Bước 9: Hạ cont — dùng actual_dropoff_time → dropoff_appointment_time → fallback
+    t_dropoff = (trip.actual_dropoff_time
+                 or trip.dropoff_appointment_time
+                 or f"Đang kéo về bãi {date_str}")
     t_settle = trip.settled_at.strftime('%H:%M %d/%m') if trip.settled_at else (f"17:30 {date_str}" if trip.status == TripStatus.COMPLETED else 'Chờ chốt sổ')
 
     # Xác định bước hiện tại dựa trên máy trạng thái
@@ -77,22 +84,22 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
         },
         {
             'step': 6,
-            'title': f'Giao nhận tại {wh_name} (Báo kho, Vào cổng, Lên dock, Ra cổng)',
+            'title': f'Vào cổng kho {wh_name} — Chờ gọi vào dock',
             'time': t_wh_in
         },
         {
             'step': 7,
-            'title': f'Đóng / Trút hàng tại {dock_name}',
+            'title': f'Đóng / Trút hàng tại dock {dock_name}',
             'time': t_unload
         },
         {
             'step': 8,
-            'title': 'Hoàn tất chứng từ giao nhận (Ký biên bản POD)',
+            'title': 'Hoàn tất chứng từ giao nhận (Ký Biên bản POD)',
             'time': t_wh_out
         },
         {
             'step': 9,
-            'title': f'Kéo vỏ cont hạ bãi tại {dropoff_name} (Phiếu EIR hạ cont)',
+            'title': f'Vận chuyển về bãi hạ {dropoff_name} (Lấy Phiếu EIR hạ cont)',
             'time': t_dropoff
         },
         {

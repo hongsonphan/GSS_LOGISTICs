@@ -330,238 +330,277 @@
         <span class="text-[10px] text-slate-300">Trạng thái: <strong class="text-white">{{ trip.get_status_display }}</strong></span>
       </div>
 
-      <!-- Action Content Based on Trip Status -->
-      {% if trip.status == 'DRAFT' or trip.status == 'DISPATCHED' or trip.status == 'ACCEPTED' or trip.status == 'CONTAINER_PICKED' %}
+      <!-- B1/B2: Chờ xác nhận lệnh -->
+      {% if trip.status == 'DRAFT' or trip.status == 'DISPATCHED' %}
       <div class="space-y-2.5">
-        <div class="text-sm font-bold text-white">Chặng 1: Nhận lệnh & Lấy vỏ Cont tại cảng/depot</div>
+        <div class="text-sm font-bold text-white">Lệnh điều xe đã được gửi đến bạn</div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Bác tài nhận cont hãy <strong>chụp ảnh giám định vỏ cont</strong> ngay tại bãi để có bằng chứng không bị đền tiền sửa cont khi hạ bãi!
+          Vui lòng xác nhận nhận chuyến. Nếu không thể nhận, bấm <strong class="text-rose-300">Từ chối</strong> để điều độ phân xe lại.
         </p>
         <div class="grid grid-cols-2 gap-2 pt-1">
-          <button type="button" onclick="openDocModalWithType('Ảnh giám định vỏ Cont')"
-            class="touch-btn py-3 px-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
-            <i class="ph-bold ph-camera text-base"></i>
-            <span>📸 Chụp Giám Định Vỏ</span>
+          <button type="button" onclick="reportMilestone('DECLINED_TRIP', 'Tài xế từ chối nhận chuyến')"
+            class="touch-btn py-3 rounded-xl border border-rose-500/50 text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-rose-950/50">
+            <i class="ph-bold ph-x-circle text-base"></i>
+            <span>Từ Chối</span>
           </button>
-          <button type="button" onclick="reportMilestone('APPROACHING_WAREHOUSE', 'Tài xế báo sắp đến kho 30p')"
-            class="touch-btn py-3 px-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
-            <i class="ph-bold ph-navigation-arrow text-base"></i>
-            <span>🚗 Bắt Đầu Chạy (30p)</span>
+          <button type="button" onclick="reportMilestone('ACCEPTED_TRIP', 'Tài xế xác nhận nhận chuyến')"
+            class="touch-btn py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
+            <i class="ph-bold ph-check-circle text-base"></i>
+            <span>Xác Nhận Nhận Chuyến</span>
           </button>
         </div>
       </div>
 
+      <!-- B3: Đã nhận lệnh, chuẩn bị xuất phát -->
+      {% elif trip.status == 'ACCEPTED' %}
+      <div class="space-y-2.5">
+        <div class="text-sm font-bold text-white">Đã nhận lệnh — Chuẩn bị xuất phát</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Trước khi lấy cont, hãy <strong class="text-amber-300">chụp ảnh giám định vỏ cont</strong> tại bãi để tránh bị đền sửa cont khi hạ bãi.
+        </p>
+        {% if trip.eta_warehouse_time %}
+        <div class="text-[11px] text-teal-300 flex items-center gap-1">
+          <i class="ph-bold ph-clock"></i>
+          <span>ETA đến kho: <strong>{{ trip.eta_warehouse_time }}</strong></span>
+        </div>
+        {% endif %}
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button type="button" onclick="openDocModalWithType('Ảnh giám định vỏ Cont')"
+            class="touch-btn py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700">
+            <i class="ph-bold ph-camera text-base"></i>
+            <span>Chụp Vỏ Cont</span>
+          </button>
+          <button type="button" onclick="reportMilestone('DEPARTED', 'Tài xế xuất phát đi lấy cont')"
+            class="touch-btn py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
+            <i class="ph-bold ph-paper-plane-tilt text-base"></i>
+            <span>Xuất Phát</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- B4: Đang đi lấy cont -->
+      {% elif trip.status == 'CONTAINER_PICKED' %}
+      <div class="space-y-2.5">
+        <div class="text-sm font-bold text-white">Đang trên đường đến kho khách hàng</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Đến cổng <strong class="text-amber-300">{{ trip.warehouse_location }}</strong>, bấm Check-in để hệ thống ghi nhận giờ đến.
+        </p>
+        {% if trip.eta_warehouse_time %}
+        <div class="text-[11px] text-teal-300 flex items-center gap-1">
+          <i class="ph-bold ph-clock"></i>
+          <span>ETA: <strong>{{ trip.eta_warehouse_time }}</strong></span>
+        </div>
+        {% endif %}
+        <button type="button" onclick="reportMilestone('APPROACHING_WAREHOUSE', 'Báo sắp đến kho 30 phút')"
+          class="touch-btn w-full py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700">
+          <i class="ph-bold ph-bell-ringing text-base"></i>
+          <span>Báo Sắp Đến (30 phút)</span>
+        </button>
+      </div>
+
+      <!-- B5a: Sắp đến cổng kho -->
       {% elif trip.status == 'IN_TRANSIT' %}
       <div class="space-y-2.5">
-        <div class="text-sm font-bold text-white">Chặng 2: Xe đang di chuyển tới kho khách hàng</div>
+        <div class="text-sm font-bold text-white">Sắp đến cổng kho — Chuẩn bị Check-in</div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Đến cổng kho <strong class="text-amber-300">{{ trip.warehouse_location }}</strong>, bấm Check-in ngay để hệ thống ghi nhận giờ chờ bốc hàng.
+          Vào đến cổng <strong class="text-amber-300">{{ trip.warehouse_location }}</strong>, bấm Check-in ngay để ghi nhận giờ chờ bốc hàng.
         </p>
-        <button type="button" onclick="reportMilestone('ARRIVED_WAREHOUSE', 'Đã check-in cổng kho')"
-          class="touch-btn w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg">
-          <i class="ph-fill ph-warehouse text-xl"></i>
-          <span>🏢 ĐÃ ĐẾN CỔNG KHO (CHECK-IN)</span>
+        <button type="button" onclick="reportMilestone('ARRIVED_WAREHOUSE', 'Đã đến cổng kho')"
+          class="touch-btn w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md">
+          <i class="ph-bold ph-map-pin text-base"></i>
+          <span>ĐÃ ĐẾN CỔNG KHO — CHECK-IN</span>
         </button>
       </div>
 
+      <!-- B5b: Đang chờ cổng kho gọi vào -->
       {% elif trip.status == 'AT_WAREHOUSE' %}
       <div class="space-y-2.5">
-        <div class="text-sm font-bold text-white">Chặng 3: Xe đã đỗ trước cổng kho khách</div>
+        <div class="text-sm font-bold text-white">Đang chờ tại cổng kho</div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Khi bảo vệ gọi xe vào dock {% if trip.warehouse_dock %}(Cửa Dock: <strong class="text-amber-300">{{ trip.warehouse_dock }}</strong>){% endif %}, bấm nút để cập nhật mốc bốc hàng.
+          Khi bảo vệ gọi xe vào{% if trip.warehouse_dock %} <strong class="text-amber-300">Dock {{ trip.warehouse_dock }}</strong>{% endif %}, bấm nút để bắt đầu.
         </p>
-        <button type="button" onclick="reportMilestone('START_UNLOADING', 'Bắt đầu đóng / dỡ hàng')"
-          class="touch-btn w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg">
-          <i class="ph-fill ph-forklift text-xl"></i>
-          <span>📦 VÀO DOCK BẮT ĐẦU ĐÓNG/DỠ HÀNG</span>
+        <button type="button" onclick="reportMilestone('START_UNLOADING', 'Bắt đầu đóng / dỡ hàng tại dock')"
+          class="touch-btn w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-sm flex items-center justify-center gap-2 shadow-md">
+          <i class="ph-bold ph-package text-base"></i>
+          <span>VÀO DOCK — BẮT ĐẦU ĐÓNG / DỠ HÀNG</span>
         </button>
       </div>
 
+      <!-- B6: Đang đóng/dỡ hàng -->
       {% elif trip.status == 'UNLOADING' %}
       <div class="space-y-2.5">
-        <div class="text-sm font-bold text-white">Chặng 4: Đang đóng/dỡ hàng tại cửa Dock</div>
+        <div class="text-sm font-bold text-white">Đang đóng / dỡ hàng tại kho</div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Sau khi thủ kho ký biên bản giao nhận, chụp ảnh POD ngay. Nếu là hàng xuất, hãy chụp thêm ảnh chì niêm phong (Seal)!
+          Sau khi thủ kho ký, chụp ngay Biên bản giao nhận (POD). Hàng xuất → chụp thêm ảnh cây chì niêm phong.
         </p>
         <div class="grid grid-cols-3 gap-2">
           <button type="button" onclick="openDocModalWithType('Biên bản giao nhận hàng')"
-            class="touch-btn py-3 px-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-md">
-            <i class="ph-bold ph-camera text-base"></i>
-            <span>📸 Chụp POD</span>
+            class="touch-btn py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-700">
+            <i class="ph-bold ph-file-text text-base"></i>
+            <span>Chụp POD</span>
           </button>
           <button type="button" onclick="openSignatureModal()"
-            class="touch-btn py-3 px-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-md">
-            <i class="ph-bold ph-signature text-base"></i>
-            <span>✍️ Ký Cảm Ứng</span>
+            class="touch-btn py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-700">
+            <i class="ph-bold ph-pen-nib text-base"></i>
+            <span>Ký Tên</span>
           </button>
           <button type="button" onclick="openDocModalWithType('Ảnh Niêm Phong Chì (Seal)')"
-            class="touch-btn py-3 px-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-md">
-            <i class="ph-bold ph-lock-key text-base"></i>
-            <span>🔒 Chụp Chì</span>
+            class="touch-btn py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-700">
+            <i class="ph-bold ph-seal text-base"></i>
+            <span>Chụp Chì</span>
           </button>
         </div>
-        <button type="button" onclick="reportMilestone('FINISHED_UNLOADING', 'Đã hoàn tất đóng hàng')"
-          class="touch-btn w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-teal-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-600">
-          <i class="ph-bold ph-check"></i>
-          <span>✅ Đóng Xong - Kéo Cont Ra Cổng</span>
+        <button type="button" onclick="reportMilestone('FINISHED_UNLOADING', 'Đóng / dỡ hàng xong')"
+          class="touch-btn w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md">
+          <i class="ph-bold ph-check text-base"></i>
+          <span>HÀNG ĐÃ XONG — CHUẨN BỊ RA CỔNG</span>
         </button>
       </div>
 
-      {% elif trip.status == 'DELIVERED' or trip.status == 'RETURNING_EMPTY' %}
+      <!-- B8: POD đã ký, chờ rời kho -->
+      {% elif trip.status == 'DELIVERED' %}
       <div class="space-y-2.5">
-        <div class="text-sm font-bold text-white">Chặng 5: Vận chuyển cont về bãi hạ rỗng / cảng xuất</div>
+        <div class="text-sm font-bold text-white">Chứng từ đã ký — Sẵn sàng rời kho</div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Nơi hạ bãi: <strong class="text-amber-300">{{ trip.dropoff_location }}</strong>. Cẩu hạ xong bấm xác nhận và chụp phiếu EIR hạ cont.
+          Bấm khi xe lăn bánh rời khu vực kho, hệ thống ghi nhận giờ ra thực tế.{% if trip.dropoff_appointment_time %}<br><span class="inline-flex items-center gap-1 mt-1"><i class="ph-bold ph-clock-countdown"></i> Hẹn hạ bãi: <strong class="text-amber-300">{{ trip.dropoff_appointment_time }}</strong></span>{% endif %}
+        </p>
+        <button type="button" onclick="reportMilestone('DEPART_TO_DROPOFF', 'Xe rời kho, vận chuyển về bãi hạ cont')"
+          class="touch-btn w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md">
+          <i class="ph-bold ph-truck text-base"></i>
+          <span>VẬN CHUYỂN VỀ BÃI HẠ CONT</span>
+        </button>
+      </div>
+
+      <!-- B9: Đang kéo về bãi hạ -->
+      {% elif trip.status == 'RETURNING_EMPTY' %}
+      <div class="space-y-2.5">
+        <div class="text-sm font-bold text-white">Đang kéo cont về bãi hạ</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Nơi hạ: <strong class="text-amber-300">{{ trip.dropoff_location }}</strong>. Cẩu hạ xong → Chụp Phiếu EIR → Bấm xác nhận.{% if trip.dropoff_appointment_time %}<br><span class="inline-flex items-center gap-1 mt-1"><i class="ph-bold ph-clock"></i> Hẹn hạ: <strong class="text-amber-300">{{ trip.dropoff_appointment_time }}</strong></span>{% endif %}
         </p>
         <div class="grid grid-cols-2 gap-2">
-          <button type="button" onclick="reportMilestone('DROPOFF_COMPLETED', 'Đã cẩu hạ cont hoàn tất tại bãi/cảng')"
-            class="touch-btn py-3.5 px-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg">
-            <i class="ph-fill ph-anchor text-base"></i>
-            <span>⚓ ĐÃ HẠ XONG BÃI</span>
-          </button>
           <button type="button" onclick="openDocModalWithType('Phiếu EIR Hạ Cont')"
-            class="touch-btn py-3.5 px-2 rounded-xl bg-teal-800 hover:bg-teal-700 text-white font-black text-xs flex items-center justify-center gap-1.5 border border-teal-600 shadow-md">
+            class="touch-btn py-3.5 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700">
             <i class="ph-bold ph-camera text-base"></i>
-            <span>📸 Chụp Phiếu EIR</span>
+            <span>Chụp Phiếu EIR</span>
+          </button>
+          <button type="button" onclick="reportMilestone('DROPOFF_COMPLETED', 'Đã cẩu hạ cont hoàn tất')"
+            class="touch-btn py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
+            <i class="ph-bold ph-anchor text-base"></i>
+            <span>ĐÃ HẠ CONT XONG</span>
           </button>
         </div>
         {% if not trip.is_overnight_detention %}
         <button type="button" onclick="reportMilestone('OVERNIGHT_WAIT', 'Kho yêu cầu chờ hạ sau 00:00')"
-          class="touch-btn w-full py-2.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-200 font-bold text-xs flex items-center justify-center gap-1.5">
-          <i class="ph-fill ph-moon-stars text-purple-400"></i>
-          <span>🌙 Báo Kho Bắt Chờ Hạ Sau 00:00 (Lưu đêm)</span>
+          class="touch-btn w-full py-2.5 rounded-xl border border-slate-600 text-slate-400 font-medium text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700/50">
+          <i class="ph-bold ph-moon text-sm"></i>
+          <span>Báo Lưu Xe Chờ Hạ Sau 00:00</span>
         </button>
         {% endif %}
       </div>
 
+      <!-- B10: Hoàn tất -->
       {% elif trip.status == 'COMPLETED' %}
       <div class="space-y-2 text-center py-2">
-        <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-2xl font-bold">
-          <i class="ph-fill ph-check-circle"></i>
+        <div class="w-12 h-12 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto">
+          <i class="ph-bold ph-check-circle text-3xl"></i>
         </div>
-        <div class="text-base font-black text-emerald-300">CHUYẾN XE ĐÃ HOÀN TẤT THÀNH CÔNG!</div>
-        <p class="text-xs text-slate-300">Toàn bộ chứng từ, mốc kho và chi phí đã được chuyển cho Điều Độ và Kế Toán đối soát.</p>
+        <div class="text-base font-black text-teal-300">CHUYẾN XE ĐÃ HOÀN TẤT!</div>
+        <p class="text-xs text-slate-400">Toàn bộ chứng từ và chi phí đã được chuyển cho Điều Độ và Kế Toán đối soát.</p>
       </div>
       {% endif %}
 
-      <!-- Live status toast message container -->
-      <div id="milestoneToast" class="hidden mt-3 p-3 rounded-xl bg-teal-900/90 border border-teal-500 text-teal-100 text-xs font-semibold flex items-center gap-2">
+      <!-- Live status toast -->
+      <div id="milestoneToast" class="hidden mt-3 p-3 rounded-xl bg-slate-700/80 border border-slate-500 text-slate-100 text-xs font-semibold flex items-center gap-2">
         <i class="ph-bold ph-check-circle text-teal-400 text-base"></i>
         <span id="milestoneToastText">Đã ghi nhận mốc thành công.</span>
       </div>
     </div>
 
-    <!-- 2. NÚT CHỨC NĂNG BỔ TRỢ CONTAINER: GIÁM ĐỊNH VỎ & ẢNH CHÌ -->
+    <!-- 2. QUICK ACTION: KÊ CHI PHÍ & CHỤP CHỨNG TỪ -->
     <div class="grid grid-cols-2 gap-2.5">
-      <!-- Nút Chụp Giám Định Vỏ Cont -->
+      <button type="button" onclick="openExpenseModal()"
+        class="touch-btn bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex flex-col items-center justify-center text-center shadow-sm">
+        <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center mb-1.5">
+          <i class="ph-bold ph-receipt text-lg"></i>
+        </div>
+        <span class="text-xs font-bold text-slate-900">Kê Chi Phí</span>
+        <span class="text-[10px] text-slate-400 mt-0.5">BOT, cẩu hạ, bốc xếp</span>
+      </button>
+      <button type="button" onclick="openDocModal()"
+        class="touch-btn bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex flex-col items-center justify-center text-center shadow-sm">
+        <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center mb-1.5">
+          <i class="ph-bold ph-camera text-lg"></i>
+        </div>
+        <span class="text-xs font-bold text-slate-900">Chụp Chứng Từ</span>
+        <span class="text-[10px] text-slate-400 mt-0.5">POD, EIR, Vỏ cont</span>
+      </button>
+    </div>
+
+    <!-- 3. BÁO MỐC NHANH (ACCORDION) -->
+    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200">
+      <button type="button" onclick="toggleAllMilestones()" class="w-full flex items-center justify-between text-left">
+        <div class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="ph-bold ph-list-numbers text-teal-600"></i>
+          <span>Báo Mốc Thủ Công</span>
+        </div>
+        <div class="flex items-center gap-1 text-slate-400 text-xs">
+          <span id="milestoneToggleLabel" class="text-[11px] font-normal">Mở</span>
+          <i id="milestoneToggleIcon" class="ph-bold ph-caret-down"></i>
+        </div>
+      </button>
+      <div id="allMilestonesList" class="hidden mt-3 grid grid-cols-3 gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="reportMilestone('ACCEPTED_TRIP','Tài xế xác nhận')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-check-circle text-base text-teal-600"></i><span class="text-[10px] font-bold text-slate-700">Nhận lệnh</span>
+        </button>
+        <button type="button" onclick="reportMilestone('DEPARTED','Xuất phát')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-paper-plane-tilt text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Xuất phát</span>
+        </button>
+        <button type="button" onclick="reportMilestone('APPROACHING_WAREHOUSE','Sắp đến 30p')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-bell-ringing text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Sắp đến kho</span>
+        </button>
+        <button type="button" onclick="reportMilestone('ARRIVED_WAREHOUSE','Đến cổng')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-map-pin text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Đến cổng kho</span>
+        </button>
+        <button type="button" onclick="reportMilestone('START_UNLOADING','Vào dock đóng/dỡ')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-package text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Vào dock</span>
+        </button>
+        <button type="button" onclick="reportMilestone('FINISHED_UNLOADING','Hàng xong')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-check text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Hàng xong</span>
+        </button>
+        <button type="button" onclick="reportMilestone('DEPART_TO_DROPOFF','Rời kho về bãi hạ')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-truck text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Rời kho</span>
+        </button>
+        <button type="button" onclick="reportMilestone('DROPOFF_COMPLETED','Đã hạ cont')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-anchor text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Đã hạ cont</span>
+        </button>
+        <button type="button" onclick="reportMilestone('OVERNIGHT_WAIT','Lưu xe sau 0h')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
+          <i class="ph-bold ph-moon text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Lưu đêm</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- QUICK ACTION: GIÁM ĐỊNH VỎ & SEAL -->
+    <div class="grid grid-cols-2 gap-2.5">
       <button type="button" onclick="openDocModalWithType('Ảnh giám định vỏ Cont')"
         class="touch-btn bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center gap-2.5 shadow-sm text-left">
-        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-          <i class="ph-fill ph-shield-check text-xl"></i>
+        <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+          <i class="ph-bold ph-shield-check text-lg"></i>
         </div>
         <div>
           <div class="text-xs font-bold text-slate-900 leading-tight">Giám Định Vỏ</div>
           <div class="text-[10px] text-slate-500 mt-0.5">Chống đền vỏ cont</div>
         </div>
       </button>
-
-      <!-- Nút Chụp Ảnh Chì (Seal) -->
       <button type="button" onclick="openDocModalWithType('Ảnh Niêm Phong Chì (Seal)')"
         class="touch-btn bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center gap-2.5 shadow-sm text-left">
-        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-          <i class="ph-fill ph-lock-key text-xl"></i>
+        <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+          <i class="ph-bold ph-seal text-lg"></i>
         </div>
         <div>
           <div class="text-xs font-bold text-slate-900 leading-tight">Chụp Cây Chì</div>
           <div class="text-[10px] text-slate-500 mt-0.5">Seal niêm phong cont</div>
         </div>
-      </button>
-    </div>
-
-    <!-- 3. DANH SÁCH TOÀN BỘ 6 MỐC SOP (ACCORDION THU GỌN) -->
-    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200">
-      <button type="button" onclick="toggleAllMilestones()" class="w-full flex items-center justify-between text-left">
-        <div class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-          <i class="ph-bold ph-list-numbers text-teal-600"></i>
-          <span>Báo Mốc 1-Chạm (SOP Hiện Trường)</span>
-        </div>
-        <div class="flex items-center gap-1 text-slate-400 text-xs font-bold">
-          <span id="milestoneToggleLabel" class="text-[11px] font-normal">Mở chọn nhanh</span>
-          <i id="milestoneToggleIcon" class="ph-bold ph-caret-down"></i>
-        </div>
-      </button>
-
-      <div id="allMilestonesList" class="hidden mt-3 grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
-        <!-- 1. Sắp đến kho 30p -->
-        <button type="button" onclick="reportMilestone('APPROACHING_WAREHOUSE', 'Tài xế báo sắp đến kho 30p')"
-          class="touch-btn p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-sky-950 flex flex-col items-center justify-center text-center">
-          <i class="ph-fill ph-navigation-arrow text-lg text-sky-600 mb-0.5"></i>
-          <span class="text-xs font-bold leading-snug">1. Sắp đến kho</span>
-          <span class="text-[10px] text-sky-700">Trước 30 phút</span>
-        </button>
-
-        <!-- 2. Đến cổng kho -->
-        <button type="button" onclick="reportMilestone('ARRIVED_WAREHOUSE', 'Đã check-in cổng kho')"
-          class="touch-btn p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 flex flex-col items-center justify-center text-center">
-          <i class="ph-fill ph-warehouse text-lg text-indigo-600 mb-0.5"></i>
-          <span class="text-xs font-bold leading-snug">2. Đến cổng kho</span>
-          <span class="text-[10px] text-indigo-700">Check-in cổng</span>
-        </button>
-
-        <!-- 3. Bắt đầu đóng/dỡ -->
-        <button type="button" onclick="reportMilestone('START_UNLOADING', 'Bắt đầu đóng / dỡ hàng')"
-          class="touch-btn p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 flex flex-col items-center justify-center text-center">
-          <i class="ph-fill ph-forklift text-lg text-amber-600 mb-0.5"></i>
-          <span class="text-xs font-bold leading-snug">3. Vào dock đóng/dỡ</span>
-          <span class="text-[10px] text-amber-700">Bắt đầu bốc hàng</span>
-        </button>
-
-        <!-- 4. Đóng hàng xong -->
-        <button type="button" onclick="reportMilestone('FINISHED_UNLOADING', 'Đã hoàn tất đóng hàng')"
-          class="touch-btn p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-950 flex flex-col items-center justify-center text-center">
-          <i class="ph-fill ph-check-fat text-lg text-teal-600 mb-0.5"></i>
-          <span class="text-xs font-bold leading-snug">4. Đóng hàng xong</span>
-          <span class="text-[10px] text-teal-700">Kéo cont ra cổng</span>
-        </button>
-
-        <!-- 5. Chờ qua đêm sau 0h -->
-        <button type="button" onclick="reportMilestone('OVERNIGHT_WAIT', 'Kho yêu cầu chờ hạ sau 00:00')"
-          class="touch-btn p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-950 flex flex-col items-center justify-center text-center">
-          <i class="ph-fill ph-moon-stars text-lg text-purple-600 mb-0.5"></i>
-          <span class="text-xs font-bold leading-snug">5. Chờ qua đêm</span>
-          <span class="text-[10px] text-purple-700">Lưu xe hạ sau 0h</span>
-        </button>
-
-        <!-- 6. Đã hạ cont xong -->
-        <button type="button" onclick="reportMilestone('DROPOFF_COMPLETED', 'Đã cẩu hạ cont hoàn tất tại bãi/cảng')"
-          class="touch-btn p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex flex-col items-center justify-center text-center">
-          <i class="ph-fill ph-anchor text-lg text-emerald-600 mb-0.5"></i>
-          <span class="text-xs font-bold leading-snug">6. Đã hạ cont xong</span>
-          <span class="text-[10px] text-emerald-700">Hoàn tất chuyến xe</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- QUICK ACTIONS 2-TOUCH: KÊ CHI PHÍ & CHỤP CHỨNG TỪ -->
-    <div class="grid grid-cols-2 gap-3">
-      <!-- Button Kê Khai Chi Phí -->
-      <button type="button" onclick="openExpenseModal()"
-        class="touch-btn bg-white hover:bg-slate-50 border-2 border-teal-600 text-teal-700 rounded-2xl p-3.5 flex flex-col items-center justify-center text-center shadow-sm">
-        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center mb-1.5">
-          <i class="ph-fill ph-receipt text-xl"></i>
-        </div>
-        <span class="text-xs font-bold text-slate-900">+ Kê Chi Phí</span>
-        <span class="text-[10px] text-slate-500 mt-0.5">BOT, Cẩu hạ, Bốc xếp</span>
-      </button>
-
-      <!-- Button Chụp POD / EIR -->
-      <button type="button" onclick="openDocModal()"
-        class="touch-btn bg-teal-700 hover:bg-teal-800 text-white rounded-2xl p-3.5 flex flex-col items-center justify-center text-center shadow-md">
-        <div class="w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center mb-1.5">
-          <i class="ph-fill ph-camera text-xl"></i>
-        </div>
-        <span class="text-xs font-bold text-white">📸 Chụp POD / EIR</span>
-        <span class="text-[10px] text-teal-200 mt-0.5">Trả ảnh chứng từ số</span>
       </button>
     </div>
 
