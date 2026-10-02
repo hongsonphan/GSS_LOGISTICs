@@ -403,3 +403,53 @@ Giao diện điện thoại giả lập với:
 - [ ] P&L box khớp 100% với tổng bảng kê chi tiết?
 - [ ] Nhấp logo/homepage → Về Dashboard (không phải Điều vận)?
 - [ ] Responsive test trên màn hình 1280px và 1920px?
+
+---
+
+## 11. BỘ NGUYÊN TẮC THIẾT KẾ FORM CHUẨN (BIM FORM DESIGN SYSTEM)
+
+Dựa trên nghiên cứu chuẩn mực từ 4 hệ thống SaaS/ERP quốc tế hàng đầu (E-Commerce ERP, Dynamic CRM Data Entry, Contact Profile và Candidate Document Portal), BIM Logistics chuẩn hóa toàn bộ các Form nhập liệu theo các nguyên tắc sau:
+
+### 11.1 Cấu Trúc Bố Cục (Form Layout Architecture)
+
+1. **Header Bar & Breadcrumbs:**
+   - Góc trái: Tiêu đề Form rõ ràng (`font-heading font-black text-xl text-slate-900`) + Thanh tiến độ hoàn thiện (VD: `Tiến độ điền: 85%`) hoặc Timestamp cập nhật cuối.
+   - Góc phải: Breadcrumb điều hướng + Cụm nút hành động (Nút Hủy `bg-slate-100` + Nút Lưu chính `bg-teal-700 hover:bg-teal-800 text-white shadow-sm`).
+2. **Tab Phân Tầng (% Completion Tab Bar):**
+   - Áp dụng cho các form đa bước (Báo giá, Chuyến xe, Khách hàng lớn).
+   - Mỗi tab hiển thị tên nhóm + chỉ số % hoàn tất (VD: `Thông tin chung (100%)`, `Chi phí & Cước (60%)`, `Chứng từ đính kèm (0%)`).
+   - Active Tab có đường gạch chân Teal thương hiệu (`border-b-2 border-teal-700 text-teal-800 font-bold`).
+3. **Bố Cục 2 Cột Bất Đối Xứng (Asymmetric 2/3 - 1/3 Grid):**
+   - **Cột Chính (Trái 65-70%):** Chứa các Section Card chính nhập dữ liệu nghiệp vụ (Thông tin Lộ trình, Hàng hóa, Cước phí, Phụ cấp).
+   - **Cột Phụ (Phải 30-35%):** Chứa các Card tiện ích vệ tinh:
+     - **Card Trạng Thái (Status Widget):** Chọn trạng thái kèm chấm tròn màu trực quan (`Live Indicator`).
+     - **Card Đính Kèm Nhanh (Dropzone File Upload):** Kéo thả chứng từ/ảnh hiện trường kèm danh sách `Recently Uploaded`.
+     - **Card Danh Mục Nhanh (Quick Master Data):** Chọn danh mục kèm nút `+ Tạo nhanh` mở Modal popup.
+4. **Phân Khối Section Card (Card-Based Grouping):**
+   - Nền Form tổng thể: `bg-slate-100/70`.
+   - Mỗi nhóm nghiệp vụ là 1 Card trắng (`bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-sm mb-5`).
+   - Header của Card: Có tiêu đề nhóm in hoa nhẹ (`text-slate-800 font-bold text-sm md:text-base flex items-center justify-between`) kèm icon hành động hoặc nút thêm nhanh (`+ Thêm dòng`).
+
+### 11.2 Chuẩn Mực Trường Nhập Liệu (Input Field Micro-UX)
+
+1. **Quy Tắc Xếp Cặp Cân Đối (Strict Field Pairing):**
+   - Các trường có mối liên hệ logic bắt buộc phải đi cùng hàng:
+     - *Họ & Tên* / *Mã & Tên đối tác*
+     - *Nơi đi & Nơi đến* / *Ngày bắt đầu & Ngày kết thúc*
+     - *Số điện thoại & Email* / *Số tài khoản & Ngân hàng*
+   - Sử dụng lưới responsive: `grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5` hoặc `md:grid-cols-3`.
+2. **Typography & Nhãn Trường (Labels & Helpers):**
+   - **Label:** `text-xs md:text-[13px] font-bold text-slate-700 mb-1.5 block`
+   - **Dấu bắt buộc:** Dấu sao đỏ rõ ràng `<span class="text-rose-600 font-bold">*</span>`.
+   - **Helper Text (Gợi ý dưới ô):** Chữ nhỏ xám nhạt `text-[11px] text-slate-400 mt-1` giải thích rõ mục đích (VD: *Nhập cước chưa bao gồm 8% VAT*).
+   - **Validation Indicator:** Icon tích xanh `ph-check-circle text-emerald-600` hiển thị bên phải khi trường dữ liệu hợp lệ.
+3. **Định Dạng Tiền Tệ & Số Liệu:**
+   - Mọi ô tiền bắt buộc gắn class `input-number-vn font-mono font-bold text-teal-800`, tự động format hàng ngàn thời gian thực (`4.000.000`).
+   - Căn lề số tiền sang phải hoặc giữa tùy form, có đơn vị tiền tệ rõ ràng (`VNĐ` / `km` / `kg`).
+4. **Khu Vực Kéo Thả Chứng Từ (Dropzone Document Uploader):**
+   - Khung viền đứt đoạn: `border-2 border-dashed border-slate-200 hover:border-teal-400 bg-slate-50/60 rounded-xl p-5 text-center cursor-pointer transition-colors`.
+   - Icon định dạng tệp to rõ (Phosphor `ph-folder-simple-dashed` hoặc `ph-file-arrow-up text-teal-600`).
+   - Danh sách file tải lên: Hiển thị icon theo đuôi file (PDF đỏ, Excel xanh lá, Ảnh xanh dương), tên file, dung lượng (MB/KB) và nút xóa `✕` nhanh.
+5. **Nút Thêm Nhanh Danh Mục (`+ Quick Master Data`):**
+   - Các trường Select danh mục (Khách hàng, Địa điểm, Hãng tàu, Nhà xe...) luôn đi kèm nút `+` nhỏ bên cạnh hoặc nút `+ Tạo mới...` ở cuối dropdown để mở modal tạo nhanh không bị gián đoạn luồng làm việc.
+

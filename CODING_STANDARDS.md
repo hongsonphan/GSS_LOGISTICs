@@ -143,3 +143,43 @@ Toàn bộ bảng dữ liệu danh mục, điều vận, đối soát và kế t
 - Bắt buộc gắn class `.erp-table` hoặc `.bim-table` trên thẻ `<table>`.
 - Sử dụng `.erp-table-container` để bọc bảng có scroll dọc, giữ Header `sticky`.
 - Class tiện ích: `.row-multiline`, `.erp-subtext` / `.bim-subtext`, `.erp-number-cell`.
+
+---
+
+## VII. QUY CHUẨN THIẾT KẾ FORM NHẬP LIỆU CHUẨN QUỐC TẾ (BIM ENTERPRISE FORM STANDARDS)
+
+Toàn bộ các Form tạo mới, chỉnh sửa (Modal Popup, Full Page Form, Drawer Form) trong hệ thống BIM Logistics bắt buộc tuân thủ 6 nguyên tắc vàng về tính hài hòa, thẩm mỹ cao cấp và trải nghiệm người dùng:
+
+### 1. Nguyên Tắc Lưới Bố Cục Cân Bằng (Strict Balanced Grid)
+- **Tỷ lệ lưới:** Sử dụng hệ lưới chuẩn 12 cột (12-column grid) hoặc chia đều 2 cột (`grid-cols-1 md:grid-cols-2 gap-4 md:gap-5`) và 3 cột (`md:grid-cols-3 gap-3.5`).
+- **Cấm triệt để lỗi "Lủng Lỗ" (No Broken Row):** Nếu 1 hàng có 2 cột mà chỉ có 1 trường dữ liệu, bắt buộc trường đó phải `col-span-2` (full width) hoặc ghép cặp với 1 trường phụ khác. Tuyệt đối không để trường 1/2 đứng trơ trọi tạo khoảng trống xấu xí.
+- **Bố cục 2/3 - 1/3 cho trang lớn:** Cột chính (8/12) chứa dữ liệu nghiệp vụ theo từng Card trắng; Cột phụ (4/12) chứa Widget trạng thái, Dropzone đính kèm và Quick Master Data.
+
+### 2. Phân Cấp Thị Giác & Thang Đo Khoảng Trắng (Visual Rhythm & Whitespace)
+- **Nhịp thở 8-Point Grid:**
+  - Padding trong Card: `p-5 md:p-6` (20px - 24px).
+  - Khoảng cách giữa các hàng input: `space-y-4` (16px).
+  - Khoảng cách giữa các ô trên cùng hàng: `gap-4 md:gap-5` (16px - 20px).
+  - Khoảng cách giữa Label và Input: `mb-1.5` (6px).
+- **Phân cấp phông chữ (Typographic Hierarchy):**
+  - **Tiêu đề nhóm (Section Header):** `text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2 pb-3 mb-4 border-b border-slate-100`.
+  - **Nhãn trường (Label):** `text-xs md:text-[13px] font-bold text-slate-700 block`.
+  - **Dấu bắt buộc:** Dấu sao đỏ `<span class="text-rose-600 font-bold ml-0.5">*</span>`.
+  - **Gợi ý trường (Helper text):** `text-[11px] text-slate-400 mt-1`.
+  - **Giá trị nhập (Input Text):** `text-sm font-semibold text-slate-900`. Dữ liệu số/tiền/mã dùng font đơn cách `font-mono font-bold text-teal-800`.
+
+### 3. Quy Chuẩn Ô Nhập Liệu (Input Affordance & States)
+- **Kích thước chiều cao chuẩn:** Cố định `h-10` (40px) hoặc `h-11` (44px cho thao tác cảm ứng/hiện trường).
+- **Đường viền & Bo góc:** `rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 transition-all duration-150`.
+- **Trạng thái Focus:** `focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 focus:outline-none`.
+- **Trạng thái Lỗi:** `border-rose-500 ring-2 ring-rose-500/20 text-rose-900 bg-rose-50/30`.
+
+### 4. Xử Lý Tiền Tệ & Định Dạng Số (Currency & Numbers)
+- Mọi ô tiền bắt buộc gắn class `.input-number-vn font-mono font-bold` tự động hiển thị phân cách hàng ngàn bằng dấu chấm (`1.000.000`).
+- Đơn vị tiền tệ/cự ly được đặt cố định bên trong ô bên phải (`text-xs font-bold text-slate-400 absolute right-3 top-2.5`).
+
+### 5. Dropzone Chứng Từ & Danh Mục Nhanh (Documents & Quick Add)
+- **Khu vực kéo thả file:** Viền nét đứt `border-2 border-dashed border-slate-200 hover:border-teal-500 bg-slate-50/60 rounded-xl p-4 md:p-5 text-center cursor-pointer transition-colors`.
+- **Danh sách file đã chọn:** Hiển thị thẻ file gọn gàng gồm icon định dạng, tên tệp rút gọn, dung lượng và nút xóa `✕`.
+- **Thêm nhanh danh mục (`+`):** Tất cả dropdown danh mục đều có nút `+` nhỏ kế bên label để bật popup tạo mới không gián đoạn luồng làm việc.
+
