@@ -105,15 +105,15 @@ class Command(BaseCommand):
 
         # Biểu cước
         tariffs_data = [
-            {'cust': 'TDA_VICACO', 'from': 'TĐÁ', 'to': 'VICACO', 'drop': 'Hạ bãi', 'price': 3500000, 'pay': 500000},
-            {'cust': 'OASIS', 'from': 'SPITC', 'to': 'MACSTAR TÂN VẠN', 'drop': 'Hạ bãi', 'price': 4500000, 'pay': 550000},
-            {'cust': 'WCA_TTI', 'from': 'CÁT LÁI', 'to': 'KHO WCA', 'drop': 'SOLOG LIBRA', 'price': 3800000, 'pay': 500000},
-            {'cust': 'TAKIGAWA', 'from': 'VSIP 2', 'to': 'VSIP 3', 'drop': 'VSIP 2', 'price': 2200000, 'pay': 400000},
-            {'cust': 'POLIFILM', 'from': 'MP3', 'to': 'VSIP 3', 'drop': 'MP3', 'price': 2500000, 'pay': 450000},
-            {'cust': 'GPF', 'from': 'GPF', 'to': 'VSIP 3', 'drop': 'GPF', 'price': 3500000, 'pay': 500000},
-            {'cust': 'TAN_UYEN', 'from': 'TÂN UYÊN', 'to': 'TÂY NINH', 'drop': '-', 'price': 4095000, 'pay': 600000},
-            {'cust': 'ANDI', 'from': 'ICD TÂY NAM', 'to': 'KHO AN DI', 'drop': 'CÁT LÁI', 'price': 3800000, 'pay': 550000},
-            {'cust': 'ANDI', 'from': 'AP-622 DEPOT', 'to': 'KHO AN DI', 'drop': 'CÁT LÁI', 'price': 4200000, 'pay': 600000},
+            {'cust': 'TDA_VICACO', 'from': 'TĐÁ', 'to': 'VICACO', 'drop': 'Hạ bãi', 'price': 3500000, 'pay': 500000, 'km': 30, 'origin': 'Cát Lái (TP.HCM)', 'dest': 'Đồng Nai (Biên Hòa/Nhơn Trạch/Long Thành)'},
+            {'cust': 'OASIS', 'from': 'SPITC', 'to': 'MACSTAR TÂN VẠN', 'drop': 'Hạ bãi', 'price': 4500000, 'pay': 550000, 'km': 20, 'origin': 'SPITC / Phú Hữu', 'dest': 'Đồng Nai (Biên Hòa/Nhơn Trạch/Long Thành)'},
+            {'cust': 'WCA_TTI', 'from': 'CÁT LÁI', 'to': 'KHO WCA', 'drop': 'SOLOG LIBRA', 'price': 3800000, 'pay': 500000, 'km': 40, 'origin': 'Cát Lái (TP.HCM)', 'dest': 'Củ Chi / Hóc Môn / TP.HCM'},
+            {'cust': 'TAKIGAWA', 'from': 'VSIP 2', 'to': 'VSIP 3', 'drop': 'VSIP 2', 'price': 2200000, 'pay': 400000, 'km': 20, 'origin': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)', 'dest': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)'},
+            {'cust': 'POLIFILM', 'from': 'MP3', 'to': 'VSIP 3', 'drop': 'MP3', 'price': 2500000, 'pay': 450000, 'km': 30, 'origin': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)', 'dest': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)'},
+            {'cust': 'GPF', 'from': 'GPF', 'to': 'VSIP 3', 'drop': 'GPF', 'price': 3500000, 'pay': 500000, 'km': 20, 'origin': 'Sóng Thần / Dĩ An', 'dest': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)'},
+            {'cust': 'TAN_UYEN', 'from': 'TÂN UYÊN', 'to': 'TÂY NINH', 'drop': '-', 'price': 4095000, 'pay': 600000, 'km': 80, 'origin': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)', 'dest': 'Tây Ninh (Trảng Bàng/Phước Đông)'},
+            {'cust': 'ANDI', 'from': 'ICD TÂY NAM', 'to': 'KHO AN DI', 'drop': 'CÁT LÁI', 'price': 3800000, 'pay': 550000, 'km': 30, 'origin': 'Cát Lái (TP.HCM)', 'dest': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)'},
+            {'cust': 'ANDI', 'from': 'AP-622 DEPOT', 'to': 'KHO AN DI', 'drop': 'CÁT LÁI', 'price': 4200000, 'pay': 600000, 'km': 30, 'origin': 'Cát Lái (TP.HCM)', 'dest': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)'},
         ]
         for td in tariffs_data:
             RouteTariff.objects.update_or_create(
@@ -124,16 +124,19 @@ class Command(BaseCommand):
                     'dropoff_location': td['drop'],
                     'container_size': '40HC',
                     'freight_price': td['price'],
-                    'driver_trip_pay': td['pay']
+                    'driver_trip_pay': td['pay'],
+                    'estimated_km': td['km'],
+                    'origin_zone': td['origin'],
+                    'destination_zone': td['dest']
                 }
             )
 
         # Báo giá (Sales / CRM)
         quotations_data = [
-            {'code': 'BG-0916-01', 'cust': 'TAKIGAWA', 'route': 'VSIP 2 -> VSIP 3', 'price': 2200000, 'trips': 45, 'status': 'APPROVED'},
-            {'code': 'BG-0916-02', 'cust': 'POLIFILM', 'route': 'MP3 -> VSIP 3', 'price': 2500000, 'trips': 20, 'status': 'APPROVED'},
-            {'code': 'BG-0916-03', 'cust': 'GPF', 'route': 'GPF -> VSIP 3', 'price': 3500000, 'trips': 15, 'status': 'NEGOTIATING'},
-            {'code': 'BG-0916-04', 'cust': 'WCA_TTI', 'route': 'CÁT LÁI -> CỦ CHI', 'price': 3800000, 'trips': 60, 'status': 'PENDING_APPROVAL'},
+            {'code': 'BG-0916-01', 'cust': 'TAKIGAWA', 'route': 'VSIP 2 -> VSIP 3', 'price': 2200000, 'trips': 45, 'status': 'APPROVED', 'km': 20, 'origin': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)', 'dest': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)'},
+            {'code': 'BG-0916-02', 'cust': 'POLIFILM', 'route': 'MP3 -> VSIP 3', 'price': 2500000, 'trips': 20, 'status': 'APPROVED', 'km': 30, 'origin': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)', 'dest': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)'},
+            {'code': 'BG-0916-03', 'cust': 'GPF', 'route': 'GPF -> VSIP 3', 'price': 3500000, 'trips': 15, 'status': 'NEGOTIATING', 'km': 20, 'origin': 'Sóng Thần / Dĩ An', 'dest': 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)'},
+            {'code': 'BG-0916-04', 'cust': 'WCA_TTI', 'route': 'CÁT LÁI -> CỦ CHI', 'price': 3800000, 'trips': 60, 'status': 'PENDING_APPROVAL', 'km': 40, 'origin': 'Cát Lái (TP.HCM)', 'dest': 'Củ Chi / Hóc Môn / TP.HCM'},
         ]
         for qd in quotations_data:
             Quotation.objects.update_or_create(
@@ -143,7 +146,62 @@ class Command(BaseCommand):
                     'route_description': qd['route'],
                     'unit_price': qd['price'],
                     'expected_trips_monthly': qd['trips'],
-                    'status': qd['status']
+                    'status': qd['status'],
+                    'estimated_km': qd['km'],
+                    'origin_zone': qd['origin'],
+                    'destination_zone': qd['dest']
+                }
+            )
+
+        # Biểu phí lương chuyến tài xế (DriverSalaryTariff)
+        from apps.master_data.models import DriverSalaryTariff
+        driver_tariffs_data = [
+            {'area': 'Khu Vực Bình Dương', 'route': 'Các KCN Sóng Thần đến Tân Uyên', 'km': 30, 'rate': 600000},
+            {'area': 'Khu Vực Bình Dương', 'route': 'KCN Bắc Tân Uyên', 'km': 50, 'rate': 600000},
+            {'area': 'Khu Vực Bình Dương', 'route': 'KCN Bàu Bàng', 'km': 70, 'rate': 650000},
+            {'area': 'Khu Vực Bình Dương', 'route': 'KCN Minh Hưng', 'km': 90, 'rate': 750000},
+            {'area': 'Khu Vực Bình Dương', 'route': 'Hớn Quản', 'km': 110, 'rate': 850000},
+            {'area': 'Khu Vực Củ Chi', 'route': 'Cắt kéo các nhà máy KCN Tân Phú Trung, KV Củ Chi', 'km': 20, 'rate': 500000},
+            {'area': 'Khu Vực Củ Chi', 'route': 'KCN Tân Phú Trung', 'km': 40, 'rate': 600000},
+            {'area': 'Khu Vực Củ Chi', 'route': 'KCN Đông Nam Củ Chi', 'km': 40, 'rate': 600000},
+            {'area': 'Khu Vực Củ Chi', 'route': 'KCN Tây Bắc Củ Chi', 'km': 50, 'rate': 600000},
+            {'area': 'Khu Vực Củ Chi', 'route': 'Khu Vực Củ Chi', 'km': 50, 'rate': 600000},
+            {'area': 'Khu Vực Long An', 'route': 'KCN Hải Sơn Long An', 'km': 50, 'rate': 600000},
+            {'area': 'Khu Vực Long An', 'route': 'KCN Tân Kim', 'km': 30, 'rate': 600000},
+            {'area': 'Khu Vực Long An', 'route': 'KCN Đức Hòa Long An', 'km': 50, 'rate': 600000},
+            {'area': 'Khu Vực Long An', 'route': 'Tân An Long An', 'km': 60, 'rate': 600000},
+            {'area': 'Khu Vực TP.HCM', 'route': 'Hóc Môn', 'km': 40, 'rate': 600000},
+            {'area': 'Khu Vực TP.HCM', 'route': 'KCN Tân Tạo', 'km': 30, 'rate': 600000},
+            {'area': 'Khu Vực TP.HCM', 'route': 'Khu Công Nghệ Cao (SHTP)', 'km': 20, 'rate': 400000},
+            {'area': 'Khu Vực TP.HCM', 'route': 'Khu Vực Bình Chánh, Vĩnh Lộc, Tân Tạo', 'km': 40, 'rate': 600000},
+            {'area': 'Khu Vực TP.HCM', 'route': 'Quận 8, Quận 11', 'km': 30, 'rate': 600000},
+            {'area': 'Khu Vực TP.HCM', 'route': 'TP. Thủ Đức', 'km': 20, 'rate': 600000},
+            {'area': 'Khu Vực Tây Ninh', 'route': 'KCN Linh Trung 3', 'km': 60, 'rate': 700000},
+            {'area': 'Khu Vực Tây Ninh', 'route': 'KCN Phước Đông', 'km': 80, 'rate': 850000},
+            {'area': 'Khu Vực Tây Ninh', 'route': 'KCN Thành Thành Công', 'km': 70, 'rate': 750000},
+            {'area': 'Khu Vực Vũng Tàu', 'route': 'KCN Tân Đức Vũng Tàu (Maple)', 'km': 70, 'rate': 750000},
+            {'area': 'Khu Vực Đồng Nai', 'route': 'Biên Hòa Đồng Nai', 'km': 30, 'rate': 600000},
+            {'area': 'Khu Vực Đồng Nai', 'route': 'KCN Amata', 'km': 30, 'rate': 600000},
+            {'area': 'Khu Vực Đồng Nai', 'route': 'Hố Nai, Sông Mây, Vĩnh Cửu', 'km': 40, 'rate': 600000},
+            {'area': 'Khu Vực Đồng Nai', 'route': 'Trảng Bom Đồng Nai', 'km': 50, 'rate': 600000},
+            {'area': 'Khu Vực Đồng Nai', 'route': 'Dầu Giây', 'km': 70, 'rate': 650000},
+            {'area': 'Khu Vực Đồng Nai', 'route': 'Long Khánh', 'km': 80, 'rate': 750000},
+            {'area': 'Khu Vực Đồng Nai', 'route': 'TBS Kho 5', 'km': 20, 'rate': 400000},
+            {'area': 'Khu Vực Đồng Nai', 'route': 'Định Quán Đồng Nai', 'km': 100, 'rate': 750000},
+            {'area': 'Tuyến Đặc Thù', 'route': 'Chuyển kho Takigawa', 'km': 20, 'rate': 450000},
+            {'area': 'Tuyến Đặc Thù', 'route': 'Chuyển kho từ KCN Phước Đông - VSIP 2', 'km': 70, 'rate': 700000},
+            {'area': 'Tuyến Đặc Thù', 'route': 'HCBH - Đóng hàng khác', 'km': 80, 'rate': 1000000},
+            {'area': 'Tuyến Đặc Thù', 'route': 'HCBH - Đóng hàng đi Campuchia', 'km': 120, 'rate': 1400000}
+        ]
+        for dtd in driver_tariffs_data:
+            DriverSalaryTariff.objects.update_or_create(
+                area_group=dtd['area'],
+                route_name=dtd['route'],
+                defaults={
+                    'estimated_km': dtd['km'],
+                    'salary_rate': dtd['rate'],
+                    'pickup_drop_area': 'Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7',
+                    'is_active': True
                 }
             )
 

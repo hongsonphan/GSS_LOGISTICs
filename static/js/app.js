@@ -8438,38 +8438,41 @@ function injectMasterDataModalFields(data) {
     if (currentMasterDataTab === 'driver_tariffs') {
         const areas = ['Khu Vực Củ Chi', 'Khu Vực Long An', 'Khu Vực Tây Ninh', 'Khu Vực Bình Dương', 'Khu Vực Đồng Nai', 'Khu Vực TP.HCM', 'Khu Vực Vũng Tàu', 'Tuyến Đặc Thù'];
         container.innerHTML = `
-            <div>
-                <label class="app-form-label">Khu Vực Kho <span class="text-rose-500">*</span></label>
-                <select id="mdf-area-group" class="app-form-control">
-                    ${areas.map(a => `<option value="${a}" ${d.area_group === a ? 'selected' : ''}>${a}</option>`).join('')}
-                </select>
-            </div>
-            <div>
-                <label class="app-form-label">Tên Tuyến / KCN / Nhà Máy <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-route-name" value="${d.route_name || ''}" placeholder="VD: KCN Phước Đông, KCN Bàu Bàng..." class="app-form-control" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div>
+                    <label class="app-form-label">Khu Vực Kho <span class="text-rose-500">*</span></label>
+                    <select id="mdf-area-group" class="app-form-control font-semibold">
+                        ${areas.map(a => `<option value="${a}" ${d.area_group === a ? 'selected' : ''}>${a}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="app-form-label">Tên Tuyến / KCN / Nhà Máy <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-route-name" value="${d.route_name || ''}" placeholder="VD: KCN Phước Đông, KCN Bàu Bàng..." class="app-form-control font-semibold" required>
+                </div>
             </div>
             <div>
                 <label class="app-form-label">Trục Lấy / Hạ Cont Chuẩn</label>
                 <input type="text" id="mdf-pickup-drop" value="${d.pickup_drop_area || 'Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7'}" placeholder="Cát Lái, SPITC, Thủ Đức..." class="app-form-control">
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start">
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="app-form-label m-0">Cự Ly Ước Tính (km)</label>
-                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded border border-indigo-200">Bước 10km</span>
+                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">Bước 10km</span>
                     </div>
                     <input type="number" id="mdf-estimated-km" value="${d.estimated_km || 30}" step="10" min="0" onchange="roundEstimatedKmInput(this)" class="app-form-control font-mono font-bold text-center">
-                    <div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 flex-wrap">
-                        <button type="button" onclick="setTariffKm(20)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">20k</button>
-                        <button type="button" onclick="setTariffKm(30)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">30k</button>
-                        <button type="button" onclick="setTariffKm(50)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">50k</button>
-                        <button type="button" onclick="setTariffKm(70)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">70k</button>
-                        <button type="button" onclick="setTariffKm(100)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">100k</button>
+                    <div class="flex items-center gap-1 mt-1.5 text-[11px] text-slate-500 flex-wrap">
+                        <span class="text-[10px] text-slate-400 font-semibold">Nhanh:</span>
+                        <button type="button" onclick="setTariffKm(20)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">20k</button>
+                        <button type="button" onclick="setTariffKm(30)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">30k</button>
+                        <button type="button" onclick="setTariffKm(50)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">50k</button>
+                        <button type="button" onclick="setTariffKm(70)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">70k</button>
+                        <button type="button" onclick="setTariffKm(100)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">100k</button>
                     </div>
                 </div>
                 <div>
                     <label class="app-form-label">Mức Lương Chuyến (VNĐ) <span class="text-rose-500">*</span></label>
-                    <input type="number" id="mdf-salary-rate" value="${d.salary_rate || 600000}" step="10000" class="app-form-control font-mono font-bold text-emerald-700" required>
+                    <input type="text" inputmode="numeric" id="mdf-salary-rate" value="${d.salary_rate ? formatNumberVN(d.salary_rate) : '600.000'}" class="input-number-vn app-form-control font-mono font-bold text-emerald-700" required>
                 </div>
             </div>
             <div>
@@ -8478,32 +8481,34 @@ function injectMasterDataModalFields(data) {
             </div>
             <div class="flex items-center space-x-2 pt-2">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
-                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động / áp dụng</label>
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động / áp dụng</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'allowances') {
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Mã Phụ Cấp <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CANG_HIEP_PHUOC" class="app-form-control uppercase font-mono" required ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CANG_HIEP_PHUOC" class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
                 </div>
                 <div>
                     <label class="app-form-label">Phân Loại</label>
-                    <select id="mdf-category" class="app-form-control">
+                    <select id="mdf-category" class="app-form-control font-semibold">
                         <option value="PORT" ${d.category === 'PORT' ? 'selected' : ''}>Phụ Thêm Cảng Xa</option>
                         <option value="INSPECTION" ${d.category === 'INSPECTION' ? 'selected' : ''}>Phụ Thu Kiểm Hóa</option>
                         <option value="OPERATION" ${d.category === 'OPERATION' ? 'selected' : ''}>Phụ Cấp Tác Nghiệp Đặc Thù</option>
                     </select>
                 </div>
             </div>
-            <div>
-                <label class="app-form-label">Tên Phụ Cấp / Tác Nghiệp <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phụ thêm Cảng Cái Mép..." class="app-form-control" required>
-            </div>
-            <div>
-                <label class="app-form-label">Số Tiền Phụ Cấp (VNĐ) <span class="text-rose-500">*</span></label>
-                <input type="number" id="mdf-amount" value="${d.amount || 0}" step="10000" class="app-form-control font-mono font-bold" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div>
+                    <label class="app-form-label">Tên Phụ Cấp / Tác Nghiệp <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phụ thêm Cảng Cái Mép..." class="app-form-control font-semibold" required>
+                </div>
+                <div>
+                    <label class="app-form-label">Số Tiền Phụ Cấp (VNĐ) <span class="text-rose-500">*</span></label>
+                    <input type="text" inputmode="numeric" id="mdf-amount" value="${d.amount ? formatNumberVN(d.amount) : '500.000'}" class="input-number-vn app-form-control font-mono font-bold text-teal-800" required>
+                </div>
             </div>
             <div>
                 <label class="app-form-label">Điều Kiện Áp Dụng</label>
@@ -8511,19 +8516,19 @@ function injectMasterDataModalFields(data) {
             </div>
             <div class="flex items-center space-x-2 pt-2">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
-                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động / áp dụng</label>
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động / áp dụng</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'locations') {
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Mã Địa Điểm <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CAT_LAI, KHO_WCA..." class="app-form-control uppercase font-mono" required ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CAT_LAI, KHO_WCA..." class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
                 </div>
                 <div>
                     <label class="app-form-label">Phân Loại</label>
-                    <select id="mdf-location-type" class="app-form-control">
+                    <select id="mdf-location-type" class="app-form-control font-semibold">
                         <option value="PORT" ${d.location_type === 'PORT' ? 'selected' : ''}>Cảng Biển</option>
                         <option value="ICD" ${d.location_type === 'ICD' ? 'selected' : ''}>Cảng Cạn (ICD)</option>
                         <option value="DEPOT" ${d.location_type === 'DEPOT' ? 'selected' : ''}>Bãi Rỗng / Depot</option>
@@ -8532,70 +8537,74 @@ function injectMasterDataModalFields(data) {
                     </select>
                 </div>
             </div>
-            <div>
-                <label class="app-form-label">Tên Địa Điểm <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Cảng Cát Lái, Kho WCA Tân Vạn..." class="app-form-control" required>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div>
+                    <label class="app-form-label">Tên Địa Điểm <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Cảng Cát Lái, Kho WCA Tân Vạn..." class="app-form-control font-semibold" required>
+                </div>
                 <div>
                     <label class="app-form-label">Tỉnh / Thành Phố</label>
                     <input type="text" id="mdf-province" value="${d.province || 'TP. Hồ Chí Minh'}" class="app-form-control">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div>
+                    <label class="app-form-label">Địa Chỉ Chi Tiết</label>
+                    <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Số nhà, đường, phường, quận/huyện..." class="app-form-control">
                 </div>
                 <div>
                     <label class="app-form-label">Số Điện Thoại Liên Hệ</label>
                     <input type="text" id="mdf-contact-phone" value="${d.contact_phone || ''}" placeholder="SĐT điều độ..." class="app-form-control font-mono">
                 </div>
             </div>
-            <div>
-                <label class="app-form-label">Địa Chỉ Chi Tiết</label>
-                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Số nhà, đường, phường, quận/huyện..." class="app-form-control">
-            </div>
-            <div>
-                <label class="app-form-label">Người Phụ Trách / Đầu Mối Giao Nhận</label>
-                <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="app-form-control">
-            </div>
-            <div>
-                <label class="app-form-label">Ghi Chú Vận Hành</label>
-                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Giờ làm việc kho, quy định vào cổng..." class="app-form-control">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div>
+                    <label class="app-form-label">Người Phụ Trách / Đầu Mối Giao Nhận</label>
+                    <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="app-form-control">
+                </div>
+                <div>
+                    <label class="app-form-label">Ghi Chú Vận Hành</label>
+                    <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Giờ làm việc kho, quy định vào cổng..." class="app-form-control">
+                </div>
             </div>
             <div class="flex items-center space-x-2 pt-2">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
-                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động</label>
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'customers') {
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Mã Khách Hàng</label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống" class="app-form-control uppercase font-mono" ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống" class="app-form-control uppercase font-mono font-bold" ${d.code ? 'readonly' : ''}>
                 </div>
                 <div>
-                    <label class="app-form-label">Mã Số Thuế</label>
-                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="app-form-control font-mono">
+                    <label class="app-form-label">Mã Số Thuế (MST)</label>
+                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="app-form-control font-mono font-semibold">
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Tên Khách Hàng / Công Ty <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo hóa đơn..." class="app-form-control" required>
+                <label class="app-form-label">Tên Khách Hàng / Doanh Nghiệp <span class="text-rose-500">*</span></label>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo giấy phép ĐKKD..." class="app-form-control font-semibold" required>
             </div>
-            <div>
-                <label class="app-form-label">Địa Chỉ Giao Nhận Hóa Đơn</label>
-                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Địa chỉ đăng ký kinh doanh..." class="app-form-control">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
-                    <label class="app-form-label">Người Liên Hệ</label>
+                    <label class="app-form-label">Người Liên Hệ / Đầu Mối</label>
                     <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="app-form-control">
                 </div>
                 <div>
-                    <label class="app-form-label">Số Điện Thoại</label>
+                    <label class="app-form-label">Số Điện Thoại Liên Hệ</label>
                     <input type="text" id="mdf-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ..." class="app-form-control font-mono">
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Ghi Chú / Yêu Cầu Đặc Thù Của Khách</label>
-                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Chính sách công nợ, quy định giao nhận..." class="app-form-control">
+                <label class="app-form-label">Địa Chỉ Xuất Hóa Đơn / Văn Phòng</label>
+                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Địa chỉ đăng ký kinh doanh..." class="app-form-control">
+            </div>
+            <div>
+                <label class="app-form-label">Ghi Chú / Yêu Cầu Giao Nhận Đặc Thù</label>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Chính sách công nợ, quy định kiểm đếm, chứng từ..." class="app-form-control">
             </div>
         `;
     } else if (currentMasterDataTab === 'tariffs') {
@@ -8606,16 +8615,19 @@ function injectMasterDataModalFields(data) {
         const contSizes = ['40HC', '20DC', '45G1', '40GP', '20RF', '40RF', 'XE_TAI_10T', 'XE_TAI_2T'];
         container.innerHTML = `
             <div>
-                <label class="app-form-label">Khách Hàng <span class="text-rose-500">*</span></label>
+                <label class="app-form-label">Khách Hàng Áp Dụng <span class="text-rose-500">*</span></label>
                 <select id="mdf-customer-id" class="app-form-control font-bold" required>
                     <option value="">-- Chọn Khách Hàng --</option>
                     ${customers.map(c => `<option value="${c.id}" ${d.customer_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
                 </select>
             </div>
-            <div class="grid grid-cols-2 gap-3 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100">
                 <div>
-                    <label class="app-form-label text-indigo-950 font-bold">1. Khu Vực Đi / Lấy Cont</label>
-                    <input type="text" id="mdf-origin-zone" list="mdf-origin-zones-list" value="${d.origin_zone || ''}" placeholder="Cát Lái, Cái Mép, Hiệp Phước..." class="app-form-control">
+                    <label class="app-form-label text-indigo-950 font-bold flex items-center space-x-1.5">
+                        <i class="ph-fill ph-map-pin text-indigo-600"></i>
+                        <span>1. Khu Vực Đi / Lấy Cont</span>
+                    </label>
+                    <input type="text" id="mdf-origin-zone" list="mdf-origin-zones-list" value="${d.origin_zone || ''}" placeholder="VD: Cát Lái, Cái Mép, Hiệp Phước..." class="app-form-control bg-white">
                     <datalist id="mdf-origin-zones-list">
                         <option value="Cát Lái (TP.HCM)">
                         <option value="Cái Mép (Vũng Tàu)">
@@ -8626,8 +8638,11 @@ function injectMasterDataModalFields(data) {
                     </datalist>
                 </div>
                 <div>
-                    <label class="app-form-label text-indigo-950 font-bold">2. Khu Vực Đến / Giao Hàng</label>
-                    <input type="text" id="mdf-dest-zone" list="mdf-dest-zones-list" value="${d.destination_zone || ''}" placeholder="Bình Dương, Đồng Nai, Tây Ninh, Long An..." class="app-form-control">
+                    <label class="app-form-label text-indigo-950 font-bold flex items-center space-x-1.5">
+                        <i class="ph-fill ph-flag-pennant text-indigo-600"></i>
+                        <span>2. Khu Vực Đến / Giao Hàng</span>
+                    </label>
+                    <input type="text" id="mdf-dest-zone" list="mdf-dest-zones-list" value="${d.destination_zone || ''}" placeholder="VD: VSIP, Bàu Bàng, Trảng Bàng, Bến Lức..." class="app-form-control bg-white">
                     <datalist id="mdf-dest-zones-list">
                         <option value="Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)">
                         <option value="Đồng Nai (Biên Hòa/Nhơn Trạch/Long Thành)">
@@ -8638,55 +8653,57 @@ function injectMasterDataModalFields(data) {
                     </datalist>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="app-form-label">Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span></label>
-                    <select id="mdf-pickup" class="app-form-control uppercase" required>
+                    <select id="mdf-pickup" class="app-form-control uppercase font-semibold" required>
                         <option value="">-- Chọn Nơi Lấy --</option>
                         ${pickupOpts.map(l => `<option value="${l.name}" ${d.pickup_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
                     </select>
                 </div>
                 <div>
                     <label class="app-form-label">Kho Nhận (Nhà Máy / Kho) <span class="text-rose-500">*</span></label>
-                    <select id="mdf-delivery" class="app-form-control uppercase" required>
+                    <select id="mdf-delivery" class="app-form-control uppercase font-semibold" required>
                         <option value="">-- Chọn Kho Nhận --</option>
                         ${warehouseOpts.map(l => `<option value="${l.name}" ${d.delivery_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
                     </select>
                 </div>
                 <div>
                     <label class="app-form-label">Nơi Hạ Cont (Bãi / Cảng)</label>
-                    <select id="mdf-dropoff" class="app-form-control uppercase">
+                    <select id="mdf-dropoff" class="app-form-control uppercase font-semibold">
                         <option value="">-- Chọn Nơi Hạ --</option>
                         ${dropoffOpts.map(l => `<option value="${l.name}" ${d.dropoff_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-4 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
-                    <label class="app-form-label">Quy Cách Cont / Xe</label>
+                    <label class="app-form-label">Quy Cách Cont / Phương Tiện</label>
                     <select id="mdf-container-size" class="app-form-control font-mono font-bold">
                         ${contSizes.map(s => `<option value="${s}" ${(d.container_size || '40HC') === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
                 </div>
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="app-form-label m-0">Cự Ly (km)</label>
-                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded border border-indigo-200">10km</span>
+                        <label class="app-form-label m-0">Cự Ly Ước Tính (km)</label>
+                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">Bước 10km</span>
                     </div>
-                    <input type="number" id="mdf-estimated-km" value="${d.estimated_km || 30}" step="10" min="0" onchange="roundEstimatedKmInput(this)" class="app-form-control font-mono font-bold text-center">
-                </div>
-                <div>
-                    <label class="app-form-label">Đơn Giá Cước (HĐ) <span class="text-rose-500">*</span></label>
-                    <input type="number" id="mdf-price" value="${d.freight_price || 4000000}" step="50000" class="app-form-control font-mono font-bold" required>
-                </div>
-                <div>
-                    <label class="app-form-label">Lương Tài Xế <span class="text-rose-500">*</span></label>
-                    <input type="number" id="mdf-pay" value="${d.driver_trip_pay || 600000}" step="50000" class="app-form-control font-mono font-bold text-emerald-700" required>
+                    <input type="text" id="mdf-estimated-km" value="${d.estimated_km || 30}" onchange="roundEstimatedKmInput(this)" class="app-form-control font-mono font-bold text-center input-number-vn" placeholder="VD: 30">
                 </div>
             </div>
-            <div>
-                <label class="app-form-label">Định Mức Vé Cầu Đường / BOT Chuẩn (VNĐ)</label>
-                <input type="number" id="mdf-toll" value="${d.toll_standard_fee || 0}" step="10000" class="app-form-control font-mono font-bold text-amber-700" placeholder="0">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="app-form-label">Đơn Giá Cước (HĐ) <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-price" value="${d.freight_price ? formatNumberVN(d.freight_price) : '4.000.000'}" class="app-form-control font-mono font-bold text-teal-800 input-number-vn" placeholder="VD: 4.000.000" required>
+                </div>
+                <div>
+                    <label class="app-form-label">Lương Chuyến Tài Xế <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-pay" value="${d.driver_trip_pay ? formatNumberVN(d.driver_trip_pay) : '600.000'}" class="app-form-control font-mono font-bold text-emerald-700 input-number-vn" placeholder="VD: 600.000" required>
+                </div>
+                <div>
+                    <label class="app-form-label">Vé BOT / Cầu Đường Chuẩn</label>
+                    <input type="text" id="mdf-toll" value="${d.toll_standard_fee ? formatNumberVN(d.toll_standard_fee) : '0'}" class="app-form-control font-mono font-bold text-amber-700 input-number-vn" placeholder="VD: 150.000">
+                </div>
             </div>
         `;
         if (d.pickup_location) setSelectValueCaseInsensitive(document.getElementById('mdf-pickup'), d.pickup_location);
@@ -8694,14 +8711,14 @@ function injectMasterDataModalFields(data) {
         if (d.dropoff_location) setSelectValueCaseInsensitive(document.getElementById('mdf-dropoff'), d.dropoff_location);
     } else if (currentMasterDataTab === 'expenses') {
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Mã Khoản Chi <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: LIFT_ON, TOLL_FEE..." class="app-form-control uppercase font-mono" required ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: LIFT_ON, TOLL_FEE..." class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
                 </div>
                 <div>
                     <label class="app-form-label">Nhóm Chi Phí</label>
-                    <select id="mdf-group-type" class="app-form-control">
+                    <select id="mdf-group-type" class="app-form-control font-semibold">
                         <option value="TOLL" ${d.group_type === 'TOLL' ? 'selected' : ''}>Vé Cầu Đường / BOT</option>
                         <option value="LIFT_ON" ${d.group_type === 'LIFT_ON' ? 'selected' : ''}>Nâng Cont</option>
                         <option value="LIFT_OFF" ${d.group_type === 'LIFT_OFF' ? 'selected' : ''}>Hạ Cont</option>
@@ -8715,37 +8732,37 @@ function injectMasterDataModalFields(data) {
             </div>
             <div>
                 <label class="app-form-label">Tên Khoản Mục Chi Phí <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phí nâng cont, Vé BOT..." class="app-form-control" required>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phí nâng cont, Vé BOT..." class="app-form-control font-semibold" required>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Định Mức Tiền Ngầm Định (VNĐ)</label>
-                    <input type="number" id="mdf-default-amount" value="${d.default_amount || 0}" step="10000" class="app-form-control font-mono font-bold">
+                    <input type="text" id="mdf-default-amount" value="${d.default_amount ? formatNumberVN(d.default_amount) : '0'}" class="app-form-control font-mono font-bold text-teal-800 input-number-vn" placeholder="VD: 100.000">
                 </div>
-                <div class="flex items-center pt-6 space-x-2">
-                    <input type="checkbox" id="mdf-requires-invoice" ${d.requires_invoice ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
-                    <label for="mdf-requires-invoice" class="text-xs font-bold text-slate-700">Bắt buộc có HĐĐT / Mã tra cứu</label>
+                <div class="flex items-center pt-2 md:pt-6 space-x-2">
+                    <input type="checkbox" id="mdf-requires-invoice" ${d.requires_invoice ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                    <label for="mdf-requires-invoice" class="text-xs font-bold text-slate-700 cursor-pointer">Bắt buộc có HĐĐT / Mã tra cứu</label>
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Ghi Chú</label>
-                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Ghi chú điều kiện..." class="app-form-control">
+                <label class="app-form-label">Ghi Chú & Điều Kiện Áp Dụng</label>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Quy định thanh toán, chứng từ thanh toán..." class="app-form-control">
             </div>
             <div class="flex items-center space-x-2 pt-2">
-                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
-                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang sử dụng</label>
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang sử dụng</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'containers') {
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Mã Quy Cách <span class="text-rose-500">*</span></label>
                     <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: 40HC, 20DC, TAI_10T..." class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
                 </div>
                 <div>
-                    <label class="app-form-label">Phân Loại</label>
-                    <select id="mdf-category" class="app-form-control">
+                    <label class="app-form-label">Phân Loại Phương Tiện / Thùng</label>
+                    <select id="mdf-category" class="app-form-control font-semibold">
                         <option value="CONTAINER" ${d.category === 'CONTAINER' ? 'selected' : ''}>Container Đường Biển</option>
                         <option value="TRUCK" ${d.category === 'TRUCK' ? 'selected' : ''}>Xe Tải Thùng / Đường Bộ</option>
                     </select>
@@ -8753,47 +8770,47 @@ function injectMasterDataModalFields(data) {
             </div>
             <div>
                 <label class="app-form-label">Tên Quy Cách / Tên Loại Thùng <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Container 40ft Cao (40HC)..." class="app-form-control" required>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Container 40ft Cao (40HC)..." class="app-form-control font-semibold" required>
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="app-form-label">Hệ Số TEU</label>
-                    <input type="number" id="mdf-teu" value="${d.teu_factor !== undefined ? d.teu_factor : 2.0}" step="0.25" class="app-form-control font-mono">
+                    <input type="number" id="mdf-teu" value="${d.teu_factor !== undefined ? d.teu_factor : 2.0}" step="0.25" class="app-form-control font-mono font-bold">
                 </div>
                 <div>
                     <label class="app-form-label">Tải Trọng Cho Phép (kg)</label>
-                    <input type="number" id="mdf-payload" value="${d.max_payload_kg || 30000}" step="500" class="app-form-control font-mono">
+                    <input type="text" id="mdf-payload" value="${d.max_payload_kg ? formatNumberVN(d.max_payload_kg) : '30.000'}" class="app-form-control font-mono font-bold input-number-vn" placeholder="VD: 30.000">
                 </div>
                 <div>
                     <label class="app-form-label">Thể Tích Chứa (CBM)</label>
-                    <input type="number" id="mdf-cbm" value="${d.cbm_capacity || 67}" step="0.5" class="app-form-control font-mono">
+                    <input type="number" id="mdf-cbm" value="${d.cbm_capacity || 67}" step="0.5" class="app-form-control font-mono font-bold">
                 </div>
             </div>
             <div class="flex items-center space-x-2 pt-2">
-                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
-                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động</label>
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'vehicles') {
         const drivers = masterDataFormOptionsCache?.drivers || [];
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Biển Số Xe <span class="text-rose-500">*</span></label>
                     <input type="text" id="mdf-license-plate" value="${d.license_plate || ''}" placeholder="VD: 51H-123.45..." class="app-form-control uppercase font-mono font-black" required ${d.license_plate ? 'readonly' : ''}>
                 </div>
                 <div>
                     <label class="app-form-label">Nguồn Sở Hữu</label>
-                    <select id="mdf-ownership" class="app-form-control">
+                    <select id="mdf-ownership" class="app-form-control font-semibold">
                         <option value="OWNED" ${d.ownership_type === 'OWNED' ? 'selected' : ''}>Xe Nhà (Đội Xe Công Ty)</option>
                         <option value="SUBCONTRACTOR" ${d.ownership_type === 'SUBCONTRACTOR' ? 'selected' : ''}>Xe Bạn (Thuê Ngoài / 3PL)</option>
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Loại Phương Tiện</label>
-                    <select id="mdf-vehicle-type" class="app-form-control">
+                    <select id="mdf-vehicle-type" class="app-form-control font-semibold">
                         <option value="TRACTOR" ${d.vehicle_type === 'TRACTOR' ? 'selected' : ''}>Đầu kéo Container</option>
                         <option value="TRUCK_10T" ${d.vehicle_type === 'TRUCK_10T' ? 'selected' : ''}>Xe tải 10 Tấn</option>
                         <option value="TRUCK_2T" ${d.vehicle_type === 'TRUCK_2T' ? 'selected' : ''}>Xe tải 2 Tấn</option>
@@ -8802,10 +8819,10 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div>
                     <label class="app-form-label">Hãng Sản Xuất / Dòng Xe</label>
-                    <input type="text" id="mdf-brand" value="${d.brand || 'Freightliner'}" placeholder="VD: Freightliner, Hino..." class="app-form-control">
+                    <input type="text" id="mdf-brand" value="${d.brand || 'Freightliner'}" placeholder="VD: Freightliner, Hino, Isuzu..." class="app-form-control">
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Tài Xế Mặc Định Gắn Xe</label>
                     <select id="mdf-driver-id" class="app-form-control font-semibold">
@@ -8815,10 +8832,10 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div>
                     <label class="app-form-label">Tải Trọng Cho Phép (kg)</label>
-                    <input type="number" id="mdf-payload" value="${d.payload_capacity_kg || 30000}" step="1000" class="app-form-control font-mono">
+                    <input type="text" id="mdf-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000'}" class="app-form-control font-mono font-bold input-number-vn" placeholder="VD: 30.000">
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="app-form-label">Hạn Đăng Kiểm</label>
                     <input type="date" id="mdf-reg-expiry" value="${d.registration_expiry ? (d.registration_expiry.includes('/') ? d.registration_expiry.split('/').reverse().join('-') : d.registration_expiry) : ''}" class="app-form-control font-mono">
@@ -8844,14 +8861,14 @@ function injectMasterDataModalFields(data) {
         `;
     } else if (currentMasterDataTab === 'trailers') {
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Biển Số Rơ-Moóc <span class="text-rose-500">*</span></label>
                     <input type="text" id="mdf-trailer-plate" value="${d.license_plate || ''}" placeholder="VD: 51R-123.45" class="app-form-control uppercase font-mono font-black" required ${d.license_plate ? 'readonly' : ''}>
                 </div>
                 <div>
                     <label class="app-form-label">Loại Rơ-Moóc <span class="text-rose-500">*</span></label>
-                    <select id="mdf-trailer-type" class="app-form-control">
+                    <select id="mdf-trailer-type" class="app-form-control font-semibold">
                         <option value="MOOC_XUONG_40" ${d.trailer_type === 'MOOC_XUONG_40' ? 'selected' : ''}>Moóc Xương 40ft (3 Trục)</option>
                         <option value="MOOC_CO_CO_40" ${d.trailer_type === 'MOOC_CO_CO_40' ? 'selected' : ''}>Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)</option>
                         <option value="MOOC_XUONG_20" ${d.trailer_type === 'MOOC_XUONG_20' ? 'selected' : ''}>Moóc Xương 20ft (3 Trục)</option>
@@ -8860,24 +8877,24 @@ function injectMasterDataModalFields(data) {
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Hãng Sản Xuất</label>
                     <input type="text" id="mdf-trailer-brand" value="${d.brand || 'Tân Thanh'}" placeholder="VD: Tân Thanh, CIMC, Doosung..." class="app-form-control">
                 </div>
                 <div>
                     <label class="app-form-label">Tải Trọng Thiết Kế (kg)</label>
-                    <input type="number" id="mdf-trailer-payload" value="${d.payload_capacity_kg || 32000}" step="500" class="app-form-control font-mono">
+                    <input type="text" id="mdf-trailer-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '32.000'}" class="app-form-control font-mono font-bold input-number-vn" placeholder="VD: 32.000">
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Hạn Đăng Kiểm Định Kỳ</label>
                     <input type="date" id="mdf-trailer-expiry" value="${d.registration_expiry ? (d.registration_expiry.includes('/') ? d.registration_expiry.split('/').reverse().join('-') : d.registration_expiry) : ''}" class="app-form-control font-mono">
                 </div>
                 <div>
                     <label class="app-form-label">Trạng Thái Hoạt Động</label>
-                    <select id="mdf-trailer-status" class="app-form-control">
+                    <select id="mdf-trailer-status" class="app-form-control font-bold">
                         <option value="IDLE" ${d.status === 'IDLE' ? 'selected' : ''}>Nằm bãi (Chờ kéo)</option>
                         <option value="ACTIVE" ${d.status === 'ACTIVE' ? 'selected' : ''}>Đang gắn xe kéo</option>
                         <option value="MAINTENANCE" ${d.status === 'MAINTENANCE' ? 'selected' : ''}>Bảo trì / Sửa chữa</option>
@@ -8887,31 +8904,31 @@ function injectMasterDataModalFields(data) {
         `;
     } else if (currentMasterDataTab === 'shipping_lines') {
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Mã Hãng Tàu <span class="text-rose-500">*</span></label>
                     <input type="text" id="mdf-sl-code" value="${d.code || ''}" placeholder="VD: MAEU, ONE, COSCO..." class="app-form-control uppercase font-mono font-black" required ${d.code ? 'readonly' : ''}>
                 </div>
                 <div>
-                    <label class="app-form-label">Tên Hãng Tàu / Hãng Vận Chuyển <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-sl-name" value="${d.name || ''}" placeholder="VD: Ocean Network Express..." class="app-form-control" required>
+                    <label class="app-form-label">Tên Hãng Tàu / Đơn Vị Vận Chuyển <span class="text-rose-500">*</span></label>
+                    <input type="text" id="mdf-sl-name" value="${d.name || ''}" placeholder="VD: Ocean Network Express..." class="app-form-control font-semibold" required>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Hotline CSKH / Cấp Vỏ</label>
                     <input type="text" id="mdf-sl-phone" value="${d.contact_phone || ''}" placeholder="VD: 028-3827-0100" class="app-form-control font-mono">
                 </div>
                 <div>
-                    <label class="app-form-label">Email Tiếp Nhận</label>
-                    <input type="email" id="mdf-sl-email" value="${d.contact_email || ''}" placeholder="cs@shipping.com" class="app-form-control">
+                    <label class="app-form-label">Email Tiếp Nhận e-DO</label>
+                    <input type="email" id="mdf-sl-email" value="${d.contact_email || ''}" placeholder="cs@shipping.com" class="app-form-control font-mono">
                 </div>
             </div>
             <div>
                 <label class="app-form-label">Website Lấy e-DO / Tra Cứu Container</label>
-                <input type="url" id="mdf-sl-web" value="${d.website || ''}" placeholder="https://..." class="app-form-control">
+                <input type="url" id="mdf-sl-web" value="${d.website || ''}" placeholder="https://..." class="app-form-control font-mono">
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Free DEM Chuẩn (Ngày)</label>
                     <input type="number" id="mdf-sl-dem" value="${d.free_dem_days || 7}" class="app-form-control font-mono font-bold text-teal-800">
@@ -8926,27 +8943,27 @@ function injectMasterDataModalFields(data) {
                 <input type="text" id="mdf-sl-notes" value="${d.notes || ''}" placeholder="Depot chỉ định hạ rỗng, lưu ý hãng..." class="app-form-control">
             </div>
             <div class="flex items-center space-x-2 pt-2">
-                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
-                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động</label>
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'subcontractors') {
         container.innerHTML = `
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Mã Đối Tác / Nhà Xe</label>
                     <input type="text" id="mdf-sc-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống (NX_...)" class="app-form-control uppercase font-mono font-bold" ${d.code ? 'readonly' : ''}>
                 </div>
                 <div>
                     <label class="app-form-label">Mã Số Thuế (MST)</label>
-                    <input type="text" id="mdf-sc-tax" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="app-form-control font-mono">
+                    <input type="text" id="mdf-sc-tax" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="app-form-control font-mono font-semibold">
                 </div>
             </div>
             <div>
                 <label class="app-form-label">Tên Nhà Xe / Đơn Vị Vận Tải 3PL <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-sc-name" value="${d.name || ''}" placeholder="VD: Công ty TNHH Vận tải Hoàng Nam..." class="app-form-control" required>
+                <input type="text" id="mdf-sc-name" value="${d.name || ''}" placeholder="VD: Công ty TNHH Vận tải Hoàng Nam..." class="app-form-control font-semibold" required>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                     <label class="app-form-label">Người Điều Hành Xe</label>
                     <input type="text" id="mdf-sc-person" value="${d.contact_person || ''}" placeholder="Tên điều độ / chủ xe..." class="app-form-control">
@@ -8957,15 +8974,15 @@ function injectMasterDataModalFields(data) {
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Địa Chỉ Bãi / Văn Phòng</label>
+                <label class="app-form-label">Địa Chỉ Bãi Xe / Văn Phòng</label>
                 <input type="text" id="mdf-sc-address" value="${d.address || ''}" placeholder="Địa chỉ..." class="app-form-control">
             </div>
-            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1">
+            <div class="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2.5">
+                <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
                     <i class="ph-bold ph-bank text-teal-700"></i>
                     <span>Tài Khoản Ngân Hàng Thanh Toán Cước</span>
                 </div>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                     <div>
                         <label class="text-[11px] font-bold text-slate-500">Số Tài Khoản</label>
                         <input type="text" id="mdf-sc-acc" value="${d.bank_account_number || ''}" placeholder="Số TK..." class="app-form-control font-mono">
@@ -8985,10 +9002,15 @@ function injectMasterDataModalFields(data) {
                 <input type="text" id="mdf-sc-notes" value="${d.notes || ''}" placeholder="VD: Chuyên tuyến Long An, 10 xe đầu kéo..." class="app-form-control">
             </div>
             <div class="flex items-center space-x-2 pt-2">
-                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
-                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hợp tác</label>
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hợp tác</label>
             </div>
         `;
+    }
+
+    // Tự động khởi tạo format hàng ngàn cho tất cả input tiền tệ / số trong modal
+    if (typeof initAllNumberInputs === 'function') {
+        initAllNumberInputs();
     }
 }
 
@@ -9019,8 +9041,8 @@ async function submitMasterDataForm(e) {
             area_group: document.getElementById('mdf-area-group').value,
             route_name: document.getElementById('mdf-route-name').value,
             pickup_drop_area: document.getElementById('mdf-pickup-drop')?.value || '',
-            estimated_km: parseInt(document.getElementById('mdf-estimated-km')?.value) || 0,
-            salary_rate: parseInt(document.getElementById('mdf-salary-rate').value),
+            estimated_km: parseNumberVN(document.getElementById('mdf-estimated-km')?.value) || 0,
+            salary_rate: parseNumberVN(document.getElementById('mdf-salary-rate').value) || 0,
             notes: document.getElementById('mdf-notes').value,
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
@@ -9029,7 +9051,7 @@ async function submitMasterDataForm(e) {
             code: document.getElementById('mdf-code').value,
             category: document.getElementById('mdf-category').value,
             name: document.getElementById('mdf-name').value,
-            amount: parseInt(document.getElementById('mdf-amount').value),
+            amount: parseNumberVN(document.getElementById('mdf-amount').value) || 0,
             notes: document.getElementById('mdf-notes').value,
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
@@ -9060,21 +9082,21 @@ async function submitMasterDataForm(e) {
             customer_id: document.getElementById('mdf-customer-id').value,
             origin_zone: document.getElementById('mdf-origin-zone')?.value || '',
             destination_zone: document.getElementById('mdf-dest-zone')?.value || '',
-            estimated_km: parseInt(document.getElementById('mdf-estimated-km')?.value) || 0,
+            estimated_km: parseNumberVN(document.getElementById('mdf-estimated-km')?.value) || 0,
             pickup_location: document.getElementById('mdf-pickup').value,
             delivery_location: document.getElementById('mdf-delivery').value,
             dropoff_location: document.getElementById('mdf-dropoff').value,
             container_size: document.getElementById('mdf-container-size')?.value || '40HC',
-            freight_price: parseInt(document.getElementById('mdf-price').value),
-            driver_trip_pay: parseInt(document.getElementById('mdf-pay').value),
-            toll_standard_fee: parseInt(document.getElementById('mdf-toll')?.value || 0)
+            freight_price: parseNumberVN(document.getElementById('mdf-price').value) || 0,
+            driver_trip_pay: parseNumberVN(document.getElementById('mdf-pay').value) || 0,
+            toll_standard_fee: parseNumberVN(document.getElementById('mdf-toll')?.value || 0) || 0
         };
     } else if (tabKey === 'expenses') {
         payload = {
             code: document.getElementById('mdf-code').value,
             group_type: document.getElementById('mdf-group-type').value,
             name: document.getElementById('mdf-name').value,
-            default_amount: parseInt(document.getElementById('mdf-default-amount').value),
+            default_amount: parseNumberVN(document.getElementById('mdf-default-amount').value) || 0,
             requires_invoice: document.getElementById('mdf-requires-invoice').checked,
             notes: document.getElementById('mdf-notes')?.value || '',
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
@@ -9084,9 +9106,9 @@ async function submitMasterDataForm(e) {
             code: document.getElementById('mdf-code').value,
             category: document.getElementById('mdf-category').value,
             name: document.getElementById('mdf-name').value,
-            teu_factor: parseFloat(document.getElementById('mdf-teu').value),
-            max_payload_kg: parseInt(document.getElementById('mdf-payload').value),
-            cbm_capacity: parseFloat(document.getElementById('mdf-cbm').value),
+            teu_factor: parseFloat(document.getElementById('mdf-teu').value) || 2.0,
+            max_payload_kg: parseNumberVN(document.getElementById('mdf-payload').value) || 0,
+            cbm_capacity: parseFloat(document.getElementById('mdf-cbm').value) || 0,
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'vehicles') {
@@ -9095,7 +9117,7 @@ async function submitMasterDataForm(e) {
             ownership_type: document.getElementById('mdf-ownership').value,
             vehicle_type: document.getElementById('mdf-vehicle-type').value,
             brand: document.getElementById('mdf-brand').value,
-            payload_capacity_kg: parseInt(document.getElementById('mdf-payload').value),
+            payload_capacity_kg: parseNumberVN(document.getElementById('mdf-payload').value) || 0,
             current_driver_id: document.getElementById('mdf-driver-id')?.value ? parseInt(document.getElementById('mdf-driver-id').value) : null,
             registration_expiry: document.getElementById('mdf-reg-expiry')?.value || null,
             insurance_expiry: document.getElementById('mdf-ins-expiry')?.value || null,
@@ -9107,7 +9129,7 @@ async function submitMasterDataForm(e) {
             license_plate: document.getElementById('mdf-trailer-plate').value,
             trailer_type: document.getElementById('mdf-trailer-type').value,
             brand: document.getElementById('mdf-trailer-brand').value,
-            payload_capacity_kg: parseInt(document.getElementById('mdf-trailer-payload').value),
+            payload_capacity_kg: parseNumberVN(document.getElementById('mdf-trailer-payload').value) || 0,
             registration_expiry: document.getElementById('mdf-trailer-expiry').value || null,
             status: document.getElementById('mdf-trailer-status').value
         };
