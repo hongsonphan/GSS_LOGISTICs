@@ -3866,6 +3866,13 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
         if (priceInput) priceInput.value = formatNumberVN(3800000);
         const tripsInput = document.getElementById('quote-monthly-trips');
         if (tripsInput) tripsInput.value = formatNumberVN(20);
+        const origZoneEl = document.getElementById('quote-origin-zone');
+        if (origZoneEl) origZoneEl.value = 'Cát Lái (TP.HCM)';
+        const destZoneEl = document.getElementById('quote-dest-zone');
+        if (destZoneEl) destZoneEl.value = 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)';
+        const kmInput = document.getElementById('quote-estimated-km');
+        if (kmInput) kmInput.value = '30';
+        onQuoteZonesChanged();
         calculateQuoteExpectedRevenue();
     } else {
         if (idInput) idInput.value = quoteId;
@@ -3884,6 +3891,12 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
             }
             const custEl = document.getElementById('quote-customer');
             if (custEl) setSelectValueCaseInsensitive(custEl, q.customer_name);
+            const origZoneEl = document.getElementById('quote-origin-zone');
+            if (origZoneEl) origZoneEl.value = q.origin_zone || '';
+            const destZoneEl = document.getElementById('quote-dest-zone');
+            if (destZoneEl) destZoneEl.value = q.destination_zone || '';
+            const kmInput = document.getElementById('quote-estimated-km');
+            if (kmInput) kmInput.value = q.estimated_km || 30;
             const routeEl = document.getElementById('quote-route');
             if (routeEl) routeEl.value = q.route_description;
             const priceEl = document.getElementById('quote-unit-price');
@@ -3911,6 +3924,9 @@ async function saveQuotation(e) {
     }
     const id = document.getElementById('quote-id')?.value;
     const customer = document.getElementById('quote-customer')?.value?.trim();
+    const origZone = document.getElementById('quote-origin-zone')?.value?.trim() || '';
+    const destZone = document.getElementById('quote-dest-zone')?.value?.trim() || '';
+    const estimatedKm = parseInt(document.getElementById('quote-estimated-km')?.value) || 0;
     const route = document.getElementById('quote-route')?.value?.trim();
     const unitPrice = parseNumberVN(document.getElementById('quote-unit-price')?.value);
     const monthlyTrips = parseNumberVN(document.getElementById('quote-monthly-trips')?.value);
@@ -3935,6 +3951,9 @@ async function saveQuotation(e) {
                 method: 'PUT',
                 body: JSON.stringify({
                     customer: customer,
+                    origin_zone: origZone,
+                    destination_zone: destZone,
+                    estimated_km: estimatedKm,
                     route_description: route,
                     unit_price: unitPrice,
                     expected_trips_monthly: monthlyTrips,
@@ -3947,6 +3966,9 @@ async function saveQuotation(e) {
                 body: JSON.stringify({
                     action: 'create_quotation',
                     customer: customer,
+                    origin_zone: origZone,
+                    destination_zone: destZone,
+                    estimated_km: estimatedKm,
                     route_description: route,
                     unit_price: unitPrice,
                     monthly_trips: monthlyTrips,
@@ -5258,51 +5280,90 @@ async function openMasterDataModalQuick(tabKey, targetSelectId = null) {
     await openCreateMasterDataModal();
 }
 
-// --- XỬ LÝ KHU VỰC & TUYẾN ĐƯỜNG BÁO GIÁ ---
-function onQuoteZoneChanged(zoneCode) {
-    const presetSelect = document.getElementById('quote-route-preset');
+// --- XỬ LÝ KHU VỰC, TUYẾN ĐƯỜNG & SỐ KM BÁO GIÁ ---
+function roundEstimatedKmInput(input) {
+    if (!input) return;
+    let val = parseInt(input.value) || 0;
+    if (val > 0) {
+        val = Math.max(10, Math.round(val / 10) * 10);
+    } else {
+        val = 0;
+    }
+    input.value = val;
+}
+
+function setQuoteKm(kmVal) {
+    const el = document.getElementById('quote-estimated-km');
+    if (el) {
+        el.value = kmVal;
+    }
+}
+
+function setTariffKm(kmVal) {
+    const el = document.getElementById('mdf-estimated-km');
+    if (el) {
+        el.value = kmVal;
+    }
+}
+
+function onQuoteZonesChanged() {
+    const origZone = document.getElementById('quote-origin-zone')?.value || '';
+    const destZone = document.getElementById('quote-dest-zone')?.value || '';
     const routeInput = document.getElementById('quote-route');
-    if (!presetSelect) return;
-    
-    const zoneMap = {
-        'KV_CAT_LAI': 'Khu Vực Cát Lái',
-        'KV_CAI_MEP': 'Khu Vực Vũng Tàu',
-        'KV_HIEP_PHUOC': 'Khu Vực TP.HCM',
-        'KV_BINH_DUONG': 'Khu Vực Bình Dương',
-        'KV_DONG_NAI': 'Khu Vực Đồng Nai',
-        'KV_TAY_NINH': 'Khu Vực Tây Ninh',
-        'KV_LONG_AN': 'Khu Vực Long An',
-        'KV_OTHER': 'Tuyến Đặc Thù'
-    };
-    
-    const zoneName = zoneMap[zoneCode] || '';
+    const presetSelect = document.getElementById('quote-route-preset');
+    const kmInput = document.getElementById('quote-estimated-km');
+
+    // Lọc danh sách tuyến mẫu
     const routes = masterDataFormOptionsCache?.routes || [];
-    const filteredRoutes = zoneName ? routes.filter(r => r.area_group === zoneName) : routes;
-    
-    presetSelect.innerHTML = '<option value="">-- Chọn Tuyến Mẫu Danh Mục --</option>' +
-        filteredRoutes.map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate}">${r.label || r.route_name}</option>`).join('');
-        
-    if (zoneCode && routeInput) {
-        const zonePrefixes = {
-            'KV_CAT_LAI': 'CÁT LÁI ➔ ',
-            'KV_CAI_MEP': 'CÁI MÉP ➔ ',
-            'KV_HIEP_PHUOC': 'HIỆP PHƯỚC ➔ ',
-            'KV_BINH_DUONG': 'KHO BÌNH DƯƠNG ➔ ',
-            'KV_DONG_NAI': 'KHO ĐỒNG NAI ➔ ',
-            'KV_TAY_NINH': 'KCN PHƯỚC ĐÔNG ➔ ',
-            'KV_LONG_AN': 'KCN THUẬN ĐẠO ➔ ',
-            'KV_OTHER': ''
-        };
-        if (zonePrefixes[zoneCode] && !routeInput.value) {
-            routeInput.value = zonePrefixes[zoneCode];
+    let filtered = routes;
+    if (destZone) {
+        const destKeyword = destZone.split('(')[0].trim().toLowerCase();
+        filtered = routes.filter(r => (r.area_group && r.area_group.toLowerCase().includes(destKeyword)) || (r.route_name && r.route_name.toLowerCase().includes(destKeyword)));
+    }
+    if (presetSelect) {
+        presetSelect.innerHTML = '<option value="">-- Chọn Tuyến Mẫu --</option>' +
+            (filtered.length ? filtered : routes).map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate}">${r.label || r.route_name}</option>`).join('');
+    }
+
+    // Tự sinh tên tuyến nếu cả 2 khu vực được chọn và ô tuyến đang trống hoặc đang là format khu vực cũ
+    if (origZone && destZone && routeInput) {
+        const cleanOrig = origZone.split('(')[0].trim().toUpperCase();
+        const cleanDest = destZone.split('(')[0].trim().toUpperCase();
+        if (!routeInput.value || routeInput.value.includes('➔')) {
+            routeInput.value = `${cleanOrig} ➔ ${cleanDest}`;
         }
+    }
+
+    // Ước tính số km mặc định theo khoảng cách giữa 2 vùng (chuẩn hóa 10km)
+    if (origZone && destZone && kmInput) {
+        let estKm = 30;
+        const o = origZone.toLowerCase();
+        const d = destZone.toLowerCase();
+        if (o.includes('cái mép') || d.includes('vũng tàu')) {
+            estKm = 70;
+        } else if (d.includes('tây ninh')) {
+            estKm = 80;
+        } else if (d.includes('bình dương') || d.includes('đồng nai') || d.includes('long an')) {
+            estKm = 40;
+        } else if (d.includes('củ chi')) {
+            estKm = 50;
+        } else {
+            estKm = 30;
+        }
+        kmInput.value = estKm;
     }
 }
 
 function onQuoteRoutePresetChanged(routeVal) {
     const routeInput = document.getElementById('quote-route');
+    const origZone = document.getElementById('quote-origin-zone')?.value || '';
+    const cleanOrig = origZone ? origZone.split('(')[0].trim().toUpperCase() : 'CÁT LÁI';
     if (routeInput && routeVal) {
-        routeInput.value = routeVal;
+        if (routeVal.toUpperCase().includes('➔') || routeVal.toUpperCase().includes('->')) {
+            routeInput.value = routeVal;
+        } else {
+            routeInput.value = `${cleanOrig} ➔ ${routeVal}`;
+        }
     }
 }
 
@@ -7998,9 +8059,11 @@ function renderMasterDataTable(items, total = items.length) {
         tableHead.innerHTML = `
             <tr>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Khách Hàng</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-indigo-900 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Khu Vực Tuyến</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nơi Lấy Cont</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Kho Giao Nhận</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nơi Hạ Cont</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Cự Ly</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Đơn Giá Cước (HĐ)</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức Lương</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức BOT</th>
@@ -8010,9 +8073,17 @@ function renderMasterDataTable(items, total = items.length) {
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
                 <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.customer_name}</td>
+                <td class="py-1.5 px-3 border-r border-slate-200/70">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200/80">
+                        ${item.origin_zone || 'Cát Lái'} <i class="ph-bold ph-arrow-right mx-1 text-[9px] text-indigo-500"></i> ${item.destination_zone || 'Kho Khách'}
+                    </span>
+                </td>
                 <td class="py-1.5 px-3 text-[12.5px] font-bold text-teal-800 border-r border-slate-200/70">${item.pickup_location}</td>
                 <td class="py-1.5 px-3 text-[12.5px] font-bold text-slate-800 border-r border-slate-200/70">${item.delivery_location}</td>
                 <td class="py-1.5 px-3 text-[11.5px] font-medium text-slate-500 border-r border-slate-200/70">${item.dropoff_location || 'Hạ bãi'}</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70 font-mono font-bold text-xs text-slate-700">
+                    ${item.estimated_km ? `~${item.estimated_km} km` : '—'}
+                </td>
                 <td class="py-1.5 px-3 text-[13px] font-black text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.freight_price)}</td>
                 <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.driver_trip_pay)}</td>
                 <td class="py-1.5 px-3 text-[13px] font-black text-amber-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.toll_standard_fee || 0)}</td>
@@ -8466,10 +8537,36 @@ function injectMasterDataModalFields(data) {
         container.innerHTML = `
             <div>
                 <label class="app-form-label">Khách Hàng <span class="text-rose-500">*</span></label>
-                <select id="mdf-customer-id" class="app-form-control" required>
+                <select id="mdf-customer-id" class="app-form-control font-bold" required>
                     <option value="">-- Chọn Khách Hàng --</option>
                     ${customers.map(c => `<option value="${c.id}" ${d.customer_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
                 </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100">
+                <div>
+                    <label class="app-form-label text-indigo-950 font-bold">1. Khu Vực Đi / Lấy Cont</label>
+                    <input type="text" id="mdf-origin-zone" list="mdf-origin-zones-list" value="${d.origin_zone || ''}" placeholder="Cát Lái, Cái Mép, Hiệp Phước..." class="app-form-control">
+                    <datalist id="mdf-origin-zones-list">
+                        <option value="Cát Lái (TP.HCM)">
+                        <option value="Cái Mép (Vũng Tàu)">
+                        <option value="Hiệp Phước (Nhà Bè)">
+                        <option value="SPITC / Phú Hữu">
+                        <option value="Sóng Thần / Dĩ An">
+                        <option value="Bãi Triền Võ (TVL)">
+                    </datalist>
+                </div>
+                <div>
+                    <label class="app-form-label text-indigo-950 font-bold">2. Khu Vực Đến / Giao Hàng</label>
+                    <input type="text" id="mdf-dest-zone" list="mdf-dest-zones-list" value="${d.destination_zone || ''}" placeholder="Bình Dương, Đồng Nai, Tây Ninh, Long An..." class="app-form-control">
+                    <datalist id="mdf-dest-zones-list">
+                        <option value="Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)">
+                        <option value="Đồng Nai (Biên Hòa/Nhơn Trạch/Long Thành)">
+                        <option value="Tây Ninh (Trảng Bàng/Phước Đông)">
+                        <option value="Long An (Bến Lức/Đức Hòa/Tân An)">
+                        <option value="Củ Chi / Hóc Môn / TP.HCM">
+                        <option value="Vũng Tàu / Phú Mỹ">
+                    </datalist>
+                </div>
             </div>
             <div class="grid grid-cols-3 gap-2">
                 <div>
@@ -8494,17 +8591,30 @@ function injectMasterDataModalFields(data) {
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-4 gap-3">
                 <div>
-                    <label class="app-form-label">Đơn Giá Cước Xuất HĐ (VNĐ) <span class="text-rose-500">*</span></label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="app-form-label m-0">Cự Ly (km)</label>
+                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded border border-indigo-200">10km</span>
+                    </div>
+                    <input type="number" id="mdf-estimated-km" value="${d.estimated_km || 30}" step="10" min="0" onchange="roundEstimatedKmInput(this)" class="app-form-control font-mono font-bold text-center">
+                    <div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 flex-wrap">
+                        <button type="button" onclick="setTariffKm(20)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">20k</button>
+                        <button type="button" onclick="setTariffKm(30)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">30k</button>
+                        <button type="button" onclick="setTariffKm(50)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">50k</button>
+                        <button type="button" onclick="setTariffKm(70)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">70k</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="app-form-label">Đơn Giá Cước (HĐ) <span class="text-rose-500">*</span></label>
                     <input type="number" id="mdf-price" value="${d.freight_price || 4000000}" step="50000" class="app-form-control font-mono font-bold" required>
                 </div>
                 <div>
-                    <label class="app-form-label">Định Mức Lương Tài Xế (VNĐ) <span class="text-rose-500">*</span></label>
+                    <label class="app-form-label">Lương Tài Xế <span class="text-rose-500">*</span></label>
                     <input type="number" id="mdf-pay" value="${d.driver_trip_pay || 600000}" step="50000" class="app-form-control font-mono font-bold text-emerald-700" required>
                 </div>
                 <div>
-                    <label class="app-form-label">Định Mức Vé BOT Tuyến (VNĐ)</label>
+                    <label class="app-form-label">Vé BOT Tuyến</label>
                     <input type="number" id="mdf-toll" value="${d.toll_standard_fee || 0}" step="10000" class="app-form-control font-mono font-bold text-amber-700" placeholder="0">
                 </div>
             </div>
@@ -8817,6 +8927,9 @@ async function submitMasterDataForm(e) {
     } else if (tabKey === 'tariffs') {
         payload = {
             customer_id: document.getElementById('mdf-customer-id').value,
+            origin_zone: document.getElementById('mdf-origin-zone')?.value || '',
+            destination_zone: document.getElementById('mdf-dest-zone')?.value || '',
+            estimated_km: parseInt(document.getElementById('mdf-estimated-km')?.value) || 0,
             pickup_location: document.getElementById('mdf-pickup').value,
             delivery_location: document.getElementById('mdf-delivery').value,
             dropoff_location: document.getElementById('mdf-dropoff').value,

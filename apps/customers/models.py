@@ -23,6 +23,13 @@ class RouteTariff(TimeStampedModel, SoftDeleteModel):
     delivery_location = models.CharField(max_length=150) # KHO WCA, MACSTAR TÂN VẠN, VSIP 3...
     dropoff_location = models.CharField(max_length=150, blank=True) # SOLOG LIBRA, HẠ BÃI...
     
+    # Khu vực tuyến (Origin & Destination Zones) phục vụ phân nhóm & tra cứu nhanh
+    origin_zone = models.CharField(max_length=100, blank=True, default='', db_index=True, help_text="Khu vực xuất phát / lấy cont: Cát Lái, Cái Mép, Hiệp Phước, TP.HCM...")
+    destination_zone = models.CharField(max_length=100, blank=True, default='', db_index=True, help_text="Khu vực giao nhận / kho hàng: Bình Dương, Đồng Nai, Tây Ninh, Long An, Củ Chi...")
+    
+    # Cự ly ước tính theo tuyến (làm tròn bội số 10km: 10km, 20km, 30km...)
+    estimated_km = models.IntegerField(default=0, help_text="Cự ly ước tính theo tuyến (km) - chuẩn hóa làm tròn bước 10km")
+
     # FK chuẩn hoá quan hệ tới Master Data Location (Sprint 1)
     pickup_loc = models.ForeignKey(
         'master_data.Location', on_delete=models.PROTECT, null=True, blank=True, related_name='pickup_tariffs',
@@ -44,13 +51,25 @@ class RouteTariff(TimeStampedModel, SoftDeleteModel):
     class Meta:
         ordering = ['customer', 'pickup_location']
 
+    def save(self, *args, **kwargs):
+        # Tự động làm tròn số km theo bước 10km (VD: 24km -> 20km, 26km -> 30km, tối thiểu 10km nếu > 0)
+        if self.estimated_km and self.estimated_km > 0:
+            rounded = int(round(float(self.estimated_km) / 10.0) * 10)
+            self.estimated_km = max(10, rounded)
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.customer.name}: {self.pickup_location} -> {self.delivery_location} ({self.freight_price:,} đ)"
+        zone_info = f" [{self.origin_zone} ➔ {self.destination_zone}]" if self.origin_zone or self.destination_zone else ""
+        km_info = f" (~{self.estimated_km}km)" if self.estimated_km else ""
+        return f"{self.customer.name}:{zone_info} {self.pickup_location} -> {self.delivery_location}{km_info} ({self.freight_price:,} đ)"
 
 class Quotation(TimeStampedModel, SoftDeleteModel):
     """Báo giá và Phễu bán hàng (CRM / Sales)."""
     quotation_code = models.CharField(max_length=30, unique=True, db_index=True) # BG-0916-01
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='quotations')
+    origin_zone = models.CharField(max_length=100, blank=True, default='', help_text="Khu vực đi: Cát Lái, Cái Mép...")
+    destination_zone = models.CharField(max_length=100, blank=True, default='', help_text="Khu vực đến: Bình Dương, Đồng Nai, Tây Ninh...")
+    estimated_km = models.IntegerField(default=0, help_text="Số km ước tính (bước 10km)")
     route_description = models.CharField(max_length=255)
     unit_price = models.DecimalField(max_digits=12, decimal_places=0)
     expected_trips_monthly = models.IntegerField(default=10)
@@ -65,6 +84,12 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
         ],
         default='NEGOTIATING'
     )
+
+    def save(self, *args, **kwargs):
+        if self.estimated_km and self.estimated_km > 0:
+            rounded = int(round(float(self.estimated_km) / 10.0) * 10)
+            self.estimated_km = max(10, rounded)
+        super().save(*args, **kwargs)
 
     @property
     def expected_revenue(self):

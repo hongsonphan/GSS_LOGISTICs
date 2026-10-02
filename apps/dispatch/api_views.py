@@ -1812,6 +1812,9 @@ class SalesAPIView(APIView):
                 'code': q.quotation_code,
                 'customer': q.customer.name,
                 'customer_id': q.customer.id,
+                'origin_zone': q.origin_zone or '',
+                'destination_zone': q.destination_zone or '',
+                'estimated_km': q.estimated_km or 0,
                 'route': q.route_description,
                 'unit_price': q.unit_price,
                 'monthly_trips': q.expected_trips_monthly,
@@ -2061,6 +2064,9 @@ class SalesAPIView(APIView):
             quotation = Quotation.objects.create(
                 quotation_code=q_code,
                 customer=customer,
+                origin_zone=data.get('origin_zone', '').strip(),
+                destination_zone=data.get('destination_zone', '').strip(),
+                estimated_km=int(data.get('estimated_km') or 0),
                 route_description=data.get('route_description', '').strip(),
                 unit_price=float(data.get('unit_price') or 4000000),
                 expected_trips_monthly=int(data.get('monthly_trips') or 10),
@@ -2083,6 +2089,9 @@ class QuotationDetailAPIView(APIView):
             'quotation_code': q.quotation_code,
             'customer_id': q.customer.id,
             'customer_name': q.customer.name,
+            'origin_zone': q.origin_zone or '',
+            'destination_zone': q.destination_zone or '',
+            'estimated_km': q.estimated_km or 0,
             'route_description': q.route_description,
             'unit_price': float(q.unit_price),
             'expected_trips_monthly': q.expected_trips_monthly,
@@ -2102,6 +2111,12 @@ class QuotationDetailAPIView(APIView):
             if customer:
                 q.customer = customer
 
+        if 'origin_zone' in data:
+            q.origin_zone = data['origin_zone'].strip()
+        if 'destination_zone' in data:
+            q.destination_zone = data['destination_zone'].strip()
+        if 'estimated_km' in data and data['estimated_km'] is not None:
+            q.estimated_km = int(data['estimated_km'] or 0)
         if 'route_description' in data:
             q.route_description = data['route_description'].strip()
         if 'unit_price' in data and data['unit_price']:
@@ -2120,6 +2135,9 @@ class QuotationDetailAPIView(APIView):
                 'id': q.id,
                 'quotation_code': q.quotation_code,
                 'customer_name': q.customer.name,
+                'origin_zone': q.origin_zone,
+                'destination_zone': q.destination_zone,
+                'estimated_km': q.estimated_km,
                 'unit_price': float(q.unit_price),
                 'expected_trips_monthly': q.expected_trips_monthly,
                 'expected_revenue': float(q.expected_revenue),

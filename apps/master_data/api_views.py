@@ -510,6 +510,9 @@ class TariffMasterListCreateAPIView(MasterDataBaseAPIView):
                 'id': t.id,
                 'customer_id': t.customer.id,
                 'customer_name': t.customer.name,
+                'origin_zone': t.origin_zone or '',
+                'destination_zone': t.destination_zone or '',
+                'estimated_km': t.estimated_km or 0,
                 'pickup_location': t.pickup_location,
                 'delivery_location': t.delivery_location,
                 'dropoff_location': t.dropoff_location,
@@ -529,6 +532,9 @@ class TariffMasterListCreateAPIView(MasterDataBaseAPIView):
 
         tariff = RouteTariff.objects.create(
             customer=customer,
+            origin_zone=data.get('origin_zone', '').strip(),
+            destination_zone=data.get('destination_zone', '').strip(),
+            estimated_km=int(data.get('estimated_km') or 0),
             pickup_location=data.get('pickup_location', '').strip().upper(),
             delivery_location=data.get('delivery_location', '').strip().upper(),
             dropoff_location=data.get('dropoff_location', '').strip().upper(),
@@ -548,6 +554,9 @@ class TariffMasterDetailAPIView(MasterDataBaseAPIView):
         if 'customer_id' in data:
             cust = Customer.objects.filter(id=data['customer_id']).first()
             if cust: tariff.customer = cust
+        if 'origin_zone' in data: tariff.origin_zone = data['origin_zone'].strip()
+        if 'destination_zone' in data: tariff.destination_zone = data['destination_zone'].strip()
+        if 'estimated_km' in data: tariff.estimated_km = int(data['estimated_km'] or 0)
         if 'pickup_location' in data: tariff.pickup_location = data['pickup_location'].strip().upper()
         if 'delivery_location' in data: tariff.delivery_location = data['delivery_location'].strip().upper()
         if 'dropoff_location' in data: tariff.dropoff_location = data['dropoff_location'].strip().upper()

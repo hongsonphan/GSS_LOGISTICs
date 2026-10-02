@@ -48,38 +48,91 @@
                     </div>
                 </div>
 
-                <!-- Tuyến Đường Vận Chuyển & Phân Loại Khu Vực -->
-                <div class="md:col-span-2">
-                    <div class="flex items-center justify-between mb-1.5">
+                <!-- Tuyến Đường Vận Chuyển & 2 Khu Vực + Số KM Ước Tính -->
+                <div class="md:col-span-2 space-y-3">
+                    <div class="flex items-center justify-between mb-1">
                         <label class="block font-bold text-slate-700 uppercase tracking-wider text-xs">
-                            Tuyến Đường & Khu Vực Vận Chuyển <span class="text-rose-600">*</span>
+                            Tuyến Đường & Cụm 2 Khu Vực Vận Chuyển <span class="text-rose-600">*</span>
                         </label>
                         <button type="button" onclick="openMasterDataModalQuick('driver_tariffs', 'quote-route')" 
                             class="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-200 flex items-center gap-1 transition-colors">
                             <i class="ph-bold ph-plus"></i> Thêm Tuyến Danh Mục
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-                        <select id="quote-zone-select" onchange="onQuoteZoneChanged(this.value)" 
-                            class="sm:col-span-1 px-3 py-2 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-900 focus:bg-white focus:ring-2 focus:ring-indigo-200">
-                            <option value="">-- Chọn Khu Vực / Vùng --</option>
-                            <option value="KV_CAT_LAI">KV Cát Lái (TP.HCM)</option>
-                            <option value="KV_CAI_MEP">KV Cái Mép (Vũng Tàu)</option>
-                            <option value="KV_HIEP_PHUOC">KV Hiệp Phước (Nhà Bè)</option>
-                            <option value="KV_BINH_DUONG">KV Bình Dương (VSIP/Sóng Thần/Bàu Bàng)</option>
-                            <option value="KV_DONG_NAI">KV Đồng Nai (Biên Hòa/Nhơn Trạch)</option>
-                            <option value="KV_TAY_NINH">KV Tây Ninh (Trảng Bàng/Phước Đông)</option>
-                            <option value="KV_LONG_AN">KV Long An (Bến Lức/Đức Hòa)</option>
-                            <option value="KV_OTHER">Tuyến Khác / Liên Tỉnh</option>
-                        </select>
-                        <select id="quote-route-preset" onchange="onQuoteRoutePresetChanged(this.value)" 
-                            class="sm:col-span-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-200">
-                            <option value="">-- Hoặc Chọn Tuyến Mẫu Danh Mục --</option>
-                        </select>
+
+                    <!-- 2 Cụm Khu Vực (Đi & Đến) + Tuyến Mẫu -->
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-indigo-50/40 p-3 rounded-xl border border-indigo-100">
+                        <div class="sm:col-span-4">
+                            <label class="block text-[11px] font-bold text-indigo-950 uppercase mb-1">1. Khu Vực Đi / Lấy Cont</label>
+                            <select id="quote-origin-zone" onchange="onQuoteZonesChanged()" 
+                                class="w-full px-2.5 py-2 bg-white border border-indigo-200 rounded-lg text-xs font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-200">
+                                <option value="">-- Chọn Khu Vực Đi --</option>
+                                <option value="Cát Lái (TP.HCM)">Cát Lái (TP.HCM)</option>
+                                <option value="Cái Mép (Vũng Tàu)">Cái Mép (Vũng Tàu)</option>
+                                <option value="Hiệp Phước (Nhà Bè)">Hiệp Phước (Nhà Bè)</option>
+                                <option value="SPITC / Phú Hữu">SPITC / Phú Hữu</option>
+                                <option value="Sóng Thần / Dĩ An">Sóng Thần / Dĩ An</option>
+                                <option value="Bãi Triền Võ (TVL)">Bãi Triền Võ (TVL)</option>
+                                <option value="Khu Vực Khác">Khu Vực Khác</option>
+                            </select>
+                        </div>
+
+                        <div class="sm:col-span-4">
+                            <label class="block text-[11px] font-bold text-indigo-950 uppercase mb-1">2. Khu Vực Đến / Kho Khách</label>
+                            <select id="quote-dest-zone" onchange="onQuoteZonesChanged()" 
+                                class="w-full px-2.5 py-2 bg-white border border-indigo-200 rounded-lg text-xs font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-200">
+                                <option value="">-- Chọn Khu Vực Đến --</option>
+                                <option value="Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)">Bình Dương (VSIP/Bàu Bàng...)</option>
+                                <option value="Đồng Nai (Biên Hòa/Nhơn Trạch/Long Thành)">Đồng Nai (Biên Hòa/Nhơn Trạch...)</option>
+                                <option value="Tây Ninh (Trảng Bàng/Phước Đông)">Tây Ninh (Trảng Bàng/Phước Đông)</option>
+                                <option value="Long An (Bến Lức/Đức Hòa/Tân An)">Long An (Bến Lức/Đức Hòa...)</option>
+                                <option value="Củ Chi / Hóc Môn / TP.HCM">Củ Chi / Hóc Môn / TP.HCM</option>
+                                <option value="Vũng Tàu / Phú Mỹ">Vũng Tàu / Phú Mỹ</option>
+                                <option value="Khu Vực Khác">Khu Vực Khác</option>
+                            </select>
+                        </div>
+
+                        <div class="sm:col-span-4">
+                            <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Tuyến Mẫu Có Sẵn</label>
+                            <select id="quote-route-preset" onchange="onQuoteRoutePresetChanged(this.value)" 
+                                class="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-200">
+                                <option value="">-- Chọn Tuyến Mẫu --</option>
+                            </select>
+                        </div>
                     </div>
-                    <input type="text" id="quote-route" required placeholder="VD: CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG hoặc SOWATCO ➔ TTI CỦ CHI" 
-                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 font-bold text-slate-900 text-sm transition-all">
-                    <p class="text-xs text-slate-400 mt-1">Mô tả rõ điểm đầu (cảng/depot/kho xuất) đến điểm cuối (nhà máy/kho nhận).</p>
+
+                    <!-- Tên Tuyến Chi Tiết & Số KM Ước Tính (Bước 10km) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                        <div class="sm:col-span-8">
+                            <label class="block font-bold text-slate-700 text-xs uppercase mb-1">Mô Tả Tuyến Đường Chi Tiết <span class="text-rose-600">*</span></label>
+                            <input type="text" id="quote-route" required placeholder="VD: CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG" 
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-600 font-bold text-slate-900 text-sm">
+                        </div>
+
+                        <div class="sm:col-span-4">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block font-bold text-slate-700 text-xs uppercase" title="Khoảng cách làm tròn chênh nhau 10km">Cự Ly Ước Tính</label>
+                                <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded border border-indigo-200">Bước 10km</span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" id="quote-estimated-km" step="10" min="0" value="30" onchange="roundEstimatedKmInput(this)"
+                                    class="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-600 font-black text-indigo-900 text-sm text-center tabular-nums">
+                                <span class="absolute right-2.5 top-2.5 text-slate-400 font-bold text-xs pointer-events-none">KM</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick KM buttons -->
+                    <div class="flex items-center gap-1 text-[11px] text-slate-500 flex-wrap">
+                        <span class="font-medium text-slate-400">Chọn nhanh cự ly:</span>
+                        <button type="button" onclick="setQuoteKm(10)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 hover:text-indigo-800 font-bold transition-colors">10 km</button>
+                        <button type="button" onclick="setQuoteKm(20)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 hover:text-indigo-800 font-bold transition-colors">20 km</button>
+                        <button type="button" onclick="setQuoteKm(30)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 hover:text-indigo-800 font-bold transition-colors">30 km</button>
+                        <button type="button" onclick="setQuoteKm(40)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 hover:text-indigo-800 font-bold transition-colors">40 km</button>
+                        <button type="button" onclick="setQuoteKm(50)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 hover:text-indigo-800 font-bold transition-colors">50 km</button>
+                        <button type="button" onclick="setQuoteKm(70)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 hover:text-indigo-800 font-bold transition-colors">70 km</button>
+                        <button type="button" onclick="setQuoteKm(100)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 hover:text-indigo-800 font-bold transition-colors">100 km</button>
+                    </div>
                 </div>
 
                 <!-- Đơn Giá Cước -->
