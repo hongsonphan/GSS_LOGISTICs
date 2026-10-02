@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.4.0] - 2026-10-02 (Bộ Tính Năng CRUD Lệnh Điều Động, Cảnh Báo Tài Xế Từ Chối & Cơ Chế Chọn Lại / Hoàn Tác)
+
+### 1. Bối Cảnh & Yêu Cầu Nghiệp Vụ:
+1. **Cơ chế Hoàn tác (Undo) cho Tài xế:** Cho phép tài xế bấm "Chọn lại / Nhận lại chuyến" hoặc đổi ý từ chối nếu lỡ bấm nhầm nút trên giao diện Mobile Driver Portal.
+2. **Cảnh báo Thời Gian Thực cho Điều Vận:** Khi tài xế bấm Từ chối nhận chuyến (kèm lý do), hệ thống ngay lập tức hiển thị Banner Đỏ rực rỡ trên màn hình Chi tiết chuyến xe và Badge đỏ trên Bảng Điều Vận để Điều độ kịp thời phân xe khác.
+3. **Phân hệ Hiệu Chỉnh (Sửa) & Hủy/Xóa Chuyến Xe (CRUD toàn diện):**
+   - Modal Hiệu Chỉnh Lệnh Điều Động (`[✏️ Sửa Lệnh]`): Cho phép cập nhật toàn bộ thông tin: Khách hàng, Số Cont, Seal, Booking, VGM, 3 Điểm Lộ trình, Lịch Đóng hàng, Cửa Dock, Phân bổ Tài xế, Đầu kéo, Rơ-mooc, Hóa đơn thương mại, Hạn Free DET và Ghi chú.
+   - Nút `[🗑️ Hủy / Xóa Chuyến]`: Thực hiện xóa mềm chuyến xe (`is_deleted=True`), ghi nhật ký điều vận và hoàn lại hạn mức container đã phát lệnh cho Đơn hàng / Booking Order gốc.
+
+### 2. Chi Tiết Thay Đổi Kỹ Thuật:
+- **Database & Model:** Thêm `declined_at` (DateTimeField) và `decline_reason` (CharField) vào model `DispatchTrip` (`apps/dispatch/models.py`), tạo migration `0014_add_declined_fields_to_trip.py`.
+- **Backend API (`apps/dispatch/api_views.py`):**
+  - Cập nhật `TripListCreateAPIView` và `TripDetailAPIView.get()` trả về `declined_at`, `decline_reason` và `acceptance_sla_status = 'DECLINED'`.
+  - Mở rộng `TripDetailAPIView.patch()` hỗ trợ cập nhật toàn diện thông tin điều động và tự động reset trạng thái từ chối khi đổi tài xế mới.
+  - Bổ sung `TripDetailAPIView.delete()` xử lý hủy chuyến, hoàn cont cho Booking và ghi log.
+  - Cập nhật `TripMilestoneReportAPIView.post()` xử lý mốc `DECLINED_TRIP` và `ACCEPTED_TRIP` hỗ trợ tài xế chọn lại mượt mà.
+- **Frontend UI & JS (`static/js/app.js` & `templates/`):**
+  - Tạo `templates/components/modal_edit_trip.html` và tích hợp vào `base.html`.
+  - Bổ sung các hàm JS: `openModalEditTrip()`, `submitEditTripForm()`, `deleteOrCancelTrip()`.
+  - Nâng cấp `viewTripDetail()` hiển thị banner cảnh báo đỏ nổi bật khi bị từ chối.
+  - Cập nhật `templates/driver_portal.html` với nút hoàn tác `[🔄 BẤM NHẦM? BẤM ĐỂ NHẬN CHUYẾN LẠI]`.
+
 ## [2.3.0] - 2026-10-02 (Tối Ưu Toàn Diện Giao Diện Màn Hình Tài Xế & Đồng Bộ 100% HTML Giả Lập Điện Thoại Trên Web Chi Tiết Chuyến)
 
 ### 1. Bối Cảnh & Yêu Cầu Người Dùng:
