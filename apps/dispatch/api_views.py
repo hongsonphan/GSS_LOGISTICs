@@ -837,8 +837,8 @@ class TripDetailAPIView(APIView):
         dropoff_plate = '-'
         if trip.dropoff_vehicle:
             dropoff_plate = trip.dropoff_vehicle.license_plate
-        elif trip.vehicle and trip.status in ['RETURNING_EMPTY', 'COMPLETED']:
-            dropoff_plate = trip.vehicle.license_plate
+        from apps.dispatch.timeline_service import get_derived_7_milestones
+        m7 = get_derived_7_milestones(trip)
 
         return Response({
             'id': trip.trip_code,
@@ -915,13 +915,13 @@ class TripDetailAPIView(APIView):
             'cargo_notes': trip.cargo_notes or trip.special_notes or '',
             'loading_date': trip.loading_date.strftime('%d/%m/%Y') if trip.loading_date else trip.created_at.strftime('%d/%m/%Y'),
             'loading_time': trip.loading_time or '8H',
-            'eta_warehouse_time': trip.eta_warehouse_time or '-',
-            'warehouse_call_in_time': trip.warehouse_call_in_time or '-',
-            'actual_gate_in_time': trip.actual_gate_in_time or '-',
-            'warehouse_call_out_time': trip.warehouse_call_out_time or '-',
-            'actual_gate_out_time': trip.actual_gate_out_time or '-',
-            'dropoff_appointment_time': trip.dropoff_appointment_time or '-',
-            'actual_dropoff_time': trip.actual_dropoff_time or '-',
+            'eta_warehouse_time': m7['eta_warehouse_time'],
+            'warehouse_call_in_time': m7['warehouse_call_in_time'],
+            'actual_gate_in_time': m7['actual_gate_in_time'],
+            'warehouse_call_out_time': m7['warehouse_call_out_time'],
+            'actual_gate_out_time': m7['actual_gate_out_time'],
+            'dropoff_appointment_time': m7['dropoff_appointment_time'],
+            'actual_dropoff_time': m7['actual_dropoff_time'],
             'is_overnight_detention': trip.is_overnight_detention,
             'overnight_wait_hours': float(trip.overnight_wait_hours or 0),
             'detention_fee_customer': float(trip.detention_fee_customer or 0),

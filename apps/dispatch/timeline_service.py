@@ -186,6 +186,131 @@ def sync_trip_10_step_timeline(trip: DispatchTrip):
             }
         )
 
+def get_derived_7_milestones(trip: DispatchTrip):
+    """
+    Tính toán và trích xuất dữ liệu 7 Mốc Thời Gian Vận Chuyển & Hạ Cont (7 Mốc Kho Thực Tế)
+    trực tiếp từ Single Source of Truth (Dữ liệu 10 Bước & Nhật ký mốc thời gian TripTimelineItem).
+    Tự động cập nhật ngược lại (back-propagate) vào các trường tương ứng trên DispatchTrip nếu đang trống.
+
+    7 Mốc gồm:
+      1. Hẹn đến (ETA): Kế hoạch đến
+      2. Kho Gọi Vào: Thông báo cửa
+      3. Vào Thực Tế: Qua cổng bảo vệ
+      4. Kho Gọi Ra: Hoàn tất đóng Cont
+      5. Ra Thực Tế: Kéo Cont rời kho
+      6. Giờ Hẹn Hạ: Yêu cầu từ Kho/ KH
+      7. Giờ Hạ Thực Tế: Cẩu Cont / Phiếu EIR
+    """
+    items = list(trip.timeline_items.all().order_by('step_number'))
+
+    # Helper tìm time_display theo từ khóa trong title
+    def find_time_by_keywords(*keywords):
+        for item in items:
+            t_lower = item.title.lower()
+            if any(k.lower() in t_lower for k in keywords):
+                if item.time_display and item.time_display != '-' and not item.time_display.startswith('Đang'):
+                    # Bỏ prefix nếu có
+                    val = item.time_display
+                    for pfx in ['ETA: ', 'Hẹn: ', 'Sau: ']:
+                        if val.startswith(pfx):
+                            val = val[len(pfx):]
+                    return val
+        return None
+
+    # 1. Hẹn đến (ETA)
+    eta = (
+        find_time_by_keywords('sắp đến kho', 'báo sắp đến')
+        or (trip.eta_warehouse_time if trip.eta_warehouse_time and trip.eta_warehouse_time != '-' else None)
+        or (trip.loading_time if trip.loading_time and trip.loading_time != '-' else None)
+        or '-'
+    )
+
+    # 2. Kho Gọi Vào
+    call_in = (
+        find_time_by_keywords('kho gọi vào', 'thông báo cửa', 'gọi xe vào')
+        or (trip.warehouse_call_in_time if trip.warehouse_call_in_time and trip.warehouse_call_in_time != '-' else None)
+        or '-'
+    )
+
+    # 3. Vào Thực Tế (Qua cổng bảo vệ)
+    actual_in = (
+        find_time_by_keywords('đã đến cổng kho', 'check-in cổng', 'vào cổng kho')
+        or (trip.actual_gate_in_time if trip.actual_gate_in_time and trip.actual_gate_in_time != '-' else None)
+        or (trip.actual_gate_in_at.strftime('%H:%M %d/%m') if trip.actual_gate_in_at else None)
+        or '-'
+    )
+
+    # 4. Kho Gọi Ra (Hoàn tất đóng Cont)
+    call_out = (
+        find_time_by_keywords('kho gọi ra')
+        or (trip.warehouse_call_out_time if trip.warehouse_call_out_time and trip.warehouse_call_out_time != '-' else None)
+        or find_time_by_keywords('bắt đầu xuống hàng', 'bắt đầu đóng', 'vào dock đóng')
+        or '-'
+    )
+
+    # 5. Ra Thực Tế (Kéo Cont rời kho)
+    actual_out = (
+        find_time_by_keywords('kéo cont rời kho', 'đã đóng/trút hàng xong', 'rời kho', 'chuẩn bị hạ bãi', 'vận chuyển về bãi hạ')
+        or (trip.actual_gate_out_time if trip.actual_gate_out_time and trip.actual_gate_out_time != '-' else None)
+        or (trip.actual_gate_out_at.strftime('%H:%M %d/%m') if trip.actual_gate_out_at else None)
+        or '-'
+    )
+
+    # 6. Giờ Hẹn Hạ (Yêu cầu từ Kho/ KH)
+    dropoff_appoint = (
+        find_time_by_keywords('lưu xe chờ hạ', 'chờ hạ sau 0h', 'sau 00:00')
+        or (trip.dropoff_appointment_time if trip.dropoff_appointment_time and trip.dropoff_appointment_time != '-' else None)
+        or '-'
+    )
+
+    # 7. Giờ Hạ Thực Tế (Cẩu Cont / Phiếu EIR)
+    actual_dropoff = (
+        find_time_by_keywords('cẩu hạ cont', 'hạ bãi thực tế', 'hạ cont thành công', 'hạ bãi rỗng', 'đã hạ cont')
+        or (trip.actual_dropoff_time if trip.actual_dropoff_time and trip.actual_dropoff_time != '-' else None)
+        or (trip.actual_dropoff_at.strftime('%H:%M %d/%m') if trip.actual_dropoff_at else None)
+        or '-'
+    )
+
+    # Tự động cập nhật ngược lại vào DispatchTrip nếu các trường chưa có dữ liệu
+    updates = []
+    if eta != '-' and not trip.eta_warehouse_time:
+        trip.eta_warehouse_time = eta
+        updates.append('eta_warehouse_time')
+    if call_in != '-' and not trip.warehouse_call_in_time:
+        trip.warehouse_call_in_time = call_in
+        updates.append('warehouse_call_in_time')
+    if actual_in != '-' and not trip.actual_gate_in_time:
+        trip.actual_gate_in_time = actual_in
+        updates.append('actual_gate_in_time')
+    if call_out != '-' and not trip.warehouse_call_out_time:
+        trip.warehouse_call_out_time = call_out
+        updates.append('warehouse_call_out_time')
+    if actual_out != '-' and not trip.actual_gate_out_time:
+        trip.actual_gate_out_time = actual_out
+        updates.append('actual_gate_out_time')
+    if dropoff_appoint != '-' and not trip.dropoff_appointment_time:
+        trip.dropoff_appointment_time = dropoff_appoint
+        updates.append('dropoff_appointment_time')
+    if actual_dropoff != '-' and not trip.actual_dropoff_time:
+        trip.actual_dropoff_time = actual_dropoff
+        updates.append('actual_dropoff_time')
+
+    if updates:
+        try:
+            trip.save(update_fields=updates)
+        except Exception:
+            pass
+
+    return {
+        'eta_warehouse_time': eta,
+        'warehouse_call_in_time': call_in,
+        'actual_gate_in_time': actual_in,
+        'warehouse_call_out_time': call_out,
+        'actual_gate_out_time': actual_out,
+        'dropoff_appointment_time': dropoff_appoint,
+        'actual_dropoff_time': actual_dropoff,
+    }
+
 def build_customer_milestones(trip: DispatchTrip):
     """
     Xây dựng tiến độ giao nhận lô hàng dành riêng cho Khách Hàng (Customer Tracking Portal).

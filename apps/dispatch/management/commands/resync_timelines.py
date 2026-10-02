@@ -4,11 +4,11 @@ Dùng sau khi thay đổi logic build_10_step_timeline_spec() để áp dụng c
 """
 from django.core.management.base import BaseCommand
 from apps.dispatch.models import DispatchTrip, TripStatus
-from apps.dispatch.timeline_service import sync_trip_10_step_timeline
+from apps.dispatch.timeline_service import sync_trip_10_step_timeline, get_derived_7_milestones
 
 
 class Command(BaseCommand):
-    help = 'Re-sync 10-step timeline cho tất cả chuyến xe active trong DB'
+    help = 'Re-sync 10-step timeline và trích xuất 7 mốc thời gian kho cho tất cả chuyến xe trong DB'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -43,6 +43,7 @@ class Command(BaseCommand):
         errors = 0
         for trip in trips.select_related('driver', 'vehicle', 'trailer'):
             try:
+                get_derived_7_milestones(trip)
                 sync_trip_10_step_timeline(trip)
                 success += 1
                 if total <= 20 or success % 10 == 0:
