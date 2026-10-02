@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.4.1] - 2026-10-02 (Cơ Chế Cấp Mới Link Driver Portal & Tự Động Vô Hiệu Hóa Link Của Tài Xế Cũ)
+
+### 1. Bối Cảnh Nghiệp Vụ & Bài Toán Chống Ghi Đè Dữ Liệu:
+- **Vấn đề thực tế:** Khi Điều độ đổi tài xế (hoặc phân lại chuyến sau khi tài xế cũ từ chối/quá hạn), tài xế cũ vẫn có thể còn lưu tin nhắn link điều xe cũ trong Zalo. Nếu tài xế cũ bấm vào link cũ và thao tác báo mốc, chụp ảnh hoặc kê chi phí phát sinh, hệ thống có thể bị ghi đè dữ liệu hoặc tính nhầm chi phí cho tài xế mới đang chạy.
+- **Giải pháp:** Xây dựng cơ chế **Tự Động Cấp Mới Link Driver Portal (`driver_token`) & Vô Hiệu Hóa Link Cũ**:
+  1. Khi tạo chuyến mới: Hệ thống tự động sinh `driver_token` bảo mật ngẫu nhiên (16 bytes).
+  2. Khi Điều độ đổi sang tài xế mới: Hệ thống tự động thu hồi token cũ (lưu vào `revoked_driver_tokens`) và sinh `driver_token` mới cho tài xế mới.
+  3. Khi tài xế mới mở link: Thao tác bình thường với đầy đủ quyền hạn.
+  4. Khi tài xế cũ bấm vào link cũ: Hệ thống chặn đứng (HTTP 403 Forbidden), vô hiệu hóa toàn bộ API báo mốc/kê chi phí, và hiển thị trang thông báo rõ ràng (`templates/driver_portal_revoked.html`): *"Lệnh điều xe này đã được chuyển giao cho tài xế mới hoặc Điều độ đã cấp lại link mới. Liên kết cũ đã bị vô hiệu hóa để bảo vệ dữ liệu."* kèm hotline Điều độ.
+
+### 2. Chi Tiết Thay Đổi Kỹ Thuật:
+- **Database Model (`apps/dispatch/models.py`):** Thêm 2 field `driver_token` và `revoked_driver_tokens` vào `DispatchTrip`, method `regenerate_driver_token()`, tạo migrations `0015_add_driver_token_to_trip.py` và `0016_add_revoked_driver_tokens.py`.
+- **Bảo mật & Phân quyền (`core/permissions.py`):** Cập nhật `IsTripDriverOrDispatcher` kiểm tra `driver_token` còn hiệu lực trên DB, từ chối toàn bộ token cũ đã bị thu hồi.
+- **Backend API & Views (`apps/dispatch/api_views.py` & `apps/dispatch/views.py`):**
+  - `get_trip_by_code_or_hash`: Ưu tiên tra cứu theo `driver_token` hiện hành.
+  - `TripDetailAPIView.patch()`: Tự động kích hoạt `trip.regenerate_driver_token()` khi đổi `driver_id` hoặc `driver`.
+  - `driver_portal_view`: Kiểm tra `revoked_driver_tokens` và render `driver_portal_revoked.html` nếu là link cũ.
+- **Template Mới:** Tạo `templates/driver_portal_revoked.html` tối ưu giao diện mobile hiện trường.
+- **Unit Test (`apps/dispatch/tests.py`):** Thêm test case `DriverTokenRevocationTestCase` kiểm tra tự động toàn bộ luồng cấp mới và vô hiệu hóa link cũ.
+
 ## [2.4.0] - 2026-10-02 (Bộ Tính Năng CRUD Lệnh Điều Động, Cảnh Báo Tài Xế Từ Chối & Cơ Chế Chọn Lại / Hoàn Tác)
 
 ### 1. Bối Cảnh & Yêu Cầu Nghiệp Vụ:

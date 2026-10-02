@@ -117,6 +117,7 @@ def driver_portal_view(request, trip_hash):
     Trang Mobile Portal dành riêng cho Tài xế xe đầu kéo / xe tải.
     - Truy cập an toàn qua Capability URL riêng của Tài xế (Driver Token chống IDOR).
     - Phân tách bảo mật: Khách hàng cầm Tracking Token không thể truy cập cổng này.
+    - Khi đổi tài xế, link cũ của tài xế trước sẽ bị vô hiệu hóa để chống ghi đè dữ liệu.
     - Nghiệp vụ: Báo 6 mốc kho SOP, Kê khai chi phí dọc đường, Chụp ảnh POD/EIR, Gọi điều độ 1-chạm.
     - Bảo mật tuyệt đối: Không để lộ doanh thu bán khách hay tỷ suất lợi nhuận nội bộ.
     """
@@ -125,27 +126,55 @@ def driver_portal_view(request, trip_hash):
     from apps.customs.models import CustomsDeclaration
     import urllib.parse
 
-    # 1. Giải mã token riêng của Driver Portal
-    decoded_id = decode_driver_hashid(trip_hash)
-    if not decoded_id and request.user.is_authenticated:
-        # Hỗ trợ nhân viên nội bộ đăng nhập mở nhanh bằng trip hashid
-        decoded_id = decode_trip_hashid(trip_hash)
-
     trip = None
-    if decoded_id:
-        trip = DispatchTrip.objects.filter(id=decoded_id).select_related(
-            'customer', 'vehicle', 'trailer', 'driver', 'dispatcher',
-            'dropoff_driver', 'dropoff_vehicle', 'dropoff_trailer',
-            'pickup_loc', 'warehouse_loc', 'dropoff_loc'
-        ).first()
 
-    # Chỉ cho phép tìm kiếm bằng trip_code công khai nếu nhân viên đã ĐĂNG NHẬP hệ thống
-    if not trip and request.user.is_authenticated:
-        trip = DispatchTrip.objects.filter(trip_code=trip_hash).select_related(
-            'customer', 'vehicle', 'trailer', 'driver', 'dispatcher',
-            'dropoff_driver', 'dropoff_vehicle', 'dropoff_trailer',
-            'pickup_loc', 'warehouse_loc', 'dropoff_loc'
+    # 1. Tìm kiếm chính xác theo driver_token hiện hành (Dành cho tài xế đang được gán chuyến)
+    trip = DispatchTrip.objects.filter(driver_token=trip_hash).select_related(
+        'customer', 'vehicle', 'trailer', 'driver', 'dispatcher',
+        'dropoff_driver', 'dropoff_vehicle', 'dropoff_trailer',
+        'pickup_loc', 'warehouse_loc', 'dropoff_loc'
+    ).first()
+
+    # 2. Nếu không khớp driver_token hiện tại, kiểm tra xem có phải link cũ đã bị thu hồi do đổi tài xế không
+    if not trip:
+        # 2a. Kiểm tra token có nằm trong danh sách token đã thu hồi của chuyến nào không
+        revoked_trip = DispatchTrip.objects.filter(revoked_driver_tokens__icontains=trip_hash).select_related(
+            'customer', 'vehicle', 'driver', 'dispatcher'
         ).first()
+        if revoked_trip:
+            return render(request, 'driver_portal_revoked.html', {'trip': revoked_trip, 'trip_hash': trip_hash}, status=403)
+
+        # 2b. Kiểm tra legacy driver hashid
+        decoded_id = decode_driver_hashid(trip_hash)
+        if decoded_id:
+            old_trip = DispatchTrip.objects.filter(id=decoded_id).select_related(
+                'customer', 'vehicle', 'driver', 'dispatcher'
+            ).first()
+            if old_trip:
+                if old_trip.driver_token and old_trip.driver_token != trip_hash:
+                    # Link cũ đã bị thu hồi do Điều độ phân lại tài xế khác!
+                    return render(request, 'driver_portal_revoked.html', {'trip': old_trip, 'trip_hash': trip_hash}, status=403)
+                elif not old_trip.driver_token:
+                    # Gán token mới cho bản ghi cũ
+                    old_trip.regenerate_driver_token(save=True)
+                    trip = old_trip
+
+    # 3. Hỗ trợ nhân viên nội bộ / Điều độ đã ĐĂNG NHẬP hệ thống mở xem trước qua trip_hashid hoặc trip_code
+    if not trip and request.user.is_authenticated:
+        decoded_trip_id = decode_trip_hashid(trip_hash)
+        if decoded_trip_id:
+            trip = DispatchTrip.objects.filter(id=decoded_trip_id).select_related(
+                'customer', 'vehicle', 'trailer', 'driver', 'dispatcher',
+                'dropoff_driver', 'dropoff_vehicle', 'dropoff_trailer',
+                'pickup_loc', 'warehouse_loc', 'dropoff_loc'
+            ).first()
+
+        if not trip:
+            trip = DispatchTrip.objects.filter(trip_code=trip_hash).select_related(
+                'customer', 'vehicle', 'trailer', 'driver', 'dispatcher',
+                'dropoff_driver', 'dropoff_vehicle', 'dropoff_trailer',
+                'pickup_loc', 'warehouse_loc', 'dropoff_loc'
+            ).first()
 
     if not trip:
         return render(request, 'driver_portal_404.html', {'trip_hash': trip_hash}, status=404)

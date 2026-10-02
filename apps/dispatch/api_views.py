@@ -759,17 +759,40 @@ class TripListCreateAPIView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 def get_trip_by_code_or_hash(trip_identifier, select_related_fields=None):
-    """Truy vấn chuyến xe an toàn bằng cả trip_code gốc hoặc HashID bảo mật (Tiêu chuẩn 10)."""
+    """Truy vấn chuyến xe an toàn bằng cả trip_code gốc, driver_token hoặc HashID bảo mật (Tiêu chuẩn 10)."""
     from core.security import decode_driver_hashid, decode_trip_hashid
     qs = DispatchTrip.objects
     if select_related_fields:
         qs = qs.select_related(*select_related_fields)
-    decoded_id = decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier)
-    if decoded_id:
-        trip = qs.filter(id=decoded_id).first()
+
+    if not trip_identifier:
+        return None
+
+    # 1. Khớp chính xác driver_token hiện tại (Capability Token Cổng Tài Xế Mobile)
+    trip = qs.filter(driver_token=trip_identifier).first()
+    if trip:
+        return trip
+
+    # 2. Khớp trip_code nội bộ
+    trip_by_code = qs.filter(trip_code=trip_identifier).first()
+    if trip_by_code:
+        return trip_by_code
+
+    # 3. Decode trip_hashid (Internal web portal)
+    decoded_trip_id = decode_trip_hashid(trip_identifier)
+    if decoded_trip_id:
+        trip = qs.filter(id=decoded_trip_id).first()
         if trip:
             return trip
-    return qs.filter(trip_code=trip_identifier).first()
+
+    # 4. Fallback cho legacy driver_hashid (chỉ chấp nhận nếu trip chưa có driver_token riêng biệt)
+    decoded_drv_id = decode_driver_hashid(trip_identifier)
+    if decoded_drv_id:
+        legacy_trip = qs.filter(id=decoded_drv_id).first()
+        if legacy_trip and (not legacy_trip.driver_token or legacy_trip.driver_token == trip_identifier):
+            return legacy_trip
+
+    return None
 
 class TripDetailAPIView(APIView):
     """API Xem chi tiết một chuyến xe (Hỗ trợ tra cứu bằng cả trip_code hoặc HashID bảo mật)."""
@@ -1168,6 +1191,7 @@ class TripDetailAPIView(APIView):
                 trip.accepted_at = None
                 trip.declined_at = None
                 trip.decline_reason = ''
+                trip.regenerate_driver_token()  # Cấp mới link và vô hiệu hóa link của tài xế cũ!
                 if trip.status in [TripStatus.DISPATCHED, TripStatus.ACCEPTED]:
                     trip.status = TripStatus.DISPATCHED
         elif 'driver' in data and data['driver']:
@@ -1179,6 +1203,7 @@ class TripDetailAPIView(APIView):
                 trip.accepted_at = None
                 trip.declined_at = None
                 trip.decline_reason = ''
+                trip.regenerate_driver_token()  # Cấp mới link và vô hiệu hóa link của tài xế cũ!
                 if trip.status in [TripStatus.DISPATCHED, TripStatus.ACCEPTED]:
                     trip.status = TripStatus.DISPATCHED
         if 'vehicle_id' in data:

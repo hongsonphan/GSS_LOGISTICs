@@ -213,13 +213,18 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
         if request.user and request.user.is_authenticated:
             return True
 
-        # Hỗ trợ Capability Token từ URL hoặc Header cho Trang Tài Xế Mobile (Chỉ chấp nhận Driver Token)
+        # Hỗ trợ Capability Token từ URL hoặc Header cho Trang Tài Xế Mobile (Chỉ chấp nhận Driver Token còn hiệu lực)
         trip_identifier = view.kwargs.get('trip_code') or request.headers.get('X-Trip-Hash') or request.GET.get('trip_hash')
         if trip_identifier:
+            from apps.dispatch.models import DispatchTrip
+            if DispatchTrip.objects.filter(driver_token=trip_identifier).exists():
+                return True
             from core.security import decode_driver_hashid, decode_trip_hashid
             decoded_id = decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier)
             if decoded_id:
-                return True
+                legacy_trip = DispatchTrip.objects.filter(id=decoded_id).first()
+                if legacy_trip and (not legacy_trip.driver_token or legacy_trip.driver_token == trip_identifier):
+                    return True
         return False
 
     def has_object_permission(self, request, view, obj):
@@ -241,12 +246,14 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
                 return True
             return False
 
-        # Kiểm tra Capability Token chống IDOR cho tài xế truy cập trực tiếp (Tuyệt đối không nhận Tracking Token)
+        # Kiểm tra Capability Token chống IDOR cho tài xế truy cập trực tiếp (Tuyệt đối không nhận Tracking Token hay Token cũ đã thu hồi)
         trip_identifier = view.kwargs.get('trip_code') or request.headers.get('X-Trip-Hash') or request.GET.get('trip_hash')
         if trip_identifier:
+            if hasattr(obj, 'driver_token') and obj.driver_token and obj.driver_token == trip_identifier:
+                return True
             from core.security import decode_driver_hashid, decode_trip_hashid
             decoded_id = decode_driver_hashid(trip_identifier) or decode_trip_hashid(trip_identifier)
-            if decoded_id and decoded_id == obj.id:
+            if decoded_id and decoded_id == obj.id and (not getattr(obj, 'driver_token', None) or obj.driver_token == trip_identifier):
                 return True
 
         return False

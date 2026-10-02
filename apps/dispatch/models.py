@@ -246,6 +246,8 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     accepted_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm tài xế xác nhận nhận chuyến")
     declined_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm tài xế từ chối chuyến")
     decline_reason = models.CharField(max_length=255, blank=True, default='', help_text="Lý do tài xế từ chối chuyến")
+    driver_token = models.CharField(max_length=64, blank=True, default='', db_index=True, help_text="Token bảo mật 1 lần duy nhất cho tài xế hiện tại của chuyến (tự động làm mới khi đổi tài xế)")
+    revoked_driver_tokens = models.TextField(blank=True, default='', help_text="Danh sách token cũ của các tài xế trước đã bị thu hồi khi đổi tài xế")
     unloading_started_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm bắt đầu đóng/trút hàng tại dock kho")
 
     status = models.CharField(max_length=25, choices=TripStatus.choices, default=TripStatus.DRAFT, db_index=True)
@@ -322,6 +324,25 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"[{self.trip_code}] {self.customer.name} - {self.get_status_display()}"
 
+    def regenerate_driver_token(self, save=False):
+        """Sinh mới mã token truy cập Driver Portal và vô hiệu hóa hoàn toàn link cũ của tài xế trước."""
+        import secrets
+        if self.driver_token:
+            tokens = [t.strip() for t in (self.revoked_driver_tokens or '').split(',') if t.strip()]
+            if self.driver_token not in tokens:
+                tokens.append(self.driver_token)
+            self.revoked_driver_tokens = ','.join(tokens)
+        self.driver_token = secrets.token_urlsafe(16)
+        if save and self.pk:
+            self.save(update_fields=['driver_token', 'revoked_driver_tokens'])
+        return self.driver_token
+
+    def save(self, *args, **kwargs):
+        if not self.driver_token:
+            import secrets
+            self.driver_token = secrets.token_urlsafe(16)
+        super().save(*args, **kwargs)
+
     @property
     def hashid(self):
         """Mã hóa ID chuyến xe thành chuỗi HashID bảo mật chống IDOR (Tiêu chuẩn 10)."""
@@ -331,6 +352,8 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     @property
     def driver_hashid(self):
         """Mã hóa Capability Token riêng cho Cổng Tài Xế Mobile (Driver Portal)."""
+        if self.driver_token:
+            return self.driver_token
         from core.security import get_driver_hashid
         return get_driver_hashid(self.id)
 
