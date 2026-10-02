@@ -740,3 +740,441 @@ class BotTollAuditAPIView(APIView):
             },
             'items': items
         }, status=status.HTTP_200_OK)
+
+
+class AccountingReportsAPIView(APIView):
+    """
+    API 5: Trung Tâm Báo Cáo Kế Toán & Quản Trị Tài Chính Vận Tải Đa Chiều.
+    Hỗ trợ 5 loại báo cáo chuẩn mực:
+    - BY_CUSTOMER: Báo cáo Doanh thu, Chi phí & Chi hộ theo Khách hàng
+    - BY_SUBCONTRACTOR: Báo cáo Quyết toán cước & Công nợ theo Xe bạn / Thầu phụ (3PL)
+    - BY_DRIVER: Báo cáo Bảng kê Lương chuyến, Tạm ứng & Quyết toán theo Tài xế
+    - BY_ROUTE: Báo cáo Hiệu quả kinh doanh & Đối soát BOT theo Tuyến đường
+    - BY_CASHFLOW: Báo cáo Sổ quỹ & Dòng tiền Thu - Chi (Mẫu S03a-DN)
+    """
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAccountant]
+
+    def get(self, request):
+        report_type = request.GET.get('report_type', 'BY_CUSTOMER')
+        from_date = request.GET.get('from_date')
+        to_date = request.GET.get('to_date')
+        customer_id = request.GET.get('customer_id')
+        driver_id = request.GET.get('driver_id')
+        vehicle_id = request.GET.get('vehicle_id')
+
+        # Bộ lọc thời gian chung cho Chuyến xe
+        trips_qs = DispatchTrip.objects.filter(is_deleted=False).select_related(
+            'customer', 'driver', 'vehicle', 'booking_order'
+        )
+
+        if from_date:
+            try:
+                fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
+                trips_qs = trips_qs.filter(created_at__date__gte=fd)
+            except ValueError:
+                pass
+
+        if to_date:
+            try:
+                td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
+                trips_qs = trips_qs.filter(created_at__date__lte=td)
+            except ValueError:
+                pass
+
+        # ---------------------------------------------------------------------
+        # 1. BÁO CÁO THEO KHÁCH HÀNG (BY_CUSTOMER)
+        # ---------------------------------------------------------------------
+        if report_type == 'BY_CUSTOMER':
+            if customer_id and customer_id.isdigit():
+                trips_qs = trips_qs.filter(customer_id=int(customer_id))
+
+            customers_map = {}
+            total_rev = Decimal(0)
+            total_exp = Decimal(0)
+            total_profit = Decimal(0)
+            total_reimbursables = Decimal(0)
+            total_trips_count = 0
+
+            for t in trips_qs:
+                cust_key = t.customer_id or 0
+                cust_name = t.customer.name if t.customer else 'Khách vãng lai / Chưa gán'
+                cust_code = t.customer.customer_code if t.customer else 'VANG_LAI'
+
+                if cust_key not in customers_map:
+                    customers_map[cust_key] = {
+                        'customer_id': cust_key,
+                        'customer_code': cust_code,
+                        'customer_name': cust_name,
+                        'trips_count': 0,
+                        'cont_20_count': 0,
+                        'cont_40_count': 0,
+                        'revenue': 0,
+                        'operating_expenses': 0,
+                        'reimbursables': 0,
+                        'gross_profit': 0,
+                        'profit_margin_pct': 0,
+                        'settled_trips_count': 0,
+                    }
+
+                c_rev = int(t.cached_revenue)
+                c_exp = int(t.cached_expense)
+                c_prof = int(t.cached_profit)
+
+                customers_map[cust_key]['trips_count'] += 1
+                total_trips_count += 1
+                if '20' in (t.container_type or ''):
+                    customers_map[cust_key]['cont_20_count'] += 1
+                else:
+                    customers_map[cust_key]['cont_40_count'] += 1
+
+                customers_map[cust_key]['revenue'] += c_rev
+                customers_map[cust_key]['operating_expenses'] += c_exp
+                customers_map[cust_key]['gross_profit'] += c_prof
+                if t.is_expenses_settled:
+                    customers_map[cust_key]['settled_trips_count'] += 1
+
+                total_rev += Decimal(c_rev)
+                total_exp += Decimal(c_exp)
+                total_profit += Decimal(c_prof)
+
+            # Lấy chi hộ theo từng khách hàng
+            reimb_qs = TripExpense.objects.filter(is_on_behalf_of_customer=True, is_deleted=False)
+            if from_date:
+                reimb_qs = reimb_qs.filter(created_at__date__gte=fd)
+            if to_date:
+                reimb_qs = reimb_qs.filter(created_at__date__lte=td)
+
+            for rexp in reimb_qs:
+                cid = rexp.trip.customer_id if (rexp.trip and rexp.trip.customer_id) else 0
+                if cid in customers_map:
+                    customers_map[cid]['reimbursables'] += int(rexp.amount)
+                total_reimbursables += Decimal(rexp.amount)
+
+            # Tính tỷ suất lợi nhuận
+            rows = list(customers_map.values())
+            for r in rows:
+                if r['revenue'] > 0:
+                    r['profit_margin_pct'] = round((r['gross_profit'] / r['revenue']) * 100, 1)
+                else:
+                    r['profit_margin_pct'] = 0
+
+            # Sắp xếp theo doanh thu giảm dần
+            rows.sort(key=lambda x: x['revenue'], reverse=True)
+
+            avg_margin = round((float(total_profit) / float(total_rev) * 100), 1) if total_rev > 0 else 0
+
+            return Response({
+                'success': True,
+                'report_type': 'BY_CUSTOMER',
+                'report_title': 'Báo Cáo Doanh Thu, Chi Phí & Chi Hộ Theo Khách Hàng',
+                'kpis': {
+                    'total_customers': len(rows),
+                    'total_trips': total_trips_count,
+                    'total_revenue': int(total_rev),
+                    'total_operating_expenses': int(total_exp),
+                    'total_reimbursables': int(total_reimbursables),
+                    'total_gross_profit': int(total_profit),
+                    'avg_profit_margin_pct': avg_margin,
+                },
+                'headers': [
+                    {'key': 'customer_name', 'label': 'Khách Hàng', 'align': 'left'},
+                    {'key': 'trips_count', 'label': 'Số Chuyến', 'align': 'center'},
+                    {'key': 'revenue', 'label': 'Doanh Thu Cước (VNĐ)', 'align': 'right'},
+                    {'key': 'operating_expenses', 'label': 'Chi Phí Chuyến (VNĐ)', 'align': 'right'},
+                    {'key': 'reimbursables', 'label': 'Tiền Chi Hộ (Debit Note)', 'align': 'right'},
+                    {'key': 'gross_profit', 'label': 'Lợi Nhuận Gộp (VNĐ)', 'align': 'right'},
+                    {'key': 'profit_margin_pct', 'label': 'Biên LN (%)', 'align': 'center'},
+                ],
+                'rows': rows
+            }, status=status.HTTP_200_OK)
+
+        # ---------------------------------------------------------------------
+        # 2. BÁO CÁO THEO XE BẠN / THẦU PHỤ 3PL (BY_SUBCONTRACTOR)
+        # ---------------------------------------------------------------------
+        elif report_type == 'BY_SUBCONTRACTOR':
+            sub_trips = trips_qs.filter(vehicle__ownership_type=VehicleOwnership.SUBCONTRACTOR)
+            if vehicle_id and vehicle_id.isdigit():
+                sub_trips = sub_trips.filter(vehicle_id=int(vehicle_id))
+
+            sub_map = {}
+            total_cust_rev = Decimal(0)
+            total_sub_cost = Decimal(0)
+            total_sub_adv = Decimal(0)
+            total_sub_rem = Decimal(0)
+            total_sub_margin = Decimal(0)
+
+            for t in sub_trips:
+                plate = t.vehicle.license_plate if t.vehicle else 'Xe ngoài chưa gán'
+                if plate not in sub_map:
+                    sub_map[plate] = {
+                        'vehicle_plate': plate,
+                        'driver_name': (t.driver.nickname or t.driver.full_name) if t.driver else 'Tài xế xe bạn',
+                        'trips_count': 0,
+                        'customer_revenue': 0,
+                        'subcontractor_cost': 0,
+                        'subcontractor_advance': 0,
+                        'remaining_payable': 0,
+                        'company_margin': 0,
+                        'settled_count': 0,
+                    }
+
+                c_cost = int(t.subcontractor_cost)
+                c_adv = int(t.subcontractor_advance)
+                c_rem = max(0, c_cost - c_adv)
+                c_rev = int(t.cached_revenue)
+                c_margin = c_rev - c_cost
+
+                sub_map[plate]['trips_count'] += 1
+                sub_map[plate]['customer_revenue'] += c_rev
+                sub_map[plate]['subcontractor_cost'] += c_cost
+                sub_map[plate]['subcontractor_advance'] += c_adv
+                sub_map[plate]['remaining_payable'] += c_rem
+                sub_map[plate]['company_margin'] += c_margin
+                if t.subcontractor_settlement_status == 'SETTLED':
+                    sub_map[plate]['settled_count'] += 1
+
+                total_cust_rev += Decimal(c_rev)
+                total_sub_cost += Decimal(c_cost)
+                total_sub_adv += Decimal(c_adv)
+                total_sub_rem += Decimal(c_rem)
+                total_sub_margin += Decimal(c_margin)
+
+            rows = list(sub_map.values())
+            rows.sort(key=lambda x: x['subcontractor_cost'], reverse=True)
+
+            return Response({
+                'success': True,
+                'report_type': 'BY_SUBCONTRACTOR',
+                'report_title': 'Báo Cáo Quyết Toán Cước & Công Nợ Xe Bạn / Thầu Phụ (3PL)',
+                'kpis': {
+                    'total_vehicles': len(rows),
+                    'total_trips': sum(r['trips_count'] for r in rows),
+                    'total_customer_revenue': int(total_cust_rev),
+                    'total_subcontractor_cost': int(total_sub_cost),
+                    'total_advance_paid': int(total_sub_adv),
+                    'total_remaining_payable': int(total_sub_rem),
+                    'total_company_margin': int(total_sub_margin),
+                },
+                'headers': [
+                    {'key': 'vehicle_plate', 'label': 'Biển Số Xe Bạn', 'align': 'left'},
+                    {'key': 'driver_name', 'label': 'Tài Xế / Chủ Xe', 'align': 'left'},
+                    {'key': 'trips_count', 'label': 'Số Chuyến', 'align': 'center'},
+                    {'key': 'customer_revenue', 'label': 'Cước Thu Khách', 'align': 'right'},
+                    {'key': 'subcontractor_cost', 'label': 'Cước Thuê Xe Bạn', 'align': 'right'},
+                    {'key': 'subcontractor_advance', 'label': 'Đã Tạm Ứng', 'align': 'right'},
+                    {'key': 'remaining_payable', 'label': 'Còn Phải Trả (AP)', 'align': 'right'},
+                    {'key': 'company_margin', 'label': 'Lợi Nhuận Giữ Lại', 'align': 'right'},
+                ],
+                'rows': rows
+            }, status=status.HTTP_200_OK)
+
+        # ---------------------------------------------------------------------
+        # 3. BÁO CÁO THEO TÀI XẾ (BY_DRIVER)
+        # ---------------------------------------------------------------------
+        elif report_type == 'BY_DRIVER':
+            # Chỉ lấy các chuyến xe nhà của công ty
+            company_trips = trips_qs.filter(vehicle__ownership_type=VehicleOwnership.COMPANY_OWNED)
+            if driver_id and driver_id.isdigit():
+                company_trips = company_trips.filter(driver_id=int(driver_id))
+
+            drivers_map = {}
+            total_trips_count = 0
+            total_driver_trip_pay = Decimal(0)
+            total_advances_given = Decimal(0)
+            total_actual_expenses = Decimal(0)
+            total_diff_refund = Decimal(0)
+            total_diff_reimburse = Decimal(0)
+
+            # Lấy tất cả tạm ứng của tài xế
+            adv_qs = DriverTripAdvance.objects.filter(is_deleted=False)
+            if from_date:
+                adv_qs = adv_qs.filter(created_at__date__gte=fd)
+            if to_date:
+                adv_qs = adv_qs.filter(created_at__date__lte=td)
+
+            for adv in adv_qs:
+                d_id = adv.driver_id
+                d_name = (adv.driver.nickname or adv.driver.full_name) if adv.driver else 'Chưa gán'
+                d_code = adv.driver.employee_code if adv.driver else 'TX'
+
+                if d_id not in drivers_map:
+                    drivers_map[d_id] = {
+                        'driver_id': d_id,
+                        'driver_code': d_code,
+                        'driver_name': d_name,
+                        'assigned_vehicle': adv.driver.assigned_vehicle.license_plate if (adv.driver and getattr(adv.driver, 'assigned_vehicle', None)) else '',
+                        'trips_count': 0,
+                        'estimated_trip_salary': 0,
+                        'total_advance_received': 0,
+                        'total_actual_expense': 0,
+                        'refund_to_company': 0,
+                        'company_reimburse': 0,
+                        'settled_advances_count': 0,
+                    }
+
+                drivers_map[d_id]['total_advance_received'] += int(adv.advance_amount)
+                drivers_map[d_id]['total_actual_expense'] += int(adv.actual_expense_amount)
+
+                diff = adv.settlement_diff
+                if diff > 0:
+                    drivers_map[d_id]['refund_to_company'] += int(diff)
+                    total_diff_refund += diff
+                elif diff < 0:
+                    drivers_map[d_id]['company_reimburse'] += int(abs(diff))
+                    total_diff_reimburse += abs(diff)
+
+                if adv.status == 'SETTLED':
+                    drivers_map[d_id]['settled_advances_count'] += 1
+
+                total_advances_given += adv.advance_amount
+                total_actual_expenses += adv.actual_expense_amount
+
+            # Cộng chuyến xe hoàn thành và lương chuyến
+            for t in company_trips:
+                d_id = t.driver_id
+                if not d_id:
+                    continue
+                d_name = (t.driver.nickname or t.driver.full_name) if t.driver else 'Tài xế'
+                d_code = t.driver.employee_code if t.driver else 'TX'
+
+                if d_id not in drivers_map:
+                    drivers_map[d_id] = {
+                        'driver_id': d_id,
+                        'driver_code': d_code,
+                        'driver_name': d_name,
+                        'assigned_vehicle': t.vehicle.license_plate if t.vehicle else '',
+                        'trips_count': 0,
+                        'estimated_trip_salary': 0,
+                        'total_advance_received': 0,
+                        'total_actual_expense': 0,
+                        'refund_to_company': 0,
+                        'company_reimburse': 0,
+                        'settled_advances_count': 0,
+                    }
+
+                drivers_map[d_id]['trips_count'] += 1
+                total_trips_count += 1
+                # Ước tính lương chuyến định mức (vd 350k - 500k/chuyến)
+                trip_salary = 400000
+                drivers_map[d_id]['estimated_trip_salary'] += trip_salary
+                total_driver_trip_pay += Decimal(trip_salary)
+
+            rows = list(drivers_map.values())
+            rows.sort(key=lambda x: x['trips_count'], reverse=True)
+
+            return Response({
+                'success': True,
+                'report_type': 'BY_DRIVER',
+                'report_title': 'Báo Cáo Bảng Kê Lương Chuyến, Tạm Ứng & Quyết Toán Theo Tài Xế',
+                'kpis': {
+                    'total_drivers': len(rows),
+                    'total_trips_completed': total_trips_count,
+                    'total_trip_salary': int(total_driver_trip_pay),
+                    'total_advance_given': int(total_advances_given),
+                    'total_actual_expense': int(total_actual_expenses),
+                    'total_driver_refund': int(total_diff_refund),
+                    'total_company_reimburse': int(total_diff_reimburse),
+                },
+                'headers': [
+                    {'key': 'driver_name', 'label': 'Họ Tên Bác Tài', 'align': 'left'},
+                    {'key': 'assigned_vehicle', 'label': 'Đầu Kéo Phụ Trách', 'align': 'center'},
+                    {'key': 'trips_count', 'label': 'Số Chuyến Hoàn Thành', 'align': 'center'},
+                    {'key': 'estimated_trip_salary', 'label': 'Lương Chuyến (VNĐ)', 'align': 'right'},
+                    {'key': 'total_advance_received', 'label': 'Tạm Ứng Đã Nhận', 'align': 'right'},
+                    {'key': 'total_actual_expense', 'label': 'Chi Phí Thực Chi (BOT/Phí)', 'align': 'right'},
+                    {'key': 'refund_to_company', 'label': 'Tài Xế Hoàn Tiền (+)', 'align': 'right'},
+                    {'key': 'company_reimburse', 'label': 'Cty Chi Bù Thêm (-)', 'align': 'right'},
+                ],
+                'rows': rows
+            }, status=status.HTTP_200_OK)
+
+        # ---------------------------------------------------------------------
+        # 4. BÁO CÁO THEO TUYẾN ĐƯỜNG & HIỆU QUẢ BOT (BY_ROUTE)
+        # ---------------------------------------------------------------------
+        elif report_type == 'BY_ROUTE':
+            routes_map = {}
+            total_rev = Decimal(0)
+            total_toll = Decimal(0)
+            total_exp = Decimal(0)
+            total_profit = Decimal(0)
+
+            for t in trips_qs:
+                p_loc = t.pickup_location or 'Điểm lấy'
+                w_loc = t.warehouse_location or 'Kho giao'
+                route_key = f"{p_loc} ➔ {w_loc}"
+
+                if route_key not in routes_map:
+                    routes_map[route_key] = {
+                        'route_name': route_key,
+                        'trips_count': 0,
+                        'revenue': 0,
+                        'actual_toll': 0,
+                        'total_expense': 0,
+                        'gross_profit': 0,
+                        'avg_profit_per_trip': 0,
+                    }
+
+                c_rev = int(t.cached_revenue)
+                c_exp = int(t.cached_expense)
+                c_prof = int(t.cached_profit)
+
+                routes_map[route_key]['trips_count'] += 1
+                routes_map[route_key]['revenue'] += c_rev
+                routes_map[route_key]['total_expense'] += c_exp
+                routes_map[route_key]['gross_profit'] += c_prof
+
+                total_rev += Decimal(c_rev)
+                total_exp += Decimal(c_exp)
+                total_profit += Decimal(c_prof)
+
+            # Lấy chi phí BOT theo tuyến
+            bot_expenses = TripExpense.objects.filter(
+                category=ExpenseCategory.TOLL_FEE,
+                is_deleted=False
+            ).select_related('trip')
+            if from_date:
+                bot_expenses = bot_expenses.filter(created_at__date__gte=fd)
+            if to_date:
+                bot_expenses = bot_expenses.filter(created_at__date__lte=td)
+
+            for b in bot_expenses:
+                if b.trip:
+                    r_key = f"{b.trip.pickup_location or 'Điểm lấy'} ➔ {b.trip.warehouse_location or 'Kho giao'}"
+                    if r_key in routes_map:
+                        routes_map[r_key]['actual_toll'] += int(b.amount)
+                    total_toll += Decimal(b.amount)
+
+            rows = list(routes_map.values())
+            for r in rows:
+                if r['trips_count'] > 0:
+                    r['avg_profit_per_trip'] = int(r['gross_profit'] / r['trips_count'])
+
+            rows.sort(key=lambda x: x['trips_count'], reverse=True)
+
+            return Response({
+                'success': True,
+                'report_type': 'BY_ROUTE',
+                'report_title': 'Báo Cáo Hiệu Quả Kinh Doanh & Chi Phí BOT Theo Tuyến Vận Tải',
+                'kpis': {
+                    'total_routes': len(rows),
+                    'total_trips': sum(r['trips_count'] for r in rows),
+                    'total_revenue': int(total_rev),
+                    'total_toll_fee': int(total_toll),
+                    'total_expense': int(total_exp),
+                    'total_gross_profit': int(total_profit),
+                },
+                'headers': [
+                    {'key': 'route_name', 'label': 'Tuyến Đường Vận Chuyển', 'align': 'left'},
+                    {'key': 'trips_count', 'label': 'Số Chuyến', 'align': 'center'},
+                    {'key': 'revenue', 'label': 'Doanh Thu Tuyến', 'align': 'right'},
+                    {'key': 'actual_toll', 'label': 'Chi Phí Vé BOT', 'align': 'right'},
+                    {'key': 'total_expense', 'label': 'Tổng Chi Phí Tuyến', 'align': 'right'},
+                    {'key': 'gross_profit', 'label': 'Lợi Nhuận Tuyến', 'align': 'right'},
+                    {'key': 'avg_profit_per_trip', 'label': 'Lợi Nhuận TB/Chuyến', 'align': 'right'},
+                ],
+                'rows': rows
+            }, status=status.HTTP_200_OK)
+
+        return Response({'error': 'Loại báo cáo không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
+

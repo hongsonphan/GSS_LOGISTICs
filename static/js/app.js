@@ -6997,6 +6997,7 @@ function switchAccountingSubTab(subtabId) {
     if (subtabId === 'acct-reimbursables') btnId = 'acct-tab-btn-5';
     if (subtabId === 'acct-subcontractors') btnId = 'acct-tab-btn-6';
     if (subtabId === 'acct-bot-audit') btnId = 'acct-tab-btn-7';
+    if (subtabId === 'acct-reports') btnId = 'acct-tab-btn-8';
 
     const activeBtn = document.getElementById(btnId);
     if (activeBtn) {
@@ -7016,6 +7017,8 @@ function switchAccountingSubTab(subtabId) {
         loadSubcontractorData();
     } else if (subtabId === 'acct-bot-audit') {
         loadBotAuditData();
+    } else if (subtabId === 'acct-reports') {
+        loadAccountingReportData();
     } else {
         loadCashBookData();
     }
@@ -12448,5 +12451,374 @@ function exportCustomsExcel() {
 
     window.open(`/api/customs/declarations/export-excel/?${params.toString()}`, '_blank');
 }
+
+
+// ==============================================================================
+// 9.8. SUBTAB 8: TRUNG TÂM BÁO CÁO KẾ TOÁN & ĐỐI SOÁT ĐA CHIỀU
+// ==============================================================================
+let currentAccountingReportType = 'BY_CUSTOMER';
+let cachedAccountingReportData = null;
+
+function selectAccountingReportType(reportType) {
+    currentAccountingReportType = reportType;
+    
+    // Cập nhật giao diện 4 nút
+    const buttons = {
+        'BY_CUSTOMER': 'btn-rep-type-customer',
+        'BY_SUBCONTRACTOR': 'btn-rep-type-subcontractor',
+        'BY_DRIVER': 'btn-rep-type-driver',
+        'BY_ROUTE': 'btn-rep-type-route'
+    };
+
+    Object.entries(buttons).forEach(([type, btnId]) => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            if (type === reportType) {
+                btn.classList.add('active', 'border-teal-600', 'bg-teal-50', 'text-teal-900');
+                btn.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+            } else {
+                btn.classList.remove('active', 'border-teal-600', 'bg-teal-50', 'text-teal-900');
+                btn.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+            }
+        }
+    });
+
+    loadAccountingReportData();
+}
+
+function setAccountingReportPeriod(period) {
+    const fromInput = document.getElementById('acct-rep-from-date');
+    const toInput = document.getElementById('acct-rep-to-date');
+    if (!fromInput || !toInput) return;
+
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth(); // 0-indexed
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const formatD = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    if (period === 'this_month') {
+        fromInput.value = `${y}-${pad(m + 1)}-01`;
+        const lastDay = new Date(y, m + 1, 0);
+        toInput.value = formatD(lastDay);
+    } else if (period === 'last_month') {
+        const prevMonth = m === 0 ? 11 : m - 1;
+        const prevYear = m === 0 ? y - 1 : y;
+        fromInput.value = `${prevYear}-${pad(prevMonth + 1)}-01`;
+        const lastDay = new Date(prevYear, prevMonth + 1, 0);
+        toInput.value = formatD(lastDay);
+    } else if (period === 'this_quarter') {
+        const qMonth = Math.floor(m / 3) * 3;
+        fromInput.value = `${y}-${pad(qMonth + 1)}-01`;
+        const lastDay = new Date(y, qMonth + 3, 0);
+        toInput.value = formatD(lastDay);
+    } else if (period === 'this_year') {
+        fromInput.value = `${y}-01-01`;
+        toInput.value = `${y}-12-31`;
+    }
+
+    loadAccountingReportData();
+}
+
+async function loadAccountingReportData() {
+    try {
+        const fromDate = document.getElementById('acct-rep-from-date')?.value || '';
+        const toDate = document.getElementById('acct-rep-to-date')?.value || '';
+
+        let url = `/api/accounting/reports/?report_type=${currentAccountingReportType}`;
+        if (fromDate) url += `&from_date=${fromDate}`;
+        if (toDate) url += `&to_date=${toDate}`;
+
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error('Không thể tải dữ liệu báo cáo kế toán');
+        const data = await res.json();
+        cachedAccountingReportData = data;
+
+        // Render Title
+        const titleEl = document.getElementById('acct-rep-title');
+        if (titleEl) titleEl.innerText = data.report_title || 'Báo Cáo Kế Toán';
+        const tblTitleEl = document.getElementById('acct-rep-table-title');
+        if (tblTitleEl) tblTitleEl.innerText = data.report_title || 'Chi Tiết Số Liệu';
+
+        // Render KPIs
+        renderAccountingReportKPIs(data);
+
+        // Render Table Headers & Body
+        renderAccountingReportTable(data);
+
+        // Update Row Count
+        const countEl = document.getElementById('acct-rep-row-count');
+        if (countEl) countEl.innerText = `${(data.rows || []).length} đối tượng`;
+
+    } catch (err) {
+        console.error('loadAccountingReportData error:', err);
+        showToast('warning', 'Lỗi tải báo cáo: ' + err.message);
+    }
+}
+
+function renderAccountingReportKPIs(data) {
+    const container = document.getElementById('acct-rep-kpi-container');
+    if (!container) return;
+    const kpis = data.kpis || {};
+    const fmt = (n) => (n !== undefined && n !== null) ? Number(n).toLocaleString('vi-VN') : '0';
+
+    let cardsHtml = '';
+
+    if (data.report_type === 'BY_CUSTOMER') {
+        cardsHtml = `
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Tổng Doanh Thu Cước</span>
+                    <i class="ph-bold ph-money text-teal-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-slate-900 font-heading mt-1">${fmt(kpis.total_revenue)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">${fmt(kpis.total_trips)} chuyến (${fmt(kpis.total_customers)} khách hàng)</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-rose-500 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Chi Phí Vận Hành</span>
+                    <i class="ph-bold ph-receipt text-rose-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-rose-600 font-heading mt-1">${fmt(kpis.total_operating_expenses)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Nâng hạ, cầu đường & chi phí chuyến</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-indigo-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Tiền Chi Hộ (Debit Note)</span>
+                    <i class="ph-bold ph-hand-coins text-indigo-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-indigo-600 font-heading mt-1">${fmt(kpis.total_reimbursables)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Đang theo dõi thu hồi từ khách hàng</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Lợi Nhuận Gộp (Margin)</span>
+                    <i class="ph-bold ph-trend-up text-emerald-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-emerald-600 font-heading mt-1">${fmt(kpis.total_gross_profit)} đ</p>
+                <p class="text-[11px] text-emerald-700 font-bold mt-1">Biên lợi nhuận TB: ${kpis.avg_profit_margin_pct}%</p>
+            </div>
+        `;
+    } else if (data.report_type === 'BY_SUBCONTRACTOR') {
+        cardsHtml = `
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Tổng Chuyến Xe Bạn</span>
+                    <i class="ph-bold ph-truck text-blue-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-slate-900 font-heading mt-1">${fmt(kpis.total_trips)} chuyến</p>
+                <p class="text-[11px] text-slate-500 mt-1">${fmt(kpis.total_vehicles)} đầu xe đối tác</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Cước Thuê Xe Bạn</span>
+                    <i class="ph-bold ph-handshake text-amber-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-amber-900 font-heading mt-1">${fmt(kpis.total_subcontractor_cost)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Thu từ khách: ${fmt(kpis.total_customer_revenue)} đ</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-rose-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Còn Phải Trả Xe Bạn (AP)</span>
+                    <i class="ph-bold ph-wallet text-rose-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-rose-600 font-heading mt-1">${fmt(kpis.total_remaining_payable)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Đã ứng trước: ${fmt(kpis.total_advance_paid)} đ</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Lợi Nhuận Giữ Lại Cty</span>
+                    <i class="ph-bold ph-coins text-emerald-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-emerald-600 font-heading mt-1">${fmt(kpis.total_company_margin)} đ</p>
+                <p class="text-[11px] text-emerald-700 font-bold mt-1">Chênh lệch cước dịch vụ 3PL</p>
+            </div>
+        `;
+    } else if (data.report_type === 'BY_DRIVER') {
+        cardsHtml = `
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Tổng Chuyến Hoàn Thành</span>
+                    <i class="ph-bold ph-steering-wheel text-teal-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-slate-900 font-heading mt-1">${fmt(kpis.total_trips_completed)} chuyến</p>
+                <p class="text-[11px] text-slate-500 mt-1">${fmt(kpis.total_drivers)} bác tài xe nhà</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Lương Chuyến Định Mức</span>
+                    <i class="ph-bold ph-money text-blue-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-blue-900 font-heading mt-1">${fmt(kpis.total_trip_salary)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Khoán lương theo chuyến chạy</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Tạm Ứng Đã Nhận</span>
+                    <i class="ph-bold ph-hand-coins text-amber-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-amber-900 font-heading mt-1">${fmt(kpis.total_advance_given)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Thực chi hiện trường: ${fmt(kpis.total_actual_expense)} đ</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Chênh Lệch Quyết Toán</span>
+                    <i class="ph-bold ph-arrows-left-right text-emerald-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-emerald-700 font-heading mt-1">+${fmt(kpis.total_driver_refund)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Tài xế hoàn lại cty (Chi bù: ${fmt(kpis.total_company_reimburse)} đ)</p>
+            </div>
+        `;
+    } else if (data.report_type === 'BY_ROUTE') {
+        cardsHtml = `
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-indigo-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Tổng Tuyến Vận Chuyển</span>
+                    <i class="ph-bold ph-path text-indigo-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-slate-900 font-heading mt-1">${fmt(kpis.total_routes)} tuyến</p>
+                <p class="text-[11px] text-slate-500 mt-1">${fmt(kpis.total_trips)} chuyến vận hành</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Doanh Thu Toàn Tuyến</span>
+                    <i class="ph-bold ph-money text-teal-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-teal-900 font-heading mt-1">${fmt(kpis.total_revenue)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Tổng cước thu từ tất cả các tuyến</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-orange-500 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Chi Phí Vé BOT Tuyến</span>
+                    <i class="ph-bold ph-barcode text-orange-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-orange-700 font-heading mt-1">${fmt(kpis.total_toll_fee)} đ</p>
+                <p class="text-[11px] text-slate-500 mt-1">Tổng chi phí: ${fmt(kpis.total_expense)} đ</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-2xs">
+                <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
+                    <span>Lợi Nhuận Gộp Tuyến</span>
+                    <i class="ph-bold ph-trend-up text-emerald-600 text-lg"></i>
+                </div>
+                <p class="text-2xl font-black text-emerald-600 font-heading mt-1">${fmt(kpis.total_gross_profit)} đ</p>
+                <p class="text-[11px] text-emerald-700 font-bold mt-1">Lợi nhuận gộp sau trừ BOT & chi phí</p>
+            </div>
+        `;
+    }
+
+    container.innerHTML = cardsHtml;
+}
+
+function renderAccountingReportTable(data) {
+    const thead = document.getElementById('acct-rep-thead');
+    const tbody = document.getElementById('acct-rep-tbody');
+    if (!thead || !tbody) return;
+
+    const headers = data.headers || [];
+    const rows = data.rows || [];
+    const fmt = (n) => (n !== undefined && n !== null) ? Number(n).toLocaleString('vi-VN') : '0';
+
+    // 1. Render THEAD
+    let thHtml = '<tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200 font-heading text-xs">';
+    thHtml += '<th class="py-3 px-3.5 w-12 text-center">STT</th>';
+    headers.forEach(h => {
+        const alignClass = h.align === 'right' ? 'text-right' : (h.align === 'center' ? 'text-center' : 'text-left');
+        thHtml += `<th class="py-3 px-3.5 ${alignClass}">${h.label}</th>`;
+    });
+    thHtml += '</tr>';
+    thead.innerHTML = thHtml;
+
+    // 2. Render TBODY
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${headers.length + 1}" class="py-8 text-center text-slate-400 italic">Không có dữ liệu trong khoảng thời gian đã chọn</td></tr>`;
+        return;
+    }
+
+    let trHtml = '';
+    rows.forEach((r, idx) => {
+        trHtml += '<tr class="hover:bg-teal-50/40 transition-colors text-xs">';
+        trHtml += `<td class="py-3 px-3.5 text-center font-bold text-slate-400">${idx + 1}</td>`;
+
+        headers.forEach(h => {
+            const val = r[h.key];
+            const alignClass = h.align === 'right' ? 'text-right font-mono font-semibold' : (h.align === 'center' ? 'text-center' : 'text-left font-semibold');
+
+            let displayVal = val;
+            if (typeof val === 'number') {
+                if (h.key.includes('pct') || h.key.includes('percent')) {
+                    displayVal = `${val}%`;
+                } else if (h.key.includes('revenue') || h.key.includes('cost') || h.key.includes('expense') || h.key.includes('profit') || h.key.includes('salary') || h.key.includes('toll') || h.key.includes('advance') || h.key.includes('payable') || h.key.includes('refund') || h.key.includes('margin') || h.key.includes('reimbursables') || h.key.includes('reimburse')) {
+                    displayVal = `${fmt(val)} đ`;
+                } else {
+                    displayVal = fmt(val);
+                }
+            }
+
+            // Highlighting
+            if (h.key === 'customer_name' || h.key === 'vehicle_plate' || h.key === 'driver_name' || h.key === 'route_name') {
+                displayVal = `<strong class="text-slate-900 font-heading">${displayVal}</strong>`;
+            } else if (h.key === 'gross_profit' || h.key === 'company_margin') {
+                displayVal = `<span class="text-emerald-700 font-bold font-mono">${displayVal}</span>`;
+            } else if (h.key === 'remaining_payable' || h.key === 'operating_expenses') {
+                displayVal = `<span class="text-rose-600 font-bold font-mono">${displayVal}</span>`;
+            } else if (h.key === 'refund_to_company') {
+                displayVal = val > 0 ? `<span class="text-emerald-700 font-bold font-mono">+${displayVal}</span>` : '-';
+            } else if (h.key === 'company_reimburse') {
+                displayVal = val > 0 ? `<span class="text-amber-700 font-bold font-mono">-${displayVal}</span>` : '-';
+            }
+
+            trHtml += `<td class="py-3 px-3.5 ${alignClass}">${displayVal}</td>`;
+        });
+
+        trHtml += '</tr>';
+    });
+
+    tbody.innerHTML = trHtml;
+}
+
+function exportAccountingReportToExcel() {
+    if (!cachedAccountingReportData || !cachedAccountingReportData.rows || cachedAccountingReportData.rows.length === 0) {
+        showToast('warning', 'Chưa có dữ liệu báo cáo để xuất Excel');
+        return;
+    }
+
+    const data = cachedAccountingReportData;
+    const headers = data.headers || [];
+    const rows = data.rows || [];
+
+    let csvContent = '\uFEFF';
+    // Title
+    csvContent += `"${data.report_title || 'BÁO CÁO KẾ TOÁN'}"\r\n`;
+    csvContent += `"Thời điểm xuất: ${new Date().toLocaleString('vi-VN')}"\r\n\r\n`;
+
+    // Headers
+    const headerLabels = ['STT', ...headers.map(h => `"${h.label}"`)];
+    csvContent += headerLabels.join(',') + '\r\n';
+
+    // Rows
+    rows.forEach((r, idx) => {
+        const rowData = [idx + 1];
+        headers.forEach(h => {
+            let val = r[h.key];
+            if (val === null || val === undefined) val = '';
+            rowData.push(`"${String(val).replace(/"/g, '""')}"`);
+        });
+        csvContent += rowData.join(',') + '\r\n';
+    });
+
+    const filename = `BIM_Logistics_BaoCao_${data.report_type}_${new Date().toISOString().slice(0, 10)}.csv`;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('success', `Đã xuất báo cáo "${filename}" thành công!`, 'Xuất Excel Thành Công');
+}
+
 
 
