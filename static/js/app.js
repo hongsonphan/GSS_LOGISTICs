@@ -2781,6 +2781,105 @@ function setBookingTime(timeStr) {
     }
 }
 
+function syncBookingClosingTime() {
+    const d = document.getElementById('booking-closing-date')?.value;
+    const t = document.getElementById('booking-closing-time-val')?.value || '17:00';
+    const hidden = document.getElementById('booking-closing-time');
+    if (hidden) {
+        hidden.value = d ? `${d} ${t}` : '';
+    }
+}
+
+function setBookingClosingTime(timeStr) {
+    const el = document.getElementById('booking-closing-time-val');
+    if (el) el.value = timeStr;
+    syncBookingClosingTime();
+}
+
+function syncBookingSiTime() {
+    const d = document.getElementById('booking-si-date')?.value;
+    const t = document.getElementById('booking-si-time-val')?.value || '12:00';
+    const hidden = document.getElementById('booking-si-cutoff');
+    if (hidden) {
+        hidden.value = d ? `${d} ${t}` : '';
+    }
+}
+
+function setBookingSiTime(timeStr) {
+    const el = document.getElementById('booking-si-time-val');
+    if (el) el.value = timeStr;
+    syncBookingSiTime();
+}
+
+function syncTripCutoff() {
+    const d = document.getElementById('inp-cutoff-date')?.value;
+    const t = document.getElementById('inp-cutoff-time')?.value || '17:00';
+    const hidden = document.getElementById('inp-cutoff');
+    if (hidden) {
+        hidden.value = d ? `${d} ${t}` : '';
+    }
+}
+
+function setTripCutoffTime(timeStr) {
+    const el = document.getElementById('inp-cutoff-time');
+    if (el) el.value = timeStr;
+    syncTripCutoff();
+}
+
+function parseAndSetDateTimeFields(rawStr, dateInputId, timeInputId, hiddenInputId, defaultTime = '17:00') {
+    const dateEl = document.getElementById(dateInputId);
+    const timeEl = document.getElementById(timeInputId);
+    const hiddenEl = document.getElementById(hiddenInputId);
+    if (!rawStr || typeof rawStr !== 'string') {
+        if (dateEl) dateEl.value = '';
+        if (timeEl) timeEl.value = defaultTime;
+        if (hiddenEl) hiddenEl.value = '';
+        return;
+    }
+    const val = rawStr.trim();
+    if (hiddenEl) hiddenEl.value = val;
+
+    let foundDate = '';
+    let foundTime = defaultTime;
+
+    // Check ISO date YYYY-MM-DD
+    const isoDateMatch = val.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+    if (isoDateMatch) {
+        foundDate = isoDateMatch[1];
+    } else {
+        // Check VN date DD/MM/YYYY or DD/MM
+        const vnDateMatch = val.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?\b/);
+        if (vnDateMatch) {
+            const day = String(vnDateMatch[1]).padStart(2, '0');
+            const month = String(vnDateMatch[2]).padStart(2, '0');
+            const year = vnDateMatch[3] ? vnDateMatch[3] : new Date().getFullYear();
+            foundDate = `${year}-${month}-${day}`;
+        }
+    }
+
+    // Check Time HH:MM or HHhMM or HHh
+    const timeMatch = val.match(/\b(\d{1,2}):(\d{2})\b/);
+    if (timeMatch) {
+        const hh = String(timeMatch[1]).padStart(2, '0');
+        const mm = String(timeMatch[2]).padStart(2, '0');
+        foundTime = `${hh}:${mm}`;
+    } else {
+        const hourOnlyMatch = val.match(/\b(\d{1,2})h(?:(\d{2}))?\b/i);
+        if (hourOnlyMatch) {
+            const hh = String(hourOnlyMatch[1]).padStart(2, '0');
+            const mm = hourOnlyMatch[2] ? String(hourOnlyMatch[2]).padStart(2, '0') : '00';
+            foundTime = `${hh}:${mm}`;
+        }
+    }
+
+    if (dateEl && foundDate) dateEl.value = foundDate;
+    if (timeEl && foundTime) timeEl.value = foundTime;
+
+    if (dateEl && dateEl.value && timeEl && timeEl.value) {
+        if (hiddenEl) hiddenEl.value = `${dateEl.value} ${timeEl.value}`;
+    }
+}
+
 // 1. Quản lý file đính kèm cho Lệnh điều động (Trip modal)
 function handleBookingFilesSelect(input) {
     if (!input || !input.files || input.files.length === 0) return;
@@ -3134,6 +3233,7 @@ async function submitNewTrip() {
     const booking = document.getElementById('inp-booking')?.value || '';
     const seal = document.getElementById('inp-seal')?.value || '';
     const vgm_weight = document.getElementById('inp-vgm')?.value || '';
+    syncTripCutoff();
     const cutoff = document.getElementById('inp-cutoff')?.value || '';
     const commercial_invoice = document.getElementById('inp-invoice') ? document.getElementById('inp-invoice').value.trim() : '';
     const warehouse_dock = document.getElementById('inp-dock') ? document.getElementById('inp-dock').value.trim() : '';
@@ -3958,6 +4058,16 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
         if (dateInput) dateInput.value = todayStr;
         const timeInput = document.getElementById('booking-loading-time');
         if (timeInput) timeInput.value = '08:00';
+        const closingDateInput = document.getElementById('booking-closing-date');
+        if (closingDateInput) closingDateInput.value = todayStr;
+        const closingTimeValInput = document.getElementById('booking-closing-time-val');
+        if (closingTimeValInput) closingTimeValInput.value = '17:00';
+        syncBookingClosingTime();
+        const siDateInput = document.getElementById('booking-si-date');
+        if (siDateInput) siDateInput.value = todayStr;
+        const siTimeValInput = document.getElementById('booking-si-time-val');
+        if (siTimeValInput) siTimeValInput.value = '12:00';
+        syncBookingSiTime();
         const totalInput = document.getElementById('booking-total-containers');
         if (totalInput) totalInput.value = formatNumberVN(1);
         const detInput = document.getElementById('booking-det');
@@ -4013,10 +4123,8 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
             if (dateEl) dateEl.value = b.loading_date || todayStr;
             const timeEl = document.getElementById('booking-loading-time');
             if (timeEl) timeEl.value = b.loading_time || '08:00';
-            const closingEl = document.getElementById('booking-closing-time');
-            if (closingEl) closingEl.value = b.closing_time || '';
-            const siEl = document.getElementById('booking-si-cutoff');
-            if (siEl) siEl.value = b.si_cutoff || '';
+            parseAndSetDateTimeFields(b.closing_time, 'booking-closing-date', 'booking-closing-time-val', 'booking-closing-time', '17:00');
+            parseAndSetDateTimeFields(b.si_cutoff, 'booking-si-date', 'booking-si-time-val', 'booking-si-cutoff', '12:00');
             const detEl = document.getElementById('booking-det');
             if (detEl) detEl.value = formatNumberVN(b.free_time_detention ?? 7);
             const demEl = document.getElementById('booking-dem');
@@ -4127,6 +4235,8 @@ async function saveBooking(e) {
     const dropoff = document.getElementById('booking-dropoff')?.value?.trim();
     const loadingDate = document.getElementById('booking-loading-date')?.value;
     const loadingTime = document.getElementById('booking-loading-time')?.value?.trim() || '08:00';
+    syncBookingClosingTime();
+    syncBookingSiTime();
     const closingTime = document.getElementById('booking-closing-time')?.value?.trim();
     const siCutoff = document.getElementById('booking-si-cutoff')?.value?.trim();
     const det = parseNumberVN(document.getElementById('booking-det')?.value) || 7;
@@ -5210,6 +5320,17 @@ function initDefaultDatesForCreateTrip() {
     if (loadingTimeEl && !loadingTimeEl.value) {
         loadingTimeEl.value = '08:00';
     }
+
+    const cutoffDateEl = document.getElementById('inp-cutoff-date');
+    if (cutoffDateEl && !cutoffDateEl.value) {
+        cutoffDateEl.value = todayStr;
+    }
+
+    const cutoffTimeEl = document.getElementById('inp-cutoff-time');
+    if (cutoffTimeEl && !cutoffTimeEl.value) {
+        cutoffTimeEl.value = '17:00';
+    }
+    syncTripCutoff();
     
     const demDaysEl = document.getElementById('inp-det-free-days');
     if (demDaysEl && (!demDaysEl.value || demDaysEl.value === '3')) {
@@ -5403,8 +5524,12 @@ function onBookingSelected(bookingId) {
     const bookingEl = document.getElementById('inp-booking');
     if (bookingEl) bookingEl.value = b.booking_number || '';
 
-    const cutoffEl = document.getElementById('inp-cutoff');
-    if (cutoffEl) cutoffEl.value = b.closing_time || '';
+    if (b.closing_time) {
+        parseAndSetDateTimeFields(b.closing_time, 'inp-cutoff-date', 'inp-cutoff-time', 'inp-cutoff', '17:00');
+    } else {
+        const cutoffEl = document.getElementById('inp-cutoff');
+        if (cutoffEl) cutoffEl.value = '';
+    }
 
     const loadTimeEl = document.getElementById('inp-load-time');
     if (loadTimeEl) loadTimeEl.value = `${b.loading_date_display || ''} - ${b.loading_time || '8H'}`.trim();

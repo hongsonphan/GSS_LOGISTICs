@@ -291,16 +291,35 @@
 
           <!-- Thông tin Cắt CY, Invoice, Cửa Dock, Thời gian & Vị trí -->
           <div class="grid grid-cols-1 md:grid-cols-5 gap-3 pt-1">
-            <div>
-              <label class="form-label font-bold text-rose-700 flex items-center" for="inp-cutoff">
-                <i class="ph-fill ph-clock-countdown mr-1 text-rose-600"></i> Cắt Máng CY / Giờ SI
-              </label>
-              <input
-                id="inp-cutoff"
-                type="text"
-                placeholder="VD: SI 10:00, CY 18:00 16/09"
-                class="form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold focus:ring-rose-500"
-              />
+            <div class="md:col-span-1">
+              <div class="flex items-center justify-between mb-1">
+                <label class="form-label font-bold text-rose-700 flex items-center m-0" for="inp-cutoff-date">
+                  <i class="ph-fill ph-clock-countdown mr-1 text-rose-600"></i> Cắt CY / Hạn SI
+                </label>
+                <span class="text-[10px] text-rose-700 font-bold bg-rose-50 px-1 py-0.2 rounded border border-rose-200">24h</span>
+              </div>
+              <div class="grid grid-cols-5 gap-1">
+                <input
+                  id="inp-cutoff-date"
+                  type="date"
+                  onchange="syncTripCutoff()"
+                  class="col-span-3 form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold text-xs px-1.5 py-1.5 focus:ring-rose-500"
+                />
+                <input
+                  id="inp-cutoff-time"
+                  type="time"
+                  value="17:00"
+                  onchange="syncTripCutoff()"
+                  class="col-span-2 form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold text-xs px-1 py-1.5 focus:ring-rose-500"
+                />
+              </div>
+              <input type="hidden" id="inp-cutoff" />
+              <div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 flex-wrap">
+                <span class="font-medium text-slate-400">Giờ:</span>
+                <button type="button" onclick="setTripCutoffTime('12:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">12:00</button>
+                <button type="button" onclick="setTripCutoffTime('17:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">17:00</button>
+                <button type="button" onclick="setTripCutoffTime('23:59')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">23:59</button>
+              </div>
             </div>
             <div>
               <label class="form-label" for="inp-invoice">Hóa Đơn TM (Invoice)</label>
