@@ -799,7 +799,7 @@ class AccountingReportsAPIView(APIView):
             for t in trips_qs:
                 cust_key = t.customer_id or 0
                 cust_name = t.customer.name if t.customer else 'Khách vãng lai / Chưa gán'
-                cust_code = t.customer.customer_code if t.customer else 'VANG_LAI'
+                cust_code = getattr(t.customer, 'code', '') if t.customer else 'VANG_LAI'
 
                 if cust_key not in customers_map:
                     customers_map[cust_key] = {
@@ -974,7 +974,7 @@ class AccountingReportsAPIView(APIView):
         # ---------------------------------------------------------------------
         elif report_type == 'BY_DRIVER':
             # Chỉ lấy các chuyến xe nhà của công ty
-            company_trips = trips_qs.filter(vehicle__ownership_type=VehicleOwnership.COMPANY_OWNED)
+            company_trips = trips_qs.filter(vehicle__ownership_type=VehicleOwnership.OWNED)
             if driver_id and driver_id.isdigit():
                 company_trips = company_trips.filter(driver_id=int(driver_id))
 
@@ -996,14 +996,14 @@ class AccountingReportsAPIView(APIView):
             for adv in adv_qs:
                 d_id = adv.driver_id
                 d_name = (adv.driver.nickname or adv.driver.full_name) if adv.driver else 'Chưa gán'
-                d_code = adv.driver.employee_code if adv.driver else 'TX'
+                d_code = getattr(adv.driver, 'employee_code', 'TX') if adv.driver else 'TX'
 
                 if d_id not in drivers_map:
                     drivers_map[d_id] = {
                         'driver_id': d_id,
                         'driver_code': d_code,
                         'driver_name': d_name,
-                        'assigned_vehicle': adv.driver.assigned_vehicle.license_plate if (adv.driver and getattr(adv.driver, 'assigned_vehicle', None)) else '',
+                        'assigned_vehicle': getattr(adv.driver, 'assigned_vehicle', None).license_plate if (adv.driver and getattr(adv.driver, 'assigned_vehicle', None)) else '',
                         'trips_count': 0,
                         'estimated_trip_salary': 0,
                         'total_advance_received': 0,
@@ -1036,7 +1036,7 @@ class AccountingReportsAPIView(APIView):
                 if not d_id:
                     continue
                 d_name = (t.driver.nickname or t.driver.full_name) if t.driver else 'Tài xế'
-                d_code = t.driver.employee_code if t.driver else 'TX'
+                d_code = getattr(t.driver, 'employee_code', 'TX') if t.driver else 'TX'
 
                 if d_id not in drivers_map:
                     drivers_map[d_id] = {
