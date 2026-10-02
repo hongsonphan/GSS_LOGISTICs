@@ -621,7 +621,10 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
                 'brand': v.brand,
                 'payload_capacity_kg': v.payload_capacity_kg,
                 'registration_expiry': v.registration_expiry.strftime('%d/%m/%Y') if v.registration_expiry else '-',
-                'driver_name': v.current_driver.nickname or v.current_driver.full_name if v.current_driver else '-',
+                'insurance_expiry': v.insurance_expiry.strftime('%d/%m/%Y') if v.insurance_expiry else '-',
+                'next_maintenance_date': v.next_maintenance_date.strftime('%d/%m/%Y') if v.next_maintenance_date else '-',
+                'current_driver_id': v.current_driver_id,
+                'driver_name': (v.current_driver.nickname or v.current_driver.full_name) if v.current_driver else '-',
                 'status': v.status,
                 'status_label': v.get_status_display(),
             })
@@ -638,8 +641,39 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
 
         import datetime
         reg_expiry = data.get('registration_expiry')
-        if not reg_expiry:
-            reg_expiry = (datetime.date.today() + datetime.timedelta(days=180)).strftime('%Y-%m-%d')
+        if reg_expiry:
+            try:
+                if '/' in reg_expiry:
+                    reg_expiry = datetime.datetime.strptime(reg_expiry, '%d/%m/%Y').date()
+                else:
+                    reg_expiry = datetime.datetime.strptime(reg_expiry, '%Y-%m-%d').date()
+            except ValueError:
+                reg_expiry = datetime.date.today() + datetime.timedelta(days=180)
+        else:
+            reg_expiry = datetime.date.today() + datetime.timedelta(days=180)
+
+        ins_expiry = data.get('insurance_expiry')
+        if ins_expiry:
+            try:
+                if '/' in ins_expiry:
+                    ins_expiry = datetime.datetime.strptime(ins_expiry, '%d/%m/%Y').date()
+                else:
+                    ins_expiry = datetime.datetime.strptime(ins_expiry, '%Y-%m-%d').date()
+            except ValueError:
+                ins_expiry = None
+
+        maint_date = data.get('next_maintenance_date')
+        if maint_date:
+            try:
+                if '/' in maint_date:
+                    maint_date = datetime.datetime.strptime(maint_date, '%d/%m/%Y').date()
+                else:
+                    maint_date = datetime.datetime.strptime(maint_date, '%Y-%m-%d').date()
+            except ValueError:
+                maint_date = None
+
+        driver_id = data.get('current_driver_id')
+        driver = Employee.objects.filter(id=driver_id).first() if driver_id else None
 
         veh = Vehicle.objects.create(
             license_plate=plate,
@@ -648,7 +682,10 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
             brand=data.get('brand', 'Freightliner').strip(),
             payload_capacity_kg=int(data.get('payload_capacity_kg', 30000)),
             registration_expiry=reg_expiry,
-            status=VehicleStatus.IDLE,
+            insurance_expiry=ins_expiry,
+            next_maintenance_date=maint_date,
+            current_driver=driver,
+            status=data.get('status', VehicleStatus.IDLE),
         )
         return Response({'success': True, 'message': f'Đã thêm xe [{veh.license_plate}] thành công!', 'id': veh.id}, status=status.HTTP_201_CREATED)
 
@@ -663,6 +700,36 @@ class VehicleMasterDetailAPIView(MasterDataBaseAPIView):
         if 'ownership_type' in data: veh.ownership_type = data['ownership_type']
         if 'payload_capacity_kg' in data: veh.payload_capacity_kg = int(data['payload_capacity_kg'])
         if 'status' in data: veh.status = data['status']
+        if 'current_driver_id' in data:
+            d_id = data['current_driver_id']
+            veh.current_driver = Employee.objects.filter(id=d_id).first() if d_id else None
+
+        import datetime
+        if 'registration_expiry' in data and data['registration_expiry']:
+            try:
+                val = data['registration_expiry']
+                veh.registration_expiry = datetime.datetime.strptime(val, '%d/%m/%Y').date() if '/' in val else datetime.datetime.strptime(val, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        if 'insurance_expiry' in data:
+            val = data['insurance_expiry']
+            if val:
+                try:
+                    veh.insurance_expiry = datetime.datetime.strptime(val, '%d/%m/%Y').date() if '/' in val else datetime.datetime.strptime(val, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            else:
+                veh.insurance_expiry = None
+        if 'next_maintenance_date' in data:
+            val = data['next_maintenance_date']
+            if val:
+                try:
+                    veh.next_maintenance_date = datetime.datetime.strptime(val, '%d/%m/%Y').date() if '/' in val else datetime.datetime.strptime(val, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            else:
+                veh.next_maintenance_date = None
+
         veh.save()
         return Response({'success': True, 'message': f'Đã cập nhật xe [{veh.license_plate}]!'})
 
@@ -682,7 +749,7 @@ class DriverSalaryTariffListCreateAPIView(MasterDataBaseAPIView):
         area = request.GET.get('area', '').strip()
         qs = DriverSalaryTariff.objects.all()
         if q:
-            qs = qs.filter(Q(route_name__icontains=q) | Q(area_group__icontains=q) | Q(notes__icontains=q))
+            qs = qs.filter(Q(route_name__icontains=q) | Q(area_group__icontains=q) | Q(notes__icontains=q) | Q(pickup_drop_area__icontains=q))
         if area and area != 'ALL':
             qs = qs.filter(area_group=area)
 
@@ -704,6 +771,7 @@ class DriverSalaryTariffListCreateAPIView(MasterDataBaseAPIView):
         data = request.data
         route_name = data.get('route_name', '').strip()
         area_group = data.get('area_group', 'Khu Vực Bình Dương').strip()
+        pickup_drop = data.get('pickup_drop_area', 'Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7').strip()
         salary_rate = int(data.get('salary_rate', 600000))
         estimated_km = int(data.get('estimated_km') or 0)
         if not route_name:
@@ -712,6 +780,7 @@ class DriverSalaryTariffListCreateAPIView(MasterDataBaseAPIView):
         tariff = DriverSalaryTariff.objects.create(
             area_group=area_group,
             route_name=route_name,
+            pickup_drop_area=pickup_drop or 'Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7',
             estimated_km=estimated_km,
             salary_rate=salary_rate,
             notes=data.get('notes', '').strip(),
@@ -727,6 +796,7 @@ class DriverSalaryTariffDetailAPIView(MasterDataBaseAPIView):
         data = request.data
         if 'route_name' in data: tariff.route_name = data['route_name'].strip()
         if 'area_group' in data: tariff.area_group = data['area_group'].strip()
+        if 'pickup_drop_area' in data: tariff.pickup_drop_area = data['pickup_drop_area'].strip()
         if 'estimated_km' in data and data['estimated_km'] is not None: tariff.estimated_km = int(data['estimated_km'] or 0)
         if 'salary_rate' in data: tariff.salary_rate = int(data['salary_rate'])
         if 'notes' in data: tariff.notes = data['notes'].strip()

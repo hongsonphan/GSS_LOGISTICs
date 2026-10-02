@@ -7968,34 +7968,32 @@ function renderMasterDataTable(items, total = items.length) {
     if (currentMasterDataTab === 'driver_tariffs') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Khu Vực Kho</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Tuyến / KCN / Nhà Máy</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trục Lấy / Hạ Cont Chuẩn</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Cự Ly</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Lương Chuyến (VNĐ)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Ghi Chú Nghiệp Vụ</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Khu Vực Kho</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Tuyến / KCN / Nhà Máy</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trục Lấy / Hạ Cont Chuẩn</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Cự Ly</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Lương Chuyến</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú Nghiệp Vụ</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">${item.area_group}</span></td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.route_name}</td>
-                <td class="py-1.5 px-3 text-[12px] text-slate-500 font-medium max-w-xs truncate border-r border-slate-200/70">${item.pickup_drop_area}</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70 font-mono font-bold text-xs text-slate-700">
-                    ${item.estimated_km ? `~${item.estimated_km} km` : '—'}
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[13px] font-semibold text-slate-800 border-r border-slate-200">${item.area_group}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.route_name}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.pickup_drop_area || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 font-mono font-bold text-xs text-slate-800">
+                    ${item.estimated_km ? `${item.estimated_km} km` : '—'}
                 </td>
-                <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.salary_rate)}</td>
-                <td class="py-1.5 px-3 text-[11.5px] text-amber-700 font-medium border-r border-slate-200/70">${item.notes || '—'}</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
-                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
-                        ${item.is_active ? 'ĐANG DÙNG' : 'TẠM NGƯNG'}
-                    </span>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${formatMoney(item.salary_rate)}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.notes || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
                 </td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8006,30 +8004,28 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'allowances') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Phụ Cấp / Tác Nghiệp</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Phân Loại</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mức Phụ Cấp (VNĐ)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Điều Kiện Áp Dụng</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Phụ Cấp / Tác Nghiệp</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Phân Loại</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mức Phụ Cấp</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Điều Kiện Áp Dụng</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[12px] font-mono font-bold text-teal-800 border-r border-slate-200/70">${item.code}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
-                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">${item.category_label || item.category}</span></td>
-                <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">+${formatMoney(item.amount)}</td>
-                <td class="py-1.5 px-3 text-[11.5px] text-slate-600 font-medium border-r border-slate-200/70">${item.notes || '—'}</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
-                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
-                        ${item.is_active ? 'ĐANG DÙNG' : 'TẠM NGƯNG'}
-                    </span>
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 font-medium border-r border-slate-200">${item.category_label || item.category}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">+${formatMoney(item.amount)}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.notes || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
                 </td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8040,30 +8036,32 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'locations') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Điểm</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Địa Điểm / Cảng / Kho</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Phân Loại</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Địa Chỉ</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Liên Hệ / SĐT</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Điểm</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Địa Điểm / Cảng / Kho</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Phân Loại</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tỉnh / Thành</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Chi Tiết</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Liên Hệ & SĐT</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[12px] font-mono font-bold text-teal-800 border-r border-slate-200/70">${item.code}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
-                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">${item.location_type_label || item.location_type}</span></td>
-                <td class="py-1.5 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200/70">${item.address || '—'}</td>
-                <td class="py-1.5 px-3 text-[11.5px] text-slate-700 font-medium border-r border-slate-200/70">${item.contact_phone || item.contact_person || '—'}</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
-                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
-                        ${item.is_active ? 'ĐANG DÙNG' : 'TẠM NGƯNG'}
-                    </span>
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
+                <td class="py-2 px-3 text-[12px] font-medium text-slate-700 border-r border-slate-200">${item.location_type_label || item.location_type}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 border-r border-slate-200">${item.province || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.address || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">${item.contact_person ? `${item.contact_person} (${item.contact_phone || ''})` : (item.contact_phone || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${item.notes || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
                 </td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8074,38 +8072,38 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'tariffs') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Khách Hàng</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-indigo-900 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Khu Vực Tuyến</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nơi Lấy Cont</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Kho Giao Nhận</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nơi Hạ Cont</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Cự Ly</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Đơn Giá Cước (HĐ)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức Lương</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức BOT</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Khách Hàng</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Khu Vực Tuyến</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Quy Cách</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Nơi Lấy Cont</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Kho Giao Nhận</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Nơi Hạ Cont</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Cự Ly</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Đơn Giá Cước</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Định Mức Lương</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Định Mức BOT</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.customer_name}</td>
-                <td class="py-1.5 px-3 border-r border-slate-200/70">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200/80">
-                        ${item.origin_zone || 'Cát Lái'} <i class="ph-bold ph-arrow-right mx-1 text-[9px] text-indigo-500"></i> ${item.destination_zone || 'Kho Khách'}
-                    </span>
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.customer_name}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">
+                    ${item.origin_zone || 'Cát Lái'} ➔ ${item.destination_zone || 'Kho Khách'}
                 </td>
-                <td class="py-1.5 px-3 text-[12.5px] font-bold text-teal-800 border-r border-slate-200/70">${item.pickup_location}</td>
-                <td class="py-1.5 px-3 text-[12.5px] font-bold text-slate-800 border-r border-slate-200/70">${item.delivery_location}</td>
-                <td class="py-1.5 px-3 text-[11.5px] font-medium text-slate-500 border-r border-slate-200/70">${item.dropoff_location || 'Hạ bãi'}</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70 font-mono font-bold text-xs text-slate-700">
-                    ${item.estimated_km ? `~${item.estimated_km} km` : '—'}
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-800 border-r border-slate-200">${item.container_size || '40HC'}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.pickup_location}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.delivery_location}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.dropoff_location || 'Hạ bãi'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 font-mono font-bold text-xs text-slate-800">
+                    ${item.estimated_km ? `${item.estimated_km} km` : '—'}
                 </td>
-                <td class="py-1.5 px-3 text-[13px] font-black text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.freight_price)}</td>
-                <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.driver_trip_pay)}</td>
-                <td class="py-1.5 px-3 text-[13px] font-black text-amber-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.toll_standard_fee || 0)}</td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${formatMoney(item.freight_price)}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${formatMoney(item.driver_trip_pay)}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${formatMoney(item.toll_standard_fee || 0)}</td>
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8116,26 +8114,28 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'customers') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Khách</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Khách Hàng / Doanh Nghiệp</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Số Thuế</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Địa Chỉ</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Người Liên Hệ / SĐT</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Số Biểu Cước</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Khách</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Khách Hàng / Doanh Nghiệp</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Liên Hệ / SĐT</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Số Biểu Cước</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[12px] font-mono font-bold text-teal-800 border-r border-slate-200/70">${item.code}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
-                <td class="py-1.5 px-3 text-[12px] font-mono text-slate-600 border-r border-slate-200/70">${item.tax_code || '—'}</td>
-                <td class="py-1.5 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200/70">${item.address || '—'}</td>
-                <td class="py-1.5 px-3 text-[11.5px] text-slate-700 font-medium border-r border-slate-200/70">${item.contact_person || item.phone || '—'}</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70"><span class="px-2 py-0.2 bg-slate-100 rounded text-[11px] font-bold text-slate-700">${item.tariffs_count || 0} tuyến</span></td>
-                <td class="py-1.5 px-3 text-center">
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.address || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">${item.contact_person ? `${item.contact_person} (${item.phone || ''})` : (item.phone || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold text-[12px] text-slate-800">${item.tariffs_count || 0} tuyến</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${item.notes || '—'}</td>
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8146,30 +8146,32 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'expenses') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Khoản Chi</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Khoản Mục</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nhóm Chi Phí</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Định Mức Tiền (VNĐ)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Yêu Cầu HĐĐT</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Ghi Chú</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Khoản Chi</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Khoản Mục</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Nhóm Chi Phí</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Định Mức Tiền</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Yêu Cầu HĐĐT</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[12px] font-mono font-bold text-rose-800 border-r border-slate-200/70">${item.code}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
-                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200">${item.group_type_label || item.group_type}</span></td>
-                <td class="py-1.5 px-3 text-[13px] font-black text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${item.default_amount > 0 ? formatMoney(item.default_amount) : 'Theo thực tế'}</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
-                    <span class="px-2 py-0.2 rounded text-[10.5px] font-bold ${item.requires_invoice ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}">
-                        ${item.requires_invoice ? 'BẮT BUỘC' : 'TÙY CHỌN'}
-                    </span>
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 font-medium border-r border-slate-200">${item.group_type_label || item.group_type}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${item.default_amount > 0 ? formatMoney(item.default_amount) : 'Theo thực tế'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.requires_invoice ? 'text-amber-700' : 'text-slate-500'}">
+                    ${item.requires_invoice ? 'Bắt buộc HĐ' : 'Tùy chọn'}
                 </td>
-                <td class="py-1.5 px-3 text-[11.5px] text-slate-500 border-r border-slate-200/70">${item.notes || '—'}</td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${item.notes || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8180,26 +8182,30 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'containers') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Quy Cách</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Quy Cách / Loại Thùng</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Phân Loại</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hệ Số TEU</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tải Trọng Tối Đa (kg)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Thể Tích (CBM)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Quy Cách</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Quy Cách / Loại Thùng</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Phân Loại</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hệ Số TEU</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tải Trọng (kg)</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Thể Tích (CBM)</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[12.5px] font-mono font-black text-indigo-800 border-r border-slate-200/70">${item.code}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.name}</td>
-                <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">${item.category_label || item.category}</span></td>
-                <td class="py-1.5 px-3 text-center font-bold text-slate-800 font-mono text-[13px] border-r border-slate-200/70">${item.teu_factor > 0 ? item.teu_factor : '—'}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.max_payload_kg).replace(' đ', '')} kg</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${item.cbm_capacity} m³</td>
-                <td class="py-1.5 px-3 text-center">
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 font-medium border-r border-slate-200">${item.category_label || item.category}</td>
+                <td class="py-2 px-3 text-center font-bold text-slate-800 font-mono text-[12px] border-r border-slate-200">${item.teu_factor > 0 ? item.teu_factor : '—'}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${formatMoney(item.max_payload_kg).replace(' đ', '')} kg</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${item.cbm_capacity} m³</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8210,30 +8216,34 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'vehicles') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Biển Số Xe</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Loại Phương Tiện</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Nguồn Sở Hữu</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hãng Sản Xuất</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tài Xế Mặc Định</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hạn Đăng Kiểm</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Biển Số Xe</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Loại Phương Tiện</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Nguồn Sở Hữu</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hãng SX</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tải Trọng</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tài Xế Mặc Định</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hạn Đăng Kiểm</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hạn Bảo Hiểm</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[13px] font-mono font-black text-slate-900 border-r border-slate-200/70">${item.license_plate}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-800 border-r border-slate-200/70">${item.vehicle_type_label || item.vehicle_type}</td>
-                <td class="py-1.5 px-3 border-r border-slate-200/70">
-                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold uppercase tracking-wider font-heading ${item.ownership_type === 'OWNED' ? 'bg-teal-100 text-teal-800 border border-teal-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}">
-                        ${item.ownership_type_label || item.ownership_type}
-                    </span>
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[13px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.license_plate}</td>
+                <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.vehicle_type_label || item.vehicle_type}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.ownership_type_label || item.ownership_type}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.driver_name || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-center font-mono text-slate-700 border-r border-slate-200">${item.insurance_expiry || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold text-slate-800">
+                    ${item.status === 'IDLE' ? 'Nằm bãi' : (item.status === 'ACTIVE' ? 'Đang chạy' : (item.status === 'MAINTENANCE' ? 'Bảo trì' : item.status_label || item.status))}
                 </td>
-                <td class="py-1.5 px-3 text-[11.5px] font-semibold text-slate-600 border-r border-slate-200/70">${item.brand || '—'}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-800 border-r border-slate-200/70">${item.driver_name || '—'}</td>
-                <td class="py-1.5 px-3 text-[11.5px] text-center font-mono font-bold text-slate-700 border-r border-slate-200/70">${item.registration_expiry}</td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8244,30 +8254,28 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'trailers') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Biển Số Moóc</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Quy Cách / Loại Moóc</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hãng Sản Xuất</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tải Trọng Cho Phép (kg)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hạn Đăng Kiểm</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Biển Số Moóc</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Quy Cách / Loại Moóc</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hãng Sản Xuất</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tải Trọng</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hạn Đăng Kiểm</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[13px] font-mono font-black text-sky-900 border-r border-slate-200/70">${item.license_plate}</td>
-                <td class="py-1.5 px-3 text-[12.5px] font-bold text-slate-800 border-r border-slate-200/70">${item.trailer_type}</td>
-                <td class="py-1.5 px-3 text-[12px] font-medium text-slate-600 border-r border-slate-200/70">${item.brand || '—'}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
-                <td class="py-1.5 px-3 text-[11.5px] text-center font-mono font-bold ${item.is_registration_warning ? 'text-rose-600 bg-rose-50 rounded' : 'text-slate-700'} border-r border-slate-200/70">${item.registration_expiry}</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
-                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.status === 'IDLE' ? 'bg-slate-100 text-slate-700' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}">
-                        ${item.status === 'IDLE' ? 'NẰM BÃI' : (item.status === 'ACTIVE' ? 'ĐANG KÉO' : item.status)}
-                    </span>
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[13px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.license_plate}</td>
+                <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.trailer_type}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
+                <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold text-slate-800">
+                    ${item.status === 'IDLE' ? 'Nằm bãi' : (item.status === 'ACTIVE' ? 'Đang kéo' : item.status)}
                 </td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8278,38 +8286,35 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'shipping_lines') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Hãng Tàu</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Đầy Đủ Hãng Vận Chuyển</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Hotline / CSKH</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Email & Cổng e-DO / Web</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Free DEM (Bãi)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Free DET (Vỏ)</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Hãng Tàu</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đầy Đủ Hãng Vận Chuyển</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hotline / CSKH</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Email & Cổng Web</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Free DEM</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Free DET</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[13px] font-mono font-black text-cyan-800 border-r border-slate-200/70">${item.code}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">
-                    <div>${item.name}</div>
-                    ${item.notes ? `<div class="text-[11px] text-slate-500 font-normal italic truncate max-w-xs">${item.notes}</div>` : ''}
-                </td>
-                <td class="py-1.5 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200/70">${item.contact_phone || '—'}</td>
-                <td class="py-1.5 px-3 text-[12px] text-slate-600 border-r border-slate-200/70">
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.contact_phone || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">
                     <div>${item.contact_email || '—'}</div>
-                    ${item.website ? `<a href="${item.website}" target="_blank" class="text-teal-700 hover:underline text-[11px] flex items-center space-x-0.5"><i class="ph ph-globe"></i><span>${item.website.replace('https://', '')}</span></a>` : ''}
+                    ${item.website ? `<a href="${item.website}" target="_blank" class="text-teal-700 hover:underline text-[11px]">${item.website.replace('https://', '')}</a>` : ''}
                 </td>
-                <td class="py-1.5 px-3 text-center font-bold text-teal-800 font-mono text-[13px] border-r border-slate-200/70">${item.free_dem_days} ngày</td>
-                <td class="py-1.5 px-3 text-center font-bold text-amber-800 font-mono text-[13px] border-r border-slate-200/70">${item.free_det_days} ngày</td>
-                <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
-                    <span class="px-2 py-0.2 rounded-full text-[10.5px] font-bold ${item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
-                        ${item.is_active ? 'ĐANG DÙNG' : 'TẠM NGƯNG'}
-                    </span>
+                <td class="py-2 px-3 text-center font-bold text-slate-800 font-mono text-[12px] border-r border-slate-200">${item.free_dem_days} ngày</td>
+                <td class="py-2 px-3 text-center font-bold text-slate-800 font-mono text-[12px] border-r border-slate-200">${item.free_det_days} ngày</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${item.notes || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang dùng' : 'Tạm ngưng'}
                 </td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8320,37 +8325,41 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'subcontractors') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Nhà Xe</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Đơn Vị / Đối Tác Vận Tải</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Mã Số Thuế</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Người Điều Hành & SĐT</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Thông Tin Thanh Toán / Ngân Hàng</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tuyến Thế Mạnh / Ghi Chú</th>
-                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Nhà Xe</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đơn Vị / Đối Tác Vận Tải</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Điều Hành & SĐT</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Thông Tin Tài Khoản Ngân Hàng</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tuyến Thế Mạnh / Ghi Chú</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
-            <tr class="hover:bg-teal-50/40 transition-colors border-b border-slate-200/70">
-                <td class="py-1.5 px-3 text-[12.5px] font-mono font-bold text-orange-800 border-r border-slate-200/70">${item.code}</td>
-                <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
                     <div>${item.name}</div>
                     ${item.address ? `<div class="text-[11px] text-slate-500 font-normal truncate max-w-xs">${item.address}</div>` : ''}
                 </td>
-                <td class="py-1.5 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200/70">${item.tax_code || '—'}</td>
-                <td class="py-1.5 px-3 text-[12px] text-slate-800 border-r border-slate-200/70">
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">
                     <div class="font-bold">${item.contact_person || '—'}</div>
-                    <div class="font-mono text-teal-700 font-bold">${item.phone || '—'}</div>
+                    <div class="font-mono text-slate-700">${item.phone || '—'}</div>
                 </td>
-                <td class="py-1.5 px-3 text-[12px] border-r border-slate-200/70">
+                <td class="py-2 px-3 text-[12px] border-r border-slate-200">
                     ${item.bank_account_number ? `
                         <div class="font-mono font-bold text-slate-900">${item.bank_account_number}</div>
                         <div class="text-[11px] text-slate-600">${item.bank_name || ''} ${item.bank_account_holder ? '• ' + item.bank_account_holder : ''}</div>
-                    ` : '<span class="text-slate-400 italic">Chưa khai báo TK</span>'}
+                    ` : '<span class="text-slate-400">Chưa có TK</span>'}
                 </td>
-                <td class="py-1.5 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200/70">${item.notes || '—'}</td>
-                <td class="py-1.5 px-3 text-center">
+                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.notes || '—'}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${item.is_active ? 'Đang hợp tác' : 'Tạm ngưng'}
+                </td>
+                <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
-                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
                 </td>
@@ -8439,6 +8448,10 @@ function injectMasterDataModalFields(data) {
                 <label class="app-form-label">Tên Tuyến / KCN / Nhà Máy <span class="text-rose-500">*</span></label>
                 <input type="text" id="mdf-route-name" value="${d.route_name || ''}" placeholder="VD: KCN Phước Đông, KCN Bàu Bàng..." class="app-form-control" required>
             </div>
+            <div>
+                <label class="app-form-label">Trục Lấy / Hạ Cont Chuẩn</label>
+                <input type="text" id="mdf-pickup-drop" value="${d.pickup_drop_area || 'Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7'}" placeholder="Cát Lái, SPITC, Thủ Đức..." class="app-form-control">
+            </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <div class="flex items-center justify-between mb-1">
@@ -8462,6 +8475,10 @@ function injectMasterDataModalFields(data) {
             <div>
                 <label class="app-form-label">Ghi Chú Điều Kiện Áp Dụng</label>
                 <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="VD: Lấy/hạ Cát Lái + 50k..." class="app-form-control">
+            </div>
+            <div class="flex items-center space-x-2 pt-2">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động / áp dụng</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'allowances') {
@@ -8492,6 +8509,10 @@ function injectMasterDataModalFields(data) {
                 <label class="app-form-label">Điều Kiện Áp Dụng</label>
                 <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="VD: Lấy hoặc hạ cont tại Cảng..." class="app-form-control">
             </div>
+            <div class="flex items-center space-x-2 pt-2">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động / áp dụng</label>
+            </div>
         `;
     } else if (currentMasterDataTab === 'locations') {
         container.innerHTML = `
@@ -8515,10 +8536,6 @@ function injectMasterDataModalFields(data) {
                 <label class="app-form-label">Tên Địa Điểm <span class="text-rose-500">*</span></label>
                 <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Cảng Cát Lái, Kho WCA Tân Vạn..." class="app-form-control" required>
             </div>
-            <div>
-                <label class="app-form-label">Địa Chỉ Chi Tiết</label>
-                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Số nhà, đường, phường, quận/huyện..." class="app-form-control">
-            </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="app-form-label">Tỉnh / Thành Phố</label>
@@ -8526,8 +8543,24 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div>
                     <label class="app-form-label">Số Điện Thoại Liên Hệ</label>
-                    <input type="text" id="mdf-contact-phone" value="${d.contact_phone || ''}" placeholder="SĐT điều độ cảng/kho..." class="app-form-control font-mono">
+                    <input type="text" id="mdf-contact-phone" value="${d.contact_phone || ''}" placeholder="SĐT điều độ..." class="app-form-control font-mono">
                 </div>
+            </div>
+            <div>
+                <label class="app-form-label">Địa Chỉ Chi Tiết</label>
+                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Số nhà, đường, phường, quận/huyện..." class="app-form-control">
+            </div>
+            <div>
+                <label class="app-form-label">Người Phụ Trách / Đầu Mối Giao Nhận</label>
+                <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="app-form-control">
+            </div>
+            <div>
+                <label class="app-form-label">Ghi Chú Vận Hành</label>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Giờ làm việc kho, quy định vào cổng..." class="app-form-control">
+            </div>
+            <div class="flex items-center space-x-2 pt-2">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'customers') {
@@ -8560,12 +8593,17 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ..." class="app-form-control font-mono">
                 </div>
             </div>
+            <div>
+                <label class="app-form-label">Ghi Chú / Yêu Cầu Đặc Thù Của Khách</label>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Chính sách công nợ, quy định giao nhận..." class="app-form-control">
+            </div>
         `;
     } else if (currentMasterDataTab === 'tariffs') {
         const customers = masterDataFormOptionsCache?.customers || masterDataCache['customers'] || [];
         const pickupOpts = masterDataFormOptionsCache?.locations?.pickup_options || masterDataCache['locations'] || [];
         const warehouseOpts = masterDataFormOptionsCache?.locations?.warehouse_options || masterDataCache['locations'] || [];
         const dropoffOpts = masterDataFormOptionsCache?.locations?.dropoff_options || masterDataCache['locations'] || [];
+        const contSizes = ['40HC', '20DC', '45G1', '40GP', '20RF', '40RF', 'XE_TAI_10T', 'XE_TAI_2T'];
         container.innerHTML = `
             <div>
                 <label class="app-form-label">Khách Hàng <span class="text-rose-500">*</span></label>
@@ -8625,17 +8663,17 @@ function injectMasterDataModalFields(data) {
             </div>
             <div class="grid grid-cols-4 gap-3">
                 <div>
+                    <label class="app-form-label">Quy Cách Cont / Xe</label>
+                    <select id="mdf-container-size" class="app-form-control font-mono font-bold">
+                        ${contSizes.map(s => `<option value="${s}" ${(d.container_size || '40HC') === s ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="app-form-label m-0">Cự Ly (km)</label>
                         <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded border border-indigo-200">10km</span>
                     </div>
                     <input type="number" id="mdf-estimated-km" value="${d.estimated_km || 30}" step="10" min="0" onchange="roundEstimatedKmInput(this)" class="app-form-control font-mono font-bold text-center">
-                    <div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 flex-wrap">
-                        <button type="button" onclick="setTariffKm(20)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">20k</button>
-                        <button type="button" onclick="setTariffKm(30)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">30k</button>
-                        <button type="button" onclick="setTariffKm(50)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">50k</button>
-                        <button type="button" onclick="setTariffKm(70)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">70k</button>
-                    </div>
                 </div>
                 <div>
                     <label class="app-form-label">Đơn Giá Cước (HĐ) <span class="text-rose-500">*</span></label>
@@ -8645,10 +8683,10 @@ function injectMasterDataModalFields(data) {
                     <label class="app-form-label">Lương Tài Xế <span class="text-rose-500">*</span></label>
                     <input type="number" id="mdf-pay" value="${d.driver_trip_pay || 600000}" step="50000" class="app-form-control font-mono font-bold text-emerald-700" required>
                 </div>
-                <div>
-                    <label class="app-form-label">Vé BOT Tuyến</label>
-                    <input type="number" id="mdf-toll" value="${d.toll_standard_fee || 0}" step="10000" class="app-form-control font-mono font-bold text-amber-700" placeholder="0">
-                </div>
+            </div>
+            <div>
+                <label class="app-form-label">Định Mức Vé Cầu Đường / BOT Chuẩn (VNĐ)</label>
+                <input type="number" id="mdf-toll" value="${d.toll_standard_fee || 0}" step="10000" class="app-form-control font-mono font-bold text-amber-700" placeholder="0">
             </div>
         `;
         if (d.pickup_location) setSelectValueCaseInsensitive(document.getElementById('mdf-pickup'), d.pickup_location);
@@ -8689,6 +8727,14 @@ function injectMasterDataModalFields(data) {
                     <label for="mdf-requires-invoice" class="text-xs font-bold text-slate-700">Bắt buộc có HĐĐT / Mã tra cứu</label>
                 </div>
             </div>
+            <div>
+                <label class="app-form-label">Ghi Chú</label>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Ghi chú điều kiện..." class="app-form-control">
+            </div>
+            <div class="flex items-center space-x-2 pt-2">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang sử dụng</label>
+            </div>
         `;
     } else if (currentMasterDataTab === 'containers') {
         container.innerHTML = `
@@ -8715,16 +8761,21 @@ function injectMasterDataModalFields(data) {
                     <input type="number" id="mdf-teu" value="${d.teu_factor !== undefined ? d.teu_factor : 2.0}" step="0.25" class="app-form-control font-mono">
                 </div>
                 <div>
-                    <label class="app-form-label">Tải Trọng (kg)</label>
+                    <label class="app-form-label">Tải Trọng Cho Phép (kg)</label>
                     <input type="number" id="mdf-payload" value="${d.max_payload_kg || 30000}" step="500" class="app-form-control font-mono">
                 </div>
                 <div>
-                    <label class="app-form-label">Thể Tích (CBM)</label>
+                    <label class="app-form-label">Thể Tích Chứa (CBM)</label>
                     <input type="number" id="mdf-cbm" value="${d.cbm_capacity || 67}" step="0.5" class="app-form-control font-mono">
                 </div>
             </div>
+            <div class="flex items-center space-x-2 pt-2">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động</label>
+            </div>
         `;
     } else if (currentMasterDataTab === 'vehicles') {
+        const drivers = masterDataFormOptionsCache?.drivers || [];
         container.innerHTML = `
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -8754,9 +8805,41 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-brand" value="${d.brand || 'Freightliner'}" placeholder="VD: Freightliner, Hino..." class="app-form-control">
                 </div>
             </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="app-form-label">Tài Xế Mặc Định Gắn Xe</label>
+                    <select id="mdf-driver-id" class="app-form-control font-semibold">
+                        <option value="">-- Chưa gán tài xế --</option>
+                        ${drivers.map(dr => `<option value="${dr.id}" ${d.current_driver_id === dr.id ? 'selected' : ''}>${dr.label || dr.nickname || dr.full_name}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="app-form-label">Tải Trọng Cho Phép (kg)</label>
+                    <input type="number" id="mdf-payload" value="${d.payload_capacity_kg || 30000}" step="1000" class="app-form-control font-mono">
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <label class="app-form-label">Hạn Đăng Kiểm</label>
+                    <input type="date" id="mdf-reg-expiry" value="${d.registration_expiry ? (d.registration_expiry.includes('/') ? d.registration_expiry.split('/').reverse().join('-') : d.registration_expiry) : ''}" class="app-form-control font-mono">
+                </div>
+                <div>
+                    <label class="app-form-label">Hạn Bảo Hiểm</label>
+                    <input type="date" id="mdf-ins-expiry" value="${d.insurance_expiry ? (d.insurance_expiry.includes('/') ? d.insurance_expiry.split('/').reverse().join('-') : d.insurance_expiry) : ''}" class="app-form-control font-mono">
+                </div>
+                <div>
+                    <label class="app-form-label">Bảo Trì Kế Tiếp</label>
+                    <input type="date" id="mdf-maint-date" value="${d.next_maintenance_date ? (d.next_maintenance_date.includes('/') ? d.next_maintenance_date.split('/').reverse().join('-') : d.next_maintenance_date) : ''}" class="app-form-control font-mono">
+                </div>
+            </div>
             <div>
-                <label class="app-form-label">Tải Trọng Cho Phép (kg)</label>
-                <input type="number" id="mdf-payload" value="${d.payload_capacity_kg || 30000}" step="1000" class="app-form-control font-mono">
+                <label class="app-form-label">Trạng Thái Phương Tiện</label>
+                <select id="mdf-vehicle-status" class="app-form-control font-bold">
+                    <option value="IDLE" ${d.status === 'IDLE' ? 'selected' : ''}>Nằm bãi (Chờ việc)</option>
+                    <option value="ACTIVE" ${d.status === 'ACTIVE' ? 'selected' : ''}>Đang chạy (Có hàng)</option>
+                    <option value="MAINTENANCE" ${d.status === 'MAINTENANCE' ? 'selected' : ''}>Hư hỏng / Bảo trì</option>
+                    <option value="DECOMMISSIONED" ${d.status === 'DECOMMISSIONED' ? 'selected' : ''}>Ngừng sử dụng</option>
+                </select>
             </div>
         `;
     } else if (currentMasterDataTab === 'trailers') {
@@ -8842,6 +8925,10 @@ function injectMasterDataModalFields(data) {
                 <label class="app-form-label">Ghi Chú Quy Định Cấp Vỏ / Hạ Rỗng</label>
                 <input type="text" id="mdf-sl-notes" value="${d.notes || ''}" placeholder="Depot chỉ định hạ rỗng, lưu ý hãng..." class="app-form-control">
             </div>
+            <div class="flex items-center space-x-2 pt-2">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hoạt động</label>
+            </div>
         `;
     } else if (currentMasterDataTab === 'subcontractors') {
         container.innerHTML = `
@@ -8897,6 +8984,10 @@ function injectMasterDataModalFields(data) {
                 <label class="app-form-label">Tuyến Thế Mạnh & Ghi Chú Đơn Giá</label>
                 <input type="text" id="mdf-sc-notes" value="${d.notes || ''}" placeholder="VD: Chuyên tuyến Long An, 10 xe đầu kéo..." class="app-form-control">
             </div>
+            <div class="flex items-center space-x-2 pt-2">
+                <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                <label for="mdf-is-active" class="text-xs font-bold text-slate-700">Đang hợp tác</label>
+            </div>
         `;
     }
 }
@@ -8927,9 +9018,11 @@ async function submitMasterDataForm(e) {
         payload = {
             area_group: document.getElementById('mdf-area-group').value,
             route_name: document.getElementById('mdf-route-name').value,
+            pickup_drop_area: document.getElementById('mdf-pickup-drop')?.value || '',
             estimated_km: parseInt(document.getElementById('mdf-estimated-km')?.value) || 0,
             salary_rate: parseInt(document.getElementById('mdf-salary-rate').value),
-            notes: document.getElementById('mdf-notes').value
+            notes: document.getElementById('mdf-notes').value,
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'allowances') {
         payload = {
@@ -8937,16 +9030,20 @@ async function submitMasterDataForm(e) {
             category: document.getElementById('mdf-category').value,
             name: document.getElementById('mdf-name').value,
             amount: parseInt(document.getElementById('mdf-amount').value),
-            notes: document.getElementById('mdf-notes').value
+            notes: document.getElementById('mdf-notes').value,
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'locations') {
         payload = {
             code: document.getElementById('mdf-code').value,
             location_type: document.getElementById('mdf-location-type').value,
             name: document.getElementById('mdf-name').value,
-            address: document.getElementById('mdf-address').value,
             province: document.getElementById('mdf-province').value,
-            contact_phone: document.getElementById('mdf-contact-phone').value
+            address: document.getElementById('mdf-address').value,
+            contact_person: document.getElementById('mdf-contact-person')?.value || '',
+            contact_phone: document.getElementById('mdf-contact-phone').value,
+            notes: document.getElementById('mdf-notes')?.value || '',
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'customers') {
         payload = {
@@ -8955,7 +9052,8 @@ async function submitMasterDataForm(e) {
             name: document.getElementById('mdf-name').value,
             address: document.getElementById('mdf-address').value,
             contact_person: document.getElementById('mdf-contact-person').value,
-            phone: document.getElementById('mdf-phone').value
+            phone: document.getElementById('mdf-phone').value,
+            notes: document.getElementById('mdf-notes')?.value || ''
         };
     } else if (tabKey === 'tariffs') {
         payload = {
@@ -8966,6 +9064,7 @@ async function submitMasterDataForm(e) {
             pickup_location: document.getElementById('mdf-pickup').value,
             delivery_location: document.getElementById('mdf-delivery').value,
             dropoff_location: document.getElementById('mdf-dropoff').value,
+            container_size: document.getElementById('mdf-container-size')?.value || '40HC',
             freight_price: parseInt(document.getElementById('mdf-price').value),
             driver_trip_pay: parseInt(document.getElementById('mdf-pay').value),
             toll_standard_fee: parseInt(document.getElementById('mdf-toll')?.value || 0)
@@ -8976,7 +9075,9 @@ async function submitMasterDataForm(e) {
             group_type: document.getElementById('mdf-group-type').value,
             name: document.getElementById('mdf-name').value,
             default_amount: parseInt(document.getElementById('mdf-default-amount').value),
-            requires_invoice: document.getElementById('mdf-requires-invoice').checked
+            requires_invoice: document.getElementById('mdf-requires-invoice').checked,
+            notes: document.getElementById('mdf-notes')?.value || '',
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'containers') {
         payload = {
@@ -8985,7 +9086,8 @@ async function submitMasterDataForm(e) {
             name: document.getElementById('mdf-name').value,
             teu_factor: parseFloat(document.getElementById('mdf-teu').value),
             max_payload_kg: parseInt(document.getElementById('mdf-payload').value),
-            cbm_capacity: parseFloat(document.getElementById('mdf-cbm').value)
+            cbm_capacity: parseFloat(document.getElementById('mdf-cbm').value),
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'vehicles') {
         payload = {
@@ -8993,7 +9095,12 @@ async function submitMasterDataForm(e) {
             ownership_type: document.getElementById('mdf-ownership').value,
             vehicle_type: document.getElementById('mdf-vehicle-type').value,
             brand: document.getElementById('mdf-brand').value,
-            payload_capacity_kg: parseInt(document.getElementById('mdf-payload').value)
+            payload_capacity_kg: parseInt(document.getElementById('mdf-payload').value),
+            current_driver_id: document.getElementById('mdf-driver-id')?.value ? parseInt(document.getElementById('mdf-driver-id').value) : null,
+            registration_expiry: document.getElementById('mdf-reg-expiry')?.value || null,
+            insurance_expiry: document.getElementById('mdf-ins-expiry')?.value || null,
+            next_maintenance_date: document.getElementById('mdf-maint-date')?.value || null,
+            status: document.getElementById('mdf-vehicle-status')?.value || 'IDLE'
         };
     } else if (tabKey === 'trailers') {
         payload = {
@@ -9013,7 +9120,8 @@ async function submitMasterDataForm(e) {
             website: document.getElementById('mdf-sl-web').value,
             free_dem_days: parseInt(document.getElementById('mdf-sl-dem').value || 7),
             free_det_days: parseInt(document.getElementById('mdf-sl-det').value || 5),
-            notes: document.getElementById('mdf-sl-notes').value
+            notes: document.getElementById('mdf-sl-notes').value,
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'subcontractors') {
         payload = {
@@ -9026,7 +9134,8 @@ async function submitMasterDataForm(e) {
             bank_account_number: document.getElementById('mdf-sc-acc').value,
             bank_name: document.getElementById('mdf-sc-bank').value,
             bank_account_holder: document.getElementById('mdf-sc-holder').value,
-            notes: document.getElementById('mdf-sc-notes').value
+            notes: document.getElementById('mdf-sc-notes').value,
+            is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     }
 
