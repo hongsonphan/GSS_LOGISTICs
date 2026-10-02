@@ -1585,16 +1585,11 @@ class TripAddDocumentAPIView(APIView):
         self.check_object_permissions(request, trip)
 
         # Tiêu chuẩn 7 & 8: Kiểm định file upload an toàn (Magic Bytes, Size <= 5MB)
-        uploaded_file = request.FILES.get('file') or request.FILES.get('document')
-        file_path_str = ''
-        if uploaded_file:
-            try:
-                validate_uploaded_document(uploaded_file)
-                from django.core.files.storage import default_storage
-                saved_name = default_storage.save(f"documents/{trip.trip_code}_{sanitize_filename(uploaded_file.name)}", uploaded_file)
-                file_path_str = f"/media/{saved_name}"
-            except DjangoValidationError as ve:
-                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        uploaded_files = request.FILES.getlist('documents') or request.FILES.getlist('files') or request.FILES.getlist('document') or request.FILES.getlist('file')
+        if not uploaded_files:
+            single = request.FILES.get('file') or request.FILES.get('document') or request.FILES.get('photo')
+            if single:
+                uploaded_files = [single]
 
         doc_name = request.data.get('doc_type', 'Phiếu EIR Hạ Cont')
         cont_no = request.data.get('container_no', trip.container_number)
@@ -1604,6 +1599,7 @@ class TripAddDocumentAPIView(APIView):
             'Phiếu EIR Hạ Cont': DocumentType.EIR_DROPOFF,
             'EIR_DROPOFF': DocumentType.EIR_DROPOFF,
             'Biên bản giao nhận hàng': DocumentType.POD,
+            'Biên bản giao nhận hàng (POD)': DocumentType.POD,
             'Biên bản giao nhận có chữ ký (POD)': DocumentType.POD,
             'POD': DocumentType.POD,
             'Ảnh giám định vỏ Cont': DocumentType.CONTAINER_CHECK,
@@ -1621,16 +1617,41 @@ class TripAddDocumentAPIView(APIView):
         }
         doc_type = doc_map.get(doc_name, DocumentType.EIR_DROPOFF)
 
-        doc = TripDocument.objects.create(
-            trip=trip,
-            document_type=doc_type,
-            title=doc_name,
-            file_path=file_path_str,
-            extracted_container_no=cont_no,
-            extracted_seal_no=seal_no,
-            ocr_raw_text=f"AI Nhận diện: {doc_name} - Cont: {cont_no} - Seal: {seal_no}",
-            is_verified=True
-        )
+        created_docs = []
+        from django.core.files.storage import default_storage
+        for idx, ufile in enumerate(uploaded_files):
+            try:
+                validate_uploaded_document(ufile)
+                saved_name = default_storage.save(f"documents/{trip.trip_code}_{sanitize_filename(ufile.name)}", ufile)
+                file_path_str = f"/media/{saved_name}"
+                title_str = doc_name if len(uploaded_files) == 1 else f"{doc_name} (#{idx+1})"
+                doc = TripDocument.objects.create(
+                    trip=trip,
+                    document_type=doc_type,
+                    title=title_str,
+                    file_path=file_path_str,
+                    extracted_container_no=cont_no,
+                    extracted_seal_no=seal_no,
+                    ocr_raw_text=f"AI Nhận diện: {doc_name} - Cont: {cont_no} - Seal: {seal_no}",
+                    is_verified=True
+                )
+                created_docs.append(doc)
+            except DjangoValidationError as ve:
+                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not created_docs and not uploaded_files:
+            # Cho phép tạo doc không kèm file (ví dụ chữ ký E-POD hoặc metadata)
+            doc = TripDocument.objects.create(
+                trip=trip,
+                document_type=doc_type,
+                title=doc_name,
+                file_path='',
+                extracted_container_no=cont_no,
+                extracted_seal_no=seal_no,
+                ocr_raw_text=f"AI Nhận diện: {doc_name} - Cont: {cont_no} - Seal: {seal_no}",
+                is_verified=True
+            )
+            created_docs.append(doc)
 
         # Xử lý nghiệp vụ đặc thù theo loại chứng từ
         now_str = timezone.now().strftime('%H:%M %d/%m')

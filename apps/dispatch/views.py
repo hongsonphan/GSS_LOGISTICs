@@ -185,6 +185,29 @@ def driver_portal_view(request, trip_hash):
     if not dispatcher_phone:
         dispatcher_phone = '0908123456'
 
+    # Số điện thoại người nhận hàng / Thủ kho khách hàng
+    consignee_phone = ''
+    consignee_name = 'Thủ kho / Người nhận'
+    if trip.warehouse_loc and trip.warehouse_loc.contact_phone:
+        consignee_phone = trip.warehouse_loc.contact_phone
+        consignee_name = trip.warehouse_loc.contact_person or trip.warehouse_loc.name
+    elif trip.customer and trip.customer.phone:
+        consignee_phone = trip.customer.phone
+        consignee_name = trip.customer.name
+    if not consignee_phone:
+        consignee_phone = dispatcher_phone  # Fallback về hotline điều độ
+
+    # Điểm đến hiện tại theo trạng thái
+    st = trip.status
+    if st in ['CONTAINER_PICKED', 'IN_TRANSIT', 'AT_WAREHOUSE', 'UNLOADING', 'DELIVERED']:
+        current_leg_target_name = trip.delivery_warehouse or trip.warehouse_location or 'Kho khách hàng'
+    elif st == 'RETURNING_EMPTY':
+        current_leg_target_name = trip.dropoff_depot or trip.dropoff_location or 'Bãi hạ cont'
+    elif st == 'COMPLETED':
+        current_leg_target_name = 'Đã hoàn tất toàn tuyến'
+    else:
+        current_leg_target_name = trip.pickup_depot or trip.pickup_location or 'Bãi lấy cont'
+
     context = {
         'trip': trip,
         'trip_hash': trip.driver_hashid,
@@ -193,6 +216,9 @@ def driver_portal_view(request, trip_hash):
         'trailer': trip.trailer,
         'dispatcher_name': dispatcher_name,
         'dispatcher_phone': dispatcher_phone,
+        'consignee_name': consignee_name,
+        'consignee_phone': consignee_phone,
+        'current_leg_target_name': current_leg_target_name,
         'maps_url_pickup': maps_url_pickup,
         'maps_url_warehouse': maps_url_warehouse,
         'maps_url_dropoff': maps_url_dropoff,

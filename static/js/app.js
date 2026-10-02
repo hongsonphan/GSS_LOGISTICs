@@ -2133,7 +2133,6 @@ function renderDriverMobileApp(trip) {
         leg2Time.innerText = tStr;
     }
 
-    // Maps Links
     const mapBase = 'https://www.google.com/maps/dir/?api=1&destination=';
     const map1 = document.getElementById('sim-leg1-map');
     if (map1) map1.href = `${mapBase}${encodeURIComponent(pLoc)}`;
@@ -2142,35 +2141,63 @@ function renderDriverMobileApp(trip) {
     const map3 = document.getElementById('sim-leg3-map');
     if (map3) map3.href = `${mapBase}${encodeURIComponent(dLoc)}`;
 
-    // Trạng thái Lộ trình 3 điểm (Style đồng bộ Driver Portal)
+    // Modal Route Elements
+    const mLeg1Name = document.getElementById('sim-modal-leg1-name');
+    if (mLeg1Name) mLeg1Name.innerText = pLoc;
+    const mLeg2Name = document.getElementById('sim-modal-leg2-name');
+    if (mLeg2Name) mLeg2Name.innerText = wLoc;
+    const mLeg3Name = document.getElementById('sim-modal-leg3-name');
+    if (mLeg3Name) mLeg3Name.innerText = dLoc;
+
+    const mLeg1Map = document.getElementById('sim-modal-leg1-map');
+    if (mLeg1Map) mLeg1Map.href = `${mapBase}${encodeURIComponent(pLoc)}`;
+    const mLeg2Map = document.getElementById('sim-modal-leg2-map');
+    if (mLeg2Map) mLeg2Map.href = `${mapBase}${encodeURIComponent(wLoc)}`;
+    const mLeg3Map = document.getElementById('sim-modal-leg3-map');
+    if (mLeg3Map) mLeg3Map.href = `${mapBase}${encodeURIComponent(dLoc)}`;
+
     const st = trip.status || 'DRAFT';
-    const leg1Card = document.getElementById('sim-leg1-card');
-    const leg1Icon = document.getElementById('sim-leg1-icon');
-    const leg1Badge = document.getElementById('sim-leg1-badge');
 
-    const leg2Card = document.getElementById('sim-leg2-card');
-    const leg2Icon = document.getElementById('sim-leg2-icon');
-    const leg2Badge = document.getElementById('sim-leg2-badge');
+    // Đang đến
+    let curDest = pLoc || 'Bãi lấy cont';
+    if (st === 'RETURNING_EMPTY') {
+        curDest = dLoc || 'Bãi hạ cont';
+    } else if (['CONTAINER_PICKED', 'IN_TRANSIT', 'AT_WAREHOUSE', 'UNLOADING', 'DELIVERED'].includes(st)) {
+        curDest = wLoc || 'Kho đóng/trả hàng';
+    } else if (st === 'COMPLETED') {
+        curDest = 'Đã hoàn tất toàn tuyến';
+    }
+    const curDestEl = document.getElementById('sim-current-dest');
+    if (curDestEl) curDestEl.innerText = `Đang đến: ${curDest}`;
 
-    const leg3Card = document.getElementById('sim-leg3-card');
-    const leg3Icon = document.getElementById('sim-leg3-icon');
-    const leg3Badge = document.getElementById('sim-leg3-badge');
+    // Trạng thái Lộ trình 3 điểm (Style đồng bộ Driver Portal)
+    const leg1Card = document.getElementById('sim-leg1-card') || document.getElementById('sim-modal-leg1-card');
+    const leg1Icon = document.getElementById('sim-leg1-icon') || document.getElementById('sim-modal-leg1-icon');
+    const leg1Badge = document.getElementById('sim-leg1-badge') || document.getElementById('sim-modal-leg1-badge');
+
+    const leg2Card = document.getElementById('sim-leg2-card') || document.getElementById('sim-modal-leg2-card');
+    const leg2Icon = document.getElementById('sim-leg2-icon') || document.getElementById('sim-modal-leg2-icon');
+    const leg2Badge = document.getElementById('sim-leg2-badge') || document.getElementById('sim-modal-leg2-badge');
+
+    const leg3Card = document.getElementById('sim-leg3-card') || document.getElementById('sim-modal-leg3-card');
+    const leg3Icon = document.getElementById('sim-leg3-icon') || document.getElementById('sim-modal-leg3-icon');
+    const leg3Badge = document.getElementById('sim-leg3-badge') || document.getElementById('sim-modal-leg3-badge');
 
     // Reset styles
     const setLegStyle = (card, icon, badge, mode, stepNum, titleText) => {
         if (!card) return;
         if (mode === 'DONE') {
-            card.className = 'p-2 rounded-lg border bg-emerald-50/70 border-emerald-300 text-emerald-950';
+            card.className = 'p-2.5 rounded-xl border bg-emerald-50/70 border-emerald-300 text-emerald-950';
             if (icon) {
-                icon.className = 'w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0 bg-emerald-700 text-white';
-                icon.innerHTML = '<i class="ph-bold ph-check text-[10px]"></i>';
+                icon.className = 'w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs mt-0.5 shrink-0 bg-emerald-700 text-white';
+                icon.innerHTML = '<i class="ph-bold ph-check text-xs"></i>';
             }
             if (badge) {
-                badge.className = 'text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 text-emerald-800';
+                badge.className = 'text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1 text-emerald-800';
                 badge.innerHTML = `<span>Điểm ${stepNum}: ${titleText}</span><span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[8.5px]">ĐÃ XONG</span>`;
             }
         } else if (mode === 'ACTIVE') {
-            card.className = 'p-2.5 rounded-lg border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-2xs';
+            card.className = 'p-3 rounded-xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-2xs';
             if (icon) {
                 icon.className = 'w-6 h-6 rounded-full flex items-center justify-center font-black text-xs mt-0.5 shrink-0 bg-teal-700 text-white ring-2 ring-teal-200';
                 icon.innerHTML = `${stepNum}`;
@@ -2181,13 +2208,13 @@ function renderDriverMobileApp(trip) {
             }
         } else {
             // PENDING
-            card.className = 'p-2 rounded-lg border bg-slate-50 border-slate-200 text-slate-400';
+            card.className = 'p-2.5 rounded-xl border bg-slate-50 border-slate-200 text-slate-400';
             if (icon) {
-                icon.className = 'w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0 bg-slate-200 text-slate-500';
+                icon.className = 'w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs mt-0.5 shrink-0 bg-slate-200 text-slate-500';
                 icon.innerHTML = `${stepNum}`;
             }
             if (badge) {
-                badge.className = 'text-[10px] font-bold uppercase tracking-wider text-slate-500';
+                badge.className = 'text-[10.5px] font-bold uppercase tracking-wider text-slate-500';
                 badge.innerHTML = `<span>Điểm ${stepNum}: ${titleText}</span>`;
             }
         }
@@ -3019,8 +3046,11 @@ async function driverReportMilestone(milestoneCode) {
 
         const data = await res.json();
         if (res.ok && data.success) {
-            showToast('success', data.message, 'Cập nhật tiến độ kho');
-            viewTripDetail(currentActiveTripCode);
+            showToast('success', data.message, 'Cập nhật tiến độ');
+            await viewTripDetail(currentActiveTripCode);
+            if (typeof loadTripsData === 'function') {
+                loadTripsData();
+            }
         } else {
             showToast('danger', data.message || data.error || data.detail || 'Không thể cập nhật mốc');
         }
@@ -3031,6 +3061,16 @@ async function driverReportMilestone(milestoneCode) {
 }
 
 // --- CÁC HÀM ĐIỀU KHIỂN GIAO DIỆN SIMULATOR TÀI XẾ ---
+function openSimRouteDetailsModal() {
+    const modal = document.getElementById('modal-sim-route-details');
+    if (modal) modal.classList.remove('hidden-view');
+}
+
+function closeSimRouteDetailsModal() {
+    const modal = document.getElementById('modal-sim-route-details');
+    if (modal) modal.classList.add('hidden-view');
+}
+
 function toggleSimTimelineAccordion() {
     const body = document.getElementById('sim-timeline-body');
     const caret = document.getElementById('sim-timeline-caret');
@@ -3113,7 +3153,10 @@ async function submitSimIncident(e) {
         if (res.ok && data.success) {
             closeSimIncidentModal();
             showToast('warning', 'Đã ghi nhận cảnh báo sự cố khẩn cấp và gửi thông báo tới Điều Độ!', 'Báo Sự Cố Thành Công');
-            viewTripDetail(currentActiveTripCode);
+            await viewTripDetail(currentActiveTripCode);
+            if (typeof loadTripsData === 'function') {
+                loadTripsData();
+            }
         } else {
             showToast('danger', data.message || data.error || 'Không thể gửi báo cáo sự cố');
         }
@@ -3123,9 +3166,14 @@ async function submitSimIncident(e) {
     }
 }
 
-function openSimContactModal() {
-    const driverName = currentActiveTripData?.driver || 'Tài xế';
-    alert(`HOTLINE ĐIỀU ĐỘ PHỤ TRÁCH:\n\n• Điều độ chính: 0908.123.456 (Trực 24/7)\n• CSKH Doanh nghiệp: 0909.789.012\n• Đang phục vụ chuyến xe: ${currentActiveTripCode || 'TVL-XXX'}`);
+function openSimContactModal(type) {
+    if (type === 'consignee') {
+        const cName = currentActiveTripData?.customer || 'Thủ kho / Người nhận';
+        alert(`LIÊN HỆ GIAO NHẬN HÀNG:\n\n• Người nhận / Khách hàng: ${cName}\n• Hotline: 0908.123.456\n• Điểm đến: ${currentActiveTripData?.warehouse_location || currentActiveTripData?.warehouse || 'Kho nhận hàng'}`);
+    } else {
+        const dispName = currentActiveTripData?.dispatcher || 'Điều độ trực';
+        alert(`HOTLINE ĐIỀU ĐỘ PHỤ TRÁCH:\n\n• Điều độ: ${dispName} (0908.123.456 - Trực 24/7)\n• Mã chuyến xe: ${currentActiveTripCode || 'TVL-XXX'}`);
+    }
 }
 
     document.getElementById('view-trip-detail').classList.add('hidden-view');

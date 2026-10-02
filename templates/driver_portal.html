@@ -19,7 +19,7 @@
     body {
       font-family: "Inter", sans-serif;
       -webkit-tap-highlight-color: transparent;
-      padding-bottom: 90px; /* Space for bottom sticky bar */
+      padding-bottom: 96px; /* Space for fixed bottom bar */
     }
     .safe-top {
       padding-top: env(safe-area-inset-top, 0.5rem);
@@ -68,7 +68,7 @@
   <!-- MAIN MOBILE CONTENT CONTAINER -->
   <main class="max-w-lg mx-auto p-3 space-y-3.5">
 
-    <!-- 1. DRIVER & VEHICLE SUMMARY CARD (GỌN GÀNG + NÚT MỞ VẬN ĐƠN) -->
+    <!-- 1. DRIVER & VEHICLE SUMMARY CARD + NÚT MỞ VẬN ĐƠN -->
     <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2.5">
@@ -94,7 +94,7 @@
         </div>
       </div>
 
-      <!-- NÚT MỞ THÔNG TIN VẬN ĐƠN & CONTAINER (THAY THẾ TOÀN BỘ CÁC CARD RẢI RÁC) -->
+      <!-- NÚT MỞ THÔNG TIN VẬN ĐƠN & CONTAINER (DRAWER GỌN) -->
       <button type="button" onclick="openTripDetailsModal()" class="touch-btn w-full p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/60 border border-slate-200 hover:border-teal-300 flex items-center justify-between text-left transition-all shadow-2xs">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center shrink-0">
@@ -117,244 +117,33 @@
       </button>
     </div>
 
-    <!-- 2. LỘ TRÌNH 3 ĐIỂM THÔNG MINH & 3 NÚT "CHỈ ĐƯỜNG" ĐỒNG BỘ -->
-    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-2.5">
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
-        <span class="flex items-center gap-1.5">
-          <i class="ph-bold ph-map-pin text-teal-600 text-sm"></i>
-          <span>Lộ Trình & Chỉ Đường (3 Điểm)</span>
-        </span>
-        <span class="text-[10px] font-normal text-slate-400">Google Maps dẫn đường</span>
+    <!-- 2. NÚT GỌN LỘ TRÌNH & CHỈ ĐƯỜNG (3 ĐIỂM) — MỞ MODAL XEM CHI TIẾT & CHỈ ĐƯỜNG -->
+    <button type="button" onclick="openRouteDetailsModal()" class="touch-btn w-full p-3.5 rounded-2xl bg-white hover:bg-teal-50/50 border border-slate-200 shadow-sm flex items-center justify-between transition-all">
+      <div class="flex items-center gap-2.5 overflow-hidden">
+        <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center text-xl shrink-0 shadow-2xs">
+          <i class="ph-bold ph-map-pin"></i>
+        </div>
+        <div class="text-left overflow-hidden">
+          <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+            <span>Lộ Trình & Chỉ Đường (3 Điểm)</span>
+          </div>
+          <div class="text-xs sm:text-sm font-black text-slate-900 truncate mt-0.5">
+            Đang đến: <span class="text-teal-700">{{ current_leg_target_name }}</span>
+          </div>
+        </div>
       </div>
+      <div class="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0 shadow-xs">
+        <i class="ph-bold ph-navigation-arrow text-sm"></i>
+        <span>Chỉ đường</span>
+      </div>
+    </button>
 
-      <!-- ĐIỂM 1: LẤY CONT / HÀNG -->
-      {% if trip.status == 'CONTAINER_PICKED' or trip.status == 'IN_TRANSIT' or trip.status == 'AT_WAREHOUSE' or trip.status == 'UNLOADING' or trip.status == 'DELIVERED' or trip.status == 'RETURNING_EMPTY' or trip.status == 'COMPLETED' %}
-      <!-- Điểm 1: ĐÃ QUA (Màu Xanh Lá) -->
-      <div class="p-3 rounded-xl border bg-emerald-50/70 border-emerald-300 text-emerald-950 transition-all">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-start gap-2.5">
-            <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
-              <i class="ph-bold ph-check text-xs"></i>
-            </div>
-            <div>
-              <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-                <span>Điểm 1: Lấy Cont / Hàng</span>
-                <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ XONG</span>
-              </div>
-              <div class="text-xs font-bold text-slate-800 mt-0.5">
-                {{ trip.pickup_depot|default:trip.pickup_location }}
-              </div>
-            </div>
-          </div>
-          {% if maps_url_pickup != '#' %}
-          <a href="{{ maps_url_pickup }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
-            <i class="ph-bold ph-navigation-arrow"></i>
-            <span>Chỉ đường</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% else %}
-      <!-- Điểm 1: ĐANG TRÊN TUYẾN HÀNH TRÌNH (ACTIVE - CHỮ TO HƠN 1 SIZE & NỔI BẬT) -->
-      <div class="p-3.5 rounded-xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs transition-all">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-start gap-2.5">
-            <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
-              1
-            </div>
-            <div>
-              <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Điểm 1: Lấy Cont / Hàng</span>
-                <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG ĐẾN</span>
-              </div>
-              <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
-                {{ trip.pickup_depot|default:trip.pickup_location }}
-              </div>
-              {% if trip.bay_location %}<div class="text-xs text-teal-800 font-medium mt-0.5">Vị trí bãi: <strong class="font-mono font-bold">{{ trip.bay_location }}</strong></div>{% endif %}
-            </div>
-          </div>
-          {% if maps_url_pickup != '#' %}
-          <a href="{{ maps_url_pickup }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
-            <i class="ph-bold ph-navigation-arrow text-sm"></i>
-            <span>Chỉ đường</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- ĐIỂM 2: KHO ĐÓNG / TRẢ HÀNG -->
-      {% if trip.status == 'RETURNING_EMPTY' or trip.status == 'COMPLETED' %}
-      <!-- Điểm 2: ĐÃ QUA (Màu Xanh Lá) -->
-      <div class="p-3 rounded-xl border bg-emerald-50/70 border-emerald-300 text-emerald-950 transition-all">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-start gap-2.5">
-            <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
-              <i class="ph-bold ph-check text-xs"></i>
-            </div>
-            <div>
-              <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-                <span>Điểm 2: Kho Đóng / Trả Hàng</span>
-                <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ XONG</span>
-              </div>
-              <div class="text-xs font-bold text-slate-800 mt-0.5">
-                {{ trip.delivery_warehouse|default:trip.warehouse_location }}
-              </div>
-            </div>
-          </div>
-          {% if maps_url_warehouse != '#' %}
-          <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
-            <i class="ph-bold ph-navigation-arrow"></i>
-            <span>Chỉ đường</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% elif trip.status == 'CONTAINER_PICKED' or trip.status == 'IN_TRANSIT' or trip.status == 'AT_WAREHOUSE' or trip.status == 'UNLOADING' or trip.status == 'DELIVERED' %}
-      <!-- Điểm 2: ĐANG TRÊN TUYẾN HÀNH TRÌNH (ACTIVE - CHỮ TO HƠN 1 SIZE & NỔI BẬT) -->
-      <div class="p-3.5 rounded-xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs transition-all">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-start gap-2.5">
-            <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
-              2
-            </div>
-            <div>
-              <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Điểm 2: Kho Đóng / Trả Hàng</span>
-                <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG ĐẾN / TẠI KHO</span>
-              </div>
-              <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
-                {{ trip.delivery_warehouse|default:trip.warehouse_location }}
-              </div>
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-teal-800 font-medium mt-1">
-                {% if trip.loading_time %}<div>Hẹn: <strong class="font-bold">{{ trip.loading_time }}</strong></div>{% endif %}
-                {% if trip.warehouse_dock %}<div>Dock: <strong class="font-bold">{{ trip.warehouse_dock }}</strong></div>{% endif %}
-              </div>
-            </div>
-          </div>
-          {% if maps_url_warehouse != '#' %}
-          <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
-            <i class="ph-bold ph-navigation-arrow text-sm"></i>
-            <span>Chỉ đường</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% else %}
-      <!-- Điểm 2: CHƯA TỚI (Màu Xám Chờ Lượt) -->
-      <div class="p-3 rounded-xl border bg-slate-50 border-slate-200 text-slate-400 transition-all">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-start gap-2.5">
-            <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
-              2
-            </div>
-            <div>
-              <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Điểm 2: Kho Đóng / Trả Hàng</div>
-              <div class="text-xs font-semibold text-slate-600 mt-0.5">
-                {{ trip.delivery_warehouse|default:trip.warehouse_location }}
-              </div>
-            </div>
-          </div>
-          {% if maps_url_warehouse != '#' %}
-          <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-medium text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
-            <i class="ph-bold ph-navigation-arrow"></i>
-            <span>Chỉ đường</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- ĐIỂM 3: BÃI HẠ VỎ CONT / CẢNG HẠ -->
-      {% if trip.status == 'COMPLETED' %}
-      <!-- Điểm 3: ĐÃ QUA (Màu Xanh Lá Hoàn Tất) -->
-      <div class="p-3 rounded-xl border bg-emerald-50/70 border-emerald-300 text-emerald-950 transition-all">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-start gap-2.5">
-            <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
-              <i class="ph-bold ph-check text-xs"></i>
-            </div>
-            <div>
-              <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-                <span>Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</span>
-                <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ HẠ CONT</span>
-              </div>
-              <div class="text-xs font-bold text-slate-800 mt-0.5">
-                {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
-              </div>
-            </div>
-          </div>
-          {% if maps_url_dropoff != '#' %}
-          <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
-            <i class="ph-bold ph-navigation-arrow"></i>
-            <span>Chỉ đường</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% elif trip.status == 'RETURNING_EMPTY' %}
-      <!-- Điểm 3: ĐANG TRÊN TUYẾN HÀNH TRÌNH (ACTIVE - CHỮ TO HƠN 1 SIZE & NỔI BẬT) -->
-      <div class="p-3.5 rounded-xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs transition-all">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-start gap-2.5">
-            <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
-              3
-            </div>
-            <div>
-              <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</span>
-                <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG VỀ BÃI HẠ</span>
-              </div>
-              <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
-                {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
-              </div>
-              {% if trip.dropoff_appointment_time %}
-              <div class="text-xs text-indigo-800 font-medium mt-0.5">
-                Hẹn hạ sau 0h: <strong class="font-bold">{{ trip.dropoff_appointment_time }}</strong>
-              </div>
-              {% endif %}
-            </div>
-          </div>
-          {% if maps_url_dropoff != '#' %}
-          <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
-            <i class="ph-bold ph-navigation-arrow text-sm"></i>
-            <span>Chỉ đường</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% else %}
-      <!-- Điểm 3: CHƯA TỚI (Màu Xám Chờ Lượt) -->
-      <div class="p-3 rounded-xl border bg-slate-50 border-slate-200 text-slate-400 transition-all">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-start gap-2.5">
-            <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
-              3
-            </div>
-            <div>
-              <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</div>
-              <div class="text-xs font-semibold text-slate-600 mt-0.5">
-                {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
-              </div>
-            </div>
-          </div>
-          {% if maps_url_dropoff != '#' %}
-          <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-medium text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
-            <i class="ph-bold ph-navigation-arrow"></i>
-            <span>Chỉ đường</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
-    </div>
-
-    <!-- 3. SMART NEXT-ACTION HERO CARD (BƯỚC TIẾP THEO CẦN LÀM - NÚT TO 1 CHẠM) -->
-    <div id="nextActionCard" class="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-2xl p-4 shadow-lg border border-slate-700 relative overflow-hidden">
+    <!-- 3. SMART NEXT-ACTION HERO CARD (BƯỚC TIẾP THEO CẦN LÀM - NÚT TO 1 CHẠM & 1 NÚT CHỤP TẬP TRUNG) -->
+    <div id="nextActionCard" class="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-2xl p-4 shadow-lg border border-slate-700 relative overflow-hidden space-y-3.5">
       <!-- Glow effect -->
       <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-teal-500/20 rounded-full blur-2xl pointer-events-none"></div>
 
-      <div class="flex items-center justify-between mb-2.5">
+      <div class="flex items-center justify-between">
         <span class="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-extrabold text-amber-400">
           <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
           BƯỚC TIẾP THEO CẦN LÀM
@@ -364,19 +153,19 @@
 
       <!-- B1/B2: Chờ xác nhận lệnh -->
       {% if trip.status == 'DRAFT' or trip.status == 'DISPATCHED' %}
-      <div class="space-y-2.5">
+      <div class="space-y-3">
         <div class="text-sm font-bold text-white">Lệnh điều xe đã được gửi đến bạn</div>
         <p class="text-xs text-slate-300 leading-relaxed">
           Vui lòng xác nhận nhận chuyến. Nếu không thể nhận, bấm <strong class="text-rose-300">Từ chối</strong> để điều độ phân xe lại.
         </p>
         <div class="grid grid-cols-2 gap-2 pt-1">
           <button type="button" onclick="reportMilestone('DECLINED_TRIP', 'Tài xế từ chối nhận chuyến')"
-            class="touch-btn py-3 rounded-xl border border-rose-500/50 text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-rose-950/50">
+            class="touch-btn py-3.5 rounded-xl border border-rose-500/60 text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-rose-950/50">
             <i class="ph-bold ph-x-circle text-base"></i>
             <span>Từ Chối</span>
           </button>
           <button type="button" onclick="reportMilestone('ACCEPTED_TRIP', 'Tài xế xác nhận nhận chuyến')"
-            class="touch-btn py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
+            class="touch-btn py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
             <i class="ph-bold ph-check-circle text-base"></i>
             <span>Xác Nhận Nhận Chuyến</span>
           </button>
@@ -385,10 +174,10 @@
 
       <!-- B3: Đã nhận lệnh, chuẩn bị xuất phát -->
       {% elif trip.status == 'ACCEPTED' %}
-      <div class="space-y-2.5">
+      <div class="space-y-3">
         <div class="text-sm font-bold text-white">Đã nhận lệnh — Chuẩn bị xuất phát</div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Trước khi lấy cont, hãy chụp ảnh giám định vỏ cont tại bãi để chống đền sửa cont khi hạ bãi.
+          Trước khi xuất phát, bác tài hãy chụp ảnh giám định vỏ cont tại bãi để chống đền sửa vỏ khi hạ.
         </p>
         {% if trip.eta_warehouse_time %}
         <div class="text-[11px] text-teal-300 flex items-center gap-1">
@@ -396,23 +185,17 @@
           <span>ETA đến kho: <strong>{{ trip.eta_warehouse_time }}</strong></span>
         </div>
         {% endif %}
-        <div class="grid grid-cols-2 gap-2 pt-1">
-          <button type="button" onclick="openDocModalWithType('Ảnh giám định vỏ Cont')"
-            class="touch-btn py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700">
-            <i class="ph-bold ph-camera text-base"></i>
-            <span>Chụp Vỏ Cont</span>
-          </button>
-          <button type="button" onclick="reportMilestone('DEPARTED', 'Tài xế xuất phát đi lấy cont')"
-            class="touch-btn py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
-            <i class="ph-bold ph-paper-plane-tilt text-base"></i>
-            <span>Xuất Phát Đi</span>
-          </button>
-        </div>
+        <!-- Nút Xuất Phát Đi (To Bản) -->
+        <button type="button" onclick="reportMilestone('DEPARTED', 'Tài xế xuất phát đi lấy cont')"
+          class="touch-btn w-full py-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md">
+          <i class="ph-bold ph-paper-plane-tilt text-lg"></i>
+          <span>XUẤT PHÁT ĐI LẤY CONT / HÀNG</span>
+        </button>
       </div>
 
       <!-- B4: Đang đi lấy cont -->
       {% elif trip.status == 'CONTAINER_PICKED' %}
-      <div class="space-y-2.5">
+      <div class="space-y-3">
         <div class="text-sm font-bold text-white">Đang trên đường đến kho khách hàng</div>
         <p class="text-xs text-slate-300 leading-relaxed">
           Đến cổng <strong class="text-amber-300">{{ trip.warehouse_location }}</strong>, bấm Check-in để hệ thống ghi nhận giờ đến.
@@ -423,16 +206,23 @@
           <span>ETA: <strong>{{ trip.eta_warehouse_time }}</strong></span>
         </div>
         {% endif %}
-        <button type="button" onclick="reportMilestone('APPROACHING_WAREHOUSE', 'Báo sắp đến kho 30 phút')"
-          class="touch-btn w-full py-3.5 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700">
-          <i class="ph-bold ph-bell-ringing text-base"></i>
-          <span>Báo Sắp Đến Kho (Trước 30 phút)</span>
-        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="reportMilestone('APPROACHING_WAREHOUSE', 'Báo sắp đến kho 30 phút')"
+            class="touch-btn py-3.5 rounded-xl border border-teal-400/60 text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-teal-950/50">
+            <i class="ph-bold ph-bell-ringing text-base"></i>
+            <span>Báo Sắp Đến (30p)</span>
+          </button>
+          <button type="button" onclick="reportMilestone('ARRIVED_WAREHOUSE', 'Đã đến cổng kho')"
+            class="touch-btn py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
+            <i class="ph-bold ph-map-pin text-base"></i>
+            <span>Đến Cổng Kho</span>
+          </button>
+        </div>
       </div>
 
       <!-- B5a: Sắp đến cổng kho -->
       {% elif trip.status == 'IN_TRANSIT' %}
-      <div class="space-y-2.5">
+      <div class="space-y-3">
         <div class="text-sm font-bold text-white">Sắp đến cổng kho — Chuẩn bị Check-in</div>
         <p class="text-xs text-slate-300 leading-relaxed">
           Vào đến cổng <strong class="text-amber-300">{{ trip.warehouse_location }}</strong>, bấm Check-in ngay để ghi nhận giờ chờ bốc hàng.
@@ -446,10 +236,10 @@
 
       <!-- B5b: Đang chờ cổng kho gọi vào -->
       {% elif trip.status == 'AT_WAREHOUSE' %}
-      <div class="space-y-2.5">
+      <div class="space-y-3">
         <div class="text-sm font-bold text-white">Đang chờ tại cổng kho</div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Khi bảo vệ gọi xe vào{% if trip.warehouse_dock %} <strong class="text-amber-300">Dock {{ trip.warehouse_dock }}</strong>{% endif %}, bấm nút để bắt đầu.
+          Khi bảo vệ gọi xe vào{% if trip.warehouse_dock %} <strong class="text-amber-300">Dock {{ trip.warehouse_dock }}</strong>{% endif %}, bấm nút để bắt đầu đóng/dỡ hàng.
         </p>
         <button type="button" onclick="reportMilestone('START_UNLOADING', 'Bắt đầu đóng / dỡ hàng tại dock')"
           class="touch-btn w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-sm flex items-center justify-center gap-2 shadow-md">
@@ -460,38 +250,28 @@
 
       <!-- B6: Đang đóng/dỡ hàng -->
       {% elif trip.status == 'UNLOADING' %}
-      <div class="space-y-2.5">
+      <div class="space-y-3">
         <div class="text-sm font-bold text-white">Đang đóng / dỡ hàng tại kho</div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Sau khi thủ kho ký, chụp ngay Biên bản giao nhận (POD). Hàng xuất → chụp thêm ảnh cây chì niêm phong.
+          Sau khi xếp hàng xong, chụp Biên bản POD (hoặc cho thủ kho ký điện tử trực tiếp). Bấm nút hoàn tất để chuẩn bị ra cổng.
         </p>
-        <div class="grid grid-cols-3 gap-2">
-          <button type="button" onclick="openDocModalWithType('Biên bản giao nhận hàng')"
-            class="touch-btn py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-700">
-            <i class="ph-bold ph-file-text text-base"></i>
-            <span>Chụp POD</span>
-          </button>
+        <div class="grid grid-cols-2 gap-2">
           <button type="button" onclick="openSignatureModal()"
-            class="touch-btn py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-700">
+            class="touch-btn py-3 rounded-xl border border-teal-400 text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-teal-950/60">
             <i class="ph-bold ph-pen-nib text-base"></i>
-            <span>Ký Tên</span>
+            <span>Thủ Kho Ký E-POD</span>
           </button>
-          <button type="button" onclick="openDocModalWithType('Ảnh Niêm Phong Chì (Seal)')"
-            class="touch-btn py-3 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-700">
-            <i class="ph-bold ph-seal text-base"></i>
-            <span>Chụp Chì</span>
+          <button type="button" onclick="reportMilestone('FINISHED_UNLOADING', 'Đóng / dỡ hàng xong')"
+            class="touch-btn py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
+            <i class="ph-bold ph-check text-base"></i>
+            <span>Hàng Đã Xong</span>
           </button>
         </div>
-        <button type="button" onclick="reportMilestone('FINISHED_UNLOADING', 'Đóng / dỡ hàng xong')"
-          class="touch-btn w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md">
-          <i class="ph-bold ph-check text-base"></i>
-          <span>HÀNG ĐÃ XONG — CHUẨN BỊ RA CỔNG</span>
-        </button>
       </div>
 
       <!-- B8: POD đã ký, chờ rời kho -->
       {% elif trip.status == 'DELIVERED' %}
-      <div class="space-y-2.5">
+      <div class="space-y-3">
         <div class="text-sm font-bold text-white">Chứng từ đã ký — Sẵn sàng rời kho</div>
         <p class="text-xs text-slate-300 leading-relaxed">
           Bấm khi xe lăn bánh rời khu vực kho, hệ thống ghi nhận giờ ra thực tế.{% if trip.dropoff_appointment_time %}<br><span class="inline-flex items-center gap-1 mt-1"><i class="ph-bold ph-clock-countdown"></i> Hẹn hạ bãi: <strong class="text-amber-300">{{ trip.dropoff_appointment_time }}</strong></span>{% endif %}
@@ -505,23 +285,16 @@
 
       <!-- B9: Đang kéo về bãi hạ -->
       {% elif trip.status == 'RETURNING_EMPTY' %}
-      <div class="space-y-2.5">
+      <div class="space-y-3">
         <div class="text-sm font-bold text-white">Đang kéo cont về bãi hạ</div>
         <p class="text-xs text-slate-300 leading-relaxed">
           Nơi hạ: <strong class="text-amber-300">{{ trip.dropoff_location }}</strong>. Cẩu hạ xong → Chụp Phiếu EIR → Bấm xác nhận.{% if trip.dropoff_appointment_time %}<br><span class="inline-flex items-center gap-1 mt-1"><i class="ph-bold ph-clock"></i> Hẹn hạ: <strong class="text-amber-300">{{ trip.dropoff_appointment_time }}</strong></span>{% endif %}
         </p>
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" onclick="openDocModalWithType('Phiếu EIR Hạ Cont')"
-            class="touch-btn py-3.5 rounded-xl border border-slate-500 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700">
-            <i class="ph-bold ph-camera text-base"></i>
-            <span>Chụp Phiếu EIR</span>
-          </button>
-          <button type="button" onclick="reportMilestone('DROPOFF_COMPLETED', 'Đã cẩu hạ cont hoàn tất')"
-            class="touch-btn py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
-            <i class="ph-bold ph-anchor text-base"></i>
-            <span>ĐÃ HẠ CONT XONG</span>
-          </button>
-        </div>
+        <button type="button" onclick="reportMilestone('DROPOFF_COMPLETED', 'Đã cẩu hạ cont hoàn tất')"
+          class="touch-btn w-full py-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md">
+          <i class="ph-bold ph-anchor text-lg"></i>
+          <span>ĐÃ HẠ CONT — LẤY PHIẾU EIR</span>
+        </button>
         {% if not trip.is_overnight_detention %}
         <button type="button" onclick="reportMilestone('OVERNIGHT_WAIT', 'Kho yêu cầu chờ hạ sau 00:00')"
           class="touch-btn w-full py-2.5 rounded-xl border border-slate-600 text-slate-400 font-medium text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700/50">
@@ -542,44 +315,23 @@
       </div>
       {% endif %}
 
+      <!-- NÚT CHỤP TẬP TRUNG DUY NHẤT (CHO CHỌN NHIỀU ẢNH VÀ LOẠI CHỨNG TỪ BÊN TRONG) -->
+      <div class="pt-2 border-t border-slate-700/80">
+        <button type="button" onclick="openDocModal()"
+          class="touch-btn w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700/90 border border-teal-500/40 text-teal-200 font-bold text-xs flex items-center justify-center gap-2 shadow-sm">
+          <i class="ph-bold ph-camera text-base text-teal-400"></i>
+          <span>Chụp / Tải Ảnh Chứng Từ (POD, EIR, Seal, Vỏ Cont...)</span>
+        </button>
+      </div>
+
       <!-- Live status toast -->
-      <div id="milestoneToast" class="hidden mt-3 p-3 rounded-xl bg-slate-700/80 border border-slate-500 text-slate-100 text-xs font-semibold flex items-center gap-2">
+      <div id="milestoneToast" class="hidden mt-2 p-3 rounded-xl bg-slate-700/80 border border-slate-500 text-slate-100 text-xs font-semibold flex items-center gap-2">
         <i class="ph-bold ph-check-circle text-teal-400 text-base"></i>
         <span id="milestoneToastText">Đã ghi nhận mốc thành công.</span>
       </div>
     </div>
 
-    <!-- 4. CỤM NÚT CHỤP NHANH CHỨNG TỪ (GỌN GÀNG & NỔI BẬT) -->
-    <div class="grid grid-cols-3 gap-2">
-      <button type="button" onclick="openDocModalWithType('Biên bản giao nhận hàng')"
-        class="touch-btn bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col items-center text-center shadow-2xs">
-        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-1">
-          <i class="ph-bold ph-file-text text-lg"></i>
-        </div>
-        <span class="text-xs font-black text-slate-900">Chụp POD</span>
-        <span class="text-[9.5px] text-slate-400 mt-0.5">Biên bản nhận</span>
-      </button>
-
-      <button type="button" onclick="openDocModalWithType('Phiếu EIR Hạ Cont')"
-        class="touch-btn bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col items-center text-center shadow-2xs">
-        <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center mb-1">
-          <i class="ph-bold ph-camera text-lg"></i>
-        </div>
-        <span class="text-xs font-black text-slate-900">Chụp EIR</span>
-        <span class="text-[9.5px] text-slate-400 mt-0.5">Phiếu hạ cont</span>
-      </button>
-
-      <button type="button" onclick="openDocModalWithType('Ảnh giám định vỏ Cont')"
-        class="touch-btn bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col items-center text-center shadow-2xs">
-        <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mb-1">
-          <i class="ph-bold ph-shield-check text-lg"></i>
-        </div>
-        <span class="text-xs font-black text-slate-900">Vỏ Cont / Seal</span>
-        <span class="text-[9.5px] text-slate-400 mt-0.5">Chống đền vỏ</span>
-      </button>
-    </div>
-
-    <!-- 5. BÁO MỐC NHANH (ACCORDION THỦ CÔNG) -->
+    <!-- 4. BÁO MỐC THỦ CÔNG (ACCORDION THU GỌN) -->
     <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200">
       <button type="button" onclick="toggleAllMilestones()" class="w-full flex items-center justify-between text-left">
         <div class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
@@ -622,7 +374,7 @@
       </div>
     </div>
 
-    <!-- 6. NHẬT KÝ MỐC THỜI GIAN (ACCORDION THU GỌN / MỞ RỘNG) -->
+    <!-- 5. NHẬT KÝ MỐC THỜI GIAN (ACCORDION THU GỌN) -->
     <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200">
       <button type="button" onclick="toggleTimelineAccordion()" class="w-full flex items-center justify-between text-left">
         <div class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
@@ -630,12 +382,12 @@
           <span>Nhật Ký Mốc Thời Gian ({{ timelines|length }} mốc)</span>
         </div>
         <div class="flex items-center gap-1 text-slate-400 text-xs">
-          <span id="timelineToggleLabel" class="text-[11px] font-normal">Thu gọn</span>
-          <i id="timelineToggleIcon" class="ph-bold ph-caret-up"></i>
+          <span id="timelineToggleLabel" class="text-[11px] font-normal">Mở xem</span>
+          <i id="timelineToggleIcon" class="ph-bold ph-caret-down"></i>
         </div>
       </button>
 
-      <div id="timelineContentWrapper" class="mt-3 pt-3 border-t border-slate-100">
+      <div id="timelineContentWrapper" class="hidden mt-3 pt-3 border-t border-slate-100">
         <div id="timelineContainer" class="relative pl-7 space-y-3.5 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
           {% for item in timelines %}
           <div class="relative">
@@ -653,7 +405,7 @@
               {% if item.is_done %}text-xs sm:text-sm font-bold text-slate-800
               {% elif item.is_active %}text-sm sm:text-base font-bold text-amber-800
               {% else %}text-xs sm:text-sm font-normal text-slate-400{% endif %}">{{ item.title }}</div>
-            <!-- Badge thời gian (chỉ hiện khi có nội dung) -->
+            <!-- Badge thời gian -->
             {% if item.time_display %}
             <div class="flex items-center gap-1.5 mt-1 text-xs font-bold px-2 py-0.5 rounded-md inline-flex border shadow-2xs
               {% if item.is_done %}text-teal-800 bg-teal-50 border-teal-200/70
@@ -677,7 +429,7 @@
       </div>
     </div>
 
-    <!-- 7. CHI PHÍ ĐÃ KÊ KHAI (ACCORDION THU GỌN / MỞ RỘNG) -->
+    <!-- 6. CHI PHÍ ĐÃ KÊ KHAI (ACCORDION THU GỌN) -->
     <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200">
       <button type="button" onclick="toggleExpenseHistoryAccordion()" class="w-full flex items-center justify-between text-left">
         <div class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
@@ -724,45 +476,287 @@
 
   </main>
 
-  <!-- BOTTOM STICKY ACTION BAR (TĂNG SIZE TO RÕ TIỆN BẤM 1 TAY) -->
+  <!-- BOTTOM STICKY ACTION BAR (CHUẨN 4 NÚT DUY NHẤT: BÁO SỰ CỐ, GỌI ĐIỀU ĐỘ, GỌI NHẬN HÀNG, KÊ CHI PHÍ) -->
   <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 safe-bottom shadow-2xl">
-    <div class="max-w-lg mx-auto px-2 py-2 flex items-center justify-between gap-1">
+    <div class="max-w-lg mx-auto px-2 py-2 grid grid-cols-4 gap-1">
       <!-- 1. Báo Sự Cố SOS (Nút Đỏ Khẩn Cấp) -->
-      <button type="button" onclick="openIncidentModal()" class="flex-1 flex flex-col items-center justify-center py-1.5 text-rose-600 hover:text-rose-700 touch-btn">
+      <button type="button" onclick="openIncidentModal()" class="flex flex-col items-center justify-center py-1.5 text-rose-600 hover:text-rose-700 touch-btn">
         <i class="ph-bold ph-warning-octagon text-2xl mb-0.5 text-rose-600"></i>
         <span class="text-[11px] font-black text-rose-600 tracking-tight">Báo Sự Cố</span>
       </button>
 
       <!-- 2. Gọi Điều Độ -->
-      <a href="tel:{{ dispatcher_phone }}" class="flex-1 flex flex-col items-center justify-center py-1.5 text-slate-700 hover:text-teal-700 touch-btn">
+      <a href="tel:{{ dispatcher_phone }}" class="flex flex-col items-center justify-center py-1.5 text-slate-700 hover:text-teal-700 touch-btn">
         <i class="ph-bold ph-phone-call text-2xl text-teal-600 mb-0.5"></i>
         <span class="text-[11px] font-black tracking-tight">Gọi Điều Độ</span>
       </a>
 
-      <!-- 3. Kê Chi Phí -->
-      <button type="button" onclick="openExpenseModal()" class="flex-1 flex flex-col items-center justify-center py-1.5 text-slate-700 hover:text-teal-700 touch-btn">
+      <!-- 3. Gọi Nhận Hàng (Thủ kho / Khách) -->
+      <a href="tel:{{ consignee_phone }}" class="flex flex-col items-center justify-center py-1.5 text-slate-700 hover:text-teal-700 touch-btn">
+        <i class="ph-bold ph-buildings text-2xl text-blue-600 mb-0.5"></i>
+        <span class="text-[11px] font-black tracking-tight">Gọi Nhận Hàng</span>
+      </a>
+
+      <!-- 4. Kê Chi Phí -->
+      <button type="button" onclick="openExpenseModal()" class="flex flex-col items-center justify-center py-1.5 text-slate-700 hover:text-teal-700 touch-btn">
         <i class="ph-bold ph-receipt text-2xl text-amber-600 mb-0.5"></i>
         <span class="text-[11px] font-black tracking-tight">Kê Chi Phí</span>
-      </button>
-
-      <!-- 4. Chụp Chứng Từ -->
-      <button type="button" onclick="openDocModal()" class="flex-1 flex flex-col items-center justify-center py-1.5 text-slate-700 hover:text-teal-700 touch-btn">
-        <i class="ph-bold ph-camera text-2xl text-emerald-600 mb-0.5"></i>
-        <span class="text-[11px] font-black tracking-tight">Chụp POD</span>
-      </button>
-
-      <!-- 5. Làm Mới -->
-      <button type="button" onclick="window.location.reload()" class="flex-1 flex flex-col items-center justify-center py-1.5 text-slate-700 hover:text-teal-700 touch-btn">
-        <i class="ph-bold ph-arrows-clockwise text-2xl text-slate-500 mb-0.5"></i>
-        <span class="text-[11px] font-black tracking-tight">Tải Lại</span>
       </button>
     </div>
   </nav>
 
-  <!-- MODAL: CHI TIẾT VẬN ĐƠN & CONTAINER (DRAWER / POPUP ĐẦY ĐỦ THÔNG TIN) -->
+  <!-- MODAL 1: LỘ TRÌNH & CHỈ ĐƯỜNG 3 ĐIỂM (DRAWER ĐẦY ĐỦ VỚI 3 NÚT GOOGLE MAPS) -->
+  <div id="routeDetailsModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 max-h-[92vh] flex flex-col shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold shadow-xs">
+            <i class="ph-bold ph-map-trifold text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-slate-900">Lộ Trình & Chỉ Đường (3 Điểm)</h3>
+            <p class="text-xs text-slate-500 font-medium">Bấm "Chỉ đường" để mở Google Maps dẫn đường</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeRouteDetailsModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center touch-btn">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+        <!-- ĐIỂM 1: LẤY CONT / HÀNG -->
+        {% if trip.status == 'CONTAINER_PICKED' or trip.status == 'IN_TRANSIT' or trip.status == 'AT_WAREHOUSE' or trip.status == 'UNLOADING' or trip.status == 'DELIVERED' or trip.status == 'RETURNING_EMPTY' or trip.status == 'COMPLETED' %}
+        <!-- Điểm 1: ĐÃ QUA -->
+        <div class="p-3 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+                <i class="ph-bold ph-check text-xs"></i>
+              </div>
+              <div>
+                <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                  <span>Điểm 1: Lấy Cont / Hàng</span>
+                  <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ XONG</span>
+                </div>
+                <div class="text-xs font-bold text-slate-800 mt-0.5">
+                  {{ trip.pickup_depot|default:trip.pickup_location }}
+                </div>
+              </div>
+            </div>
+            {% if maps_url_pickup != '#' %}
+            <a href="{{ maps_url_pickup }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+              <i class="ph-bold ph-navigation-arrow"></i>
+              <span>Chỉ đường</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <!-- Điểm 1: ACTIVE -->
+        <div class="p-3.5 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
+                1
+              </div>
+              <div>
+                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>Điểm 1: Lấy Cont / Hàng</span>
+                  <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG ĐẾN</span>
+                </div>
+                <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                  {{ trip.pickup_depot|default:trip.pickup_location }}
+                </div>
+                {% if trip.bay_location %}<div class="text-xs text-teal-800 font-medium mt-0.5">Vị trí bãi: <strong class="font-mono font-bold">{{ trip.bay_location }}</strong></div>{% endif %}
+              </div>
+            </div>
+            {% if maps_url_pickup != '#' %}
+            <a href="{{ maps_url_pickup }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
+              <i class="ph-bold ph-navigation-arrow text-sm"></i>
+              <span>Chỉ đường</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- ĐIỂM 2: KHO ĐÓNG / TRẢ HÀNG -->
+        {% if trip.status == 'RETURNING_EMPTY' or trip.status == 'COMPLETED' %}
+        <!-- Điểm 2: ĐÃ QUA -->
+        <div class="p-3 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+                <i class="ph-bold ph-check text-xs"></i>
+              </div>
+              <div>
+                <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                  <span>Điểm 2: Kho Đóng / Trả Hàng</span>
+                  <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ XONG</span>
+                </div>
+                <div class="text-xs font-bold text-slate-800 mt-0.5">
+                  {{ trip.delivery_warehouse|default:trip.warehouse_location }}
+                </div>
+              </div>
+            </div>
+            {% if maps_url_warehouse != '#' %}
+            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+              <i class="ph-bold ph-navigation-arrow"></i>
+              <span>Chỉ đường</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% elif trip.status == 'CONTAINER_PICKED' or trip.status == 'IN_TRANSIT' or trip.status == 'AT_WAREHOUSE' or trip.status == 'UNLOADING' or trip.status == 'DELIVERED' %}
+        <!-- Điểm 2: ACTIVE -->
+        <div class="p-3.5 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
+                2
+              </div>
+              <div>
+                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>Điểm 2: Kho Đóng / Trả Hàng</span>
+                  <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG ĐẾN / TẠI KHO</span>
+                </div>
+                <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                  {{ trip.delivery_warehouse|default:trip.warehouse_location }}
+                </div>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-teal-800 font-medium mt-1">
+                  {% if trip.loading_time %}<div>Hẹn: <strong class="font-bold">{{ trip.loading_time }}</strong></div>{% endif %}
+                  {% if trip.warehouse_dock %}<div>Dock: <strong class="font-bold">{{ trip.warehouse_dock }}</strong></div>{% endif %}
+                </div>
+              </div>
+            </div>
+            {% if maps_url_warehouse != '#' %}
+            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
+              <i class="ph-bold ph-navigation-arrow text-sm"></i>
+              <span>Chỉ đường</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <!-- Điểm 2: PENDING -->
+        <div class="p-3 rounded-2xl border bg-slate-50 border-slate-200 text-slate-400">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+                2
+              </div>
+              <div>
+                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Điểm 2: Kho Đóng / Trả Hàng</div>
+                <div class="text-xs font-semibold text-slate-600 mt-0.5">
+                  {{ trip.delivery_warehouse|default:trip.warehouse_location }}
+                </div>
+              </div>
+            </div>
+            {% if maps_url_warehouse != '#' %}
+            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-medium text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+              <i class="ph-bold ph-navigation-arrow"></i>
+              <span>Chỉ đường</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- ĐIỂM 3: BÃI HẠ VỎ CONT / CẢNG HẠ -->
+        {% if trip.status == 'COMPLETED' %}
+        <!-- Điểm 3: ĐÃ QUA -->
+        <div class="p-3 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+                <i class="ph-bold ph-check text-xs"></i>
+              </div>
+              <div>
+                <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                  <span>Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</span>
+                  <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ HẠ CONT</span>
+                </div>
+                <div class="text-xs font-bold text-slate-800 mt-0.5">
+                  {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
+                </div>
+              </div>
+            </div>
+            {% if maps_url_dropoff != '#' %}
+            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+              <i class="ph-bold ph-navigation-arrow"></i>
+              <span>Chỉ đường</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% elif trip.status == 'RETURNING_EMPTY' %}
+        <!-- Điểm 3: ACTIVE -->
+        <div class="p-3.5 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
+                3
+              </div>
+              <div>
+                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</span>
+                  <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG VỀ BÃI HẠ</span>
+                </div>
+                <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                  {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
+                </div>
+                {% if trip.dropoff_appointment_time %}
+                <div class="text-xs text-indigo-800 font-medium mt-0.5">
+                  Hẹn hạ sau 0h: <strong class="font-bold">{{ trip.dropoff_appointment_time }}</strong>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% if maps_url_dropoff != '#' %}
+            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
+              <i class="ph-bold ph-navigation-arrow text-sm"></i>
+              <span>Chỉ đường</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <!-- Điểm 3: PENDING -->
+        <div class="p-3 rounded-2xl border bg-slate-50 border-slate-200 text-slate-400">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+                3
+              </div>
+              <div>
+                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</div>
+                <div class="text-xs font-semibold text-slate-600 mt-0.5">
+                  {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
+                </div>
+              </div>
+            </div>
+            {% if maps_url_dropoff != '#' %}
+            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-medium text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+              <i class="ph-bold ph-navigation-arrow"></i>
+              <span>Chỉ đường</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="pt-2 shrink-0 border-t border-slate-100">
+        <button type="button" onclick="closeRouteDetailsModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl touch-btn">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: CHI TIẾT VẬN ĐƠN & CONTAINER (DRAWER ĐẦY ĐỦ THÔNG TIN) -->
   <div id="tripDetailsModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 max-h-[92vh] flex flex-col shadow-2xl space-y-4">
-      <!-- Modal Header -->
       <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
         <div class="flex items-center gap-2.5">
           <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold shadow-xs">
@@ -778,7 +772,6 @@
         </button>
       </div>
 
-      <!-- Modal Body (Scrollable) -->
       <div class="flex-1 overflow-y-auto space-y-3.5 pr-1 text-xs">
         <!-- Khối 1: Container 1 & Booking -->
         <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
@@ -917,7 +910,6 @@
         {% endif %}
       </div>
 
-      <!-- Modal Footer -->
       <div class="pt-2 shrink-0 border-t border-slate-100">
         <button type="button" onclick="closeTripDetailsModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl touch-btn">
           Đóng
@@ -927,10 +919,9 @@
   </div>
 
 
-  <!-- MODAL: KÊ KHAI CHI PHÍ PHÁT SINH (MULTI-ROW BATCH ENTRY CHO TÀI XẾ) -->
+  <!-- MODAL 3: KÊ KHAI CHI PHÍ PHÁT SINH (MULTI-ROW BATCH ENTRY CHO TÀI XẾ) -->
   <div id="expenseModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 max-h-[92vh] flex flex-col shadow-2xl space-y-3.5">
-      <!-- Modal Header -->
       <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
         <div class="flex items-center gap-2.5">
           <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold shadow-xs">
@@ -946,7 +937,6 @@
         </button>
       </div>
 
-      <!-- Form Body (Scrollable) -->
       <form id="expenseForm" onsubmit="submitBatchExpenses(event)" class="flex-1 overflow-y-auto space-y-4 pr-1">
         <!-- Danh sách các dòng chi phí -->
         <div id="expenseRowsContainer" class="space-y-3.5">
@@ -981,33 +971,52 @@
     </div>
   </div>
 
-  <!-- MODAL: CHỤP & TẢI LÊN CHỨNG TỪ (POD, EIR, GIÁM ĐỊNH VỎ, SEAL) -->
-  <div id="docModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
+  <!-- MODAL 4: CHỤP & TẢI LÊN CHỨNG TỪ THÔNG MINH (POD, EIR, GIÁM ĐỊNH VỎ, SEAL - HỖ TRỢ CHỤP NHIỀU ẢNH) -->
+  <div id="docModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[92vh] overflow-y-auto shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
             <i class="ph-bold ph-camera text-lg"></i>
           </div>
-          <h3 id="docModalTitle" class="text-base font-bold text-slate-900">Chụp & Trả Ảnh Chứng Từ</h3>
+          <div>
+            <h3 id="docModalTitle" class="text-base font-bold text-slate-900">Chụp & Trả Ảnh Chứng Từ</h3>
+            <p class="text-[11px] text-slate-500">Chụp 1 hoặc nhiều ảnh cùng lúc</p>
+          </div>
         </div>
-        <button type="button" onclick="closeDocModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">
-          <i class="ph-bold ph-x"></i>
+        <button type="button" onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center touch-btn">
+          <i class="ph-bold ph-x text-sm"></i>
         </button>
       </div>
 
       <form id="docForm" onsubmit="submitDoc(event)" class="space-y-3.5">
-        <!-- Loại chứng từ -->
+        <!-- CHIPS CHỌN NHANH LOẠI CHỨNG TỪ -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Loại chứng từ <span class="text-rose-500">*</span></label>
-          <select id="docType" required onchange="onDocTypeChange()" class="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 font-medium">
-            <option value="Biên bản giao nhận hàng">Biên bản giao nhận hàng (POD có chữ ký kho)</option>
-            <option value="Phiếu EIR Hạ Cont">Phiếu EIR Hạ Cont tại Cảng/Bãi</option>
-            <option value="Ảnh giám định vỏ Cont">Giám định vỏ cont lúc nhận (Chống đền vỏ)</option>
-            <option value="Ảnh Niêm Phong Chì (Seal)">Ảnh chụp chì niêm phong đã bấm (Seal)</option>
-            <option value="Phiếu cân xe">Phiếu cân xe / Cân tải trọng</option>
-            <option value="Hóa đơn GTGT">Hóa đơn GTGT / Chứng từ khác</option>
-          </select>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Chọn loại chứng từ chụp: <span class="text-rose-500">*</span></label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button type="button" onclick="selectDocTypeChip('Biên bản giao nhận hàng (POD)')"
+              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-teal-600 bg-teal-50 text-teal-950 font-bold">
+              <i class="ph-bold ph-file-text text-base text-emerald-600"></i>
+              <span>1. POD Giao Nhận</span>
+            </button>
+            <button type="button" onclick="selectDocTypeChip('Phiếu EIR Hạ Cont')"
+              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
+              <i class="ph-bold ph-camera text-base text-sky-600"></i>
+              <span>2. EIR Hạ Cont</span>
+            </button>
+            <button type="button" onclick="selectDocTypeChip('Ảnh giám định vỏ Cont')"
+              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
+              <i class="ph-bold ph-shield-check text-base text-amber-600"></i>
+              <span>3. Vỏ Cont / Seal</span>
+            </button>
+            <button type="button" onclick="selectDocTypeChip('Hóa đơn GTGT')"
+              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
+              <i class="ph-bold ph-receipt text-base text-purple-600"></i>
+              <span>4. Vé BOT / HĐĐT</span>
+            </button>
+          </div>
+          <!-- Hidden select for form value -->
+          <input type="hidden" id="docType" value="Biên bản giao nhận hàng (POD)">
         </div>
 
         <!-- Khối đánh giá tình trạng vỏ cont (chỉ hiện khi chọn Giám định vỏ cont) -->
@@ -1029,20 +1038,26 @@
           </div>
         </div>
 
-        <!-- Chụp ảnh trực tiếp từ Camera -->
+        <!-- Chụp / Chọn ảnh (Hỗ trợ Multiple Files) -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Chụp ảnh từ Camera <span class="text-rose-500">*</span></label>
-          <input type="file" id="docFile" required accept="image/*" capture="camera" onchange="previewDocImage(event)"
+          <label class="block text-xs font-bold text-slate-700 mb-1">Chụp hoặc Chọn ảnh từ máy <span class="text-rose-500">*</span></label>
+          <input type="file" id="docFileInput" multiple accept="image/*" capture="camera" onchange="handleDocFilesSelected(event)"
             class="w-full text-xs text-slate-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-700 file:text-white hover:file:bg-teal-800">
+          <p class="text-[10.5px] text-slate-400 mt-1">Bác tài có thể chụp liên tiếp nhiều hình (mặt trước, mặt sau, số cont...).</p>
         </div>
 
-        <!-- Preview Ảnh Chụp -->
-        <div id="imagePreviewContainer" class="hidden">
-          <div class="text-[11px] text-slate-500 font-medium mb-1">Xem trước ảnh đã chụp:</div>
-          <img id="imagePreview" src="" alt="Preview" class="w-full h-44 object-cover rounded-xl border border-slate-200 shadow-sm">
+        <!-- Preview Danh Sách Nhiều Ảnh Đã Chọn -->
+        <div id="docMultiPreviewContainer" class="hidden space-y-1.5">
+          <div class="flex items-center justify-between text-[11px] text-slate-600 font-bold">
+            <span>Danh sách ảnh đã chụp (<span id="docPhotoCount">0</span> ảnh):</span>
+            <button type="button" onclick="clearAllSelectedPhotos()" class="text-rose-600 hover:text-rose-700 text-[10.5px]">Xóa tất cả</button>
+          </div>
+          <div id="docThumbnailsGrid" class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200">
+            <!-- Thumbnails injected by JS -->
+          </div>
         </div>
 
-        <!-- Container & Seal xác nhận -->
+        <!-- Container & Seal đối chiếu -->
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
             <label class="block text-[11px] font-semibold text-slate-600 mb-1">Số Cont đối chiếu</label>
@@ -1057,11 +1072,11 @@
         </div>
 
         <div class="pt-2">
-          <button type="submit" id="btnSubmitDoc" class="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm rounded-xl shadow-md touch-btn flex items-center justify-center gap-2">
-            <i class="ph-bold ph-upload-simple"></i>
-            <span>Gửi Nghiệm Thu Chứng Từ</span>
+          <button type="submit" id="btnSubmitDoc" class="w-full py-4 bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm rounded-xl shadow-md touch-btn flex items-center justify-center gap-2">
+            <i class="ph-bold ph-upload-simple text-lg"></i>
+            <span id="btnSubmitDocText">GỬI NGHIỆM THU CHỨNG TỪ</span>
           </button>
-          <div class="text-center mt-2">
+          <div class="text-center mt-2.5">
             <button type="button" onclick="closeDocModal(); openSignatureModal();" class="text-xs text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
               <i class="ph-bold ph-signature"></i>
               <span>Hoặc cho Thủ kho ký nhận trực tiếp lên màn hình</span>
@@ -1072,7 +1087,7 @@
     </div>
   </div>
 
-  <!-- MODAL: KÝ NHẬN CẢM ỨNG ĐIỆN TỬ (TOUCHPAD E-SIGNATURE) -->
+  <!-- MODAL 5: KÝ NHẬN CẢM ỨNG ĐIỆN TỬ (TOUCHPAD E-SIGNATURE) -->
   <div id="signatureModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[92vh] overflow-y-auto shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1123,11 +1138,11 @@
       <!-- Nút Xác Nhận Nộp -->
       <div class="flex items-center gap-2 pt-2">
         <button type="button" onclick="closeSignatureModal()"
-          class="touch-btn w-1/3 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
+          class="touch-btn w-1/3 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
           Hủy bỏ
         </button>
         <button type="button" id="btnSubmitSignature" onclick="submitSignature()"
-          class="touch-btn w-2/3 py-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
+          class="touch-btn w-2/3 py-3.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
           <i class="ph-bold ph-check-circle text-base"></i>
           <span>Xác Nhận & Lưu E-POD</span>
         </button>
@@ -1135,7 +1150,7 @@
     </div>
   </div>
 
-  <!-- MODAL: BÁO SỰ CỐ DỌC ĐƯỜNG KHẨN CẤP (SOS) -->
+  <!-- MODAL 6: BÁO SỰ CỐ DỌC ĐƯỜNG KHẨN CẤP (SOS) -->
   <div id="incidentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1151,48 +1166,34 @@
       </div>
 
       <form id="incidentForm" onsubmit="submitIncident(event)" class="space-y-3.5">
-        <!-- Loại sự cố -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Loại sự cố gặp phải <span class="text-rose-500">*</span></label>
-          <select id="incidentType" required class="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-medium">
-            <option value="VEHICLE_BREAKDOWN">Nổ lốp / Hỏng xe / Sự cố kỹ thuật đầu kéo</option>
-            <option value="TRAFFIC_JAM">Kẹt đường nghiêm trọng / Trễ giờ hẹn kho</option>
-            <option value="POLICE_CHECK">Kiểm tra tải trọng / CSGT kiểm tra</option>
-            <option value="WAREHOUSE_ISSUE">Kho từ chối nhận hàng / Quá tải dock bốc dỡ</option>
-            <option value="ACCIDENT">Va quẹt / Sự cố giao thông hiện trường</option>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Loại sự cố <span class="text-rose-500">*</span></label>
+          <select id="incidentType" required class="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-rose-500 font-medium">
+            <option value="VEHICLE_BREAKDOWN">Hỏng xe / Nổ lốp / Sự cố kỹ thuật</option>
+            <option value="TRAFFIC_JAM">Kẹt đường nghiêm trọng / Cháy giờ SI</option>
+            <option value="POLICE_CHECK">CSGT kiểm tra / Cân tải trọng</option>
+            <option value="WAREHOUSE_ISSUE">Kho từ chối / Quá tải dock bốc hàng</option>
+            <option value="ACCIDENT">Va quẹt / Sự cố giao thông</option>
             <option value="OTHER">Sự cố phát sinh khác</option>
           </select>
         </div>
 
-        <!-- Phím gợi ý nhanh -->
         <div>
-          <div class="text-[11px] font-semibold text-slate-500 mb-1.5">Chọn nhanh nội dung:</div>
-          <div class="flex flex-wrap gap-1.5 text-xs">
-            <button type="button" onclick="setIncidentNote('Nổ lốp xe, đang chờ vá lưu động')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">Nổ lốp</button>
-            <button type="button" onclick="setIncidentNote('Kẹt xe cầu Phú Mỹ / Phà Cát Lái')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">Kẹt đường</button>
-            <button type="button" onclick="setIncidentNote('Kho hết chỗ, hẹn chờ dỡ hàng')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">Kho kín dock</button>
-            <button type="button" onclick="setIncidentNote('Hãng tàu đóng bãi, ngưng hạ cont')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">Bãi ngưng nhận</button>
-          </div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Mô tả chi tiết & Vị trí hiện tại <span class="text-rose-500">*</span></label>
+          <textarea id="incidentNotes" required rows="3" placeholder="vd: Nổ lốp tại cầu Đồng Nai hướng về TP.HCM, cần cứu hộ..."
+            class="w-full text-xs rounded-xl border border-slate-300 p-2.5 focus:border-rose-500 font-medium"></textarea>
         </div>
 
-        <!-- Ghi chú chi tiết -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Mô tả sự cố & vị trí hiện tại <span class="text-rose-500">*</span></label>
-          <textarea id="incidentNotes" required rows="3" placeholder="VD: Bể vỏ xe ở ngã tư Bình Chuẩn, đang chờ đội cứu hộ tới vá..."
-            class="w-full text-xs rounded-xl border border-slate-300 p-2.5 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"></textarea>
-        </div>
-
-        <!-- Chụp ảnh hiện trường sự cố -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Ảnh chụp hiện trường (Nếu có)</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Chụp ảnh hiện trường (Nếu có)</label>
           <input type="file" id="incidentPhotoFile" accept="image/*" capture="camera"
-            class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100">
+            class="w-full text-xs text-slate-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-700 file:text-white hover:file:bg-rose-800">
         </div>
 
         <div class="pt-2">
-          <button type="submit" id="btnSubmitIncident" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm rounded-xl shadow-md touch-btn flex items-center justify-center gap-2">
-            <i class="ph-bold ph-warning-octagon"></i>
-            <span>Gửi Cảnh Báo Khẩn Tới Điều Độ</span>
+          <button type="submit" id="btnSubmitIncident" class="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white font-black text-sm rounded-xl shadow-md touch-btn flex items-center justify-center gap-2">
+            <i class="ph-bold ph-warning-octagon text-lg"></i>
+            <span>GỬI CẢNH BÁO KHẨN TỚI ĐIỀU ĐỘ</span>
           </button>
         </div>
       </form>
@@ -1225,7 +1226,7 @@
       return cookieValue || '';
     }
 
-    // 1. BÁO MỐC 1-CHẠM (SOP BƯỚC 6)
+    // 1. BÁO MỐC 1-CHẠM + AUTO RELOAD DỮ LIỆU TỨC THÌ
     async function reportMilestone(milestoneCode, title) {
       if (navigator.vibrate) navigator.vibrate(30);
       if (!confirm(`Xác nhận cập nhật mốc: "${title}"?`)) {
@@ -1259,8 +1260,10 @@
             const badge = document.getElementById('headerStatusBadge');
             if (badge) badge.innerText = data.new_status_label;
           }
-          // Thêm dòng timeline tạm thời
-          appendTimeline(title, data.time || 'Vừa xong');
+          // Auto reload trang sau 600ms để hiển thị chính xác trạng thái tiếp theo
+          setTimeout(() => {
+            window.location.reload();
+          }, 600);
         } else {
           showToast(`Lỗi: ${data.error || 'Không thể cập nhật mốc'}`, false);
         }
@@ -1278,31 +1281,13 @@
       toastText.innerText = text;
       toast.classList.remove('hidden');
       if (isSuccess) {
-        toast.className = "mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-semibold flex items-center gap-2";
+        toast.className = "mt-2 p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-semibold flex items-center gap-2";
       } else {
-        toast.className = "mt-3 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-2";
+        toast.className = "mt-2 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-2";
       }
       setTimeout(() => {
         toast.classList.add('hidden');
       }, 5000);
-    }
-
-    function appendTimeline(title, timeStr) {
-      const c = document.getElementById('timelineContainer');
-      if (!c) return;
-      const el = document.createElement('div');
-      el.className = "relative";
-      el.innerHTML = `
-        <div class="absolute -left-7 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shadow-xs bg-teal-600 text-white ring-4 ring-teal-100">
-          <i class="ph-bold ph-check text-[10px]"></i>
-        </div>
-        <div class="text-xs sm:text-sm font-bold text-slate-800 leading-tight">${title}</div>
-        <div class="flex items-center gap-1.5 mt-1 text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md inline-flex border border-teal-200/70 shadow-2xs">
-          <i class="ph-bold ph-clock text-xs text-teal-600"></i>
-          <span>${timeStr}</span>
-        </div>
-      `;
-      c.prepend(el);
     }
 
     // =========================================================================
@@ -1388,7 +1373,7 @@
             <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">VNĐ</span>
           </div>
 
-          <!-- Phím chọn tiền nhanh lớn bản -->
+          <!-- Phím chọn tiền nhanh -->
           <div class="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 text-xs">
             <button type="button" onclick="setRowAmount(this, 35000)" class="touch-btn px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold shrink-0">35k</button>
             <button type="button" onclick="setRowAmount(this, 50000)" class="touch-btn px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold shrink-0">50k</button>
@@ -1443,7 +1428,6 @@
         const removeBtn = row.querySelector('.btn-remove-row');
         if (badge) badge.innerText = idx + 1;
         if (title) title.innerText = `Khoản chi #${idx + 1}`;
-        // Nếu chỉ có 1 dòng thì ẩn nút xóa để tránh xoá trắng
         if (removeBtn) {
           if (rows.length === 1) removeBtn.classList.add('hidden');
           else removeBtn.classList.remove('hidden');
@@ -1589,7 +1573,7 @@
       }
     }
 
-    // 3. ACCORDION 6 MỐC ĐIỀU VẬN
+    // 3. ACCORDION 9 MỐC ĐIỀU VẬN
     function toggleAllMilestones() {
       const el = document.getElementById('allMilestonesList');
       const icon = document.getElementById('milestoneToggleIcon');
@@ -1607,38 +1591,39 @@
       }
     }
 
-    // 4. MODAL CHỨNG TỪ (POD, EIR, GIÁM ĐỊNH VỎ, SEAL)
+    // =========================================================================
+    // 4. MODAL CHỨNG TỪ THÔNG MINH (POD, EIR, GIÁM ĐỊNH VỎ, SEAL - MULTI-PHOTOS)
+    // =========================================================================
+    let selectedDocFiles = [];
+
     function openDocModal() {
       document.getElementById('docModal').classList.remove('hidden');
-      onDocTypeChange();
     }
     function closeDocModal() {
       document.getElementById('docModal').classList.add('hidden');
     }
-    function openDocModalWithType(type) {
-      openDocModal();
-      const select = document.getElementById('docType');
-      if (select && type) {
-        for (let i = 0; i < select.options.length; i++) {
-          if (select.options[i].value.includes(type) || type.includes(select.options[i].value)) {
-            select.selectedIndex = i;
-            break;
-          }
+
+    function selectDocTypeChip(typeLabel) {
+      document.getElementById('docType').value = typeLabel;
+      const chips = document.querySelectorAll('.doc-type-chip');
+      chips.forEach(chip => {
+        if (chip.innerText.includes(typeLabel) || typeLabel.includes(chip.innerText.trim().slice(3))) {
+          chip.className = "doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-teal-600 bg-teal-50 text-teal-950 font-bold";
+        } else {
+          chip.className = "doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium";
         }
-        onDocTypeChange();
-      }
-    }
-    function onDocTypeChange() {
-      const val = document.getElementById('docType').value;
+      });
+
       const group = document.getElementById('containerConditionGroup');
       if (group) {
-        if (val.includes('giám định') || val.includes('vỏ Cont')) {
+        if (typeLabel.includes('giám định') || typeLabel.includes('Vỏ Cont') || typeLabel.includes('vỏ Cont')) {
           group.classList.remove('hidden');
         } else {
           group.classList.add('hidden');
         }
       }
     }
+
     function toggleDamageDesc(isDamaged) {
       const c = document.getElementById('damageDescContainer');
       if (c) {
@@ -1647,31 +1632,86 @@
       }
     }
 
-    function previewDocImage(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = document.getElementById('imagePreview');
-          const c = document.getElementById('imagePreviewContainer');
-          img.src = e.target.result;
-          c.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
+    function handleDocFilesSelected(event) {
+      const files = Array.from(event.target.files);
+      if (files.length > 0) {
+        selectedDocFiles = selectedDocFiles.concat(files);
+        renderDocThumbnails();
       }
+    }
+
+    function renderDocThumbnails() {
+      const container = document.getElementById('docMultiPreviewContainer');
+      const grid = document.getElementById('docThumbnailsGrid');
+      const countEl = document.getElementById('docPhotoCount');
+      const btnText = document.getElementById('btnSubmitDocText');
+
+      if (!grid || !container) return;
+
+      if (selectedDocFiles.length === 0) {
+        container.classList.add('hidden');
+        grid.innerHTML = '';
+        if (btnText) btnText.innerText = "GỬI NGHIỆM THU CHỨNG TỪ";
+        return;
+      }
+
+      container.classList.remove('hidden');
+      if (countEl) countEl.innerText = selectedDocFiles.length;
+      if (btnText) btnText.innerText = `GỬI NGHIỆM THU (${selectedDocFiles.length} ẢNH)`;
+
+      grid.innerHTML = '';
+      selectedDocFiles.forEach((file, index) => {
+        const thumbCard = document.createElement('div');
+        thumbCard.className = "relative rounded-lg overflow-hidden border border-slate-300 aspect-square bg-slate-200 group";
+
+        const img = document.createElement('img');
+        img.className = "w-full h-full object-cover";
+        img.src = URL.createObjectURL(file);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = "absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow-md touch-btn";
+        deleteBtn.innerHTML = `<i class="ph-bold ph-trash"></i>`;
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          removeSelectedPhoto(index);
+        };
+
+        const idxBadge = document.createElement('span');
+        idxBadge.className = "absolute bottom-1 left-1 px-1.5 py-0.2 rounded bg-slate-900/80 text-white text-[9px] font-bold";
+        idxBadge.innerText = `#${index + 1}`;
+
+        thumbCard.appendChild(img);
+        thumbCard.appendChild(deleteBtn);
+        thumbCard.appendChild(idxBadge);
+        grid.appendChild(thumbCard);
+      });
+    }
+
+    function removeSelectedPhoto(index) {
+      selectedDocFiles.splice(index, 1);
+      renderDocThumbnails();
+    }
+
+    function clearAllSelectedPhotos() {
+      selectedDocFiles = [];
+      const fileInput = document.getElementById('docFileInput');
+      if (fileInput) fileInput.value = '';
+      renderDocThumbnails();
     }
 
     async function submitDoc(event) {
       event.preventDefault();
       const btn = document.getElementById('btnSubmitDoc');
-      const fileInput = document.getElementById('docFile');
-      if (fileInput.files.length === 0) {
-        alert("Vui lòng chụp ảnh chứng từ!");
+      const btnText = document.getElementById('btnSubmitDocText');
+
+      if (selectedDocFiles.length === 0) {
+        alert("Vui lòng chụp hoặc chọn ít nhất một bức ảnh chứng từ!");
         return;
       }
 
       btn.disabled = true;
-      btn.innerText = "Đang tải ảnh lên...";
+      if (btnText) btnText.innerText = `Đang tải lên ${selectedDocFiles.length} ảnh...`;
 
       const docType = document.getElementById('docType').value;
       const contNo = document.getElementById('docContNo').value;
@@ -1681,9 +1721,12 @@
       formData.append('doc_type', docType);
       formData.append('container_no', contNo);
       formData.append('seal_no', sealNo);
-      formData.append('document', fileInput.files[0]);
 
-      if (docType.includes('giám định') || docType.includes('vỏ Cont')) {
+      selectedDocFiles.forEach((file) => {
+        formData.append('documents', file);
+      });
+
+      if (docType.includes('giám định') || docType.includes('Vỏ Cont') || docType.includes('vỏ Cont')) {
         const cond = document.querySelector('input[name="containerCondRadio"]:checked')?.value || 'GOOD';
         const damageNote = document.getElementById('damageDescInput')?.value || '';
         formData.append('container_condition', cond);
@@ -1706,7 +1749,7 @@
         const data = await response.json();
         if (response.ok && data.success) {
           if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
-          alert("Đã gửi ảnh chứng từ nghiệm thu thành công!");
+          alert(`Đã gửi ${selectedDocFiles.length} ảnh chứng từ nghiệm thu thành công!`);
           closeDocModal();
           window.location.reload();
         } else {
@@ -1717,11 +1760,13 @@
         console.error(err);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="ph-bold ph-upload-simple"></i><span>Gửi Nghiệm Thu Chứng Từ</span>`;
+        if (btnText) btnText.innerText = "GỬI NGHIỆM THU CHỨNG TỪ";
       }
     }
 
-    // 4b. MODAL KÝ NHẬN CẢM ỨNG ĐIỆN TỬ (TOUCHPAD E-SIGNATURE)
+    // =========================================================================
+    // 5. MODAL KÝ NHẬN CẢM ỨNG ĐIỆN TỬ (TOUCHPAD E-SIGNATURE)
+    // =========================================================================
     let sigCanvas = null;
     let sigCtx = null;
     let isDrawing = false;
@@ -1736,7 +1781,6 @@
       sigCtx.lineCap = 'round';
       sigCtx.lineJoin = 'round';
 
-      // Mouse events
       sigCanvas.onmousedown = (e) => {
         isDrawing = true;
         hasDrawnSignature = true;
@@ -1753,7 +1797,6 @@
       };
       window.onmouseup = () => { isDrawing = false; };
 
-      // Touch events (Mobile)
       sigCanvas.ontouchstart = (e) => {
         e.preventDefault();
         isDrawing = true;
@@ -1826,13 +1869,12 @@
       btn.innerText = "Đang lưu chữ ký E-POD...";
 
       try {
-        // Chuyển canvas sang Blob ảnh PNG
         const blob = await new Promise(resolve => sigCanvas.toBlob(resolve, 'image/png'));
         const phone = (document.getElementById('signerPhone')?.value || '').trim();
         const noteStr = `Ký điện tử bởi: ${signerName}${phone ? ' - SĐT: ' + phone : ''} lúc ${new Date().toLocaleTimeString('vi-VN')} ${new Date().toLocaleDateString('vi-VN')}`;
 
         const formData = new FormData();
-        formData.append('doc_type', 'Biên bản giao nhận hàng');
+        formData.append('doc_type', 'Biên bản giao nhận hàng (POD)');
         formData.append('document', blob, 'e_pod_signature.png');
         formData.append('notes', noteStr);
         formData.append('signer_name', signerName);
@@ -1865,16 +1907,14 @@
       }
     }
 
-    // 5. MODAL BÁO SỰ CỐ DỌC ĐƯỜNG (SOS KHẨN CẤP)
+    // =========================================================================
+    // 6. MODAL BÁO SỰ CỐ DỌC ĐƯỜNG (SOS KHẨN CẤP)
+    // =========================================================================
     function openIncidentModal() {
       document.getElementById('incidentModal').classList.remove('hidden');
     }
     function closeIncidentModal() {
       document.getElementById('incidentModal').classList.add('hidden');
-    }
-    function setIncidentNote(text) {
-      const area = document.getElementById('incidentNotes');
-      if (area) area.value = text;
     }
 
     async function submitIncident(event) {
@@ -1921,11 +1961,22 @@
         console.error(err);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="ph-bold ph-warning-octagon"></i><span>Gửi Cảnh Báo Khẩn Tới Điều Độ</span>`;
+        btn.innerHTML = `<i class="ph-bold ph-warning-octagon"></i><span>GỬI CẢNH BÁO KHẨN TỚI ĐIỀU ĐỘ</span>`;
       }
     }
 
-    // 0. MODAL CHI TIẾT VẬN ĐƠN & CONTAINER
+    // =========================================================================
+    // 7. MODALS LỘ TRÌNH & CHI TIẾT VẬN ĐƠN
+    // =========================================================================
+    function openRouteDetailsModal() {
+      const modal = document.getElementById('routeDetailsModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+    function closeRouteDetailsModal() {
+      const modal = document.getElementById('routeDetailsModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
     function openTripDetailsModal() {
       const modal = document.getElementById('tripDetailsModal');
       if (modal) modal.classList.remove('hidden');
@@ -1935,7 +1986,7 @@
       if (modal) modal.classList.add('hidden');
     }
 
-    // ACCORDION NHẬT KÝ MỐC THỜI GIAN
+    // ACCORDIONS
     function toggleTimelineAccordion() {
       const wrapper = document.getElementById('timelineContentWrapper');
       const icon = document.getElementById('timelineToggleIcon');
@@ -1953,7 +2004,6 @@
       }
     }
 
-    // ACCORDION LỊCH SỬ CHI PHÍ
     function toggleExpenseHistoryAccordion() {
       const wrapper = document.getElementById('expenseHistoryWrapper');
       const icon = document.getElementById('expenseHistoryToggleIcon');
@@ -1971,7 +2021,7 @@
       }
     }
 
-    // 6. HỖ TRỢ OFFLINE KHI MẤT SÓNG 4G TRONG KHO/BÃI CẢNG
+    // 8. HỖ TRỢ OFFLINE KHI MẤT SÓNG 4G
     window.addEventListener('online', () => {
       showToast("⚡ Đã kết nối lại mạng 4G! Hệ thống sẵn sàng.", true);
     });
