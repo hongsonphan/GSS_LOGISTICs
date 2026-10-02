@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.3.0] - 2026-10-02 (Tối Ưu Toàn Diện Giao Diện Màn Hình Tài Xế & Đồng Bộ 100% HTML Giả Lập Điện Thoại Trên Web Chi Tiết Chuyến)
+
+### 1. Bối Cảnh & Yêu Cầu Người Dùng:
+- **Tối ưu màn hình Tài Xế ngoài hiện trường (`templates/driver_portal.html`):**
+  1. Loại bỏ dòng "Điều độ chính, báo sự cố, gọi" ở card tài xế.
+  2. Gom toàn bộ thông tin chi tiết (Container, Seal, Booking, Khách hàng, Hãng tàu, Hải quan, Cửa dock, Hạn Free DET/DEM, Tạm ứng) vào Modal Popup `[📄 Thông tin Vận Đơn & Container]`, giúp màn hình thoáng đãng, không bị tràn cuộn.
+  3. Chuẩn hóa Lộ trình 3 điểm thông minh: Điểm đã qua (Xanh lá `✓`), Điểm đang đến (Chữ to hơn 1 size, viền teal nổi bật, badge `⚡ ĐANG ĐẾN`, nút sáng), Điểm chưa tới (Màu xám). Cả 3 điểm đều có nút "Chỉ đường" dẫn tới Google Maps.
+  4. Nút hành động Bước tiếp theo (Hero Next Action Button) 1-chạm cực to rõ theo đúng vòng đời máy trạng thái.
+  5. Chuyển "Nhật ký mốc thời gian" và "Chi phí đã kê" sang dạng Accordion đóng/mở tiện dụng.
+  6. Tăng kích thước thanh Bottom Navigation Bar (4 nút to rõ: Chụp ảnh, Kê chi phí, Báo sự cố, Gọi điều độ).
+  7. Hỗ trợ Form kê nhiều dòng chi phí (Batch Multi-row Expense) lưu 1 lần.
+- **Đồng bộ hóa 100% HTML Giả Lập Điện Thoại (`templates/views/view_trip_detail.html` & `static/js/app.js`):**
+  - Cột bên phải trong màn hình Chi tiết chuyến xe (Mobile Simulator) được cập nhật đồng bộ hoàn toàn với giao diện tài xế thực tế, hỗ trợ click mở popup chi tiết vận đơn, mở modal báo sự cố, tương tác các nút 1-chạm và đồng bộ trạng thái lộ trình 3 điểm.
+
+### 2. Các File Đã Thay Đổi:
+- `templates/driver_portal.html`: Tinh gọn layout, dọn dẹp thẻ lặp, tối ưu trải nghiệm hiện trường.
+- `templates/views/view_trip_detail.html`: Nâng cấp giao diện Mobile Simulator và tích hợp Modal Popup Vận đơn & Sự cố.
+- `static/js/app.js`: Nâng cấp `renderDriverMobileApp(trip)`, các hàm điều khiển accordion, popup modal và tương tác simulator.
+- `apps/billing/advance_views.py` & `config/urls.py`: Thêm API Quyết toán gom chuyến tài xế theo Ngày / Bác tài / Đầu xe.
+- `templates/components/modal_batch_driver_settlement.html`: Modal quyết toán hàng loạt cho Điều vận / Kế toán.
+
 ## [2.2.0] - 2026-09-28 (Nâng Cấp Bảo Mật Cổng Tra Cứu Khách Hàng & Mobile Tài Xế: Phân Tách Capability Token, Chuẩn Hóa 6 Mốc B2B, Định Dạng Phần Ngàn & Phóng To Giờ Hành Trình)
 
 ### 1. Bối Cảnh Nghiệp Vụ & Phát Hiện Bảo Mật:
