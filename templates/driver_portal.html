@@ -768,73 +768,54 @@
     </div>
   </nav>
 
-  <!-- MODAL: KÊ KHAI CHI PHÍ PHÁT SINH -->
-  <div id="expenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
-            <i class="ph-bold ph-receipt text-lg"></i>
+  <!-- MODAL: KÊ KHAI CHI PHÍ PHÁT SINH (MULTI-ROW BATCH ENTRY CHO TÀI XẾ) -->
+  <div id="expenseModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 max-h-[92vh] flex flex-col shadow-2xl space-y-3.5">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold shadow-xs">
+            <i class="ph-bold ph-receipt text-2xl"></i>
           </div>
-          <h3 class="text-base font-bold text-slate-900">Kê Khai Chi Phí Hiện Trường</h3>
+          <div>
+            <h3 class="text-base sm:text-lg font-black text-slate-900 leading-tight">Kê Chi Phí Đi Đường</h3>
+            <p class="text-xs text-slate-500 font-medium">Nhập nhiều khoản chi và gửi duyệt cùng lúc</p>
+          </div>
         </div>
-        <button type="button" onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">
-          <i class="ph-bold ph-x"></i>
+        <button type="button" onclick="closeExpenseModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center touch-btn">
+          <i class="ph-bold ph-x text-lg"></i>
         </button>
       </div>
 
-      <form id="expenseForm" onsubmit="submitExpense(event)" class="space-y-3.5">
-        <!-- Loại chi phí -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Loại khoản mục chi phí <span class="text-rose-500">*</span></label>
-          <select id="expCategory" required class="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 font-medium">
-            <option value="TOLL_FEE">Vé cầu đường / BOT</option>
-            <option value="LIFT_ON">Phí Nâng Cont</option>
-            <option value="LIFT_OFF">Phí Hạ Cont</option>
-            <option value="CONTAINER_DEPOSIT">Phí Cược vỏ Cont</option>
-            <option value="WEIGHING">Phí Cân xe</option>
-            <option value="LABOR_STEVEDORING">Cước bốc xếp / Bồi dưỡng kho</option>
-            <option value="OTHER">Chi phí khác phát sinh</option>
-          </select>
+      <!-- Form Body (Scrollable) -->
+      <form id="expenseForm" onsubmit="submitBatchExpenses(event)" class="flex-1 overflow-y-auto space-y-4 pr-1">
+        <!-- Danh sách các dòng chi phí -->
+        <div id="expenseRowsContainer" class="space-y-3.5">
+          <!-- Rendered dynamically by JS -->
         </div>
 
-        <!-- Số tiền -->
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="block text-xs font-bold text-slate-700">Số tiền (VNĐ) <span class="text-rose-500">*</span></label>
-            <span id="expAmountPreview" class="text-xs font-bold text-teal-700"></span>
+        <!-- Nút Thêm Khoản Chi Mới -->
+        <button type="button" onclick="addExpenseRow()" class="touch-btn w-full py-3.5 rounded-2xl border-2 border-dashed border-teal-500/70 bg-teal-50/50 hover:bg-teal-50 text-teal-800 font-bold text-sm flex items-center justify-center gap-2 transition-all">
+          <i class="ph-bold ph-plus-circle text-xl text-teal-600"></i>
+          <span>+ THÊM KHOẢN CHI PHÍ MỚI</span>
+        </button>
+
+        <!-- Khối Tổng Kết Chi Phí To Bản -->
+        <div class="p-4 rounded-2xl bg-slate-900 text-white shadow-md flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">TỔNG CỘNG ĐỢT KÊ NÀY:</span>
+            <span id="batchTotalCount" class="text-xs text-teal-300 font-semibold">1 khoản chi</span>
           </div>
-          <input type="number" id="expAmount" required min="1000" step="1000" placeholder="Ví dụ: 35.000" oninput="formatExpAmountPreview(this.value)"
-            class="w-full text-base font-black text-slate-900 rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
-          
-          <!-- Phím chọn tiền nhanh có định dạng phần ngàn -->
-          <div class="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 text-xs">
-            <button type="button" onclick="setExpAmount(35000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold shrink-0">35.000 đ</button>
-            <button type="button" onclick="setExpAmount(50000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold shrink-0">50.000 đ</button>
-            <button type="button" onclick="setExpAmount(100000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold shrink-0">100.000 đ</button>
-            <button type="button" onclick="setExpAmount(200000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold shrink-0">200.000 đ</button>
-            <button type="button" onclick="setExpAmount(500000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold shrink-0">500.000 đ</button>
+          <div class="text-right">
+            <span id="batchTotalAmount" class="text-2xl font-black text-amber-400 font-mono tracking-tight">0 đ</span>
           </div>
         </div>
 
-        <!-- Tên trạm / Ghi chú -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Ghi chú trạm / lý do phát sinh</label>
-          <input type="text" id="expNotes" placeholder="VD: Trạm BOT Long Thành, Cân bãi Tây Nam..."
-            class="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
-        </div>
-
-        <!-- Chụp ảnh hóa đơn / vé BOT -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Ảnh chụp vé BOT / Biên lai (Không bắt buộc)</label>
-          <input type="file" id="expReceiptFile" accept="image/*" capture="camera"
-            class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
-        </div>
-
-        <div class="pt-2">
-          <button type="submit" id="btnSubmitExpense" class="w-full py-3.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm rounded-xl shadow-md touch-btn flex items-center justify-center gap-2">
-            <i class="ph-bold ph-check"></i>
-            <span>Lưu & Gửi Kế Toán Duyệt</span>
+        <!-- Nút Lưu & Gửi Duyệt To Toàn Màn Hình -->
+        <div class="pt-1 sticky bottom-0 bg-white pb-2">
+          <button type="submit" id="btnSubmitExpense" class="w-full py-4 bg-teal-700 hover:bg-teal-800 text-white font-black text-base rounded-2xl shadow-lg touch-btn flex items-center justify-center gap-2.5">
+            <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
+            <span id="btnSubmitExpenseText">LƯU & GỬI DUYỆT (1 KHOẢN)</span>
           </button>
         </div>
       </form>
@@ -1165,49 +1146,258 @@
       c.prepend(el);
     }
 
-    // 2. MODAL CHI PHÍ
+    // =========================================================================
+    // 2. MODAL KÊ CHI PHÍ ĐI ĐƯỜNG ĐA DÒNG (MULTI-ROW BATCH ENTRY CHO TÀI XẾ)
+    // =========================================================================
+    let expenseRowCounter = 0;
+
+    const EXPENSE_CATEGORIES = [
+      { value: 'TOLL_FEE', label: 'Vé cầu đường / BOT', icon: 'ph-bold ph-ticket' },
+      { value: 'LIFT_ON', label: 'Phí Nâng Cont tại cảng/bãi', icon: 'ph-bold ph-arrow-up' },
+      { value: 'LIFT_OFF', label: 'Phí Hạ Cont tại cảng/bãi', icon: 'ph-bold ph-arrow-down' },
+      { value: 'CONTAINER_DEPOSIT', label: 'Phí Cược vỏ Cont', icon: 'ph-bold ph-shield-check' },
+      { value: 'WEIGHING', label: 'Phí Cân xe tải trọng', icon: 'ph-bold ph-scales' },
+      { value: 'LABOR_STEVEDORING', label: 'Cước bốc xếp / Bồi dưỡng kho', icon: 'ph-bold ph-hand-coins' },
+      { value: 'OTHER', label: 'Chi phí khác phát sinh', icon: 'ph-bold ph-dots-three-circle' }
+    ];
+
     function openExpenseModal() {
-      document.getElementById('expenseModal').classList.remove('hidden');
+      const modal = document.getElementById('expenseModal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+
+      const container = document.getElementById('expenseRowsContainer');
+      if (container && container.children.length === 0) {
+        addExpenseRow();
+      }
+      recalculateBatchExpensesTotal();
     }
+
     function closeExpenseModal() {
-      document.getElementById('expenseModal').classList.add('hidden');
+      const modal = document.getElementById('expenseModal');
+      if (modal) modal.classList.add('hidden');
     }
-    function formatExpAmountPreview(val) {
-      const p = document.getElementById('expAmountPreview');
-      if (!p) return;
-      const num = Number(val);
-      if (!val || isNaN(num) || num <= 0) {
-        p.innerText = '';
+
+    function addExpenseRow(data = {}) {
+      const container = document.getElementById('expenseRowsContainer');
+      if (!container) return;
+
+      expenseRowCounter++;
+      const rowId = `exp-row-${expenseRowCounter}`;
+      const currentIdx = container.children.length + 1;
+
+      const card = document.createElement('div');
+      card.id = rowId;
+      card.className = "expense-row-card bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-3 shadow-2xs relative transition-all";
+
+      const catOptionsHtml = EXPENSE_CATEGORIES.map(c => 
+        `<option value="${c.value}" ${data.category === c.value ? 'selected' : ''}>${c.label}</option>`
+      ).join('');
+
+      card.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-200/70 pb-2">
+          <div class="flex items-center gap-1.5 text-xs font-black text-slate-800">
+            <span class="w-5 h-5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[11px] font-mono row-index-badge">
+              ${currentIdx}
+            </span>
+            <span class="row-title-text">Khoản chi #${currentIdx}</span>
+          </div>
+          <button type="button" onclick="removeExpenseRow('${rowId}')" class="btn-remove-row text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 p-1 rounded-lg hover:bg-rose-50 touch-btn">
+            <i class="ph-bold ph-trash text-sm"></i>
+            <span>Xóa</span>
+          </button>
+        </div>
+
+        <!-- 1. Chọn loại chi phí -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Loại khoản mục <span class="text-rose-500">*</span></label>
+          <select name="exp_category_${expenseRowCounter}" class="row-category-input w-full h-11 text-xs font-bold text-slate-800 rounded-xl border border-slate-300 bg-white px-3 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+            ${catOptionsHtml}
+          </select>
+        </div>
+
+        <!-- 2. Nhập số tiền (Font to + Phím chọn nhanh) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-slate-700">Số tiền (VNĐ) <span class="text-rose-500">*</span></label>
+            <span class="row-amount-preview text-xs font-black text-teal-700 font-mono"></span>
+          </div>
+          <div class="relative">
+            <input type="text" inputmode="numeric" placeholder="VD: 35.000" value="${data.amount ? Number(data.amount).toLocaleString('vi-VN') : ''}"
+              oninput="onExpenseAmountInput(this)"
+              class="row-amount-input w-full h-12 text-lg font-black text-slate-900 rounded-xl border border-slate-300 bg-white px-3.5 pr-12 focus:border-teal-600 focus:ring-1 focus:ring-teal-600 font-mono tabular-nums">
+            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">VNĐ</span>
+          </div>
+
+          <!-- Phím chọn tiền nhanh lớn bản -->
+          <div class="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 text-xs">
+            <button type="button" onclick="setRowAmount(this, 35000)" class="touch-btn px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold shrink-0">35k</button>
+            <button type="button" onclick="setRowAmount(this, 50000)" class="touch-btn px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold shrink-0">50k</button>
+            <button type="button" onclick="setRowAmount(this, 100000)" class="touch-btn px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold shrink-0">100k</button>
+            <button type="button" onclick="setRowAmount(this, 200000)" class="touch-btn px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold shrink-0">200k</button>
+            <button type="button" onclick="setRowAmount(this, 500000)" class="touch-btn px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold shrink-0">500k</button>
+            <button type="button" onclick="setRowAmount(this, 1000000)" class="touch-btn px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-700 font-bold shrink-0">1.000k</button>
+          </div>
+        </div>
+
+        <!-- 3. Tên trạm / Ghi chú -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">Ghi chú trạm / kho / nội dung</label>
+          <input type="text" placeholder="VD: Trạm BOT Long Phước, Bãi Tây Nam..." value="${data.notes || ''}"
+            class="row-notes-input w-full h-10 text-xs font-medium text-slate-800 rounded-xl border border-slate-300 bg-white px-3 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+        </div>
+
+        <!-- 4. Chụp ảnh hóa đơn / vé BOT -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">Chụp ảnh vé / biên lai (Nếu có)</label>
+          <div class="flex items-center gap-2">
+            <input type="file" accept="image/*" capture="camera" onchange="previewRowReceipt(this)"
+              class="row-receipt-file w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-700 file:text-white hover:file:bg-teal-800">
+            <div class="row-receipt-preview hidden w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+              <img src="" alt="Thumbnail" class="w-full h-full object-cover">
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(card);
+      updateRowIndexes();
+      recalculateBatchExpensesTotal();
+    }
+
+    function removeExpenseRow(rowId) {
+      const el = document.getElementById(rowId);
+      if (el) {
+        el.remove();
+        updateRowIndexes();
+        recalculateBatchExpensesTotal();
+      }
+    }
+
+    function updateRowIndexes() {
+      const container = document.getElementById('expenseRowsContainer');
+      if (!container) return;
+      const rows = container.querySelectorAll('.expense-row-card');
+      rows.forEach((row, idx) => {
+        const badge = row.querySelector('.row-index-badge');
+        const title = row.querySelector('.row-title-text');
+        const removeBtn = row.querySelector('.btn-remove-row');
+        if (badge) badge.innerText = idx + 1;
+        if (title) title.innerText = `Khoản chi #${idx + 1}`;
+        // Nếu chỉ có 1 dòng thì ẩn nút xóa để tránh xoá trắng
+        if (removeBtn) {
+          if (rows.length === 1) removeBtn.classList.add('hidden');
+          else removeBtn.classList.remove('hidden');
+        }
+      });
+    }
+
+    function onExpenseAmountInput(inputEl) {
+      let raw = inputEl.value.replace(/\D/g, '');
+      if (!raw) {
+        inputEl.value = '';
+      } else {
+        const num = parseInt(raw, 10);
+        inputEl.value = num.toLocaleString('vi-VN');
+      }
+      recalculateBatchExpensesTotal();
+    }
+
+    function setRowAmount(btnEl, amount) {
+      const card = btnEl.closest('.expense-row-card');
+      if (!card) return;
+      const input = card.querySelector('.row-amount-input');
+      if (input) {
+        input.value = Number(amount).toLocaleString('vi-VN');
+        recalculateBatchExpensesTotal();
+      }
+    }
+
+    function previewRowReceipt(fileInput) {
+      const card = fileInput.closest('.expense-row-card');
+      if (!card) return;
+      const previewContainer = card.querySelector('.row-receipt-preview');
+      const img = previewContainer?.querySelector('img');
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          if (img) img.src = e.target.result;
+          if (previewContainer) previewContainer.classList.remove('hidden');
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        if (previewContainer) previewContainer.classList.add('hidden');
+      }
+    }
+
+    function recalculateBatchExpensesTotal() {
+      const container = document.getElementById('expenseRowsContainer');
+      if (!container) return;
+      const rows = container.querySelectorAll('.expense-row-card');
+      let total = 0;
+      let validCount = 0;
+
+      rows.forEach(row => {
+        const amtStr = row.querySelector('.row-amount-input')?.value || '0';
+        const amt = parseInt(amtStr.replace(/\D/g, ''), 10) || 0;
+        if (amt > 0) {
+          total += amt;
+          validCount++;
+        }
+      });
+
+      const totalEl = document.getElementById('batchTotalAmount');
+      const countEl = document.getElementById('batchTotalCount');
+      const btnText = document.getElementById('btnSubmitExpenseText');
+
+      if (totalEl) totalEl.innerText = `${total.toLocaleString('vi-VN')} đ`;
+      if (countEl) countEl.innerText = `${rows.length} khoản chi (${validCount} có tiền)`;
+      if (btnText) btnText.innerText = `LƯU & GỬI DUYỆT (${rows.length} KHOẢN CHI)`;
+    }
+
+    async function submitBatchExpenses(event) {
+      event.preventDefault();
+      const container = document.getElementById('expenseRowsContainer');
+      if (!container) return;
+
+      const rows = container.querySelectorAll('.expense-row-card');
+      const items = [];
+      const formData = new FormData();
+
+      let validCount = 0;
+      rows.forEach((row, idx) => {
+        const category = row.querySelector('.row-category-input')?.value || 'TOLL_FEE';
+        const amtStr = row.querySelector('.row-amount-input')?.value || '0';
+        const amount = parseInt(amtStr.replace(/\D/g, ''), 10) || 0;
+        const notes = row.querySelector('.row-notes-input')?.value || '';
+        const fileInput = row.querySelector('.row-receipt-file');
+
+        if (amount > 0) {
+          validCount++;
+          items.push({
+            id: idx,
+            category: category,
+            amount: amount,
+            notes: notes
+          });
+
+          if (fileInput && fileInput.files && fileInput.files[0]) {
+            formData.append(`receipt_${idx}`, fileInput.files[0]);
+          }
+        }
+      });
+
+      if (items.length === 0) {
+        alert("Vui lòng nhập số tiền cho ít nhất một khoản chi phí!");
         return;
       }
-      p.innerText = `= ${num.toLocaleString('vi-VN')} đ`;
-    }
-    function setExpAmount(amount) {
-      const inp = document.getElementById('expAmount');
-      if (inp) {
-        inp.value = amount;
-        formatExpAmountPreview(amount);
-      }
-    }
 
-    async function submitExpense(event) {
-      event.preventDefault();
       const btn = document.getElementById('btnSubmitExpense');
+      const btnText = document.getElementById('btnSubmitExpenseText');
       btn.disabled = true;
-      btn.innerText = "Đang lưu chi phí...";
+      if (btnText) btnText.innerText = "Đang lưu và gửi duyệt...";
 
-      const category = document.getElementById('expCategory').value;
-      const amount = document.getElementById('expAmount').value;
-      const notes = document.getElementById('expNotes').value;
-      const fileInput = document.getElementById('expReceiptFile');
-
-      const formData = new FormData();
-      formData.append('category', category);
-      formData.append('amount', amount);
-      formData.append('notes', notes);
-      if (fileInput.files.length > 0) {
-        formData.append('receipt', fileInput.files[0]);
-      }
+      formData.append('expenses_json', JSON.stringify(items));
 
       try {
         const csrfToken = getCsrfToken();
@@ -1224,19 +1414,19 @@
 
         const data = await response.json();
         if (response.ok && data.success) {
-          if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
-          alert(`Đã kê khai chi phí ${Number(amount).toLocaleString('vi-VN')} đ thành công!`);
+          if (navigator.vibrate) navigator.vibrate([50, 60, 50]);
+          alert(data.message || `Đã lưu ${items.length} khoản chi phí thành công!`);
           closeExpenseModal();
           window.location.reload();
         } else {
-          alert(`Lỗi: ${data.error || 'Không thể lưu chi phí'}`);
+          alert(`Lỗi: ${data.error || 'Không thể lưu danh sách chi phí'}`);
         }
       } catch (err) {
         alert("Lỗi kết nối mạng, vui lòng thử lại.");
         console.error(err);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="ph-bold ph-check"></i><span>Lưu & Gửi Kế Toán Duyệt</span>`;
+        recalculateBatchExpensesTotal();
       }
     }
 

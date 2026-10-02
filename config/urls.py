@@ -34,6 +34,8 @@ from apps.billing.advance_views import (
     DispatcherFundActionAPIView,
     DriverAdvanceCreateAPIView,
     DriverAdvanceSettleAPIView,
+    DriverBatchSettlementQueryAPIView,
+    DriverBatchSettlementExecuteAPIView,
 )
 from apps.billing.finance_reports_api import (
     CustomerReimbursablesAPIView,
@@ -114,6 +116,8 @@ urlpatterns = [
     path('api/accounting/dispatcher-funds/<int:pk>/action/', DispatcherFundActionAPIView.as_view(), name='api-dispatcher-fund-action'),
     path('api/accounting/driver-advances/', DriverAdvanceCreateAPIView.as_view(), name='api-driver-advance-create'),
     path('api/accounting/driver-advances/<int:pk>/settle/', DriverAdvanceSettleAPIView.as_view(), name='api-driver-advance-settle'),
+    path('api/accounting/driver-settlements/batch-preview/', DriverBatchSettlementQueryAPIView.as_view(), name='api-driver-batch-settlement-query'),
+    path('api/accounting/driver-settlements/batch-settle/', DriverBatchSettlementExecuteAPIView.as_view(), name='api-driver-batch-settlement-execute'),
     path('api/accounting/reimbursables/', CustomerReimbursablesAPIView.as_view(), name='api-accounting-reimbursables'),
     path('api/accounting/cashbook/', CashBookAPIView.as_view(), name='api-accounting-cashbook'),
     path('api/accounting/subcontractor-settlements/', SubcontractorSettlementsAPIView.as_view(), name='api-accounting-subcontractors'),

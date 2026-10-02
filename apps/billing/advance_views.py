@@ -474,3 +474,284 @@ class DriverAdvanceSettleAPIView(APIView):
             'refund_amount': refund_amount,
             'reimburse_amount': reimburse_amount
         })
+
+
+class DriverBatchSettlementQueryAPIView(APIView):
+    """
+    API Truy vấn & Gom Chuyến Quyết Toán Chi Phí Tài Xế theo Đợt:
+    - Khoảng thời gian: Từ ngày -> Đến ngày
+    - Gom nhóm theo: Tài Xế (Driver), Đầu Xe (Vehicle), hoặc Ngày Chạy (Date)
+    - Tự động đối soát Tạm ứng vs Thực chi và tính chênh lệch tổng hợp.
+    """
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsDispatcherOrAccountant]
+
+    def get(self, request):
+        from_date_str = request.query_params.get('from_date')
+        to_date_str = request.query_params.get('to_date')
+        driver_id = request.query_params.get('driver_id')
+        vehicle_id = request.query_params.get('vehicle_id')
+        group_by = request.query_params.get('group_by', 'driver') # 'driver', 'vehicle', 'date'
+        settle_filter = request.query_params.get('settlement_status', 'ALL') # 'ALL', 'PENDING', 'SETTLED'
+
+        trips_qs = DispatchTrip.objects.filter(is_deleted=False).select_related(
+            'driver', 'vehicle', 'customer', 'booking_order'
+        ).prefetch_related(
+            'expenses', 'driver_advances', 'documents'
+        ).order_by('-loading_date', '-id')
+
+        if from_date_str:
+            try:
+                from_date = datetime.datetime.strptime(from_date_str, '%Y-%m-%d').date()
+                trips_qs = trips_qs.filter(loading_date__gte=from_date)
+            except ValueError:
+                pass
+
+        if to_date_str:
+            try:
+                to_date = datetime.datetime.strptime(to_date_str, '%Y-%m-%d').date()
+                trips_qs = trips_qs.filter(loading_date__lte=to_date)
+            except ValueError:
+                pass
+
+        if driver_id:
+            trips_qs = trips_qs.filter(driver_id=driver_id)
+
+        if vehicle_id:
+            trips_qs = trips_qs.filter(vehicle_id=vehicle_id)
+
+        if settle_filter == 'PENDING':
+            trips_qs = trips_qs.filter(is_expenses_settled=False)
+        elif settle_filter == 'SETTLED':
+            trips_qs = trips_qs.filter(is_expenses_settled=True)
+
+        # Gom nhóm theo group_by
+        grouped_data = {}
+        total_trips_count = 0
+        grand_total_advance = 0
+        grand_total_spent = 0
+
+        for trip in trips_qs:
+            total_trips_count += 1
+            # Tính tổng tạm ứng của chuyến
+            advances_list = [a for a in trip.driver_advances.all() if not a.is_deleted]
+            trip_advance = int(sum(a.amount for a in advances_list))
+
+            # Tính tổng thực chi của chuyến (các khoản hợp lệ chưa bị xóa / reject)
+            expenses_list = [e for e in trip.expenses.all() if not e.is_deleted and e.status != ApprovalStatus.REJECTED]
+            trip_spent = int(sum(e.amount for e in expenses_list))
+
+            trip_diff = trip_advance - trip_spent # >0: tài xế nộp thừa, <0: cty chi bù
+            grand_total_advance += trip_advance
+            grand_total_spent += trip_spent
+
+            trip_item = {
+                'id': trip.id,
+                'trip_code': trip.trip_code,
+                'loading_date': trip.loading_date.strftime('%d/%m/%Y') if trip.loading_date else '-',
+                'loading_date_raw': trip.loading_date.strftime('%Y-%m-%d') if trip.loading_date else '',
+                'customer_name': trip.customer.name if trip.customer else '-',
+                'route': f"{trip.pickup_location or 'Cảng'} ➔ {trip.warehouse_location or 'Kho'}",
+                'container_number': trip.container_number or '-',
+                'seal_number': trip.seal_number or '-',
+                'driver_id': trip.driver_id,
+                'driver_name': (trip.driver.nickname or trip.driver.full_name) if trip.driver else 'Chưa gán tài',
+                'driver_phone': trip.driver.phone_number if trip.driver else '',
+                'vehicle_id': trip.vehicle_id,
+                'license_plate': trip.vehicle.license_plate if trip.vehicle else '-',
+                'status': trip.status,
+                'status_label': trip.get_status_display(),
+                'is_settled': trip.is_expenses_settled,
+                'advance_amount': trip_advance,
+                'actual_spent': trip_spent,
+                'diff': trip_diff,
+                'expenses_count': len(expenses_list),
+                'advances_count': len(advances_list),
+                'has_pod': trip.documents.filter(document_type__in=['POD', 'E_POD', 'DELIVERY_NOTE'], is_verified=True).exists(),
+            }
+
+            # Xác định khóa gom nhóm
+            if group_by == 'vehicle':
+                group_key = f"xe_{trip.vehicle_id or 0}"
+                group_label = f"Đầu xe: {trip.vehicle.license_plate if trip.vehicle else 'Chưa gán xe'}"
+                group_sub = f"Tài xế phụ trách: {(trip.driver.nickname or trip.driver.full_name) if trip.driver else '-'}"
+            elif group_by == 'date':
+                d_str = trip.loading_date.strftime('%d/%m/%Y') if trip.loading_date else 'Không ngày'
+                group_key = f"date_{trip.loading_date.strftime('%Y%m%d') if trip.loading_date else 'none'}"
+                group_label = f"Ngày vận hành: {d_str}"
+                group_sub = f"Các chuyến chạy trong ngày {d_str}"
+            else: # default: driver
+                group_key = f"driver_{trip.driver_id or 0}"
+                driver_name = (trip.driver.nickname or trip.driver.full_name) if trip.driver else 'Chưa gán tài xế'
+                group_label = f"Bác tài: {driver_name}"
+                group_sub = f"SĐT: {trip.driver.phone_number if trip.driver else '-'} | Xe thường trực: {trip.vehicle.license_plate if trip.vehicle else '-'}"
+
+            if group_key not in grouped_data:
+                grouped_data[group_key] = {
+                    'group_key': group_key,
+                    'group_label': group_label,
+                    'group_sub': group_sub,
+                    'driver_id': trip.driver_id,
+                    'vehicle_id': trip.vehicle_id,
+                    'total_trips': 0,
+                    'settled_trips': 0,
+                    'pending_trips': 0,
+                    'total_advance': 0,
+                    'total_spent': 0,
+                    'total_diff': 0,
+                    'trips': []
+                }
+
+            g = grouped_data[group_key]
+            g['total_trips'] += 1
+            if trip.is_expenses_settled:
+                g['settled_trips'] += 1
+            else:
+                g['pending_trips'] += 1
+            g['total_advance'] += trip_advance
+            g['total_spent'] += trip_spent
+            g['total_diff'] += trip_diff
+            g['trips'].append(trip_item)
+
+        groups_list = list(grouped_data.values())
+
+        return Response({
+            'success': True,
+            'summary': {
+                'total_trips': total_trips_count,
+                'total_groups': len(groups_list),
+                'grand_total_advance': grand_total_advance,
+                'grand_total_spent': grand_total_spent,
+                'grand_total_diff': grand_total_advance - grand_total_spent,
+            },
+            'groups': groups_list
+        })
+
+
+class DriverBatchSettlementExecuteAPIView(APIView):
+    """
+    API Thực Thi Quyết Toán Gom Chuyến Hàng Loạt:
+    - Khóa sổ chi phí các chuyến xe được chọn (is_expenses_settled = True).
+    - Quyết toán tất cả các phiếu tạm ứng của các chuyến này.
+    - Tự động tạo bút toán Sổ Quỹ (CashTransaction) cho phần chênh lệch (Chi bù hoặc Thu hồi).
+    """
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsDispatcherOrAccountant]
+
+    def post(self, request):
+        trip_ids = request.data.get('trip_ids', [])
+        if not trip_ids or not isinstance(trip_ids, list):
+            return Response({'error': 'Vui lòng chọn ít nhất một chuyến xe để quyết toán gom'}, status=status.HTTP_400_BAD_REQUEST)
+
+        settlement_notes = request.data.get('settlement_notes', '').strip()
+        payment_method = request.data.get('payment_method', PaymentMethod.BANK)
+        auto_create_cash = request.data.get('auto_create_cash_transaction', True)
+        curr_emp = getattr(request.user, 'employee', None)
+
+        trips = DispatchTrip.objects.filter(id__in=trip_ids, is_deleted=False).select_related('driver', 'vehicle')
+        if not trips.exists():
+            return Response({'error': 'Không tìm thấy các chuyến xe tương ứng'}, status=status.HTTP_404_NOT_FOUND)
+
+        now = timezone.now()
+        total_advance_all = 0
+        total_spent_all = 0
+        settled_trip_codes = []
+
+        with transaction.atomic():
+            for trip in trips:
+                settled_trip_codes.append(trip.trip_code)
+
+                # 1. Khóa sổ chi phí chuyến xe
+                trip.is_expenses_settled = True
+                trip.settled_at = now
+                trip.settled_by = curr_emp
+                trip.advance_settlement_status = 'SETTLED'
+                trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by', 'advance_settlement_status'])
+
+                # 2. Chốt các khoản chi phí của chuyến
+                trip.expenses.filter(is_deleted=False).exclude(status=ApprovalStatus.REJECTED).update(
+                    status=ApprovalStatus.SETTLED
+                )
+
+                # 3. Tính tiền của chuyến
+                advances = trip.driver_advances.filter(is_deleted=False)
+                t_adv = int(sum(a.amount for a in advances))
+                t_exp = int(sum(e.amount for e in trip.expenses.filter(is_deleted=False).exclude(status=ApprovalStatus.REJECTED)))
+                total_advance_all += t_adv
+                total_spent_all += t_exp
+
+                # 4. Quyết toán từng phiếu tạm ứng
+                for adv in advances.filter(status=DriverAdvanceStatus.ADVANCED):
+                    adv.status = DriverAdvanceStatus.SETTLED
+                    adv.actual_spent = t_exp
+                    diff_one = int(adv.amount) - t_exp
+                    if diff_one > 0:
+                        adv.settlement_diff_type = SettlementDiffType.DRIVER_REFUND
+                        adv.refund_amount = diff_one
+                        adv.reimburse_amount = 0
+                    elif diff_one < 0:
+                        adv.settlement_diff_type = SettlementDiffType.COMPANY_REIMBURSE
+                        adv.refund_amount = 0
+                        adv.reimburse_amount = abs(diff_one)
+                    else:
+                        adv.settlement_diff_type = SettlementDiffType.BALANCED
+                        adv.refund_amount = 0
+                        adv.reimburse_amount = 0
+                    adv.settled_at = now
+                    adv.settled_by = curr_emp
+                    adv.settlement_notes = f"Quyết toán gom đợt: {settlement_notes}" if settlement_notes else "Quyết toán gom nhiều chuyến"
+                    adv.save()
+
+            # 5. Xử lý Chênh lệch toàn đợt vào Sổ Quỹ Thu Chi
+            net_diff = total_advance_all - total_spent_all # >0: thu lại tiền thừa, <0: chi trả bù
+            cash_tx_code = ''
+
+            if auto_create_cash and net_diff != 0:
+                today_date = now.date()
+                if net_diff > 0:
+                    # Thu tiền thừa từ tài xế
+                    tx_type = TransactionType.INFLOW
+                    tx_category = CashFlowCategory.ADVANCE_REFUND
+                    tx_amount = net_diff
+                    tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
+                    partner_name = (trips.first().driver.full_name if trips.first().driver else 'Tài xế')
+                    tx_notes = f"Thu hoàn ứng tiền thừa quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
+                else:
+                    # Chi bù tiền vượt ứng cho tài xế
+                    tx_type = TransactionType.OUTFLOW
+                    tx_category = CashFlowCategory.ADVANCE_REIMBURSE
+                    tx_amount = abs(net_diff)
+                    tx_prefix = f"PC-{today_date.strftime('%Y%m')}"
+                    partner_name = (trips.first().driver.full_name if trips.first().driver else 'Tài xế')
+                    tx_notes = f"Chi bù vượt ứng quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
+
+                last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
+                seq = 1
+                if last_tx and last_tx.code.split('-')[-1].isdigit():
+                    seq = int(last_tx.code.split('-')[-1]) + 1
+                cash_tx_code = f"{tx_prefix}-{seq:04d}"
+
+                CashTransaction.objects.create(
+                    code=cash_tx_code,
+                    transaction_type=tx_type,
+                    payment_method=payment_method,
+                    category=tx_category,
+                    amount=tx_amount,
+                    transaction_date=today_date,
+                    partner_type='DRIVER',
+                    partner_name=partner_name,
+                    ref_code=', '.join(settled_trip_codes[:3]),
+                    created_by=curr_emp,
+                    notes=settlement_notes or tx_notes
+                )
+
+        return Response({
+            'success': True,
+            'message': f'Đã quyết toán gom thành công {len(trip_ids)} chuyến xe!',
+            'settled_trips_count': len(trip_ids),
+            'total_advance': total_advance_all,
+            'total_spent': total_spent_all,
+            'net_difference': net_diff,
+            'cash_transaction_code': cash_tx_code
+        })
+

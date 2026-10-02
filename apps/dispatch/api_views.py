@@ -1144,7 +1144,7 @@ class TripDetailAPIView(APIView):
         return self.patch(request, trip_code)
 
 class TripAddExpenseAPIView(APIView):
-    """API thêm khoản mục chi phí phát sinh (kèm thông tin HĐĐT tra cứu)."""
+    """API thêm khoản mục chi phí phát sinh (Hỗ trợ cả Kê Nhiều Dòng Cùng Lúc - Multi-row Batch & Đơn dòng)."""
     permission_classes = [IsTripDriverOrDispatcher]
 
     def post(self, request, trip_code):
@@ -1159,6 +1159,116 @@ class TripAddExpenseAPIView(APIView):
                 'error': 'Chuyến xe đã được Kế toán chốt sổ đối soát, không thể thêm khoản chi phí mới.'
             }, status=status.HTTP_403_FORBIDDEN)
 
+        cat_map = {
+            'LIFT_ON': ExpenseCategory.LIFT_ON,
+            'LIFT_OFF': ExpenseCategory.LIFT_OFF,
+            'CONTAINER_DEPOSIT': ExpenseCategory.CONTAINER_DEPOSIT,
+            'WEIGHING': ExpenseCategory.WEIGHING,
+            'LABOR_STEVEDORING': ExpenseCategory.LABOR_STEVEDORING,
+            'TOLL_FEE': ExpenseCategory.TOLL_FEE,
+            'BOT_TOLL': ExpenseCategory.TOLL_FEE,
+            'OTHER': ExpenseCategory.OTHER,
+            # Old choices mapping
+            'Phí BOT / Cầu đường': ExpenseCategory.TOLL_FEE,
+            'Phí nâng / hạ Cont': ExpenseCategory.LIFT_ON,
+            'Phí neo xe / Lưu bãi': ExpenseCategory.OTHER,
+            'Cước phí bốc xếp': ExpenseCategory.LABOR_STEVEDORING,
+            'Phí bồi dưỡng kho': ExpenseCategory.LABOR_STEVEDORING,
+            'Khác': ExpenseCategory.OTHER,
+        }
+
+        from apps.master_data.models import ExpenseItem
+        from apps.billing.models import TripLegChoice
+
+        expense_item_map = {
+            ExpenseCategory.LIFT_ON: 'LIFT_ON',
+            ExpenseCategory.LIFT_OFF: 'LIFT_OFF',
+            ExpenseCategory.CONTAINER_DEPOSIT: 'CONTAINER_DEPOSIT',
+            ExpenseCategory.WEIGHING: 'WEIGHING',
+            ExpenseCategory.LABOR_STEVEDORING: 'LABOR_STEVEDORING',
+            ExpenseCategory.TOLL_FEE: 'TOLL_BOT',
+            ExpenseCategory.BOT_TOLL: 'TOLL_BOT',
+            ExpenseCategory.LIFT_ON_OFF: 'LIFT_ON',
+            ExpenseCategory.OTHER: 'OTHER_EXPENSE',
+        }
+
+        # Kiểm tra xem có payload dạng mảng nhiều dòng (batch expenses) hay không
+        batch_items = None
+        if 'expenses_json' in request.data:
+            import json
+            try:
+                batch_items = json.loads(request.data['expenses_json'])
+            except Exception:
+                batch_items = None
+        elif 'items' in request.data and isinstance(request.data['items'], list):
+            batch_items = request.data['items']
+        elif 'expenses' in request.data and isinstance(request.data['expenses'], list):
+            batch_items = request.data['expenses']
+
+        if batch_items and isinstance(batch_items, list) and len(batch_items) > 0:
+            # === XỬ LÝ BATCH NHIỀU DÒNG CHI PHÍ ===
+            created_expenses = []
+            total_batch_amount = 0
+
+            with transaction.atomic():
+                for idx, item in enumerate(batch_items):
+                    category_key = item.get('category', 'TOLL_FEE')
+                    try:
+                        amt = int(str(item.get('amount', 0)).replace('.', '').replace(',', '').strip())
+                    except (ValueError, TypeError):
+                        amt = 0
+                    if amt <= 0:
+                        continue
+
+                    notes = item.get('notes', '').strip()
+                    category = cat_map.get(category_key, ExpenseCategory.OTHER)
+                    item_code = expense_item_map.get(category, 'OTHER_EXPENSE')
+                    expense_item = ExpenseItem.objects.filter(code=item_code, is_active=True).first()
+
+                    # File ảnh tương ứng (receipt_0, receipt_1... hoặc file list)
+                    r_file = request.FILES.get(f'receipt_{idx}') or request.FILES.get(f'receipt_{item.get("id", idx)}')
+                    r_path_str = ''
+                    if r_file:
+                        try:
+                            validate_uploaded_document(r_file)
+                            from django.core.files.storage import default_storage
+                            saved_name = default_storage.save(f"receipts/{trip.trip_code}_{sanitize_filename(r_file.name)}", r_file)
+                            r_path_str = f"/media/{saved_name}"
+                        except Exception:
+                            r_file = None
+
+                    exp = TripExpense.objects.create(
+                        trip=trip,
+                        driver=trip.driver,
+                        vehicle=trip.vehicle,
+                        trip_leg=TripLegChoice.ENTIRE,
+                        category=category,
+                        expense_item=expense_item,
+                        amount=amt,
+                        receipt_image_path=r_path_str,
+                        receipt_image=r_file if r_file else None,
+                        status=ApprovalStatus.APPROVED,
+                        company_borne=True,
+                        notes=notes or f"Kê khai chi phí: {dict(ExpenseCategory.choices).get(category, 'Chi phí')}"
+                    )
+                    created_expenses.append(exp)
+                    total_batch_amount += amt
+
+                trip.update_financials()
+
+            if not created_expenses:
+                return Response({'error': 'Không có khoản chi phí hợp lệ nào được cung cấp'}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({
+                'success': True,
+                'message': f'Đã lưu thành công {len(created_expenses)} khoản chi phí với tổng tiền {total_batch_amount:,} đ!',
+                'count': len(created_expenses),
+                'total_amount': total_batch_amount,
+                'cached_expense': trip.cached_expense,
+                'cached_profit': trip.cached_profit,
+            })
+
+        # === XỬ LÝ ĐƠN DÒNG (Single Expense Item) ===
         category_key = request.data.get('category', 'TOLL_FEE')
         amount = int(request.data.get('amount', 0))
         raw_ocr = request.data.get('raw_ocr', '')
@@ -1186,47 +1296,18 @@ class TripAddExpenseAPIView(APIView):
         tax_amount = int(request.data.get('tax_amount', 0))
         amount_before_tax = int(request.data.get('amount_before_tax', amount - tax_amount))
 
-        cat_map = {
-            'LIFT_ON': ExpenseCategory.LIFT_ON,
-            'LIFT_OFF': ExpenseCategory.LIFT_OFF,
-            'CONTAINER_DEPOSIT': ExpenseCategory.CONTAINER_DEPOSIT,
-            'WEIGHING': ExpenseCategory.WEIGHING,
-            'LABOR_STEVEDORING': ExpenseCategory.LABOR_STEVEDORING,
-            'TOLL_FEE': ExpenseCategory.TOLL_FEE,
-            'OTHER': ExpenseCategory.OTHER,
-            # Old choices mapping
-            'Phí BOT / Cầu đường': ExpenseCategory.TOLL_FEE,
-            'Phí nâng / hạ Cont': ExpenseCategory.LIFT_ON,
-            'Phí neo xe / Lưu bãi': ExpenseCategory.OTHER,
-            'Cước phí bốc xếp': ExpenseCategory.LABOR_STEVEDORING,
-            'Phí bồi dưỡng kho': ExpenseCategory.LABOR_STEVEDORING,
-            'Khác': ExpenseCategory.OTHER,
-        }
         category = cat_map.get(category_key, ExpenseCategory.OTHER)
 
         # Map sang master_data.ExpenseItem (Sprint 1)
-        from apps.master_data.models import ExpenseItem
         expense_item_id = request.data.get('expense_item_id')
         expense_item = None
         if expense_item_id:
             expense_item = ExpenseItem.objects.filter(id=expense_item_id, is_active=True).first()
         if not expense_item:
-            expense_item_map = {
-                ExpenseCategory.LIFT_ON: 'LIFT_ON',
-                ExpenseCategory.LIFT_OFF: 'LIFT_OFF',
-                ExpenseCategory.CONTAINER_DEPOSIT: 'CONTAINER_DEPOSIT',
-                ExpenseCategory.WEIGHING: 'WEIGHING',
-                ExpenseCategory.LABOR_STEVEDORING: 'LABOR_STEVEDORING',
-                ExpenseCategory.TOLL_FEE: 'TOLL_BOT',
-                ExpenseCategory.BOT_TOLL: 'TOLL_BOT',
-                ExpenseCategory.LIFT_ON_OFF: 'LIFT_ON',
-                ExpenseCategory.OTHER: 'OTHER_EXPENSE',
-            }
             item_code = expense_item_map.get(category, 'OTHER_EXPENSE')
             expense_item = ExpenseItem.objects.filter(code=item_code, is_active=True).first()
 
         # Phân định Tài xế & Xe theo Chặng (Trip Leg)
-        from apps.billing.models import TripLegChoice
         trip_leg = request.data.get('trip_leg', TripLegChoice.ENTIRE)
         driver_id = request.data.get('driver_id')
         vehicle_id = request.data.get('vehicle_id')

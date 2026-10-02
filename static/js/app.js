@@ -6609,6 +6609,351 @@ async function submitSettleAdvanceForm(e) {
 }
 
 // -------------------------------------------------------------
+// MODAL QUYẾT TOÁN GOM CHUYẾN THEO ĐỢT (BATCH DRIVER SETTLEMENT)
+// -------------------------------------------------------------
+let batchSettlementData = null;
+let batchAllTripsList = [];
+
+function openBatchSettlementModal(prefilledDriverId = null, prefilledVehicleId = null) {
+    const modal = document.getElementById('modal-batch-driver-settlement');
+    if (!modal) return;
+
+    // Thiết lập ngày mặc định (Đầu tháng đến Hôm nay)
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const fromDateInp = document.getElementById('batch-settle-from-date');
+    const toDateInp = document.getElementById('batch-settle-to-date');
+
+    if (fromDateInp && !fromDateInp.value) {
+        fromDateInp.value = firstDayOfMonth.toISOString().slice(0, 10);
+    }
+    if (toDateInp && !toDateInp.value) {
+        toDateInp.value = today.toISOString().slice(0, 10);
+    }
+
+    // Nạp dropdown Tài xế / Xe
+    populateBatchTargetOptions('driver', prefilledDriverId);
+
+    modal.classList.remove('hidden');
+    loadBatchSettlementPreview();
+}
+
+function closeBatchSettlementModal() {
+    const modal = document.getElementById('modal-batch-driver-settlement');
+    if (modal) modal.classList.add('hidden');
+}
+
+function onBatchGroupByChange() {
+    const groupBy = document.getElementById('batch-settle-group-by')?.value || 'driver';
+    populateBatchTargetOptions(groupBy);
+    loadBatchSettlementPreview();
+}
+
+function populateBatchTargetOptions(groupBy, preselectedId = null) {
+    const targetLabel = document.getElementById('batch-settle-target-label');
+    const targetSelect = document.getElementById('batch-settle-target-select');
+    if (!targetSelect) return;
+
+    targetSelect.innerHTML = '<option value="">-- Tất cả --</option>';
+
+    if (groupBy === 'driver') {
+        if (targetLabel) targetLabel.innerText = 'Chọn Bác Tài:';
+        if (window.rawPersonnelList && window.rawPersonnelList.length > 0) {
+            const drivers = window.rawPersonnelList.filter(p => p.role === 'DRIVER' || p.role === 'Lái xe' || p.department === 'Đội Xe');
+            drivers.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.innerText = `${d.full_name} (${d.nickname || d.phone_number || 'Tài xế'})`;
+                if (preselectedId && String(d.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        }
+    } else if (groupBy === 'vehicle') {
+        if (targetLabel) targetLabel.innerText = 'Chọn Đầu Xe:';
+        if (window.rawFleetVehiclesList && window.rawFleetVehiclesList.length > 0) {
+            window.rawFleetVehiclesList.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.innerText = `${v.license_plate} (${v.vehicle_type || 'Đầu kéo'})`;
+                if (preselectedId && String(v.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        }
+    } else {
+        if (targetLabel) targetLabel.innerText = 'Đối tượng:';
+        targetSelect.innerHTML = '<option value="">-- Toàn bộ chuyến xe --</option>';
+    }
+}
+
+async function loadBatchSettlementPreview() {
+    const groupBy = document.getElementById('batch-settle-group-by')?.value || 'driver';
+    const fromDate = document.getElementById('batch-settle-from-date')?.value || '';
+    const toDate = document.getElementById('batch-settle-to-date')?.value || '';
+    const targetId = document.getElementById('batch-settle-target-select')?.value || '';
+
+    let url = `/api/accounting/driver-settlements/batch-preview/?group_by=${groupBy}&from_date=${fromDate}&to_date=${toDate}`;
+    if (groupBy === 'driver' && targetId) url += `&driver_id=${targetId}`;
+    if (groupBy === 'vehicle' && targetId) url += `&vehicle_id=${targetId}`;
+
+    const tbody = document.getElementById('batch-settle-tbody');
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-500 font-medium"><i class="ph-bold ph-spinner ph-spin text-2xl mb-1 block text-teal-600"></i> Đang phân tích và gom dữ liệu chuyến xe...</td></tr>`;
+    }
+
+    try {
+        const res = await fetchWithAuth(url);
+        const data = await res.json();
+        if (res.ok && data.success) {
+            batchSettlementData = data;
+            renderBatchSettlementTable(data);
+        } else {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-rose-500 font-bold">${data.error || 'Không thể tải dữ liệu'}</td></tr>`;
+        }
+    } catch (err) {
+        console.error(err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-rose-500 font-bold">Lỗi kết nối máy chủ</td></tr>`;
+    }
+}
+
+function renderBatchSettlementTable(data) {
+    const tbody = document.getElementById('batch-settle-tbody');
+    const headerInfo = document.getElementById('batch-table-header-info');
+    if (!tbody) return;
+
+    const groups = data.groups || [];
+    batchAllTripsList = [];
+
+    if (groups.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400 font-semibold"><i class="ph-bold ph-info text-2xl mb-1 block"></i> Không có chuyến xe nào trong khoảng thời gian đã chọn.</td></tr>`;
+        if (headerInfo) headerInfo.innerText = 'Hiển thị 0 chuyến';
+        onBatchTripSelectionChange();
+        return;
+    }
+
+    let html = '';
+    let totalTripsInView = 0;
+
+    groups.forEach((group, gIdx) => {
+        const trips = group.trips || [];
+        totalTripsInView += trips.length;
+
+        // Group Header Row
+        html += `
+            <tr class="bg-slate-100/90 font-bold text-slate-800 border-y border-slate-200">
+                <td colspan="10" class="py-2.5 px-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-emerald-700 text-white flex items-center justify-center text-xs font-black">
+                                ${gIdx + 1}
+                            </span>
+                            <span class="text-sm font-black text-slate-900">${group.group_label}</span>
+                            <span class="text-xs text-slate-500 font-normal">(${group.group_sub})</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs">
+                            <span class="text-slate-600 font-medium">Số chuyến: <strong class="text-slate-900">${group.total_trips}</strong></span>
+                            <span class="text-amber-800 font-medium">Tạm ứng: <strong class="font-mono">${formatMoneyVND(group.total_advance)}</strong></span>
+                            <span class="text-teal-800 font-medium">Thực chi: <strong class="font-mono">${formatMoneyVND(group.total_spent)}</strong></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        trips.forEach(t => {
+            batchAllTripsList.push(t);
+            const isSettled = t.is_settled;
+            // Mặc định tick chọn các chuyến chưa quyết toán
+            const isChecked = !isSettled;
+
+            let diffBadge = '';
+            if (t.diff > 0) {
+                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-800 font-mono">+${formatMoneyVND(t.diff)} (Thừa)</span>`;
+            } else if (t.diff < 0) {
+                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 font-mono">-${formatMoneyVND(Math.abs(t.diff))} (Bù)</span>`;
+            } else {
+                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 font-mono">0 đ</span>`;
+            }
+
+            const podBadge = t.has_pod
+                ? `<span class="text-emerald-700 font-bold flex items-center justify-center gap-0.5"><i class="ph-bold ph-check-circle text-xs"></i> Có E-POD</span>`
+                : `<span class="text-amber-600 font-medium flex items-center justify-center gap-0.5"><i class="ph-bold ph-clock text-xs"></i> Chờ nộp</span>`;
+
+            const settleStatusBadge = isSettled
+                ? `<span class="px-2 py-0.5 rounded-md text-[10.5px] font-black bg-emerald-100 text-emerald-800">ĐÃ KHÓA SỔ</span>`
+                : `<span class="px-2 py-0.5 rounded-md text-[10.5px] font-black bg-amber-100 text-amber-800">CHỜ QUYẾT TOÁN</span>`;
+
+            html += `
+                <tr class="hover:bg-slate-50 transition-colors ${isSettled ? 'opacity-70 bg-slate-50/50' : ''}">
+                    <td class="text-center py-2.5 px-3">
+                        <input type="checkbox" data-trip-id="${t.id}" data-advance="${t.advance_amount}" data-spent="${t.actual_spent}"
+                            ${isChecked ? 'checked' : ''} onchange="onBatchTripSelectionChange()"
+                            class="batch-trip-checkbox w-4 h-4 text-emerald-600 rounded cursor-pointer">
+                    </td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-900 font-mono">
+                        <div class="font-bold text-teal-800">${t.trip_code}</div>
+                        <div class="text-[11px] text-slate-500 font-normal">${t.loading_date}</div>
+                    </td>
+                    <td class="py-2.5 px-3">
+                        <div class="font-bold text-slate-800 truncate max-w-[180px]" title="${t.customer_name}">${t.customer_name}</div>
+                        <div class="text-[11px] text-slate-500 truncate max-w-[180px]" title="${t.route}">${t.route}</div>
+                    </td>
+                    <td class="py-2.5 px-3">
+                        <div class="font-bold text-slate-800">${t.driver_name}</div>
+                        <div class="text-[11px] font-mono text-slate-600 bg-amber-50 px-1.5 py-0.2 rounded inline-block border border-amber-200/70">${t.license_plate}</div>
+                    </td>
+                    <td class="py-2.5 px-3 font-mono text-xs">
+                        <div class="font-bold text-slate-700">${t.container_number}</div>
+                        <div class="text-[11px] text-slate-500">${t.seal_number}</div>
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-800 tabular-nums">
+                        ${formatMoneyVND(t.advance_amount)}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono font-bold text-teal-800 tabular-nums">
+                        ${formatMoneyVND(t.actual_spent)}
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        ${diffBadge}
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        ${podBadge}
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        ${settleStatusBadge}
+                    </td>
+                </tr>
+            `;
+        });
+    });
+
+    tbody.innerHTML = html;
+    if (headerInfo) headerInfo.innerText = `Hiển thị ${totalTripsInView} chuyến xe trong ${groups.length} nhóm`;
+    onBatchTripSelectionChange();
+}
+
+function toggleSelectAllBatchTrips(masterCheckbox) {
+    const checkboxes = document.querySelectorAll('.batch-trip-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+    });
+    onBatchTripSelectionChange();
+}
+
+function onBatchTripSelectionChange() {
+    const checkboxes = document.querySelectorAll('.batch-trip-checkbox:checked');
+    let selectedCount = 0;
+    let totalAdvance = 0;
+    let totalSpent = 0;
+
+    checkboxes.forEach(cb => {
+        selectedCount++;
+        totalAdvance += parseInt(cb.getAttribute('data-advance') || '0', 10);
+        totalSpent += parseInt(cb.getAttribute('data-spent') || '0', 10);
+    });
+
+    const netDiff = totalAdvance - totalSpent;
+
+    // Cập nhật 4 thẻ KPI
+    const kpiCount = document.getElementById('batch-kpi-trips-count');
+    const kpiSub = document.getElementById('batch-kpi-trips-sub');
+    const kpiAdv = document.getElementById('batch-kpi-advance-total');
+    const kpiSpent = document.getElementById('batch-kpi-spent-total');
+    const kpiDiffCard = document.getElementById('batch-kpi-diff-card');
+    const kpiDiffTitle = document.getElementById('batch-kpi-diff-title');
+    const kpiDiffAmount = document.getElementById('batch-kpi-diff-amount');
+    const kpiDiffDesc = document.getElementById('batch-kpi-diff-desc');
+
+    const footerCount = document.getElementById('batch-footer-selected-count');
+    const btnSubmitText = document.getElementById('btn-submit-batch-settle-text');
+
+    if (kpiCount) kpiCount.innerText = `${selectedCount} chuyến`;
+    if (kpiSub) kpiSub.innerText = `Trên tổng số ${batchAllTripsList.length} chuyến`;
+    if (kpiAdv) kpiAdv.innerText = formatMoneyVND(totalAdvance);
+    if (kpiSpent) kpiSpent.innerText = formatMoneyVND(totalSpent);
+
+    if (footerCount) footerCount.innerText = selectedCount;
+    if (btnSubmitText) btnSubmitText.innerText = `XÁC NHẬN QUYẾT TOÁN GOM (${selectedCount} CHUYẾN)`;
+
+    if (kpiDiffCard && kpiDiffAmount && kpiDiffDesc && kpiDiffTitle) {
+        if (netDiff > 0) {
+            kpiDiffCard.className = 'p-3.5 rounded-2xl border bg-blue-50/70 border-blue-200 text-blue-900';
+            kpiDiffTitle.innerText = 'TÀI XẾ HOÀN TIỀN THỪA';
+            kpiDiffAmount.className = 'text-xl sm:text-2xl font-black tabular-nums font-heading mt-0.5 text-blue-800';
+            kpiDiffAmount.innerText = `+${formatMoneyVND(netDiff)}`;
+            kpiDiffDesc.innerText = 'Tài xế nộp hoàn lại vào Quỹ';
+        } else if (netDiff < 0) {
+            kpiDiffCard.className = 'p-3.5 rounded-2xl border bg-rose-50/70 border-rose-200 text-rose-900';
+            kpiDiffTitle.innerText = 'CÔNG TY CHI TRẢ BÙ';
+            kpiDiffAmount.className = 'text-xl sm:text-2xl font-black tabular-nums font-heading mt-0.5 text-rose-700';
+            kpiDiffAmount.innerText = `-${formatMoneyVND(Math.abs(netDiff))}`;
+            kpiDiffDesc.innerText = 'Công ty chi bù khoản vượt ứng';
+        } else {
+            kpiDiffCard.className = 'p-3.5 rounded-2xl border bg-emerald-50/70 border-emerald-200 text-emerald-900';
+            kpiDiffTitle.innerText = 'CHÊNH LỆCH ĐỐI SOÁT';
+            kpiDiffAmount.className = 'text-xl sm:text-2xl font-black tabular-nums font-heading mt-0.5 text-emerald-800';
+            kpiDiffAmount.innerText = '0 đ';
+            kpiDiffDesc.innerText = 'Khớp đúng 100%';
+        }
+    }
+}
+
+async function executeBatchSettlementSubmit() {
+    const checkboxes = document.querySelectorAll('.batch-trip-checkbox:checked');
+    const tripIds = [];
+    checkboxes.forEach(cb => {
+        const id = parseInt(cb.getAttribute('data-trip-id'), 10);
+        if (id) tripIds.push(id);
+    });
+
+    if (tripIds.length === 0) {
+        showToast('warning', 'Vui lòng chọn ít nhất một chuyến xe để quyết toán gom!', 'Chưa chọn chuyến');
+        return;
+    }
+
+    if (!confirm(`Xác nhận khóa sổ và quyết toán gom ${tripIds.length} chuyến xe đã chọn?`)) {
+        return;
+    }
+
+    const notes = document.getElementById('batch-settlement-notes')?.value || '';
+    const paymentMethod = document.getElementById('batch-payment-method')?.value || 'BANK';
+    const autoCashbook = document.getElementById('batch-auto-cashbook')?.checked !== false;
+
+    const btn = document.getElementById('btn-submit-batch-settle');
+    const btnText = document.getElementById('btn-submit-batch-settle-text');
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.innerText = 'Đang xử lý quyết toán...';
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/driver-settlements/batch-settle/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                trip_ids: tripIds,
+                settlement_notes: notes,
+                payment_method: paymentMethod,
+                auto_create_cash_transaction: autoCashbook
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message, 'Quyết Toán Gom Thành Công');
+            closeBatchSettlementModal();
+            loadAccountingData();
+            if (typeof loadAccountingAdvancesData === 'function') loadAccountingAdvancesData();
+        } else {
+            showToast('danger', data.error || 'Không thể thực hiện quyết toán gom');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    } finally {
+        if (btn) btn.disabled = false;
+        onBatchTripSelectionChange();
+    }
+}
+
+// -------------------------------------------------------------
 // MODAL TẠO QUỸ TẠM ỨNG ĐIỀU VẬN (COMPANY ➔ DISPATCHER)
 // -------------------------------------------------------------
 function openDispatcherFundModal() {
