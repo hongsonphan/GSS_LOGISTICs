@@ -118,23 +118,23 @@
     </div>
 
     <!-- 2. NÚT GỌN LỘ TRÌNH & CHỈ ĐƯỜNG (CHẠM NỀN: MỞ MODAL 3 ĐIỂM | CHẠM NÚT: MỞ GOOGLE MAPS ĐIỂM HIỆN TẠI) -->
-    <div onclick="openRouteDetailsModal()" class="touch-btn w-full p-3.5 rounded-2xl bg-white hover:bg-teal-50/50 border border-slate-200 shadow-sm flex items-center justify-between transition-all cursor-pointer">
-      <div class="flex items-center gap-2.5 overflow-hidden">
-        <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center text-xl shrink-0 shadow-2xs">
+    <div onclick="openRouteDetailsModal()" class="touch-btn w-full p-4 rounded-2xl bg-white hover:bg-teal-50/50 border border-slate-200 shadow-sm flex items-center justify-between transition-all cursor-pointer">
+      <div class="flex items-center gap-3 overflow-hidden">
+        <div class="w-11 h-11 rounded-2xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center text-2xl shrink-0 shadow-2xs">
           <i class="ph-bold ph-map-pin"></i>
         </div>
         <div class="text-left overflow-hidden">
-          <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
             <span>{{ current_leg_title|default:'Lộ Trình Chuyến Xe' }}</span>
           </div>
-          <div class="text-xs sm:text-sm font-black text-slate-900 truncate mt-0.5">
+          <div class="text-sm sm:text-base font-black text-slate-900 truncate mt-0.5">
             <span class="text-teal-700">{{ current_leg_target_name|default:'Đang cập nhật địa điểm' }}</span>
           </div>
         </div>
       </div>
       {% if current_maps_url and current_maps_url != '#' %}
-      <a href="{{ current_maps_url }}" target="_blank" onclick="event.stopPropagation()" class="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0 shadow-xs touch-btn">
-        <i class="ph-bold ph-navigation-arrow text-sm"></i>
+      <a href="{{ current_maps_url }}" target="_blank" onclick="event.stopPropagation()" class="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shrink-0 shadow-sm touch-btn">
+        <i class="ph-bold ph-navigation-arrow text-base"></i>
         <span>Chỉ đường</span>
       </a>
       {% else %}
@@ -144,35 +144,35 @@
       {% endif %}
     </div>
 
-    <!-- 3. SMART NEXT-ACTION HERO CARD (BƯỚC TIẾP THEO CẦN LÀM - NÚT TO 1 CHẠM & 1 NÚT CHỤP TẬP TRUNG) -->
-    <div id="nextActionCard" class="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-2xl p-4 shadow-lg border border-slate-700 relative overflow-hidden space-y-3.5">
+    <!-- 3. SMART NEXT-ACTION HERO CARD (BƯỚC TIẾP THEO CẦN LÀM - NÚT TO 1 CHẠM & MÀU SẮC TRỰC QUAN CHO TÀI XẾ) -->
+    <div id="nextActionCard" class="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-700 relative overflow-hidden space-y-4">
       <!-- Glow effect -->
       <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-teal-500/20 rounded-full blur-2xl pointer-events-none"></div>
 
       <div class="flex items-center justify-between">
-        <span class="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-extrabold text-amber-400">
-          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span class="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-black text-amber-400">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
           BƯỚC TIẾP THEO CẦN LÀM
         </span>
-        <span class="text-[10px] text-slate-300">Trạng thái: <strong class="text-white">{{ trip.get_status_display }}</strong></span>
+        <span class="text-xs text-slate-300">Trạng thái: <strong class="text-white">{{ trip.get_status_display }}</strong></span>
       </div>
 
       <!-- B1/B2: Chờ xác nhận lệnh -->
       {% if trip.status == 'DRAFT' or trip.status == 'DISPATCHED' %}
       <div class="space-y-3">
-        <div class="text-sm font-bold text-white">Lệnh điều xe đã được gửi đến bạn</div>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <div class="text-base font-bold text-white">Lệnh điều xe đã được gửi đến bạn</div>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
           Vui lòng xác nhận nhận chuyến. Nếu không thể nhận, bấm <strong class="text-rose-300">Từ chối</strong> để điều độ phân xe lại.
         </p>
-        <div class="grid grid-cols-2 gap-2 pt-1">
+        <div class="grid grid-cols-2 gap-2.5 pt-1">
           <button type="button" onclick="reportMilestone('DECLINED_TRIP', 'Tài xế từ chối nhận chuyến')"
-            class="touch-btn py-3.5 rounded-xl border border-rose-500/60 text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-rose-950/50">
-            <i class="ph-bold ph-x-circle text-base"></i>
+            class="touch-btn py-4 rounded-xl border border-rose-500/70 bg-rose-950/40 text-rose-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-rose-950/70">
+            <i class="ph-bold ph-x-circle text-lg"></i>
             <span>Từ Chối</span>
           </button>
           <button type="button" onclick="reportMilestone('ACCEPTED_TRIP', 'Tài xế xác nhận nhận chuyến')"
-            class="touch-btn py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
-            <i class="ph-bold ph-check-circle text-base"></i>
+            class="touch-btn py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg">
+            <i class="ph-bold ph-check-circle text-lg"></i>
             <span>Xác Nhận Nhận Chuyến</span>
           </button>
         </div>
@@ -181,20 +181,20 @@
       <!-- B3: Đã nhận lệnh, chuẩn bị xuất phát -->
       {% elif trip.status == 'ACCEPTED' %}
       <div class="space-y-3">
-        <div class="text-sm font-bold text-white">Đã nhận lệnh — Chuẩn bị xuất phát</div>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <div class="text-base font-bold text-white">Đã nhận lệnh — Chuẩn bị xuất phát</div>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
           Trước khi xuất phát, bác tài hãy chụp ảnh giám định vỏ cont tại bãi để chống đền sửa vỏ khi hạ.
         </p>
         {% if trip.eta_warehouse_time %}
-        <div class="text-[11px] text-teal-300 flex items-center gap-1">
-          <i class="ph-bold ph-clock"></i>
+        <div class="text-xs text-teal-300 flex items-center gap-1.5 font-medium">
+          <i class="ph-bold ph-clock text-sm"></i>
           <span>ETA đến kho: <strong>{{ trip.eta_warehouse_time }}</strong></span>
         </div>
         {% endif %}
         <!-- Nút Xuất Phát Đi (To Bản) -->
         <button type="button" onclick="reportMilestone('DEPARTED', 'Tài xế xuất phát đi lấy cont')"
-          class="touch-btn w-full py-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md">
-          <i class="ph-bold ph-paper-plane-tilt text-lg"></i>
+          class="touch-btn w-full py-4.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg">
+          <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
           <span>XUẤT PHÁT ĐI LẤY CONT / HÀNG</span>
         </button>
       </div>
@@ -202,25 +202,26 @@
       <!-- B4: Đang đi lấy cont -->
       {% elif trip.status == 'CONTAINER_PICKED' %}
       <div class="space-y-3">
-        <div class="text-sm font-bold text-white">Đang trên đường đến kho khách hàng</div>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <div class="text-base font-bold text-white">Đang trên đường đến kho khách hàng</div>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
           Đến cổng <strong class="text-amber-300">{{ trip.warehouse_location }}</strong>, bấm Check-in để hệ thống ghi nhận giờ đến.
         </p>
         {% if trip.eta_warehouse_time %}
-        <div class="text-[11px] text-teal-300 flex items-center gap-1">
-          <i class="ph-bold ph-clock"></i>
+        <div class="text-xs text-teal-300 flex items-center gap-1.5 font-medium">
+          <i class="ph-bold ph-clock text-sm"></i>
           <span>ETA: <strong>{{ trip.eta_warehouse_time }}</strong></span>
         </div>
         {% endif %}
-        <div class="grid grid-cols-2 gap-2">
+        <!-- 2 Nút Màu Sắc Phân Biệt: Cam Cảnh Báo vs Xanh Check-in -->
+        <div class="grid grid-cols-2 gap-2.5">
           <button type="button" onclick="reportMilestone('APPROACHING_WAREHOUSE', 'Báo sắp đến kho 30 phút')"
-            class="touch-btn py-3.5 rounded-xl border border-teal-400/60 text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-teal-950/50">
-            <i class="ph-bold ph-bell-ringing text-base"></i>
+            class="touch-btn py-4 rounded-xl border-2 border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2">
+            <i class="ph-bold ph-bell-ringing text-lg text-amber-400"></i>
             <span>Báo Sắp Đến (30p)</span>
           </button>
           <button type="button" onclick="reportMilestone('ARRIVED_WAREHOUSE', 'Đã đến cổng kho')"
-            class="touch-btn py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
-            <i class="ph-bold ph-map-pin text-base"></i>
+            class="touch-btn py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg">
+            <i class="ph-bold ph-map-pin text-lg"></i>
             <span>Đến Cổng Kho</span>
           </button>
         </div>
@@ -229,13 +230,13 @@
       <!-- B5a: Sắp đến cổng kho -->
       {% elif trip.status == 'IN_TRANSIT' %}
       <div class="space-y-3">
-        <div class="text-sm font-bold text-white">Sắp đến cổng kho — Chuẩn bị Check-in</div>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <div class="text-base font-bold text-white">Sắp đến cổng kho — Chuẩn bị Check-in</div>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
           Vào đến cổng <strong class="text-amber-300">{{ trip.warehouse_location }}</strong>, bấm Check-in ngay để ghi nhận giờ chờ bốc hàng.
         </p>
         <button type="button" onclick="reportMilestone('ARRIVED_WAREHOUSE', 'Đã đến cổng kho')"
-          class="touch-btn w-full py-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md">
-          <i class="ph-bold ph-map-pin text-lg"></i>
+          class="touch-btn w-full py-4.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg">
+          <i class="ph-bold ph-map-pin text-xl"></i>
           <span>ĐÃ ĐẾN CỔNG KHO — CHECK-IN</span>
         </button>
       </div>
@@ -243,13 +244,13 @@
       <!-- B5b: Đang chờ cổng kho gọi vào -->
       {% elif trip.status == 'AT_WAREHOUSE' %}
       <div class="space-y-3">
-        <div class="text-sm font-bold text-white">Đang chờ tại cổng kho</div>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <div class="text-base font-bold text-white">Đang chờ tại cổng kho</div>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
           Khi bảo vệ gọi xe vào{% if trip.warehouse_dock %} <strong class="text-amber-300">Dock {{ trip.warehouse_dock }}</strong>{% endif %}, bấm nút để bắt đầu đóng/dỡ hàng.
         </p>
         <button type="button" onclick="reportMilestone('START_UNLOADING', 'Bắt đầu đóng / dỡ hàng tại dock')"
-          class="touch-btn w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-sm flex items-center justify-center gap-2 shadow-md">
-          <i class="ph-bold ph-package text-lg"></i>
+          class="touch-btn w-full py-4.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg">
+          <i class="ph-bold ph-package text-xl"></i>
           <span>VÀO DOCK — BẮT ĐẦU ĐÓNG / DỠ HÀNG</span>
         </button>
       </div>
@@ -257,19 +258,20 @@
       <!-- B6: Đang đóng/dỡ hàng -->
       {% elif trip.status == 'UNLOADING' %}
       <div class="space-y-3">
-        <div class="text-sm font-bold text-white">Đang đóng / dỡ hàng tại kho</div>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <div class="text-base font-bold text-white">Đang đóng / dỡ hàng tại kho</div>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
           Sau khi xếp hàng xong, chụp Biên bản POD (hoặc cho thủ kho ký điện tử trực tiếp). Bấm nút hoàn tất để chuẩn bị ra cổng.
         </p>
-        <div class="grid grid-cols-2 gap-2">
+        <!-- 2 Nút Màu Sắc Phân Biệt: Xanh Dương Ký vs Xanh Ngọc Hàng Xong -->
+        <div class="grid grid-cols-2 gap-2.5">
           <button type="button" onclick="openSignatureModal()"
-            class="touch-btn py-3 rounded-xl border border-teal-400 text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-teal-950/60">
-            <i class="ph-bold ph-pen-nib text-base"></i>
+            class="touch-btn py-4 rounded-xl border-2 border-sky-400 bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2">
+            <i class="ph-bold ph-pen-nib text-lg text-sky-300"></i>
             <span>Thủ Kho Ký E-POD</span>
           </button>
           <button type="button" onclick="reportMilestone('FINISHED_UNLOADING', 'Đóng / dỡ hàng xong')"
-            class="touch-btn py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md">
-            <i class="ph-bold ph-check text-base"></i>
+            class="touch-btn py-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg">
+            <i class="ph-bold ph-check-circle text-lg"></i>
             <span>Hàng Đã Xong</span>
           </button>
         </div>
@@ -278,13 +280,13 @@
       <!-- B8: POD đã ký, chờ rời kho -->
       {% elif trip.status == 'DELIVERED' %}
       <div class="space-y-3">
-        <div class="text-sm font-bold text-white">Chứng từ đã ký — Sẵn sàng rời kho</div>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <div class="text-base font-bold text-white">Chứng từ đã ký — Sẵn sàng rời kho</div>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
           Bấm khi xe lăn bánh rời khu vực kho, hệ thống ghi nhận giờ ra thực tế.{% if trip.dropoff_appointment_time %}<br><span class="inline-flex items-center gap-1 mt-1"><i class="ph-bold ph-clock-countdown"></i> Hẹn hạ bãi: <strong class="text-amber-300">{{ trip.dropoff_appointment_time }}</strong></span>{% endif %}
         </p>
         <button type="button" onclick="reportMilestone('DEPART_TO_DROPOFF', 'Xe rời kho, vận chuyển về bãi hạ cont')"
-          class="touch-btn w-full py-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md">
-          <i class="ph-bold ph-truck text-lg"></i>
+          class="touch-btn w-full py-4.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg">
+          <i class="ph-bold ph-truck text-xl"></i>
           <span>VẬN CHUYỂN VỀ BÃI HẠ CONT</span>
         </button>
       </div>
@@ -292,19 +294,19 @@
       <!-- B9: Đang kéo về bãi hạ -->
       {% elif trip.status == 'RETURNING_EMPTY' %}
       <div class="space-y-3">
-        <div class="text-sm font-bold text-white">Đang kéo cont về bãi hạ</div>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <div class="text-base font-bold text-white">Đang kéo cont về bãi hạ</div>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
           Nơi hạ: <strong class="text-amber-300">{{ trip.dropoff_location }}</strong>. Cẩu hạ xong → Chụp Phiếu EIR → Bấm xác nhận.{% if trip.dropoff_appointment_time %}<br><span class="inline-flex items-center gap-1 mt-1"><i class="ph-bold ph-clock"></i> Hẹn hạ: <strong class="text-amber-300">{{ trip.dropoff_appointment_time }}</strong></span>{% endif %}
         </p>
         <button type="button" onclick="reportMilestone('DROPOFF_COMPLETED', 'Đã cẩu hạ cont hoàn tất')"
-          class="touch-btn w-full py-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md">
-          <i class="ph-bold ph-anchor text-lg"></i>
+          class="touch-btn w-full py-4.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg">
+          <i class="ph-bold ph-anchor text-xl"></i>
           <span>ĐÃ HẠ CONT — LẤY PHIẾU EIR</span>
         </button>
         {% if not trip.is_overnight_detention %}
         <button type="button" onclick="reportMilestone('OVERNIGHT_WAIT', 'Kho yêu cầu chờ hạ sau 00:00')"
-          class="touch-btn w-full py-2.5 rounded-xl border border-slate-600 text-slate-400 font-medium text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700/50">
-          <i class="ph-bold ph-moon text-sm"></i>
+          class="touch-btn w-full py-3 rounded-xl border border-slate-600 text-slate-300 font-medium text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-slate-700/50">
+          <i class="ph-bold ph-moon text-base text-amber-400"></i>
           <span>Báo Lưu Xe Chờ Hạ Sau 00:00</span>
         </button>
         {% endif %}
@@ -313,19 +315,19 @@
       <!-- B10: Hoàn tất -->
       {% elif trip.status == 'COMPLETED' %}
       <div class="space-y-2 text-center py-2">
-        <div class="w-12 h-12 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto">
-          <i class="ph-bold ph-check-circle text-3xl"></i>
+        <div class="w-14 h-14 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto">
+          <i class="ph-bold ph-check-circle text-4xl"></i>
         </div>
-        <div class="text-base font-black text-teal-300">CHUYẾN XE ĐÃ HOÀN TẤT!</div>
-        <p class="text-xs text-slate-400">Toàn bộ chứng từ và chi phí đã được chuyển cho Điều Độ và Kế Toán đối soát.</p>
+        <div class="text-lg font-black text-teal-300">CHUYẾN XE ĐÃ HOÀN TẤT!</div>
+        <p class="text-xs sm:text-sm text-slate-400">Toàn bộ chứng từ và chi phí đã được chuyển cho Điều Độ và Kế Toán đối soát.</p>
       </div>
       {% endif %}
 
       <!-- NÚT CHỤP TẬP TRUNG DUY NHẤT (CHO CHỌN NHIỀU ẢNH VÀ LOẠI CHỨNG TỪ BÊN TRONG) -->
       <div class="pt-2 border-t border-slate-700/80">
         <button type="button" onclick="openDocModal()"
-          class="touch-btn w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700/90 border border-teal-500/40 text-teal-200 font-bold text-xs flex items-center justify-center gap-2 shadow-sm">
-          <i class="ph-bold ph-camera text-base text-teal-400"></i>
+          class="touch-btn w-full py-3.5 sm:py-4 rounded-2xl bg-slate-800 hover:bg-slate-700/90 border border-teal-500/50 text-teal-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-sm">
+          <i class="ph-bold ph-camera text-xl text-teal-400"></i>
           <span>Chụp / Tải Ảnh Chứng Từ (POD, EIR, Seal, Vỏ Cont...)</span>
         </button>
       </div>
@@ -533,24 +535,24 @@
         <!-- ĐIỂM 1: LẤY CONT / HÀNG -->
         {% if trip.status == 'CONTAINER_PICKED' or trip.status == 'IN_TRANSIT' or trip.status == 'AT_WAREHOUSE' or trip.status == 'UNLOADING' or trip.status == 'DELIVERED' or trip.status == 'RETURNING_EMPTY' or trip.status == 'COMPLETED' %}
         <!-- Điểm 1: ĐÃ QUA -->
-        <div class="p-3 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
+        <div class="p-3.5 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-start gap-2.5">
-              <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+              <div class="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
                 <i class="ph-bold ph-check text-xs"></i>
               </div>
               <div>
-                <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                <div class="text-[10.5px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
                   <span>Điểm 1: Lấy Cont / Hàng</span>
                   <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ XONG</span>
                 </div>
-                <div class="text-xs font-bold text-slate-800 mt-0.5">
+                <div class="text-xs sm:text-sm font-bold text-slate-800 mt-0.5">
                   {{ trip.pickup_depot|default:trip.pickup_location }}
                 </div>
               </div>
             </div>
             {% if maps_url_pickup != '#' %}
-            <a href="{{ maps_url_pickup }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+            <a href="{{ maps_url_pickup }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs sm:text-sm px-3 py-2 rounded-xl shadow-2xs touch-btn">
               <i class="ph-bold ph-navigation-arrow"></i>
               <span>Chỉ đường</span>
             </a>
@@ -559,14 +561,14 @@
         </div>
         {% else %}
         <!-- Điểm 1: ACTIVE -->
-        <div class="p-3.5 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
+        <div class="p-4 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
           <div class="flex items-center justify-between gap-2">
-            <div class="flex items-start gap-2.5">
-              <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
                 1
               </div>
               <div>
-                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider">
+                <div class="text-xs font-black text-teal-800 uppercase tracking-wider">
                   <span>Điểm 1: Lấy Cont / Hàng</span>
                 </div>
                 <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
@@ -576,8 +578,8 @@
               </div>
             </div>
             {% if maps_url_pickup != '#' %}
-            <a href="{{ maps_url_pickup }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
-              <i class="ph-bold ph-navigation-arrow text-sm"></i>
+            <a href="{{ maps_url_pickup }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs sm:text-sm px-3.5 py-2.5 rounded-xl shadow-md touch-btn">
+              <i class="ph-bold ph-navigation-arrow text-base"></i>
               <span>Chỉ đường</span>
             </a>
             {% endif %}
@@ -588,24 +590,24 @@
         <!-- ĐIỂM 2: KHO ĐÓNG / TRẢ HÀNG -->
         {% if trip.status == 'RETURNING_EMPTY' or trip.status == 'COMPLETED' %}
         <!-- Điểm 2: ĐÃ QUA -->
-        <div class="p-3 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
+        <div class="p-3.5 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-start gap-2.5">
-              <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+              <div class="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
                 <i class="ph-bold ph-check text-xs"></i>
               </div>
               <div>
-                <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                <div class="text-[10.5px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
                   <span>Điểm 2: Kho Đóng / Trả Hàng</span>
                   <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ XONG</span>
                 </div>
-                <div class="text-xs font-bold text-slate-800 mt-0.5">
+                <div class="text-xs sm:text-sm font-bold text-slate-800 mt-0.5">
                   {{ trip.delivery_warehouse|default:trip.warehouse_location }}
                 </div>
               </div>
             </div>
             {% if maps_url_warehouse != '#' %}
-            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs sm:text-sm px-3 py-2 rounded-xl shadow-2xs touch-btn">
               <i class="ph-bold ph-navigation-arrow"></i>
               <span>Chỉ đường</span>
             </a>
@@ -614,14 +616,14 @@
         </div>
         {% elif trip.status == 'CONTAINER_PICKED' or trip.status == 'IN_TRANSIT' or trip.status == 'AT_WAREHOUSE' or trip.status == 'UNLOADING' or trip.status == 'DELIVERED' %}
         <!-- Điểm 2: ACTIVE -->
-        <div class="p-3.5 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
+        <div class="p-4 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
           <div class="flex items-center justify-between gap-2">
-            <div class="flex items-start gap-2.5">
-              <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
                 2
               </div>
               <div>
-                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider">
+                <div class="text-xs font-black text-teal-800 uppercase tracking-wider">
                   <span>Điểm 2: Kho Đóng / Trả Hàng</span>
                 </div>
                 <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
@@ -634,8 +636,8 @@
               </div>
             </div>
             {% if maps_url_warehouse != '#' %}
-            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
-              <i class="ph-bold ph-navigation-arrow text-sm"></i>
+            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs sm:text-sm px-3.5 py-2.5 rounded-xl shadow-md touch-btn">
+              <i class="ph-bold ph-navigation-arrow text-base"></i>
               <span>Chỉ đường</span>
             </a>
             {% endif %}
@@ -643,21 +645,21 @@
         </div>
         {% else %}
         <!-- Điểm 2: PENDING -->
-        <div class="p-3 rounded-2xl border bg-slate-50 border-slate-200 text-slate-400">
+        <div class="p-3.5 rounded-2xl border bg-slate-50 border-slate-200 text-slate-400">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-start gap-2.5">
-              <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+              <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
                 2
               </div>
               <div>
-                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Điểm 2: Kho Đóng / Trả Hàng</div>
-                <div class="text-xs font-semibold text-slate-600 mt-0.5">
+                <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Điểm 2: Kho Đóng / Trả Hàng</div>
+                <div class="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5">
                   {{ trip.delivery_warehouse|default:trip.warehouse_location }}
                 </div>
               </div>
             </div>
             {% if maps_url_warehouse != '#' %}
-            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-medium text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+            <a href="{{ maps_url_warehouse }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-medium text-xs px-3 py-2 rounded-xl shadow-2xs touch-btn">
               <i class="ph-bold ph-navigation-arrow"></i>
               <span>Chỉ đường</span>
             </a>
@@ -669,24 +671,24 @@
         <!-- ĐIỂM 3: BÃI HẠ VỎ CONT / CẢNG HẠ -->
         {% if trip.status == 'COMPLETED' %}
         <!-- Điểm 3: ĐÃ QUA -->
-        <div class="p-3 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
+        <div class="p-3.5 rounded-2xl border bg-emerald-50/80 border-emerald-300 text-emerald-950">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-start gap-2.5">
-              <div class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+              <div class="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
                 <i class="ph-bold ph-check text-xs"></i>
               </div>
               <div>
-                <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                <div class="text-[10.5px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
                   <span>Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</span>
                   <span class="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[9.5px]">ĐÃ HẠ CONT</span>
                 </div>
-                <div class="text-xs font-bold text-slate-800 mt-0.5">
+                <div class="text-xs sm:text-sm font-bold text-slate-800 mt-0.5">
                   {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
                 </div>
               </div>
             </div>
             {% if maps_url_dropoff != '#' %}
-            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs sm:text-sm px-3 py-2 rounded-xl shadow-2xs touch-btn">
               <i class="ph-bold ph-navigation-arrow"></i>
               <span>Chỉ đường</span>
             </a>
@@ -695,14 +697,14 @@
         </div>
         {% elif trip.status == 'RETURNING_EMPTY' %}
         <!-- Điểm 3: ACTIVE -->
-        <div class="p-3.5 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
+        <div class="p-4 rounded-2xl border-2 bg-teal-50 border-teal-600 text-teal-950 shadow-xs">
           <div class="flex items-center justify-between gap-2">
-            <div class="flex items-start gap-2.5">
-              <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-sm mt-0.5 shrink-0 ring-4 ring-teal-200">
                 3
               </div>
               <div>
-                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider">
+                <div class="text-xs font-black text-teal-800 uppercase tracking-wider">
                   <span>Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</span>
                 </div>
                 <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
@@ -716,8 +718,8 @@
               </div>
             </div>
             {% if maps_url_dropoff != '#' %}
-            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-3 py-2 rounded-xl shadow-md touch-btn">
-              <i class="ph-bold ph-navigation-arrow text-sm"></i>
+            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs sm:text-sm px-3.5 py-2.5 rounded-xl shadow-md touch-btn">
+              <i class="ph-bold ph-navigation-arrow text-base"></i>
               <span>Chỉ đường</span>
             </a>
             {% endif %}
@@ -725,21 +727,21 @@
         </div>
         {% else %}
         <!-- Điểm 3: PENDING -->
-        <div class="p-3 rounded-2xl border bg-slate-50 border-slate-200 text-slate-400">
+        <div class="p-3.5 rounded-2xl border bg-slate-50 border-slate-200 text-slate-400">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-start gap-2.5">
-              <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
+              <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs mt-0.5 shrink-0">
                 3
               </div>
               <div>
-                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</div>
-                <div class="text-xs font-semibold text-slate-600 mt-0.5">
+                <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</div>
+                <div class="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5">
                   {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
                 </div>
               </div>
             </div>
             {% if maps_url_dropoff != '#' %}
-            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-medium text-xs px-2.5 py-1.5 rounded-lg shadow-2xs touch-btn">
+            <a href="{{ maps_url_dropoff }}" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-medium text-xs px-3 py-2 rounded-xl shadow-2xs touch-btn">
               <i class="ph-bold ph-navigation-arrow"></i>
               <span>Chỉ đường</span>
             </a>
@@ -995,40 +997,40 @@
       <form id="docForm" onsubmit="submitDoc(event)" class="space-y-3.5">
         <!-- CHIPS CHỌN NHANH LOẠI CHỨNG TỪ (3 DÒNG X 2 Ô = 6 LOẠI THEO CHU TRÌNH THỰC TẾ) -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">Chọn loại chứng từ chụp: <span class="text-rose-500">*</span></label>
-          <div class="grid grid-cols-2 gap-2 text-xs">
+          <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2">Chọn loại chứng từ chụp: <span class="text-rose-500">*</span></label>
+          <div class="grid grid-cols-2 gap-2.5 text-xs sm:text-sm">
             <!-- Dòng 1: Lấy cont / Cảng -->
             <button type="button" data-val="Ảnh giám định vỏ Cont" onclick="selectDocTypeChip('Ảnh giám định vỏ Cont', this)"
-              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
-              <i class="ph-bold ph-shield-check text-base text-amber-600"></i>
-              <span>1. Giám định Vỏ Cont</span>
+              class="doc-type-chip p-3.5 sm:p-4 rounded-2xl border text-left flex items-center gap-2.5 min-h-[62px] border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 font-medium touch-btn">
+              <i class="ph-bold ph-shield-check text-xl sm:text-2xl text-amber-600 shrink-0"></i>
+              <span class="leading-tight">1. Giám định Vỏ Cont</span>
             </button>
             <button type="button" data-val="Phiếu EIR Lấy Cont" onclick="selectDocTypeChip('Phiếu EIR Lấy Cont', this)"
-              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
-              <i class="ph-bold ph-arrow-circle-up text-base text-teal-600"></i>
-              <span>2. Phiếu EIR Lấy Cont</span>
+              class="doc-type-chip p-3.5 sm:p-4 rounded-2xl border text-left flex items-center gap-2.5 min-h-[62px] border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 font-medium touch-btn">
+              <i class="ph-bold ph-arrow-circle-up text-xl sm:text-2xl text-teal-600 shrink-0"></i>
+              <span class="leading-tight">2. Phiếu EIR Lấy Cont</span>
             </button>
             <!-- Dòng 2: Tại kho & Niêm phong -->
             <button type="button" data-val="Biên bản giao nhận hàng (POD)" onclick="selectDocTypeChip('Biên bản giao nhận hàng (POD)', this)"
-              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-teal-600 bg-teal-50 text-teal-950 font-bold shadow-2xs">
-              <i class="ph-bold ph-file-text text-base text-emerald-600"></i>
-              <span>3. Biên bản POD Giao Nhận</span>
+              class="doc-type-chip p-3.5 sm:p-4 rounded-2xl border-2 text-left flex items-center gap-2.5 min-h-[62px] border-teal-600 bg-teal-50 text-teal-950 font-black shadow-xs touch-btn">
+              <i class="ph-bold ph-file-text text-xl sm:text-2xl text-emerald-600 shrink-0"></i>
+              <span class="leading-tight">3. Biên bản POD Giao Nhận</span>
             </button>
             <button type="button" data-val="Ảnh Niêm Phong Chì (Seal)" onclick="selectDocTypeChip('Ảnh Niêm Phong Chì (Seal)', this)"
-              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
-              <i class="ph-bold ph-seal text-base text-blue-600"></i>
-              <span>4. Ảnh Chì (Seal)</span>
+              class="doc-type-chip p-3.5 sm:p-4 rounded-2xl border text-left flex items-center gap-2.5 min-h-[62px] border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 font-medium touch-btn">
+              <i class="ph-bold ph-seal text-xl sm:text-2xl text-blue-600 shrink-0"></i>
+              <span class="leading-tight">4. Ảnh Chì (Seal)</span>
             </button>
             <!-- Dòng 3: Hạ cont & Chi phí phát sinh -->
             <button type="button" data-val="Phiếu EIR Hạ Cont" onclick="selectDocTypeChip('Phiếu EIR Hạ Cont', this)"
-              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
-              <i class="ph-bold ph-arrow-circle-down text-base text-sky-600"></i>
-              <span>5. Phiếu EIR Hạ Cont</span>
+              class="doc-type-chip p-3.5 sm:p-4 rounded-2xl border text-left flex items-center gap-2.5 min-h-[62px] border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 font-medium touch-btn">
+              <i class="ph-bold ph-arrow-circle-down text-xl sm:text-2xl text-sky-600 shrink-0"></i>
+              <span class="leading-tight">5. Phiếu EIR Hạ Cont</span>
             </button>
             <button type="button" data-val="Hóa đơn GTGT" onclick="selectDocTypeChip('Hóa đơn GTGT', this)"
-              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
-              <i class="ph-bold ph-receipt text-base text-purple-600"></i>
-              <span>6. Vé BOT / Hóa đơn</span>
+              class="doc-type-chip p-3.5 sm:p-4 rounded-2xl border text-left flex items-center gap-2.5 min-h-[62px] border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 font-medium touch-btn">
+              <i class="ph-bold ph-receipt text-xl sm:text-2xl text-purple-600 shrink-0"></i>
+              <span class="leading-tight">6. Vé BOT / Hóa đơn</span>
             </button>
           </div>
           <!-- Hidden select for form value -->
@@ -1624,9 +1626,9 @@
       const chips = document.querySelectorAll('.doc-type-chip');
       chips.forEach(chip => {
         if (chip === btn || chip.getAttribute('data-val') === typeLabel) {
-          chip.className = "doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-teal-600 bg-teal-50 text-teal-950 font-bold shadow-2xs";
+          chip.className = "doc-type-chip p-3.5 sm:p-4 rounded-2xl border-2 text-left flex items-center gap-2.5 min-h-[62px] border-teal-600 bg-teal-50 text-teal-950 font-black shadow-xs touch-btn";
         } else {
-          chip.className = "doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium";
+          chip.className = "doc-type-chip p-3.5 sm:p-4 rounded-2xl border text-left flex items-center gap-2.5 min-h-[62px] border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 font-medium touch-btn";
         }
       });
 
