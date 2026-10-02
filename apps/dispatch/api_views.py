@@ -975,6 +975,34 @@ class TripDetailAPIView(APIView):
             except (ValueError, TypeError):
                 pass
 
+        # Cập nhật 7 Mốc thời gian vận chuyển & kho khách hàng (Chuẩn bảng điều độ Excel)
+        if 'eta_warehouse_time' in data:
+            trip.eta_warehouse_time = str(data['eta_warehouse_time']).strip()
+        if 'warehouse_call_in_time' in data:
+            trip.warehouse_call_in_time = str(data['warehouse_call_in_time']).strip()
+        if 'actual_gate_in_time' in data:
+            trip.actual_gate_in_time = str(data['actual_gate_in_time']).strip()
+            if not trip.actual_gate_in_at and trip.actual_gate_in_time and trip.actual_gate_in_time != '-':
+                trip.actual_gate_in_at = timezone.now()
+        if 'warehouse_call_out_time' in data:
+            trip.warehouse_call_out_time = str(data['warehouse_call_out_time']).strip()
+        if 'actual_gate_out_time' in data:
+            trip.actual_gate_out_time = str(data['actual_gate_out_time']).strip()
+            if not trip.actual_gate_out_at and trip.actual_gate_out_time and trip.actual_gate_out_time != '-':
+                trip.actual_gate_out_at = timezone.now()
+        if 'warehouse_dock' in data:
+            trip.warehouse_dock = str(data['warehouse_dock']).strip()
+        if 'commercial_invoice' in data:
+            trip.commercial_invoice = str(data['commercial_invoice']).strip()
+        if 'loading_time' in data:
+            trip.loading_time = str(data['loading_time']).strip()
+        if 'loading_date' in data and data['loading_date']:
+            try:
+                from datetime import datetime
+                trip.loading_date = datetime.strptime(str(data['loading_date']).strip(), '%Y-%m-%d').date()
+            except Exception:
+                pass
+
         # Cập nhật trạng thái chuyến xe (nếu có yêu cầu)
         if 'status' in data and data['status']:
             target_status = str(data['status']).strip()
@@ -1057,9 +1085,14 @@ class TripDetailAPIView(APIView):
                     is_on_behalf_of_customer=False,
                     notes=f"Phụ cấp lưu đêm trực xe sau 0h ({trip.overnight_wait_hours}h)"
                 )
-            trip.update_financials()
-
         trip.save()
+
+        # Đồng bộ lại 10 bước tiến độ điều vận theo dữ liệu thời gian mới
+        try:
+            from apps.dispatch.timeline_service import sync_trip_10_step_timeline
+            sync_trip_10_step_timeline(trip)
+        except Exception:
+            pass
 
         # Ghi log mốc thời gian vào Timeline nếu có
         now_str = timezone.now().strftime('%H:%M %d/%m')
