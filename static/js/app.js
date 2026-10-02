@@ -1430,18 +1430,27 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         // --- RENDER TIẾN ĐỘ THỰC HIỆN (QUY TRÌNH 10 BƯỚC) DẠNG LƯỚI BẢNG CHUẨN ---
         const tContainer = document.getElementById('detail-timeline');
         if (tContainer) {
-            tContainer.innerHTML = '';
             const timelineList = trip.timeline || [];
             if (timelineList.length === 0) {
-                tContainer.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="py-8 text-center text-slate-400 text-xs italic">
+                if (tContainer.tagName === 'TBODY') {
+                    tContainer.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-slate-400 text-xs italic">
+                                <i class="ph ph-clock-counter-clockwise text-2xl text-slate-300 block mb-1"></i>
+                                Đang khởi tạo các mốc tiến độ điều vận...
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tContainer.innerHTML = `
+                        <div class="py-8 text-center text-slate-400 text-xs italic">
                             <i class="ph ph-clock-counter-clockwise text-2xl text-slate-300 block mb-1"></i>
                             Đang khởi tạo các mốc tiến độ điều vận...
-                        </td>
-                    </tr>
-                `;
+                        </div>
+                    `;
+                }
             } else {
+                let rowsHtml = '';
                 timelineList.forEach(item => {
                     let rowClass = 'hover:bg-slate-50/60 transition-colors';
                     let iconHtml = `<div class="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-normal mx-auto">${item.step}</div>`;
@@ -1478,7 +1487,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                         docsHtml = formattedDocs;
                     }
 
-                    tContainer.innerHTML += `
+                    rowsHtml += `
                         <tr class="${rowClass}">
                             <td class="py-3 px-3 text-center align-top">
                                 ${iconHtml}
@@ -1507,6 +1516,26 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                         </tr>
                     `;
                 });
+
+                if (tContainer.tagName === 'TBODY') {
+                    tContainer.innerHTML = rowsHtml;
+                } else {
+                    tContainer.innerHTML = `
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-y border-slate-200 bg-slate-50 text-[11px] font-bold text-slate-600 uppercase tracking-wider font-heading">
+                                    <th class="py-2.5 px-3 w-14 text-center">Bước</th>
+                                    <th class="py-2.5 px-3 min-w-[260px]">Nội Dung & Chứng Từ Đính Kèm</th>
+                                    <th class="py-2.5 px-3 w-36 text-center">Trạng Thái</th>
+                                    <th class="py-2.5 px-3 min-w-[170px]">Bộ Phận / Người Xử Lý</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-xs font-sans">
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    `;
+                }
             }
         }
 
