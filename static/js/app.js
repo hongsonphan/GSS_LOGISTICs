@@ -5322,7 +5322,7 @@ function onQuoteZonesChanged() {
     }
     if (presetSelect) {
         presetSelect.innerHTML = '<option value="">-- Chọn Tuyến Mẫu --</option>' +
-            (filtered.length ? filtered : routes).map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate}">${r.label || r.route_name}</option>`).join('');
+            (filtered.length ? filtered : routes).map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate || 0}" data-km="${r.estimated_km || 0}">${r.label || r.route_name}${r.estimated_km ? ` (${r.estimated_km} km)` : ''}</option>`).join('');
     }
 
     // Tự sinh tên tuyến nếu cả 2 khu vực được chọn và ô tuyến đang trống hoặc đang là format khu vực cũ
@@ -5358,6 +5358,18 @@ function onQuoteRoutePresetChanged(routeVal) {
     const routeInput = document.getElementById('quote-route');
     const origZone = document.getElementById('quote-origin-zone')?.value || '';
     const cleanOrig = origZone ? origZone.split('(')[0].trim().toUpperCase() : 'CÁT LÁI';
+    const presetSelect = document.getElementById('quote-route-preset');
+
+    // Tự động load số km ước tính từ tuyến mẫu nếu có
+    if (presetSelect && presetSelect.selectedOptions && presetSelect.selectedOptions.length > 0) {
+        const opt = presetSelect.selectedOptions[0];
+        const km = opt ? parseInt(opt.getAttribute('data-km')) : 0;
+        if (km && km > 0) {
+            const kmInput = document.getElementById('quote-estimated-km');
+            if (kmInput) kmInput.value = km;
+        }
+    }
+
     if (routeInput && routeVal) {
         if (routeVal.toUpperCase().includes('➔') || routeVal.toUpperCase().includes('->')) {
             routeInput.value = routeVal;
@@ -7959,6 +7971,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Khu Vực Kho</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Tên Tuyến / KCN / Nhà Máy</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trục Lấy / Hạ Cont Chuẩn</th>
+                <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Cự Ly</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Lương Chuyến (VNĐ)</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Ghi Chú Nghiệp Vụ</th>
                 <th class="py-2 px-3 text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200/90 select-none">Trạng Thái</th>
@@ -7970,6 +7983,9 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-1.5 px-3 border-r border-slate-200/70"><span class="px-2 py-0.2 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">${item.area_group}</span></td>
                 <td class="py-1.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200/70">${item.route_name}</td>
                 <td class="py-1.5 px-3 text-[12px] text-slate-500 font-medium max-w-xs truncate border-r border-slate-200/70">${item.pickup_drop_area}</td>
+                <td class="py-1.5 px-3 text-center border-r border-slate-200/70 font-mono font-bold text-xs text-slate-700">
+                    ${item.estimated_km ? `~${item.estimated_km} km` : '—'}
+                </td>
                 <td class="py-1.5 px-3 text-[13px] font-black text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200/70">${formatMoney(item.salary_rate)}</td>
                 <td class="py-1.5 px-3 text-[11.5px] text-amber-700 font-medium border-r border-slate-200/70">${item.notes || '—'}</td>
                 <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
@@ -8423,9 +8439,25 @@ function injectMasterDataModalFields(data) {
                 <label class="app-form-label">Tên Tuyến / KCN / Nhà Máy <span class="text-rose-500">*</span></label>
                 <input type="text" id="mdf-route-name" value="${d.route_name || ''}" placeholder="VD: KCN Phước Đông, KCN Bàu Bàng..." class="app-form-control" required>
             </div>
-            <div>
-                <label class="app-form-label">Mức Lương Chuyến (VNĐ) <span class="text-rose-500">*</span></label>
-                <input type="number" id="mdf-salary-rate" value="${d.salary_rate || 600000}" step="10000" class="app-form-control font-mono font-bold" required>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="app-form-label m-0">Cự Ly Ước Tính (km)</label>
+                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded border border-indigo-200">Bước 10km</span>
+                    </div>
+                    <input type="number" id="mdf-estimated-km" value="${d.estimated_km || 30}" step="10" min="0" onchange="roundEstimatedKmInput(this)" class="app-form-control font-mono font-bold text-center">
+                    <div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 flex-wrap">
+                        <button type="button" onclick="setTariffKm(20)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">20k</button>
+                        <button type="button" onclick="setTariffKm(30)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">30k</button>
+                        <button type="button" onclick="setTariffKm(50)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">50k</button>
+                        <button type="button" onclick="setTariffKm(70)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">70k</button>
+                        <button type="button" onclick="setTariffKm(100)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold">100k</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="app-form-label">Mức Lương Chuyến (VNĐ) <span class="text-rose-500">*</span></label>
+                    <input type="number" id="mdf-salary-rate" value="${d.salary_rate || 600000}" step="10000" class="app-form-control font-mono font-bold text-emerald-700" required>
+                </div>
             </div>
             <div>
                 <label class="app-form-label">Ghi Chú Điều Kiện Áp Dụng</label>
@@ -8895,6 +8927,7 @@ async function submitMasterDataForm(e) {
         payload = {
             area_group: document.getElementById('mdf-area-group').value,
             route_name: document.getElementById('mdf-route-name').value,
+            estimated_km: parseInt(document.getElementById('mdf-estimated-km')?.value) || 0,
             salary_rate: parseInt(document.getElementById('mdf-salary-rate').value),
             notes: document.getElementById('mdf-notes').value
         };

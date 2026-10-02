@@ -95,6 +95,7 @@ class DriverSalaryTariff(TimeStampedModel, SoftDeleteModel):
     area_group = models.CharField(max_length=100, db_index=True, help_text="Nhóm khu vực kho: Củ Chi, Long An, Tây Ninh, Bình Dương, Đồng Nai, TP.HCM, Vũng Tàu, Tuyến đặc thù")
     route_name = models.CharField(max_length=200, help_text="Tên chi tiết tuyến / KCN / Nhà máy (vd: KCN Phước Đông, KCN Tân Phú Trung...)")
     pickup_drop_area = models.CharField(max_length=255, default='Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7', help_text="Khu vực lấy / hạ cont chuẩn")
+    estimated_km = models.IntegerField(default=0, help_text="Cự ly ước tính theo tuyến (km) - chuẩn hóa làm tròn bước 10km")
     salary_rate = models.DecimalField(max_digits=12, decimal_places=0, help_text="Mức lương chuyến tài xế được hưởng (VNĐ)")
     notes = models.CharField(max_length=255, blank=True, help_text="Ghi chú điều kiện đặc biệt (vd: Lấy/hạ Cát Lái +50k...)")
     is_active = models.BooleanField(default=True, db_index=True)
@@ -104,8 +105,15 @@ class DriverSalaryTariff(TimeStampedModel, SoftDeleteModel):
         verbose_name = 'Biểu phí lương chuyến tài xế'
         verbose_name_plural = 'Danh mục Biểu phí lương chuyến tài xế'
 
+    def save(self, *args, **kwargs):
+        if self.estimated_km and self.estimated_km > 0:
+            rounded = int(round(float(self.estimated_km) / 10.0) * 10)
+            self.estimated_km = max(10, rounded)
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"[{self.area_group}] {self.route_name} - {self.salary_rate:,.0f} đ"
+        km_str = f" (~{self.estimated_km}km)" if self.estimated_km else ""
+        return f"[{self.area_group}] {self.route_name}{km_str} - {self.salary_rate:,.0f} đ"
 
 class AllowanceCategory(models.TextChoices):
     PORT = 'PORT', 'Phụ Thêm Cảng Xa'

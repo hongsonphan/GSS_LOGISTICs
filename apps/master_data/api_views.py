@@ -166,20 +166,42 @@ class MasterDataFormOptionsAPIView(APIView):
             for sc in Subcontractor.objects.filter(is_active=True).order_by('name')
         ]
 
-        # 8. Tuyến đường & Khu Vực (DriverSalaryTariff & RouteTariff)
+        # 8. Tuyến đường & Khu Vực (DriverSalaryTariff)
         routes = [
             {
                 'id': dst.id,
                 'area_group': dst.area_group,
                 'route_name': dst.route_name,
+                'estimated_km': dst.estimated_km or 0,
                 'salary_rate': float(dst.salary_rate),
-                'label': f"[{dst.area_group}] {dst.route_name}"
+                'label': f"[{dst.area_group}] {dst.route_name}{f' (~{dst.estimated_km}km)' if dst.estimated_km else ''}"
             }
             for dst in DriverSalaryTariff.objects.all().order_by('area_group', 'route_name')
         ]
 
+        # 9. Danh mục Biểu cước khách hàng (RouteTariff)
+        customer_tariffs = [
+            {
+                'id': ct.id,
+                'customer_id': ct.customer_id,
+                'customer_name': ct.customer.name,
+                'origin_zone': ct.origin_zone,
+                'destination_zone': ct.destination_zone,
+                'pickup_location': ct.pickup_location,
+                'delivery_location': ct.delivery_location,
+                'dropoff_location': ct.dropoff_location,
+                'estimated_km': ct.estimated_km or 0,
+                'freight_price': float(ct.freight_price),
+                'driver_trip_pay': float(ct.driver_trip_pay),
+                'toll_standard_fee': float(ct.toll_standard_fee or 0),
+                'label': f"{ct.customer.name}: {ct.pickup_location} ➔ {ct.delivery_location}{f' (~{ct.estimated_km}km)' if ct.estimated_km else ''}"
+            }
+            for ct in RouteTariff.objects.select_related('customer').all().order_by('customer__name', 'pickup_location')
+        ]
+
         return Response({
             'customers': customers,
+            'customer_tariffs': customer_tariffs,
             'locations': {
                 'all': all_locations,
                 'ports': ports,
@@ -671,6 +693,7 @@ class DriverSalaryTariffListCreateAPIView(MasterDataBaseAPIView):
                 'area_group': t.area_group,
                 'route_name': t.route_name,
                 'pickup_drop_area': t.pickup_drop_area,
+                'estimated_km': t.estimated_km or 0,
                 'salary_rate': float(t.salary_rate),
                 'notes': t.notes,
                 'is_active': t.is_active,
@@ -682,12 +705,14 @@ class DriverSalaryTariffListCreateAPIView(MasterDataBaseAPIView):
         route_name = data.get('route_name', '').strip()
         area_group = data.get('area_group', 'Khu Vực Bình Dương').strip()
         salary_rate = int(data.get('salary_rate', 600000))
+        estimated_km = int(data.get('estimated_km') or 0)
         if not route_name:
             return Response({'error': 'Tên tuyến / KCN không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
 
         tariff = DriverSalaryTariff.objects.create(
             area_group=area_group,
             route_name=route_name,
+            estimated_km=estimated_km,
             salary_rate=salary_rate,
             notes=data.get('notes', '').strip(),
             is_active=bool(data.get('is_active', True)),
@@ -702,6 +727,7 @@ class DriverSalaryTariffDetailAPIView(MasterDataBaseAPIView):
         data = request.data
         if 'route_name' in data: tariff.route_name = data['route_name'].strip()
         if 'area_group' in data: tariff.area_group = data['area_group'].strip()
+        if 'estimated_km' in data and data['estimated_km'] is not None: tariff.estimated_km = int(data['estimated_km'] or 0)
         if 'salary_rate' in data: tariff.salary_rate = int(data['salary_rate'])
         if 'notes' in data: tariff.notes = data['notes'].strip()
         if 'is_active' in data: tariff.is_active = bool(data['is_active'])
