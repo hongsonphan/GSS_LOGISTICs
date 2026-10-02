@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from apps.dispatch.models import DispatchTrip, TripTimelineItem, ShipmentType, TripStatus
-from apps.dispatch.timeline_service import sync_trip_10_step_timeline
+from apps.dispatch.timeline_service import sync_trip_10_step_timeline, build_10_step_timeline_spec, get_derived_7_milestones
 from apps.fleet.models import Vehicle, Trailer, VehicleStatus, VehicleType
 from apps.personnel.models import Employee, Department, EmployeeRole
 from apps.customers.models import Customer, Quotation, RouteTariff, BookingOrder, BookingStatus, BookingDocument
@@ -715,10 +715,20 @@ class TripDetailAPIView(APIView):
 
         self.check_object_permissions(request, trip)
 
-        timeline_items = trip.timeline_items.all().order_by('step_number')
-        if not timeline_items.exists() or timeline_items.count() < 10:
-            sync_trip_10_step_timeline(trip)
-            timeline_items = trip.timeline_items.all().order_by('step_number')
+        sync_trip_10_step_timeline(trip)
+        timeline_specs = build_10_step_timeline_spec(trip)
+        timeline_data = [
+            {
+                'step': item['step'],
+                'title': item['title'],
+                'time': item['time'],
+                'done': item['done'],
+                'active': item['active'],
+                'docs': item.get('docs', []),
+                'actor': item.get('actor', ''),
+            }
+            for item in timeline_specs
+        ]
 
         expenses = trip.expenses.select_related('driver', 'vehicle', 'expense_item').filter(is_deleted=False)
         # Defensive deduplication: đảm bảo trên giao diện không bao giờ hiển thị chứng từ trùng lặp
@@ -731,17 +741,6 @@ class TripDetailAPIView(APIView):
                 seen_doc_keys.add(doc_key)
                 unique_documents.append(doc)
         documents = unique_documents
-
-        timeline_data = [
-            {
-                'step': item.step_number,
-                'title': item.title,
-                'time': item.time_display,
-                'done': item.is_done,
-                'active': item.is_active,
-            }
-            for item in timeline_items
-        ]
 
         expenses_data = [
             {

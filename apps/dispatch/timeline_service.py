@@ -62,56 +62,83 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     except ValueError:
         curr_idx = 0
 
+    # BƯỚC 7: Đóng/Xuống hàng xong
+    t_finish_unload = trip.warehouse_call_out_time if (trip.warehouse_call_out_time and trip.warehouse_call_out_time != '-') else (
+        trip.unloading_started_at.strftime('%H:%M %d/%m') if trip.unloading_started_at else (
+            f"Hẹn: {trip.loading_time}" if trip.loading_time else f"Hẹn: {date_str}"
+        )
+    )
+
     specs = [
         {
             'step': 1,
-            'title': 'Tiếp nhận Booking & Chuẩn bị lệnh điều động',
-            'time': t_create
+            'title': 'Nhận Booking',
+            'time': t_create,
+            'docs': ['File Booking / Lệnh cấp cont KH'],
+            'actor': 'Sale / Điều độ'
         },
         {
             'step': 2,
-            'title': f'Phát lệnh điều xe Zalo / App tài xế ({driver_name} - {vehicle_plate})',
-            'time': t_dispatch
+            'title': f'Phát lệnh Điều vận ({driver_name} - {vehicle_plate})',
+            'time': t_dispatch,
+            'docs': [],
+            'actor': 'Điều độ'
         },
         {
             'step': 3,
-            'title': f'Tài xế {driver_name} xác nhận nhận chuyến trên App',
-            'time': t_accept
+            'title': f'Tài xế {driver_name} xác nhận nhận chuyến',
+            'time': t_accept,
+            'docs': [],
+            'actor': 'Tài xế'
         },
         {
             'step': 4,
-            'title': f'Xuất phát & Lấy Cont / Hàng tại {pickup_name} (Kiểm tra Cont, Seal, EIR)',
-            'time': t_pickup
+            'title': f'Tài xế xuất phát & Hẹn giờ đến ({pickup_name})',
+            'time': t_pickup,
+            'docs': ['Phiếu EIR nhận cont', 'Ảnh Số Cont & Kẹp Chì Seal'],
+            'actor': 'Tài xế'
         },
         {
             'step': 5,
-            'title': f'Vận chuyển theo tuyến duyệt ({trip.pickup_location} ➔ {trip.warehouse_location})',
-            'time': t_transit
+            'title': f'Đã đến cổng kho {wh_name}',
+            'time': t_wh_in,
+            'docs': [],
+            'actor': 'Tài xế / Kho'
         },
         {
             'step': 6,
-            'title': f'Đến cổng kho {wh_name} (Báo kho, Chờ gọi vào dock)',
-            'time': t_wh_in
+            'title': f'Bắt đầu Đóng / Trả hàng tại kho ({dock_name})',
+            'time': t_unload,
+            'docs': ['Packing List / Lệnh giao hàng'],
+            'actor': 'Tài xế / Kho'
         },
         {
             'step': 7,
-            'title': f'Đóng / Trút hàng tại dock {dock_name}',
-            'time': t_unload
+            'title': 'Đóng hàng / Xuống hàng xong',
+            'time': t_finish_unload,
+            'docs': ['Ảnh Kẹp Chì Seal mới', 'Phiếu Cân xe'],
+            'actor': 'Tài xế / Kho'
         },
         {
             'step': 8,
-            'title': 'Hoàn tất chứng từ giao nhận (Ký Biên bản POD)',
-            'time': t_wh_out
+            'title': 'Hoàn tất Chứng từ Giao nhận (Ký POD)',
+            'time': t_wh_out,
+            'docs': ['Biên bản giao nhận POD có chữ ký', 'Phiếu xuất kho'],
+            'actor': 'Tài xế'
         },
         {
             'step': 9,
-            'title': f'Vận chuyển về bãi hạ {dropoff_name} (Lấy Phiếu EIR hạ cont)',
-            'time': t_dropoff
+            'title': f'Vận chuyển về Bãi hạ Rỗng / Cảng Xuất ({dropoff_name})',
+            'time': t_dropoff,
+            'docs': ['Phiếu EIR hạ cont'],
+            'actor': 'Tài xế'
         },
         {
             'step': 10,
-            'title': 'Tổng hợp chi phí & Đối chiếu thanh toán kế toán',
-            'time': t_settle
+            'title': 'Tổng hợp chi phí & Đối soát thanh toán',
+            'time': t_settle,
+            'docs': ['Bảng kê chi phí & Hóa đơn điện tử'],
+            'actor': 'Kế toán'
         }
     ]
 
@@ -163,7 +190,9 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             'title': s['title'],
             'time': time_val,
             'done': is_done,
-            'active': is_active
+            'active': is_active,
+            'docs': s.get('docs', []),
+            'actor': s.get('actor', '')
         })
 
     return result

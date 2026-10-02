@@ -558,42 +558,40 @@
                         <div class="flex items-center justify-between mb-2 pb-1 border-b border-slate-100">
                             <p
                                 class="text-[10.5px] font-black text-teal-800 uppercase tracking-wider font-heading flex items-center">
-                                <i class="ph-fill ph-navigation-arrow mr-1 text-teal-600"></i> Báo Mốc Kho (Bước 6)
+                                <i class="ph-bold ph-navigation-arrow mr-1 text-teal-600"></i> Báo Mốc Kho (Bước 6)
                             </p>
                             <span class="text-[9.5px] text-slate-400 font-semibold">1-Chạm</span>
                         </div>
                         <div class="grid grid-cols-2 gap-1.5">
                             <button onclick="driverReportMilestone('APPROACHING_WAREHOUSE')"
                                 class="p-2 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-slate-800 block">🚗 Sắp đến kho</span>
-                                <span class="text-[9px] text-slate-400">Báo trước 30p</span>
+                                <span class="text-[11px] font-bold text-slate-800 flex items-center gap-1"><i class="ph-bold ph-bell-ringing text-teal-600"></i> Sắp đến kho</span>
+                                <span class="text-[9px] text-slate-400 block">Báo trước 30p</span>
                             </button>
                             <button onclick="driverReportMilestone('ARRIVED_WAREHOUSE')"
                                 class="p-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-blue-800 block">📍 Đến cổng kho</span>
-                                <span class="text-[9px] text-slate-400">Check-in kho</span>
+                                <span class="text-[11px] font-bold text-blue-900 flex items-center gap-1"><i class="ph-bold ph-map-pin text-blue-600"></i> Đến cổng kho</span>
+                                <span class="text-[9px] text-slate-400 block">Check-in kho</span>
                             </button>
                             <button onclick="driverReportMilestone('START_UNLOADING')"
                                 class="p-2 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-amber-800 block">📦 Đang dỡ/đóng</span>
-                                <span class="text-[9px] text-slate-400">Bắt đầu hàng</span>
+                                <span class="text-[11px] font-bold text-amber-900 flex items-center gap-1"><i class="ph-bold ph-package text-amber-600"></i> Đang dỡ/đóng</span>
+                                <span class="text-[9px] text-slate-400 block">Bắt đầu hàng</span>
                             </button>
                             <button onclick="driverReportMilestone('FINISHED_UNLOADING')"
                                 class="p-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-emerald-800 block">✅ Đóng xong</span>
-                                <span class="text-[9px] text-slate-400">Chuẩn bị hạ bãi</span>
+                                <span class="text-[11px] font-bold text-emerald-900 flex items-center gap-1"><i class="ph-bold ph-check-circle text-emerald-600"></i> Đóng xong</span>
+                                <span class="text-[9px] text-slate-400 block">Chuẩn bị hạ bãi</span>
                             </button>
                             <button onclick="driverReportMilestone('OVERNIGHT_WAIT')"
                                 class="p-2 bg-amber-50/80 hover:bg-amber-100 border border-amber-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-amber-900 block flex items-center gap-1">🌙 Chờ
-                                    sau 0h</span>
-                                <span class="text-[9px] text-amber-700">Kho yêu cầu</span>
+                                <span class="text-[11px] font-bold text-amber-900 flex items-center gap-1"><i class="ph-bold ph-moon text-amber-700"></i> Chờ sau 0h</span>
+                                <span class="text-[9px] text-amber-700 block">Kho yêu cầu</span>
                             </button>
                             <button onclick="driverReportMilestone('DROPOFF_COMPLETED')"
                                 class="p-2 bg-teal-50/80 hover:bg-teal-100 border border-teal-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-teal-900 block flex items-center gap-1">⚓ Đã hạ
-                                    cont</span>
-                                <span class="text-[9px] text-teal-700">Phiếu EIR</span>
+                                <span class="text-[11px] font-bold text-teal-900 flex items-center gap-1"><i class="ph-bold ph-anchor text-teal-700"></i> Đã hạ cont</span>
+                                <span class="text-[9px] text-teal-700 block">Phiếu EIR</span>
                             </button>
                         </div>
                     </div>
@@ -640,12 +638,12 @@
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick="openModalAddExpense()"
                             class="w-full bg-[#0a1128] text-white font-bold py-2.5 rounded-xl shadow hover:bg-slate-800 transition-all flex flex-col items-center justify-center space-y-0.5 active:scale-95">
-                            <i class="ph-fill ph-receipt text-lg text-teal-400"></i>
+                            <i class="ph-bold ph-receipt text-lg text-teal-400"></i>
                             <span class="text-[10.5px] font-heading">Kê Khai Chi Phí</span>
                         </button>
                         <button onclick="openOcrApp('chung-tu')"
                             class="w-full bg-teal-700 text-white font-bold py-2.5 rounded-xl shadow hover:bg-teal-800 transition-all flex flex-col items-center justify-center space-y-0.5 active:scale-95">
-                            <i class="ph-fill ph-camera text-lg"></i>
+                            <i class="ph-bold ph-camera text-lg"></i>
                             <span class="text-[10.5px] font-heading">Chụp EIR / HĐĐT</span>
                         </button>
                     </div>
