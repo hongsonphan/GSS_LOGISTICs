@@ -507,15 +507,30 @@
                 </div>
             </div>
 
-            <!-- 4. Timeline 10 Bước Điều Vận Thực Tế -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                <h3
-                    class="text-xs font-bold text-slate-800 uppercase tracking-widest mb-4 flex items-center font-heading">
-                    <i class="ph-fill ph-check-circle mr-2 text-teal-600 text-lg"></i> Tiến độ Thực Hiện (Quy trình 10
-                    Bước)
-                </h3>
-                <div class="pl-2 space-y-0" id="detail-timeline">
-                    <!-- Timeline injected here by JS -->
+            <!-- 4. Tiến độ Thực Hiện (Quy trình 10 Bước) dạng Lưới Grid Chuẩn -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm overflow-hidden">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center font-heading">
+                        <i class="ph-bold ph-check-circle mr-2 text-teal-600 text-lg"></i> Tiến độ Thực Hiện (Quy trình 10 Bước)
+                    </h3>
+                    <span class="text-xs font-bold bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200/60 font-heading">
+                        Chuỗi Cung Ứng Khép Kín
+                    </span>
+                </div>
+                <div class="overflow-x-auto -mx-5 -mb-5">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-y border-slate-200 bg-slate-50 text-[11px] font-bold text-slate-600 uppercase tracking-wider font-heading">
+                                <th class="py-2.5 px-3 w-12 text-center">Bước</th>
+                                <th class="py-2.5 px-3 min-w-[260px]">Nội Dung & Chứng Từ Đính Kèm</th>
+                                <th class="py-2.5 px-3 w-36 text-center">Trạng Thái</th>
+                                <th class="py-2.5 px-3 min-w-[170px]">Bộ Phận / Người Xử Lý</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-xs font-sans" id="detail-timeline">
+                            <!-- Timeline items injected here by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

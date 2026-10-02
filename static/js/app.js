@@ -1427,78 +1427,84 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         // --- RENDER MOBILE SIMULATOR DATA ---
         renderDriverMobileApp(trip);
 
-        // --- RENDER TIMELINE 10 BƯỚC ---
+        // --- RENDER TIẾN ĐỘ THỰC HIỆN (QUY TRÌNH 10 BƯỚC) DẠNG LƯỚI BẢNG CHUẨN ---
         const tContainer = document.getElementById('detail-timeline');
         if (tContainer) {
             tContainer.innerHTML = '';
             const timelineList = trip.timeline || [];
             if (timelineList.length === 0) {
                 tContainer.innerHTML = `
-                    <div class="py-6 text-center text-slate-400 text-xs italic">
-                        <i class="ph ph-clock-counter-clockwise text-xl text-slate-300 block mb-1"></i>
-                        Đang khởi tạo các mốc tiến độ điều vận...
-                    </div>
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-slate-400 text-xs italic">
+                            <i class="ph ph-clock-counter-clockwise text-2xl text-slate-300 block mb-1"></i>
+                            Đang khởi tạo các mốc tiến độ điều vận...
+                        </td>
+                    </tr>
                 `;
             } else {
                 timelineList.forEach(item => {
-                    let borderClass = 'border-slate-200 bg-slate-50';
-                    let dotHtml = `<span class="text-[9.5px] font-normal text-slate-400">${item.step}</span>`;
+                    let rowClass = 'hover:bg-slate-50/60 transition-colors';
+                    let iconHtml = `<div class="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-normal mx-auto">${item.step}</div>`;
                     let textClass = 'text-slate-400 font-normal text-[13px]';
-                    let badgeHtml = '';
+                    let actorTextClass = 'text-slate-400 font-normal text-[13px]';
+                    let badgeHtml = '<span class="inline-block px-2 py-0.5 rounded text-[10px] font-normal text-slate-400 bg-slate-100 border border-slate-200">Chưa thực hiện</span>';
                     
                     if (item.active) {
-                        borderClass = 'border-teal-600 ring-4 ring-teal-100 bg-teal-50';
-                        dotHtml = '<div class="w-2.5 h-2.5 bg-teal-600 rounded-full animate-pulse"></div>';
+                        rowClass = 'bg-teal-50/40 hover:bg-teal-50/70 transition-colors border-l-4 border-l-teal-600';
+                        iconHtml = '<div class="w-6 h-6 rounded-full bg-teal-600 text-white ring-4 ring-teal-100 flex items-center justify-center font-bold text-xs animate-pulse mx-auto"><div class="w-2 h-2 rounded-full bg-white"></div></div>';
                         textClass = 'text-teal-950 font-bold text-[14.5px]';
-                        badgeHtml = '<span class="ml-2 px-2 py-0.5 rounded text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300 whitespace-nowrap animate-pulse">ĐANG THỰC HIỆN</span>';
+                        actorTextClass = 'text-teal-950 font-bold text-[14.5px]';
+                        badgeHtml = '<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300 whitespace-nowrap animate-pulse">ĐANG THỰC HIỆN</span>';
                     } else if (item.done) {
-                        borderClass = 'border-emerald-500 bg-emerald-50';
-                        dotHtml = '<i class="ph-bold ph-check text-[11px] text-emerald-600"></i>';
+                        rowClass = 'hover:bg-slate-50/80 transition-colors';
+                        iconHtml = '<div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-xs mx-auto"><i class="ph-bold ph-check text-xs"></i></div>';
                         textClass = 'text-slate-800 font-bold text-[13px]';
-                        badgeHtml = '<span class="ml-2 px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">Hoàn thành</span>';
+                        actorTextClass = 'text-slate-800 font-bold text-[13px]';
+                        badgeHtml = '<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">Hoàn thành</span>';
                     }
 
-                    // Actor tag
-                    let actorHtml = '';
-                    if (item.actor) {
-                        actorHtml = `<span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/70 font-heading shrink-0">${item.actor}</span>`;
-                    }
-
-                    // Sub-documents checklist
+                    // Chứng từ đính kèm (dạng text liệt kê có link mở xem file/hình)
                     let docsHtml = '';
                     if (item.docs && item.docs.length > 0) {
-                        const docTags = item.docs.map(d => `
-                            <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md ${item.done ? 'bg-emerald-50/80 text-emerald-800 border border-emerald-200 font-medium' : (item.active ? 'bg-teal-50 text-teal-900 border border-teal-200 font-medium' : 'bg-slate-50 text-slate-400 border border-slate-200/60 font-normal')}">
-                                <i class="ph ph-file-text text-xs ${item.done ? 'text-emerald-600' : (item.active ? 'text-teal-600' : 'text-slate-400')}"></i>
-                                <span>${d}</span>
-                            </span>
-                        `).join('');
-                        docsHtml = `<div class="flex flex-wrap items-center gap-1.5 mt-1.5">${docTags}</div>`;
+                        const formattedDocs = item.docs.map(doc => {
+                            const docName = typeof doc === 'string' ? doc : (doc.name || '');
+                            const docUrl = typeof doc === 'object' && doc.url ? doc.url : '';
+                            if (docUrl) {
+                                return `<a href="${docUrl}" target="_blank" rel="noopener noreferrer" class="text-teal-700 hover:text-teal-900 font-semibold underline underline-offset-2 inline-flex items-center gap-0.5 transition-colors" title="Bấm xem tài liệu / ảnh gốc"><i class="ph ph-file-text text-xs text-teal-600"></i><span>${docName}</span><i class="ph-bold ph-arrow-square-out text-[9px] text-teal-500"></i></a>`;
+                            } else {
+                                return `<span class="text-slate-500 font-normal inline-flex items-center gap-0.5"><i class="ph ph-file text-xs text-slate-300"></i><span>${docName}</span></span>`;
+                            }
+                        }).join('<span class="text-slate-300 mx-1.5 font-normal">;</span>');
+                        docsHtml = formattedDocs;
                     }
 
                     tContainer.innerHTML += `
-                        <div class="relative py-2.5 timeline-item">
-                            <div class="timeline-line"></div>
-                            <div class="absolute left-0 top-[12px] w-6 h-6 rounded-full border-2 flex items-center justify-center z-10 transition-all shadow-2xs ${borderClass}">
-                                ${dotHtml}
-                            </div>
-                            <div class="pl-9">
-                                <div class="flex items-center justify-between flex-wrap gap-1.5">
-                                    <div class="flex items-center flex-wrap gap-1">
-                                        <span class="tracking-tight ${textClass}">${item.title}</span>
-                                        ${badgeHtml}
-                                    </div>
-                                    ${actorHtml}
-                                </div>
+                        <tr class="${rowClass}">
+                            <td class="py-3 px-3 text-center align-top">
+                                ${iconHtml}
+                            </td>
+                            <td class="py-3 px-3 align-top">
+                                <div class="${textClass} leading-snug">${item.title}</div>
                                 ${item.time ? `
-                                    <p class="text-[11px] mt-0.5 font-medium ${item.active ? 'text-teal-800 font-bold' : (item.done ? 'text-slate-600' : 'text-slate-400')} flex items-center">
-                                        <i class="ph ph-clock mr-1 ${item.active ? 'text-teal-600' : 'text-slate-400'} text-xs"></i>
+                                    <div class="text-[11px] mt-0.5 font-mono ${item.active ? 'text-teal-800 font-bold' : (item.done ? 'text-slate-500 font-medium' : 'text-slate-400')} flex items-center gap-1">
+                                        <i class="ph ph-clock text-xs ${item.active ? 'text-teal-600' : 'text-slate-400'}"></i>
                                         <span>${item.time}</span>
-                                    </p>
+                                    </div>
                                 ` : ''}
-                                ${docsHtml}
-                            </div>
-                        </div>
+                                ${docsHtml ? `
+                                    <div class="text-[11.5px] mt-1.5 text-slate-600 leading-relaxed bg-slate-50/80 px-2 py-1 rounded-md border border-slate-200/60 inline-block">
+                                        <span class="text-slate-400 font-medium mr-1"><i class="ph ph-paperclip mr-0.5 text-slate-400"></i>Chứng từ:</span>
+                                        ${docsHtml}
+                                    </div>
+                                ` : ''}
+                            </td>
+                            <td class="py-3 px-3 text-center align-top whitespace-nowrap">
+                                ${badgeHtml}
+                            </td>
+                            <td class="py-3 px-3 align-top whitespace-nowrap">
+                                <span class="${actorTextClass}">${item.actor || '—'}</span>
+                            </td>
+                        </tr>
                     `;
                 });
             }

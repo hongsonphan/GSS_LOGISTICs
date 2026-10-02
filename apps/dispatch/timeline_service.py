@@ -23,7 +23,10 @@ STATUS_PROGRESSION = [
 def build_10_step_timeline_spec(trip: DispatchTrip):
     """
     Xây dựng đặc tả chi tiết 10 bước điều vận thực tế theo dữ liệu cụ thể của chuyến xe.
+    Đảm bảo tính nhất quán thời gian (Chronological Coherence), ánh xạ chính xác chứng từ và nhân sự xử lý.
     """
+    from apps.documents.models import DocumentType
+
     pickup_name = trip.pickup_depot or trip.pickup_location or 'Bãi lấy cont'
     dropoff_name = trip.dropoff_depot or trip.dropoff_location or 'Bãi hạ cont'
     wh_name = trip.delivery_warehouse or trip.warehouse_location or 'Kho khách hàng'
@@ -31,30 +34,114 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     vehicle_plate = trip.vehicle.license_plate if trip.vehicle else 'Xe công ty'
     dock_name = trip.warehouse_dock or 'dock kho'
 
-    date_str = trip.loading_date.strftime('%d/%m') if trip.loading_date else trip.created_at.strftime('%d/%m')
-    t_create   = trip.created_at.strftime('%H:%M %d/%m') if trip.created_at else f"17:00 {date_str}"
-    t_dispatch = trip.dispatched_at.strftime('%H:%M %d/%m') if trip.dispatched_at else f"18:00 {date_str}"
-    t_accept   = trip.accepted_at.strftime('%H:%M %d/%m') if trip.accepted_at else f"18:15 {date_str}"
-    # Bước 4: Xuất phát lấy cont
-    t_pickup   = trip.actual_start_time.strftime('%H:%M %d/%m') if trip.actual_start_time else f"08:00 {date_str}"
-    # Bước 5: Vận chuyển — cùng lúc xuất phát, hiển thị ETA đến kho nếu có
-    t_transit  = trip.actual_start_time.strftime('%H:%M %d/%m') if trip.actual_start_time else (
-                 f"ETA: {trip.eta_warehouse_time}" if trip.eta_warehouse_time else f"09:30 {date_str}")
-    # Bước 6: Vào cổng kho — actual_gate_in_time (CharField thực tế) → ETA → fallback
-    t_wh_in    = trip.actual_gate_in_time or (
-                 f"ETA: {trip.eta_warehouse_time}" if trip.eta_warehouse_time else f"11:00 {date_str}")
-    # Bước 7: Bắt đầu đóng/trút tại dock — unloading_started_at → loading_time hẹn → fallback
-    t_unload   = (trip.unloading_started_at.strftime('%H:%M %d/%m') if trip.unloading_started_at
-                  else (f"Hẹn: {trip.loading_time}" if trip.loading_time else f"Hẹn: {date_str}"))
-    # Bước 8: Ký POD & Ra cổng kho — actual_gate_out_time (ghi lúc bấm "Vận chuyển về bãi")
-    t_wh_out   = trip.actual_gate_out_time or (
-                 f"Sau: {trip.actual_gate_in_time}" if trip.actual_gate_in_time else f"15:00 {date_str}")
-    # Bước 9: Hạ cont — actual_dropoff_time → hẹn hạ → fallback
-    t_dropoff  = (trip.actual_dropoff_time or
-                  (f"Hẹn: {trip.dropoff_appointment_time}" if trip.dropoff_appointment_time
-                   else f"Đang kéo về bãi {date_str}"))
-    t_settle   = (trip.settled_at.strftime('%H:%M %d/%m') if trip.settled_at
-                  else ('Chờ chốt sổ' if trip.status != TripStatus.COMPLETED else f"17:30 {date_str}"))
+    # Ánh xạ toàn bộ tài liệu đính kèm thực tế của chuyến xe
+    docs_by_type = {}
+    if trip.pk:
+        for doc in trip.documents.filter(is_deleted=False).order_by('created_at'):
+            if doc.file_path:
+                url = doc.file_path if (doc.file_path.startswith('/media/') or doc.file_path.startswith('http')) else f"/media/{doc.file_path}"
+                docs_by_type[doc.document_type] = {
+                    'url': url,
+                    'title': doc.title or doc.get_document_type_display(),
+                    'created_at': doc.created_at
+                }
+
+    booking_url = trip.booking_file.url if trip.booking_file else (docs_by_type.get(DocumentType.BOOKING_NOTE, {}).get('url', ''))
+    eir_pickup_url = docs_by_type.get(DocumentType.EIR_PICKUP, {}).get('url', '')
+    seal_url = docs_by_type.get(DocumentType.SEAL_IMAGE, {}).get('url', '') or docs_by_type.get(DocumentType.CONTAINER_CHECK, {}).get('url', '')
+    weight_url = docs_by_type.get(DocumentType.WEIGHT_TICKET, {}).get('url', '')
+    pod_url = docs_by_type.get(DocumentType.POD, {}).get('url', '')
+    eir_dropoff_url = docs_by_type.get(DocumentType.EIR_DROPOFF, {}).get('url', '')
+    invoice_url = docs_by_type.get(DocumentType.INVOICE, {}).get('url', '')
+
+    # Chuẩn hoá ngày giờ cơ sở
+    created_dt = trip.created_at or timezone.now()
+    date_str = trip.loading_date.strftime('%d/%m') if trip.loading_date else created_dt.strftime('%d/%m')
+    t_create = created_dt.strftime('%H:%M %d/%m')
+
+    # Xử lý thời gian hợp lý theo chuỗi tiến trình thực tế (Tránh lệch giờ phi logic)
+    if trip.actual_start_time:
+        start_dt = trip.actual_start_time
+        t_pickup = start_dt.strftime('%H:%M %d/%m')
+        
+        # Giờ phát lệnh phải trước hoặc cùng lúc xuất phát
+        if trip.dispatched_at:
+            t_dispatch = trip.dispatched_at.strftime('%H:%M %d/%m')
+        else:
+            disp_dt = created_dt if created_dt < start_dt else (start_dt - timedelta(hours=1))
+            t_dispatch = disp_dt.strftime('%H:%M %d/%m')
+
+        # Giờ tài xế xác nhận nhận chuyến
+        if trip.accepted_at:
+            t_accept = trip.accepted_at.strftime('%H:%M %d/%m')
+        else:
+            acc_dt = min(start_dt, created_dt + timedelta(minutes=15))
+            t_accept = acc_dt.strftime('%H:%M %d/%m')
+    else:
+        # Chưa xuất phát
+        t_dispatch = trip.dispatched_at.strftime('%H:%M %d/%m') if trip.dispatched_at else (
+            t_create if trip.status != TripStatus.DRAFT else 'Chờ phát lệnh'
+        )
+        t_accept = trip.accepted_at.strftime('%H:%M %d/%m') if trip.accepted_at else (
+            (created_dt + timedelta(minutes=15)).strftime('%H:%M %d/%m') if trip.status not in [TripStatus.DRAFT, TripStatus.DISPATCHED] else 'Chờ tài xế nhận'
+        )
+        t_pickup = f"Hẹn: {trip.loading_time or '08:00'} {date_str}"
+
+    # Bước 5: Đến cổng kho
+    if trip.actual_gate_in_time and trip.actual_gate_in_time != '-':
+        t_wh_in = trip.actual_gate_in_time
+    elif trip.actual_gate_in_at:
+        t_wh_in = trip.actual_gate_in_at.strftime('%H:%M %d/%m')
+    else:
+        t_wh_in = f"ETA: {trip.eta_warehouse_time}" if (trip.eta_warehouse_time and trip.eta_warehouse_time != '-') else f"Hẹn: {trip.loading_time or '09:30'}"
+
+    # Bước 6: Bắt đầu Đóng / Trả hàng tại kho
+    if trip.unloading_started_at:
+        t_unload = trip.unloading_started_at.strftime('%H:%M %d/%m')
+    elif trip.warehouse_call_in_time and trip.warehouse_call_in_time != '-':
+        t_unload = trip.warehouse_call_in_time
+    else:
+        t_unload = f"Hẹn: {trip.loading_time}" if trip.loading_time else f"Hẹn: {date_str}"
+
+    # Bước 7: Đóng hàng / Xuống hàng xong
+    if trip.warehouse_call_out_time and trip.warehouse_call_out_time != '-':
+        t_finish_unload = trip.warehouse_call_out_time
+    elif trip.unloading_started_at:
+        t_finish_unload = (trip.unloading_started_at + timedelta(minutes=45)).strftime('%H:%M %d/%m')
+    else:
+        t_finish_unload = f"Hẹn: {trip.loading_time}" if trip.loading_time else f"Hẹn: {date_str}"
+
+    # Bước 8: Hoàn tất chứng từ giao nhận (Ký POD)
+    if trip.actual_gate_out_time and trip.actual_gate_out_time != '-':
+        t_wh_out = trip.actual_gate_out_time
+    elif trip.actual_gate_out_at:
+        t_wh_out = trip.actual_gate_out_at.strftime('%H:%M %d/%m')
+    elif docs_by_type.get(DocumentType.POD):
+        t_wh_out = docs_by_type[DocumentType.POD]['created_at'].strftime('%H:%M %d/%m')
+    else:
+        t_wh_out = f"Sau đóng hàng"
+
+    # Bước 9: Vận chuyển về bãi hạ
+    if trip.actual_dropoff_time and trip.actual_dropoff_time != '-':
+        t_dropoff = trip.actual_dropoff_time
+    elif trip.actual_dropoff_at:
+        t_dropoff = trip.actual_dropoff_at.strftime('%H:%M %d/%m')
+    elif trip.dropoff_appointment_time and trip.dropoff_appointment_time != '-':
+        t_dropoff = f"Hẹn: {trip.dropoff_appointment_time}"
+    else:
+        t_dropoff = f"Đang kéo về bãi {date_str}" if trip.status in [TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED] else ""
+
+    # Bước 10: Tổng hợp chi phí & Đối soát
+    if trip.settled_at:
+        t_settle = trip.settled_at.strftime('%H:%M %d/%m')
+    else:
+        t_settle = 'Chờ chốt sổ' if trip.status == TripStatus.COMPLETED else ''
+
+    # Xác định nhân sự & bộ phận phụ trách từng bước
+    dispatcher_actor = f"{trip.dispatcher.nickname or trip.dispatcher.full_name} - Điều Vận" if trip.dispatcher else "Trần Điều Độ - Điều Vận"
+    accountant_actor = f"{trip.settled_by.nickname or trip.settled_by.full_name} - Kế Toán" if trip.settled_by else "Trần Kế Toán - Kế Toán"
+    driver_actor = f"{driver_name} - Đội Xe"
+    warehouse_actor = f"{driver_name} / Thủ Kho"
 
     # Xác định bước hiện tại dựa trên máy trạng thái
     try:
@@ -62,83 +149,93 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     except ValueError:
         curr_idx = 0
 
-    # BƯỚC 7: Đóng/Xuống hàng xong
-    t_finish_unload = trip.warehouse_call_out_time if (trip.warehouse_call_out_time and trip.warehouse_call_out_time != '-') else (
-        trip.unloading_started_at.strftime('%H:%M %d/%m') if trip.unloading_started_at else (
-            f"Hẹn: {trip.loading_time}" if trip.loading_time else f"Hẹn: {date_str}"
-        )
-    )
-
     specs = [
         {
             'step': 1,
             'title': 'Nhận Booking',
             'time': t_create,
-            'docs': ['File Booking / Lệnh cấp cont KH'],
-            'actor': 'Sale / Điều độ'
+            'docs': [
+                {'name': 'File Booking / Lệnh cấp cont KH', 'url': booking_url}
+            ],
+            'actor': 'Thuận - Kinh Doanh'
         },
         {
             'step': 2,
             'title': f'Phát lệnh Điều vận ({driver_name} - {vehicle_plate})',
             'time': t_dispatch,
             'docs': [],
-            'actor': 'Điều độ'
+            'actor': dispatcher_actor
         },
         {
             'step': 3,
             'title': f'Tài xế {driver_name} xác nhận nhận chuyến',
             'time': t_accept,
             'docs': [],
-            'actor': 'Tài xế'
+            'actor': driver_actor
         },
         {
             'step': 4,
             'title': f'Tài xế xuất phát & Hẹn giờ đến ({pickup_name})',
             'time': t_pickup,
-            'docs': ['Phiếu EIR nhận cont', 'Ảnh Số Cont & Kẹp Chì Seal'],
-            'actor': 'Tài xế'
+            'docs': [
+                {'name': 'Phiếu EIR nhận cont', 'url': eir_pickup_url},
+                {'name': 'Ảnh Số Cont & Kẹp Chì Seal', 'url': seal_url}
+            ],
+            'actor': driver_actor
         },
         {
             'step': 5,
             'title': f'Đã đến cổng kho {wh_name}',
             'time': t_wh_in,
             'docs': [],
-            'actor': 'Tài xế / Kho'
+            'actor': warehouse_actor
         },
         {
             'step': 6,
             'title': f'Bắt đầu Đóng / Trả hàng tại kho ({dock_name})',
             'time': t_unload,
-            'docs': ['Packing List / Lệnh giao hàng'],
-            'actor': 'Tài xế / Kho'
+            'docs': [
+                {'name': 'Packing List / Lệnh giao hàng', 'url': invoice_url}
+            ],
+            'actor': warehouse_actor
         },
         {
             'step': 7,
             'title': 'Đóng hàng / Xuống hàng xong',
             'time': t_finish_unload,
-            'docs': ['Ảnh Kẹp Chì Seal mới', 'Phiếu Cân xe'],
-            'actor': 'Tài xế / Kho'
+            'docs': [
+                {'name': 'Ảnh Kẹp Chì Seal mới', 'url': seal_url},
+                {'name': 'Phiếu Cân xe', 'url': weight_url}
+            ],
+            'actor': warehouse_actor
         },
         {
             'step': 8,
             'title': 'Hoàn tất Chứng từ Giao nhận (Ký POD)',
             'time': t_wh_out,
-            'docs': ['Biên bản giao nhận POD có chữ ký', 'Phiếu xuất kho'],
-            'actor': 'Tài xế'
+            'docs': [
+                {'name': 'Biên bản giao nhận POD có chữ ký', 'url': pod_url},
+                {'name': 'Phiếu xuất kho', 'url': invoice_url}
+            ],
+            'actor': driver_actor
         },
         {
             'step': 9,
             'title': f'Vận chuyển về Bãi hạ Rỗng / Cảng Xuất ({dropoff_name})',
             'time': t_dropoff,
-            'docs': ['Phiếu EIR hạ cont'],
-            'actor': 'Tài xế'
+            'docs': [
+                {'name': 'Phiếu EIR hạ cont', 'url': eir_dropoff_url}
+            ],
+            'actor': driver_actor
         },
         {
             'step': 10,
             'title': 'Tổng hợp chi phí & Đối soát thanh toán',
             'time': t_settle,
-            'docs': ['Bảng kê chi phí & Hóa đơn điện tử'],
-            'actor': 'Kế toán'
+            'docs': [
+                {'name': 'Bảng kê chi phí & Hóa đơn điện tử', 'url': invoice_url}
+            ],
+            'actor': accountant_actor
         }
     ]
 
@@ -162,7 +259,6 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             elif step_num == 2:
                 is_done = False
                 is_active = True
-                # Hiện thời gian phát lệnh nếu có, còn không hiện 'Đang chuẩn bị'
                 time_val = s['time'] if s['time'] and 'date_str' not in s['time'] else 'Đang chuẩn bị'
             else:
                 is_done = False
@@ -178,7 +274,6 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             elif step_num == target_step:
                 is_done = False
                 is_active = True
-                # Hiện thời gian dự kiến/thực tế từ spec, không cứng nhắc 'Đang thực hiện'
                 time_val = s['time'] if s['time'] else 'Đang thực hiện'
             else:
                 is_done = False
