@@ -1,23 +1,27 @@
 <!-- MODAL TẠO LỆNH ĐIỀU ĐỘNG (Bim_ERP-Solutions Defensive Form Standard) -->
 <div
   id="modal-create-trip"
-  class="fixed inset-0 bg-slate-900/60 z-50 hidden-view flex items-center justify-center p-4 backdrop-blur-sm"
+  class="fixed inset-0 bg-slate-900/60 z-50 hidden-view flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in"
 >
   <div
-    class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-slide-up border border-slate-200"
+    class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-100"
   >
+    <!-- Modal Header -->
     <div
-      class="flex justify-between items-center px-6 py-4 border-b bg-slate-50"
+      class="bg-gradient-to-r from-teal-700 to-teal-800 p-5 text-white flex justify-between items-center shrink-0"
     >
-      <h3
-        class="text-[17px] font-bold text-slate-800 flex items-center font-heading"
-      >
-        <i class="ph-fill ph-plus-circle text-teal-600 text-2xl mr-2.5"></i> Tạo
-        Lệnh Điều Động Mới
-      </h3>
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl backdrop-blur-xs border border-white/10">
+          <i class="ph-fill ph-plus-circle text-teal-200"></i>
+        </div>
+        <div>
+          <h3 class="font-black font-heading text-lg tracking-tight">Tạo Lệnh Điều Động Chuyến Xe Mới</h3>
+          <p class="text-xs text-teal-100 font-medium mt-0.5">Phân bổ xe, tài xế, quản lý vỏ cont & kế thừa dữ liệu từ Booking/Báo giá</p>
+        </div>
+      </div>
       <button
         onclick="closeModal('modal-create-trip')"
-        class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+        class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
       >
         <i class="ph ph-x text-xl"></i>
       </button>
@@ -34,39 +38,39 @@
         novalidate
       >
         <!-- Khối Kế Thừa Dữ Liệu Từ Booking (Sale / Báo Giá) -->
-        <div class="bg-teal-50/80 p-4 rounded-xl border border-teal-200 shadow-sm">
+        <div class="bg-teal-50/90 p-4 md:p-5 rounded-2xl border border-teal-200 shadow-xs">
           <div class="flex items-center justify-between mb-2">
-            <label class="form-label text-teal-950 font-black text-sm flex items-center mb-0" for="select-booking-order">
-              <i class="ph-fill ph-handshake text-teal-700 text-lg mr-2"></i>
+            <label class="form-label text-teal-950 font-black text-xs uppercase tracking-wider flex items-center mb-0" for="select-booking-order">
+              <i class="ph-fill ph-handshake text-teal-700 text-base mr-1.5"></i>
               Kế Thừa Thông Tin Từ Booking (Phân Hệ Sale / Báo Giá)
             </label>
             <div class="flex items-center gap-2">
               <button type="button" onclick="openModal('modal-booking')" 
-                class="text-xs font-bold text-teal-800 hover:text-teal-950 bg-white hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-300 flex items-center gap-1 transition-colors shadow-2xs font-heading">
+                class="text-xs font-bold text-teal-800 hover:text-teal-950 bg-white hover:bg-teal-100 px-2.5 py-1 rounded-xl border border-teal-300 flex items-center gap-1 transition-colors shadow-2xs font-heading">
                 <i class="ph-bold ph-plus-circle text-teal-600"></i> Tạo Booking Mới
               </button>
-              <span class="text-[11px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full font-heading">Tự động điền 9 trường</span>
+              <span class="text-[10.5px] font-bold text-teal-700 bg-teal-100/90 px-2 py-0.5 rounded-full font-heading border border-teal-200">Tự động điền 9 trường</span>
             </div>
           </div>
           <div class="relative">
-            <select id="select-booking-order" onchange="onBookingSelected(this.value)" class="form-select text-sm font-bold text-slate-800 bg-white border-teal-300 focus:ring-teal-500 py-2">
+            <select id="select-booking-order" onchange="onBookingSelected(this.value)" class="form-select text-sm font-bold text-slate-800 bg-white border-teal-300 focus:ring-teal-500 py-2 rounded-xl">
               <option value="">-- Chọn Booking / Đơn Hàng Đang Chờ Điều Xe (Hoặc Nhập Thủ Công) --</option>
               <!-- Injected by JS -->
             </select>
           </div>
-          <p class="text-[11.5px] text-teal-800 mt-1.5 flex items-center gap-1 font-medium">
+          <p class="text-[11px] text-teal-800 mt-1.5 flex items-center gap-1 font-medium">
             <i class="ph-fill ph-info text-teal-600"></i>
             Khi chọn Booking, hệ thống tự động điền: Khách hàng, B/L, Cắt máng CY, Lịch đóng hàng, Lộ trình 3 điểm và Đơn giá cước thỏa thuận.
           </p>
         </div>
 
         <!-- Section 1: Chứng từ & Phân loại -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-100 flex-wrap gap-2">
+        <div class="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
             <h4
-              class="font-bold text-slate-800 flex items-center font-heading text-[15px] mb-0"
+              class="font-bold text-slate-800 flex items-center font-heading text-xs uppercase tracking-wider mb-0"
             >
-              <i class="ph-fill ph-file-text text-teal-600 mr-2"></i> 1. Thông Tin Khách Hàng & Vận Đơn
+              <i class="ph-fill ph-file-text text-teal-600 mr-2 text-base"></i> 1. Thông Tin Khách Hàng & Vận Đơn
             </h4>
             
             <!-- Toggle Ghép 2 Cont 20ft (Twin 20ft) -->
