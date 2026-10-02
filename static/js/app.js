@@ -809,22 +809,31 @@ function applyDispatchFilters() {
             }
         }
 
-        if (filterStatus) {
-            if (filterStatus === 'DROP_HOOK') {
-                if (!trip.is_split_trip) return false;
-            } else if (filterStatus === 'TWIN_CONT') {
-                if (!trip.is_twin_container) return false;
-            } else if (filterStatus === 'DET_WARNING') {
-                if (!trip.det_status || !['OVERDUE', 'TODAY', 'WARNING'].includes(trip.det_status.status)) return false;
-            } else if (filterStatus === 'TRANSIT') {
-                if (trip.status !== 'In Transit' && trip.status_raw !== 'TRANSIT') return false;
-            } else if (filterStatus === 'DELIVERED') {
-                if (trip.status !== 'Delivered' && trip.status_raw !== 'DELIVERED') return false;
-            } else if (filterStatus === 'PENDING') {
-                if (!['Dispatched', 'Picked Up', 'Draft'].includes(trip.status)) return false;
-            } else if (trip.status !== filterStatus && trip.status_raw !== filterStatus) {
+        if (!filterStatus || filterStatus === 'ACTIVE') {
+            // Mặc định: Chỉ hiển thị các chuyến đang điều vận, ẩn các chuyến đã hoàn thành hoặc đã hủy
+            if (trip.status === 'COMPLETED' || trip.status === 'CANCELLED' || 
+                trip.status_raw === 'COMPLETED' || trip.status_raw === 'CANCELLED' || 
+                trip.status === 'Hoàn tất & Chốt sổ' || trip.status === 'Đã hủy') {
                 return false;
             }
+        } else if (filterStatus === 'ALL') {
+            // Hiển thị tất cả
+        } else if (filterStatus === 'COMPLETED') {
+            if (trip.status !== 'COMPLETED' && trip.status_raw !== 'COMPLETED' && trip.status !== 'Hoàn tất & Chốt sổ') return false;
+        } else if (filterStatus === 'DROP_HOOK') {
+            if (!trip.is_split_trip) return false;
+        } else if (filterStatus === 'TWIN_CONT') {
+            if (!trip.is_twin_container) return false;
+        } else if (filterStatus === 'DET_WARNING') {
+            if (!trip.det_status || !['OVERDUE', 'TODAY', 'WARNING'].includes(trip.det_status.status)) return false;
+        } else if (filterStatus === 'TRANSIT') {
+            if (trip.status !== 'In Transit' && trip.status_raw !== 'TRANSIT' && trip.status !== 'IN_TRANSIT' && trip.status !== 'RETURNING_EMPTY' && trip.status !== 'CONTAINER_PICKED') return false;
+        } else if (filterStatus === 'DELIVERED') {
+            if (trip.status !== 'Delivered' && trip.status_raw !== 'DELIVERED' && trip.status !== 'AT_WAREHOUSE' && trip.status !== 'UNLOADING') return false;
+        } else if (filterStatus === 'PENDING') {
+            if (!['Dispatched', 'Picked Up', 'Draft', 'DRAFT', 'DISPATCHED', 'ACCEPTED'].includes(trip.status) && !['DRAFT', 'DISPATCHED', 'ACCEPTED'].includes(trip.status_raw)) return false;
+        } else if (trip.status !== filterStatus && trip.status_raw !== filterStatus) {
+            return false;
         }
 
         if (filterType && (trip.type_raw || '').toUpperCase() !== filterType) {
@@ -876,6 +885,13 @@ function applyDispatchFilters() {
             valB = (valB || '').toString();
             const cmp = valA.localeCompare(valB, 'vi');
             return dispatchSortDirection === 'asc' ? cmp : -cmp;
+        });
+    } else {
+        // Mặc định: Chuyến mới nhất ở trên đầu
+        list.sort((a, b) => {
+            const idA = (a.id || '').toString();
+            const idB = (b.id || '').toString();
+            return idB.localeCompare(idA, 'vi', { numeric: true });
         });
     }
 
@@ -2818,6 +2834,10 @@ function renderTripBookingFilesList() {
                         class="p-1 rounded text-teal-700 hover:text-teal-900 hover:bg-teal-100 transition-colors" title="Mở xem file">
                         <i class="ph-bold ph-arrow-square-out text-sm"></i>
                     </a>
+                    <button type="button" onclick="removeInheritedBookingFile()" 
+                        class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors" title="Gỡ bỏ file kế thừa">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -2878,6 +2898,12 @@ function showInheritedBookingFile(fileUrl, fileName) {
         currentInheritedBookingFile = { url: fileUrl, name: fileName || 'File_Booking_Dinh_Kem' };
     }
     renderTripBookingFilesList();
+}
+
+function removeInheritedBookingFile() {
+    currentInheritedBookingFile = null;
+    renderTripBookingFilesList();
+    showToast('info', 'Đã gỡ bỏ file đính kèm kế thừa từ Booking.');
 }
 
 // 2. Quản lý multi-files cho Sale / Booking Order
@@ -5031,7 +5057,7 @@ function setSelectValueCaseInsensitive(selectEl, value, label = null) {
 
 function populateMasterDataDropdowns() {
     if (!masterDataFormOptionsCache) return;
-    const { customers, locations, drivers, vehicles } = masterDataFormOptionsCache;
+    const { customers, locations, drivers, vehicles, shipping_lines, routes } = masterDataFormOptionsCache;
 
     function fillSelect(elId, items, placeholder, valueKey = 'name', textKey = 'label') {
         const sel = document.getElementById(elId);
@@ -5072,8 +5098,133 @@ function populateMasterDataDropdowns() {
     fillSelect('booking-delivery', locations?.warehouse_options, '-- Chọn Kho Khách --', 'name', 'label');
     fillSelect('booking-dropoff', locations?.dropoff_options, '-- Chọn Điểm Hạ --', 'name', 'label');
 
+    // Datalist Hãng Tàu cho Booking
+    const slDatalist = document.getElementById('shipping-lines-datalist');
+    if (slDatalist && Array.isArray(shipping_lines)) {
+        slDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days}d / DET: ${sl.free_det_days}d)</option>`).join('');
+    }
+
     // Modal Báo Giá (modal-quotation)
     fillSelect('quote-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
+    
+    // Tuyến đường mẫu Báo giá
+    const quotePreset = document.getElementById('quote-route-preset');
+    if (quotePreset && Array.isArray(routes)) {
+        quotePreset.innerHTML = '<option value="">-- Hoặc Chọn Tuyến Mẫu Danh Mục --</option>' +
+            routes.map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate}">${r.label || r.route_name}</option>`).join('');
+    }
+}
+
+// --- BỘ LỌC TÌM KIẾM NHANH KHÁCH HÀNG TRÊN DROPDOWN (SEARCHABLE DROPDOWN) ---
+function filterCustomerSelectOptions(searchId, selectId) {
+    const searchInput = document.getElementById(searchId);
+    const selectEl = document.getElementById(selectId);
+    if (!searchInput || !selectEl) return;
+    
+    const keyword = searchInput.value.trim().toLowerCase();
+    const options = selectEl.options;
+    let firstMatch = null;
+    
+    for (let i = 0; i < options.length; i++) {
+        const opt = options[i];
+        if (!opt.value) continue;
+        const text = opt.text.toLowerCase();
+        if (!keyword || text.includes(keyword)) {
+            opt.style.display = '';
+            if (!firstMatch && keyword) firstMatch = opt;
+        } else {
+            opt.style.display = 'none';
+        }
+    }
+    if (firstMatch && keyword) {
+        selectEl.value = firstMatch.value;
+    }
+}
+
+// --- QUY TẮC MỞ NHANH MODAL MASTER DATA & TỰ ĐỘNG CHỌN (UNIVERSAL QUICK-ADD) ---
+async function openMasterDataModalQuick(tabKey, targetSelectId = null) {
+    quickMasterDataTargetSelectId = targetSelectId;
+    currentMasterDataTab = tabKey;
+    await openCreateMasterDataModal();
+}
+
+// --- XỬ LÝ KHU VỰC & TUYẾN ĐƯỜNG BÁO GIÁ ---
+function onQuoteZoneChanged(zoneCode) {
+    const presetSelect = document.getElementById('quote-route-preset');
+    const routeInput = document.getElementById('quote-route');
+    if (!presetSelect) return;
+    
+    const zoneMap = {
+        'KV_CAT_LAI': 'Khu Vực Cát Lái',
+        'KV_CAI_MEP': 'Khu Vực Vũng Tàu',
+        'KV_HIEP_PHUOC': 'Khu Vực TP.HCM',
+        'KV_BINH_DUONG': 'Khu Vực Bình Dương',
+        'KV_DONG_NAI': 'Khu Vực Đồng Nai',
+        'KV_TAY_NINH': 'Khu Vực Tây Ninh',
+        'KV_LONG_AN': 'Khu Vực Long An',
+        'KV_OTHER': 'Tuyến Đặc Thù'
+    };
+    
+    const zoneName = zoneMap[zoneCode] || '';
+    const routes = masterDataFormOptionsCache?.routes || [];
+    const filteredRoutes = zoneName ? routes.filter(r => r.area_group === zoneName) : routes;
+    
+    presetSelect.innerHTML = '<option value="">-- Chọn Tuyến Mẫu Danh Mục --</option>' +
+        filteredRoutes.map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate}">${r.label || r.route_name}</option>`).join('');
+        
+    if (zoneCode && routeInput) {
+        const zonePrefixes = {
+            'KV_CAT_LAI': 'CÁT LÁI ➔ ',
+            'KV_CAI_MEP': 'CÁI MÉP ➔ ',
+            'KV_HIEP_PHUOC': 'HIỆP PHƯỚC ➔ ',
+            'KV_BINH_DUONG': 'KHO BÌNH DƯƠNG ➔ ',
+            'KV_DONG_NAI': 'KHO ĐỒNG NAI ➔ ',
+            'KV_TAY_NINH': 'KCN PHƯỚC ĐÔNG ➔ ',
+            'KV_LONG_AN': 'KCN THUẬN ĐẠO ➔ ',
+            'KV_OTHER': ''
+        };
+        if (zonePrefixes[zoneCode] && !routeInput.value) {
+            routeInput.value = zonePrefixes[zoneCode];
+        }
+    }
+}
+
+function onQuoteRoutePresetChanged(routeVal) {
+    const routeInput = document.getElementById('quote-route');
+    if (routeInput && routeVal) {
+        routeInput.value = routeVal;
+    }
+}
+
+// --- KHỞI TẠO MẶC ĐỊNH NGÀY/GIỜ CHO CÁC FORM TẠO MỚI ---
+function initDefaultDatesForCreateTrip() {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const loadingDateEl = document.getElementById('inp-loading-date');
+    if (loadingDateEl && !loadingDateEl.value) {
+        loadingDateEl.value = todayStr;
+    }
+    
+    const loadingTimeEl = document.getElementById('inp-loading-time');
+    if (loadingTimeEl && !loadingTimeEl.value) {
+        loadingTimeEl.value = '08:00';
+    }
+    
+    const demDaysEl = document.getElementById('inp-det-free-days');
+    if (demDaysEl && (!demDaysEl.value || demDaysEl.value === '3')) {
+        demDaysEl.value = '7';
+    }
+    
+    onFreeDaysChange();
+}
+
+function initDefaultDatesForQuotation() {
+    const priceInput = document.getElementById('quote-unit-price');
+    if (priceInput && !priceInput.value) priceInput.value = formatNumberVN(3800000);
+    const tripsInput = document.getElementById('quote-monthly-trips');
+    if (tripsInput && !tripsInput.value) tripsInput.value = formatNumberVN(20);
+    calculateQuoteExpectedRevenue();
 }
 
 // --- NGHIỆP VỤ GHÉP 2 CONT 20FT (TWIN 20FT DRAYAGE TMS STANDARD) ---
@@ -5105,14 +5256,18 @@ function toggleTwinContMode(isTwin) {
     }
 }
 
+// --- TÍNH HẠN TRẢ VỎ CONTAINER (7 NGÀY CỘNG 6 DO TÍNH CẢ NGÀY ĐẦU) ---
 function onFreeDaysChange() {
     const daysInput = document.getElementById('inp-det-free-days');
     const expiryInput = document.getElementById('inp-det-expiry');
+    const loadingDateInput = document.getElementById('inp-loading-date');
     if (!daysInput || !expiryInput) return;
     const days = parseInt(daysInput.value) || 0;
     if (days > 0) {
-        const d = new Date();
-        d.setDate(d.getDate() + days);
+        const baseDate = (loadingDateInput && loadingDateInput.value) ? new Date(loadingDateInput.value) : new Date();
+        const d = new Date(baseDate);
+        // Tính hạn trả vỏ: ngày nhận cont là ngày 1 -> cộng thêm (days - 1) ngày
+        d.setDate(d.getDate() + Math.max(0, days - 1));
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
@@ -5321,6 +5476,7 @@ async function openModal(id, extraParam = null) {
             chkTwin.checked = false;
             toggleTwinContMode(false);
         }
+        initDefaultDatesForCreateTrip();
         onFreeDaysChange();
         await loadMasterDataFormOptions();
         populateMasterDataDropdowns();
@@ -8613,6 +8769,26 @@ async function submitMasterDataForm(e) {
             showToast('success', data.message || 'Lưu bản ghi thành công!');
             closeMasterDataModal();
             loadMasterData();
+
+            // Tự động tải lại danh mục cho các Modal đang mở và chọn ngay bản ghi vừa tạo
+            await loadMasterDataFormOptions(true);
+            populateMasterDataDropdowns();
+
+            if (quickMasterDataTargetSelectId) {
+                const targetEl = document.getElementById(quickMasterDataTargetSelectId);
+                const createdName = payload.name || payload.code || payload.license_plate || payload.route_name || '';
+                if (targetEl && createdName) {
+                    if (targetEl.tagName === 'SELECT') {
+                        setSelectValueCaseInsensitive(targetEl, createdName);
+                    } else {
+                        targetEl.value = createdName;
+                    }
+                    if (typeof targetEl.onchange === 'function') {
+                        targetEl.onchange();
+                    }
+                }
+                quickMasterDataTargetSelectId = null;
+            }
         } else {
             showToast('danger', data.message || data.error || data.detail || 'Có lỗi xảy ra khi lưu dữ liệu!');
         }

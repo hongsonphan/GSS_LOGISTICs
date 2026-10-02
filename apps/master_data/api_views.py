@@ -166,6 +166,18 @@ class MasterDataFormOptionsAPIView(APIView):
             for sc in Subcontractor.objects.filter(is_active=True).order_by('name')
         ]
 
+        # 8. Tuyến đường & Khu Vực (DriverSalaryTariff & RouteTariff)
+        routes = [
+            {
+                'id': dst.id,
+                'area_group': dst.area_group,
+                'route_name': dst.route_name,
+                'salary_rate': float(dst.salary_rate),
+                'label': f"[{dst.area_group}] {dst.route_name}"
+            }
+            for dst in DriverSalaryTariff.objects.all().order_by('area_group', 'route_name')
+        ]
+
         return Response({
             'customers': customers,
             'locations': {
@@ -184,6 +196,7 @@ class MasterDataFormOptionsAPIView(APIView):
             'shipping_lines': shipping_lines,
             'subcontractors': subcontractors,
             'container_types': container_types,
+            'routes': routes,
         })
 
 # ==============================================================================

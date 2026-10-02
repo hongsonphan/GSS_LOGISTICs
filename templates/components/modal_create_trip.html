@@ -40,7 +40,13 @@
               <i class="ph-fill ph-handshake text-teal-700 text-lg mr-2"></i>
               Kế Thừa Thông Tin Từ Booking (Phân Hệ Sale / Báo Giá)
             </label>
-            <span class="text-[11px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full font-heading">Tự động điền 9 trường dữ liệu</span>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="openModal('modal-booking')" 
+                class="text-xs font-bold text-teal-800 hover:text-teal-950 bg-white hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-300 flex items-center gap-1 transition-colors shadow-2xs font-heading">
+                <i class="ph-bold ph-plus-circle text-teal-600"></i> Tạo Booking Mới
+              </button>
+              <span class="text-[11px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full font-heading">Tự động điền 9 trường</span>
+            </div>
           </div>
           <div class="relative">
             <select id="select-booking-order" onchange="onBookingSelected(this.value)" class="form-select text-sm font-bold text-slate-800 bg-white border-teal-300 focus:ring-teal-500 py-2">
@@ -76,10 +82,18 @@
           <!-- Thông tin Khách hàng, Loại hình, Quy cách cont -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="md:col-span-2">
-              <label class="form-label" for="inp-customer"
-                >Khách hàng / Chủ hàng (Chọn từ Danh Mục)
-                <span class="text-rose-500">*</span></label
-              >
+              <div class="flex items-center justify-between mb-1">
+                <label class="form-label mb-0" for="inp-customer"
+                  >Khách hàng / Chủ hàng <span class="text-rose-500">*</span></label
+                >
+                <button type="button" onclick="openMasterDataModalQuick('customers', 'inp-customer')" 
+                  class="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded border border-teal-200 flex items-center gap-1 transition-colors">
+                  <i class="ph-bold ph-plus"></i> Thêm KH
+                </button>
+              </div>
+              <input type="text" id="inp-customer-search" oninput="filterCustomerSelectOptions('inp-customer-search', 'inp-customer')" 
+                placeholder="🔍 Gõ tìm nhanh tên KH / MST..." 
+                class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 transition-all font-medium mb-1.5 focus:bg-white focus:border-teal-600">
               <select
                 id="inp-customer"
                 class="form-select font-bold text-slate-800"
@@ -385,10 +399,15 @@
           </h4>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-teal-50/40 p-4 rounded-xl border border-teal-100">
-              <label class="form-label text-teal-900" for="inp-pickup"
-                >1. Nơi Lấy (Cảng / ICD / Depot)
-                <span class="text-rose-500">*</span></label
-              >
+              <div class="flex items-center justify-between mb-1">
+                <label class="form-label text-teal-900 mb-0" for="inp-pickup"
+                  >1. Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span></label
+                >
+                <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-pickup')" 
+                  class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-100/80 px-1.5 py-0.2 rounded border border-teal-300 flex items-center gap-0.5">
+                  <i class="ph-bold ph-plus"></i> Thêm
+                </button>
+              </div>
               <select
                 id="inp-pickup"
                 class="form-select font-bold text-teal-900 uppercase mb-1"
@@ -398,10 +417,15 @@
               <div id="err-pickup" class="field-error-msg hidden"></div>
             </div>
             <div class="bg-amber-50/40 p-4 rounded-xl border border-amber-100">
-              <label class="form-label text-amber-900" for="inp-warehouse"
-                >2. Nơi Đóng/Trả (Kho KH / Nhà Máy)
-                <span class="text-rose-500">*</span></label
-              >
+              <div class="flex items-center justify-between mb-1">
+                <label class="form-label text-amber-900 mb-0" for="inp-warehouse"
+                  >2. Nơi Đóng/Trả (Kho KH) <span class="text-rose-500">*</span></label
+                >
+                <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-warehouse')" 
+                  class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-100/80 px-1.5 py-0.2 rounded border border-amber-300 flex items-center gap-0.5">
+                  <i class="ph-bold ph-plus"></i> Thêm
+                </button>
+              </div>
               <select
                 id="inp-warehouse"
                 class="form-select font-bold text-amber-900 uppercase mb-1"
@@ -413,9 +437,15 @@
             <div
               class="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100"
             >
-              <label class="form-label text-emerald-900" for="inp-dropoff"
-                >3. Nơi Hạ (Bãi Rỗng / Cảng Xuất)</label
-              >
+              <div class="flex items-center justify-between mb-1">
+                <label class="form-label text-emerald-900 mb-0" for="inp-dropoff"
+                  >3. Nơi Hạ (Bãi Rỗng / Cảng)</label
+                >
+                <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-dropoff')" 
+                  class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-100/80 px-1.5 py-0.2 rounded border border-emerald-300 flex items-center gap-0.5">
+                  <i class="ph-bold ph-plus"></i> Thêm
+                </button>
+              </div>
               <select
                 id="inp-dropoff"
                 class="form-select font-bold text-emerald-900 uppercase mb-1"
@@ -446,9 +476,15 @@
           <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
           <div id="section-direct-dispatch" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="form-label" for="inp-driver">
-                Tài xế nhận lệnh (Toàn trình) <span class="text-rose-500">*</span>
-              </label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="form-label mb-0" for="inp-driver">
+                  Tài xế nhận lệnh (Toàn trình) <span class="text-rose-500">*</span>
+                </label>
+                <button type="button" onclick="openMasterDataModalQuick('driver_tariffs', 'inp-driver')" 
+                  class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 flex items-center gap-0.5">
+                  <i class="ph-bold ph-plus"></i> Danh mục
+                </button>
+              </div>
               <select id="inp-driver" class="form-select font-bold text-slate-800">
                 <option value="">-- Chọn tài xế điều động --</option>
               </select>

@@ -23,24 +23,60 @@
             <input type="hidden" id="quote-id" value="">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Tên Khách Hàng (Chọn từ Danh Mục) -->
+                <!-- Tên Khách Hàng (Tìm Kiếm + Chọn Danh Mục + Nút Thêm Nhanh) -->
                 <div class="md:col-span-2">
-                    <label class="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-xs">
-                        Tên Khách Hàng / Đối Tác <span class="text-rose-600">*</span>
-                    </label>
-                    <div class="relative">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider text-xs">
+                            Tên Khách Hàng / Đối Tác <span class="text-rose-600">*</span>
+                        </label>
+                        <button type="button" onclick="openMasterDataModalQuick('customers', 'quote-customer')" 
+                            class="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-200 flex items-center gap-1 transition-colors">
+                            <i class="ph-bold ph-plus"></i> Thêm Khách Hàng
+                        </button>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="relative">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <input type="text" id="quote-customer-search" oninput="filterCustomerSelectOptions('quote-customer-search', 'quote-customer')" 
+                                placeholder="🔍 Gõ tìm nhanh tên khách hàng / MST / mã KH..." 
+                                class="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-xs text-slate-800 transition-all font-medium mb-1.5">
+                        </div>
                         <select id="quote-customer" required 
-                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 font-bold text-slate-900 text-sm transition-all">
+                            class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 font-bold text-slate-900 text-sm transition-all">
                             <option value="">-- Chọn Khách Hàng Trong Danh Mục --</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Tuyến Đường Vận Chuyển -->
+                <!-- Tuyến Đường Vận Chuyển & Phân Loại Khu Vực -->
                 <div class="md:col-span-2">
-                    <label class="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-xs">
-                        Tuyến Đường Vận Chuyển <span class="text-rose-600">*</span>
-                    </label>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider text-xs">
+                            Tuyến Đường & Khu Vực Vận Chuyển <span class="text-rose-600">*</span>
+                        </label>
+                        <button type="button" onclick="openMasterDataModalQuick('driver_tariffs', 'quote-route')" 
+                            class="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-200 flex items-center gap-1 transition-colors">
+                            <i class="ph-bold ph-plus"></i> Thêm Tuyến Danh Mục
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                        <select id="quote-zone-select" onchange="onQuoteZoneChanged(this.value)" 
+                            class="sm:col-span-1 px-3 py-2 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-900 focus:bg-white focus:ring-2 focus:ring-indigo-200">
+                            <option value="">-- Chọn Khu Vực / Vùng --</option>
+                            <option value="KV_CAT_LAI">KV Cát Lái (TP.HCM)</option>
+                            <option value="KV_CAI_MEP">KV Cái Mép (Vũng Tàu)</option>
+                            <option value="KV_HIEP_PHUOC">KV Hiệp Phước (Nhà Bè)</option>
+                            <option value="KV_BINH_DUONG">KV Bình Dương (VSIP/Sóng Thần/Bàu Bàng)</option>
+                            <option value="KV_DONG_NAI">KV Đồng Nai (Biên Hòa/Nhơn Trạch)</option>
+                            <option value="KV_TAY_NINH">KV Tây Ninh (Trảng Bàng/Phước Đông)</option>
+                            <option value="KV_LONG_AN">KV Long An (Bến Lức/Đức Hòa)</option>
+                            <option value="KV_OTHER">Tuyến Khác / Liên Tỉnh</option>
+                        </select>
+                        <select id="quote-route-preset" onchange="onQuoteRoutePresetChanged(this.value)" 
+                            class="sm:col-span-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-200">
+                            <option value="">-- Hoặc Chọn Tuyến Mẫu Danh Mục --</option>
+                        </select>
+                    </div>
                     <input type="text" id="quote-route" required placeholder="VD: CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG hoặc SOWATCO ➔ TTI CỦ CHI" 
                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 font-bold text-slate-900 text-sm transition-all">
                     <p class="text-xs text-slate-400 mt-1">Mô tả rõ điểm đầu (cảng/depot/kho xuất) đến điểm cuối (nhà máy/kho nhận).</p>

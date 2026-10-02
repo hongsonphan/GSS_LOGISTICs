@@ -339,7 +339,8 @@ class TripListCreateAPIView(APIView):
 
         trips_qs = DispatchTrip.objects.select_related(
             'customer', 'vehicle', 'driver', 'dropoff_vehicle', 'dropoff_driver'
-        ).prefetch_related('customs_declarations').all()
+        ).prefetch_related('customs_declarations').order_by('-created_at')
+
         if query:
             trips_qs = trips_qs.filter(
                 Q(trip_code__icontains=query) |
@@ -350,10 +351,25 @@ class TripListCreateAPIView(APIView):
                 Q(customer__name__icontains=query) |
                 Q(vehicle__license_plate__icontains=query)
             )
-        if status_filter and status_filter != 'Tất cả trạng thái':
-            # Map Vietnamese label if needed
+
+        if not status_filter or status_filter in ['ACTIVE', 'Đang điều vận']:
+            # Mặc định: Chỉ hiển thị các chuyến đang điều vận, ẩn các chuyến đã hoàn thành hoặc đã hủy
+            trips_qs = trips_qs.exclude(status__in=[TripStatus.COMPLETED, TripStatus.CANCELLED])
+        elif status_filter in ['ALL', 'Tất cả trạng thái', 'Tất cả']:
+            pass
+        elif status_filter in ['COMPLETED', 'Đã hoàn thành']:
+            trips_qs = trips_qs.filter(status=TripStatus.COMPLETED)
+        elif status_filter in ['CANCELLED', 'Đã hủy']:
+            trips_qs = trips_qs.filter(status=TripStatus.CANCELLED)
+        elif status_filter in ['TRANSIT', 'Đang vận chuyển']:
+            trips_qs = trips_qs.filter(status__in=[TripStatus.IN_TRANSIT, TripStatus.CONTAINER_PICKED, TripStatus.RETURNING_EMPTY])
+        elif status_filter in ['DELIVERED', 'Đã giao hàng']:
+            trips_qs = trips_qs.filter(status__in=[TripStatus.DELIVERED, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING])
+        elif status_filter in ['PENDING', 'Chờ khởi hành']:
+            trips_qs = trips_qs.filter(status__in=[TripStatus.DRAFT, TripStatus.DISPATCHED, TripStatus.ACCEPTED])
+        else:
             for k, v in TripStatus.choices:
-                if status_filter.lower() in v.lower():
+                if status_filter.lower() in v.lower() or status_filter.upper() == k:
                     trips_qs = trips_qs.filter(status=k)
                     break
 
@@ -406,8 +422,8 @@ class TripListCreateAPIView(APIView):
                 'cargo_notes_2': t.cargo_notes_2 or '',
                 'det_free_days': t.det_free_days,
                 'dem_free_days': t.dem_free_days,
-                'det_expiry_date': t.det_expiry_date.strftime('%d/%m/%Y') if t.det_expiry_date else '',
-                'dem_expiry_date': t.dem_expiry_date.strftime('%d/%m/%Y') if t.dem_expiry_date else '',
+                'det_expiry_date': (f"23:59 {t.det_expiry_date.strftime('%d/%m/%Y')}" if t.det_expiry_date else ''),
+                'dem_expiry_date': (f"23:59 {t.dem_expiry_date.strftime('%d/%m/%Y')}" if t.dem_expiry_date else ''),
                 'det_status': det_status,
                 'container_condition': t.container_condition,
                 'container_condition_label': t.get_container_condition_display(),
@@ -574,8 +590,11 @@ class TripListCreateAPIView(APIView):
         dem_days = int(data.get('dem_free_days') or 3)
         det_exp = parse_date(str(data.get('det_expiry_date')).strip()) if data.get('det_expiry_date') else None
         dem_exp = parse_date(str(data.get('dem_expiry_date')).strip()) if data.get('dem_expiry_date') else None
+        if not dem_exp and dem_days > 0:
+            # Quy chuẩn tính hạn trả vỏ: 7 ngày thì cộng 6 ngày (do tính cả ngày đầu lấy cont)
+            dem_exp = timezone.now().date() + timedelta(days=max(0, dem_days - 1))
         if not det_exp and det_days > 0:
-            det_exp = timezone.now().date() + timedelta(days=det_days)
+            det_exp = timezone.now().date() + timedelta(days=max(0, det_days - 1))
 
         # Tiêu chuẩn 7 & 8: Xác thực & xử lý tệp đính kèm Booking từ khách hàng (Ảnh hoặc PDF)
         uploaded_booking_file = request.FILES.get('booking_file') or request.FILES.get('file')
@@ -902,8 +921,8 @@ class TripDetailAPIView(APIView):
             'cargo_notes_2': trip.cargo_notes_2 or '',
             'det_free_days': trip.det_free_days,
             'dem_free_days': trip.dem_free_days,
-            'det_expiry_date': trip.det_expiry_date.strftime('%d/%m/%Y') if trip.det_expiry_date else '',
-            'dem_expiry_date': trip.dem_expiry_date.strftime('%d/%m/%Y') if trip.dem_expiry_date else '',
+            'det_expiry_date': (f"23:59 {trip.det_expiry_date.strftime('%d/%m/%Y')}" if trip.det_expiry_date else ''),
+            'dem_expiry_date': (f"23:59 {trip.dem_expiry_date.strftime('%d/%m/%Y')}" if trip.dem_expiry_date else ''),
             'det_status': calculate_dem_det_status(trip),
             'container_condition': trip.container_condition,
             'container_condition_label': trip.get_container_condition_display(),
