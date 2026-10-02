@@ -1454,8 +1454,8 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                 timelineList.forEach(item => {
                     let rowClass = 'hover:bg-slate-50/60 transition-colors';
                     let iconHtml = `<div class="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-normal mx-auto">${item.step}</div>`;
-                    let textClass = 'text-slate-400 font-normal text-[13px]';
-                    let actorTextClass = 'text-slate-400 font-normal text-[13px]';
+                    let actorTextClass = 'text-slate-300 font-normal text-[13px]';
+                    let actorDisplay = '—';
                     let badgeHtml = '<span class="inline-block px-2 py-0.5 rounded text-[10px] font-normal text-slate-400 bg-slate-100 border border-slate-200">Chưa thực hiện</span>';
                     
                     if (item.active) {
@@ -1463,12 +1463,14 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                         iconHtml = '<div class="w-6 h-6 rounded-full bg-teal-600 text-white ring-4 ring-teal-100 flex items-center justify-center font-bold text-xs animate-pulse mx-auto"><div class="w-2 h-2 rounded-full bg-white"></div></div>';
                         textClass = 'text-teal-950 font-bold text-[14.5px]';
                         actorTextClass = 'text-teal-950 font-bold text-[14.5px]';
+                        actorDisplay = (item.actor && item.actor !== '—') ? item.actor : '—';
                         badgeHtml = '<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300 whitespace-nowrap animate-pulse">ĐANG THỰC HIỆN</span>';
                     } else if (item.done) {
                         rowClass = 'hover:bg-slate-50/80 transition-colors';
                         iconHtml = '<div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-xs mx-auto"><i class="ph-bold ph-check text-xs"></i></div>';
                         textClass = 'text-slate-800 font-bold text-[13px]';
                         actorTextClass = 'text-slate-800 font-bold text-[13px]';
+                        actorDisplay = (item.actor && item.actor !== '—') ? item.actor : '—';
                         badgeHtml = '<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">Hoàn thành</span>';
                     }
 
@@ -1510,7 +1512,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                                 ${badgeHtml}
                             </td>
                             <td class="py-3 px-3 align-top whitespace-nowrap">
-                                <span class="${actorTextClass}">${item.actor || '—'}</span>
+                                <span class="${actorTextClass}">${actorDisplay}</span>
                             </td>
                         </tr>
                     `;

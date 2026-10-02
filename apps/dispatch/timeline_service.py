@@ -242,28 +242,33 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     result = []
     for s in specs:
         step_num = s['step']
-        # Tính toán done / active
+        # Tính toán done / active / actor
         if trip.status == TripStatus.COMPLETED:
             is_done = True
             is_active = False
             time_val = s['time']
+            actor_val = s.get('actor', '—')
         elif trip.status == TripStatus.CANCELLED:
             is_done = False
             is_active = False
             time_val = 'Đã hủy'
+            actor_val = '—'
         elif trip.status == TripStatus.DRAFT:
             if step_num == 1:
                 is_done = True
                 is_active = False
                 time_val = s['time']
+                actor_val = s.get('actor', '—')
             elif step_num == 2:
                 is_done = False
                 is_active = True
                 time_val = s['time'] if s['time'] and 'date_str' not in s['time'] else 'Đang chuẩn bị'
+                actor_val = s.get('actor', '—')
             else:
                 is_done = False
                 is_active = False
                 time_val = ''
+                actor_val = '—'
         else:
             # Các trạng thái vận hành khác
             target_step = curr_idx + 1
@@ -271,14 +276,17 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
                 is_done = True
                 is_active = False
                 time_val = s['time']
+                actor_val = s.get('actor', '—')
             elif step_num == target_step:
                 is_done = False
                 is_active = True
                 time_val = s['time'] if s['time'] else 'Đang thực hiện'
+                actor_val = s.get('actor', '—')
             else:
                 is_done = False
                 is_active = False
                 time_val = ''
+                actor_val = '—'
 
         result.append({
             'step': step_num,
@@ -286,8 +294,8 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             'time': time_val,
             'done': is_done,
             'active': is_active,
-            'docs': s.get('docs', []),
-            'actor': s.get('actor', '')
+            'docs': s.get('docs', []) if (is_done or is_active) else [],
+            'actor': actor_val
         })
 
     return result
