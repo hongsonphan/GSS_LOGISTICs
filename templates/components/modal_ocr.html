@@ -3,7 +3,7 @@
     <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col animate-slide-up">
         <div class="flex justify-between items-center p-4 border-b bg-slate-50">
             <h3 class="font-bold text-slate-800 flex items-center font-heading" id="ocr-modal-title">
-                <i class="ph-fill ph-camera text-teal-700 text-xl mr-2"></i> Báo Cáo Phí (AI OCR)
+                <i class="ph-bold ph-camera text-teal-700 text-xl mr-2"></i> Báo Cáo Phí (AI OCR)
             </h3>
             <button onclick="closeModal('modal-ocr')" class="p-1 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
                 <i class="ph ph-x text-xl"></i>
@@ -15,7 +15,7 @@
             <div id="ocr-step-1" class="space-y-4">
                 <div onclick="startOcrScan()" class="border-2 border-dashed border-teal-400 rounded-2xl p-10 flex flex-col items-center justify-center text-slate-500 hover:bg-teal-50/50 cursor-pointer transition-colors group">
                     <div class="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                        <i class="ph-fill ph-camera text-4xl text-teal-600"></i>
+                        <i class="ph-bold ph-camera text-4xl text-teal-600"></i>
                     </div>
                     <p class="font-bold text-teal-950 font-heading text-base" id="ocr-upload-text">Mở Camera Chụp Vé/Hóa Đơn</p>
                     <p class="text-xs text-center text-slate-500 mt-1" id="ocr-upload-sub">Hệ thống AI OCR sẽ trích xuất số tiền tự động.</p>
@@ -33,7 +33,7 @@
             <div id="ocr-step-3" class="hidden-view space-y-4 animate-fade-in">
                 <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5">
                     <p class="text-emerald-800 font-bold text-sm flex items-center font-heading">
-                        <i class="ph-fill ph-check-circle mr-1.5 text-base"></i> Quét thành công (Độ chính xác 98.5%)
+                        <i class="ph-bold ph-check-circle mr-1.5 text-base"></i> Quét thành công (Độ chính xác 98.5%)
                     </p>
                     <p class="text-emerald-700 text-xs mt-1 italic font-medium" id="ocr-raw-text">Dữ liệu gốc OCR: "Trạm thu phí Cầu Đồng Nai - 120.000 VNĐ"</p>
                 </div>
@@ -81,7 +81,7 @@
                 </div>
 
                 <button onclick="submitOcrData()" class="w-full py-3.5 font-bold rounded-xl shadow-md text-white bg-teal-700 hover:bg-teal-800 mt-4 flex justify-center items-center font-heading transition-all active:scale-95">
-                    <i class="ph-fill ph-check-circle mr-2 text-lg"></i> Xác Nhận & Lưu Chứng Từ
+                    <i class="ph-bold ph-check-circle mr-2 text-lg"></i> Xác Nhận & Lưu Chứng Từ
                 </button>
             </div>
 

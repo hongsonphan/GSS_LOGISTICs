@@ -8,123 +8,121 @@
   >
     <!-- Modal Header -->
     <div
-      class="bg-gradient-to-r from-teal-700 to-teal-800 p-5 text-white flex justify-between items-center shrink-0"
+      class="bg-gradient-to-r from-teal-700 to-teal-800 px-5 py-3 text-white flex justify-between items-center shrink-0"
     >
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl backdrop-blur-xs border border-white/10">
-          <i class="ph-fill ph-plus-circle text-teal-200"></i>
+        <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-lg backdrop-blur-xs border border-white/10">
+          <i class="ph-bold ph-plus-circle text-teal-200"></i>
         </div>
         <div>
-          <h3 class="font-black font-heading text-lg tracking-tight">Tạo Lệnh Điều Động Chuyến Xe Mới</h3>
-          <p class="text-xs text-teal-100 font-medium mt-0.5">Phân bổ xe, tài xế, quản lý vỏ cont & kế thừa dữ liệu từ Booking/Báo giá</p>
+          <h3 class="font-black font-heading text-base tracking-tight leading-tight">Tạo Lệnh Điều Động Chuyến Xe Mới</h3>
+          <p class="text-[11px] text-teal-100 font-medium leading-tight">Phân bổ xe, tài xế, quản lý vỏ cont & kế thừa từ Booking/Báo giá</p>
         </div>
       </div>
       <button
         onclick="closeModal('modal-create-trip')"
-        class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+        class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
       >
-        <i class="ph ph-x text-xl"></i>
+        <i class="ph ph-x text-lg"></i>
       </button>
     </div>
 
-    <div class="p-6 flex-1 overflow-y-auto bg-slate-50/40">
+    <div class="p-4 flex-1 overflow-y-auto bg-slate-50/40">
       <form
         id="form-create-trip"
         onsubmit="
           event.preventDefault();
           submitNewTrip();
         "
-        class="space-y-5"
+        class="space-y-3"
         novalidate
       >
         <!-- Khối Kế Thừa Dữ Liệu Từ Booking (Sale / Báo Giá) -->
-        <div class="bg-teal-50/90 p-4 md:p-5 rounded-2xl border border-teal-200 shadow-xs">
-          <div class="flex items-center justify-between mb-2">
+        <div class="bg-teal-50/90 p-3 rounded-xl border border-teal-200 shadow-xs">
+          <div class="flex items-center justify-between mb-1">
             <label class="form-label text-teal-950 font-black text-xs uppercase tracking-wider flex items-center mb-0" for="select-booking-order">
-              <i class="ph-fill ph-handshake text-teal-700 text-base mr-1.5"></i>
-              Kế Thừa Thông Tin Từ Booking (Phân Hệ Sale / Báo Giá)
+              <i class="ph-bold ph-handshake text-teal-700 text-sm mr-1"></i>
+              Kế Thừa Thông Tin Từ Booking (Sale / Báo Giá)
             </label>
             <div class="flex items-center gap-2">
               <button type="button" onclick="openModal('modal-booking')" 
-                class="text-xs font-bold text-teal-800 hover:text-teal-950 bg-white hover:bg-teal-100 px-2.5 py-1 rounded-xl border border-teal-300 flex items-center gap-1 transition-colors shadow-2xs font-heading">
+                class="text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-white hover:bg-teal-100 px-2 py-0.5 rounded-lg border border-teal-300 flex items-center gap-1 transition-colors shadow-2xs font-heading">
                 <i class="ph-bold ph-plus-circle text-teal-600"></i> Tạo Booking Mới
               </button>
-              <span class="text-[10.5px] font-bold text-teal-700 bg-teal-100/90 px-2 py-0.5 rounded-full font-heading border border-teal-200">Tự động điền 9 trường</span>
+              <span class="text-[10px] font-bold text-teal-700 bg-teal-100/90 px-2 py-0.2 rounded-full font-heading border border-teal-200">Tự điền 9 trường</span>
             </div>
           </div>
           <div class="relative">
-            <select id="select-booking-order" onchange="onBookingSelected(this.value)" class="form-select text-sm font-bold text-slate-800 bg-white border-teal-300 focus:ring-teal-500 py-2 rounded-xl">
+            <select id="select-booking-order" onchange="onBookingSelected(this.value)" class="form-select text-xs font-bold text-slate-800 bg-white border-teal-300 focus:ring-teal-500 py-1.5 h-8.5 rounded-lg">
               <option value="">-- Chọn Booking / Đơn Hàng Đang Chờ Điều Xe (Hoặc Nhập Thủ Công) --</option>
               <!-- Injected by JS -->
             </select>
           </div>
-          <p class="text-[11px] text-teal-800 mt-1.5 flex items-center gap-1 font-medium">
-            <i class="ph-fill ph-info text-teal-600"></i>
-            Khi chọn Booking, hệ thống tự động điền: Khách hàng, B/L, Cắt máng CY, Lịch đóng hàng, Lộ trình 3 điểm và Đơn giá cước thỏa thuận.
-          </p>
         </div>
 
         <!-- Section 1: Chứng từ & Phân loại -->
-        <div class="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-3">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 flex-wrap gap-2">
             <h4
               class="font-bold text-slate-800 flex items-center font-heading text-xs uppercase tracking-wider mb-0"
             >
-              <i class="ph-fill ph-file-text text-teal-600 mr-2 text-base"></i> 1. Thông Tin Khách Hàng & Vận Đơn
+              <i class="ph-bold ph-file-text text-teal-600 mr-1.5 text-sm"></i> 1. Thông Tin Khách Hàng & Vận Đơn
             </h4>
             
             <!-- Toggle Ghép 2 Cont 20ft (Twin 20ft) -->
             <label class="inline-flex items-center cursor-pointer select-none">
               <input type="checkbox" id="chk-twin-cont" onchange="toggleTwinContMode(this.checked)" class="sr-only peer">
-              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600 relative"></div>
-              <span class="ml-2.5 text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
-                <i class="ph-bold ph-stack text-teal-600"></i> Chế độ Ghép 2 Cont 20ft (Twin 20ft)
+              <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600 relative"></div>
+              <span class="ml-2 text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                <i class="ph-bold ph-stack text-teal-600"></i> Ghép 2 Cont 20ft
               </span>
             </label>
           </div>
 
           <!-- Thông tin Khách hàng, Loại hình, Quy cách cont -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="md:col-span-2">
-              <div class="flex items-center justify-between mb-1">
-                <label class="form-label mb-0" for="inp-customer"
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+            <div class="md:col-span-6">
+              <div class="flex items-center justify-between mb-0.5">
+                <label class="form-label mb-0 text-xs font-bold" for="inp-customer"
                   >Khách hàng / Chủ hàng <span class="text-rose-500">*</span></label
                 >
                 <button type="button" onclick="openMasterDataModalQuick('customers', 'inp-customer')" 
-                  class="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded border border-teal-200 flex items-center gap-1 transition-colors">
-                  <i class="ph-bold ph-plus"></i> Thêm KH
+                  class="text-[10.5px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5">
+                  <i class="ph-bold ph-plus text-[10px]"></i> Thêm KH
                 </button>
               </div>
-              <input type="text" id="inp-customer-search" oninput="filterCustomerSelectOptions('inp-customer-search', 'inp-customer')" 
-                placeholder="🔍 Gõ tìm nhanh tên KH / MST..." 
-                class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 transition-all font-medium mb-1.5 focus:bg-white focus:border-teal-600">
-              <select
-                id="inp-customer"
-                class="form-select font-bold text-slate-800"
-              >
-                <option value="">-- Chọn Khách Hàng Trong Danh Mục --</option>
-              </select>
+              <div class="grid grid-cols-12 gap-1.5">
+                <input type="text" id="inp-customer-search" oninput="filterCustomerSelectOptions('inp-customer-search', 'inp-customer')" 
+                  placeholder="Tìm kiếm Khách Hàng..." 
+                  class="col-span-5 h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium focus:bg-white focus:border-teal-600">
+                <select
+                  id="inp-customer"
+                  class="col-span-7 h-8.5 px-2 py-1 form-select font-bold text-slate-800 text-xs"
+                >
+                  <option value="">-- Chọn Khách Hàng --</option>
+                </select>
+              </div>
               <div id="err-customer" class="field-error-msg hidden"></div>
             </div>
-            <div>
-              <label class="form-label" for="inp-type"
+            <div class="md:col-span-3">
+              <label class="form-label mb-0.5 text-xs font-bold" for="inp-type"
                 >Loại Hình <span class="text-rose-500">*</span></label
               >
-              <select id="inp-type" class="form-select font-bold text-teal-800">
+              <select id="inp-type" class="form-select h-8.5 px-2 py-1 font-bold text-teal-800 text-xs">
                 <option value="Nhập">Hàng Nhập (Cảng -> Kho)</option>
                 <option value="Xuất">Hàng Xuất (Kho -> Cảng)</option>
                 <option value="Nội địa">Nội địa / Chuyển kho</option>
               </select>
             </div>
-            <div>
+            <div class="md:col-span-3">
               <label
-                class="form-label font-bold text-teal-900"
+                class="form-label font-bold text-teal-900 mb-0.5 text-xs"
                 for="inp-cont-type"
                 >Loại Cont / Xe <span class="text-rose-500">*</span></label
               >
               <select
                 id="inp-cont-type"
-                class="form-select font-semibold text-slate-800 border-teal-300"
+                class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 border-teal-300 text-xs"
               >
                 <optgroup label="── Container Chuẩn ──">
                   <option value="40HC" selected>Cont 40HC (High Cube)</option>
@@ -148,177 +146,168 @@
           </div>
 
           <!-- Thông tin Container 1 & Container 2 -->
-          <div class="grid grid-cols-1 gap-3" id="section-containers-wrapper">
+          <div class="grid grid-cols-1 gap-2.5" id="section-containers-wrapper">
             <!-- Box Container #1 -->
-            <div class="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200">
-              <div class="flex items-center justify-between mb-2.5 border-b border-slate-200 pb-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5" id="label-cont-1-title">
+            <div class="p-2.5 bg-slate-50/80 rounded-lg border border-slate-200">
+              <div class="flex items-center justify-between mb-1.5 border-b border-slate-200 pb-0.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1" id="label-cont-1-title">
                   <i class="ph-bold ph-cube text-teal-600"></i> Thông Tin Vỏ Cont / Chì
                 </span>
-                <span class="text-[11px] text-slate-500 font-medium">Cont chính</span>
+                <span class="text-[10.5px] text-slate-500 font-medium">Cont chính</span>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                 <div>
-                  <label class="form-label" for="inp-booking">Số Booking / B/L</label>
+                  <label class="form-label mb-0.5 text-[11px]" for="inp-booking">Số Booking / B/L</label>
                   <input
                     id="inp-booking"
                     type="text"
-                    placeholder="VD: 235601091589, 6466005230"
-                    class="form-input uppercase"
+                    placeholder="VD: 235601091589"
+                    class="form-input h-8.5 px-2 py-1 text-xs uppercase"
                   />
                 </div>
                 <div>
-                  <label class="form-label" for="inp-cont">Số Container</label>
+                  <label class="form-label mb-0.5 text-[11px]" for="inp-cont">Số Container</label>
                   <input
                     id="inp-cont"
                     type="text"
-                    placeholder="VD: MRKU6074874, CSNU8011022"
-                    class="form-input uppercase"
+                    placeholder="VD: MRKU6074874"
+                    class="form-input h-8.5 px-2 py-1 text-xs uppercase font-bold text-teal-800"
                   />
                 </div>
                 <div>
-                  <label class="form-label" for="inp-seal">Số Chì (Seal)</label>
+                  <label class="form-label mb-0.5 text-[11px]" for="inp-seal">Số Chì (Seal)</label>
                   <input
                     id="inp-seal"
                     type="text"
-                    placeholder="VD: MLVN1739611, 34192379"
-                    class="form-input uppercase"
+                    placeholder="VD: MLVN1739611"
+                    class="form-input h-8.5 px-2 py-1 text-xs uppercase"
                   />
                 </div>
                 <div>
-                  <label class="form-label" for="inp-vgm">Trọng Lượng VGM (Tấn)</label>
+                  <label class="form-label mb-0.5 text-[11px]" for="inp-vgm">Trọng Lượng VGM</label>
                   <input
                     id="inp-vgm"
                     type="text"
-                    placeholder="VD: 24.5 Tấn, 26,800 KGS"
-                    class="form-input uppercase font-mono font-bold"
+                    placeholder="VD: 24.5 Tấn"
+                    class="form-input h-8.5 px-2 py-1 text-xs uppercase font-mono font-bold"
                   />
                 </div>
               </div>
             </div>
 
-            <!-- Box Container #2 (Ẩn mặc định, hiện khi check Ghép 2 Cont 20ft) -->
-            <div id="section-twin-cont-2" class="hidden-view p-3.5 bg-teal-50/70 rounded-xl border border-teal-200 space-y-2.5">
-              <div class="flex items-center justify-between border-b border-teal-200 pb-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-teal-900 flex items-center gap-1.5 font-heading">
-                  <i class="ph-fill ph-stack text-teal-700"></i> Container #2 (20ft Ghép Cùng Chuyến)
+            <!-- Box Container #2 (Ghép) -->
+            <div id="section-twin-cont-2" class="hidden-view p-2.5 bg-teal-50/70 rounded-lg border border-teal-200 space-y-2">
+              <div class="flex items-center justify-between border-b border-teal-200 pb-0.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-teal-900 flex items-center gap-1 font-heading">
+                  <i class="ph-bold ph-stack text-teal-700"></i> Container #2 (20ft Ghép)
                 </span>
-                <span class="text-[11px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-full font-heading">Kẹp 20ft</span>
+                <span class="text-[10px] font-bold text-teal-800 bg-teal-100 px-1.5 py-0.2 rounded-full font-heading">Kẹp 20ft</span>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                 <div>
-                  <label class="form-label text-teal-950" for="inp-booking-2">Số Booking / B/L Cont 2</label>
+                  <label class="form-label text-teal-950 mb-0.5 text-[11px]" for="inp-booking-2">Số Booking Cont 2</label>
                   <input
                     id="inp-booking-2"
                     type="text"
-                    placeholder="VD: 235601091590 (nếu khác)"
-                    class="form-input uppercase bg-white border-teal-200"
+                    placeholder="VD: 235601091590"
+                    class="form-input h-8.5 px-2 py-1 text-xs uppercase bg-white border-teal-200"
                   />
                 </div>
                 <div>
-                  <label class="form-label text-teal-950" for="inp-cont-2">Số Container 2 (20ft)</label>
+                  <label class="form-label text-teal-950 mb-0.5 text-[11px]" for="inp-cont-2">Số Cont 2 (20ft)</label>
                   <input
                     id="inp-cont-2"
                     type="text"
                     placeholder="VD: TCLU2987114"
-                    class="form-input uppercase bg-white border-teal-200 font-bold"
+                    class="form-input h-8.5 px-2 py-1 text-xs uppercase bg-white border-teal-200 font-bold"
                   />
                 </div>
                 <div>
-                  <label class="form-label text-teal-950" for="inp-seal-2">Số Chì (Seal) Cont 2</label>
+                  <label class="form-label text-teal-950 mb-0.5 text-[11px]" for="inp-seal-2">Số Chì Cont 2</label>
                   <input
                     id="inp-seal-2"
                     type="text"
                     placeholder="VD: MLVN1739612"
-                    class="form-input uppercase bg-white border-teal-200"
+                    class="form-input h-8.5 px-2 py-1 text-xs uppercase bg-white border-teal-200"
                   />
                 </div>
                 <div>
-                  <label class="form-label text-teal-950" for="inp-vgm-2">Trọng Lượng VGM Cont 2</label>
+                  <label class="form-label text-teal-950 mb-0.5 text-[11px]" for="inp-vgm-2">Trọng Lượng VGM 2</label>
                   <input
                     id="inp-vgm-2"
                     type="text"
                     placeholder="VD: 22.0 Tấn"
-                    class="form-input uppercase bg-white border-teal-200 font-mono font-bold"
+                    class="form-input h-8.5 px-2 py-1 text-xs uppercase bg-white border-teal-200 font-mono font-bold"
                   />
                 </div>
-              </div>
-              <div>
-                <label class="form-label text-teal-950" for="inp-cargo-notes-2">Ghi Chú Hàng Hóa / Yêu Cầu Cont 2</label>
-                <input
-                  id="inp-cargo-notes-2"
-                  type="text"
-                  placeholder="VD: Hàng hạt nhựa, giao cùng kho nhưng dỡ sau Cont 1..."
-                  class="form-input bg-white border-teal-200 text-xs text-teal-900"
-                />
               </div>
             </div>
           </div>
 
           <!-- Đính Kèm File Booking / Lệnh Cấp Rỗng Từ Khách Hàng (Ảnh hoặc PDF) -->
-          <div class="p-3.5 bg-blue-50/60 rounded-xl border border-blue-200 space-y-2.5">
-            <div class="flex items-center justify-between border-b border-blue-200 pb-1.5 flex-wrap gap-2">
+          <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-200 space-y-2">
+            <div class="flex items-center justify-between border-b border-blue-200 pb-1 flex-wrap gap-2">
               <span class="text-xs font-bold uppercase tracking-wider text-blue-950 flex items-center gap-1.5 font-heading">
-                <i class="ph-fill ph-file-arrow-up text-blue-600 text-base"></i> Đính Kèm File Booking / Lệnh Cấp Rỗng (Ảnh hoặc PDF)
+                <i class="ph-bold ph-file-arrow-up text-blue-600 text-sm"></i> Đính Kèm File Booking / Lệnh Cấp Rỗng (Ảnh hoặc PDF)
               </span>
-              <span class="text-[11px] font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full font-heading">Hỗ trợ JPG, PNG, PDF (Tối đa 5MB)</span>
+              <span class="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.2 rounded-full font-heading">Hỗ trợ JPG, PNG, PDF (Tối đa 5MB)</span>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 items-center">
               <!-- Nút chọn File hoặc Drag-and-drop -->
               <div class="md:col-span-2">
-                <div class="space-y-2">
-                  <div class="flex items-center gap-3">
-                    <label class="cursor-pointer px-4 py-2 bg-white border border-blue-300 hover:border-blue-500 rounded-xl text-xs font-bold text-blue-800 hover:bg-blue-50/80 transition-all flex items-center gap-2 shadow-2xs shrink-0">
-                      <i class="ph-bold ph-upload-simple text-base text-blue-600"></i>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-2.5">
+                    <label class="cursor-pointer px-3 py-1.5 bg-white border border-blue-300 hover:border-blue-500 rounded-lg text-xs font-bold text-blue-800 hover:bg-blue-50/80 transition-all flex items-center gap-1.5 shadow-2xs shrink-0">
+                      <i class="ph-bold ph-upload-simple text-sm text-blue-600"></i>
                       <span>Chọn Tệp Đính Kèm</span>
                       <input type="file" id="inp-booking-file" multiple accept="image/*,.pdf" class="sr-only" onchange="handleBookingFilesSelect(this)">
                     </label>
-                    <span id="booking-file-summary" class="text-xs text-slate-500 italic flex items-center gap-1">
-                      <i class="ph ph-info text-blue-500"></i> Chưa có tệp nào được đính kèm (hoặc kế thừa từ Booking)
+                    <span id="booking-file-summary" class="text-[11px] text-slate-500 italic flex items-center gap-1">
+                      <i class="ph ph-info text-blue-500"></i> Chưa có tệp đính kèm (hoặc kế thừa từ Booking)
                     </span>
                   </div>
 
                   <!-- Danh sách hiển thị Multi-files -->
-                  <div id="booking-files-list-area" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <div id="booking-files-list-area" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-0.5">
                     <!-- Render dynamically via JS -->
                   </div>
                 </div>
               </div>
 
               <!-- Gợi ý nghiệp vụ -->
-              <div class="text-[11px] text-slate-500 font-medium">
-                Tài liệu này sẽ tự động lưu vào <strong class="text-blue-900">Chứng từ chuyến xe</strong> để Tài xế xem trên App & Điều phối đối chiếu bãi lấy cont.
+              <div class="text-[11px] text-slate-500 font-medium leading-relaxed">
+                Tài liệu này tự động lưu vào <strong class="text-blue-900">Chứng từ chuyến xe</strong> để Tài xế xem trên App & Điều phối đối chiếu.
               </div>
             </div>
           </div>
 
           <!-- Thông tin Cắt CY, Invoice, Cửa Dock, Thời gian & Vị trí -->
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 pt-1">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-2.5 pt-0.5">
             <div class="md:col-span-1">
-              <div class="flex items-center justify-between mb-1">
-                <label class="form-label font-bold text-rose-700 flex items-center m-0" for="inp-cutoff-date">
-                  <i class="ph-fill ph-clock-countdown mr-1 text-rose-600"></i> Cắt CY / Hạn SI
+              <div class="flex items-center justify-between mb-0.5">
+                <label class="form-label font-bold text-rose-700 flex items-center m-0 text-xs" for="inp-cutoff-date">
+                  <i class="ph-bold ph-clock-countdown mr-1 text-rose-600"></i> Cắt CY / SI
                 </label>
-                <span class="text-[10px] text-rose-700 font-bold bg-rose-50 px-1 py-0.2 rounded border border-rose-200">24h</span>
+                <span class="text-[9.5px] text-rose-700 font-bold bg-rose-50 px-1 py-0.2 rounded border border-rose-200">24h</span>
               </div>
               <div class="grid grid-cols-5 gap-1">
                 <input
                   id="inp-cutoff-date"
                   type="date"
                   onchange="syncTripCutoff()"
-                  class="col-span-3 form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold text-xs px-1.5 py-1.5 focus:ring-rose-500"
+                  class="col-span-3 form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold text-xs px-1.5 py-1 h-8.5 focus:ring-rose-500"
                 />
                 <input
                   id="inp-cutoff-time"
                   type="time"
                   value="17:00"
                   onchange="syncTripCutoff()"
-                  class="col-span-2 form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold text-xs px-1 py-1.5 focus:ring-rose-500"
+                  class="col-span-2 form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold text-xs px-1 py-1 h-8.5 focus:ring-rose-500"
                 />
               </div>
               <input type="hidden" id="inp-cutoff" />
-              <div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 flex-wrap">
+              <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
                 <span class="font-medium text-slate-400">Giờ:</span>
                 <button type="button" onclick="setTripCutoffTime('12:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">12:00</button>
                 <button type="button" onclick="setTripCutoffTime('17:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">17:00</button>
@@ -326,35 +315,35 @@
               </div>
             </div>
             <div>
-              <label class="form-label" for="inp-invoice">Hóa Đơn TM (Invoice)</label>
+              <label class="form-label mb-0.5 text-xs font-bold" for="inp-invoice">Hóa Đơn TM (Invoice)</label>
               <input
                 id="inp-invoice"
                 type="text"
                 placeholder="VD: VCC33970..."
-                class="form-input uppercase font-mono font-bold text-teal-800"
+                class="form-input h-8.5 px-2 py-1 uppercase font-mono font-bold text-teal-800 text-xs"
               />
             </div>
             <div>
-              <label class="form-label" for="inp-dock">Cửa Xuất (Dock Kho)</label>
+              <label class="form-label mb-0.5 text-xs font-bold" for="inp-dock">Cửa Xuất (Dock Kho)</label>
               <input
                 id="inp-dock"
                 type="text"
                 placeholder="VD: D2, DP, DOCK 5..."
-                class="form-input uppercase font-bold text-slate-800"
+                class="form-input h-8.5 px-2 py-1 uppercase font-bold text-slate-800 text-xs"
               />
             </div>
             <div>
-              <label class="form-label" for="inp-load-time">Giờ Hẹn Đóng Hàng</label>
+              <label class="form-label mb-0.5 text-xs font-bold" for="inp-load-time">Giờ Hẹn Đóng Hàng</label>
               <input
                 id="inp-load-time"
                 type="time"
                 value="08:00"
-                class="form-input font-bold text-slate-800"
+                class="form-input h-8.5 px-2 py-1 font-bold text-slate-800 text-xs"
               />
             </div>
             <div>
-              <label class="form-label" for="inp-cont-loc">Vị Trí Vỏ Hiện Tại</label>
-              <select id="inp-cont-loc" class="form-select font-semibold text-slate-800">
+              <label class="form-label mb-0.5 text-xs font-bold" for="inp-cont-loc">Vị Trí Vỏ Hiện Tại</label>
+              <select id="inp-cont-loc" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 text-xs">
                 <option value="NHÀ MÁY" selected>Tại Nhà Máy Khách Hàng</option>
                 <option value="BÃI TVL">Tại Bãi Triền Võ</option>
                 <option value="CẢNG / DEPOT">Tại Cảng / Bãi Cont</option>
@@ -363,49 +352,49 @@
           </div>
 
           <!-- Quản lý Hạn Free-time DEM/DET Cảng & Giám Định Vỏ Cont (EIR) -->
-          <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2.5">
+          <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2">
             <div class="flex items-center justify-between border-b border-amber-200 pb-1">
-              <span class="text-xs font-bold uppercase tracking-wider text-amber-950 flex items-center gap-1.5 font-heading">
-                <i class="ph-fill ph-hourglass-high text-amber-700"></i> Quản Lý Hạn Free DEM/DET Cảng & Giám Định Vỏ Cont Hiện Trường
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-950 flex items-center gap-1 font-heading">
+                <i class="ph-bold ph-hourglass-high text-amber-700"></i> Hạn Free DEM/DET & Giám Định Vỏ Cont EIR
               </span>
-              <span class="text-[11px] font-bold text-amber-800">Phòng ngừa rủi ro phạt lưu bãi/vỏ cont</span>
+              <span class="text-[10px] font-bold text-amber-800">Phòng ngừa rủi ro phạt lưu bãi/vỏ cont</span>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2.5">
               <div>
-                <label class="form-label text-amber-950" for="inp-det-free-days">Free Mượn Vỏ (DET - Ngày)</label>
+                <label class="form-label text-amber-950 mb-0.5 text-[11px] font-bold" for="inp-det-free-days">Free Mượn Vỏ (DET - Ngày)</label>
                 <input
                   id="inp-det-free-days"
                   type="number"
                   min="0"
                   max="30"
                   value="3"
-                  class="form-input font-bold text-slate-800 bg-white"
+                  class="form-input h-8.5 px-2 py-1 font-bold text-slate-800 bg-white text-xs"
                   onchange="onFreeDaysChange()"
                 />
               </div>
               <div>
-                <label class="form-label text-amber-950" for="inp-det-expiry">Hạn Chót Trả Vỏ (DET Expiry)</label>
+                <label class="form-label text-amber-950 mb-0.5 text-[11px] font-bold" for="inp-det-expiry">Hạn Chót Trả Vỏ (DET Expiry)</label>
                 <input
                   id="inp-det-expiry"
                   type="date"
-                  class="form-input font-bold text-amber-900 bg-white border-amber-300"
+                  class="form-input h-8.5 px-2 py-1 font-bold text-amber-900 bg-white border-amber-300 text-xs"
                 />
               </div>
               <div>
-                <label class="form-label text-amber-950" for="select-container-condition">Giám Định Vỏ (Phiếu EIR)</label>
-                <select id="select-container-condition" class="form-select font-bold text-slate-800 bg-white">
+                <label class="form-label text-amber-950 mb-0.5 text-[11px] font-bold" for="select-container-condition">Giám Định Vỏ (Phiếu EIR)</label>
+                <select id="select-container-condition" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 bg-white text-xs">
                   <option value="GOOD" selected>Nguyên Vẹn / Đạt Chuẩn</option>
                   <option value="DAMAGED">Có Hư Hỏng Từ Trước (Biên bản EIR)</option>
                   <option value="CLEANING_REQUIRED">Bẩn / Cần Vệ Sinh Bãi</option>
                 </select>
               </div>
               <div>
-                <label class="form-label text-amber-950" for="inp-damage-desc">Ghi Chú Hư Hỏng / EIR Hiện Trường</label>
+                <label class="form-label text-amber-950 mb-0.5 text-[11px] font-bold" for="inp-damage-desc">Ghi Chú Hư Hỏng / EIR Hiện Trường</label>
                 <input
                   id="inp-damage-desc"
                   type="text"
                   placeholder="VD: Rách nóc cont 10cm có xác nhận bãi..."
-                  class="form-input bg-white text-slate-800 text-xs"
+                  class="form-input h-8.5 px-2 py-1 bg-white text-slate-800 text-xs"
                 />
               </div>
             </div>
@@ -413,65 +402,64 @@
         </div>
 
         <!-- Section 2: Lộ Trình 3 Điểm -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
           <h4
-            class="font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center font-heading text-[15px]"
+            class="font-bold text-slate-800 pb-1.5 border-b border-slate-100 flex items-center font-heading text-xs uppercase tracking-wider mb-0"
           >
-            <i class="ph-fill ph-map-pin text-teal-600 mr-2"></i> 2. Lộ Trình
-            Vận Chuyển (Nơi Lấy - Đóng/Trả - Nơi Hạ)
+            <i class="ph-bold ph-map-pin text-teal-600 mr-1.5 text-sm"></i> 2. Lộ Trình Vận Chuyển (Nơi Lấy - Đóng/Trả - Nơi Hạ)
           </h4>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-teal-50/40 p-4 rounded-xl border border-teal-100">
-              <div class="flex items-center justify-between mb-1">
-                <label class="form-label text-teal-900 mb-0" for="inp-pickup"
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            <div class="bg-teal-50/40 p-2.5 rounded-lg border border-teal-100">
+              <div class="flex items-center justify-between mb-0.5">
+                <label class="form-label text-teal-900 mb-0 text-xs font-bold" for="inp-pickup"
                   >1. Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span></label
                 >
                 <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-pickup')" 
                   class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-100/80 px-1.5 py-0.2 rounded border border-teal-300 flex items-center gap-0.5">
-                  <i class="ph-bold ph-plus"></i> Thêm
+                  <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm
                 </button>
               </div>
               <select
                 id="inp-pickup"
-                class="form-select font-bold text-teal-900 uppercase mb-1"
+                class="form-select h-8.5 px-2 py-1 font-bold text-teal-900 uppercase text-xs"
               >
                 <option value="">-- Chọn Cảng / Depot Lấy --</option>
               </select>
               <div id="err-pickup" class="field-error-msg hidden"></div>
             </div>
-            <div class="bg-amber-50/40 p-4 rounded-xl border border-amber-100">
-              <div class="flex items-center justify-between mb-1">
-                <label class="form-label text-amber-900 mb-0" for="inp-warehouse"
+            <div class="bg-amber-50/40 p-2.5 rounded-lg border border-amber-100">
+              <div class="flex items-center justify-between mb-0.5">
+                <label class="form-label text-amber-900 mb-0 text-xs font-bold" for="inp-warehouse"
                   >2. Nơi Đóng/Trả (Kho KH) <span class="text-rose-500">*</span></label
                 >
                 <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-warehouse')" 
                   class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-100/80 px-1.5 py-0.2 rounded border border-amber-300 flex items-center gap-0.5">
-                  <i class="ph-bold ph-plus"></i> Thêm
+                  <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm
                 </button>
               </div>
               <select
                 id="inp-warehouse"
-                class="form-select font-bold text-amber-900 uppercase mb-1"
+                class="form-select h-8.5 px-2 py-1 font-bold text-amber-900 uppercase text-xs"
               >
                 <option value="">-- Chọn Kho Khách Hàng --</option>
               </select>
               <div id="err-warehouse" class="field-error-msg hidden"></div>
             </div>
             <div
-              class="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100"
+              class="bg-emerald-50/40 p-2.5 rounded-lg border border-emerald-100"
             >
-              <div class="flex items-center justify-between mb-1">
-                <label class="form-label text-emerald-900 mb-0" for="inp-dropoff"
+              <div class="flex items-center justify-between mb-0.5">
+                <label class="form-label text-emerald-900 mb-0 text-xs font-bold" for="inp-dropoff"
                   >3. Nơi Hạ (Bãi Rỗng / Cảng)</label
                 >
                 <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-dropoff')" 
                   class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-100/80 px-1.5 py-0.2 rounded border border-emerald-300 flex items-center gap-0.5">
-                  <i class="ph-bold ph-plus"></i> Thêm
+                  <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm
                 </button>
               </div>
               <select
                 id="inp-dropoff"
-                class="form-select font-bold text-emerald-900 uppercase mb-1"
+                class="form-select h-8.5 px-2 py-1 font-bold text-emerald-900 uppercase text-xs"
               >
                 <option value="">-- Chọn Nơi Hạ Cont --</option>
               </select>
@@ -480,103 +468,103 @@
         </div>
 
         <!-- Section 3: Phân công & Nghiệp vụ Cắt Kéo (Drop & Hook) -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <div class="flex items-center justify-between pb-2 mb-4 border-b border-slate-100 flex-wrap gap-2">
-            <h4 class="font-bold text-slate-800 flex items-center font-heading text-[15px] mb-0">
-              <i class="ph-fill ph-users text-teal-600 mr-2"></i> 3. Phân Công Tài Xế & Cấu Hình Chặng
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 flex-wrap gap-2">
+            <h4 class="font-bold text-slate-800 flex items-center font-heading text-xs uppercase tracking-wider mb-0">
+              <i class="ph-bold ph-users text-teal-600 mr-1.5 text-sm"></i> 3. Phân Công Tài Xế & Cấu Hình Chặng
             </h4>
             
             <!-- Toggle Cắt Kéo -->
             <label class="inline-flex items-center cursor-pointer select-none">
               <input type="checkbox" id="chk-drop-hook" onchange="toggleDropHookMode(this.checked)" class="sr-only peer">
-              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600 relative"></div>
-              <span class="ml-2.5 text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+              <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600 relative"></div>
+              <span class="ml-2 text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
                 <i class="ph-bold ph-arrows-split text-amber-600"></i> Chế độ Cắt Kéo / Cắt Mooc (2 Tài)
               </span>
             </label>
           </div>
 
           <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
-          <div id="section-direct-dispatch" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="section-direct-dispatch" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="form-label mb-0" for="inp-driver">
+              <div class="flex items-center justify-between mb-0.5">
+                <label class="form-label mb-0 text-xs font-bold" for="inp-driver">
                   Tài xế nhận lệnh (Toàn trình) <span class="text-rose-500">*</span>
                 </label>
                 <button type="button" onclick="openMasterDataModalQuick('driver_tariffs', 'inp-driver')" 
                   class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 flex items-center gap-0.5">
-                  <i class="ph-bold ph-plus"></i> Danh mục
+                  <i class="ph-bold ph-plus text-[9.5px]"></i> Danh mục
                 </button>
               </div>
-              <select id="inp-driver" class="form-select font-bold text-slate-800">
+              <select id="inp-driver" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
                 <option value="">-- Chọn tài xế điều động --</option>
               </select>
               <div id="err-driver" class="field-error-msg hidden"></div>
             </div>
             <div>
-              <label class="form-label" for="inp-notes">Ghi chú phí Công ty chịu / Lưu ý Điều độ</label>
+              <label class="form-label mb-0.5 text-xs font-bold" for="inp-notes">Ghi chú phí Công ty chịu / Lưu ý Điều độ</label>
               <input
                 id="inp-notes"
                 type="text"
                 placeholder="VD: Xin trái tuyến Đồng An 320k TVL chịu, Free time 3 ngày..."
-                class="form-input bg-amber-50/40 border-amber-200 text-amber-950 font-medium"
+                class="form-input h-8.5 px-2 py-1 bg-amber-50/40 border-amber-200 text-amber-950 font-medium text-xs"
               />
             </div>
           </div>
 
           <!-- Mode 2: Chế độ Cắt Kéo / 2 Chặng (Ẩn mặc định, hiện khi bật toggle) -->
-          <div id="section-drop-hook-dispatch" class="hidden-view space-y-4 pt-1">
-            <div class="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
-              <i class="ph-fill ph-info text-amber-600 text-base shrink-0 mt-0.5"></i>
-              <div>
-                <strong>Nghiệp vụ Cắt Kéo (Drop & Hook):</strong> Tài xế Chặng 1 lấy cont kéo về kho cắt mooc để kho đóng/dỡ hàng. Tài xế Chặng 2 móc mooc tại kho kéo đi hạ bãi/cảng. Hệ thống tự động ghi nhận phân định trách nhiệm vỏ cont và chia lương theo tỷ lệ.
+          <div id="section-drop-hook-dispatch" class="hidden-view space-y-2.5 pt-0.5">
+            <div class="p-2.5 bg-amber-50/80 border border-amber-200 rounded-lg text-xs text-amber-900 flex items-start gap-2">
+              <i class="ph-bold ph-info text-amber-600 text-sm shrink-0 mt-0.5"></i>
+              <div class="text-[11px] leading-relaxed">
+                <strong>Nghiệp vụ Cắt Kéo (Drop & Hook):</strong> Tài xế Chặng 1 lấy cont kéo về kho cắt mooc để kho đóng/dỡ hàng. Tài xế Chặng 2 móc mooc tại kho kéo đi hạ bãi/cảng. Hệ thống tự động phân định trách nhiệm vỏ cont và chia lương theo tỷ lệ.
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               <!-- CHẶNG 1: LẤY CONT -> KHO -->
-              <div class="p-4 bg-teal-50/50 border border-teal-200 rounded-xl space-y-3">
-                <div class="flex items-center justify-between text-teal-900 font-bold text-xs uppercase tracking-wider border-b border-teal-200 pb-1.5">
+              <div class="p-3 bg-teal-50/50 border border-teal-200 rounded-xl space-y-2">
+                <div class="flex items-center justify-between text-teal-900 font-bold text-xs uppercase tracking-wider border-b border-teal-200 pb-1">
                   <span class="flex items-center gap-1.5">
-                    <span class="w-5 h-5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[10px]">1</span>
+                    <span class="w-4.5 h-4.5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[9.5px]">1</span>
                     Chặng 1: Lấy Cont ➔ Giao Kho
                   </span>
-                  <span class="text-[11px] text-teal-700 font-bold" id="badge-ratio-leg1">Tỷ lệ: 50%</span>
+                  <span class="text-[10.5px] text-teal-700 font-bold" id="badge-ratio-leg1">Tỷ lệ: 50%</span>
                 </div>
                 <div>
-                  <label class="form-label text-teal-950" for="inp-driver-leg1">Tài xế Lấy Cont <span class="text-rose-500">*</span></label>
-                  <select id="inp-driver-leg1" onchange="onDriverLeg1Change(this.value)" class="form-select font-bold text-slate-800">
+                  <label class="form-label text-teal-950 mb-0.5 text-[11px] font-bold" for="inp-driver-leg1">Tài xế Lấy Cont <span class="text-rose-500">*</span></label>
+                  <select id="inp-driver-leg1" onchange="onDriverLeg1Change(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
                     <option value="">-- Chọn tài xế lấy cont --</option>
                   </select>
                   <div id="err-driver-leg1" class="field-error-msg hidden"></div>
                 </div>
                 <div>
-                  <label class="form-label text-teal-950" for="inp-vehicle-leg1">Đầu Kéo Lấy Cont</label>
-                  <select id="inp-vehicle-leg1" class="form-select font-semibold text-slate-800">
+                  <label class="form-label text-teal-950 mb-0.5 text-[11px] font-bold" for="inp-vehicle-leg1">Đầu Kéo Lấy Cont</label>
+                  <select id="inp-vehicle-leg1" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 text-xs">
                     <option value="">-- Tự động theo tài xế --</option>
                   </select>
                 </div>
               </div>
 
               <!-- CHẶNG 2: KHO -> CẢNG HẠ -->
-              <div class="p-4 bg-indigo-50/50 border border-indigo-200 rounded-xl space-y-3">
-                <div class="flex items-center justify-between text-indigo-900 font-bold text-xs uppercase tracking-wider border-b border-indigo-200 pb-1.5">
+              <div class="p-3 bg-indigo-50/50 border border-indigo-200 rounded-xl space-y-2">
+                <div class="flex items-center justify-between text-indigo-900 font-bold text-xs uppercase tracking-wider border-b border-indigo-200 pb-1">
                   <span class="flex items-center gap-1.5">
-                    <span class="w-5 h-5 rounded-full bg-indigo-700 text-white flex items-center justify-center text-[10px]">2</span>
+                    <span class="w-4.5 h-4.5 rounded-full bg-indigo-700 text-white flex items-center justify-center text-[9.5px]">2</span>
                     Chặng 2: Móc Mooc ➔ Hạ Cảng/Depot
                   </span>
-                  <span class="text-[11px] text-indigo-700 font-bold" id="badge-ratio-leg2">Tỷ lệ: 50%</span>
+                  <span class="text-[10.5px] text-indigo-700 font-bold" id="badge-ratio-leg2">Tỷ lệ: 50%</span>
                 </div>
                 <div>
-                  <label class="form-label text-indigo-950" for="inp-dropoff-driver">Tài xế Hạ Cont <span class="text-rose-500">*</span></label>
-                  <select id="inp-dropoff-driver" onchange="onDriverLeg2Change(this.value)" class="form-select font-bold text-slate-800">
+                  <label class="form-label text-indigo-950 mb-0.5 text-[11px] font-bold" for="inp-dropoff-driver">Tài xế Hạ Cont <span class="text-rose-500">*</span></label>
+                  <select id="inp-dropoff-driver" onchange="onDriverLeg2Change(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
                     <option value="">-- Chọn tài xế hạ cont --</option>
                   </select>
                   <div id="err-dropoff-driver" class="field-error-msg hidden"></div>
                 </div>
                 <div>
-                  <label class="form-label text-indigo-950" for="inp-dropoff-vehicle">Đầu Kéo Hạ Cont</label>
-                  <select id="inp-dropoff-vehicle" class="form-select font-semibold text-slate-800">
+                  <label class="form-label text-indigo-950 mb-0.5 text-[11px] font-bold" for="inp-dropoff-vehicle">Đầu Kéo Hạ Cont</label>
+                  <select id="inp-dropoff-vehicle" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 text-xs">
                     <option value="">-- Tự động theo tài xế --</option>
                   </select>
                 </div>
@@ -584,10 +572,10 @@
             </div>
 
             <!-- Tỷ lệ phân chia lương tài xế -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
               <div>
-                <label class="form-label" for="inp-driver-split-ratio">Tỷ lệ phân chia thù lao (Chặng 1 / Chặng 2)</label>
-                <select id="inp-driver-split-ratio" onchange="onSplitRatioChange(this.value)" class="form-select font-bold text-slate-800">
+                <label class="form-label mb-0.5 text-xs font-bold" for="inp-driver-split-ratio">Tỷ lệ phân chia thù lao (Chặng 1 / Chặng 2)</label>
+                <select id="inp-driver-split-ratio" onchange="onSplitRatioChange(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
                   <option value="50">Chia đều 50% - 50% (Định mức tiêu chuẩn)</option>
                   <option value="60">Chặng 1: 60% (Lấy xa) - Chặng 2: 40%</option>
                   <option value="40">Chặng 1: 40% - Chặng 2: 60% (Hạ xa/chờ cảng)</option>
@@ -595,28 +583,28 @@
                 </select>
               </div>
               <div>
-                <label class="form-label" for="inp-notes-drop-hook">Ghi chú bàn giao mooc tại kho</label>
+                <label class="form-label mb-0.5 text-xs font-bold" for="inp-notes-drop-hook">Ghi chú bàn giao mooc tại kho</label>
                 <input
                   id="inp-notes-drop-hook"
                   type="text"
                   placeholder="VD: Cắt mooc lúc 18H tại Kho Tân Vạn D2, chụp ảnh số seal trước khi bàn giao..."
-                  class="form-input bg-amber-50/40 border-amber-200 text-amber-950 font-medium"
+                  class="form-input h-8.5 px-2 py-1 bg-amber-50/40 border-amber-200 text-amber-950 font-medium text-xs"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        <div class="pt-3 border-t border-slate-200 flex justify-end space-x-3">
+        <div class="pt-2 border-t border-slate-200 flex justify-end space-x-2.5">
           <button
             type="button"
             onclick="closeModal('modal-create-trip')"
-            class="btn-bim-secondary"
+            class="btn-bim-secondary px-4 py-1.5 text-xs font-bold"
           >
             <i class="ph ph-x"></i> Hủy
           </button>
-          <button type="button" id="btn-submit-trip" onclick="submitNewTrip()" class="btn-bim-primary px-6 py-2.5">
-            <i class="ph-fill ph-paper-plane-right text-lg"></i> Xác Nhận & Phát Lệnh Zalo
+          <button type="button" id="btn-submit-trip" onclick="submitNewTrip()" class="btn-bim-primary px-5 py-1.5 text-xs font-bold shadow-sm">
+            <i class="ph-bold ph-paper-plane-tilt text-base"></i> Xác Nhận & Phát Lệnh Zalo
           </button>
         </div>
       </form>

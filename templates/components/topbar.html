@@ -30,10 +30,10 @@
         <div class="flex items-center space-x-2 pl-2 border-l border-slate-200">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                    {% if current_employee and current_employee.role == 'DIRECTOR' %}👑
-                    {% elif current_employee and current_employee.role == 'DISPATCHER' %}🚚
-                    {% elif current_employee and current_employee.role == 'ACCOUNTANT' %}📊
-                    {% elif current_employee and current_employee.role == 'DRIVER' %}🚛
+                    {% if current_employee and current_employee.role == 'DIRECTOR' %}<i class="ph-bold ph-crown text-sm"></i>
+                    {% elif current_employee and current_employee.role == 'DISPATCHER' %}<i class="ph-bold ph-steering-wheel text-sm"></i>
+                    {% elif current_employee and current_employee.role == 'ACCOUNTANT' %}<i class="ph-bold ph-calculator text-sm"></i>
+                    {% elif current_employee and current_employee.role == 'DRIVER' %}<i class="ph-bold ph-truck text-sm"></i>
                     {% else %}<i class="ph-bold ph-user text-sm"></i>{% endif %}
                 </div>
                 <div class="hidden lg:flex flex-col text-left">

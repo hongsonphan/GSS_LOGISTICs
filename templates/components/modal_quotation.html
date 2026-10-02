@@ -1,79 +1,71 @@
 <!-- MODAL TẠO & HIỆU CHỈNH BÁO GIÁ TUYẾN CƯỚC (CRM / SALES) -->
 <div id="modal-quotation" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden-view p-4 animate-fade-in">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col border border-slate-100 max-h-[92vh]">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col border border-slate-100 max-h-[94vh]">
         
         <!-- Modal Header -->
-        <div class="bg-gradient-to-r from-teal-700 to-teal-800 p-5 text-white flex justify-between items-center shrink-0">
+        <div class="bg-gradient-to-r from-teal-700 to-teal-800 px-5 py-3.5 text-white flex justify-between items-center shrink-0">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl backdrop-blur-xs border border-white/10">
-                    <i class="ph-fill ph-handshake text-teal-200"></i>
+                <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-lg backdrop-blur-xs border border-white/10">
+                    <i class="ph-bold ph-handshake text-teal-200"></i>
                 </div>
                 <div>
-                    <h3 id="modal-quotation-title" class="font-black font-heading text-lg tracking-tight">Thêm Báo Giá Tuyến Cước Mới</h3>
-                    <p class="text-xs text-teal-100 font-medium mt-0.5">Phễu bán hàng & thỏa thuận biểu cước thương mại (Sale / Business Development)</p>
+                    <h3 id="modal-quotation-title" class="font-black font-heading text-base tracking-tight leading-tight">Thêm Báo Giá Tuyến Cước Mới</h3>
+                    <p class="text-[11px] text-teal-100 font-medium leading-tight">Phễu bán hàng & thỏa thuận biểu cước thương mại (Sale / BD)</p>
                 </div>
             </div>
-            <button onclick="closeModal('modal-quotation')" class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
-                <i class="ph ph-x text-xl"></i>
+            <button onclick="closeModal('modal-quotation')" class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+                <i class="ph ph-x text-lg"></i>
             </button>
         </div>
 
         <!-- Modal Body Form -->
-        <form id="form-quotation" onsubmit="saveQuotation(event); return false;" novalidate class="p-6 overflow-y-auto space-y-5 flex-1 text-sm bg-slate-50/50">
+        <form id="form-quotation" onsubmit="saveQuotation(event); return false;" novalidate class="p-4 md:p-4.5 overflow-y-auto space-y-3 flex-1 text-sm bg-slate-50/50">
             <input type="hidden" id="quote-id" value="">
 
             <!-- CARD 1: THÔNG TIN KHÁCH HÀNG & LỘ TRÌNH VẬN CHUYỂN -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
-                        <i class="ph-fill ph-map-pin-line text-teal-700 text-sm"></i>
+            <div class="bg-white p-3.5 md:p-4 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h4 class="text-[11.5px] font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                        <i class="ph-bold ph-map-pin-line text-teal-700 text-sm"></i>
                         <span>1. Khách Hàng & Tuyến Đường Báo Giá</span>
                     </h4>
-                    <span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">Phân hệ Sales</span>
+                    <span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.2 rounded-full border border-teal-200">Phân hệ Sales</span>
                 </div>
 
                 <!-- Tên Khách Hàng -->
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center justify-between mb-1">
                         <label class="block font-bold text-slate-700 text-xs">
                             Tên Khách Hàng / Đối Tác <span class="text-rose-600 font-bold">*</span>
                         </label>
                         <button type="button" onclick="openMasterDataModalQuick('customers', 'quote-customer')" 
-                            class="text-xs font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 flex items-center gap-1 transition-colors">
-                            <i class="ph-bold ph-plus"></i> Thêm Khách Hàng
+                            class="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded border border-teal-200 flex items-center gap-1 transition-colors">
+                            <i class="ph-bold ph-plus text-[10px]"></i> Thêm Khách Hàng
                         </button>
                     </div>
-                    <div class="space-y-1.5">
-                        <div class="relative">
-                            <i class="ph ph-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+                        <div class="md:col-span-5 relative">
+                            <i class="ph ph-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
                             <input type="text" id="quote-customer-search" oninput="filterCustomerSelectOptions('quote-customer-search', 'quote-customer')" 
-                                placeholder="🔍 Gõ tìm nhanh tên khách hàng / MST / mã KH..." 
-                                class="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 text-xs text-slate-800 transition-all font-medium">
+                                placeholder="Tìm tên KH / MST..." 
+                                class="w-full h-8.5 pl-7 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 text-xs text-slate-800 transition-all font-medium">
                         </div>
-                        <select id="quote-customer" required 
-                            class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-bold text-slate-900 text-sm transition-all">
-                            <option value="">-- Chọn Khách Hàng Trong Danh Mục --</option>
-                        </select>
+                        <div class="md:col-span-7">
+                            <select id="quote-customer" required 
+                                class="w-full h-8.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-900 text-xs transition-all">
+                                <option value="">-- Chọn Khách Hàng Trong Danh Mục --</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Cụm 2 Khu Vực Vận Chuyển -->
-                <div class="space-y-3 pt-1">
-                    <div class="flex items-center justify-between">
-                        <label class="block font-bold text-slate-700 text-xs">
-                            Cụm 2 Khu Vực & Tuyến Đường Mẫu <span class="text-rose-600 font-bold">*</span>
-                        </label>
-                        <button type="button" onclick="openMasterDataModalQuick('driver_tariffs', 'quote-route')" 
-                            class="text-xs font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 flex items-center gap-1 transition-colors">
-                            <i class="ph-bold ph-plus"></i> Thêm Tuyến Danh Mục
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 bg-teal-50/40 p-3.5 rounded-xl border border-teal-100">
+                <div class="space-y-2 pt-0.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-teal-50/40 p-2.5 rounded-lg border border-teal-100">
                         <div class="sm:col-span-4">
-                            <label class="block text-[11px] font-bold text-teal-950 uppercase mb-1">1. Khu Vực Đi / Lấy Cont</label>
+                            <label class="block text-[10.5px] font-bold text-teal-950 uppercase mb-0.5">1. Khu Vực Đi / Lấy Cont</label>
                             <select id="quote-origin-zone" onchange="onQuoteZonesChanged()" 
-                                class="w-full px-2.5 py-2 bg-white border border-teal-200 rounded-lg text-xs font-bold text-teal-900 focus:ring-2 focus:ring-teal-200">
+                                class="w-full h-8 px-2 py-1 bg-white border border-teal-200 rounded text-xs font-bold text-teal-900 focus:ring-1 focus:ring-teal-200">
                                 <option value="">-- Chọn Khu Vực Đi --</option>
                                 <option value="Cát Lái (TP.HCM)">Cát Lái (TP.HCM)</option>
                                 <option value="Cái Mép (Vũng Tàu)">Cái Mép (Vũng Tàu)</option>
@@ -86,9 +78,9 @@
                         </div>
 
                         <div class="sm:col-span-4">
-                            <label class="block text-[11px] font-bold text-teal-950 uppercase mb-1">2. Khu Vực Đến / Kho Khách</label>
+                            <label class="block text-[10.5px] font-bold text-teal-950 uppercase mb-0.5">2. Khu Vực Đến / Kho Khách</label>
                             <select id="quote-dest-zone" onchange="onQuoteZonesChanged()" 
-                                class="w-full px-2.5 py-2 bg-white border border-teal-200 rounded-lg text-xs font-bold text-teal-900 focus:ring-2 focus:ring-teal-200">
+                                class="w-full h-8 px-2 py-1 bg-white border border-teal-200 rounded text-xs font-bold text-teal-900 focus:ring-1 focus:ring-teal-200">
                                 <option value="">-- Chọn Khu Vực Đến --</option>
                                 <option value="Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)">Bình Dương (VSIP/Bàu Bàng...)</option>
                                 <option value="Đồng Nai (Biên Hòa/Nhơn Trạch/Long Thành)">Đồng Nai (Biên Hòa/Nhơn Trạch...)</option>
@@ -101,103 +93,109 @@
                         </div>
 
                         <div class="sm:col-span-4">
-                            <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Tuyến Mẫu Có Sẵn</label>
+                            <div class="flex items-center justify-between mb-0.5">
+                                <label class="block text-[10.5px] font-bold text-slate-700 uppercase">Tuyến Mẫu</label>
+                                <button type="button" onclick="openMasterDataModalQuick('driver_tariffs', 'quote-route')" 
+                                    class="text-[10px] font-bold text-teal-700 hover:underline">
+                                    + Thêm tuyến
+                                </button>
+                            </div>
                             <select id="quote-route-preset" onchange="onQuoteRoutePresetChanged(this.value)" 
-                                class="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-teal-200">
+                                class="w-full h-8 px-2 py-1 bg-white border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:ring-1 focus:ring-teal-200">
                                 <option value="">-- Chọn Tuyến Mẫu --</option>
                             </select>
                         </div>
                     </div>
 
                     <!-- Mô Tả Tuyến & Cự Ly (km) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end pt-1">
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
                         <div class="sm:col-span-8">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Mô Tả Tuyến Đường Chi Tiết <span class="text-rose-600 font-bold">*</span></label>
+                            <label class="block font-bold text-slate-700 text-xs mb-0.5">Mô Tả Tuyến Đường Chi Tiết <span class="text-rose-600 font-bold">*</span></label>
                             <input type="text" id="quote-route" required placeholder="VD: CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG" 
-                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-bold text-slate-900 text-sm">
+                                class="w-full h-8.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-900 text-xs">
                         </div>
 
                         <div class="sm:col-span-4">
-                            <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center justify-between mb-0.5">
                                 <label class="block font-bold text-slate-700 text-xs" title="Khoảng cách làm tròn chênh nhau 10km">Cự Ly Ước Tính</label>
-                                <span class="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">Bước 10km</span>
+                                <span class="text-[9.5px] text-teal-700 font-bold bg-teal-50 px-1 py-0.2 rounded border border-teal-200">Bước 10km</span>
                             </div>
                             <div class="relative">
                                 <input type="number" id="quote-estimated-km" step="10" min="0" value="30" onchange="roundEstimatedKmInput(this)"
-                                    class="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-black text-teal-900 text-sm text-center tabular-nums">
-                                <span class="absolute right-2.5 top-2.5 text-slate-400 font-bold text-xs pointer-events-none">KM</span>
+                                    class="w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-black text-teal-900 text-xs text-center tabular-nums">
+                                <span class="absolute right-2 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">KM</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Quick KM Chips -->
-                    <div class="flex items-center gap-1.5 text-[11px] text-slate-500 flex-wrap pt-0.5">
-                        <span class="font-medium text-slate-400">Chọn nhanh cự ly:</span>
-                        <button type="button" onclick="setQuoteKm(10)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">10 km</button>
-                        <button type="button" onclick="setQuoteKm(20)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">20 km</button>
-                        <button type="button" onclick="setQuoteKm(30)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">30 km</button>
-                        <button type="button" onclick="setQuoteKm(40)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">40 km</button>
-                        <button type="button" onclick="setQuoteKm(50)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">50 km</button>
-                        <button type="button" onclick="setQuoteKm(70)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">70 km</button>
-                        <button type="button" onclick="setQuoteKm(100)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">100 km</button>
+                    <div class="flex items-center gap-1 text-[10.5px] text-slate-500 flex-wrap">
+                        <span class="font-medium text-slate-400">Chọn nhanh:</span>
+                        <button type="button" onclick="setQuoteKm(10)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">10km</button>
+                        <button type="button" onclick="setQuoteKm(20)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">20km</button>
+                        <button type="button" onclick="setQuoteKm(30)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">30km</button>
+                        <button type="button" onclick="setQuoteKm(40)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">40km</button>
+                        <button type="button" onclick="setQuoteKm(50)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">50km</button>
+                        <button type="button" onclick="setQuoteKm(70)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">70km</button>
+                        <button type="button" onclick="setQuoteKm(100)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-teal-100 hover:text-teal-800 font-bold transition-colors">100km</button>
                     </div>
                 </div>
             </div>
 
             <!-- CARD 2: BIỂU CƯỚC & DOANH THU KẾ HOẠCH -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
-                        <i class="ph-fill ph-currency-circle-dollar text-teal-700 text-sm"></i>
+            <div class="bg-white p-3.5 md:p-4 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h4 class="text-[11.5px] font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                        <i class="ph-bold ph-currency-circle-dollar text-teal-700 text-sm"></i>
                         <span>2. Đơn Giá Cước & Sản Lượng Kế Hoạch</span>
                     </h4>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <!-- Đơn Giá Cước -->
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1.5 text-xs">
+                        <label class="block font-bold text-slate-700 mb-1 text-xs">
                             Đơn Giá Cước Đề Xuất (VNĐ) <span class="text-rose-600 font-bold">*</span>
                         </label>
                         <div class="relative">
                             <input type="text" inputmode="numeric" id="quote-unit-price" required value="3.800.000" placeholder="VD: 3.800.000" oninput="calculateQuoteExpectedRevenue()"
-                                class="input-number-vn w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-mono font-bold text-teal-800 text-sm tabular-nums transition-all pr-12">
-                            <span class="absolute right-3 top-2.5 text-slate-400 font-bold text-xs pointer-events-none">VNĐ</span>
+                                class="input-number-vn w-full h-8.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-teal-800 text-xs tabular-nums transition-all pr-10">
+                            <span class="absolute right-2.5 top-2 text-slate-400 font-bold text-[10.5px] pointer-events-none">VNĐ</span>
                         </div>
                     </div>
 
                     <!-- Sản Lượng Dự Kiến -->
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1.5 text-xs">
+                        <label class="block font-bold text-slate-700 mb-1 text-xs">
                             Sản Lượng Cam Kết (Chuyến/Tháng) <span class="text-rose-600 font-bold">*</span>
                         </label>
                         <div class="relative">
                             <input type="text" inputmode="numeric" id="quote-monthly-trips" required value="20" placeholder="VD: 20" oninput="calculateQuoteExpectedRevenue()"
-                                class="input-number-vn w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-mono font-bold text-slate-800 text-sm tabular-nums transition-all pr-24">
-                            <span class="absolute right-3 top-2.5 text-slate-400 font-bold text-xs pointer-events-none">chuyến/tháng</span>
+                                class="input-number-vn w-full h-8.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-slate-800 text-xs tabular-nums transition-all pr-20">
+                            <span class="absolute right-2.5 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">chuyến/tháng</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tự Động Tính Doanh Thu Kế Hoạch -->
-                <div class="bg-teal-50/60 p-4 rounded-xl border border-teal-100 flex items-center justify-between">
+                <div class="bg-teal-50/60 p-2.5 rounded-lg border border-teal-100 flex items-center justify-between">
                     <div>
-                        <span class="text-xs font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1">
+                        <span class="text-[11px] font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1">
                             <i class="ph-bold ph-calculator text-teal-700"></i> Doanh Thu Kế Hoạch / Tháng (Tạm tính)
                         </span>
-                        <p class="text-[11px] text-slate-500 font-medium mt-0.5">Bằng: Đơn giá cước × Sản lượng cam kết hàng tháng</p>
+                        <p class="text-[10px] text-slate-500 font-medium">Bằng: Đơn giá cước × Sản lượng cam kết hàng tháng</p>
                     </div>
                     <div class="text-right">
-                        <span id="quote-preview-revenue" class="text-2xl font-black text-teal-900 tabular-nums font-heading">76.000.000 đ</span>
+                        <span id="quote-preview-revenue" class="text-lg font-black text-teal-900 tabular-nums font-heading">76.000.000 đ</span>
                     </div>
                 </div>
 
                 <!-- Trạng Thái Ban Đầu -->
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1.5 text-xs">
+                    <label class="block font-bold text-slate-700 mb-1 text-xs">
                         Giai Đoạn Chu Trình Báo Giá (Sales Funnel) <span class="text-rose-600 font-bold">*</span>
                     </label>
-                    <select id="quote-status" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 font-bold text-slate-800 text-sm transition-all">
+                    <select id="quote-status" class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs transition-all">
                         <option value="NEGOTIATING">1. Đang thương lượng (Chờ khách chốt đơn giá)</option>
                         <option value="PENDING_APPROVAL">2. Chờ Ban Giám Đốc duyệt (Trình BGĐ duyệt giá cước / chiết khấu)</option>
                         <option value="APPROVED">3. Đã duyệt (Khách đồng ý & Ký kết hợp đồng thương mại)</option>
@@ -208,12 +206,12 @@
             </div>
 
             <!-- Modal Footer Buttons -->
-            <div class="pt-3 border-t border-slate-200/80 flex items-center justify-end space-x-2.5">
-                <button type="button" onclick="closeModal('modal-quotation')" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-sm transition-all">
+            <div class="pt-2 border-t border-slate-200/80 flex items-center justify-end space-x-2">
+                <button type="button" onclick="closeModal('modal-quotation')" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs transition-all">
                     Đóng
                 </button>
-                <button type="button" id="btn-submit-quote" onclick="saveQuotation(event)" class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold font-heading text-sm shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
-                    <i class="ph-fill ph-check-circle text-base"></i>
+                <button type="button" id="btn-submit-quote" onclick="saveQuotation(event)" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold font-heading text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
+                    <i class="ph-bold ph-check-circle text-sm"></i>
                     <span id="btn-save-quote-text">Lưu Báo Giá</span>
                 </button>
             </div>
@@ -221,4 +219,5 @@
 
     </div>
 </div>
+
 

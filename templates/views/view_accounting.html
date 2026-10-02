@@ -22,7 +22,7 @@
                 <span>Làm Mới</span>
             </button>
             <button onclick="exportAccountingToExcel()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
-                <i class="ph-fill ph-file-xls text-sm"></i>
+                <i class="ph-bold ph-file-xls text-sm"></i>
                 <span>Xuất Báo Cáo Kế Toán</span>
             </button>
         </div>
@@ -31,35 +31,35 @@
     <!-- THANH SUBTABS KẾ TOÁN 7 TRỤ CỘT TÀI CHÍNH VẬN TẢI -->
     <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap gap-1.5">
         <button id="acct-tab-btn-1" onclick="switchAccountingSubTab('acct-cashbook')" class="acct-subtab-btn active px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all bg-emerald-700 text-white shadow-sm">
-            <i class="ph-fill ph-bank text-sm"></i>
+            <i class="ph-bold ph-bank text-sm"></i>
             <span>1. Sổ Quỹ Thu - Chi</span>
         </button>
         <button id="acct-tab-btn-2" onclick="switchAccountingSubTab('acct-driver-advances')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-            <i class="ph-fill ph-hand-coins text-sm"></i>
+            <i class="ph-bold ph-hand-coins text-sm"></i>
             <span>2. Tạm Ứng - Hoàn Ứng Tài Xế</span>
             <span id="badge-acct-driver-advances" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">0</span>
         </button>
         <button id="acct-tab-btn-3" onclick="switchAccountingSubTab('acct-dispatcher-funds')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-            <i class="ph-fill ph-wallet text-sm"></i>
+            <i class="ph-bold ph-wallet text-sm"></i>
             <span>3. Quỹ Tạm Ứng Điều Vận</span>
             <span id="badge-acct-dispatcher-funds" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800">0</span>
         </button>
         <button id="acct-tab-btn-4" onclick="switchAccountingSubTab('acct-settlements')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-            <i class="ph-fill ph-receipt text-sm"></i>
+            <i class="ph-bold ph-receipt text-sm"></i>
             <span>4. Đối Soát & Khóa Sổ Chuyến</span>
         </button>
         <button id="acct-tab-btn-5" onclick="switchAccountingSubTab('acct-reimbursables')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-            <i class="ph-fill ph-file-text text-sm"></i>
+            <i class="ph-bold ph-file-text text-sm"></i>
             <span>5. Chi Hộ & Debit Note</span>
             <span id="badge-acct-reimbursables" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">0</span>
         </button>
         <button id="acct-tab-btn-6" onclick="switchAccountingSubTab('acct-subcontractors')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-            <i class="ph-fill ph-truck text-sm"></i>
+            <i class="ph-bold ph-truck text-sm"></i>
             <span>6. Quyết Toán Xe Bạn (3PL)</span>
             <span id="badge-acct-subcontractors" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">0</span>
         </button>
         <button id="acct-tab-btn-7" onclick="switchAccountingSubTab('acct-bot-audit')" class="acct-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-            <i class="ph-fill ph-barcode text-sm"></i>
+            <i class="ph-bold ph-barcode text-sm"></i>
             <span>7. Đối Soát BOT Tuyến</span>
         </button>
     </div>
@@ -74,7 +74,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tồn Quỹ Tiền Mặt</span>
                     <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-money"></i>
+                        <i class="ph-bold ph-money"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1" id="cash-stat-cash-balance">-- đ</p>
@@ -85,7 +85,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Số Dư Tài Khoản Ngân Hàng</span>
                     <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-bank"></i>
+                        <i class="ph-bold ph-bank"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1" id="cash-stat-bank-balance">-- đ</p>
@@ -96,7 +96,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Tồn Quỹ Toàn Cty</span>
                     <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-wallet"></i>
+                        <i class="ph-bold ph-wallet"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="cash-stat-total-balance">-- đ</p>
@@ -107,7 +107,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Dòng Tiền Thuần Trong Kỳ</span>
                     <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-chart-line-up"></i>
+                        <i class="ph-bold ph-chart-line-up"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="cash-stat-period-net">-- đ</p>
@@ -120,7 +120,7 @@
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                     <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                        <i class="ph-fill ph-bank text-emerald-700 text-sm"></i>
+                        <i class="ph-bold ph-bank text-emerald-700 text-sm"></i>
                         <span>Sổ Quỹ Thu - Chi: <strong>Hạch toán minh bạch dòng tiền Tiền mặt & Ngân hàng (Mẫu S03a-DN)</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
@@ -133,7 +133,7 @@
                             <span>- Lập Phiếu Chi</span>
                         </button>
                         <button type="button" onclick="exportCashBookToExcel()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold font-heading border border-slate-200 shadow-2xs flex items-center gap-1.5 transition-all">
-                            <i class="ph-fill ph-file-xls text-emerald-700 text-xs"></i>
+                            <i class="ph-bold ph-file-xls text-emerald-700 text-xs"></i>
                             <span>Xuất Sổ Quỹ Excel</span>
                         </button>
                     </div>
@@ -241,7 +241,7 @@
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                     <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                        <i class="ph-fill ph-hand-coins text-amber-600 text-sm"></i>
+                        <i class="ph-bold ph-hand-coins text-amber-600 text-sm"></i>
                         <span>Bảng Quản Lý: <strong>Tạm Ứng & Đối Soát Hoàn Ứng Chuyến Cho Tài Xế</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
@@ -339,7 +339,7 @@
         <div class="erp-table-container flex flex-col shadow-sm">
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between text-xs flex-wrap gap-2">
                 <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                    <i class="ph-fill ph-wallet text-indigo-600 text-sm"></i>
+                    <i class="ph-bold ph-wallet text-indigo-600 text-sm"></i>
                     <span>Bảng Theo Dõi: <strong>Quỹ Tạm Ứng Công Ty Cho Bộ Phận Điều Phối Đội Xe</strong></span>
                 </div>
                 <div class="flex items-center gap-2">
@@ -385,12 +385,12 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Cước (Tháng)</span>
                     <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-currency-circle-dollar"></i>
+                        <i class="ph-bold ph-currency-circle-dollar"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-revenue">-- đ</p>
                 <p class="text-xs text-teal-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-trips-count">
-                    <i class="ph-fill ph-check-circle text-xs"></i> Tính trên các chuyến xe đã phát sinh
+                    <i class="ph-bold ph-check-circle text-xs"></i> Tính trên các chuyến xe đã phát sinh
                 </p>
             </div>
 
@@ -399,7 +399,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chi Phí Chuyến</span>
                     <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-receipt"></i>
+                        <i class="ph-bold ph-receipt"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-expense">-- đ</p>
@@ -411,7 +411,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Lợi Nhuận Gộp Vận Tải</span>
                     <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-chart-line-up"></i>
+                        <i class="ph-bold ph-chart-line-up"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-profit">-- đ</p>
@@ -425,12 +425,12 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chờ Kế Toán Chốt Sổ</span>
                     <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-lock-key-open"></i>
+                        <i class="ph-bold ph-lock-key-open"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="acct-stat-pending">-- chuyến</p>
                 <p class="text-xs text-amber-700 font-medium mt-1.5 flex items-center gap-1" id="acct-stat-settled">
-                    <i class="ph-fill ph-lock-key text-xs"></i> Đã chốt sổ: -- chuyến
+                    <i class="ph-bold ph-lock-key text-xs"></i> Đã chốt sổ: -- chuyến
                 </p>
             </div>
         </div>
@@ -441,7 +441,7 @@
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                     <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                        <i class="ph-fill ph-funnel text-teal-700 text-sm"></i>
+                        <i class="ph-bold ph-funnel text-teal-700 text-sm"></i>
                         <span>Bộ Lọc & Sắp Xếp: <strong>Đối soát chi phí, lợi nhuận & chốt sổ chuyến xe</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
@@ -587,12 +587,12 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Đã Chi Hộ KH</span>
                     <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-hand-coins"></i>
+                        <i class="ph-bold ph-hand-coins"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="reimburse-stat-total">-- đ</p>
                 <p class="text-xs text-teal-700 font-medium mt-1.5 flex items-center gap-1" id="reimburse-stat-count">
-                    <i class="ph-fill ph-check-circle text-xs"></i> 0 khoản chi hộ
+                    <i class="ph-bold ph-check-circle text-xs"></i> 0 khoản chi hộ
                 </p>
             </div>
 
@@ -600,7 +600,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Thu Hồi Từ KH</span>
                     <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-check-circle"></i>
+                        <i class="ph-bold ph-check-circle"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1" id="reimburse-stat-collected">-- đ</p>
@@ -611,12 +611,12 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Còn Phải Thu Hồi</span>
                     <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-hourglass-high"></i>
+                        <i class="ph-bold ph-hourglass-high"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="reimburse-stat-pending">-- đ</p>
                 <p class="text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1" id="reimburse-stat-pending-count">
-                    <i class="ph-fill ph-warning-circle text-xs"></i> Chờ khách hàng hoàn ứng
+                    <i class="ph-bold ph-warning-circle text-xs"></i> Chờ khách hàng hoàn ứng
                 </p>
             </div>
 
@@ -624,7 +624,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Lập Debit Note</span>
                     <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-file-text"></i>
+                        <i class="ph-bold ph-file-text"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="reimburse-stat-billed">-- đ</p>
@@ -637,7 +637,7 @@
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                     <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                        <i class="ph-fill ph-file-text text-teal-700 text-sm"></i>
+                        <i class="ph-bold ph-file-text text-teal-700 text-sm"></i>
                         <span>Bảng Kê Chi Hộ & Debit Note: <strong>Nâng hạ, cược vỏ cont, cân xe, kiểm dịch, bồi dưỡng kho</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
@@ -650,7 +650,7 @@
                             <span>Xác Nhận KH Hoàn Tiền 1-Chạm</span>
                         </button>
                         <button type="button" onclick="exportReimbursablesToExcel()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold font-heading border border-slate-200 shadow-2xs flex items-center gap-1.5 transition-all">
-                            <i class="ph-fill ph-file-xls text-emerald-700 text-xs"></i>
+                            <i class="ph-bold ph-file-xls text-emerald-700 text-xs"></i>
                             <span>Xuất Debit Note Excel</span>
                         </button>
                     </div>
@@ -724,7 +724,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chuyến Xe Bạn Chạy</span>
                     <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-truck"></i>
+                        <i class="ph-bold ph-truck"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="subcon-stat-trips">-- chuyến</p>
@@ -735,7 +735,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Cước Trả Xe Bạn</span>
                     <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-currency-circle-dollar"></i>
+                        <i class="ph-bold ph-currency-circle-dollar"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="subcon-stat-cost">-- đ</p>
@@ -746,7 +746,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đã Tạm Ứng Cước</span>
                     <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-hand-coins"></i>
+                        <i class="ph-bold ph-hand-coins"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="subcon-stat-advance">-- đ</p>
@@ -757,7 +757,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Còn Phải Quyết Toán</span>
                     <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-scales"></i>
+                        <i class="ph-bold ph-scales"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="subcon-stat-remaining">-- đ</p>
@@ -770,12 +770,12 @@
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                     <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                        <i class="ph-fill ph-truck text-slate-800 text-sm"></i>
+                        <i class="ph-bold ph-truck text-slate-800 text-sm"></i>
                         <span>Bảng Quyết Toán Thầu Phụ 3PL: <strong>Đối soát cước thuê xe ngoài, tạm ứng và chênh lệch cty hưởng</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
                         <button type="button" onclick="exportSubcontractorToExcel()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
-                            <i class="ph-fill ph-file-xls text-sm"></i>
+                            <i class="ph-bold ph-file-xls text-sm"></i>
                             <span>Xuất Bảng Kê Xe Bạn Excel</span>
                         </button>
                     </div>
@@ -838,7 +838,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chuyến Xe Có Vé BOT</span>
                     <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-barcode"></i>
+                        <i class="ph-bold ph-barcode"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="bot-stat-trips">-- chuyến</p>
@@ -849,7 +849,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Tiền Vé BOT Thực Tế</span>
                     <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-receipt"></i>
+                        <i class="ph-bold ph-receipt"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="bot-stat-actual">-- đ</p>
@@ -860,7 +860,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Định Mức Tuyến Chuẩn</span>
                     <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-compass"></i>
+                        <i class="ph-bold ph-compass"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="bot-stat-standard">-- đ</p>
@@ -871,7 +871,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Cảnh Báo Vượt Định Mức</span>
                     <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-warning"></i>
+                        <i class="ph-bold ph-warning"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="bot-stat-variance">-- chuyến</p>
@@ -883,7 +883,7 @@
         <div class="erp-table-container flex flex-col shadow-sm">
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between text-xs flex-wrap gap-2">
                 <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                    <i class="ph-fill ph-barcode text-teal-700 text-sm"></i>
+                    <i class="ph-bold ph-barcode text-teal-700 text-sm"></i>
                     <span>Bảng Đối Chiếu: <strong>Vé Cầu Đường BOT Hiện Trường vs Định Mức Tuyến Đường</strong></span>
                 </div>
                 <div class="flex items-center gap-2">
@@ -892,7 +892,7 @@
                         <span>Làm Mới</span>
                     </button>
                     <button type="button" onclick="exportBotAuditToExcel()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
-                        <i class="ph-fill ph-file-xls text-sm"></i>
+                        <i class="ph-bold ph-file-xls text-sm"></i>
                         <span>Xuất Báo Cáo BOT</span>
                     </button>
                 </div>

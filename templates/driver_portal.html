@@ -73,7 +73,7 @@
       <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold text-lg">
-            <i class="ph-fill ph-steering-wheel text-2xl"></i>
+            <i class="ph-bold ph-steering-wheel text-2xl"></i>
           </div>
           <div>
             <div class="text-xs text-slate-500 font-medium">Tài xế nhận lệnh:</div>
@@ -97,7 +97,7 @@
       <!-- DISPATCHER CONTACT & SOS BUTTON -->
       <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
         <div class="flex items-center gap-2">
-          <i class="ph-fill ph-headset text-teal-600 text-base"></i>
+          <i class="ph-bold ph-headset text-teal-600 text-base"></i>
           <span class="text-slate-600">Điều độ: <strong class="text-slate-900">{{ dispatcher_name }}</strong></span>
         </div>
         <div class="flex items-center gap-1.5">
@@ -124,11 +124,11 @@
         {% elif customs_dec.customs_status == 'KIEM_HOA' %}bg-rose-50 border-rose-300 text-rose-900
         {% else %}bg-sky-50 border-sky-300 text-sky-900{% endif %}">
         <div class="flex items-center gap-2">
-          <span class="text-lg">
-            {% if customs_dec.customs_status == 'THONG_QUAN' %}🟢
-            {% elif customs_dec.customs_status == 'DANG_XU_LY' %}🟡
-            {% elif customs_dec.customs_status == 'KIEM_HOA' %}🔴
-            {% else %}🔵{% endif %}
+          <span class="w-3 h-3 rounded-full shrink-0
+            {% if customs_dec.customs_status == 'THONG_QUAN' %}bg-emerald-500
+            {% elif customs_dec.customs_status == 'DANG_XU_LY' %}bg-amber-500
+            {% elif customs_dec.customs_status == 'KIEM_HOA' %}bg-rose-500
+            {% else %}bg-sky-500{% endif %}">
           </span>
           <div>
             <div class="text-[11px] font-bold uppercase tracking-wider">Hải Quan Tờ Khai</div>
@@ -661,7 +661,7 @@
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
-              <i class="ph-fill ph-file-text"></i>
+              <i class="ph-bold ph-file-text"></i>
             </div>
             <div>
               <div class="font-bold text-slate-900">{{ doc.title }}</div>
@@ -861,12 +861,12 @@
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Loại chứng từ <span class="text-rose-500">*</span></label>
           <select id="docType" required onchange="onDocTypeChange()" class="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 font-medium">
-            <option value="Biên bản giao nhận hàng">📝 Biên bản giao nhận hàng (POD có chữ ký kho)</option>
-            <option value="Phiếu EIR Hạ Cont">⚓ Phiếu EIR Hạ Cont tại Cảng/Bãi</option>
-            <option value="Ảnh giám định vỏ Cont">🔍 Giám định vỏ cont lúc nhận (Chống đền vỏ)</option>
-            <option value="Ảnh Niêm Phong Chì (Seal)">🔒 Ảnh chụp chì niêm phong đã bấm (Seal)</option>
-            <option value="Phiếu cân xe">⚖️ Phiếu cân xe / Cân tải trọng</option>
-            <option value="Hóa đơn GTGT">🧾 Hóa đơn GTGT / Chứng từ khác</option>
+            <option value="Biên bản giao nhận hàng">Biên bản giao nhận hàng (POD có chữ ký kho)</option>
+            <option value="Phiếu EIR Hạ Cont">Phiếu EIR Hạ Cont tại Cảng/Bãi</option>
+            <option value="Ảnh giám định vỏ Cont">Giám định vỏ cont lúc nhận (Chống đền vỏ)</option>
+            <option value="Ảnh Niêm Phong Chì (Seal)">Ảnh chụp chì niêm phong đã bấm (Seal)</option>
+            <option value="Phiếu cân xe">Phiếu cân xe / Cân tải trọng</option>
+            <option value="Hóa đơn GTGT">Hóa đơn GTGT / Chứng từ khác</option>
           </select>
         </div>
 
@@ -876,11 +876,11 @@
           <div class="grid grid-cols-2 gap-2 text-xs">
             <label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-slate-200 cursor-pointer">
               <input type="radio" name="containerCondRadio" value="GOOD" checked onchange="toggleDamageDesc(false)" class="text-teal-600">
-              <span class="font-bold text-slate-800">✅ Đạt chuẩn</span>
+              <span class="font-bold text-slate-800 flex items-center gap-1"><i class="ph-bold ph-check text-emerald-600"></i> Đạt chuẩn</span>
             </label>
             <label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-slate-200 cursor-pointer">
               <input type="radio" name="containerCondRadio" value="DAMAGED" onchange="toggleDamageDesc(true)" class="text-rose-600">
-              <span class="font-bold text-rose-700">⚠️ Có hư hỏng</span>
+              <span class="font-bold text-rose-700 flex items-center gap-1"><i class="ph-bold ph-warning text-amber-600"></i> Có hư hỏng</span>
             </label>
           </div>
           <div id="damageDescContainer" class="hidden">
@@ -1015,12 +1015,12 @@
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Loại sự cố gặp phải <span class="text-rose-500">*</span></label>
           <select id="incidentType" required class="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-medium">
-            <option value="VEHICLE_BREAKDOWN">💥 Nổ lốp / Hỏng xe / Sự cố kỹ thuật đầu kéo</option>
-            <option value="TRAFFIC_JAM">🚦 Kẹt đường nghiêm trọng / Trễ giờ hẹn kho</option>
-            <option value="POLICE_CHECK">👮 Kiểm tra tải trọng / CSGT kiểm tra</option>
-            <option value="WAREHOUSE_ISSUE">🏢 Kho từ chối nhận hàng / Quá tải dock bốc dỡ</option>
-            <option value="ACCIDENT">🚗 Va quẹt / Sự cố giao thông hiện trường</option>
-            <option value="OTHER">⚠️ Sự cố phát sinh khác</option>
+            <option value="VEHICLE_BREAKDOWN">Nổ lốp / Hỏng xe / Sự cố kỹ thuật đầu kéo</option>
+            <option value="TRAFFIC_JAM">Kẹt đường nghiêm trọng / Trễ giờ hẹn kho</option>
+            <option value="POLICE_CHECK">Kiểm tra tải trọng / CSGT kiểm tra</option>
+            <option value="WAREHOUSE_ISSUE">Kho từ chối nhận hàng / Quá tải dock bốc dỡ</option>
+            <option value="ACCIDENT">Va quẹt / Sự cố giao thông hiện trường</option>
+            <option value="OTHER">Sự cố phát sinh khác</option>
           </select>
         </div>
 
@@ -1180,7 +1180,7 @@
         p.innerText = '';
         return;
       }
-      p.innerText = `👉 ${num.toLocaleString('vi-VN')} đ`;
+      p.innerText = `= ${num.toLocaleString('vi-VN')} đ`;
     }
     function setExpAmount(amount) {
       const inp = document.getElementById('expAmount');

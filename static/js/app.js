@@ -205,8 +205,8 @@ function showToast(type, message, title = '') {
     const typeClass = type === 'success' ? 'toast-success' :
                       type === 'danger' ? 'toast-danger' : 'toast-warning';
     
-    const icon = type === 'success' ? 'ph-fill ph-check-circle text-emerald-600' :
-                 type === 'danger' ? 'ph-fill ph-x-circle text-rose-600' : 'ph-fill ph-warning-circle text-amber-600';
+    const icon = type === 'success' ? 'ph-bold ph-check-circle text-emerald-600' :
+                 type === 'danger' ? 'ph-bold ph-x-circle text-rose-600' : 'ph-bold ph-warning-circle text-amber-600';
 
     toast.className = `toast-notification ${typeClass}`;
     toast.innerHTML = `
@@ -1400,7 +1400,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                 settleCont.innerHTML = `
                     <div class="flex items-center space-x-1.5">
                         <span class="px-3 py-1.5 rounded-xl text-xs font-black bg-purple-100 text-purple-900 border border-purple-300 flex items-center shadow-sm font-heading" title="Chốt bởi ${trip.settled_by || 'Kế toán'} lúc ${trip.settled_at}">
-                            <i class="ph-fill ph-lock-key mr-1 text-purple-700 text-sm"></i> ĐÃ CHỐT SỔ KẾ TOÁN
+                            <i class="ph-bold ph-lock-key mr-1 text-purple-700 text-sm"></i> ĐÃ CHỐT SỔ KẾ TOÁN
                         </span>
                         <button onclick="unsettleTripExpenses()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 transition-colors flex items-center font-heading" title="Mở khóa sổ để hiệu chỉnh chi phí">
                             <i class="ph ph-lock-key-open mr-1"></i> Mở Sổ
@@ -1419,7 +1419,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             if (settleCont) {
                 settleCont.innerHTML = `
                     <button onclick="settleTripExpenses()" class="px-3.5 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading">
-                        <i class="ph-fill ph-lock-simple mr-1.5 text-base text-indigo-200"></i> Chốt Sổ Kế Toán
+                        <i class="ph-bold ph-lock-simple mr-1.5 text-base text-indigo-200"></i> Chốt Sổ Kế Toán
                     </button>
                 `;
             }
@@ -1572,36 +1572,36 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             } else {
                 docList.forEach(doc => {
                     // Xác định icon, màu sắc và danh mục chứng từ
-                    let iconClass = 'ph-fill ph-file-text text-teal-600';
+                    let iconClass = 'ph-bold ph-file-text text-teal-600';
                     let iconBg = 'bg-teal-50 border-teal-200';
                     let tagLabel = doc.type_label || 'Chứng từ';
 
                     if (doc.type === 'BOOKING_NOTE') {
-                        iconClass = 'ph-fill ph-file-pdf text-rose-600';
+                        iconClass = 'ph-bold ph-file-pdf text-rose-600';
                         iconBg = 'bg-rose-50 border-rose-200';
                         tagLabel = 'Lệnh Booking / Cấp Rỗng';
                     } else if (doc.type === 'EIR_PICKUP') {
-                        iconClass = 'ph-fill ph-truck text-blue-600';
+                        iconClass = 'ph-bold ph-truck text-blue-600';
                         iconBg = 'bg-blue-50 border-blue-200';
                         tagLabel = 'Phiếu EIR Lấy Cont';
                     } else if (doc.type === 'EIR_DROPOFF') {
-                        iconClass = 'ph-fill ph-arrow-down-left text-indigo-600';
+                        iconClass = 'ph-bold ph-arrow-down-left text-indigo-600';
                         iconBg = 'bg-indigo-50 border-indigo-200';
                         tagLabel = 'Phiếu EIR Hạ Cont';
                     } else if (doc.type === 'POD') {
-                        iconClass = 'ph-fill ph-signature text-emerald-600';
+                        iconClass = 'ph-bold ph-signature text-emerald-600';
                         iconBg = 'bg-emerald-50 border-emerald-200';
                         tagLabel = 'Biên bản POD';
                     } else if (doc.type === 'INVOICE') {
-                        iconClass = 'ph-fill ph-receipt text-amber-600';
+                        iconClass = 'ph-bold ph-receipt text-amber-600';
                         iconBg = 'bg-amber-50 border-amber-200';
                         tagLabel = 'Hóa đơn / Biên nhận';
                     } else if (doc.type === 'WEIGHT_TICKET') {
-                        iconClass = 'ph-fill ph-scales text-purple-600';
+                        iconClass = 'ph-bold ph-scales text-purple-600';
                         iconBg = 'bg-purple-50 border-purple-200';
                         tagLabel = 'Phiếu cân';
                     } else if (doc.type === 'CONTAINER_CHECK') {
-                        iconClass = 'ph-fill ph-shield-check text-cyan-600';
+                        iconClass = 'ph-bold ph-shield-check text-cyan-600';
                         iconBg = 'bg-cyan-50 border-cyan-200';
                         tagLabel = 'Giám định vỏ cont';
                     }
@@ -1795,7 +1795,7 @@ function renderCostSheetTable(trip) {
                             <div class="flex items-center space-x-2">
                                 <span class="font-bold text-slate-900 text-[13px]">${item.title}</span>
                                 <span class="inline-flex items-center space-x-1 px-2 py-0.2 rounded-full bg-teal-100 text-teal-900 text-[10.5px] font-bold font-heading hover:bg-teal-200 transition-colors">
-                                    <i class="ph-fill ph-list-numbers"></i>
+                                    <i class="ph-bold ph-list-numbers"></i>
                                     <span>${matchedExps.length} khoản chi</span>
                                     <i id="icon-toggle-${item.code}" class="ph ph-caret-down text-xs transition-transform duration-200"></i>
                                 </span>
@@ -1881,7 +1881,7 @@ function renderCostSheetTable(trip) {
                             <td class="py-1.5 px-2.5 text-center">
                                 ${trip.is_expenses_settled || !subExp.can_edit ? `
                                     <span class="inline-flex items-center text-purple-700 font-bold text-[10.5px] bg-purple-50 px-2 py-0.5 rounded border border-purple-200" title="Đã chốt sổ Kế toán, không thể chỉnh sửa">
-                                        <i class="ph-fill ph-lock mr-1"></i> Khóa
+                                        <i class="ph-bold ph-lock mr-1"></i> Khóa
                                     </span>
                                 ` : `
                                     <div class="inline-flex items-center space-x-1">
@@ -1950,7 +1950,7 @@ function renderCostSheetTable(trip) {
                             ${singleExp ? (
                                 trip.is_expenses_settled || !singleExp.can_edit ? `
                                     <span class="inline-flex items-center text-purple-700 font-bold text-[10.5px] bg-purple-50 px-2 py-0.5 rounded border border-purple-200" title="Đã chốt sổ Kế toán, không thể chỉnh sửa">
-                                        <i class="ph-fill ph-lock mr-1"></i> Khóa
+                                        <i class="ph-bold ph-lock mr-1"></i> Khóa
                                     </span>
                                 ` : `
                                     <div class="inline-flex items-center space-x-1">
@@ -2020,7 +2020,7 @@ window.copyDriverPortalLink = function() {
     }
     const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
     const portalUrl = `${window.location.origin}/driver/${driverToken}/`;
-    const message = `LỆNH ĐIỀU XE BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nXe: ${trip.vehicle || '-'} | Mooc: ${trip.trailer || '-'}\nCont: ${trip.container || '-'} | Seal: ${trip.seal || '-'}\nĐiểm 1 (Lấy cont): ${trip.pickup || '-'}\nĐiểm 2 (Giao kho): ${trip.warehouse || '-'}\nĐiểm 3 (Hạ cont): ${trip.dropoff || '-'}\n👉 Mở link mobile báo mốc & kê chi phí: ${portalUrl}`;
+    const message = `LỆNH ĐIỀU XE BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nXe: ${trip.vehicle || '-'} | Mooc: ${trip.trailer || '-'}\nCont: ${trip.container || '-'} | Seal: ${trip.seal || '-'}\nĐiểm 1 (Lấy cont): ${trip.pickup || '-'}\nĐiểm 2 (Giao kho): ${trip.warehouse || '-'}\nĐiểm 3 (Hạ cont): ${trip.dropoff || '-'}\n- Mở link mobile báo mốc & kê chi phí: ${portalUrl}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {
@@ -2042,7 +2042,7 @@ window.copyCustomerTrackingLink = function() {
     const trackingToken = trip.tracking_hashid || trip.hashid || trip.trip_code;
     const trackingUrl = `${window.location.origin}/tracking/${trackingToken}/`;
     const destWarehouse = trip.delivery_warehouse || trip.warehouse || 'Kho Khách Hàng';
-    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nSố Chì (Seal): ${trip.seal || 'Chưa bấm'}\nKho Giao Hàng: ${destWarehouse}\n👉 Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
+    const message = `THÔNG TIN TRA CỨU VẬN ĐƠN CONTAINER - BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nContainer: ${trip.container || '-'} (${trip.container_type || '40HC'})\nSố Chì (Seal): ${trip.seal || 'Chưa bấm'}\nKho Giao Hàng: ${destWarehouse}\n- Quý khách có thể theo dõi tiến độ chuyến xe thời gian thực tại: ${trackingUrl}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {
@@ -2111,13 +2111,13 @@ function renderDriverMobileApp(trip) {
         } else if (exp.status === 'SETTLED') {
             actionButtons = `
                 <span class="inline-flex items-center text-[9.5px] font-bold text-purple-700 mt-1" title="Kế toán đã chốt sổ">
-                    <i class="ph-fill ph-lock mr-0.5"></i> Đã chốt sổ
+                    <i class="ph-bold ph-lock mr-0.5"></i> Đã chốt sổ
                 </span>
             `;
         } else {
             actionButtons = `
                 <span class="inline-flex items-center text-[9.5px] font-bold text-emerald-700 mt-1" title="Điều độ đã duyệt">
-                    <i class="ph-fill ph-lock mr-0.5"></i> Đã duyệt
+                    <i class="ph-bold ph-lock mr-0.5"></i> Đã duyệt
                 </span>
             `;
         }
@@ -2922,7 +2922,7 @@ function renderTripBookingFilesList() {
         itemsHtml += `
             <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 border border-teal-200 text-xs">
                 <div class="flex items-center space-x-2 truncate pr-2">
-                    <i class="${isPdf ? 'ph-fill ph-file-pdf text-rose-600' : 'ph-fill ph-file-image text-teal-600'} text-base shrink-0"></i>
+                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0"></i>
                     <div class="truncate">
                         <p class="font-bold text-teal-900 truncate" title="${currentInheritedBookingFile.name || 'File Booking'}">${currentInheritedBookingFile.name || 'File Booking'}</p>
                         <span class="text-[10px] text-teal-700 italic font-medium">(Kế thừa từ Booking)</span>
@@ -2952,7 +2952,7 @@ function renderTripBookingFilesList() {
         itemsHtml += `
             <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 shadow-2xs text-xs">
                 <div class="flex items-center space-x-2 truncate pr-2">
-                    <i class="${isPdf ? 'ph-fill ph-file-pdf text-rose-600' : 'ph-fill ph-file-image text-blue-600'} text-base shrink-0"></i>
+                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0"></i>
                     <div class="truncate">
                         <p class="font-bold text-slate-800 truncate" title="${file.name}">${file.name}</p>
                         <span class="text-[10px] text-slate-400 font-medium">(${sizeStr})</span>
@@ -2975,7 +2975,7 @@ function renderTripBookingFilesList() {
     area.innerHTML = itemsHtml;
     if (summary) {
         if (totalCount > 0) {
-            summary.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-600"></i> <strong class="text-emerald-800">${totalCount}</strong> tệp đính kèm`;
+            summary.innerHTML = `<i class="ph-bold ph-check-circle text-emerald-600"></i> <strong class="text-emerald-800">${totalCount}</strong> tệp đính kèm`;
         } else {
             summary.innerHTML = `<i class="ph ph-info text-blue-500"></i> Chưa có tệp nào được đính kèm (hoặc kế thừa từ Booking)`;
         }
@@ -3070,7 +3070,7 @@ function renderSaleBookingFilesList() {
         itemsHtml += `
             <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 border border-teal-200 shadow-2xs text-xs">
                 <div class="flex items-center space-x-2 truncate pr-2">
-                    <i class="${isPdf ? 'ph-fill ph-file-pdf text-rose-600' : 'ph-fill ph-file-image text-teal-600'} text-base shrink-0"></i>
+                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0"></i>
                     <div class="truncate">
                         <p class="font-bold text-teal-900 truncate" title="${doc.name || 'File Booking'}">${doc.name || 'File Booking'}</p>
                         <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'}</span>
@@ -3103,7 +3103,7 @@ function renderSaleBookingFilesList() {
         itemsHtml += `
             <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-blue-200 shadow-2xs text-xs">
                 <div class="flex items-center space-x-2 truncate pr-2">
-                    <i class="${isPdf ? 'ph-fill ph-file-pdf text-rose-600' : 'ph-fill ph-file-image text-blue-600'} text-base shrink-0"></i>
+                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0"></i>
                     <div class="truncate">
                         <p class="font-bold text-slate-800 truncate" title="${file.name}">${file.name}</p>
                         <span class="text-[10px] text-blue-600 font-medium">Mới: (${sizeStr})</span>
@@ -3126,7 +3126,7 @@ function renderSaleBookingFilesList() {
     listArea.innerHTML = itemsHtml;
     if (summary) {
         if (totalCount > 0) {
-            summary.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-600"></i> <strong class="text-emerald-800">${totalCount}</strong> tệp đính kèm`;
+            summary.innerHTML = `<i class="ph-bold ph-check-circle text-emerald-600"></i> <strong class="text-emerald-800">${totalCount}</strong> tệp đính kèm`;
         } else {
             summary.innerHTML = `<i class="ph ph-info text-blue-500"></i> Chưa có tệp nào được đính kèm`;
         }
@@ -3191,7 +3191,7 @@ async function submitNewTrip() {
             missingLabels.push(f.label);
             inputEl.classList.add('input-error');
             if (errEl) {
-                errEl.innerHTML = `<i class="ph-fill ph-warning-circle"></i> Vui lòng chọn/nhập ${f.label.toLowerCase()}`;
+                errEl.innerHTML = `<i class="ph-bold ph-warning-circle"></i> Vui lòng chọn/nhập ${f.label.toLowerCase()}`;
                 errEl.classList.remove('hidden');
             }
             if (!firstErrorEl) firstErrorEl = inputEl;
@@ -3373,11 +3373,11 @@ async function submitNewTrip() {
 function openOcrApp(mode) {
     currentOcrMode = mode;
     if (mode === 'phi-ton') {
-        document.getElementById('ocr-modal-title').innerHTML = '<i class="ph-fill ph-camera text-amber-600 text-xl mr-2"></i> Báo Cáo Phí Phát Sinh';
+        document.getElementById('ocr-modal-title').innerHTML = '<i class="ph-bold ph-camera text-amber-600 text-xl mr-2"></i> Báo Cáo Phí Phát Sinh';
         document.getElementById('ocr-upload-text').innerText = 'Chụp Hóa Đơn / Vé Trạm BOT';
         document.getElementById('ocr-upload-sub').innerText = 'AI OCR sẽ tự động trích xuất số tiền chi phí.';
     } else {
-        document.getElementById('ocr-modal-title').innerHTML = '<i class="ph-fill ph-file-text text-emerald-600 text-xl mr-2"></i> Trả Chứng Từ Hoàn Thành';
+        document.getElementById('ocr-modal-title').innerHTML = '<i class="ph-bold ph-file-text text-emerald-600 text-xl mr-2"></i> Trả Chứng Từ Hoàn Thành';
         document.getElementById('ocr-upload-text').innerText = 'Chụp Phiếu EIR / Biên Bản POD';
         document.getElementById('ocr-upload-sub').innerText = 'AI OCR sẽ nhận diện số Cont, Seal để đối chiếu lệnh.';
     }
@@ -4723,12 +4723,12 @@ function renderBookingsTable(bookings) {
                 <div class="flex items-center justify-center space-x-1.5">
                     ${b.status !== 'COMPLETED' && b.status !== 'CANCELLED' ? `
                         <button onclick="dispatchFromBooking(${b.id})" class="px-2.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1 font-heading" title="Điều xe ngay">
-                            <i class="ph-fill ph-paper-plane-tilt text-xs"></i>
+                            <i class="ph-bold ph-paper-plane-tilt text-xs"></i>
                             <span>Điều Xe</span>
                         </button>
                     ` : `
                         <span class="px-2 py-1 text-xs text-emerald-700 font-bold flex items-center gap-0.5">
-                            <i class="ph-fill ph-check"></i> Đủ xe
+                            <i class="ph-bold ph-check"></i> Đủ xe
                         </span>
                     `}
                     <!-- 1. Xem chi tiết Booking (Chế độ chỉ đọc) -->
@@ -4767,28 +4767,28 @@ async function loadSalesData() {
             const revTrendEl = document.getElementById('sales-trend-revenue');
             if (revTrendEl) revTrendEl.innerHTML = `<i class="ph-bold ph-trend-up"></i> ${ov.revenue_trend}`;
             const revNoteEl = document.getElementById('sales-note-revenue');
-            if (revNoteEl) revNoteEl.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-600 text-xs"></i> ${ov.revenue_note}`;
+            if (revNoteEl) revNoteEl.innerHTML = `<i class="ph-bold ph-check-circle text-emerald-600 text-xs"></i> ${ov.revenue_note}`;
 
             const bkEl = document.getElementById('sales-overview-bookings');
             if (bkEl) bkEl.innerText = `${new Intl.NumberFormat('vi-VN').format(ov.total_bookings || 0)} Đơn hàng`;
             const bkTrendEl = document.getElementById('sales-trend-bookings');
             if (bkTrendEl) bkTrendEl.innerHTML = `<i class="ph-bold ph-trend-up"></i> ${ov.booking_trend}`;
             const bkNoteEl = document.getElementById('sales-note-bookings');
-            if (bkNoteEl) bkNoteEl.innerHTML = `<i class="ph-fill ph-truck text-teal-600 text-xs"></i> ${ov.booking_note}`;
+            if (bkNoteEl) bkNoteEl.innerHTML = `<i class="ph-bold ph-truck text-teal-600 text-xs"></i> ${ov.booking_note}`;
 
             const contEl = document.getElementById('sales-overview-containers');
             if (contEl) contEl.innerText = `${new Intl.NumberFormat('vi-VN').format(ov.total_containers || 0)} Cont`;
             const contTrendEl = document.getElementById('sales-trend-containers');
             if (contTrendEl) contTrendEl.innerHTML = `<i class="ph-bold ph-trend-up"></i> ${ov.container_trend}`;
             const contNoteEl = document.getElementById('sales-note-containers');
-            if (contNoteEl) contNoteEl.innerHTML = `<i class="ph-fill ph-package text-amber-600 text-xs"></i> ${ov.container_note}`;
+            if (contNoteEl) contNoteEl.innerHTML = `<i class="ph-bold ph-package text-amber-600 text-xs"></i> ${ov.container_note}`;
 
             const winEl = document.getElementById('sales-overview-winrate');
             if (winEl) winEl.innerText = `${ov.win_rate}%`;
             const winTrendEl = document.getElementById('sales-trend-winrate');
             if (winTrendEl) winTrendEl.innerHTML = `<i class="ph-bold ph-trend-up"></i> ${ov.win_rate_trend}`;
             const winNoteEl = document.getElementById('sales-note-winrate');
-            if (winNoteEl) winNoteEl.innerHTML = `<i class="ph-fill ph-chats-circle text-indigo-600 text-xs"></i> ${ov.win_rate_note}`;
+            if (winNoteEl) winNoteEl.innerHTML = `<i class="ph-bold ph-chats-circle text-indigo-600 text-xs"></i> ${ov.win_rate_note}`;
         }
 
         // Cập nhật badges số lượng trên 2 tab
@@ -5727,9 +5727,9 @@ async function loadAccountingData() {
             const pendEl = document.getElementById('acct-stat-pending');
             if (pendEl) pendEl.innerText = `${new Intl.NumberFormat('vi-VN').format(st.pending_settle_count)} chuyến`;
             const setEl = document.getElementById('acct-stat-settled');
-            if (setEl) setEl.innerHTML = `<i class="ph-fill ph-lock-key text-xs"></i> Đã chốt sổ: ${new Intl.NumberFormat('vi-VN').format(st.settled_count)} chuyến`;
+            if (setEl) setEl.innerHTML = `<i class="ph-bold ph-lock-key text-xs"></i> Đã chốt sổ: ${new Intl.NumberFormat('vi-VN').format(st.settled_count)} chuyến`;
             const tripsCountEl = document.getElementById('acct-stat-trips-count');
-            if (tripsCountEl) tripsCountEl.innerHTML = `<i class="ph-fill ph-check-circle text-xs"></i> Tính trên ${st.total_trips} chuyến xe phát sinh`;
+            if (tripsCountEl) tripsCountEl.innerHTML = `<i class="ph-bold ph-check-circle text-xs"></i> Tính trên ${st.total_trips} chuyến xe phát sinh`;
         }
 
         // 2. Lưu cache và hiển thị bảng
@@ -5777,10 +5777,10 @@ function renderAccountingTable(list) {
 
         const settleBadge = item.is_settled
             ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 font-heading">
-                <i class="ph-fill ph-lock-key"></i> Đã Chốt Sổ
+                <i class="ph-bold ph-lock-key"></i> Đã Chốt Sổ
                </span>`
             : `<span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1 font-heading">
-                <i class="ph-fill ph-clock-countdown"></i> Chờ Chốt Sổ
+                <i class="ph-bold ph-clock-countdown"></i> Chờ Chốt Sổ
                </span>`;
 
         tr.innerHTML = `
@@ -5811,7 +5811,7 @@ function renderAccountingTable(list) {
             <td class="p-3.5 text-center">
                 ${item.invoices_count > 0 ? `
                     <span class="px-2 py-0.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg text-xs font-bold inline-flex items-center gap-1">
-                        <i class="ph-fill ph-file-text"></i> ${item.invoices_count} HĐ
+                        <i class="ph-bold ph-file-text"></i> ${item.invoices_count} HĐ
                     </span>
                     ${item.sample_invoice ? `<p class="text-[11px] font-mono text-slate-500 mt-0.5">Số: ${item.sample_invoice}</p>` : ''}
                 ` : `
@@ -5842,7 +5842,7 @@ function renderAccountingTable(list) {
                     ` : `
                         <button onclick="toggleSettleTrip('${item.trip_code}', false)" title="Chốt sổ kế toán (Khóa cứng chi phí)" 
                             class="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1 font-heading">
-                            <i class="ph-fill ph-lock-key text-xs"></i>
+                            <i class="ph-bold ph-lock-key text-xs"></i>
                             <span>Chốt Sổ</span>
                         </button>
                     `}
@@ -6891,7 +6891,7 @@ function renderReimbursablesTable(list) {
                                 <i class="ph-bold ph-check text-xs"></i> Thu Tiền
                             </button>
                         ` : `
-                            <span class="text-xs text-emerald-600 font-bold flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Đã Thu</span>
+                            <span class="text-xs text-emerald-600 font-bold flex items-center gap-1"><i class="ph-bold ph-check-circle"></i> Đã Thu</span>
                         `}
                     </div>
                 </td>
@@ -7157,8 +7157,8 @@ function renderCashBookTable(list) {
             : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">➖ Chi Tiền</span>`;
 
         const methodBadge = item.payment_method === 'BANK'
-            ? `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200"><i class="ph-fill ph-bank"></i> Ngân Hàng</span>`
-            : `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200"><i class="ph-fill ph-money"></i> Tiền Mặt</span>`;
+            ? `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200"><i class="ph-bold ph-bank"></i> Ngân Hàng</span>`
+            : `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200"><i class="ph-bold ph-money"></i> Tiền Mặt</span>`;
 
         const amountClass = isInflow ? 'text-emerald-700' : 'text-rose-700';
         const sign = isInflow ? '+' : '-';
@@ -7414,7 +7414,7 @@ function renderSubcontractorTable(list) {
                                 <i class="ph-bold ph-check text-xs"></i> Quyết Toán
                             </button>
                         ` : `
-                            <span class="text-xs text-emerald-600 font-bold"><i class="ph-fill ph-check-circle"></i> Đã Xong</span>
+                            <span class="text-xs text-emerald-600 font-bold"><i class="ph-bold ph-check-circle"></i> Đã Xong</span>
                         `}
                     </div>
                 </td>
@@ -8624,7 +8624,7 @@ function injectMasterDataModalFields(data) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100">
                 <div>
                     <label class="app-form-label text-indigo-950 font-bold flex items-center space-x-1.5">
-                        <i class="ph-fill ph-map-pin text-indigo-600"></i>
+                        <i class="ph-bold ph-map-pin text-indigo-600"></i>
                         <span>1. Khu Vực Đi / Lấy Cont</span>
                     </label>
                     <input type="text" id="mdf-origin-zone" list="mdf-origin-zones-list" value="${d.origin_zone || ''}" placeholder="VD: Cát Lái, Cái Mép, Hiệp Phước..." class="app-form-control bg-white">
@@ -8639,7 +8639,7 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div>
                     <label class="app-form-label text-indigo-950 font-bold flex items-center space-x-1.5">
-                        <i class="ph-fill ph-flag-pennant text-indigo-600"></i>
+                        <i class="ph-bold ph-flag-pennant text-indigo-600"></i>
                         <span>2. Khu Vực Đến / Giao Hàng</span>
                     </label>
                     <input type="text" id="mdf-dest-zone" list="mdf-dest-zones-list" value="${d.destination_zone || ''}" placeholder="VD: VSIP, Bàu Bàng, Trảng Bàng, Bến Lức..." class="app-form-control bg-white">
@@ -10453,8 +10453,8 @@ function applyReport11Filters() {
         }
 
         const statusBadge = item.is_settled
-            ? '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 justify-center"><i class="ph-fill ph-check-circle"></i> Đã hoàn ứng</span>'
-            : '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 justify-center"><i class="ph-fill ph-clock"></i> Đang tạm ứng</span>';
+            ? '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã hoàn ứng</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>';
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -10469,7 +10469,7 @@ function applyReport11Filters() {
                 <td class="text-xs text-slate-600 max-w-[180px] truncate" title="${escapeHtml(item.route)}">${escapeHtml(item.route)}</td>
                 <td class="text-xs">
                     <div class="font-bold text-slate-900 flex items-center gap-1">
-                        <i class="ph-fill ph-steering-wheel text-slate-500"></i>
+                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
                         <span>${escapeHtml(item.driver_name)}</span>
                     </div>
                     <div class="text-[10px] font-mono font-bold text-teal-800 mt-0.5">${escapeHtml(item.license_plate)}</div>
@@ -10732,9 +10732,9 @@ function renderCustomsTable(list) {
     }
 
     const laneBadges = {
-        'GREEN': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 Luồng Xanh</span>',
-        'YELLOW': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">🟡 Luồng Vàng</span>',
-        'RED': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">🔴 Luồng Đỏ</span>',
+        'GREEN': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>Luồng Xanh</span>',
+        'YELLOW': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>Luồng Vàng</span>',
+        'RED': '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>Luồng Đỏ</span>',
     };
 
     const statusBadges = {

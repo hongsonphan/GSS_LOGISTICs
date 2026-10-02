@@ -33,7 +33,7 @@
     <div class="space-y-2.5">
         <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="ph-fill ph-chart-line-up text-indigo-600 text-sm"></i>
+                <i class="ph-bold ph-chart-line-up text-indigo-600 text-sm"></i>
                 Tình Trạng Kinh Doanh & Hiệu Suất Tăng Trưởng (So Với Tuần / Tháng)
             </h3>
             <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
@@ -52,7 +52,7 @@
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-revenue">429.500.000 đ</p>
                 <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-revenue">
-                    <i class="ph-fill ph-check-circle text-emerald-600 text-xs"></i> 2 tuyến cước đã duyệt ký kết
+                    <i class="ph-bold ph-check-circle text-emerald-600 text-xs"></i> 2 tuyến cước đã duyệt ký kết
                 </p>
             </div>
 
@@ -66,7 +66,7 @@
                 </div>
                 <p class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-bookings">8 Đơn hàng</p>
                 <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-bookings">
-                    <i class="ph-fill ph-truck text-teal-600 text-xs"></i> 6 Chờ điều · 2 Đang chạy
+                    <i class="ph-bold ph-truck text-teal-600 text-xs"></i> 6 Chờ điều · 2 Đang chạy
                 </p>
             </div>
 
@@ -80,7 +80,7 @@
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-containers">20 Cont</p>
                 <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-containers">
-                    <i class="ph-fill ph-package text-amber-600 text-xs"></i> Đã kéo: 3 · Còn lại: 17 cont
+                    <i class="ph-bold ph-package text-amber-600 text-xs"></i> Đã kéo: 3 · Còn lại: 17 cont
                 </p>
             </div>
 
@@ -94,7 +94,7 @@
                 </div>
                 <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-winrate">50.0%</p>
                 <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-winrate">
-                    <i class="ph-fill ph-chats-circle text-indigo-600 text-xs"></i> 1 Đang đàm phán · 1 Chờ duyệt
+                    <i class="ph-bold ph-chats-circle text-indigo-600 text-xs"></i> 1 Đang đàm phán · 1 Chờ duyệt
                 </p>
             </div>
         </div>
@@ -108,7 +108,7 @@
             <!-- Subtab 1: NVKD / Báo Giá -->
             <button id="tab-btn-quotations" onclick="switchSalesSubTab('quotations')" 
                 class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-sm font-bold font-heading flex items-center justify-center space-x-2.5 transition-all shadow-sm bg-indigo-700 text-white">
-                <i class="ph-fill ph-handshake text-base"></i>
+                <i class="ph-bold ph-handshake text-base"></i>
                 <span>1. Báo Giá & Khách Hàng (Sales / NVKD)</span>
                 <span class="px-2 py-0.5 rounded-full text-xs font-black bg-white/20 text-white tabular-nums" id="badge-count-quotes">4</span>
             </button>
@@ -116,7 +116,7 @@
             <!-- Subtab 2: Sale Admin / CS / Booking -->
             <button id="tab-btn-bookings" onclick="switchSalesSubTab('bookings')" 
                 class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-sm font-bold font-heading flex items-center justify-center space-x-2.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-                <i class="ph-fill ph-truck text-base"></i>
+                <i class="ph-bold ph-truck text-base"></i>
                 <span>2. Đơn Đặt Hàng / Booking Từ Khách (Sale Admin / CS)</span>
                 <span class="px-2 py-0.5 rounded-full text-xs font-black bg-teal-100 text-teal-800 tabular-nums" id="badge-count-bookings">8</span>
             </button>
@@ -124,7 +124,7 @@
         
         <!-- Role & Responsibility Guide Tag -->
         <div class="hidden lg:flex items-center text-xs text-slate-500 space-x-2 px-3">
-            <i class="ph-fill ph-shield-check text-indigo-600 text-base"></i>
+            <i class="ph-bold ph-shield-check text-indigo-600 text-base"></i>
             <span id="sales-tab-role-hint" class="font-medium text-slate-600">
                 Phân quyền: <strong class="text-indigo-700">Nhân viên Kinh doanh (NVKD)</strong> — Khảo sát tuyến, chào giá, đàm phán hợp đồng
             </span>
@@ -145,7 +145,7 @@
             </div>
             <div class="flex items-center space-x-2.5">
                 <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full font-heading flex items-center gap-1">
-                    <i class="ph-fill ph-user-circle"></i> Sales / NVKD
+                    <i class="ph-bold ph-user-circle"></i> Sales / NVKD
                 </span>
                 <button onclick="openModalQuotation()" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
                     <i class="ph ph-plus text-base"></i>
@@ -161,7 +161,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đang Thương Lượng</span>
                     <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-chats-circle"></i>
+                        <i class="ph-bold ph-chats-circle"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-negotiating">1</p>
@@ -173,7 +173,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chờ BGĐ Phê Duyệt</span>
                     <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-file-dashed"></i>
+                        <i class="ph-bold ph-file-dashed"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-pending">1</p>
@@ -185,7 +185,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tuyến Cước Đã Duyệt</span>
                     <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-check-circle"></i>
+                        <i class="ph-bold ph-check-circle"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-approved">2</p>
@@ -197,7 +197,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Kế Hoạch (Tháng)</span>
                     <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-base">
-                        <i class="ph-fill ph-currency-circle-dollar"></i>
+                        <i class="ph-bold ph-currency-circle-dollar"></i>
                     </span>
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-revenue">429.500.000 đ</p>
@@ -211,7 +211,7 @@
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                     <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                        <i class="ph-fill ph-funnel text-indigo-700 text-sm"></i>
+                        <i class="ph-bold ph-funnel text-indigo-700 text-sm"></i>
                         <span>Bộ Lọc & Sắp Xếp: <strong>Quản lý phễu báo giá & hợp đồng tuyến CRM</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
@@ -346,7 +346,7 @@
             </div>
             <div class="flex items-center space-x-2.5">
                 <span class="text-xs font-bold text-teal-800 bg-teal-100 px-3 py-1 rounded-full border border-teal-200 font-heading flex items-center gap-1">
-                    <i class="ph-fill ph-headset"></i> Sale Admin / CS
+                    <i class="ph-bold ph-headset"></i> Sale Admin / CS
                 </span>
                 <button onclick="openModalBooking()" class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
                     <i class="ph ph-plus text-base"></i>
@@ -362,7 +362,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chờ Điều Xe</span>
                     <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
-                        <i class="ph-fill ph-clock-countdown"></i>
+                        <i class="ph-bold ph-clock-countdown"></i>
                     </span>
                 </div>
                 <p class="text-2xl font-black text-slate-800 tabular-nums font-heading" id="sales-stat-pending-dispatch">6</p>
@@ -374,7 +374,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đang Điều Xe</span>
                     <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
-                        <i class="ph-fill ph-truck"></i>
+                        <i class="ph-bold ph-truck"></i>
                     </span>
                 </div>
                 <p class="text-2xl font-black text-teal-700 tabular-nums font-heading" id="sales-stat-partially-dispatched">2</p>
@@ -386,7 +386,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Đủ Xe / Hoàn Tất</span>
                     <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
-                        <i class="ph-fill ph-check-circle"></i>
+                        <i class="ph-bold ph-check-circle"></i>
                     </span>
                 </div>
                 <p class="text-2xl font-black text-emerald-700 tabular-nums font-heading" id="sales-stat-completed">0</p>
@@ -398,7 +398,7 @@
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sản Lượng Container</span>
                     <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
-                        <i class="ph-fill ph-package"></i>
+                        <i class="ph-bold ph-package"></i>
                     </span>
                 </div>
                 <p class="text-2xl font-black text-slate-800 tabular-nums font-heading">
@@ -416,7 +416,7 @@
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                     <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                        <i class="ph-fill ph-funnel text-teal-700 text-sm"></i>
+                        <i class="ph-bold ph-funnel text-teal-700 text-sm"></i>
                         <span>Bộ Lọc & Sắp Xếp: <strong>Quản lý tiến độ đơn hàng Booking Sale</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
