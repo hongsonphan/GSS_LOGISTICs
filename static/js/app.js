@@ -8438,97 +8438,121 @@ function injectMasterDataModalFields(data) {
     if (currentMasterDataTab === 'driver_tariffs') {
         const areas = ['Khu Vực Củ Chi', 'Khu Vực Long An', 'Khu Vực Tây Ninh', 'Khu Vực Bình Dương', 'Khu Vực Đồng Nai', 'Khu Vực TP.HCM', 'Khu Vực Vũng Tàu', 'Tuyến Đặc Thù'];
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Khu Vực Kho <span class="text-rose-500">*</span></label>
-                    <select id="mdf-area-group" class="app-form-control font-semibold">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Khu Vực Kho <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-area-group" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         ${areas.map(a => `<option value="${a}" ${d.area_group === a ? 'selected' : ''}>${a}</option>`).join('')}
                     </select>
                 </div>
-                <div>
-                    <label class="app-form-label">Tên Tuyến / KCN / Nhà Máy <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-route-name" value="${d.route_name || ''}" placeholder="VD: KCN Phước Đông, KCN Bàu Bàng..." class="app-form-control font-semibold" required>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Tuyến / KCN / Nhà Máy <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-route-name" value="${d.route_name || ''}" placeholder="VD: KCN Phước Đông, KCN Bàu Bàng..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Trục Lấy / Hạ Cont Chuẩn</label>
-                <input type="text" id="mdf-pickup-drop" value="${d.pickup_drop_area || 'Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7'}" placeholder="Cát Lái, SPITC, Thủ Đức..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Trục Lấy / Hạ Cont Chuẩn</label>
+                </div>
+                <input type="text" id="mdf-pickup-drop" value="${d.pickup_drop_area || 'Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7'}" placeholder="Cát Lái, SPITC, Thủ Đức..." class="form-input h-8.5 px-2.5 py-1 text-xs font-medium text-slate-800 w-full">
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start">
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="app-form-label m-0">Cự Ly Ước Tính (km)</label>
-                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">Bước 10km</span>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Cự Ly Ước Tính (km)</label>
+                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">Bước 10km</span>
                     </div>
-                    <input type="number" id="mdf-estimated-km" value="${d.estimated_km || 30}" step="10" min="0" onchange="roundEstimatedKmInput(this)" class="app-form-control font-mono font-bold text-center">
-                    <div class="flex items-center gap-1 mt-1.5 text-[11px] text-slate-500 flex-wrap">
+                    <input type="number" id="mdf-estimated-km" value="${d.estimated_km || 30}" step="10" min="0" onchange="roundEstimatedKmInput(this)" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-center w-full">
+                    <div class="flex items-center gap-1 mt-1 text-[11px] text-slate-500 flex-wrap">
                         <span class="text-[10px] text-slate-400 font-semibold">Nhanh:</span>
-                        <button type="button" onclick="setTariffKm(20)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">20k</button>
-                        <button type="button" onclick="setTariffKm(30)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">30k</button>
-                        <button type="button" onclick="setTariffKm(50)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">50k</button>
-                        <button type="button" onclick="setTariffKm(70)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">70k</button>
-                        <button type="button" onclick="setTariffKm(100)" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">100k</button>
+                        <button type="button" onclick="setTariffKm(20)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">20k</button>
+                        <button type="button" onclick="setTariffKm(30)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">30k</button>
+                        <button type="button" onclick="setTariffKm(50)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">50k</button>
+                        <button type="button" onclick="setTariffKm(70)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">70k</button>
+                        <button type="button" onclick="setTariffKm(100)" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-indigo-100 font-bold transition-colors">100k</button>
                     </div>
                 </div>
-                <div>
-                    <label class="app-form-label">Mức Lương Chuyến (VNĐ) <span class="text-rose-500">*</span></label>
-                    <input type="text" inputmode="numeric" id="mdf-salary-rate" value="${d.salary_rate ? formatNumberVN(d.salary_rate) : '600.000'}" class="input-number-vn app-form-control font-mono font-bold text-emerald-700" required>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mức Lương Chuyến (VNĐ) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" inputmode="numeric" id="mdf-salary-rate" value="${d.salary_rate ? formatNumberVN(d.salary_rate) : '600.000'}" class="input-number-vn form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-emerald-700 text-right w-full" required>
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Ghi Chú Điều Kiện Áp Dụng</label>
-                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="VD: Lấy/hạ Cát Lái + 50k..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú Điều Kiện Áp Dụng</label>
+                </div>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="VD: Lấy/hạ Cát Lái + 50k..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
-            <div class="flex items-center space-x-2 pt-2">
+            <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động / áp dụng</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'allowances') {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Mã Phụ Cấp <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CANG_HIEP_PHUOC" class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Phụ Cấp <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CANG_HIEP_PHUOC" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" required ${d.code ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Phân Loại</label>
-                    <select id="mdf-category" class="app-form-control font-semibold">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại</label>
+                    </div>
+                    <select id="mdf-category" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="PORT" ${d.category === 'PORT' ? 'selected' : ''}>Phụ Thêm Cảng Xa</option>
                         <option value="INSPECTION" ${d.category === 'INSPECTION' ? 'selected' : ''}>Phụ Thu Kiểm Hóa</option>
                         <option value="OPERATION" ${d.category === 'OPERATION' ? 'selected' : ''}>Phụ Cấp Tác Nghiệp Đặc Thù</option>
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Tên Phụ Cấp / Tác Nghiệp <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phụ thêm Cảng Cái Mép..." class="app-form-control font-semibold" required>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Phụ Cấp / Tác Nghiệp <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phụ thêm Cảng Cái Mép..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
                 </div>
-                <div>
-                    <label class="app-form-label">Số Tiền Phụ Cấp (VNĐ) <span class="text-rose-500">*</span></label>
-                    <input type="text" inputmode="numeric" id="mdf-amount" value="${d.amount ? formatNumberVN(d.amount) : '500.000'}" class="input-number-vn app-form-control font-mono font-bold text-teal-800" required>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Tiền Phụ Cấp (VNĐ) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" inputmode="numeric" id="mdf-amount" value="${d.amount ? formatNumberVN(d.amount) : '500.000'}" class="input-number-vn form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 text-right w-full" required>
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Điều Kiện Áp Dụng</label>
-                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="VD: Lấy hoặc hạ cont tại Cảng..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Điều Kiện Áp Dụng</label>
+                </div>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="VD: Lấy hoặc hạ cont tại Cảng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
-            <div class="flex items-center space-x-2 pt-2">
+            <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động / áp dụng</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'locations') {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Mã Địa Điểm <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CAT_LAI, KHO_WCA..." class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Địa Điểm <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: CAT_LAI, KHO_WCA..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" required ${d.code ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Phân Loại</label>
-                    <select id="mdf-location-type" class="app-form-control font-semibold">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại</label>
+                    </div>
+                    <select id="mdf-location-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="PORT" ${d.location_type === 'PORT' ? 'selected' : ''}>Cảng Biển</option>
                         <option value="ICD" ${d.location_type === 'ICD' ? 'selected' : ''}>Cảng Cạn (ICD)</option>
                         <option value="DEPOT" ${d.location_type === 'DEPOT' ? 'selected' : ''}>Bãi Rỗng / Depot</option>
@@ -8537,74 +8561,100 @@ function injectMasterDataModalFields(data) {
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Tên Địa Điểm <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Cảng Cát Lái, Kho WCA Tân Vạn..." class="app-form-control font-semibold" required>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Địa Điểm <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Cảng Cát Lái, Kho WCA Tân Vạn..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
                 </div>
-                <div>
-                    <label class="app-form-label">Tỉnh / Thành Phố</label>
-                    <input type="text" id="mdf-province" value="${d.province || 'TP. Hồ Chí Minh'}" class="app-form-control">
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Địa Chỉ Chi Tiết</label>
-                    <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Số nhà, đường, phường, quận/huyện..." class="app-form-control">
-                </div>
-                <div>
-                    <label class="app-form-label">Số Điện Thoại Liên Hệ</label>
-                    <input type="text" id="mdf-contact-phone" value="${d.contact_phone || ''}" placeholder="SĐT điều độ..." class="app-form-control font-mono">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tỉnh / Thành Phố</label>
+                    </div>
+                    <input type="text" id="mdf-province" value="${d.province || 'TP. Hồ Chí Minh'}" class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Người Phụ Trách / Đầu Mối Giao Nhận</label>
-                    <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="app-form-control">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Chi Tiết</label>
+                    </div>
+                    <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Số nhà, đường, phường, quận/huyện..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
-                <div>
-                    <label class="app-form-label">Ghi Chú Vận Hành</label>
-                    <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Giờ làm việc kho, quy định vào cổng..." class="app-form-control">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Điện Thoại Liên Hệ</label>
+                    </div>
+                    <input type="text" id="mdf-contact-phone" value="${d.contact_phone || ''}" placeholder="SĐT điều độ..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
             </div>
-            <div class="flex items-center space-x-2 pt-2">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Người Phụ Trách / Đầu Mối</label>
+                    </div>
+                    <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú Vận Hành</label>
+                    </div>
+                    <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Giờ làm việc kho, quy định vào cổng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'customers') {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Mã Khách Hàng</label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống" class="app-form-control uppercase font-mono font-bold" ${d.code ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Khách Hàng</label>
+                    </div>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Mã Số Thuế (MST)</label>
-                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="app-form-control font-mono font-semibold">
-                </div>
-            </div>
-            <div>
-                <label class="app-form-label">Tên Khách Hàng / Doanh Nghiệp <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo giấy phép ĐKKD..." class="app-form-control font-semibold" required>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Người Liên Hệ / Đầu Mối</label>
-                    <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="app-form-control">
-                </div>
-                <div>
-                    <label class="app-form-label">Số Điện Thoại Liên Hệ</label>
-                    <input type="text" id="mdf-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ..." class="app-form-control font-mono">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (MST)</label>
+                    </div>
+                    <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Địa Chỉ Xuất Hóa Đơn / Văn Phòng</label>
-                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Địa chỉ đăng ký kinh doanh..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Tên Khách Hàng / Doanh Nghiệp <span class="text-rose-500">*</span></label>
+                </div>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo giấy phép ĐKKD..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Người Liên Hệ / Đầu Mối</label>
+                    </div>
+                    <input type="text" id="mdf-contact-person" value="${d.contact_person || ''}" placeholder="Tên nhân sự phụ trách..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Điện Thoại Liên Hệ</label>
+                    </div>
+                    <input type="text" id="mdf-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
             </div>
             <div>
-                <label class="app-form-label">Ghi Chú / Yêu Cầu Giao Nhận Đặc Thù</label>
-                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Chính sách công nợ, quy định kiểm đếm, chứng từ..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Xuất Hóa Đơn / Văn Phòng</label>
+                </div>
+                <input type="text" id="mdf-address" value="${d.address || ''}" placeholder="Địa chỉ đăng ký kinh doanh..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+            </div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú / Yêu Cầu Giao Nhận Đặc Thù</label>
+                </div>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Chính sách công nợ, quy định kiểm đếm, chứng từ..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
         `;
     } else if (currentMasterDataTab === 'tariffs') {
@@ -8615,19 +8665,23 @@ function injectMasterDataModalFields(data) {
         const contSizes = ['40HC', '20DC', '45G1', '40GP', '20RF', '40RF', 'XE_TAI_10T', 'XE_TAI_2T'];
         container.innerHTML = `
             <div>
-                <label class="app-form-label">Khách Hàng Áp Dụng <span class="text-rose-500">*</span></label>
-                <select id="mdf-customer-id" class="app-form-control font-bold" required>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Khách Hàng Áp Dụng <span class="text-rose-500">*</span></label>
+                </div>
+                <select id="mdf-customer-id" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
                     <option value="">-- Chọn Khách Hàng --</option>
                     ${customers.map(c => `<option value="${c.id}" ${d.customer_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
                 </select>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100">
-                <div>
-                    <label class="app-form-label text-indigo-950 font-bold flex items-center space-x-1.5">
-                        <i class="ph-bold ph-map-pin text-indigo-600"></i>
-                        <span>1. Khu Vực Đi / Lấy Cont</span>
-                    </label>
-                    <input type="text" id="mdf-origin-zone" list="mdf-origin-zones-list" value="${d.origin_zone || ''}" placeholder="VD: Cát Lái, Cái Mép, Hiệp Phước..." class="app-form-control bg-white">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-teal-900 text-xs truncate flex items-center gap-1">
+                            <i class="ph-bold ph-map-pin text-teal-600"></i>
+                            1. Khu Vực Đi / Lấy Cont
+                        </label>
+                    </div>
+                    <input type="text" id="mdf-origin-zone" list="mdf-origin-zones-list" value="${d.origin_zone || ''}" placeholder="VD: Cát Lái, Cái Mép, Hiệp Phước..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-teal-900 w-full">
                     <datalist id="mdf-origin-zones-list">
                         <option value="Cát Lái (TP.HCM)">
                         <option value="Cái Mép (Vũng Tàu)">
@@ -8637,12 +8691,14 @@ function injectMasterDataModalFields(data) {
                         <option value="Bãi Triền Võ (TVL)">
                     </datalist>
                 </div>
-                <div>
-                    <label class="app-form-label text-indigo-950 font-bold flex items-center space-x-1.5">
-                        <i class="ph-bold ph-flag-pennant text-indigo-600"></i>
-                        <span>2. Khu Vực Đến / Giao Hàng</span>
-                    </label>
-                    <input type="text" id="mdf-dest-zone" list="mdf-dest-zones-list" value="${d.destination_zone || ''}" placeholder="VD: VSIP, Bàu Bàng, Trảng Bàng, Bến Lức..." class="app-form-control bg-white">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-teal-900 text-xs truncate flex items-center gap-1">
+                            <i class="ph-bold ph-flag-pennant text-teal-600"></i>
+                            2. Khu Vực Đến / Giao Hàng
+                        </label>
+                    </div>
+                    <input type="text" id="mdf-dest-zone" list="mdf-dest-zones-list" value="${d.destination_zone || ''}" placeholder="VD: VSIP, Bàu Bàng, Trảng Bàng, Bến Lức..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-teal-900 w-full">
                     <datalist id="mdf-dest-zones-list">
                         <option value="Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)">
                         <option value="Đồng Nai (Biên Hòa/Nhơn Trạch/Long Thành)">
@@ -8653,56 +8709,70 @@ function injectMasterDataModalFields(data) {
                     </datalist>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                    <label class="app-form-label">Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span></label>
-                    <select id="mdf-pickup" class="app-form-control uppercase font-semibold" required>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-pickup" class="form-select h-8.5 px-2.5 py-1 text-xs uppercase font-bold text-teal-900 w-full" required>
                         <option value="">-- Chọn Nơi Lấy --</option>
                         ${pickupOpts.map(l => `<option value="${l.name}" ${d.pickup_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
                     </select>
                 </div>
-                <div>
-                    <label class="app-form-label">Kho Nhận (Nhà Máy / Kho) <span class="text-rose-500">*</span></label>
-                    <select id="mdf-delivery" class="app-form-control uppercase font-semibold" required>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Kho Nhận (Nhà Máy / Kho) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-delivery" class="form-select h-8.5 px-2.5 py-1 text-xs uppercase font-bold text-amber-900 w-full" required>
                         <option value="">-- Chọn Kho Nhận --</option>
                         ${warehouseOpts.map(l => `<option value="${l.name}" ${d.delivery_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
                     </select>
                 </div>
-                <div>
-                    <label class="app-form-label">Nơi Hạ Cont (Bãi / Cảng)</label>
-                    <select id="mdf-dropoff" class="app-form-control uppercase font-semibold">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Nơi Hạ Cont (Bãi / Cảng)</label>
+                    </div>
+                    <select id="mdf-dropoff" class="form-select h-8.5 px-2.5 py-1 text-xs uppercase font-bold text-emerald-900 w-full">
                         <option value="">-- Chọn Nơi Hạ --</option>
                         ${dropoffOpts.map(l => `<option value="${l.name}" ${d.dropoff_location === l.name ? 'selected' : ''}>${l.label || l.name}</option>`).join('')}
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Quy Cách Cont / Phương Tiện</label>
-                    <select id="mdf-container-size" class="app-form-control font-mono font-bold">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Quy Cách Cont / Phương Tiện</label>
+                    </div>
+                    <select id="mdf-container-size" class="form-select h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-800 w-full">
                         ${contSizes.map(s => `<option value="${s}" ${(d.container_size || '40HC') === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
                 </div>
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="app-form-label m-0">Cự Ly Ước Tính (km)</label>
-                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">Bước 10km</span>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Cự Ly Ước Tính (km)</label>
+                        <span class="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">Bước 10km</span>
                     </div>
-                    <input type="text" id="mdf-estimated-km" value="${d.estimated_km || 30}" onchange="roundEstimatedKmInput(this)" class="app-form-control font-mono font-bold text-center input-number-vn" placeholder="VD: 30">
+                    <input type="text" id="mdf-estimated-km" value="${d.estimated_km || 30}" onchange="roundEstimatedKmInput(this)" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-center input-number-vn w-full" placeholder="VD: 30">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                    <label class="app-form-label">Đơn Giá Cước (HĐ) <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-price" value="${d.freight_price ? formatNumberVN(d.freight_price) : '4.000.000'}" class="app-form-control font-mono font-bold text-teal-800 input-number-vn" placeholder="VD: 4.000.000" required>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Đơn Giá Cước (HĐ) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-price" value="${d.freight_price ? formatNumberVN(d.freight_price) : '4.000.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 text-right input-number-vn w-full" placeholder="VD: 4.000.000" required>
                 </div>
-                <div>
-                    <label class="app-form-label">Lương Chuyến Tài Xế <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-pay" value="${d.driver_trip_pay ? formatNumberVN(d.driver_trip_pay) : '600.000'}" class="app-form-control font-mono font-bold text-emerald-700 input-number-vn" placeholder="VD: 600.000" required>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Lương Chuyến Tài Xế <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-pay" value="${d.driver_trip_pay ? formatNumberVN(d.driver_trip_pay) : '600.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-emerald-700 text-right input-number-vn w-full" placeholder="VD: 600.000" required>
                 </div>
-                <div>
-                    <label class="app-form-label">Vé BOT / Cầu Đường Chuẩn</label>
-                    <input type="text" id="mdf-toll" value="${d.toll_standard_fee ? formatNumberVN(d.toll_standard_fee) : '0'}" class="app-form-control font-mono font-bold text-amber-700 input-number-vn" placeholder="VD: 150.000">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Vé BOT / Cầu Đường Chuẩn</label>
+                    </div>
+                    <input type="text" id="mdf-toll" value="${d.toll_standard_fee ? formatNumberVN(d.toll_standard_fee) : '0'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-amber-700 text-right input-number-vn w-full" placeholder="VD: 150.000">
                 </div>
             </div>
         `;
@@ -8711,14 +8781,18 @@ function injectMasterDataModalFields(data) {
         if (d.dropoff_location) setSelectValueCaseInsensitive(document.getElementById('mdf-dropoff'), d.dropoff_location);
     } else if (currentMasterDataTab === 'expenses') {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Mã Khoản Chi <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: LIFT_ON, TOLL_FEE..." class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Khoản Chi <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: LIFT_ON, TOLL_FEE..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" required ${d.code ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Nhóm Chi Phí</label>
-                    <select id="mdf-group-type" class="app-form-control font-semibold">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Nhóm Chi Phí</label>
+                    </div>
+                    <select id="mdf-group-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="TOLL" ${d.group_type === 'TOLL' ? 'selected' : ''}>Vé Cầu Đường / BOT</option>
                         <option value="LIFT_ON" ${d.group_type === 'LIFT_ON' ? 'selected' : ''}>Nâng Cont</option>
                         <option value="LIFT_OFF" ${d.group_type === 'LIFT_OFF' ? 'selected' : ''}>Hạ Cont</option>
@@ -8731,62 +8805,80 @@ function injectMasterDataModalFields(data) {
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Tên Khoản Mục Chi Phí <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phí nâng cont, Vé BOT..." class="app-form-control font-semibold" required>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Định Mức Tiền Ngầm Định (VNĐ)</label>
-                    <input type="text" id="mdf-default-amount" value="${d.default_amount ? formatNumberVN(d.default_amount) : '0'}" class="app-form-control font-mono font-bold text-teal-800 input-number-vn" placeholder="VD: 100.000">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Tên Khoản Mục Chi Phí <span class="text-rose-500">*</span></label>
                 </div>
-                <div class="flex items-center pt-2 md:pt-6 space-x-2">
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Phí nâng cont, Vé BOT..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Định Mức Tiền Ngầm Định (VNĐ)</label>
+                    </div>
+                    <input type="text" id="mdf-default-amount" value="${d.default_amount ? formatNumberVN(d.default_amount) : '0'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 text-right input-number-vn w-full" placeholder="VD: 100.000">
+                </div>
+                <div class="md:col-span-6 flex items-center pt-6 space-x-2">
                     <input type="checkbox" id="mdf-requires-invoice" ${d.requires_invoice ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
                     <label for="mdf-requires-invoice" class="text-xs font-bold text-slate-700 cursor-pointer">Bắt buộc có HĐĐT / Mã tra cứu</label>
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Ghi Chú & Điều Kiện Áp Dụng</label>
-                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Quy định thanh toán, chứng từ thanh toán..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú & Điều Kiện Áp Dụng</label>
+                </div>
+                <input type="text" id="mdf-notes" value="${d.notes || ''}" placeholder="Quy định thanh toán, chứng từ thanh toán..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
-            <div class="flex items-center space-x-2 pt-2">
+            <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang sử dụng</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'containers') {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Mã Quy Cách <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: 40HC, 20DC, TAI_10T..." class="app-form-control uppercase font-mono font-bold" required ${d.code ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Quy Cách <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-code" value="${d.code || ''}" placeholder="VD: 40HC, 20DC, TAI_10T..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" required ${d.code ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Phân Loại Phương Tiện / Thùng</label>
-                    <select id="mdf-category" class="app-form-control font-semibold">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại Phương Tiện / Thùng</label>
+                    </div>
+                    <select id="mdf-category" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="CONTAINER" ${d.category === 'CONTAINER' ? 'selected' : ''}>Container Đường Biển</option>
                         <option value="TRUCK" ${d.category === 'TRUCK' ? 'selected' : ''}>Xe Tải Thùng / Đường Bộ</option>
                     </select>
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Tên Quy Cách / Tên Loại Thùng <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Container 40ft Cao (40HC)..." class="app-form-control font-semibold" required>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Tên Quy Cách / Tên Loại Thùng <span class="text-rose-500">*</span></label>
+                </div>
+                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="VD: Container 40ft Cao (40HC)..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                    <label class="app-form-label">Hệ Số TEU</label>
-                    <input type="number" id="mdf-teu" value="${d.teu_factor !== undefined ? d.teu_factor : 2.0}" step="0.25" class="app-form-control font-mono font-bold">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hệ Số TEU</label>
+                    </div>
+                    <input type="number" id="mdf-teu" value="${d.teu_factor !== undefined ? d.teu_factor : 2.0}" step="0.25" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-center w-full">
                 </div>
-                <div>
-                    <label class="app-form-label">Tải Trọng Cho Phép (kg)</label>
-                    <input type="text" id="mdf-payload" value="${d.max_payload_kg ? formatNumberVN(d.max_payload_kg) : '30.000'}" class="app-form-control font-mono font-bold input-number-vn" placeholder="VD: 30.000">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng Cho Phép (kg)</label>
+                    </div>
+                    <input type="text" id="mdf-payload" value="${d.max_payload_kg ? formatNumberVN(d.max_payload_kg) : '30.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right input-number-vn w-full" placeholder="VD: 30.000">
                 </div>
-                <div>
-                    <label class="app-form-label">Thể Tích Chứa (CBM)</label>
-                    <input type="number" id="mdf-cbm" value="${d.cbm_capacity || 67}" step="0.5" class="app-form-control font-mono font-bold">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Thể Tích Chứa (CBM)</label>
+                    </div>
+                    <input type="number" id="mdf-cbm" value="${d.cbm_capacity || 67}" step="0.5" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-center w-full">
                 </div>
             </div>
-            <div class="flex items-center space-x-2 pt-2">
+            <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
             </div>
@@ -8794,64 +8886,84 @@ function injectMasterDataModalFields(data) {
     } else if (currentMasterDataTab === 'vehicles') {
         const drivers = masterDataFormOptionsCache?.drivers || [];
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Biển Số Xe <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-license-plate" value="${d.license_plate || ''}" placeholder="VD: 51H-123.45..." class="app-form-control uppercase font-mono font-black" required ${d.license_plate ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Biển Số Xe <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-license-plate" value="${d.license_plate || ''}" placeholder="VD: 51H-123.45..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Nguồn Sở Hữu</label>
-                    <select id="mdf-ownership" class="app-form-control font-semibold">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Nguồn Sở Hữu</label>
+                    </div>
+                    <select id="mdf-ownership" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="OWNED" ${d.ownership_type === 'OWNED' ? 'selected' : ''}>Xe Nhà (Đội Xe Công Ty)</option>
                         <option value="SUBCONTRACTOR" ${d.ownership_type === 'SUBCONTRACTOR' ? 'selected' : ''}>Xe Bạn (Thuê Ngoài / 3PL)</option>
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Loại Phương Tiện</label>
-                    <select id="mdf-vehicle-type" class="app-form-control font-semibold">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Loại Phương Tiện</label>
+                    </div>
+                    <select id="mdf-vehicle-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="TRACTOR" ${d.vehicle_type === 'TRACTOR' ? 'selected' : ''}>Đầu kéo Container</option>
                         <option value="TRUCK_10T" ${d.vehicle_type === 'TRUCK_10T' ? 'selected' : ''}>Xe tải 10 Tấn</option>
                         <option value="TRUCK_2T" ${d.vehicle_type === 'TRUCK_2T' ? 'selected' : ''}>Xe tải 2 Tấn</option>
                         <option value="VAN" ${d.vehicle_type === 'VAN' ? 'selected' : ''}>Xe tải nhỏ / Van</option>
                     </select>
                 </div>
-                <div>
-                    <label class="app-form-label">Hãng Sản Xuất / Dòng Xe</label>
-                    <input type="text" id="mdf-brand" value="${d.brand || 'Freightliner'}" placeholder="VD: Freightliner, Hino, Isuzu..." class="app-form-control">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hãng Sản Xuất / Dòng Xe</label>
+                    </div>
+                    <input type="text" id="mdf-brand" value="${d.brand || 'Freightliner'}" placeholder="VD: Freightliner, Hino, Isuzu..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Tài Xế Mặc Định Gắn Xe</label>
-                    <select id="mdf-driver-id" class="app-form-control font-semibold">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tài Xế Mặc Định Gắn Xe</label>
+                    </div>
+                    <select id="mdf-driver-id" class="form-select h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full">
                         <option value="">-- Chưa gán tài xế --</option>
                         ${drivers.map(dr => `<option value="${dr.id}" ${d.current_driver_id === dr.id ? 'selected' : ''}>${dr.label || dr.nickname || dr.full_name}</option>`).join('')}
                     </select>
                 </div>
-                <div>
-                    <label class="app-form-label">Tải Trọng Cho Phép (kg)</label>
-                    <input type="text" id="mdf-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000'}" class="app-form-control font-mono font-bold input-number-vn" placeholder="VD: 30.000">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng Cho Phép (kg)</label>
+                    </div>
+                    <input type="text" id="mdf-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right input-number-vn w-full" placeholder="VD: 30.000">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                    <label class="app-form-label">Hạn Đăng Kiểm</label>
-                    <input type="date" id="mdf-reg-expiry" value="${d.registration_expiry ? (d.registration_expiry.includes('/') ? d.registration_expiry.split('/').reverse().join('-') : d.registration_expiry) : ''}" class="app-form-control font-mono">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hạn Đăng Kiểm</label>
+                    </div>
+                    <input type="date" id="mdf-reg-expiry" value="${d.registration_expiry ? (d.registration_expiry.includes('/') ? d.registration_expiry.split('/').reverse().join('-') : d.registration_expiry) : ''}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
-                <div>
-                    <label class="app-form-label">Hạn Bảo Hiểm</label>
-                    <input type="date" id="mdf-ins-expiry" value="${d.insurance_expiry ? (d.insurance_expiry.includes('/') ? d.insurance_expiry.split('/').reverse().join('-') : d.insurance_expiry) : ''}" class="app-form-control font-mono">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hạn Bảo Hiểm</label>
+                    </div>
+                    <input type="date" id="mdf-ins-expiry" value="${d.insurance_expiry ? (d.insurance_expiry.includes('/') ? d.insurance_expiry.split('/').reverse().join('-') : d.insurance_expiry) : ''}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
-                <div>
-                    <label class="app-form-label">Bảo Trì Kế Tiếp</label>
-                    <input type="date" id="mdf-maint-date" value="${d.next_maintenance_date ? (d.next_maintenance_date.includes('/') ? d.next_maintenance_date.split('/').reverse().join('-') : d.next_maintenance_date) : ''}" class="app-form-control font-mono">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Bảo Trì Kế Tiếp</label>
+                    </div>
+                    <input type="date" id="mdf-maint-date" value="${d.next_maintenance_date ? (d.next_maintenance_date.includes('/') ? d.next_maintenance_date.split('/').reverse().join('-') : d.next_maintenance_date) : ''}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Trạng Thái Phương Tiện</label>
-                <select id="mdf-vehicle-status" class="app-form-control font-bold">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Trạng Thái Phương Tiện</label>
+                </div>
+                <select id="mdf-vehicle-status" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                     <option value="IDLE" ${d.status === 'IDLE' ? 'selected' : ''}>Nằm bãi (Chờ việc)</option>
                     <option value="ACTIVE" ${d.status === 'ACTIVE' ? 'selected' : ''}>Đang chạy (Có hàng)</option>
                     <option value="MAINTENANCE" ${d.status === 'MAINTENANCE' ? 'selected' : ''}>Hư hỏng / Bảo trì</option>
@@ -8861,14 +8973,18 @@ function injectMasterDataModalFields(data) {
         `;
     } else if (currentMasterDataTab === 'trailers') {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Biển Số Rơ-Moóc <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-trailer-plate" value="${d.license_plate || ''}" placeholder="VD: 51R-123.45" class="app-form-control uppercase font-mono font-black" required ${d.license_plate ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Biển Số Rơ-Moóc <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-trailer-plate" value="${d.license_plate || ''}" placeholder="VD: 51R-123.45" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.license_plate ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Loại Rơ-Moóc <span class="text-rose-500">*</span></label>
-                    <select id="mdf-trailer-type" class="app-form-control font-semibold">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Loại Rơ-Moóc <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-trailer-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="MOOC_XUONG_40" ${d.trailer_type === 'MOOC_XUONG_40' ? 'selected' : ''}>Moóc Xương 40ft (3 Trục)</option>
                         <option value="MOOC_CO_CO_40" ${d.trailer_type === 'MOOC_CO_CO_40' ? 'selected' : ''}>Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)</option>
                         <option value="MOOC_XUONG_20" ${d.trailer_type === 'MOOC_XUONG_20' ? 'selected' : ''}>Moóc Xương 20ft (3 Trục)</option>
@@ -8877,24 +8993,32 @@ function injectMasterDataModalFields(data) {
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Hãng Sản Xuất</label>
-                    <input type="text" id="mdf-trailer-brand" value="${d.brand || 'Tân Thanh'}" placeholder="VD: Tân Thanh, CIMC, Doosung..." class="app-form-control">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hãng Sản Xuất</label>
+                    </div>
+                    <input type="text" id="mdf-trailer-brand" value="${d.brand || 'Tân Thanh'}" placeholder="VD: Tân Thanh, CIMC, Doosung..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
-                <div>
-                    <label class="app-form-label">Tải Trọng Thiết Kế (kg)</label>
-                    <input type="text" id="mdf-trailer-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '32.000'}" class="app-form-control font-mono font-bold input-number-vn" placeholder="VD: 32.000">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng Thiết Kế (kg)</label>
+                    </div>
+                    <input type="text" id="mdf-trailer-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '32.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right input-number-vn w-full" placeholder="VD: 32.000">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Hạn Đăng Kiểm Định Kỳ</label>
-                    <input type="date" id="mdf-trailer-expiry" value="${d.registration_expiry ? (d.registration_expiry.includes('/') ? d.registration_expiry.split('/').reverse().join('-') : d.registration_expiry) : ''}" class="app-form-control font-mono">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hạn Đăng Kiểm Định Kỳ</label>
+                    </div>
+                    <input type="date" id="mdf-trailer-expiry" value="${d.registration_expiry ? (d.registration_expiry.includes('/') ? d.registration_expiry.split('/').reverse().join('-') : d.registration_expiry) : ''}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
-                <div>
-                    <label class="app-form-label">Trạng Thái Hoạt Động</label>
-                    <select id="mdf-trailer-status" class="app-form-control font-bold">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Trạng Thái Hoạt Động</label>
+                    </div>
+                    <select id="mdf-trailer-status" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="IDLE" ${d.status === 'IDLE' ? 'selected' : ''}>Nằm bãi (Chờ kéo)</option>
                         <option value="ACTIVE" ${d.status === 'ACTIVE' ? 'selected' : ''}>Đang gắn xe kéo</option>
                         <option value="MAINTENANCE" ${d.status === 'MAINTENANCE' ? 'selected' : ''}>Bảo trì / Sửa chữa</option>
@@ -8904,104 +9028,134 @@ function injectMasterDataModalFields(data) {
         `;
     } else if (currentMasterDataTab === 'shipping_lines') {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Mã Hãng Tàu <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-sl-code" value="${d.code || ''}" placeholder="VD: MAEU, ONE, COSCO..." class="app-form-control uppercase font-mono font-black" required ${d.code ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Hãng Tàu <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-sl-code" value="${d.code || ''}" placeholder="VD: MAEU, ONE, COSCO..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-black w-full" required ${d.code ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Tên Hãng Tàu / Đơn Vị Vận Chuyển <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-sl-name" value="${d.name || ''}" placeholder="VD: Ocean Network Express..." class="app-form-control font-semibold" required>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Hotline CSKH / Cấp Vỏ</label>
-                    <input type="text" id="mdf-sl-phone" value="${d.contact_phone || ''}" placeholder="VD: 028-3827-0100" class="app-form-control font-mono">
-                </div>
-                <div>
-                    <label class="app-form-label">Email Tiếp Nhận e-DO</label>
-                    <input type="email" id="mdf-sl-email" value="${d.contact_email || ''}" placeholder="cs@shipping.com" class="app-form-control font-mono">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Hãng Tàu / Đơn Vị Vận Chuyển <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-sl-name" value="${d.name || ''}" placeholder="VD: Ocean Network Express..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
                 </div>
             </div>
-            <div>
-                <label class="app-form-label">Website Lấy e-DO / Tra Cứu Container</label>
-                <input type="url" id="mdf-sl-web" value="${d.website || ''}" placeholder="https://..." class="app-form-control font-mono">
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Free DEM Chuẩn (Ngày)</label>
-                    <input type="number" id="mdf-sl-dem" value="${d.free_dem_days || 7}" class="app-form-control font-mono font-bold text-teal-800">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hotline CSKH / Cấp Vỏ</label>
+                    </div>
+                    <input type="text" id="mdf-sl-phone" value="${d.contact_phone || ''}" placeholder="VD: 028-3827-0100" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
-                <div>
-                    <label class="app-form-label">Free DET Chuẩn (Ngày)</label>
-                    <input type="number" id="mdf-sl-det" value="${d.free_det_days || 5}" class="app-form-control font-mono font-bold text-amber-800">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Email Tiếp Nhận e-DO</label>
+                    </div>
+                    <input type="email" id="mdf-sl-email" value="${d.contact_email || ''}" placeholder="cs@shipping.com" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Ghi Chú Quy Định Cấp Vỏ / Hạ Rỗng</label>
-                <input type="text" id="mdf-sl-notes" value="${d.notes || ''}" placeholder="Depot chỉ định hạ rỗng, lưu ý hãng..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Website Lấy e-DO / Tra Cứu Container</label>
+                </div>
+                <input type="url" id="mdf-sl-web" value="${d.website || ''}" placeholder="https://..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
             </div>
-            <div class="flex items-center space-x-2 pt-2">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Free DEM Chuẩn (Ngày)</label>
+                    </div>
+                    <input type="number" id="mdf-sl-dem" value="${d.free_dem_days || 7}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-center text-teal-800 w-full">
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Free DET Chuẩn (Ngày)</label>
+                    </div>
+                    <input type="number" id="mdf-sl-det" value="${d.free_det_days || 5}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-center text-amber-800 w-full">
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú Quy Định Cấp Vỏ / Hạ Rỗng</label>
+                </div>
+                <input type="text" id="mdf-sl-notes" value="${d.notes || ''}" placeholder="Depot chỉ định hạ rỗng, lưu ý hãng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hoạt động</label>
             </div>
         `;
     } else if (currentMasterDataTab === 'subcontractors') {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Mã Đối Tác / Nhà Xe</label>
-                    <input type="text" id="mdf-sc-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống (NX_...)" class="app-form-control uppercase font-mono font-bold" ${d.code ? 'readonly' : ''}>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe</label>
+                    </div>
+                    <input type="text" id="mdf-sc-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống (NX_...)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
                 </div>
-                <div>
-                    <label class="app-form-label">Mã Số Thuế (MST)</label>
-                    <input type="text" id="mdf-sc-tax" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="app-form-control font-mono font-semibold">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (MST)</label>
+                    </div>
+                    <input type="text" id="mdf-sc-tax" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Tên Nhà Xe / Đơn Vị Vận Tải 3PL <span class="text-rose-500">*</span></label>
-                <input type="text" id="mdf-sc-name" value="${d.name || ''}" placeholder="VD: Công ty TNHH Vận tải Hoàng Nam..." class="app-form-control font-semibold" required>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="app-form-label">Người Điều Hành Xe</label>
-                    <input type="text" id="mdf-sc-person" value="${d.contact_person || ''}" placeholder="Tên điều độ / chủ xe..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Tên Nhà Xe / Đơn Vị Vận Tải 3PL <span class="text-rose-500">*</span></label>
                 </div>
-                <div>
-                    <label class="app-form-label">Số Điện Thoại Điều Xe <span class="text-rose-500">*</span></label>
-                    <input type="text" id="mdf-sc-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ gấp..." class="app-form-control font-mono font-bold text-teal-800" required>
+                <input type="text" id="mdf-sc-name" value="${d.name || ''}" placeholder="VD: Công ty TNHH Vận tải Hoàng Nam..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Người Điều Hành Xe</label>
+                    </div>
+                    <input type="text" id="mdf-sc-person" value="${d.contact_person || ''}" placeholder="Tên điều độ / chủ xe..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Điện Thoại Điều Xe <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-sc-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ gấp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 w-full" required>
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Địa Chỉ Bãi Xe / Văn Phòng</label>
-                <input type="text" id="mdf-sc-address" value="${d.address || ''}" placeholder="Địa chỉ..." class="app-form-control">
-            </div>
-            <div class="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2.5">
-                <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
-                    <i class="ph-bold ph-bank text-teal-700"></i>
-                    <span>Tài Khoản Ngân Hàng Thanh Toán Cước</span>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Bãi Xe / Văn Phòng</label>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-                    <div>
-                        <label class="text-[11px] font-bold text-slate-500">Số Tài Khoản</label>
-                        <input type="text" id="mdf-sc-acc" value="${d.bank_account_number || ''}" placeholder="Số TK..." class="app-form-control font-mono">
+                <input type="text" id="mdf-sc-address" value="${d.address || ''}" placeholder="Địa chỉ..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Tài Khoản</label>
                     </div>
-                    <div>
-                        <label class="text-[11px] font-bold text-slate-500">Tên Ngân Hàng</label>
-                        <input type="text" id="mdf-sc-bank" value="${d.bank_name || ''}" placeholder="VD: VCB, MB, Tech..." class="app-form-control">
+                    <input type="text" id="mdf-sc-acc" value="${d.bank_account_number || ''}" placeholder="Số TK..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Ngân Hàng</label>
                     </div>
-                    <div>
-                        <label class="text-[11px] font-bold text-slate-500">Chủ Tài Khoản</label>
-                        <input type="text" id="mdf-sc-holder" value="${d.bank_account_holder || ''}" placeholder="Tên in hoa..." class="app-form-control uppercase">
+                    <input type="text" id="mdf-sc-bank" value="${d.bank_name || ''}" placeholder="VD: VCB, MB..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Chủ Tài Khoản</label>
                     </div>
+                    <input type="text" id="mdf-sc-holder" value="${d.bank_account_holder || ''}" placeholder="Tên in hoa..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase text-slate-800 w-full">
                 </div>
             </div>
             <div>
-                <label class="app-form-label">Tuyến Thế Mạnh & Ghi Chú Đơn Giá</label>
-                <input type="text" id="mdf-sc-notes" value="${d.notes || ''}" placeholder="VD: Chuyên tuyến Long An, 10 xe đầu kéo..." class="app-form-control">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Tuyến Thế Mạnh & Ghi Chú Đơn Giá</label>
+                </div>
+                <input type="text" id="mdf-sc-notes" value="${d.notes || ''}" placeholder="VD: Chuyên tuyến Long An, 10 xe đầu kéo..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
-            <div class="flex items-center space-x-2 pt-2">
+            <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hợp tác</label>
             </div>
