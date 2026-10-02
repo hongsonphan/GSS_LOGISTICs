@@ -1084,6 +1084,23 @@ function renderDispatchTable(trips) {
                 <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider font-heading inline-block ${statusCls}">
                     ${escapeHtml(trip.status_label)}
                 </span>
+                ${trip.status === 'DISPATCHED' ? `
+                    <div class="mt-1">
+                        ${trip.acceptance_sla_status === 'OVERDUE' ? `
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-600 text-white border border-rose-700 inline-flex items-center gap-1 animate-pulse" title="Tài xế chưa nhận chuyến sau hơn 60 phút - Cần đổi xe hoặc gọi điện">
+                                <i class="ph-bold ph-warning-circle"></i> Quá hạn (${trip.minutes_since_dispatch}p)
+                            </span>
+                        ` : trip.acceptance_sla_status === 'WARNING' ? `
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-500 text-white border border-amber-600 inline-flex items-center gap-1" title="Chờ tài xế xác nhận nhận chuyến">
+                                <i class="ph-bold ph-clock"></i> Chờ TX (${trip.minutes_since_dispatch}p)
+                            </span>
+                        ` : `
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-200 inline-flex items-center gap-1" title="Đã phát lệnh qua Zalo/App">
+                                <i class="ph ph-paper-plane-tilt"></i> Chờ nhận (${trip.minutes_since_dispatch}p)
+                            </span>
+                        `}
+                    </div>
+                ` : ''}
             </td>
         `;
         tbody.appendChild(tr);
@@ -1387,6 +1404,32 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         if (badge) {
             badge.className = `px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
             badge.innerText = trip.status_label;
+        }
+
+        // Cập nhật Cảnh báo SLA 60 Phút Xác Nhận Chuyến Xe
+        const slaBanner = document.getElementById('trip-sla-warning-banner');
+        if (slaBanner) {
+            if (trip.status === 'DISPATCHED' && trip.acceptance_sla_status === 'OVERDUE') {
+                slaBanner.className = 'p-4 rounded-2xl border bg-rose-50 border-rose-300 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition-all mb-4';
+                const iconBox = document.getElementById('trip-sla-icon-box');
+                if (iconBox) iconBox.className = 'w-10 h-10 rounded-xl bg-rose-200 text-rose-700 flex items-center justify-center text-2xl shrink-0';
+                const titleEl = document.getElementById('trip-sla-title');
+                if (titleEl) titleEl.innerText = `⚠️ CẢNH BÁO: TÀI XẾ QUÁ HẠN XÁC NHẬN (${trip.minutes_since_dispatch} PHÚT)`;
+                const descEl = document.getElementById('trip-sla-desc');
+                if (descEl) descEl.innerText = `Bác tài ${trip.driver} (${trip.driver_phone || 'Chưa có SĐT'}) chưa nhận chuyến sau hơn 60 phút phát lệnh. Vui lòng gọi điện xác nhận hoặc phân xe/tài xế khác ngay!`;
+                slaBanner.classList.remove('hidden');
+            } else if (trip.status === 'DISPATCHED' && trip.acceptance_sla_status === 'WARNING') {
+                slaBanner.className = 'p-4 rounded-2xl border bg-amber-50 border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition-all mb-4';
+                const iconBox = document.getElementById('trip-sla-icon-box');
+                if (iconBox) iconBox.className = 'w-10 h-10 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center text-2xl shrink-0';
+                const titleEl = document.getElementById('trip-sla-title');
+                if (titleEl) titleEl.innerText = `ĐANG CHỜ BÁC TÀI XÁC NHẬN (${trip.minutes_since_dispatch} PHÚT)`;
+                const descEl = document.getElementById('trip-sla-desc');
+                if (descEl) descEl.innerText = `Lệnh điều xe đã gửi tới bác tài ${trip.driver}. Hệ thống sẽ cảnh báo đỏ nếu quá 60 phút không phản hồi.`;
+                slaBanner.classList.remove('hidden');
+            } else {
+                slaBanner.classList.add('hidden');
+            }
         }
 
         // Trạng thái Chốt Sổ Kế Toán (Settlement Controls)
@@ -2011,6 +2054,36 @@ function renderCostSheetTable(trip) {
     if (appTotal) appTotal.innerText = formatMoney(totalCalculated);
 }
 
+// Xây dựng nội dung tin nhắn Lệnh điều xe gửi Zalo chuẩn hóa
+function buildDriverZaloMessage(trip) {
+    if (!trip) return '';
+    const driverToken = trip.driver_hashid || trip.hashid || trip.id || trip.trip_code;
+    const portalUrl = `${window.location.origin}/driver/${driverToken}/`;
+    const tripCode = trip.id || trip.trip_code || trip.code || 'TVL-XXX';
+    const vehicle = trip.vehicle || trip.truck || '-';
+    const trailer = trip.trailer || '-';
+    const cont = trip.container || trip.container_number || 'CHƯA CÓ CONT';
+    const contType = trip.container_type ? ` (${trip.container_type})` : '';
+    const seal = trip.seal || trip.seal_number || '-';
+    const pickup = trip.pickup || trip.pickup_location || '-';
+    const warehouse = trip.warehouse || trip.warehouse_location || '-';
+    const dropoff = trip.dropoff || trip.dropoff_location || '-';
+    const loadingTimeStr = trip.loading_time ? `\n⏰ Giờ hẹn đóng hàng: ${trip.loading_time}` : '';
+
+    return `🚚 LỆNH ĐIỀU XE BIM LOGISTICS:
+• Chuyến: ${tripCode}
+• Xe: ${vehicle} | Mooc: ${trailer}
+• Cont: ${cont}${contType} | Seal: ${seal}
+• Điểm 1 (Lấy cont): ${pickup}
+• Điểm 2 (Giao kho): ${warehouse}
+• Điểm 3 (Hạ cont): ${dropoff}${loadingTimeStr}
+⚠️ LƯU Ý: Vui lòng mở link bên dưới xác nhận nhận chuyến trong vòng 60 phút.
+
+👉 Mở link mobile báo mốc & kê chi phí:
+${portalUrl}`;
+}
+window.buildDriverZaloMessage = buildDriverZaloMessage;
+
 // Sao chép Lệnh điều xe kèm link Mobile Driver Portal gửi tài xế qua Zalo/SMS
 window.copyDriverPortalLink = function() {
     const trip = window.currentTripDetail;
@@ -2018,18 +2091,33 @@ window.copyDriverPortalLink = function() {
         alert('Chưa có thông tin chi tiết chuyến xe để sao chép!');
         return;
     }
-    const driverToken = trip.driver_hashid || trip.hashid || trip.trip_code;
-    const portalUrl = `${window.location.origin}/driver/${driverToken}/`;
-    const message = `LỆNH ĐIỀU XE BIM LOGISTICS:\nChuyến: ${trip.trip_code || trip.code || trip.id}\nXe: ${trip.vehicle || '-'} | Mooc: ${trip.trailer || '-'}\nCont: ${trip.container || '-'} | Seal: ${trip.seal || '-'}\nĐiểm 1 (Lấy cont): ${trip.pickup || '-'}\nĐiểm 2 (Giao kho): ${trip.warehouse || '-'}\nĐiểm 3 (Hạ cont): ${trip.dropoff || '-'}\n- Mở link mobile báo mốc & kê chi phí: ${portalUrl}`;
+    const message = buildDriverZaloMessage(trip);
+    const portalUrl = `${window.location.origin}/driver/${trip.driver_hashid || trip.hashid || trip.id}/`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {
-            alert('✓ Đã sao chép Lệnh điều xe kèm link Mobile Driver Portal vào bộ nhớ tạm!\nBạn có thể dán (Paste) ngay vào Zalo gửi cho tài xế.');
+            showToast('success', '✓ Đã sao chép Lệnh điều xe kèm link Mobile Driver Portal vào bộ nhớ tạm!\nBạn có thể dán (Ctrl+V) ngay vào Zalo gửi cho tài xế.', 'Đã Sao Chép Lệnh Xe');
         }).catch(err => {
             prompt('Sao chép liên kết gửi tài xế:', portalUrl);
         });
     } else {
         prompt('Sao chép liên kết gửi tài xế:', portalUrl);
+    }
+};
+
+window.openZaloDriverChat = function() {
+    const trip = window.currentTripDetail;
+    if (!trip) return;
+    const message = buildDriverZaloMessage(trip);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(message).catch(() => {});
+    }
+    const phone = trip.driver_phone ? String(trip.driver_phone).replace(/\D/g, '') : '';
+    if (phone) {
+        window.open(`https://zalo.me/${phone}`, '_blank');
+        showToast('success', `Đã sao chép Lệnh điều xe vào bộ nhớ tạm & Mở Zalo tài xế (${phone})! Hãy dán (Ctrl+V) để gửi.`, 'Mở Zalo Thành Công');
+    } else {
+        showToast('warning', 'Tài xế chưa có số điện thoại đăng ký Zalo trong hồ sơ.', 'Thiếu SĐT Tài Xế');
     }
 };
 
@@ -2046,7 +2134,7 @@ window.copyCustomerTrackingLink = function() {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(message).then(() => {
-            alert('✓ Đã sao chép liên kết tra cứu tiến độ chuyến xe dành cho khách hàng!\nBạn có thể dán (Paste) gửi qua Zalo / Email cho chủ hàng.');
+            showToast('success', '✓ Đã sao chép liên kết tra cứu tiến độ chuyến xe dành cho khách hàng!\nBạn có thể dán (Ctrl+V) gửi qua Zalo / Email cho chủ hàng.', 'Đã Sao Chép Tracking Link');
         }).catch(err => {
             prompt('Sao chép liên kết gửi khách hàng:', trackingUrl);
         });
@@ -2617,6 +2705,125 @@ async function submitDetentionUpdate() {
         showToast('danger', err.message || 'Lỗi khi cập nhật mốc lưu xe', 'Thất bại');
     }
 }
+
+// Xác nhận nhận chuyến thay tài xế (khi điều độ gọi điện thoại trực tiếp)
+async function confirmTripManually() {
+    const trip = window.currentTripDetail;
+    if (!trip) return;
+    if (!confirm(`Xác nhận bác tài ${trip.driver} ĐÃ NHẬN CHUYẾN ${trip.id} qua điện thoại?`)) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/trips/${trip.id}/milestones/`, {
+            method: 'POST',
+            body: JSON.stringify({
+                milestone: 'ACCEPTED_TRIP',
+                notes: 'Điều độ viên xác nhận nhận chuyến thay tài xế qua điện thoại'
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', `Đã xác nhận nhận chuyến ${trip.id}!`, 'Xác Nhận Thành Công');
+            await viewTripDetail(trip.id);
+            if (typeof loadTripsData === 'function') loadTripsData();
+        } else {
+            showToast('danger', data.message || data.error || 'Không thể xác nhận chuyến');
+        }
+    } catch (err) {
+        console.error('Error confirming trip:', err);
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+window.confirmTripManually = confirmTripManually;
+
+// Modal Phân Lại Xe / Bác Tài (Khi Quá Hạn Xác Nhận)
+function openReassignDriverModal() {
+    const trip = window.currentTripDetail;
+    if (!trip) return;
+    
+    const modal = document.getElementById('modal-reassign-driver');
+    if (!modal) return;
+
+    const selectDrv = document.getElementById('reassign-driver-select');
+    if (selectDrv && trip.available_drivers) {
+        selectDrv.innerHTML = '<option value="">-- Chọn Bác Tài Mới Thay Thế --</option>' + 
+            trip.available_drivers.map(d => `<option value="${d.id}" data-veh="${d.vehicle_id || ''}">${escapeHtml(d.name)} ${d.vehicle ? `(Xe: ${d.vehicle})` : ''}</option>`).join('');
+    }
+    
+    const currInfo = document.getElementById('reassign-current-info');
+    if (currInfo) {
+        currInfo.innerText = `Chuyến: ${trip.id} | Bác tài hiện tại: ${trip.driver} (${trip.vehicle})`;
+    }
+
+    modal.classList.remove('hidden-view');
+    modal.classList.remove('hidden');
+}
+window.openReassignDriverModal = openReassignDriverModal;
+
+function closeReassignDriverModal() {
+    const modal = document.getElementById('modal-reassign-driver');
+    if (modal) {
+        modal.classList.add('hidden-view');
+        modal.classList.add('hidden');
+    }
+}
+window.closeReassignDriverModal = closeReassignDriverModal;
+
+async function submitReassignDriver(e) {
+    e.preventDefault();
+    const trip = window.currentTripDetail;
+    if (!trip) return;
+
+    const selectDrv = document.getElementById('reassign-driver-select');
+    const driverId = selectDrv?.value;
+    if (!driverId) {
+        alert('Vui lòng chọn tài xế mới!');
+        return;
+    }
+
+    const selectedOption = selectDrv.options[selectDrv.selectedIndex];
+    const vehId = selectedOption?.getAttribute('data-veh');
+    const reason = document.getElementById('reassign-reason')?.value || 'Tài xế cũ không phản hồi sau 60 phút';
+
+    try {
+        const payload = {
+            driver_id: parseInt(driverId, 10),
+            notes: `[ĐỔI TÀI XẾ] ${reason}`
+        };
+        if (vehId && vehId !== 'null' && vehId !== '') {
+            payload.vehicle_id = parseInt(vehId, 10);
+        }
+
+        const res = await fetchWithAuth(`/api/trips/${trip.id}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            closeReassignDriverModal();
+            showToast('success', `Đã phân công lại chuyến ${trip.id} cho tài xế mới!`, 'Phân Xe Thành Công');
+            await viewTripDetail(trip.id);
+            if (typeof loadTripsData === 'function') loadTripsData();
+
+            // Tự động mở Zalo cho bác tài mới
+            const newTrip = window.currentTripDetail;
+            if (newTrip && newTrip.driver_phone) {
+                const cleanPhone = String(newTrip.driver_phone).replace(/\D/g, '');
+                const msg = buildDriverZaloMessage(newTrip);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(msg).catch(() => {});
+                }
+                showToast('success', `Đã sao chép Lệnh điều xe & Mở Zalo tài xế mới (${cleanPhone}). Hãy dán (Ctrl+V) để gửi!`, 'Mở Zalo Tài Xế Mới');
+                window.open(`https://zalo.me/${cleanPhone}`, '_blank');
+            }
+        } else {
+            showToast('danger', data.message || data.error || 'Lỗi khi phân lại tài xế');
+        }
+    } catch (err) {
+        console.error('Error reassigning driver:', err);
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+window.submitReassignDriver = submitReassignDriver;
 
 // Các hàm Modal Thêm Chi Phí Phát Sinh
 function openModalAddExpense() {
@@ -3766,7 +3973,20 @@ async function submitNewTrip() {
             document.getElementById('form-create-trip').reset();
             clearBookingFileSelection();
             loadTripsData();
-            showToast('success', result.message || 'Tạo lệnh điều động thành công!', 'Thành công');
+
+            // Tự động sao chép Lệnh điều xe và mở Zalo nếu có tài xế
+            const message = buildDriverZaloMessage(result);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(message).catch(() => {});
+            }
+
+            if (result.driver_phone) {
+                const cleanPhone = String(result.driver_phone).replace(/\D/g, '');
+                showToast('success', `Đã tạo lệnh ${result.trip_code}! Đã sao chép nội dung Lệnh & Mở Zalo tài xế (${result.driver_name || cleanPhone}). Hãy dán (Ctrl+V) để gửi ngay!`, 'Tạo Lệnh & Sao Chép Zalo');
+                window.open(`https://zalo.me/${cleanPhone}`, '_blank');
+            } else {
+                showToast('success', result.message || 'Tạo lệnh điều động thành công!', 'Thành công');
+            }
         } else {
             let errorMsg = result.message || result.error || result.detail;
             if (!errorMsg && typeof result === 'object' && Object.keys(result).length > 0) {

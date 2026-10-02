@@ -373,6 +373,7 @@ class TripListCreateAPIView(APIView):
                     trips_qs = trips_qs.filter(status=k)
                     break
 
+        now_dt = timezone.now()
         trips_list = []
         for t in trips_qs:
             det_status = calculate_dem_det_status(t)
@@ -386,6 +387,26 @@ class TripListCreateAPIView(APIView):
                 'status_label': customs_decl.get_status_display() if customs_decl else '',
                 'is_cleared': (customs_decl.status in ['CLEARED', 'RELEASED']) if customs_decl else False,
             }
+
+            minutes_since_dispatch = 0
+            acceptance_sla_status = 'NORMAL'
+            if t.status == TripStatus.DISPATCHED:
+                if t.dispatched_at:
+                    diff_mins = int((now_dt - t.dispatched_at).total_seconds() // 60)
+                    minutes_since_dispatch = max(0, diff_mins)
+                else:
+                    diff_mins = int((now_dt - t.created_at).total_seconds() // 60)
+                    minutes_since_dispatch = max(0, diff_mins)
+
+                if minutes_since_dispatch >= 60:
+                    acceptance_sla_status = 'OVERDUE'
+                elif minutes_since_dispatch >= 30:
+                    acceptance_sla_status = 'WARNING'
+                else:
+                    acceptance_sla_status = 'NORMAL'
+            elif t.status in [TripStatus.ACCEPTED, TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]:
+                acceptance_sla_status = 'ACCEPTED'
+
             trips_list.append({
                 'id': t.trip_code,
                 'hashid': t.hashid,
@@ -400,7 +421,12 @@ class TripListCreateAPIView(APIView):
                 'dropoff': t.dropoff_location,
                 'status': t.status,
                 'status_label': t.get_status_display(),
+                'dispatched_at': t.dispatched_at.isoformat() if t.dispatched_at else None,
+                'accepted_at': t.accepted_at.isoformat() if t.accepted_at else None,
+                'minutes_since_dispatch': minutes_since_dispatch,
+                'acceptance_sla_status': acceptance_sla_status,
                 'driver': (t.driver.nickname or t.driver.full_name) if t.driver else '-',
+                'driver_phone': t.driver.phone_number if t.driver else '',
                 'vehicle': t.vehicle.license_plate if t.vehicle else '-',
                 'vehicle_ownership': t.vehicle.get_ownership_type_display() if t.vehicle else 'Xe Nhà',
                 'vehicle_ownership_code': t.vehicle.ownership_type if t.vehicle else 'OWNED',
@@ -707,7 +733,22 @@ class TripListCreateAPIView(APIView):
         return Response({
             'success': True,
             'message': f'Tạo lệnh điều động {trip.trip_code} thành công!',
-            'trip_code': trip.trip_code
+            'trip_code': trip.trip_code,
+            'id': trip.trip_code,
+            'hashid': trip.hashid,
+            'driver_hashid': trip.driver_hashid,
+            'driver_name': (trip.driver.nickname or trip.driver.full_name) if trip.driver else '',
+            'driver_phone': trip.driver.phone_number if trip.driver else '',
+            'vehicle': trip.vehicle.license_plate if trip.vehicle else '-',
+            'trailer': trip.trailer.license_plate if trip.trailer else '-',
+            'container': trip.container_number or 'CHƯA CÓ CONT',
+            'container_type': trip.container_type or '40HC',
+            'seal': trip.seal_number or '-',
+            'pickup': trip.pickup_location or '-',
+            'warehouse': trip.warehouse_location or '-',
+            'dropoff': trip.dropoff_location or '-',
+            'loading_time': trip.loading_time or '',
+            'dispatched_at': trip.dispatched_at.isoformat() if trip.dispatched_at else None,
         }, status=status.HTTP_201_CREATED)
 
 def get_trip_by_code_or_hash(trip_identifier, select_related_fields=None):
@@ -850,6 +891,7 @@ class TripDetailAPIView(APIView):
         driver_name = (trip.driver.nickname or trip.driver.full_name) if trip.driver else 'Chưa gán tài xế'
         driver_phone = trip.driver.phone_number if trip.driver else ''
         vehicle_plate = trip.vehicle.license_plate if trip.vehicle else 'Chưa gán xe'
+        trailer_plate = trip.trailer.license_plate if trip.trailer else '-'
         vehicle_ownership = trip.vehicle.get_ownership_type_display() if trip.vehicle else 'Xe Nhà'
         vehicle_ownership_code = trip.vehicle.ownership_type if trip.vehicle else 'OWNED'
         dropoff_plate = '-'
@@ -857,6 +899,26 @@ class TripDetailAPIView(APIView):
             dropoff_plate = trip.dropoff_vehicle.license_plate
         from apps.dispatch.timeline_service import get_derived_7_milestones
         m7 = get_derived_7_milestones(trip)
+
+        now_dt = timezone.now()
+        minutes_since_dispatch = 0
+        acceptance_sla_status = 'NORMAL'
+        if trip.status == TripStatus.DISPATCHED:
+            if trip.dispatched_at:
+                diff_mins = int((now_dt - trip.dispatched_at).total_seconds() // 60)
+                minutes_since_dispatch = max(0, diff_mins)
+            else:
+                diff_mins = int((now_dt - trip.created_at).total_seconds() // 60)
+                minutes_since_dispatch = max(0, diff_mins)
+
+            if minutes_since_dispatch >= 60:
+                acceptance_sla_status = 'OVERDUE'
+            elif minutes_since_dispatch >= 30:
+                acceptance_sla_status = 'WARNING'
+            else:
+                acceptance_sla_status = 'NORMAL'
+        elif trip.status in [TripStatus.ACCEPTED, TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]:
+            acceptance_sla_status = 'ACCEPTED'
 
         return Response({
             'id': trip.trip_code,
@@ -881,11 +943,16 @@ class TripDetailAPIView(APIView):
             'destination_port': trip.destination_port or '-',
             'vgm_weight': trip.vgm_weight or '-',
             'status': trip.status,
+            'dispatched_at': trip.dispatched_at.isoformat() if trip.dispatched_at else None,
+            'accepted_at': trip.accepted_at.isoformat() if trip.accepted_at else None,
+            'minutes_since_dispatch': minutes_since_dispatch,
+            'acceptance_sla_status': acceptance_sla_status,
             'driver': driver_name,
             'driver_id': trip.driver_id,
             'driver_phone': driver_phone,
             'vehicle': vehicle_plate,
             'vehicle_id': trip.vehicle_id,
+            'trailer': trailer_plate,
             'vehicle_ownership': vehicle_ownership,
             'vehicle_ownership_code': vehicle_ownership_code,
             'is_split_trip': trip.is_split_trip,
@@ -1055,12 +1122,20 @@ class TripDetailAPIView(APIView):
         if 'damage_description' in data:
             trip.damage_description = str(data['damage_description']).strip()
         if 'driver_id' in data:
-            trip.driver = Employee.objects.filter(id=data['driver_id']).first()
+            new_drv = Employee.objects.filter(id=data['driver_id']).first()
+            if new_drv and new_drv != trip.driver:
+                trip.driver = new_drv
+                if trip.status == TripStatus.DISPATCHED:
+                    trip.dispatched_at = timezone.now()
+                    trip.accepted_at = None
         elif 'driver' in data and data['driver']:
             drv = Employee.objects.filter(nickname__iexact=str(data['driver']).strip()).first() or \
                   Employee.objects.filter(full_name__iexact=str(data['driver']).strip()).first()
-            if drv:
+            if drv and drv != trip.driver:
                 trip.driver = drv
+                if trip.status == TripStatus.DISPATCHED:
+                    trip.dispatched_at = timezone.now()
+                    trip.accepted_at = None
         if 'vehicle_id' in data:
             trip.vehicle = Vehicle.objects.filter(id=data['vehicle_id']).first()
         elif 'vehicle' in data and data['vehicle']:
