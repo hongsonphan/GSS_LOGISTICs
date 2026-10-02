@@ -3176,6 +3176,7 @@ function openSimContactModal(type) {
     }
 }
 
+function backToTrips() {
     document.getElementById('view-trip-detail').classList.add('hidden-view');
     if (previousActiveTab && previousActiveTab !== 'trip-detail') {
         switchTab(previousActiveTab, true);
