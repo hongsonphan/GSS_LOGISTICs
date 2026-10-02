@@ -1472,19 +1472,18 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                         badgeHtml = '<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">Hoàn thành</span>';
                     }
 
-                    // Chứng từ đính kèm (dạng text liệt kê có link mở xem file/hình)
+                    // Chứng từ đính kèm (Chỉ hiển thị khi có chứng từ thật đính kèm)
                     let docsHtml = '';
                     if (item.docs && item.docs.length > 0) {
-                        const formattedDocs = item.docs.map(doc => {
-                            const docName = typeof doc === 'string' ? doc : (doc.name || '');
-                            const docUrl = typeof doc === 'object' && doc.url ? doc.url : '';
-                            if (docUrl) {
+                        const validDocs = item.docs.filter(doc => (typeof doc === 'object' && doc.url && doc.url.trim() !== ''));
+                        if (validDocs.length > 0) {
+                            const formattedDocs = validDocs.map(doc => {
+                                const docName = doc.name || 'Chứng từ';
+                                const docUrl = doc.url;
                                 return `<a href="${docUrl}" target="_blank" rel="noopener noreferrer" class="text-teal-700 hover:text-teal-900 font-semibold underline underline-offset-2 inline-flex items-center gap-0.5 transition-colors" title="Bấm xem tài liệu / ảnh gốc"><i class="ph ph-file-text text-xs text-teal-600"></i><span>${docName}</span><i class="ph-bold ph-arrow-square-out text-[9px] text-teal-500"></i></a>`;
-                            } else {
-                                return `<span class="text-slate-500 font-normal inline-flex items-center gap-0.5"><i class="ph ph-file text-xs text-slate-300"></i><span>${docName}</span></span>`;
-                            }
-                        }).join('<span class="text-slate-300 mx-1.5 font-normal">;</span>');
-                        docsHtml = formattedDocs;
+                            }).join('<span class="text-slate-300 mx-1.5 font-normal">;</span>');
+                            docsHtml = formattedDocs;
+                        }
                     }
 
                     rowsHtml += `

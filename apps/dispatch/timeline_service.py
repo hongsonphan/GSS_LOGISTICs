@@ -149,14 +149,29 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     except ValueError:
         curr_idx = 0
 
+    # Xác định danh sách chứng từ con THỰC TẾ đã đính kèm (Chỉ hiện khi có file/ảnh thật)
+    step1_docs = [{'name': 'File Booking / Lệnh cấp cont KH', 'url': booking_url}] if booking_url else []
+    step4_docs = []
+    if eir_pickup_url:
+        step4_docs.append({'name': 'Phiếu EIR nhận cont', 'url': eir_pickup_url})
+    if seal_url:
+        step4_docs.append({'name': 'Ảnh Số Cont & Kẹp Chì Seal', 'url': seal_url})
+    step6_docs = [{'name': 'Packing List / Lệnh giao hàng', 'url': invoice_url}] if invoice_url else []
+    step7_docs = []
+    if seal_url:
+        step7_docs.append({'name': 'Ảnh Kẹp Chì Seal mới', 'url': seal_url})
+    if weight_url:
+        step7_docs.append({'name': 'Phiếu Cân xe', 'url': weight_url})
+    step8_docs = [{'name': 'Biên bản giao nhận POD có chữ ký', 'url': pod_url}] if pod_url else []
+    step9_docs = [{'name': 'Phiếu EIR hạ cont', 'url': eir_dropoff_url}] if eir_dropoff_url else []
+    step10_docs = [{'name': 'Bảng kê chi phí & Hóa đơn điện tử', 'url': invoice_url}] if invoice_url else []
+
     specs = [
         {
             'step': 1,
             'title': 'Nhận Booking',
             'time': t_create,
-            'docs': [
-                {'name': 'File Booking / Lệnh cấp cont KH', 'url': booking_url}
-            ],
+            'docs': step1_docs,
             'actor': 'Thuận - Kinh Doanh'
         },
         {
@@ -177,10 +192,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             'step': 4,
             'title': f'Tài xế xuất phát & Hẹn giờ đến ({pickup_name})',
             'time': t_pickup,
-            'docs': [
-                {'name': 'Phiếu EIR nhận cont', 'url': eir_pickup_url},
-                {'name': 'Ảnh Số Cont & Kẹp Chì Seal', 'url': seal_url}
-            ],
+            'docs': step4_docs,
             'actor': driver_actor
         },
         {
@@ -194,47 +206,35 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             'step': 6,
             'title': f'Bắt đầu Đóng / Trả hàng tại kho ({dock_name})',
             'time': t_unload,
-            'docs': [
-                {'name': 'Packing List / Lệnh giao hàng', 'url': invoice_url}
-            ],
+            'docs': step6_docs,
             'actor': warehouse_actor
         },
         {
             'step': 7,
             'title': 'Đóng hàng / Xuống hàng xong',
             'time': t_finish_unload,
-            'docs': [
-                {'name': 'Ảnh Kẹp Chì Seal mới', 'url': seal_url},
-                {'name': 'Phiếu Cân xe', 'url': weight_url}
-            ],
+            'docs': step7_docs,
             'actor': warehouse_actor
         },
         {
             'step': 8,
             'title': 'Hoàn tất Chứng từ Giao nhận (Ký POD)',
             'time': t_wh_out,
-            'docs': [
-                {'name': 'Biên bản giao nhận POD có chữ ký', 'url': pod_url},
-                {'name': 'Phiếu xuất kho', 'url': invoice_url}
-            ],
+            'docs': step8_docs,
             'actor': driver_actor
         },
         {
             'step': 9,
             'title': f'Vận chuyển về Bãi hạ Rỗng / Cảng Xuất ({dropoff_name})',
             'time': t_dropoff,
-            'docs': [
-                {'name': 'Phiếu EIR hạ cont', 'url': eir_dropoff_url}
-            ],
+            'docs': step9_docs,
             'actor': driver_actor
         },
         {
             'step': 10,
             'title': 'Tổng hợp chi phí & Đối soát thanh toán',
             'time': t_settle,
-            'docs': [
-                {'name': 'Bảng kê chi phí & Hóa đơn điện tử', 'url': invoice_url}
-            ],
+            'docs': step10_docs,
             'actor': accountant_actor
         }
     ]
