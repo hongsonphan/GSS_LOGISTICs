@@ -244,6 +244,8 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     # Mốc timestamp chuẩn hóa theo quy trình điều vận 9 bước
     dispatched_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm Điều độ phát lệnh App/Zalo cho tài xế")
     accepted_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm tài xế xác nhận nhận chuyến")
+    declined_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm tài xế từ chối chuyến")
+    decline_reason = models.CharField(max_length=255, blank=True, default='', help_text="Lý do tài xế từ chối chuyến")
     unloading_started_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm bắt đầu đóng/trút hàng tại dock kho")
 
     status = models.CharField(max_length=25, choices=TripStatus.choices, default=TripStatus.DRAFT, db_index=True)

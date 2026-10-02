@@ -390,7 +390,12 @@ class TripListCreateAPIView(APIView):
 
             minutes_since_dispatch = 0
             acceptance_sla_status = 'NORMAL'
-            if t.status == TripStatus.DISPATCHED:
+            if t.declined_at:
+                acceptance_sla_status = 'DECLINED'
+                if t.declined_at:
+                    diff_mins = int((now_dt - t.declined_at).total_seconds() // 60)
+                    minutes_since_dispatch = max(0, diff_mins)
+            elif t.status == TripStatus.DISPATCHED:
                 if t.dispatched_at:
                     diff_mins = int((now_dt - t.dispatched_at).total_seconds() // 60)
                     minutes_since_dispatch = max(0, diff_mins)
@@ -423,6 +428,8 @@ class TripListCreateAPIView(APIView):
                 'status_label': t.get_status_display(),
                 'dispatched_at': t.dispatched_at.isoformat() if t.dispatched_at else None,
                 'accepted_at': t.accepted_at.isoformat() if t.accepted_at else None,
+                'declined_at': t.declined_at.isoformat() if t.declined_at else None,
+                'decline_reason': t.decline_reason or '',
                 'minutes_since_dispatch': minutes_since_dispatch,
                 'acceptance_sla_status': acceptance_sla_status,
                 'driver': (t.driver.nickname or t.driver.full_name) if t.driver else '-',
@@ -903,7 +910,12 @@ class TripDetailAPIView(APIView):
         now_dt = timezone.now()
         minutes_since_dispatch = 0
         acceptance_sla_status = 'NORMAL'
-        if trip.status == TripStatus.DISPATCHED:
+        if trip.declined_at:
+            acceptance_sla_status = 'DECLINED'
+            if trip.declined_at:
+                diff_mins = int((now_dt - trip.declined_at).total_seconds() // 60)
+                minutes_since_dispatch = max(0, diff_mins)
+        elif trip.status == TripStatus.DISPATCHED:
             if trip.dispatched_at:
                 diff_mins = int((now_dt - trip.dispatched_at).total_seconds() // 60)
                 minutes_since_dispatch = max(0, diff_mins)
@@ -945,6 +957,8 @@ class TripDetailAPIView(APIView):
             'status': trip.status,
             'dispatched_at': trip.dispatched_at.isoformat() if trip.dispatched_at else None,
             'accepted_at': trip.accepted_at.isoformat() if trip.accepted_at else None,
+            'declined_at': trip.declined_at.isoformat() if trip.declined_at else None,
+            'decline_reason': trip.decline_reason or '',
             'minutes_since_dispatch': minutes_since_dispatch,
             'acceptance_sla_status': acceptance_sla_status,
             'driver': driver_name,
@@ -1099,6 +1113,31 @@ class TripDetailAPIView(APIView):
                 trip.save(update_fields=['status'])
 
         # Cập nhật thông tin Lệnh Điều Động (Sửa Lệnh Điều Động)
+        if 'customer_id' in data and data['customer_id']:
+            from apps.customers.models import Customer
+            trip.customer = Customer.objects.filter(id=data['customer_id']).first() or trip.customer
+        elif 'customer' in data and data['customer']:
+            from apps.customers.models import Customer
+            trip.customer = Customer.objects.filter(name__iexact=str(data['customer']).strip()).first() or trip.customer
+        if 'transport_type' in data or 'shipment_type' in data:
+            stype = str(data.get('transport_type') or data.get('shipment_type') or '').strip()
+            if stype:
+                trip.shipment_type = stype
+        if 'container_type' in data:
+            trip.container_type = str(data['container_type']).strip()
+        if 'trailer_id' in data:
+            if data['trailer_id']:
+                from apps.fleet.models import Trailer
+                trip.trailer = Trailer.objects.filter(id=data['trailer_id']).first()
+            else:
+                trip.trailer = None
+        if 'cont_location_type' in data:
+            trip.cont_location_type = str(data['cont_location_type']).strip()
+        if 'free_det_days' in data or 'det_free_days' in data:
+            try:
+                trip.det_free_days = int(data.get('free_det_days') or data.get('det_free_days') or 3)
+            except (ValueError, TypeError):
+                pass
         if 'container' in data or 'container_number' in data:
             trip.container_number = str(data.get('container') if 'container' in data else data.get('container_number', '')).strip()
         if 'seal' in data or 'seal_number' in data:
@@ -1125,17 +1164,23 @@ class TripDetailAPIView(APIView):
             new_drv = Employee.objects.filter(id=data['driver_id']).first()
             if new_drv and new_drv != trip.driver:
                 trip.driver = new_drv
-                if trip.status == TripStatus.DISPATCHED:
-                    trip.dispatched_at = timezone.now()
-                    trip.accepted_at = None
+                trip.dispatched_at = timezone.now()
+                trip.accepted_at = None
+                trip.declined_at = None
+                trip.decline_reason = ''
+                if trip.status in [TripStatus.DISPATCHED, TripStatus.ACCEPTED]:
+                    trip.status = TripStatus.DISPATCHED
         elif 'driver' in data and data['driver']:
             drv = Employee.objects.filter(nickname__iexact=str(data['driver']).strip()).first() or \
                   Employee.objects.filter(full_name__iexact=str(data['driver']).strip()).first()
             if drv and drv != trip.driver:
                 trip.driver = drv
-                if trip.status == TripStatus.DISPATCHED:
-                    trip.dispatched_at = timezone.now()
-                    trip.accepted_at = None
+                trip.dispatched_at = timezone.now()
+                trip.accepted_at = None
+                trip.declined_at = None
+                trip.decline_reason = ''
+                if trip.status in [TripStatus.DISPATCHED, TripStatus.ACCEPTED]:
+                    trip.status = TripStatus.DISPATCHED
         if 'vehicle_id' in data:
             trip.vehicle = Vehicle.objects.filter(id=data['vehicle_id']).first()
         elif 'vehicle' in data and data['vehicle']:
@@ -1217,6 +1262,46 @@ class TripDetailAPIView(APIView):
     def put(self, request, trip_code):
         """Hỗ trợ cập nhật đầy đủ thông tin chuyến xe qua PUT (Idempotent)."""
         return self.patch(request, trip_code)
+
+    def delete(self, request, trip_code):
+        """API Hủy / Xóa mềm chuyến xe (Hỗ trợ hoàn lại hạn mức container cho Booking Order)."""
+        trip = get_trip_by_code_or_hash(trip_code)
+        if not trip:
+            return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        if trip.is_expenses_settled:
+            return Response({'error': 'Chuyến xe đã được Kế toán chốt sổ chi phí, không thể xóa/hủy!'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Hoàn lại số lượng cont đã phát lệnh cho Booking nếu có
+        if trip.booking_order and trip.booking_order.dispatched_containers > 0:
+            trip.booking_order.dispatched_containers -= 1
+            from apps.customers.models import BookingStatus
+            if trip.booking_order.dispatched_containers == 0:
+                trip.booking_order.status = BookingStatus.PENDING_DISPATCH
+            else:
+                trip.booking_order.status = BookingStatus.PARTIALLY_DISPATCHED
+            trip.booking_order.save(update_fields=['dispatched_containers', 'status'])
+
+        reason = request.data.get('reason') or request.GET.get('reason') or 'Điều độ viên hủy lệnh điều động'
+        trip.is_deleted = True
+        trip.status = TripStatus.CANCELLED
+        trip.save(update_fields=['is_deleted', 'status', 'updated_at'])
+
+        from core.models import TrackingEventLog
+        actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.dispatcher
+        TrackingEventLog.objects.create(
+            trip=trip,
+            actor=actor,
+            event_type=TripStatus.CANCELLED,
+            title=f"Hủy Lệnh Điều Động {trip.trip_code}",
+            description=f"Lý do hủy: {reason}"
+        )
+
+        return Response({
+            'success': True,
+            'message': f'Đã hủy và xóa lệnh điều động {trip.trip_code} thành công!',
+            'trip_code': trip.trip_code
+        })
 
 class TripAddExpenseAPIView(APIView):
     """API thêm khoản mục chi phí phát sinh (Hỗ trợ cả Kê Nhiều Dòng Cùng Lúc - Multi-row Batch & Đơn dòng)."""
@@ -2697,7 +2782,9 @@ class TripDriverMilestoneAPIView(APIView):
 
         elif milestone_code == 'ACCEPTED_TRIP':
             trip.accepted_at = now_dt
-            extra_update_fields = ['accepted_at']
+            trip.declined_at = None
+            trip.decline_reason = ''
+            extra_update_fields = ['accepted_at', 'declined_at', 'decline_reason']
 
         elif milestone_code == 'DEPARTED':
             trip.actual_start_time = now_dt
@@ -2729,8 +2816,11 @@ class TripDriverMilestoneAPIView(APIView):
         # ── Xử lý DECLINED_TRIP đặc biệt: revert status, ghi log, không tạo timeline item ──
         if milestone_code == 'DECLINED_TRIP':
             actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
+            trip.declined_at = now_dt
+            trip.decline_reason = notes or 'Tài xế từ chối nhận chuyến'
+            trip.accepted_at = None
             trip.status = TripStatus.DISPATCHED
-            trip.save(update_fields=['status'])
+            trip.save(update_fields=['declined_at', 'decline_reason', 'accepted_at', 'status'])
             from core.models import TrackingEventLog
             TrackingEventLog.objects.create(
                 trip=trip,
@@ -2744,6 +2834,8 @@ class TripDriverMilestoneAPIView(APIView):
                 'message': info['msg'],
                 'new_status': trip.status,
                 'new_status_label': trip.get_status_display(),
+                'declined_at': trip.declined_at.isoformat(),
+                'decline_reason': trip.decline_reason,
                 'time': now_str
             })
 

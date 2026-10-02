@@ -60,6 +60,7 @@
 
     <!-- 3. POPUP MODALS -->
     {% include 'components/modal_create_trip.html' %}
+    {% include 'components/modal_edit_trip.html' %}
     {% include 'components/modal_ocr.html' %}
     {% include 'components/modal_quotation.html' %}
     {% include 'components/modal_booking.html' %}
@@ -90,7 +91,7 @@
             is_superuser: {{ request.user.is_superuser|yesno:"true,false" }}
         };
     </script>
-    <script src="{% static 'js/app.js' %}?v=2.1.3"></script>
+    <script src="{% static 'js/app.js' %}?v=2.1.4"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

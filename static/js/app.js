@@ -1086,7 +1086,11 @@ function renderDispatchTable(trips) {
                 </span>
                 ${trip.status === 'DISPATCHED' ? `
                     <div class="mt-1">
-                        ${trip.acceptance_sla_status === 'OVERDUE' ? `
+                        ${trip.acceptance_sla_status === 'DECLINED' || trip.declined_at ? `
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-700 text-white border border-rose-900 inline-flex items-center gap-1 shadow-sm" title="Tài xế đã TỪ CHỐI nhận chuyến: ${escapeHtml(trip.decline_reason || 'Không rõ lý do')}">
+                                <i class="ph-bold ph-x-circle"></i> TX TỪ CHỐI (${trip.minutes_since_dispatch}p)
+                            </span>
+                        ` : trip.acceptance_sla_status === 'OVERDUE' ? `
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-600 text-white border border-rose-700 inline-flex items-center gap-1 animate-pulse" title="Tài xế chưa nhận chuyến sau hơn 60 phút - Cần đổi xe hoặc gọi điện">
                                 <i class="ph-bold ph-warning-circle"></i> Quá hạn (${trip.minutes_since_dispatch}p)
                             </span>
@@ -1406,10 +1410,19 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             badge.innerText = trip.status_label;
         }
 
-        // Cập nhật Cảnh báo SLA 60 Phút Xác Nhận Chuyến Xe
+        // Cập nhật Cảnh báo SLA & Từ chối Chuyến Xe
         const slaBanner = document.getElementById('trip-sla-warning-banner');
         if (slaBanner) {
-            if (trip.status === 'DISPATCHED' && trip.acceptance_sla_status === 'OVERDUE') {
+            if (trip.acceptance_sla_status === 'DECLINED' || trip.declined_at) {
+                slaBanner.className = 'p-4 rounded-2xl border bg-rose-100 border-rose-400 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all mb-4';
+                const iconBox = document.getElementById('trip-sla-icon-box');
+                if (iconBox) iconBox.className = 'w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center text-2xl shrink-0';
+                const titleEl = document.getElementById('trip-sla-title');
+                if (titleEl) titleEl.innerText = `❌ TÀI XẾ ${trip.driver} ĐÃ TỪ CHỐI CHUYẾN!`;
+                const descEl = document.getElementById('trip-sla-desc');
+                if (descEl) descEl.innerHTML = `Lý do từ chối: <strong class="text-rose-900">${escapeHtml(trip.decline_reason || 'Không nêu lý do')}</strong> (${trip.minutes_since_dispatch} phút trước). Vui lòng phân lại tài xế / xe khác ngay để đảm bảo tiến độ!`;
+                slaBanner.classList.remove('hidden');
+            } else if (trip.status === 'DISPATCHED' && trip.acceptance_sla_status === 'OVERDUE') {
                 slaBanner.className = 'p-4 rounded-2xl border bg-rose-50 border-rose-300 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition-all mb-4';
                 const iconBox = document.getElementById('trip-sla-icon-box');
                 if (iconBox) iconBox.className = 'w-10 h-10 rounded-xl bg-rose-200 text-rose-700 flex items-center justify-center text-2xl shrink-0';
@@ -2824,6 +2837,269 @@ async function submitReassignDriver(e) {
     }
 }
 window.submitReassignDriver = submitReassignDriver;
+
+// =========================================================================
+// PHÂN HỆ HIỆU CHỈNH LỆNH ĐIỀU ĐỘNG & HỦY CHUYẾN XE (TRIP CRUD)
+// =========================================================================
+async function openModalEditTrip(tripCode = null) {
+    const code = tripCode || (window.currentTripDetail ? window.currentTripDetail.id : null);
+    if (!code) {
+        showToast('warning', 'Vui lòng chọn chuyến xe cần hiệu chỉnh!');
+        return;
+    }
+
+    // Tải master data options nếu chưa có
+    if (typeof loadMasterDataFormOptions === 'function') {
+        await loadMasterDataFormOptions();
+    }
+    if (typeof populateMasterDataDropdowns === 'function') {
+        populateMasterDataDropdowns();
+    }
+
+    // Đổ danh sách Khách hàng, Bác tài, Đầu kéo, Rơ-mooc vào Form Edit nếu có cache
+    if (typeof masterDataFormOptionsCache !== 'undefined' && masterDataFormOptionsCache) {
+        const { customers, drivers, vehicles, trailers } = masterDataFormOptionsCache;
+        
+        const custSel = document.getElementById('edit-inp-customer');
+        if (custSel && Array.isArray(customers)) {
+            const curVal = custSel.value;
+            custSel.innerHTML = '<option value="">-- Chọn Khách Hàng --</option>' +
+                customers.map(c => `<option value="${c.id}">${escapeHtml(c.label || c.name)}</option>`).join('');
+            if (curVal) custSel.value = curVal;
+        }
+
+        const drvSel = document.getElementById('edit-inp-driver');
+        if (drvSel && Array.isArray(drivers)) {
+            const curVal = drvSel.value;
+            drvSel.innerHTML = '<option value="">-- Chọn Bác Tài --</option>' +
+                drivers.map(d => `<option value="${d.id}">${escapeHtml(d.label || d.nickname || d.full_name)}</option>`).join('');
+            if (curVal) drvSel.value = curVal;
+        }
+
+        const vehSel = document.getElementById('edit-inp-vehicle');
+        if (vehSel && Array.isArray(vehicles)) {
+            const curVal = vehSel.value;
+            vehSel.innerHTML = '<option value="">-- Chọn Đầu Kéo --</option>' +
+                vehicles.map(v => `<option value="${v.id}">${escapeHtml(v.label || v.plate)}</option>`).join('');
+            if (curVal) vehSel.value = curVal;
+        }
+
+        const trlSel = document.getElementById('edit-inp-trailer');
+        if (trlSel && Array.isArray(trailers)) {
+            const curVal = trlSel.value;
+            trlSel.innerHTML = '<option value="">-- Chọn Rơ-Moóc --</option>' +
+                trailers.map(t => `<option value="${t.id}">${escapeHtml(t.label || t.plate)}</option>`).join('');
+            if (curVal) trlSel.value = curVal;
+        }
+    }
+
+    // Lấy thông tin chuyến xe
+    let trip = window.currentTripDetail;
+    if (!trip || trip.id !== code) {
+        try {
+            const res = await fetchWithAuth(`/api/trips/${code}/`);
+            if (res.ok) {
+                trip = await res.json();
+                window.currentTripDetail = trip;
+            }
+        } catch (e) {
+            console.error('Error fetching trip detail for edit:', e);
+        }
+    }
+
+    if (!trip) {
+        showToast('danger', 'Không tìm thấy dữ liệu chuyến xe');
+        return;
+    }
+
+    // Gán dữ liệu lên form Edit
+    const codeEl = document.getElementById('edit-modal-trip-code');
+    if (codeEl) codeEl.innerText = trip.id || trip.trip_code;
+
+    // Customer
+    const custSel = document.getElementById('edit-inp-customer');
+    if (custSel) {
+        if (trip.customer_id) {
+            custSel.value = trip.customer_id;
+        } else if (trip.customer) {
+            for (let i = 0; i < custSel.options.length; i++) {
+                if (custSel.options[i].text.toLowerCase().includes(trip.customer.toLowerCase())) {
+                    custSel.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Type & Container type
+    const typeSel = document.getElementById('edit-inp-type');
+    if (typeSel) typeSel.value = trip.type || 'Nhập';
+    const contTypeSel = document.getElementById('edit-inp-cont-type');
+    if (contTypeSel) contTypeSel.value = trip.container_type || '40HC';
+
+    // Container, Seal, Booking, VGM
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = (val && val !== '-') ? val : '';
+    };
+
+    setVal('edit-inp-booking', trip.booking);
+    setVal('edit-inp-cont', trip.container);
+    setVal('edit-inp-seal', trip.seal);
+    setVal('edit-inp-vgm', trip.vgm_weight);
+
+    // 3 Điểm
+    setVal('edit-inp-pickup', trip.pickup);
+    setVal('edit-inp-warehouse', trip.warehouse);
+    setVal('edit-inp-dropoff', trip.dropoff);
+
+    // Lịch đóng hàng
+    setVal('edit-inp-loading-date', trip.raw_loading_date || trip.loading_date_raw || (trip.loading_date && trip.loading_date.match(/^\d{4}-\d{2}-\d{2}$/) ? trip.loading_date : ''));
+    setVal('edit-inp-loading-time', trip.loading_time);
+    setVal('edit-inp-dock', trip.warehouse_dock);
+
+    // Driver, Vehicle, Trailer
+    const drvSel = document.getElementById('edit-inp-driver');
+    if (drvSel) {
+        if (trip.driver_id) drvSel.value = trip.driver_id;
+        else if (trip.driver) {
+            for (let i = 0; i < drvSel.options.length; i++) {
+                if (drvSel.options[i].text.toLowerCase().includes(trip.driver.toLowerCase())) {
+                    drvSel.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    const vehSel = document.getElementById('edit-inp-vehicle');
+    if (vehSel) {
+        if (trip.vehicle_id) vehSel.value = trip.vehicle_id;
+        else if (trip.vehicle) {
+            for (let i = 0; i < vehSel.options.length; i++) {
+                if (vehSel.options[i].text.toLowerCase().includes(trip.vehicle.toLowerCase())) {
+                    vehSel.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    const trlSel = document.getElementById('edit-inp-trailer');
+    if (trlSel && trip.trailer_id) trlSel.value = trip.trailer_id;
+
+    // Phụ & Ghi chú
+    setVal('edit-inp-invoice', trip.commercial_invoice);
+    setVal('edit-inp-free-det', trip.det_free_days || 3);
+    const locTypeSel = document.getElementById('edit-inp-location-type');
+    if (locTypeSel) locTypeSel.value = trip.cont_location_type || 'BÃI TVL';
+    setVal('edit-inp-notes', trip.cargo_notes);
+
+    // Mở modal
+    const modal = document.getElementById('modal-edit-trip');
+    if (modal) {
+        modal.classList.remove('hidden-view');
+        modal.classList.remove('hidden');
+    }
+}
+window.openModalEditTrip = openModalEditTrip;
+
+async function submitEditTripForm() {
+    const trip = window.currentTripDetail;
+    if (!trip) {
+        showToast('danger', 'Không tìm thấy thông tin chuyến xe để cập nhật');
+        return;
+    }
+
+    const btnSave = document.getElementById('btn-save-edit-trip');
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="ph ph-spinner-gap animate-spin mr-1"></i> Đang lưu...';
+    }
+
+    const payload = {
+        customer_id: document.getElementById('edit-inp-customer')?.value || null,
+        transport_type: document.getElementById('edit-inp-type')?.value || 'Nhập',
+        container_type: document.getElementById('edit-inp-cont-type')?.value || '40HC',
+        booking_number: document.getElementById('edit-inp-booking')?.value?.trim() || '',
+        container_number: document.getElementById('edit-inp-cont')?.value?.trim() || '',
+        seal_number: document.getElementById('edit-inp-seal')?.value?.trim() || '',
+        vgm_weight: document.getElementById('edit-inp-vgm')?.value?.trim() || '',
+        pickup_location: document.getElementById('edit-inp-pickup')?.value?.trim() || '',
+        warehouse_location: document.getElementById('edit-inp-warehouse')?.value?.trim() || '',
+        dropoff_location: document.getElementById('edit-inp-dropoff')?.value?.trim() || '',
+        loading_date: document.getElementById('edit-inp-loading-date')?.value || null,
+        loading_time: document.getElementById('edit-inp-loading-time')?.value?.trim() || '',
+        warehouse_dock: document.getElementById('edit-inp-dock')?.value?.trim() || '',
+        driver_id: document.getElementById('edit-inp-driver')?.value || null,
+        vehicle_id: document.getElementById('edit-inp-vehicle')?.value || null,
+        trailer_id: document.getElementById('edit-inp-trailer')?.value || null,
+        commercial_invoice: document.getElementById('edit-inp-invoice')?.value?.trim() || '',
+        free_det_days: document.getElementById('edit-inp-free-det')?.value || 3,
+        cont_location_type: document.getElementById('edit-inp-location-type')?.value || 'BÃI TVL',
+        cargo_notes: document.getElementById('edit-inp-notes')?.value?.trim() || ''
+    };
+
+    try {
+        const res = await fetchWithAuth(`/api/trips/${trip.id}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            closeModal('modal-edit-trip');
+            showToast('success', `Đã cập nhật lệnh điều động ${trip.id} thành công!`, 'Lưu Thành Công');
+            await viewTripDetail(trip.id);
+            if (typeof loadTripsData === 'function') loadTripsData();
+        } else {
+            showToast('danger', data.error || data.message || 'Lỗi khi cập nhật chuyến xe');
+        }
+    } catch (err) {
+        console.error('Error updating trip:', err);
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    } finally {
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i> Lưu Thay Đổi';
+        }
+    }
+}
+window.submitEditTripForm = submitEditTripForm;
+
+async function deleteOrCancelTrip(tripCode = null) {
+    const code = tripCode || (window.currentTripDetail ? window.currentTripDetail.id : null);
+    if (!code) {
+        showToast('warning', 'Không tìm thấy chuyến xe cần xóa');
+        return;
+    }
+
+    const reason = prompt(`XÁC NHẬN HỦY / XÓA CHUYẾN XE ${code}\n\nNhập lý do hủy chuyến (để lưu vết nhật ký điều độ):`, 'Điều độ hủy hoặc dời lịch');
+    if (reason === null) return; // Người dùng bấm Hủy
+
+    try {
+        const res = await fetchWithAuth(`/api/trips/${code}/`, {
+            method: 'DELETE',
+            body: JSON.stringify({ reason: reason.trim() || 'Điều độ viên hủy chuyến' })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            closeModal('modal-edit-trip');
+            showToast('success', data.message || `Đã hủy chuyến ${code} thành công!`, 'Hủy Chuyến Thành Công');
+            if (typeof backToTrips === 'function') {
+                backToTrips();
+            }
+            if (typeof loadTripsData === 'function') {
+                loadTripsData();
+            }
+        } else {
+            showToast('danger', data.error || data.message || 'Không thể hủy chuyến xe');
+        }
+    } catch (err) {
+        console.error('Error deleting trip:', err);
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+window.deleteOrCancelTrip = deleteOrCancelTrip;
 
 // Các hàm Modal Thêm Chi Phí Phát Sinh
 function openModalAddExpense() {
