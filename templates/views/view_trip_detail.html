@@ -535,136 +535,379 @@
             </div>
         </div>
 
-        <!-- Phải: Giao Diện Mobile Tài Xế (Driver Experience) -->
+        <!-- Phải: Giao Diện Mobile Tài Xế (Driver Experience Simulator) -->
         <div class="xl:w-1/3 flex flex-col gap-4 items-center">
             <div class="w-full flex items-center justify-between px-2">
-                <p class="text-xs font-bold text-slate-600 uppercase tracking-wider font-heading">Giao diện App Tài xế
-                    (Hiện trường)</p>
-                <span class="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Live Driver
-                    Sync</span>
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <p class="text-xs font-black text-slate-700 uppercase tracking-wider font-heading">Giao diện App Tài xế (Giả Lập Hiện Trường)</p>
+                </div>
+                <span class="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full border border-teal-200">BIM Driver Sync</span>
             </div>
 
-            <div
-                class="bg-slate-900 rounded-[2.5rem] p-1.5 shadow-2xl flex flex-col relative overflow-hidden h-[720px] w-[330px] border-[6px] border-slate-800 shrink-0">
+            <!-- Khung Điện Thoại Giả Lập -->
+            <div class="bg-slate-900 rounded-[2.5rem] p-1.5 shadow-2xl flex flex-col relative overflow-hidden h-[760px] w-[350px] border-[6px] border-slate-800 shrink-0">
                 <!-- Fake Notch -->
-                <div
-                    class="absolute top-0 inset-x-0 h-6 bg-slate-900 rounded-b-2xl z-20 w-1/3 mx-auto flex items-center justify-center space-x-2">
+                <div class="absolute top-0 inset-x-0 h-6 bg-slate-900 rounded-b-2xl z-30 w-1/3 mx-auto flex items-center justify-center space-x-2">
                     <div class="w-1.5 h-1.5 bg-slate-700 rounded-full"></div>
                     <div class="w-12 h-1.5 bg-slate-700 rounded-full"></div>
                 </div>
 
                 <!-- App Header -->
-                <div class="bg-gradient-to-r from-teal-800 to-teal-950 pt-9 pb-3 px-4 text-white z-10 shadow-md">
+                <div class="bg-gradient-to-r from-teal-800 via-teal-900 to-teal-950 pt-8 pb-2.5 px-3.5 text-white z-20 shadow-md">
                     <div class="flex items-center justify-between mb-1">
-                        <p
-                            class="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-widest font-heading">
-                            Triền Võ Driver App</p>
-                        <span class="text-[10px] text-teal-300 font-bold" id="app-driver-name">Tài xế Phong</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-black bg-white/20 px-2 py-0.5 rounded uppercase tracking-wider font-heading">BIM DRIVER</span>
+                            <span id="app-status-badge" class="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-900 uppercase">ĐANG ĐI</span>
+                        </div>
+                        <button onclick="viewTripDetail(currentActiveTripCode)" title="Tải lại dữ liệu app" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-teal-200 transition-colors">
+                            <i class="ph-bold ph-arrows-clockwise text-xs"></i>
+                        </button>
                     </div>
-                    <h3 class="font-black text-base leading-tight truncate mt-1 font-heading" id="app-title">Chuyến Xe
-                    </h3>
+                    <div class="flex items-center justify-between mt-1">
+                        <div class="overflow-hidden">
+                            <h3 class="font-black text-sm leading-tight truncate font-heading" id="app-trip-code">TVL-XXX</h3>
+                            <div class="text-[11px] text-teal-200 truncate mt-0.5" id="app-driver-name">Tài xế: --</div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-[11px] font-black font-mono bg-amber-300 text-slate-900 px-2 py-0.5 rounded shadow-2xs inline-block" id="app-vehicle-plate">--</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- App Body -->
-                <div class="bg-slate-50 flex-1 overflow-y-auto z-10 pb-24 p-3 space-y-3">
+                <!-- App Body (Scrollable) -->
+                <div class="bg-slate-100 flex-1 overflow-y-auto z-10 pb-24 p-2.5 space-y-2.5 text-slate-800">
 
-                    <!-- Quick Milestone Actions: Bước 6 SOP Giao nhận kho khách hàng -->
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-                        <div class="flex items-center justify-between mb-2 pb-1 border-b border-slate-100">
-                            <p
-                                class="text-[10.5px] font-black text-teal-800 uppercase tracking-wider font-heading flex items-center">
-                                <i class="ph-bold ph-navigation-arrow mr-1 text-teal-600"></i> Báo Mốc Kho (Bước 6)
-                            </p>
-                            <span class="text-[9.5px] text-slate-400 font-semibold">1-Chạm</span>
+                    <!-- 1. NÚT MỞ POPUP THÔNG TIN VẬN ĐƠN & CONTAINER -->
+                    <button type="button" onclick="openSimTripDetailsModal()" class="w-full p-2.5 rounded-xl bg-white hover:bg-teal-50/70 border border-slate-200 hover:border-teal-300 flex items-center justify-between text-left transition-all shadow-xs active:scale-[0.98]">
+                        <div class="flex items-center gap-2.5 overflow-hidden">
+                            <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                <i class="ph-bold ph-file-text text-base"></i>
+                            </div>
+                            <div class="overflow-hidden">
+                                <div class="text-xs font-black text-slate-900 flex items-center gap-1.5 truncate font-heading">
+                                    <span>Thông tin Vận Đơn & Container</span>
+                                    <span id="app-customs-dot" class="w-2 h-2 rounded-full bg-emerald-500 hidden" title="Có tờ khai Hải quan"></span>
+                                </div>
+                                <div class="text-[10.5px] text-slate-500 truncate mt-0.5">
+                                    Cont: <strong class="text-teal-800 font-mono" id="app-cont-no">--</strong> | BK: <span id="app-booking-no" class="font-mono">--</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-1.5">
-                            <button onclick="driverReportMilestone('APPROACHING_WAREHOUSE')"
-                                class="p-2 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-slate-800 flex items-center gap-1"><i class="ph-bold ph-bell-ringing text-teal-600"></i> Sắp đến kho</span>
-                                <span class="text-[9px] text-slate-400 block">Báo trước 30p</span>
-                            </button>
-                            <button onclick="driverReportMilestone('ARRIVED_WAREHOUSE')"
-                                class="p-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-blue-900 flex items-center gap-1"><i class="ph-bold ph-map-pin text-blue-600"></i> Đến cổng kho</span>
-                                <span class="text-[9px] text-slate-400 block">Check-in kho</span>
-                            </button>
-                            <button onclick="driverReportMilestone('START_UNLOADING')"
-                                class="p-2 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-amber-900 flex items-center gap-1"><i class="ph-bold ph-package text-amber-600"></i> Đang dỡ/đóng</span>
-                                <span class="text-[9px] text-slate-400 block">Bắt đầu hàng</span>
-                            </button>
-                            <button onclick="driverReportMilestone('FINISHED_UNLOADING')"
-                                class="p-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-emerald-900 flex items-center gap-1"><i class="ph-bold ph-check-circle text-emerald-600"></i> Đóng xong</span>
-                                <span class="text-[9px] text-slate-400 block">Chuẩn bị hạ bãi</span>
-                            </button>
-                            <button onclick="driverReportMilestone('OVERNIGHT_WAIT')"
-                                class="p-2 bg-amber-50/80 hover:bg-amber-100 border border-amber-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-amber-900 flex items-center gap-1"><i class="ph-bold ph-moon text-amber-700"></i> Chờ sau 0h</span>
-                                <span class="text-[9px] text-amber-700 block">Kho yêu cầu</span>
-                            </button>
-                            <button onclick="driverReportMilestone('DROPOFF_COMPLETED')"
-                                class="p-2 bg-teal-50/80 hover:bg-teal-100 border border-teal-300 rounded-lg text-left transition-all active:scale-95">
-                                <span class="text-[11px] font-bold text-teal-900 flex items-center gap-1"><i class="ph-bold ph-anchor text-teal-700"></i> Đã hạ cont</span>
-                                <span class="text-[9px] text-teal-700 block">Phiếu EIR</span>
-                            </button>
+                        <div class="flex items-center gap-1 text-teal-700 font-bold text-[11px] shrink-0 pl-1">
+                            <span>Chi tiết</span>
+                            <i class="ph-bold ph-caret-right text-xs"></i>
+                        </div>
+                    </button>
+
+                    <!-- 2. LỘ TRÌNH 3 ĐIỂM THÔNG MINH (3 NÚT CHỈ ĐƯỜNG ĐỒNG BỘ) -->
+                    <div class="bg-white rounded-xl p-2.5 shadow-xs border border-slate-200 space-y-2">
+                        <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-1.5">
+                            <span class="flex items-center gap-1 text-teal-700 font-black">
+                                <i class="ph-bold ph-map-pin text-teal-600"></i> Lộ Trình 3 Điểm Chuẩn
+                            </span>
+                            <span class="text-[9.5px] text-slate-400">Google Maps dẫn đường</span>
+                        </div>
+
+                        <!-- Điểm 1: Lấy Cont / Hàng -->
+                        <div id="sim-leg1-card" class="p-2 rounded-lg border transition-all">
+                            <div class="flex items-center justify-between gap-1.5">
+                                <div class="flex items-start gap-2 overflow-hidden">
+                                    <div id="sim-leg1-icon" class="w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0 bg-slate-200 text-slate-600">1</div>
+                                    <div class="overflow-hidden">
+                                        <div class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" id="sim-leg1-badge">
+                                            <span>Điểm 1: Lấy Cont / Hàng</span>
+                                        </div>
+                                        <div class="text-xs font-bold text-slate-800 truncate mt-0.5" id="sim-leg1-name">--</div>
+                                    </div>
+                                </div>
+                                <a id="sim-leg1-map" href="#" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-teal-50 text-teal-800 border border-slate-200 font-bold text-[10px] px-2 py-1 rounded shadow-2xs">
+                                    <i class="ph-bold ph-navigation-arrow"></i>
+                                    <span>Chỉ đường</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Điểm 2: Kho Đóng / Trả Hàng -->
+                        <div id="sim-leg2-card" class="p-2 rounded-lg border transition-all">
+                            <div class="flex items-center justify-between gap-1.5">
+                                <div class="flex items-start gap-2 overflow-hidden">
+                                    <div id="sim-leg2-icon" class="w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0 bg-slate-200 text-slate-600">2</div>
+                                    <div class="overflow-hidden">
+                                        <div class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" id="sim-leg2-badge">
+                                            <span>Điểm 2: Kho Đóng / Trả Hàng</span>
+                                        </div>
+                                        <div class="text-xs font-bold text-slate-800 truncate mt-0.5" id="sim-leg2-name">--</div>
+                                        <div class="text-[9.5px] text-teal-700 truncate" id="sim-leg2-time"></div>
+                                    </div>
+                                </div>
+                                <a id="sim-leg2-map" href="#" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-teal-50 text-teal-800 border border-slate-200 font-bold text-[10px] px-2 py-1 rounded shadow-2xs">
+                                    <i class="ph-bold ph-navigation-arrow"></i>
+                                    <span>Chỉ đường</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ -->
+                        <div id="sim-leg3-card" class="p-2 rounded-lg border transition-all">
+                            <div class="flex items-center justify-between gap-1.5">
+                                <div class="flex items-start gap-2 overflow-hidden">
+                                    <div id="sim-leg3-icon" class="w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0 bg-slate-200 text-slate-600">3</div>
+                                    <div class="overflow-hidden">
+                                        <div class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" id="sim-leg3-badge">
+                                            <span>Điểm 3: Bãi Hạ Vỏ Cont</span>
+                                        </div>
+                                        <div class="text-xs font-bold text-slate-800 truncate mt-0.5" id="sim-leg3-name">--</div>
+                                    </div>
+                                </div>
+                                <a id="sim-leg3-map" href="#" target="_blank" class="shrink-0 inline-flex items-center gap-1 bg-white hover:bg-teal-50 text-teal-800 border border-slate-200 font-bold text-[10px] px-2 py-1 rounded shadow-2xs">
+                                    <i class="ph-bold ph-navigation-arrow"></i>
+                                    <span>Chỉ đường</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Chi phí tài xế đã kê (Có nút sửa/xóa nếu là PENDING) -->
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-                        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100">
-                            <div>
-                                <p
-                                    class="text-[10.5px] font-black text-slate-700 uppercase tracking-wider font-heading">
-                                    Chi phí tài xế đã kê</p>
-                                <p class="text-[9.5px] text-slate-400">Nhập nhầm có thể sửa/xóa trước khi duyệt</p>
-                            </div>
-                            <span class="text-[11px] font-bold text-teal-700 tabular-nums" id="app-total-expense">0
-                                đ</span>
+                    <!-- 3. SMART NEXT-ACTION HERO CARD (BƯỚC TIẾP THEO 1-CHẠM) -->
+                    <div id="sim-next-action-card" class="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-xl p-3 shadow-md border border-slate-700 relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-extrabold text-amber-400">
+                                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                                BƯỚC TIẾP THEO
+                            </span>
+                            <span class="text-[9.5px] text-slate-300" id="sim-next-step-label">Bước 1/10</span>
                         </div>
-                        <div id="app-expenses-list" class="space-y-2">
+                        <div class="text-xs font-bold text-white mb-1" id="sim-next-action-title">Xác nhận nhận lệnh chuyến xe</div>
+                        <p class="text-[10.5px] text-slate-300 leading-relaxed mb-2.5" id="sim-next-action-desc">Tài xế bấm nhận chuyến để bắt đầu thực hiện hành trình.</p>
+                        <div id="sim-next-action-btns" class="pt-0.5">
                             <!-- Injected by JS -->
                         </div>
                     </div>
 
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-                        <p class="text-[10.5px] font-black text-slate-700 uppercase tracking-wider mb-2 font-heading">
-                            Thông tin Vỏ Cont / EIR</p>
-                        <div class="text-xs space-y-1.5 text-slate-600 font-medium">
-                            <div class="flex justify-between">
-                                <span class="text-slate-400">Số cont:</span>
-                                <strong class="text-slate-800" id="app-cont-no">-</strong>
+                    <!-- 4. ACCORDION: NHẬT KÝ MỐC THỜI GIAN (9 BƯỚC ĐIỀU VẬN) -->
+                    <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+                        <button type="button" onclick="toggleSimTimelineAccordion()" class="w-full p-2.5 bg-slate-50/80 hover:bg-slate-100 flex items-center justify-between text-left transition-colors border-b border-slate-100">
+                            <span class="text-[11px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-clock-counter-clockwise text-teal-700"></i>
+                                <span>Nhật Ký Mốc Thời Gian</span>
+                            </span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9.5px] bg-teal-50 text-teal-700 font-bold px-1.5 py-0.5 rounded border border-teal-200">Báo Mốc</span>
+                                <i id="sim-timeline-caret" class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200"></i>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-400">Số EIR:</span>
-                                <strong class="text-teal-700" id="app-eir-no">-</strong>
+                        </button>
+                        <div id="sim-timeline-body" class="hidden p-2 space-y-2">
+                            <!-- Quick Milestone Buttons Grid -->
+                            <div class="grid grid-cols-2 gap-1.5 pb-2 border-b border-slate-100">
+                                <button onclick="driverReportMilestone('APPROACHING_WAREHOUSE')"
+                                    class="p-1.5 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded text-left transition-all active:scale-95">
+                                    <span class="text-[10px] font-bold text-slate-800 flex items-center gap-1"><i class="ph-bold ph-bell-ringing text-teal-600"></i> Sắp đến kho</span>
+                                    <span class="text-[8.5px] text-slate-400 block">Báo trước 30p</span>
+                                </button>
+                                <button onclick="driverReportMilestone('ARRIVED_WAREHOUSE')"
+                                    class="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded text-left transition-all active:scale-95">
+                                    <span class="text-[10px] font-bold text-blue-900 flex items-center gap-1"><i class="ph-bold ph-map-pin text-blue-600"></i> Đến cổng kho</span>
+                                    <span class="text-[8.5px] text-slate-400 block">Check-in kho</span>
+                                </button>
+                                <button onclick="driverReportMilestone('START_UNLOADING')"
+                                    class="p-1.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded text-left transition-all active:scale-95">
+                                    <span class="text-[10px] font-bold text-amber-900 flex items-center gap-1"><i class="ph-bold ph-package text-amber-600"></i> Đang dỡ/đóng</span>
+                                    <span class="text-[8.5px] text-slate-400 block">Bắt đầu hàng</span>
+                                </button>
+                                <button onclick="driverReportMilestone('FINISHED_UNLOADING')"
+                                    class="p-1.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded text-left transition-all active:scale-95">
+                                    <span class="text-[10px] font-bold text-emerald-900 flex items-center gap-1"><i class="ph-bold ph-check-circle text-emerald-600"></i> Đóng xong</span>
+                                    <span class="text-[8.5px] text-slate-400 block">Chuẩn bị hạ</span>
+                                </button>
+                                <button onclick="driverReportMilestone('OVERNIGHT_WAIT')"
+                                    class="p-1.5 bg-amber-50/80 hover:bg-amber-100 border border-amber-300 rounded text-left transition-all active:scale-95">
+                                    <span class="text-[10px] font-bold text-amber-900 flex items-center gap-1"><i class="ph-bold ph-moon text-amber-700"></i> Chờ sau 0h</span>
+                                    <span class="text-[8.5px] text-amber-700 block">Kho yêu cầu</span>
+                                </button>
+                                <button onclick="driverReportMilestone('DROPOFF_COMPLETED')"
+                                    class="p-1.5 bg-teal-50/80 hover:bg-teal-100 border border-teal-300 rounded text-left transition-all active:scale-95">
+                                    <span class="text-[10px] font-bold text-teal-900 flex items-center gap-1"><i class="ph-bold ph-anchor text-teal-700"></i> Đã hạ cont</span>
+                                    <span class="text-[8.5px] text-teal-700 block">Phiếu EIR</span>
+                                </button>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-400">Hãng tàu:</span>
-                                <strong class="text-slate-800" id="app-shipping-line">-</strong>
+                            <!-- Mini Milestone List -->
+                            <div id="sim-timeline-mini-list" class="space-y-1 text-xs">
+                                <!-- Injected by JS -->
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. ACCORDION: CHI PHÍ ĐÃ KÊ -->
+                    <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+                        <button type="button" onclick="toggleSimExpenseAccordion()" class="w-full p-2.5 bg-slate-50/80 hover:bg-slate-100 flex items-center justify-between text-left transition-colors border-b border-slate-100">
+                            <span class="text-[11px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-receipt text-teal-700"></i>
+                                <span>Chi Phí Đã Kê (<span id="app-total-expense" class="text-teal-700 font-mono">0 đ</span>)</span>
+                            </span>
+                            <div class="flex items-center gap-1.5">
+                                <i id="sim-expense-caret" class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200"></i>
+                            </div>
+                        </button>
+                        <div id="sim-expense-body" class="p-2 space-y-1.5">
+                            <div id="app-expenses-list" class="space-y-1.5 max-h-48 overflow-y-auto">
+                                <!-- Injected by JS -->
+                            </div>
+                            <button type="button" onclick="openModalAddExpense()" class="w-full py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-[10.5px] font-bold flex items-center justify-center gap-1 transition-colors">
+                                <i class="ph-bold ph-plus-circle"></i>
+                                <span>+ Thêm Dòng Chi Phí</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- App Footer Action -->
-                <div class="absolute bottom-0 inset-x-0 bg-white p-3 border-t border-slate-200 z-20 pb-5">
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="openModalAddExpense()"
-                            class="w-full bg-[#0a1128] text-white font-bold py-2.5 rounded-xl shadow hover:bg-slate-800 transition-all flex flex-col items-center justify-center space-y-0.5 active:scale-95">
-                            <i class="ph-bold ph-receipt text-lg text-teal-400"></i>
-                            <span class="text-[10.5px] font-heading">Kê Khai Chi Phí</span>
+                <!-- App Bottom Action Bar (4 Nút To Rõ Tối Ưu Hiện Trường) -->
+                <div class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200 z-20 px-2 py-1.5 shadow-lg pb-3">
+                    <div class="grid grid-cols-4 gap-1">
+                        <button onclick="openOcrApp('chung-tu')" class="flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-900 transition-all active:scale-95">
+                            <i class="ph-bold ph-camera text-lg text-teal-700"></i>
+                            <span class="text-[9.5px] font-bold mt-0.5">Chụp Ảnh</span>
                         </button>
-                        <button onclick="openOcrApp('chung-tu')"
-                            class="w-full bg-teal-700 text-white font-bold py-2.5 rounded-xl shadow hover:bg-teal-800 transition-all flex flex-col items-center justify-center space-y-0.5 active:scale-95">
-                            <i class="ph-bold ph-camera text-lg"></i>
-                            <span class="text-[10.5px] font-heading">Chụp EIR / HĐĐT</span>
+                        <button onclick="openModalAddExpense()" class="flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 transition-all active:scale-95">
+                            <i class="ph-bold ph-receipt text-lg text-emerald-700"></i>
+                            <span class="text-[9.5px] font-bold mt-0.5">Kê Chi Phí</span>
+                        </button>
+                        <button onclick="openSimIncidentModal()" class="flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-900 transition-all active:scale-95">
+                            <i class="ph-bold ph-warning-octagon text-lg text-rose-600"></i>
+                            <span class="text-[9.5px] font-bold mt-0.5">Báo Sự Cố</span>
+                        </button>
+                        <button onclick="openSimContactModal()" class="flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-900 transition-all active:scale-95">
+                            <i class="ph-bold ph-phone-call text-lg text-blue-700"></i>
+                            <span class="text-[9.5px] font-bold mt-0.5">Gọi Điều Độ</span>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- MODAL SIMULATOR: THÔNG TIN VẬN ĐƠN & CONTAINER CHI TIẾT -->
+<div id="modal-sim-trip-details" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs hidden-view p-4 animate-fade-in">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+        <div class="bg-gradient-to-r from-teal-800 to-teal-950 text-white px-5 py-3.5 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-2">
+                <i class="ph-bold ph-file-text text-teal-300 text-xl"></i>
+                <div>
+                    <h3 class="font-bold text-sm font-heading">Thông Tin Vận Đơn & Container</h3>
+                    <p class="text-[10.5px] text-teal-200" id="sim-modal-trip-code">Lệnh: TVL-XXX</p>
+                </div>
+            </div>
+            <button onclick="closeSimTripDetailsModal()" class="text-teal-200 hover:text-white p-1 rounded-lg">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-4 space-y-3 overflow-y-auto text-xs text-slate-700">
+            <!-- Khối 1: Container & Seal -->
+            <div class="bg-teal-50/70 p-3 rounded-xl border border-teal-200 space-y-1.5">
+                <div class="text-[10.5px] font-black text-teal-900 uppercase tracking-wider font-heading flex items-center justify-between">
+                    <span>1. Container & Chì (Seal)</span>
+                    <span class="text-[10px] bg-teal-200 text-teal-900 px-1.5 py-0.2 rounded font-mono" id="sim-modal-cont-type">40HC</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                        <span class="text-[10.5px] text-slate-500 block">Số Container:</span>
+                        <strong class="text-sm font-black text-slate-900 font-mono" id="sim-modal-cont-no">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-[10.5px] text-slate-500 block">Số Chì (Seal):</span>
+                        <strong class="text-sm font-bold text-slate-900 font-mono" id="sim-modal-seal-no">-</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khối 2: Booking & Khách Hàng -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                <div class="text-[10.5px] font-black text-slate-800 uppercase tracking-wider font-heading">2. Booking & Khách Hàng</div>
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                        <span class="text-[10.5px] text-slate-500 block">Số Booking / B/L:</span>
+                        <strong class="font-mono text-teal-800 text-xs" id="sim-modal-booking">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-[10.5px] text-slate-500 block">Hãng Tàu:</span>
+                        <strong class="text-slate-800 text-xs" id="sim-modal-shipping-line">-</strong>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-[10.5px] text-slate-500 block">Khách Hàng:</span>
+                        <strong class="text-slate-900 text-xs" id="sim-modal-customer">-</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khối 3: Cửa Dock & Hạn Hải Quan, Free DET/DEM -->
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-amber-50/60 p-2.5 rounded-xl border border-amber-200">
+                    <span class="text-[10px] font-bold text-amber-900 uppercase block">Cửa Dock Kho</span>
+                    <strong class="text-xs font-black text-amber-950 font-mono mt-0.5 block" id="sim-modal-dock">-</strong>
+                </div>
+                <div class="bg-blue-50/60 p-2.5 rounded-xl border border-blue-200">
+                    <span class="text-[10px] font-bold text-blue-900 uppercase block">Hạn Free DET / DEM</span>
+                    <strong class="text-xs font-black text-blue-950 font-mono mt-0.5 block" id="sim-modal-det">-</strong>
+                </div>
+            </div>
+
+            <!-- Khối 4: Tờ Khai Hải Quan & Tạm Ứng -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+                <div class="flex justify-between items-center text-[11px]">
+                    <span class="text-slate-500">Tờ khai Hải quan:</span>
+                    <strong class="font-mono text-slate-800" id="sim-modal-customs">-</strong>
+                </div>
+                <div class="flex justify-between items-center text-[11px] pt-1 border-t border-slate-200">
+                    <span class="text-slate-500">Tiền tạm ứng chuyến:</span>
+                    <strong class="font-mono text-teal-800 font-bold" id="sim-modal-advance">0 đ</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <button type="button" onclick="closeSimTripDetailsModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors">
+                Đóng
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL SIMULATOR: BÁO SỰ CỐ HIỆN TRƯỜNG -->
+<div id="modal-sim-incident" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs hidden-view p-4 animate-fade-in">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-slide-up flex flex-col">
+        <div class="bg-rose-700 text-white px-5 py-3.5 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-2">
+                <i class="ph-bold ph-warning-octagon text-rose-200 text-xl"></i>
+                <h3 class="font-bold text-sm font-heading">Báo Sự Cố Khẩn Cấp (Hiện Trường)</h3>
+            </div>
+            <button onclick="closeSimIncidentModal()" class="text-rose-200 hover:text-white p-1 rounded-lg">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+        </div>
+        <form onsubmit="submitSimIncident(event)" class="p-4 space-y-3 text-xs">
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Loại sự cố phát sinh <span class="text-rose-500">*</span></label>
+                <select id="sim-inc-type" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-800">
+                    <option value="TRAFFIC_JAM">Kẹt xe / Kẹt phà / Trễ giờ hẹn</option>
+                    <option value="CONTAINER_DAMAGE">Vỏ cont bị rách / móp / hư seal</option>
+                    <option value="WAREHOUSE_DELAY">Kho không cho vào dock / Chờ quá lâu</option>
+                    <option value="VEHICLE_BREAKDOWN">Xe hỏng / Nổ lốp / Hư đầu kéo</option>
+                    <option value="POLICE_INSPECTION">Kiểm tra tải trọng / CSGT</option>
+                    <option value="OTHER">Sự cố khác...</option>
+                </select>
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Mô tả sự cố & Vị trí hiện tại</label>
+                <textarea id="sim-inc-desc" rows="3" required placeholder="Ghi rõ vị trí và tình hình để Điều độ hỗ trợ xử lý ngay..." class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800"></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                <button type="button" onclick="closeSimIncidentModal()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold">Hủy</button>
+                <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold flex items-center gap-1 shadow-sm">
+                    <i class="ph-bold ph-paper-plane-tilt"></i> Gửi Báo Sự Cố
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
