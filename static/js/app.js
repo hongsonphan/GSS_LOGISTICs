@@ -1447,24 +1447,17 @@ async function viewTripDetail(tripCode, updateHistory = true) {
 
         // Trạng thái Chốt Sổ Kế Toán (Settlement Controls)
         const settleCont = document.getElementById('settlement-status-container');
-        const btnAddHead = document.getElementById('btn-header-add-expense');
         const btnAddTbl = document.getElementById('btn-add-expense-table');
         const banner = document.getElementById('cost-sheet-settled-banner');
 
         if (trip.is_expenses_settled) {
             if (settleCont) {
                 settleCont.innerHTML = `
-                    <div class="flex items-center space-x-1.5">
-                        <span class="px-3 py-1.5 rounded-xl text-xs font-black bg-purple-100 text-purple-900 border border-purple-300 flex items-center shadow-sm font-heading" title="Chốt bởi ${trip.settled_by || 'Kế toán'} lúc ${trip.settled_at}">
-                            <i class="ph-bold ph-lock-key mr-1 text-purple-700 text-sm"></i> ĐÃ CHỐT SỔ KẾ TOÁN
-                        </span>
-                        <button onclick="unsettleTripExpenses()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 transition-colors flex items-center font-heading" title="Mở khóa sổ để hiệu chỉnh chi phí">
-                            <i class="ph ph-lock-key-open mr-1"></i> Mở Sổ
-                        </button>
-                    </div>
+                    <span class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-purple-50 text-purple-900 border border-purple-200 flex items-center shadow-2xs font-heading" title="Chốt bởi ${trip.settled_by || 'Kế toán'} lúc ${trip.settled_at}">
+                        <i class="ph-bold ph-lock-key mr-1.5 text-purple-600 text-sm"></i> Đã Chốt Sổ (Kế Toán)
+                    </span>
                 `;
             }
-            if (btnAddHead) btnAddHead.classList.add('hidden');
             if (btnAddTbl) btnAddTbl.classList.add('hidden');
             if (banner) {
                 banner.classList.remove('hidden');
@@ -1473,13 +1466,8 @@ async function viewTripDetail(tripCode, updateHistory = true) {
             }
         } else {
             if (settleCont) {
-                settleCont.innerHTML = `
-                    <button onclick="settleTripExpenses()" class="px-3.5 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading">
-                        <i class="ph-bold ph-lock-simple mr-1.5 text-base text-indigo-200"></i> Chốt Sổ Kế Toán
-                    </button>
-                `;
+                settleCont.innerHTML = '';
             }
-            if (btnAddHead) btnAddHead.classList.remove('hidden');
             if (btnAddTbl) btnAddTbl.classList.remove('hidden');
             if (banner) banner.classList.add('hidden');
         }

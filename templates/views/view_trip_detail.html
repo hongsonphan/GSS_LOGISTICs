@@ -22,34 +22,30 @@
                 </p>
             </div>
         </div>
-        <div class="flex items-center space-x-3">
-            <!-- Nút / Trạng thái Chốt sổ Kế toán -->
-            <div id="settlement-status-container" class="flex items-center space-x-2">
-                <!-- Injected by JavaScript -->
+        <div class="flex items-center space-x-2.5">
+            <!-- Trạng thái Chốt sổ Kế toán (Badge read-only khi Kế toán đã khóa) -->
+            <div id="settlement-status-container" class="flex items-center">
+                <!-- Injected by JavaScript if settled -->
             </div>
             <button id="btn-header-edit-trip" onclick="openModalEditTrip()"
                 class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading" title="Hiệu chỉnh thông tin lệnh điều động">
                 <i class="ph-bold ph-note-pencil mr-1.5 text-base text-teal-400"></i> Sửa Lệnh
             </button>
-            <button id="btn-header-add-expense" onclick="openModalAddExpense()"
-                class="px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-sm flex items-center transition-all font-heading">
-                <i class="ph-bold ph-plus-circle mr-1.5 text-base"></i> Thêm Khoản Chi
-            </button>
             <button id="btn-copy-driver-link" onclick="copyDriverPortalLink()" title="Sao chép Lệnh điều xe kèm link Mobile Driver Portal gửi tài xế"
-                class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading">
+                class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading">
                 <i class="ph-bold ph-copy mr-1.5 text-base text-teal-600"></i> Copy Link Tài Xế
             </button>
             <button id="btn-copy-customer-tracking-link" onclick="copyCustomerTrackingLink()" title="Sao chép liên kết tra cứu tiến độ chuyến xe gửi khách hàng"
-                class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading">
-                <i class="ph-bold ph-link mr-1.5 text-base text-indigo-600"></i> Link Gửi Khách Hàng
+                class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading">
+                <i class="ph-bold ph-link mr-1.5 text-base text-indigo-600"></i> Link Gửi Khách
             </button>
             <a id="driver-portal-btn" href="#" target="_blank" title="Mở trang thao tác trên điện thoại của tài xế"
-                class="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading">
+                class="px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center transition-all font-heading">
                 <i class="ph-bold ph-device-mobile mr-1.5 text-base"></i> Màn Hình Tài Xế
             </a>
             <a id="zalo-driver-link" href="#" target="_blank"
                 class="px-3.5 py-2 bg-[#0068FF] text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm flex items-center transition-all font-heading">
-                <i class="ph-bold ph-telegram-logo mr-1.5 text-base"></i> Nhắn Zalo Tài Xế
+                <i class="ph-bold ph-telegram-logo mr-1.5 text-base"></i> Nhắn Zalo
             </a>
         </div>
     </div>
@@ -436,8 +432,8 @@
                     </div>
                     <div class="flex items-center space-x-2">
                         <button id="btn-add-expense-table" onclick="openModalAddExpense()"
-                            class="text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-200 transition-colors flex items-center font-heading">
-                            <i class="ph ph-plus-bold mr-1"></i> Thêm dòng chi phí
+                            class="text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 px-3.5 py-2 rounded-xl border border-teal-200 transition-colors flex items-center font-heading shadow-2xs">
+                            <i class="ph-bold ph-plus-circle mr-1.5 text-base text-teal-600"></i> Thêm Khoản Chi
                         </button>
                     </div>
                 </div>
