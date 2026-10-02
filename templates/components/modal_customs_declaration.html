@@ -18,46 +18,57 @@
         </div>
 
         <!-- Form Body -->
-        <form id="form-customs-declaration" onsubmit="submitCustomsDeclarationForm(event)" class="p-5 md:p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+        <form id="form-customs-declaration" onsubmit="submitCustomsDeclarationForm(event)" class="p-5 md:p-6 space-y-3.5 max-h-[78vh] overflow-y-auto">
             <input type="hidden" id="customs-edit-id" value="">
 
             <!-- Nhóm 1: Thông tin Tờ khai & Khách hàng -->
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-3">
-                <div class="text-[12.5px] font-black text-teal-900 font-heading uppercase tracking-wider flex items-center">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+                <div class="text-[11.5px] font-black text-teal-900 font-heading uppercase tracking-wider flex items-center pb-1.5 border-b border-slate-100">
                     <i class="ph-bold ph-file-text mr-1.5 text-teal-700"></i>
-                    Thông Tin Tờ Khai VNACCS & Khách Hàng
+                    1. Thông Tin Tờ Khai VNACCS & Khách Hàng
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label class="app-form-label">Số Tờ Khai VNACCS <span class="text-rose-500">*</span></label>
-                        <input type="text" id="cust-decl-number" placeholder="VD: 106883921100 (12 số)" maxlength="20" class="app-form-control uppercase font-mono font-bold tracking-wider" required>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-6">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Số Tờ Khai VNACCS <span class="text-rose-500">*</span></label>
+                        </div>
+                        <input type="text" id="cust-decl-number" placeholder="VD: 106883921100 (12 số)" maxlength="20" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold tracking-wider w-full" required>
                     </div>
-                    <div>
-                        <label class="app-form-label">Ngày Đăng Ký Tờ Khai <span class="text-rose-500">*</span></label>
-                        <input type="date" id="cust-decl-date" class="app-form-control font-medium" required>
+                    <div class="md:col-span-6">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Ngày Đăng Ký Tờ Khai <span class="text-rose-500">*</span></label>
+                        </div>
+                        <input type="date" id="cust-decl-date" class="form-input h-8.5 px-2.5 py-1 text-xs font-medium w-full" required>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label class="app-form-label">Doanh Nghiệp / Khách Hàng <span class="text-rose-500">*</span></label>
-                        <select id="cust-customer-id" class="app-form-control" required>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-8">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Doanh Nghiệp / Khách Hàng <span class="text-rose-500">*</span></label>
+                        </div>
+                        <select id="cust-customer-id" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
                             <option value="">-- Chọn Doanh Nghiệp / Chủ Hàng --</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="app-form-label">Chiều Vận Chuyển</label>
-                        <select id="cust-direction" class="app-form-control font-bold">
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Chiều Vận Chuyển</label>
+                        </div>
+                        <select id="cust-direction" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-teal-800 w-full">
                             <option value="IMPORT">Hàng Nhập Khẩu</option>
                             <option value="EXPORT">Hàng Xuất Khẩu</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="app-form-label">Loại Hình VNACCS <span class="text-rose-500">*</span></label>
-                        <select id="cust-decl-type" class="app-form-control font-bold">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-5">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Loại Hình VNACCS <span class="text-rose-500">*</span></label>
+                        </div>
+                        <select id="cust-decl-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                             <option value="A11">A11 - Nhập KD Tiêu Dùng</option>
                             <option value="A12">A12 - Nhập KD Sản Xuất</option>
                             <option value="B11">B11 - Xuất Kinh Doanh</option>
@@ -68,9 +79,11 @@
                             <option value="H11">H11 - Hàng Phi Mậu Dịch</option>
                         </select>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="app-form-label">Chi Cục Hải Quan Mở Tờ Khai</label>
-                        <select id="cust-office-code" onchange="onCustomsOfficeChange(this)" class="app-form-control">
+                    <div class="md:col-span-7">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Chi Cục Hải Quan Mở Tờ Khai</label>
+                        </div>
+                        <select id="cust-office-code" onchange="onCustomsOfficeChange(this)" class="form-select h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full">
                             <option value="02CI">02CI - Cửa Khẩu Cảng Cát Lái (KV4 TP.HCM)</option>
                             <option value="51CB">51CB - Cửa Khẩu Cảng Cái Mép (BR-VT)</option>
                             <option value="43BA">43BA - Chi Cục Hải Quan Sóng Thần (Bình Dương)</option>
@@ -86,23 +99,28 @@
             </div>
 
             <!-- Nhóm 2: Phân luồng, Trạng thái & Đối soát Vận tải -->
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-3">
-                <div class="text-[12.5px] font-black text-teal-900 font-heading uppercase tracking-wider flex items-center">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+                <div class="text-[11.5px] font-black text-teal-900 font-heading uppercase tracking-wider flex items-center pb-1.5 border-b border-slate-100">
                     <i class="ph-bold ph-shield-check mr-1.5 text-teal-700"></i>
-                    Phân Luồng, Trạng Thái & Đối Soát Vận Tải
+                    2. Phân Luồng, Trạng Thái & Đối Soát Vận Tải
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label class="app-form-label">Phân Luồng Hải Quan <span class="text-rose-500">*</span></label>
-                        <select id="cust-lane" class="app-form-control font-bold">
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-6">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Phân Luồng Hải Quan <span class="text-rose-500">*</span></label>
+                        </div>
+                        <select id="cust-lane" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold w-full">
                             <option value="GREEN" class="text-emerald-700 font-bold">Luồng Xanh (1) - Tự Động Thông Quan</option>
-                            <option value="YELLOW" class="text-amber-700 font-bold">Luồng Vàng (2) - Thẩm Định Hồ Sơ Giấy Tờ</option>
+                            <option value="YELLOW" class="text-amber-700 font-bold">Luồng Vàng (2) - Thẩm Định Hồ Sơ</option>
                             <option value="RED" class="text-rose-700 font-bold">Luồng Đỏ (3) - Kiểm Tra Thực Tế / Soi Chiếu</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="app-form-label">Trạng Thái Hồ Sơ</label>
-                        <select id="cust-status" class="app-form-control font-bold">
+                    <div class="md:col-span-6">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Trạng Thái Hồ Sơ</label>
+                        </div>
+                        <select id="cust-status" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                             <option value="DRAFT">Chờ truyền tờ khai</option>
                             <option value="SUBMITTED" selected>Đã đăng ký VNACCS</option>
                             <option value="PROCESSING">Đang thẩm định hồ sơ</option>
@@ -114,18 +132,24 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="app-form-label">Số Vận Đơn (B/L)</label>
-                        <input type="text" id="cust-bl-number" placeholder="VD: ONE09283719" class="app-form-control uppercase font-mono font-medium">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Số Vận Đơn (B/L)</label>
+                        </div>
+                        <input type="text" id="cust-bl-number" placeholder="VD: ONE09283719" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-medium w-full">
                     </div>
-                    <div>
-                        <label class="app-form-label">Số Vỏ Container & Chì</label>
-                        <input type="text" id="cust-container-numbers" placeholder="VD: TCLU1829304 / B98231" class="app-form-control uppercase font-mono font-medium">
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Số Vỏ Container & Chì</label>
+                        </div>
+                        <input type="text" id="cust-container-numbers" placeholder="VD: TCLU1829304 / B98231" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-medium w-full">
                     </div>
-                    <div>
-                        <label class="app-form-label">Liên Kết Chuyến Xe Điều Vận</label>
-                        <select id="cust-trip-id" class="app-form-control font-mono">
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Liên Kết Chuyến Xe</label>
+                        </div>
+                        <select id="cust-trip-id" class="form-select h-8.5 px-2.5 py-1 text-xs font-mono w-full">
                             <option value="">-- Chưa gán chuyến xe --</option>
                         </select>
                     </div>
@@ -133,11 +157,11 @@
             </div>
 
             <!-- Nhóm 3: Thuế XNK, Chi Phí & Chứng Từ -->
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-3">
-                <div class="text-[12.5px] font-black text-teal-900 font-heading uppercase tracking-wider flex items-center justify-between">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+                <div class="text-[11.5px] font-black text-teal-900 font-heading uppercase tracking-wider flex items-center justify-between pb-1.5 border-b border-slate-100">
                     <span class="flex items-center">
                         <i class="ph-bold ph-coins mr-1.5 text-teal-700"></i>
-                        Nghĩa Vụ Thuế & Chi Phí Dịch Vụ
+                        3. Nghĩa Vụ Thuế & Chi Phí Dịch Vụ
                     </span>
                     <label class="inline-flex items-center space-x-1.5 text-xs text-slate-700 font-bold cursor-pointer">
                         <input type="checkbox" id="cust-is-tax-paid" class="w-4 h-4 rounded text-teal-700 focus:ring-teal-500 border-slate-300">
@@ -145,30 +169,39 @@
                     </label>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="app-form-label">Tiền Thuế XNK / VAT (VNĐ)</label>
-                        <input type="number" id="cust-tax-amount" value="0" step="10000" class="app-form-control font-mono font-bold text-slate-900">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Tiền Thuế XNK / VAT (VNĐ)</label>
+                        </div>
+                        <input type="number" id="cust-tax-amount" value="0" step="10000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-900 w-full">
                     </div>
-                    <div>
-                        <label class="app-form-label">Phí Dịch Vụ Khai Thuê (VNĐ)</label>
-                        <input type="number" id="cust-service-fee" value="1200000" step="50000" class="app-form-control font-mono font-bold text-teal-800">
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Phí Dịch Vụ Khai Thuê (VNĐ)</label>
+                        </div>
+                        <input type="number" id="cust-service-fee" value="1200000" step="50000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 w-full">
                     </div>
-                    <div>
-                        <label class="app-form-label">Lệ Phí / Chi Hộ Kiểm Hóa (VNĐ)</label>
-                        <input type="number" id="cust-reimbursable-fee" value="0" step="50000" class="app-form-control font-mono font-bold text-amber-700" placeholder="0">
-                        <span class="text-[11px] text-slate-400">Tự động liên thông sang Debit Note</span>
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Lệ Phí / Chi Hộ (VNĐ)</label>
+                        </div>
+                        <input type="number" id="cust-reimbursable-fee" value="0" step="50000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-amber-700 w-full" placeholder="0">
                     </div>
                 </div>
 
                 <div>
-                    <label class="app-form-label">Ghi Chú Phân Luồng / Yêu Cầu Kiểm Hóa Hiện Trường</label>
-                    <textarea id="cust-inspection-notes" rows="2" placeholder="VD: Kiểm hóa 10% tại cổng 2 Cát Lái, cán bộ HQ yêu cầu mẫu thử..." class="app-form-control text-xs"></textarea>
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú Phân Luồng / Yêu Cầu Kiểm Hóa Hiện Trường</label>
+                    </div>
+                    <textarea id="cust-inspection-notes" rows="2" placeholder="VD: Kiểm hóa 10% tại cổng 2 Cát Lái, cán bộ HQ yêu cầu mẫu thử..." class="form-textarea p-2.5 border border-slate-200 rounded-lg text-xs w-full focus:border-teal-600"></textarea>
                 </div>
 
                 <div>
-                    <label class="app-form-label">Tệp Tờ Khai Thông Quan (PDF hoặc Hình Ảnh)</label>
-                    <input type="file" id="cust-document-file" accept=".pdf,.png,.jpg,.jpeg" class="app-form-control text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tệp Tờ Khai Thông Quan (PDF hoặc Hình Ảnh)</label>
+                    </div>
+                    <input type="file" id="cust-document-file" accept=".pdf,.png,.jpg,.jpeg" class="form-input h-8.5 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer w-full">
                     <div id="cust-current-doc-link" class="mt-1 hidden">
                         <a href="#" target="_blank" class="text-xs text-teal-600 hover:underline inline-flex items-center">
                             <i class="ph-bold ph-paperclip mr-1"></i> Xem tệp đính kèm hiện tại

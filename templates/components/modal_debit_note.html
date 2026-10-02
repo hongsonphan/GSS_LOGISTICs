@@ -18,7 +18,7 @@
         </div>
 
         <!-- Form Body -->
-        <form id="form-debit-note" onsubmit="handleSaveDebitNote(event)" class="p-6 space-y-4 text-xs font-semibold text-slate-700">
+        <form id="form-debit-note" onsubmit="handleSaveDebitNote(event)" class="p-5 md:p-6 space-y-3.5 text-xs font-semibold text-slate-700">
             <input type="hidden" id="dn-action-type" value="create">
             <input type="hidden" id="dn-expense-ids" value="">
 
@@ -39,26 +39,32 @@
 
             <!-- Mã Debit Note -->
             <div id="dn-code-container">
-                <label class="block text-slate-600 mb-1">Mã Số Debit Note (Bảng Kê) <span class="text-rose-500">*</span></label>
-                <input type="text" id="dn-number" required placeholder="vd: DN-2026-KH01-001"
-                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 uppercase">
-                <p class="text-[10px] text-slate-400 mt-1">Mã số này sẽ in trên Bảng kê gửi phòng kế toán khách hàng để đối soát thanh toán.</p>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Debit Note (Bảng Kê) <span class="text-rose-500">*</span></label>
+                </div>
+                <input type="text" id="dn-number" required placeholder="VD: DN-2026-KH01-001"
+                    class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 uppercase w-full">
+                <p class="text-[10.5px] text-slate-400 mt-1">Mã số này sẽ in trên Bảng kê gửi phòng kế toán khách hàng để đối soát thanh toán.</p>
             </div>
 
             <!-- Trường dành riêng cho Xác nhận thu hồi tiền (Settle Mode) -->
             <div id="dn-settle-fields" class="space-y-3 hidden">
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                        <label class="block text-slate-600 mb-1">Kênh Thu Tiền Hoàn Ứng <span class="text-rose-500">*</span></label>
-                        <select id="dn-payment-method" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 bg-white">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Kênh Thu Tiền Hoàn Ứng <span class="text-rose-500">*</span></label>
+                        </div>
+                        <select id="dn-payment-method" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 bg-white w-full">
                             <option value="BANK">Tài khoản Ngân hàng (Chuyển khoản)</option>
                             <option value="CASH">Tiền mặt tại quỹ công ty</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-slate-600 mb-1">Ngân Hàng Nhận Tiền</label>
-                        <input type="text" id="dn-bank-name" placeholder="vd: VCB - CN Tân Bình"
-                            class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Ngân Hàng Nhận Tiền</label>
+                        </div>
+                        <input type="text" id="dn-bank-name" placeholder="VD: VCB - CN Tân Bình"
+                            class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full">
                     </div>
                 </div>
                 <div class="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-800 flex items-center gap-2 font-medium">
@@ -69,17 +75,19 @@
 
             <!-- Ghi chú đối soát -->
             <div>
-                <label class="block text-slate-600 mb-1">Ghi Chú Đối Soát</label>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú Đối Soát</label>
+                </div>
                 <textarea id="dn-notes" rows="2" placeholder="Ghi chú chứng từ, ngày hẹn thanh toán hoặc người gửi..."
-                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500"></textarea>
+                    class="form-textarea p-2.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full"></textarea>
             </div>
 
             <!-- Buttons -->
-            <div class="pt-2 border-t border-slate-200 flex justify-end space-x-2">
-                <button type="button" onclick="closeDebitNoteModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-colors">
+            <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2.5">
+                <button type="button" onclick="closeDebitNoteModal()" class="px-4 py-1.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
                     Hủy Bỏ
                 </button>
-                <button type="submit" id="btn-submit-debit-note" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all">
+                <button type="submit" id="btn-submit-debit-note" class="px-5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
                     <i class="ph-bold ph-check text-sm"></i>
                     <span id="btn-submit-debit-note-label">Xác Nhận Lập Debit Note</span>
                 </button>

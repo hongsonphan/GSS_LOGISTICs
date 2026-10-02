@@ -5,81 +5,94 @@
         <!-- Modal Header -->
         <div class="bg-gradient-to-r from-teal-700 to-teal-800 px-5 py-3 text-white flex justify-between items-center shrink-0">
             <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-lg backdrop-blur-xs border border-white/10">
+                <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base backdrop-blur-xs border border-white/10">
                     <i class="ph-bold ph-boat text-teal-200"></i>
                 </div>
                 <div>
-                    <h3 id="modal-booking-title" class="font-black font-heading text-base tracking-tight leading-tight">Tiếp Nhận Đơn Đặt Hàng / Booking Mới</h3>
+                    <h3 id="modal-booking-title" class="font-black font-heading text-sm tracking-tight leading-tight">Tiếp Nhận Đơn Đặt Hàng / Booking Mới</h3>
                     <p class="text-[11px] text-teal-100 font-medium leading-tight">Tiếp nhận đơn vận chuyển, kiểm soát chứng từ và liên thông sang Điều Vận</p>
                 </div>
             </div>
             <button onclick="closeModal('modal-booking')" class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors">
-                <i class="ph ph-x text-lg"></i>
+                <i class="ph ph-x text-base"></i>
             </button>
         </div>
 
         <!-- Modal Body Form -->
-        <form id="form-booking" onsubmit="saveBooking(event); return false;" novalidate class="p-4 overflow-y-auto space-y-3 flex-1 text-sm bg-slate-50/50">
+        <form id="form-booking" onsubmit="saveBooking(event); return false;" novalidate class="p-4 overflow-y-auto space-y-3 flex-1 text-xs bg-slate-50/40">
             <input type="hidden" id="booking-id" value="">
 
             <!-- CARD 1: DỊCH VỤ & KHÁCH HÀNG & HÃNG TÀU -->
-            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-3">
                 <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                    <h4 class="text-[11.5px] font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
                         <i class="ph-bold ph-identification-card text-teal-700 text-sm"></i>
                         <span>1. Thông Tin Dịch Vụ, Khách Hàng & Booking Hãng Tàu</span>
                     </h4>
                     <span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.2 rounded-full border border-teal-200">Booking Order</span>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                    <!-- Phân loại Dịch Vụ -->
-                    <div class="sm:col-span-3">
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Phân Loại Dịch Vụ <span class="text-rose-600 font-bold">*</span></label>
+                <!-- Row 1: 4 Cột Cân Đối (3-3-3-3) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <!-- Phân loại Dịch Vụ (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Phân Loại Dịch Vụ <span class="text-rose-500">*</span></label>
+                        </div>
                         <select id="booking-type" onchange="onBookingTypeChange()" 
                             class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs transition-all">
-                            <option value="EXPORT_FCL">Kéo Cont Xuất Khẩu (Cấp rỗng ➔ Cảng)</option>
-                            <option value="IMPORT_FCL">Kéo Cont Nhập Khẩu (Lấy cảng ➔ Trả rỗng)</option>
-                            <option value="DOMESTIC">Vận Chuyển Nội Địa / FTL</option>
+                            <option value="EXPORT_FCL">Kéo Cont Xuất Khẩu</option>
+                            <option value="IMPORT_FCL">Kéo Cont Nhập Khẩu</option>
+                            <option value="DOMESTIC">Vận Chuyển Nội Địa</option>
                         </select>
                     </div>
 
-                    <!-- Khách Hàng Đặt Đơn -->
-                    <div class="sm:col-span-5">
-                        <div class="flex items-center justify-between mb-0.5">
-                            <label class="block font-bold text-slate-700 text-xs">Khách Hàng <span class="text-rose-600 font-bold">*</span></label>
-                            <button type="button" onclick="openMasterDataModalQuick('customers', 'booking-customer')" 
-                                class="text-[10.5px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5">
-                                <i class="ph-bold ph-plus text-[10px]"></i> Thêm KH
-                            </button>
+                    <!-- Tìm Khách Hàng (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Tìm Kiếm Khách Hàng</label>
                         </div>
-                        <div class="grid grid-cols-12 gap-1.5">
+                        <div class="relative">
+                            <i class="ph ph-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
                             <input type="text" id="booking-customer-search" oninput="filterCustomerSelectOptions('booking-customer-search', 'booking-customer')" 
-                                placeholder="Tìm tên KH / MST..." 
-                                class="col-span-5 h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium focus:bg-white focus:border-teal-600">
-                            <select id="booking-customer" required 
-                                class="col-span-7 h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-900 text-xs transition-all">
-                                <option value="">-- Chọn Khách Hàng --</option>
-                            </select>
+                                placeholder="Gõ tên hoặc MST..." 
+                                class="w-full h-8.5 pl-7 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium focus:bg-white focus:border-teal-600 transition-all">
                         </div>
                     </div>
 
-                    <!-- Số Booking Khách Cung Cấp / Số PO -->
-                    <div class="sm:col-span-4">
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Số Booking / Số PO <span class="text-rose-600 font-bold">*</span></label>
+                    <!-- Chọn Khách Hàng (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Khách Hàng <span class="text-rose-500">*</span></label>
+                            <button type="button" onclick="openMasterDataModalQuick('customers', 'booking-customer')" 
+                                class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 flex items-center gap-0.5">
+                                <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm KH
+                            </button>
+                        </div>
+                        <select id="booking-customer" required 
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-900 text-xs transition-all">
+                            <option value="">-- Chọn Khách Hàng --</option>
+                        </select>
+                    </div>
+
+                    <!-- Số Booking Khách Cung Cấp / Số PO (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Số Booking / PO <span class="text-rose-500">*</span></label>
+                        </div>
                         <input type="text" id="booking-number" required placeholder="VD: 276081838, PO-889..." 
-                            class="w-full h-8.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-teal-800 text-xs transition-all uppercase">
+                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-teal-800 text-xs transition-all uppercase">
                     </div>
                 </div>
 
-                <!-- Hãng Tàu, Tàu Chuyến, Loại Cont & Số lượng -->
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-0.5 items-end">
-                    <!-- Hãng Tàu -->
-                    <div id="wrapper-shipping-line" class="sm:col-span-3">
-                        <div class="flex items-center justify-between mb-0.5">
+                <!-- Row 2: 4 Cột Cân Đối (3-3-3-3) - Khớp thẳng trục với Row 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <!-- Hãng Tàu (col 3) -->
+                    <div id="wrapper-shipping-line" class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
                             <label class="block font-bold text-slate-700 text-xs truncate">Hãng Tàu</label>
                             <button type="button" onclick="openMasterDataModalQuick('shipping_lines', 'booking-shipping-line')" 
-                                class="text-[10px] font-bold text-teal-700 hover:underline">
+                                class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
                                 + Thêm
                             </button>
                         </div>
@@ -88,20 +101,24 @@
                         <datalist id="shipping-lines-datalist"></datalist>
                     </div>
 
-                    <!-- Tàu / Chuyến -->
-                    <div id="wrapper-vessel" class="sm:col-span-4">
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs truncate">
-                            Tên Tàu & Chuyến <span class="text-[10px] text-slate-400 font-normal lowercase">(Vessel/Voy)</span>
-                        </label>
+                    <!-- Tàu / Chuyến (col 3) -->
+                    <div id="wrapper-vessel" class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">
+                                Tên Tàu & Chuyến <span class="text-[10px] text-slate-400 font-normal lowercase">(Vessel/Voy)</span>
+                            </label>
+                        </div>
                         <input type="text" id="booking-vessel" placeholder="VD: CAP SAN LAZARO / 001N" 
                             class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-medium text-slate-800 text-xs">
                     </div>
 
-                    <!-- Loại Phương Tiện / Cont -->
-                    <div class="sm:col-span-3">
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs truncate">
-                            Loại Cont / Xe <span class="text-rose-600 font-bold">*</span>
-                        </label>
+                    <!-- Loại Phương Tiện / Cont (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">
+                                Loại Cont / Xe <span class="text-rose-500">*</span>
+                            </label>
+                        </div>
                         <select id="booking-container-size" 
                             class="w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
                             <option value="40HC">Cont 40HC (Cao 9ft6)</option>
@@ -114,9 +131,11 @@
                         </select>
                     </div>
 
-                    <!-- Tổng Số Lượng -->
-                    <div class="sm:col-span-2">
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs truncate">Số Lượng <span class="text-rose-600 font-bold">*</span></label>
+                    <!-- Tổng Số Lượng (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Số Lượng Cont <span class="text-rose-500">*</span></label>
+                        </div>
                         <input type="text" inputmode="numeric" id="booking-total-containers" required value="1" placeholder="1" 
                             class="input-number-vn w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-black text-teal-800 text-xs text-center tabular-nums">
                     </div>
@@ -124,92 +143,113 @@
             </div>
 
             <!-- CARD 2: HÀNG HÓA & LỘ TRÌNH 3 ĐIỂM -->
-            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-3">
                 <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                    <h4 class="text-[11.5px] font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
                         <i class="ph-bold ph-map-pin text-teal-700 text-sm"></i>
                         <span>2. Hàng Hóa & Lộ Trình Vận Chuyển 3 Điểm</span>
                     </h4>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Tên Hàng Hóa Thực Tế</label>
+                <!-- Row 1: Hàng hóa (6) + HS Code (6) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-6">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Tên Hàng Hóa Thực Tế</label>
+                        </div>
                         <input type="text" id="booking-commodity" placeholder="VD: Máy cắt cỏ, Dụng cụ Ryobi, Hạt nhựa, Bao bì..." 
                             class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-medium text-slate-800 text-xs">
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Mã Phân Loại HS Code</label>
+                    <div class="md:col-span-6">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Mã Phân Loại HS Code</label>
+                        </div>
                         <input type="text" id="booking-hs-code" placeholder="VD: 8433.11, 8414.59..." 
                             class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-medium text-slate-800 text-xs">
                     </div>
+                </div>
 
-                    <!-- Lộ trình 3 điểm -->
-                    <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
-                        <div>
-                            <div class="flex items-center justify-between mb-0.5">
-                                <label class="block font-bold text-teal-800 text-xs">1. Điểm Lấy Cont <span class="text-rose-600 font-bold">*</span></label>
-                                <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-pickup')" 
-                                    class="text-[10px] font-bold text-teal-700 hover:underline">+ Thêm</button>
-                            </div>
-                            <select id="booking-pickup" required 
-                                class="w-full h-8 px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
-                                <option value="">-- Chọn Điểm Lấy --</option>
-                            </select>
+                <!-- Row 2: 3 Điểm Lộ Trình Đồng Trục (4-4-4) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-teal-900 text-xs truncate">1. Điểm Lấy Cont <span class="text-rose-500">*</span></label>
+                            <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-pickup')" 
+                                class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
+                                + Thêm
+                            </button>
                         </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-0.5">
-                                <label class="block font-bold text-slate-800 text-xs">2. Kho Đóng/Dỡ <span class="text-rose-600 font-bold">*</span></label>
-                                <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-delivery')" 
-                                    class="text-[10px] font-bold text-teal-700 hover:underline">+ Thêm</button>
-                            </div>
-                            <select id="booking-delivery" required 
-                                class="w-full h-8 px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
-                                <option value="">-- Chọn Kho Khách --</option>
-                            </select>
+                        <select id="booking-pickup" required 
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
+                            <option value="">-- Chọn Điểm Lấy --</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-amber-900 text-xs truncate">2. Kho Đóng / Dỡ <span class="text-rose-500">*</span></label>
+                            <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-delivery')" 
+                                class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                                + Thêm
+                            </button>
                         </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-0.5">
-                                <label class="block font-bold text-indigo-800 text-xs">3. Điểm Hạ/Trả Cont <span class="text-rose-600 font-bold">*</span></label>
-                                <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-dropoff')" 
-                                    class="text-[10px] font-bold text-indigo-700 hover:underline">+ Thêm</button>
-                            </div>
-                            <select id="booking-dropoff" required 
-                                class="w-full h-8 px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
-                                <option value="">-- Chọn Điểm Hạ --</option>
-                            </select>
+                        <select id="booking-delivery" required 
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
+                            <option value="">-- Chọn Kho Khách --</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-4">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-emerald-900 text-xs truncate">3. Điểm Hạ / Trả Cont <span class="text-rose-500">*</span></label>
+                            <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-dropoff')" 
+                                class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                + Thêm
+                            </button>
                         </div>
+                        <select id="booking-dropoff" required 
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 uppercase focus:border-teal-600">
+                            <option value="">-- Chọn Điểm Hạ --</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
             <!-- CARD 3: KẾ HOẠCH ĐÓNG HÀNG & HẠN CUT-OFF & CƯỚC -->
-            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-3">
                 <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                    <h4 class="text-[11.5px] font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
                         <i class="ph-bold ph-clock-countdown text-teal-700 text-sm"></i>
                         <span>3. Kế Hoạch Đóng Hàng, Hạn Cut-Off & Cước Vận Chuyển</span>
                     </h4>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Ngày Hẹn Đóng <span class="text-rose-600 font-bold">*</span></label>
+                <!-- Row 1: 4 Cột Cân Đối (3-3-3-3) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <!-- Ngày Hẹn Đóng (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Ngày Hẹn Đóng <span class="text-rose-500">*</span></label>
+                        </div>
                         <input type="date" id="booking-loading-date" required 
                             class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
                     </div>
-                    <div>
-                        <div class="flex items-center justify-between mb-0.5">
-                            <label class="block font-bold text-slate-700 text-xs">Giờ Hẹn Tại Kho</label>
-                            <span class="text-[9.5px] text-teal-700 font-bold bg-teal-50 px-1 py-0.2 rounded border border-teal-200">24h</span>
+
+                    <!-- Giờ Hẹn Tại Kho (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Giờ Hẹn Tại Kho</label>
+                            <span class="text-[9.5px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">24h</span>
                         </div>
                         <input type="time" id="booking-loading-time" value="08:00" 
                             class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
                     </div>
-                    <div>
-                        <div class="flex items-center justify-between mb-0.5">
-                            <label class="block font-bold text-rose-800 text-xs">Hạn Cắt Máng CY</label>
-                            <span class="text-[9.5px] text-rose-700 font-bold bg-rose-50 px-1 py-0.2 rounded border border-rose-200">24h</span>
+
+                    <!-- Hạn Cắt Máng CY (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-rose-700 text-xs truncate">Hạn Cắt Máng CY</label>
+                            <span class="text-[9.5px] text-rose-700 font-bold bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">24h</span>
                         </div>
                         <div class="grid grid-cols-5 gap-1">
                             <input type="date" id="booking-closing-date" onchange="syncBookingClosingTime()"
@@ -219,10 +259,12 @@
                         </div>
                         <input type="hidden" id="booking-closing-time">
                     </div>
-                    <div>
-                        <div class="flex items-center justify-between mb-0.5">
-                            <label class="block font-bold text-slate-700 text-xs">Hạn SI Cut-off</label>
-                            <span class="text-[9.5px] text-slate-600 font-bold bg-slate-100 px-1 py-0.2 rounded border border-slate-200">24h</span>
+
+                    <!-- Hạn SI Cut-off (col 3) -->
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Hạn SI Cut-off</label>
+                            <span class="text-[9.5px] text-slate-600 font-bold bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">24h</span>
                         </div>
                         <div class="grid grid-cols-5 gap-1">
                             <input type="date" id="booking-si-date" onchange="syncBookingSiTime()"
@@ -232,25 +274,41 @@
                         </div>
                         <input type="hidden" id="booking-si-cutoff">
                     </div>
+                </div>
 
-                    <!-- Free time & Cước -->
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Free DET (Ngày)</label>
+                <!-- Row 2: 4 Cột Cân Đối (3-3-3-3) - Khớp thẳng trục với Row 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Free DET (Ngày)</label>
+                        </div>
                         <input type="text" inputmode="numeric" id="booking-det" value="7" placeholder="VD: 7"
-                            class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-slate-800 text-xs tabular-nums">
+                            class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-slate-800 text-xs text-center tabular-nums">
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Free DEM (Ngày)</label>
+
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Free DEM (Ngày)</label>
+                        </div>
                         <input type="text" inputmode="numeric" id="booking-dem" value="7" placeholder="VD: 7"
-                            class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-slate-800 text-xs tabular-nums">
+                            class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-slate-800 text-xs text-center tabular-nums">
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Cước Vận Chuyển (VNĐ) <span class="text-rose-600 font-bold">*</span></label>
-                        <input type="text" inputmode="numeric" id="booking-price" required value="4.000.000" placeholder="VD: 4.000.000"
-                            class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-mono font-bold text-teal-800 text-xs tabular-nums">
+
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Cước Vận Chuyển <span class="text-rose-500">*</span></label>
+                        </div>
+                        <div class="relative">
+                            <input type="text" inputmode="numeric" id="booking-price" required value="4.000.000" placeholder="VD: 4.000.000"
+                                class="input-number-vn w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-mono font-bold text-teal-800 text-xs tabular-nums pr-10">
+                            <span class="absolute right-2 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">VNĐ</span>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-0.5 text-xs">Trạng Thái Đơn <span class="text-rose-600 font-bold">*</span></label>
+
+                    <div class="md:col-span-3">
+                        <div class="flex items-center justify-between h-5 mb-1">
+                            <label class="block font-bold text-slate-700 text-xs truncate">Trạng Thái Đơn <span class="text-rose-500">*</span></label>
+                        </div>
                         <select id="booking-status" 
                             class="w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-slate-800 text-xs">
                             <option value="PENDING_DISPATCH">Chờ điều xe (Chưa gán xe)</option>
@@ -261,10 +319,13 @@
                     </div>
                 </div>
 
+                <!-- Row 3: Ghi chú (Full width) -->
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5 text-xs">Ghi Chú / Yêu Cầu Đặc Biệt</label>
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú / Yêu Cầu Đặc Biệt</label>
+                    </div>
                     <input type="text" id="booking-notes" placeholder="VD: Gọi kho trước 1h, kiểm tra seal kỹ, tài xế có bảo hộ..." 
-                        class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white text-slate-800 text-xs">
+                        class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white text-slate-800 text-xs font-medium">
                 </div>
             </div>
 
@@ -300,9 +361,9 @@
             <!-- CARD 5: TIẾN ĐỘ CONTAINER CỦA BOOKING -->
             <div id="booking-trips-section" class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2">
                 <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                    <div class="flex items-center space-x-1.5 text-slate-800 font-bold uppercase tracking-wider text-[11.5px] font-heading">
+                    <div class="flex items-center space-x-1.5 text-slate-800 font-bold uppercase tracking-wider text-xs font-heading">
                         <i class="ph-bold ph-truck text-teal-700 text-sm"></i>
-                        <span>5. Tiến Độ Container Thuộc Booking</span>
+                        <span>4. Tiến Độ Container Thuộc Booking</span>
                     </div>
                     <span id="booking-trips-count-badge" class="px-2 py-0.2 rounded-full text-[10.5px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
                         0 / 0 Container
@@ -335,10 +396,10 @@
 
             <!-- Modal Footer Buttons -->
             <div class="pt-2 border-t border-slate-200/80 flex items-center justify-end space-x-2">
-                <button type="button" onclick="closeModal('modal-booking')" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs transition-all">
+                <button type="button" onclick="closeModal('modal-booking')" class="px-4 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer">
                     Đóng
                 </button>
-                <button type="button" id="btn-submit-booking" onclick="saveBooking(event)" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold font-heading text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
+                <button type="button" id="btn-submit-booking" onclick="saveBooking(event)" class="px-5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
                     <i class="ph-bold ph-check-circle text-sm"></i>
                     <span id="btn-save-booking-text">Tiếp Nhận Đơn Hàng</span>
                 </button>

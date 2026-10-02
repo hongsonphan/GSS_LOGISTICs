@@ -18,14 +18,16 @@
         </div>
 
         <!-- Modal Form -->
-        <form id="form-driver-advance" onsubmit="submitDriverAdvanceForm(event)" class="p-6 space-y-4 text-xs font-medium text-slate-700">
+        <form id="form-driver-advance" onsubmit="submitDriverAdvanceForm(event)" class="p-5 md:p-6 space-y-3.5 text-xs font-medium text-slate-700">
             <!-- Chọn Chuyến xe -->
             <div>
-                <label class="block font-bold text-slate-800 mb-1">
-                    Chọn Chuyến Xe Vận Chuyển <span class="text-rose-600">*</span>
-                </label>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-800 text-xs truncate">
+                        Chọn Chuyến Xe Vận Chuyển <span class="text-rose-600">*</span>
+                    </label>
+                </div>
                 <select id="adv-inp-trip" onchange="onAdvanceTripChange()" required
-                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                    class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full">
                     <option value="">-- Chọn chuyến xe cần cấp tạm ứng --</option>
                 </select>
                 <p id="adv-trip-info" class="text-[11px] text-teal-700 font-semibold mt-1 hidden"></p>
@@ -33,55 +35,63 @@
 
             <!-- Tài xế nhận tiền -->
             <div>
-                <label class="block font-bold text-slate-800 mb-1">
-                    Tài Xế Nhận Tiền <span class="text-rose-600">*</span>
-                </label>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-800 text-xs truncate">
+                        Tài Xế Nhận Tiền <span class="text-rose-600">*</span>
+                    </label>
+                </div>
                 <select id="adv-inp-driver" required
-                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                    class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full">
                     <option value="">-- Chọn tài xế nhận tạm ứng --</option>
                 </select>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <!-- Số tiền tạm ứng -->
                 <div>
-                    <label class="block font-bold text-slate-800 mb-1">
-                        Số Tiền Tạm Ứng (VNĐ) <span class="text-rose-600">*</span>
-                    </label>
-                    <input type="text" id="adv-inp-amount" required placeholder="ví dụ: 1.500.000"
-                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-teal-800 text-right tabular-nums focus:border-teal-600 focus:ring-1 focus:ring-teal-500 input-number-vn" />
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-800 text-xs truncate">
+                            Số Tiền Tạm Ứng (VNĐ) <span class="text-rose-600">*</span>
+                        </label>
+                    </div>
+                    <input type="text" id="adv-inp-amount" required placeholder="VD: 1.500.000"
+                        class="form-input h-8.5 px-2.5 py-1 text-xs font-black text-teal-800 text-right tabular-nums focus:border-teal-600 focus:ring-1 focus:ring-teal-500 input-number-vn font-mono w-full" />
                 </div>
 
                 <!-- Ngày tạm ứng -->
                 <div>
-                    <label class="block font-bold text-slate-800 mb-1">
-                        Ngày Cấp Tiền <span class="text-rose-600">*</span>
-                    </label>
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-800 text-xs truncate">
+                            Ngày Cấp Tiền <span class="text-rose-600">*</span>
+                        </label>
+                    </div>
                     <input type="date" id="adv-inp-date" required
-                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500" />
+                        class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full" />
                 </div>
             </div>
 
             <!-- Nguồn tiền tạm ứng -->
             <div>
-                <label class="block font-bold text-slate-800 mb-1">
-                    Nguồn Tiền Tạm Ứng <span class="text-rose-600">*</span>
-                </label>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-teal-50/50">
-                        <input type="radio" name="adv_source" value="DISPATCHER_FUND" checked onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
-                        <span class="font-bold text-slate-800">Trích Quỹ Điều Vận</span>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-800 text-xs truncate">
+                        Nguồn Tiền Tạm Ứng <span class="text-rose-600">*</span>
                     </label>
-                    <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-teal-50/50">
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-teal-50/50">
+                        <input type="radio" name="adv_source" value="DISPATCHER_FUND" checked onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
+                        <span class="font-bold text-slate-800 text-xs">Trích Quỹ Điều Vận</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-teal-50/50">
                         <input type="radio" name="adv_source" value="COMPANY_DIRECT" onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
-                        <span class="font-bold text-slate-800">Cty Chi Trực Tiếp</span>
+                        <span class="font-bold text-slate-800 text-xs">Cty Chi Trực Tiếp</span>
                     </label>
                 </div>
 
                 <!-- Dropdown chọn Quỹ điều vận -->
                 <div id="adv-box-dispatcher-fund">
                     <select id="adv-inp-fund"
-                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                        class="form-select h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full">
                         <option value="">-- Chọn Quỹ Điều Vận khả dụng --</option>
                     </select>
                     <p id="adv-fund-balance-hint" class="text-[11px] text-slate-500 mt-1"></p>
@@ -90,24 +100,28 @@
 
             <!-- Mục đích tạm ứng -->
             <div>
-                <label class="block font-bold text-slate-800 mb-1">Mục Đích Tạm Ứng & Chi Phát Sinh</label>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-800 text-xs truncate">Mục Đích Tạm Ứng & Chi Phát Sinh</label>
+                </div>
                 <input type="text" id="adv-inp-purpose" value="Chi phí cầu đường BOT, nâng hạ cảng, cược vỏ cont, kiểm dịch"
-                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500" />
+                    class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full" />
             </div>
 
             <!-- Ghi chú thêm -->
             <div>
-                <label class="block font-bold text-slate-800 mb-1">Ghi Chú Thêm (Nếu có)</label>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-800 text-xs truncate">Ghi Chú Thêm (Nếu có)</label>
+                </div>
                 <textarea id="adv-inp-notes" rows="2" placeholder="Ghi chú điều chuyển, số biên lai, phương thức giao tiền..."
-                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500"></textarea>
+                    class="form-textarea p-2.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full"></textarea>
             </div>
 
             <!-- Footer Buttons -->
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
-                <button type="button" onclick="closeDriverAdvanceModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold font-heading transition-colors">
+                <button type="button" onclick="closeDriverAdvanceModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
                     Hủy Bỏ
                 </button>
-                <button type="submit" id="btn-submit-driver-advance" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all">
+                <button type="submit" id="btn-submit-driver-advance" class="px-5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
                     <i class="ph-bold ph-check text-sm"></i>
                     <span>Xác Nhận Cấp Tạm Ứng</span>
                 </button>
