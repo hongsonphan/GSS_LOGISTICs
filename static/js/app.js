@@ -12828,5 +12828,9 @@ function exportAccountingReportToExcel() {
     showToast('success', `Đã xuất báo cáo "${filename}" thành công!`, 'Xuất Excel Thành Công');
 }
 
-
-
+window.switchTab = switchTab;
+window.switchAccountingSubTab = switchAccountingSubTab;
+window.switchAccountingReportType = switchAccountingReportType;
+window.changeAccountingReportPeriod = changeAccountingReportPeriod;
+window.loadAccountingReportData = loadAccountingReportData;
+window.exportAccountingReportToExcel = exportAccountingReportToExcel;
