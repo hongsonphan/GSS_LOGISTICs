@@ -200,13 +200,21 @@ def driver_portal_view(request, trip_hash):
     # Điểm đến hiện tại theo trạng thái
     st = trip.status
     if st in ['CONTAINER_PICKED', 'IN_TRANSIT', 'AT_WAREHOUSE', 'UNLOADING', 'DELIVERED']:
+        current_leg_title = 'Điểm 2: Kho Đóng / Trả Hàng'
         current_leg_target_name = trip.delivery_warehouse or trip.warehouse_location or 'Kho khách hàng'
+        current_maps_url = maps_url_warehouse
     elif st == 'RETURNING_EMPTY':
+        current_leg_title = 'Điểm 3: Bãi Hạ Vỏ Cont'
         current_leg_target_name = trip.dropoff_depot or trip.dropoff_location or 'Bãi hạ cont'
+        current_maps_url = maps_url_dropoff
     elif st == 'COMPLETED':
-        current_leg_target_name = 'Đã hoàn tất toàn tuyến'
+        current_leg_title = 'Lộ Trình Đã Hoàn Tất'
+        current_leg_target_name = 'Đã hạ cont hoàn tất toàn tuyến'
+        current_maps_url = maps_url_dropoff
     else:
+        current_leg_title = 'Điểm 1: Lấy Cont / Hàng'
         current_leg_target_name = trip.pickup_depot or trip.pickup_location or 'Bãi lấy cont'
+        current_maps_url = maps_url_pickup
 
     context = {
         'trip': trip,
@@ -218,7 +226,9 @@ def driver_portal_view(request, trip_hash):
         'dispatcher_phone': dispatcher_phone,
         'consignee_name': consignee_name,
         'consignee_phone': consignee_phone,
+        'current_leg_title': current_leg_title,
         'current_leg_target_name': current_leg_target_name,
+        'current_maps_url': current_maps_url,
         'maps_url_pickup': maps_url_pickup,
         'maps_url_warehouse': maps_url_warehouse,
         'maps_url_dropoff': maps_url_dropoff,

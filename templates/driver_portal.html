@@ -117,26 +117,32 @@
       </button>
     </div>
 
-    <!-- 2. NÚT GỌN LỘ TRÌNH & CHỈ ĐƯỜNG (3 ĐIỂM) — MỞ MODAL XEM CHI TIẾT & CHỈ ĐƯỜNG -->
-    <button type="button" onclick="openRouteDetailsModal()" class="touch-btn w-full p-3.5 rounded-2xl bg-white hover:bg-teal-50/50 border border-slate-200 shadow-sm flex items-center justify-between transition-all">
+    <!-- 2. NÚT GỌN LỘ TRÌNH & CHỈ ĐƯỜNG (CHẠM NỀN: MỞ MODAL 3 ĐIỂM | CHẠM NÚT: MỞ GOOGLE MAPS ĐIỂM HIỆN TẠI) -->
+    <div onclick="openRouteDetailsModal()" class="touch-btn w-full p-3.5 rounded-2xl bg-white hover:bg-teal-50/50 border border-slate-200 shadow-sm flex items-center justify-between transition-all cursor-pointer">
       <div class="flex items-center gap-2.5 overflow-hidden">
         <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center text-xl shrink-0 shadow-2xs">
           <i class="ph-bold ph-map-pin"></i>
         </div>
         <div class="text-left overflow-hidden">
           <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-            <span>Lộ Trình & Chỉ Đường (3 Điểm)</span>
+            <span>{{ current_leg_title|default:'Lộ Trình Chuyến Xe' }}</span>
           </div>
           <div class="text-xs sm:text-sm font-black text-slate-900 truncate mt-0.5">
-            Đang đến: <span class="text-teal-700">{{ current_leg_target_name }}</span>
+            <span class="text-teal-700">{{ current_leg_target_name|default:'Đang cập nhật địa điểm' }}</span>
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0 shadow-xs">
+      {% if current_maps_url and current_maps_url != '#' %}
+      <a href="{{ current_maps_url }}" target="_blank" onclick="event.stopPropagation()" class="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0 shadow-xs touch-btn">
         <i class="ph-bold ph-navigation-arrow text-sm"></i>
         <span>Chỉ đường</span>
+      </a>
+      {% else %}
+      <div class="flex items-center gap-1 text-slate-400 text-xs">
+        <i class="ph-bold ph-caret-right"></i>
       </div>
-    </button>
+      {% endif %}
+    </div>
 
     <!-- 3. SMART NEXT-ACTION HERO CARD (BƯỚC TIẾP THEO CẦN LÀM - NÚT TO 1 CHẠM & 1 NÚT CHỤP TẬP TRUNG) -->
     <div id="nextActionCard" class="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-2xl p-4 shadow-lg border border-slate-700 relative overflow-hidden space-y-3.5">
@@ -560,9 +566,8 @@
                 1
               </div>
               <div>
-                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider">
                   <span>Điểm 1: Lấy Cont / Hàng</span>
-                  <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG ĐẾN</span>
                 </div>
                 <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
                   {{ trip.pickup_depot|default:trip.pickup_location }}
@@ -616,9 +621,8 @@
                 2
               </div>
               <div>
-                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider">
                   <span>Điểm 2: Kho Đóng / Trả Hàng</span>
-                  <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG ĐẾN / TẠI KHO</span>
                 </div>
                 <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
                   {{ trip.delivery_warehouse|default:trip.warehouse_location }}
@@ -698,9 +702,8 @@
                 3
               </div>
               <div>
-                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                <div class="text-[11px] font-black text-teal-800 uppercase tracking-wider">
                   <span>Điểm 3: Bãi Hạ Vỏ Cont / Cảng Hạ</span>
-                  <span class="px-2 py-0.5 bg-amber-400 text-slate-900 rounded-full text-[10px] font-black animate-pulse">⚡ ĐANG VỀ BÃI HẠ</span>
                 </div>
                 <div class="text-sm sm:text-base font-black text-slate-900 mt-0.5">
                   {{ trip.dropoff_depot|default:trip.dropoff_location|default:'Theo lệnh điều độ' }}
@@ -990,29 +993,42 @@
       </div>
 
       <form id="docForm" onsubmit="submitDoc(event)" class="space-y-3.5">
-        <!-- CHIPS CHỌN NHANH LOẠI CHỨNG TỪ -->
+        <!-- CHIPS CHỌN NHANH LOẠI CHỨNG TỪ (3 DÒNG X 2 Ô = 6 LOẠI THEO CHU TRÌNH THỰC TẾ) -->
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1.5">Chọn loại chứng từ chụp: <span class="text-rose-500">*</span></label>
           <div class="grid grid-cols-2 gap-2 text-xs">
-            <button type="button" onclick="selectDocTypeChip('Biên bản giao nhận hàng (POD)')"
-              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-teal-600 bg-teal-50 text-teal-950 font-bold">
-              <i class="ph-bold ph-file-text text-base text-emerald-600"></i>
-              <span>1. POD Giao Nhận</span>
-            </button>
-            <button type="button" onclick="selectDocTypeChip('Phiếu EIR Hạ Cont')"
-              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
-              <i class="ph-bold ph-camera text-base text-sky-600"></i>
-              <span>2. EIR Hạ Cont</span>
-            </button>
-            <button type="button" onclick="selectDocTypeChip('Ảnh giám định vỏ Cont')"
+            <!-- Dòng 1: Lấy cont / Cảng -->
+            <button type="button" data-val="Ảnh giám định vỏ Cont" onclick="selectDocTypeChip('Ảnh giám định vỏ Cont', this)"
               class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
               <i class="ph-bold ph-shield-check text-base text-amber-600"></i>
-              <span>3. Vỏ Cont / Seal</span>
+              <span>1. Giám định Vỏ Cont</span>
             </button>
-            <button type="button" onclick="selectDocTypeChip('Hóa đơn GTGT')"
+            <button type="button" data-val="Phiếu EIR Lấy Cont" onclick="selectDocTypeChip('Phiếu EIR Lấy Cont', this)"
+              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
+              <i class="ph-bold ph-arrow-circle-up text-base text-teal-600"></i>
+              <span>2. Phiếu EIR Lấy Cont</span>
+            </button>
+            <!-- Dòng 2: Tại kho & Niêm phong -->
+            <button type="button" data-val="Biên bản giao nhận hàng (POD)" onclick="selectDocTypeChip('Biên bản giao nhận hàng (POD)', this)"
+              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-teal-600 bg-teal-50 text-teal-950 font-bold shadow-2xs">
+              <i class="ph-bold ph-file-text text-base text-emerald-600"></i>
+              <span>3. Biên bản POD Giao Nhận</span>
+            </button>
+            <button type="button" data-val="Ảnh Niêm Phong Chì (Seal)" onclick="selectDocTypeChip('Ảnh Niêm Phong Chì (Seal)', this)"
+              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
+              <i class="ph-bold ph-seal text-base text-blue-600"></i>
+              <span>4. Ảnh Chì (Seal)</span>
+            </button>
+            <!-- Dòng 3: Hạ cont & Chi phí phát sinh -->
+            <button type="button" data-val="Phiếu EIR Hạ Cont" onclick="selectDocTypeChip('Phiếu EIR Hạ Cont', this)"
+              class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
+              <i class="ph-bold ph-arrow-circle-down text-base text-sky-600"></i>
+              <span>5. Phiếu EIR Hạ Cont</span>
+            </button>
+            <button type="button" data-val="Hóa đơn GTGT" onclick="selectDocTypeChip('Hóa đơn GTGT', this)"
               class="doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium">
               <i class="ph-bold ph-receipt text-base text-purple-600"></i>
-              <span>4. Vé BOT / HĐĐT</span>
+              <span>6. Vé BOT / Hóa đơn</span>
             </button>
           </div>
           <!-- Hidden select for form value -->
@@ -1603,12 +1619,12 @@
       document.getElementById('docModal').classList.add('hidden');
     }
 
-    function selectDocTypeChip(typeLabel) {
+    function selectDocTypeChip(typeLabel, btn) {
       document.getElementById('docType').value = typeLabel;
       const chips = document.querySelectorAll('.doc-type-chip');
       chips.forEach(chip => {
-        if (chip.innerText.includes(typeLabel) || typeLabel.includes(chip.innerText.trim().slice(3))) {
-          chip.className = "doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-teal-600 bg-teal-50 text-teal-950 font-bold";
+        if (chip === btn || chip.getAttribute('data-val') === typeLabel) {
+          chip.className = "doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-teal-600 bg-teal-50 text-teal-950 font-bold shadow-2xs";
         } else {
           chip.className = "doc-type-chip p-2.5 rounded-xl border text-left flex items-center gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium";
         }
