@@ -756,7 +756,7 @@ class AccountingReportsAPIView(APIView):
     permission_classes = [IsAccountant]
 
     def get(self, request):
-        report_type = request.GET.get('report_type', 'BY_CUSTOMER')
+        report_type = request.GET.get('report_type') or request.GET.get('type') or 'BY_CUSTOMER'
         from_date = request.GET.get('from_date')
         to_date = request.GET.get('to_date')
         customer_id = request.GET.get('customer_id')
@@ -1013,22 +1013,24 @@ class AccountingReportsAPIView(APIView):
                         'settled_advances_count': 0,
                     }
 
-                drivers_map[d_id]['total_advance_received'] += int(adv.advance_amount)
-                drivers_map[d_id]['total_actual_expense'] += int(adv.actual_expense_amount)
+                adv_amount = Decimal(adv.amount or 0)
+                adv_spent = Decimal(adv.actual_spent or 0)
+                adv_refund = Decimal(adv.refund_amount or (adv_amount - adv_spent if adv_amount > adv_spent and adv.status == 'SETTLED' else 0))
+                adv_reimburse = Decimal(adv.reimburse_amount or (adv_spent - adv_amount if adv_spent > adv_amount and adv.status == 'SETTLED' else 0))
 
-                diff = adv.settlement_diff
-                if diff > 0:
-                    drivers_map[d_id]['refund_to_company'] += int(diff)
-                    total_diff_refund += diff
-                elif diff < 0:
-                    drivers_map[d_id]['company_reimburse'] += int(abs(diff))
-                    total_diff_reimburse += abs(diff)
+                drivers_map[d_id]['total_advance_received'] += int(adv_amount)
+                drivers_map[d_id]['total_actual_expense'] += int(adv_spent)
+                drivers_map[d_id]['refund_to_company'] += int(adv_refund)
+                drivers_map[d_id]['company_reimburse'] += int(adv_reimburse)
+
+                total_diff_refund += adv_refund
+                total_diff_reimburse += adv_reimburse
 
                 if adv.status == 'SETTLED':
                     drivers_map[d_id]['settled_advances_count'] += 1
 
-                total_advances_given += adv.advance_amount
-                total_actual_expenses += adv.actual_expense_amount
+                total_advances_given += adv_amount
+                total_actual_expenses += adv_spent
 
             # Cộng chuyến xe hoàn thành và lương chuyến
             for t in company_trips:
