@@ -32,23 +32,29 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     dock_name = trip.warehouse_dock or 'dock kho'
 
     date_str = trip.loading_date.strftime('%d/%m') if trip.loading_date else trip.created_at.strftime('%d/%m')
-    t_create = trip.created_at.strftime('%H:%M %d/%m') if trip.created_at else f"17:00 {date_str}"
+    t_create   = trip.created_at.strftime('%H:%M %d/%m') if trip.created_at else f"17:00 {date_str}"
     t_dispatch = trip.dispatched_at.strftime('%H:%M %d/%m') if trip.dispatched_at else f"18:00 {date_str}"
-    t_accept = trip.accepted_at.strftime('%H:%M %d/%m') if trip.accepted_at else f"18:15 {date_str}"
-    t_pickup = trip.actual_start_time.strftime('%H:%M %d/%m') if trip.actual_start_time else f"08:00 {date_str}"
-    t_transit = f"09:30 {date_str}"
-    # Bước 6: Vào cổng kho — dùng actual_gate_in_time (CharField) fallback eta_warehouse_time
-    t_wh_in = trip.actual_gate_in_time or trip.eta_warehouse_time or f"11:00 {date_str}"
-    # Bước 7: Đóng/trút hàng — dùng unloading_started_at (DateTimeField mới) fallback loading_time (giờ hẹn đóng hàng)
-    t_unload = (trip.unloading_started_at.strftime('%H:%M %d/%m') if trip.unloading_started_at
-                else (trip.loading_time or f"Hẹn: {date_str}"))
-    # Bước 8: Ký POD — dùng actual_gate_out_time (timestamp ra cổng / POD)
-    t_wh_out = trip.actual_gate_out_time or f"15:00 {date_str}"
-    # Bước 9: Hạ cont — dùng actual_dropoff_time → dropoff_appointment_time → fallback
-    t_dropoff = (trip.actual_dropoff_time
-                 or trip.dropoff_appointment_time
-                 or f"Đang kéo về bãi {date_str}")
-    t_settle = trip.settled_at.strftime('%H:%M %d/%m') if trip.settled_at else (f"17:30 {date_str}" if trip.status == TripStatus.COMPLETED else 'Chờ chốt sổ')
+    t_accept   = trip.accepted_at.strftime('%H:%M %d/%m') if trip.accepted_at else f"18:15 {date_str}"
+    # Bước 4: Xuất phát lấy cont
+    t_pickup   = trip.actual_start_time.strftime('%H:%M %d/%m') if trip.actual_start_time else f"08:00 {date_str}"
+    # Bước 5: Vận chuyển — cùng lúc xuất phát, hiển thị ETA đến kho nếu có
+    t_transit  = trip.actual_start_time.strftime('%H:%M %d/%m') if trip.actual_start_time else (
+                 f"ETA: {trip.eta_warehouse_time}" if trip.eta_warehouse_time else f"09:30 {date_str}")
+    # Bước 6: Vào cổng kho — actual_gate_in_time (CharField thực tế) → ETA → fallback
+    t_wh_in    = trip.actual_gate_in_time or (
+                 f"ETA: {trip.eta_warehouse_time}" if trip.eta_warehouse_time else f"11:00 {date_str}")
+    # Bước 7: Bắt đầu đóng/trút tại dock — unloading_started_at → loading_time hẹn → fallback
+    t_unload   = (trip.unloading_started_at.strftime('%H:%M %d/%m') if trip.unloading_started_at
+                  else (f"Hẹn: {trip.loading_time}" if trip.loading_time else f"Hẹn: {date_str}"))
+    # Bước 8: Ký POD & Ra cổng kho — actual_gate_out_time (ghi lúc bấm "Vận chuyển về bãi")
+    t_wh_out   = trip.actual_gate_out_time or (
+                 f"Sau: {trip.actual_gate_in_time}" if trip.actual_gate_in_time else f"15:00 {date_str}")
+    # Bước 9: Hạ cont — actual_dropoff_time → hẹn hạ → fallback
+    t_dropoff  = (trip.actual_dropoff_time or
+                  (f"Hẹn: {trip.dropoff_appointment_time}" if trip.dropoff_appointment_time
+                   else f"Đang kéo về bãi {date_str}"))
+    t_settle   = (trip.settled_at.strftime('%H:%M %d/%m') if trip.settled_at
+                  else ('Chờ chốt sổ' if trip.status != TripStatus.COMPLETED else f"17:30 {date_str}"))
 
     # Xác định bước hiện tại dựa trên máy trạng thái
     try:
@@ -129,7 +135,8 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             elif step_num == 2:
                 is_done = False
                 is_active = True
-                time_val = 'Đang chuẩn bị'
+                # Hiện thời gian phát lệnh nếu có, còn không hiện 'Đang chuẩn bị'
+                time_val = s['time'] if s['time'] and 'date_str' not in s['time'] else 'Đang chuẩn bị'
             else:
                 is_done = False
                 is_active = False
@@ -144,7 +151,8 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             elif step_num == target_step:
                 is_done = False
                 is_active = True
-                time_val = 'Đang thực hiện'
+                # Hiện thời gian dự kiến/thực tế từ spec, không cứng nhắc 'Đang thực hiện'
+                time_val = s['time'] if s['time'] else 'Đang thực hiện'
             else:
                 is_done = False
                 is_active = False

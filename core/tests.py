@@ -1742,7 +1742,7 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertIn(self.trip.trip_code, content)
         self.assertIn(self.driver.full_name, content)
         self.assertIn(self.vehicle.license_plate, content)
-        self.assertIn("Báo Mốc 1-Chạm", content)
+        self.assertIn("Báo Mốc Thủ Công", content)
 
         # Chống lộ dữ liệu nội bộ (Tuyệt đối không hiển thị doanh thu khách hay lợi nhuận trên trang tài xế)
         self.assertNotIn("cached_margin_percent", content)

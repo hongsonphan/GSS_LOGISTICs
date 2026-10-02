@@ -2431,35 +2431,56 @@ class TripDriverMilestoneAPIView(APIView):
         if not info:
             return Response({'error': 'Mã mốc thời gian không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Cập nhật các trường đặc thù của mốc hạ cont & lưu xe
+        # ── Lưu timestamp fields TRƯỚC khi gọi transition_trip ──
+        # (transition_trip gọi sync_trip_10_step_timeline ngay sau khi đổi status,
+        #  nên các field phải được lưu trước để hiển thị giờ thực tế đúng)
+        now_dt = timezone.now()
+        extra_update_fields = []
+
         if milestone_code == 'OVERNIGHT_WAIT':
             trip.is_overnight_detention = True
             if not trip.dropoff_appointment_time or trip.dropoff_appointment_time == '-':
                 trip.dropoff_appointment_time = 'Sau 00:00'
-            trip.save(update_fields=['is_overnight_detention', 'dropoff_appointment_time'])
+            extra_update_fields = ['is_overnight_detention', 'dropoff_appointment_time']
+
         elif milestone_code == 'DROPOFF_COMPLETED':
             trip.actual_dropoff_time = now_str
-            trip.actual_end_time = timezone.now()
-            trip.save(update_fields=['actual_dropoff_time', 'actual_end_time'])
+            trip.actual_dropoff_at = now_dt
+            trip.actual_end_time = now_dt
+            extra_update_fields = ['actual_dropoff_time', 'actual_dropoff_at', 'actual_end_time']
+
         elif milestone_code == 'ACCEPTED_TRIP':
-            trip.accepted_at = timezone.now()
-            trip.save(update_fields=['accepted_at'])
+            trip.accepted_at = now_dt
+            extra_update_fields = ['accepted_at']
+
         elif milestone_code == 'DEPARTED':
-            trip.actual_start_time = timezone.now()
-            trip.save(update_fields=['actual_start_time'])
+            trip.actual_start_time = now_dt
+            extra_update_fields = ['actual_start_time']
+
+        elif milestone_code == 'ARRIVED_WAREHOUSE':
+            # Ghi nhận giờ đến cổng thực tế
+            trip.actual_gate_in_time = now_str
+            trip.actual_gate_in_at = now_dt
+            extra_update_fields = ['actual_gate_in_time', 'actual_gate_in_at']
+
         elif milestone_code == 'START_UNLOADING':
-            trip.unloading_started_at = timezone.now()
-            trip.save(update_fields=['unloading_started_at'])
-        elif milestone_code == 'DEPART_TO_DROPOFF':
-            now = timezone.now()
-            trip.actual_gate_out_time = now.strftime('%H:%M %d/%m')
-            trip.actual_gate_out_at = now
-            trip.save(update_fields=['actual_gate_out_time', 'actual_gate_out_at'])
+            trip.unloading_started_at = now_dt
+            extra_update_fields = ['unloading_started_at']
+
         elif milestone_code == 'FINISHED_UNLOADING':
-            # Ghi nhận POD time = giờ hàng xong, sau đó driver sẽ upload POD riêng
+            # Không có field riêng; POD sẽ upload riêng qua doc API
             pass
 
-        # Xử lý DECLINED_TRIP đặc biệt: chỉ revert status và ghi log, không tạo timeline item
+        elif milestone_code == 'DEPART_TO_DROPOFF':
+            # "Ra Thực Tế" = lúc xe lăn bánh rời kho hướng về bãi hạ
+            trip.actual_gate_out_time = now_str
+            trip.actual_gate_out_at = now_dt
+            extra_update_fields = ['actual_gate_out_time', 'actual_gate_out_at']
+
+        if extra_update_fields:
+            trip.save(update_fields=extra_update_fields)
+
+        # ── Xử lý DECLINED_TRIP đặc biệt: revert status, ghi log, không tạo timeline item ──
         if milestone_code == 'DECLINED_TRIP':
             actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
             trip.status = TripStatus.DISPATCHED
@@ -2480,7 +2501,7 @@ class TripDriverMilestoneAPIView(APIView):
                 'time': now_str
             })
 
-        # Chuyển trạng thái qua State Machine & lưu vết TrackingEventLog (Tiêu chuẩn 20)
+        # ── Chuyển trạng thái qua State Machine (gọi sync_trip_10_step_timeline bên trong) ──
         target_status = info['status']
         actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.driver
         if trip.status != target_status:
@@ -2497,8 +2518,12 @@ class TripDriverMilestoneAPIView(APIView):
                     title=f"Mốc thời gian: {info['title']}",
                     description=notes or info['msg']
                 )
+        else:
+            # Không đổi status nhưng đã lưu fields mới → sync timeline thủ công
+            from apps.dispatch.timeline_service import sync_trip_10_step_timeline
+            sync_trip_10_step_timeline(trip)
 
-        # Thêm mốc timeline
+        # ── Thêm mốc log vào timeline (hiển thị nhật ký hiện trường) ──
         TripTimelineItem.objects.create(
             trip=trip,
             step_number=trip.timeline_items.count() + 1,
