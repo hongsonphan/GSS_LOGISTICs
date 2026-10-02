@@ -973,20 +973,73 @@ class AccountingReportsAPIView(APIView):
         # 3. BÁO CÁO THEO TÀI XẾ (BY_DRIVER)
         # ---------------------------------------------------------------------
         elif report_type == 'BY_DRIVER':
-            # Chỉ lấy các chuyến xe nhà của công ty
-            company_trips = trips_qs.filter(vehicle__ownership_type=VehicleOwnership.OWNED)
+            # Danh sách tài xế chính thức & thầu phụ được phân quyền
+            drivers_qs = Employee.objects.filter(is_deleted=False)
             if driver_id and driver_id.isdigit():
-                company_trips = company_trips.filter(driver_id=int(driver_id))
+                drivers_qs = drivers_qs.filter(id=int(driver_id))
+            else:
+                drivers_qs = drivers_qs.filter(Q(role='DRIVER') | Q(dispatched_trips__isnull=False)).distinct()
 
             drivers_map = {}
-            total_trips_count = 0
-            total_driver_trip_pay = Decimal(0)
-            total_advances_given = Decimal(0)
-            total_actual_expenses = Decimal(0)
-            total_diff_refund = Decimal(0)
-            total_diff_reimburse = Decimal(0)
+            for d in drivers_qs:
+                d_id = d.id
+                assigned_v = getattr(d, 'assigned_vehicle', None)
+                v_plate = assigned_v.license_plate if assigned_v else ''
+                d_name = d.full_name or d.nickname or f'Tài xế #{d_id}'
+                d_code = d.code or f'TX-{d_id}'
 
-            # Lấy tất cả tạm ứng của tài xế
+                drivers_map[d_id] = {
+                    'driver_id': d_id,
+                    'driver_code': d_code,
+                    'driver_name': d_name,
+                    'assigned_vehicle': v_plate,
+                    'trips_count': 0,
+                    'completed_trips_count': 0,
+                    'estimated_trip_salary': 0,
+                    'total_advance_received': 0,
+                    'total_actual_expense': 0,
+                    'reimbursable_expense': 0,
+                    'settlement_balance': 0,
+                    'refund_to_company': 0,
+                    'company_reimburse': 0,
+                    'settled_advances_count': 0,
+                }
+
+            # Map chuyến xe của tài xế trong kỳ
+            for t in trips_qs:
+                d_id = t.driver_id
+                if not d_id:
+                    continue
+                if d_id not in drivers_map:
+                    d_name = (t.driver.nickname or t.driver.full_name) if t.driver else 'Tài xế'
+                    d_code = getattr(t.driver, 'code', f'TX-{d_id}') if t.driver else f'TX-{d_id}'
+                    drivers_map[d_id] = {
+                        'driver_id': d_id,
+                        'driver_code': d_code,
+                        'driver_name': d_name,
+                        'assigned_vehicle': t.vehicle.license_plate if t.vehicle else '',
+                        'trips_count': 0,
+                        'completed_trips_count': 0,
+                        'estimated_trip_salary': 0,
+                        'total_advance_received': 0,
+                        'total_actual_expense': 0,
+                        'reimbursable_expense': 0,
+                        'settlement_balance': 0,
+                        'refund_to_company': 0,
+                        'company_reimburse': 0,
+                        'settled_advances_count': 0,
+                    }
+
+                d_row = drivers_map[d_id]
+                d_row['trips_count'] += 1
+                if not d_row['assigned_vehicle'] and t.vehicle:
+                    d_row['assigned_vehicle'] = t.vehicle.license_plate
+
+                if t.status == 'COMPLETED':
+                    d_row['completed_trips_count'] += 1
+                    d_row['estimated_trip_salary'] += 400000
+
+            # Map tiền tạm ứng cấp cho tài xế
             adv_qs = DriverTripAdvance.objects.filter(is_deleted=False)
             if from_date:
                 adv_qs = adv_qs.filter(created_at__date__gte=fd)
@@ -995,75 +1048,58 @@ class AccountingReportsAPIView(APIView):
 
             for adv in adv_qs:
                 d_id = adv.driver_id
-                d_name = (adv.driver.nickname or adv.driver.full_name) if adv.driver else 'Chưa gán'
-                d_code = getattr(adv.driver, 'employee_code', 'TX') if adv.driver else 'TX'
-
-                if d_id not in drivers_map:
-                    drivers_map[d_id] = {
-                        'driver_id': d_id,
-                        'driver_code': d_code,
-                        'driver_name': d_name,
-                        'assigned_vehicle': getattr(adv.driver, 'assigned_vehicle', None).license_plate if (adv.driver and getattr(adv.driver, 'assigned_vehicle', None)) else '',
-                        'trips_count': 0,
-                        'estimated_trip_salary': 0,
-                        'total_advance_received': 0,
-                        'total_actual_expense': 0,
-                        'refund_to_company': 0,
-                        'company_reimburse': 0,
-                        'settled_advances_count': 0,
-                    }
-
+                if not d_id or d_id not in drivers_map:
+                    continue
+                d_row = drivers_map[d_id]
                 adv_amount = Decimal(adv.amount or 0)
-                adv_spent = Decimal(adv.actual_spent or 0)
-                adv_refund = Decimal(adv.refund_amount or (adv_amount - adv_spent if adv_amount > adv_spent and adv.status == 'SETTLED' else 0))
-                adv_reimburse = Decimal(adv.reimburse_amount or (adv_spent - adv_amount if adv_spent > adv_amount and adv.status == 'SETTLED' else 0))
-
-                drivers_map[d_id]['total_advance_received'] += int(adv_amount)
-                drivers_map[d_id]['total_actual_expense'] += int(adv_spent)
-                drivers_map[d_id]['refund_to_company'] += int(adv_refund)
-                drivers_map[d_id]['company_reimburse'] += int(adv_reimburse)
-
-                total_diff_refund += adv_refund
-                total_diff_reimburse += adv_reimburse
+                d_row['total_advance_received'] += int(adv_amount)
 
                 if adv.status == 'SETTLED':
-                    drivers_map[d_id]['settled_advances_count'] += 1
+                    d_row['settled_advances_count'] += 1
+                    if adv.refund_amount > 0:
+                        d_row['refund_to_company'] += int(adv.refund_amount)
+                    if adv.reimburse_amount > 0:
+                        d_row['company_reimburse'] += int(adv.reimburse_amount)
 
-                total_advances_given += adv_amount
-                total_actual_expenses += adv_spent
+            # Map chi phí thực tế phát sinh của tài xế từ Bảng Kê Chi Phí
+            exp_qs = TripExpense.objects.filter(is_deleted=False)
+            if from_date:
+                exp_qs = exp_qs.filter(created_at__date__gte=fd)
+            if to_date:
+                exp_qs = exp_qs.filter(created_at__date__lte=td)
 
-            # Cộng chuyến xe hoàn thành và lương chuyến
-            for t in company_trips:
-                d_id = t.driver_id
-                if not d_id:
+            for exp in exp_qs:
+                d_id = exp.driver_id or (exp.trip.driver_id if exp.trip else None)
+                if not d_id or d_id not in drivers_map:
                     continue
-                d_name = (t.driver.nickname or t.driver.full_name) if t.driver else 'Tài xế'
-                d_code = getattr(t.driver, 'employee_code', 'TX') if t.driver else 'TX'
+                d_row = drivers_map[d_id]
+                amt = int(exp.amount or 0)
+                d_row['total_actual_expense'] += amt
+                if exp.is_on_behalf_of_customer:
+                    d_row['reimbursable_expense'] += amt
 
-                if d_id not in drivers_map:
-                    drivers_map[d_id] = {
-                        'driver_id': d_id,
-                        'driver_code': d_code,
-                        'driver_name': d_name,
-                        'assigned_vehicle': t.vehicle.license_plate if t.vehicle else '',
-                        'trips_count': 0,
-                        'estimated_trip_salary': 0,
-                        'total_advance_received': 0,
-                        'total_actual_expense': 0,
-                        'refund_to_company': 0,
-                        'company_reimburse': 0,
-                        'settled_advances_count': 0,
-                    }
+            # Tính toán chênh lệch & số dư đối soát hoàn ứng
+            total_trips_count = 0
+            total_driver_trip_pay = Decimal(0)
+            total_advances_given = Decimal(0)
+            total_actual_expenses = Decimal(0)
+            total_driver_refund = Decimal(0)
+            total_company_reimburse = Decimal(0)
 
-                drivers_map[d_id]['trips_count'] += 1
-                total_trips_count += 1
-                # Ước tính lương chuyến định mức (vd 350k - 500k/chuyến)
-                trip_salary = 400000
-                drivers_map[d_id]['estimated_trip_salary'] += trip_salary
-                total_driver_trip_pay += Decimal(trip_salary)
+            for d_row in drivers_map.values():
+                total_trips_count += d_row['completed_trips_count']
+                total_driver_trip_pay += Decimal(d_row['estimated_trip_salary'])
+                total_advances_given += Decimal(d_row['total_advance_received'])
+                total_actual_expenses += Decimal(d_row['total_actual_expense'])
+                total_driver_refund += Decimal(d_row['refund_to_company'])
+                total_company_reimburse += Decimal(d_row['company_reimburse'])
+                
+                # Số dư đối soát (Tạm ứng - Thực chi)
+                d_row['settlement_balance'] = d_row['total_advance_received'] - d_row['total_actual_expense']
 
             rows = list(drivers_map.values())
-            rows.sort(key=lambda x: x['trips_count'], reverse=True)
+            # Sắp xếp ưu tiên: Tài xế có nhiều chuyến / chi phí nhiều nhất lên đầu
+            rows.sort(key=lambda x: (x['trips_count'], x['total_actual_expense']), reverse=True)
 
             return Response({
                 'success': True,
@@ -1075,18 +1111,18 @@ class AccountingReportsAPIView(APIView):
                     'total_trip_salary': int(total_driver_trip_pay),
                     'total_advance_given': int(total_advances_given),
                     'total_actual_expense': int(total_actual_expenses),
-                    'total_driver_refund': int(total_diff_refund),
-                    'total_company_reimburse': int(total_diff_reimburse),
+                    'total_driver_refund': int(total_driver_refund),
+                    'total_company_reimburse': int(total_company_reimburse),
                 },
                 'headers': [
                     {'key': 'driver_name', 'label': 'Họ Tên Bác Tài', 'align': 'left'},
                     {'key': 'assigned_vehicle', 'label': 'Đầu Kéo Phụ Trách', 'align': 'center'},
-                    {'key': 'trips_count', 'label': 'Số Chuyến Hoàn Thành', 'align': 'center'},
+                    {'key': 'trips_count', 'label': 'Tổng Chuyến (Xong)', 'align': 'center'},
                     {'key': 'estimated_trip_salary', 'label': 'Lương Chuyến (VNĐ)', 'align': 'right'},
-                    {'key': 'total_advance_received', 'label': 'Tạm Ứng Đã Nhận', 'align': 'right'},
+                    {'key': 'total_advance_received', 'label': 'Tạm Ứng Đã Cấp', 'align': 'right'},
                     {'key': 'total_actual_expense', 'label': 'Chi Phí Thực Chi (BOT/Phí)', 'align': 'right'},
-                    {'key': 'refund_to_company', 'label': 'Tài Xế Hoàn Tiền (+)', 'align': 'right'},
-                    {'key': 'company_reimburse', 'label': 'Cty Chi Bù Thêm (-)', 'align': 'right'},
+                    {'key': 'settlement_balance', 'label': 'Số Dư Đối Soát (+/-)', 'align': 'right'},
+                    {'key': 'settled_advances_count', 'label': 'Phiếu Đã Chốt', 'align': 'center'},
                 ],
                 'rows': rows
             }, status=status.HTTP_200_OK)

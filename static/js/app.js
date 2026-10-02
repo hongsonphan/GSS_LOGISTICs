@@ -12748,7 +12748,7 @@ function renderAccountingReportTable(data) {
             if (typeof val === 'number') {
                 if (h.key.includes('pct') || h.key.includes('percent')) {
                     displayVal = `${val}%`;
-                } else if (h.key.includes('revenue') || h.key.includes('cost') || h.key.includes('expense') || h.key.includes('profit') || h.key.includes('salary') || h.key.includes('toll') || h.key.includes('advance') || h.key.includes('payable') || h.key.includes('refund') || h.key.includes('margin') || h.key.includes('reimbursables') || h.key.includes('reimburse')) {
+                } else if (h.key.includes('revenue') || h.key.includes('cost') || h.key.includes('expense') || h.key.includes('profit') || h.key.includes('salary') || h.key.includes('toll') || h.key.includes('advance') || h.key.includes('payable') || h.key.includes('refund') || h.key.includes('margin') || h.key.includes('reimbursables') || h.key.includes('reimburse') || h.key.includes('balance')) {
                     displayVal = `${fmt(val)} đ`;
                 } else {
                     displayVal = fmt(val);
@@ -12766,6 +12766,14 @@ function renderAccountingReportTable(data) {
                 displayVal = val > 0 ? `<span class="text-emerald-700 font-bold font-mono">+${displayVal}</span>` : '-';
             } else if (h.key === 'company_reimburse') {
                 displayVal = val > 0 ? `<span class="text-amber-700 font-bold font-mono">-${displayVal}</span>` : '-';
+            } else if (h.key === 'settlement_balance') {
+                if (val > 0) {
+                    displayVal = `<span class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold font-mono">+${fmt(val)} đ <span class="text-[10px] font-normal">(Nộp cty)</span></span>`;
+                } else if (val < 0) {
+                    displayVal = `<span class="inline-flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded font-bold font-mono">${fmt(val)} đ <span class="text-[10px] font-normal">(Cty bù)</span></span>`;
+                } else {
+                    displayVal = `<span class="text-slate-400 font-mono">0 đ (Khớp)</span>`;
+                }
             }
 
             trHtml += `<td class="py-3 px-3.5 ${alignClass}">${displayVal}</td>`;
