@@ -65,7 +65,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     specs = [
         {
             'step': 1,
-            'title': 'Tiếp nhận & Chuẩn bị lệnh điều động',
+            'title': 'Tiếp nhận Booking & Chuẩn bị lệnh điều động',
             'time': t_create
         },
         {
@@ -80,7 +80,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
         },
         {
             'step': 4,
-            'title': f'Lấy Cont / Hàng tại {pickup_name} (Kiểm tra Cont, Seal, EIR)',
+            'title': f'Xuất phát & Lấy Cont / Hàng tại {pickup_name} (Kiểm tra Cont, Seal, EIR)',
             'time': t_pickup
         },
         {
@@ -90,7 +90,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
         },
         {
             'step': 6,
-            'title': f'Vào cổng kho {wh_name} — Chờ gọi vào dock',
+            'title': f'Đến cổng kho {wh_name} (Báo kho, Chờ gọi vào dock)',
             'time': t_wh_in
         },
         {
@@ -170,7 +170,8 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
 
 def sync_trip_10_step_timeline(trip: DispatchTrip):
     """
-    Đồng bộ hoặc khởi tạo 10 bản ghi TripTimelineItem cho chuyến xe trong Database.
+    Đồng bộ hoặc khởi tạo chính xác 10 bản ghi TripTimelineItem cho chuyến xe trong Database.
+    Xóa sạch mọi bản ghi thừa (> 10) để bảo toàn kiến trúc 10 bước chuẩn.
     """
     timeline_specs = build_10_step_timeline_spec(trip)
 
@@ -185,6 +186,9 @@ def sync_trip_10_step_timeline(trip: DispatchTrip):
                 'is_active': spec['active'],
             }
         )
+
+    # Dọn dẹp bản ghi trùng lặp hoặc mốc log thừa > 10 nếu có
+    trip.timeline_items.filter(step_number__gt=10).delete()
 
 def get_derived_7_milestones(trip: DispatchTrip):
     """

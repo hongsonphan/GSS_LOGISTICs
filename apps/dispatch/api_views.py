@@ -2556,16 +2556,6 @@ class TripDriverMilestoneAPIView(APIView):
             from apps.dispatch.timeline_service import sync_trip_10_step_timeline
             sync_trip_10_step_timeline(trip)
 
-        # ── Thêm mốc log vào timeline (hiển thị nhật ký hiện trường) ──
-        TripTimelineItem.objects.create(
-            trip=trip,
-            step_number=trip.timeline_items.count() + 1,
-            title=info['title'] + (f" ({notes})" if notes else ""),
-            time_display=now_str,
-            is_done=True,
-            is_active=False
-        )
-
         return Response({
             'success': True,
             'message': info['msg'],
