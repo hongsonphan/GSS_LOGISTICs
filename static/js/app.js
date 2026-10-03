@@ -12457,6 +12457,7 @@ function exportCustomsExcel() {
 // 9.8. SUBTAB 8: TRUNG TÂM BÁO CÁO KẾ TOÁN & ĐỐI SOÁT ĐA CHIỀU
 // ==============================================================================
 let currentAccountingReportType = 'BY_CUSTOMER';
+let currentAccountingReportPeriod = 'this_month';
 let cachedAccountingReportData = null;
 
 function selectAccountingReportType(reportType) {
@@ -12487,6 +12488,7 @@ function selectAccountingReportType(reportType) {
 }
 
 function setAccountingReportPeriod(period) {
+    currentAccountingReportPeriod = period;
     const fromInput = document.getElementById('acct-rep-from-date');
     const toInput = document.getElementById('acct-rep-to-date');
     if (!fromInput || !toInput) return;
@@ -12917,10 +12919,24 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
 
     if (titleEl) titleEl.innerText = targetKey || 'Đang tải dữ liệu...';
     if (subtextEl) subtextEl.innerText = 'Vui lòng chờ trong giây lát...';
-    if (periodEl) periodEl.innerText = `Kỳ: ${currentAccountingReportPeriod || 'Tất cả'}`;
+    const fromDate = document.getElementById('acct-rep-from-date')?.value || '';
+    const toDate = document.getElementById('acct-rep-to-date')?.value || '';
+    let periodText = 'Tất cả';
+    if (fromDate && toDate) {
+        periodText = `${fromDate} đến ${toDate}`;
+    } else if (currentAccountingReportPeriod) {
+        const periodMap = {
+            'this_month': 'Tháng này',
+            'last_month': 'Tháng trước',
+            'this_quarter': 'Quý này',
+            'this_year': 'Năm nay'
+        };
+        periodText = periodMap[currentAccountingReportPeriod] || currentAccountingReportPeriod;
+    }
+    if (periodEl) periodEl.innerText = `Kỳ: ${periodText}`;
     
     // Đổi Badge & Icon theo loại báo cáo
-    const reportType = currentAccountingReportType || 'BY_CUSTOMER';
+    const reportType = currentAccountingReportType || (cachedAccountingReportData ? cachedAccountingReportData.report_type : 'BY_CUSTOMER');
     if (reportType === 'BY_CUSTOMER') {
         if (badgeEl) badgeEl.innerText = 'CHI TIẾT KHÁCH HÀNG';
         if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-buildings"></i>';
@@ -12944,8 +12960,6 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
 
     // 2. Gọi API Drill-down
     try {
-        const fromDate = document.getElementById('acct-rep-from-date')?.value || '';
-        const toDate = document.getElementById('acct-rep-to-date')?.value || '';
         const url = `/api/accounting/reports/drilldown/?type=${reportType}&target_id=${targetId}&target_key=${encodeURIComponent(targetKey)}&from_date=${fromDate}&to_date=${toDate}`;
         
         const res = await fetchWithAuth(url);
