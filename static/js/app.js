@@ -13224,8 +13224,14 @@ function exportAccountingReportToExcel() {
 
 window.switchTab = switchTab;
 window.switchAccountingSubTab = switchAccountingSubTab;
-window.switchAccountingReportType = switchAccountingReportType;
-window.changeAccountingReportPeriod = changeAccountingReportPeriod;
+window.selectAccountingReportType = selectAccountingReportType;
+window.switchAccountingReportType = selectAccountingReportType;
+window.setAccountingReportPeriod = setAccountingReportPeriod;
+window.changeAccountingReportPeriod = setAccountingReportPeriod;
 window.loadAccountingReportData = loadAccountingReportData;
 window.exportAccountingReportToExcel = exportAccountingReportToExcel;
+window.openAccountingReportDrilldown = openAccountingReportDrilldown;
+window.closeAccountingDrilldownModal = closeAccountingDrilldownModal;
+window.switchDrilldownTab = switchDrilldownTab;
+window.exportAccountingDrilldownToExcel = exportAccountingDrilldownToExcel;
 
