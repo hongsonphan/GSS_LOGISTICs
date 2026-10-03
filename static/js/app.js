@@ -12903,7 +12903,6 @@ function renderAccountingReportTable(data) {
 // =========================================================================
 
 let currentDrilldownTarget = null;
-let currentDrilldownTab = 'trips';
 
 async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
     const targetKey = decodeURIComponent(encodedTargetKey || '');
