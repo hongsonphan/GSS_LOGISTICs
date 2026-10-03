@@ -12903,14 +12903,20 @@ function renderAccountingReportTable(data) {
 // =========================================================================
 
 let currentDrilldownTarget = null;
+let currentDrilldownTab = 'trips';
 
 async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
     const targetKey = decodeURIComponent(encodedTargetKey || '');
     currentDrilldownTarget = { targetId, encodedTargetKey };
 
-    // 1. Chuyển đổi giữa View Tổng Hợp và View Chi Tiết Toàn Trang
+    // 1. Chuyển đổi giữa View Tổng Hợp và View Chi Tiết Toàn Trang (Focus Mode)
     const summaryView = document.getElementById('acct-rep-summary-view');
     const drilldownView = document.getElementById('acct-rep-drilldown-view');
+    const mainHeader = document.getElementById('acct-main-header');
+    const mainSubtabsBar = document.getElementById('acct-main-subtabs-bar');
+
+    if (mainHeader) mainHeader.classList.add('hidden');
+    if (mainSubtabsBar) mainSubtabsBar.classList.add('hidden');
     if (summaryView) summaryView.classList.add('hidden');
     if (drilldownView) drilldownView.classList.remove('hidden');
 
@@ -12922,6 +12928,10 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
     const kpiContainer = document.getElementById('drilldown-kpi-container');
     const tripsTbody = document.getElementById('drilldown-trips-tbody');
     const expTbody = document.getElementById('drilldown-expenses-tbody');
+    const tripsTfoot = document.getElementById('drilldown-trips-tfoot');
+    const expTfoot = document.getElementById('drilldown-expenses-tfoot');
+    const searchInput = document.getElementById('drilldown-table-search');
+    if (searchInput) searchInput.value = '';
 
     if (titleEl) titleEl.innerText = targetKey || 'Đang tải dữ liệu...';
     if (subtextEl) subtextEl.innerText = 'Vui lòng chờ trong giây lát...';
@@ -12947,35 +12957,37 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
     if (reportType === 'BY_CUSTOMER') {
         if (badgeEl) {
             badgeEl.innerText = 'CHI TIẾT KHÁCH HÀNG';
-            badgeEl.className = 'px-2.5 py-0.5 rounded-md bg-teal-100 border border-teal-200 text-teal-900 text-[11px] font-black uppercase tracking-wider font-heading';
+            badgeEl.className = 'px-2 py-0.5 rounded-md bg-teal-100 border border-teal-200 text-teal-900 text-[10.5px] font-black uppercase tracking-wider font-heading';
         }
         if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-buildings text-teal-700"></i>';
     } else if (reportType === 'BY_SUBCONTRACTOR') {
         if (badgeEl) {
             badgeEl.innerText = 'CHI TIẾT XE BẠN (3PL)';
-            badgeEl.className = 'px-2.5 py-0.5 rounded-md bg-rose-100 border border-rose-200 text-rose-900 text-[11px] font-black uppercase tracking-wider font-heading';
+            badgeEl.className = 'px-2 py-0.5 rounded-md bg-rose-100 border border-rose-200 text-rose-900 text-[10.5px] font-black uppercase tracking-wider font-heading';
         }
         if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-truck text-rose-600"></i>';
     } else if (reportType === 'BY_DRIVER') {
         if (badgeEl) {
             badgeEl.innerText = 'CHI TIẾT BÁC TÀI';
-            badgeEl.className = 'px-2.5 py-0.5 rounded-md bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-black uppercase tracking-wider font-heading';
+            badgeEl.className = 'px-2 py-0.5 rounded-md bg-amber-100 border border-amber-200 text-amber-900 text-[10.5px] font-black uppercase tracking-wider font-heading';
         }
         if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-steering-wheel text-amber-600"></i>';
     } else if (reportType === 'BY_ROUTE') {
         if (badgeEl) {
             badgeEl.innerText = 'CHI TIẾT TUYẾN ĐƯỜNG';
-            badgeEl.className = 'px-2.5 py-0.5 rounded-md bg-indigo-100 border border-indigo-200 text-indigo-900 text-[11px] font-black uppercase tracking-wider font-heading';
+            badgeEl.className = 'px-2 py-0.5 rounded-md bg-indigo-100 border border-indigo-200 text-indigo-900 text-[10.5px] font-black uppercase tracking-wider font-heading';
         }
         if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-path text-indigo-600"></i>';
     }
 
     if (kpiContainer) {
-        kpiContainer.innerHTML = '<div class="col-span-4 py-8 text-center text-slate-400"><i class="ph-bold ph-spinner animate-spin text-2xl text-teal-600"></i> Đang nạp dữ liệu phân tích chi tiết...</div>';
+        kpiContainer.innerHTML = '<div class="col-span-2 lg:col-span-4 py-4 text-center text-slate-400"><i class="ph-bold ph-spinner animate-spin text-xl text-teal-600"></i> Đang nạp dữ liệu phân tích chi tiết...</div>';
     }
     if (tripsTbody) {
         tripsTbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-slate-400"><i class="ph-bold ph-spinner animate-spin text-2xl text-teal-600"></i> Đang tải các chuyến xe...</td></tr>';
     }
+    if (tripsTfoot) tripsTfoot.innerHTML = '';
+    if (expTfoot) expTfoot.innerHTML = '';
 
     // Cuộn lên đầu view kế toán
     const mainView = document.getElementById('view-ke-toan');
@@ -12994,31 +13006,47 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
         if (titleEl) titleEl.innerText = data.target_name || targetKey;
         if (subtextEl) subtextEl.innerText = data.target_subtext || '';
 
-        // 3. Render 4 Thẻ KPI của riêng đối tượng
+        // 3. Render 4 Thẻ KPI Phân Tích Nhỏ Gọn (Compact Metric Strip)
         const sum = data.summary || {};
         const fmt = (n) => Number(n || 0).toLocaleString('vi-VN');
 
         if (kpiContainer) {
             kpiContainer.innerHTML = `
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs">
-                    <span class="text-[11px] font-bold text-slate-500 uppercase">Tổng Chuyến Chạy</span>
-                    <p class="text-2xl font-black text-slate-900 font-heading mt-1">${fmt(sum.total_trips)} chuyến</p>
-                    <p class="text-[11px] text-teal-700 font-semibold mt-1">Số lượng chuyến phát sinh</p>
+                <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200/90 border-l-4 border-l-teal-600 flex items-center justify-between shadow-2xs">
+                    <div>
+                        <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider block">Tổng Chuyến Chạy</span>
+                        <p class="text-xl font-black text-slate-900 font-heading tabular-nums mt-0.5">${fmt(sum.total_trips)} <span class="text-xs font-semibold text-slate-500">chuyến</span></p>
+                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-teal-100/70 text-teal-800 flex items-center justify-center text-sm shrink-0">
+                        <i class="ph-bold ph-truck"></i>
+                    </div>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs">
-                    <span class="text-[11px] font-bold text-slate-500 uppercase">Tổng Doanh Thu Cước</span>
-                    <p class="text-2xl font-black text-blue-900 font-heading mt-1">${fmt(sum.total_revenue)} đ</p>
-                    <p class="text-[11px] text-slate-500 mt-1">Cước vận chuyển ghi nhận</p>
+                <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200/90 border-l-4 border-l-blue-600 flex items-center justify-between shadow-2xs">
+                    <div>
+                        <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider block">Tổng Doanh Thu Cước</span>
+                        <p class="text-xl font-black text-blue-900 font-heading tabular-nums mt-0.5">${fmt(sum.total_revenue)} <span class="text-xs font-semibold text-slate-500">đ</span></p>
+                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-blue-100/70 text-blue-800 flex items-center justify-center text-sm shrink-0">
+                        <i class="ph-bold ph-hand-coins"></i>
+                    </div>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-rose-500 shadow-2xs">
-                    <span class="text-[11px] font-bold text-slate-500 uppercase">Tổng Chi Phí Thực Tế</span>
-                    <p class="text-2xl font-black text-rose-600 font-heading mt-1">${fmt(sum.total_expense)} đ</p>
-                    <p class="text-[11px] text-slate-500 mt-1">Chi hộ: ${fmt(sum.total_reimbursable)} đ (${sum.total_expenses_items || 0} khoản)</p>
+                <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200/90 border-l-4 border-l-rose-500 flex items-center justify-between shadow-2xs">
+                    <div>
+                        <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider block">Tổng Chi Phí Thực Tế</span>
+                        <p class="text-xl font-black text-rose-600 font-heading tabular-nums mt-0.5">${fmt(sum.total_expense)} <span class="text-xs font-semibold text-slate-500">đ</span></p>
+                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-rose-100/70 text-rose-700 flex items-center justify-center text-sm shrink-0">
+                        <i class="ph-bold ph-receipt"></i>
+                    </div>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-2xs">
-                    <span class="text-[11px] font-bold text-slate-500 uppercase">Lợi Nhuận Gộp Đối Tượng</span>
-                    <p class="text-2xl font-black text-emerald-700 font-heading mt-1">${fmt(sum.total_gross_profit)} đ</p>
-                    <p class="text-[11px] text-emerald-700 font-semibold mt-1">Hiệu quả ròng sau chi phí</p>
+                <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200/90 border-l-4 border-l-emerald-600 flex items-center justify-between shadow-2xs">
+                    <div>
+                        <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider block">Lợi Nhuận Gộp Đối Tượng</span>
+                        <p class="text-xl font-black text-emerald-700 font-heading tabular-nums mt-0.5">${fmt(sum.total_gross_profit)} <span class="text-xs font-semibold text-slate-500">đ</span></p>
+                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100/70 text-emerald-800 flex items-center justify-center text-sm shrink-0">
+                        <i class="ph-bold ph-trend-up"></i>
+                    </div>
                 </div>
             `;
         }
@@ -13028,8 +13056,8 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
         const expenses = data.expenses || [];
         const tabTripsLabel = document.getElementById('drilldown-tab-trips-label');
         const tabExpLabel = document.getElementById('drilldown-tab-expenses-label');
-        if (tabTripsLabel) tabTripsLabel.innerText = `1. Bảng Kê Toàn Bộ Các Chuyến Xe (${trips.length})`;
-        if (tabExpLabel) tabExpLabel.innerText = `2. Chi Tiết Khoản Chi & Hóa Đơn (${expenses.length})`;
+        if (tabTripsLabel) tabTripsLabel.innerText = `Bảng Kê Chuyến Xe (${trips.length})`;
+        if (tabExpLabel) tabExpLabel.innerText = `Khoản Chi & Hóa Đơn (${expenses.length})`;
 
         // 5. Render Bảng Chuyến Xe
         if (tripsTbody) {
@@ -13077,6 +13105,22 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
             }
         }
 
+        // Render Footer Tổng Chuyến Xe
+        if (tripsTfoot && trips.length > 0) {
+            tripsTfoot.innerHTML = `
+                <tr class="bg-slate-100/90 font-black text-slate-800 border-t-2 border-slate-300">
+                    <td colspan="6" class="py-3 px-3.5 text-right font-heading uppercase text-xs">
+                        TỔNG CỘNG (${trips.length} chuyến):
+                    </td>
+                    <td class="py-3 px-3.5 text-right font-mono text-blue-900 font-black text-xs">${fmt(sum.total_revenue)} đ</td>
+                    <td class="py-3 px-3.5 text-right font-mono text-rose-600 font-black text-xs">${fmt(sum.total_expense)} đ</td>
+                    <td class="py-3 px-3.5 text-right font-mono text-amber-700 font-black text-xs">${fmt(sum.total_reimbursable)} đ</td>
+                    <td class="py-3 px-3.5 text-right font-mono text-emerald-700 font-black text-xs">${fmt(sum.total_gross_profit)} đ</td>
+                    <td></td>
+                </tr>
+            `;
+        }
+
         // 6. Render Bảng Chi Phí & Hóa Đơn
         if (expTbody) {
             if (expenses.length === 0) {
@@ -13110,6 +13154,19 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
             }
         }
 
+        // Render Footer Tổng Chi Phí
+        if (expTfoot && expenses.length > 0) {
+            expTfoot.innerHTML = `
+                <tr class="bg-slate-100/90 font-black text-slate-800 border-t-2 border-slate-300">
+                    <td colspan="3" class="py-3 px-3.5 text-right font-heading uppercase text-xs">
+                        TỔNG CỘNG (${expenses.length} khoản chi):
+                    </td>
+                    <td class="py-3 px-3.5 text-right font-mono text-rose-600 font-black text-xs">${fmt(sum.total_expense)} đ</td>
+                    <td colspan="5"></td>
+                </tr>
+            `;
+        }
+
         // Mặc định mở Tab 1 (Chuyến xe)
         switchDrilldownTab('trips');
 
@@ -13128,23 +13185,71 @@ function switchDrilldownTab(tabName) {
     const panelExp = document.getElementById('drilldown-panel-expenses');
 
     if (tabName === 'trips') {
-        if (btnTrips) btnTrips.className = 'px-4 py-2 rounded-xl text-xs font-bold font-heading bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer';
-        if (btnExp) btnExp.className = 'px-4 py-2 rounded-xl text-xs font-bold font-heading bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer';
+        if (btnTrips) btnTrips.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold font-heading bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer';
+        if (btnExp) btnExp.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold font-heading text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition-all cursor-pointer';
         if (panelTrips) panelTrips.classList.remove('hidden');
         if (panelExp) panelExp.classList.add('hidden');
     } else {
-        if (btnTrips) btnTrips.className = 'px-4 py-2 rounded-xl text-xs font-bold font-heading bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer';
-        if (btnExp) btnExp.className = 'px-4 py-2 rounded-xl text-xs font-bold font-heading bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer';
+        if (btnTrips) btnTrips.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold font-heading text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition-all cursor-pointer';
+        if (btnExp) btnExp.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold font-heading bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer';
         if (panelTrips) panelTrips.classList.add('hidden');
         if (panelExp) panelExp.classList.remove('hidden');
     }
+
+    // Re-apply search filter for newly activated tab
+    filterDrilldownTable();
 }
 window.switchDrilldownTab = switchDrilldownTab;
+
+function filterDrilldownTable() {
+    const searchInput = document.getElementById('drilldown-table-search');
+    const clearBtn = document.getElementById('drilldown-search-clear');
+    if (!searchInput) return;
+
+    const term = (searchInput.value || '').trim().toLowerCase();
+    if (clearBtn) {
+        if (term) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    const currentTab = currentDrilldownTab || 'trips';
+    const tbody = currentTab === 'trips' 
+        ? document.getElementById('drilldown-trips-tbody') 
+        : document.getElementById('drilldown-expenses-tbody');
+
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (!term || text.includes(term)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+window.filterDrilldownTable = filterDrilldownTable;
+
+function clearDrilldownSearch() {
+    const searchInput = document.getElementById('drilldown-table-search');
+    if (searchInput) {
+        searchInput.value = '';
+        filterDrilldownTable();
+        searchInput.focus();
+    }
+}
+window.clearDrilldownSearch = clearDrilldownSearch;
 
 function closeAccountingDrilldownView() {
     const summaryView = document.getElementById('acct-rep-summary-view');
     const drilldownView = document.getElementById('acct-rep-drilldown-view');
+    const mainHeader = document.getElementById('acct-main-header');
+    const mainSubtabsBar = document.getElementById('acct-main-subtabs-bar');
+
     if (drilldownView) drilldownView.classList.add('hidden');
+    if (mainHeader) mainHeader.classList.remove('hidden');
+    if (mainSubtabsBar) mainSubtabsBar.classList.remove('hidden');
     if (summaryView) summaryView.classList.remove('hidden');
 
     const mainView = document.getElementById('view-ke-toan');
@@ -13158,6 +13263,7 @@ function reloadAccountingDrilldown() {
         openAccountingReportDrilldown(currentDrilldownTarget.targetId, currentDrilldownTarget.encodedTargetKey);
     }
 }
+window.reloadAccountingDrilldown = reloadAccountingDrilldown;
 window.reloadAccountingDrilldown = reloadAccountingDrilldown;
 
 function exportAccountingDrilldownToExcel() {
