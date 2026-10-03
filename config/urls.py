@@ -43,6 +43,7 @@ from apps.billing.finance_reports_api import (
     SubcontractorSettlementsAPIView,
     BotTollAuditAPIView,
     AccountingReportsAPIView,
+    AccountingReportDrilldownAPIView,
 )
 
 from rest_framework_simplejwt.views import (
@@ -124,6 +125,7 @@ urlpatterns = [
     path('api/accounting/subcontractor-settlements/', SubcontractorSettlementsAPIView.as_view(), name='api-accounting-subcontractors'),
     path('api/accounting/bot-audit/', BotTollAuditAPIView.as_view(), name='api-accounting-bot-audit'),
     path('api/accounting/reports/', AccountingReportsAPIView.as_view(), name='api-accounting-reports'),
+    path('api/accounting/reports/drilldown/', AccountingReportDrilldownAPIView.as_view(), name='api-accounting-reports-drilldown'),
     path('api/reports/', ReportsAPIView.as_view(), name='api-reports'),
     path('api/master-data/', include('apps.master_data.urls')),
 ]

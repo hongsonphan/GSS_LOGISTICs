@@ -1216,3 +1216,177 @@ class AccountingReportsAPIView(APIView):
 
         return Response({'error': 'Loại báo cáo không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class AccountingReportDrilldownAPIView(APIView):
+    """
+    API 6: Báo Cáo Chi Tiết Chuyến Xe & Chi Phí Từng Đối Tượng (Drill-down).
+    Hỗ trợ xem chi tiết toàn bộ các chuyến xe, bảng kê chi phí và phân tích tài chính
+    cho từng Khách hàng, Tài xế, Xe bạn (3PL) hoặc Tuyến đường vận chuyển.
+    """
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAccountant]
+
+    def get(self, request):
+        report_type = request.GET.get('report_type') or request.GET.get('type') or 'BY_CUSTOMER'
+        target_id = request.GET.get('target_id')
+        target_key = request.GET.get('target_key') or ''
+        from_date = request.GET.get('from_date')
+        to_date = request.GET.get('to_date')
+
+        trips_qs = DispatchTrip.objects.filter(is_deleted=False).select_related(
+            'customer', 'driver', 'vehicle', 'booking_order'
+        ).prefetch_related('expenses')
+
+        if from_date:
+            try:
+                fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
+                trips_qs = trips_qs.filter(created_at__date__gte=fd)
+            except ValueError:
+                pass
+
+        if to_date:
+            try:
+                td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
+                trips_qs = trips_qs.filter(created_at__date__lte=td)
+            except ValueError:
+                pass
+
+        target_name = target_key or 'Đối Tượng'
+        target_subtext = ''
+
+        # 1. Drill-down theo Khách Hàng
+        if report_type == 'BY_CUSTOMER':
+            if target_id and target_id.isdigit() and int(target_id) > 0:
+                trips_qs = trips_qs.filter(customer_id=int(target_id))
+                cust = Customer.objects.filter(id=int(target_id)).first()
+                if cust:
+                    target_name = cust.name
+                    target_subtext = f"Mã KH: {cust.code or 'KH'} | MST: {getattr(cust, 'tax_code', '') or 'Chưa có'}"
+            else:
+                trips_qs = trips_qs.filter(Q(customer__name=target_key) | Q(customer__isnull=True))
+                target_name = target_key or 'Khách vãng lai'
+
+        # 2. Drill-down theo Xe Bạn / Thầu Phụ 3PL
+        elif report_type == 'BY_SUBCONTRACTOR':
+            if target_key:
+                trips_qs = trips_qs.filter(vehicle__license_plate=target_key)
+                target_name = f"Đầu Kéo Xe Bạn: {target_key}"
+                target_subtext = "Đơn vị vận tải / Thầu phụ ngoài (3PL)"
+            elif target_id and target_id.isdigit():
+                trips_qs = trips_qs.filter(vehicle_id=int(target_id))
+                target_name = f"Xe Bạn #{target_id}"
+
+        # 3. Drill-down theo Bác Tài
+        elif report_type == 'BY_DRIVER':
+            if target_id and target_id.isdigit():
+                trips_qs = trips_qs.filter(driver_id=int(target_id))
+                emp = Employee.objects.filter(id=int(target_id)).first()
+                if emp:
+                    target_name = emp.full_name or emp.nickname or f"Bác tài #{target_id}"
+                    target_subtext = f"Mã NV: {emp.code or 'TX'} | SĐT: {emp.phone_number or 'Chưa có'}"
+            elif target_key:
+                trips_qs = trips_qs.filter(Q(driver__full_name=target_key) | Q(driver__nickname=target_key) | Q(driver__code=target_key))
+                target_name = f"Bác Tài: {target_key}"
+
+        # 4. Drill-down theo Tuyến Đường
+        elif report_type == 'BY_ROUTE':
+            if '➔' in target_key:
+                parts = [p.strip() for p in target_key.split('➔')]
+                p_from = parts[0]
+                p_to = parts[1] if len(parts) > 1 else ''
+                trips_qs = trips_qs.filter(pickup_location__icontains=p_from, warehouse_location__icontains=p_to)
+            target_name = f"Tuyến: {target_key}"
+            target_subtext = "Phân tích doanh thu cước, vé BOT và chi phí theo lộ trình"
+
+        # Tính toán danh sách chi tiết chuyến xe
+        trips_list = []
+        all_trip_ids = []
+        tot_rev = Decimal(0)
+        tot_exp = Decimal(0)
+        tot_reimb = Decimal(0)
+        tot_profit = Decimal(0)
+        tot_sub_payable = Decimal(0)
+
+        for t in trips_qs.order_by('-created_at'):
+            all_trip_ids.append(t.id)
+            c_rev = int(t.cached_revenue)
+            c_exp = int(t.cached_expense)
+            c_prof = int(t.cached_profit)
+            c_reimb = sum(e.amount for e in t.expenses.all() if not e.is_deleted and e.is_on_behalf_of_customer)
+            
+            sub_cost = int(t.subcontractor_cost or 0)
+            sub_adv = int(t.subcontractor_advance or 0)
+            sub_payable = max(0, sub_cost - sub_adv)
+
+            tot_rev += Decimal(c_rev)
+            tot_exp += Decimal(c_exp)
+            tot_reimb += Decimal(c_reimb)
+            tot_profit += Decimal(c_prof)
+            tot_sub_payable += Decimal(sub_payable)
+
+            trips_list.append({
+                'id': t.id,
+                'trip_code': t.trip_code,
+                'created_date': t.created_at.strftime('%d/%m/%Y %H:%M'),
+                'customer_name': t.customer.name if t.customer else 'Khách vãng lai',
+                'driver_name': (t.driver.nickname or t.driver.full_name) if t.driver else 'Chưa gán',
+                'driver_phone': getattr(t.driver, 'phone_number', '') if t.driver else '',
+                'vehicle_plate': t.vehicle.license_plate if t.vehicle else 'Chưa gán',
+                'vehicle_type': t.vehicle.get_ownership_type_display() if t.vehicle else 'Xe nhà',
+                'container_number': t.container_number or 'Chưa cont',
+                'container_type': t.container_type or '40GP',
+                'seal_number': t.seal_number or '-',
+                'route': f"{t.pickup_location or 'Cảng'} ➔ {t.warehouse_location or 'Kho'} ➔ {t.dropoff_location or 'Bãi hạ'}",
+                'status': t.status,
+                'status_display': t.get_status_display(),
+                'revenue': c_rev,
+                'operating_expense': c_exp,
+                'reimbursable_expense': int(c_reimb),
+                'gross_profit': c_prof,
+                'subcontractor_cost': sub_cost,
+                'subcontractor_advance': sub_adv,
+                'subcontractor_payable': sub_payable,
+                'is_expenses_settled': t.is_expenses_settled,
+                'expenses_count': t.expenses.filter(is_deleted=False).count(),
+            })
+
+        # Lấy danh sách chi tiết các khoản chi phí phát sinh
+        expenses_qs = TripExpense.objects.filter(
+            trip_id__in=all_trip_ids,
+            is_deleted=False
+        ).select_related('trip', 'driver', 'vehicle', 'expense_item').order_by('-created_at')
+
+        expenses_list = []
+        for e in expenses_qs:
+            expenses_list.append({
+                'id': e.id,
+                'trip_code': e.trip.trip_code if e.trip else '',
+                'category': e.category,
+                'category_display': e.get_category_display() if hasattr(e, 'get_category_display') else e.category,
+                'expense_item_name': e.expense_item.name if e.expense_item else '',
+                'amount': int(e.amount),
+                'receipt_type_display': e.get_receipt_type_display() if hasattr(e, 'get_receipt_type_display') else e.receipt_type,
+                'invoice_number': e.invoice_number or e.invoice_lookup_code or '',
+                'is_on_behalf_of_customer': e.is_on_behalf_of_customer,
+                'status': e.status,
+                'status_display': e.get_status_display() if hasattr(e, 'get_status_display') else e.status,
+                'created_at': e.created_at.strftime('%d/%m/%Y %H:%M'),
+            })
+
+        return Response({
+            'success': True,
+            'report_type': report_type,
+            'target_name': target_name,
+            'target_subtext': target_subtext,
+            'summary': {
+                'total_trips': len(trips_list),
+                'total_revenue': int(tot_rev),
+                'total_expense': int(tot_exp),
+                'total_reimbursable': int(tot_reimb),
+                'total_gross_profit': int(tot_profit),
+                'total_subcontractor_payable': int(tot_sub_payable),
+                'total_expenses_items': len(expenses_list),
+            },
+            'trips': trips_list,
+            'expenses': expenses_list,
+        }, status=status.HTTP_200_OK)
