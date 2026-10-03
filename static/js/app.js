@@ -12462,6 +12462,9 @@ let cachedAccountingReportData = null;
 
 function selectAccountingReportType(reportType) {
     currentAccountingReportType = reportType;
+    if (typeof closeAccountingDrilldownView === 'function') {
+        closeAccountingDrilldownView();
+    }
     
     // Cập nhật giao diện 4 nút
     const buttons = {
@@ -12896,29 +12899,33 @@ function renderAccountingReportTable(data) {
 }
 
 // =========================================================================
-// MODAL DRILL-DOWN CHI TIẾT CHUYẾN XE & KHOẢN CHI TỪNG ĐỐI TƯỢNG
+// BÁO CÁO CHI TIẾT TOÀN TRANG (FULL-PAGE DRILL-DOWN)
 // =========================================================================
+
+let currentDrilldownTarget = null;
 
 async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
     const targetKey = decodeURIComponent(encodedTargetKey || '');
-    const modal = document.getElementById('modal-accounting-report-drilldown');
-    if (!modal) return;
+    currentDrilldownTarget = { targetId, encodedTargetKey };
 
-    // 1. Reset UI Modal & Hiển thị Spinner
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    // 1. Chuyển đổi giữa View Tổng Hợp và View Chi Tiết Toàn Trang
+    const summaryView = document.getElementById('acct-rep-summary-view');
+    const drilldownView = document.getElementById('acct-rep-drilldown-view');
+    if (summaryView) summaryView.classList.add('hidden');
+    if (drilldownView) drilldownView.classList.remove('hidden');
 
-    const titleEl = document.getElementById('drilldown-modal-title');
-    const badgeEl = document.getElementById('drilldown-modal-badge');
-    const subtextEl = document.getElementById('drilldown-modal-subtext');
-    const periodEl = document.getElementById('drilldown-modal-period');
-    const iconEl = document.getElementById('drilldown-modal-icon');
+    const titleEl = document.getElementById('drilldown-view-title');
+    const badgeEl = document.getElementById('drilldown-view-badge');
+    const subtextEl = document.getElementById('drilldown-view-subtext');
+    const periodEl = document.getElementById('drilldown-view-period');
+    const iconEl = document.getElementById('drilldown-view-icon');
     const kpiContainer = document.getElementById('drilldown-kpi-container');
     const tripsTbody = document.getElementById('drilldown-trips-tbody');
     const expTbody = document.getElementById('drilldown-expenses-tbody');
 
     if (titleEl) titleEl.innerText = targetKey || 'Đang tải dữ liệu...';
     if (subtextEl) subtextEl.innerText = 'Vui lòng chờ trong giây lát...';
+
     const fromDate = document.getElementById('acct-rep-from-date')?.value || '';
     const toDate = document.getElementById('acct-rep-to-date')?.value || '';
     let periodText = 'Tất cả';
@@ -12938,25 +12945,41 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
     // Đổi Badge & Icon theo loại báo cáo
     const reportType = currentAccountingReportType || (cachedAccountingReportData ? cachedAccountingReportData.report_type : 'BY_CUSTOMER');
     if (reportType === 'BY_CUSTOMER') {
-        if (badgeEl) badgeEl.innerText = 'CHI TIẾT KHÁCH HÀNG';
-        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-buildings"></i>';
+        if (badgeEl) {
+            badgeEl.innerText = 'CHI TIẾT KHÁCH HÀNG';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md bg-teal-100 border border-teal-200 text-teal-900 text-[11px] font-black uppercase tracking-wider font-heading';
+        }
+        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-buildings text-teal-700"></i>';
     } else if (reportType === 'BY_SUBCONTRACTOR') {
-        if (badgeEl) badgeEl.innerText = 'CHI TIẾT XE BẠN (3PL)';
-        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-truck text-rose-300"></i>';
+        if (badgeEl) {
+            badgeEl.innerText = 'CHI TIẾT XE BẠN (3PL)';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md bg-rose-100 border border-rose-200 text-rose-900 text-[11px] font-black uppercase tracking-wider font-heading';
+        }
+        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-truck text-rose-600"></i>';
     } else if (reportType === 'BY_DRIVER') {
-        if (badgeEl) badgeEl.innerText = 'CHI TIẾT BÁC TÀI';
-        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-steering-wheel text-amber-300"></i>';
+        if (badgeEl) {
+            badgeEl.innerText = 'CHI TIẾT BÁC TÀI';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-black uppercase tracking-wider font-heading';
+        }
+        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-steering-wheel text-amber-600"></i>';
     } else if (reportType === 'BY_ROUTE') {
-        if (badgeEl) badgeEl.innerText = 'CHI TIẾT TUYẾN ĐƯỜNG';
-        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-path text-indigo-300"></i>';
+        if (badgeEl) {
+            badgeEl.innerText = 'CHI TIẾT TUYẾN ĐƯỜNG';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-md bg-indigo-100 border border-indigo-200 text-indigo-900 text-[11px] font-black uppercase tracking-wider font-heading';
+        }
+        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-path text-indigo-600"></i>';
     }
 
     if (kpiContainer) {
-        kpiContainer.innerHTML = '<div class="col-span-4 py-8 text-center text-slate-400"><i class="ph-bold ph-spinner animate-spin text-2xl"></i> Đang nạp dữ liệu phân tích chi tiết...</div>';
+        kpiContainer.innerHTML = '<div class="col-span-4 py-8 text-center text-slate-400"><i class="ph-bold ph-spinner animate-spin text-2xl text-teal-600"></i> Đang nạp dữ liệu phân tích chi tiết...</div>';
     }
     if (tripsTbody) {
-        tripsTbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-slate-400"><i class="ph-bold ph-spinner animate-spin text-2xl"></i> Đang tải các chuyến xe...</td></tr>';
+        tripsTbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-slate-400"><i class="ph-bold ph-spinner animate-spin text-2xl text-teal-600"></i> Đang tải các chuyến xe...</td></tr>';
     }
+
+    // Cuộn lên đầu view kế toán
+    const mainView = document.getElementById('view-ke-toan');
+    if (mainView) mainView.scrollTo({ top: 0, behavior: 'smooth' });
 
     // 2. Gọi API Drill-down
     try {
@@ -12977,25 +13000,25 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
 
         if (kpiContainer) {
             kpiContainer.innerHTML = `
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs">
                     <span class="text-[11px] font-bold text-slate-500 uppercase">Tổng Chuyến Chạy</span>
-                    <p class="text-xl font-black text-slate-900 font-heading mt-0.5">${fmt(sum.total_trips)} chuyến</p>
-                    <p class="text-[10px] text-teal-700 font-semibold mt-0.5">Số lượng chuyến phát sinh</p>
+                    <p class="text-2xl font-black text-slate-900 font-heading mt-1">${fmt(sum.total_trips)} chuyến</p>
+                    <p class="text-[11px] text-teal-700 font-semibold mt-1">Số lượng chuyến phát sinh</p>
                 </div>
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs">
                     <span class="text-[11px] font-bold text-slate-500 uppercase">Tổng Doanh Thu Cước</span>
-                    <p class="text-xl font-black text-blue-900 font-heading mt-0.5">${fmt(sum.total_revenue)} đ</p>
-                    <p class="text-[10px] text-slate-500 mt-0.5">Cước vận chuyển ghi nhận</p>
+                    <p class="text-2xl font-black text-blue-900 font-heading mt-1">${fmt(sum.total_revenue)} đ</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Cước vận chuyển ghi nhận</p>
                 </div>
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 border-l-4 border-l-rose-500 shadow-2xs">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-rose-500 shadow-2xs">
                     <span class="text-[11px] font-bold text-slate-500 uppercase">Tổng Chi Phí Thực Tế</span>
-                    <p class="text-xl font-black text-rose-600 font-heading mt-0.5">${fmt(sum.total_expense)} đ</p>
-                    <p class="text-[10px] text-slate-500 mt-0.5">Chi hộ: ${fmt(sum.total_reimbursable)} đ (${sum.total_expenses_items || 0} khoản)</p>
+                    <p class="text-2xl font-black text-rose-600 font-heading mt-1">${fmt(sum.total_expense)} đ</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Chi hộ: ${fmt(sum.total_reimbursable)} đ (${sum.total_expenses_items || 0} khoản)</p>
                 </div>
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-2xs">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-2xs">
                     <span class="text-[11px] font-bold text-slate-500 uppercase">Lợi Nhuận Gộp Đối Tượng</span>
-                    <p class="text-xl font-black text-emerald-700 font-heading mt-0.5">${fmt(sum.total_gross_profit)} đ</p>
-                    <p class="text-[10px] text-emerald-700 font-semibold mt-0.5">Hiệu quả ròng sau chi phí</p>
+                    <p class="text-2xl font-black text-emerald-700 font-heading mt-1">${fmt(sum.total_gross_profit)} đ</p>
+                    <p class="text-[11px] text-emerald-700 font-semibold mt-1">Hiệu quả ròng sau chi phí</p>
                 </div>
             `;
         }
@@ -13005,45 +13028,45 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
         const expenses = data.expenses || [];
         const tabTripsLabel = document.getElementById('drilldown-tab-trips-label');
         const tabExpLabel = document.getElementById('drilldown-tab-expenses-label');
-        if (tabTripsLabel) tabTripsLabel.innerText = `1. Bảng Kê Các Chuyến Xe (${trips.length})`;
+        if (tabTripsLabel) tabTripsLabel.innerText = `1. Bảng Kê Toàn Bộ Các Chuyến Xe (${trips.length})`;
         if (tabExpLabel) tabExpLabel.innerText = `2. Chi Tiết Khoản Chi & Hóa Đơn (${expenses.length})`;
 
         // 5. Render Bảng Chuyến Xe
         if (tripsTbody) {
             if (trips.length === 0) {
-                tripsTbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-slate-400 italic">Không có chuyến xe nào trong kỳ đã chọn</td></tr>';
+                tripsTbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-slate-400 italic">Không có chuyến xe nào trong kỳ đã chọn</td></tr>';
             } else {
                 let tripsHtml = '';
                 trips.forEach((t, idx) => {
                     const statusClass = t.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
                     tripsHtml += `
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="py-2.5 px-3 text-center font-bold text-slate-400">${idx + 1}</td>
-                            <td class="py-2.5 px-3">
-                                <button type="button" onclick="closeAccountingDrilldownModal(); viewTripDetail('${t.trip_code}')"
+                        <tr class="hover:bg-teal-50/50 transition-colors">
+                            <td class="py-3 px-3.5 text-center font-bold text-slate-400">${idx + 1}</td>
+                            <td class="py-3 px-3.5">
+                                <button type="button" onclick="viewTripDetail('${t.trip_code}')"
                                     class="text-teal-700 hover:text-teal-900 font-bold font-mono text-left underline decoration-teal-300 flex items-center gap-1 cursor-pointer">
                                     <i class="ph-bold ph-arrow-square-out text-xs"></i>
                                     <span>${t.trip_code}</span>
                                 </button>
                             </td>
-                            <td class="py-2.5 px-3 text-slate-600">${t.created_date}</td>
-                            <td class="py-2.5 px-3">
-                                <strong class="text-slate-800 block">${escapeHtml(t.vehicle_plate)}</strong>
+                            <td class="py-3 px-3.5 text-slate-600">${t.created_date}</td>
+                            <td class="py-3 px-3.5">
+                                <strong class="text-slate-800 block font-heading">${escapeHtml(t.vehicle_plate)}</strong>
                                 <span class="text-slate-500 text-[11px]">${escapeHtml(t.driver_name)}</span>
                             </td>
-                            <td class="py-2.5 px-3">
+                            <td class="py-3 px-3.5">
                                 <span class="font-mono font-semibold text-slate-800 block">${escapeHtml(t.container_number)} (${t.container_type})</span>
                                 <span class="text-slate-400 text-[10px]">Seal: ${escapeHtml(t.seal_number)}</span>
                             </td>
-                            <td class="py-2.5 px-3 text-slate-700 max-w-[220px] truncate" title="${escapeHtml(t.route)}">
+                            <td class="py-3 px-3.5 text-slate-700 max-w-[240px] truncate font-medium" title="${escapeHtml(t.route)}">
                                 ${escapeHtml(t.route)}
                             </td>
-                            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">${fmt(t.revenue)} đ</td>
-                            <td class="py-2.5 px-3 text-right font-mono font-semibold text-rose-600">${fmt(t.operating_expense)} đ</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-amber-700">${t.reimbursable_expense > 0 ? fmt(t.reimbursable_expense) + ' đ' : '-'}</td>
-                            <td class="py-2.5 px-3 text-right font-mono font-black text-emerald-700">${fmt(t.gross_profit)} đ</td>
-                            <td class="py-2.5 px-3 text-center">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusClass}">
+                            <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-800">${fmt(t.revenue)} đ</td>
+                            <td class="py-3 px-3.5 text-right font-mono font-semibold text-rose-600">${fmt(t.operating_expense)} đ</td>
+                            <td class="py-3 px-3.5 text-right font-mono text-amber-700">${t.reimbursable_expense > 0 ? fmt(t.reimbursable_expense) + ' đ' : '-'}</td>
+                            <td class="py-3 px-3.5 text-right font-mono font-black text-emerald-700">${fmt(t.gross_profit)} đ</td>
+                            <td class="py-3 px-3.5 text-center">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusClass}">
                                     ${t.status_display}
                                 </span>
                             </td>
@@ -13057,7 +13080,7 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
         // 6. Render Bảng Chi Phí & Hóa Đơn
         if (expTbody) {
             if (expenses.length === 0) {
-                expTbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-slate-400 italic">Không có khoản chi phí phát sinh nào</td></tr>';
+                expTbody.innerHTML = '<tr><td colspan="9" class="py-12 text-center text-slate-400 italic">Không có khoản chi phí phát sinh nào</td></tr>';
             } else {
                 let expHtml = '';
                 expenses.forEach((e, idx) => {
@@ -13066,20 +13089,20 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
                         : '<span class="text-slate-400">-</span>';
                     expHtml += `
                         <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="py-2.5 px-3 text-center font-bold text-slate-400">${idx + 1}</td>
-                            <td class="py-2.5 px-3 font-mono font-bold text-teal-800">${escapeHtml(e.trip_code)}</td>
-                            <td class="py-2.5 px-3 font-semibold text-slate-800">
+                            <td class="py-3 px-3.5 text-center font-bold text-slate-400">${idx + 1}</td>
+                            <td class="py-3 px-3.5 font-mono font-bold text-teal-800">${escapeHtml(e.trip_code)}</td>
+                            <td class="py-3 px-3.5 font-semibold text-slate-800">
                                 ${escapeHtml(e.category_display)}
                                 ${e.expense_item_name ? `<span class="text-slate-400 font-normal text-[11px] block">(${escapeHtml(e.expense_item_name)})</span>` : ''}
                             </td>
-                            <td class="py-2.5 px-3 text-right font-mono font-black text-rose-600">${fmt(e.amount)} đ</td>
-                            <td class="py-2.5 px-3 text-slate-600">${escapeHtml(e.receipt_type_display)}</td>
-                            <td class="py-2.5 px-3 font-mono text-slate-700">${escapeHtml(e.invoice_number || '-')}</td>
-                            <td class="py-2.5 px-3 text-center">${isReimbBadge}</td>
-                            <td class="py-2.5 px-3 text-center">
+                            <td class="py-3 px-3.5 text-right font-mono font-black text-rose-600">${fmt(e.amount)} đ</td>
+                            <td class="py-3 px-3.5 text-slate-600">${escapeHtml(e.receipt_type_display)}</td>
+                            <td class="py-3 px-3.5 font-mono text-slate-700">${escapeHtml(e.invoice_number || '-')}</td>
+                            <td class="py-3 px-3.5 text-center">${isReimbBadge}</td>
+                            <td class="py-3 px-3.5 text-center">
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${escapeHtml(e.status_display)}</span>
                             </td>
-                            <td class="py-2.5 px-3 text-center text-slate-500">${e.created_at}</td>
+                            <td class="py-3 px-3.5 text-center text-slate-500">${e.created_at}</td>
                         </tr>
                     `;
                 });
@@ -13105,27 +13128,37 @@ function switchDrilldownTab(tabName) {
     const panelExp = document.getElementById('drilldown-panel-expenses');
 
     if (tabName === 'trips') {
-        if (btnTrips) btnTrips.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold font-heading bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 transition-all';
-        if (btnExp) btnExp.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold font-heading bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 transition-all';
+        if (btnTrips) btnTrips.className = 'px-4 py-2 rounded-xl text-xs font-bold font-heading bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer';
+        if (btnExp) btnExp.className = 'px-4 py-2 rounded-xl text-xs font-bold font-heading bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer';
         if (panelTrips) panelTrips.classList.remove('hidden');
         if (panelExp) panelExp.classList.add('hidden');
     } else {
-        if (btnTrips) btnTrips.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold font-heading bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 transition-all';
-        if (btnExp) btnExp.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold font-heading bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 transition-all';
+        if (btnTrips) btnTrips.className = 'px-4 py-2 rounded-xl text-xs font-bold font-heading bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer';
+        if (btnExp) btnExp.className = 'px-4 py-2 rounded-xl text-xs font-bold font-heading bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer';
         if (panelTrips) panelTrips.classList.add('hidden');
         if (panelExp) panelExp.classList.remove('hidden');
     }
 }
 window.switchDrilldownTab = switchDrilldownTab;
 
-function closeAccountingDrilldownModal() {
-    const modal = document.getElementById('modal-accounting-report-drilldown');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+function closeAccountingDrilldownView() {
+    const summaryView = document.getElementById('acct-rep-summary-view');
+    const drilldownView = document.getElementById('acct-rep-drilldown-view');
+    if (drilldownView) drilldownView.classList.add('hidden');
+    if (summaryView) summaryView.classList.remove('hidden');
+
+    const mainView = document.getElementById('view-ke-toan');
+    if (mainView) mainView.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.closeAccountingDrilldownView = closeAccountingDrilldownView;
+window.closeAccountingDrilldownModal = closeAccountingDrilldownView;
+
+function reloadAccountingDrilldown() {
+    if (currentDrilldownTarget) {
+        openAccountingReportDrilldown(currentDrilldownTarget.targetId, currentDrilldownTarget.encodedTargetKey);
     }
 }
-window.closeAccountingDrilldownModal = closeAccountingDrilldownModal;
+window.reloadAccountingDrilldown = reloadAccountingDrilldown;
 
 function exportAccountingDrilldownToExcel() {
     if (!cachedAccountingDrilldownData || !cachedAccountingDrilldownData.trips || cachedAccountingDrilldownData.trips.length === 0) {
