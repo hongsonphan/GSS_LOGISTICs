@@ -340,6 +340,24 @@ async function loadDashboardData(periodOverride) {
         const pendingBookingsEl = document.getElementById('bgd-pending-bookings');
         if (pendingBookingsEl) pendingBookingsEl.innerText = `${comm.pending_bookings ?? 6} đơn`;
 
+        // Cập nhật 3 Thẻ Mini Dưới Biểu Đồ Doanh Thu & Subtitle
+        const avgRevEl = document.getElementById('bgd-avg-rev');
+        if (avgRevEl) avgRevEl.innerText = '~' + new Intl.NumberFormat('vi-VN').format(fin.avg_revenue || 0) + ' đ';
+        const avgExpEl = document.getElementById('bgd-avg-exp');
+        if (avgExpEl) avgExpEl.innerText = '~' + new Intl.NumberFormat('vi-VN').format(fin.avg_expense || 0) + ' đ';
+        const avgMarginEl = document.getElementById('bgd-avg-margin');
+        if (avgMarginEl) avgMarginEl.innerText = `${fin.profit_margin || 0}%`;
+
+        const avgRevLbl = document.getElementById('bgd-avg-rev-label');
+        if (avgRevLbl && fin.avg_revenue_label) avgRevLbl.innerText = fin.avg_revenue_label;
+        const avgExpLbl = document.getElementById('bgd-avg-exp-label');
+        if (avgExpLbl && fin.avg_expense_label) avgExpLbl.innerText = fin.avg_expense_label;
+        const avgMarginLbl = document.getElementById('bgd-avg-margin-label');
+        if (avgMarginLbl && fin.avg_margin_label) avgMarginLbl.innerText = fin.avg_margin_label;
+
+        const chartSubEl = document.getElementById('bgd-chart-subtitle');
+        if (chartSubEl && fin.chart_subtitle) chartSubEl.innerText = fin.chart_subtitle;
+
         // 2. Khởi tạo Biểu đồ Chart.js nếu có thư viện
         if (typeof Chart !== 'undefined' && data.charts) {
             renderBgdRevenueChart(data.charts.daily_trend);

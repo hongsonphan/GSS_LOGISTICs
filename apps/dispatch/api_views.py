@@ -282,6 +282,47 @@ class DashboardBGDAPIView(APIView):
         else:
             c_green, c_yellow, c_red, c_rate = 85, 12, 3, 85.0
 
+        # Tính toán các chỉ số trung bình theo kỳ cho 3 ô mini dưới biểu đồ
+        if period == 'today':
+            avg_rev = agg_revenue
+            avg_exp = agg_expense
+            rev_label = "Doanh Thu (Hôm nay)"
+            exp_label = "Chi Phí (Hôm nay)"
+            margin_label = "Biên Lợi Nhuận"
+            chart_subtitle = "Hôm nay & Hôm qua: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+        elif period == 'this_month':
+            days_count = max((today - today.replace(day=1)).days + 1, 1)
+            avg_rev = round(agg_revenue / days_count)
+            avg_exp = round(agg_expense / days_count)
+            rev_label = "Doanh Thu TB / Ngày"
+            exp_label = "Chi Phí TB / Ngày"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Tháng này (T{today.month}/{today.year}): Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+        elif period == 'this_quarter':
+            quarter = (today.month - 1) // 3 + 1
+            months_count = max(today.month - (quarter - 1) * 3, 1)
+            avg_rev = round(agg_revenue / months_count)
+            avg_exp = round(agg_expense / months_count)
+            rev_label = "Doanh Thu TB / Tháng"
+            exp_label = "Chi Phí TB / Tháng"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Quý {quarter}/{today.year}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+        elif period == 'this_year':
+            months_count = max(today.month, 1)
+            avg_rev = round(agg_revenue / months_count)
+            avg_exp = round(agg_expense / months_count)
+            rev_label = "Doanh Thu TB / Tháng"
+            exp_label = "Chi Phí TB / Tháng"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Năm {today.year}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+        else: # '7_days'
+            avg_rev = round(agg_revenue / 7)
+            avg_exp = round(agg_expense / 7)
+            rev_label = "Doanh Thu TB / Ngày"
+            exp_label = "Chi Phí TB / Ngày"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = "Chuỗi 7 ngày gần nhất: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+
         return Response({
             'period': period,
             'period_label': period_label,
@@ -296,6 +337,12 @@ class DashboardBGDAPIView(APIView):
                 'profit_margin': profit_margin,
                 'operating_ratio': operating_ratio,
                 'pending_settle_count': pending_settle_count,
+                'avg_revenue': avg_rev,
+                'avg_expense': avg_exp,
+                'avg_revenue_label': rev_label,
+                'avg_expense_label': exp_label,
+                'avg_margin_label': margin_label,
+                'chart_subtitle': chart_subtitle,
             },
             'productivity': {
                 'completed_yesterday': completed_trips,
