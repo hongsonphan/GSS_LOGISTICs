@@ -140,27 +140,81 @@ class DashboardBGDAPIView(APIView):
         active_bookings = BookingOrder.objects.filter(status=BookingStatus.PARTIALLY_DISPATCHED, is_deleted=False).count()
         completed_bookings = BookingOrder.objects.filter(status=BookingStatus.COMPLETED, is_deleted=False).count()
         
-        # 6. Chuỗi dữ liệu biểu đồ 7 ngày gần nhất (Dữ liệu thực tế từng ngày)
+        period = request.GET.get('period', '7_days')
+
+        # 6. Chuỗi dữ liệu biểu đồ theo kỳ (today, 7_days, this_month, this_quarter, this_year)
         chart_days = []
         chart_revenue = []
         chart_expense = []
         chart_profit = []
-        
-        for i in range(6, -1, -1):
-            day_date = today - datetime.timedelta(days=i)
-            chart_days.append(day_date.strftime("%d/%m"))
-            
+
+        if period == 'today':
             day_trips = DispatchTrip.objects.filter(
-                Q(loading_date=day_date) | Q(loading_date__isnull=True, created_at__date=day_date),
+                Q(loading_date=today) | Q(loading_date__isnull=True, created_at__date=today),
                 is_deleted=False
             )
             day_rev = int(day_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
             day_exp = int(day_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
-            day_profit = day_rev - day_exp
+            chart_days = ['Hôm qua', 'Hôm nay']
+            
+            yest_trips = DispatchTrip.objects.filter(
+                Q(loading_date=yesterday) | Q(loading_date__isnull=True, created_at__date=yesterday),
+                is_deleted=False
+            )
+            yest_rev = int(yest_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+            yest_exp = int(yest_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+            
+            chart_revenue = [yest_rev, day_rev]
+            chart_expense = [yest_exp, day_exp]
+            chart_profit = [yest_rev - yest_exp, day_rev - day_exp]
+        elif period == 'this_month':
+            # 30 ngày gần nhất gom theo các chặng 5 ngày hoặc 15 ngày
+            days_count = 14
+            for i in range(days_count - 1, -1, -1):
+                day_date = today - datetime.timedelta(days=i)
+                chart_days.append(day_date.strftime("%d/%m"))
+                day_trips = DispatchTrip.objects.filter(
+                    Q(loading_date=day_date) | Q(loading_date__isnull=True, created_at__date=day_date),
+                    is_deleted=False
+                )
+                day_rev = int(day_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+                day_exp = int(day_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+                chart_revenue.append(day_rev)
+                chart_expense.append(day_exp)
+                chart_profit.append(day_rev - day_exp)
+        elif period in ['this_quarter', 'this_year']:
+            # 6 tháng gần nhất
+            for m in range(5, -1, -1):
+                # approximate month
+                m_date = today - datetime.timedelta(days=m * 30)
+                m_label = f"T{m_date.month}"
+                chart_days.append(m_label)
+                m_trips = DispatchTrip.objects.filter(
+                    created_at__year=m_date.year,
+                    created_at__month=m_date.month,
+                    is_deleted=False
+                )
+                m_rev = int(m_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+                m_exp = int(m_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+                chart_revenue.append(m_rev)
+                chart_expense.append(m_exp)
+                chart_profit.append(m_rev - m_exp)
+        else: # 7_days default
+            for i in range(6, -1, -1):
+                day_date = today - datetime.timedelta(days=i)
+                chart_days.append(day_date.strftime("%d/%m"))
+                
+                day_trips = DispatchTrip.objects.filter(
+                    Q(loading_date=day_date) | Q(loading_date__isnull=True, created_at__date=day_date),
+                    is_deleted=False
+                )
+                day_rev = int(day_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+                day_exp = int(day_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+                day_profit = day_rev - day_exp
 
-            chart_revenue.append(day_rev)
-            chart_expense.append(day_exp)
-            chart_profit.append(day_profit)
+                chart_revenue.append(day_rev)
+                chart_expense.append(day_exp)
+                chart_profit.append(day_profit)
 
         # 7. Danh sách chuyến xe phân tích P&L gần nhất kèm trạng thái (chuẩn 20 chuyến)
         recent_trips = DispatchTrip.objects.select_related('customer', 'driver', 'vehicle').order_by('-id')[:20]

@@ -239,11 +239,54 @@ let bgdDonutChart = null;
 let currentDonutType = 'fleet';
 let bgdDataCache = null;
 let previousActiveTab = 'dashboard';
+let currentDashboardPeriod = '7_days';
+
+function toggleDashboardPeriodDropdown(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('topbar-period-menu');
+    if (menu) menu.classList.toggle('hidden');
+}
+window.toggleDashboardPeriodDropdown = toggleDashboardPeriodDropdown;
+
+function setDashboardPeriod(period, label) {
+    currentDashboardPeriod = period;
+    const labelEl = document.getElementById('topbar-period-label');
+    if (labelEl) labelEl.innerText = label;
+
+    // Update active style on menu items
+    document.querySelectorAll('#topbar-period-menu .period-item').forEach(item => {
+        const itemPeriod = item.getAttribute('data-period');
+        if (itemPeriod === period) {
+            item.className = 'w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between font-bold text-teal-800 bg-teal-50/60 period-item';
+            item.innerHTML = `<span>${label}</span><i class="ph-bold ph-check text-teal-600"></i>`;
+        } else {
+            const itemLabel = item.querySelector('span')?.innerText || item.innerText.trim();
+            item.className = 'w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between period-item';
+            item.innerHTML = `<span>${itemLabel}</span>`;
+        }
+    });
+
+    const menu = document.getElementById('topbar-period-menu');
+    if (menu) menu.classList.add('hidden');
+
+    loadDashboardData(period);
+}
+window.setDashboardPeriod = setDashboardPeriod;
+
+// Close dropdown on click outside
+document.addEventListener('click', (e) => {
+    const container = document.getElementById('dashboard-period-dropdown-container');
+    const menu = document.getElementById('topbar-period-menu');
+    if (menu && container && !container.contains(e.target)) {
+        menu.classList.add('hidden');
+    }
+});
 
 // --- 1. TẢI DỮ LIỆU BAN GIÁM ĐỐC (CHUẨN QUỐC TẾ TMS & HẢI QUAN) ---
-async function loadDashboardData() {
+async function loadDashboardData(periodOverride) {
+    const period = periodOverride || currentDashboardPeriod || '7_days';
     try {
-        const res = await fetchWithAuth('/api/dashboard/');
+        const res = await fetchWithAuth(`/api/dashboard/?period=${period}`);
         if (!res.ok) throw new Error('Không thể kết nối máy chủ');
         const data = await res.json();
         bgdDataCache = data;
@@ -6035,6 +6078,16 @@ function switchTab(tabId, updateHistory = true) {
             'cai-dat': 'Cài đặt'
         };
         topbarTitleEl.innerText = TAB_NAME_MAP[tabId] || 'Dashboard Tổng quan';
+    }
+
+    // Toggle Cụm Điều Khiển Dashboard trên Topbar
+    const dashboardActionsEl = document.getElementById('topbar-dashboard-actions');
+    if (dashboardActionsEl) {
+        if (tabId === 'dashboard') {
+            dashboardActionsEl.classList.remove('hidden');
+        } else {
+            dashboardActionsEl.classList.add('hidden');
+        }
     }
 
     // Cập nhật URL sạch trên thanh địa chỉ trình duyệt (Loại bỏ hoàn toàn dấu #)

@@ -14,10 +14,58 @@
         </button>
 
         <!-- Tiêu Đề Phân Hệ Hiện Tại (Cập nhật động theo tab) -->
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-3">
             <h1 id="topbar-page-title" class="text-base md:text-lg font-black text-slate-900 tracking-tight font-heading">
                 Dashboard Tổng quan
             </h1>
+
+            <!-- Cụm Điều Khiển Dashboard trên Topbar (Ẩn khi sang tab khác) -->
+            <div id="topbar-dashboard-actions" class="flex items-center space-x-2 pl-3 border-l border-slate-200">
+                <!-- Dropdown chọn kỳ báo cáo -->
+                <div class="relative" id="dashboard-period-dropdown-container">
+                    <button type="button" id="topbar-period-btn" onclick="toggleDashboardPeriodDropdown(event)" 
+                        class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold font-heading transition-colors flex items-center gap-1.5 border border-slate-200 shadow-2xs cursor-pointer">
+                        <i class="ph ph-calendar-check text-teal-700 text-sm"></i>
+                        <span id="topbar-period-label">7 Ngày qua</span>
+                        <i class="ph ph-caret-down text-slate-400 text-xs"></i>
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div id="topbar-period-menu" class="hidden absolute left-0 mt-1.5 w-40 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50 text-xs font-semibold animate-fade-in">
+                        <button type="button" onclick="setDashboardPeriod('today', 'Hôm nay')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between period-item" data-period="today">
+                            <span>Hôm nay</span>
+                        </button>
+                        <button type="button" onclick="setDashboardPeriod('7_days', '7 Ngày qua')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between font-bold text-teal-800 bg-teal-50/60 period-item" data-period="7_days">
+                            <span>7 Ngày qua</span>
+                            <i class="ph-bold ph-check text-teal-600"></i>
+                        </button>
+                        <button type="button" onclick="setDashboardPeriod('this_month', 'Tháng này')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between period-item" data-period="this_month">
+                            <span>Tháng này</span>
+                        </button>
+                        <button type="button" onclick="setDashboardPeriod('this_quarter', 'Quý này')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between period-item" data-period="this_quarter">
+                            <span>Quý này</span>
+                        </button>
+                        <button type="button" onclick="setDashboardPeriod('this_year', 'Năm nay')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between period-item" data-period="this_year">
+                            <span>Năm nay</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Nút Ẩn / Hiện Biểu Đồ -->
+                <button id="btn-toggle-dashboard-charts" onclick="toggleDashboardCharts()" 
+                    class="px-2.5 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 rounded-lg text-xs font-bold font-heading transition-colors flex items-center space-x-1.5 border border-slate-200 shadow-2xs active:scale-95 cursor-pointer" 
+                    title="Ẩn/Hiện biểu đồ để xem chi tiết Bảng Phân Tích">
+                    <i class="ph ph-eye-slash text-sm text-teal-700" id="icon-toggle-charts"></i>
+                    <span id="text-toggle-charts">Ẩn Biểu Đồ</span>
+                </button>
+
+                <!-- Nút Làm Mới -->
+                <button onclick="loadDashboardData()" 
+                    class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold font-heading transition-colors flex items-center space-x-1.5 border border-slate-200 shadow-2xs active:scale-95 cursor-pointer" 
+                    title="Tải lại số liệu mới nhất">
+                    <i class="ph ph-arrows-clockwise text-sm text-teal-700"></i>
+                    <span>Làm Mới</span>
+                </button>
+            </div>
         </div>
     </div>
     <div class="flex items-center space-x-3">

@@ -1,31 +1,6 @@
 <!-- 1. DASHBOARD BAN GIÁM ĐỐC (EXECUTIVE COMMAND CENTER - CHUẨN QUỐC TẾ TMS & HẢI QUAN) -->
 <div id="view-dashboard" class="view p-3 md:p-4 2xl:p-5 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-3 2xl:space-y-4">
     
-    <!-- Top Executive Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-2.5 bg-white px-4 py-2.5 2xl:px-5 2xl:py-3.5 rounded-xl 2xl:rounded-2xl border border-slate-200/80 shadow-xs shrink-0">
-        <div>
-            <h2 class="text-xl 2xl:text-2xl font-black text-slate-800 tracking-tight font-heading">Tổng quan Dashboard</h2>
-            <p class="text-slate-500 text-xs mt-0.5 font-medium">Báo cáo điều hành chỉ huy: Giám sát tức thì Dòng tiền, Năng suất đội xe, Tiến độ đơn hàng & Tỷ lệ thông quan</p>
-        </div>
-
-        <!-- Action Controls -->
-        <div class="flex items-center space-x-2">
-            <!-- Nút Ẩn / Hiện Biểu Đồ -->
-            <button id="btn-toggle-dashboard-charts" onclick="toggleDashboardCharts()" class="px-3 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 rounded-lg text-xs font-bold font-heading transition-colors flex items-center space-x-1.5 border border-slate-200 shadow-xs active:scale-95" title="Ẩn/Hiện 2 dòng biểu đồ để xem chi tiết Bảng Phân Tích Hiệu Suất">
-                <i class="ph ph-eye-slash text-base text-teal-700" id="icon-toggle-charts"></i>
-                <span id="text-toggle-charts">Ẩn Biểu Đồ</span>
-            </button>
-            <button onclick="loadDashboardData()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold font-heading transition-colors flex items-center space-x-1.5 border border-slate-200 shadow-xs active:scale-95" title="Tải lại số liệu mới nhất">
-                <i class="ph ph-arrows-clockwise text-base text-teal-700"></i>
-                <span>Làm Mới</span>
-            </button>
-            <div class="hidden lg:flex items-center text-xs font-bold bg-teal-50 text-teal-800 px-3 py-1.5 rounded-lg border border-teal-200/80 shadow-xs">
-                <i class="ph ph-calendar-check text-base text-teal-600 mr-1.5"></i>
-                <span>7 Ngày</span>
-            </div>
-        </div>
-    </div>
-
     <!-- HÀNG 1: 4 TRỤ CỘT ĐIỀU HÀNH CHIẾN LƯỢC (CLICK-TO-JUMP DRILL-DOWN CARDS) -->
     <div id="dashboard-row-pillars" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5 2xl:gap-3.5 shrink-0 transition-all duration-300">
         
