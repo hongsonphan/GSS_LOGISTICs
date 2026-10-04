@@ -6020,6 +6020,23 @@ function switchTab(tabId, updateHistory = true) {
     const targetView = document.getElementById(`view-${tabId}`);
     if (targetView) targetView.classList.remove('hidden-view');
 
+    // Cập nhật Tiêu đề Phân hệ trên Topbar
+    const topbarTitleEl = document.getElementById('topbar-page-title');
+    if (topbarTitleEl) {
+        const TAB_NAME_MAP = {
+            'dashboard': 'Dashboard Tổng quan',
+            'kinh-doanh': 'Sale & Booking',
+            'dieu-van': 'Điều vận',
+            'xe-bai': 'Xe & Bãi',
+            'nhan-su': 'Hành chính & Nhân sự',
+            'ke-toan': 'Tài chính & Kế toán',
+            'hai-quan': 'Dịch vụ Hải quan',
+            'bao-cao': 'Báo cáo & Thống kê',
+            'cai-dat': 'Cài đặt'
+        };
+        topbarTitleEl.innerText = TAB_NAME_MAP[tabId] || 'Dashboard Tổng quan';
+    }
+
     // Cập nhật URL sạch trên thanh địa chỉ trình duyệt (Loại bỏ hoàn toàn dấu #)
     if (updateHistory && window.history && window.history.pushState) {
         const routePath = TAB_ROUTE_MAP[tabId] || '/';
@@ -10707,7 +10724,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initAllNumberInputs();
     const dateEl = document.getElementById('current-date');
     if (dateEl) {
-        dateEl.innerText = new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
+        const now = new Date();
+        const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+        const dayName = days[now.getDay()];
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        dateEl.innerText = `${dayName}, ${d}/${m}/${y}`;
     }
 
     // Khôi phục trạng thái thu gọn Sidebar từ localStorage
