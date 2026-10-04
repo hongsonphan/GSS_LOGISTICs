@@ -218,6 +218,13 @@
                         <span class="text-[11px] font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded-full border border-indigo-200">
                             Hiển thị: <strong id="quote-filtered-count">0</strong> / <span id="quote-total-count">0</span> báo giá
                         </span>
+                        <!-- Nút Tùy Chỉnh Cột Báo Giá -->
+                        <button type="button" onclick="openColumnCustomizer('sales-quotations-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-indigo-700"></i>
+                            <span>Cột</span>
+                        </button>
                         <button type="button" onclick="resetQuoteFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
                             <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
                         </button>
@@ -262,11 +269,11 @@
 
             <!-- Bảng Dữ Liệu Báo Giá Kèm Sắp Xếp Cột -->
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="sales-quotations-table" data-table-title="Bảng Báo Giá Tuyến & Hợp Đồng CRM">
                     <thead>
                         <tr>
                             <!-- 1. Mã Báo Giá (Có sắp xếp) -->
-                            <th onclick="toggleQuoteSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã Báo Giá">
+                            <th data-col-key="code" data-col-name="Mã Báo Giá" data-col-locked="true" onclick="toggleQuoteSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã Báo Giá">
                                 <div class="flex items-center gap-1.5">
                                     <span>Mã Báo Giá</span>
                                     <i id="sort-icon-quote-code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -274,7 +281,7 @@
                             </th>
 
                             <!-- 2. Khách Hàng (Có sắp xếp) -->
-                            <th onclick="toggleQuoteSort('customer')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách Hàng">
+                            <th data-col-key="customer" data-col-name="Khách Hàng" onclick="toggleQuoteSort('customer')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách Hàng">
                                 <div class="flex items-center gap-1.5">
                                     <span>Khách Hàng</span>
                                     <i id="sort-icon-quote-customer" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -282,7 +289,7 @@
                             </th>
 
                             <!-- 3. Tuyến Đường Vận Chuyển (Có sắp xếp) -->
-                            <th onclick="toggleQuoteSort('route')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tuyến Đường">
+                            <th data-col-key="route" data-col-name="Tuyến Đường Vận Chuyển" onclick="toggleQuoteSort('route')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tuyến Đường">
                                 <div class="flex items-center gap-1.5">
                                     <span>Tuyến Đường Vận Chuyển</span>
                                     <i id="sort-icon-quote-route" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -290,7 +297,7 @@
                             </th>
 
                             <!-- 4. Đơn Giá Cước (Có sắp xếp số) -->
-                            <th onclick="toggleQuoteSort('unit_price')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Đơn Giá Cước">
+                            <th data-col-key="unit_price" data-col-name="Đơn Giá Cước (VNĐ)" onclick="toggleQuoteSort('unit_price')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Đơn Giá Cước">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <span>Đơn Giá Cước (VNĐ)</span>
                                     <i id="sort-icon-quote-unit_price" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -298,7 +305,7 @@
                             </th>
 
                             <!-- 5. Sản Lượng Dự Kiến (Có sắp xếp số) -->
-                            <th onclick="toggleQuoteSort('monthly_trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Sản Lượng Chuyến">
+                            <th data-col-key="monthly_trips" data-col-name="Sản Lượng Dự Kiến" onclick="toggleQuoteSort('monthly_trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Sản Lượng Chuyến">
                                 <div class="flex items-center justify-center gap-1.5">
                                     <span>Sản Lượng Dự Kiến</span>
                                     <i id="sort-icon-quote-monthly_trips" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -306,7 +313,7 @@
                             </th>
 
                             <!-- 6. Doanh Thu Kế Hoạch (Có sắp xếp số) -->
-                            <th onclick="toggleQuoteSort('expected_revenue')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Doanh Thu Kế Hoạch">
+                            <th data-col-key="expected_revenue" data-col-name="Doanh Thu Kế Hoạch" onclick="toggleQuoteSort('expected_revenue')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Doanh Thu Kế Hoạch">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <span>Doanh Thu Kế Hoạch</span>
                                     <i id="sort-icon-quote-expected_revenue" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -314,14 +321,14 @@
                             </th>
 
                             <!-- 7. Trạng Thái Hợp Đồng (Có sắp xếp) -->
-                            <th onclick="toggleQuoteSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Trạng Thái">
+                            <th data-col-key="status" data-col-name="Trạng Thái Hợp Đồng" onclick="toggleQuoteSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Trạng Thái">
                                 <div class="flex items-center gap-1.5">
                                     <span>Trạng Thái Hợp Đồng</span>
                                     <i id="sort-icon-quote-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
 
-                            <th class="text-center">Thao Tác</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="sales-tbody">
@@ -423,6 +430,13 @@
                         <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
                             Hiển thị: <strong id="booking-filtered-count">0</strong> / <span id="booking-total-count">0</span> đơn hàng
                         </span>
+                        <!-- Nút Tùy Chỉnh Cột Booking -->
+                        <button type="button" onclick="openColumnCustomizer('sales-bookings-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-teal-700"></i>
+                            <span>Cột</span>
+                        </button>
                         <button type="button" onclick="resetBookingFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
                             <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
                         </button>
@@ -489,42 +503,42 @@
 
             <!-- Bảng dữ liệu có sắp xếp cột -->
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="sales-bookings-table" data-table-title="Danh Sách Đơn Hàng Booking">
                     <thead>
                         <tr>
                             <!-- Cột 1: Có sắp xếp theo ngày hẹn đóng -->
-                            <th onclick="toggleBookingSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Ngày Hẹn Đóng">
+                            <th data-col-key="loading_date" data-col-name="Mã Đơn / Lịch Đóng" data-col-locked="true" onclick="toggleBookingSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Ngày Hẹn Đóng">
                                 <div class="flex items-center gap-1.5">
                                     <span>Mã Đơn / Lịch Đóng</span>
                                     <i id="sort-icon-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
-                            <th>Khách Hàng & Dịch Vụ</th>
-                            <th>Số Booking (B/L) / PO</th>
-                            <th>Loại Cont & Hàng Hóa</th>
+                            <th data-col-key="customer_service" data-col-name="Khách Hàng & Dịch Vụ">Khách Hàng & Dịch Vụ</th>
+                            <th data-col-key="booking_bl" data-col-name="Số Booking (B/L) / PO">Số Booking (B/L) / PO</th>
+                            <th data-col-key="cont_cargo" data-col-name="Loại Cont & Hàng Hóa">Loại Cont & Hàng Hóa</th>
                             <!-- Cột 5: Có sắp xếp theo tiến độ -->
-                            <th onclick="toggleBookingSort('progress_percent')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tiến Độ Điều Xe">
+                            <th data-col-key="progress_percent" data-col-name="Tiến Độ Điều Xe" onclick="toggleBookingSort('progress_percent')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tiến Độ Điều Xe">
                                 <div class="flex items-center gap-1.5">
                                     <span>Tiến Độ Điều Xe</span>
                                     <i id="sort-icon-progress_percent" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
-                            <th>Lộ Trình Vận Chuyển</th>
+                            <th data-col-key="route" data-col-name="Lộ Trình Vận Chuyển">Lộ Trình Vận Chuyển</th>
                             <!-- Cột 7: Có sắp xếp theo hạn cắt máng -->
-                            <th onclick="toggleBookingSort('closing_time')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Hạn Cắt Máng">
+                            <th data-col-key="closing_time" data-col-name="Hạn Cắt Máng (CY)" onclick="toggleBookingSort('closing_time')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Hạn Cắt Máng">
                                 <div class="flex items-center gap-1.5">
                                     <span>Hạn Cắt Máng (CY)</span>
                                     <i id="sort-icon-closing_time" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
                             <!-- Cột 8: Có sắp xếp theo giá cước -->
-                            <th onclick="toggleBookingSort('price')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Cước Thỏa Thuận">
+                            <th data-col-key="price" data-col-name="Cước Thỏa Thuận" onclick="toggleBookingSort('price')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Cước Thỏa Thuận">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <span>Cước Thỏa Thuận</span>
                                     <i id="sort-icon-price" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
-                            <th class="text-center">Thao Tác</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="sales-bookings-tbody">

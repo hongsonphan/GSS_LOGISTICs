@@ -177,27 +177,34 @@
                             <option value="VEHICLE_MAINTENANCE">Chi bảo dưỡng sửa xe</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="flex items-center gap-2">
                         <input type="text" id="cash-search" oninput="debounce(loadCashBookData, 300)()" placeholder="Tìm số phiếu, đối tác, số tham chiếu..."
                             class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500">
+                        <!-- Nút Tùy Chỉnh Cột Sổ Quỹ -->
+                        <button type="button" onclick="openColumnCustomizer('accounting-cashbook-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-emerald-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-emerald-700"></i>
+                            <span>Cột</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="accounting-cashbook-table" data-table-title="Sổ Quỹ Thu Chi & Dòng Tiền">
                     <thead>
                         <tr>
-                            <th>Mã Phiếu</th>
-                            <th>Ngày Hạch Toán</th>
-                            <th class="text-center">Loại</th>
-                            <th>Kênh Quỹ</th>
-                            <th>Khoản Mục Thu / Chi</th>
-                            <th>Đối Tác Giao Dịch</th>
-                            <th>Số Tham Chiếu</th>
-                            <th class="text-right">Số Tiền (VNĐ)</th>
-                            <th>Người Lập</th>
-                            <th>Diễn Giải Lý Do</th>
+                            <th data-col-key="code" data-col-name="Mã Phiếu" data-col-locked="true">Mã Phiếu</th>
+                            <th data-col-key="date" data-col-name="Ngày Hạch Toán">Ngày Hạch Toán</th>
+                            <th data-col-key="type" data-col-name="Loại" class="text-center">Loại</th>
+                            <th data-col-key="channel" data-col-name="Kênh Quỹ">Kênh Quỹ</th>
+                            <th data-col-key="category" data-col-name="Khoản Mục Thu / Chi">Khoản Mục Thu / Chi</th>
+                            <th data-col-key="partner" data-col-name="Đối Tác Giao Dịch">Đối Tác Giao Dịch</th>
+                            <th data-col-key="reference" data-col-name="Số Tham Chiếu">Số Tham Chiếu</th>
+                            <th data-col-key="amount" data-col-name="Số Tiền (VNĐ)" class="text-right">Số Tiền (VNĐ)</th>
+                            <th data-col-key="creator" data-col-name="Người Lập">Người Lập</th>
+                            <th data-col-key="reason" data-col-name="Diễn Giải Lý Do">Diễn Giải Lý Do</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="acct-cash-tbody">
@@ -282,27 +289,34 @@
                             <option value="COMPANY_DIRECT">Công ty chi trực tiếp</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="flex items-center gap-2">
                         <input id="filter-adv-search" oninput="applyDriverAdvancesFilter()" type="text" placeholder="Tìm mã phiếu, mã chuyến, xe..."
                             class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800" />
+                        <!-- Nút Tùy Chỉnh Cột Tạm Ứng -->
+                        <button type="button" onclick="openColumnCustomizer('accounting-advances-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-emerald-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-emerald-700"></i>
+                            <span>Cột</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="accounting-advances-table" data-table-title="Bảng Kê Tạm Ứng & Hoàn Ứng Tài Xế">
                     <thead>
                         <tr>
-                            <th>Mã Phiếu Ứng</th>
-                            <th>Mã Chuyến & Ngày</th>
-                            <th>Khách Hàng</th>
-                            <th>Tài Xế & Xe</th>
-                            <th class="text-right">Tiền Tạm Ứng</th>
-                            <th>Nguồn Tiền</th>
-                            <th class="text-right">Thực Chi Đối Soát</th>
-                            <th class="text-center">Chênh Lệch Hoàn Ứng</th>
-                            <th class="text-center">Trạng Thái</th>
-                            <th class="text-center">Thao Tác</th>
+                            <th data-col-key="code" data-col-name="Mã Phiếu Ứng" data-col-locked="true">Mã Phiếu Ứng</th>
+                            <th data-col-key="trip_date" data-col-name="Mã Chuyến & Ngày">Mã Chuyến & Ngày</th>
+                            <th data-col-key="customer" data-col-name="Khách Hàng">Khách Hàng</th>
+                            <th data-col-key="driver_vehicle" data-col-name="Tài Xế & Xe">Tài Xế & Xe</th>
+                            <th data-col-key="advance_amount" data-col-name="Tiền Tạm Ứng" class="text-right">Tiền Tạm Ứng</th>
+                            <th data-col-key="source" data-col-name="Nguồn Tiền">Nguồn Tiền</th>
+                            <th data-col-key="actual_spent" data-col-name="Thực Chi Đối Soát" class="text-right">Thực Chi Đối Soát</th>
+                            <th data-col-key="diff" data-col-name="Chênh Lệch Hoàn Ứng" class="text-center">Chênh Lệch Hoàn Ứng</th>
+                            <th data-col-key="status" data-col-name="Trạng Thái" class="text-center">Trạng Thái</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="acct-adv-tbody">
@@ -464,6 +478,12 @@
                         <button type="button" onclick="resetAccountingFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
                             <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
                         </button>
+                        <button type="button" onclick="openColumnCustomizer('accounting-pnl-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-teal-700"></i>
+                            <span>Cột</span>
+                        </button>
                     </div>
                 </div>
 
@@ -512,11 +532,11 @@
 
             <!-- Bảng Dữ Liệu Chi Tiết Kèm Sắp Xếp Cột -->
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="accounting-pnl-table" data-table-title="Bảng Đối Soát Chi Phí & Lãi Lỗ Chuyến Xe">
                     <thead>
                         <tr>
                             <!-- 1. Mã Chuyến & Ngày Chạy -->
-                            <th onclick="toggleAccountingSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã Chuyến">
+                            <th data-col-key="trip_code" data-col-name="Mã Chuyến & Ngày Chạy" data-col-locked="true" onclick="toggleAccountingSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã Chuyến">
                                 <div class="flex items-center gap-1.5">
                                     <span>Mã Chuyến & Ngày Chạy</span>
                                     <i id="sort-icon-acct-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -524,7 +544,7 @@
                             </th>
 
                             <!-- 2. Khách Hàng & Tuyến Vận Tải -->
-                            <th onclick="toggleAccountingSort('customer_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách Hàng">
+                            <th data-col-key="customer" data-col-name="Khách Hàng & Tuyến Vận Tải" onclick="toggleAccountingSort('customer_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách Hàng">
                                 <div class="flex items-center gap-1.5">
                                     <span>Khách Hàng & Tuyến Vận Tải</span>
                                     <i id="sort-icon-acct-customer_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -532,7 +552,7 @@
                             </th>
 
                             <!-- 3. Tài Xế & Biển Số -->
-                            <th onclick="toggleAccountingSort('driver_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tài Xế">
+                            <th data-col-key="driver" data-col-name="Tài Xế & Biển Số" onclick="toggleAccountingSort('driver_name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tài Xế">
                                 <div class="flex items-center gap-1.5">
                                     <span>Tài Xế & Biển Số</span>
                                     <i id="sort-icon-acct-driver_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -540,7 +560,7 @@
                             </th>
 
                             <!-- 4. Doanh Thu Cước -->
-                            <th onclick="toggleAccountingSort('revenue')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Doanh Thu">
+                            <th data-col-key="revenue" data-col-name="Doanh Thu Cước" onclick="toggleAccountingSort('revenue')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Doanh Thu">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <span>Doanh Thu Cước</span>
                                     <i id="sort-icon-acct-revenue" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -548,7 +568,7 @@
                             </th>
 
                             <!-- 5. Tổng Chi Phí -->
-                            <th onclick="toggleAccountingSort('expense')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Tổng Chi Phí">
+                            <th data-col-key="expense" data-col-name="Tổng Chi Phí" onclick="toggleAccountingSort('expense')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Tổng Chi Phí">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <span>Tổng Chi Phí</span>
                                     <i id="sort-icon-acct-expense" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -556,7 +576,7 @@
                             </th>
 
                             <!-- 6. Lợi Nhuận Gộp -->
-                            <th onclick="toggleAccountingSort('profit')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lợi Nhuận Gộp">
+                            <th data-col-key="profit" data-col-name="Lợi Nhuận Gộp" onclick="toggleAccountingSort('profit')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lợi Nhuận Gộp">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <span>Lợi Nhuận Gộp</span>
                                     <i id="sort-icon-acct-profit" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -564,7 +584,7 @@
                             </th>
 
                             <!-- 7. Hóa Đơn / Chứng Từ -->
-                            <th onclick="toggleAccountingSort('invoices_count')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Số Hóa Đơn">
+                            <th data-col-key="invoices" data-col-name="Chứng Từ / HĐĐT" onclick="toggleAccountingSort('invoices_count')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Số Hóa Đơn">
                                 <div class="flex items-center justify-center gap-1.5">
                                     <span>Chứng Từ / HĐĐT</span>
                                     <i id="sort-icon-acct-invoices_count" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -572,14 +592,14 @@
                             </th>
 
                             <!-- 8. Trạng Thái Sổ Sách -->
-                            <th onclick="toggleAccountingSort('is_settled')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Trạng Thái">
+                            <th data-col-key="status" data-col-name="Trạng Thái Sổ Sách" onclick="toggleAccountingSort('is_settled')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Trạng Thái">
                                 <div class="flex items-center justify-center gap-1.5">
                                     <span>Trạng Thái Sổ Sách</span>
                                     <i id="sort-icon-acct-is_settled" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
 
-                            <th class="text-center">Thao Tác Kế Toán</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác Kế Toán</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="acct-tbody">
@@ -696,27 +716,33 @@
                         </span>
                         <button type="button" onclick="selectAllReimbursables(true)" class="text-xs text-teal-700 hover:underline font-bold">Chọn tất cả</button>
                         <button type="button" onclick="selectAllReimbursables(false)" class="text-xs text-slate-500 hover:underline">Bỏ chọn</button>
+                        <button type="button" onclick="openColumnCustomizer('accounting-reimburse-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0 ml-auto"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-teal-700"></i>
+                            <span>Cột</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="accounting-reimburse-table" data-table-title="Bảng Kê Chi Hộ & Debit Note">
                     <thead>
                         <tr>
-                            <th class="w-8 text-center">
+                            <th data-col-key="checkbox" data-col-name="Chọn" data-col-locked="true" class="w-8 text-center">
                                 <input type="checkbox" id="reimburse-check-all" onchange="toggleCheckAllReimbursables(this)" class="rounded text-teal-600 focus:ring-teal-500">
                             </th>
-                            <th>Mã Chuyến / Ngày</th>
-                            <th>Khách Hàng</th>
-                            <th>Số Cont / Booking</th>
-                            <th>Khoản Mục Chi Hộ</th>
-                            <th class="text-right">Số Tiền (VNĐ)</th>
-                            <th>Hóa Đơn / Tra Cứu</th>
-                            <th>Số Debit Note</th>
-                            <th class="text-center">Trạng Thái</th>
-                            <th>Ngày Hoàn Tiền</th>
-                            <th class="text-center">Thao Tác</th>
+                            <th data-col-key="trip_date" data-col-name="Mã Chuyến / Ngày" data-col-locked="true">Mã Chuyến / Ngày</th>
+                            <th data-col-key="customer" data-col-name="Khách Hàng">Khách Hàng</th>
+                            <th data-col-key="container" data-col-name="Số Cont / Booking">Số Cont / Booking</th>
+                            <th data-col-key="category" data-col-name="Khoản Mục Chi Hộ">Khoản Mục Chi Hộ</th>
+                            <th data-col-key="amount" data-col-name="Số Tiền (VNĐ)" class="text-right">Số Tiền (VNĐ)</th>
+                            <th data-col-key="invoice" data-col-name="Hóa Đơn / Tra Cứu">Hóa Đơn / Tra Cứu</th>
+                            <th data-col-key="debit_note" data-col-name="Số Debit Note">Số Debit Note</th>
+                            <th data-col-key="status" data-col-name="Trạng Thái" class="text-center">Trạng Thái</th>
+                            <th data-col-key="settle_date" data-col-name="Ngày Hoàn Tiền">Ngày Hoàn Tiền</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="acct-reimburse-tbody">
@@ -809,28 +835,34 @@
                         <input type="text" id="subcon-search" oninput="debounce(loadSubcontractorData, 300)()" placeholder="Tìm biển số xe, mã chuyến, số cont..."
                             class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700">
                     </div>
-                    <div class="flex items-center text-xs text-slate-500 font-medium justify-end">
+                    <div class="flex items-center text-xs text-slate-500 font-medium justify-end gap-2">
                         <span id="subcon-filtered-badge">Hiển thị: 0 chuyến xe bạn</span>
+                        <button type="button" onclick="openColumnCustomizer('accounting-subcon-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-slate-700"></i>
+                            <span>Cột</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="accounting-subcon-table" data-table-title="Bảng Quyết Toán Thầu Phụ 3PL & Xe Bạn">
                     <thead>
                         <tr>
-                            <th>Mã Chuyến</th>
-                            <th>Biển Số Xe Bạn</th>
-                            <th>Tài Xế</th>
-                            <th>Khách Hàng & Tuyến Vận Chuyển</th>
-                            <th class="text-right">Cước Thu Khách</th>
-                            <th class="text-right">Cước Trả Xe Bạn</th>
-                            <th class="text-right">Chênh Lệch Cty Hưởng</th>
-                            <th class="text-right">Đã Tạm Ứng</th>
-                            <th class="text-right">Còn Phải Trả</th>
-                            <th class="text-center">Trạng Thái</th>
-                            <th>Ghi Chú</th>
-                            <th class="text-center">Thao Tác</th>
+                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true">Mã Chuyến</th>
+                            <th data-col-key="vehicle" data-col-name="Biển Số Xe Bạn">Biển Số Xe Bạn</th>
+                            <th data-col-key="driver" data-col-name="Tài Xế">Tài Xế</th>
+                            <th data-col-key="route" data-col-name="Khách Hàng & Tuyến Vận Chuyển">Khách Hàng & Tuyến Vận Chuyển</th>
+                            <th data-col-key="customer_freight" data-col-name="Cước Thu Khách" class="text-right">Cước Thu Khách</th>
+                            <th data-col-key="subcon_freight" data-col-name="Cước Trả Xe Bạn" class="text-right">Cước Trả Xe Bạn</th>
+                            <th data-col-key="profit_margin" data-col-name="Chênh Lệch Cty Hưởng" class="text-right">Chênh Lệch Cty Hưởng</th>
+                            <th data-col-key="advance_amount" data-col-name="Đã Tạm Ứng" class="text-right">Đã Tạm Ứng</th>
+                            <th data-col-key="remaining_amount" data-col-name="Còn Phải Trả" class="text-right">Còn Phải Trả</th>
+                            <th data-col-key="status" data-col-name="Trạng Thái" class="text-center">Trạng Thái</th>
+                            <th data-col-key="notes" data-col-name="Ghi Chú">Ghi Chú</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="text-center">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="acct-subcon-tbody">
