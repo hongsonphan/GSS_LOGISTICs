@@ -14,7 +14,6 @@
     
     <!-- Navigation Items -->
     <div class="p-3 flex-1 overflow-y-auto space-y-1">
-        <p class="text-[11px] font-extrabold text-teal-400 uppercase tracking-widest px-3 pt-3 pb-1.5 font-heading">Phân hệ quản trị</p>
         <ul class="space-y-1" id="sidebar-menu">
             <!-- 1. Tổng quan Dashboard -->
             <li>
@@ -64,12 +63,12 @@
             </li>
             {% endif %}
 
-            <!-- 6. Quản lý Kế toán (BẢO MẬT TÀI CHÍNH: Chỉ Giám Đốc & Kế Toán) -->
+            <!-- 6. Tài chính & Kế toán (BẢO MẬT TÀI CHÍNH: Chỉ Giám Đốc & Kế Toán) -->
             {% if is_admin or not role or role in 'DIRECTOR,ACCOUNTANT' %}
             <li>
                 <a href="/accounting" onclick="event.preventDefault(); switchTab('ke-toan');" class="sidebar-item-main flex items-center" data-target="ke-toan">
                     <i class="ph ph-calculator text-xl mr-3 text-slate-400"></i>
-                    <span class="flex-1 text-left tracking-wide">Quản lý Kế toán</span>
+                    <span class="flex-1 text-left tracking-wide">Tài chính & Kế toán</span>
                 </a>
             </li>
             {% endif %}
@@ -80,7 +79,6 @@
                 <a href="/customs" onclick="event.preventDefault(); switchTab('hai-quan');" class="sidebar-item-main flex items-center" data-target="hai-quan">
                     <i class="ph ph-file-text text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide">Dịch vụ Hải quan</span>
-                    <span class="text-[9.5px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded ml-1">VNACCS</span>
                 </a>
             </li>
             {% endif %}
@@ -91,7 +89,6 @@
                 <a href="/reports" onclick="event.preventDefault(); switchTab('bao-cao');" class="sidebar-item-main flex items-center" data-target="bao-cao">
                     <i class="ph ph-chart-bar text-xl mr-3 text-slate-400"></i>
                     <span class="flex-1 text-left tracking-wide font-medium">Báo cáo & Thống kê</span>
-                    <span class="text-[9.5px] font-bold text-emerald-300 bg-teal-900/80 border border-teal-600/60 px-1.5 py-0.2 rounded ml-1">TMS BI</span>
                 </a>
             </li>
             {% endif %}
