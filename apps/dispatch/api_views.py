@@ -107,24 +107,62 @@ class DashboardBGDAPIView(APIView):
             start_date = today
             end_date = today
             period_label = 'Hôm nay'
+            rev_label = "Doanh Thu (Hôm nay)"
+            exp_label = "Chi Phí (Hôm nay)"
+            margin_label = "Biên Lợi Nhuận"
+            chart_subtitle = "Hôm nay: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
         elif period == 'this_month':
             start_date = today.replace(day=1)
             end_date = today
             period_label = 'Tháng này'
+            rev_label = "Doanh Thu TB / Ngày"
+            exp_label = "Chi Phí TB / Ngày"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Tháng {today.month}/{today.year} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')}): Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
         elif period == 'this_quarter':
             quarter = (today.month - 1) // 3 + 1
             quarter_start_month = (quarter - 1) * 3 + 1
             start_date = datetime.date(today.year, quarter_start_month, 1)
             end_date = today
             period_label = 'Quý này'
+            rev_label = "Doanh Thu TB / Tháng"
+            exp_label = "Chi Phí TB / Tháng"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Quý {quarter}/{today.year}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
         elif period == 'this_year':
             start_date = datetime.date(today.year, 1, 1)
             end_date = today
             period_label = 'Năm nay'
+            rev_label = "Doanh Thu TB / Tháng"
+            exp_label = "Chi Phí TB / Tháng"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Năm {today.year}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+        elif period == 'custom':
+            start_str = request.GET.get('start_date')
+            end_str = request.GET.get('end_date')
+            try:
+                start_date = datetime.datetime.strptime(start_str, '%Y-%m-%d').date() if start_str else (today - datetime.timedelta(days=6))
+                end_date = datetime.datetime.strptime(end_str, '%Y-%m-%d').date() if end_str else today
+            except Exception:
+                start_date = today - datetime.timedelta(days=6)
+                end_date = today
+            
+            if start_date > end_date:
+                start_date, end_date = end_date, start_date
+
+            period_label = f"{start_date.strftime('%d/%m/%y')} - {end_date.strftime('%d/%m/%y')}"
+            rev_label = "Doanh Thu TB / Ngày" if (end_date - start_date).days <= 31 else "Doanh Thu TB / Tháng"
+            exp_label = "Chi Phí TB / Ngày" if (end_date - start_date).days <= 31 else "Chi Phí TB / Tháng"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Giai đoạn {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
         else: # '7_days'
             start_date = today - datetime.timedelta(days=6)
             end_date = today
             period_label = '7 ngày qua'
+            rev_label = "Doanh Thu TB / Ngày"
+            exp_label = "Chi Phí TB / Ngày"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"7 ngày qua ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')}): Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
 
         # 1. Lọc tập chuyến xe theo kỳ được chọn
         trips_period = DispatchTrip.objects.filter(
@@ -174,7 +212,7 @@ class DashboardBGDAPIView(APIView):
         active_bookings = BookingOrder.objects.filter(status=BookingStatus.PARTIALLY_DISPATCHED, is_deleted=False).count()
         completed_bookings = BookingOrder.objects.filter(status=BookingStatus.COMPLETED, is_deleted=False).count()
 
-        # 6. Chuỗi dữ liệu biểu đồ theo kỳ (today, 7_days, this_month, this_quarter, this_year)
+        # 6. Chuỗi dữ liệu biểu đồ CHÍNH XÁC theo kỳ
         chart_days = []
         chart_revenue = []
         chart_expense = []
@@ -199,30 +237,46 @@ class DashboardBGDAPIView(APIView):
             chart_revenue = [yest_rev, day_rev]
             chart_expense = [yest_exp, day_exp]
             chart_profit = [yest_rev - yest_exp, day_rev - day_exp]
-        elif period == 'this_month':
-            days_in_month = (today - today.replace(day=1)).days + 1
-            days_count = max(days_in_month, 7)
-            for i in range(days_count - 1, -1, -1):
-                day_date = today - datetime.timedelta(days=i)
-                chart_days.append(day_date.strftime("%d/%m"))
-                day_trips = DispatchTrip.objects.filter(
-                    Q(loading_date=day_date) | Q(loading_date__isnull=True, created_at__date=day_date),
+        elif period in ['7_days', 'this_month'] or (period == 'custom' and (end_date - start_date).days <= 31):
+            # Duyệt chính xác từng ngày trong khoảng [start_date, end_date]
+            cur_date = start_date
+            while cur_date <= end_date:
+                chart_days.append(cur_date.strftime("%d/%m"))
+                d_trips = DispatchTrip.objects.filter(
+                    Q(loading_date=cur_date) | Q(loading_date__isnull=True, created_at__date=cur_date),
                     is_deleted=False
                 )
-                day_rev = int(day_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
-                day_exp = int(day_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
-                chart_revenue.append(day_rev)
-                chart_expense.append(day_exp)
-                chart_profit.append(day_rev - day_exp)
-        elif period in ['this_quarter', 'this_year']:
-            # 6 tháng gần nhất
-            for m in range(5, -1, -1):
-                m_date = today - datetime.timedelta(days=m * 30)
-                m_label = f"T{m_date.month}"
-                chart_days.append(m_label)
+                d_rev = int(d_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+                d_exp = int(d_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+                chart_revenue.append(d_rev)
+                chart_expense.append(d_exp)
+                chart_profit.append(d_rev - d_exp)
+                cur_date += datetime.timedelta(days=1)
+        elif period == 'this_quarter':
+            # Chỉ hiển thị các tháng trong quý hiện tại (T10, T11, T12 nếu Quý 4)
+            quarter = (today.month - 1) // 3 + 1
+            quarter_months = [(quarter - 1) * 3 + 1, (quarter - 1) * 3 + 2, (quarter - 1) * 3 + 3]
+            for m in quarter_months:
+                chart_days.append(f"T{m}")
+                if m <= today.month:
+                    m_trips = DispatchTrip.objects.filter(
+                        Q(loading_date__year=today.year, loading_date__month=m) | Q(loading_date__isnull=True, created_at__year=today.year, created_at__month=m),
+                        is_deleted=False
+                    )
+                    m_rev = int(m_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+                    m_exp = int(m_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+                    chart_revenue.append(m_rev)
+                    chart_expense.append(m_exp)
+                    chart_profit.append(m_rev - m_exp)
+                else:
+                    chart_revenue.append(0)
+                    chart_expense.append(0)
+                    chart_profit.append(0)
+        else: # this_year hoặc custom > 31 ngày
+            for m in range(1, today.month + 1):
+                chart_days.append(f"T{m}")
                 m_trips = DispatchTrip.objects.filter(
-                    created_at__year=m_date.year,
-                    created_at__month=m_date.month,
+                    Q(loading_date__year=today.year, loading_date__month=m) | Q(loading_date__isnull=True, created_at__year=today.year, created_at__month=m),
                     is_deleted=False
                 )
                 m_rev = int(m_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
@@ -230,22 +284,6 @@ class DashboardBGDAPIView(APIView):
                 chart_revenue.append(m_rev)
                 chart_expense.append(m_exp)
                 chart_profit.append(m_rev - m_exp)
-        else: # 7_days default
-            for i in range(6, -1, -1):
-                day_date = today - datetime.timedelta(days=i)
-                chart_days.append(day_date.strftime("%d/%m"))
-                
-                day_trips = DispatchTrip.objects.filter(
-                    Q(loading_date=day_date) | Q(loading_date__isnull=True, created_at__date=day_date),
-                    is_deleted=False
-                )
-                day_rev = int(day_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
-                day_exp = int(day_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
-                day_profit = day_rev - day_exp
-
-                chart_revenue.append(day_rev)
-                chart_expense.append(day_exp)
-                chart_profit.append(day_profit)
 
         # 7. Danh sách chuyến xe phân tích P&L trong kỳ
         period_trips_qs = trips_period.select_related('customer', 'driver', 'vehicle').order_by('-id')[:50]
@@ -286,42 +324,19 @@ class DashboardBGDAPIView(APIView):
         if period == 'today':
             avg_rev = agg_revenue
             avg_exp = agg_expense
-            rev_label = "Doanh Thu (Hôm nay)"
-            exp_label = "Chi Phí (Hôm nay)"
-            margin_label = "Biên Lợi Nhuận"
-            chart_subtitle = "Hôm nay & Hôm qua: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
-        elif period == 'this_month':
-            days_count = max((today - today.replace(day=1)).days + 1, 1)
+        elif period in ['7_days', 'this_month'] or (period == 'custom' and (end_date - start_date).days <= 31):
+            days_count = max((end_date - start_date).days + 1, 1)
             avg_rev = round(agg_revenue / days_count)
             avg_exp = round(agg_expense / days_count)
-            rev_label = "Doanh Thu TB / Ngày"
-            exp_label = "Chi Phí TB / Ngày"
-            margin_label = "Biên Lợi Nhuận TB"
-            chart_subtitle = f"Tháng này (T{today.month}/{today.year}): Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
         elif period == 'this_quarter':
             quarter = (today.month - 1) // 3 + 1
             months_count = max(today.month - (quarter - 1) * 3, 1)
             avg_rev = round(agg_revenue / months_count)
             avg_exp = round(agg_expense / months_count)
-            rev_label = "Doanh Thu TB / Tháng"
-            exp_label = "Chi Phí TB / Tháng"
-            margin_label = "Biên Lợi Nhuận TB"
-            chart_subtitle = f"Quý {quarter}/{today.year}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
-        elif period == 'this_year':
+        else: # this_year hoặc custom > 31 ngày
             months_count = max(today.month, 1)
             avg_rev = round(agg_revenue / months_count)
             avg_exp = round(agg_expense / months_count)
-            rev_label = "Doanh Thu TB / Tháng"
-            exp_label = "Chi Phí TB / Tháng"
-            margin_label = "Biên Lợi Nhuận TB"
-            chart_subtitle = f"Năm {today.year}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
-        else: # '7_days'
-            avg_rev = round(agg_revenue / 7)
-            avg_exp = round(agg_expense / 7)
-            rev_label = "Doanh Thu TB / Ngày"
-            exp_label = "Chi Phí TB / Ngày"
-            margin_label = "Biên Lợi Nhuận TB"
-            chart_subtitle = "Chuỗi 7 ngày gần nhất: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
 
         return Response({
             'period': period,

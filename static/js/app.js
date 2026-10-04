@@ -248,6 +248,9 @@ function toggleDashboardPeriodDropdown(e) {
 }
 window.toggleDashboardPeriodDropdown = toggleDashboardPeriodDropdown;
 
+let currentDashboardCustomStart = null;
+let currentDashboardCustomEnd = null;
+
 function setDashboardPeriod(period, label) {
     currentDashboardPeriod = period;
     const labelEl = document.getElementById('topbar-period-label');
@@ -273,20 +276,83 @@ function setDashboardPeriod(period, label) {
 }
 window.setDashboardPeriod = setDashboardPeriod;
 
-// Close dropdown on click outside
+function openDashboardCustomDatePicker(event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById('topbar-period-menu');
+    if (menu) menu.classList.add('hidden');
+    
+    const popover = document.getElementById('topbar-custom-date-popover');
+    if (popover) {
+        popover.classList.remove('hidden');
+        const startInput = document.getElementById('topbar-custom-start-date');
+        const endInput = document.getElementById('topbar-custom-end-date');
+        
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        
+        if (startInput && !startInput.value) {
+            startInput.value = currentDashboardCustomStart || `${yyyy}-${mm}-01`;
+        }
+        if (endInput && !endInput.value) {
+            endInput.value = currentDashboardCustomEnd || todayStr;
+        }
+    }
+}
+window.openDashboardCustomDatePicker = openDashboardCustomDatePicker;
+
+function closeDashboardCustomDatePicker() {
+    const popover = document.getElementById('topbar-custom-date-popover');
+    if (popover) popover.classList.add('hidden');
+}
+window.closeDashboardCustomDatePicker = closeDashboardCustomDatePicker;
+
+function applyDashboardCustomDate() {
+    const startInput = document.getElementById('topbar-custom-start-date');
+    const endInput = document.getElementById('topbar-custom-end-date');
+    
+    if (!startInput || !endInput || !startInput.value || !endInput.value) {
+        showToast('warning', 'Vui lòng chọn đầy đủ Từ ngày và Đến ngày', 'Cảnh báo');
+        return;
+    }
+    
+    currentDashboardCustomStart = startInput.value;
+    currentDashboardCustomEnd = endInput.value;
+    
+    closeDashboardCustomDatePicker();
+    
+    const startDateObj = new Date(currentDashboardCustomStart);
+    const endDateObj = new Date(currentDashboardCustomEnd);
+    const sStr = `${String(startDateObj.getDate()).padStart(2, '0')}/${String(startDateObj.getMonth() + 1).padStart(2, '0')}`;
+    const eStr = `${String(endDateObj.getDate()).padStart(2, '0')}/${String(endDateObj.getMonth() + 1).padStart(2, '0')}`;
+    const customLabel = `${sStr} - ${eStr}`;
+    
+    setDashboardPeriod('custom', customLabel);
+}
+window.applyDashboardCustomDate = applyDashboardCustomDate;
+
+// Close dropdown and popover on click outside
 document.addEventListener('click', (e) => {
     const container = document.getElementById('dashboard-period-dropdown-container');
     const menu = document.getElementById('topbar-period-menu');
-    if (menu && container && !container.contains(e.target)) {
-        menu.classList.add('hidden');
+    const popover = document.getElementById('topbar-custom-date-popover');
+    if (container && !container.contains(e.target)) {
+        if (menu) menu.classList.add('hidden');
+        if (popover) popover.classList.add('hidden');
     }
 });
 
 // --- 1. TẢI DỮ LIỆU BAN GIÁM ĐỐC (CHUẨN QUỐC TẾ TMS & HẢI QUAN) ---
 async function loadDashboardData(periodOverride) {
     const period = periodOverride || currentDashboardPeriod || '7_days';
+    let url = `/api/dashboard/?period=${period}`;
+    if (period === 'custom' && currentDashboardCustomStart && currentDashboardCustomEnd) {
+        url += `&start_date=${currentDashboardCustomStart}&end_date=${currentDashboardCustomEnd}`;
+    }
     try {
-        const res = await fetchWithAuth(`/api/dashboard/?period=${period}`);
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error('Không thể kết nối máy chủ');
         const data = await res.json();
         bgdDataCache = data;
