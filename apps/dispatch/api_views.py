@@ -212,7 +212,8 @@ class DashboardBGDAPIView(APIView):
         active_bookings = BookingOrder.objects.filter(status=BookingStatus.PARTIALLY_DISPATCHED, is_deleted=False).count()
         completed_bookings = BookingOrder.objects.filter(status=BookingStatus.COMPLETED, is_deleted=False).count()
 
-        # 6. Chuỗi dữ liệu biểu đồ CHÍNH XÁC theo kỳ
+        # 6. Chuỗi dữ liệu biểu đồ CHÍNH XÁC theo khoảng thời gian và phân kỳ thông minh
+        total_days = (end_date - start_date).days + 1
         chart_days = []
         chart_revenue = []
         chart_expense = []
@@ -237,8 +238,45 @@ class DashboardBGDAPIView(APIView):
             chart_revenue = [yest_rev, day_rev]
             chart_expense = [yest_exp, day_exp]
             chart_profit = [yest_rev - yest_exp, day_rev - day_exp]
-        elif period in ['7_days', 'this_month'] or (period == 'custom' and (end_date - start_date).days <= 31):
-            # Duyệt chính xác từng ngày trong khoảng [start_date, end_date]
+            avg_rev = agg_revenue
+            avg_exp = agg_expense
+            rev_label = "Doanh Thu (Hôm nay)"
+            exp_label = "Chi Phí (Hôm nay)"
+            margin_label = "Biên Lợi Nhuận"
+            chart_subtitle = "Hôm nay: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+
+        elif period == 'this_quarter':
+            quarter = (today.month - 1) // 3 + 1
+            quarter_months = [(quarter - 1) * 3 + 1, (quarter - 1) * 3 + 2, (quarter - 1) * 3 + 3]
+            active_m_count = 0
+            for m in quarter_months:
+                chart_days.append(f"T{m}")
+                if m <= today.month:
+                    m_trips = DispatchTrip.objects.filter(
+                        Q(loading_date__year=today.year, loading_date__month=m) | Q(loading_date__isnull=True, created_at__year=today.year, created_at__month=m),
+                        is_deleted=False
+                    )
+                    m_rev = int(m_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+                    m_exp = int(m_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+                    chart_revenue.append(m_rev)
+                    chart_expense.append(m_exp)
+                    chart_profit.append(m_rev - m_exp)
+                    active_m_count += 1
+                else:
+                    chart_revenue.append(0)
+                    chart_expense.append(0)
+                    chart_profit.append(0)
+            
+            months_count = max(active_m_count, 1)
+            avg_rev = round(agg_revenue / months_count)
+            avg_exp = round(agg_expense / months_count)
+            rev_label = "Doanh Thu TB / Tháng"
+            exp_label = "Chi Phí TB / Tháng"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Quý {quarter}/{today.year}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+
+        elif total_days <= 45 or period in ['7_days', 'this_month']:
+            # Hiển thị theo TỪNG NGÀY (Daily Granularity)
             cur_date = start_date
             while cur_date <= end_date:
                 chart_days.append(cur_date.strftime("%d/%m"))
@@ -252,31 +290,68 @@ class DashboardBGDAPIView(APIView):
                 chart_expense.append(d_exp)
                 chart_profit.append(d_rev - d_exp)
                 cur_date += datetime.timedelta(days=1)
-        elif period == 'this_quarter':
-            # Chỉ hiển thị các tháng trong quý hiện tại (T10, T11, T12 nếu Quý 4)
-            quarter = (today.month - 1) // 3 + 1
-            quarter_months = [(quarter - 1) * 3 + 1, (quarter - 1) * 3 + 2, (quarter - 1) * 3 + 3]
-            for m in quarter_months:
-                chart_days.append(f"T{m}")
-                if m <= today.month:
-                    m_trips = DispatchTrip.objects.filter(
-                        Q(loading_date__year=today.year, loading_date__month=m) | Q(loading_date__isnull=True, created_at__year=today.year, created_at__month=m),
-                        is_deleted=False
-                    )
-                    m_rev = int(m_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
-                    m_exp = int(m_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
-                    chart_revenue.append(m_rev)
-                    chart_expense.append(m_exp)
-                    chart_profit.append(m_rev - m_exp)
+            
+            days_count = max(total_days, 1)
+            avg_rev = round(agg_revenue / days_count)
+            avg_exp = round(agg_expense / days_count)
+            rev_label = "Doanh Thu TB / Ngày"
+            exp_label = "Chi Phí TB / Ngày"
+            margin_label = "Biên Lợi Nhuận TB"
+            if period == '7_days':
+                chart_subtitle = f"7 ngày qua ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')}): Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+            elif period == 'this_month':
+                chart_subtitle = f"Tháng {today.month}/{today.year} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')}): Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+            else:
+                chart_subtitle = f"Giai đoạn {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')} ({total_days} ngày): Cột Doanh Thu vs Chi Phí"
+
+        elif total_days <= 120:
+            # Gom theo TUẦN (Weekly Granularity) cho khoảng 1.5 tháng - 4 tháng
+            cur_date = start_date
+            while cur_date <= end_date:
+                w_end = min(cur_date + datetime.timedelta(days=6), end_date)
+                w_label = f"{cur_date.strftime('%d/%m')}-{w_end.strftime('%d/%m')}"
+                chart_days.append(w_label)
+                
+                w_trips = DispatchTrip.objects.filter(
+                    Q(loading_date__range=[cur_date, w_end]) | Q(loading_date__isnull=True, created_at__date__range=[cur_date, w_end]),
+                    is_deleted=False
+                )
+                w_rev = int(w_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
+                w_exp = int(w_trips.aggregate(total=Sum('cached_expense'))['total'] or 0)
+                chart_revenue.append(w_rev)
+                chart_expense.append(w_exp)
+                chart_profit.append(w_rev - w_exp)
+                
+                cur_date = w_end + datetime.timedelta(days=1)
+            
+            weeks_count = max(len(chart_days), 1)
+            avg_rev = round(agg_revenue / weeks_count)
+            avg_exp = round(agg_expense / weeks_count)
+            rev_label = "Doanh Thu TB / Tuần"
+            exp_label = "Chi Phí TB / Tuần"
+            margin_label = "Biên Lợi Nhuận TB"
+            chart_subtitle = f"Giai đoạn {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')} (Gom {len(chart_days)} tuần): Cột Doanh Thu vs Chi Phí"
+
+        else:
+            # Gom theo THÁNG (Monthly Granularity) cho khoảng > 4 tháng hoặc Năm nay
+            cur_year = start_date.year
+            cur_month = start_date.month
+            end_year = end_date.year
+            end_month = end_date.month
+            
+            month_slots = []
+            while (cur_year < end_year) or (cur_year == end_year and cur_month <= end_month):
+                month_slots.append((cur_year, cur_month))
+                if cur_month == 12:
+                    cur_year += 1
+                    cur_month = 1
                 else:
-                    chart_revenue.append(0)
-                    chart_expense.append(0)
-                    chart_profit.append(0)
-        else: # this_year hoặc custom > 31 ngày
-            for m in range(1, today.month + 1):
-                chart_days.append(f"T{m}")
+                    cur_month += 1
+            
+            for y, m in month_slots:
+                chart_days.append(f"T{m}/{str(y)[-2:]}" if len(month_slots) > 12 or start_date.year != end_date.year else f"T{m}")
                 m_trips = DispatchTrip.objects.filter(
-                    Q(loading_date__year=today.year, loading_date__month=m) | Q(loading_date__isnull=True, created_at__year=today.year, created_at__month=m),
+                    Q(loading_date__year=y, loading_date__month=m) | Q(loading_date__isnull=True, created_at__year=y, created_at__month=m),
                     is_deleted=False
                 )
                 m_rev = int(m_trips.aggregate(total=Sum('cached_revenue'))['total'] or 0)
@@ -284,6 +359,17 @@ class DashboardBGDAPIView(APIView):
                 chart_revenue.append(m_rev)
                 chart_expense.append(m_exp)
                 chart_profit.append(m_rev - m_exp)
+            
+            months_count = max(len(month_slots), 1)
+            avg_rev = round(agg_revenue / months_count)
+            avg_exp = round(agg_expense / months_count)
+            rev_label = "Doanh Thu TB / Tháng"
+            exp_label = "Chi Phí TB / Tháng"
+            margin_label = "Biên Lợi Nhuận TB"
+            if period == 'this_year':
+                chart_subtitle = f"Năm {today.year}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+            else:
+                chart_subtitle = f"Giai đoạn {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')} ({len(month_slots)} tháng): Cột Doanh Thu vs Chi Phí"
 
         # 7. Danh sách chuyến xe phân tích P&L trong kỳ
         period_trips_qs = trips_period.select_related('customer', 'driver', 'vehicle').order_by('-id')[:50]
@@ -319,24 +405,6 @@ class DashboardBGDAPIView(APIView):
             c_rate = round(c_cleared / total_customs * 100, 1)
         else:
             c_green, c_yellow, c_red, c_rate = 85, 12, 3, 85.0
-
-        # Tính toán các chỉ số trung bình theo kỳ cho 3 ô mini dưới biểu đồ
-        if period == 'today':
-            avg_rev = agg_revenue
-            avg_exp = agg_expense
-        elif period in ['7_days', 'this_month'] or (period == 'custom' and (end_date - start_date).days <= 31):
-            days_count = max((end_date - start_date).days + 1, 1)
-            avg_rev = round(agg_revenue / days_count)
-            avg_exp = round(agg_expense / days_count)
-        elif period == 'this_quarter':
-            quarter = (today.month - 1) // 3 + 1
-            months_count = max(today.month - (quarter - 1) * 3, 1)
-            avg_rev = round(agg_revenue / months_count)
-            avg_exp = round(agg_expense / months_count)
-        else: # this_year hoặc custom > 31 ngày
-            months_count = max(today.month, 1)
-            avg_rev = round(agg_revenue / months_count)
-            avg_exp = round(agg_expense / months_count)
 
         return Response({
             'period': period,
