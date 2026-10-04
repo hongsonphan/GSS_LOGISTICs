@@ -1,20 +1,8 @@
 <!-- 8. PHÂN HỆ CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA & SETTINGS) -->
 <div id="view-cai-dat" class="view hidden-view p-3.5 md:p-4 h-full flex flex-col space-y-2.5 overflow-hidden bg-slate-100">
-    <!-- Top Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 shrink-0">
-        <div>
-            <div class="flex items-center space-x-2">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-black font-heading bg-teal-100 text-teal-800 border border-teal-200 uppercase tracking-wider">
-                    Cài đặt • Master Data
-                </span>
-                <span class="text-sm font-semibold text-slate-500">Khai báo & Quản trị tập trung toàn bộ danh mục</span>
-            </div>
-            <h2 class="text-xl md:text-2xl font-black text-slate-900 mt-0.5 tracking-tight font-heading">Cài Đặt Hệ Thống</h2>
-        </div>
-
-        <!-- 11 KPI Pills Counter -->
-        <div class="flex items-center flex-wrap gap-2 text-xs font-bold font-heading">
-            <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('driver_tariffs')">
+    <!-- Top KPI Pills Counter -->
+    <div class="flex items-center flex-wrap gap-2 text-xs font-bold font-heading shrink-0 pb-1">
+        <div class="px-2.5 py-1 bg-white rounded-lg border border-slate-200/90 shadow-2xs flex items-center space-x-1 cursor-pointer hover:border-teal-400" onclick="switchMasterDataTab('driver_tariffs')">
                 <i class="ph-bold ph-money text-emerald-600 text-sm"></i>
                 <span class="text-slate-600">Lương:</span>
                 <span id="md-stat-driver-tariffs" class="text-slate-900 font-black">36</span>
