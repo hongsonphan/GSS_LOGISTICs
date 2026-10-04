@@ -1,0 +1,55 @@
+<!-- MODAL TÙY CHỈNH CỘT BẢNG DỮ LIỆU (UNIVERSAL TABLE COLUMN MANAGER) -->
+<div id="bim-column-customizer-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md flex flex-col overflow-hidden animate-scale-up">
+        
+        <!-- Header -->
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 shadow-2xs">
+                    <i class="ph-bold ph-columns text-base"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-slate-900 font-heading leading-tight">Tùy Chỉnh Cột Hiển Thị</h3>
+                    <p class="text-[11px] text-teal-700 font-bold truncate max-w-[220px]" id="bim-col-modal-title">Bảng Dữ Liệu</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono" id="bim-col-modal-visible-count">0/0</span>
+                <button type="button" onclick="closeColumnCustomizer()" class="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                    <i class="ph-bold ph-x text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-4 flex-1 overflow-y-auto max-h-[58vh]">
+            <div class="mb-3 p-2.5 bg-teal-50/70 rounded-xl border border-teal-200/80 flex items-start space-x-2">
+                <i class="ph-bold ph-info text-teal-700 text-sm mt-0.5 shrink-0"></i>
+                <p class="text-[11px] text-teal-900 leading-tight">
+                    Kéo thả biểu tượng <strong>⠿</strong> hoặc bấm <strong>▲ ▼</strong> để đổi vị trí cột. Bỏ tick để ẩn cột không cần xem.
+                </p>
+            </div>
+
+            <!-- Danh sách cột động -->
+            <div id="bim-col-modal-list" class="space-y-2">
+                <!-- Được render tự động bởi column_manager.js -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+            <button type="button" onclick="BimColumnManager_reset()" 
+                class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-slate-700 font-bold text-xs font-heading transition-colors flex items-center gap-1.5 shadow-2xs">
+                <i class="ph-bold ph-arrow-counter-clockwise text-xs"></i>
+                <span>Mặc định</span>
+            </button>
+            
+            <button type="button" onclick="closeColumnCustomizer()" 
+                class="px-4 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs font-heading shadow-sm transition-colors flex items-center gap-1.5">
+                <i class="ph-bold ph-check text-xs"></i>
+                <span>Hoàn tất</span>
+            </button>
+        </div>
+
+    </div>
+</div>

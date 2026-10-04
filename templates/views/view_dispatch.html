@@ -59,6 +59,13 @@
                     <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
                         Hiển thị: <strong id="dispatch-filtered-count">0</strong> / <span id="dispatch-total-count">0</span> chuyến xe
                     </span>
+                    <!-- Nút Tùy Chỉnh Cột Bảng Điều Vận -->
+                    <button type="button" onclick="openColumnCustomizer('dispatch-trips-table')" 
+                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                     <button type="button" onclick="resetDispatchFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
                         <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
                     </button>
@@ -124,11 +131,11 @@
 
         <!-- Bảng Dữ Liệu Chuyến Xe Kèm Sắp Xếp Cột -->
         <div class="overflow-x-auto flex-1">
-            <table class="erp-table whitespace-nowrap">
+            <table class="erp-table whitespace-nowrap" id="dispatch-trips-table" data-table-title="Danh Sách Điều Vận Chuyến Xe">
                 <thead>
                     <tr>
                         <!-- 1. Mã / Lịch Đóng (Có sắp xếp) -->
-                        <th onclick="toggleDispatchSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Lịch Đóng / Khởi hành">
+                        <th data-col-key="loading_date" data-col-name="Mã / Lịch Đóng" data-col-locked="true" onclick="toggleDispatchSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Lịch Đóng / Khởi hành">
                             <div class="flex items-center gap-1.5">
                                 <span>Mã / Lịch Đóng</span>
                                 <i id="sort-icon-dispatch-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -136,7 +143,7 @@
                         </th>
 
                         <!-- 2. Khách hàng & Kho (Có sắp xếp) -->
-                        <th onclick="toggleDispatchSort('customer')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách hàng">
+                        <th data-col-key="customer" data-col-name="Khách hàng & Kho" onclick="toggleDispatchSort('customer')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách hàng">
                             <div class="flex items-center gap-1.5">
                                 <span>Khách hàng & Kho</span>
                                 <i id="sort-icon-dispatch-customer" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -144,27 +151,27 @@
                         </th>
 
                         <!-- 3. Container / Booking (Có sắp xếp) -->
-                        <th onclick="toggleDispatchSort('container')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Số Container">
+                        <th data-col-key="container" data-col-name="Booking / Cont / Seal" onclick="toggleDispatchSort('container')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Số Container">
                             <div class="flex items-center gap-1.5">
                                 <span>Booking / Cont / Seal</span>
                                 <i id="sort-icon-dispatch-container" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                             </div>
                         </th>
 
-                        <th>Invoice / Dock</th>
+                        <th data-col-key="invoice_dock" data-col-name="Invoice / Dock">Invoice / Dock</th>
 
                         <!-- 5. Xe Kéo & Xe Hạ (Có sắp xếp) -->
-                        <th onclick="toggleDispatchSort('vehicle')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Biển Số Xe">
+                        <th data-col-key="vehicle" data-col-name="Xe Kéo & Xe Hạ" onclick="toggleDispatchSort('vehicle')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Biển Số Xe">
                             <div class="flex items-center gap-1.5">
                                 <span>Xe Kéo & Xe Hạ</span>
                                 <i id="sort-icon-dispatch-vehicle" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                             </div>
                         </th>
 
-                        <th>Lưu Ý & Vị Trí Cont</th>
+                        <th data-col-key="notes" data-col-name="Lưu Ý & Vị Trí Cont">Lưu Ý & Vị Trí Cont</th>
 
                         <!-- 7. Tuyến & Chi phí (Có sắp xếp theo chi phí) -->
-                        <th onclick="toggleDispatchSort('expense')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Chi Phí">
+                        <th data-col-key="expense" data-col-name="Nơi Lấy ➔ Nơi Hạ" onclick="toggleDispatchSort('expense')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Chi Phí">
                             <div class="flex items-center gap-1.5">
                                 <span>Nơi Lấy ➔ Nơi Hạ</span>
                                 <i id="sort-icon-dispatch-expense" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -172,7 +179,7 @@
                         </th>
 
                         <!-- 8. Trạng thái (Có sắp xếp) -->
-                        <th onclick="toggleDispatchSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Trạng Thái">
+                        <th data-col-key="status" data-col-name="Trạng thái" onclick="toggleDispatchSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Trạng Thái">
                             <div class="flex items-center justify-center gap-1.5">
                                 <span>Trạng thái</span>
                                 <i id="sort-icon-dispatch-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>

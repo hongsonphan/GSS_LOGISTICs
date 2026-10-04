@@ -125,6 +125,13 @@
         </div>
 
         <div class="flex items-center space-x-2">
+            <!-- Nút Tùy Chỉnh Cột Hải Quan -->
+            <button type="button" onclick="openColumnCustomizer('customs-declarations-table')" 
+                class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                <i class="ph-bold ph-columns text-teal-700"></i>
+                <span>Cột</span>
+            </button>
             <button onclick="fetchCustomsDeclarations()" class="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="Làm mới dữ liệu">
                 <i class="ph-bold ph-arrows-clockwise text-base"></i>
             </button>
@@ -134,19 +141,19 @@
     <!-- Data Table Container -->
     <div class="bg-white rounded-2xl shadow-2xs border border-slate-200 flex-1 flex flex-col overflow-hidden">
         <div class="flex-1 overflow-x-auto overflow-y-auto">
-            <table class="w-full text-left border-collapse border-spacing-0">
+            <table class="w-full text-left border-collapse border-spacing-0" id="customs-declarations-table" data-table-title="Tờ Khai Hải Quan Điện Tử">
                 <thead>
                     <tr class="bg-slate-100 border-b border-slate-200 sticky top-0 z-10">
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 w-12 select-none">STT</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 select-none">Số Tờ Khai (VNACCS)</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 select-none">Chủ Hàng / Chi Cục HQ</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 select-none">Phân Luồng</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 select-none">Trạng Thái</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 select-none">Vận Đơn / Cont</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 select-none">Chuyến Xe Điều Vận</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200 select-none">Thuế XNK (VNĐ)</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200 select-none">Chi Hộ Kiểm Hóa</th>
-                        <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center select-none w-28">Thao Tác</th>
+                        <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 w-12 select-none">STT</th>
+                        <th data-col-key="declaration_number" data-col-name="Số Tờ Khai" data-col-locked="true" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 select-none">Số Tờ Khai (VNACCS)</th>
+                        <th data-col-key="customer_customs_dept" data-col-name="Chủ Hàng / Chi Cục HQ" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 select-none">Chủ Hàng / Chi Cục HQ</th>
+                        <th data-col-key="channel" data-col-name="Phân Luồng" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 select-none">Phân Luồng</th>
+                        <th data-col-key="status" data-col-name="Trạng Thái" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 select-none">Trạng Thái</th>
+                        <th data-col-key="container_bl" data-col-name="Vận Đơn / Cont" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 select-none">Vận Đơn / Cont</th>
+                        <th data-col-key="trip" data-col-name="Chuyến Xe Điều Vận" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 select-none">Chuyến Xe Điều Vận</th>
+                        <th data-col-key="tax_amount" data-col-name="Thuế XNK (VNĐ)" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200 select-none">Thuế XNK (VNĐ)</th>
+                        <th data-col-key="inspection_fee" data-col-name="Chi Hộ Kiểm Hóa" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200 select-none">Chi Hộ Kiểm Hóa</th>
+                        <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center select-none w-28">Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody id="customs-table-body">

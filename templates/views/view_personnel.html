@@ -40,6 +40,13 @@
                     <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
                         Hiển thị: <strong id="hr-filtered-count">0</strong> / <span id="hr-total-count">0</span> nhân sự
                     </span>
+                    <!-- Nút Tùy Chỉnh Cột Nhân Sự -->
+                    <button type="button" onclick="openColumnCustomizer('personnel-payroll-table')" 
+                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                     <button type="button" onclick="resetHRFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
                         <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
                     </button>
@@ -62,11 +69,11 @@
         </div>
 
         <div class="overflow-x-auto flex-1">
-            <table class="erp-table whitespace-nowrap">
+            <table class="erp-table whitespace-nowrap" id="personnel-payroll-table" data-table-title="Bảng Lương & Nhân Sự Vận Hành">
                 <thead>
                     <tr>
                         <!-- 1. Mã NV -->
-                        <th onclick="toggleHRSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã NV">
+                        <th data-col-key="code" data-col-name="Mã NV" data-col-locked="true" onclick="toggleHRSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã NV">
                             <div class="flex items-center gap-1.5">
                                 <span>Mã NV</span>
                                 <i id="sort-icon-hr-code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -74,7 +81,7 @@
                         </th>
 
                         <!-- 2. Tài xế -->
-                        <th onclick="toggleHRSort('name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tên Tài xế">
+                        <th data-col-key="name" data-col-name="Tài xế" onclick="toggleHRSort('name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tên Tài xế">
                             <div class="flex items-center gap-1.5">
                                 <span>Tài xế</span>
                                 <i id="sort-icon-hr-name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -82,7 +89,7 @@
                         </th>
 
                         <!-- 3. Số chuyến -->
-                        <th onclick="toggleHRSort('trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Số Chuyến">
+                        <th data-col-key="trips" data-col-name="Số chuyến (Tháng)" onclick="toggleHRSort('trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Số Chuyến">
                             <div class="flex items-center justify-center gap-1.5">
                                 <span>Số chuyến (Tháng)</span>
                                 <i id="sort-icon-hr-trips" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -90,7 +97,7 @@
                         </th>
 
                         <!-- 4. Lương Cơ Bản -->
-                        <th onclick="toggleHRSort('base_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lương Cơ Bản">
+                        <th data-col-key="base_salary" data-col-name="Lương Cơ Bản" onclick="toggleHRSort('base_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lương Cơ Bản">
                             <div class="flex items-center justify-end gap-1.5">
                                 <span>Lương Cơ Bản</span>
                                 <i id="sort-icon-hr-base_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -98,7 +105,7 @@
                         </th>
 
                         <!-- 5. Lương Chuyến -->
-                        <th onclick="toggleHRSort('trip_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lương Chuyến">
+                        <th data-col-key="trip_salary" data-col-name="Lương Chuyến (Tạm tính)" onclick="toggleHRSort('trip_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lương Chuyến">
                             <div class="flex items-center justify-end gap-1.5">
                                 <span>Lương Chuyến (Tạm tính)</span>
                                 <i id="sort-icon-hr-trip_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -106,7 +113,7 @@
                         </th>
 
                         <!-- 6. Tạm ứng -->
-                        <th onclick="toggleHRSort('advance')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Tạm Ứng">
+                        <th data-col-key="advance" data-col-name="Tạm ứng" onclick="toggleHRSort('advance')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Tạm Ứng">
                             <div class="flex items-center justify-end gap-1.5">
                                 <span>Tạm ứng</span>
                                 <i id="sort-icon-hr-advance" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -114,7 +121,7 @@
                         </th>
 
                         <!-- 7. Thực lãnh dự kiến -->
-                        <th onclick="toggleHRSort('net_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Thực Lãnh Dự Kiến">
+                        <th data-col-key="net_salary" data-col-name="Thực lãnh dự kiến" onclick="toggleHRSort('net_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Thực Lãnh Dự Kiến">
                             <div class="flex items-center justify-end gap-1.5">
                                 <span>Thực lãnh dự kiến</span>
                                 <i id="sort-icon-hr-net_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>

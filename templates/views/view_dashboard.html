@@ -245,6 +245,13 @@
                         <i class="ph ph-arrows-out-simple text-teal-700" id="icon-table-expand"></i>
                         <span id="text-table-expand">Toàn Màn Hình</span>
                     </button>
+                    <!-- Nút Tùy Chỉnh Cột Bảng (Universal Column Customizer) -->
+                    <button type="button" onclick="openColumnCustomizer('dashboard-pnl-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 w-fit" 
+                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                     <button onclick="switchTab('ke-toan')" class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg text-xs font-bold font-heading border border-teal-200 transition-colors flex items-center space-x-1.5 w-fit">
                         <span>Xem Toàn Bộ Sổ Kế Toán</span>
                         <i class="ph ph-arrow-right"></i>
@@ -279,11 +286,11 @@
         </div>
         
         <div class="overflow-x-auto flex-1 overflow-y-auto">
-            <table class="erp-table min-w-[950px] w-full text-left whitespace-nowrap">
+            <table class="erp-table min-w-[950px] w-full text-left whitespace-nowrap" id="dashboard-pnl-table" data-table-title="Báo Cáo Hiệu Suất & P&L Chuyến Xe">
                 <thead class="sticky top-0 bg-slate-100 z-10 border-b border-slate-300 shadow-2xs select-none">
                     <tr>
                         <!-- 1. Mã Chuyến -->
-                        <th onclick="toggleDashboardPnlSort('trip_code')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Mã Chuyến">
+                        <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleDashboardPnlSort('trip_code')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Mã Chuyến">
                             <div class="flex items-center gap-1">
                                 <span>Mã Chuyến</span>
                                 <i id="sort-icon-pnl-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -291,7 +298,7 @@
                         </th>
 
                         <!-- 2. Khách Hàng & Tuyến -->
-                        <th onclick="toggleDashboardPnlSort('customer_name')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Khách Hàng">
+                        <th data-col-key="customer_name" data-col-name="Khách Hàng & Tuyến" onclick="toggleDashboardPnlSort('customer_name')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Khách Hàng">
                             <div class="flex items-center gap-1">
                                 <span>Khách Hàng & Tuyến</span>
                                 <i id="sort-icon-pnl-customer_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -299,7 +306,7 @@
                         </th>
 
                         <!-- 3. Tài Xế & Đầu Kéo -->
-                        <th onclick="toggleDashboardPnlSort('driver_name')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Tài Xế">
+                        <th data-col-key="driver_name" data-col-name="Tài Xế & Xe" onclick="toggleDashboardPnlSort('driver_name')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Tài Xế">
                             <div class="flex items-center gap-1">
                                 <span>Tài Xế & Xe</span>
                                 <i id="sort-icon-pnl-driver_name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -307,7 +314,7 @@
                         </th>
 
                         <!-- 4. Container / Hàng -->
-                        <th onclick="toggleDashboardPnlSort('container_number')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Container">
+                        <th data-col-key="container_number" data-col-name="Container" onclick="toggleDashboardPnlSort('container_number')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Container">
                             <div class="flex items-center gap-1">
                                 <span>Container</span>
                                 <i id="sort-icon-pnl-container_number" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -315,7 +322,7 @@
                         </th>
 
                         <!-- 5. Doanh Thu Cước -->
-                        <th onclick="toggleDashboardPnlSort('revenue')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Doanh Thu">
+                        <th data-col-key="revenue" data-col-name="Doanh Thu" onclick="toggleDashboardPnlSort('revenue')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Doanh Thu">
                             <div class="flex items-center justify-end gap-1">
                                 <span>Doanh Thu</span>
                                 <i id="sort-icon-pnl-revenue" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -323,7 +330,7 @@
                         </th>
 
                         <!-- 6. Chi Phí Vận Hành -->
-                        <th onclick="toggleDashboardPnlSort('expense')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Chi Phí">
+                        <th data-col-key="expense" data-col-name="Chi Phí" onclick="toggleDashboardPnlSort('expense')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Chi Phí">
                             <div class="flex items-center justify-end gap-1">
                                 <span>Chi Phí</span>
                                 <i id="sort-icon-pnl-expense" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -331,7 +338,7 @@
                         </th>
 
                         <!-- 7. Lợi Nhuận Gộp -->
-                        <th onclick="toggleDashboardPnlSort('profit')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Lợi Nhuận">
+                        <th data-col-key="profit" data-col-name="Lợi Nhuận Gộp" onclick="toggleDashboardPnlSort('profit')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Lợi Nhuận">
                             <div class="flex items-center justify-end gap-1">
                                 <span>Lợi Nhuận Gộp</span>
                                 <i id="sort-icon-pnl-profit" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -339,7 +346,7 @@
                         </th>
 
                         <!-- 8. Biên LN (%) -->
-                        <th onclick="toggleDashboardPnlSort('margin_percent')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Biên Lợi Nhuận">
+                        <th data-col-key="margin_percent" data-col-name="Biên LN (%)" onclick="toggleDashboardPnlSort('margin_percent')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Biên Lợi Nhuận">
                             <div class="flex items-center justify-center gap-1">
                                 <span>Biên LN (%)</span>
                                 <i id="sort-icon-pnl-margin_percent" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
@@ -347,14 +354,14 @@
                         </th>
 
                         <!-- 9. Trạng Thái -->
-                        <th onclick="toggleDashboardPnlSort('status')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Trạng Thái">
+                        <th data-col-key="status" data-col-name="Trạng Thái" onclick="toggleDashboardPnlSort('status')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Trạng Thái">
                             <div class="flex items-center justify-center gap-1">
                                 <span>Trạng Thái</span>
                                 <i id="sort-icon-pnl-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                             </div>
                         </th>
 
-                        <th class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center select-none">Thao Tác</th>
+                        <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider text-center select-none">Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-medium text-xs" id="bgd-pnl-tbody">
