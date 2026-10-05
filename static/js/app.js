@@ -955,15 +955,15 @@ function applyDispatchFilters() {
             }
         }
 
-        if (!filterStatus || filterStatus === 'ACTIVE') {
-            // Mặc định: Chỉ hiển thị các chuyến đang điều vận, ẩn các chuyến đã hoàn thành hoặc đã hủy
+        if (filterStatus === 'ACTIVE') {
+            // Lọc các chuyến đang điều vận, ẩn các chuyến đã hoàn thành hoặc đã hủy
             if (trip.status === 'COMPLETED' || trip.status === 'CANCELLED' || 
                 trip.status_raw === 'COMPLETED' || trip.status_raw === 'CANCELLED' || 
                 trip.status === 'Hoàn tất & Chốt sổ' || trip.status === 'Đã hủy') {
                 return false;
             }
-        } else if (filterStatus === 'ALL') {
-            // Hiển thị tất cả
+        } else if (!filterStatus || filterStatus === 'ALL') {
+            // Mặc định / Tất cả: Hiển thị toàn bộ chuyến xe
         } else if (filterStatus === 'COMPLETED') {
             if (trip.status !== 'COMPLETED' && trip.status_raw !== 'COMPLETED' && trip.status !== 'Hoàn tất & Chốt sổ') return false;
         } else if (filterStatus === 'DROP_HOOK') {

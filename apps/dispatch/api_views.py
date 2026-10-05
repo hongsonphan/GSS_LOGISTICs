@@ -572,10 +572,11 @@ class TripListCreateAPIView(APIView):
                 Q(vehicle__license_plate__icontains=query)
             )
 
-        if not status_filter or status_filter in ['ACTIVE', 'Đang điều vận']:
-            # Mặc định: Chỉ hiển thị các chuyến đang điều vận, ẩn các chuyến đã hoàn thành hoặc đã hủy
+        if status_filter in ['ACTIVE', 'Đang điều vận']:
+            # Lọc các chuyến đang điều vận
             trips_qs = trips_qs.exclude(status__in=[TripStatus.COMPLETED, TripStatus.CANCELLED])
-        elif status_filter in ['ALL', 'Tất cả trạng thái', 'Tất cả']:
+        elif not status_filter or status_filter in ['ALL', 'Tất cả trạng thái', 'Tất cả']:
+            # Mặc định: Hiển thị tất cả các chuyến xe
             pass
         elif status_filter in ['COMPLETED', 'Đã hoàn thành']:
             trips_qs = trips_qs.filter(status=TripStatus.COMPLETED)

@@ -89,8 +89,10 @@
                     <select id="filter-dispatch-status" onchange="applyDispatchFilters()" 
                         class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
                         <option value="">-- Tất cả Trạng thái --</option>
+                        <option value="ACTIVE">Đang điều vận (Chưa hoàn thành)</option>
                         <option value="TRANSIT">Đang vận chuyển (Trên đường)</option>
-                        <option value="DELIVERED">Đã giao hàng / Hoàn tất</option>
+                        <option value="DELIVERED">Đã giao hàng / Tại kho</option>
+                        <option value="COMPLETED">Đã hoàn thành</option>
                         <option value="PENDING">Chờ nhận lệnh / Khởi hành</option>
                         <option value="DROP_HOOK">Chạy Cắt Kéo (Drop & Hook)</option>
                         <option value="TWIN_CONT">Ghép 2 Cont 20ft (Kẹp 20)</option>
