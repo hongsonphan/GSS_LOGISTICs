@@ -84,6 +84,20 @@
             <span>11. Tạm Ứng & Chi Phí Tài Xế (Điều Vận QL)</span>
             <span id="badge-report-driver-adv-pending" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">0</span>
         </button>
+        <button id="report-tab-btn-12" onclick="switchReportSubTab('report-12')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-bold ph-receipt text-sm"></i>
+            <span>12. Quyết Toán Chuyến & Backlog</span>
+            <span id="badge-report-carryover-count" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">0</span>
+        </button>
+        <button id="report-tab-btn-13" onclick="switchReportSubTab('report-13')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-bold ph-coins text-sm"></i>
+            <span>13. Công Nợ Phải Thu (AR)</span>
+        </button>
+        <button id="report-tab-btn-14" onclick="switchReportSubTab('report-14')" class="report-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i class="ph-bold ph-hourglass-high text-sm"></i>
+            <span>14. Tuổi Đơn Tồn Đọng Chưa Chốt</span>
+            <span id="badge-report-unsettled-critical" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">0</span>
+        </button>
     </div>
 
 
@@ -837,6 +851,231 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep11-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 12: BÁO CÁO QUYẾT TOÁN CHUYẾN XE & BACKLOG CHUYỂN KỲ -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-12" class="report-subtab-content space-y-4 hidden">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-700">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Chuyến & Đã Quyết Toán</span>
+                <p class="text-3xl font-black text-teal-900 tabular-nums font-heading mt-1" id="rep12-stat-trips">0 / 0</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep12-note-settled">Đã chốt sổ: 0 · Chưa chốt: 0</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Đã Quyết Toán</span>
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep12-stat-settled-rev">0 đ</p>
+                <p class="text-xs text-indigo-700 font-bold mt-1" id="rep12-stat-settled-profit">Lợi nhuận chốt: 0 đ</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Đang Đọng (Chưa Chốt)</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep12-stat-unsettled-rev">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Chờ đủ POD hoặc chờ chốt kỳ đối soát</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chuyến Tồn Kỳ Trước (Gối Đầu)</span>
+                <p class="text-3xl font-black text-rose-700 tabular-nums font-heading mt-1" id="rep12-stat-carryover">0</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Chạy tháng trước chuyển sang</p>
+            </div>
+        </div>
+
+        <!-- Bảng Kê Chi Tiết Quyết Toán Chuyến -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                        <i class="ph-bold ph-receipt text-teal-700"></i>
+                        Bảng Kê Quyết Toán Chuyến Xe & Backlog (Bao Gồm Xe - Tài, Phân Bổ Doanh Thu - Chi Phí)
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="filter-rep12-status" onchange="applyReport12Filters()" class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 focus:border-teal-600">
+                        <option value="ALL">-- Tất cả trạng thái --</option>
+                        <option value="SETTLED">Đã Quyết Toán</option>
+                        <option value="UNSETTLED">Chưa Quyết Toán (Đọng)</option>
+                        <option value="CARRY_OVER">Chuyến Gối Đầu / Tồn Kỳ Trước</option>
+                        <option value="OWNED">Chỉ Xe Nhà</option>
+                        <option value="PARTNER">Chỉ Xe Bạn / 3PL</option>
+                    </select>
+                    <input type="text" id="filter-rep12-search" oninput="applyReport12Filters()" placeholder="Tìm biển số xe, tài xế, mã chuyến, khách..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th onclick="toggleReport12Sort('trip_code')" class="cursor-pointer">Mã Chuyến</th>
+                            <th onclick="toggleReport12Sort('loading_date')" class="cursor-pointer text-center">Ngày Chạy</th>
+                            <th onclick="toggleReport12Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
+                            <th onclick="toggleReport12Sort('vehicle_plate')" class="cursor-pointer">Xe Kéo & Loại Xe</th>
+                            <th onclick="toggleReport12Sort('driver_name')" class="cursor-pointer">Bác Tài</th>
+                            <th>Tuyến Đường & Số Cont</th>
+                            <th onclick="toggleReport12Sort('revenue')" class="cursor-pointer text-right">Doanh Thu Cước</th>
+                            <th onclick="toggleReport12Sort('expense')" class="cursor-pointer text-right">Chi Phí Vận Hành</th>
+                            <th onclick="toggleReport12Sort('reimbursable')" class="cursor-pointer text-right">Chi Hộ</th>
+                            <th onclick="toggleReport12Sort('profit')" class="cursor-pointer text-right font-black">Lợi Nhuận Gộp</th>
+                            <th class="text-center">Biên LN (%)</th>
+                            <th class="text-center">Chứng Từ POD</th>
+                            <th class="text-center">Phân Loại Chuyến</th>
+                            <th class="text-center">Trạng Thái Quyết Toán</th>
+                            <th>Người Chốt & Ngày Chốt</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep12-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 13: BÁO CÁO THEO DÕI CÔNG NỢ PHẢI THU (AR AGING) & THU TIỀN -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-13" class="report-subtab-content space-y-4 hidden">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-700">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Công Nợ Phải Thu (AR)</span>
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep13-stat-total-ar">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep13-stat-rev-reim">Cước: 0 đ · Chi hộ: 0 đ</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Thu Hồi Từ Khách</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep13-stat-collected">0 đ</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1">Ghi nhận qua Sổ Quỹ / Chốt đối soát</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Còn Phải Thu Khách Hàng</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep13-stat-balance">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Dư nợ thực tế cần đối soát</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nợ Quá Hạn (>30 Ngày)</span>
+                <p class="text-3xl font-black text-rose-700 tabular-nums font-heading mt-1" id="rep13-stat-overdue">0 đ</p>
+                <p class="text-xs text-rose-700 font-bold mt-1">Cần nhắc nợ & đốc thúc thu hồi</p>
+            </div>
+        </div>
+
+        <!-- Bảng Kê Theo Dõi Công Nợ Từng Khách Hàng -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                        <i class="ph-bold ph-coins text-teal-700"></i>
+                        Bảng Theo Dõi Công Nợ Phải Thu & Phân Bổ Tuổi Nợ (AR Aging by Customer)
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep13-search" oninput="applyReport13Filters()" placeholder="Tìm tên khách hàng, mã KH, MST..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th onclick="toggleReport13Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
+                            <th class="text-center">Số Chuyến</th>
+                            <th class="text-center">Đã / Chưa Chốt</th>
+                            <th onclick="toggleReport13Sort('freight_revenue')" class="cursor-pointer text-right">Cước Vận Tải</th>
+                            <th onclick="toggleReport13Sort('reimbursable_amount')" class="cursor-pointer text-right">Tiền Chi Hộ</th>
+                            <th onclick="toggleReport13Sort('total_receivable')" class="cursor-pointer text-right font-black text-slate-900">Tổng Phải Thu</th>
+                            <th onclick="toggleReport13Sort('collected_amount')" class="cursor-pointer text-right text-emerald-700 font-bold">Đã Thu Hồi</th>
+                            <th onclick="toggleReport13Sort('remaining_balance')" class="cursor-pointer text-right text-indigo-700 font-black">Còn Phải Thu</th>
+                            <th class="text-right text-emerald-700 font-medium">Trong Hạn (<=30N)</th>
+                            <th class="text-right text-amber-700 font-medium">Quá Hạn (31-60N)</th>
+                            <th class="text-right text-orange-700 font-medium">Quá Hạn (61-90N)</th>
+                            <th class="text-right text-rose-700 font-bold">Nợ Xấu (>90N)</th>
+                            <th class="text-center">Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep13-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 14: BÁO CÁO TUỔI ĐƠN TỒN ĐỌNG CHƯA QUYẾT TOÁN (UNSETTLED AGING) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-14" class="report-subtab-content space-y-4 hidden">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Đơn Tồn Chưa Quyết Toán</span>
+                <p class="text-3xl font-black text-rose-700 tabular-nums font-heading mt-1" id="rep14-stat-total-unsettled">0</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Tất cả chuyến xe chưa khóa sổ</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Đang Bị Giam</span>
+                <p class="text-3xl font-black text-amber-800 tabular-nums font-heading mt-1" id="rep14-stat-rev-stuck">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep14-stat-exp-stuck">Chi phí đang ứng: 0 đ</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-700">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tồn Đọng Nghiêm Trọng (>30 Ngày)</span>
+                <p class="text-3xl font-black text-rose-900 tabular-nums font-heading mt-1" id="rep14-stat-over-30">0</p>
+                <p class="text-xs text-rose-700 font-bold mt-1">Cần can thiệp gỡ vướng ngay</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chuyến Thiếu POD Gốc</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep14-stat-missing-pod">0</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Tài xế chưa nộp biên bản gốc</p>
+            </div>
+        </div>
+
+        <!-- Bảng Kê Chi Tiết Tuổi Đơn Tồn Đọng -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                        <i class="ph-bold ph-hourglass-high text-rose-700"></i>
+                        Bảng Theo Dõi Tuổi Đơn Tồn Đọng Chưa Khóa Sổ & Nguyên Nhân Vướng Mắc
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="filter-rep14-level" onchange="applyReport14Filters()" class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 focus:border-teal-600">
+                        <option value="ALL">-- Tất cả mức độ tuổi đơn --</option>
+                        <option value="CRITICAL">Nghiêm trọng (>30 Ngày)</option>
+                        <option value="WARNING">Cảnh báo (16-30 Ngày)</option>
+                        <option value="WATCH">Theo dõi POD (8-15 Ngày)</option>
+                        <option value="NORMAL">Bình thường (0-7 Ngày)</option>
+                    </select>
+                    <input type="text" id="filter-rep14-search" oninput="applyReport14Filters()" placeholder="Tìm biển số, tài xế, khách, mã chuyến..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap">
+                    <thead>
+                        <tr>
+                            <th onclick="toggleReport14Sort('trip_code')" class="cursor-pointer">Mã Chuyến</th>
+                            <th onclick="toggleReport14Sort('loading_date')" class="cursor-pointer text-center">Ngày Chạy</th>
+                            <th onclick="toggleReport14Sort('days_unsettled')" class="cursor-pointer text-center font-black">Số Ngày Tồn</th>
+                            <th class="text-center">Mức Độ Cảnh Báo</th>
+                            <th onclick="toggleReport14Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
+                            <th onclick="toggleReport14Sort('vehicle_plate')" class="cursor-pointer">Xe Kéo & Sở Hữu</th>
+                            <th onclick="toggleReport14Sort('driver_name')" class="cursor-pointer">Tài Xế</th>
+                            <th onclick="toggleReport14Sort('revenue')" class="cursor-pointer text-right">Doanh Thu Dự Kiến</th>
+                            <th onclick="toggleReport14Sort('expense')" class="cursor-pointer text-right">Chi Phí / Tạm Ứng</th>
+                            <th>Lý Do Tồn Đọng / Điểm Nghẽn</th>
+                            <th class="text-center">Tình Trạng POD</th>
+                            <th class="text-center">Trạng Thái Vận Hành</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep14-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
                 </table>

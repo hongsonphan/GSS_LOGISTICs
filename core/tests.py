@@ -2174,6 +2174,73 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertEqual(format_money('550000'), '550.000')
         self.assertEqual(money_vnd(35000), '35.000 đ')
 
+    def test_reports_12_13_14_settlement_and_aging(self):
+        """Kiểm tra 3 Báo Cáo mới: Báo Cáo 12 (Quyết toán & Backlog), Báo Cáo 13 (Công Nợ AR) và Báo Cáo 14 (Tuổi đơn tồn đọng)."""
+        import datetime
+        from django.utils import timezone
+        today = timezone.now().date()
+        past_date = today - datetime.timedelta(days=45)
+
+        # 1. Tạo chuyến gối đầu tháng trước (chưa chốt)
+        trip_backlog = DispatchTrip.objects.create(
+            trip_code="TRIP-BACKLOG-001",
+            customer=self.customer,
+            pickup_location="Cát Lái",
+            warehouse_location="Kho Tân Tạo",
+            vehicle=self.vehicle,
+            driver=self.driver,
+            loading_date=past_date,
+            cached_revenue=4500000,
+            cached_expense=1500000,
+            cached_profit=3000000,
+            is_expenses_settled=False
+        )
+
+        # 2. Tạo chuyến trong kỳ đã quyết toán
+        trip_settled = DispatchTrip.objects.create(
+            trip_code="TRIP-SETTLED-002",
+            customer=self.customer,
+            pickup_location="Cát Lái",
+            warehouse_location="Kho Tân Tạo",
+            vehicle=self.vehicle,
+            driver=self.driver,
+            loading_date=today,
+            cached_revenue=5000000,
+            cached_expense=2000000,
+            cached_profit=3000000,
+            is_expenses_settled=True,
+            settled_at=timezone.now(),
+            settled_by=self.accountant
+        )
+
+        # 3. Gọi API Báo Cáo
+        self.client.force_login(self.director_user)
+        res = self.client.get('/api/reports/?period=all')
+        self.assertEqual(res.status_code, 200)
+
+        data = res.json()
+        self.assertIn('report12_settlement_backlog', data)
+        self.assertIn('report13_ar_aging', data)
+        self.assertIn('report14_unsettled_aging', data)
+
+        # Kiểm tra Report 12 (Settlement Backlog)
+        r12 = data['report12_settlement_backlog']
+        self.assertGreaterEqual(r12['total_trips_count'], 2)
+        self.assertGreaterEqual(r12['settled_trips_count'], 1)
+        self.assertGreaterEqual(r12['unsettled_trips_count'], 1)
+
+        # Kiểm tra Report 13 (AR Aging)
+        r13 = data['report13_ar_aging']
+        self.assertGreaterEqual(r13['total_receivable'], 5000000)
+        self.assertGreaterEqual(len(r13['customers']), 1)
+
+        # Kiểm tra Report 14 (Unsettled Aging)
+        r14 = data['report14_unsettled_aging']
+        self.assertGreaterEqual(r14['total_unsettled_count'], 1)
+        found_backlog = any(r['trip_code'] == 'TRIP-BACKLOG-001' and r['aging_level'] == 'CRITICAL' for r in r14['records'])
+        self.assertTrue(found_backlog)
+
+
 
 
 

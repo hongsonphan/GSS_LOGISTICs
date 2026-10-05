@@ -11508,6 +11508,27 @@ function changeReportPeriod(period) {
     loadReportsData();
 }
 
+// Hàm điều hướng trực tiếp sang phân hệ Báo Cáo và mở đúng Tab báo cáo chỉ định (Deep-linking)
+window.openReportTab = function(reportId, periodOverride) {
+    if (typeof switchTab === 'function') {
+        switchTab('bao-cao', true);
+    }
+    if (reportId && typeof switchReportSubTab === 'function') {
+        let subtabId = reportId;
+        if (reportId === 'settlement' || reportId === 'report-settlement') subtabId = 'report-12';
+        else if (reportId === 'ar-aging' || reportId === 'report-ar-aging') subtabId = 'report-13';
+        else if (reportId === 'unsettled-aging' || reportId === 'report-unsettled-aging') subtabId = 'report-14';
+        else if (!subtabId.startsWith('report-')) subtabId = `report-${subtabId}`;
+        
+        setTimeout(() => {
+            switchReportSubTab(subtabId);
+            if (periodOverride && typeof changeReportPeriod === 'function') {
+                changeReportPeriod(periodOverride);
+            }
+        }, 60);
+    }
+};
+
 async function loadReportsData() {
     try {
         const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
@@ -11554,6 +11575,24 @@ async function loadReportsData() {
                 : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
         }
 
+        const carryoverBadge = document.getElementById('badge-report-carryover-count');
+        if (carryoverBadge && data.report12_settlement_backlog) {
+            const carryCount = data.report12_settlement_backlog.carryover_trips_count || 0;
+            carryoverBadge.innerText = carryCount;
+            carryoverBadge.className = carryCount > 0
+                ? 'px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800'
+                : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
+        }
+
+        const unsettledCriticalBadge = document.getElementById('badge-report-unsettled-critical');
+        if (unsettledCriticalBadge && data.report14_unsettled_aging) {
+            const critCount = data.report14_unsettled_aging.over_30_days_count || 0;
+            unsettledCriticalBadge.innerText = critCount;
+            unsettledCriticalBadge.className = critCount > 0
+                ? 'px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 animate-pulse'
+                : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
+        }
+
         // Render Báo cáo 1
         renderReport1(data);
 
@@ -11586,6 +11625,15 @@ async function loadReportsData() {
 
         // Render Báo cáo 11: Tạm Ứng & Chi Phí Phát Sinh Tài Xế (Điều Vận Quản Lý)
         renderReport11(data);
+
+        // Render Báo cáo 12: Quyết Toán Chuyến Xe & Backlog Chuyển Kỳ
+        renderReport12(data);
+
+        // Render Báo cáo 13: Báo Cáo Theo Dõi Công Nợ Phải Thu (AR)
+        renderReport13(data);
+
+        // Render Báo cáo 14: Báo Cáo Tuổi Đơn Tồn Đọng Chưa Quyết Toán
+        renderReport14(data);
 
     } catch (err) {
         console.error('Lỗi khi tải dữ liệu báo cáo TMS:', err);
@@ -12611,6 +12659,424 @@ function toggleReport11Sort(col) {
     }
     applyReport11Filters();
 }
+
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 12: BÁO CÁO QUYẾT TOÁN CHUYẾN XE & BACKLOG CHUYỂN KỲ
+// -------------------------------------------------------------
+let rep12DataCache = [];
+let rep12SortCol = 'loading_date';
+let rep12SortAsc = false;
+
+function renderReport12(data) {
+    const r12 = data.report12_settlement_backlog || {};
+    const canViewFinance = (data.can_view_finance !== false);
+
+    const elTrips = document.getElementById('rep12-stat-trips');
+    if (elTrips) elTrips.innerText = `${r12.settled_trips_count || 0} / ${r12.total_trips_count || 0}`;
+
+    const elNoteSettled = document.getElementById('rep12-note-settled');
+    if (elNoteSettled) elNoteSettled.innerText = `Đã chốt sổ: ${r12.settled_trips_count || 0} · Chưa chốt: ${r12.unsettled_trips_count || 0}`;
+
+    const elSettledRev = document.getElementById('rep12-stat-settled-rev');
+    if (elSettledRev) elSettledRev.innerText = canViewFinance ? formatMoneyVND(r12.settled_revenue || 0) : '*** (Bảo mật)';
+
+    const elSettledProfit = document.getElementById('rep12-stat-settled-profit');
+    if (elSettledProfit) elSettledProfit.innerText = canViewFinance ? `Lợi nhuận chốt: ${formatMoneyVND(r12.settled_profit || 0)}` : 'Lợi nhuận: ***';
+
+    const elUnsettledRev = document.getElementById('rep12-stat-unsettled-rev');
+    if (elUnsettledRev) elUnsettledRev.innerText = canViewFinance ? formatMoneyVND(r12.unsettled_revenue || 0) : '*** (Bảo mật)';
+
+    const elCarryover = document.getElementById('rep12-stat-carryover');
+    if (elCarryover) elCarryover.innerText = `${r12.carryover_trips_count || 0} Chuyến`;
+
+    rep12DataCache = r12.trips || [];
+    rep12DataCache._can_view_finance = canViewFinance;
+    applyReport12Filters();
+}
+
+function applyReport12Filters() {
+    const canViewFinance = (rep12DataCache._can_view_finance !== false);
+    const searchVal = (document.getElementById('filter-rep12-search')?.value || '').toLowerCase().trim();
+    const statusVal = document.getElementById('filter-rep12-status')?.value || 'ALL';
+
+    let list = rep12DataCache.filter(item => {
+        if (statusVal === 'SETTLED' && !item.is_settled) return false;
+        if (statusVal === 'UNSETTLED' && item.is_settled) return false;
+        if (statusVal === 'CARRY_OVER' && !item.is_carry_over) return false;
+        if (statusVal === 'OWNED' && item.vehicle_ownership !== 'OWNED') return false;
+        if (statusVal === 'PARTNER' && item.vehicle_ownership !== 'PARTNER') return false;
+
+        if (!searchVal) return true;
+        return (item.trip_code || '').toLowerCase().includes(searchVal) ||
+               (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.vehicle_plate || '').toLowerCase().includes(searchVal) ||
+               (item.driver_name || '').toLowerCase().includes(searchVal) ||
+               (item.container_number || '').toLowerCase().includes(searchVal) ||
+               (item.route || '').toLowerCase().includes(searchVal);
+    });
+
+    list.sort((a, b) => {
+        let valA = a[rep12SortCol];
+        let valB = b[rep12SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep12SortAsc ? -1 : 1;
+        if (valA > valB) return rep12SortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const tbody = document.getElementById('rep12-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="15" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe nào khớp bộ lọc</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const revDisp = canViewFinance ? formatMoneyVND(item.revenue) : '***';
+        const expDisp = canViewFinance ? formatMoneyVND(item.expense) : '***';
+        const reimDisp = canViewFinance ? formatMoneyVND(item.reimbursable) : '***';
+        const profDisp = canViewFinance ? formatMoneyVND(item.profit) : '***';
+
+        let categoryBadge = '';
+        if (item.category_tag === 'BACKLOG_SETTLED') {
+            categoryBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Tồn T- trước ➔ Đã Q.Toán</span>';
+        } else if (item.category_tag === 'BACKLOG_PENDING') {
+            categoryBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">Tồn T- trước ➔ Nợ Tiếp</span>';
+        } else if (item.category_tag === 'CURRENT_SETTLED') {
+            categoryBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200">Trong kỳ ➔ Đã Q.Toán</span>';
+        } else {
+            categoryBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Trong kỳ ➔ Chưa Chốt</span>';
+        }
+
+        const settlementBadge = item.is_settled
+            ? '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã Quyết Toán</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>';
+
+        const podBadge = item.has_pod
+            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 inline-flex items-center gap-1"><i class="ph-bold ph-file-check"></i> Đã Thu POD</span>'
+            : '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i> Thiếu POD</span>';
+
+        const ownershipBadge = item.vehicle_ownership === 'OWNED'
+            ? '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-50 text-teal-800">Xe Nhà</span>'
+            : '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-800">Xe Bạn (3PL)</span>';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors ${item.is_carry_over ? 'bg-amber-50/20' : ''}">
+                <td class="font-bold text-xs">
+                    <a href="javascript:void(0)" onclick="viewTripDetail('${escapeHtml(item.trip_code)}')" class="font-mono text-teal-800 hover:text-teal-900 underline flex items-center gap-1">
+                        <i class="ph-bold ph-truck"></i>
+                        <span>${escapeHtml(item.trip_code)}</span>
+                    </a>
+                    ${item.settlement_batch_code && item.settlement_batch_code !== '-' ? `<div class="text-[10px] text-slate-400 font-mono">Đợt: ${escapeHtml(item.settlement_batch_code)}</div>` : ''}
+                </td>
+                <td class="text-center text-xs font-mono text-slate-600 font-bold">${escapeHtml(item.loading_date)}</td>
+                <td class="text-xs font-bold text-slate-800">
+                    <div>${escapeHtml(item.customer_name)}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.customer_code)}</div>
+                </td>
+                <td class="text-xs">
+                    <div class="font-bold font-mono text-slate-900 flex items-center gap-1">
+                        <span>${escapeHtml(item.vehicle_plate)}</span>
+                        ${ownershipBadge}
+                    </div>
+                    ${item.dropoff_vehicle_plate ? `<div class="text-[10px] font-mono text-slate-500">Hạ: ${escapeHtml(item.dropoff_vehicle_plate)}</div>` : ''}
+                </td>
+                <td class="text-xs">
+                    <div class="font-bold text-slate-900 flex items-center gap-1">
+                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
+                        <span>${escapeHtml(item.driver_name)}</span>
+                    </div>
+                    ${item.dropoff_driver_name ? `<div class="text-[10px] text-slate-500">TX Hạ: ${escapeHtml(item.dropoff_driver_name)}</div>` : ''}
+                </td>
+                <td class="text-xs text-slate-600 max-w-[200px] truncate">
+                    <div title="${escapeHtml(item.route)}">${escapeHtml(item.route)}</div>
+                    <div class="text-[10px] font-mono text-slate-500">Cont: ${escapeHtml(item.container_number)}</div>
+                </td>
+                <td class="text-right text-xs font-bold text-slate-900 tabular-nums">${revDisp}</td>
+                <td class="text-right text-xs text-rose-700 tabular-nums">${expDisp}</td>
+                <td class="text-right text-xs text-indigo-700 tabular-nums">${reimDisp}</td>
+                <td class="text-right text-xs font-black text-emerald-700 tabular-nums bg-emerald-50/40">${profDisp}</td>
+                <td class="text-center text-xs font-bold tabular-nums ${item.margin_percent >= 20 ? 'text-emerald-700' : 'text-amber-700'}">${canViewFinance ? `${item.margin_percent}%` : '***'}</td>
+                <td class="text-center text-xs">${podBadge}</td>
+                <td class="text-center text-xs">${categoryBadge}</td>
+                <td class="text-center text-xs">${settlementBadge}</td>
+                <td class="text-xs text-slate-500">
+                    <div>${escapeHtml(item.settled_by || '-')}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.settled_at)}</div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleReport12Sort(col) {
+    if (rep12SortCol === col) {
+        rep12SortAsc = !rep12SortAsc;
+    } else {
+        rep12SortCol = col;
+        rep12SortAsc = false;
+    }
+    applyReport12Filters();
+}
+
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 13: BÁO CÁO THEO DÕI CÔNG NỢ PHẢI THU (AR AGING) & THU TIỀN
+// -------------------------------------------------------------
+let rep13DataCache = [];
+let rep13SortCol = 'total_receivable';
+let rep13SortAsc = false;
+
+function renderReport13(data) {
+    const r13 = data.report13_ar_aging || {};
+    const canViewFinance = (data.can_view_finance !== false);
+
+    const elTotalAr = document.getElementById('rep13-stat-total-ar');
+    if (elTotalAr) elTotalAr.innerText = canViewFinance ? formatMoneyVND(r13.total_receivable || 0) : '*** (Bảo mật)';
+
+    const elRevReim = document.getElementById('rep13-stat-rev-reim');
+    if (elRevReim) elRevReim.innerText = canViewFinance ? `Cước: ${formatMoneyVND(r13.total_freight_revenue || 0)} · Chi hộ: ${formatMoneyVND(r13.total_reimbursable || 0)}` : '***';
+
+    const elCollected = document.getElementById('rep13-stat-collected');
+    if (elCollected) elCollected.innerText = canViewFinance ? formatMoneyVND(r13.total_collected || 0) : '*** (Bảo mật)';
+
+    const elBalance = document.getElementById('rep13-stat-balance');
+    if (elBalance) elBalance.innerText = canViewFinance ? formatMoneyVND(r13.total_remaining_balance || 0) : '*** (Bảo mật)';
+
+    const elOverdue = document.getElementById('rep13-stat-overdue');
+    if (elOverdue) elOverdue.innerText = canViewFinance ? formatMoneyVND(r13.total_overdue || 0) : '*** (Bảo mật)';
+
+    rep13DataCache = r13.customers || [];
+    rep13DataCache._can_view_finance = canViewFinance;
+    applyReport13Filters();
+}
+
+function applyReport13Filters() {
+    const canViewFinance = (rep13DataCache._can_view_finance !== false);
+    const searchVal = (document.getElementById('filter-rep13-search')?.value || '').toLowerCase().trim();
+
+    let list = rep13DataCache.filter(item => {
+        if (!searchVal) return true;
+        return (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.customer_code || '').toLowerCase().includes(searchVal) ||
+               (item.tax_code || '').toLowerCase().includes(searchVal) ||
+               (item.contact_phone || '').toLowerCase().includes(searchVal);
+    });
+
+    list.sort((a, b) => {
+        let valA = a[rep13SortCol];
+        let valB = b[rep13SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep13SortAsc ? -1 : 1;
+        if (valA > valB) return rep13SortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const tbody = document.getElementById('rep13-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy khách hàng nào có công nợ</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const freightDisp = canViewFinance ? formatMoneyVND(item.freight_revenue) : '***';
+        const reimDisp = canViewFinance ? formatMoneyVND(item.reimbursable_amount) : '***';
+        const totalDisp = canViewFinance ? formatMoneyVND(item.total_receivable) : '***';
+        const collectedDisp = canViewFinance ? formatMoneyVND(item.collected_amount) : '***';
+        const balanceDisp = canViewFinance ? formatMoneyVND(item.remaining_balance) : '***';
+        const currentDisp = canViewFinance ? formatMoneyVND(item.aging_current) : '***';
+        const aging31Disp = canViewFinance ? formatMoneyVND(item.aging_31_60) : '***';
+        const aging61Disp = canViewFinance ? formatMoneyVND(item.aging_61_90) : '***';
+        const agingOver90Disp = canViewFinance ? formatMoneyVND(item.aging_over_90) : '***';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-bold text-xs text-slate-900">
+                    <div class="flex items-center gap-1.5">
+                        <i class="ph-bold ph-buildings text-teal-700"></i>
+                        <span>${escapeHtml(item.customer_name)}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono">Mã: ${escapeHtml(item.customer_code)} · MST: ${escapeHtml(item.tax_code)}</div>
+                </td>
+                <td class="text-center font-bold text-xs tabular-nums text-slate-800">${item.trips_count}</td>
+                <td class="text-center text-xs tabular-nums">
+                    <span class="text-emerald-700 font-bold">${item.settled_trips_count}</span> / 
+                    <span class="text-amber-700 font-bold">${item.unsettled_trips_count}</span>
+                </td>
+                <td class="text-right text-xs text-slate-800 tabular-nums">${freightDisp}</td>
+                <td class="text-right text-xs text-slate-600 tabular-nums">${reimDisp}</td>
+                <td class="text-right text-xs font-black text-slate-900 tabular-nums">${totalDisp}</td>
+                <td class="text-right text-xs font-bold text-emerald-700 tabular-nums">${collectedDisp}</td>
+                <td class="text-right text-xs font-black text-indigo-700 tabular-nums bg-indigo-50/50">${balanceDisp}</td>
+                <td class="text-right text-xs text-emerald-700 tabular-nums">${currentDisp}</td>
+                <td class="text-right text-xs text-amber-700 tabular-nums">${aging31Disp}</td>
+                <td class="text-right text-xs text-orange-700 tabular-nums">${aging61Disp}</td>
+                <td class="text-right text-xs font-bold text-rose-700 tabular-nums">${agingOver90Disp}</td>
+                <td class="text-center">
+                    <button type="button" onclick="openReportTab('12')" class="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-[11px] font-bold transition-all" title="Xem danh sách chuyến của khách">
+                        Chi Tiết Chuyến
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleReport13Sort(col) {
+    if (rep13SortCol === col) {
+        rep13SortAsc = !rep13SortAsc;
+    } else {
+        rep13SortCol = col;
+        rep13SortAsc = false;
+    }
+    applyReport13Filters();
+}
+
+
+// -------------------------------------------------------------
+// RENDER BÁO CÁO 14: BÁO CÁO TUỔI ĐƠN TỒN ĐỌNG CHƯA QUYẾT TOÁN (UNSETTLED AGING)
+// -------------------------------------------------------------
+let rep14DataCache = [];
+let rep14SortCol = 'days_unsettled';
+let rep14SortAsc = false;
+
+function renderReport14(data) {
+    const r14 = data.report14_unsettled_aging || {};
+    const canViewFinance = (data.can_view_finance !== false);
+
+    const elTotal = document.getElementById('rep14-stat-total-unsettled');
+    if (elTotal) elTotal.innerText = `${r14.total_unsettled_count || 0} Chuyến`;
+
+    const elRevStuck = document.getElementById('rep14-stat-rev-stuck');
+    if (elRevStuck) elRevStuck.innerText = canViewFinance ? formatMoneyVND(r14.total_unsettled_revenue || 0) : '*** (Bảo mật)';
+
+    const elExpStuck = document.getElementById('rep14-stat-exp-stuck');
+    if (elExpStuck) elExpStuck.innerText = canViewFinance ? `Chi phí đang ứng: ${formatMoneyVND(r14.total_unsettled_expense || 0)}` : 'Chi phí: ***';
+
+    const elOver30 = document.getElementById('rep14-stat-over-30');
+    if (elOver30) elOver30.innerText = `${r14.over_30_days_count || 0} Chuyến`;
+
+    const elMissingPod = document.getElementById('rep14-stat-missing-pod');
+    if (elMissingPod) elMissingPod.innerText = `${r14.missing_pod_count || 0} Chuyến`;
+
+    rep14DataCache = r14.records || [];
+    rep14DataCache._can_view_finance = canViewFinance;
+    applyReport14Filters();
+}
+
+function applyReport14Filters() {
+    const canViewFinance = (rep14DataCache._can_view_finance !== false);
+    const searchVal = (document.getElementById('filter-rep14-search')?.value || '').toLowerCase().trim();
+    const levelVal = document.getElementById('filter-rep14-level')?.value || 'ALL';
+
+    let list = rep14DataCache.filter(item => {
+        if (levelVal !== 'ALL' && item.aging_level !== levelVal) return false;
+
+        if (!searchVal) return true;
+        return (item.trip_code || '').toLowerCase().includes(searchVal) ||
+               (item.customer_name || '').toLowerCase().includes(searchVal) ||
+               (item.vehicle_plate || '').toLowerCase().includes(searchVal) ||
+               (item.driver_name || '').toLowerCase().includes(searchVal) ||
+               (item.pending_reason || '').toLowerCase().includes(searchVal) ||
+               (item.route || '').toLowerCase().includes(searchVal);
+    });
+
+    list.sort((a, b) => {
+        let valA = a[rep14SortCol];
+        let valB = b[rep14SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep14SortAsc ? -1 : 1;
+        if (valA > valB) return rep14SortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const tbody = document.getElementById('rep14-tbody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không có chuyến xe nào bị tồn đọng chưa quyết toán</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(item => {
+        const revDisp = canViewFinance ? formatMoneyVND(item.revenue) : '***';
+        const expDisp = canViewFinance ? formatMoneyVND(item.expense) : '***';
+
+        let levelBadge = '';
+        if (item.aging_level === 'CRITICAL') {
+            levelBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">> 30 Ngày (Cực Gấp)</span>';
+        } else if (item.aging_level === 'WARNING') {
+            levelBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">16 - 30 Ngày (Cảnh Báo)</span>';
+        } else if (item.aging_level === 'WATCH') {
+            levelBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800 border border-sky-300">8 - 15 Ngày (Đốc Thúc POD)</span>';
+        } else {
+            levelBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">0 - 7 Ngày (Bình Thường)</span>';
+        }
+
+        const podBadge = item.has_pod
+            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Đã Có POD</span>'
+            : '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-700">Thiếu POD Gốc</span>';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="font-bold text-xs">
+                    <a href="javascript:void(0)" onclick="viewTripDetail('${escapeHtml(item.trip_code)}')" class="font-mono text-teal-800 hover:text-teal-900 underline flex items-center gap-1">
+                        <i class="ph-bold ph-truck"></i>
+                        <span>${escapeHtml(item.trip_code)}</span>
+                    </a>
+                </td>
+                <td class="text-center text-xs font-mono text-slate-600 font-bold">${escapeHtml(item.loading_date)}</td>
+                <td class="text-center text-xs font-black text-rose-700 tabular-nums">${item.days_unsettled} ngày</td>
+                <td class="text-center text-xs">${levelBadge}</td>
+                <td class="text-xs font-bold text-slate-800">
+                    <div>${escapeHtml(item.customer_name)}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.customer_code)}</div>
+                </td>
+                <td class="text-xs">
+                    <div class="font-mono font-bold text-slate-900">${escapeHtml(item.vehicle_plate)}</div>
+                    <div class="text-[10px] text-slate-500">${escapeHtml(item.ownership_label)}</div>
+                </td>
+                <td class="text-xs font-bold text-slate-800">
+                    <div class="flex items-center gap-1">
+                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
+                        <span>${escapeHtml(item.driver_name)}</span>
+                    </div>
+                </td>
+                <td class="text-right text-xs font-bold text-slate-900 tabular-nums">${revDisp}</td>
+                <td class="text-right text-xs text-rose-700 tabular-nums">${expDisp}</td>
+                <td class="text-xs text-slate-700 max-w-xs font-medium" title="${escapeHtml(item.pending_reason)}">
+                    <div class="flex items-center gap-1 text-rose-800">
+                        <i class="ph-bold ph-warning-circle shrink-0"></i>
+                        <span>${escapeHtml(item.pending_reason)}</span>
+                    </div>
+                </td>
+                <td class="text-center text-xs">${podBadge}</td>
+                <td class="text-center text-xs">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">${escapeHtml(item.status_label)}</span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleReport14Sort(col) {
+    if (rep14SortCol === col) {
+        rep14SortAsc = !rep14SortAsc;
+    } else {
+        rep14SortCol = col;
+        rep14SortAsc = false;
+    }
+    applyReport14Filters();
+}
+
+
 
 // -------------------------------------------------------------
 // XUẤT BÁO CÁO RA TỆP CSV / EXCEL CHUẨN UTF-8 VỚI BOM

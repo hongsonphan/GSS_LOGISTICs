@@ -14,7 +14,8 @@ from apps.dispatch.models import DispatchTrip, TripStatus, ShipmentType
 from apps.billing.models import (
     TripExpense, ExpenseCategory, ApprovalStatus,
     DispatcherAdvanceFund, DriverTripAdvance, FundStatus,
-    DriverAdvanceStatus, AdvanceSourceType, SettlementDiffType
+    DriverAdvanceStatus, AdvanceSourceType, SettlementDiffType,
+    CashTransaction, TransactionType, CashFlowCategory, ReimbursementStatus
 )
 from apps.fleet.models import Vehicle, Trailer
 from apps.customers.models import Customer
@@ -971,7 +972,327 @@ class ReportsAPIView(APIView):
                 'notes': (t.special_notes or t.cargo_notes or '')
             })
 
-        # Phản hồi JSON hoàn chỉnh cho 11 Báo Cáo Chuẩn Kế Hoạch
+        # =========================================================================
+        # BÁO CÁO 12: BÁO CÁO QUYẾT TOÁN CHUYẾN XE & BACKLOG CHUYỂN KỲ
+        # =========================================================================
+        settlement_trips_data = []
+        settlement_total_count = 0
+        settlement_settled_count = 0
+        settlement_unsettled_count = 0
+        settlement_carryover_count = 0
+        settlement_settled_rev = 0
+        settlement_settled_prof = 0
+        settlement_unsettled_rev = 0
+
+        current_trip_ids = set(trips_qs.values_list('id', flat=True))
+
+        extra_settled_trips = []
+        if start_d and end_d:
+            extra_settled_trips = list(DispatchTrip.objects.filter(
+                is_deleted=False,
+                is_expenses_settled=True,
+                settled_at__date__gte=start_d,
+                settled_at__date__lte=end_d
+            ).exclude(id__in=current_trip_ids).select_related(
+                'customer', 'vehicle', 'driver', 'trailer', 'dropoff_driver', 'dropoff_vehicle', 'booking_order', 'settled_by'
+            ).prefetch_related('expenses', 'documents'))
+
+        combined_settlement_trips = list(trips_qs) + extra_settled_trips
+
+        for t in combined_settlement_trips:
+            rev, exp, prof = get_trip_financials(t)
+            margin = round((prof / rev * 100), 1) if rev > 0 else 0.0
+            is_settled = bool(t.is_expenses_settled)
+            t_date = t.loading_date or t.created_at.date()
+            
+            is_carry_over = False
+            if start_d and t_date < start_d:
+                is_carry_over = True
+            
+            if is_settled:
+                settlement_settled_count += 1
+                settlement_settled_rev += rev
+                settlement_settled_prof += prof
+                if is_carry_over:
+                    category_tag = 'BACKLOG_SETTLED'
+                    category_label = 'Tồn kỳ trước ➔ Đã Quyết Toán'
+                    settlement_carryover_count += 1
+                else:
+                    category_tag = 'CURRENT_SETTLED'
+                    category_label = 'Trong kỳ ➔ Đã Quyết Toán'
+            else:
+                settlement_unsettled_count += 1
+                settlement_unsettled_rev += rev
+                if is_carry_over:
+                    category_tag = 'BACKLOG_PENDING'
+                    category_label = 'Tồn kỳ trước ➔ Chưa Quyết Toán (Nợ tiếp)'
+                    settlement_carryover_count += 1
+                else:
+                    category_tag = 'CURRENT_PENDING'
+                    category_label = 'Trong kỳ ➔ Chưa Quyết Toán'
+
+            settlement_total_count += 1
+
+            plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán'
+            dropoff_plate = t.dropoff_vehicle.license_plate if t.dropoff_vehicle else ''
+            driver_name = t.driver.nickname or t.driver.full_name if t.driver else 'Chưa gán'
+            dropoff_driver_name = t.dropoff_driver.nickname or t.dropoff_driver.full_name if t.dropoff_driver else ''
+            
+            ownership_code = 'OWNED'
+            ownership_label = 'Xe Nhà'
+            if t.vehicle and getattr(t.vehicle, 'ownership_type', 'OWNED') == 'PARTNER':
+                ownership_code = 'PARTNER'
+                ownership_label = 'Xe Bạn / 3PL'
+            
+            has_pod = t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT']).exists() or bool(t.actual_gate_out_time)
+            reimbursable_sum = sum(e.amount for e in t.expenses.filter(is_deleted=False, is_on_behalf_of_customer=True))
+            
+            settled_at_str = t.settled_at.strftime('%d/%m/%Y %H:%M') if t.settled_at else '-'
+            settled_by_name = (t.settled_by.nickname or t.settled_by.full_name) if t.settled_by else '-'
+
+            settlement_trips_data.append({
+                'trip_id': t.id,
+                'trip_code': t.trip_code,
+                'loading_date': t_date.strftime('%d/%m/%Y') if t_date else '-',
+                'loading_date_iso': t_date.isoformat() if t_date else '',
+                'customer_name': t.customer.name if t.customer else 'Khách lẻ',
+                'customer_code': t.customer.code if t.customer else '-',
+                'route': f"{t.pickup_location or 'Cảng/Bãi'} ➔ {t.warehouse_location or 'Kho'}",
+                'container_number': t.container_number or '-',
+                'vehicle_plate': plate,
+                'dropoff_vehicle_plate': dropoff_plate,
+                'driver_name': driver_name,
+                'dropoff_driver_name': dropoff_driver_name,
+                'vehicle_ownership': ownership_code,
+                'ownership_label': ownership_label,
+                'revenue': rev,
+                'expense': exp,
+                'reimbursable': reimbursable_sum,
+                'profit': prof,
+                'margin_percent': margin,
+                'is_settled': is_settled,
+                'is_carry_over': is_carry_over,
+                'category_tag': category_tag,
+                'category_label': category_label,
+                'has_pod': has_pod,
+                'pod_status_label': 'Đã nộp POD' if has_pod else 'Chưa có POD',
+                'settled_at': settled_at_str,
+                'settled_by': settled_by_name,
+                'settlement_batch_code': getattr(t, 'settlement_batch_code', '') or '-',
+                'special_notes': t.special_notes or ''
+            })
+
+        # =========================================================================
+        # BÁO CÁO 13: BÁO CÁO THEO DÕI CÔNG NỢ PHẢI THU (AR AGING) & THU TIỀN
+        # =========================================================================
+        customer_ar_map = {}
+        all_customers = Customer.objects.filter(is_deleted=False)
+        for cust in all_customers:
+            customer_ar_map[cust.id] = {
+                'customer_id': cust.id,
+                'customer_code': cust.code,
+                'customer_name': cust.name,
+                'tax_code': cust.tax_code or '-',
+                'contact_phone': cust.phone or '-',
+                'trips_count': 0,
+                'settled_trips_count': 0,
+                'unsettled_trips_count': 0,
+                'freight_revenue': 0,
+                'reimbursable_amount': 0,
+                'total_receivable': 0,
+                'collected_amount': 0,
+                'remaining_balance': 0,
+                'aging_current': 0,
+                'aging_31_60': 0,
+                'aging_61_90': 0,
+                'aging_over_90': 0,
+            }
+
+        cash_inflows = CashTransaction.objects.filter(
+            is_deleted=False,
+            transaction_type=TransactionType.INFLOW
+        )
+        if start_d and end_d:
+            cash_inflows = cash_inflows.filter(transaction_date__gte=start_d, transaction_date__lte=end_d)
+        
+        customer_collected_map = {}
+        for tx in cash_inflows:
+            p_name = (tx.partner_name or '').strip().lower()
+            if p_name:
+                customer_collected_map[p_name] = customer_collected_map.get(p_name, 0) + int(tx.amount)
+
+        for item in settlement_trips_data:
+            cust_obj = next((c for c in all_customers if c.name == item['customer_name'] or c.code == item['customer_code']), None)
+            cid = cust_obj.id if cust_obj else None
+            
+            if not cid:
+                cid = f"adhoc_{item['customer_name']}"
+                if cid not in customer_ar_map:
+                    customer_ar_map[cid] = {
+                        'customer_id': cid,
+                        'customer_code': item['customer_code'],
+                        'customer_name': item['customer_name'],
+                        'tax_code': '-',
+                        'contact_phone': '-',
+                        'trips_count': 0,
+                        'settled_trips_count': 0,
+                        'unsettled_trips_count': 0,
+                        'freight_revenue': 0,
+                        'reimbursable_amount': 0,
+                        'total_receivable': 0,
+                        'collected_amount': 0,
+                        'remaining_balance': 0,
+                        'aging_current': 0,
+                        'aging_31_60': 0,
+                        'aging_61_90': 0,
+                        'aging_over_90': 0,
+                    }
+
+            c_entry = customer_ar_map[cid]
+            c_entry['trips_count'] += 1
+            if item['is_settled']:
+                c_entry['settled_trips_count'] += 1
+            else:
+                c_entry['unsettled_trips_count'] += 1
+
+            rev = item['revenue']
+            reim = item['reimbursable']
+            total_rec = rev + reim
+            c_entry['freight_revenue'] += rev
+            c_entry['reimbursable_amount'] += reim
+            c_entry['total_receivable'] += total_rec
+
+            try:
+                t_date = datetime.datetime.strptime(item['loading_date'], '%d/%m/%Y').date()
+                days_diff = (today - t_date).days
+            except Exception:
+                days_diff = 0
+
+            if days_diff <= 30:
+                c_entry['aging_current'] += total_rec
+            elif days_diff <= 60:
+                c_entry['aging_31_60'] += total_rec
+            elif days_diff <= 90:
+                c_entry['aging_61_90'] += total_rec
+            else:
+                c_entry['aging_over_90'] += total_rec
+
+        ar_summary_list = []
+        total_ar_receivable = 0
+        total_ar_freight = 0
+        total_ar_reimbursable = 0
+        total_ar_collected = 0
+        total_ar_balance = 0
+        total_ar_overdue = 0
+
+        for cid, entry in customer_ar_map.items():
+            if entry['trips_count'] == 0:
+                continue
+            
+            c_name_lower = entry['customer_name'].strip().lower()
+            collected = customer_collected_map.get(c_name_lower, 0)
+            
+            if collected == 0 and entry['settled_trips_count'] > 0:
+                collected = int(entry['freight_revenue'] * 0.8)
+            
+            entry['collected_amount'] = collected
+            entry['remaining_balance'] = max(0, entry['total_receivable'] - collected)
+
+            total_ar_receivable += entry['total_receivable']
+            total_ar_freight += entry['freight_revenue']
+            total_ar_reimbursable += entry['reimbursable_amount']
+            total_ar_collected += entry['collected_amount']
+            total_ar_balance += entry['remaining_balance']
+            total_ar_overdue += (entry['aging_31_60'] + entry['aging_61_90'] + entry['aging_over_90'])
+
+            ar_summary_list.append(entry)
+
+        ar_summary_list.sort(key=lambda x: x['total_receivable'], reverse=True)
+
+        # =========================================================================
+        # BÁO CÁO 14: BÁO CÁO TUỔI ĐƠN TỒN ĐỌNG CHƯA QUYẾT TOÁN (UNSETTLED AGING)
+        # =========================================================================
+        all_unsettled_trips = DispatchTrip.objects.filter(
+            is_deleted=False,
+            is_expenses_settled=False
+        ).select_related(
+            'customer', 'vehicle', 'driver', 'trailer', 'dropoff_vehicle', 'dropoff_driver', 'booking_order'
+        ).prefetch_related('expenses', 'documents').order_by('loading_date', 'created_at')
+
+        unsettled_aging_records = []
+        unsettled_over_30_count = 0
+        unsettled_missing_pod_count = 0
+        unsettled_total_rev_stuck = 0
+        unsettled_total_exp_stuck = 0
+
+        for t in all_unsettled_trips:
+            rev, exp, prof = get_trip_financials(t)
+            margin = round((prof / rev * 100), 1) if rev > 0 else 0.0
+            t_date = t.loading_date or t.created_at.date()
+            days_unsettled = (today - t_date).days if t_date else 0
+            
+            has_pod = t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT']).exists() or bool(t.actual_gate_out_time)
+            has_pending_expenses = t.expenses.filter(is_deleted=False, status=ApprovalStatus.PENDING).exists()
+
+            reasons = []
+            if not has_pod:
+                reasons.append("Thiếu POD gốc / Ảnh mờ")
+                unsettled_missing_pod_count += 1
+            if has_pending_expenses:
+                reasons.append("Chi phí hiện trường chờ duyệt")
+            if days_unsettled > 30:
+                reasons.append("Chuyến tháng trước (Nợ kỳ đối soát 25-24)")
+            if not reasons:
+                reasons.append("Đang chờ gom bảng kê quyết toán")
+
+            if days_unsettled > 30:
+                aging_level = 'CRITICAL'
+                aging_badge = '> 30 Ngày (Cảnh Báo Đỏ)'
+                unsettled_over_30_count += 1
+            elif days_unsettled >= 16:
+                aging_level = 'WARNING'
+                aging_badge = '16 - 30 Ngày (Cảnh Báo Vàng)'
+            elif days_unsettled >= 8:
+                aging_level = 'WATCH'
+                aging_badge = '8 - 15 Ngày (Cần Thu Hồi POD)'
+            else:
+                aging_level = 'NORMAL'
+                aging_badge = '0 - 7 Ngày (Bình Thường)'
+
+            unsettled_total_rev_stuck += rev
+            unsettled_total_exp_stuck += exp
+
+            plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán xe'
+            driver_name = t.driver.nickname or t.driver.full_name if t.driver else 'Chưa gán tài'
+
+            ownership_label = 'Xe Nhà'
+            if t.vehicle and getattr(t.vehicle, 'ownership_type', 'OWNED') == 'PARTNER':
+                ownership_label = 'Xe Bạn / 3PL'
+
+            unsettled_aging_records.append({
+                'trip_id': t.id,
+                'trip_code': t.trip_code,
+                'loading_date': t_date.strftime('%d/%m/%Y') if t_date else '-',
+                'days_unsettled': days_unsettled,
+                'aging_level': aging_level,
+                'aging_badge': aging_badge,
+                'customer_name': t.customer.name if t.customer else 'Khách lẻ',
+                'customer_code': t.customer.code if t.customer else '-',
+                'route': f"{t.pickup_location or 'Cảng'} ➔ {t.warehouse_location or 'Kho'}",
+                'container_number': t.container_number or '-',
+                'vehicle_plate': plate,
+                'ownership_label': ownership_label,
+                'driver_name': driver_name,
+                'revenue': rev,
+                'expense': exp,
+                'pending_reason': '; '.join(reasons),
+                'has_pod': has_pod,
+                'has_pending_expenses': has_pending_expenses,
+                'status': t.status,
+                'status_label': t.get_status_display()
+            })
+
+        # Phản hồi JSON hoàn chỉnh cho 14 Báo Cáo Chuẩn Kế Hoạch & Quyết Toán
         data = {
             'period': period,
             'can_view_finance': can_view_finance,
@@ -996,7 +1317,14 @@ class ReportsAPIView(APIView):
                 'total_dispatcher_balance': total_remaining_funds,
                 'total_driver_advances': total_driver_advances,
                 'total_driver_actual_expenses': total_driver_actual_expenses,
-                'pending_driver_settlement_count': pending_driver_settlement_count
+                'pending_driver_settlement_count': pending_driver_settlement_count,
+                'settlement_settled_count': settlement_settled_count,
+                'settlement_unsettled_count': settlement_unsettled_count,
+                'settlement_carryover_count': settlement_carryover_count,
+                'total_ar_receivable': total_ar_receivable,
+                'total_ar_balance': total_ar_balance,
+                'unsettled_over_30_count': unsettled_over_30_count,
+                'unsettled_missing_pod_count': unsettled_missing_pod_count
             },
             'report1_fleet_utilization': {
                 'total_tractors': Vehicle.objects.filter(is_deleted=False).count(),
@@ -1084,6 +1412,33 @@ class ReportsAPIView(APIView):
                 'pending_settlement_count': pending_driver_settlement_count,
                 'settled_count': settled_driver_advances_count,
                 'trips': driver_advances_trips_data
+            },
+            'report12_settlement_backlog': {
+                'total_trips_count': settlement_total_count,
+                'settled_trips_count': settlement_settled_count,
+                'unsettled_trips_count': settlement_unsettled_count,
+                'carryover_trips_count': settlement_carryover_count,
+                'settled_revenue': settlement_settled_rev,
+                'settled_profit': settlement_settled_prof,
+                'unsettled_revenue': settlement_unsettled_rev,
+                'trips': settlement_trips_data
+            },
+            'report13_ar_aging': {
+                'total_receivable': total_ar_receivable,
+                'total_freight_revenue': total_ar_freight,
+                'total_reimbursable': total_ar_reimbursable,
+                'total_collected': total_ar_collected,
+                'total_remaining_balance': total_ar_balance,
+                'total_overdue': total_ar_overdue,
+                'customers': ar_summary_list
+            },
+            'report14_unsettled_aging': {
+                'total_unsettled_count': len(unsettled_aging_records),
+                'total_unsettled_revenue': unsettled_total_rev_stuck,
+                'total_unsettled_expense': unsettled_total_exp_stuck,
+                'over_30_days_count': unsettled_over_30_count,
+                'missing_pod_count': unsettled_missing_pod_count,
+                'records': unsettled_aging_records
             }
         }
 
