@@ -13229,17 +13229,18 @@ window.toggleReportViewMode = toggleReportViewMode;
 window.switchReportSubTab = switchReportSubTab;
 
 function changeReportPeriod(period) {
+    if (period === 'this_year') period = 'year';
     currentReportPeriod = period;
 
     // Cập nhật giao diện nút kỳ
-    const periodButtons = ['today', 'week', 'month', 'quarter', 'all'];
+    const periodButtons = ['today', 'week', 'month', 'quarter', 'year', 'all'];
     periodButtons.forEach(p => {
         const btn = document.getElementById(`btn-period-${p}`);
         if (!btn) return;
         if (p === period) {
-            btn.className = 'report-period-btn px-3 py-1.5 rounded-lg bg-teal-700 text-white shadow-xs transition-colors';
+            btn.className = 'report-period-btn px-3 py-1.5 rounded-lg bg-teal-700 text-white shadow-xs transition-colors cursor-pointer';
         } else {
-            btn.className = 'report-period-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors';
+            btn.className = 'report-period-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer';
         }
     });
 
@@ -13269,8 +13270,29 @@ window.openReportTab = function(reportId, periodOverride) {
 
 async function loadReportsData() {
     try {
-        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
-        let url = `/api/reports/?period=${currentReportPeriod}&from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`;
+        let p = currentReportPeriod || 'month';
+        if (p === 'this_year') p = 'year';
+        let url = `/api/reports/?period=${p}`;
+        if (p !== 'all') {
+            let globalDates;
+            if (p === 'year') {
+                const now = new Date();
+                globalDates = { fromDate: `${now.getFullYear()}-01-01`, toDate: `${now.getFullYear()}-12-31` };
+            } else if (p === 'month') {
+                globalDates = getDateRangeForPeriod('this_month');
+            } else if (p === 'quarter') {
+                globalDates = getDateRangeForPeriod('this_quarter');
+            } else if (p === 'today') {
+                globalDates = getDateRangeForPeriod('today');
+            } else if (p === 'week') {
+                globalDates = getDateRangeForPeriod('7_days');
+            } else {
+                globalDates = getDateRangeForPeriod(p, currentDashboardCustomStart, currentDashboardCustomEnd);
+            }
+            if (globalDates && globalDates.fromDate && globalDates.toDate) {
+                url += `&from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`;
+            }
+        }
         const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error('Không thể tải dữ liệu báo cáo');
         const data = await res.json();

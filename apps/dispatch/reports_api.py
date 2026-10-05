@@ -93,6 +93,11 @@ class ReportsAPIView(APIView):
             start_d = start_quarter
             end_d = today
             date_filter &= make_date_range_q(start_quarter, today)
+        elif period in ('year', 'this_year'):
+            start_year = today.replace(month=1, day=1)
+            start_d = start_year
+            end_d = today
+            date_filter &= make_date_range_q(start_year, today)
 
         if customer_id:
             date_filter &= Q(customer_id=customer_id)
