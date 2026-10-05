@@ -2,6 +2,41 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.7.4] - 2026-10-05 (Hệ Thống Bản In Báo Cáo Quản Trị Doanh Nghiệp A4 & Đồng Bộ Nhận Diện Triền Võ Logistics)
+
+### 1. Bản In Báo Cáo Quản Trị Doanh Nghiệp Chuẩn A4 (`modal_report_print.html`):
+- **Phủ sóng 14 phân hệ Báo cáo Quản trị Doanh nghiệp (TMS BI Reports):**
+  * `TMS-BI-01`: Báo Cáo P&L Hiệu Suất Đội Xe Theo Đầu Kéo / Tuyến.
+  * `TMS-BI-02`: Báo Cáo Vỏ Cont, Lưu Bãi & Hạn Miễn Phí DEM/DET.
+  * `TMS-BI-03`: Báo Cáo Tỷ Lệ Giao Đúng Hạn (OTP & OTD).
+  * `TMS-BI-04`: Báo Cáo Chi Phí Tuyến Vận Hành & Chi Hộ Khách Hàng.
+  * `TMS-BI-05`: Báo Cáo Lưu Đêm, Chờ Bốc Dỡ & Cắt Kéo.
+  * `TMS-BI-06`: Báo Cáo Biên Bản Sự Cố Bất Thường Vận Tải (OS&D).
+  * `TMS-BI-07`: Báo Cáo Doanh Thu Khách Hàng & Thể Tích Sản Lượng TEU.
+  * `TMS-BI-08`: Báo Cáo Quyết Toán Xe Thầu Phụ 3PL & Chi Phí Vận Chuyển.
+  * `TMS-BI-09`: Báo Cáo Bảng Lương Chuyến & Thu Nhập Lái Xe.
+  * `TMS-BI-10`: Báo Cáo Sổ Quỹ Tiền Mặt & Quỹ Tạm Ứng Điều Vận.
+  * `TMS-BI-11`: Báo Cáo Tạm Ứng Dọc Đường & Quyết Toán Bác Tài.
+  * `TMS-BI-12`: Báo Cáo Tồn Đọng Chờ Quyết Toán Chuyến Vận Tải.
+  * `TMS-BI-13`: Báo Cáo Công Nợ Phải Thu Khách Hàng (AR Aging).
+  * `TMS-BI-14`: Báo Cáo Tuổi Đơn Hàng & Vận Đơn Tồn Đọng Lưu Kho.
+- **Tiêu chuẩn biểu mẫu A4 doanh nghiệp:**
+  * Header nhận diện TVL Logo, thông tin pháp lý công ty, mã biểu mẫu nghiệp vụ, ngày giờ xuất báo cáo.
+  * Khung chỉ số KPIs điều hành (Executive Metrics Grid) trích xuất động từ màn hình lọc.
+  * Bảng số liệu chi tiết tự động sao chép chính xác từ dữ liệu báo cáo (theads, tbodys, tfoots).
+  * Dòng số tiền tổng kết bằng chữ chuẩn tiếng Việt (`numberToWordsVN`).
+  * 3 Vị trí ký duyệt pháp lý: **Người Lập Biểu**, **Kế Toán Trưởng**, **Ban Giám Đốc**.
+  * Chuyển đổi linh hoạt báo cáo ngay trên Toolbar xem trước và tối ưu in ấn sắc nét với `@media print`.
+
+### 2. Đồng Bộ Nhận Diện Logo Triền Võ Logistics (TVL Branding):
+- Lưu trữ logo tại `static/images/trienvo_logo.png` và `media/trienvo_logo.png`.
+- Tích hợp nhận diện logo TVL vào toàn bộ các mẫu in: Báo Giá Doanh Nghiệp, Phiếu Thu/Chi Sổ Quỹ và 14 Biểu Mẫu Báo Cáo Quản Trị.
+
+### 3. Kiểm Thử Hồi Quy & An Toàn Dữ Liệu:
+- 100% bộ kiểm thử tự động **77/77 Unit Tests PASSED**.
+
+---
+
 ## [2.7.3] - 2026-10-05 (Bổ Sung Ghi Chú Điều Khoản & 3 Mẫu In Báo Giá Chuẩn Doanh Nghiệp Triền Võ)
 
 ### 1. Bổ Sung Mục "3. Ghi Chú & Điều Khoản Báo Giá" (Quotation Notes & Terms):

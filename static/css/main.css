@@ -571,7 +571,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     display: none !important;
 }
 
-/* ── 8. PRINT STYLES FOR VOUCHERS & QUOTATIONS ── */
+/* ── 8. PRINT STYLES FOR VOUCHERS, QUOTATIONS & REPORTS ── */
 @media print {
     body * {
         visibility: hidden !important;
@@ -579,11 +579,14 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     #modal-cash-voucher-print,
     #modal-cash-voucher-print *,
     #modal-quotation-print,
-    #modal-quotation-print * {
+    #modal-quotation-print *,
+    #modal-report-print,
+    #modal-report-print * {
         visibility: visible !important;
     }
     #modal-cash-voucher-print,
-    #modal-quotation-print {
+    #modal-quotation-print,
+    #modal-report-print {
         position: fixed !important;
         left: 0 !important;
         top: 0 !important;
@@ -601,24 +604,27 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         display: none !important;
     }
     #cash-voucher-printable-area,
-    #quotation-printable-area {
+    #quotation-printable-area,
+    #report-printable-area {
         width: 100% !important;
         max-width: 100% !important;
         border: none !important;
         box-shadow: none !important;
         margin: 0 !important;
-        padding: 8mm 12mm !important;
+        padding: 6mm 10mm !important;
         background: white !important;
         color: #000 !important;
-        font-size: 10pt !important;
+        font-size: 9.5pt !important;
     }
     #quotation-printable-area table th,
-    #quotation-printable-area table td {
+    #quotation-printable-area table td,
+    #report-printable-area table th,
+    #report-printable-area table td {
         border-color: #333 !important;
     }
     @page {
         size: A4 portrait;
-        margin: 8mm;
+        margin: 6mm;
     }
 }
 

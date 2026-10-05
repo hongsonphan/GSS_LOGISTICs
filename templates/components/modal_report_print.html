@@ -1,0 +1,150 @@
+<!-- MODAL XEM CHI TIẾT & IN BÁO CÁO QUẢN TRỊ DOANH NGHIỆP (BIM TMS BI REPORTS) -->
+<div id="modal-report-print" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fade-in">
+    <div class="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[96vh]">
+        
+        <!-- Header Toolbar (Ẩn khi in ấn) -->
+        <div class="px-6 py-3.5 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 no-print shrink-0 border-b border-slate-800">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-lg text-white shadow-sm">
+                    <i class="ph-bold ph-printer"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-bold text-sm sm:text-base font-heading tracking-tight" id="report-print-top-title">In Báo Cáo Quản Trị Doanh Nghiệp</h3>
+                        <span id="report-print-badge-period" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-500/20 text-teal-300 font-mono">Tháng Này</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-medium">Kết xuất biểu mẫu in chuẩn A4 theo phân hệ quản trị Triền Võ Logistics (TVL)</p>
+                </div>
+            </div>
+
+            <!-- Controls: Chọn Báo Cáo + Nút In + Nút Đóng -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Dropdown chọn phân hệ báo cáo cần in -->
+                <div class="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-700">
+                    <span class="text-[11px] text-slate-300 font-bold hidden sm:inline">Phân hệ:</span>
+                    <select id="report-print-type-selector" onchange="onReportPrintTypeChanged(this.value)" 
+                        class="bg-slate-900 text-teal-300 text-xs font-bold rounded-lg px-2 py-1 border border-slate-700 focus:border-teal-500 focus:outline-none cursor-pointer max-w-[240px] truncate">
+                        <option value="report-1">1. Hiệu Suất Đội Xe & P&L</option>
+                        <option value="report-2">2. Vỏ Cont & DEM/DET Hãng Tàu</option>
+                        <option value="report-3">3. Đúng Giờ & Chất Lượng OTP</option>
+                        <option value="report-4">4. Chi Phí Tuyến & Hoàn Chi Hộ</option>
+                        <option value="report-5">5. Cắt Kéo & Lưu Xe Sau 0H</option>
+                        <option value="report-6">6. Sự Cố & Ngoại Lệ (OS&D)</option>
+                        <option value="report-7">7. Doanh Thu Khách & Sản Lượng TEU</option>
+                        <option value="report-8">8. Quyết Toán Xe Thầu Phụ 3PL</option>
+                        <option value="report-9">9. Lương Chuyến & Thu Nhập Tài Xế</option>
+                        <option value="report-10">10. Quỹ Tạm Ứng Điều Vận (Kế Toán QL)</option>
+                        <option value="report-11">11. Tạm Ứng & Chi Phí Tài Xế</option>
+                        <option value="report-12">12. Quyết Toán Chuyến & Backlog</option>
+                        <option value="report-13">13. Công Nợ Phải Thu Khách Hàng (AR)</option>
+                        <option value="report-14">14. Tuổi Đơn Hàng Tồn Đọng Chưa Chốt</option>
+                    </select>
+                </div>
+
+                <button type="button" onclick="executePrintReportDocument()" 
+                    class="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all cursor-pointer">
+                    <i class="ph-bold ph-printer text-base"></i>
+                    <span>In Báo Cáo (Print)</span>
+                </button>
+                <button type="button" onclick="closeReportPrintModal()" 
+                    class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer" title="Đóng">
+                    <i class="ph-bold ph-x text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Printable Container Wrapper -->
+        <div class="p-4 sm:p-8 overflow-y-auto bg-slate-100 flex-1 flex justify-center">
+            <div id="report-printable-area" class="w-full max-w-4xl bg-white p-8 sm:p-12 rounded-xl shadow-xs border border-slate-200 text-slate-900 font-sans leading-relaxed text-xs sm:text-sm space-y-5">
+                
+                <!-- 1. Header Đơn vị TVL & Quốc hiệu / Thông tin Biểu Mẫu -->
+                <div class="flex justify-between items-start gap-4 pb-3 border-b-2 border-slate-800">
+                    <!-- Logo TVL & Brand -->
+                    <div class="flex items-center gap-3">
+                        <img src="/static/images/trienvo_logo.png" alt="Trien Vo Logistics" class="h-16 w-auto object-contain shrink-0" onerror="this.src='/media/trienvo_logo.png'">
+                        <div class="space-y-0.5">
+                            <h4 class="font-black text-xs sm:text-sm text-slate-900 uppercase font-heading">CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ</h4>
+                            <p class="text-[11px] text-slate-600 font-medium">BIM LOGISTICS — Hệ Thống Quản Trị Vận Tải & Chuỗi Cung Ứng</p>
+                            <p class="text-[10px] text-slate-500">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh</p>
+                            <p class="text-[10px] text-slate-500">Hotline: 0965 559 561 • MST: 0314567890 • Email: Phongkinhdoanh.tvl@trienvo.com</p>
+                        </div>
+                    </div>
+
+                    <!-- Quốc hiệu & Ngày Xuất Báo Cáo -->
+                    <div class="text-right space-y-0.5 shrink-0 min-w-[200px]">
+                        <p class="font-bold text-[11px] text-slate-900 uppercase">HỆ THỐNG BÁO CÁO QUẢN TRỊ</p>
+                        <p class="text-[10.5px] text-slate-500 italic">Mã phân hệ: <strong id="print-rep-module-code" class="font-mono text-slate-800">TMS-BI-01</strong></p>
+                        <p class="text-[11px] text-slate-600 pt-1" id="print-rep-export-date">
+                            Ngày in: 05/10/2026 19:30
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2. Tiêu Đề Báo Cáo & Kỳ Lọc Dữ Liệu -->
+                <div class="text-center py-2 space-y-1">
+                    <h2 class="text-lg sm:text-2xl font-black uppercase tracking-wide text-slate-950 font-heading" id="print-rep-main-title">
+                        BÁO CÁO KẾT QUẢ KINH DOANH & HIỆU SUẤT ĐỘI XE
+                    </h2>
+                    <p class="text-xs text-slate-600 font-medium" id="print-rep-period-subtitle">
+                        Kỳ báo cáo: Tháng 10/2026 (Từ ngày 01/10/2026 đến ngày 31/10/2026)
+                    </p>
+                </div>
+
+                <!-- 3. Khung Chỉ Số KPIs Tổng Hợp (Executive KPIs Grid) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="print-rep-kpis-container">
+                    <!-- Dynamic KPIs Rendered via JS -->
+                </div>
+
+                <!-- 4. Bảng Dữ Liệu Báo Cáo Chi Tiết -->
+                <div class="overflow-x-auto pt-1">
+                    <table class="w-full border-collapse border border-slate-400 text-xs text-left" id="print-rep-data-table">
+                        <thead class="bg-slate-100 font-bold text-slate-900" id="print-rep-table-thead">
+                            <!-- Dynamic thead -->
+                        </thead>
+                        <tbody class="divide-y divide-slate-200" id="print-rep-table-tbody">
+                            <!-- Dynamic tbody -->
+                        </tbody>
+                        <tfoot class="bg-slate-50 font-bold text-slate-900" id="print-rep-table-tfoot">
+                            <!-- Dynamic tfoot -->
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- 5. Dòng Số Tiền Bằng Chữ (Nếu có tổng tiền phát sinh) -->
+                <div id="print-rep-words-box" class="hidden text-xs text-slate-800 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-baseline gap-1.5">
+                    <span class="font-bold not-italic">Số tiền bằng chữ:</span>
+                    <span class="font-bold text-slate-950" id="print-rep-amount-words">-</span>
+                </div>
+
+                <!-- 6. Ghi Chú & Nguồn Dữ Liệu Kiểm Toán -->
+                <div class="text-[11px] text-slate-500 space-y-0.5 pt-1">
+                    <p class="italic">* Báo cáo được trích xuất tự động từ Cơ sở dữ liệu vận hành BIM Logistics ERP-TMS. Dữ liệu đã được đối soát theo chứng từ thực tế.</p>
+                </div>
+
+                <!-- 7. Khung 3 Chữ Ký Chuẩn Doanh Nghiệp -->
+                <div class="grid grid-cols-3 gap-4 pt-6 text-center text-xs">
+                    <div class="space-y-1">
+                        <p class="font-bold uppercase text-slate-900">NGƯỜI LẬP BIỂU</p>
+                        <p class="italic text-[10.5px] text-slate-500">(Ký, ghi rõ họ tên)</p>
+                        <div class="h-20"></div>
+                        <p class="font-bold text-slate-900" id="print-rep-sign-author">Người lập báo cáo</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="font-bold uppercase text-slate-900">KẾ TOÁN TRƯỞNG</p>
+                        <p class="italic text-[10.5px] text-slate-500">(Ký, ghi rõ họ tên)</p>
+                        <div class="h-20"></div>
+                        <p class="font-bold text-slate-900">Kế toán trưởng</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="font-bold uppercase text-slate-900">BAN GIÁM ĐỐC</p>
+                        <p class="italic text-[10.5px] text-slate-500">(Ký, đóng dấu)</p>
+                        <div class="h-20"></div>
+                        <p class="font-bold text-slate-900">GIÁM ĐỐC ĐIỀU HÀNH</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
