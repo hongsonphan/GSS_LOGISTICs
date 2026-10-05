@@ -101,7 +101,7 @@ class DashboardBGDAPIView(APIView):
     def get(self, request):
         today = timezone.now().date()
         yesterday = today - datetime.timedelta(days=1)
-        period = request.GET.get('period', '7_days')
+        period = request.GET.get('period', '10_days')
 
         if period == 'today':
             start_date = today
@@ -141,10 +141,10 @@ class DashboardBGDAPIView(APIView):
             start_str = request.GET.get('start_date')
             end_str = request.GET.get('end_date')
             try:
-                start_date = datetime.datetime.strptime(start_str, '%Y-%m-%d').date() if start_str else (today - datetime.timedelta(days=6))
+                start_date = datetime.datetime.strptime(start_str, '%Y-%m-%d').date() if start_str else (today - datetime.timedelta(days=9))
                 end_date = datetime.datetime.strptime(end_str, '%Y-%m-%d').date() if end_str else today
             except Exception:
-                start_date = today - datetime.timedelta(days=6)
+                start_date = today - datetime.timedelta(days=9)
                 end_date = today
             
             if start_date > end_date:
@@ -155,14 +155,15 @@ class DashboardBGDAPIView(APIView):
             exp_label = "Chi Phí TB / Ngày" if (end_date - start_date).days <= 31 else "Chi Phí TB / Tháng"
             margin_label = "Biên Lợi Nhuận TB"
             chart_subtitle = f"Giai đoạn {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}: Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
-        else: # '7_days'
-            start_date = today - datetime.timedelta(days=6)
+        else: # '10_days' or fallback '7_days'
+            days_count = 6 if period == '7_days' else 9
+            start_date = today - datetime.timedelta(days=days_count)
             end_date = today
-            period_label = '7 ngày qua'
+            period_label = '7 ngày qua' if period == '7_days' else '10 ngày qua'
             rev_label = "Doanh Thu TB / Ngày"
             exp_label = "Chi Phí TB / Ngày"
             margin_label = "Biên Lợi Nhuận TB"
-            chart_subtitle = f"7 ngày qua ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')}): Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
+            chart_subtitle = f"{period_label} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')}): Cột Doanh Thu vs Chi Phí & Đường Lợi Nhuận"
 
         # 1. Lọc tập chuyến xe theo kỳ được chọn
         trips_period = DispatchTrip.objects.filter(
@@ -593,6 +594,22 @@ class TripListCreateAPIView(APIView):
                 if status_filter.lower() in v.lower() or status_filter.upper() == k:
                     trips_qs = trips_qs.filter(status=k)
                     break
+
+        # Lọc theo khung thời gian (Kỳ chọn trên Topbar)
+        from_date = request.GET.get('from_date') or request.GET.get('start_date')
+        to_date = request.GET.get('to_date') or request.GET.get('end_date')
+        if from_date:
+            try:
+                fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                trips_qs = trips_qs.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
+            except Exception:
+                pass
+        if to_date:
+            try:
+                td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                trips_qs = trips_qs.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
+            except Exception:
+                pass
 
         now_dt = timezone.now()
         trips_list = []
@@ -2156,6 +2173,8 @@ class PersonnelPayrollAPIView(APIView):
     permission_classes = [CanViewPayroll]
     def get(self, request):
         drivers = Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True)
+        from_date = request.GET.get('from_date') or request.GET.get('start_date')
+        to_date = request.GET.get('to_date') or request.GET.get('end_date')
         results = []
 
         for d in drivers:
@@ -2165,6 +2184,19 @@ class PersonnelPayrollAPIView(APIView):
                 status__in=[TripStatus.DELIVERED, TripStatus.COMPLETED, TripStatus.RETURNING_EMPTY],
                 is_deleted=False
             )
+            if from_date:
+                try:
+                    fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                    driver_trips = driver_trips.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
+                except Exception:
+                    pass
+            if to_date:
+                try:
+                    td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                    driver_trips = driver_trips.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
+                except Exception:
+                    pass
+
             trips_count = driver_trips.count()
 
             # Tính lương chuyến thực tế theo từng record trong database
@@ -2297,7 +2329,23 @@ class SalesAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     permission_classes = [IsSalesOrDirector]
     def get(self, request):
+        from_date = request.GET.get('from_date') or request.GET.get('start_date')
+        to_date = request.GET.get('to_date') or request.GET.get('end_date')
+
         quotations = Quotation.objects.filter(is_deleted=False).select_related('customer').all()
+        if from_date:
+            try:
+                fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                quotations = quotations.filter(created_at__date__gte=fd)
+            except Exception:
+                pass
+        if to_date:
+            try:
+                td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                quotations = quotations.filter(created_at__date__lte=td)
+            except Exception:
+                pass
+
         q_results = []
         total_monthly_expected_revenue = 0
         negotiating_count = 0
@@ -2336,7 +2384,21 @@ class SalesAPIView(APIView):
         # Sắp xếp chuẩn nghiệp vụ: Booking nào gấp gần nhất hiển thị lên trên đầu
         # 1. Trạng thái PENDING_DISPATCH (chờ điều) và PARTIALLY_DISPATCHED (đang điều) lên trước COMPLETED
         # 2. Ngày đóng hàng (loading_date) gần nhất lên trước
-        bookings = BookingOrder.objects.filter(is_deleted=False).select_related('customer').prefetch_related('trips', 'trips__driver', 'trips__vehicle', 'trips__dropoff_driver', 'trips__dropoff_vehicle').order_by(
+        bookings = BookingOrder.objects.filter(is_deleted=False).select_related('customer').prefetch_related('trips', 'trips__driver', 'trips__vehicle', 'trips__dropoff_driver', 'trips__dropoff_vehicle')
+        if from_date:
+            try:
+                fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                bookings = bookings.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
+            except Exception:
+                pass
+        if to_date:
+            try:
+                td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                bookings = bookings.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
+            except Exception:
+                pass
+
+        bookings = bookings.order_by(
             models.Case(
                 models.When(status=BookingStatus.PENDING_DISPATCH, then=models.Value(1)),
                 models.When(status=BookingStatus.PARTIALLY_DISPATCHED, then=models.Value(2)),
@@ -3217,7 +3279,22 @@ class AccountingAPIView(APIView):
     """API Phân hệ Quản lý Kế toán: Đối soát Chi phí, Hóa đơn chứng từ và Chốt sổ chuyến xe."""
     permission_classes = [IsAccountant]
     def get(self, request):
-        trips = DispatchTrip.objects.select_related('customer', 'driver', 'vehicle', 'settled_by', 'booking_order').prefetch_related('expenses').all().order_by('-created_at')
+        trips = DispatchTrip.objects.select_related('customer', 'driver', 'vehicle', 'settled_by', 'booking_order').prefetch_related('expenses').filter(is_deleted=False).order_by('-created_at')
+
+        from_date = request.GET.get('from_date') or request.GET.get('start_date')
+        to_date = request.GET.get('to_date') or request.GET.get('end_date')
+        if from_date:
+            try:
+                fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                trips = trips.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
+            except Exception:
+                pass
+        if to_date:
+            try:
+                td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                trips = trips.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
+            except Exception:
+                pass
 
         total_revenue = 0
         total_expense = 0

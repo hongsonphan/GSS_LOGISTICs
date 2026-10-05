@@ -26,7 +26,7 @@
                     <button type="button" id="topbar-period-btn" onclick="toggleDashboardPeriodDropdown(event)" 
                         class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold font-heading transition-colors flex items-center gap-1.5 border border-slate-200 shadow-2xs cursor-pointer">
                         <i class="ph ph-calendar-check text-teal-700 text-sm"></i>
-                        <span id="topbar-period-label">7 Ngày qua</span>
+                        <span id="topbar-period-label">10 Ngày qua</span>
                         <i class="ph ph-caret-down text-slate-400 text-xs"></i>
                     </button>
                     <!-- Dropdown Menu -->
@@ -34,8 +34,8 @@
                         <button type="button" onclick="setDashboardPeriod('today', 'Hôm nay')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between period-item" data-period="today">
                             <span>Hôm nay</span>
                         </button>
-                        <button type="button" onclick="setDashboardPeriod('7_days', '7 Ngày qua')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between font-bold text-teal-800 bg-teal-50/60 period-item" data-period="7_days">
-                            <span>7 Ngày qua</span>
+                        <button type="button" onclick="setDashboardPeriod('10_days', '10 Ngày qua')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between font-bold text-teal-800 bg-teal-50/60 period-item" data-period="10_days">
+                            <span>10 Ngày qua</span>
                             <i class="ph-bold ph-check text-teal-600"></i>
                         </button>
                         <button type="button" onclick="setDashboardPeriod('this_month', 'Tháng này')" class="w-full text-left px-3 py-2 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between period-item" data-period="this_month">

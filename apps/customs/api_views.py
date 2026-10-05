@@ -36,8 +36,23 @@ class CustomsDeclarationListCreateAPIView(APIView):
         direction = request.GET.get('direction', '').strip()
         customer_id = request.GET.get('customer_id', '').strip()
         is_tax_paid = request.GET.get('is_tax_paid', '').strip()
+        from_date = request.GET.get('from_date') or request.GET.get('start_date')
+        to_date = request.GET.get('to_date') or request.GET.get('end_date')
 
         qs = CustomsDeclaration.objects.select_related('customer', 'booking_order', 'dispatch_trip').all()
+
+        if from_date:
+            try:
+                fd = datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                qs = qs.filter(Q(declaration_date__gte=fd) | Q(declaration_date__isnull=True, created_at__date__gte=fd))
+            except Exception:
+                pass
+        if to_date:
+            try:
+                td = datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                qs = qs.filter(Q(declaration_date__lte=td) | Q(declaration_date__isnull=True, created_at__date__lte=td))
+            except Exception:
+                pass
 
         if q:
             qs = qs.filter(
@@ -58,8 +73,8 @@ class CustomsDeclarationListCreateAPIView(APIView):
         if is_tax_paid != '':
             qs = qs.filter(is_tax_paid=(is_tax_paid.lower() in ['true', '1']))
 
-        # Tính toán KPIs tổng quan
-        all_qs = CustomsDeclaration.objects.all()
+        # Tính toán KPIs tổng quan theo tập dữ liệu đã lọc
+        all_qs = qs
         green_count = all_qs.filter(customs_lane=CustomsLane.GREEN).count()
         yellow_count = all_qs.filter(customs_lane=CustomsLane.YELLOW).count()
         red_count = all_qs.filter(customs_lane=CustomsLane.RED).count()

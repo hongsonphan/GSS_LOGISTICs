@@ -258,7 +258,7 @@ let bgdDonutChart = null;
 let currentDonutType = 'fleet';
 let bgdDataCache = null;
 let previousActiveTab = 'dashboard';
-let currentDashboardPeriod = '7_days';
+let currentDashboardPeriod = '10_days';
 let currentDashboardCustomStart = null;
 let currentDashboardCustomEnd = null;
 
@@ -278,9 +278,10 @@ function getDateRangeForPeriod(period, customStart, customEnd) {
         const tStr = fmt(now);
         return { fromDate: tStr, toDate: tStr };
     }
-    if (period === '7_days') {
+    if (period === '10_days' || period === '7_days') {
         const past = new Date(now);
-        past.setDate(now.getDate() - 6);
+        const daysAgo = (period === '7_days') ? 6 : 9;
+        past.setDate(now.getDate() - daysAgo);
         return { fromDate: fmt(past), toDate: fmt(now) };
     }
     if (period === 'this_month') {
@@ -301,7 +302,7 @@ function getDateRangeForPeriod(period, customStart, customEnd) {
         return { fromDate: customStart, toDate: customEnd };
     }
     const past = new Date(now);
-    past.setDate(now.getDate() - 6);
+    past.setDate(now.getDate() - 9);
     return { fromDate: fmt(past), toDate: fmt(now) };
 }
 window.getDateRangeForPeriod = getDateRangeForPeriod;
@@ -365,6 +366,7 @@ function setDashboardPeriod(period, label) {
     } else if (currentTab === 'bao-cao') {
         const reportPeriodMap = {
             'today': 'today',
+            '10_days': 'week',
             '7_days': 'week',
             'this_month': 'month',
             'this_quarter': 'quarter',
@@ -1444,7 +1446,8 @@ function renderDispatchTable(trips) {
 
 async function loadTripsData() {
     try {
-        const res = await fetchWithAuth('/api/trips/');
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        const res = await fetchWithAuth(`/api/trips/?from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`);
         if (!res.ok) throw new Error('Lỗi tải danh sách chuyến');
         const data = await res.json();
 
@@ -4847,7 +4850,8 @@ function renderHRTable(data) {
 
 async function loadHRData() {
     try {
-        const res = await fetchWithAuth('/api/personnel/');
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        const res = await fetchWithAuth(`/api/personnel/?from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`);
         if (!res.ok) throw new Error('Lỗi tải nhân sự');
         const data = await res.json();
         rawHRData = data || [];
@@ -5997,7 +6001,8 @@ function renderBookingsTable(bookings) {
 
 async function loadSalesData() {
     try {
-        const res = await fetchWithAuth('/api/sales/');
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        const res = await fetchWithAuth(`/api/sales/?from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`);
         if (!res.ok) throw new Error('Lỗi tải dữ liệu kinh doanh');
         const data = await res.json();
 
@@ -6424,6 +6429,7 @@ function switchTab(tabId, updateHistory = true) {
     } else if (tabId === 'bao-cao') {
         const reportPeriodMap = {
             'today': 'today',
+            '10_days': 'week',
             '7_days': 'week',
             'this_month': 'month',
             'this_quarter': 'quarter',
@@ -7027,7 +7033,8 @@ async function loadAccountingData() {
     }
 
     try {
-        const res = await fetchWithAuth('/api/accounting/');
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        const res = await fetchWithAuth(`/api/accounting/?from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`);
         if (!res.ok) throw new Error('Lỗi tải dữ liệu kế toán');
         const data = await res.json();
 
@@ -8690,7 +8697,8 @@ async function loadReimbursablesData() {
         const customerId = document.getElementById('reimburse-filter-customer')?.value || '';
         const search = document.getElementById('reimburse-search')?.value || '';
 
-        let url = `/api/accounting/reimbursables/?reimbursement_status=${statusFilter}`;
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        let url = `/api/accounting/reimbursables/?reimbursement_status=${statusFilter}&from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`;
         if (customerId) url += `&customer_id=${customerId}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
 
@@ -9028,7 +9036,8 @@ async function loadCashBookData() {
         const category = document.getElementById('cash-filter-category')?.value || 'ALL';
         const search = document.getElementById('cash-search')?.value || '';
 
-        let url = `/api/accounting/cashbook/?payment_method=${method}&transaction_type=${type}&category=${category}`;
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        let url = `/api/accounting/cashbook/?payment_method=${method}&transaction_type=${type}&category=${category}&from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
 
         const res = await fetchWithAuth(url);
@@ -9233,7 +9242,8 @@ async function loadSubcontractorData() {
         const status = document.getElementById('subcon-filter-status')?.value || 'ALL';
         const search = document.getElementById('subcon-search')?.value || '';
 
-        let url = `/api/accounting/subcontractor-settlements/?status=${status}`;
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        let url = `/api/accounting/subcontractor-settlements/?status=${status}&from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
 
         const res = await fetchWithAuth(url);
@@ -9466,7 +9476,8 @@ function exportSubcontractorToExcel() {
 // ==============================================================================
 async function loadBotAuditData() {
     try {
-        const res = await fetchWithAuth('/api/accounting/bot-audit/');
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        const res = await fetchWithAuth(`/api/accounting/bot-audit/?from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`);
         if (!res.ok) throw new Error('Không thể tải đối soát vé BOT');
         const data = await res.json();
 
@@ -11499,7 +11510,9 @@ function changeReportPeriod(period) {
 
 async function loadReportsData() {
     try {
-        const res = await fetchWithAuth(`/api/reports/?period=${currentReportPeriod}`);
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        let url = `/api/reports/?period=${currentReportPeriod}&from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`;
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error('Không thể tải dữ liệu báo cáo');
         const data = await res.json();
         rawReportsData = data;
@@ -12759,6 +12772,10 @@ async function fetchCustomsDeclarations() {
         if (status) params.append('status', status);
         if (direction) params.append('direction', direction);
         if (tax !== '') params.append('is_tax_paid', tax);
+
+        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+        if (globalDates.fromDate) params.append('from_date', globalDates.fromDate);
+        if (globalDates.toDate) params.append('to_date', globalDates.toDate);
 
         const res = await fetchWithAuth(`/api/customs/declarations/?${params.toString()}`);
         if (!res.ok) throw new Error('Không thể tải dữ liệu hải quan');

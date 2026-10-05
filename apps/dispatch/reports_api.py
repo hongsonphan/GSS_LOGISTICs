@@ -34,7 +34,9 @@ class ReportsAPIView(APIView):
     permission_classes = [CanViewOperationalReports]
 
     def get(self, request):
-        period = request.GET.get('period', 'month') # today, week, month, quarter, all
+        period = request.GET.get('period', 'month') # today, 10_days, week, month, quarter, all
+        from_date = request.GET.get('from_date') or request.GET.get('start_date')
+        to_date = request.GET.get('to_date') or request.GET.get('end_date')
         customer_id = request.GET.get('customer_id', '')
         vehicle_id = request.GET.get('vehicle_id', '')
 
@@ -58,10 +60,22 @@ class ReportsAPIView(APIView):
 
         start_d = None
         end_d = None
-        if period == 'today':
+        if from_date and to_date:
+            try:
+                start_d = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                end_d = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                date_filter &= make_date_range_q(start_d, end_d)
+            except Exception:
+                pass
+        elif period == 'today':
             start_d = today
             end_d = today
             date_filter &= make_date_range_q(today)
+        elif period in ('10_days', '10days', 'ten_days'):
+            start_10 = today - datetime.timedelta(days=9)
+            start_d = start_10
+            end_d = today
+            date_filter &= make_date_range_q(start_10, today)
         elif period == 'week':
             start_week = today - datetime.timedelta(days=today.weekday())
             start_d = start_week
