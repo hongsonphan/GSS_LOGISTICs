@@ -13048,22 +13048,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let currentReportPeriod = 'month';
 let rawReportsData = null;
+
+// Caches & Sort States cho toàn bộ 14 Báo cáo TMS
 let rep1DataCache = [];
+let rep1SortCol = 'revenue';
+let rep1SortAsc = false;
+
 let rep2DataCache = [];
+let rep2SortCol = 'estimated_fines';
+let rep2SortAsc = false;
+
 let rep3DataCache = [];
+let rep3SortCol = 'trip_code';
+let rep3SortAsc = false;
+
 let rep4DataCache = [];
+let rep4SortCol = 'amount';
+let rep4SortAsc = false;
+
 let rep5DataCache = [];
+let rep5SortCol = 'wait_hours';
+let rep5SortAsc = false;
+
 let rep6DataCache = [];
+let rep6SortCol = 'estimated_damage';
+let rep6SortAsc = false;
+
 let rep7DataCache = [];
 let rep7SortCol = 'total_teu';
 let rep7SortAsc = false;
+
 let rep8SubcontractorsCache = [];
+let rep8SubSortCol = 'gross_payable';
+let rep8SubSortAsc = false;
 let rep8TripsCache = [];
+let rep8TripSortCol = 'date';
+let rep8TripSortAsc = false;
+
 let rep9DataCache = [];
 let rep9SortCol = 'base_trip_salary';
 let rep9SortAsc = false;
-let rep1SortCol = 'revenue';
-let rep1SortAsc = false;
+
+let rep10DataCache = [];
+let rep10SortCol = 'code';
+let rep10SortAsc = false;
+
+let rep11DataCache = [];
+let rep11SortCol = 'trip_code';
+let rep11SortAsc = false;
+
+let rep12DataCache = [];
+let rep12SortCol = 'loading_date';
+let rep12SortAsc = false;
+
+let rep13DataCache = [];
+let rep13SortCol = 'total_receivable';
+let rep13SortAsc = false;
+
+let rep14DataCache = [];
+let rep14SortCol = 'days_unsettled';
+let rep14SortAsc = false;
 
 function formatMoneyVND(amount) {
     if (amount === null || amount === undefined || isNaN(amount)) return '0 đ';
@@ -14582,16 +14626,6 @@ function applyReport10Filters() {
             </tr>
         `;
     }
-}
-
-function toggleReport10Sort(col) {
-    if (rep10SortCol === col) {
-        rep10SortAsc = !rep10SortAsc;
-    } else {
-        rep10SortCol = col;
-        rep10SortAsc = false;
-    }
-    applyReport10Filters();
 }
 
 function toggleReport10Sort(col) {
