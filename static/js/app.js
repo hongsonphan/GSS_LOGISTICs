@@ -1360,6 +1360,13 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const detailView = document.getElementById('view-trip-detail');
         if (detailView) detailView.classList.remove('hidden-view');
 
+        // Cập nhật Tiêu đề Phân hệ trên Topbar
+        const topbarTitleEl = document.getElementById('topbar-page-title');
+        if (topbarTitleEl) {
+            const originTab = (previousActiveTab === 'ke-toan' ? 'Kế toán' : 'Điều vận');
+            topbarTitleEl.innerText = `${originTab} | Chi tiết chuyến ${trip.id || trip.trip_code || ''}`;
+        }
+
         window.currentTripDetail = trip;
 
         // Helper gán text an toàn chống crash DOM
@@ -6241,7 +6248,7 @@ function switchTab(tabId, updateHistory = true) {
             'quyet-toan': (previousActiveTab === 'ke-toan' ? 'Kế toán | Quyết toán chuyến' : 'Điều vận | Quyết toán chuyến'),
             'hai-quan': 'Dịch vụ Hải quan',
             'bao-cao': 'Báo cáo & Thống kê',
-            'cai-dat': 'Cài đặt'
+            'cai-dat': 'Cài đặt & Danh mục'
         };
         topbarTitleEl.innerText = TAB_NAME_MAP[tabId] || 'Dashboard Tổng quan';
     }
