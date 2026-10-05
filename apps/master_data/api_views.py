@@ -1181,10 +1181,17 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
                 'bank_name': company.bank_name,
                 'bank_branch': company.bank_branch,
                 'operating_license': company.operating_license,
+                'branch_name': company.branch_name,
+                'branch_address': company.branch_address,
+                'branch_phone': company.branch_phone,
+                'fleet_yard_name': company.fleet_yard_name,
+                'fleet_yard_address': company.fleet_yard_address,
+                'fleet_yard_hotline': company.fleet_yard_hotline,
                 'default_vat_rate': float(company.default_vat_rate),
                 'fuel_reference_price': float(company.fuel_reference_price),
                 'cbm_formula_divisor': company.cbm_formula_divisor,
                 'logo_url': company.logo_url,
+                'notes': company.notes,
                 'is_default': company.is_default,
                 'updated_at': company.updated_at.strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
             }
@@ -1225,6 +1232,20 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
             company.bank_branch = data['bank_branch'].strip()
         if 'operating_license' in data:
             company.operating_license = data['operating_license'].strip()
+        if 'branch_name' in data:
+            company.branch_name = data['branch_name'].strip()
+        if 'branch_address' in data:
+            company.branch_address = data['branch_address'].strip()
+        if 'branch_phone' in data:
+            company.branch_phone = data['branch_phone'].strip()
+        if 'fleet_yard_name' in data:
+            company.fleet_yard_name = data['fleet_yard_name'].strip()
+        if 'fleet_yard_address' in data:
+            company.fleet_yard_address = data['fleet_yard_address'].strip()
+        if 'fleet_yard_hotline' in data:
+            company.fleet_yard_hotline = data['fleet_yard_hotline'].strip()
+        if 'notes' in data:
+            company.notes = data['notes'].strip()
         if 'default_vat_rate' in data and data['default_vat_rate'] is not None:
             try:
                 company.default_vat_rate = float(data['default_vat_rate'])
@@ -1263,13 +1284,21 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
                 'bank_name': company.bank_name,
                 'bank_branch': company.bank_branch,
                 'operating_license': company.operating_license,
+                'branch_name': company.branch_name,
+                'branch_address': company.branch_address,
+                'branch_phone': company.branch_phone,
+                'fleet_yard_name': company.fleet_yard_name,
+                'fleet_yard_address': company.fleet_yard_address,
+                'fleet_yard_hotline': company.fleet_yard_hotline,
                 'default_vat_rate': float(company.default_vat_rate),
                 'fuel_reference_price': float(company.fuel_reference_price),
                 'cbm_formula_divisor': company.cbm_formula_divisor,
                 'logo_url': company.logo_url,
+                'notes': company.notes,
                 'is_default': company.is_default,
                 'updated_at': company.updated_at.strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
             }
         })
+
 
 

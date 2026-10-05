@@ -207,6 +207,13 @@ class MasterDataAPITestCase(TestCase):
             'short_name': 'TRIEN VO LOGISTICS CORP',
             'tax_code': '0319999888',
             'phone': '0903.888.999',
+            'branch_name': 'Chi Nhánh Hải Phòng',
+            'branch_address': 'KCN Đình Vũ, Hải Phòng',
+            'branch_phone': '0225.3123.456',
+            'fleet_yard_name': 'Bãi Xe Trung Tâm Sóng Thần',
+            'fleet_yard_address': 'ĐT743, Dĩ An, Bình Dương',
+            'fleet_yard_hotline': '0918.888.999',
+            'notes': 'Chính sách kiểm đếm hàng hóa & seal nghiêm ngặt',
             'default_vat_rate': 10.0,
             'fuel_reference_price': 22500,
             'cbm_formula_divisor': 6000
@@ -214,6 +221,8 @@ class MasterDataAPITestCase(TestCase):
         self.assertEqual(update_res.status_code, status.HTTP_200_OK)
         self.assertTrue(update_res.data.get('success'))
         self.assertEqual(update_res.data['data']['short_name'], 'TRIEN VO LOGISTICS CORP')
+        self.assertEqual(update_res.data['data']['branch_name'], 'Chi Nhánh Hải Phòng')
+        self.assertEqual(update_res.data['data']['fleet_yard_name'], 'Bãi Xe Trung Tâm Sóng Thần')
         self.assertEqual(update_res.data['data']['default_vat_rate'], 10.0)
         self.assertEqual(update_res.data['data']['fuel_reference_price'], 22500.0)
         self.assertEqual(update_res.data['data']['cbm_formula_divisor'], 6000)
@@ -222,5 +231,10 @@ class MasterDataAPITestCase(TestCase):
         company = CompanyProfile.get_default_company()
         self.assertEqual(company.short_name, 'TRIEN VO LOGISTICS CORP')
         self.assertEqual(company.tax_code, '0319999888')
+        self.assertEqual(company.branch_name, 'Chi Nhánh Hải Phòng')
+        self.assertEqual(company.branch_address, 'KCN Đình Vũ, Hải Phòng')
+        self.assertEqual(company.fleet_yard_name, 'Bãi Xe Trung Tâm Sóng Thần')
+        self.assertEqual(company.fleet_yard_hotline, '0918.888.999')
+        self.assertEqual(company.notes, 'Chính sách kiểm đếm hàng hóa & seal nghiêm ngặt')
         self.assertEqual(float(company.default_vat_rate), 10.0)
 

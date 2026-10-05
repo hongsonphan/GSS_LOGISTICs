@@ -11828,8 +11828,54 @@ function injectMasterDataModalFields(data) {
                 </div>
             </div>
 
-            <!-- Group 3: Ngân hàng -->
-            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">3. Tài Khoản Ngân Hàng Giao Dịch</div>
+            <!-- Group 3: Chi nhánh & Văn phòng -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">3. Chi Nhánh & Văn Phòng Đại Diện</div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Chi Nhánh / Văn Phòng Đại Diện</label>
+                    </div>
+                    <input type="text" id="mdf-cp-branch-name" value="${escapeHtml(d.branch_name || '')}" placeholder="VD: Chi Nhánh Hải Phòng / Văn Phòng Kho Sóng Thần" class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Điện Thoại Chi Nhánh</label>
+                    </div>
+                    <input type="text" id="mdf-cp-branch-phone" value="${escapeHtml(d.branch_phone || '')}" placeholder="VD: 0225.3123.456" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-12">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Chi Nhánh</label>
+                    </div>
+                    <input type="text" id="mdf-cp-branch-address" value="${escapeHtml(d.branch_address || '')}" placeholder="VD: Lô CN-02, KCN Đình Vũ, P. Đông Hải 2, Q. Hải An, Hải Phòng" class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+
+            <!-- Group 4: Bãi xe & Trạm điều phối -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">4. Bãi Đỗ Xe & Trạm Điều Phối Đầu Kéo</div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Bãi Xe / Depot Tập Kết</label>
+                    </div>
+                    <input type="text" id="mdf-cp-yard-name" value="${escapeHtml(d.fleet_yard_name || '')}" placeholder="VD: Bãi Xe Trung Tâm Sóng Thần - Dĩ An" class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hotline Điều Phối Trực Bãi</label>
+                    </div>
+                    <input type="text" id="mdf-cp-yard-hotline" value="${escapeHtml(d.fleet_yard_hotline || '')}" placeholder="VD: 0918.888.999" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-amber-700 w-full">
+                </div>
+                <div class="md:col-span-12">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Bãi Đỗ & Trạm Điều Phối</label>
+                    </div>
+                    <input type="text" id="mdf-cp-yard-address" value="${escapeHtml(d.fleet_yard_address || '')}" placeholder="VD: Đường ĐT743, KCN Sóng Thần 1, Dĩ An, Bình Dương" class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+
+            <!-- Group 5: Ngân hàng -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">5. Tài Khoản Ngân Hàng Giao Dịch</div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -11851,8 +11897,8 @@ function injectMasterDataModalFields(data) {
                 </div>
             </div>
 
-            <!-- Group 4: Tham số hệ thống -->
-            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">4. Tham Số Vận Hành & Tính Cước Mặc Định</div>
+            <!-- Group 6: Tham số hệ thống -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">6. Tham Số Vận Hành & Tính Cước Mặc Định</div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -11872,6 +11918,15 @@ function injectMasterDataModalFields(data) {
                     </div>
                     <input type="number" id="mdf-cp-cbm-divisor" value="${d.cbm_formula_divisor || 5000}" step="100" min="1000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-indigo-700 text-center w-full">
                 </div>
+            </div>
+
+            <!-- Group 7: Ghi chú & Chính sách -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">7. Ghi Chú & Chính Sách Vận Hành Toàn Hệ Thống</div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú Vận Hành / Tiêu Chuẩn Phục Vụ</label>
+                </div>
+                <textarea id="mdf-cp-notes" rows="2" placeholder="VD: Áp dụng phụ phí nâng hạ ngoài giờ sau 18h; Quy định kiểm tra seal nguyên vẹn trước khi kéo..." class="form-input px-2.5 py-1.5 text-xs text-slate-800 w-full">${escapeHtml(d.notes || '')}</textarea>
             </div>
         `;
     } else if (currentMasterDataTab === 'driver_tariffs') {
@@ -12642,12 +12697,19 @@ async function submitMasterDataForm(e) {
             phone: document.getElementById('mdf-cp-phone')?.value || '',
             email: document.getElementById('mdf-cp-email')?.value || '',
             website: document.getElementById('mdf-cp-website')?.value || '',
+            branch_name: document.getElementById('mdf-cp-branch-name')?.value || '',
+            branch_address: document.getElementById('mdf-cp-branch-address')?.value || '',
+            branch_phone: document.getElementById('mdf-cp-branch-phone')?.value || '',
+            fleet_yard_name: document.getElementById('mdf-cp-yard-name')?.value || '',
+            fleet_yard_address: document.getElementById('mdf-cp-yard-address')?.value || '',
+            fleet_yard_hotline: document.getElementById('mdf-cp-yard-hotline')?.value || '',
             bank_account_number: document.getElementById('mdf-cp-bank-acc')?.value || '',
             bank_name: document.getElementById('mdf-cp-bank-name')?.value || '',
             bank_branch: document.getElementById('mdf-cp-bank-branch')?.value || '',
             default_vat_rate: parseFloat(document.getElementById('mdf-cp-vat')?.value) || 8.0,
             fuel_reference_price: parseNumberVN(document.getElementById('mdf-cp-fuel-price')?.value) || 21000,
             cbm_formula_divisor: parseInt(document.getElementById('mdf-cp-cbm-divisor')?.value) || 5000,
+            notes: document.getElementById('mdf-cp-notes')?.value || '',
         };
     } else if (tabKey === 'driver_tariffs') {
         payload = {

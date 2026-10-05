@@ -206,10 +206,23 @@ class CompanyProfile(TimeStampedModel, SoftDeleteModel):
     bank_name = models.CharField(max_length=150, blank=True, default='Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank)', help_text="Tên ngân hàng")
     bank_branch = models.CharField(max_length=150, blank=True, default='Chi nhánh Nam Sài Gòn', help_text="Chi nhánh ngân hàng")
     operating_license = models.CharField(max_length=100, blank=True, default='GP-VT-2024/TPHCM', help_text="Giấy phép kinh doanh vận tải")
+    
+    # Thông tin Chi nhánh & Văn phòng Đại diện
+    branch_name = models.CharField(max_length=200, blank=True, default='Văn Phòng Chi Nhánh', help_text="Tên chi nhánh / Văn phòng đại diện")
+    branch_address = models.CharField(max_length=255, blank=True, default='', help_text="Địa chỉ văn phòng chi nhánh")
+    branch_phone = models.CharField(max_length=50, blank=True, default='', help_text="Điện thoại / Hotline chi nhánh")
+
+    # Thông tin Bãi đỗ xe & Trạm điều phối nội bộ
+    fleet_yard_name = models.CharField(max_length=200, blank=True, default='Bãi Đỗ Xe & Trạm Điều Phối TVL', help_text="Tên bãi đỗ xe / Depot")
+    fleet_yard_address = models.CharField(max_length=255, blank=True, default='Đường Nguyễn Thị Định, P. Cát Lái, TP. Thủ Đức, TP. Hồ Chí Minh', help_text="Địa chỉ bãi đỗ xe")
+    fleet_yard_hotline = models.CharField(max_length=50, blank=True, default='0903.999.888', help_text="Hotline quản lý trực bãi xe")
+
+    # Tham số vận hành & Cấu hình hệ thống
     default_vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=8.00, help_text="Thuế suất VAT mặc định (%)")
     fuel_reference_price = models.DecimalField(max_digits=12, decimal_places=0, default=21000, help_text="Giá dầu tham chiếu chuẩn (VNĐ/Lít)")
     cbm_formula_divisor = models.IntegerField(default=5000, help_text="Hệ số quy đổi thể tích CBM (mặc định 5000)")
     logo_url = models.CharField(max_length=255, blank=True, default='/static/images/logo.png', help_text="Đường dẫn file logo công ty")
+    notes = models.TextField(blank=True, help_text="Ghi chú cấu hình và chính sách vận hành")
     is_default = models.BooleanField(default=True, help_text="Là hồ sơ công ty mặc định")
 
     class Meta:
@@ -240,6 +253,12 @@ class CompanyProfile(TimeStampedModel, SoftDeleteModel):
                 bank_name='Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank)',
                 bank_branch='Chi nhánh Nam Sài Gòn',
                 operating_license='GP-VT-2024/TPHCM',
+                branch_name='Văn Phòng Chi Nhánh Tây Ninh',
+                branch_address='Khu Công Nghiệp Phước Đông, Huyện Gò Dầu, Tỉnh Tây Ninh',
+                branch_phone='0903.123.789',
+                fleet_yard_name='Bãi Đỗ Xe & Trạm Điều Phối Cát Lái TVL',
+                fleet_yard_address='Đường Nguyễn Thị Định, P. Cát Lái, TP. Thủ Đức, TP. Hồ Chí Minh',
+                fleet_yard_hotline='0903.999.888',
                 default_vat_rate=8.00,
                 fuel_reference_price=21000,
                 cbm_formula_divisor=5000,
