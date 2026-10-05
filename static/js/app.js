@@ -8799,11 +8799,12 @@ async function executePageSettlementSubmit() {
             if (typeof loadAccountingData === 'function') loadAccountingData();
             if (typeof loadAccountingAdvancesData === 'function') loadAccountingAdvancesData();
         } else {
-            showToast('danger', data.error || 'Không thể thực hiện quyết toán gom');
+            const errorMsg = data.error || data.detail || data.message || (typeof data === 'string' ? data : 'Không thể thực hiện quyết toán gom');
+            showToast('danger', errorMsg, 'Lỗi Quyết Toán Gom');
         }
     } catch (err) {
         console.error(err);
-        showToast('danger', 'Lỗi kết nối máy chủ');
+        showToast('danger', err.message || 'Lỗi kết nối máy chủ', 'Lỗi Hệ Thống');
     } finally {
         if (btn) btn.disabled = false;
         onSettlementTripSelectionChange();
