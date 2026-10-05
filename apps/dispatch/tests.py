@@ -265,3 +265,59 @@ class DriverPortalMistakeCorrectionTestCase(TestCase):
         self.assertEqual(self.trip.container_number, 'TGHU8888888')
         self.assertEqual(self.trip.seal_number, 'SEAL9999')
 
+    def test_milestone_locking_and_rollback_rules(self):
+        # 1. Nhảy cóc trái phép (từ DISPATCHED lên DROPOFF_COMPLETED) -> Bị chặn 400
+        jump_res = self.client.post(
+            f'/api/trips/{self.token}/milestones/',
+            data=json.dumps({'milestone': 'DROPOFF_COMPLETED'}),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(jump_res.status_code, 400)
+
+        # 2. Bước hợp lệ: Nhận chuyến (DISPATCHED -> ACCEPTED)
+        res1 = self.client.post(
+            f'/api/trips/{self.token}/milestones/',
+            data=json.dumps({'milestone': 'ACCEPTED_TRIP'}),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(res1.status_code, 200)
+        self.trip.refresh_from_db()
+        self.assertEqual(self.trip.status, TripStatus.ACCEPTED)
+
+        # 3. Bước tiếp: Xuất phát (ACCEPTED -> CONTAINER_PICKED)
+        res2 = self.client.post(
+            f'/api/trips/{self.token}/milestones/',
+            data=json.dumps({'milestone': 'DEPARTED'}),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(res2.status_code, 200)
+        self.trip.refresh_from_db()
+        self.assertEqual(self.trip.status, TripStatus.CONTAINER_PICKED)
+
+        # 4. Rollback 1 bước trước liền kề (CONTAINER_PICKED -> ACCEPTED)
+        rollback_res = self.client.post(
+            f'/api/trips/{self.token}/milestones/',
+            data=json.dumps({'milestone': 'ACCEPTED_TRIP'}),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(rollback_res.status_code, 200)
+        self.trip.refresh_from_db()
+        self.assertEqual(self.trip.status, TripStatus.ACCEPTED)
+
+        # 5. Khóa tuyệt đối khi chuyến xe đã hoàn tất (COMPLETED)
+        self.trip.status = TripStatus.COMPLETED
+        self.trip.save(update_fields=['status'])
+
+        lock_res = self.client.post(
+            f'/api/trips/{self.token}/milestones/',
+            data=json.dumps({'milestone': 'START_UNLOADING'}),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(lock_res.status_code, 400)
+        self.assertIn("hoàn tất", lock_res.json().get('error', '').lower())
+

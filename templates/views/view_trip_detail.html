@@ -679,38 +679,9 @@
                             </div>
                         </button>
                         <div id="sim-timeline-body" class="hidden p-2 space-y-2">
-                            <!-- Quick Milestone Buttons Grid -->
-                            <div class="grid grid-cols-2 gap-1.5 pb-2 border-b border-slate-100">
-                                <button onclick="driverReportMilestone('APPROACHING_WAREHOUSE')"
-                                    class="p-1.5 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded text-left transition-all active:scale-95">
-                                    <span class="text-[10px] font-bold text-slate-800 flex items-center gap-1"><i class="ph-bold ph-bell-ringing text-teal-600"></i> Sắp đến kho</span>
-                                    <span class="text-[8.5px] text-slate-400 block">Báo trước 30p</span>
-                                </button>
-                                <button onclick="driverReportMilestone('ARRIVED_WAREHOUSE')"
-                                    class="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded text-left transition-all active:scale-95">
-                                    <span class="text-[10px] font-bold text-blue-900 flex items-center gap-1"><i class="ph-bold ph-map-pin text-blue-600"></i> Đến cổng kho</span>
-                                    <span class="text-[8.5px] text-slate-400 block">Check-in kho</span>
-                                </button>
-                                <button onclick="driverReportMilestone('START_UNLOADING')"
-                                    class="p-1.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded text-left transition-all active:scale-95">
-                                    <span class="text-[10px] font-bold text-amber-900 flex items-center gap-1"><i class="ph-bold ph-package text-amber-600"></i> Đang dỡ/đóng</span>
-                                    <span class="text-[8.5px] text-slate-400 block">Bắt đầu hàng</span>
-                                </button>
-                                <button onclick="driverReportMilestone('FINISHED_UNLOADING')"
-                                    class="p-1.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded text-left transition-all active:scale-95">
-                                    <span class="text-[10px] font-bold text-emerald-900 flex items-center gap-1"><i class="ph-bold ph-check-circle text-emerald-600"></i> Đóng xong</span>
-                                    <span class="text-[8.5px] text-slate-400 block">Chuẩn bị hạ</span>
-                                </button>
-                                <button onclick="driverReportMilestone('OVERNIGHT_WAIT')"
-                                    class="p-1.5 bg-amber-50/80 hover:bg-amber-100 border border-amber-300 rounded text-left transition-all active:scale-95">
-                                    <span class="text-[10px] font-bold text-amber-900 flex items-center gap-1"><i class="ph-bold ph-moon text-amber-700"></i> Chờ sau 0h</span>
-                                    <span class="text-[8.5px] text-amber-700 block">Kho yêu cầu</span>
-                                </button>
-                                <button onclick="driverReportMilestone('DROPOFF_COMPLETED')"
-                                    class="p-1.5 bg-teal-50/80 hover:bg-teal-100 border border-teal-300 rounded text-left transition-all active:scale-95">
-                                    <span class="text-[10px] font-bold text-teal-900 flex items-center gap-1"><i class="ph-bold ph-anchor text-teal-700"></i> Đã hạ cont</span>
-                                    <span class="text-[8.5px] text-teal-700 block">Phiếu EIR</span>
-                                </button>
+                            <!-- Quick Milestone Buttons Grid (Rendered and locked dynamically by JS) -->
+                            <div class="grid grid-cols-2 gap-1.5 pb-2 border-b border-slate-100" id="sim-quick-milestones-grid">
+                                <!-- Injected dynamically by renderSimQuickMilestones -->
                             </div>
                             <!-- Mini Milestone List -->
                             <div id="sim-timeline-mini-list" class="space-y-1 text-xs">

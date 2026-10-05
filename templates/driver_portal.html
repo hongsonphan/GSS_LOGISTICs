@@ -400,33 +400,7 @@
         </div>
       </button>
       <div id="allMilestonesList" class="hidden mt-3 grid grid-cols-3 gap-2 pt-2 border-t border-slate-100">
-        <button type="button" onclick="reportMilestone('ACCEPTED_TRIP','Tài xế xác nhận')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-check-circle text-base text-teal-600"></i><span class="text-[10px] font-bold text-slate-700">Nhận lệnh</span>
-        </button>
-        <button type="button" onclick="reportMilestone('DEPARTED','Xuất phát')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-paper-plane-tilt text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Xuất phát</span>
-        </button>
-        <button type="button" onclick="reportMilestone('APPROACHING_WAREHOUSE','Sắp đến 30p')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-bell-ringing text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Sắp đến kho</span>
-        </button>
-        <button type="button" onclick="reportMilestone('ARRIVED_WAREHOUSE','Đến cổng')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-map-pin text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Đến cổng kho</span>
-        </button>
-        <button type="button" onclick="reportMilestone('START_UNLOADING','Vào dock đóng/dỡ')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-package text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Vào dock</span>
-        </button>
-        <button type="button" onclick="reportMilestone('FINISHED_UNLOADING','Hàng xong')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-check text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Hàng xong</span>
-        </button>
-        <button type="button" onclick="reportMilestone('DEPART_TO_DROPOFF','Rời kho về bãi hạ')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-truck text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Rời kho</span>
-        </button>
-        <button type="button" onclick="reportMilestone('DROPOFF_COMPLETED','Đã hạ cont')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-anchor text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Đã hạ cont</span>
-        </button>
-        <button type="button" onclick="reportMilestone('OVERNIGHT_WAIT','Lưu xe sau 0h')" class="touch-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex flex-col items-center text-center gap-1">
-          <i class="ph-bold ph-moon text-base text-slate-600"></i><span class="text-[10px] font-bold text-slate-700">Lưu đêm</span>
-        </button>
+        <!-- Injected dynamically by initDriverMilestoneButtons with zero-jump and completed lock -->
       </div>
     </div>
 
@@ -1510,6 +1484,8 @@
   <script>
     const TRIP_HASH = "{{ trip_hash }}";
     const TRIP_CODE = "{{ trip.trip_code }}";
+    const TRIP_STATUS = "{{ trip.status }}";
+    const IS_OVERNIGHT = {{ trip.is_overnight_detention|yesno:"true,false" }};
 
     // Helper: Read CSRF cookie or DOM token
     function getCsrfToken() {
@@ -1531,8 +1507,118 @@
       return cookieValue || '';
     }
 
+    // Khởi tạo trạng thái và khóa nút mốc thời gian thủ công
+    function initDriverMilestoneButtons() {
+      const listEl = document.getElementById('allMilestonesList');
+      if (!listEl) return;
+
+      if (TRIP_STATUS === 'COMPLETED') {
+        listEl.innerHTML = `
+          <div class="col-span-3 p-3 bg-slate-100 border border-slate-200 rounded-2xl text-center space-y-1">
+            <div class="text-xs font-black text-slate-700 flex items-center justify-center gap-1.5 font-heading">
+              <i class="ph-bold ph-lock-key text-teal-700 text-base"></i>
+              <span>CHUYẾN XE ĐÃ HOÀN TẤT (ĐÃ KHÓA)</span>
+            </div>
+            <p class="text-[11px] text-slate-500">Mọi mốc tiến độ đã hoàn thành và được chốt cố định, không thể chỉnh sửa.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const stepOrder = {
+        'DRAFT': 0, 'DISPATCHED': 0,
+        'ACCEPTED': 1,
+        'CONTAINER_PICKED': 2,
+        'IN_TRANSIT': 3,
+        'AT_WAREHOUSE': 4,
+        'UNLOADING': 5,
+        'DELIVERED': 6,
+        'RETURNING_EMPTY': 7,
+        'COMPLETED': 8
+      };
+
+      const curr = stepOrder[TRIP_STATUS] !== undefined ? stepOrder[TRIP_STATUS] : 0;
+
+      const items = [
+        { code: 'ACCEPTED_TRIP', title: 'Nhận lệnh', icon: 'ph-check-circle', target: 1, color: 'emerald' },
+        { code: 'DEPARTED', title: 'Xuất phát', icon: 'ph-paper-plane-tilt', target: 2, color: 'teal' },
+        { code: 'APPROACHING_WAREHOUSE', title: 'Sắp đến kho', icon: 'ph-bell-ringing', target: 3, color: 'amber' },
+        { code: 'ARRIVED_WAREHOUSE', title: 'Đến cổng kho', icon: 'ph-map-pin', target: 4, color: 'blue' },
+        { code: 'START_UNLOADING', title: 'Vào dock', icon: 'ph-package', target: 5, color: 'amber' },
+        { code: 'FINISHED_UNLOADING', title: 'Hàng xong', icon: 'ph-check-circle', target: 6, color: 'emerald' },
+        { code: 'DEPART_TO_DROPOFF', title: 'Rời kho', icon: 'ph-truck', target: 7, color: 'teal' },
+        { code: 'DROPOFF_COMPLETED', title: 'Đã hạ cont', icon: 'ph-anchor', target: 8, color: 'teal' },
+        { code: 'OVERNIGHT_WAIT', title: 'Lưu đêm', icon: 'ph-moon', target: null, color: 'amber' }
+      ];
+
+      let html = '';
+      items.forEach(item => {
+        let isEnabled = false;
+        let badge = '';
+        let btnCls = '';
+
+        if (item.code === 'OVERNIGHT_WAIT') {
+          if (curr >= 4 && curr <= 7 && !IS_OVERNIGHT) {
+            isEnabled = true;
+            badge = 'Sau 0h';
+            btnCls = 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900 shadow-2xs cursor-pointer';
+          } else if (IS_OVERNIGHT) {
+            isEnabled = false;
+            badge = '✓ Đã báo';
+            btnCls = 'bg-amber-100/60 border-amber-200 text-amber-900 opacity-60 cursor-not-allowed';
+          } else {
+            isEnabled = false;
+            badge = 'Chưa đến';
+            btnCls = 'bg-slate-50 border-slate-200 text-slate-400 opacity-35 cursor-not-allowed';
+          }
+        } else {
+          const target = item.target;
+          const isNext = (target === curr + 1) || (curr === 2 && target === 4);
+          const isPrev1 = (target === curr - 1) || (curr === 4 && target === 3) || (curr === 7 && target === 6);
+          const isPast = target < curr && !isPrev1;
+
+          if (isNext) {
+            isEnabled = true;
+            badge = 'Tiếp theo';
+            btnCls = `bg-${item.color}-50 hover:bg-${item.color}-100 border-${item.color}-500 text-${item.color}-950 ring-2 ring-${item.color}-200/80 font-black shadow-xs cursor-pointer`;
+          } else if (isPrev1) {
+            isEnabled = true;
+            badge = '↩ Bấm lại nếu nhầm';
+            btnCls = 'bg-amber-50/80 hover:bg-amber-100 border-amber-300 text-amber-900 font-bold cursor-pointer';
+          } else if (isPast || target === curr) {
+            isEnabled = false;
+            badge = '✓ Đã qua';
+            btnCls = 'bg-slate-100 border-slate-200 text-slate-400 opacity-45 cursor-not-allowed';
+          } else {
+            isEnabled = false;
+            badge = 'Chưa đến';
+            btnCls = 'bg-slate-50 border-slate-200 text-slate-400 opacity-30 cursor-not-allowed';
+          }
+        }
+
+        const disabledAttr = isEnabled ? '' : 'disabled';
+        const clickAttr = isEnabled ? `onclick="reportMilestone('${item.code}', '${item.title}')"` : '';
+
+        html += `
+          <button type="button" ${disabledAttr} ${clickAttr}
+            class="touch-btn p-2.5 rounded-xl border flex flex-col items-center text-center gap-1 transition-all ${btnCls}">
+            <i class="ph-bold ${item.icon} text-base"></i>
+            <span class="text-[10.5px] leading-tight font-bold">${item.title}</span>
+            <span class="text-[8.5px] px-1.5 py-0.2 rounded font-semibold ${isEnabled ? 'bg-white/80 border border-slate-200/80 text-slate-800' : 'text-slate-400'}">${badge}</span>
+          </button>
+        `;
+      });
+
+      listEl.innerHTML = html;
+    }
+
     // 1. BÁO MỐC 1-CHẠM + AUTO RELOAD DỮ LIỆU TỨC THÌ
     async function reportMilestone(milestoneCode, title) {
+      if (TRIP_STATUS === 'COMPLETED') {
+        alert("Chuyến xe đã hoàn tất! Toàn bộ mốc thời gian đã được chốt và khóa cố định.");
+        return;
+      }
+
       if (navigator.vibrate) navigator.vibrate(30);
       if (!confirm(`Xác nhận cập nhật mốc: "${title}"?`)) {
         return;
@@ -2831,8 +2917,9 @@
       showToast("⚠️ Bác tài đang mất sóng 4G. Mọi thao tác sẽ được lưu tạm và gửi tự động khi có mạng.", false);
     });
 
-    // Tự động rà soát hàng đợi khi mở portal
+    // Tự động rà soát hàng đợi & khởi tạo trạng thái khóa nút mốc
     document.addEventListener('DOMContentLoaded', () => {
+      initDriverMilestoneButtons();
       if (navigator.onLine) syncOfflineQueue();
     });
   </script>

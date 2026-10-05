@@ -15,7 +15,7 @@ from apps.personnel.models import Employee, Department, EmployeeRole
 from apps.customers.models import Customer, Quotation, RouteTariff, BookingOrder, BookingStatus, BookingDocument
 from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus
 from apps.documents.models import TripDocument, DocumentType
-from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.exceptions import ValidationError, ValidationError as DjangoValidationError
 from core.workflows import transition_trip, STATUS_LABELS
 from core.permissions import (
     IsAdminOrDirector,
@@ -3082,6 +3082,12 @@ class TripDriverMilestoneAPIView(APIView):
 
         self.check_object_permissions(request, trip)
 
+        # ── KHÓA TUYỆT ĐỐI KHI CHUYẾN XE ĐÃ HOÀN TẤT ──
+        if trip.status == TripStatus.COMPLETED:
+            return Response({
+                'error': 'Chuyến xe đã hoàn tất! Toàn bộ mốc thời gian đã được chốt và khóa cố định.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         milestone_code = request.data.get('milestone')
         notes = request.data.get('notes', '')
         now_dt = timezone.now()
@@ -3228,17 +3234,10 @@ class TripDriverMilestoneAPIView(APIView):
         if trip.status != target_status:
             try:
                 transition_trip(trip, target_status, actor=actor, description=notes or info['title'])
-            except Exception:
-                trip.status = target_status
-                trip.save(update_fields=['status'])
-                from core.models import TrackingEventLog
-                TrackingEventLog.objects.create(
-                    trip=trip,
-                    actor=actor,
-                    event_type=target_status,
-                    title=f"Mốc thời gian: {info['title']}",
-                    description=notes or info['msg']
-                )
+            except ValidationError as ve:
+                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as ex:
+                return Response({'error': f'Không thể chuyển mốc trạng thái: {str(ex)}'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             # Không đổi status nhưng đã lưu fields mới → sync timeline thủ công
             from apps.dispatch.timeline_service import sync_trip_10_step_timeline

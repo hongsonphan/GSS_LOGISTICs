@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.7.2] - 2026-10-05 (Kiểm Soát Máy Trạng Thái & Khóa Nút Báo Mốc Tiến Độ Zero-Jump & Completed Lock)
+
+### 1. Khóa Cứng Mốc Khi Chuyến Xe Hoàn Tất (COMPLETED Lock):
+- **Backend Guard (`TripDriverMilestoneAPIView` & `VALID_TRANSITIONS`):**
+  * Khi chuyến xe có trạng thái `COMPLETED`, API từ chối mọi yêu cầu cập nhật mốc tiếp theo và trả về lỗi 400 rõ ràng.
+- **Frontend UI State (`static/js/app.js` & `templates/driver_portal.html`):**
+  * Tự động vô hiệu hóa toàn bộ các nút báo mốc (`disabled`, `opacity-40 cursor-not-allowed`) và hiển thị banner thông báo: `🔒 Chuyến xe đã hoàn tất (Đã khóa)`.
+
+### 2. Logic Khóa Nút Chống Nhảy Cóc & Cho Phép Quay Lại 1 Bước Liền Kề (1-Step Rollback):
+- **Cơ chế phân cấp nút bấm linh hoạt:**
+  * **Bước kế tiếp (Next Step):** Nổi bật với màu sắc tương ứng (`Tiếp theo`), cho phép bấm để tiến hành trình.
+  * **1 bước trước liền kề (Immediate Previous Step):** Viền màu hổ phách/amber (`↩ Bấm lại nếu nhầm`), cho phép bác tài bấm sửa lại nếu vô tình bấm nhầm.
+  * **Các bước cũ hơn (> 1 bước trước):** Vô hiệu hóa (`✓ Đã qua`), không cho bấm lùi sâu.
+  * **Các bước tương lai (> 1 bước sau):** Vô hiệu hóa (`Chưa đến`), ngăn chặn tuyệt đối tình trạng nhảy cóc trạng thái.
+- **Kiểm Thử Tự Động:** Bổ sung `test_milestone_locking_and_rollback_rules`, toàn bộ **72/72 Unit Tests PASSED (100%)**.
+
+---
+
 ## [2.7.1] - 2026-10-05 (Sửa Lỗi Accordion Màn Hình Tài Xế & Bổ Sung Tính Năng Hiệu Chỉnh Kê Khai Nhầm)
 
 ### 1. Sửa Lỗi Tương Tác Màn Hình Tài Xế (Driver Portal UI Fix):

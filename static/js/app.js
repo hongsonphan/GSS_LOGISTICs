@@ -2776,6 +2776,9 @@ function renderDriverMobileApp(trip) {
         }
     }
 
+    // 4.5. DYNAMICALLY RENDER & LOCK QUICK MILESTONES (ZERO JUMP & COMPLETED LOCK)
+    renderSimQuickMilestones(trip.status, !!trip.is_overnight_detention);
+
     // 5. Accordion Timeline Mini List
     const timelineMiniList = document.getElementById('sim-timeline-mini-list');
     if (timelineMiniList) {
@@ -3846,9 +3849,162 @@ async function driverDeleteExpense(expenseId) {
     }
 }
 
+// Dynamic quick milestones renderer with strict state machine and mistake rollback logic
+function renderSimQuickMilestones(tripStatus, isOvernight) {
+    const grid = document.getElementById('sim-quick-milestones-grid');
+    if (!grid) return;
+
+    if (tripStatus === 'COMPLETED') {
+        grid.innerHTML = `
+            <div class="col-span-2 p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-center space-y-1">
+                <div class="text-[11px] font-black text-slate-700 flex items-center justify-center gap-1.5 font-heading">
+                    <i class="ph-bold ph-lock-key text-teal-700"></i>
+                    <span>Chuyến xe đã hoàn tất (Đã khóa)</span>
+                </div>
+                <p class="text-[9.5px] text-slate-500">Mọi mốc tiến độ đã hoàn thành và được chốt cố định.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Step order mapping (0: DISPATCHED, 1: ACCEPTED, 2: CONTAINER_PICKED, 3: IN_TRANSIT, 4: AT_WAREHOUSE, 5: UNLOADING, 6: DELIVERED, 7: RETURNING_EMPTY, 8: COMPLETED)
+    const stepOrder = {
+        'DRAFT': 0, 'DISPATCHED': 0,
+        'ACCEPTED': 1,
+        'CONTAINER_PICKED': 2,
+        'IN_TRANSIT': 3,
+        'AT_WAREHOUSE': 4,
+        'UNLOADING': 5,
+        'DELIVERED': 6,
+        'RETURNING_EMPTY': 7,
+        'COMPLETED': 8
+    };
+
+    const currentStep = stepOrder[tripStatus] !== undefined ? stepOrder[tripStatus] : 0;
+
+    const quickBtns = [
+        {
+            code: 'APPROACHING_WAREHOUSE',
+            title: 'Sắp đến kho',
+            desc: 'Báo trước 30p',
+            icon: 'ph-bell-ringing',
+            targetStep: 3,
+            color: 'teal'
+        },
+        {
+            code: 'ARRIVED_WAREHOUSE',
+            title: 'Đến cổng kho',
+            desc: 'Check-in kho',
+            icon: 'ph-map-pin',
+            targetStep: 4,
+            color: 'blue'
+        },
+        {
+            code: 'START_UNLOADING',
+            title: 'Đang dỡ/đóng',
+            desc: 'Bắt đầu hàng',
+            icon: 'ph-package',
+            targetStep: 5,
+            color: 'amber'
+        },
+        {
+            code: 'FINISHED_UNLOADING',
+            title: 'Đóng xong',
+            desc: 'Chuẩn bị hạ',
+            icon: 'ph-check-circle',
+            targetStep: 6,
+            color: 'emerald'
+        },
+        {
+            code: 'OVERNIGHT_WAIT',
+            title: 'Chờ sau 0h',
+            desc: isOvernight ? 'Đã báo lưu xe' : 'Kho yêu cầu',
+            icon: 'ph-moon',
+            targetStep: null,
+            color: 'amber'
+        },
+        {
+            code: 'DROPOFF_COMPLETED',
+            title: 'Đã hạ cont',
+            desc: 'Phiếu EIR',
+            icon: 'ph-anchor',
+            targetStep: 8,
+            color: 'teal'
+        }
+    ];
+
+    let html = '';
+    quickBtns.forEach(btn => {
+        let isEnabled = false;
+        let btnBadge = '';
+        let btnStyle = '';
+
+        if (btn.code === 'OVERNIGHT_WAIT') {
+            if (currentStep >= 4 && currentStep <= 7 && !isOvernight) {
+                isEnabled = true;
+                btnBadge = 'Sau 0h';
+                btnStyle = 'bg-amber-50/90 hover:bg-amber-100 border-amber-300 text-amber-900 active:scale-95 cursor-pointer';
+            } else if (isOvernight) {
+                isEnabled = false;
+                btnBadge = '✓ Đã báo';
+                btnStyle = 'bg-amber-100/70 border-amber-300 text-amber-900 opacity-60 cursor-not-allowed';
+            } else {
+                isEnabled = false;
+                btnBadge = 'Chưa đến';
+                btnStyle = 'bg-slate-50 border-slate-200 text-slate-400 opacity-35 cursor-not-allowed';
+            }
+        } else {
+            const target = btn.targetStep;
+            const isNext = (target === currentStep + 1) || (currentStep === 2 && target === 4);
+            const isPrev1 = (target === currentStep - 1) || (currentStep === 4 && target === 3) || (currentStep === 7 && target === 6);
+            const isPast = target < currentStep && !isPrev1;
+
+            if (isNext) {
+                isEnabled = true;
+                btnBadge = 'Tiếp theo';
+                btnStyle = `bg-${btn.color}-50 hover:bg-${btn.color}-100 border-${btn.color}-500 text-${btn.color}-950 ring-2 ring-${btn.color}-200/60 font-bold active:scale-95 cursor-pointer shadow-2xs`;
+            } else if (isPrev1) {
+                isEnabled = true;
+                btnBadge = '↩ Sửa lại nếu nhầm';
+                btnStyle = 'bg-amber-50/80 hover:bg-amber-100 border-amber-300 text-amber-900 font-bold active:scale-95 cursor-pointer';
+            } else if (isPast || target === currentStep) {
+                isEnabled = false;
+                btnBadge = '✓ Đã qua';
+                btnStyle = 'bg-slate-100/80 border-slate-200 text-slate-400 opacity-45 cursor-not-allowed';
+            } else {
+                isEnabled = false;
+                btnBadge = 'Chưa đến';
+                btnStyle = 'bg-slate-50 border-slate-200 text-slate-400 opacity-35 cursor-not-allowed';
+            }
+        }
+
+        const disabledAttr = isEnabled ? '' : 'disabled';
+        const clickHandler = isEnabled ? `onclick="driverReportMilestone('${btn.code}')"` : '';
+
+        html += `
+            <button type="button" ${disabledAttr} ${clickHandler}
+                class="p-1.5 rounded-lg border text-left transition-all ${btnStyle}">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold flex items-center gap-1">
+                        <i class="ph-bold ${btn.icon}"></i> ${btn.title}
+                    </span>
+                    <span class="text-[8px] font-semibold px-1 py-0.2 rounded ${isEnabled ? 'bg-white/80 border border-slate-200 text-slate-800' : 'text-slate-400'}">${btnBadge}</span>
+                </div>
+                <span class="text-[8.5px] opacity-75 block mt-0.5">${btn.desc}</span>
+            </button>
+        `;
+    });
+
+    grid.innerHTML = html;
+}
+
 // Tài xế báo nhanh mốc thời gian kho 1 chạm (Bước 6 SOP)
 async function driverReportMilestone(milestoneCode) {
     if (!currentActiveTripCode) return;
+    if (currentActiveTripData && currentActiveTripData.status === 'COMPLETED') {
+        showToast('warning', 'Chuyến xe đã hoàn tất! Toàn bộ mốc thời gian đã được chốt và khóa cố định.');
+        return;
+    }
 
     try {
         const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/milestones/`, {
