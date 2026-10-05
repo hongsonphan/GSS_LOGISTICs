@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.5] - 2026-10-05 (Sửa Lỗi Cấu Trúc HTML Layout Báo Cáo & Chuẩn Hóa Nhãn Thương Hiệu BIZ SOLUTIONS)
+
+### 1. Khắc Phục Triệt Để Lỗi Bố Trí Layout Màn Hình Báo Cáo & Thống Kê:
+- **Nguyên nhân cốt lõi:** Thẻ đóng `</div>` dư thừa trong `view_accounting.html` (dòng 954) và `view_reports.html` (dòng 860, 1105) đã vô tình đóng sớm vùng chứa `<main id="main-views">`, làm phân hệ Báo cáo bị đẩy ra ngoài và hiển thị lệch sang cột phải (tạo khoảng trống trắng lớn bên trái).
+- **Xử lý dứt điểm:** Rà soát và cân bằng 100% tất cả các thẻ mở/đóng `<div>` trên toàn bộ các view và component template trong dự án.
+- **Kết quả:** Phân hệ Báo cáo & Thống kê hiển thị toàn màn hình, thanh Sidebar và Topbar căn chỉnh chuẩn mực, bố cục 4 thẻ nhóm báo cáo và bảng số liệu dàn đều chuyên nghiệp.
+
+### 2. Chuẩn Hóa Nhãn Thương Hiệu:
+- Hiệu chỉnh nhãn trên Header Sidebar: `BIM SOLUTIONS` ➔ **`BIZ SOLUTIONS`** theo đúng nhận diện hệ sinh thái doanh nghiệp.
+
+### 3. Kiểm Thử & Triển Khai:
+- **82/82 Unit Tests PASSED 100%**.
+- Đã triển khai và khởi chạy ổn định trên máy chủ VPS (`port 8085`).
+
+---
+
 ## [2.8.4] - 2026-10-05 (Tái Cấu Trúc Gom 4 Nhóm Báo Cáo Chiến Lược & Nâng Cấp Báo Cáo Đối Soát Công Nợ Khách Hàng AR Aging)
 
 ### 1. Tái Cấu Trúc Gom 14 Báo Cáo Quản Trị Thành 4 Nhóm Nghiệp Vụ Chuyên Sâu:
