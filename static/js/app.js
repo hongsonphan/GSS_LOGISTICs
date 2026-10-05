@@ -927,8 +927,46 @@ function toggleDispatchSort(col) {
     applyDispatchFilters();
 }
 
+let isHideCompletedTripsActive = (function() {
+    try {
+        return localStorage.getItem('bim_hide_completed_trips') === 'true';
+    } catch (e) {
+        return false;
+    }
+})();
+
+function updateHideCompletedBtnUI() {
+    const btn = document.getElementById('btn-toggle-hide-completed');
+    const icon = document.getElementById('icon-toggle-hide-completed');
+    const text = document.getElementById('text-toggle-hide-completed');
+    if (!btn) return;
+
+    if (isHideCompletedTripsActive) {
+        btn.className = 'text-xs font-bold text-teal-900 bg-teal-100 hover:bg-teal-200 border border-teal-300 shadow-2xs px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer';
+        if (icon) icon.className = 'ph-bold ph-eye-slash text-teal-800 text-sm';
+        if (text) text.innerText = 'Đang Ẩn Đã Xong';
+    } else {
+        btn.className = 'text-xs font-semibold text-slate-700 hover:text-teal-800 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer';
+        if (icon) icon.className = 'ph-bold ph-eye text-slate-500 text-sm';
+        if (text) text.innerText = 'Ẩn Đã Hoàn Thành';
+    }
+}
+
+function toggleHideCompletedTrips() {
+    isHideCompletedTripsActive = !isHideCompletedTripsActive;
+    try {
+        localStorage.setItem('bim_hide_completed_trips', isHideCompletedTripsActive ? 'true' : 'false');
+    } catch (e) {}
+    updateHideCompletedBtnUI();
+    applyDispatchFilters();
+}
+window.toggleHideCompletedTrips = toggleHideCompletedTrips;
+window.updateHideCompletedBtnUI = updateHideCompletedBtnUI;
+
 function applyDispatchFilters() {
     if (!rawDispatchTrips || !Array.isArray(rawDispatchTrips)) return;
+
+    updateHideCompletedBtnUI();
 
     const filterCust = document.getElementById('filter-dispatch-customer')?.value?.trim().toLowerCase() || '';
     const filterDrv = document.getElementById('filter-dispatch-driver')?.value?.trim() || '';
@@ -952,6 +990,13 @@ function applyDispatchFilters() {
             } else if (filterDrv.startsWith('VEHICLE:')) {
                 const targetVeh = filterDrv.replace('VEHICLE:', '');
                 if (trip.vehicle !== targetVeh) return false;
+            }
+        }
+
+        // Nếu bật nút "Ẩn Đã Hoàn Thành" (và không đang lọc riêng mục COMPLETED)
+        if (isHideCompletedTripsActive && filterStatus !== 'COMPLETED') {
+            if (trip.status === 'COMPLETED' || trip.status_raw === 'COMPLETED' || trip.status === 'Hoàn tất & Chốt sổ') {
+                return false;
             }
         }
 
