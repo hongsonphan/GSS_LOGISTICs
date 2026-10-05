@@ -9975,7 +9975,49 @@ function numberToWordsVN(n) {
     return words;
 }
 
-// --- QUẢN LÝ MODAL XEM CHI TIẾT & IN PHIẾU THU / CHI ---
+// --- QUẢN LÝ MODAL XEM CHI TIẾT & IN PHIẾU THU / CHI (MẪU 01-TT / 02-TT BTC) ---
+let currentVoucherPrintMode = 'dual';
+
+function setDynamicPrintPageStyle(cssText) {
+    let styleEl = document.getElementById('dynamic-print-page-style');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamic-print-page-style';
+        document.head.appendChild(styleEl);
+    }
+    styleEl.innerHTML = `@media print { ${cssText} }`;
+}
+
+function setVoucherPrintMode(mode = 'dual') {
+    currentVoucherPrintMode = mode;
+    const printArea = document.getElementById('cash-voucher-printable-area');
+    const btnDual = document.getElementById('btn-voucher-mode-dual');
+    const btnSingle = document.getElementById('btn-voucher-mode-single');
+
+    if (printArea) {
+        if (mode === 'dual') {
+            printArea.classList.add('voucher-mode-dual');
+            printArea.classList.remove('voucher-mode-single');
+        } else {
+            printArea.classList.add('voucher-mode-single');
+            printArea.classList.remove('voucher-mode-dual');
+        }
+    }
+
+    if (btnDual && btnSingle) {
+        if (mode === 'dual') {
+            btnDual.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-teal-600 text-white shadow-xs cursor-pointer';
+            btnSingle.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white cursor-pointer';
+        } else {
+            btnSingle.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-teal-600 text-white shadow-xs cursor-pointer';
+            btnDual.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white cursor-pointer';
+        }
+    }
+
+    // Thiết lập khổ in chuẩn A4 dọc
+    setDynamicPrintPageStyle(mode === 'dual' ? '@page { size: A4 portrait; margin: 3mm 4mm; }' : '@page { size: A4 portrait; margin: 8mm; }');
+}
+
 async function openCashVoucherModal(txDataOrId) {
     let tx = null;
     if (typeof txDataOrId === 'object' && txDataOrId !== null) {
@@ -10000,11 +10042,11 @@ async function openCashVoucherModal(txDataOrId) {
 
     const isInflow = tx.transaction_type === 'INFLOW';
     const titleText = isInflow ? 'PHIẾU THU' : 'PHIẾU CHI';
-    const topTitleText = isInflow ? 'Phiếu Thu Sổ Quỹ (Mẫu 01-TT)' : 'Phiếu Chi Sổ Quỹ (Mẫu 02-TT)';
+    const topTitleText = isInflow ? 'Phiếu Thu Sổ Quỹ (Mẫu 01-TT BTC)' : 'Phiếu Chi Sổ Quỹ (Mẫu 02-TT BTC)';
     const templateNoText = isInflow ? 'Mẫu số 01 - TT' : 'Mẫu số 02 - TT';
     const debitAcc = isInflow ? (tx.payment_method === 'BANK' ? '1121' : '1111') : '1411 / 331 / 642';
     const creditAcc = isInflow ? '1411 / 131 / 711' : (tx.payment_method === 'BANK' ? '1121' : '1111');
-    const partnerLabel = isInflow ? 'Họ và tên người nộp tiền:' : 'Họ và tên người nhận tiền:';
+    const partnerLabel = isInflow ? 'Họ tên người nộp tiền:' : 'Họ tên người nhận tiền:';
     const signPartnerRole = isInflow ? 'Người Nộp Tiền' : 'Người Nhận Tiền';
     const reasonLabel = isInflow ? 'Lý do nộp:' : 'Lý do chi:';
 
@@ -10024,36 +10066,55 @@ async function openCashVoucherModal(txDataOrId) {
     }
 
     const dateFormattedText = `Ngày ${day} tháng ${month} năm ${year}`;
+    const signDateFormattedText = `Ngày ${day}/${month}/${year}`;
+    const amountWords = numberToWordsVN(tx.amount);
+    const amountFormatted = (formatMoneyVND(tx.amount) || '0') + ' đ';
+    const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
+    const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe vận tải Triền Võ Logistics';
+    const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
+    const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
 
-    // Set DOM elements
-    const setElemText = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = val;
+    // Helper cập nhật tất cả selector cùng class (đồng bộ Liên 1 & Liên 2)
+    const setAllClassText = (cls, val) => {
+        document.querySelectorAll(`#cash-voucher-printable-area .${cls}`).forEach(el => {
+            el.innerText = val;
+        });
     };
 
-    setElemText('voucher-modal-top-title', topTitleText);
-    setElemText('print-v-template-no', templateNoText);
-    setElemText('print-v-code', tx.code || '-');
-    setElemText('print-v-footer-code', tx.code || '-');
-    setElemText('print-v-debit-acc', debitAcc);
-    setElemText('print-v-credit-acc', creditAcc);
-    setElemText('print-v-title', titleText);
-    setElemText('print-v-date', dateFormattedText);
-    setElemText('print-v-sign-date', dateFormattedText);
-    setElemText('print-v-partner-label', partnerLabel);
-    setElemText('print-v-sign-partner-role', signPartnerRole);
-    setElemText('print-v-partner-name', tx.partner_name || 'Tài xế / Đối tác');
-    setElemText('print-v-department', tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe Triền Võ Logistics');
-    setElemText('print-v-reason-label', reasonLabel);
-    setElemText('print-v-reason', tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến'));
-    setElemText('print-v-amount', (formatMoneyVND(tx.amount) || '0') + ' đ');
-    setElemText('print-v-method', tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt');
-    
-    const amountWords = numberToWordsVN(tx.amount);
-    setElemText('print-v-amount-words', amountWords);
-    setElemText('print-v-received-words', amountWords);
-    setElemText('print-v-creator-name', tx.created_by || 'Kế toán viên');
-    setElemText('print-v-attachments', tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc');
+    const topTitleEl = document.getElementById('voucher-modal-top-title');
+    if (topTitleEl) topTitleEl.innerText = topTitleText;
+
+    const footerCodeEl = document.getElementById('print-v-footer-code');
+    if (footerCodeEl) footerCodeEl.innerText = tx.code || '-';
+
+    const copy2Badge = document.getElementById('voucher-copy-2-badge');
+    if (copy2Badge) {
+        copy2Badge.innerText = isInflow ? 'Liên 2: Giao cho người nộp tiền' : 'Liên 2: Giao cho người nhận tiền';
+    }
+
+    // Đồng bộ Liên 1 & Liên 2
+    setAllClassText('v-template-no', templateNoText);
+    setAllClassText('v-code', tx.code || '-');
+    setAllClassText('v-debit-acc', debitAcc);
+    setAllClassText('v-credit-acc', creditAcc);
+    setAllClassText('v-title', titleText);
+    setAllClassText('v-date', dateFormattedText);
+    setAllClassText('v-sign-date', signDateFormattedText);
+    setAllClassText('v-partner-label', partnerLabel);
+    setAllClassText('v-sign-partner-role', signPartnerRole);
+    setAllClassText('v-partner-name', tx.partner_name || 'Tài xế / Đối tác');
+    setAllClassText('v-department', departmentFormatted);
+    setAllClassText('v-reason-label', reasonLabel);
+    setAllClassText('v-reason', reasonFormatted);
+    setAllClassText('v-amount', amountFormatted);
+    setAllClassText('v-method', methodFormatted);
+    setAllClassText('v-amount-words', amountWords);
+    setAllClassText('v-received-words', amountWords);
+    setAllClassText('v-creator-name', tx.created_by || 'Kế toán viên');
+    setAllClassText('v-attachments', attachmentsFormatted);
+
+    // Mặc định chế độ 2 Liên / A4
+    setVoucherPrintMode('dual');
 
     modal.classList.remove('hidden');
 }
@@ -10070,6 +10131,8 @@ function printCashVoucher() {
 window.openCashVoucherModal = openCashVoucherModal;
 window.closeCashVoucherModal = closeCashVoucherModal;
 window.printCashVoucher = printCashVoucher;
+window.setVoucherPrintMode = setVoucherPrintMode;
+window.setDynamicPrintPageStyle = setDynamicPrintPageStyle;
 window.numberToWordsVN = numberToWordsVN;
 
 function openCreateCashTransactionModal(defaultType = 'INFLOW') {
@@ -14578,6 +14641,73 @@ const REPORT_PRINT_METADATA = {
     }
 };
 
+// --- TỰ ĐỘNG PHÂN LOẠI KHỔ GIẤY A4 NGANG (LANDSCAPE) / DỌC (PORTRAIT) TỐI ƯU ---
+const DEFAULT_REPORT_ORIENTATION = {
+    'report-1': 'landscape', // P&L Hiệu Suất Đội Xe: 11 Cột
+    'report-2': 'portrait',  // Vỏ Cont & DEM/DET Hãng Tàu: 6 Cột
+    'report-3': 'portrait',  // Đúng Giờ & Chất Lượng OTP: 6 Cột
+    'report-4': 'landscape', // Chi Phí Tuyến & Chi Hộ: 8 Cột
+    'report-5': 'landscape', // Bàn Giao Cắt Kéo & Lưu Xe 0H: 13 Cột
+    'report-6': 'portrait',  // Biên Bản Sự Cố OS&D: Dạng biên bản
+    'report-7': 'landscape', // Doanh Thu Khách & Sản Lượng TEU: 11 Cột
+    'report-8': 'landscape', // Quyết Toán Xe Thầu Phụ 3PL: 9-11 Cột
+    'report-9': 'landscape', // Lương Chuyến & Thu Nhập Lái Xe: 10 Cột
+    'report-10': 'portrait', // Sổ Quỹ Tiền Mặt & Tạm Ứng Điều Vận: 6 Cột
+    'report-11': 'portrait', // Tạm Ứng & Chi Phí Dọc Đường: 6 Cột
+    'report-12': 'landscape',// Tiến Độ Quyết Toán & Backlog: 10 Cột
+    'report-13': 'landscape',// Công Nợ Phải Thu AR Aging: 8 Cột
+    'report-14': 'landscape' // Tuổi Đơn Hàng Tồn Đọng: 8 Cột
+};
+
+let currentReportPrintOrientation = 'landscape';
+
+function setReportPrintOrientation(orientation = 'landscape') {
+    currentReportPrintOrientation = orientation;
+    const printArea = document.getElementById('report-printable-area');
+    const modalDialog = document.getElementById('report-print-modal-dialog');
+    const btnPortrait = document.getElementById('btn-rep-orient-portrait');
+    const btnLandscape = document.getElementById('btn-rep-orient-landscape');
+
+    if (printArea) {
+        if (orientation === 'landscape') {
+            printArea.classList.add('is-landscape');
+            printArea.classList.remove('is-portrait');
+        } else {
+            printArea.classList.add('is-portrait');
+            printArea.classList.remove('is-landscape');
+        }
+    }
+
+    if (modalDialog) {
+        if (orientation === 'landscape') {
+            modalDialog.classList.add('max-w-6xl');
+            modalDialog.classList.remove('max-w-4xl');
+        } else {
+            modalDialog.classList.add('max-w-4xl');
+            modalDialog.classList.remove('max-w-6xl');
+        }
+    }
+
+    if (btnPortrait && btnLandscape) {
+        if (orientation === 'landscape') {
+            btnLandscape.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 bg-teal-600 text-white shadow-xs cursor-pointer';
+            btnPortrait.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 text-slate-300 hover:text-white cursor-pointer';
+        } else {
+            btnPortrait.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 bg-teal-600 text-white shadow-xs cursor-pointer';
+            btnLandscape.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 text-slate-300 hover:text-white cursor-pointer';
+        }
+    }
+
+    // Dynamic @page size setting
+    if (typeof setDynamicPrintPageStyle === 'function') {
+        if (orientation === 'landscape') {
+            setDynamicPrintPageStyle('@page { size: A4 landscape; margin: 4mm 6mm; }');
+        } else {
+            setDynamicPrintPageStyle('@page { size: A4 portrait; margin: 6mm 8mm; }');
+        }
+    }
+}
+
 function openReportPrintModal(targetReportType = null) {
     const reportKey = targetReportType || currentActiveReportSubtab || 'report-1';
     const cleanKey = reportKey.startsWith('report-') ? reportKey : `report-${reportKey}`;
@@ -14603,6 +14733,10 @@ function renderReportPrintContent(reportKey) {
         code: 'TMS-BI-REPORT',
         authorRole: 'Bộ Phận Vận Hành & Kế Toán'
     };
+
+    // Tự động chọn khổ giấy tối ưu cho báo cáo này
+    const autoOrientation = DEFAULT_REPORT_ORIENTATION[reportKey] || 'landscape';
+    setReportPrintOrientation(autoOrientation);
 
     const titleEl = document.getElementById('print-rep-main-title');
     if (titleEl) titleEl.innerText = meta.title;
@@ -14703,7 +14837,7 @@ function renderReportPrintContent(reportKey) {
             if (srcTbody && tbodyEl) {
                 const trs = srcTbody.querySelectorAll('tr');
                 if (trs.length === 0 || trs[0].querySelector('td[colspan]')) {
-                    tbodyEl.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 italic">Không có dữ liệu phát sinh trong kỳ báo cáo này</td></tr>`;
+                    tbodyEl.innerHTML = `<tr><td colspan="12" class="text-center py-6 text-slate-400 italic">Không có dữ liệu phát sinh trong kỳ báo cáo này</td></tr>`;
                 } else {
                     trs.forEach((tr, index) => {
                         const newTr = document.createElement('tr');
@@ -14760,6 +14894,14 @@ function closeReportPrintModal() {
 function printReportDocument() {
     openReportPrintModal(currentActiveReportSubtab);
 }
+
+window.openReportPrintModal = openReportPrintModal;
+window.closeReportPrintModal = closeReportPrintModal;
+window.printReportDocument = printReportDocument;
+window.executePrintReportDocument = executePrintReportDocument;
+window.setReportPrintOrientation = setReportPrintOrientation;
+window.onReportPrintTypeChanged = onReportPrintTypeChanged;
+
 
 // Hàm phân giải URL khi tải trang lần đầu (Hỗ trợ Clean Semantic URL & Deep-link HashID)
 function resolveInitialRoute() {

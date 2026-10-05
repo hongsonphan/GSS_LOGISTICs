@@ -2,6 +2,32 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.1] - 2026-10-05 (Cơ Chế Nhận Diện Khổ Giấy In Thông Minh & In Phiếu Thu/Chi 2 Liên A5 Trên 1 Trang A4)
+
+### 1. In Phiếu Thu / Phiếu Chi 2 Liên A5 Trên 1 Trang A4 (`modal_cash_voucher_print.html`):
+- **Chuẩn Mực Kế Toán Doanh Nghiệp (Thông tư 200/2014/TT-BTC & TT 133/2016/TT-BTC):**
+  * Tích hợp cấu trúc in 2 liên trên cùng 1 trang A4 đứng (`portrait`):
+    - **Liên 1:** Lưu tại cuống chứng từ / Bộ phận Kế toán.
+    - **Đường cắt nét đứt chuẩn hóa (Cutting Separator):** `✂ --- Đường cắt phân chia Liên 1 và Liên 2 --- ✂`.
+    - **Liên 2:** Giao cho Người nộp tiền (Phiếu Thu) hoặc Người nhận tiền (Phiếu Chi).
+  * Tự động đồng bộ chính xác 100% nội dung (Logo TVL, Mã số BTC, Số phiếu, Định khoản Nợ/Có, Họ tên, Đơn vị, Lý do, Số tiền số & chữ, Chữ ký 5 bên) trên cả 2 liên.
+- **Tùy Chọn Chế Độ In Linh Hoạt Trên Toolbar:**
+  * `[2 Liên / A4 (A5 x 2)]`: Mặc định tối ưu, tinh chỉnh chiều cao mỗi liên ~136mm vừa khít 1 tờ A4 không nhảy sang trang 2.
+  * `[1 Liên Đơn]`: Cho phép in đơn 1 liên phóng to toàn trang khi cần thiết.
+
+### 2. Cơ Chế Tự Động Nhận Diện & Chuyển Đổi Khổ Giấy In A4 Dọc / Ngang (`modal_report_print.html` & `app.js`):
+- **Smart Orientation Auto-Detection:**
+  * Tự động kích hoạt **Khổ Ngang (A4 Landscape)** cho các báo cáo nhiều cột số liệu: P&L Hiệu Suất Đội Xe (`TMS-BI-01`), Chi Phí Tuyến & Chi Hộ (`TMS-BI-04`), Bàn Giao Cắt Kéo & Lưu Xe 0H (`TMS-BI-05`), Doanh Thu Khách & Sản Lượng TEU (`TMS-BI-07`), Quyết Toán 3PL (`TMS-BI-08`), Lương Chuyến & Thu Nhập Tài Xế (`TMS-BI-09`), Tiến Độ Quyết Toán Backlog (`TMS-BI-12`), Công Nợ AR Aging (`TMS-BI-13`), Tuổi Đơn Hàng Tồn Đọng (`TMS-BI-14`).
+  * Tự động kích hoạt **Khổ Dọc (A4 Portrait)** cho các báo cáo ít cột / hồ sơ sự cố: Vỏ Cont DEM/DET (`TMS-BI-02`), Đúng Giờ OTP (`TMS-BI-03`), Biên Bản Sự Cố OS&D (`TMS-BI-06`), Sổ Quỹ Tiền Mặt (`TMS-BI-10`), Bảng Tạm Ứng Dọc Đường (`TMS-BI-11`).
+- **Nút Chuyển Đổi Khổ Giấy Trên Toolbar:**
+  * Cung cấp 2 nút chọn `[Khổ Dọc]` và `[Khổ Ngang]` cho phép người dùng chủ động thay đổi bất kỳ lúc nào.
+  * Tự động cập nhật dynamic stylesheet `@page { size: A4 landscape/portrait; }` và co giãn độ rộng modal preview (`max-w-6xl` vs `max-w-4xl`).
+
+### 3. Kiểm Thử & Kiểm Soát Hồi Quy:
+- **78/78 Unit Tests PASSED (100% Zero-Regression)**.
+
+---
+
 ## [2.8.0] - 2026-10-05 (Khai Báo Hệ Thống & Cấu Hình Thông Tin Doanh Nghiệp trong Danh Mục Master Data)
 
 ### 1. Phân Hệ Khai Báo Hệ Thống (Master Data System Settings):

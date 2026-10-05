@@ -1,9 +1,9 @@
 <!-- MODAL XEM CHI TIẾT & IN BÁO CÁO QUẢN TRỊ DOANH NGHIỆP (BIM TMS BI REPORTS) -->
-<div id="modal-report-print" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fade-in">
-    <div class="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[96vh]">
+<div id="modal-report-print" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fade-in">
+    <div id="report-print-modal-dialog" class="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[96vh] transition-all duration-200">
         
         <!-- Header Toolbar (Ẩn khi in ấn) -->
-        <div class="px-6 py-3.5 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 no-print shrink-0 border-b border-slate-800">
+        <div class="px-5 py-3 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 no-print shrink-0 border-b border-slate-800">
             <div class="flex items-center space-x-3">
                 <div class="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-lg text-white shadow-sm">
                     <i class="ph-bold ph-printer"></i>
@@ -13,17 +13,17 @@
                         <h3 class="font-bold text-sm sm:text-base font-heading tracking-tight" id="report-print-top-title">In Báo Cáo Quản Trị Doanh Nghiệp</h3>
                         <span id="report-print-badge-period" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-500/20 text-teal-300 font-mono">Tháng Này</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 font-medium">Kết xuất biểu mẫu in chuẩn A4 theo phân hệ quản trị Triền Võ Logistics (TVL)</p>
+                    <p class="text-[11px] text-slate-400 font-medium">Kết xuất biểu mẫu in chuẩn A4 (Tự động nhận diện Khổ Dọc / Khổ Ngang tối ưu)</p>
                 </div>
             </div>
 
-            <!-- Controls: Chọn Báo Cáo + Nút In + Nút Đóng -->
+            <!-- Controls: Chọn Báo Cáo + Chọn Khổ Giấy + Nút In + Nút Đóng -->
             <div class="flex items-center gap-2 flex-wrap">
                 <!-- Dropdown chọn phân hệ báo cáo cần in -->
                 <div class="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-700">
                     <span class="text-[11px] text-slate-300 font-bold hidden sm:inline">Phân hệ:</span>
                     <select id="report-print-type-selector" onchange="onReportPrintTypeChanged(this.value)" 
-                        class="bg-slate-900 text-teal-300 text-xs font-bold rounded-lg px-2 py-1 border border-slate-700 focus:border-teal-500 focus:outline-none cursor-pointer max-w-[240px] truncate">
+                        class="bg-slate-900 text-teal-300 text-xs font-bold rounded-lg px-2 py-1 border border-slate-700 focus:border-teal-500 focus:outline-none cursor-pointer max-w-[210px] truncate">
                         <option value="report-1">1. Hiệu Suất Đội Xe & P&L</option>
                         <option value="report-2">2. Vỏ Cont & DEM/DET Hãng Tàu</option>
                         <option value="report-3">3. Đúng Giờ & Chất Lượng OTP</option>
@@ -41,10 +41,24 @@
                     </select>
                 </div>
 
+                <!-- Nút chuyển đổi Khổ Giấy (Portrait / Landscape) -->
+                <div class="inline-flex p-1 bg-slate-800 rounded-xl border border-slate-700">
+                    <button type="button" id="btn-rep-orient-portrait" onclick="setReportPrintOrientation('portrait')" 
+                        class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 text-slate-300 hover:text-white cursor-pointer" title="In Khổ Dọc (A4 Portrait)">
+                        <i class="ph-bold ph-file"></i>
+                        <span class="hidden sm:inline">Khổ Dọc</span>
+                    </button>
+                    <button type="button" id="btn-rep-orient-landscape" onclick="setReportPrintOrientation('landscape')" 
+                        class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 bg-teal-600 text-white shadow-xs cursor-pointer" title="In Khổ Ngang (A4 Landscape)">
+                        <i class="ph-bold ph-file-dashed rotate-90"></i>
+                        <span class="hidden sm:inline">Khổ Ngang</span>
+                    </button>
+                </div>
+
                 <button type="button" onclick="executePrintReportDocument()" 
                     class="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all cursor-pointer">
                     <i class="ph-bold ph-printer text-base"></i>
-                    <span>In Báo Cáo (Print)</span>
+                    <span>In Báo Cáo</span>
                 </button>
                 <button type="button" onclick="closeReportPrintModal()" 
                     class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer" title="Đóng">
@@ -54,8 +68,8 @@
         </div>
 
         <!-- Printable Container Wrapper -->
-        <div class="p-4 sm:p-8 overflow-y-auto bg-slate-100 flex-1 flex justify-center">
-            <div id="report-printable-area" class="w-full max-w-4xl bg-white p-8 sm:p-12 rounded-xl shadow-xs border border-slate-200 text-slate-900 font-sans leading-relaxed text-xs sm:text-sm space-y-5">
+        <div class="p-3 sm:p-6 overflow-y-auto bg-slate-100 flex-1 flex justify-center">
+            <div id="report-printable-area" class="w-full max-w-4xl bg-white p-6 sm:p-10 rounded-xl shadow-xs border border-slate-200 text-slate-900 font-sans leading-relaxed text-xs sm:text-sm space-y-4 is-landscape transition-all">
                 
                 <!-- 1. Header Đơn vị TVL & Quốc hiệu / Thông tin Biểu Mẫu -->
                 <div class="flex justify-between items-start gap-4 pb-3 border-b-2 border-slate-800">

@@ -603,7 +603,8 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     .no-print {
         display: none !important;
     }
-    #cash-voucher-printable-area,
+    
+    /* ── A. KHUNG BÁO GIÁ & BÁO CÁO ── */
     #quotation-printable-area,
     #report-printable-area {
         width: 100% !important;
@@ -611,20 +612,91 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         border: none !important;
         box-shadow: none !important;
         margin: 0 !important;
-        padding: 6mm 10mm !important;
+        padding: 4mm 6mm !important;
         background: white !important;
         color: #000 !important;
-        font-size: 9.5pt !important;
+        font-size: 8.5pt !important;
     }
     #quotation-printable-area table th,
     #quotation-printable-area table td,
     #report-printable-area table th,
     #report-printable-area table td {
         border-color: #333 !important;
+        padding: 3px 5px !important;
     }
-    @page {
-        size: A4 portrait;
-        margin: 6mm;
+    #report-printable-area table {
+        width: 100% !important;
+        table-layout: auto !important;
+    }
+
+    /* ── B. KHUNG PHIẾU THU / CHI (2 LIÊN A5 TRÊN 1 TRANG A4) ── */
+    #cash-voucher-printable-area {
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 2mm 6mm !important;
+        background: white !important;
+        color: #000 !important;
+    }
+
+    /* Chế độ 2 Liên A5 trên 1 trang A4 */
+    #cash-voucher-printable-area.voucher-mode-dual {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        height: 100% !important;
+        max-height: 285mm !important;
+    }
+    #cash-voucher-printable-area.voucher-mode-dual .voucher-slip {
+        height: 136mm !important;
+        max-height: 136mm !important;
+        box-sizing: border-box !important;
+        padding: 1mm 2mm !important;
+        font-size: 8pt !important;
+        line-height: 1.25 !important;
+        overflow: hidden !important;
+    }
+    #cash-voucher-printable-area.voucher-mode-dual .voucher-slip img {
+        height: 9mm !important;
+    }
+    #cash-voucher-printable-area.voucher-mode-dual .voucher-slip h2 {
+        font-size: 11pt !important;
+        margin: 1px 0 !important;
+    }
+    #cash-voucher-printable-area.voucher-mode-dual .voucher-slip .grid {
+        padding-bottom: 2mm !important;
+    }
+    #cash-voucher-printable-area.voucher-mode-dual .voucher-cut-separator {
+        height: 8mm !important;
+        margin: 0 !important;
+        display: block !important;
+    }
+
+    /* Chế độ 1 Liên Đơn */
+    #cash-voucher-printable-area.voucher-mode-single .voucher-slip-1 {
+        padding: 10mm !important;
+        font-size: 10pt !important;
+    }
+    #cash-voucher-printable-area.voucher-mode-single .voucher-slip-2,
+    #cash-voucher-printable-area.voucher-mode-single .voucher-cut-separator {
+        display: none !important;
     }
 }
+
+/* ── CẤU HÌNH CSS HIỂN THỊ WEB CHO CHẾ ĐỘ 1 LIÊN / 2 LIÊN ── */
+#cash-voucher-printable-area.voucher-mode-single .voucher-slip-2,
+#cash-voucher-printable-area.voucher-mode-single .voucher-cut-separator {
+    display: none !important;
+}
+
+/* ── CẤU HÌNH CSS HIỂN THỊ WEB CHO BÁO CÁO KHỔ DỌC / NGANG ── */
+#report-printable-area.is-landscape {
+    max-width: 1100px;
+}
+#report-printable-area.is-portrait {
+    max-width: 820px;
+}
+
 
