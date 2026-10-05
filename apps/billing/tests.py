@@ -182,3 +182,35 @@ class DriverBatchSettlementTests(TestCase):
         res = self.client.post(url, data=payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('SIM-TEST-002', res.data['error'])
+
+    def test_cash_book_detail_voucher_api(self):
+        """Kiểm tra API chi tiết phiếu thu / chi để phục vụ xem và in ấn Mẫu 01-TT/02-TT."""
+        # Tạo 1 phiếu thu
+        tx = CashTransaction.objects.create(
+            code='PT-202610-TEST',
+            transaction_type=TransactionType.INFLOW,
+            payment_method=PaymentMethod.BANK,
+            category=CashFlowCategory.ADVANCE_REFUND,
+            amount=200000,
+            transaction_date=datetime.date.today(),
+            partner_type='DRIVER',
+            partner_name='Nguyễn Văn Bụi (BỤI 94)',
+            ref_code='SIM-TEST-001, SIM-TEST-002',
+            created_by=self.accountant_emp,
+            notes='Thu hoàn ứng tiền thừa đợt test'
+        )
+
+        self.client.force_authenticate(user=self.accountant_user)
+        url = f'/api/accounting/cashbook/{tx.id}/'
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data['success'])
+        self.assertEqual(res.data['transaction']['code'], 'PT-202610-TEST')
+        self.assertEqual(res.data['transaction']['amount'], 200000)
+        self.assertEqual(res.data['transaction']['transaction_type'], 'INFLOW')
+
+        # Test query by code
+        url_by_code = f'/api/accounting/cashbook/{tx.code}/'
+        res_code = self.client.get(url_by_code)
+        self.assertEqual(res_code.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_code.data['transaction']['id'], tx.id)

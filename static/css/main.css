@@ -570,3 +570,47 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .hidden-view {
     display: none !important;
 }
+
+/* ── 8. PRINT STYLES FOR VOUCHERS (MẪU 01-TT / 02-TT) ── */
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #modal-cash-voucher-print,
+    #modal-cash-voucher-print * {
+        visibility: visible !important;
+    }
+    #modal-cash-voucher-print {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        z-index: 999999 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    #cash-voucher-printable-area {
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 10mm 15mm !important;
+        background: white !important;
+        color: #000 !important;
+        font-size: 11pt !important;
+    }
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+}
+

@@ -435,6 +435,52 @@ class CashBookAPIView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class CashBookDetailAPIView(APIView):
+    """
+    API Chi Tiết Phiếu Thu / Phiếu Chi (Xem & In Chứng Từ Mẫu 01-TT / 02-TT).
+    """
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAccountant]
+
+    def get(self, request, pk):
+        try:
+            if str(pk).isdigit():
+                t = CashTransaction.objects.select_related('created_by').get(id=int(pk), is_deleted=False)
+            else:
+                t = CashTransaction.objects.select_related('created_by').get(code=pk, is_deleted=False)
+        except CashTransaction.DoesNotExist:
+            return Response({'error': 'Không tìm thấy phiếu thu/chi tương ứng'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'success': True,
+            'transaction': {
+                'id': t.id,
+                'code': t.code,
+                'transaction_type': t.transaction_type,
+                'transaction_type_label': t.get_transaction_type_display(),
+                'payment_method': t.payment_method,
+                'payment_method_label': t.get_payment_method_display(),
+                'category': t.category,
+                'category_label': t.get_category_display(),
+                'amount': int(t.amount),
+                'transaction_date': t.transaction_date.strftime('%d/%m/%Y') if t.transaction_date else '',
+                'transaction_date_iso': t.transaction_date.strftime('%Y-%m-%d') if t.transaction_date else '',
+                'day': t.transaction_date.strftime('%d') if t.transaction_date else '',
+                'month': t.transaction_date.strftime('%m') if t.transaction_date else '',
+                'year': t.transaction_date.strftime('%Y') if t.transaction_date else '',
+                'partner_type': t.partner_type,
+                'partner_type_label': t.get_partner_type_display() if t.partner_type else '',
+                'partner_name': t.partner_name,
+                'ref_code': t.ref_code,
+                'bank_name': t.bank_name,
+                'bank_account': t.bank_account,
+                'created_by': (t.created_by.nickname or t.created_by.full_name) if t.created_by else '',
+                'notes': t.notes,
+                'created_at': t.created_at.strftime('%d/%m/%Y %H:%M') if t.created_at else ''
+            }
+        }, status=status.HTTP_200_OK)
+
+
 class SubcontractorSettlementsAPIView(APIView):
     """
     API 3: Quyết Toán & Đối Soát Nhà Xe Bạn / Thầu Phụ 3PL (Subcontractor Payables).

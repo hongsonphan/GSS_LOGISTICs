@@ -8947,6 +8947,13 @@ async function executePageSettlementSubmit() {
             loadSettlementData();
             if (typeof loadAccountingData === 'function') loadAccountingData();
             if (typeof loadAccountingAdvancesData === 'function') loadAccountingAdvancesData();
+
+            // Tự động mở ngay Phiếu Thu / Phiếu Chi vừa tạo để xem và in ấn
+            if (data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code) {
+                setTimeout(() => {
+                    openCashVoucherModal(data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code);
+                }, 350);
+            }
         } else {
             const errorMsg = data.error || data.detail || data.message || (typeof data === 'string' ? data : 'Không thể thực hiện quyết toán gom');
             showToast('danger', errorMsg, 'Lỗi Quyết Toán Gom');
@@ -9554,7 +9561,7 @@ function renderCashBookTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy giao dịch thu chi nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy giao dịch thu chi nào phù hợp</td></tr>`;
         return;
     }
 
@@ -9596,10 +9603,176 @@ function renderCashBookTable(list) {
                 <td class="text-xs text-slate-600 max-w-[220px] truncate" title="${escapeHtml(item.notes || '')}">
                     ${escapeHtml(item.notes || '-')}
                 </td>
+                <td class="text-center">
+                    <button type="button" onclick="openCashVoucherModal('${escapeHtml(item.id || item.code)}')" 
+                        class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Xem chi tiết & In phiếu Thu/Chi">
+                        <i class="ph-bold ph-printer text-emerald-700"></i>
+                        <span>In Phiếu</span>
+                    </button>
+                </td>
             </tr>
         `;
     }).join('');
 }
+
+// --- CHUYỂN ĐỔI SỐ TIỀN THÀNH CHỮ TIẾNG VIỆT CHUẨN KẾ TOÁN ---
+function numberToWordsVN(n) {
+    if (n === null || n === undefined || isNaN(n)) return '';
+    let num = Math.abs(Math.round(Number(n)));
+    if (num === 0) return 'Không đồng.';
+
+    const digits = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+    const scaleUnits = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ'];
+
+    function readGroup(group, showZeroHundred) {
+        let h = Math.floor(group / 100);
+        let t = Math.floor((group % 100) / 10);
+        let u = group % 10;
+        let res = '';
+
+        if (h > 0 || showZeroHundred) {
+            res += digits[h] + ' trăm ';
+            if (t === 0 && u > 0) res += 'lẻ ';
+        }
+
+        if (t > 1) {
+            res += digits[t] + ' mươi ';
+            if (u === 1) res += 'mốt ';
+            else if (u === 5) res += 'lăm ';
+            else if (u > 0) res += digits[u] + ' ';
+        } else if (t === 1) {
+            res += 'mười ';
+            if (u === 5) res += 'lăm ';
+            else if (u > 0) res += digits[u] + ' ';
+        } else if (u > 0 && !res.includes('lẻ')) {
+            res += digits[u] + ' ';
+        } else if (u > 0) {
+            res += digits[u] + ' ';
+        }
+
+        return res.trim();
+    }
+
+    let groups = [];
+    while (num > 0) {
+        groups.push(num % 1000);
+        num = Math.floor(num / 1000);
+    }
+
+    let words = '';
+    for (let i = groups.length - 1; i >= 0; i--) {
+        let g = groups[i];
+        if (g > 0) {
+            let showZeroHundred = (i < groups.length - 1) && (groups.length > 1);
+            let gText = readGroup(g, showZeroHundred);
+            let unit = scaleUnits[i] ? ' ' + scaleUnits[i] : '';
+            words += (words ? ' ' : '') + gText + unit;
+        }
+    }
+
+    words = words.trim();
+    if (!words) return 'Không đồng.';
+    words = words.charAt(0).toUpperCase() + words.slice(1) + ' đồng chẵn.';
+    return words;
+}
+
+// --- QUẢN LÝ MODAL XEM CHI TIẾT & IN PHIẾU THU / CHI ---
+async function openCashVoucherModal(txDataOrId) {
+    let tx = null;
+    if (typeof txDataOrId === 'object' && txDataOrId !== null) {
+        tx = txDataOrId;
+    } else {
+        try {
+            const res = await fetchWithAuth(`/api/accounting/cashbook/${txDataOrId}/`);
+            if (!res.ok) throw new Error('Không tìm thấy chứng từ');
+            const data = await res.json();
+            tx = data.transaction;
+        } catch (err) {
+            console.error('Lỗi tải chứng từ:', err);
+            showToast('danger', 'Không thể tải chi tiết chứng từ để in', 'Lỗi In Phiếu');
+            return;
+        }
+    }
+
+    if (!tx) return;
+
+    const modal = document.getElementById('modal-cash-voucher-print');
+    if (!modal) return;
+
+    const isInflow = tx.transaction_type === 'INFLOW';
+    const titleText = isInflow ? 'PHIẾU THU' : 'PHIẾU CHI';
+    const topTitleText = isInflow ? 'Phiếu Thu Sổ Quỹ (Mẫu 01-TT)' : 'Phiếu Chi Sổ Quỹ (Mẫu 02-TT)';
+    const templateNoText = isInflow ? 'Mẫu số 01 - TT' : 'Mẫu số 02 - TT';
+    const debitAcc = isInflow ? (tx.payment_method === 'BANK' ? '1121' : '1111') : '1411 / 331 / 642';
+    const creditAcc = isInflow ? '1411 / 131 / 711' : (tx.payment_method === 'BANK' ? '1121' : '1111');
+    const partnerLabel = isInflow ? 'Họ và tên người nộp tiền:' : 'Họ và tên người nhận tiền:';
+    const signPartnerRole = isInflow ? 'Người Nộp Tiền' : 'Người Nhận Tiền';
+    const reasonLabel = isInflow ? 'Lý do nộp:' : 'Lý do chi:';
+
+    // Parse date parts
+    let day = tx.day || '', month = tx.month || '', year = tx.year || '';
+    if (!day && tx.transaction_date) {
+        const parts = tx.transaction_date.split('/');
+        if (parts.length === 3) {
+            day = parts[0]; month = parts[1]; year = parts[2];
+        }
+    }
+    if (!day) {
+        const now = new Date();
+        day = String(now.getDate()).padStart(2, '0');
+        month = String(now.getMonth() + 1).padStart(2, '0');
+        year = String(now.getFullYear());
+    }
+
+    const dateFormattedText = `Ngày ${day} tháng ${month} năm ${year}`;
+
+    // Set DOM elements
+    const setElemText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+    };
+
+    setElemText('voucher-modal-top-title', topTitleText);
+    setElemText('print-v-template-no', templateNoText);
+    setElemText('print-v-code', tx.code || '-');
+    setElemText('print-v-footer-code', tx.code || '-');
+    setElemText('print-v-debit-acc', debitAcc);
+    setElemText('print-v-credit-acc', creditAcc);
+    setElemText('print-v-title', titleText);
+    setElemText('print-v-date', dateFormattedText);
+    setElemText('print-v-sign-date', dateFormattedText);
+    setElemText('print-v-partner-label', partnerLabel);
+    setElemText('print-v-sign-partner-role', signPartnerRole);
+    setElemText('print-v-partner-name', tx.partner_name || 'Tài xế / Đối tác');
+    setElemText('print-v-department', tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe Triền Võ Logistics');
+    setElemText('print-v-reason-label', reasonLabel);
+    setElemText('print-v-reason', tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến'));
+    setElemText('print-v-amount', (formatMoneyVND(tx.amount) || '0') + ' đ');
+    setElemText('print-v-method', tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt');
+    
+    const amountWords = numberToWordsVN(tx.amount);
+    setElemText('print-v-amount-words', amountWords);
+    setElemText('print-v-received-words', amountWords);
+    setElemText('print-v-creator-name', tx.created_by || 'Kế toán viên');
+    setElemText('print-v-attachments', tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc');
+
+    modal.classList.remove('hidden');
+}
+
+function closeCashVoucherModal() {
+    const modal = document.getElementById('modal-cash-voucher-print');
+    if (modal) modal.classList.add('hidden');
+}
+
+function printCashVoucher() {
+    window.print();
+}
+
+window.openCashVoucherModal = openCashVoucherModal;
+window.closeCashVoucherModal = closeCashVoucherModal;
+window.printCashVoucher = printCashVoucher;
+window.numberToWordsVN = numberToWordsVN;
 
 function openCreateCashTransactionModal(defaultType = 'INFLOW') {
     const modal = document.getElementById('modal-cash-transaction');

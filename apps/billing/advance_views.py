@@ -759,7 +759,7 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                     seq = int(last_tx.code.split('-')[-1]) + 1
                 cash_tx_code = f"{tx_prefix}-{seq:04d}"
 
-                CashTransaction.objects.create(
+                cash_tx = CashTransaction.objects.create(
                     code=cash_tx_code,
                     transaction_type=tx_type,
                     payment_method=payment_method,
@@ -772,6 +772,7 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                     created_by=curr_emp,
                     notes=settlement_notes or tx_notes
                 )
+                cash_tx_id = cash_tx.id
 
         return Response({
             'success': True,
@@ -780,6 +781,27 @@ class DriverBatchSettlementExecuteAPIView(APIView):
             'total_advance': total_advance_all,
             'total_spent': total_spent_all,
             'net_difference': net_diff,
-            'cash_transaction_code': cash_tx_code
+            'cash_transaction_id': cash_tx_id if 'cash_tx_id' in locals() else None,
+            'cash_transaction_code': cash_tx_code,
+            'cash_transaction': {
+                'id': cash_tx.id,
+                'code': cash_tx.code,
+                'transaction_type': cash_tx.transaction_type,
+                'transaction_type_label': cash_tx.get_transaction_type_display(),
+                'payment_method': cash_tx.payment_method,
+                'payment_method_label': cash_tx.get_payment_method_display(),
+                'category': cash_tx.category,
+                'category_label': cash_tx.get_category_display(),
+                'amount': int(cash_tx.amount),
+                'transaction_date': cash_tx.transaction_date.strftime('%d/%m/%Y'),
+                'transaction_date_iso': cash_tx.transaction_date.strftime('%Y-%m-%d'),
+                'day': cash_tx.transaction_date.strftime('%d'),
+                'month': cash_tx.transaction_date.strftime('%m'),
+                'year': cash_tx.transaction_date.strftime('%Y'),
+                'partner_name': cash_tx.partner_name,
+                'ref_code': cash_tx.ref_code,
+                'created_by': (cash_tx.created_by.nickname or cash_tx.created_by.full_name) if cash_tx.created_by else '',
+                'notes': cash_tx.notes
+            } if ('cash_tx' in locals() and cash_tx) else None
         })
 

@@ -41,6 +41,7 @@ from apps.billing.advance_views import (
 from apps.billing.finance_reports_api import (
     CustomerReimbursablesAPIView,
     CashBookAPIView,
+    CashBookDetailAPIView,
     SubcontractorSettlementsAPIView,
     BotTollAuditAPIView,
     AccountingReportsAPIView,
@@ -130,6 +131,9 @@ urlpatterns = [
     path('api/accounting/driver-settlements/batch-settle/', DriverBatchSettlementExecuteAPIView.as_view(), name='api-driver-batch-settlement-execute'),
     path('api/accounting/reimbursables/', CustomerReimbursablesAPIView.as_view(), name='api-accounting-reimbursables'),
     path('api/accounting/cashbook/', CashBookAPIView.as_view(), name='api-accounting-cashbook'),
+    path('api/accounting/cashbook/<str:pk>/', CashBookDetailAPIView.as_view(), name='api-accounting-cashbook-detail'),
+    path('api/accounting/cash-transactions/', CashBookAPIView.as_view(), name='api-accounting-cash-transactions'),
+    path('api/accounting/cash-transactions/<str:pk>/', CashBookDetailAPIView.as_view(), name='api-accounting-cash-transactions-detail'),
     path('api/accounting/subcontractor-settlements/', SubcontractorSettlementsAPIView.as_view(), name='api-accounting-subcontractors'),
     path('api/accounting/bot-audit/', BotTollAuditAPIView.as_view(), name='api-accounting-bot-audit'),
     path('api/accounting/reports/', AccountingReportsAPIView.as_view(), name='api-accounting-reports'),
