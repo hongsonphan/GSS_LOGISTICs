@@ -43,6 +43,16 @@
             </li>
             {% endif %}
 
+            <!-- 3.1. Quyết Toán Gom Chuyến (Điều phối, Kế toán, BGD) -->
+            {% if is_admin or not role or role in 'DIRECTOR,DISPATCHER,ACCOUNTANT' %}
+            <li>
+                <a href="/settlements" onclick="event.preventDefault(); switchTab('quyet-toan');" class="sidebar-item-main flex items-center" data-target="quyet-toan">
+                    <i class="ph ph-stack text-xl mr-3 text-slate-400"></i>
+                    <span class="flex-1 text-left tracking-wide">Quyết Toán Gom Chuyến</span>
+                </a>
+            </li>
+            {% endif %}
+
             <!-- 4. Xe & Bãi (Bãi xe, Điều phối, BGD) -->
             {% if is_admin or not role or role in 'DIRECTOR,DISPATCHER,MECHANIC' %}
             <li>
