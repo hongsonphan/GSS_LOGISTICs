@@ -95,11 +95,30 @@ async function fetchWithAuth(url, options = {}) {
 
 const STATUS_STYLE_MAP = {
     'COMPLETED': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    'IN_TRANSIT': 'bg-amber-100 text-amber-800 border-amber-300',
+    'DELIVERED': 'bg-teal-100 text-teal-800 border-teal-300',
+    'RETURNING_EMPTY': 'bg-purple-100 text-purple-800 border-purple-300',
     'UNLOADING': 'bg-orange-100 text-orange-800 border-orange-300',
-    'DISPATCHED': 'bg-teal-100 text-teal-800 border-teal-300',
+    'AT_WAREHOUSE': 'bg-indigo-100 text-indigo-800 border-indigo-300',
+    'IN_TRANSIT': 'bg-amber-100 text-amber-800 border-amber-300',
+    'CONTAINER_PICKED': 'bg-cyan-100 text-cyan-800 border-cyan-300',
     'ACCEPTED': 'bg-blue-100 text-blue-800 border-blue-300',
+    'DISPATCHED': 'bg-teal-100 text-teal-800 border-teal-300',
     'DRAFT': 'bg-slate-100 text-slate-700 border-slate-300',
+    'CANCELLED': 'bg-rose-100 text-rose-800 border-rose-300',
+};
+
+const STATUS_NAME_MAP = {
+    'DRAFT': 'Tiếp nhận đơn',
+    'DISPATCHED': 'Đã điều xe',
+    'ACCEPTED': 'Tài xế nhận lệnh',
+    'CONTAINER_PICKED': 'Đã lấy Cont / Hàng',
+    'IN_TRANSIT': 'Đang vận chuyển',
+    'AT_WAREHOUSE': 'Đã đến kho hàng',
+    'UNLOADING': 'Đang đóng / dỡ hàng',
+    'DELIVERED': 'Đã giao hàng (Ký POD)',
+    'RETURNING_EMPTY': 'Đang trả vỏ rỗng',
+    'COMPLETED': 'Hoàn tất chuyến xe',
+    'CANCELLED': 'Đã hủy chuyến',
 };
 
 // =========================================================================
@@ -1534,7 +1553,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const badge = document.getElementById('detail-status-badge');
         if (badge) {
             badge.className = `px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
-            badge.innerText = trip.status_label;
+            badge.innerText = trip.status_label || trip.status_display || STATUS_NAME_MAP[trip.status] || trip.status || 'Chưa xác định';
         }
 
         // Cập nhật Cảnh báo SLA & Từ chối Chuyến Xe

@@ -457,7 +457,9 @@ def build_customer_milestones(trip: DispatchTrip):
       4. Đang vận chuyển / Đã nhận hàng
       5. Đã đến kho hàng / Đang vận chuyển
       6. Đã giao thành công (Ký nhận POD)
-    Tuyệt đối không để lộ tác nghiệp nội bộ (hạ vỏ rỗng, hãng tàu, chi phí, lệnh điều xe, đối soát).
+    BẢO MẬT & NHẤT QUÁN STATE MACHINE:
+      - Tuyệt đối không để lộ tác nghiệp nội bộ (hạ vỏ rỗng, hãng tàu, chi phí, lệnh điều xe, đối soát).
+      - Tuân thủ máy trạng thái nghiêm ngặt: Mốc sau KHÔNG BAO GIỜ hoàn thành khi chuyến xe chưa đạt trạng thái đó.
     """
     from apps.documents.models import DocumentType
     from apps.dispatch.models import ShipmentType
@@ -476,7 +478,6 @@ def build_customer_milestones(trip: DispatchTrip):
     t_map = {item.step_number: item.time_display for item in trip.timeline_items.all()}
 
     # Kiểm tra chứng từ POD
-    has_pod = trip.documents.filter(is_deleted=False, document_type=DocumentType.POD).exists()
     pod_doc = trip.documents.filter(is_deleted=False, document_type=DocumentType.POD).order_by('-created_at').first()
     t_pod = pod_doc.created_at.strftime('%H:%M %d/%m') if (pod_doc and pod_doc.created_at) else t_gate_out
 
@@ -488,23 +489,23 @@ def build_customer_milestones(trip: DispatchTrip):
 
         m2_done = (trip.status != TripStatus.DRAFT) and bool(trip.vehicle)
         m2_active = (trip.status == TripStatus.DRAFT)
-        m2_time = t_map.get(2) or t_create
+        m2_time = (t_map.get(2) or t_create) if m2_done else ''
 
         m3_done = trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m3_active = trip.status in [TripStatus.DISPATCHED, TripStatus.ACCEPTED, TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT]
-        m3_time = t_gate_in or t_map.get(6) or ''
+        m3_time = (t_gate_in or t_map.get(5) or t_map.get(6) or '') if m3_done else ''
 
         m4_done = trip.status in [TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
-        m4_active = trip.status == TripStatus.UNLOADING
-        m4_time = t_map.get(7) or t_gate_out or ''
+        m4_active = trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING]
+        m4_time = (t_map.get(7) or t_gate_out or '') if m4_done else ''
 
         m5_done = trip.status in [TripStatus.DELIVERED, TripStatus.COMPLETED]
         m5_active = trip.status == TripStatus.RETURNING_EMPTY
-        m5_time = t_map.get(9) or ''
+        m5_time = (t_map.get(9) or '') if m5_done else ''
 
-        m6_done = (trip.status in [TripStatus.DELIVERED, TripStatus.COMPLETED]) or has_pod
+        m6_done = trip.status in [TripStatus.DELIVERED, TripStatus.COMPLETED]
         m6_active = (trip.status == TripStatus.RETURNING_EMPTY) and not m6_done
-        m6_time = trip.actual_dropoff_time or t_map.get(9) or t_pod or ''
+        m6_time = (trip.actual_dropoff_time or t_map.get(9) or t_pod or '') if m6_done else ''
 
         milestones = [
             {
@@ -565,23 +566,23 @@ def build_customer_milestones(trip: DispatchTrip):
 
         m2_done = (trip.status != TripStatus.DRAFT) and bool(trip.vehicle)
         m2_active = (trip.status == TripStatus.DRAFT)
-        m2_time = t_map.get(2) or t_create
+        m2_time = (t_map.get(2) or t_create) if m2_done else ''
 
         m3_done = trip.status in [TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m3_active = trip.status in [TripStatus.DISPATCHED, TripStatus.ACCEPTED]
-        m3_time = t_map.get(4) or ''
+        m3_time = (t_map.get(3) or t_map.get(4) or '') if m3_done else ''
 
         m4_done = trip.status in [TripStatus.IN_TRANSIT, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m4_active = trip.status == TripStatus.CONTAINER_PICKED
-        m4_time = t_map.get(4) or ''
+        m4_time = (t_map.get(4) or '') if m4_done else ''
 
         m5_done = trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
-        m5_active = trip.status in [TripStatus.IN_TRANSIT, TripStatus.CONTAINER_PICKED]
-        m5_time = t_map.get(5) or ''
+        m5_active = trip.status == TripStatus.IN_TRANSIT
+        m5_time = (t_gate_in or t_map.get(5) or '') if m5_done else ''
 
-        m6_done = (trip.status in [TripStatus.DELIVERED, TripStatus.COMPLETED]) or has_pod
+        m6_done = trip.status in [TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m6_active = (trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING]) and not m6_done
-        m6_time = t_gate_out or t_map.get(8) or t_pod or ''
+        m6_time = (t_gate_out or t_map.get(8) or t_pod or '') if m6_done else ''
 
         milestones = [
             {
@@ -602,7 +603,7 @@ def build_customer_milestones(trip: DispatchTrip):
             },
             {
                 'step': 3,
-                'title': 'Đã đến kho hàng',
+                'title': 'Đã đến điểm nhận hàng',
                 'desc': f"Xe đã có mặt tại điểm nhận hàng: {pickup_name}",
                 'is_done': m3_done,
                 'is_active': m3_active,
@@ -642,23 +643,23 @@ def build_customer_milestones(trip: DispatchTrip):
 
         m2_done = (trip.status != TripStatus.DRAFT) and bool(trip.vehicle)
         m2_active = (trip.status == TripStatus.DRAFT)
-        m2_time = t_map.get(2) or t_create
+        m2_time = (t_map.get(2) or t_create) if m2_done else ''
 
         m3_done = trip.status in [TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m3_active = trip.status in [TripStatus.DISPATCHED, TripStatus.ACCEPTED]
-        m3_time = t_map.get(4) or ''
+        m3_time = (t_map.get(4) or (trip.actual_start_time.strftime('%H:%M %d/%m') if trip.actual_start_time else '')) if m3_done else ''
 
         m4_done = trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m4_active = trip.status in [TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT]
-        m4_time = t_map.get(5) or ''
+        m4_time = (t_map.get(5) or '') if m4_done else ''
 
         m5_done = trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
-        m5_active = trip.status == TripStatus.IN_TRANSIT
-        m5_time = t_gate_in or t_map.get(6) or ''
+        m5_active = (trip.status == TripStatus.IN_TRANSIT)
+        m5_time = (t_gate_in or t_map.get(5) or t_map.get(6) or '') if m5_done else ''
 
-        m6_done = (trip.status in [TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]) or has_pod
+        m6_done = trip.status in [TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]
         m6_active = (trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING]) and not m6_done
-        m6_time = t_gate_out or t_map.get(8) or t_pod or ''
+        m6_time = (t_gate_out or t_map.get(8) or t_pod or '') if m6_done else ''
 
         milestones = [
             {
@@ -718,5 +719,17 @@ def build_customer_milestones(trip: DispatchTrip):
             m['is_active'] = False
             if not m['time']:
                 m['time'] = t_create
+    elif trip.status == TripStatus.CANCELLED:
+        for m in milestones:
+            if m['step'] > 1:
+                m['is_done'] = False
+                m['is_active'] = False
+                m['time'] = ''
+
+    # Kiểm tra bảo toàn dữ liệu: Mốc chưa hoàn thành và không active thì tuyệt đối không được có timestamp
+    for m in milestones:
+        if not m['is_done'] and not m['is_active']:
+            m['time'] = ''
 
     return milestones
+

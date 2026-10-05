@@ -1938,6 +1938,46 @@ class BimLogisticsCoreTestCase(TestCase):
         res_404 = self.client.get('/tracking/INVALIDHASH999/')
         self.assertEqual(res_404.status_code, 404)
 
+    def test_customer_milestone_state_machine_integrity(self):
+        """Đảm bảo tính nhất quán máy trạng thái: Chuyến ở CONTAINER_PICKED tuyệt đối không đánh dấu bước 6 (POD) hoàn thành."""
+        from apps.dispatch.timeline_service import build_customer_milestones
+        from apps.documents.models import DocumentType, TripDocument
+
+        trip = DispatchTrip.objects.create(
+            trip_code="TRACK-STATE-001",
+            customer=self.customer,
+            vehicle=self.vehicle,
+            driver=self.driver,
+            dispatcher=self.dispatcher,
+            status=TripStatus.CONTAINER_PICKED,
+            shipment_type=ShipmentType.IMPORT,
+            container_number="MSKU-9988112",
+            container_type="40HC",
+            pickup_location="Cảng Cát Lái",
+            dropoff_location="Depot Tây Nam"
+        )
+
+        # Giả lập tài xế / admin upload trước file POD
+        TripDocument.objects.create(
+            trip=trip,
+            document_type=DocumentType.POD,
+            title="Biên bản giao nhận hàng (POD) (#1)",
+            file_path="/media/documents/test_pod.png"
+        )
+
+        milestones = build_customer_milestones(trip)
+        # Mốc 3 (Đã nhận hàng): is_done = True
+        self.assertTrue(milestones[2]['is_done'])
+        # Mốc 4 (Đang vận chuyển): is_active = True
+        self.assertTrue(milestones[3]['is_active'])
+        # Mốc 5 (Đã đến kho): is_done = False
+        self.assertFalse(milestones[4]['is_done'])
+        self.assertEqual(milestones[4]['time'], '')
+        # Mốc 6 (Đã giao thành công): is_done = False, time = '' (KHÔNG nhảy cóc)
+        self.assertFalse(milestones[5]['is_done'])
+        self.assertEqual(milestones[5]['time'], '')
+
+
     def test_touchpad_esignature_submission(self):
         """Kiểm thử tài xế tải lên chữ ký cảm ứng điện tử E-Signature chuyển trạng thái DELIVERED."""
         from django.core.files.uploadedfile import SimpleUploadedFile

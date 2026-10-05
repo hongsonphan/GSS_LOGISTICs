@@ -1198,6 +1198,8 @@ class TripDetailAPIView(APIView):
             'destination_port': trip.destination_port or '-',
             'vgm_weight': trip.vgm_weight or '-',
             'status': trip.status,
+            'status_label': trip.get_status_display(),
+            'status_display': trip.get_status_display(),
             'dispatched_at': trip.dispatched_at.isoformat() if trip.dispatched_at else None,
             'accepted_at': trip.accepted_at.isoformat() if trip.accepted_at else None,
             'declined_at': trip.declined_at.isoformat() if trip.declined_at else None,
