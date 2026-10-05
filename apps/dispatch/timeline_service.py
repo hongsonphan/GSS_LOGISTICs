@@ -20,6 +20,15 @@ STATUS_PROGRESSION = [
     TripStatus.COMPLETED,         # Bước 10: Hoàn tất & Chốt sổ kế toán
 ]
 
+def format_vietnam_time(dt, fmt='%H:%M %d/%m'):
+    """Chuyển đổi datetime sang chuẩn Giờ Địa Phương Việt Nam (Asia/Ho_Chi_Minh - UTC+7)."""
+    if not dt:
+        return ''
+    if hasattr(dt, 'tzinfo') and dt.tzinfo:
+        return timezone.localtime(dt).strftime(fmt)
+    return dt.strftime(fmt)
+
+
 def build_10_step_timeline_spec(trip: DispatchTrip):
     """
     Xây dựng đặc tả chi tiết 10 bước điều vận thực tế theo dữ liệu cụ thể của chuyến xe.
@@ -54,36 +63,36 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     eir_dropoff_url = docs_by_type.get(DocumentType.EIR_DROPOFF, {}).get('url', '')
     invoice_url = docs_by_type.get(DocumentType.INVOICE, {}).get('url', '')
 
-    # Chuẩn hoá ngày giờ cơ sở
+    # Chuẩn hoá ngày giờ cơ sở theo múi giờ Việt Nam
     created_dt = trip.created_at or timezone.now()
-    date_str = trip.loading_date.strftime('%d/%m') if trip.loading_date else created_dt.strftime('%d/%m')
-    t_create = created_dt.strftime('%H:%M %d/%m')
+    date_str = trip.loading_date.strftime('%d/%m') if trip.loading_date else format_vietnam_time(created_dt, '%d/%m')
+    t_create = format_vietnam_time(created_dt)
 
-    # Xử lý thời gian hợp lý theo chuỗi tiến trình thực tế (Tránh lệch giờ phi logic)
+    # Xử lý thời gian hợp lý theo chuỗi tiến trình thực tế của Tài xế / Điều vận
     if trip.actual_start_time:
         start_dt = trip.actual_start_time
-        t_pickup = start_dt.strftime('%H:%M %d/%m')
+        t_pickup = format_vietnam_time(start_dt)
         
         # Giờ phát lệnh phải trước hoặc cùng lúc xuất phát
         if trip.dispatched_at:
-            t_dispatch = trip.dispatched_at.strftime('%H:%M %d/%m')
+            t_dispatch = format_vietnam_time(trip.dispatched_at)
         else:
             disp_dt = created_dt if created_dt < start_dt else (start_dt - timedelta(hours=1))
-            t_dispatch = disp_dt.strftime('%H:%M %d/%m')
+            t_dispatch = format_vietnam_time(disp_dt)
 
         # Giờ tài xế xác nhận nhận chuyến
         if trip.accepted_at:
-            t_accept = trip.accepted_at.strftime('%H:%M %d/%m')
+            t_accept = format_vietnam_time(trip.accepted_at)
         else:
             acc_dt = min(start_dt, created_dt + timedelta(minutes=15))
-            t_accept = acc_dt.strftime('%H:%M %d/%m')
+            t_accept = format_vietnam_time(acc_dt)
     else:
         # Chưa xuất phát
-        t_dispatch = trip.dispatched_at.strftime('%H:%M %d/%m') if trip.dispatched_at else (
+        t_dispatch = format_vietnam_time(trip.dispatched_at) if trip.dispatched_at else (
             t_create if trip.status != TripStatus.DRAFT else 'Chờ phát lệnh'
         )
-        t_accept = trip.accepted_at.strftime('%H:%M %d/%m') if trip.accepted_at else (
-            (created_dt + timedelta(minutes=15)).strftime('%H:%M %d/%m') if trip.status not in [TripStatus.DRAFT, TripStatus.DISPATCHED] else 'Chờ tài xế nhận'
+        t_accept = format_vietnam_time(trip.accepted_at) if trip.accepted_at else (
+            format_vietnam_time(created_dt + timedelta(minutes=15)) if trip.status not in [TripStatus.DRAFT, TripStatus.DISPATCHED] else 'Chờ tài xế nhận'
         )
         t_pickup = f"Hẹn: {trip.loading_time or '08:00'} {date_str}"
 
@@ -91,13 +100,13 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     if trip.actual_gate_in_time and trip.actual_gate_in_time != '-':
         t_wh_in = trip.actual_gate_in_time
     elif trip.actual_gate_in_at:
-        t_wh_in = trip.actual_gate_in_at.strftime('%H:%M %d/%m')
+        t_wh_in = format_vietnam_time(trip.actual_gate_in_at)
     else:
         t_wh_in = f"ETA: {trip.eta_warehouse_time}" if (trip.eta_warehouse_time and trip.eta_warehouse_time != '-') else f"Hẹn: {trip.loading_time or '09:30'}"
 
     # Bước 6: Bắt đầu Đóng / Trả hàng tại kho
     if trip.unloading_started_at:
-        t_unload = trip.unloading_started_at.strftime('%H:%M %d/%m')
+        t_unload = format_vietnam_time(trip.unloading_started_at)
     elif trip.warehouse_call_in_time and trip.warehouse_call_in_time != '-':
         t_unload = trip.warehouse_call_in_time
     else:
@@ -107,7 +116,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     if trip.warehouse_call_out_time and trip.warehouse_call_out_time != '-':
         t_finish_unload = trip.warehouse_call_out_time
     elif trip.unloading_started_at:
-        t_finish_unload = (trip.unloading_started_at + timedelta(minutes=45)).strftime('%H:%M %d/%m')
+        t_finish_unload = format_vietnam_time(trip.unloading_started_at + timedelta(minutes=45))
     else:
         t_finish_unload = f"Hẹn: {trip.loading_time}" if trip.loading_time else f"Hẹn: {date_str}"
 
@@ -115,9 +124,9 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     if trip.actual_gate_out_time and trip.actual_gate_out_time != '-':
         t_wh_out = trip.actual_gate_out_time
     elif trip.actual_gate_out_at:
-        t_wh_out = trip.actual_gate_out_at.strftime('%H:%M %d/%m')
+        t_wh_out = format_vietnam_time(trip.actual_gate_out_at)
     elif docs_by_type.get(DocumentType.POD):
-        t_wh_out = docs_by_type[DocumentType.POD]['created_at'].strftime('%H:%M %d/%m')
+        t_wh_out = format_vietnam_time(docs_by_type[DocumentType.POD]['created_at'])
     else:
         t_wh_out = f"Sau đóng hàng"
 
@@ -125,7 +134,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     if trip.actual_dropoff_time and trip.actual_dropoff_time != '-':
         t_dropoff = trip.actual_dropoff_time
     elif trip.actual_dropoff_at:
-        t_dropoff = trip.actual_dropoff_at.strftime('%H:%M %d/%m')
+        t_dropoff = format_vietnam_time(trip.actual_dropoff_at)
     elif trip.dropoff_appointment_time and trip.dropoff_appointment_time != '-':
         t_dropoff = f"Hẹn: {trip.dropoff_appointment_time}"
     else:
@@ -133,7 +142,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
 
     # Bước 10: Tổng hợp chi phí & Đối soát
     if trip.settled_at:
-        t_settle = trip.settled_at.strftime('%H:%M %d/%m')
+        t_settle = format_vietnam_time(trip.settled_at)
     else:
         t_settle = 'Chờ chốt sổ' if trip.status == TripStatus.COMPLETED else ''
 

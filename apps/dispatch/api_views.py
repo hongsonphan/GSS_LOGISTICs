@@ -2950,7 +2950,9 @@ class TripDriverMilestoneAPIView(APIView):
 
         milestone_code = request.data.get('milestone')
         notes = request.data.get('notes', '')
-        now_str = timezone.now().strftime('%H:%M %d/%m')
+        now_dt = timezone.now()
+        local_now = timezone.localtime(now_dt)
+        now_str = request.data.get('custom_time', '').strip() or local_now.strftime('%H:%M %d/%m')
 
         mapping = {
             'APPROACHING_WAREHOUSE': {
@@ -3131,7 +3133,9 @@ class TripDriverIncidentAPIView(APIView):
         incident_type = request.data.get('incident_type', 'OTHER')
         notes = request.data.get('notes', '').strip()
         location_text = request.data.get('location', '').strip()
-        now_str = timezone.now().strftime('%H:%M %d/%m')
+        now_dt = timezone.now()
+        local_now = timezone.localtime(now_dt)
+        now_str = local_now.strftime('%H:%M %d/%m')
 
         type_labels = {
             'VEHICLE_BREAKDOWN': 'Hỏng xe / Nổ lốp / Sự cố kỹ thuật',
