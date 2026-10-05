@@ -109,6 +109,14 @@
                         </select>
                     </div>
 
+                    <!-- Nút Tùy Chỉnh Cột Hồ Sơ Nhân Sự -->
+                    <button type="button" onclick="openColumnCustomizer('employees-table')" 
+                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+
                     <button onclick="loadEmployeesData()" title="Làm mới danh sách" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer">
                         <i class="ph-bold ph-arrows-clockwise text-base"></i>
                     </button>
@@ -117,19 +125,19 @@
 
             <!-- Employee Data Table -->
             <div class="overflow-x-auto relative border-b border-slate-200 erp-table-container min-h-[380px] max-h-[calc(100vh-360px)] overflow-y-auto">
-                <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="employees-table">
+                <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="employees-table" data-table-title="Hồ Sơ Cán Bộ & Tài Xế">
                     <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
                         <tr>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Mã NV</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Họ Và Tên</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Biệt Danh</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Số Điện Thoại / Zalo</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Phòng Ban</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Chức Vụ</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">GPLX / Hạn Bằng</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200">Lương Cơ Bản</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200">Trạng Thái</th>
-                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center">Thao Tác</th>
+                            <th data-col-key="code" data-col-name="Mã NV" data-col-locked="true" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Mã NV</th>
+                            <th data-col-key="full_name" data-col-name="Họ Và Tên" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Họ Và Tên</th>
+                            <th data-col-key="nickname" data-col-name="Biệt Danh" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Biệt Danh</th>
+                            <th data-col-key="phone" data-col-name="Số Điện Thoại / Zalo" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Số Điện Thoại / Zalo</th>
+                            <th data-col-key="department" data-col-name="Phòng Ban" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Phòng Ban</th>
+                            <th data-col-key="role" data-col-name="Chức Vụ" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Chức Vụ</th>
+                            <th data-col-key="license" data-col-name="GPLX / Hạn Bằng" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">GPLX / Hạn Bằng</th>
+                            <th data-col-key="base_salary" data-col-name="Lương Cơ Bản" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200">Lương Cơ Bản</th>
+                            <th data-col-key="status" data-col-name="Trạng Thái" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200">Trạng Thái</th>
+                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium" id="employees-tbody">

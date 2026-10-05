@@ -134,6 +134,13 @@
                         class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs md:text-sm font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
                     <option value="ALL">Tất cả</option>
                 </select>
+                <!-- Nút Tùy Chỉnh Cột Danh Mục -->
+                <button type="button" onclick="openColumnCustomizer('md-main-table')" 
+                    class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                    title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                    <i class="ph-bold ph-columns text-teal-700"></i>
+                    <span>Cột</span>
+                </button>
                 <button onclick="reloadActiveMasterDataTab()" title="Làm mới dữ liệu" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer">
                     <i class="ph-bold ph-arrows-clockwise text-base"></i>
                 </button>
@@ -142,7 +149,7 @@
 
         <!-- Dynamic Data Table Container (Sticky Header & Scrollable Body) -->
         <div id="md-table-container" class="overflow-x-auto relative border-b border-slate-200 erp-table-container min-h-[420px] max-h-[calc(100vh-320px)] overflow-y-auto">
-            <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="md-main-table">
+            <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="md-main-table" data-table-title="Hệ Thống Danh Mục Cài Đặt">
                 <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200/90 shadow-2xs" id="md-table-head">
                     <!-- Populated dynamically based on active tab -->
                 </thead>
