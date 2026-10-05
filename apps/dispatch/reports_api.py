@@ -1106,6 +1106,7 @@ class ReportsAPIView(APIView):
                 'aging_31_60': 0,
                 'aging_61_90': 0,
                 'aging_over_90': 0,
+                'trips': [],
             }
 
         cash_inflows = CashTransaction.objects.filter(
@@ -1146,6 +1147,7 @@ class ReportsAPIView(APIView):
                         'aging_31_60': 0,
                         'aging_61_90': 0,
                         'aging_over_90': 0,
+                        'trips': [],
                     }
 
             c_entry = customer_ar_map[cid]
@@ -1176,6 +1178,24 @@ class ReportsAPIView(APIView):
                 c_entry['aging_61_90'] += total_rec
             else:
                 c_entry['aging_over_90'] += total_rec
+
+            if 'trips' not in c_entry:
+                c_entry['trips'] = []
+            c_entry['trips'].append({
+                'trip_id': item['trip_id'],
+                'trip_code': item['trip_code'],
+                'loading_date': item['loading_date'],
+                'vehicle_plate': item['vehicle_plate'],
+                'container_number': item['container_number'],
+                'route': item['route'],
+                'driver_name': item['driver_name'],
+                'revenue': rev,
+                'reimbursable': reim,
+                'total_receivable': total_rec,
+                'is_settled': item['is_settled'],
+                'has_pod': item['has_pod'],
+                'days_diff': days_diff
+            })
 
         ar_summary_list = []
         total_ar_receivable = 0

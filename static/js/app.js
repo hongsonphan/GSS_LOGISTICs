@@ -13071,9 +13071,92 @@ function formatMoneyVND(amount) {
 }
 
 let currentActiveReportSubtab = 'report-1';
+let currentActiveReportGroup = 'group-1';
+let currentReportViewMode = 'group'; // 'group' hoặc 'all'
+
+const REPORT_GROUP_MAPPING = {
+    'group-1': ['report-1', 'report-7', 'report-4'],
+    'group-2': ['report-2', 'report-3', 'report-5', 'report-6'],
+    'group-3': ['report-10', 'report-11', 'report-9', 'report-8'],
+    'group-4': ['report-13', 'report-12', 'report-14']
+};
+
+function switchReportGroup(groupId, autoSwitchFirstChild = true) {
+    currentActiveReportGroup = groupId;
+
+    // Cập nhật trạng thái hiển thị của 4 Card Nhóm Lớn
+    ['group-1', 'group-2', 'group-3', 'group-4'].forEach(g => {
+        const num = g.replace('group-', '');
+        const btn = document.getElementById(`report-group-btn-${num}`);
+        if (!btn) return;
+        if (g === groupId) {
+            btn.classList.add('active', 'border-teal-600', 'shadow-xs', 'ring-2', 'ring-teal-600/20');
+            btn.classList.remove('border-slate-200', 'hover:border-slate-300', 'shadow-2xs');
+        } else {
+            btn.classList.remove('active', 'border-teal-600', 'shadow-xs', 'ring-2', 'ring-teal-600/20');
+            btn.classList.add('border-slate-200', 'hover:border-slate-300', 'shadow-2xs');
+        }
+    });
+
+    // Lọc hiển thị các nút subtab con nếu ở chế độ 'group'
+    applyReportGroupFilterToButtons();
+
+    // Tự động kích hoạt báo cáo đầu tiên của nhóm nếu báo cáo hiện tại không nằm trong nhóm này
+    const groupReports = REPORT_GROUP_MAPPING[groupId] || [];
+    if (autoSwitchFirstChild && !groupReports.includes(currentActiveReportSubtab)) {
+        if (groupReports.length > 0) {
+            switchReportSubTab(groupReports[0]);
+        }
+    }
+}
+
+function toggleReportViewMode(mode) {
+    currentReportViewMode = mode;
+    const btnGroup = document.getElementById('btn-report-view-group');
+    const btnAll = document.getElementById('btn-report-view-all');
+
+    if (mode === 'all') {
+        if (btnAll) {
+            btnAll.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading bg-teal-700 text-white shadow-2xs transition-colors';
+        }
+        if (btnGroup) {
+            btnGroup.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors';
+        }
+    } else {
+        if (btnGroup) {
+            btnGroup.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading bg-slate-100 text-slate-800 hover:bg-slate-200 transition-colors';
+        }
+        if (btnAll) {
+            btnAll.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors';
+        }
+    }
+
+    applyReportGroupFilterToButtons();
+}
+
+function applyReportGroupFilterToButtons() {
+    const subtabButtons = document.querySelectorAll('.report-subtab-btn');
+    subtabButtons.forEach(btn => {
+        const btnGroup = btn.getAttribute('data-report-group');
+        if (currentReportViewMode === 'all' || btnGroup === currentActiveReportGroup) {
+            btn.classList.remove('hidden');
+        } else {
+            btn.classList.add('hidden');
+        }
+    });
+}
 
 function switchReportSubTab(subtabId) {
     currentActiveReportSubtab = subtabId;
+
+    // Tự động nhận diện và kích hoạt Nhóm cha tương ứng
+    for (const [grp, rpts] of Object.entries(REPORT_GROUP_MAPPING)) {
+        if (rpts.includes(subtabId) && currentActiveReportGroup !== grp) {
+            switchReportGroup(grp, false);
+            break;
+        }
+    }
+
     // Ẩn tất cả subtab content
     document.querySelectorAll('.report-subtab-content').forEach(el => el.classList.add('hidden'));
 
@@ -13093,8 +13176,13 @@ function switchReportSubTab(subtabId) {
     if (activeBtn) {
         activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
         activeBtn.classList.add('bg-teal-700', 'text-white', 'shadow-sm', 'active');
+        activeBtn.classList.remove('hidden'); // Đảm bảo nút được nhìn thấy
     }
 }
+
+window.switchReportGroup = switchReportGroup;
+window.toggleReportViewMode = toggleReportViewMode;
+window.switchReportSubTab = switchReportSubTab;
 
 function changeReportPeriod(period) {
     currentReportPeriod = period;
@@ -14435,6 +14523,7 @@ function toggleReport12Sort(col) {
 let rep13DataCache = [];
 let rep13SortCol = 'total_receivable';
 let rep13SortAsc = false;
+let currentStatementCustomer = null;
 
 function renderReport13(data) {
     const r13 = data.report13_ar_aging || {};
@@ -14501,12 +14590,14 @@ function applyReport13Filters() {
         const aging61Disp = canViewFinance ? formatMoneyVND(item.aging_61_90) : '***';
         const agingOver90Disp = canViewFinance ? formatMoneyVND(item.aging_over_90) : '***';
 
+        const custIdSafe = escapeHtml(String(item.customer_id || item.customer_code || ''));
+
         return `
             <tr class="hover:bg-slate-50 transition-colors">
                 <td class="font-bold text-xs text-slate-900">
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-1.5 cursor-pointer text-teal-800 hover:text-teal-900" onclick="viewCustomerARStatement('${custIdSafe}')">
                         <i class="ph-bold ph-buildings text-teal-700"></i>
-                        <span>${escapeHtml(item.customer_name)}</span>
+                        <span class="hover:underline">${escapeHtml(item.customer_name)}</span>
                     </div>
                     <div class="text-[10px] text-slate-400 font-mono">Mã: ${escapeHtml(item.customer_code)} · MST: ${escapeHtml(item.tax_code)}</div>
                 </td>
@@ -14525,14 +14616,240 @@ function applyReport13Filters() {
                 <td class="text-right text-xs text-orange-700 tabular-nums">${aging61Disp}</td>
                 <td class="text-right text-xs font-bold text-rose-700 tabular-nums">${agingOver90Disp}</td>
                 <td class="text-center">
-                    <button type="button" onclick="openReportTab('12')" class="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-[11px] font-bold transition-all" title="Xem danh sách chuyến của khách">
-                        Chi Tiết Chuyến
-                    </button>
+                    <div class="flex items-center justify-center gap-1">
+                        <button type="button" onclick="viewCustomerARStatement('${custIdSafe}')" class="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1" title="Xem bảng kê đối soát công nợ chi tiết (SOA)">
+                            <i class="ph-bold ph-eye text-xs"></i>
+                            <span>Đối Soát</span>
+                        </button>
+                        <button type="button" onclick="printCustomerARStatement('${custIdSafe}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1" title="In bảng kê đối soát công nợ A4 cho khách hàng">
+                            <i class="ph-bold ph-printer text-xs"></i>
+                            <span>In</span>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
 }
+
+function viewCustomerARStatement(customerId) {
+    const cust = rep13DataCache.find(c => String(c.customer_id) === String(customerId) || String(c.customer_code) === String(customerId));
+    if (!cust) {
+        showToast('Không tìm thấy dữ liệu đối soát của khách hàng', 'error');
+        return;
+    }
+    currentStatementCustomer = cust;
+
+    const modal = document.getElementById('modal-customer-ar-statement');
+    if (!modal) return;
+
+    // Cập nhật Header & Info
+    const elHeader = document.getElementById('modal-ar-soa-customer-header');
+    if (elHeader) elHeader.innerText = `Khách hàng: ${cust.customer_name} (${cust.customer_code || '-'})`;
+
+    const elCustName = document.getElementById('modal-ar-cust-name');
+    if (elCustName) elCustName.innerText = cust.customer_name;
+
+    const elCustCode = document.getElementById('modal-ar-cust-code');
+    if (elCustCode) elCustCode.innerText = cust.customer_code || '-';
+
+    const elCustTax = document.getElementById('modal-ar-cust-tax');
+    if (elCustTax) elCustTax.innerText = cust.tax_code || '-';
+
+    const elCustPhone = document.getElementById('modal-ar-cust-phone');
+    if (elCustPhone) elCustPhone.innerText = cust.contact_phone || '-';
+
+    // Cập nhật Thẻ Tiền
+    const elTotal = document.getElementById('modal-ar-cust-total');
+    if (elTotal) elTotal.innerText = formatMoneyVND(cust.total_receivable || 0);
+
+    const elSub = document.getElementById('modal-ar-cust-sub');
+    if (elSub) elSub.innerText = `Cước: ${formatMoneyVND(cust.freight_revenue || 0)} · Chi hộ: ${formatMoneyVND(cust.reimbursable_amount || 0)}`;
+
+    const elBalance = document.getElementById('modal-ar-cust-balance');
+    if (elBalance) elBalance.innerText = formatMoneyVND(cust.remaining_balance || 0);
+
+    const elCollected = document.getElementById('modal-ar-cust-collected');
+    if (elCollected) elCollected.innerText = `Đã thu: ${formatMoneyVND(cust.collected_amount || 0)}`;
+
+    const elCount = document.getElementById('modal-ar-trips-count');
+    if (elCount) elCount.innerText = `${cust.trips ? cust.trips.length : 0} Vận Đơn / Chuyến Xe`;
+
+    // Render Bảng Chuyến
+    const tbody = document.getElementById('modal-ar-trips-tbody');
+    if (tbody) {
+        const trips = cust.trips || [];
+        if (trips.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 font-medium">Không có chi tiết chuyến phát sinh trong kỳ</td></tr>`;
+        } else {
+            tbody.innerHTML = trips.map((t, idx) => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="text-center font-bold text-slate-500">${idx + 1}</td>
+                    <td class="font-bold text-teal-800 font-mono">${escapeHtml(t.trip_code)}</td>
+                    <td class="text-center text-slate-700">${escapeHtml(t.loading_date)}</td>
+                    <td class="text-slate-800 font-medium">${escapeHtml(t.vehicle_plate)} · <span class="text-slate-500">${escapeHtml(t.driver_name || '-')}</span></td>
+                    <td class="font-mono text-slate-700">${escapeHtml(t.container_number || '-')}</td>
+                    <td class="text-slate-700 truncate max-w-xs" title="${escapeHtml(t.route)}">${escapeHtml(t.route)}</td>
+                    <td class="text-right text-slate-900 font-medium tabular-nums">${formatMoneyVND(t.revenue || 0)}</td>
+                    <td class="text-right text-slate-600 tabular-nums">${formatMoneyVND(t.reimbursable || 0)}</td>
+                    <td class="text-right font-black text-slate-900 tabular-nums bg-slate-50">${formatMoneyVND(t.total_receivable || 0)}</td>
+                    <td class="text-center">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${t.has_pod ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                            ${t.has_pod ? 'Đã Nộp POD' : 'Thiếu POD'}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${t.is_settled ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'}">
+                            ${t.is_settled ? 'Đã Chốt' : 'Chưa Chốt'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closeCustomerARStatementModal() {
+    const modal = document.getElementById('modal-customer-ar-statement');
+    if (modal) modal.classList.add('hidden');
+}
+
+function printCurrentCustomerStatement() {
+    if (!currentStatementCustomer) return;
+    printCustomerARStatement(currentStatementCustomer.customer_id);
+}
+
+function printCustomerARStatement(customerId) {
+    const cust = rep13DataCache.find(c => String(c.customer_id) === String(customerId) || String(c.customer_code) === String(customerId));
+    if (!cust) {
+        showToast('Không tìm thấy thông tin khách hàng để in đối soát', 'error');
+        return;
+    }
+    currentStatementCustomer = cust;
+
+    // Thiết lập dữ liệu vào Modal In Báo Cáo chung với tiêu đề và định dạng Statement of Account
+    const modal = document.getElementById('modal-report-print');
+    if (!modal) {
+        window.print();
+        return;
+    }
+
+    // Đặt tiêu đề báo cáo in
+    const titleEl = document.getElementById('print-rep-title');
+    if (titleEl) titleEl.innerText = `BẢNG KÊ ĐỐI SOÁT CÔNG NỢ & CƯỚC VẬN CHUYỂN`;
+
+    const subTitleEl = document.getElementById('print-rep-subtitle');
+    if (subTitleEl) subTitleEl.innerText = `Khách hàng: ${cust.customer_name} (Mã: ${cust.customer_code || '-'} · MST: ${cust.tax_code || '-'})`;
+
+    // Thiết lập KPIs tóm tắt
+    const kpisContainer = document.getElementById('print-rep-kpis');
+    if (kpisContainer) {
+        kpisContainer.innerHTML = `
+            <div class="p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-left">
+                <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight block truncate">Tổng Cước Vận Tải</span>
+                <p class="text-base font-black text-slate-900 font-heading tabular-nums mt-0.5">${formatMoneyVND(cust.freight_revenue || 0)}</p>
+                <p class="text-[9.5px] text-slate-500 truncate mt-0.5">Cước hợp đồng chuyến</p>
+            </div>
+            <div class="p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-left">
+                <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight block truncate">Tổng Khoản Chi Hộ</span>
+                <p class="text-base font-black text-slate-900 font-heading tabular-nums mt-0.5">${formatMoneyVND(cust.reimbursable_amount || 0)}</p>
+                <p class="text-[9.5px] text-slate-500 truncate mt-0.5">Nâng hạ cảng, lưu cont, phụ phí</p>
+            </div>
+            <div class="p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-left">
+                <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight block truncate">Đã Thanh Toán</span>
+                <p class="text-base font-black text-emerald-700 font-heading tabular-nums mt-0.5">${formatMoneyVND(cust.collected_amount || 0)}</p>
+                <p class="text-[9.5px] text-emerald-700 truncate mt-0.5">Đã thu hồi qua quỹ/ngân hàng</p>
+            </div>
+            <div class="p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-left border-l-4 border-l-indigo-600">
+                <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight block truncate">Dư Nợ Còn Phải Trả</span>
+                <p class="text-base font-black text-indigo-700 font-heading tabular-nums mt-0.5">${formatMoneyVND(cust.remaining_balance || 0)}</p>
+                <p class="text-[9.5px] text-indigo-700 font-bold truncate mt-0.5">Số dư cần quyết toán đối soát</p>
+            </div>
+        `;
+    }
+
+    // Thiết lập Bảng In chi tiết từng chuyến
+    const theadEl = document.getElementById('print-rep-table-thead');
+    const tbodyEl = document.getElementById('print-rep-table-tbody');
+    const tfootEl = document.getElementById('print-rep-table-tfoot');
+    const wordsBox = document.getElementById('print-rep-words-box');
+    const wordsText = document.getElementById('print-rep-amount-words');
+
+    if (theadEl) {
+        theadEl.innerHTML = `
+            <tr>
+                <th class="border border-slate-400 p-2 text-center text-slate-900 font-bold bg-slate-100">STT</th>
+                <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Mã Chuyến</th>
+                <th class="border border-slate-400 p-2 text-center text-slate-900 font-bold bg-slate-100">Ngày Chạy</th>
+                <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Xe Kéo & Tài Xế</th>
+                <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Số Cont</th>
+                <th class="border border-slate-400 p-2 text-slate-900 font-bold bg-slate-100">Tuyến Vận Chuyển</th>
+                <th class="border border-slate-400 p-2 text-right text-slate-900 font-bold bg-slate-100">Cước Vận Tải</th>
+                <th class="border border-slate-400 p-2 text-right text-slate-900 font-bold bg-slate-100">Chi Hộ</th>
+                <th class="border border-slate-400 p-2 text-right text-slate-900 font-bold bg-slate-100 font-black">Tổng Phải Thu</th>
+                <th class="border border-slate-400 p-2 text-center text-slate-900 font-bold bg-slate-100">Tình Trạng POD</th>
+            </tr>
+        `;
+    }
+
+    const trips = cust.trips || [];
+    if (tbodyEl) {
+        if (trips.length === 0) {
+            tbodyEl.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 italic">Không có chi tiết chuyến phát sinh trong kỳ</td></tr>`;
+        } else {
+            tbodyEl.innerHTML = trips.map((t, idx) => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="border border-slate-300 p-1.5 text-center font-bold">${idx + 1}</td>
+                    <td class="border border-slate-300 p-1.5 font-bold font-mono text-slate-900">${escapeHtml(t.trip_code)}</td>
+                    <td class="border border-slate-300 p-1.5 text-center">${escapeHtml(t.loading_date)}</td>
+                    <td class="border border-slate-300 p-1.5">${escapeHtml(t.vehicle_plate)} · ${escapeHtml(t.driver_name || '')}</td>
+                    <td class="border border-slate-300 p-1.5 font-mono">${escapeHtml(t.container_number || '-')}</td>
+                    <td class="border border-slate-300 p-1.5">${escapeHtml(t.route)}</td>
+                    <td class="border border-slate-300 p-1.5 text-right font-mono">${formatMoneyVND(t.revenue || 0)}</td>
+                    <td class="border border-slate-300 p-1.5 text-right font-mono">${formatMoneyVND(t.reimbursable || 0)}</td>
+                    <td class="border border-slate-300 p-1.5 text-right font-mono font-bold">${formatMoneyVND(t.total_receivable || 0)}</td>
+                    <td class="border border-slate-300 p-1.5 text-center font-bold ${t.has_pod ? 'text-emerald-700' : 'text-rose-700'}">${t.has_pod ? 'Đã Nộp POD' : 'Thiếu POD'}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    if (tfootEl) {
+        tfootEl.innerHTML = `
+            <tr>
+                <td colspan="6" class="border border-slate-400 p-2 font-bold text-slate-950 bg-slate-100 text-right uppercase">TỔNG CỘNG ĐỐI SOÁT:</td>
+                <td class="border border-slate-400 p-2 font-bold text-slate-950 bg-slate-100 text-right font-mono">${formatMoneyVND(cust.freight_revenue || 0)}</td>
+                <td class="border border-slate-400 p-2 font-bold text-slate-950 bg-slate-100 text-right font-mono">${formatMoneyVND(cust.reimbursable_amount || 0)}</td>
+                <td class="border border-slate-400 p-2 font-black text-slate-950 bg-slate-100 text-right font-mono">${formatMoneyVND(cust.total_receivable || 0)}</td>
+                <td class="border border-slate-400 p-2 bg-slate-100"></td>
+            </tr>
+        `;
+    }
+
+    if (wordsBox && wordsText && typeof numberToWordsVN === 'function') {
+        const bal = cust.remaining_balance || cust.total_receivable || 0;
+        if (bal > 0) {
+            wordsBox.classList.remove('hidden');
+            wordsText.innerText = numberToWordsVN(bal);
+        } else {
+            wordsBox.classList.add('hidden');
+        }
+    }
+
+    // Đảm bảo đồng bộ thông tin pháp lý công ty Triền Võ lên header bản in
+    if (typeof syncCompanyProfileToPrintForms === 'function') {
+        syncCompanyProfileToPrintForms();
+    }
+
+    modal.classList.remove('hidden');
+}
+
+window.viewCustomerARStatement = viewCustomerARStatement;
+window.closeCustomerARStatementModal = closeCustomerARStatementModal;
+window.printCurrentCustomerStatement = printCurrentCustomerStatement;
+window.printCustomerARStatement = printCustomerARStatement;
 
 function toggleReport13Sort(col) {
     if (rep13SortCol === col) {

@@ -2,6 +2,47 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.4] - 2026-10-05 (Tái Cấu Trúc Gom 4 Nhóm Báo Cáo Chiến Lược & Nâng Cấp Báo Cáo Đối Soát Công Nợ Khách Hàng AR Aging)
+
+### 1. Tái Cấu Trúc Gom 14 Báo Cáo Quản Trị Thành 4 Nhóm Nghiệp Vụ Chuyên Sâu:
+- **Giải quyết bất cập UX thanh tab 14 nút dài:** Thay thế giao diện dàn trải bằng **4 Thẻ Nhóm Báo Cáo Chiến Lược (Group Category Cards)** kết hợp thanh điều hướng con (Sub-pills) mượt mà:
+  * **📊 Nhóm I: Doanh Thu & Hiệu Suất Đội Xe:**
+    - `report-1`: Hiệu Suất Đội Xe & P&L Chi Tiết Từng Đầu Xe (Vehicle Profit Center).
+    - `report-7`: Doanh Thu Khách Hàng & Sản Lượng TEU (Key Accounts Analysis).
+    - `report-4`: Chi Phí Tuyến Đường & Thu Hồi Tiền Chi Hộ Khách Hàng.
+  * **🚛 Nhóm II: Vận Hành, Hiện Trường & Ngoại Lệ:**
+    - `report-2`: Quản Lý Vỏ Cont & Cảnh Báo Hạn DEM/DET Hãng Tàu.
+    - `report-3`: Tỷ Lệ Giao Đúng Giờ (OTP / OTD & Delay Analytics).
+    - `report-5`: Bàn Giao Cắt Kéo & Neo Xe Qua Đêm Sau 0H.
+    - `report-6`: Biên Bản Ngoại Lệ & Sự Cố Hàng Hóa (OS&D Incident Reports).
+  * **💵 Nhóm III: Tài Chính, Sổ Quỹ & Chi Phí Lương:**
+    - `report-10`: Sổ Quỹ Tiền Mặt & Quỹ Tạm Ứng Điều Vận (Kế Toán Quản Lý).
+    - `report-11`: Tạm Ứng Dọc Đường & Kê Khai Chi Phí Lái Xe (Điều Vận Quản Lý).
+    - `report-9`: Bảng Lương Chuyến & Thu Nhập Lái Xe.
+    - `report-8`: Quyết Toán & Công Nợ Nhà Xe Thầu Phụ 3PL.
+  * **📑 Nhóm IV: Quyết Toán Chuyến, Công Nợ Phải Thu & Tuổi Đơn:**
+    - `report-13`: **Báo Cáo Công Nợ Phải Thu Khách Hàng (AR Aging & Đối Soát SOA)**.
+    - `report-12`: Báo Cáo Tiến Độ Quyết Toán Chuyến Xe & Backlog Tồn Đọng.
+    - `report-14`: Phân Tích Tuổi Đơn Hàng Tồn Đọng Chưa Khóa Sổ.
+- **Hỗ trợ chuyển đổi chế độ xem linh hoạt:** Nút toggle giữa chế độ **"Theo Nhóm"** (gọn gàng, tập trung) và **"Tất Cả (14)"** (truy cập nhanh toàn diện).
+
+### 2. Nâng Cấp Toàn Diện Phân Hệ Báo Cáo Công Nợ Khách Hàng (AR Aging & Đối Soát SOA):
+- **Cung cấp cấu trúc dữ liệu đối soát chi tiết từng chuyến đi (`trips: []`):**
+  * Backend API (`reports_api.py`) gom dữ liệu chuyến xe theo từng khách hàng (Mã chuyến, ngày chạy, xe kéo, bác tài, số container, tuyến đường, tiền cước vận tải, chi phí chi hộ, tổng tiền phải thu, tình trạng chứng từ POD, trạng thái quyết toán).
+- **Modal Bảng Kê Đối Soát Công Nợ Khách Hàng (`modal-customer-ar-statement`):**
+  * Hiển thị đầy đủ thông tin pháp lý của khách hàng (Tên công ty, Mã KH, MST, SĐT).
+  * 4 Thẻ chỉ số đối soát: Tổng Phát Sinh, Cước Vận Tải, Tiền Chi Hộ, Đã Thanh Toán, Dư Nợ Còn Phải Thu.
+  * Bảng danh sách chi tiết từng vận đơn/chuyến xe trong kỳ.
+- **In Bảng Kê Đối Soát Khách Hàng Khổ A4 Chuẩn Doanh Nghiệp (Statement of Account Print):**
+  * Tích hợp thương hiệu **CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ** (Logo TVL, MST, Trụ sở, Hotline).
+  * Bảng kê chuyến hàng có STT, mã chuyến, số cont, tuyến đường, cước, chi hộ, tổng tiền.
+  * Dòng tổng kết đối soát, số tiền bằng chữ tiếng Việt và 3 vị trí ký tên (Người lập biểu, Kế toán công nợ, Đại diện Khách hàng).
+
+### 3. Kiểm Thử Tự Động & Vận Hành:
+- **79/79 Unit Tests PASSED (100%)**.
+
+---
+
 ## [2.8.3] - 2026-10-05 (Tự Động Mở Phiếu Thu/Chi Khi Quyết Toán & Khai Báo Chi Nhánh / Bãi Xe Hệ Thống)
 
 ### 1. Tự Động Mở Ngay Phiếu Thu / Phiếu Chi Khi Quyết Toán Chuyến:
