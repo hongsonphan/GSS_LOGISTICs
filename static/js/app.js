@@ -252,6 +252,77 @@ function showToast(type, message, title = '') {
     }, 4500);
 }
 
+// --- GLOBAL ENTERPRISE CONFIRMATION MODAL (Bim_ERP-Solutions Standard) ---
+let _globalConfirmResolver = null;
+
+function showConfirmModal(options = {}) {
+    return new Promise((resolve) => {
+        _globalConfirmResolver = resolve;
+        const modal = document.getElementById('modal-global-confirm');
+        if (!modal) {
+            resolve(window.confirm(options.message || options.title || 'Xác nhận thao tác?'));
+            return;
+        }
+
+        const titleEl = document.getElementById('confirm-modal-title');
+        const msgEl = document.getElementById('confirm-modal-message');
+        const iconBox = document.getElementById('confirm-modal-icon-box');
+        const iconEl = document.getElementById('confirm-modal-icon');
+        const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+        const okBtn = document.getElementById('confirm-modal-ok-btn');
+        const okText = document.getElementById('confirm-modal-ok-text');
+        const okIcon = document.getElementById('confirm-modal-ok-icon');
+
+        const type = options.type || 'warning'; // 'warning' | 'danger' | 'success' | 'info'
+        const title = options.title || (type === 'danger' ? 'Xác Nhận Xóa Dữ Liệu' : 'Xác Nhận Thao Tác');
+        const message = options.message || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+        const confirmText = options.confirmText || (type === 'danger' ? 'Xác Nhận Xóa' : 'Đồng Ý');
+        const cancelText = options.cancelText || 'Huỷ bỏ';
+
+        if (titleEl) titleEl.innerText = title;
+        if (msgEl) msgEl.innerText = message;
+        if (cancelBtn) cancelBtn.innerText = cancelText;
+        if (okText) okText.innerText = confirmText;
+
+        if (iconBox && iconEl && okBtn) {
+            if (type === 'danger') {
+                iconBox.className = 'w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-rose-100 text-rose-600 shadow-xs';
+                iconEl.className = options.icon || 'ph-bold ph-trash text-2xl';
+                okBtn.className = 'px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all cursor-pointer';
+                if (okIcon) okIcon.className = 'ph-bold ph-trash text-sm';
+            } else if (type === 'success') {
+                iconBox.className = 'w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-700 shadow-xs';
+                iconEl.className = options.icon || 'ph-bold ph-seal-check text-2xl';
+                okBtn.className = 'px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all cursor-pointer';
+                if (okIcon) okIcon.className = 'ph-bold ph-check text-sm';
+            } else if (type === 'info') {
+                iconBox.className = 'w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-teal-100 text-teal-700 shadow-xs';
+                iconEl.className = options.icon || 'ph-bold ph-info text-2xl';
+                okBtn.className = 'px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all cursor-pointer';
+                if (okIcon) okIcon.className = 'ph-bold ph-arrow-right text-sm';
+            } else {
+                iconBox.className = 'w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-amber-100 text-amber-700 shadow-xs';
+                iconEl.className = options.icon || 'ph-bold ph-warning text-2xl';
+                okBtn.className = 'px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-1.5 transition-all cursor-pointer';
+                if (okIcon) okIcon.className = 'ph-bold ph-check text-sm';
+            }
+        }
+
+        modal.classList.remove('hidden');
+    });
+}
+
+function resolveGlobalConfirm(result) {
+    const modal = document.getElementById('modal-global-confirm');
+    if (modal) modal.classList.add('hidden');
+    if (typeof _globalConfirmResolver === 'function') {
+        _globalConfirmResolver(result);
+        _globalConfirmResolver = null;
+    }
+}
+window.showConfirmModal = showConfirmModal;
+window.resolveGlobalConfirm = resolveGlobalConfirm;
+
 // Biến lưu trữ biểu đồ và dữ liệu Dashboard
 let bgdRevenueChart = null;
 let bgdDonutChart = null;
@@ -3055,7 +3126,15 @@ async function submitDetentionUpdate() {
 async function confirmTripManually() {
     const trip = window.currentTripDetail;
     if (!trip) return;
-    if (!confirm(`Xác nhận bác tài ${trip.driver} ĐÃ NHẬN CHUYẾN ${trip.id} qua điện thoại?`)) return;
+    const confirmed = await showConfirmModal({
+        title: 'Xác Nhận Nhận Chuyến',
+        message: `Xác nhận bác tài ${trip.driver} ĐÃ NHẬN CHUYẾN ${trip.id} qua điện thoại?\n\nTrạng thái sẽ được chuyển sang ĐÃ NHẬN VIỆC (ACCEPTED).`,
+        confirmText: 'Xác Nhận Nhận Chuyến',
+        cancelText: 'Huỷ bỏ',
+        type: 'success',
+        icon: 'ph-bold ph-phone-call text-2xl'
+    });
+    if (!confirmed) return;
 
     try {
         const res = await fetchWithAuth(`/api/trips/${trip.id}/milestones/`, {
@@ -3728,7 +3807,14 @@ async function deleteExpensePrompt(expenseId, categoryName) {
         return;
     }
 
-    const confirmDelete = confirm(`Bạn có chắc chắn muốn xóa khoản chi "${categoryName}" này khỏi bảng kê chuyến xe?\nThao tác sẽ được lưu vết kiểm toán (Soft-Delete).`);
+    const confirmDelete = await showConfirmModal({
+        title: 'Xóa Khoản Chi Phí',
+        message: `Bạn có chắc chắn muốn xóa khoản chi "${categoryName}" này khỏi bảng kê chuyến xe?\n\nThao tác sẽ được lưu vết kiểm toán (Soft-Delete).`,
+        confirmText: 'Xác Nhận Xóa',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
     if (!confirmDelete) return;
 
     try {
@@ -3753,12 +3839,14 @@ async function deleteExpensePrompt(expenseId, categoryName) {
 async function settleTripExpenses() {
     if (!currentActiveTripCode) return;
     
-    const confirmSettle = confirm(
-        `XÁC NHẬN CHỐT SỔ KẾ TOÁN CHO CHUYẾN XE ${currentActiveTripCode}?\n\n` +
-        `• Toàn bộ chi phí thực tế sẽ chuyển sang trạng thái "ĐÃ CHỐT SỔ" (SETTLED).\n` +
-        `• Bảng kê sẽ bị khóa cứng (Read-only), ngăn chặn tài xế hoặc điều độ sửa đổi/xóa.\n` +
-        `• Số liệu sẽ được khóa để đối soát P&L và lập hóa đơn cước khách hàng.`
-    );
+    const confirmSettle = await showConfirmModal({
+        title: 'Chốt Sổ Kế Toán Chuyến Xe',
+        message: `Xác nhận CHỐT SỔ KẾ TOÁN cho chuyến xe [${currentActiveTripCode}]?\n\n• Toàn bộ chi phí thực tế sẽ chuyển sang trạng thái "ĐÃ CHỐT SỔ" (SETTLED).\n• Bảng kê sẽ bị khóa cứng (Read-only), ngăn chặn sửa đổi/xóa.\n• Số liệu được khóa để đối soát P&L và xuất hóa đơn.`,
+        confirmText: 'Chốt Khóa Sổ',
+        cancelText: 'Huỷ bỏ',
+        type: 'success',
+        icon: 'ph-bold ph-seal-check text-2xl'
+    });
     if (!confirmSettle) return;
 
     try {
@@ -3782,10 +3870,14 @@ async function settleTripExpenses() {
 async function unsettleTripExpenses() {
     if (!currentActiveTripCode) return;
     
-    const confirmUnsettle = confirm(
-        `MỞ KHÓA SỔ KẾ TOÁN CHO CHUYẾN XE ${currentActiveTripCode}?\n\n` +
-        `Lưu ý: Chỉ thực hiện khi cần điều chỉnh số liệu phát sinh sai sót hoặc bổ sung hóa đơn hợp lệ theo yêu cầu Kế toán trưởng.`
-    );
+    const confirmUnsettle = await showConfirmModal({
+        title: 'Mở Khóa Sổ Kế Toán',
+        message: `MỞ KHÓA SỔ KẾ TOÁN CHO CHUYẾN XE [${currentActiveTripCode}]?\n\nLưu ý: Chỉ thực hiện khi cần điều chỉnh số liệu phát sinh sai sót hoặc bổ sung hóa đơn hợp lệ.`,
+        confirmText: 'Mở Khóa Sổ',
+        cancelText: 'Huỷ bỏ',
+        type: 'warning',
+        icon: 'ph-bold ph-lock-open text-2xl'
+    });
     if (!confirmUnsettle) return;
 
     try {
@@ -3829,7 +3921,14 @@ async function driverDeleteExpense(expenseId) {
         return;
     }
 
-    const ok = confirm(`Tài xế xác nhận muốn xóa khoản chi: "${exp.category_name}" (${new Intl.NumberFormat('vi-VN').format(exp.amount)} đ) do nhập nhầm?`);
+    const ok = await showConfirmModal({
+        title: 'Hủy Khoản Chi Nhập Nhầm',
+        message: `Tài xế xác nhận muốn xóa khoản chi: "${exp.category_name}" (${new Intl.NumberFormat('vi-VN').format(exp.amount)} đ) do nhập nhầm?`,
+        confirmText: 'Xóa Khoản Chi',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
     if (!ok) return;
 
     try {
@@ -4426,7 +4525,15 @@ async function deleteSaleBookingExistingDoc(docId) {
         return;
     }
 
-    if (!confirm('Bạn có chắc chắn muốn xóa tài liệu này khỏi Booking?')) return;
+    const confirmed = await showConfirmModal({
+        title: 'Xóa Tài Liệu Booking',
+        message: 'Bạn có chắc chắn muốn xóa tài liệu này khỏi Booking không?\n\nThao tác sẽ gỡ bỏ tệp đính kèm khỏi hệ thống.',
+        confirmText: 'Xác Nhận Xóa',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
 
     try {
         const res = await fetchWithAuth(`/api/bookings/${currentEditingBookingId}/documents/${docId}/`, {
@@ -5130,7 +5237,15 @@ async function submitEmployeeForm(event) {
 }
 
 async function deleteEmployeeItem(id) {
-    if (!confirm('Bạn có chắc chắn muốn chuyển nhân sự này sang trạng thái tạm ngưng công tác?')) return;
+    const confirmed = await showConfirmModal({
+        title: 'Tạm Ngưng Nhân Sự',
+        message: 'Bạn có chắc chắn muốn chuyển nhân sự này sang trạng thái tạm ngưng công tác?\n\nDữ liệu lịch sử phân công và bảng lương vẫn được bảo lưu an toàn.',
+        confirmText: 'Tạm Ngưng',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-user-minus text-2xl'
+    });
+    if (!confirmed) return;
 
     try {
         const res = await fetchWithAuth(`/api/personnel/employees/${id}/`, {
@@ -5565,7 +5680,15 @@ async function changeQuotationStatus(quoteId, newStatus) {
 }
 
 async function deleteQuotation(quoteId) {
-    if (!confirm('Bạn có chắc chắn muốn xóa báo giá này không? Dữ liệu lịch sử sẽ được bảo lưu an toàn.')) return;
+    const confirmed = await showConfirmModal({
+        title: 'Xóa Báo Giá',
+        message: 'Bạn có chắc chắn muốn xóa báo giá này không?\n\nDữ liệu lịch sử sẽ được bảo lưu an toàn (Soft-Delete).',
+        confirmText: 'Xác Nhận Xóa',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
     try {
         const res = await fetchWithAuth(`/api/quotations/${quoteId}/`, {
             method: 'DELETE'
@@ -5920,7 +6043,15 @@ async function changeBookingStatus(bookingId, newStatus) {
 }
 
 async function deleteBooking(bookingId) {
-    if (!confirm('Bạn có chắc chắn muốn xóa / hủy đơn hàng này không? Dữ liệu lịch sử sẽ được bảo lưu an toàn.')) return;
+    const confirmed = await showConfirmModal({
+        title: 'Hủy / Xóa Đơn Hàng',
+        message: 'Bạn có chắc chắn muốn xóa / hủy đơn hàng này không?\n\nDữ liệu lịch sử sẽ được bảo lưu an toàn (Soft-Delete).',
+        confirmText: 'Xác Nhận Xóa',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
     try {
         const res = await fetchWithAuth(`/api/bookings/${bookingId}/`, {
             method: 'DELETE'
@@ -7653,9 +7784,15 @@ function filterAccountingTable() {
 
 async function toggleSettleTrip(tripCode, isCurrentlySettled) {
     if (isCurrentlySettled) {
-        if (!confirm(`Bạn có chắc chắn muốn MỞ KHÓA SỔ KẾ TOÁN cho chuyến xe [${tripCode}]?\nSau khi mở khóa, các khoản chi phí có thể bị sửa đổi hoặc xóa.`)) {
-            return;
-        }
+        const confirmed = await showConfirmModal({
+            title: 'Mở Khóa Sổ Kế Toán',
+            message: `Bạn có chắc chắn muốn MỞ KHÓA SỔ KẾ TOÁN cho chuyến xe [${tripCode}]?\n\nSau khi mở khóa, các khoản chi phí có thể bị sửa đổi hoặc xóa.`,
+            confirmText: 'Mở Khóa Sổ',
+            cancelText: 'Huỷ bỏ',
+            type: 'warning',
+            icon: 'ph-bold ph-lock-open text-2xl'
+        });
+        if (!confirmed) return;
         try {
             const res = await fetchWithAuth(`/api/trips/${tripCode}/unsettle-expenses/`, {
                 method: 'POST'
@@ -7671,9 +7808,15 @@ async function toggleSettleTrip(tripCode, isCurrentlySettled) {
             showToast('danger', 'Lỗi kết nối máy chủ');
         }
     } else {
-        if (!confirm(`XÁC NHẬN CHỐT SỔ KẾ TOÁN chuyến xe [${tripCode}]?\nToàn bộ chi phí đã duyệt sẽ được khóa cứng để làm căn cứ quyết toán và hạch toán thuế.`)) {
-            return;
-        }
+        const confirmed = await showConfirmModal({
+            title: 'Chốt Sổ Kế Toán',
+            message: `Xác nhận CHỐT SỔ KẾ TOÁN chuyến xe [${tripCode}]?\n\nToàn bộ chi phí đã duyệt sẽ được khóa cứng để làm căn cứ quyết toán và hạch toán thuế.`,
+            confirmText: 'Chốt Khóa Sổ',
+            cancelText: 'Huỷ bỏ',
+            type: 'success',
+            icon: 'ph-bold ph-seal-check text-2xl'
+        });
+        if (!confirmed) return;
         try {
             const res = await fetchWithAuth(`/api/trips/${tripCode}/settle-expenses/`, {
                 method: 'POST'
@@ -8767,9 +8910,15 @@ async function executePageSettlementSubmit() {
         return;
     }
 
-    if (!confirm(`Xác nhận khóa sổ và quyết toán gom ${tripIds.length} chuyến xe đã chọn? Hệ thống sẽ tự động cập nhật đối soát và hạch toán Sổ Quỹ.`)) {
-        return;
-    }
+    const confirmed = await showConfirmModal({
+        title: 'Khóa Sổ & Quyết Toán Gom Chuyến',
+        message: `Xác nhận khóa sổ và quyết toán gom ${tripIds.length} chuyến xe đã chọn?\n\nHệ thống sẽ tự động cập nhật đối soát chi phí, chốt hoàn ứng và hạch toán Sổ Quỹ Thu - Chi.`,
+        confirmText: `Quyết Toán (${tripIds.length} Chuyến)`,
+        cancelText: 'Huỷ bỏ',
+        type: 'success',
+        icon: 'ph-bold ph-seal-check text-2xl'
+    });
+    if (!confirmed) return;
 
     const notes = document.getElementById('page-settle-notes')?.value || '';
     const paymentMethod = document.getElementById('page-settle-payment-method')?.value || 'BANK';
@@ -8903,7 +9052,15 @@ async function submitDispatcherFundForm(e) {
 }
 
 async function approveDispatcherFund(fundId) {
-    if (!confirm('Xác nhận Kế toán / Ban Giám Đốc DUYỆT XUẤT QUỸ tạm ứng này cho bộ phận Điều vận?')) return;
+    const confirmed = await showConfirmModal({
+        title: 'Duyệt Xuất Quỹ Điều Vận',
+        message: 'Xác nhận Kế toán / Ban Giám Đốc DUYỆT XUẤT QUỸ tạm ứng này cho bộ phận Điều vận?\n\nHệ thống sẽ chuyển trạng thái Quỹ sang ĐÃ DUYỆT (APPROVED).',
+        confirmText: 'Duyệt Xuất Quỹ',
+        cancelText: 'Huỷ bỏ',
+        type: 'success',
+        icon: 'ph-bold ph-seal-check text-2xl'
+    });
+    if (!confirmed) return;
     try {
         const res = await fetchWithAuth(`/api/accounting/dispatcher-funds/${fundId}/action/`, {
             method: 'POST',
@@ -9302,7 +9459,15 @@ async function handleSaveDebitNote(e) {
 }
 
 async function settleSingleReimbursement(expenseId) {
-    if (!confirm('Xác nhận Khách hàng đã hoàn tiền cho khoản chi hộ này và tự động ghi vào Sổ Quỹ?')) return;
+    const confirmed = await showConfirmModal({
+        title: 'Thu Hồi Chi Hộ',
+        message: 'Xác nhận Khách hàng đã hoàn tiền cho khoản chi hộ này?\n\nHệ thống sẽ tự động hạch toán Phiếu Thu vào Sổ Quỹ.',
+        confirmText: 'Thu Hồi Tiền',
+        cancelText: 'Huỷ bỏ',
+        type: 'success',
+        icon: 'ph-bold ph-hand-coins text-2xl'
+    });
+    if (!confirmed) return;
     try {
         const res = await fetchWithAuth('/api/accounting/reimbursables/', {
             method: 'POST',
@@ -11612,7 +11777,15 @@ async function submitMasterDataForm(e) {
 
 // Delete Item (Soft-delete)
 async function deleteMasterDataItem(id) {
-    if (!confirm('Bạn có chắc chắn muốn xóa bản ghi này khỏi danh mục không?')) return;
+    const confirmed = await showConfirmModal({
+        title: 'Xóa Danh Mục',
+        message: 'Bạn có chắc chắn muốn xóa bản ghi này khỏi danh mục không?\n\nDữ liệu lịch sử sẽ được bảo lưu an toàn (Soft-Delete).',
+        confirmText: 'Xóa Bản Ghi',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
 
     const endpoints = {
         'driver_tariffs': `/api/master-data/driver-tariffs/${id}/`,
@@ -13907,7 +14080,15 @@ async function quickToggleCustomsTax(id) {
 }
 
 async function deleteCustomsDeclaration(id) {
-    if (!confirm('Bạn có chắc chắn muốn xóa tờ khai hải quan này vào thùng rác không?')) return;
+    const confirmed = await showConfirmModal({
+        title: 'Xóa Tờ Khai Hải Quan',
+        message: 'Bạn có chắc chắn muốn xóa tờ khai hải quan này không?\n\nDữ liệu lịch sử sẽ được bảo lưu an toàn (Soft-Delete).',
+        confirmText: 'Xóa Tờ Khai',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
     try {
         const res = await fetchWithAuth(`/api/customs/declarations/${id}/`, {
             method: 'DELETE'

@@ -1,0 +1,45 @@
+<!-- BIM LOGISTICS — GLOBAL ENTERPRISE CONFIRMATION & ALERT MODAL DIALOG -->
+<div id="modal-global-confirm" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+    <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all animate-scale-up">
+        
+        <!-- Header / Close button -->
+        <div class="pt-5 px-6 pb-2 flex items-start justify-between">
+            <div class="flex items-center gap-3">
+                <div id="confirm-modal-icon-box" class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs bg-amber-100 text-amber-700">
+                    <i id="confirm-modal-icon" class="ph-bold ph-warning text-2xl"></i>
+                </div>
+                <div>
+                    <h3 id="confirm-modal-title" class="text-base sm:text-lg font-black text-slate-900 font-heading leading-snug">
+                        Xác nhận thao tác
+                    </h3>
+                    <p id="confirm-modal-subtitle" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-heading">
+                        BIM Logistics TMS & ERP
+                    </p>
+                </div>
+            </div>
+            <button type="button" onclick="resolveGlobalConfirm(false)" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="Đóng">
+                <i class="ph-bold ph-x text-base"></i>
+            </button>
+        </div>
+
+        <!-- Body Message -->
+        <div class="px-6 py-3">
+            <div id="confirm-modal-message" class="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-2xs">
+                Bạn có chắc chắn muốn thực hiện hành động này?
+            </div>
+        </div>
+
+        <!-- Footer Action Buttons -->
+        <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-2.5">
+            <button type="button" id="confirm-modal-cancel-btn" onclick="resolveGlobalConfirm(false)" 
+                class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold font-heading shadow-2xs transition-all cursor-pointer">
+                Huỷ bỏ
+            </button>
+            <button type="button" id="confirm-modal-ok-btn" onclick="resolveGlobalConfirm(true)" 
+                class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black font-heading shadow-sm flex items-center gap-1.5 transition-all cursor-pointer">
+                <i id="confirm-modal-ok-icon" class="ph-bold ph-check text-sm"></i>
+                <span id="confirm-modal-ok-text">Xác nhận</span>
+            </button>
+        </div>
+    </div>
+</div>
