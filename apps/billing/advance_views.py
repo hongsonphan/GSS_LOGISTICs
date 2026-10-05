@@ -497,7 +497,10 @@ class DriverBatchSettlementQueryAPIView(APIView):
         group_by = request.query_params.get('group_by', 'driver') # 'driver', 'customer', 'vehicle', 'date'
         settle_filter = request.query_params.get('settlement_status', 'ALL') # 'ALL', 'PENDING', 'SETTLED'
 
-        trips_qs = DispatchTrip.objects.filter(is_deleted=False).select_related(
+        trips_qs = DispatchTrip.objects.filter(
+            is_deleted=False,
+            status=TripStatus.COMPLETED
+        ).select_related(
             'driver', 'vehicle', 'customer', 'booking_order'
         ).prefetch_related(
             'expenses', 'driver_advances', 'documents'
@@ -663,6 +666,14 @@ class DriverBatchSettlementExecuteAPIView(APIView):
         trips = DispatchTrip.objects.filter(id__in=trip_ids, is_deleted=False).select_related('driver', 'vehicle')
         if not trips.exists():
             return Response({'error': 'Không tìm thấy các chuyến xe tương ứng'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Kiểm tra điều kiện chỉ quyết toán các chuyến đã COMPLETED
+        uncompleted_trips = trips.exclude(status=TripStatus.COMPLETED)
+        if uncompleted_trips.exists():
+            codes = ", ".join(uncompleted_trips.values_list('trip_code', flat=True)[:3])
+            return Response({
+                'error': f'Không thể quyết toán vì có chuyến chưa hoàn thành ({codes}). Chỉ được quyết toán các chuyến đã ở trạng thái ĐÃ HOÀN THÀNH (COMPLETED)!'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
         total_advance_all = 0
