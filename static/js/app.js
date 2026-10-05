@@ -429,11 +429,7 @@ function setDashboardPeriod(period, label) {
     } else if (currentTab === 'quyet-toan') {
         loadSettlementData();
     } else if (currentTab === 'ke-toan') {
-        if (currentAccountingSubTab === 'acct-reports') {
-            loadAccountingReportData();
-        } else {
-            switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
-        }
+        switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
     } else if (currentTab === 'bao-cao') {
         const reportPeriodMap = {
             'today': 'today',
@@ -8163,12 +8159,11 @@ function switchAccountingSubTab(subtabId) {
     // Active button tương ứng (Thứ tự mới: 1. Cashbook, 2. Driver Adv, 3. Dispatcher Fund, 4. Settlements, 5. Reimbursables, 6. Subcontractors, 7. BOT)
     let btnId = 'acct-tab-btn-1';
     if (subtabId === 'acct-driver-advances') btnId = 'acct-tab-btn-2';
-    if (subtabId === 'acct-dispatcher-funds') btnId = 'acct-tab-btn-3';
-    if (subtabId === 'acct-settlements') btnId = 'acct-tab-btn-4';
-    if (subtabId === 'acct-reimbursables') btnId = 'acct-tab-btn-5';
-    if (subtabId === 'acct-subcontractors') btnId = 'acct-tab-btn-6';
-    if (subtabId === 'acct-bot-audit') btnId = 'acct-tab-btn-7';
-    if (subtabId === 'acct-reports') btnId = 'acct-tab-btn-8';
+    else if (subtabId === 'acct-dispatcher-funds') btnId = 'acct-tab-btn-3';
+    else if (subtabId === 'acct-settlements') btnId = 'acct-tab-btn-4';
+    else if (subtabId === 'acct-reimbursables') btnId = 'acct-tab-btn-5';
+    else if (subtabId === 'acct-subcontractors') btnId = 'acct-tab-btn-6';
+    else if (subtabId === 'acct-bot-audit') btnId = 'acct-tab-btn-7';
 
     const activeBtn = document.getElementById(btnId);
     if (activeBtn) {
@@ -8188,8 +8183,6 @@ function switchAccountingSubTab(subtabId) {
         loadSubcontractorData();
     } else if (subtabId === 'acct-bot-audit') {
         loadBotAuditData();
-    } else if (subtabId === 'acct-reports') {
-        loadAccountingReportData();
     } else {
         loadCashBookData();
     }
