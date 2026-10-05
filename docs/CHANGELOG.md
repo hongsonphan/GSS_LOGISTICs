@@ -2,6 +2,41 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.0] - 2026-10-05 (Khai Báo Hệ Thống & Cấu Hình Thông Tin Doanh Nghiệp trong Danh Mục Master Data)
+
+### 1. Phân Hệ Khai Báo Hệ Thống (Master Data System Settings):
+- **Model `CompanyProfile` (`apps/master_data/models.py`):**
+  * Lưu trữ đầy đủ pháp nhân doanh nghiệp: Tên pháp nhân công ty, Tên viết tắt / Thương hiệu, Mã số thuế (MST), Giấy phép kinh doanh vận tải, Người đại diện pháp luật & Chức vụ.
+  * Thông tin trụ sở chính, Hotline / Điện thoại điều hành, Email liên hệ, Website cổng thông tin.
+  * Tài khoản ngân hàng giao dịch doanh nghiệp (Số tài khoản, Tên ngân hàng, Chi nhánh).
+  * Tham số vận hành & tính cước mặc định: Thuế suất VAT mặc định (%), Giá dầu tham chiếu chuẩn (VNĐ/Lít), Hệ số quy đổi CBM (Divisor: 5000).
+  * Phương thức `get_default_company()` tự động khởi tạo và truy xuất cấu hình công ty chuẩn.
+- **RESTful APIs (`apps/master_data/api_views.py` & `urls.py`):**
+  * `GET /api/master-data/company/`: Lấy dữ liệu hồ sơ công ty và cấu hình hệ thống.
+  * `PUT` / `POST /api/master-data/company/`: Cập nhật linh hoạt thông tin doanh nghiệp và tham số hệ thống.
+  * Tích hợp `company_name` vào `GET /api/master-data/summary/`.
+
+### 2. Giao Diện Người Dùng Chuẩn UI/UX BIM Ecosystem (`view_master_data.html` & `app.js`):
+- **KPI Pill & Tab Khai Báo Hệ Thống:**
+  * Top KPI Pill `🏢 Hệ Thống: Triền Võ` cho phép truy cập nhanh thông tin công ty.
+  * Sub-tab `🏢 Khai Báo Hệ Thống` nằm ở vị trí đầu tiên trong thanh điều hướng danh mục.
+- **Card Tổng Quan Thông Tin Doanh Nghiệp (`renderCompanyProfileView`):**
+  * Header Banner nhận diện thương hiệu với logo/icon, tên đầy đủ, MST, trạng thái hoạt động và nút `Hiệu Chỉnh Thông Tin`.
+  * 4 Card cấu trúc rõ ràng:
+    1. *Pháp Lý & Định Danh Doanh Nghiệp*
+    2. *Trụ Sở & Kênh Liên Lạc*
+    3. *Tài Khoản Ngân Hàng Giao Dịch*
+    4. *Tham Số Vận Hành & Tính Cước Mặc Định*
+- **Modal Hiệu Chỉnh Thông Tin Doanh Nghiệp:**
+  * Hỗ trợ form nhập liệu chuẩn với các nhóm trường thông tin phân loại khoa học và kiểm tra hợp lệ dữ liệu.
+
+### 3. Kiểm Thử Tự Động & Vận Hành An Toàn:
+- Bổ sung `test_company_profile_crud` trong `apps/master_data/tests.py`.
+- **78/78 Unit Tests PASSED (100% Zero-Regression)**.
+- Triển khai và đồng bộ thành công lên máy chủ VPS production (`ubuntu@149.118.60.194`).
+
+---
+
 ## [2.7.4] - 2026-10-05 (Hệ Thống Bản In Báo Cáo Quản Trị Doanh Nghiệp A4 & Đồng Bộ Nhận Diện Triền Võ Logistics)
 
 ### 1. Bản In Báo Cáo Quản Trị Doanh Nghiệp Chuẩn A4 (`modal_report_print.html`):
