@@ -237,20 +237,41 @@
                 <table class="erp-table whitespace-nowrap" id="rep1-pnl-table" data-table-title="Báo Cáo P&L Từng Đầu Xe">
                     <thead>
                         <tr>
-                            <th onclick="toggleReport1Sort('plate')" class="cursor-pointer">Biển Số Xe</th>
-                            <th onclick="toggleReport1Sort('vehicle_type')" class="cursor-pointer">Loại Phương Tiện</th>
-                            <th onclick="toggleReport1Sort('ownership')" class="cursor-pointer">Sở Hữu</th>
-                            <th onclick="toggleReport1Sort('driver')" class="cursor-pointer">Tài Xế Mặc Định</th>
-                            <th onclick="toggleReport1Sort('trips_count')" class="cursor-pointer text-center">Số Chuyến</th>
-                            <th onclick="toggleReport1Sort('revenue')" class="cursor-pointer text-right">Doanh Thu</th>
-                            <th onclick="toggleReport1Sort('expense')" class="cursor-pointer text-right">Chi Phí</th>
-                            <th onclick="toggleReport1Sort('profit')" class="cursor-pointer text-right">Lợi Nhuận Gộp</th>
-                            <th onclick="toggleReport1Sort('margin_percent')" class="cursor-pointer text-center">Biên LN (%)</th>
+                            <th onclick="toggleReport1Sort('plate')" class="cursor-pointer hover:bg-slate-100">
+                                <div class="flex items-center gap-1"><span>Biển Số Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('vehicle_type')" class="cursor-pointer hover:bg-slate-100">
+                                <div class="flex items-center gap-1"><span>Loại Phương Tiện</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('ownership')" class="cursor-pointer hover:bg-slate-100">
+                                <div class="flex items-center gap-1"><span>Sở Hữu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('driver')" class="cursor-pointer hover:bg-slate-100">
+                                <div class="flex items-center gap-1"><span>Tài Xế Mặc Định</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center">
+                                <div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right">
+                                <div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('expense')" class="cursor-pointer hover:bg-slate-100 text-right">
+                                <div class="flex items-center justify-end gap-1"><span>Chi Phí</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('profit')" class="cursor-pointer hover:bg-slate-100 text-right">
+                                <div class="flex items-center justify-end gap-1"><span>Lợi Nhuận Gộp</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('margin_percent')" class="cursor-pointer hover:bg-slate-100 text-center">
+                                <div class="flex items-center justify-center gap-1"><span>Biên LN (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep1-pnl-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep1-pnl-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -322,6 +343,9 @@
                     <tbody class="divide-y divide-slate-100" id="rep2-shipping-lines-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep2-shipping-lines-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -348,20 +372,23 @@
                 <table class="erp-table whitespace-nowrap" id="rep2-containers-table" data-table-title="Chi Tiết Vỏ Cont & Hạn DEM/DET">
                     <thead>
                         <tr>
-                            <th>Số Container</th>
-                            <th>Mã Chuyến</th>
-                            <th>Khách Hàng</th>
-                            <th>Hãng Tàu</th>
-                            <th>Vị Trí Hiện Tại</th>
-                            <th class="text-center">Free DET (Ngày)</th>
-                            <th>Hạn Trả Vỏ</th>
-                            <th class="text-center">Trạng Thái Hạn</th>
-                            <th class="text-right">Tiền Phạt Ước Tính</th>
+                            <th onclick="toggleReport2Sort('container_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Container</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('shipping_line')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hãng Tàu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('location_type')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Vị Trí Hiện Tại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('det_free_days')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Free DET (Ngày)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('det_expiry_date')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hạn Trả Vỏ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('det_status')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Trạng Thái Hạn</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport2Sort('estimated_fines')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tiền Phạt Ước Tính</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep2-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep2-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -416,20 +443,23 @@
                 <table class="erp-table whitespace-nowrap" id="rep3-otp-table" data-table-title="Đúng Giờ & Chỉ Số OTP/SLA">
                     <thead>
                         <tr>
-                            <th>Mã Chuyến</th>
-                            <th>Khách Hàng</th>
-                            <th>Tuyến Vận Tải</th>
-                            <th>Tài Xế & Biển Số</th>
-                            <th>Giờ Hẹn Kho</th>
-                            <th>Giờ Vào Cổng Thực Tế</th>
-                            <th>Hạn Cắt Máng</th>
-                            <th class="text-center">Đúng Giờ?</th>
+                            <th onclick="toggleReport3Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport3Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport3Sort('route')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tuyến Vận Tải</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport3Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế & Biển Số</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport3Sort('loading_time')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Giờ Hẹn Kho</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport3Sort('gate_in_time')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Giờ Vào Cổng Thực Tế</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport3Sort('closing_time')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hạn Cắt Máng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport3Sort('is_on_time')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Đúng Giờ?</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Nguyên Nhân Trễ (Nếu có)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep3-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep3-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -484,19 +514,22 @@
                 <table class="erp-table whitespace-nowrap" id="rep4-expenses-table" data-table-title="Chi Phí Tuyến & Thu Hồi Chi Hộ">
                     <thead>
                         <tr>
-                            <th>Mã Chuyến</th>
-                            <th>Khách Hàng</th>
-                            <th>Khoản Mục Chi Hộ</th>
-                            <th>Phân Loại</th>
-                            <th class="text-right">Số Tiền (VNĐ)</th>
-                            <th>Số Hóa Đơn / Chứng Từ</th>
-                            <th>Ngày Phát Sinh</th>
-                            <th class="text-center">Tình Trạng Thu Hồi</th>
+                            <th onclick="toggleReport4Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport4Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport4Sort('expense_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khoản Mục Chi Hộ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport4Sort('expense_type')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Phân Loại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport4Sort('amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Số Tiền (VNĐ)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport4Sort('invoice_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Hóa Đơn / Chứng Từ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport4Sort('date')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Ngày Phát Sinh</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport4Sort('is_settled')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tình Trạng Thu Hồi</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep4-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep4-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -546,24 +579,27 @@
                 <table class="erp-table whitespace-nowrap" id="rep5-layover-table" data-table-title="Cắt Kéo & Lưu Xe Sau 0H">
                     <thead>
                         <tr>
-                            <th>Mã Chuyến</th>
-                            <th>Khách Hàng</th>
-                            <th>Container</th>
-                            <th>Hình Thức</th>
-                            <th>Tài / Xe Chặng 1</th>
-                            <th>Tài / Xe Chặng 2</th>
-                            <th>Giờ Ra Kho</th>
-                            <th>Hẹn Hạ (Sau 0H)</th>
-                            <th>Hạ Thực Tế</th>
-                            <th class="text-center">Số Giờ Chờ</th>
-                            <th class="text-right">Phí Thu Khách</th>
-                            <th class="text-right">Phụ Cấp TX</th>
+                            <th onclick="toggleReport5Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('container_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Container</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('is_split_trip')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hình Thức</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('driver_leg1')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài / Xe Chặng 1</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('driver_leg2')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài / Xe Chặng 2</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('gate_out_time')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Giờ Ra Kho</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('appointment_dropoff')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hẹn Hạ (Sau 0H)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('actual_dropoff')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hạ Thực Tế</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('wait_hours')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Số Giờ Chờ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('detention_fee')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Phí Thu Khách</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport5Sort('driver_allowance')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Phụ Cấp TX</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Lý Do Chờ / Ghi Chú</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep5-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep5-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -608,21 +644,24 @@
                 <table class="erp-table whitespace-nowrap" id="rep6-osd-table" data-table-title="Ngoại Lệ & Sự Cố OS&D">
                     <thead>
                         <tr>
-                            <th>Mã Chuyến</th>
-                            <th>Ngày</th>
-                            <th>Khách Hàng</th>
-                            <th>Số Container</th>
-                            <th>Số Seal</th>
-                            <th>Phân Loại Sự Cố</th>
+                            <th onclick="toggleReport6Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport6Sort('date')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Ngày</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport6Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport6Sort('container_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Container</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport6Sort('seal_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Seal</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport6Sort('issue_type')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Phân Loại Sự Cố</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Mô Tả Chi Tiết</th>
-                            <th class="text-right">Thiệt Hại Ước Tính</th>
+                            <th onclick="toggleReport6Sort('estimated_damage')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Thiệt Hại Ước Tính</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-center">Biên Bản & Ảnh POD</th>
-                            <th>Tình Trạng Giải Quyết</th>
+                            <th onclick="toggleReport6Sort('resolution_status')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tình Trạng Giải Quyết</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep6-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep6-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -678,22 +717,25 @@
                 <table class="erp-table whitespace-nowrap" id="rep7-customer-table" data-table-title="Doanh Thu Khách Hàng & Sản Lượng TEU">
                     <thead>
                         <tr>
-                            <th onclick="toggleReport7Sort('customer_name')" class="cursor-pointer">Tên Khách Hàng</th>
-                            <th>Mã KH</th>
-                            <th onclick="toggleReport7Sort('trips_count')" class="cursor-pointer text-center">Số Chuyến</th>
-                            <th onclick="toggleReport7Sort('total_teu')" class="cursor-pointer text-center text-teal-800 font-black">Tổng TEU</th>
-                            <th class="text-center">20ft</th>
-                            <th class="text-center">40ft</th>
-                            <th class="text-center">45ft</th>
+                            <th onclick="toggleReport7Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tên Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('customer_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã KH</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('total_teu')" class="cursor-pointer hover:bg-slate-100 text-center text-teal-800 font-black"><div class="flex items-center justify-center gap-1"><span>Tổng TEU</span><i class="ph-bold ph-arrows-down-up text-[11px] text-teal-600"></i></div></th>
+                            <th onclick="toggleReport7Sort('teu_20_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>20ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('teu_40_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>40ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('teu_45_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>45ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Tuyến Vận Chuyển Chủ Lực</th>
-                            <th onclick="toggleReport7Sort('revenue')" class="cursor-pointer text-right">Doanh Thu</th>
-                            <th onclick="toggleReport7Sort('revenue_share')" class="cursor-pointer text-center">Tỷ Trọng (%)</th>
-                            <th onclick="toggleReport7Sort('margin_percent')" class="cursor-pointer text-center">Biên LN (%)</th>
+                            <th onclick="toggleReport7Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('revenue_share')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tỷ Trọng (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('margin_percent')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Biên LN (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep7-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep7-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -749,20 +791,23 @@
                 <table class="erp-table whitespace-nowrap" id="rep8-subcontractor-summary-table" data-table-title="Công Nợ Nhà Xe Thầu Phụ">
                     <thead>
                         <tr>
-                            <th>Nhà Xe Thầu Phụ</th>
+                            <th onclick="toggleReport8SubSort('subcontractor_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Nhà Xe Thầu Phụ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Người Liên Hệ / SĐT</th>
                             <th>Tài Khoản Thụ Hưởng (Xuất UNC)</th>
-                            <th class="text-center">Số Chuyến</th>
-                            <th class="text-right">Tổng Cước Thỏa Thuận</th>
-                            <th class="text-right">Tạm Ứng</th>
-                            <th class="text-right">Đã Thanh Toán</th>
-                            <th class="text-right font-black text-rose-700">Công Nợ Còn Lại</th>
+                            <th onclick="toggleReport8SubSort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8SubSort('gross_payable')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tổng Cước Thỏa Thuận</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8SubSort('advance_amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tạm Ứng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8SubSort('settled_amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Đã Thanh Toán</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8SubSort('balance_due')" class="cursor-pointer hover:bg-slate-100 text-right font-black text-rose-700"><div class="flex items-center justify-end gap-1"><span>Công Nợ Còn Lại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-rose-600"></i></div></th>
                             <th class="text-center">Tình Trạng</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep8-subcontractors-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep8-subcontractors-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -788,25 +833,29 @@
                 <table class="erp-table whitespace-nowrap" id="rep8-subcontractor-trips-table" data-table-title="Bảng Kê Chuyến Xe Ngoài">
                     <thead>
                         <tr>
-                            <th>Mã Chuyến</th>
-                            <th>Ngày Chạy</th>
-                            <th>Nhà Xe</th>
-                            <th>Biển Số Xe</th>
-                            <th>Tài Xế</th>
+                            <th onclick="toggleReport8TripSort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8TripSort('date')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Ngày Chạy</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8TripSort('subcontractor_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Nhà Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8TripSort('vehicle')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Biển Số Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8TripSort('driver')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Tuyến Đường Vận Chuyển</th>
-                            <th>Số Container</th>
-                            <th class="text-right">Cước Thỏa Thuận</th>
-                            <th class="text-right">Tạm Ứng</th>
-                            <th class="text-right font-black text-rose-700">Còn Lại</th>
+                            <th onclick="toggleReport8TripSort('container_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Container</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8TripSort('gross_cost')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Cước Thỏa Thuận</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8TripSort('advance')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tạm Ứng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport8TripSort('balance')" class="cursor-pointer hover:bg-slate-100 text-right font-black text-rose-700"><div class="flex items-center justify-end gap-1"><span>Còn Lại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-rose-600"></i></div></th>
                             <th class="text-center">Trạng Thái</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep8-trips-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep8-trips-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- ========================================================================= -->
@@ -859,23 +908,26 @@
                 <table class="erp-table whitespace-nowrap" id="rep9-driver-payroll-table" data-table-title="Lương Chuyến & Năng Suất Tài Xế">
                     <thead>
                         <tr>
-                            <th onclick="toggleReport9Sort('driver_name')" class="cursor-pointer">Tài Xế</th>
-                            <th>Mã NV</th>
+                            <th onclick="toggleReport9Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport9Sort('driver_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã NV</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Số Điện Thoại</th>
-                            <th onclick="toggleReport9Sort('trips_count')" class="cursor-pointer text-center">Số Chuyến</th>
-                            <th class="text-center">Cắt Kéo</th>
-                            <th onclick="toggleReport9Sort('base_trip_salary')" class="cursor-pointer text-right">Lương Tuyến Chuẩn</th>
-                            <th class="text-right">Phụ Cấp Sau 0H</th>
-                            <th class="text-right">Phụ Cấp Khác</th>
-                            <th class="text-right">Tạm Ứng</th>
-                            <th onclick="toggleReport9Sort('net_salary')" class="cursor-pointer text-right font-black text-emerald-700">Thực Lĩnh (VNĐ)</th>
-                            <th onclick="toggleReport9Sort('otp_rate')" class="cursor-pointer text-center">Tỷ Lệ OTP</th>
-                            <th class="text-center">Sự Cố (OS&D)</th>
+                            <th onclick="toggleReport9Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport9Sort('split_trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Cắt Kéo</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport9Sort('base_trip_salary')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Lương Tuyến Chuẩn</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport9Sort('layover_allowance')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Phụ Cấp Sau 0H</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport9Sort('special_allowances')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Phụ Cấp Khác</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport9Sort('total_advances')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tạm Ứng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport9Sort('net_salary')" class="cursor-pointer hover:bg-slate-100 text-right font-black text-emerald-700"><div class="flex items-center justify-end gap-1"><span>Thực Lĩnh (VNĐ)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-emerald-600"></i></div></th>
+                            <th onclick="toggleReport9Sort('otp_rate')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tỷ Lệ OTP</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport9Sort('incident_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Sự Cố (OS&D)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep9-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep9-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -937,15 +989,15 @@
                 <table class="erp-table whitespace-nowrap" id="rep10-dispatcher-funds-table" data-table-title="Sổ Quỹ Tạm Ứng Điều Vận">
                     <thead>
                         <tr>
-                            <th onclick="toggleReport10Sort('code')" class="cursor-pointer">Mã Phiếu Quỹ</th>
-                            <th onclick="toggleReport10Sort('dispatcher_name')" class="cursor-pointer">Điều Phối Viên</th>
-                            <th onclick="toggleReport10Sort('advance_date')" class="cursor-pointer text-center">Ngày Cấp</th>
-                            <th onclick="toggleReport10Sort('amount')" class="cursor-pointer text-right">Hạn Mức Quỹ (VNĐ)</th>
-                            <th onclick="toggleReport10Sort('disbursed_amount')" class="cursor-pointer text-right">Đã Trích Cho Xe</th>
+                            <th onclick="toggleReport10Sort('code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Phiếu Quỹ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport10Sort('dispatcher_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Điều Phối Viên</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport10Sort('advance_date')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Ngày Cấp</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport10Sort('amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Hạn Mức Quỹ (VNĐ)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport10Sort('disbursed_amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Đã Trích Cho Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-center w-28">Tỷ Lệ Giải Ngân</th>
-                            <th class="text-right">Đã Quyết Toán</th>
-                            <th class="text-right">Tiền Thừa Trả Lại</th>
-                            <th onclick="toggleReport10Sort('remaining_balance')" class="cursor-pointer text-right font-black text-teal-800">Số Dư Còn Lại</th>
+                            <th onclick="toggleReport10Sort('settled_amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Đã Quyết Toán</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport10Sort('refunds_returned')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tiền Thừa Trả Lại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport10Sort('remaining_balance')" class="cursor-pointer hover:bg-slate-100 text-right font-black text-teal-800"><div class="flex items-center justify-end gap-1"><span>Số Dư Còn Lại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-teal-600"></i></div></th>
                             <th class="text-center">Trạng Thái</th>
                             <th>Người Duyệt</th>
                             <th>Ghi Chú</th>
@@ -954,6 +1006,9 @@
                     <tbody class="divide-y divide-slate-100" id="rep10-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep10-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -1020,16 +1075,16 @@
                 <table class="erp-table whitespace-nowrap" id="rep11-driver-advances-table" data-table-title="Tạm Ứng & Chi Phí Tài Xế">
                     <thead>
                         <tr>
-                            <th onclick="toggleReport11Sort('trip_code')" class="cursor-pointer">Mã Chuyến / TUTX</th>
-                            <th onclick="toggleReport11Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
+                            <th onclick="toggleReport11Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến / TUTX</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport11Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Tuyến Đường</th>
-                            <th onclick="toggleReport11Sort('driver_name')" class="cursor-pointer">Tài Xế & Biển Số</th>
-                            <th onclick="toggleReport11Sort('advance_date')" class="cursor-pointer text-center">Ngày Nhận</th>
+                            <th onclick="toggleReport11Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế & Biển Số</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport11Sort('advance_date')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Ngày Nhận</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Nguồn Tiền</th>
-                            <th onclick="toggleReport11Sort('advance_amount')" class="cursor-pointer text-right">Tạm Ứng (VNĐ)</th>
-                            <th onclick="toggleReport11Sort('actual_expenses')" class="cursor-pointer text-right">Chi Phí Thực Tế (VNĐ)</th>
+                            <th onclick="toggleReport11Sort('advance_amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tạm Ứng (VNĐ)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport11Sort('actual_expenses')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Chi Phí Thực Tế (VNĐ)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-right">Phân Bổ Chi Phí (BOT / Nâng Hạ / Cược Cont)</th>
-                            <th onclick="toggleReport11Sort('difference')" class="cursor-pointer text-right font-black">Chênh Lệch Đối Soát</th>
+                            <th onclick="toggleReport11Sort('difference')" class="cursor-pointer hover:bg-slate-100 text-right font-black"><div class="flex items-center justify-end gap-1"><span>Chênh Lệch Đối Soát</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-center">Phương Án</th>
                             <th class="text-center">Trạng Thái</th>
                             <th class="text-center">Chứng Từ</th>
@@ -1039,9 +1094,13 @@
                     <tbody class="divide-y divide-slate-100" id="rep11-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep11-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- ========================================================================= -->
@@ -1104,17 +1163,17 @@
                 <table class="erp-table whitespace-nowrap" id="rep12-settlement-table" data-table-title="Bảng Kê Quyết Toán Chuyến Xe & Backlog">
                     <thead>
                         <tr>
-                            <th onclick="toggleReport12Sort('trip_code')" class="cursor-pointer">Mã Chuyến</th>
-                            <th onclick="toggleReport12Sort('loading_date')" class="cursor-pointer text-center">Ngày Chạy</th>
-                            <th onclick="toggleReport12Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
-                            <th onclick="toggleReport12Sort('vehicle_plate')" class="cursor-pointer">Xe Kéo & Loại Xe</th>
-                            <th onclick="toggleReport12Sort('driver_name')" class="cursor-pointer">Bác Tài</th>
+                            <th onclick="toggleReport12Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('loading_date')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Ngày Chạy</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('vehicle_plate')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Xe Kéo & Loại Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Bác Tài</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Tuyến Đường & Số Cont</th>
-                            <th onclick="toggleReport12Sort('revenue')" class="cursor-pointer text-right">Doanh Thu Cước</th>
-                            <th onclick="toggleReport12Sort('expense')" class="cursor-pointer text-right">Chi Phí Vận Hành</th>
-                            <th onclick="toggleReport12Sort('reimbursable')" class="cursor-pointer text-right">Chi Hộ</th>
-                            <th onclick="toggleReport12Sort('profit')" class="cursor-pointer text-right font-black">Lợi Nhuận Gộp</th>
-                            <th class="text-center">Biên LN (%)</th>
+                            <th onclick="toggleReport12Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Doanh Thu Cước</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('expense')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Chi Phí Vận Hành</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('reimbursable')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Chi Hộ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('profit')" class="cursor-pointer hover:bg-slate-100 text-right font-black"><div class="flex items-center justify-end gap-1"><span>Lợi Nhuận Gộp</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport12Sort('margin_percent')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Biên LN (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-center">Chứng Từ POD</th>
                             <th class="text-center">Phân Loại Chuyến</th>
                             <th class="text-center">Trạng Thái Quyết Toán</th>
@@ -1124,6 +1183,9 @@
                     <tbody class="divide-y divide-slate-100" id="rep12-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep12-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -1182,24 +1244,27 @@
                 <table class="erp-table whitespace-nowrap" id="rep13-ar-aging-table" data-table-title="Báo Cáo Công Nợ Phải Thu & Tuổi Nợ">
                     <thead>
                         <tr>
-                            <th onclick="toggleReport13Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
-                            <th class="text-center">Số Chuyến</th>
+                            <th onclick="toggleReport13Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport13Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-center">Đã / Chưa Chốt</th>
-                            <th onclick="toggleReport13Sort('freight_revenue')" class="cursor-pointer text-right">Cước Vận Tải</th>
-                            <th onclick="toggleReport13Sort('reimbursable_amount')" class="cursor-pointer text-right">Tiền Chi Hộ</th>
-                            <th onclick="toggleReport13Sort('total_receivable')" class="cursor-pointer text-right font-black text-slate-900">Tổng Phải Thu</th>
-                            <th onclick="toggleReport13Sort('collected_amount')" class="cursor-pointer text-right text-emerald-700 font-bold">Đã Thu Hồi</th>
-                            <th onclick="toggleReport13Sort('remaining_balance')" class="cursor-pointer text-right text-indigo-700 font-black">Còn Phải Thu</th>
-                            <th class="text-right text-emerald-700 font-medium">Trong Hạn (<=30N)</th>
-                            <th class="text-right text-amber-700 font-medium">Quá Hạn (31-60N)</th>
-                            <th class="text-right text-orange-700 font-medium">Quá Hạn (61-90N)</th>
-                            <th class="text-right text-rose-700 font-bold">Nợ Xấu (>90N)</th>
+                            <th onclick="toggleReport13Sort('freight_revenue')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Cước Vận Tải</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport13Sort('reimbursable_amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tiền Chi Hộ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport13Sort('total_receivable')" class="cursor-pointer hover:bg-slate-100 text-right font-black text-slate-900"><div class="flex items-center justify-end gap-1"><span>Tổng Phải Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport13Sort('collected_amount')" class="cursor-pointer hover:bg-slate-100 text-right text-emerald-700 font-bold"><div class="flex items-center justify-end gap-1"><span>Đã Thu Hồi</span><i class="ph-bold ph-arrows-down-up text-[11px] text-emerald-600"></i></div></th>
+                            <th onclick="toggleReport13Sort('remaining_balance')" class="cursor-pointer hover:bg-slate-100 text-right text-indigo-700 font-black"><div class="flex items-center justify-end gap-1"><span>Còn Phải Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-indigo-600"></i></div></th>
+                            <th onclick="toggleReport13Sort('aging_current')" class="cursor-pointer hover:bg-slate-100 text-right text-emerald-700 font-medium"><div class="flex items-center justify-end gap-1"><span>Trong Hạn (<=30N)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport13Sort('aging_31_60')" class="cursor-pointer hover:bg-slate-100 text-right text-amber-700 font-medium"><div class="flex items-center justify-end gap-1"><span>Quá Hạn (31-60N)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport13Sort('aging_61_90')" class="cursor-pointer hover:bg-slate-100 text-right text-orange-700 font-medium"><div class="flex items-center justify-end gap-1"><span>Quá Hạn (61-90N)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport13Sort('aging_over_90')" class="cursor-pointer hover:bg-slate-100 text-right text-rose-700 font-bold"><div class="flex items-center justify-end gap-1"><span>Nợ Xấu (>90N)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-rose-600"></i></div></th>
                             <th class="text-center">Hành Động</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep13-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep13-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -1265,15 +1330,15 @@
                 <table class="erp-table whitespace-nowrap" id="rep14-unsettled-aging-table" data-table-title="Báo Cáo Tuổi Đơn Tồn Chưa Quyết Toán">
                     <thead>
                         <tr>
-                            <th onclick="toggleReport14Sort('trip_code')" class="cursor-pointer">Mã Chuyến</th>
-                            <th onclick="toggleReport14Sort('loading_date')" class="cursor-pointer text-center">Ngày Chạy</th>
-                            <th onclick="toggleReport14Sort('days_unsettled')" class="cursor-pointer text-center font-black">Số Ngày Tồn</th>
+                            <th onclick="toggleReport14Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport14Sort('loading_date')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Ngày Chạy</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport14Sort('days_unsettled')" class="cursor-pointer hover:bg-slate-100 text-center font-black"><div class="flex items-center justify-center gap-1"><span>Số Ngày Tồn</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th class="text-center">Mức Độ Cảnh Báo</th>
-                            <th onclick="toggleReport14Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
-                            <th onclick="toggleReport14Sort('vehicle_plate')" class="cursor-pointer">Xe Kéo & Sở Hữu</th>
-                            <th onclick="toggleReport14Sort('driver_name')" class="cursor-pointer">Tài Xế</th>
-                            <th onclick="toggleReport14Sort('revenue')" class="cursor-pointer text-right">Doanh Thu Dự Kiến</th>
-                            <th onclick="toggleReport14Sort('expense')" class="cursor-pointer text-right">Chi Phí / Tạm Ứng</th>
+                            <th onclick="toggleReport14Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport14Sort('vehicle_plate')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Xe Kéo & Sở Hữu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport14Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport14Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Doanh Thu Dự Kiến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport14Sort('expense')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Chi Phí / Tạm Ứng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Lý Do Tồn Đọng / Điểm Nghẽn</th>
                             <th class="text-center">Tình Trạng POD</th>
                             <th class="text-center">Trạng Thái Vận Hành</th>
@@ -1282,6 +1347,9 @@
                     <tbody class="divide-y divide-slate-100" id="rep14-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep14-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -1350,7 +1418,7 @@
                         <span id="modal-ar-trips-count" class="text-xs text-slate-500 font-medium">0 Chuyến</span>
                     </div>
                     <div class="overflow-x-auto max-h-80">
-                        <table class="erp-table whitespace-nowrap text-xs w-full">
+                        <table class="erp-table whitespace-nowrap text-xs w-full" id="modal-ar-trips-table">
                             <thead class="sticky top-0 bg-slate-100 z-10">
                                 <tr>
                                     <th class="text-center">STT</th>
@@ -1369,6 +1437,9 @@
                             <tbody class="divide-y divide-slate-100" id="modal-ar-trips-tbody">
                                 <!-- Rendered by JS -->
                             </tbody>
+                            <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="modal-ar-trips-tfoot">
+                                <!-- Rendered by JS -->
+                            </tfoot>
                         </table>
                     </div>
                 </div>

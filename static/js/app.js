@@ -13389,12 +13389,21 @@ function applyReport1Filters() {
     });
 
     const tbody = document.getElementById('rep1-pnl-tbody');
+    const tfoot = document.getElementById('rep1-pnl-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu đầu xe phù hợp với kỳ và bộ lọc này</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    // Tính tổng cộng
+    const totalTrips = list.reduce((sum, item) => sum + (Number(item.trips_count) || 0), 0);
+    const totalRev = list.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0);
+    const totalExp = list.reduce((sum, item) => sum + (Number(item.expense) || 0), 0);
+    const totalProfit = list.reduce((sum, item) => sum + (Number(item.profit) || 0), 0);
+    const avgMargin = totalRev > 0 ? ((totalProfit / totalRev) * 100).toFixed(1) : '0.0';
 
     tbody.innerHTML = list.map(item => {
         const isOwned = item.ownership_code === 'OWNED';
@@ -13429,6 +13438,19 @@ function applyReport1Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="4" class="py-2.5 px-3 text-slate-800 font-bold uppercase">TỔNG CỘNG: ${list.length} Đầu Xe</td>
+                <td class="text-center font-black font-mono tabular-nums text-slate-900">${totalTrips}</td>
+                <td class="text-right font-black font-mono tabular-nums text-slate-900">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
+                <td class="text-right font-black font-mono tabular-nums text-rose-700">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
+                <td class="text-right font-black font-mono tabular-nums ${totalProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${canViewFinance ? formatMoneyVND(totalProfit) : '***'}</td>
+                <td class="text-center font-black font-mono tabular-nums text-teal-800">${canViewFinance ? `${avgMargin}%` : '***'}</td>
+            </tr>
+        `;
+    }
 }
 
 function toggleReport1Sort(col) {
@@ -13461,11 +13483,19 @@ function renderReport2(data) {
 
     // Render Bảng Ma trận Hãng Tàu (Shipping Lines Summary)
     const slTbody = document.getElementById('rep2-shipping-lines-tbody');
+    const slTfoot = document.getElementById('rep2-shipping-lines-tfoot');
     if (slTbody) {
         const slList = r2.shipping_lines_summary || [];
         if (slList.length === 0) {
             slTbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-medium">Chưa có dữ liệu hãng tàu trong kỳ này</td></tr>`;
+            if (slTfoot) slTfoot.innerHTML = '';
         } else {
+            const sumConts = slList.reduce((sum, item) => sum + (Number(item.total_containers) || 0), 0);
+            const sumSafe = slList.reduce((sum, item) => sum + (Number(item.safe_count) || 0), 0);
+            const sumWarn = slList.reduce((sum, item) => sum + (Number(item.warning_count) || 0), 0);
+            const sumOverdue = slList.reduce((sum, item) => sum + (Number(item.overdue_count) || 0), 0);
+            const sumFines = slList.reduce((sum, item) => sum + (Number(item.estimated_fines) || 0), 0);
+
             slTbody.innerHTML = slList.map(sl => `
                 <tr class="hover:bg-slate-50 transition-colors">
                     <td class="font-bold text-slate-800 text-xs flex items-center gap-2">
@@ -13479,6 +13509,19 @@ function renderReport2(data) {
                     <td class="text-right font-black text-rose-600 text-xs tabular-nums">${formatMoneyVND(sl.estimated_fines)}</td>
                 </tr>
             `).join('');
+
+            if (slTfoot) {
+                slTfoot.innerHTML = `
+                    <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                        <td class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${slList.length} Hãng Tàu</td>
+                        <td class="text-center font-mono font-black tabular-nums">${sumConts}</td>
+                        <td class="text-center font-mono font-black text-emerald-700 tabular-nums">${sumSafe}</td>
+                        <td class="text-center font-mono font-black text-amber-700 tabular-nums">${sumWarn}</td>
+                        <td class="text-center font-mono font-black text-rose-700 tabular-nums">${sumOverdue}</td>
+                        <td class="text-right font-mono font-black text-rose-700 tabular-nums">${formatMoneyVND(sumFines)}</td>
+                    </tr>
+                `;
+            }
         }
     }
 
@@ -13488,7 +13531,7 @@ function renderReport2(data) {
 
 function applyReport2Filters() {
     const searchVal = (document.getElementById('filter-rep2-search')?.value || '').toLowerCase().trim();
-    const list = rep2DataCache.filter(item => {
+    let list = rep2DataCache.filter(item => {
         if (!searchVal) return true;
         return (item.container_number || '').toLowerCase().includes(searchVal) ||
                (item.trip_code || '').toLowerCase().includes(searchVal) ||
@@ -13497,13 +13540,27 @@ function applyReport2Filters() {
                (item.location_type || '').toLowerCase().includes(searchVal);
     });
 
+    list.sort((a, b) => {
+        let valA = a[rep2SortCol];
+        let valB = b[rep2SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep2SortAsc ? -1 : 1;
+        if (valA > valB) return rep2SortAsc ? 1 : -1;
+        return 0;
+    });
+
     const tbody = document.getElementById('rep2-tbody');
+    const tfoot = document.getElementById('rep2-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy vỏ container nào trong kỳ theo dõi này</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    const totalFines = list.reduce((sum, item) => sum + (Number(item.estimated_fines) || 0), 0);
 
     tbody.innerHTML = list.map(item => {
         let statusBadge = '';
@@ -13533,6 +13590,25 @@ function applyReport2Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="8" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Vỏ Container Theo Dõi</td>
+                <td class="text-right font-mono font-black text-rose-700 tabular-nums">${formatMoneyVND(totalFines)}</td>
+            </tr>
+        `;
+    }
+}
+
+function toggleReport2Sort(col) {
+    if (rep2SortCol === col) {
+        rep2SortAsc = !rep2SortAsc;
+    } else {
+        rep2SortCol = col;
+        rep2SortAsc = false;
+    }
+    applyReport2Filters();
 }
 
 // -------------------------------------------------------------
@@ -13559,7 +13635,7 @@ function renderReport3(data) {
 
 function applyReport3Filters() {
     const searchVal = (document.getElementById('filter-rep3-search')?.value || '').toLowerCase().trim();
-    const list = rep3DataCache.filter(item => {
+    let list = rep3DataCache.filter(item => {
         if (!searchVal) return true;
         return (item.trip_code || '').toLowerCase().includes(searchVal) ||
                (item.customer_name || '').toLowerCase().includes(searchVal) ||
@@ -13568,13 +13644,28 @@ function applyReport3Filters() {
                (item.delay_reason || '').toLowerCase().includes(searchVal);
     });
 
+    list.sort((a, b) => {
+        let valA = a[rep3SortCol];
+        let valB = b[rep3SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep3SortAsc ? -1 : 1;
+        if (valA > valB) return rep3SortAsc ? 1 : -1;
+        return 0;
+    });
+
     const tbody = document.getElementById('rep3-tbody');
+    const tfoot = document.getElementById('rep3-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu vận hành trong kỳ đã chọn</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    const onTimeCount = list.filter(i => i.is_on_time).length;
+    const otpPercent = list.length > 0 ? ((onTimeCount / list.length) * 100).toFixed(1) : '0.0';
 
     tbody.innerHTML = list.map(item => {
         const onTimeBadge = item.is_on_time
@@ -13599,6 +13690,26 @@ function applyReport3Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="7" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Chuyến Vận Hành</td>
+                <td class="text-center font-mono font-black text-emerald-700 tabular-nums">${otpPercent}% ĐÚNG HẸN (${onTimeCount}/${list.length})</td>
+                <td class="text-center font-mono font-bold text-rose-700 tabular-nums">${list.length - onTimeCount} Trễ hẹn</td>
+            </tr>
+        `;
+    }
+}
+
+function toggleReport3Sort(col) {
+    if (rep3SortCol === col) {
+        rep3SortAsc = !rep3SortAsc;
+    } else {
+        rep3SortCol = col;
+        rep3SortAsc = false;
+    }
+    applyReport3Filters();
 }
 
 // -------------------------------------------------------------
@@ -13625,7 +13736,7 @@ function renderReport4(data) {
 
 function applyReport4Filters() {
     const searchVal = (document.getElementById('filter-rep4-search')?.value || '').toLowerCase().trim();
-    const list = rep4DataCache.filter(item => {
+    let list = rep4DataCache.filter(item => {
         if (!searchVal) return true;
         return (item.trip_code || '').toLowerCase().includes(searchVal) ||
                (item.customer_name || '').toLowerCase().includes(searchVal) ||
@@ -13634,13 +13745,29 @@ function applyReport4Filters() {
                (item.invoice_number || '').toLowerCase().includes(searchVal);
     });
 
+    list.sort((a, b) => {
+        let valA = a[rep4SortCol];
+        let valB = b[rep4SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep4SortAsc ? -1 : 1;
+        if (valA > valB) return rep4SortAsc ? 1 : -1;
+        return 0;
+    });
+
     const tbody = document.getElementById('rep4-tbody');
+    const tfoot = document.getElementById('rep4-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Không có khoản chi hộ nào phát sinh trong kỳ này</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    const totalAmount = list.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const settledAmount = list.filter(i => i.is_settled).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const pendingAmount = totalAmount - settledAmount;
 
     tbody.innerHTML = list.map(item => {
         const settleBadge = item.is_settled
@@ -13660,6 +13787,29 @@ function applyReport4Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="4" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Khoản Chi Hộ</td>
+                <td class="text-right font-mono font-black text-slate-900 tabular-nums">${formatMoneyVND(totalAmount)}</td>
+                <td colspan="3" class="text-right font-mono font-bold text-slate-600 tabular-nums">
+                    <span class="text-emerald-700">Đã thu: ${formatMoneyVND(settledAmount)}</span> · 
+                    <span class="text-rose-700 font-black">Chờ thu: ${formatMoneyVND(pendingAmount)}</span>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function toggleReport4Sort(col) {
+    if (rep4SortCol === col) {
+        rep4SortAsc = !rep4SortAsc;
+    } else {
+        rep4SortCol = col;
+        rep4SortAsc = false;
+    }
+    applyReport4Filters();
 }
 
 // -------------------------------------------------------------
@@ -13683,7 +13833,7 @@ function renderReport5(data) {
 
 function applyReport5Filters() {
     const searchVal = (document.getElementById('filter-rep5-search')?.value || '').toLowerCase().trim();
-    const list = rep5DataCache.filter(item => {
+    let list = rep5DataCache.filter(item => {
         if (!searchVal) return true;
         return (item.trip_code || '').toLowerCase().includes(searchVal) ||
                (item.customer_name || '').toLowerCase().includes(searchVal) ||
@@ -13693,13 +13843,29 @@ function applyReport5Filters() {
                (item.reason || '').toLowerCase().includes(searchVal);
     });
 
+    list.sort((a, b) => {
+        let valA = a[rep5SortCol];
+        let valB = b[rep5SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep5SortAsc ? -1 : 1;
+        if (valA > valB) return rep5SortAsc ? 1 : -1;
+        return 0;
+    });
+
     const tbody = document.getElementById('rep5-tbody');
+    const tfoot = document.getElementById('rep5-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không có chuyến cắt kéo hoặc neo xe qua đêm nào trong kỳ</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    const totalWaitHours = list.reduce((sum, item) => sum + (Number(item.wait_hours) || 0), 0);
+    const totalDetFee = list.reduce((sum, item) => sum + (Number(item.detention_fee) || 0), 0);
+    const totalAllowance = list.reduce((sum, item) => sum + (Number(item.driver_allowance) || 0), 0);
 
     tbody.innerHTML = list.map(item => {
         const typeBadge = item.is_split_trip
@@ -13724,6 +13890,28 @@ function applyReport5Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="9" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Chuyến Bàn Giao Cắt Kéo / Neo Xe</td>
+                <td class="text-center font-mono font-black tabular-nums">${totalWaitHours}h</td>
+                <td class="text-right font-mono font-black text-teal-800 tabular-nums">${formatMoneyVND(totalDetFee)}</td>
+                <td class="text-right font-mono font-black text-indigo-700 tabular-nums">${formatMoneyVND(totalAllowance)}</td>
+                <td></td>
+            </tr>
+        `;
+    }
+}
+
+function toggleReport5Sort(col) {
+    if (rep5SortCol === col) {
+        rep5SortAsc = !rep5SortAsc;
+    } else {
+        rep5SortCol = col;
+        rep5SortAsc = false;
+    }
+    applyReport5Filters();
 }
 
 // -------------------------------------------------------------
@@ -13744,7 +13932,7 @@ function renderReport6(data) {
 
 function applyReport6Filters() {
     const searchVal = (document.getElementById('filter-rep6-search')?.value || '').toLowerCase().trim();
-    const list = rep6DataCache.filter(item => {
+    let list = rep6DataCache.filter(item => {
         if (!searchVal) return true;
         return (item.trip_code || '').toLowerCase().includes(searchVal) ||
                (item.customer_name || '').toLowerCase().includes(searchVal) ||
@@ -13754,13 +13942,27 @@ function applyReport6Filters() {
                (item.description || '').toLowerCase().includes(searchVal);
     });
 
+    list.sort((a, b) => {
+        let valA = a[rep6SortCol];
+        let valB = b[rep6SortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep6SortAsc ? -1 : 1;
+        if (valA > valB) return rep6SortAsc ? 1 : -1;
+        return 0;
+    });
+
     const tbody = document.getElementById('rep6-tbody');
+    const tfoot = document.getElementById('rep6-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không có sự cố hoặc ngoại lệ OS&D nào được ghi nhận</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    const totalDamage = list.reduce((sum, item) => sum + (Number(item.estimated_damage) || 0), 0);
 
     tbody.innerHTML = list.map(item => {
         const podLink = item.has_pod_photo
@@ -13782,6 +13984,26 @@ function applyReport6Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="7" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Vụ Việc Sự Cố & Ngoại Lệ OS&D</td>
+                <td class="text-right font-mono font-black text-rose-700 tabular-nums">${formatMoneyVND(totalDamage)}</td>
+                <td colspan="2"></td>
+            </tr>
+        `;
+    }
+}
+
+function toggleReport6Sort(col) {
+    if (rep6SortCol === col) {
+        rep6SortAsc = !rep6SortAsc;
+    } else {
+        rep6SortCol = col;
+        rep6SortAsc = false;
+    }
+    applyReport6Filters();
 }
 
 // -------------------------------------------------------------
@@ -13811,6 +14033,11 @@ function renderReport7(data) {
     applyReport7Filters();
 }
 
+let rep8SubSortCol = 'gross_payable';
+let rep8SubSortAsc = false;
+let rep8TripSortCol = 'date';
+let rep8TripSortAsc = false;
+
 function applyReport7Filters() {
     const canViewFinance = (rep7DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep7-search')?.value || '').toLowerCase().trim();
@@ -13833,12 +14060,22 @@ function applyReport7Filters() {
     });
 
     const tbody = document.getElementById('rep7-tbody');
+    const tfoot = document.getElementById('rep7-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu khách hàng phù hợp</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    const totalTrips = list.reduce((sum, item) => sum + (Number(item.trips_count) || 0), 0);
+    const totalTeu = list.reduce((sum, item) => sum + (Number(item.total_teu) || 0), 0);
+    const total20 = list.reduce((sum, item) => sum + (Number(item.teu_20_count) || 0), 0);
+    const total40 = list.reduce((sum, item) => sum + (Number(item.teu_40_count) || 0), 0);
+    const total45 = list.reduce((sum, item) => sum + (Number(item.teu_45_count) || 0), 0);
+    const totalRev = list.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0);
+    const avgMargin = list.length > 0 ? (list.reduce((sum, item) => sum + (Number(item.margin_percent) || 0), 0) / list.length).toFixed(1) : '0.0';
 
     tbody.innerHTML = list.map(item => {
         const revDisplay = canViewFinance ? formatMoneyVND(item.revenue) : '***';
@@ -13861,6 +14098,23 @@ function applyReport7Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="2" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Khách Hàng</td>
+                <td class="text-center font-mono font-black tabular-nums">${totalTrips}</td>
+                <td class="text-center font-mono font-black text-teal-800 bg-teal-50/80 tabular-nums">${totalTeu.toFixed(1)}</td>
+                <td class="text-center font-mono font-bold tabular-nums">${total20}</td>
+                <td class="text-center font-mono font-bold tabular-nums">${total40}</td>
+                <td class="text-center font-mono font-bold tabular-nums">${total45}</td>
+                <td></td>
+                <td class="text-right font-mono font-black text-indigo-700 tabular-nums">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
+                <td class="text-center font-mono font-bold tabular-nums">100.0%</td>
+                <td class="text-center font-mono font-bold tabular-nums">${canViewFinance ? `${avgMargin}%` : '***'}</td>
+            </tr>
+        `;
+    }
 }
 
 function toggleReport7Sort(col) {
@@ -13900,23 +14154,61 @@ function renderReport8(data) {
     applyReport8Filters();
 }
 
+function toggleReport8SubSort(col) {
+    if (rep8SubSortCol === col) {
+        rep8SubSortAsc = !rep8SubSortAsc;
+    } else {
+        rep8SubSortCol = col;
+        rep8SubSortAsc = false;
+    }
+    applyReport8Filters();
+}
+
+function toggleReport8TripSort(col) {
+    if (rep8TripSortCol === col) {
+        rep8TripSortAsc = !rep8TripSortAsc;
+    } else {
+        rep8TripSortCol = col;
+        rep8TripSortAsc = false;
+    }
+    applyReport8Filters();
+}
+
 function applyReport8Filters() {
     const canViewFinance = (rep8SubcontractorsCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep8-search')?.value || '').toLowerCase().trim();
 
     // 1. Render Bảng Nhà xe thầu phụ
-    const subList = rep8SubcontractorsCache.filter(item => {
+    let subList = rep8SubcontractorsCache.filter(item => {
         if (!searchVal) return true;
         return (item.subcontractor_name || '').toLowerCase().includes(searchVal) ||
                (item.contact_info || '').toLowerCase().includes(searchVal) ||
                (item.bank_info || '').toLowerCase().includes(searchVal);
     });
 
+    subList.sort((a, b) => {
+        let valA = a[rep8SubSortCol];
+        let valB = b[rep8SubSortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return rep8SubSortAsc ? -1 : 1;
+        if (valA > valB) return rep8SubSortAsc ? 1 : -1;
+        return 0;
+    });
+
     const subTbody = document.getElementById('rep8-subcontractors-tbody');
+    const subTfoot = document.getElementById('rep8-subcontractors-tfoot');
     if (subTbody) {
         if (subList.length === 0) {
             subTbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy nhà xe thầu phụ nào trong kỳ</td></tr>`;
+            if (subTfoot) subTfoot.innerHTML = '';
         } else {
+            const sumTrips = subList.reduce((sum, item) => sum + (Number(item.trips_count) || 0), 0);
+            const sumGross = subList.reduce((sum, item) => sum + (Number(item.gross_payable) || 0), 0);
+            const sumAdv = subList.reduce((sum, item) => sum + (Number(item.advance_amount) || 0), 0);
+            const sumSettled = subList.reduce((sum, item) => sum + (Number(item.settled_amount) || 0), 0);
+            const sumBal = subList.reduce((sum, item) => sum + (Number(item.balance_due) || 0), 0);
+
             subTbody.innerHTML = subList.map(s => {
                 const grossDisp = canViewFinance ? formatMoneyVND(s.gross_payable) : '***';
                 const advDisp = canViewFinance ? formatMoneyVND(s.advance_amount) : '***';
@@ -13945,13 +14237,28 @@ function applyReport8Filters() {
                     </tr>
                 `;
             }).join('');
+
+            if (subTfoot) {
+                subTfoot.innerHTML = `
+                    <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                        <td colspan="3" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${subList.length} Nhà Xe Thầu Phụ</td>
+                        <td class="text-center font-mono font-black tabular-nums">${sumTrips}</td>
+                        <td class="text-right font-mono font-black tabular-nums text-slate-900">${canViewFinance ? formatMoneyVND(sumGross) : '***'}</td>
+                        <td class="text-right font-mono font-bold tabular-nums text-slate-600">${canViewFinance ? formatMoneyVND(sumAdv) : '***'}</td>
+                        <td class="text-right font-mono font-bold tabular-nums text-emerald-700">${canViewFinance ? formatMoneyVND(sumSettled) : '***'}</td>
+                        <td class="text-right font-mono font-black tabular-nums text-rose-700 bg-rose-50/80">${canViewFinance ? formatMoneyVND(sumBal) : '***'}</td>
+                        <td></td>
+                    </tr>
+                `;
+            }
         }
     }
 
     // 2. Render Bảng chi tiết chuyến xe ngoài
     const tripsTbody = document.getElementById('rep8-trips-tbody');
+    const tripsTfoot = document.getElementById('rep8-trips-tfoot');
     if (tripsTbody) {
-        const tripList = rep8TripsCache.filter(item => {
+        let tripList = rep8TripsCache.filter(item => {
             if (!searchVal) return true;
             return (item.trip_code || '').toLowerCase().includes(searchVal) ||
                    (item.subcontractor_name || '').toLowerCase().includes(searchVal) ||
@@ -13961,9 +14268,24 @@ function applyReport8Filters() {
                    (item.container_number || '').toLowerCase().includes(searchVal);
         });
 
+        tripList.sort((a, b) => {
+            let valA = a[rep8TripSortCol];
+            let valB = b[rep8TripSortCol];
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+            if (valA < valB) return rep8TripSortAsc ? -1 : 1;
+            if (valA > valB) return rep8TripSortAsc ? 1 : -1;
+            return 0;
+        });
+
         if (tripList.length === 0) {
             tripsTbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không có chuyến xe ngoài nào được tìm thấy</td></tr>`;
+            if (tripsTfoot) tripsTfoot.innerHTML = '';
         } else {
+            const sumGross = tripList.reduce((sum, item) => sum + (Number(item.gross_cost) || 0), 0);
+            const sumAdv = tripList.reduce((sum, item) => sum + (Number(item.advance) || 0), 0);
+            const sumBal = tripList.reduce((sum, item) => sum + (Number(item.balance) || 0), 0);
+
             tripsTbody.innerHTML = tripList.map(t => {
                 const costDisp = canViewFinance ? formatMoneyVND(t.gross_cost) : '***';
                 const advDisp = canViewFinance ? formatMoneyVND(t.advance) : '***';
@@ -13985,6 +14307,18 @@ function applyReport8Filters() {
                     </tr>
                 `;
             }).join('');
+
+            if (tripsTfoot) {
+                tripsTfoot.innerHTML = `
+                    <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                        <td colspan="7" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${tripList.length} Chuyến Xe Ngoài</td>
+                        <td class="text-right font-mono font-black tabular-nums text-slate-900">${canViewFinance ? formatMoneyVND(sumGross) : '***'}</td>
+                        <td class="text-right font-mono font-bold tabular-nums text-slate-600">${canViewFinance ? formatMoneyVND(sumAdv) : '***'}</td>
+                        <td class="text-right font-mono font-black tabular-nums text-rose-700">${canViewFinance ? formatMoneyVND(sumBal) : '***'}</td>
+                        <td></td>
+                    </tr>
+                `;
+            }
         }
     }
 }
@@ -14036,12 +14370,24 @@ function applyReport9Filters() {
     });
 
     const tbody = document.getElementById('rep9-tbody');
+    const tfoot = document.getElementById('rep9-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy tài xế nào trong kỳ</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    const totalTrips = list.reduce((sum, item) => sum + (Number(item.trips_count) || 0), 0);
+    const totalSplit = list.reduce((sum, item) => sum + (Number(item.split_trips_count) || 0), 0);
+    const totalBase = list.reduce((sum, item) => sum + (Number(item.base_trip_salary) || 0), 0);
+    const totalLayover = list.reduce((sum, item) => sum + (Number(item.layover_allowance) || 0), 0);
+    const totalSpecial = list.reduce((sum, item) => sum + (Number(item.special_allowances) || 0), 0);
+    const totalAdv = list.reduce((sum, item) => sum + (Number(item.total_advances) || 0), 0);
+    const totalNet = list.reduce((sum, item) => sum + (Number(item.net_salary) || 0), 0);
+    const avgOtp = list.length > 0 ? (list.reduce((sum, item) => sum + (Number(item.otp_rate) || 0), 0) / list.length).toFixed(1) : '0.0';
+    const totalIncidents = list.reduce((sum, item) => sum + (Number(item.incident_count) || 0), 0);
 
     tbody.innerHTML = list.map(item => {
         const baseDisp = canViewFinance ? formatMoneyVND(item.base_trip_salary) : '***';
@@ -14070,6 +14416,23 @@ function applyReport9Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="3" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Tài Xế</td>
+                <td class="text-center font-mono font-black tabular-nums">${totalTrips}</td>
+                <td class="text-center font-mono font-black text-teal-800 tabular-nums">${totalSplit}</td>
+                <td class="text-right font-mono font-bold tabular-nums text-slate-800">${canViewFinance ? formatMoneyVND(totalBase) : '***'}</td>
+                <td class="text-right font-mono font-bold tabular-nums text-amber-700">${canViewFinance ? formatMoneyVND(totalLayover) : '***'}</td>
+                <td class="text-right font-mono font-medium tabular-nums text-slate-600">${canViewFinance ? formatMoneyVND(totalSpecial) : '***'}</td>
+                <td class="text-right font-mono font-medium tabular-nums text-rose-600">${canViewFinance ? formatMoneyVND(totalAdv) : '***'}</td>
+                <td class="text-right font-mono font-black tabular-nums text-emerald-700 bg-emerald-50/80">${canViewFinance ? formatMoneyVND(totalNet) : '***'}</td>
+                <td class="text-center font-mono font-bold tabular-nums">${avgOtp}%</td>
+                <td class="text-center font-mono font-black tabular-nums ${totalIncidents > 0 ? 'text-rose-700' : 'text-slate-400'}">${totalIncidents}</td>
+            </tr>
+        `;
+    }
 }
 
 function toggleReport9Sort(col) {
@@ -14136,12 +14499,21 @@ function applyReport10Filters() {
     });
 
     const tbody = document.getElementById('rep10-tbody');
+    const tfoot = document.getElementById('rep10-tfoot');
     if (!tbody) return;
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy gói Quỹ Điều Vận nào trong kỳ</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
         return;
     }
+
+    const totalAmount = list.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const totalDisbursed = list.reduce((sum, item) => sum + (Number(item.disbursed_amount) || 0), 0);
+    const totalSettled = list.reduce((sum, item) => sum + (Number(item.settled_amount) || 0), 0);
+    const totalRefunds = list.reduce((sum, item) => sum + (Number(item.refunds_returned) || 0), 0);
+    const totalBalance = list.reduce((sum, item) => sum + (Number(item.remaining_balance) || 0), 0);
+    const avgUtil = totalAmount > 0 ? ((totalDisbursed / totalAmount) * 100).toFixed(1) : '0.0';
 
     tbody.innerHTML = list.map(item => {
         let statusBadge = '';
@@ -14195,6 +14567,31 @@ function applyReport10Filters() {
             </tr>
         `;
     }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="3" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Gói Quỹ Điều Vận</td>
+                <td class="text-right font-mono font-black tabular-nums text-slate-900">${formatMoneyVND(totalAmount)}</td>
+                <td class="text-right font-mono font-black tabular-nums text-amber-700">${formatMoneyVND(totalDisbursed)}</td>
+                <td class="text-center font-mono font-bold tabular-nums">${avgUtil}%</td>
+                <td class="text-right font-mono font-bold tabular-nums text-slate-700">${formatMoneyVND(totalSettled)}</td>
+                <td class="text-right font-mono font-bold tabular-nums text-emerald-700">${formatMoneyVND(totalRefunds)}</td>
+                <td class="text-right font-mono font-black tabular-nums text-teal-800 bg-teal-50/80">${formatMoneyVND(totalBalance)}</td>
+                <td colspan="3"></td>
+            </tr>
+        `;
+    }
+}
+
+function toggleReport10Sort(col) {
+    if (rep10SortCol === col) {
+        rep10SortAsc = !rep10SortAsc;
+    } else {
+        rep10SortCol = col;
+        rep10SortAsc = false;
+    }
+    applyReport10Filters();
 }
 
 function toggleReport10Sort(col) {
@@ -14271,7 +14668,46 @@ function applyReport11Filters() {
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="14" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe nào phát sinh tạm ứng hoặc chi phí trong kỳ</td></tr>`;
+        const tfoot = document.getElementById('rep11-tfoot');
+        if (tfoot) tfoot.innerHTML = '';
         return;
+    }
+
+    const totalAdv = list.reduce((sum, item) => sum + (parseFloat(item.advance_amount) || 0), 0);
+    const totalExp = list.reduce((sum, item) => sum + (parseFloat(item.actual_expenses) || 0), 0);
+    const totalBot = list.reduce((sum, item) => sum + (parseFloat(item.bot_expense) || 0), 0);
+    const totalPort = list.reduce((sum, item) => sum + (parseFloat(item.port_lift_expense) || 0), 0);
+    const totalDep = list.reduce((sum, item) => sum + (parseFloat(item.deposit_expense) || 0), 0);
+    const totalDiff = totalAdv - totalExp;
+    const totalDocs = list.reduce((sum, item) => sum + (parseInt(item.documents_count) || 0), 0);
+
+    const tfoot = document.getElementById('rep11-tfoot');
+    if (tfoot) {
+        let diffColor = 'text-slate-800';
+        let diffText = '0 đ';
+        if (totalDiff > 0) {
+            diffColor = 'text-emerald-700 font-black';
+            diffText = `+ ${formatMoneyVND(totalDiff)}`;
+        } else if (totalDiff < 0) {
+            diffColor = 'text-rose-700 font-black';
+            diffText = `- ${formatMoneyVND(Math.abs(totalDiff))}`;
+        }
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
+                <td colspan="6" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Chuyến Tạm Ứng:</td>
+                <td class="text-right text-indigo-800 font-mono font-black p-2">${formatMoneyVND(totalAdv)}</td>
+                <td class="text-right text-rose-700 font-mono font-black p-2">${formatMoneyVND(totalExp)}</td>
+                <td class="text-right text-[11px] text-slate-700 p-2">
+                    <span>BOT: ${formatMoneyVND(totalBot)}</span> | 
+                    <span>Cảng: ${formatMoneyVND(totalPort)}</span>
+                    ${totalDep > 0 ? ` | <span>Cược: ${formatMoneyVND(totalDep)}</span>` : ''}
+                </td>
+                <td class="text-right font-mono p-2 ${diffColor}">${diffText}</td>
+                <td colspan="2" class="text-center p-2"></td>
+                <td class="text-center font-bold text-teal-800 p-2">${totalDocs > 0 ? `<i class="ph-bold ph-receipt mr-0.5"></i>${totalDocs}` : '-'}</td>
+                <td class="p-2"></td>
+            </tr>
+        `;
     }
 
     tbody.innerHTML = list.map(item => {
@@ -14425,7 +14861,30 @@ function applyReport12Filters() {
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="15" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe nào khớp bộ lọc</td></tr>`;
+        const tfoot = document.getElementById('rep12-tfoot');
+        if (tfoot) tfoot.innerHTML = '';
         return;
+    }
+
+    const totalRev = list.reduce((sum, item) => sum + (parseFloat(item.revenue) || 0), 0);
+    const totalExp = list.reduce((sum, item) => sum + (parseFloat(item.expense) || 0), 0);
+    const totalReim = list.reduce((sum, item) => sum + (parseFloat(item.reimbursable) || 0), 0);
+    const totalProfit = list.reduce((sum, item) => sum + (parseFloat(item.profit) || 0), 0);
+    const avgMargin = totalRev > 0 ? ((totalProfit / totalRev) * 100).toFixed(1) : '0.0';
+
+    const tfoot = document.getElementById('rep12-tfoot');
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
+                <td colspan="6" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
+                <td class="text-right text-slate-900 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
+                <td class="text-right text-rose-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
+                <td class="text-right text-indigo-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalReim) : '***'}</td>
+                <td class="text-right text-emerald-700 font-mono font-black bg-emerald-50/40 p-2">${canViewFinance ? formatMoneyVND(totalProfit) : '***'}</td>
+                <td class="text-center font-mono font-bold ${parseFloat(avgMargin) >= 20 ? 'text-emerald-700' : 'text-amber-700'} p-2">${canViewFinance ? `${avgMargin}%` : '***'}</td>
+                <td colspan="4" class="p-2"></td>
+            </tr>
+        `;
     }
 
     tbody.innerHTML = list.map(item => {
@@ -14576,7 +15035,43 @@ function applyReport13Filters() {
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy khách hàng nào có công nợ</td></tr>`;
+        const tfoot = document.getElementById('rep13-tfoot');
+        if (tfoot) tfoot.innerHTML = '';
         return;
+    }
+
+    const totalTrips = list.reduce((sum, item) => sum + (parseInt(item.trips_count) || 0), 0);
+    const totalSettledTrips = list.reduce((sum, item) => sum + (parseInt(item.settled_trips_count) || 0), 0);
+    const totalUnsettledTrips = list.reduce((sum, item) => sum + (parseInt(item.unsettled_trips_count) || 0), 0);
+    const totalFreight = list.reduce((sum, item) => sum + (parseFloat(item.freight_revenue) || 0), 0);
+    const totalReim = list.reduce((sum, item) => sum + (parseFloat(item.reimbursable_amount) || 0), 0);
+    const totalReceivable = list.reduce((sum, item) => sum + (parseFloat(item.total_receivable) || 0), 0);
+    const totalCollected = list.reduce((sum, item) => sum + (parseFloat(item.collected_amount) || 0), 0);
+    const totalBalance = list.reduce((sum, item) => sum + (parseFloat(item.remaining_balance) || 0), 0);
+    const totalCurrent = list.reduce((sum, item) => sum + (parseFloat(item.aging_current) || 0), 0);
+    const total31 = list.reduce((sum, item) => sum + (parseFloat(item.aging_31_60) || 0), 0);
+    const total61 = list.reduce((sum, item) => sum + (parseFloat(item.aging_61_90) || 0), 0);
+    const totalOver90 = list.reduce((sum, item) => sum + (parseFloat(item.aging_over_90) || 0), 0);
+
+    const tfoot = document.getElementById('rep13-tfoot');
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
+                <td class="p-2 uppercase text-slate-900 font-heading">TỔNG CỘNG: ${list.length} Khách Hàng</td>
+                <td class="text-center font-bold font-mono text-slate-900 p-2">${totalTrips}</td>
+                <td class="text-center font-bold text-xs p-2"><span class="text-emerald-700">${totalSettledTrips}</span> / <span class="text-amber-700">${totalUnsettledTrips}</span></td>
+                <td class="text-right text-slate-900 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalFreight) : '***'}</td>
+                <td class="text-right text-slate-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalReim) : '***'}</td>
+                <td class="text-right text-slate-950 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalReceivable) : '***'}</td>
+                <td class="text-right text-emerald-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalCollected) : '***'}</td>
+                <td class="text-right text-indigo-700 font-mono font-black bg-indigo-50/50 p-2">${canViewFinance ? formatMoneyVND(totalBalance) : '***'}</td>
+                <td class="text-right text-emerald-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalCurrent) : '***'}</td>
+                <td class="text-right text-amber-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(total31) : '***'}</td>
+                <td class="text-right text-orange-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(total61) : '***'}</td>
+                <td class="text-right text-rose-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalOver90) : '***'}</td>
+                <td class="p-2"></td>
+            </tr>
+        `;
     }
 
     tbody.innerHTML = list.map(item => {
@@ -14677,11 +15172,17 @@ function viewCustomerARStatement(customerId) {
 
     // Render Bảng Chuyến
     const tbody = document.getElementById('modal-ar-trips-tbody');
+    const modalTfoot = document.getElementById('modal-ar-trips-tfoot');
     if (tbody) {
         const trips = cust.trips || [];
         if (trips.length === 0) {
             tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 font-medium">Không có chi tiết chuyến phát sinh trong kỳ</td></tr>`;
+            if (modalTfoot) modalTfoot.innerHTML = '';
         } else {
+            const sumRev = trips.reduce((sum, t) => sum + (parseFloat(t.revenue) || 0), 0);
+            const sumReim = trips.reduce((sum, t) => sum + (parseFloat(t.reimbursable) || 0), 0);
+            const sumTotal = trips.reduce((sum, t) => sum + (parseFloat(t.total_receivable) || 0), 0);
+
             tbody.innerHTML = trips.map((t, idx) => `
                 <tr class="hover:bg-slate-50 transition-colors">
                     <td class="text-center font-bold text-slate-500">${idx + 1}</td>
@@ -14705,6 +15206,18 @@ function viewCustomerARStatement(customerId) {
                     </td>
                 </tr>
             `).join('');
+
+            if (modalTfoot) {
+                modalTfoot.innerHTML = `
+                    <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
+                        <td colspan="6" class="text-right uppercase p-2">TỔNG CỘNG: ${trips.length} Chuyến Vận Đơn:</td>
+                        <td class="text-right font-mono font-bold text-slate-900 p-2">${formatMoneyVND(sumRev)}</td>
+                        <td class="text-right font-mono font-bold text-slate-600 p-2">${formatMoneyVND(sumReim)}</td>
+                        <td class="text-right font-mono font-black text-slate-950 bg-slate-200/50 p-2">${formatMoneyVND(sumTotal)}</td>
+                        <td colspan="2" class="p-2"></td>
+                    </tr>
+                `;
+            }
         }
     }
 
@@ -14925,7 +15438,27 @@ function applyReport14Filters() {
 
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không có chuyến xe nào bị tồn đọng chưa quyết toán</td></tr>`;
+        const tfoot = document.getElementById('rep14-tfoot');
+        if (tfoot) tfoot.innerHTML = '';
         return;
+    }
+
+    const totalRev = list.reduce((sum, item) => sum + (parseFloat(item.revenue) || 0), 0);
+    const totalExp = list.reduce((sum, item) => sum + (parseFloat(item.expense) || 0), 0);
+    const avgDays = list.length > 0 ? Math.round(list.reduce((sum, item) => sum + (parseInt(item.days_unsettled) || 0), 0) / list.length) : 0;
+
+    const tfoot = document.getElementById('rep14-tfoot');
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
+                <td colspan="2" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Đơn Tồn:</td>
+                <td class="text-center font-bold text-rose-700 font-mono p-2">TB ${avgDays} ngày</td>
+                <td colspan="4" class="p-2"></td>
+                <td class="text-right text-slate-900 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
+                <td class="text-right text-rose-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
+                <td colspan="3" class="p-2"></td>
+            </tr>
+        `;
     }
 
     tbody.innerHTML = list.map(item => {
