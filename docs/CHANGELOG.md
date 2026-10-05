@@ -2,16 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [2.8.2] - 2026-10-05 (Đồng Bộ Thông Tin Doanh Nghiệp Hệ Thống & Trải Nghiệm Xem Full Viền Tờ A4)
+## [2.8.2] - 2026-10-05 (Chuẩn Hóa Logo Khách Hàng Triền Võ & Trải Nghiệm Xem Full Viền Tờ A4)
 
-### 1. Đồng Bộ Thông Tin Doanh Nghiệp Động & Loại Bỏ Nhãn Phụ:
+### 1. Phân Tách Tuyệt Đối Logo Công Ty Khách Hàng (Triền Võ) & Logo Phần Mềm (BIM):
+- **Chuẩn hóa Logo Công ty Triền Võ (`trienvo_logo.png`):**
+  * Tách biệt hoàn toàn Logo phần mềm quản trị BIM (`logo.png`) khỏi các chứng từ in ấn của doanh nghiệp.
+  * Cập nhật model `CompanyProfile` và database: `logo_url` mặc định trỏ chính xác đến `/static/images/trienvo_logo.png` (Logo có vòng cung và chữ TVL - Trien Vo Logistics).
+  * Hàm `syncCompanyProfileToPrintForms()` ngăn chặn triệt để việc fallback nhầm sang logo phần mềm BIM.
 - **Loại bỏ dòng phụ `BIM LOGISTICS`:** Xóa bỏ hoàn toàn nhãn `BIM LOGISTICS — Vận Tải & Dịch Vụ Cảng Quốc Tế` trên toàn bộ các biểu mẫu in (Phiếu Thu/Chi Liên 1 & 2, Báo Giá Cước Vận Chuyển, 14 Phân Hệ Báo Cáo Quản Trị BI).
 - **Hàm `syncCompanyProfileToPrintForms()`:** Tự động lấy trực tiếp thông tin từ cấu hình Khai Báo Hệ Thống (`masterDataCache['company']` / `CompanyProfile`) bao gồm:
-  * Tên doanh nghiệp đầy đủ (`print-comp-name`).
-  * Trụ sở chính (`print-comp-address`).
-  * Mã số thuế, Hotline điều hành, Email (`print-comp-contact`).
-  * Logo nhận diện chính thức (`print-comp-logo`).
-- Tự động đồng bộ ngay khi mở bất kỳ modal in nào (`openCashVoucherModal`, `openQuotationPrintModal`, `openReportPrintModal`).
+  * Tên doanh nghiệp đầy đủ: `CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ` (`print-comp-name`).
+  * Trụ sở chính: `153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh` (`print-comp-address`).
+  * Mã số thuế: `0314567890`, Hotline điều hành: `0965.559.561`, Email: `Phongkinhdoanh.tvl@trienvo.com` (`print-comp-contact`).
+  * Logo nhận diện chính thức Triền Võ Logistics (`print-comp-logo`).
 
 ### 2. Giao Diện Xem Full Viền Tờ A4 (Full Sheet A4 Modal Preview):
 - Mở rộng container modal (`max-w-5xl` / `max-w-6xl`) giúp tờ in hiển thị to rõ, tràn viền trang giấy A4 trên màn hình.

@@ -197,9 +197,9 @@ class CompanyProfile(TimeStampedModel, SoftDeleteModel):
     short_name = models.CharField(max_length=100, blank=True, default='TRIỀN VÕ LOGISTICS', help_text="Tên thương hiệu / viết tắt")
     tax_code = models.CharField(max_length=50, blank=True, default='0312345678', help_text="Mã số thuế")
     phone = models.CharField(max_length=50, blank=True, default='0903.123.456', help_text="Hotline / Số điện thoại liên hệ")
-    email = models.CharField(max_length=100, blank=True, default='contact@trienvo.com', help_text="Email liên hệ")
+    email = models.CharField(max_length=100, blank=True, default='Phongkinhdoanh.tvl@trienvo.com', help_text="Email liên hệ")
     website = models.CharField(max_length=255, blank=True, default='https://trienvo.com', help_text="Website công ty")
-    address = models.CharField(max_length=255, blank=True, default='Số 123 Đường Nguyễn Văn Linh, P. Tân Thuận Tây, Quận 7, TP. Hồ Chí Minh', help_text="Địa chỉ trụ sở chính")
+    address = models.CharField(max_length=255, blank=True, default='153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh', help_text="Địa chỉ trụ sở chính")
     representative_name = models.CharField(max_length=100, blank=True, default='Võ Văn Triền', help_text="Người đại diện pháp luật")
     representative_role = models.CharField(max_length=100, blank=True, default='Giám Đốc', help_text="Chức vụ người đại diện")
     bank_account_number = models.CharField(max_length=50, blank=True, default='19030000000001', help_text="Số tài khoản ngân hàng")
@@ -221,7 +221,7 @@ class CompanyProfile(TimeStampedModel, SoftDeleteModel):
     default_vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=8.00, help_text="Thuế suất VAT mặc định (%)")
     fuel_reference_price = models.DecimalField(max_digits=12, decimal_places=0, default=21000, help_text="Giá dầu tham chiếu chuẩn (VNĐ/Lít)")
     cbm_formula_divisor = models.IntegerField(default=5000, help_text="Hệ số quy đổi thể tích CBM (mặc định 5000)")
-    logo_url = models.CharField(max_length=255, blank=True, default='/static/images/logo.png', help_text="Đường dẫn file logo công ty")
+    logo_url = models.CharField(max_length=255, blank=True, default='/static/images/trienvo_logo.png', help_text="Đường dẫn file logo công ty")
     notes = models.TextField(blank=True, help_text="Ghi chú cấu hình và chính sách vận hành")
     is_default = models.BooleanField(default=True, help_text="Là hồ sơ công ty mặc định")
 
@@ -240,13 +240,13 @@ class CompanyProfile(TimeStampedModel, SoftDeleteModel):
             obj = cls.objects.first()
         if not obj:
             obj = cls.objects.create(
-                company_name='CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ',
+                company_name='CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ',
                 short_name='TRIỀN VÕ LOGISTICS',
-                tax_code='0312345678',
-                phone='0903.123.456',
-                email='contact@trienvo.com',
+                tax_code='0314567890',
+                phone='0965 559 561',
+                email='Phongkinhdoanh.tvl@trienvo.com',
                 website='https://trienvo.com',
-                address='Số 123 Đường Nguyễn Văn Linh, P. Tân Thuận Tây, Quận 7, TP. Hồ Chí Minh',
+                address='153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh',
                 representative_name='Võ Văn Triền',
                 representative_role='Giám Đốc',
                 bank_account_number='19030000000001',
@@ -262,6 +262,7 @@ class CompanyProfile(TimeStampedModel, SoftDeleteModel):
                 default_vat_rate=8.00,
                 fuel_reference_price=21000,
                 cbm_formula_divisor=5000,
+                logo_url='/static/images/trienvo_logo.png',
                 is_default=True,
             )
         return obj

@@ -199,7 +199,8 @@ class MasterDataAPITestCase(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.data.get('success'))
         self.assertIn('TRIỀN VÕ', res.data['data']['company_name'])
-        self.assertEqual(res.data['data']['tax_code'], '0312345678')
+        self.assertEqual(res.data['data']['tax_code'], '0314567890')
+        self.assertEqual(res.data['data']['logo_url'], '/static/images/trienvo_logo.png')
 
         # 2. PUT update profile
         update_res = self.client.put('/api/master-data/company/', {

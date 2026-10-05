@@ -10715,7 +10715,12 @@ function syncCompanyProfileToPrintForms() {
     const compTax = comp.tax_code || '0314567890';
     const compPhone = comp.hotline || comp.phone || '0965.559.561';
     const compEmail = comp.email || 'Phongkinhdoanh.tvl@trienvo.com';
-    const compLogo = comp.logo_url || '/static/images/trienvo_logo.png';
+    
+    // Đảm bảo luôn lấy logo chính thức của Công ty Triền Võ (không lấy logo phần mềm BIM)
+    let compLogo = comp.logo_url || '/static/images/trienvo_logo.png';
+    if (!compLogo || compLogo.endsWith('/logo.png') || compLogo.includes('static/images/logo.png')) {
+        compLogo = '/static/images/trienvo_logo.png';
+    }
 
     // 1. Đồng bộ Tên công ty
     document.querySelectorAll('.print-comp-name').forEach(el => {
@@ -10732,11 +10737,10 @@ function syncCompanyProfileToPrintForms() {
         el.innerText = `MST: ${compTax} • Hotline: ${compPhone} • Email: ${compEmail}`;
     });
 
-    // 4. Đồng bộ Logo
+    // 4. Đồng bộ Logo Công ty Triền Võ
     document.querySelectorAll('.print-comp-logo').forEach(el => {
-        if (compLogo && el.src !== compLogo) {
-            el.src = compLogo;
-        }
+        el.src = compLogo;
+        el.onerror = () => { el.src = '/media/trienvo_logo.png'; };
     });
 }
 window.syncCompanyProfileToPrintForms = syncCompanyProfileToPrintForms;
