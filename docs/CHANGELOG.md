@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.6] - 2026-10-05 (Nâng Cấp Phân Hệ Sales: Báo Giá Đa Tuyến Đường Động, Cơ Chế Định Giá Xăng Dầu & In A4 WYSIWYG)
+
+### 1. Nâng Cấp Phương Thức Định Giá & Mô Hình Báo Giá (Pricing Models):
+- **Báo giá Đa Tuyến Đường (`MULTI_ROUTE`):**
+  * Bổ sung model `QuotationItem` liên kết với `Quotation`, cho phép thêm/sửa/xóa không giới hạn các dòng tuyến đường cho cùng một khách hàng trong một phiếu báo giá.
+  * Mỗi tuyến đường quản lý độc lập: Lộ trình chi tiết, Quy cách loại cont/xe (20GP, 40HC, 45ft, Xe tải 5T, 10T, 15T...), Cự ly km, Đơn giá cước đề xuất (VNĐ), Sản lượng cam kết (chuyến/tháng) và Thành tiền theo từng dòng.
+  * Tự động cộng dồn và tính toán chính xác Tổng sản lượng cam kết và **Tổng Doanh Thu Kế Hoạch / Tháng**.
+- **Báo giá Gắn Biến Động Xăng Dầu DO 0.05S (`FUEL_ADJUSTED`):**
+  * Khai báo Giá dầu DO cơ sở $P_0$ (VNĐ/lít) tại thời điểm ký kết (vd: 21.000 đ/lít).
+  * Khai báo Biên độ bước nhảy giá dầu (vd: 1.000 đ/lít) và Tỷ lệ % điều chỉnh cước tương ứng (vd: $\pm 3.5\%$).
+  * Tự động tạo và hiển thị công thức điều chỉnh giá cước thương mại theo đúng chu kỳ điều hành giá xăng dầu của Petrolimex / Bộ Công Thương.
+- **Báo giá Trọn Gói / Bao Chuyến (`FLAT_CHARTER`):** Hỗ trợ báo giá bao trọn gói cố định theo kỳ hạn.
+
+### 2. Chuẩn Hóa Bản In & Bản Preview A4 WYSIWYG:
+- **Đồng bộ 100% giữa Preview và Bản In (What You See Is What You Get):**
+  * Khung in thiết kế chuẩn tỷ lệ trang A4 đứng (`portrait`, `@page { size: A4 portrait; margin: 8mm 10mm; }`).
+  * Preview trong Modal như thế nào thì khi bấm "In Ngay" hoặc xuất PDF ra giấy y hệt 100%, không bị vỡ bảng, lệch lề hay nhảy trang vô lý.
+  * Render đầy đủ toàn bộ bảng danh sách các tuyến đường (STT 1, 2, 3...).
+  * Tự động hiển thị Khối **"QUY CHUẨN ĐIỀU CHỈNH CƯỚC THEO GIÁ XĂNG DẦU"** khi báo giá áp dụng cơ chế xăng dầu.
+  * Giữ nguyên chữ ký 2 bên Đại diện Khách hàng và Đại diện Triền Võ Logistics (TVL).
+
+### 3. Kiểm Thử & Triển Khai:
+- **86/86 Unit Tests PASSED 100%** (bao gồm `QuotationMultiRouteAndPricingMethodTestCase` và `FrontendSyntaxIntegrityTestCase`).
+- `node -c static/js/app.js` và `node -c static/js/column_manager.js` PASSED không lỗi cú pháp.
+
+---
+
 ## [2.8.5] - 2026-10-05 (Sửa Lỗi Cấu Trúc HTML Layout Báo Cáo & Chuẩn Hóa Nhãn Thương Hiệu BIZ SOLUTIONS)
 
 ### 1. Khắc Phục Triệt Để Lỗi Bố Trí Layout Màn Hình Báo Cáo & Thống Kê:

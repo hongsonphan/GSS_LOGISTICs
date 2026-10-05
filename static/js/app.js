@@ -5493,12 +5493,137 @@ async function loadFleetData() {
 }
 
 // --- 8. SALE & BÁO GIÁ CRM & BOOKINGS CRUD ---
-function calculateQuoteExpectedRevenue() {
-    const price = parseNumberVN(document.getElementById('quote-unit-price')?.value);
-    const trips = parseNumberVN(document.getElementById('quote-monthly-trips')?.value);
+function onQuotationPricingMethodChange(method) {
+    const fuelBox = document.getElementById('quote-fuel-adjustment-box');
+    if (fuelBox) {
+        if (method === 'FUEL_ADJUSTED') {
+            fuelBox.classList.remove('hidden');
+            updateFuelFormulaText();
+        } else {
+            fuelBox.classList.add('hidden');
+        }
+    }
+}
+
+function updateFuelFormulaText() {
+    const basePrice = parseNumberVN(document.getElementById('quote-base-fuel-price')?.value) || 21000;
+    const step = parseNumberVN(document.getElementById('quote-fuel-step')?.value) || 1000;
+    const ratio = parseFloat(document.getElementById('quote-fuel-ratio')?.value) || 3.5;
+    const formulaEl = document.getElementById('quote-fuel-formula-display');
+    if (formulaEl) {
+        formulaEl.innerText = `Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi ${new Intl.NumberFormat('vi-VN').format(step)} đ/lít so với giá cơ sở (${new Intl.NumberFormat('vi-VN').format(basePrice)} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng ${ratio}%.`;
+    }
+}
+
+function addQuotationRouteRow(data = {}) {
+    const tbody = document.getElementById('quote-routes-tbody');
+    if (!tbody) return;
+
+    const rowIdx = tbody.children.length + 1;
+    const routeDesc = data.route_description || data.route || '';
+    const cargoType = data.cargo_type || document.getElementById('quote-cargo-type')?.value || 'Cont 40HC';
+    const estKm = data.estimated_km !== undefined ? data.estimated_km : 30;
+    const unitPrice = data.unit_price !== undefined ? data.unit_price : 3800000;
+    const trips = data.expected_trips_monthly !== undefined ? data.expected_trips_monthly : (data.monthly_trips || 20);
+    const lineTotal = Number(unitPrice) * Number(trips);
+
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50/80 transition-colors quote-route-item-row';
+    tr.innerHTML = `
+        <td class="p-2 text-center font-bold text-slate-500 row-stt">${rowIdx}</td>
+        <td class="p-2">
+            <input type="text" value="${escapeHtml(routeDesc)}" placeholder="VD: CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG" required
+                class="quote-item-route w-full h-8 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-900 text-xs">
+        </td>
+        <td class="p-2">
+            <select class="quote-item-cargo w-full h-8 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600">
+                <option value="Cont 40HC" ${cargoType === 'Cont 40HC' ? 'selected' : ''}>Cont 40HC</option>
+                <option value="Cont 20GP" ${cargoType === 'Cont 20GP' ? 'selected' : ''}>Cont 20GP</option>
+                <option value="Cont 45ft" ${cargoType === 'Cont 45ft' ? 'selected' : ''}>Cont 45ft</option>
+                <option value="Cont Flatrack / Lạnh" ${cargoType.includes('Flatrack') ? 'selected' : ''}>Cont Flatrack/RF</option>
+                <option value="Xe tải 5 tấn" ${cargoType.includes('5 tấn') ? 'selected' : ''}>Xe tải 5T</option>
+                <option value="Xe tải 10 tấn" ${cargoType.includes('10 tấn') ? 'selected' : ''}>Xe tải 10T</option>
+                <option value="Xe tải 15 tấn" ${cargoType.includes('15 tấn') ? 'selected' : ''}>Xe tải 15T</option>
+                <option value="Hàng rời / FTL" ${cargoType.includes('Hàng rời') ? 'selected' : ''}>Hàng rời / FTL</option>
+            </select>
+        </td>
+        <td class="p-2 text-center">
+            <input type="number" step="10" min="0" value="${estKm}" 
+                class="quote-item-km w-16 h-8 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs text-center tabular-nums">
+        </td>
+        <td class="p-2 text-right">
+            <input type="text" inputmode="numeric" value="${formatNumberVN(unitPrice)}" oninput="calculateQuotationItemsTotal()" placeholder="0"
+                class="quote-item-price input-number-vn w-28 h-8 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-teal-800 text-xs text-right tabular-nums">
+        </td>
+        <td class="p-2 text-center">
+            <input type="text" inputmode="numeric" value="${formatNumberVN(trips)}" oninput="calculateQuotationItemsTotal()" placeholder="1"
+                class="quote-item-trips input-number-vn w-20 h-8 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-slate-800 text-xs text-center tabular-nums">
+        </td>
+        <td class="p-2 text-right font-black text-teal-900 font-mono tabular-nums quote-item-line-total text-xs">
+            ${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ
+        </td>
+        <td class="p-2 text-center">
+            <button type="button" onclick="removeQuotationRouteRow(this)" title="Xóa tuyến này"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">
+                <i class="ph-bold ph-trash text-sm"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    initAllNumberInputs();
+    calculateQuotationItemsTotal();
+}
+
+function removeQuotationRouteRow(button) {
+    const tbody = document.getElementById('quote-routes-tbody');
+    if (!tbody) return;
+    const tr = button.closest('tr');
+    if (tr) tr.remove();
+
+    if (tbody.children.length === 0) {
+        addQuotationRouteRow({ route_description: '', unit_price: 3800000, expected_trips_monthly: 10 });
+    } else {
+        Array.from(tbody.children).forEach((row, idx) => {
+            const sttEl = row.querySelector('.row-stt');
+            if (sttEl) sttEl.innerText = idx + 1;
+        });
+        calculateQuotationItemsTotal();
+    }
+}
+
+function calculateQuotationItemsTotal() {
+    const tbody = document.getElementById('quote-routes-tbody');
+    if (!tbody) return;
+
+    let totalRevenue = 0;
+    let totalTrips = 0;
+    const rows = Array.from(tbody.querySelectorAll('tr.quote-route-item-row'));
+
+    rows.forEach(row => {
+        const priceInput = row.querySelector('.quote-item-price');
+        const tripsInput = row.querySelector('.quote-item-trips');
+        const lineTotalEl = row.querySelector('.quote-item-line-total');
+
+        const price = parseNumberVN(priceInput?.value) || 0;
+        const trips = parseNumberVN(tripsInput?.value) || 0;
+        const lineTotal = price * trips;
+
+        if (lineTotalEl) {
+            lineTotalEl.innerText = `${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ`;
+        }
+        totalRevenue += lineTotal;
+        totalTrips += trips;
+    });
+
+    const badgeEl = document.getElementById('quote-routes-count-badge');
+    if (badgeEl) badgeEl.innerText = `${rows.length} tuyến`;
+
+    const tripsLabel = document.getElementById('quote-total-monthly-trips-label');
+    if (tripsLabel) tripsLabel.innerText = `${new Intl.NumberFormat('vi-VN').format(totalTrips)} chuyến/tháng`;
+
     const revEl = document.getElementById('quote-preview-revenue');
     if (revEl) {
-        revEl.innerText = new Intl.NumberFormat('vi-VN').format(price * trips) + ' đ';
+        revEl.innerText = `${new Intl.NumberFormat('vi-VN').format(totalRevenue)} đ`;
     }
 }
 
@@ -5519,7 +5644,7 @@ const DEFAULT_QUOTATION_NOTES = {
     fuel: `- Đơn giá trên chưa bao gồm thuế VAT.
 - Phí bốc xếp tại kho do khách hàng chịu trách nhiệm.
 - Đơn giá áp dụng theo mức giá dầu Diesel cơ sở tại thời điểm báo giá.
-- Khi giá dầu thị trường biến động tăng/giảm trên 5%, hai bên sẽ điều chỉnh đơn giá cước tương ứng.
+- Khi giá dầu thị trường biến động theo từng bước quy định, hai bên sẽ điều chỉnh đơn giá cước tương ứng.
 - Phí Neo tính sau 12h kể từ khi xe đến kho: Neo xe: 1.500.000 VNĐ/đêm, Neo Mooc: 1.000.000 VNĐ/đêm.
 - Hotline hỗ trợ 24/7: 0965 559 561 (Phòng Kinh Doanh).`
 };
@@ -5545,6 +5670,8 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
     const submitBtn = document.getElementById('btn-submit-quote');
     const btnText = document.getElementById('btn-save-quote-text');
     const idInput = document.getElementById('quote-id');
+    const routesTbody = document.getElementById('quote-routes-tbody');
+    if (routesTbody) routesTbody.innerHTML = '';
 
     if (submitBtn) {
         submitBtn.style.display = isReadOnly ? 'none' : 'inline-flex';
@@ -5554,16 +5681,16 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
         if (idInput) idInput.value = '';
         if (titleEl) titleEl.innerText = 'Thêm Báo Giá Tuyến Cước Mới';
         if (btnText) btnText.innerText = 'Lưu Báo Giá';
-        const priceInput = document.getElementById('quote-unit-price');
-        if (priceInput) priceInput.value = formatNumberVN(3800000);
-        const tripsInput = document.getElementById('quote-monthly-trips');
-        if (tripsInput) tripsInput.value = formatNumberVN(20);
-        const origZoneEl = document.getElementById('quote-origin-zone');
-        if (origZoneEl) origZoneEl.value = 'Cát Lái (TP.HCM)';
-        const destZoneEl = document.getElementById('quote-dest-zone');
-        if (destZoneEl) destZoneEl.value = 'Bình Dương (VSIP/Bàu Bàng/Mỹ Phước)';
-        const kmInput = document.getElementById('quote-estimated-km');
-        if (kmInput) kmInput.value = '30';
+
+        const methodEl = document.getElementById('quote-pricing-method');
+        if (methodEl) methodEl.value = 'MULTI_ROUTE';
+        const p0Input = document.getElementById('quote-base-fuel-price');
+        if (p0Input) p0Input.value = formatNumberVN(21000);
+        const stepInput = document.getElementById('quote-fuel-step');
+        if (stepInput) stepInput.value = formatNumberVN(1000);
+        const ratioInput = document.getElementById('quote-fuel-ratio');
+        if (ratioInput) ratioInput.value = '3.5';
+
         const tplEl = document.getElementById('quote-template-type');
         if (tplEl) tplEl.value = 'STANDARD';
         const cargoEl = document.getElementById('quote-cargo-type');
@@ -5571,8 +5698,16 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
         const notesEl = document.getElementById('quote-notes');
         if (notesEl) notesEl.value = DEFAULT_QUOTATION_NOTES.fcl;
 
-        onQuoteZonesChanged();
-        calculateQuoteExpectedRevenue();
+        onQuotationPricingMethodChange('MULTI_ROUTE');
+
+        // Mặc định thêm 1 dòng mẫu
+        addQuotationRouteRow({
+            route_description: 'CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG',
+            cargo_type: 'Cont 40HC',
+            estimated_km: 30,
+            unit_price: 3800000,
+            expected_trips_monthly: 20
+        });
     } else {
         if (idInput) idInput.value = quoteId;
         if (titleEl) titleEl.innerText = isReadOnly ? 'Đang tải chi tiết báo giá...' : 'Đang tải thông tin báo giá...';
@@ -5590,21 +5725,21 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
             }
             const custEl = document.getElementById('quote-customer');
             if (custEl) setSelectValueCaseInsensitive(custEl, q.customer_name);
-            const origZoneEl = document.getElementById('quote-origin-zone');
-            if (origZoneEl) origZoneEl.value = q.origin_zone || '';
-            const destZoneEl = document.getElementById('quote-dest-zone');
-            if (destZoneEl) destZoneEl.value = q.destination_zone || '';
-            const kmInput = document.getElementById('quote-estimated-km');
-            if (kmInput) kmInput.value = q.estimated_km || 30;
-            const routeEl = document.getElementById('quote-route');
-            if (routeEl) routeEl.value = q.route_description;
-            const priceEl = document.getElementById('quote-unit-price');
-            if (priceEl) priceEl.value = formatNumberVN(q.unit_price);
-            const tripsEl = document.getElementById('quote-monthly-trips');
-            if (tripsEl) tripsEl.value = formatNumberVN(q.expected_trips_monthly);
+
+            const methodEl = document.getElementById('quote-pricing-method');
+            if (methodEl) methodEl.value = q.pricing_method || 'MULTI_ROUTE';
+
+            const p0Input = document.getElementById('quote-base-fuel-price');
+            if (p0Input) p0Input.value = formatNumberVN(q.base_fuel_price || 21000);
+            const stepInput = document.getElementById('quote-fuel-step');
+            if (stepInput) stepInput.value = formatNumberVN(q.fuel_step_vnd || 1000);
+            const ratioInput = document.getElementById('quote-fuel-ratio');
+            if (ratioInput) ratioInput.value = q.fuel_ratio_percent || 3.5;
+
+            onQuotationPricingMethodChange(q.pricing_method || 'MULTI_ROUTE');
+
             const statusEl = document.getElementById('quote-status');
             if (statusEl) statusEl.value = q.status;
-
             const tplEl = document.getElementById('quote-template-type');
             if (tplEl) tplEl.value = q.template_type || 'STANDARD';
             const cargoEl = document.getElementById('quote-cargo-type');
@@ -5613,12 +5748,32 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
             if (contactPersonEl) contactPersonEl.value = q.contact_person || '';
             const contactPhoneEl = document.getElementById('quote-contact-phone');
             if (contactPhoneEl) contactPhoneEl.value = q.contact_phone || '';
+            const contactEmailEl = document.getElementById('quote-contact-email');
+            if (contactEmailEl) contactEmailEl.value = q.contact_email || '';
             const validUntilEl = document.getElementById('quote-valid-until');
             if (validUntilEl) validUntilEl.value = q.valid_until || '';
             const notesEl = document.getElementById('quote-notes');
             if (notesEl) notesEl.value = q.notes || DEFAULT_QUOTATION_NOTES.fcl;
 
-            calculateQuoteExpectedRevenue();
+            if (q.items && q.items.length > 0) {
+                q.items.forEach(it => addQuotationRouteRow(it));
+            } else {
+                addQuotationRouteRow({
+                    route_description: q.route_description,
+                    cargo_type: q.cargo_type || 'Cont 40HC',
+                    estimated_km: q.estimated_km || 30,
+                    unit_price: q.unit_price || 3800000,
+                    expected_trips_monthly: q.expected_trips_monthly || 10
+                });
+            }
+
+            if (isReadOnly && form) {
+                form.querySelectorAll('input, select, textarea, button').forEach(el => {
+                    if (el.id !== 'btn-print-quote-modal' && !el.getAttribute('onclick')?.includes('closeModal') && !el.getAttribute('onclick')?.includes('printQuotation')) {
+                        el.disabled = true;
+                    }
+                });
+            }
         } catch (err) {
             console.error('Lỗi tải chi tiết báo giá:', err);
             showToast('error', 'Không thể tải thông tin báo giá để xem/chỉnh sửa', 'Lỗi');
@@ -5636,23 +5791,47 @@ async function saveQuotation(e) {
     }
     const id = document.getElementById('quote-id')?.value;
     const customer = document.getElementById('quote-customer')?.value?.trim();
-    const origZone = document.getElementById('quote-origin-zone')?.value?.trim() || '';
-    const destZone = document.getElementById('quote-dest-zone')?.value?.trim() || '';
-    const estimatedKm = parseInt(document.getElementById('quote-estimated-km')?.value) || 0;
-    const route = document.getElementById('quote-route')?.value?.trim();
-    const unitPrice = parseNumberVN(document.getElementById('quote-unit-price')?.value);
-    const monthlyTrips = parseNumberVN(document.getElementById('quote-monthly-trips')?.value);
+    const pricingMethod = document.getElementById('quote-pricing-method')?.value || 'MULTI_ROUTE';
+    const baseFuelPrice = parseNumberVN(document.getElementById('quote-base-fuel-price')?.value) || 21000;
+    const fuelStep = parseNumberVN(document.getElementById('quote-fuel-step')?.value) || 1000;
+    const fuelRatio = parseFloat(document.getElementById('quote-fuel-ratio')?.value) || 3.5;
     const statusVal = document.getElementById('quote-status')?.value || 'NEGOTIATING';
-
     const templateType = document.getElementById('quote-template-type')?.value || 'STANDARD';
     const cargoType = document.getElementById('quote-cargo-type')?.value || 'Container 40HC / Hàng tổng hợp';
     const contactPerson = document.getElementById('quote-contact-person')?.value?.trim() || '';
     const contactPhone = document.getElementById('quote-contact-phone')?.value?.trim() || '';
+    const contactEmail = document.getElementById('quote-contact-email')?.value?.trim() || '';
     const validUntil = document.getElementById('quote-valid-until')?.value || '';
     const notes = document.getElementById('quote-notes')?.value || '';
 
-    if (!customer || !route) {
-        showToast('warning', 'Vui lòng nhập đầy đủ tên khách hàng và tuyến đường', 'Thiếu Thông Tin');
+    if (!customer) {
+        showToast('warning', 'Vui lòng chọn khách hàng hợp lệ trong danh mục!', 'Thiếu Thông Tin');
+        return;
+    }
+
+    // Thu thập danh sách các dòng tuyến đường
+    const rows = Array.from(document.querySelectorAll('#quote-routes-tbody tr.quote-route-item-row'));
+    const items = [];
+    rows.forEach(row => {
+        const route = row.querySelector('.quote-item-route')?.value?.trim();
+        const cargo = row.querySelector('.quote-item-cargo')?.value || cargoType;
+        const km = parseInt(row.querySelector('.quote-item-km')?.value) || 0;
+        const price = parseNumberVN(row.querySelector('.quote-item-price')?.value) || 0;
+        const trips = parseNumberVN(row.querySelector('.quote-item-trips')?.value) || 1;
+
+        if (route) {
+            items.push({
+                route_description: route,
+                cargo_type: cargo,
+                estimated_km: km,
+                unit_price: price,
+                expected_trips_monthly: trips
+            });
+        }
+    });
+
+    if (items.length === 0) {
+        showToast('warning', 'Vui lòng nhập ít nhất 1 tuyến đường báo giá hợp lệ!', 'Thiếu Thông Tin');
         return;
     }
 
@@ -5667,20 +5846,25 @@ async function saveQuotation(e) {
         let res;
         const payload = {
             customer: customer,
-            origin_zone: origZone,
-            destination_zone: destZone,
-            estimated_km: estimatedKm,
-            route_description: route,
-            unit_price: unitPrice,
-            expected_trips_monthly: monthlyTrips,
-            monthly_trips: monthlyTrips,
+            pricing_method: pricingMethod,
+            base_fuel_price: baseFuelPrice,
+            fuel_step_vnd: fuelStep,
+            fuel_ratio_percent: fuelRatio,
             status: statusVal,
             template_type: templateType,
             cargo_type: cargoType,
             contact_person: contactPerson,
             contact_phone: contactPhone,
+            contact_email: contactEmail,
             valid_until: validUntil,
-            notes: notes
+            notes: notes,
+            items: items,
+            // Fallback fields
+            route_description: items[0].route_description,
+            unit_price: items[0].unit_price,
+            expected_trips_monthly: items[0].expected_trips_monthly,
+            monthly_trips: items[0].expected_trips_monthly,
+            estimated_km: items[0].estimated_km
         };
 
         if (id) {
@@ -5743,16 +5927,37 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const modalTitle = document.getElementById('quote-print-modal-title');
     if (modalTitle) modalTitle.innerText = `Báo Giá [${q.quotation_code || q.code || ''}] - ${q.customer_name || q.customer || ''}`;
 
-    const unitPrice = Number(q.unit_price || 0);
-    const monthlyTrips = Number(q.expected_trips_monthly || q.monthly_trips || 0);
-    const totalPrice = unitPrice * (monthlyTrips || 1);
-    const amountInWords = (typeof numberToWordsVN === 'function') ? numberToWordsVN(totalPrice) : `${new Intl.NumberFormat('vi-VN').format(totalPrice)} đồng`;
+    // Chuẩn bị danh sách items
+    let items = q.items || [];
+    if (!items || items.length === 0) {
+        items = [{
+            route_description: q.route_description || q.route || 'Tuyến vận chuyển chính',
+            cargo_type: q.cargo_type || 'Cont 40HC',
+            estimated_km: q.estimated_km || 0,
+            unit_price: q.unit_price || 0,
+            expected_trips_monthly: q.expected_trips_monthly || q.monthly_trips || 1
+        }];
+    }
+
+    let grandTotal = 0;
+    items.forEach(it => {
+        grandTotal += Number(it.unit_price || 0) * Number(it.expected_trips_monthly || 1);
+    });
+
+    const amountInWords = (typeof numberToWordsVN === 'function') ? numberToWordsVN(grandTotal) : `${new Intl.NumberFormat('vi-VN').format(grandTotal)} đồng`;
     const createdDate = q.created_at || (new Date().toLocaleDateString('vi-VN'));
     const notesText = q.notes || DEFAULT_QUOTATION_NOTES.fcl;
 
-    // 1. Điền dữ liệu MẪU 1: STANDARD (TVL Tiêu Chuẩn)
     const now = new Date();
     const datePlaceStr = `Tp. Hồ Chí Minh, ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
+
+    const isFuelAdjusted = (q.pricing_method === 'FUEL_ADJUSTED') || Boolean(q.base_fuel_price && q.pricing_method === 'FUEL_ADJUSTED');
+    const p0Val = Number(q.base_fuel_price || 21000);
+    const stepVal = Number(q.fuel_step_vnd || 1000);
+    const ratioVal = Number(q.fuel_ratio_percent || 3.5);
+    const formulaText = q.fuel_surcharge_formula || `Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi ${new Intl.NumberFormat('vi-VN').format(stepVal)} đ/lít so với giá cơ sở (${new Intl.NumberFormat('vi-VN').format(p0Val)} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng ${ratioVal}%.`;
+
+    // 1. Điền dữ liệu MẪU 1: STANDARD (TVL Tiêu Chuẩn)
     const p1DatePlace = document.getElementById('print-q1-date-place');
     if (p1DatePlace) p1DatePlace.innerText = datePlaceStr;
 
@@ -5774,29 +5979,47 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const p1Tax = document.getElementById('print-q1-tax-code');
     if (p1Tax) p1Tax.innerText = q.customer_tax_code || 'Chưa cập nhật';
 
-    const p1Route = document.getElementById('print-q1-route');
-    if (p1Route) p1Route.innerText = q.route_description || q.route || '';
-
-    const p1Cargo = document.getElementById('print-q1-cargo');
-    if (p1Cargo) p1Cargo.innerText = q.cargo_type || 'Cont 40HC';
-
-    const p1Km = document.getElementById('print-q1-km');
-    if (p1Km) p1Km.innerText = `${q.estimated_km || 0} km`;
-
-    const p1UnitPrice = document.getElementById('print-q1-unit-price');
-    if (p1UnitPrice) p1UnitPrice.innerText = `${new Intl.NumberFormat('vi-VN').format(unitPrice)} đ`;
-
-    const p1Trips = document.getElementById('print-q1-trips');
-    if (p1Trips) p1Trips.innerText = `${new Intl.NumberFormat('vi-VN').format(monthlyTrips)} chuyến`;
-
-    const p1TotalPrice = document.getElementById('print-q1-total-price');
-    if (p1TotalPrice) p1TotalPrice.innerText = `${new Intl.NumberFormat('vi-VN').format(totalPrice)} đ`;
+    // Render bảng Mẫu 1
+    const p1Tbody = document.getElementById('print-q1-table-body');
+    if (p1Tbody) {
+        p1Tbody.innerHTML = items.map((it, idx) => {
+            const lineTotal = Number(it.unit_price || 0) * Number(it.expected_trips_monthly || 1);
+            return `
+                <tr>
+                    <td class="border border-slate-400 p-2 text-center font-bold">${idx + 1}</td>
+                    <td class="border border-slate-400 p-2 font-bold text-slate-900">${escapeHtml(it.route_description || it.route || '')}</td>
+                    <td class="border border-slate-400 p-2 text-center">${escapeHtml(it.cargo_type || q.cargo_type || 'Cont 40HC')}</td>
+                    <td class="border border-slate-400 p-2 text-center font-semibold tabular-nums">${it.estimated_km || 0} km</td>
+                    <td class="border border-slate-400 p-2 text-right font-bold text-slate-950 tabular-nums">${new Intl.NumberFormat('vi-VN').format(it.unit_price || 0)} đ</td>
+                    <td class="border border-slate-400 p-2 text-center font-semibold tabular-nums">${new Intl.NumberFormat('vi-VN').format(it.expected_trips_monthly || 1)} chuyến</td>
+                    <td class="border border-slate-400 p-2 text-right font-black text-slate-950 tabular-nums">${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ</td>
+                </tr>
+            `;
+        }).join('');
+    }
 
     const p1GrandTotal = document.getElementById('print-q1-grand-total');
-    if (p1GrandTotal) p1GrandTotal.innerText = `${new Intl.NumberFormat('vi-VN').format(totalPrice)} VNĐ`;
+    if (p1GrandTotal) p1GrandTotal.innerText = `${new Intl.NumberFormat('vi-VN').format(grandTotal)} VNĐ`;
 
     const p1TotalWords = document.getElementById('print-q1-total-words');
     if (p1TotalWords) p1TotalWords.innerText = amountInWords;
+
+    const p1FuelBox = document.getElementById('print-q1-fuel-box');
+    if (p1FuelBox) {
+        if (isFuelAdjusted) {
+            p1FuelBox.classList.remove('hidden');
+            const p0El = document.getElementById('print-q1-fuel-p0');
+            if (p0El) p0El.innerText = `${new Intl.NumberFormat('vi-VN').format(p0Val)} đ/lít`;
+            const stepEl = document.getElementById('print-q1-fuel-step');
+            if (stepEl) stepEl.innerText = `±${new Intl.NumberFormat('vi-VN').format(stepVal)} đ/lít`;
+            const ratioEl = document.getElementById('print-q1-fuel-ratio');
+            if (ratioEl) ratioEl.innerText = `±${ratioVal}% cước`;
+            const formEl = document.getElementById('print-q1-fuel-formula');
+            if (formEl) formEl.innerText = formulaText;
+        } else {
+            p1FuelBox.classList.add('hidden');
+        }
+    }
 
     const p1Notes = document.getElementById('print-q1-notes-content');
     if (p1Notes) p1Notes.innerText = notesText;
@@ -5823,17 +6046,37 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const p2Cargo = document.getElementById('print-q2-cargo');
     if (p2Cargo) p2Cargo.innerText = q.cargo_type || 'Container & Hàng tổng hợp';
 
-    const p2Origin = document.getElementById('print-q2-origin');
-    if (p2Origin) p2Origin.innerText = q.origin_zone || 'Điểm nhận hàng';
+    const p2Tbody = document.getElementById('print-q2-tbody');
+    if (p2Tbody) {
+        p2Tbody.innerHTML = items.map((it, idx) => {
+            const lineTotal = Number(it.unit_price || 0) * Number(it.expected_trips_monthly || 1);
+            return `
+                <tr>
+                    <td class="border border-slate-900 p-2 text-center font-bold">${idx + 1}</td>
+                    <td class="border border-slate-900 p-2 font-bold text-slate-900">${escapeHtml(it.route_description || it.route || '')}</td>
+                    <td class="border border-slate-900 p-2 text-center font-semibold">${escapeHtml(it.cargo_type || q.cargo_type || 'Cont 40HC')}</td>
+                    <td class="border border-slate-900 p-2 text-center">${it.estimated_km || 0} km</td>
+                    <td class="border border-slate-900 p-2 text-right font-black font-mono">${new Intl.NumberFormat('vi-VN').format(it.unit_price || 0)} đ</td>
+                    <td class="border border-slate-900 p-2 text-center font-semibold">${new Intl.NumberFormat('vi-VN').format(it.expected_trips_monthly || 1)} chuyến</td>
+                    <td class="border border-slate-900 p-2 text-right font-black font-mono text-slate-950">${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ</td>
+                </tr>
+            `;
+        }).join('');
+    }
 
-    const p2Dest = document.getElementById('print-q2-dest');
-    if (p2Dest) p2Dest.innerText = q.destination_zone || q.route_description || q.route || '';
+    const p2GrandTotal = document.getElementById('print-q2-grand-total');
+    if (p2GrandTotal) p2GrandTotal.innerText = `${new Intl.NumberFormat('vi-VN').format(grandTotal)} VNĐ`;
 
-    const p2Km = document.getElementById('print-q2-km');
-    if (p2Km) p2Km.innerText = `${q.estimated_km || 0} km`;
-
-    const p2Price40 = document.getElementById('print-q2-price-40');
-    if (p2Price40) p2Price40.innerText = `${new Intl.NumberFormat('vi-VN').format(unitPrice)} đ`;
+    const p2FuelBox = document.getElementById('print-q2-fuel-box');
+    if (p2FuelBox) {
+        if (isFuelAdjusted) {
+            p2FuelBox.classList.remove('hidden');
+            const descEl = document.getElementById('print-q2-fuel-desc');
+            if (descEl) descEl.innerText = formulaText;
+        } else {
+            p2FuelBox.classList.add('hidden');
+        }
+    }
 
     const p2Notes = document.getElementById('print-q2-notes');
     if (p2Notes) p2Notes.innerText = notesText;
@@ -5848,26 +6091,39 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const p3Cust = document.getElementById('print-q3-customer');
     if (p3Cust) p3Cust.innerText = q.customer_name || q.customer || '';
 
-    const p3Route = document.getElementById('print-q3-route');
-    if (p3Route) p3Route.innerText = `Vận chuyển tuyến: ${q.route_description || q.route || ''}`;
-
-    const p3Cargo = document.getElementById('print-q3-cargo');
-    if (p3Cargo) p3Cargo.innerText = q.cargo_type || 'Cont 40HC';
-
-    const p3Trips = document.getElementById('print-q3-trips');
-    if (p3Trips) p3Trips.innerText = `${new Intl.NumberFormat('vi-VN').format(monthlyTrips)} chuyến`;
-
-    const p3Price = document.getElementById('print-q3-price');
-    if (p3Price) p3Price.innerText = `${new Intl.NumberFormat('vi-VN').format(unitPrice)} đ`;
-
-    const p3Total = document.getElementById('print-q3-total');
-    if (p3Total) p3Total.innerText = `${new Intl.NumberFormat('vi-VN').format(totalPrice)} đ`;
+    const p3Tbody = document.getElementById('print-q3-tbody');
+    if (p3Tbody) {
+        p3Tbody.innerHTML = items.map((it, idx) => {
+            const lineTotal = Number(it.unit_price || 0) * Number(it.expected_trips_monthly || 1);
+            return `
+                <tr>
+                    <td class="border border-slate-300 p-2 text-center">${idx + 1}</td>
+                    <td class="border border-slate-300 p-2 font-bold">${escapeHtml(it.route_description || it.route || '')}</td>
+                    <td class="border border-slate-300 p-2 text-center">${escapeHtml(it.cargo_type || q.cargo_type || 'Cont 40HC')}</td>
+                    <td class="border border-slate-300 p-2 text-center font-semibold">${new Intl.NumberFormat('vi-VN').format(it.expected_trips_monthly || 1)} chuyến</td>
+                    <td class="border border-slate-300 p-2 text-right font-mono">${new Intl.NumberFormat('vi-VN').format(it.unit_price || 0)} đ</td>
+                    <td class="border border-slate-300 p-2 text-right font-black font-mono">${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ</td>
+                </tr>
+            `;
+        }).join('');
+    }
 
     const p3GrandTotal = document.getElementById('print-q3-grand-total');
-    if (p3GrandTotal) p3GrandTotal.innerText = `${new Intl.NumberFormat('vi-VN').format(totalPrice)} VNĐ`;
+    if (p3GrandTotal) p3GrandTotal.innerText = `${new Intl.NumberFormat('vi-VN').format(grandTotal)} VNĐ`;
 
     const p3Words = document.getElementById('print-q3-words');
     if (p3Words) p3Words.innerText = amountInWords;
+
+    const p3FuelBox = document.getElementById('print-q3-fuel-box');
+    if (p3FuelBox) {
+        if (isFuelAdjusted) {
+            p3FuelBox.classList.remove('hidden');
+            const descEl = document.getElementById('print-q3-fuel-desc');
+            if (descEl) descEl.innerText = formulaText;
+        } else {
+            p3FuelBox.classList.add('hidden');
+        }
+    }
 
     const p3Notes = document.getElementById('print-q3-notes');
     if (p3Notes) p3Notes.innerText = notesText;
@@ -5919,35 +6175,56 @@ function printQuotationFromModal() {
     const id = document.getElementById('quote-id')?.value;
     const custSelect = document.getElementById('quote-customer');
     const customer = custSelect ? (custSelect.options[custSelect.selectedIndex]?.text || '') : '';
-    const origZone = document.getElementById('quote-origin-zone')?.value || '';
-    const destZone = document.getElementById('quote-dest-zone')?.value || '';
-    const estimatedKm = parseInt(document.getElementById('quote-estimated-km')?.value) || 0;
-    const route = document.getElementById('quote-route')?.value || '';
-    const unitPrice = parseNumberVN(document.getElementById('quote-unit-price')?.value);
-    const monthlyTrips = parseNumberVN(document.getElementById('quote-monthly-trips')?.value);
+    const pricingMethod = document.getElementById('quote-pricing-method')?.value || 'MULTI_ROUTE';
+    const baseFuelPrice = parseNumberVN(document.getElementById('quote-base-fuel-price')?.value) || 21000;
+    const fuelStep = parseNumberVN(document.getElementById('quote-fuel-step')?.value) || 1000;
+    const fuelRatio = parseFloat(document.getElementById('quote-fuel-ratio')?.value) || 3.5;
     const templateType = document.getElementById('quote-template-type')?.value || 'STANDARD';
     const cargoType = document.getElementById('quote-cargo-type')?.value || 'Container 40HC / Hàng tổng hợp';
     const contactPerson = document.getElementById('quote-contact-person')?.value || '';
     const contactPhone = document.getElementById('quote-contact-phone')?.value || '';
+    const contactEmail = document.getElementById('quote-contact-email')?.value || '';
     const validUntil = document.getElementById('quote-valid-until')?.value || '';
     const notes = document.getElementById('quote-notes')?.value || '';
+
+    // Thu thập danh sách items từ các hàng đang nhập
+    const rows = Array.from(document.querySelectorAll('#quote-routes-tbody tr.quote-route-item-row'));
+    const items = [];
+    rows.forEach(row => {
+        const route = row.querySelector('.quote-item-route')?.value?.trim();
+        const cargo = row.querySelector('.quote-item-cargo')?.value || cargoType;
+        const km = parseInt(row.querySelector('.quote-item-km')?.value) || 0;
+        const price = parseNumberVN(row.querySelector('.quote-item-price')?.value) || 0;
+        const trips = parseNumberVN(row.querySelector('.quote-item-trips')?.value) || 1;
+
+        if (route) {
+            items.push({
+                route_description: route,
+                cargo_type: cargo,
+                estimated_km: km,
+                unit_price: price,
+                expected_trips_monthly: trips
+            });
+        }
+    });
 
     const quoteData = {
         id: id,
         quotation_code: id ? `BG-${id}` : 'BG-DRAFT',
         customer_name: customer.replace(/^[^-]+-\s*/, '').trim(),
-        origin_zone: origZone,
-        destination_zone: destZone,
-        estimated_km: estimatedKm,
-        route_description: route,
-        unit_price: unitPrice,
-        expected_trips_monthly: monthlyTrips,
+        pricing_method: pricingMethod,
+        base_fuel_price: baseFuelPrice,
+        fuel_step_vnd: fuelStep,
+        fuel_ratio_percent: fuelRatio,
+        fuel_surcharge_formula: `Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi ${new Intl.NumberFormat('vi-VN').format(fuelStep)} đ/lít so với giá cơ sở (${new Intl.NumberFormat('vi-VN').format(baseFuelPrice)} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng ${fuelRatio}%.`,
         template_type: templateType,
         cargo_type: cargoType,
         contact_person: contactPerson,
         contact_phone: contactPhone,
+        contact_email: contactEmail,
         valid_until: validUntil,
-        notes: notes
+        notes: notes,
+        items: items
     };
 
     openQuotationPrintModal(quoteData, templateType);
@@ -6980,12 +7257,36 @@ function renderQuotationsTable(quotations) {
         if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'bg-amber-100 text-amber-800';
         if (s.status.includes('Từ chối') || s.status.includes('hết hiệu lực')) statusCls = 'bg-rose-100 text-rose-800';
 
+        const hasMultiRoutes = (s.items_count && s.items_count > 1) || (s.items && s.items.length > 1);
+        const routeCount = s.items_count || (s.items ? s.items.length : 1);
+        const isFuelAdj = s.pricing_method === 'FUEL_ADJUSTED';
+
+        let routeDisplay = escapeHtml(s.route);
+        if (hasMultiRoutes) {
+            routeDisplay = `
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-bold text-slate-900">${escapeHtml(s.route)}</span>
+                    <span class="px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px] border border-indigo-200">+${routeCount - 1} tuyến khác</span>
+                </div>
+            `;
+        }
+
+        let methodBadge = '';
+        if (isFuelAdj) {
+            methodBadge = `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200"><i class="ph-bold ph-gas-pump"></i> Giá Dầu</span>`;
+        }
+
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors';
         tr.innerHTML = `
-            <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">${escapeHtml(s.code)}</td>
+            <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">
+                <div class="flex flex-col">
+                    <span>${escapeHtml(s.code)}</span>
+                    ${methodBadge ? `<div class="mt-0.5">${methodBadge}</div>` : ''}
+                </div>
+            </td>
             <td class="p-3.5 font-bold text-slate-900 text-sm">${escapeHtml(s.customer)}</td>
-            <td class="p-3.5 font-medium text-slate-700 text-[13.5px]">${escapeHtml(s.route)}</td>
+            <td class="p-3.5 font-medium text-slate-700 text-[13px]">${routeDisplay}</td>
             <td class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>
             <td class="p-3.5 text-center font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(s.monthly_trips || 0)} <span class="text-xs text-slate-400 font-normal">chuyến</span></td>
             <td class="p-3.5 text-right font-black text-emerald-700 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(s.expected_revenue)} đ</td>

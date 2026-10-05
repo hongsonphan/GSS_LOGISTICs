@@ -12,7 +12,7 @@ from apps.dispatch.models import DispatchTrip, TripTimelineItem, ShipmentType, T
 from apps.dispatch.timeline_service import sync_trip_10_step_timeline, build_10_step_timeline_spec, get_derived_7_milestones
 from apps.fleet.models import Vehicle, Trailer, VehicleStatus, VehicleType
 from apps.personnel.models import Employee, Department, EmployeeRole
-from apps.customers.models import Customer, Quotation, RouteTariff, BookingOrder, BookingStatus, BookingDocument
+from apps.customers.models import Customer, Quotation, QuotationItem, RouteTariff, BookingOrder, BookingStatus, BookingDocument
 from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus
 from apps.documents.models import TripDocument, DocumentType
 from django.core.exceptions import ValidationError, ValidationError as DjangoValidationError
@@ -2403,7 +2403,7 @@ class SalesAPIView(APIView):
         from_date = request.GET.get('from_date') or request.GET.get('start_date')
         to_date = request.GET.get('to_date') or request.GET.get('end_date')
 
-        quotations = Quotation.objects.filter(is_deleted=False).select_related('customer').all()
+        quotations = Quotation.objects.filter(is_deleted=False).select_related('customer').prefetch_related('items').all()
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
@@ -2436,6 +2436,22 @@ class SalesAPIView(APIView):
             elif q.status == 'REJECTED':
                 rejected_count += 1
 
+            q_items = []
+            for it in q.items.filter(is_deleted=False):
+                q_items.append({
+                    'id': it.id,
+                    'route_description': it.route_description,
+                    'origin_zone': it.origin_zone,
+                    'destination_zone': it.destination_zone,
+                    'cargo_type': it.cargo_type,
+                    'estimated_km': it.estimated_km,
+                    'unit_price': float(it.unit_price),
+                    'expected_trips_monthly': it.expected_trips_monthly,
+                    'surcharges': float(it.surcharges),
+                    'line_revenue': float(it.line_revenue),
+                    'notes': it.notes
+                })
+
             q_results.append({
                 'id': q.id,
                 'code': q.quotation_code,
@@ -2445,13 +2461,21 @@ class SalesAPIView(APIView):
                 'customer_address': q.customer.address or '',
                 'customer_phone': q.customer.phone or '',
                 'customer_contact': q.customer.contact_person or '',
+                'pricing_method': q.pricing_method or 'MULTI_ROUTE',
+                'pricing_method_display': q.get_pricing_method_display(),
+                'base_fuel_price': float(q.base_fuel_price or 21000),
+                'fuel_step_vnd': float(q.fuel_step_vnd or 1000),
+                'fuel_ratio_percent': float(q.fuel_ratio_percent or 3.5),
+                'fuel_surcharge_formula': q.fuel_surcharge_formula or '',
                 'origin_zone': q.origin_zone or '',
                 'destination_zone': q.destination_zone or '',
                 'estimated_km': q.estimated_km or 0,
                 'route': q.route_description,
-                'unit_price': q.unit_price,
+                'unit_price': float(q.unit_price),
                 'monthly_trips': q.expected_trips_monthly,
-                'expected_revenue': q.expected_revenue,
+                'expected_revenue': float(q.expected_revenue),
+                'items': q_items,
+                'items_count': len(q_items),
                 'status': q.get_status_display(),
                 'status_raw': q.status,
                 'notes': q.notes or '',
@@ -2724,25 +2748,105 @@ class SalesAPIView(APIView):
                 except Exception:
                     pass
 
-            quotation = Quotation.objects.create(
-                quotation_code=q_code,
-                customer=customer,
-                origin_zone=data.get('origin_zone', '').strip(),
-                destination_zone=data.get('destination_zone', '').strip(),
-                estimated_km=int(data.get('estimated_km') or 0),
-                route_description=data.get('route_description', '').strip(),
-                unit_price=float(data.get('unit_price') or 4000000),
-                expected_trips_monthly=int(data.get('monthly_trips') or 10),
-                status=data.get('status', 'NEGOTIATING'),
-                notes=data.get('notes', '').strip(),
-                template_type=data.get('template_type', 'STANDARD').strip(),
-                contact_person=data.get('contact_person', '').strip(),
-                contact_phone=data.get('contact_phone', '').strip(),
-                contact_email=data.get('contact_email', '').strip(),
-                cargo_type=data.get('cargo_type', 'Hàng tổng hợp / Container').strip(),
-                valid_until=valid_until_d
-            )
-            return Response({'success': True, 'message': f'Tạo Báo Giá {quotation.quotation_code} thành công!', 'quotation_id': quotation.id})
+            # Xử lý danh sách tuyến đường (items list)
+            items_raw = data.get('items') or data.get('items_json')
+            items_list = []
+            if items_raw:
+                if isinstance(items_raw, str):
+                    import json
+                    try:
+                        items_list = json.loads(items_raw)
+                    except Exception:
+                        items_list = []
+                elif isinstance(items_raw, list):
+                    items_list = items_raw
+
+            first_route = data.get('route_description', '').strip()
+            first_unit_price = float(data.get('unit_price') or 4000000)
+            first_trips = int(data.get('monthly_trips') or data.get('expected_trips_monthly') or 10)
+            first_orig_zone = data.get('origin_zone', '').strip()
+            first_dest_zone = data.get('destination_zone', '').strip()
+            first_est_km = int(data.get('estimated_km') or 0)
+            first_cargo = data.get('cargo_type', 'Container 40HC / Hàng tổng hợp').strip()
+
+            if items_list and len(items_list) > 0:
+                it0 = items_list[0]
+                first_route = it0.get('route_description', first_route) or first_route
+                first_unit_price = float(it0.get('unit_price', first_unit_price) or first_unit_price)
+                first_trips = int(it0.get('expected_trips_monthly', first_trips) or first_trips)
+                first_orig_zone = it0.get('origin_zone', first_orig_zone) or first_orig_zone
+                first_dest_zone = it0.get('destination_zone', first_dest_zone) or first_dest_zone
+                first_est_km = int(it0.get('estimated_km', first_est_km) or first_est_km)
+                first_cargo = it0.get('cargo_type', first_cargo) or first_cargo
+
+            pricing_method = data.get('pricing_method', 'MULTI_ROUTE').strip() or 'MULTI_ROUTE'
+            base_fuel_price = float(data.get('base_fuel_price') or 21000)
+            fuel_step_vnd = float(data.get('fuel_step_vnd') or 1000)
+            fuel_ratio_percent = float(data.get('fuel_ratio_percent') or 3.5)
+            fuel_surcharge_formula = data.get('fuel_surcharge_formula', '').strip() or f"Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi {int(fuel_step_vnd):,} đ/lít so với giá cơ sở ({int(base_fuel_price):,} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng {fuel_ratio_percent}%."
+
+            with transaction.atomic():
+                quotation = Quotation.objects.create(
+                    quotation_code=q_code,
+                    customer=customer,
+                    pricing_method=pricing_method,
+                    base_fuel_price=base_fuel_price,
+                    fuel_step_vnd=fuel_step_vnd,
+                    fuel_ratio_percent=fuel_ratio_percent,
+                    fuel_surcharge_formula=fuel_surcharge_formula,
+                    origin_zone=first_orig_zone,
+                    destination_zone=first_dest_zone,
+                    estimated_km=first_est_km,
+                    route_description=first_route,
+                    unit_price=first_unit_price,
+                    expected_trips_monthly=first_trips,
+                    status=data.get('status', 'NEGOTIATING'),
+                    notes=data.get('notes', '').strip(),
+                    template_type=data.get('template_type', 'STANDARD').strip(),
+                    contact_person=data.get('contact_person', '').strip(),
+                    contact_phone=data.get('contact_phone', '').strip(),
+                    contact_email=data.get('contact_email', '').strip(),
+                    cargo_type=first_cargo,
+                    valid_until=valid_until_d
+                )
+
+                if items_list and len(items_list) > 0:
+                    for it in items_list:
+                        r_desc = it.get('route_description', '').strip()
+                        if not r_desc:
+                            continue
+                        QuotationItem.objects.create(
+                            quotation=quotation,
+                            route_description=r_desc,
+                            origin_zone=it.get('origin_zone', '').strip(),
+                            destination_zone=it.get('destination_zone', '').strip(),
+                            cargo_type=it.get('cargo_type', first_cargo).strip(),
+                            estimated_km=int(it.get('estimated_km') or 0),
+                            unit_price=float(it.get('unit_price') or 0),
+                            expected_trips_monthly=int(it.get('expected_trips_monthly') or 1),
+                            surcharges=float(it.get('surcharges') or 0),
+                            notes=it.get('notes', '').strip()
+                        )
+                else:
+                    # Tạo 1 item mặc định từ thông tin tuyến đơn
+                    QuotationItem.objects.create(
+                        quotation=quotation,
+                        route_description=first_route,
+                        origin_zone=first_orig_zone,
+                        destination_zone=first_dest_zone,
+                        cargo_type=first_cargo,
+                        estimated_km=first_est_km,
+                        unit_price=first_unit_price,
+                        expected_trips_monthly=first_trips,
+                        notes=''
+                    )
+
+            return Response({
+                'success': True, 
+                'message': f'Tạo Báo Giá {quotation.quotation_code} thành công!', 
+                'quotation_id': quotation.id,
+                'items_count': quotation.items.count()
+            })
 
         return Response({'error': 'Hành động không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2751,9 +2855,26 @@ class QuotationDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Báo Giá."""
     permission_classes = [IsSalesOrDirector]
     def get(self, request, pk):
-        q = Quotation.objects.filter(pk=pk, is_deleted=False).select_related('customer').first()
+        q = Quotation.objects.filter(pk=pk, is_deleted=False).select_related('customer').prefetch_related('items').first()
         if not q:
             return Response({'error': 'Không tìm thấy báo giá'}, status=status.HTTP_404_NOT_FOUND)
+
+        q_items = []
+        for it in q.items.filter(is_deleted=False):
+            q_items.append({
+                'id': it.id,
+                'route_description': it.route_description,
+                'origin_zone': it.origin_zone,
+                'destination_zone': it.destination_zone,
+                'cargo_type': it.cargo_type,
+                'estimated_km': it.estimated_km,
+                'unit_price': float(it.unit_price),
+                'expected_trips_monthly': it.expected_trips_monthly,
+                'surcharges': float(it.surcharges),
+                'line_revenue': float(it.line_revenue),
+                'notes': it.notes
+            })
+
         return Response({
             'id': q.id,
             'quotation_code': q.quotation_code,
@@ -2763,6 +2884,12 @@ class QuotationDetailAPIView(APIView):
             'customer_address': q.customer.address or '',
             'customer_phone': q.customer.phone or '',
             'customer_contact': q.customer.contact_person or '',
+            'pricing_method': q.pricing_method or 'MULTI_ROUTE',
+            'pricing_method_display': q.get_pricing_method_display(),
+            'base_fuel_price': float(q.base_fuel_price or 21000),
+            'fuel_step_vnd': float(q.fuel_step_vnd or 1000),
+            'fuel_ratio_percent': float(q.fuel_ratio_percent or 3.5),
+            'fuel_surcharge_formula': q.fuel_surcharge_formula or '',
             'origin_zone': q.origin_zone or '',
             'destination_zone': q.destination_zone or '',
             'estimated_km': q.estimated_km or 0,
@@ -2770,6 +2897,7 @@ class QuotationDetailAPIView(APIView):
             'unit_price': float(q.unit_price),
             'expected_trips_monthly': q.expected_trips_monthly,
             'expected_revenue': float(q.expected_revenue),
+            'items': q_items,
             'status': q.status,
             'status_display': q.get_status_display(),
             'notes': q.notes or '',
@@ -2793,6 +2921,17 @@ class QuotationDetailAPIView(APIView):
             customer = resolve_customer(customer_name)
             if customer:
                 q.customer = customer
+
+        if 'pricing_method' in data and data['pricing_method']:
+            q.pricing_method = data['pricing_method'].strip()
+        if 'base_fuel_price' in data and data['base_fuel_price'] is not None:
+            q.base_fuel_price = float(data['base_fuel_price'])
+        if 'fuel_step_vnd' in data and data['fuel_step_vnd'] is not None:
+            q.fuel_step_vnd = float(data['fuel_step_vnd'])
+        if 'fuel_ratio_percent' in data and data['fuel_ratio_percent'] is not None:
+            q.fuel_ratio_percent = float(data['fuel_ratio_percent'])
+        if 'fuel_surcharge_formula' in data:
+            q.fuel_surcharge_formula = data['fuel_surcharge_formula'].strip()
 
         if 'origin_zone' in data:
             q.origin_zone = data['origin_zone'].strip()
@@ -2830,7 +2969,67 @@ class QuotationDetailAPIView(APIView):
                     pass
             else:
                 q.valid_until = None
-        q.save()
+
+        # Xử lý cập nhật danh sách nhiều tuyến đường (items list)
+        items_raw = data.get('items') or data.get('items_json')
+        items_list = None
+        if items_raw is not None:
+            if isinstance(items_raw, str):
+                import json
+                try:
+                    items_list = json.loads(items_raw)
+                except Exception:
+                    items_list = None
+            elif isinstance(items_raw, list):
+                items_list = items_raw
+
+        with transaction.atomic():
+            if items_list and len(items_list) > 0:
+                # Xóa các dòng cũ và tạo mới lại
+                q.items.all().delete()
+                for it in items_list:
+                    r_desc = it.get('route_description', '').strip()
+                    if not r_desc:
+                        continue
+                    QuotationItem.objects.create(
+                        quotation=q,
+                        route_description=r_desc,
+                        origin_zone=it.get('origin_zone', '').strip(),
+                        destination_zone=it.get('destination_zone', '').strip(),
+                        cargo_type=it.get('cargo_type', q.cargo_type).strip(),
+                        estimated_km=int(it.get('estimated_km') or 0),
+                        unit_price=float(it.get('unit_price') or 0),
+                        expected_trips_monthly=int(it.get('expected_trips_monthly') or 1),
+                        surcharges=float(it.get('surcharges') or 0),
+                        notes=it.get('notes', '').strip()
+                    )
+                # Đồng bộ dòng đầu tiên vào fields cha của Quotation
+                it0 = items_list[0]
+                q.route_description = it0.get('route_description', q.route_description)
+                q.unit_price = float(it0.get('unit_price', q.unit_price) or q.unit_price)
+                q.expected_trips_monthly = int(it0.get('expected_trips_monthly', q.expected_trips_monthly) or q.expected_trips_monthly)
+                if it0.get('origin_zone'): q.origin_zone = it0.get('origin_zone')
+                if it0.get('destination_zone'): q.destination_zone = it0.get('destination_zone')
+                if it0.get('estimated_km'): q.estimated_km = int(it0.get('estimated_km'))
+
+            q.save()
+
+        q_items = []
+        for it in q.items.filter(is_deleted=False):
+            q_items.append({
+                'id': it.id,
+                'route_description': it.route_description,
+                'origin_zone': it.origin_zone,
+                'destination_zone': it.destination_zone,
+                'cargo_type': it.cargo_type,
+                'estimated_km': it.estimated_km,
+                'unit_price': float(it.unit_price),
+                'expected_trips_monthly': it.expected_trips_monthly,
+                'surcharges': float(it.surcharges),
+                'line_revenue': float(it.line_revenue),
+                'notes': it.notes
+            })
+
         return Response({
             'success': True,
             'message': f'Cập nhật báo giá {q.quotation_code} thành công!',
@@ -2838,12 +3037,18 @@ class QuotationDetailAPIView(APIView):
                 'id': q.id,
                 'quotation_code': q.quotation_code,
                 'customer_name': q.customer.name,
+                'pricing_method': q.pricing_method,
+                'base_fuel_price': float(q.base_fuel_price),
+                'fuel_step_vnd': float(q.fuel_step_vnd),
+                'fuel_ratio_percent': float(q.fuel_ratio_percent),
+                'fuel_surcharge_formula': q.fuel_surcharge_formula,
                 'origin_zone': q.origin_zone,
                 'destination_zone': q.destination_zone,
                 'estimated_km': q.estimated_km,
                 'unit_price': float(q.unit_price),
                 'expected_trips_monthly': q.expected_trips_monthly,
                 'expected_revenue': float(q.expected_revenue),
+                'items': q_items,
                 'status': q.status,
                 'notes': q.notes,
                 'template_type': q.template_type

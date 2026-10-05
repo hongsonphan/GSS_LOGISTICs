@@ -84,7 +84,44 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
         ],
         default='NEGOTIATING'
     )
-    # Bổ sung ghi chú điều khoản & mẫu in chứng từ
+    # Phương thức báo giá & cơ chế định giá cước (Pricing Method)
+    pricing_method = models.CharField(
+        max_length=30,
+        default='MULTI_ROUTE',
+        choices=[
+            ('MULTI_ROUTE', 'Báo giá theo tuyến đường (Ma trận đa tuyến)'),
+            ('FUEL_ADJUSTED', 'Báo giá điều chỉnh theo biến động giá dầu DO'),
+            ('FLAT_CHARTER', 'Báo giá trọn gói / bao chuyến / theo tháng')
+        ],
+        help_text="Phương thức báo giá áp dụng"
+    )
+
+    # Các thông số điều chỉnh theo giá xăng dầu DO 0.05S
+    base_fuel_price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=0, 
+        default=21000, 
+        help_text="Giá dầu DO cơ sở P0 tại thời điểm báo giá (VNĐ/lít)"
+    )
+    fuel_step_vnd = models.DecimalField(
+        max_digits=10, 
+        decimal_places=0, 
+        default=1000, 
+        help_text="Biên độ biến động giá dầu mỗi bước (VNĐ/lít)"
+    )
+    fuel_ratio_percent = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        default=3.5, 
+        help_text="Tỷ lệ điều chỉnh giá cước (%) trên mỗi bước biến động giá dầu"
+    )
+    fuel_surcharge_formula = models.CharField(
+        max_length=255, 
+        blank=True,
+        default="Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng 3.5%",
+        help_text="Diễn giải công thức phụ phí / điều chỉnh xăng dầu"
+    )
+
     notes = models.TextField(blank=True, default='', help_text="Điều khoản & ghi chú báo giá (VAT, bốc xếp, phí neo, điều khoản thương mại)")
     template_type = models.CharField(
         max_length=30,
@@ -110,10 +147,40 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
 
     @property
     def expected_revenue(self):
+        # Nếu có các dòng tuyến đường chi tiết (QuotationItem), tính tổng doanh thu kế hoạch của tất cả các dòng
+        items = self.items.filter(is_deleted=False) if hasattr(self, 'items') else None
+        if items and items.exists():
+            return sum((it.unit_price * it.expected_trips_monthly) for it in items)
         return self.unit_price * self.expected_trips_monthly
 
     def __str__(self):
         return f"[{self.quotation_code}] {self.customer.name} - {self.route_description}"
+
+
+class QuotationItem(TimeStampedModel, SoftDeleteModel):
+    """
+    Chi tiết từng dòng tuyến đường trong một Báo Giá (Hỗ trợ báo giá nhiều tuyến cho cùng 1 khách hàng).
+    """
+    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='items')
+    route_description = models.CharField(max_length=255, help_text="Mô tả tuyến đường: Điểm đi -> Điểm đến")
+    origin_zone = models.CharField(max_length=100, blank=True, default='', help_text="Khu vực đi: Cát Lái, Cái Mép...")
+    destination_zone = models.CharField(max_length=100, blank=True, default='', help_text="Khu vực đến: Bình Dương, Đồng Nai...")
+    cargo_type = models.CharField(max_length=100, blank=True, default='Cont 40HC', help_text="Quy cách cont / Loại xe")
+    estimated_km = models.IntegerField(default=0, help_text="Cự ly ước tính (km)")
+    unit_price = models.DecimalField(max_digits=12, decimal_places=0, help_text="Đơn giá cước vận chuyển (VNĐ)")
+    expected_trips_monthly = models.IntegerField(default=1, help_text="Sản lượng cam kết (chuyến/tháng)")
+    surcharges = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Phụ phí nếu có (VNĐ)")
+    notes = models.CharField(max_length=255, blank=True, default='', help_text="Ghi chú riêng của tuyến")
+
+    class Meta:
+        ordering = ['id']
+
+    @property
+    def line_revenue(self):
+        return self.unit_price * self.expected_trips_monthly
+
+    def __str__(self):
+        return f"{self.route_description} ({self.unit_price:,} đ x {self.expected_trips_monthly})"
 
 class BookingStatus(models.TextChoices):
     PENDING_DISPATCH = 'PENDING_DISPATCH', 'Chờ điều xe'
