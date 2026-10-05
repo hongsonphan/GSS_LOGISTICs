@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.2] - 2026-10-05 (Đồng Bộ Thông Tin Doanh Nghiệp Hệ Thống & Trải Nghiệm Xem Full Viền Tờ A4)
+
+### 1. Đồng Bộ Thông Tin Doanh Nghiệp Động & Loại Bỏ Nhãn Phụ:
+- **Loại bỏ dòng phụ `BIM LOGISTICS`:** Xóa bỏ hoàn toàn nhãn `BIM LOGISTICS — Vận Tải & Dịch Vụ Cảng Quốc Tế` trên toàn bộ các biểu mẫu in (Phiếu Thu/Chi Liên 1 & 2, Báo Giá Cước Vận Chuyển, 14 Phân Hệ Báo Cáo Quản Trị BI).
+- **Hàm `syncCompanyProfileToPrintForms()`:** Tự động lấy trực tiếp thông tin từ cấu hình Khai Báo Hệ Thống (`masterDataCache['company']` / `CompanyProfile`) bao gồm:
+  * Tên doanh nghiệp đầy đủ (`print-comp-name`).
+  * Trụ sở chính (`print-comp-address`).
+  * Mã số thuế, Hotline điều hành, Email (`print-comp-contact`).
+  * Logo nhận diện chính thức (`print-comp-logo`).
+- Tự động đồng bộ ngay khi mở bất kỳ modal in nào (`openCashVoucherModal`, `openQuotationPrintModal`, `openReportPrintModal`).
+
+### 2. Giao Diện Xem Full Viền Tờ A4 (Full Sheet A4 Modal Preview):
+- Mở rộng container modal (`max-w-5xl` / `max-w-6xl`) giúp tờ in hiển thị to rõ, tràn viền trang giấy A4 trên màn hình.
+- Khung xem trước dạng Sheet Paper với bo viền `border border-slate-300`, hiệu ứng đổ bóng `shadow-md` và lề cân đối.
+- Tối ưu hóa in ấn `@media print` tràn lề sắc nét, loại bỏ khung viền modal ngoài khi in ấn ra giấy thật.
+
+### 3. Kiểm Thử Tự Động & Vận Hành:
+- **78/78 Unit Tests PASSED (100%)**.
+
+---
+
 ## [2.8.1] - 2026-10-05 (Cơ Chế Nhận Diện Khổ Giấy In Thông Minh & In Phiếu Thu/Chi 2 Liên A5 Trên 1 Trang A4)
 
 ### 1. In Phiếu Thu / Phiếu Chi 2 Liên A5 Trên 1 Trang A4 (`modal_cash_voucher_print.html`):

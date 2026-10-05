@@ -1,6 +1,6 @@
 <!-- MODAL XEM CHI TIẾT & IN PHIẾU THU / PHIẾU CHI (MẪU 01-TT / 02-TT BTC) -->
-<div id="modal-cash-voucher-print" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fade-in">
-    <div class="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[96vh]">
+<div id="modal-cash-voucher-print" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs overflow-y-auto animate-fade-in">
+    <div class="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[98vh]">
         
         <!-- Header Toolbar (Ẩn khi in ấn) -->
         <div class="px-5 py-3 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 no-print shrink-0 border-b border-slate-800">
@@ -10,7 +10,7 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-sm sm:text-base font-heading tracking-tight" id="voucher-modal-top-title">Chứng Từ Sổ Quỹ Thu Chi</h3>
-                    <p class="text-[11px] text-slate-300 font-medium">Mẫu chuẩn Kế toán Việt Nam (Thông tư 200/2014/TT-BTC & TT 133/2016/TT-BTC)</p>
+                    <p class="text-[11px] text-slate-300 font-medium">Mẫu chuẩn Kế toán Doanh nghiệp (Thông tư 200/2014/TT-BTC & TT 133/2016/TT-BTC)</p>
                 </div>
             </div>
 
@@ -41,26 +41,26 @@
             </div>
         </div>
 
-        <!-- Printable Voucher Body Container -->
-        <div class="p-4 sm:p-6 overflow-y-auto bg-slate-100 flex-1 flex justify-center">
-            <div id="cash-voucher-printable-area" class="w-full max-w-3xl bg-white p-6 sm:p-8 rounded-xl shadow-xs border border-slate-200 text-slate-900 font-sans text-xs space-y-4 voucher-mode-dual">
+        <!-- Printable Voucher Body Container (View Full Viền Tờ A4) -->
+        <div class="p-3 sm:p-6 overflow-y-auto bg-slate-200/80 flex-1 flex justify-center">
+            <div id="cash-voucher-printable-area" class="w-full max-w-4xl bg-white p-6 sm:p-8 rounded-lg shadow-md border border-slate-300 text-slate-900 font-sans text-xs space-y-4 voucher-mode-dual">
                 
                 <!-- ==================== LIÊN 1 ==================== -->
-                <div class="voucher-slip voucher-slip-1 pb-4">
+                <div class="voucher-slip voucher-slip-1 pb-3">
                     <!-- Header Đơn vị & Mẫu số BTC -->
                     <div class="flex justify-between items-start gap-3 pb-2 border-b border-slate-300">
-                        <div class="flex items-center gap-2.5">
-                            <img src="/static/images/trienvo_logo.png" alt="Trien Vo Logistics" class="h-11 w-auto object-contain shrink-0" onerror="this.src='/media/trienvo_logo.png'">
-                            <div class="space-y-0 text-left">
-                                <h4 class="font-black text-[11px] sm:text-xs uppercase tracking-tight text-slate-900 font-heading">CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ</h4>
-                                <p class="text-[10px] text-slate-600 font-medium leading-tight">BIM LOGISTICS — Vận Tải & Dịch Vụ Cảng Quốc Tế</p>
-                                <p class="text-[9.5px] text-slate-500 leading-tight">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Q.12, TP.HCM • ĐT: 0965.559.561</p>
+                        <div class="flex items-center gap-3">
+                            <img src="/static/images/trienvo_logo.png" alt="Trien Vo Logistics" class="h-12 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/trienvo_logo.png'">
+                            <div class="space-y-0.5 text-left">
+                                <h4 class="font-black text-xs sm:text-sm uppercase tracking-tight text-slate-900 font-heading print-comp-name">CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ</h4>
+                                <p class="text-[10px] text-slate-600 leading-tight print-comp-address">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh</p>
+                                <p class="text-[9.5px] text-slate-500 leading-tight print-comp-contact">MST: 0314567890 • Hotline: 0965.559.561</p>
                             </div>
                         </div>
-                        <div class="text-right space-y-0 shrink-0">
+                        <div class="text-right space-y-0.5 shrink-0">
                             <p class="font-bold text-[11px] text-slate-900 v-template-no">Mẫu số 01 - TT</p>
                             <p class="text-[9px] text-slate-500 italic max-w-[170px] leading-tight">(Ban hành theo TT số 200/2014/TT-BTC của BTC)</p>
-                            <div class="pt-0.5 text-[10px] font-mono text-slate-700 leading-tight">
+                            <div class="pt-0.5 text-[10.5px] font-mono text-slate-700 leading-tight">
                                 <p>Số: <strong class="v-code text-slate-900 font-bold">PT-202610-0001</strong></p>
                                 <p>Nợ: <span class="v-debit-acc font-semibold">1121</span> | Có: <span class="v-credit-acc font-semibold">1411</span></p>
                             </div>
@@ -73,7 +73,7 @@
                             PHIẾU THU
                         </h2>
                         <div class="flex items-center justify-center gap-2">
-                            <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-teal-100 text-teal-800 border border-teal-200">Liên 1: Lưu tại cuống / Kế toán</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9.5px] font-bold bg-teal-100 text-teal-900 border border-teal-200">Liên 1: Lưu tại cuống / Kế toán</span>
                             <span class="italic text-[10.5px] text-slate-600 font-medium v-date">Ngày 05 tháng 10 năm 2026</span>
                         </div>
                     </div>
@@ -81,30 +81,30 @@
                     <!-- Nội dung chứng từ -->
                     <div class="space-y-1.5 pt-1 text-slate-800 text-[11px] sm:text-xs">
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px] v-partner-label">Họ tên người nộp tiền:</span>
+                            <span class="font-bold shrink-0 min-w-[155px] v-partner-label">Họ tên người nộp tiền:</span>
                             <span class="font-bold text-slate-900 flex-1 truncate v-partner-name">Nguyễn Văn Bụi (BỤI 94)</span>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px]">Địa chỉ / Bộ phận:</span>
+                            <span class="font-bold shrink-0 min-w-[155px]">Địa chỉ / Bộ phận:</span>
                             <span class="text-slate-700 flex-1 truncate v-department">Đội xe vận tải Triền Võ Logistics</span>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px] v-reason-label">Lý do nộp:</span>
+                            <span class="font-bold shrink-0 min-w-[155px] v-reason-label">Lý do nộp:</span>
                             <span class="text-slate-800 flex-1 font-medium v-reason">Thu hoàn ứng tiền thừa quyết toán gom chuyến xe</span>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px]">Số tiền:</span>
+                            <span class="font-bold shrink-0 min-w-[155px]">Số tiền:</span>
                             <div class="flex-1 flex items-baseline gap-2">
                                 <span class="font-black text-xs sm:text-sm text-slate-950 font-heading font-mono v-amount">200.000 đ</span>
                                 <span class="text-[10px] text-slate-500 font-medium">(Hình thức: <strong class="v-method">Chuyển khoản Ngân hàng</strong>)</span>
                             </div>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px]">Viết bằng chữ:</span>
+                            <span class="font-bold shrink-0 min-w-[155px]">Viết bằng chữ:</span>
                             <span class="italic font-bold text-slate-900 flex-1 v-amount-words">Hai trăm nghìn đồng chẵn.</span>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px]">Kèm theo:</span>
+                            <span class="font-bold shrink-0 min-w-[155px]">Kèm theo:</span>
                             <span class="text-slate-700 flex-1 truncate v-attachments">01 Bảng kê quyết toán chuyến & chứng từ gốc</span>
                         </div>
                     </div>
@@ -146,7 +146,7 @@
                     <div class="border-t-2 border-dashed border-slate-400 w-full absolute top-1/2 left-0 -translate-y-1/2"></div>
                     <span class="relative bg-white px-3 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-300 rounded-full inline-flex items-center gap-1 shadow-2xs">
                         <i class="ph-bold ph-scissors text-teal-600"></i>
-                        <span>Đường cắt chia Liên 1 (Lưu kế toán) và Liên 2 (Giao đối tác / Tài xế)</span>
+                        <span>Đường cắt phân chia Liên 1 (Lưu kế toán) và Liên 2 (Giao đối tác / Tài xế)</span>
                         <i class="ph-bold ph-scissors text-teal-600 rotate-180"></i>
                     </span>
                 </div>
@@ -155,18 +155,18 @@
                 <div class="voucher-slip voucher-slip-2 pt-2 pb-2">
                     <!-- Header Đơn vị & Mẫu số BTC -->
                     <div class="flex justify-between items-start gap-3 pb-2 border-b border-slate-300">
-                        <div class="flex items-center gap-2.5">
-                            <img src="/static/images/trienvo_logo.png" alt="Trien Vo Logistics" class="h-11 w-auto object-contain shrink-0" onerror="this.src='/media/trienvo_logo.png'">
-                            <div class="space-y-0 text-left">
-                                <h4 class="font-black text-[11px] sm:text-xs uppercase tracking-tight text-slate-900 font-heading">CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ</h4>
-                                <p class="text-[10px] text-slate-600 font-medium leading-tight">BIM LOGISTICS — Vận Tải & Dịch Vụ Cảng Quốc Tế</p>
-                                <p class="text-[9.5px] text-slate-500 leading-tight">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Q.12, TP.HCM • ĐT: 0965.559.561</p>
+                        <div class="flex items-center gap-3">
+                            <img src="/static/images/trienvo_logo.png" alt="Trien Vo Logistics" class="h-12 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/trienvo_logo.png'">
+                            <div class="space-y-0.5 text-left">
+                                <h4 class="font-black text-xs sm:text-sm uppercase tracking-tight text-slate-900 font-heading print-comp-name">CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ</h4>
+                                <p class="text-[10px] text-slate-600 leading-tight print-comp-address">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh</p>
+                                <p class="text-[9.5px] text-slate-500 leading-tight print-comp-contact">MST: 0314567890 • Hotline: 0965.559.561</p>
                             </div>
                         </div>
-                        <div class="text-right space-y-0 shrink-0">
+                        <div class="text-right space-y-0.5 shrink-0">
                             <p class="font-bold text-[11px] text-slate-900 v-template-no">Mẫu số 01 - TT</p>
                             <p class="text-[9px] text-slate-500 italic max-w-[170px] leading-tight">(Ban hành theo TT số 200/2014/TT-BTC của BTC)</p>
-                            <div class="pt-0.5 text-[10px] font-mono text-slate-700 leading-tight">
+                            <div class="pt-0.5 text-[10.5px] font-mono text-slate-700 leading-tight">
                                 <p>Số: <strong class="v-code text-slate-900 font-bold">PT-202610-0001</strong></p>
                                 <p>Nợ: <span class="v-debit-acc font-semibold">1121</span> | Có: <span class="v-credit-acc font-semibold">1411</span></p>
                             </div>
@@ -179,7 +179,7 @@
                             PHIẾU THU
                         </h2>
                         <div class="flex items-center justify-center gap-2">
-                            <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200" id="voucher-copy-2-badge">Liên 2: Giao cho người nộp tiền</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200" id="voucher-copy-2-badge">Liên 2: Giao cho người nộp tiền</span>
                             <span class="italic text-[10.5px] text-slate-600 font-medium v-date">Ngày 05 tháng 10 năm 2026</span>
                         </div>
                     </div>
@@ -187,30 +187,30 @@
                     <!-- Nội dung chứng từ Liên 2 -->
                     <div class="space-y-1.5 pt-1 text-slate-800 text-[11px] sm:text-xs">
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px] v-partner-label">Họ tên người nộp tiền:</span>
+                            <span class="font-bold shrink-0 min-w-[155px] v-partner-label">Họ tên người nộp tiền:</span>
                             <span class="font-bold text-slate-900 flex-1 truncate v-partner-name">Nguyễn Văn Bụi (BỤI 94)</span>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px]">Địa chỉ / Bộ phận:</span>
+                            <span class="font-bold shrink-0 min-w-[155px]">Địa chỉ / Bộ phận:</span>
                             <span class="text-slate-700 flex-1 truncate v-department">Đội xe vận tải Triền Võ Logistics</span>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px] v-reason-label">Lý do nộp:</span>
+                            <span class="font-bold shrink-0 min-w-[155px] v-reason-label">Lý do nộp:</span>
                             <span class="text-slate-800 flex-1 font-medium v-reason">Thu hoàn ứng tiền thừa quyết toán gom chuyến xe</span>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px]">Số tiền:</span>
+                            <span class="font-bold shrink-0 min-w-[155px]">Số tiền:</span>
                             <div class="flex-1 flex items-baseline gap-2">
                                 <span class="font-black text-xs sm:text-sm text-slate-950 font-heading font-mono v-amount">200.000 đ</span>
                                 <span class="text-[10px] text-slate-500 font-medium">(Hình thức: <strong class="v-method">Chuyển khoản Ngân hàng</strong>)</span>
                             </div>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px]">Viết bằng chữ:</span>
+                            <span class="font-bold shrink-0 min-w-[155px]">Viết bằng chữ:</span>
                             <span class="italic font-bold text-slate-900 flex-1 v-amount-words">Hai trăm nghìn đồng chẵn.</span>
                         </div>
                         <div class="flex items-baseline gap-2 border-b border-dotted border-slate-300 pb-0.5">
-                            <span class="font-bold shrink-0 min-w-[150px]">Kèm theo:</span>
+                            <span class="font-bold shrink-0 min-w-[155px]">Kèm theo:</span>
                             <span class="text-slate-700 flex-1 truncate v-attachments">01 Bảng kê quyết toán chuyến & chứng từ gốc</span>
                         </div>
                     </div>
@@ -270,4 +270,5 @@
 
     </div>
 </div>
+
 

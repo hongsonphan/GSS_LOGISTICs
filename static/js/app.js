@@ -5879,6 +5879,9 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     const p3SignDate = document.getElementById('print-q3-sign-date');
     if (p3SignDate) p3SignDate.innerText = datePlaceStr;
 
+    // Đồng bộ thông tin công ty hệ thống lên mẫu in
+    syncCompanyProfileToPrintForms();
+
     switchQuotationPrintTemplate(selectedTemplate);
 
     const modal = document.getElementById('modal-quotation-print');
@@ -10113,6 +10116,9 @@ async function openCashVoucherModal(txDataOrId) {
     setAllClassText('v-creator-name', tx.created_by || 'Kế toán viên');
     setAllClassText('v-attachments', attachmentsFormatted);
 
+    // Đồng bộ thông tin công ty hệ thống lên phiếu thu chi
+    syncCompanyProfileToPrintForms();
+
     // Mặc định chế độ 2 Liên / A4
     setVoucherPrintMode('dual');
 
@@ -10702,6 +10708,39 @@ function reloadActiveMasterDataTab() {
     }
 }
 
+function syncCompanyProfileToPrintForms() {
+    const comp = masterDataCache['company'] || window.SYSTEM_COMPANY || {};
+    const compName = comp.company_name || 'CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ';
+    const compAddress = comp.headquarters_address || comp.address || '153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh';
+    const compTax = comp.tax_code || '0314567890';
+    const compPhone = comp.hotline || comp.phone || '0965.559.561';
+    const compEmail = comp.email || 'Phongkinhdoanh.tvl@trienvo.com';
+    const compLogo = comp.logo_url || '/static/images/trienvo_logo.png';
+
+    // 1. Đồng bộ Tên công ty
+    document.querySelectorAll('.print-comp-name').forEach(el => {
+        el.innerText = compName.toUpperCase();
+    });
+
+    // 2. Đồng bộ Địa chỉ
+    document.querySelectorAll('.print-comp-address').forEach(el => {
+        el.innerText = `Đ/c: ${compAddress}`;
+    });
+
+    // 3. Đồng bộ Liên hệ (MST, Hotline, Email)
+    document.querySelectorAll('.print-comp-contact').forEach(el => {
+        el.innerText = `MST: ${compTax} • Hotline: ${compPhone} • Email: ${compEmail}`;
+    });
+
+    // 4. Đồng bộ Logo
+    document.querySelectorAll('.print-comp-logo').forEach(el => {
+        if (compLogo && el.src !== compLogo) {
+            el.src = compLogo;
+        }
+    });
+}
+window.syncCompanyProfileToPrintForms = syncCompanyProfileToPrintForms;
+
 async function loadCompanyProfile() {
     const container = document.getElementById('md-company-view');
     if (container) {
@@ -10719,11 +10758,15 @@ async function loadCompanyProfile() {
         const data = await res.json();
         const profile = data.data || {};
         masterDataCache['company'] = profile;
+        window.SYSTEM_COMPANY = profile;
 
         if (profile.short_name || profile.company_name) {
             const el = document.getElementById('md-stat-company');
             if (el) el.innerText = profile.short_name || 'Triền Võ';
         }
+
+        // Tự động đồng bộ lên tất cả các mẫu in
+        syncCompanyProfileToPrintForms();
 
         renderCompanyProfileView(profile);
     } catch (err) {
@@ -10791,7 +10834,7 @@ function renderCompanyProfileView(company) {
                 </div>
             </div>
 
-            <!-- 4 Structured Information Grid Cards -->
+            <!-- 6 Structured Information Grid Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Card 1: Pháp lý & Định danh -->
                 <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
@@ -10835,15 +10878,15 @@ function renderCompanyProfileView(company) {
                 <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                         <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
-                            <i class="ph-bold ph-phone-call text-lg text-teal-600"></i>
-                            <span>2. Trụ Sở & Kênh Liên Lạc</span>
+                            <i class="ph-bold ph-buildings text-lg text-teal-600"></i>
+                            <span>2. Trụ Sở Chính & Kênh Liên Lạc</span>
                         </div>
-                        <span class="text-[11px] font-bold text-slate-400">Liên hệ</span>
+                        <span class="text-[11px] font-bold text-slate-400">Trụ sở</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div class="sm:col-span-2">
-                            <span class="block text-slate-400 font-medium text-[11px]">Địa chỉ đăng ký kinh doanh:</span>
+                            <span class="block text-slate-400 font-medium text-[11px]">Địa chỉ trụ sở chính (Đăng ký KD):</span>
                             <strong class="text-slate-800 text-xs leading-relaxed">${escapeHtml(company.address || '-')}</strong>
                         </div>
                         <div>
@@ -10864,12 +10907,64 @@ function renderCompanyProfileView(company) {
                     </div>
                 </div>
 
-                <!-- Card 3: Tài khoản ngân hàng -->
+                <!-- Card 3: Chi nhánh & Văn phòng đại diện -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
+                            <i class="ph-bold ph-storefront text-lg text-purple-600"></i>
+                            <span>3. Chi Nhánh & Văn Phòng Đại Diện</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Chi nhánh</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Tên chi nhánh / Văn phòng:</span>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.branch_name || 'Văn Phòng Chi Nhánh')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Điện thoại chi nhánh:</span>
+                            <strong class="text-emerald-700 font-mono font-bold text-xs">${escapeHtml(company.branch_phone || '-')}</strong>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <span class="block text-slate-400 font-medium text-[11px]">Địa chỉ chi nhánh:</span>
+                            <strong class="text-slate-800 text-xs leading-relaxed">${escapeHtml(company.branch_address || '-')}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Bãi xe & Trạm điều phối -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
+                            <i class="ph-bold ph-truck text-lg text-amber-600"></i>
+                            <span>4. Bãi Đỗ Xe & Trạm Điều Phối Đầu Kéo</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Bãi xe / Depot</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Tên bãi đỗ xe:</span>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.fleet_yard_name || 'Bãi Đỗ Xe & Trạm Điều Phối TVL')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Hotline điều phối trực bãi:</span>
+                            <strong class="text-amber-800 font-mono font-bold text-xs">${escapeHtml(company.fleet_yard_hotline || '-')}</strong>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <span class="block text-slate-400 font-medium text-[11px]">Địa chỉ bãi đỗ xe:</span>
+                            <strong class="text-slate-800 text-xs leading-relaxed">${escapeHtml(company.fleet_yard_address || '-')}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Tài khoản ngân hàng -->
                 <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                         <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
                             <i class="ph-bold ph-bank text-lg text-teal-600"></i>
-                            <span>3. Tài Khoản Ngân Hàng Giao Dịch</span>
+                            <span>5. Tài Khoản Ngân Hàng Giao Dịch</span>
                         </div>
                         <span class="text-[11px] font-bold text-slate-400">Thanh toán</span>
                     </div>
@@ -10894,12 +10989,12 @@ function renderCompanyProfileView(company) {
                     </div>
                 </div>
 
-                <!-- Card 4: Tham số hệ thống & Tính cước -->
+                <!-- Card 6: Tham số hệ thống & Tính cước -->
                 <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                         <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
                             <i class="ph-bold ph-sliders text-lg text-teal-600"></i>
-                            <span>4. Tham Số Vận Hành & Tính Cước Mặc Định</span>
+                            <span>6. Tham Số Vận Hành & Tính Cước Mặc Định</span>
                         </div>
                         <span class="text-[11px] font-bold text-slate-400">Cấu hình</span>
                     </div>
@@ -12869,6 +12964,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tải danh mục Master Data chuẩn bị sẵn cho tất cả modal form
     loadMasterDataFormOptions().then(() => populateMasterDataDropdowns());
 
+    // Nạp thông tin công ty hệ thống để đồng bộ lên các biểu mẫu in
+    loadCompanyProfile();
+
     // Khởi tạo điều hướng Clean Semantic URL & Deep-link HashID (Chuẩn Quốc Tế SaaS)
     resolveInitialRoute();
 });
@@ -14770,6 +14868,9 @@ function renderReportPrintContent(reportKey) {
         const userName = window.CURRENT_USER?.full_name || window.CURRENT_USER?.username || meta.authorRole;
         authorEl.innerText = userName;
     }
+
+    // Đồng bộ thông tin công ty hệ thống lên báo cáo
+    syncCompanyProfileToPrintForms();
 
     // 1. Trích xuất KPIs từ subtab tương ứng
     const subtabContent = document.getElementById(`subtab-${reportKey}`);
