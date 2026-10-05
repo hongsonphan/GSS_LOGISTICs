@@ -7675,18 +7675,13 @@ async function submitSettleAdvanceForm(e) {
 }
 
 // -------------------------------------------------------------
-// MODAL QUYẾT TOÁN GOM CHUYẾN THEO ĐỢT (BATCH DRIVER SETTLEMENT)
-// -------------------------------------------------------------
-let batchSettlementData = null;
-let batchAllTripsList = [];
-
-// -------------------------------------------------------------
 // 9.3. PHÂN HỆ QUYẾT TOÁN GOM CHUYẾN XE (BATCH TRIP SETTLEMENT CONTROLLER)
 // -------------------------------------------------------------
 let pageSettlementData = null;
 let pageAllTripsList = [];
 let batchSettlementData = null;
 let batchAllTripsList = [];
+
 
 function openBatchSettlementModal(prefilledDriverId = null, prefilledVehicleId = null) {
     // Chuyển trực tiếp sang Trang Quyết Toán Gom Chuyến chuyên dụng
