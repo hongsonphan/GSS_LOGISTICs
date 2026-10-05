@@ -191,3 +191,36 @@ class MasterDataAPITestCase(TestCase):
         self.assertIn('shipping_lines', res.data)
         self.assertIn('subcontractors', res.data)
         self.assertIn('trailers', res.data)
+
+    def test_company_profile_crud(self):
+        from apps.master_data.models import CompanyProfile
+        # 1. GET current profile (auto created if none)
+        res = self.client.get('/api/master-data/company/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data.get('success'))
+        self.assertIn('TRIỀN VÕ', res.data['data']['company_name'])
+        self.assertEqual(res.data['data']['tax_code'], '0312345678')
+
+        # 2. PUT update profile
+        update_res = self.client.put('/api/master-data/company/', {
+            'company_name': 'CÔNG TY TNHH VẬN TẢI & LOGISTICS TRIỀN VÕ',
+            'short_name': 'TRIEN VO LOGISTICS CORP',
+            'tax_code': '0319999888',
+            'phone': '0903.888.999',
+            'default_vat_rate': 10.0,
+            'fuel_reference_price': 22500,
+            'cbm_formula_divisor': 6000
+        }, format='json')
+        self.assertEqual(update_res.status_code, status.HTTP_200_OK)
+        self.assertTrue(update_res.data.get('success'))
+        self.assertEqual(update_res.data['data']['short_name'], 'TRIEN VO LOGISTICS CORP')
+        self.assertEqual(update_res.data['data']['default_vat_rate'], 10.0)
+        self.assertEqual(update_res.data['data']['fuel_reference_price'], 22500.0)
+        self.assertEqual(update_res.data['data']['cbm_formula_divisor'], 6000)
+
+        # 3. Verify in DB
+        company = CompanyProfile.get_default_company()
+        self.assertEqual(company.short_name, 'TRIEN VO LOGISTICS CORP')
+        self.assertEqual(company.tax_code, '0319999888')
+        self.assertEqual(float(company.default_vat_rate), 10.0)
+

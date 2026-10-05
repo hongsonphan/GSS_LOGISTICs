@@ -188,3 +188,63 @@ class Subcontractor(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
+class CompanyProfile(TimeStampedModel, SoftDeleteModel):
+    """
+    Khai báo Thông tin Công ty & Tham số Hệ thống Cài đặt Tổng thể (System Settings).
+    Lưu trữ pháp nhân doanh nghiệp, thông tin thuế, tài khoản ngân hàng và tham số tính cước.
+    """
+    company_name = models.CharField(max_length=255, default='CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ', help_text="Tên pháp nhân công ty")
+    short_name = models.CharField(max_length=100, blank=True, default='TRIỀN VÕ LOGISTICS', help_text="Tên thương hiệu / viết tắt")
+    tax_code = models.CharField(max_length=50, blank=True, default='0312345678', help_text="Mã số thuế")
+    phone = models.CharField(max_length=50, blank=True, default='0903.123.456', help_text="Hotline / Số điện thoại liên hệ")
+    email = models.CharField(max_length=100, blank=True, default='contact@trienvo.com', help_text="Email liên hệ")
+    website = models.CharField(max_length=255, blank=True, default='https://trienvo.com', help_text="Website công ty")
+    address = models.CharField(max_length=255, blank=True, default='Số 123 Đường Nguyễn Văn Linh, P. Tân Thuận Tây, Quận 7, TP. Hồ Chí Minh', help_text="Địa chỉ trụ sở chính")
+    representative_name = models.CharField(max_length=100, blank=True, default='Võ Văn Triền', help_text="Người đại diện pháp luật")
+    representative_role = models.CharField(max_length=100, blank=True, default='Giám Đốc', help_text="Chức vụ người đại diện")
+    bank_account_number = models.CharField(max_length=50, blank=True, default='19030000000001', help_text="Số tài khoản ngân hàng")
+    bank_name = models.CharField(max_length=150, blank=True, default='Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank)', help_text="Tên ngân hàng")
+    bank_branch = models.CharField(max_length=150, blank=True, default='Chi nhánh Nam Sài Gòn', help_text="Chi nhánh ngân hàng")
+    operating_license = models.CharField(max_length=100, blank=True, default='GP-VT-2024/TPHCM', help_text="Giấy phép kinh doanh vận tải")
+    default_vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=8.00, help_text="Thuế suất VAT mặc định (%)")
+    fuel_reference_price = models.DecimalField(max_digits=12, decimal_places=0, default=21000, help_text="Giá dầu tham chiếu chuẩn (VNĐ/Lít)")
+    cbm_formula_divisor = models.IntegerField(default=5000, help_text="Hệ số quy đổi thể tích CBM (mặc định 5000)")
+    logo_url = models.CharField(max_length=255, blank=True, default='/static/images/logo.png', help_text="Đường dẫn file logo công ty")
+    is_default = models.BooleanField(default=True, help_text="Là hồ sơ công ty mặc định")
+
+    class Meta:
+        ordering = ['-is_default', 'company_name']
+        verbose_name = 'Thông tin Công ty / Khai báo Hệ thống'
+        verbose_name_plural = 'Khai báo Thông tin Công ty'
+
+    def __str__(self):
+        return f"{self.short_name or self.company_name} (MST: {self.tax_code})"
+
+    @classmethod
+    def get_default_company(cls):
+        obj = cls.objects.filter(is_default=True).first()
+        if not obj:
+            obj = cls.objects.first()
+        if not obj:
+            obj = cls.objects.create(
+                company_name='CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ',
+                short_name='TRIỀN VÕ LOGISTICS',
+                tax_code='0312345678',
+                phone='0903.123.456',
+                email='contact@trienvo.com',
+                website='https://trienvo.com',
+                address='Số 123 Đường Nguyễn Văn Linh, P. Tân Thuận Tây, Quận 7, TP. Hồ Chí Minh',
+                representative_name='Võ Văn Triền',
+                representative_role='Giám Đốc',
+                bank_account_number='19030000000001',
+                bank_name='Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank)',
+                bank_branch='Chi nhánh Nam Sài Gòn',
+                operating_license='GP-VT-2024/TPHCM',
+                default_vat_rate=8.00,
+                fuel_reference_price=21000,
+                cbm_formula_divisor=5000,
+                is_default=True,
+            )
+        return obj
+
+

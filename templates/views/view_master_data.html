@@ -2,6 +2,11 @@
 <div id="view-cai-dat" class="view hidden-view p-4 md:p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
     <!-- Top KPI Pills Counter (Quick Switch & Stats) -->
     <div class="flex items-center flex-wrap gap-2 text-xs font-bold font-heading shrink-0">
+        <div data-md-pill="company" class="md-kpi-pill px-3 py-1.5 bg-white rounded-xl border border-slate-200 shadow-2xs flex items-center space-x-1.5 cursor-pointer hover:border-teal-400 hover:bg-teal-50/40 transition-all" onclick="switchMasterDataTab('company')">
+            <i class="ph-bold ph-buildings text-teal-700 text-sm"></i>
+            <span class="text-slate-600">Hệ Thống:</span>
+            <span id="md-stat-company" class="text-slate-900 font-black truncate max-w-[100px]">Triền Võ</span>
+        </div>
         <div data-md-pill="driver_tariffs" class="md-kpi-pill px-3 py-1.5 bg-white rounded-xl border border-slate-200 shadow-2xs flex items-center space-x-1.5 cursor-pointer hover:border-teal-400 hover:bg-teal-50/40 transition-all ring-2 ring-teal-600 bg-teal-50/60 border-teal-400" onclick="switchMasterDataTab('driver_tariffs')">
             <i class="ph-bold ph-money text-emerald-600 text-sm"></i>
             <span class="text-slate-600">Lương:</span>
@@ -64,6 +69,10 @@
         <!-- Sub-Navigation 11 Tabs & Action Button -->
         <div class="border-b border-slate-200 px-3 md:px-4 pt-2 flex items-center justify-between flex-wrap gap-2 bg-slate-50/80 shrink-0">
             <div class="flex items-center space-x-1 overflow-x-auto pb-px" id="master-data-tabs">
+                <button onclick="switchMasterDataTab('company')" data-md-tab="company" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                    <i class="ph-bold ph-buildings text-base text-teal-700"></i>
+                    <span>Khai Báo Hệ Thống</span>
+                </button>
                 <button onclick="switchMasterDataTab('driver_tariffs')" data-md-tab="driver_tariffs" class="md-tab-btn active px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
                     <i class="ph-bold ph-money text-base text-emerald-600"></i>
                     <span>Biểu Phí Lương Chuyến</span>
@@ -120,7 +129,7 @@
         </div>
 
         <!-- Filter & Search Toolbar -->
-        <div class="p-2.5 px-3 md:px-4 border-b border-slate-200/80 bg-white flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
+        <div id="md-filter-toolbar" class="p-2.5 px-3 md:px-4 border-b border-slate-200/80 bg-white flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
             <div class="relative w-full sm:w-80">
                 <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
                 <input type="text" id="md-search-input" onkeyup="filterMasterDataTable()" placeholder="Tìm kiếm nhanh trong bảng..."
@@ -145,6 +154,11 @@
                     <i class="ph-bold ph-arrows-clockwise text-base"></i>
                 </button>
             </div>
+        </div>
+
+        <!-- Dynamic Company Profile Dashboard View (Shown when tab is 'company') -->
+        <div id="md-company-view" class="hidden p-4 md:p-6 overflow-y-auto min-h-[420px] max-h-[calc(100vh-260px)] bg-slate-50/50">
+            <!-- Populated dynamically via JavaScript renderCompanyProfileView -->
         </div>
 
         <!-- Dynamic Data Table Container (Sticky Header & Scrollable Body) -->

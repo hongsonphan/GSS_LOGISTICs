@@ -10542,6 +10542,7 @@ async function loadMasterData() {
         if (data.stats) {
             const s = data.stats;
             const el = id => document.getElementById(id);
+            if (el('md-stat-company') && s.company_name) el('md-stat-company').innerText = s.company_name;
             if (el('md-stat-driver-tariffs')) el('md-stat-driver-tariffs').innerText = s.driver_tariffs_count || 0;
             if (el('md-stat-allowances')) el('md-stat-allowances').innerText = s.allowances_count || 0;
             if (el('md-stat-locations')) el('md-stat-locations').innerText = s.locations_count || 0;
@@ -10557,7 +10558,11 @@ async function loadMasterData() {
     } catch (err) {
         console.error('Lỗi tải tóm tắt Cài đặt:', err);
     }
-    loadActiveMasterDataTab();
+    if (currentMasterDataTab === 'company') {
+        loadCompanyProfile();
+    } else {
+        loadActiveMasterDataTab();
+    }
 }
 
 function switchMasterDataTab(tabKey) {
@@ -10587,6 +10592,7 @@ function switchMasterDataTab(tabKey) {
     }
 
     const labels = {
+        'company': '✏️ Hiệu Chỉnh Khai Báo HT',
         'driver_tariffs': '+ Thêm Mới Tuyến Lương',
         'allowances': '+ Thêm Mới Phụ Cấp',
         'locations': '+ Thêm Mới Cảng / Kho',
@@ -10605,11 +10611,257 @@ function switchMasterDataTab(tabKey) {
     const searchInput = document.getElementById('md-search-input');
     if (searchInput) searchInput.value = '';
 
-    loadActiveMasterDataTab();
+    const filterToolbar = document.getElementById('md-filter-toolbar');
+    const tableContainer = document.getElementById('md-table-container');
+    const paginationContainer = document.getElementById('md-pagination-container');
+    const companyView = document.getElementById('md-company-view');
+
+    if (tabKey === 'company') {
+        if (filterToolbar) filterToolbar.classList.add('hidden');
+        if (tableContainer) tableContainer.classList.add('hidden');
+        if (paginationContainer) paginationContainer.classList.add('hidden');
+        if (companyView) companyView.classList.remove('hidden');
+        loadCompanyProfile();
+    } else {
+        if (filterToolbar) filterToolbar.classList.remove('hidden');
+        if (tableContainer) tableContainer.classList.remove('hidden');
+        if (paginationContainer) paginationContainer.classList.remove('hidden');
+        if (companyView) companyView.classList.add('hidden');
+        loadActiveMasterDataTab();
+    }
 }
 
 function reloadActiveMasterDataTab() {
-    loadActiveMasterDataTab();
+    if (currentMasterDataTab === 'company') {
+        loadCompanyProfile();
+    } else {
+        loadActiveMasterDataTab();
+    }
+}
+
+async function loadCompanyProfile() {
+    const container = document.getElementById('md-company-view');
+    if (container) {
+        container.innerHTML = `
+            <div class="p-12 text-center text-slate-400">
+                <i class="ph ph-spinner animate-spin text-3xl mb-2 text-teal-600 block"></i>
+                Đang tải thông tin khai báo hệ thống...
+            </div>
+        `;
+    }
+
+    try {
+        const res = await fetchWithAuth('/api/master-data/company/');
+        if (!res.ok) throw new Error(`Máy chủ phản hồi lỗi ${res.status}`);
+        const data = await res.json();
+        const profile = data.data || {};
+        masterDataCache['company'] = profile;
+
+        if (profile.short_name || profile.company_name) {
+            const el = document.getElementById('md-stat-company');
+            if (el) el.innerText = profile.short_name || 'Triền Võ';
+        }
+
+        renderCompanyProfileView(profile);
+    } catch (err) {
+        console.error('Lỗi tải thông tin công ty:', err);
+        if (container) {
+            container.innerHTML = `
+                <div class="p-12 text-center text-rose-500 font-bold">
+                    <i class="ph-bold ph-warning-circle text-3xl mb-2 block"></i>
+                    Lỗi tải thông tin khai báo hệ thống: ${err.message || 'Không thể kết nối máy chủ.'}
+                </div>
+            `;
+        }
+    }
+}
+
+function renderCompanyProfileView(company) {
+    const container = document.getElementById('md-company-view');
+    if (!container) return;
+    if (!company) {
+        container.innerHTML = `
+            <div class="p-8 text-center text-slate-400">
+                <i class="ph ph-spinner animate-spin text-3xl mb-2 text-teal-600 block"></i>
+                Đang tải thông tin khai báo hệ thống...
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="max-w-6xl mx-auto space-y-4">
+            <!-- Header Card -->
+            <div class="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 border border-teal-700/50">
+                <div class="flex items-start md:items-center space-x-4">
+                    <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl font-black text-teal-300 shadow-inner shrink-0">
+                        <i class="ph-bold ph-buildings"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/30 text-teal-200 border border-teal-400/30">
+                                ${escapeHtml(company.short_name || 'TRIỀN VÕ LOGISTICS')}
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
+                                <i class="ph-bold ph-check-circle"></i> Đang hoạt động
+                            </span>
+                            <span class="text-xs text-teal-300 font-mono">
+                                MST: <strong class="text-white">${escapeHtml(company.tax_code || '---')}</strong>
+                            </span>
+                        </div>
+                        <h2 class="text-lg md:text-xl font-black font-heading tracking-tight text-white leading-snug">
+                            ${escapeHtml(company.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ')}
+                        </h2>
+                        <p class="text-xs text-teal-200/80 mt-1 flex items-center gap-1.5 flex-wrap">
+                            <span><i class="ph-bold ph-map-pin text-teal-300"></i> ${escapeHtml(company.address || '---')}</span>
+                            <span class="text-teal-400">•</span>
+                            <span>Cập nhật: <strong class="text-white">${escapeHtml(company.updated_at || '---')}</strong></span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="openCreateMasterDataModal()" class="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl text-xs md:text-sm font-black font-heading shadow-md flex items-center space-x-2 transition-all cursor-pointer">
+                        <i class="ph-bold ph-pencil-simple text-base"></i>
+                        <span>Hiệu Chỉnh Thông Tin</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4 Structured Information Grid Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Card 1: Pháp lý & Định danh -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
+                            <i class="ph-bold ph-identification-card text-lg text-teal-600"></i>
+                            <span>1. Pháp Lý & Định Danh Doanh Nghiệp</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-400">Pháp nhân</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Tên pháp nhân:</span>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.company_name || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Tên thương hiệu / Viết tắt:</span>
+                            <strong class="text-teal-700 font-bold text-xs">${escapeHtml(company.short_name || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Mã số thuế (MST):</span>
+                            <strong class="text-slate-900 font-mono font-bold text-xs">${escapeHtml(company.tax_code || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Giấy phép KD vận tải:</span>
+                            <strong class="text-indigo-700 font-mono font-bold text-xs">${escapeHtml(company.operating_license || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Người đại diện pháp luật:</span>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.representative_name || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Chức danh đại diện:</span>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.representative_role || 'Giám Đốc')}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Trụ sở & Kênh liên hệ -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
+                            <i class="ph-bold ph-phone-call text-lg text-teal-600"></i>
+                            <span>2. Trụ Sở & Kênh Liên Lạc</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-400">Liên hệ</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="sm:col-span-2">
+                            <span class="block text-slate-400 font-medium text-[11px]">Địa chỉ đăng ký kinh doanh:</span>
+                            <strong class="text-slate-800 text-xs leading-relaxed">${escapeHtml(company.address || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Hotline / Điện thoại:</span>
+                            <strong class="text-emerald-700 font-mono font-bold text-xs">${escapeHtml(company.phone || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Email công ty:</span>
+                            <strong class="text-blue-700 text-xs font-medium">${escapeHtml(company.email || '-')}</strong>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <span class="block text-slate-400 font-medium text-[11px]">Website chính thức:</span>
+                            <a href="${escapeHtml(company.website || '#')}" target="_blank" class="text-teal-700 hover:underline font-bold text-xs flex items-center gap-1">
+                                <span>${escapeHtml(company.website || '-')}</span>
+                                <i class="ph ph-arrow-square-out text-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Tài khoản ngân hàng -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
+                            <i class="ph-bold ph-bank text-lg text-teal-600"></i>
+                            <span>3. Tài Khoản Ngân Hàng Giao Dịch</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-400">Thanh toán</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Số tài khoản:</span>
+                            <strong class="text-emerald-800 font-mono font-black text-sm tracking-wide bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">${escapeHtml(company.bank_account_number || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Chủ tài khoản:</span>
+                            <strong class="text-slate-900 font-bold text-xs uppercase">${escapeHtml(company.company_name || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Tên ngân hàng:</span>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.bank_name || '-')}</strong>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium text-[11px]">Chi nhánh ngân hàng:</span>
+                            <strong class="text-slate-800 text-xs">${escapeHtml(company.bank_branch || '-')}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Tham số hệ thống & Tính cước -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
+                            <i class="ph-bold ph-sliders text-lg text-teal-600"></i>
+                            <span>4. Tham Số Vận Hành & Tính Cước Mặc Định</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-400">Cấu hình</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <span class="block text-slate-500 font-medium text-[11px]">Thuế VAT Mặc Định:</span>
+                            <strong class="text-teal-800 font-mono font-black text-base">${Number(company.default_vat_rate || 8).toFixed(1)} %</strong>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Áp dụng báo giá & hóa đơn</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <span class="block text-slate-500 font-medium text-[11px]">Giá Dầu Tham Chiếu:</span>
+                            <strong class="text-amber-700 font-mono font-black text-base">${formatNumberVN(company.fuel_reference_price || 21000)} đ</strong>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Dầu DO 0.05S (VNĐ/Lít)</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <span class="block text-slate-500 font-medium text-[11px]">Mẫu Số Quy Đổi CBM:</span>
+                            <strong class="text-indigo-700 font-mono font-black text-base">${company.cbm_formula_divisor || 5000}</strong>
+                            <p class="text-[10px] text-slate-400 mt-0.5">D x R x C / Divisor</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 async function loadActiveMasterDataTab() {
@@ -11267,6 +11519,15 @@ async function openCreateMasterDataModal() {
     document.getElementById('md-edit-id').value = '';
     document.getElementById('md-catalog-key').value = currentMasterDataTab;
 
+    if (currentMasterDataTab === 'company') {
+        const profile = masterDataCache['company'] || {};
+        document.getElementById('md-modal-title').innerText = 'Hiệu Chỉnh Khai Báo Hệ Thống (Công Ty)';
+        document.getElementById('md-modal-subtitle').innerText = 'Cập nhật thông tin pháp nhân & tham số vận hành chuẩn';
+        injectMasterDataModalFields(profile);
+        document.getElementById('modal-master-data').classList.remove('hidden');
+        return;
+    }
+
     const titles = {
         'driver_tariffs': 'Thêm Tuyến Lương Chuyến Mới',
         'allowances': 'Thêm Phụ Cấp / Kiểm Hóa Mới',
@@ -11290,6 +11551,9 @@ async function openCreateMasterDataModal() {
 // Open Edit Modal with Current Data
 async function openEditMasterDataModal(id) {
     await loadMasterDataFormOptions();
+    if (currentMasterDataTab === 'company') {
+        return openCreateMasterDataModal();
+    }
     const items = masterDataCache[currentMasterDataTab] || [];
     const item = items.find(i => i.id === id);
     if (!item) return;
@@ -11328,7 +11592,131 @@ function injectMasterDataModalFields(data) {
 
     const d = data || {};
 
-    if (currentMasterDataTab === 'driver_tariffs') {
+    if (currentMasterDataTab === 'company') {
+        container.innerHTML = `
+            <div class="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl mb-3 flex items-center space-x-2.5 text-xs text-teal-900 font-medium">
+                <i class="ph-bold ph-info text-base text-teal-700 shrink-0"></i>
+                <span>Thông tin Khai Báo Hệ Thống sẽ được sử dụng trên toàn bộ Báo giá, Đơn đặt hàng, Biên bản giao nhận POD và Hóa đơn quyết toán.</span>
+            </div>
+
+            <!-- Group 1: Pháp lý & Định danh -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pb-1 border-b border-slate-200">1. Pháp Lý & Định Danh Doanh Nghiệp</div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Pháp Nhân Đầy Đủ <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-cp-name" value="${escapeHtml(d.company_name || '')}" placeholder="VD: CÔNG TY TNHH VẬN TẢI TRIỀN VÕ" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Thương Hiệu / Viết Tắt</label>
+                    </div>
+                    <input type="text" id="mdf-cp-short-name" value="${escapeHtml(d.short_name || '')}" placeholder="VD: TRIỀN VÕ LOGISTICS" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-teal-700 w-full">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (MST) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-cp-tax-code" value="${escapeHtml(d.tax_code || '')}" placeholder="VD: 0312345678" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-800 w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Giấy Phép KD Vận Tải</label>
+                    </div>
+                    <input type="text" id="mdf-cp-license" value="${escapeHtml(d.operating_license || '')}" placeholder="VD: GP-VT-2024/TPHCM" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Người Đại Diện & Chức Vụ</label>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <input type="text" id="mdf-cp-rep-name" value="${escapeHtml(d.representative_name || '')}" placeholder="Họ tên" class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-2/3">
+                        <input type="text" id="mdf-cp-rep-role" value="${escapeHtml(d.representative_role || 'Giám Đốc')}" placeholder="Chức vụ" class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-1/3">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Group 2: Trụ sở & Liên hệ -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">2. Trụ Sở & Thông Tin Liên Hệ</div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Trụ Sở Chính (Đăng ký KD) <span class="text-rose-500">*</span></label>
+                </div>
+                <input type="text" id="mdf-cp-address" value="${escapeHtml(d.address || '')}" placeholder="VD: Số 123 Đường Nguyễn Văn Linh, P. Tân Thuận Tây, Quận 7, TP. HCM" class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full" required>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Hotline / Điện Thoại <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-cp-phone" value="${escapeHtml(d.phone || '')}" placeholder="VD: 0903.123.456" class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-emerald-700 w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Email Liên Hệ</label>
+                    </div>
+                    <input type="email" id="mdf-cp-email" value="${escapeHtml(d.email || '')}" placeholder="VD: contact@trienvo.com" class="form-input h-8.5 px-2.5 py-1 text-xs text-blue-700 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Website Công Ty</label>
+                    </div>
+                    <input type="text" id="mdf-cp-website" value="${escapeHtml(d.website || '')}" placeholder="VD: https://trienvo.com" class="form-input h-8.5 px-2.5 py-1 text-xs text-teal-700 w-full">
+                </div>
+            </div>
+
+            <!-- Group 3: Ngân hàng -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">3. Tài Khoản Ngân Hàng Giao Dịch</div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Tài Khoản</label>
+                    </div>
+                    <input type="text" id="mdf-cp-bank-acc" value="${escapeHtml(d.bank_account_number || '')}" placeholder="VD: 19030000000001" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-emerald-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Ngân Hàng</label>
+                    </div>
+                    <input type="text" id="mdf-cp-bank-name" value="${escapeHtml(d.bank_name || '')}" placeholder="VD: Ngân hàng Techcombank" class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Chi Nhánh</label>
+                    </div>
+                    <input type="text" id="mdf-cp-bank-branch" value="${escapeHtml(d.bank_branch || '')}" placeholder="VD: Chi nhánh Nam Sài Gòn" class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
+            </div>
+
+            <!-- Group 4: Tham số hệ thống -->
+            <div class="text-xs font-bold text-teal-800 uppercase tracking-wider pt-2 pb-1 border-b border-slate-200">4. Tham Số Vận Hành & Tính Cước Mặc Định</div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Thuế VAT Mặc Định (%)</label>
+                    </div>
+                    <input type="number" id="mdf-cp-vat" value="${d.default_vat_rate || 8}" step="0.1" min="0" max="100" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 text-center w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Giá Dầu Tham Chiếu (VNĐ/Lít)</label>
+                    </div>
+                    <input type="text" inputmode="numeric" id="mdf-cp-fuel-price" value="${d.fuel_reference_price ? formatNumberVN(d.fuel_reference_price) : '21.000'}" class="input-number-vn form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-amber-700 text-right w-full">
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mẫu Số Quy Đổi CBM</label>
+                    </div>
+                    <input type="number" id="mdf-cp-cbm-divisor" value="${d.cbm_formula_divisor || 5000}" step="100" min="1000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-indigo-700 text-center w-full">
+                </div>
+            </div>
+        `;
+    } else if (currentMasterDataTab === 'driver_tariffs') {
         const areas = ['Khu Vực Củ Chi', 'Khu Vực Long An', 'Khu Vực Tây Ninh', 'Khu Vực Bình Dương', 'Khu Vực Đồng Nai', 'Khu Vực TP.HCM', 'Khu Vực Vũng Tàu', 'Tuyến Đặc Thù'];
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -12066,9 +12454,10 @@ async function submitMasterDataForm(e) {
     e.preventDefault();
     const editId = document.getElementById('md-edit-id').value;
     const tabKey = document.getElementById('md-catalog-key').value;
-    const isEdit = !!editId;
+    const isEdit = tabKey === 'company' ? true : !!editId;
 
     const endpoints = {
+        'company': '/api/master-data/company/',
         'driver_tariffs': isEdit ? `/api/master-data/driver-tariffs/${editId}/` : '/api/master-data/driver-tariffs/',
         'allowances': isEdit ? `/api/master-data/allowances/${editId}/` : '/api/master-data/allowances/',
         'locations': isEdit ? `/api/master-data/locations/${editId}/` : '/api/master-data/locations/',
@@ -12083,7 +12472,26 @@ async function submitMasterDataForm(e) {
     };
 
     let payload = {};
-    if (tabKey === 'driver_tariffs') {
+    if (tabKey === 'company') {
+        payload = {
+            company_name: document.getElementById('mdf-cp-name')?.value || '',
+            short_name: document.getElementById('mdf-cp-short-name')?.value || '',
+            tax_code: document.getElementById('mdf-cp-tax-code')?.value || '',
+            operating_license: document.getElementById('mdf-cp-license')?.value || '',
+            representative_name: document.getElementById('mdf-cp-rep-name')?.value || '',
+            representative_role: document.getElementById('mdf-cp-rep-role')?.value || '',
+            address: document.getElementById('mdf-cp-address')?.value || '',
+            phone: document.getElementById('mdf-cp-phone')?.value || '',
+            email: document.getElementById('mdf-cp-email')?.value || '',
+            website: document.getElementById('mdf-cp-website')?.value || '',
+            bank_account_number: document.getElementById('mdf-cp-bank-acc')?.value || '',
+            bank_name: document.getElementById('mdf-cp-bank-name')?.value || '',
+            bank_branch: document.getElementById('mdf-cp-bank-branch')?.value || '',
+            default_vat_rate: parseFloat(document.getElementById('mdf-cp-vat')?.value) || 8.0,
+            fuel_reference_price: parseNumberVN(document.getElementById('mdf-cp-fuel-price')?.value) || 21000,
+            cbm_formula_divisor: parseInt(document.getElementById('mdf-cp-cbm-divisor')?.value) || 5000,
+        };
+    } else if (tabKey === 'driver_tariffs') {
         payload = {
             area_group: document.getElementById('mdf-area-group').value,
             route_name: document.getElementById('mdf-route-name').value,

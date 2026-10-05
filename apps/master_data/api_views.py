@@ -13,7 +13,7 @@ from apps.master_data.models import (
     ContainerType, ContainerCategory,
     ExpenseItem, ExpenseCategoryGroup,
     DriverSalaryTariff, DriverAllowanceCatalog, AllowanceCategory,
-    ShippingLine, Subcontractor
+    ShippingLine, Subcontractor, CompanyProfile
 )
 from apps.customers.models import Customer, RouteTariff
 from apps.fleet.models import Vehicle, Trailer, VehicleType, VehicleOwnership, VehicleStatus
@@ -22,6 +22,7 @@ from apps.personnel.models import Employee
 class MasterDataSummaryAPIView(APIView):
     """Thống kê tổng quan số lượng bản ghi của các danh mục cốt lõi."""
     def get(self, request):
+        company = CompanyProfile.get_default_company()
         return Response({
             'stats': {
                 'driver_tariffs_count': DriverSalaryTariff.objects.count(),
@@ -35,6 +36,7 @@ class MasterDataSummaryAPIView(APIView):
                 'trailers_count': Trailer.objects.count(),
                 'shipping_lines_count': ShippingLine.objects.count(),
                 'subcontractors_count': Subcontractor.objects.count(),
+                'company_name': company.short_name or company.company_name,
             }
         })
 
@@ -1150,4 +1152,124 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
         sc.delete()
         return Response({'success': True, 'message': f'Đã xóa nhà xe thầu phụ [{sc.name}].'})
+
+# ==============================================================================
+# 12. KHAI BÁO THÔNG TIN CÔNG TY & HỆ THỐNG (COMPANY PROFILE & SYSTEM SETTINGS)
+# ==============================================================================
+class CompanyProfileAPIView(MasterDataBaseAPIView):
+    """
+    API Khai báo & Cập nhật Thông tin Công ty / Tham số Hệ thống Cài đặt.
+    GET: Lấy thông tin công ty hiện tại.
+    PUT / POST: Cập nhật thông tin công ty.
+    """
+    def get(self, request):
+        company = CompanyProfile.get_default_company()
+        return Response({
+            'success': True,
+            'data': {
+                'id': company.id,
+                'company_name': company.company_name,
+                'short_name': company.short_name,
+                'tax_code': company.tax_code,
+                'phone': company.phone,
+                'email': company.email,
+                'website': company.website,
+                'address': company.address,
+                'representative_name': company.representative_name,
+                'representative_role': company.representative_role,
+                'bank_account_number': company.bank_account_number,
+                'bank_name': company.bank_name,
+                'bank_branch': company.bank_branch,
+                'operating_license': company.operating_license,
+                'default_vat_rate': float(company.default_vat_rate),
+                'fuel_reference_price': float(company.fuel_reference_price),
+                'cbm_formula_divisor': company.cbm_formula_divisor,
+                'logo_url': company.logo_url,
+                'is_default': company.is_default,
+                'updated_at': company.updated_at.strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
+            }
+        })
+
+    def put(self, request):
+        return self._update_company(request)
+
+    def post(self, request):
+        return self._update_company(request)
+
+    def _update_company(self, request):
+        company = CompanyProfile.get_default_company()
+        data = request.data
+        if 'company_name' in data and data['company_name'].strip():
+            company.company_name = data['company_name'].strip()
+        if 'short_name' in data:
+            company.short_name = data['short_name'].strip()
+        if 'tax_code' in data:
+            company.tax_code = data['tax_code'].strip()
+        if 'phone' in data:
+            company.phone = data['phone'].strip()
+        if 'email' in data:
+            company.email = data['email'].strip()
+        if 'website' in data:
+            company.website = data['website'].strip()
+        if 'address' in data:
+            company.address = data['address'].strip()
+        if 'representative_name' in data:
+            company.representative_name = data['representative_name'].strip()
+        if 'representative_role' in data:
+            company.representative_role = data['representative_role'].strip()
+        if 'bank_account_number' in data:
+            company.bank_account_number = data['bank_account_number'].strip()
+        if 'bank_name' in data:
+            company.bank_name = data['bank_name'].strip()
+        if 'bank_branch' in data:
+            company.bank_branch = data['bank_branch'].strip()
+        if 'operating_license' in data:
+            company.operating_license = data['operating_license'].strip()
+        if 'default_vat_rate' in data and data['default_vat_rate'] is not None:
+            try:
+                company.default_vat_rate = float(data['default_vat_rate'])
+            except (ValueError, TypeError):
+                pass
+        if 'fuel_reference_price' in data and data['fuel_reference_price'] is not None:
+            try:
+                company.fuel_reference_price = float(data['fuel_reference_price'])
+            except (ValueError, TypeError):
+                pass
+        if 'cbm_formula_divisor' in data and data['cbm_formula_divisor'] is not None:
+            try:
+                company.cbm_formula_divisor = int(data['cbm_formula_divisor'])
+            except (ValueError, TypeError):
+                pass
+        if 'logo_url' in data:
+            company.logo_url = data['logo_url'].strip()
+
+        company.save()
+
+        return Response({
+            'success': True,
+            'message': 'Đã cập nhật thông tin công ty và cấu hình hệ thống thành công!',
+            'data': {
+                'id': company.id,
+                'company_name': company.company_name,
+                'short_name': company.short_name,
+                'tax_code': company.tax_code,
+                'phone': company.phone,
+                'email': company.email,
+                'website': company.website,
+                'address': company.address,
+                'representative_name': company.representative_name,
+                'representative_role': company.representative_role,
+                'bank_account_number': company.bank_account_number,
+                'bank_name': company.bank_name,
+                'bank_branch': company.bank_branch,
+                'operating_license': company.operating_license,
+                'default_vat_rate': float(company.default_vat_rate),
+                'fuel_reference_price': float(company.fuel_reference_price),
+                'cbm_formula_divisor': company.cbm_formula_divisor,
+                'logo_url': company.logo_url,
+                'is_default': company.is_default,
+                'updated_at': company.updated_at.strftime('%H:%M %d/%m/%Y') if company.updated_at else '-',
+            }
+        })
+
 
