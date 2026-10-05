@@ -6128,9 +6128,15 @@ function switchTab(tabId, updateHistory = true) {
 
     // RBAC: Chặn các tab không có thẩm quyền truy cập
     if (!isAdmin && role) {
-        if ((tabId === 'nhan-su' || tabId === 'ke-toan' || tabId === 'quyet-toan') && !['DIRECTOR', 'ACCOUNTANT'].includes(role)) {
+        if (tabId === 'quyet-toan' && !['DIRECTOR', 'DISPATCHER', 'ACCOUNTANT'].includes(role)) {
             if (typeof showToast === 'function') {
-                showToast('warning', 'Phân hệ Quyết toán, Nhân sự và Kế toán tài chính chỉ dành cho Kế toán viên và Ban Giám Đốc!', 'Hạn Chế Quyền');
+                showToast('warning', 'Tính năng Quyết toán gom chuyến dành cho Điều độ viên, Kế toán và Ban Giám Đốc!', 'Hạn Chế Quyền');
+            }
+            return;
+        }
+        if ((tabId === 'nhan-su' || tabId === 'ke-toan') && !['DIRECTOR', 'ACCOUNTANT'].includes(role)) {
+            if (typeof showToast === 'function') {
+                showToast('warning', 'Phân hệ Nhân sự và Kế toán tài chính chỉ dành cho Kế toán viên và Ban Giám Đốc!', 'Hạn Chế Quyền');
             }
             return;
         }
@@ -6154,11 +6160,19 @@ function switchTab(tabId, updateHistory = true) {
         if (icon) icon.className = icon.className.replace('text-teal-300', 'text-slate-400');
     });
 
-    const activeBtn = document.querySelector(`[data-target="${tabId}"]`);
+    const activeTarget = (tabId === 'quyet-toan') ? (previousActiveTab === 'ke-toan' ? 'ke-toan' : 'dieu-van') : tabId;
+    const activeBtn = document.querySelector(`[data-target="${activeTarget}"]`);
     if (activeBtn) {
         activeBtn.classList.add('active');
         const icon = activeBtn.querySelector('i');
         if (icon) icon.className = icon.className.replace('text-slate-400', 'text-teal-300');
+    }
+
+    if (tabId === 'quyet-toan') {
+        const backBtnText = document.getElementById('settle-back-btn-text');
+        if (backBtnText) {
+            backBtnText.innerText = previousActiveTab === 'ke-toan' ? 'Quay lại Kế Toán' : 'Quay lại Điều Vận';
+        }
     }
 
     // Ẩn view chi tiết chuyến xe nếu đang mở
@@ -7702,7 +7716,20 @@ let batchSettlementData = null;
 let batchAllTripsList = [];
 
 
+function returnFromSettlementView() {
+    if (previousActiveTab && previousActiveTab !== 'quyet-toan') {
+        switchTab(previousActiveTab, true);
+    } else {
+        switchTab('dieu-van', true);
+    }
+}
+window.returnFromSettlementView = returnFromSettlementView;
+
 function openBatchSettlementModal(prefilledDriverId = null, prefilledVehicleId = null) {
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-quyet-toan') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
     // Chuyển trực tiếp sang Trang Quyết Toán Gom Chuyến chuyên dụng
     switchTab('quyet-toan');
     if (prefilledDriverId) {
