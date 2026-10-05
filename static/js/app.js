@@ -14077,11 +14077,6 @@ function renderReport7(data) {
     applyReport7Filters();
 }
 
-let rep8SubSortCol = 'gross_payable';
-let rep8SubSortAsc = false;
-let rep8TripSortCol = 'date';
-let rep8TripSortAsc = false;
-
 function applyReport7Filters() {
     const canViewFinance = (rep7DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep7-search')?.value || '').toLowerCase().trim();
@@ -14492,10 +14487,6 @@ function toggleReport9Sort(col) {
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 10: QUỸ TẠM ỨNG ĐIỀU VẬN (KẾ TOÁN QUẢN LÝ)
 // -------------------------------------------------------------
-let rep10DataCache = [];
-let rep10SortCol = 'code';
-let rep10SortAsc = false;
-
 function renderReport10(data) {
     const r10 = data.report10_dispatcher_funds || {};
 
@@ -14642,10 +14633,6 @@ function toggleReport10Sort(col) {
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 11: TẠM ỨNG & CHI PHÍ PHÁT SINH TÀI XẾ (ĐIỀU VẬN QUẢN LÝ)
 // -------------------------------------------------------------
-let rep11DataCache = [];
-let rep11SortCol = 'trip_code';
-let rep11SortAsc = false;
-
 function renderReport11(data) {
     const r11 = data.report11_driver_advances_expenses || {};
 
@@ -14828,10 +14815,6 @@ function toggleReport11Sort(col) {
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 12: BÁO CÁO QUYẾT TOÁN CHUYẾN XE & BACKLOG CHUYỂN KỲ
 // -------------------------------------------------------------
-let rep12DataCache = [];
-let rep12SortCol = 'loading_date';
-let rep12SortAsc = false;
-
 function renderReport12(data) {
     const r12 = data.report12_settlement_backlog || {};
     const canViewFinance = (data.can_view_finance !== false);
@@ -15013,9 +14996,6 @@ function toggleReport12Sort(col) {
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 13: BÁO CÁO THEO DÕI CÔNG NỢ PHẢI THU (AR AGING) & THU TIỀN
 // -------------------------------------------------------------
-let rep13DataCache = [];
-let rep13SortCol = 'total_receivable';
-let rep13SortAsc = false;
 let currentStatementCustomer = null;
 
 function renderReport13(data) {
@@ -15412,10 +15392,6 @@ function toggleReport13Sort(col) {
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 14: BÁO CÁO TUỔI ĐƠN TỒN ĐỌNG CHƯA QUYẾT TOÁN (UNSETTLED AGING)
 // -------------------------------------------------------------
-let rep14DataCache = [];
-let rep14SortCol = 'days_unsettled';
-let rep14SortAsc = false;
-
 function renderReport14(data) {
     const r14 = data.report14_unsettled_aging || {};
     const canViewFinance = (data.can_view_finance !== false);
