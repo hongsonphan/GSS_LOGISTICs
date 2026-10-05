@@ -2180,6 +2180,65 @@ class TripAddDocumentAPIView(APIView):
             'doc_id': doc.id
         })
 
+class TripDocumentDetailAPIView(APIView):
+    """API Cho phép Tài xế và Điều độ Hiệu chỉnh hoặc Xóa (Soft-delete) chứng từ đã nộp nhầm."""
+    permission_classes = [IsTripDriverOrDispatcher]
+
+    def put(self, request, trip_code, doc_id):
+        trip = get_trip_by_code_or_hash(trip_code)
+        if not trip:
+            return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+        self.check_object_permissions(request, trip)
+
+        doc = trip.documents.filter(id=doc_id, is_deleted=False).first()
+        if not doc:
+            return Response({'error': 'Không tìm thấy chứng từ'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'title' in data and data['title']:
+            doc.title = str(data['title']).strip()
+        if 'container_no' in data or 'extracted_container_no' in data:
+            val = str(data.get('container_no') if 'container_no' in data else data.get('extracted_container_no', '')).strip().upper()
+            doc.extracted_container_no = val
+            if val and not trip.container_number:
+                trip.container_number = val
+                trip.save(update_fields=['container_number'])
+        if 'seal_no' in data or 'extracted_seal_no' in data:
+            val = str(data.get('seal_no') if 'seal_no' in data else data.get('extracted_seal_no', '')).strip().upper()
+            doc.extracted_seal_no = val
+            if val and not trip.seal_number:
+                trip.seal_number = val
+                trip.save(update_fields=['seal_number'])
+        if 'notes' in data or 'ocr_raw_text' in data:
+            doc.ocr_raw_text = str(data.get('notes') if 'notes' in data else data.get('ocr_raw_text', '')).strip()
+
+        doc.save()
+        return Response({
+            'success': True,
+            'message': f'Đã cập nhật chứng từ "{doc.title}" thành công!',
+            'doc_id': doc.id,
+            'title': doc.title,
+            'container_no': doc.extracted_container_no,
+            'seal_no': doc.extracted_seal_no
+        })
+
+    def delete(self, request, trip_code, doc_id):
+        trip = get_trip_by_code_or_hash(trip_code)
+        if not trip:
+            return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+        self.check_object_permissions(request, trip)
+
+        doc = trip.documents.filter(id=doc_id, is_deleted=False).first()
+        if not doc:
+            return Response({'error': 'Không tìm thấy chứng từ'}, status=status.HTTP_404_NOT_FOUND)
+
+        doc_title = doc.title
+        doc.delete()  # Soft delete
+        return Response({
+            'success': True,
+            'message': f'Đã xóa chứng từ "{doc_title}" thành công!'
+        })
+
 class PersonnelPayrollAPIView(APIView):
     """API Bảng lương tài xế theo đúng dữ liệu chuyến xe thực tế trong cơ sở dữ liệu."""
     permission_classes = [CanViewPayroll]

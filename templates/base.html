@@ -39,7 +39,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- International Enterprise Typography & Custom Styles -->
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.6.0">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.7.0">
 </head>
 <body class="flex h-screen bg-slate-100 selection:bg-teal-100 selection:text-teal-900">
 
@@ -65,6 +65,7 @@
     {% include 'components/modal_quotation.html' %}
     {% include 'components/modal_booking.html' %}
     {% include 'components/modal_master_data.html' %}
+    {% include 'components/modal_employee.html' %}
     {% include 'components/modal_driver_advance.html' %}
     {% include 'components/modal_settle_advance.html' %}
     {% include 'components/modal_batch_driver_settlement.html' %}
@@ -92,8 +93,8 @@
             is_superuser: {{ request.user.is_superuser|yesno:"true,false" }}
         };
     </script>
-    <script src="{% static 'js/column_manager.js' %}?v=2.6.0"></script>
-    <script src="{% static 'js/app.js' %}?v=2.6.0"></script>
+    <script src="{% static 'js/column_manager.js' %}?v=2.7.0"></script>
+    <script src="{% static 'js/app.js' %}?v=2.7.0"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

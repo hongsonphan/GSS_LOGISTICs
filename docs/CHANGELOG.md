@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.7.0] - 2026-10-05 (Xây Dựng Hoàn Chỉnh Phân Hệ CRUD Hồ Sơ Nhân Sự & Đội Ngũ Tài Xế /hr)
+
+### 1. Phân Hệ Hành Chính & Nhân Sự Toàn Diện (`apps/personnel/` & `/hr`):
+- **Kiến trúc RESTful API CRUD Nhân sự (`apps/personnel/`):**
+  * `EmployeeSerializer`: Chuẩn hóa dữ liệu hồ sơ nhân viên (`code`, `full_name`, `nickname`, `phone_number`, `zalo_id`, `department`, `role`, `license_number`, `license_expiry`, `base_salary`, `is_active`). Validate duy nhất mã nhân viên và định dạng số điện thoại.
+  * `EmployeeListCreateAPIView` (`/api/personnel/employees/`): Hỗ trợ tìm kiếm từ khóa thời gian thực, lọc theo phòng ban (`FLEET`, `DISPATCH`, `ACCOUNTING`, `SALES`, `CUSTOMS`, `HR`, `MANAGEMENT`), chức vụ (`DRIVER`, `DISPATCHER`, `ACCOUNTANT`, `SALESMAN`, `MECHANIC`, `DIRECTOR`) và trạng thái (`ACTIVE`, `INACTIVE`).
+  * `EmployeeDetailAPIView` (`/api/personnel/employees/<id>/`): Cập nhật thông tin chuyên môn, mức lương cơ bản và hỗ trợ Soft-Delete (chuyển trạng thái tạm ngưng công tác).
+  * `EmployeeStatsAPIView` (`/api/personnel/stats/`): Thống kê cơ cấu nhân sự toàn công ty và danh mục dropdown cho form khai báo.
+- **Giao diện 2 Sub-Tabs Chuyên Nghiệp (`templates/views/view_personnel.html` & `modal_employee.html`):**
+  * **Sub-Tab 1: Hồ Sơ Cán Bộ & Tài Xế (Directory):** Bảng danh bạ chuẩn ERP `.erp-table`, hiển thị mã NV, họ tên, nickname hiện trường, số điện thoại, Zalo, phòng ban, chức vụ, GPLX, lương cơ bản và các nút thao tác nhanh (✏️ Chỉnh sửa, 🗑️ Tạm ngưng). Nút `+ Thêm Mới Nhân Sự` mở modal khai báo trực quan.
+  * **Sub-Tab 2: Bảng Tính Lương & Tạm Ứng Chuyến (Payroll):** Tính toán lương chuyến theo sản lượng thực tế, thưởng vượt 40 chuyến/tháng, trừ tạm ứng và thực lãnh dự kiến cho tài xế.
+- **Tự Động Hóa Kiểm Thử (Automated Tests):**
+  * Bổ sung bộ 7 unit tests chuyên sâu (`apps/personnel/tests.py`), nâng tổng số bài kiểm thử của hệ thống lên **67/67 Tests Passed 100%**.
+
+---
+
 ## [2.6.0] - 2026-10-05 (Production Readiness: Bảo Mật XSS/Open Redirect, Khóa Xung Đột Tiền Tệ Concurrency, Tối Ưu N+1 & Offline Queue Driver Portal)
 
 ### 1. Nâng Cấp Bảo Mật & Phòng Chống Tấn Công (P0 Security Hardening):

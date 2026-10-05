@@ -1,134 +1,269 @@
-<!-- 3. NHÂN SỰ & LƯƠNG -->
-<div id="view-nhan-su" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-sm flex items-center">
-            <div class="p-3.5 bg-blue-100 rounded-xl text-blue-600 mr-4"><i class="ph-bold ph-users text-2xl"></i></div>
+<!-- 3. PHÂN HỆ HÀNH CHÍNH & NHÂN SỰ (PERSONNEL & HR MANAGEMENT) -->
+<div id="view-nhan-su" class="view hidden-view p-4 md:p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
+    <!-- Top KPI Cards for Personnel -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 shrink-0">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs flex items-center">
+            <div class="p-3 bg-teal-50 rounded-xl text-teal-700 mr-3.5"><i class="ph-bold ph-users text-2xl"></i></div>
             <div>
-                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Tổng nhân sự</p>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">48</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng nhân sự</p>
+                <p class="text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-0.5" id="hr-kpi-total">0</p>
             </div>
         </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-sm flex items-center">
-            <div class="p-3.5 bg-emerald-100 rounded-xl text-emerald-600 mr-4"><i class="ph-bold ph-steering-wheel text-2xl"></i></div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-2xs flex items-center">
+            <div class="p-3 bg-emerald-50 rounded-xl text-emerald-700 mr-3.5"><i class="ph-bold ph-steering-wheel text-2xl"></i></div>
             <div>
-                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Tài xế sẵn sàng</p>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="hr-stat-drivers">15</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tài xế xe container</p>
+                <p class="text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-0.5" id="hr-kpi-drivers">0</p>
             </div>
         </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-sm flex items-center">
-            <div class="p-3.5 bg-amber-100 rounded-xl text-amber-600 mr-4"><i class="ph-bold ph-first-aid text-2xl"></i></div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs flex items-center">
+            <div class="p-3 bg-blue-50 rounded-xl text-blue-700 mr-3.5"><i class="ph-bold ph-headset text-2xl"></i></div>
             <div>
-                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Nghỉ phép / Ốm</p>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">3</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Điều độ & Kế toán</p>
+                <p class="text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-0.5" id="hr-kpi-office">0</p>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-2xs flex items-center">
+            <div class="p-3 bg-amber-50 rounded-xl text-amber-700 mr-3.5"><i class="ph-bold ph-user-minus text-2xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tạm ngưng / Nghỉ phép</p>
+                <p class="text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-0.5" id="hr-kpi-inactive">0</p>
             </div>
         </div>
     </div>
-    
-    <div class="erp-table-container flex-1 flex flex-col shadow-sm">
-        <!-- Header thông tin & Bộ lọc thông minh cho Nhân Sự & Bảng Lương -->
-        <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
-            <div class="flex items-center justify-between text-xs flex-wrap gap-2">
-                <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                    <i class="ph-bold ph-funnel text-teal-700 text-sm"></i>
-                    <span>Bộ Lọc & Sắp Xếp: <strong>Bảng lương chuyến tạm tính & hồ sơ nhân sự</strong></span>
+
+    <!-- Main Card with Sub-tabs -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col flex-1">
+        <!-- Sub-Navigation 2 Tabs & Action Button -->
+        <div class="border-b border-slate-200 px-4 pt-2 flex items-center justify-between flex-wrap gap-2 bg-slate-50/80 shrink-0">
+            <div class="flex items-center space-x-1" id="hr-sub-tabs">
+                <button onclick="switchHRSubTab('directory')" id="hr-tab-directory-btn" class="hr-tab-btn active px-4 py-2.5 text-xs md:text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-2 transition-all cursor-pointer">
+                    <i class="ph-bold ph-address-book text-base text-teal-600"></i>
+                    <span>Hồ Sơ Cán Bộ & Tài Xế</span>
+                </button>
+                <button onclick="switchHRSubTab('payroll')" id="hr-tab-payroll-btn" class="hr-tab-btn px-4 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2 transition-all cursor-pointer">
+                    <i class="ph-bold ph-money text-base text-emerald-600"></i>
+                    <span>Bảng Tính Lương & Tạm Ứng Chuyến</span>
+                </button>
+            </div>
+
+            <div class="pb-2">
+                <button onclick="openCreateEmployeeModal()" id="btn-create-employee" class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-user-plus text-base"></i>
+                    <span>+ Thêm Mới Nhân Sự</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- SUB-PANEL 1: HỒ SƠ NHÂN SỰ & TÀI XẾ (CRUD DIRECTORY) -->
+        <!-- ========================================================================= -->
+        <div id="hr-panel-directory" class="flex flex-col flex-1">
+            <!-- Filter & Search Toolbar -->
+            <div class="p-3 px-4 border-b border-slate-200/80 bg-white flex flex-col md:flex-row items-center justify-between gap-2.5 shrink-0">
+                <!-- Search Input -->
+                <div class="relative w-full md:w-80">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+                    <input type="text" id="emp-search-input" onkeyup="filterEmployeesTable()" placeholder="Tìm theo tên, mã NV, SĐT, biệt danh..."
+                           class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs md:text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
-                        Hiển thị: <strong id="hr-filtered-count">0</strong> / <span id="hr-total-count">0</span> nhân sự
-                    </span>
-                    <!-- Nút Tùy Chỉnh Cột Nhân Sự -->
-                    <button type="button" onclick="openColumnCustomizer('personnel-payroll-table')" 
-                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
-                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
-                        <i class="ph-bold ph-columns text-teal-700"></i>
-                        <span>Cột</span>
-                    </button>
-                    <button type="button" onclick="resetHRFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
-                        <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
+
+                <!-- Filters: Department, Role, Status -->
+                <div class="flex items-center flex-wrap gap-2 w-full md:w-auto justify-end">
+                    <div class="flex items-center space-x-1.5">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Phòng ban:</label>
+                        <select id="emp-filter-dept" onchange="filterEmployeesTable()"
+                                class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
+                            <option value="ALL">Tất cả phòng ban</option>
+                            <option value="FLEET">Đội Xe & Bãi</option>
+                            <option value="DISPATCH">Phòng Điều Vận</option>
+                            <option value="ACCOUNTING">Kế Toán Tài Chính</option>
+                            <option value="SALES">Phòng Kinh Doanh</option>
+                            <option value="CUSTOMS">Thủ Tục Hải Quan</option>
+                            <option value="HR">Hành Chính Nhân Sự</option>
+                            <option value="MANAGEMENT">Ban Giám Đốc</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-1.5">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Chức vụ:</label>
+                        <select id="emp-filter-role" onchange="filterEmployeesTable()"
+                                class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
+                            <option value="ALL">Tất cả chức vụ</option>
+                            <option value="DRIVER">Tài xế (DRIVER)</option>
+                            <option value="DISPATCHER">Điều độ viên</option>
+                            <option value="ACCOUNTANT">Kế toán viên</option>
+                            <option value="SALESMAN">Nhân viên Sale</option>
+                            <option value="MECHANIC">Kỹ thuật bãi</option>
+                            <option value="DIRECTOR">Ban Giám Đốc</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-1.5">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Trạng thái:</label>
+                        <select id="emp-filter-status" onchange="filterEmployeesTable()"
+                                class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
+                            <option value="ALL">Tất cả</option>
+                            <option value="ACTIVE">Đang làm việc</option>
+                            <option value="INACTIVE">Tạm ngưng</option>
+                        </select>
+                    </div>
+
+                    <button onclick="loadEmployeesData()" title="Làm mới danh sách" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer">
+                        <i class="ph-bold ph-arrows-clockwise text-base"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Thanh tìm kiếm từ khóa -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 text-xs">
-                <div class="sm:col-span-2">
-                    <div class="relative">
-                        <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="text" id="filter-hr-search" oninput="applyHRFilters()" placeholder="Tìm mã nhân viên, họ tên tài xế..." 
-                            class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
-                        <button type="button" onclick="clearHRSearch()" id="btn-clear-hr-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                            <i class="ph-bold ph-x text-xs"></i>
-                        </button>
-                    </div>
+            <!-- Employee Data Table -->
+            <div class="overflow-x-auto relative border-b border-slate-200 erp-table-container min-h-[380px] max-h-[calc(100vh-360px)] overflow-y-auto">
+                <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="employees-table">
+                    <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
+                        <tr>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Mã NV</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Họ Và Tên</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Biệt Danh</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Số Điện Thoại / Zalo</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Phòng Ban</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Chức Vụ</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">GPLX / Hạn Bằng</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200">Lương Cơ Bản</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200">Trạng Thái</th>
+                            <th class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium" id="employees-tbody">
+                        <tr>
+                            <td colspan="10" class="p-8 text-center text-slate-400">
+                                <i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>
+                                Đang tải hồ sơ nhân sự...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Counter -->
+            <div class="p-2.5 px-4 bg-slate-50/90 flex items-center justify-between text-xs font-semibold text-slate-600 select-none shrink-0">
+                <div class="flex items-center space-x-1">
+                    <span>Tổng số:</span>
+                    <span id="emp-count-display" class="font-black text-teal-800">0</span>
+                    <span>nhân sự</span>
+                </div>
+                <div class="text-[11px] text-slate-400">
+                    Hệ thống quản lý dữ liệu nhân sự chuẩn BIM Logistics
                 </div>
             </div>
         </div>
 
-        <div class="overflow-x-auto flex-1">
-            <table class="erp-table whitespace-nowrap" id="personnel-payroll-table" data-table-title="Bảng Lương & Nhân Sự Vận Hành">
-                <thead>
-                    <tr>
-                        <!-- 1. Mã NV -->
-                        <th data-col-key="code" data-col-name="Mã NV" data-col-locked="true" onclick="toggleHRSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã NV">
-                            <div class="flex items-center gap-1.5">
-                                <span>Mã NV</span>
-                                <i id="sort-icon-hr-code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                            </div>
-                        </th>
+        <!-- ========================================================================= -->
+        <!-- SUB-PANEL 2: BẢNG LƯƠNG & TẠM ỨNG CHUYẾN (PAYROLL & ADVANCES) -->
+        <!-- ========================================================================= -->
+        <div id="hr-panel-payroll" class="hidden flex flex-col flex-1">
+            <!-- Header thông tin & Bộ lọc thông minh cho Nhân Sự & Bảng Lương -->
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5 shrink-0">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                        <i class="ph-bold ph-funnel text-teal-700 text-sm"></i>
+                        <span>Bảng Lương Chuyến Tạm Tính: <strong>Dữ liệu chuyến hoàn thành trong kỳ</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2.5 py-1 rounded-full border border-teal-200">
+                            Hiển thị: <strong id="hr-filtered-count">0</strong> / <span id="hr-total-count">0</span> tài xế
+                        </span>
+                        <button type="button" onclick="openColumnCustomizer('personnel-payroll-table')" 
+                            class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                            <i class="ph-bold ph-columns text-teal-700"></i>
+                            <span>Cột</span>
+                        </button>
+                        <button type="button" onclick="resetHRFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1 cursor-pointer">
+                            <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
+                        </button>
+                    </div>
+                </div>
 
-                        <!-- 2. Tài xế -->
-                        <th data-col-key="name" data-col-name="Tài xế" onclick="toggleHRSort('name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Tên Tài xế">
-                            <div class="flex items-center gap-1.5">
-                                <span>Tài xế</span>
-                                <i id="sort-icon-hr-name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                            </div>
-                        </th>
+                <!-- Thanh tìm kiếm từ khóa -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 text-xs">
+                    <div class="sm:col-span-2">
+                        <div class="relative">
+                            <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="filter-hr-search" oninput="applyHRFilters()" placeholder="Tìm mã nhân viên, họ tên tài xế..." 
+                                class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
+                            <button type="button" onclick="clearHRSearch()" id="btn-clear-hr-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                                <i class="ph-bold ph-x text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- 3. Số chuyến -->
-                        <th data-col-key="trips" data-col-name="Số chuyến (Tháng)" onclick="toggleHRSort('trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center" title="Click để sắp xếp theo Số Chuyến">
-                            <div class="flex items-center justify-center gap-1.5">
-                                <span>Số chuyến (Tháng)</span>
-                                <i id="sort-icon-hr-trips" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                            </div>
-                        </th>
+            <div class="overflow-x-auto border-b border-slate-200 erp-table-container min-h-[380px] max-h-[calc(100vh-360px)] overflow-y-auto">
+                <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="personnel-payroll-table" data-table-title="Bảng Lương & Nhân Sự Vận Hành">
+                    <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
+                        <tr>
+                            <!-- 1. Mã NV -->
+                            <th data-col-key="code" data-col-name="Mã NV" data-col-locked="true" onclick="toggleHRSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Mã NV">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Mã NV</span>
+                                    <i id="sort-icon-hr-code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                        <!-- 4. Lương Cơ Bản -->
-                        <th data-col-key="base_salary" data-col-name="Lương Cơ Bản" onclick="toggleHRSort('base_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lương Cơ Bản">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <span>Lương Cơ Bản</span>
-                                <i id="sort-icon-hr-base_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                            </div>
-                        </th>
+                            <!-- 2. Tài xế -->
+                            <th data-col-key="name" data-col-name="Tài xế" onclick="toggleHRSort('name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Tên Tài xế">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Tài xế</span>
+                                    <i id="sort-icon-hr-name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                        <!-- 5. Lương Chuyến -->
-                        <th data-col-key="trip_salary" data-col-name="Lương Chuyến (Tạm tính)" onclick="toggleHRSort('trip_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Lương Chuyến">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <span>Lương Chuyến (Tạm tính)</span>
-                                <i id="sort-icon-hr-trip_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                            </div>
-                        </th>
+                            <!-- 3. Số chuyến -->
+                            <th data-col-key="trips" data-col-name="Số chuyến (Tháng)" onclick="toggleHRSort('trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Số Chuyến">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <span>Số chuyến (Tháng)</span>
+                                    <i id="sort-icon-hr-trips" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                        <!-- 6. Tạm ứng -->
-                        <th data-col-key="advance" data-col-name="Tạm ứng" onclick="toggleHRSort('advance')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Tạm Ứng">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <span>Tạm ứng</span>
-                                <i id="sort-icon-hr-advance" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                            </div>
-                        </th>
+                            <!-- 4. Lương Cơ Bản -->
+                            <th data-col-key="base_salary" data-col-name="Lương Cơ Bản" onclick="toggleHRSort('base_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Lương Cơ Bản">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Lương Cơ Bản</span>
+                                    <i id="sort-icon-hr-base_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
 
-                        <!-- 7. Thực lãnh dự kiến -->
-                        <th data-col-key="net_salary" data-col-name="Thực lãnh dự kiến" onclick="toggleHRSort('net_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Thực Lãnh Dự Kiến">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <span>Thực lãnh dự kiến</span>
-                                <i id="sort-icon-hr-net_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                            </div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100" id="hr-tbody">
-                    <!-- Rendered via API -->
-                </tbody>
-            </table>
+                            <!-- 5. Lương Chuyến -->
+                            <th data-col-key="trip_salary" data-col-name="Lương Chuyến (Tạm tính)" onclick="toggleHRSort('trip_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Lương Chuyến">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Lương Chuyến (Tạm tính)</span>
+                                    <i id="sort-icon-hr-trip_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 6. Tạm ứng -->
+                            <th data-col-key="advance" data-col-name="Tạm ứng" onclick="toggleHRSort('advance')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Tạm Ứng">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Tạm ứng</span>
+                                    <i id="sort-icon-hr-advance" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 7. Thực lãnh dự kiến -->
+                            <th data-col-key="net_salary" data-col-name="Thực lãnh dự kiến" onclick="toggleHRSort('net_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right py-2.5 px-3.5" title="Click để sắp xếp theo Thực Lãnh Dự Kiến">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span>Thực lãnh dự kiến</span>
+                                    <i id="sort-icon-hr-net_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium" id="hr-tbody">
+                        <!-- Rendered via API -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

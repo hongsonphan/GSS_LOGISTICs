@@ -498,33 +498,107 @@
         </div>
       </button>
 
-      <div id="expenseHistoryWrapper" class="hidden mt-3 pt-3 border-t border-slate-100 space-y-2">
+      <div id="expenseHistoryWrapper" class="hidden mt-3 pt-3 border-t border-slate-100 space-y-2.5">
         {% for exp in expenses %}
-        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-          <div>
-            <div class="font-bold text-slate-900">{{ exp.get_category_display }}</div>
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
+          <div class="space-y-1">
+            <div class="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+              <span>{{ exp.get_category_display }}</span>
+              {% if exp.invoice_number %}
+              <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.2 rounded font-mono font-bold">HĐ: {{ exp.invoice_number }}</span>
+              {% endif %}
+            </div>
             <div class="text-[11px] text-slate-500">
-              {{ exp.created_at|date:"H:i d/m" }} {% if exp.notes %}- {{ exp.notes }}{% endif %}
+              {{ exp.created_at|date:"H:i d/m" }} {% if exp.notes %}· <span class="text-slate-700 font-medium">{{ exp.notes }}</span>{% endif %}
             </div>
             {% if exp.receipt_image_path %}
-            <a href="{{ exp.receipt_image_path }}" target="_blank" class="text-[10px] text-teal-600 hover:underline flex items-center gap-1 mt-0.5 font-bold">
-              <i class="ph-bold ph-image"></i> Xem ảnh hóa đơn
+            <a href="{{ exp.receipt_image_path }}" target="_blank" class="text-[11px] text-teal-700 hover:underline flex items-center gap-1 font-bold pt-0.5">
+              <i class="ph-bold ph-image"></i> Xem ảnh hóa đơn/vé
             </a>
             {% endif %}
           </div>
-          <div class="text-right">
-            <div class="font-black text-slate-900 tabular-nums">{{ exp.amount|format_money }} đ</div>
-            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full inline-block mt-0.5
-              {% if exp.status == 'APPROVED' or exp.status == 'SETTLED' %}bg-emerald-100 text-emerald-800
-              {% elif exp.status == 'REJECTED' %}bg-rose-100 text-rose-800
-              {% else %}bg-amber-100 text-amber-800{% endif %}">
-              {{ exp.get_status_display }}
-            </span>
+          <div class="flex items-center justify-between sm:justify-end gap-2.5 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
+            <div class="text-left sm:text-right">
+              <div class="font-black text-slate-900 tabular-nums text-sm">{{ exp.amount|format_money }} đ</div>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block mt-0.5
+                {% if exp.status == 'APPROVED' or exp.status == 'SETTLED' %}bg-emerald-100 text-emerald-800
+                {% elif exp.status == 'REJECTED' %}bg-rose-100 text-rose-800
+                {% else %}bg-amber-100 text-amber-800{% endif %}">
+                {{ exp.get_status_display }}
+              </span>
+            </div>
+            {% if not trip.is_expenses_settled and exp.status != 'SETTLED' %}
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="openEditExpenseModal({{ exp.id }}, '{{ exp.category }}', {{ exp.amount }}, '{{ exp.notes|default:''|escapejs }}', '{{ exp.invoice_number|default:''|escapejs }}')"
+                class="px-2.5 py-1.5 bg-slate-200/80 hover:bg-teal-100 text-slate-700 hover:text-teal-900 rounded-xl text-xs font-bold inline-flex items-center gap-1 touch-btn" title="Hiệu chỉnh nếu kê nhầm">
+                <i class="ph-bold ph-pencil-simple text-sm text-teal-700"></i> <span>Sửa</span>
+              </button>
+              <button type="button" onclick="deleteDriverExpense({{ exp.id }}, '{{ exp.get_category_display|escapejs }}', {{ exp.amount }})"
+                class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 border border-rose-200 rounded-xl text-xs font-bold inline-flex items-center gap-1 touch-btn" title="Xóa khoản chi kê nhầm">
+                <i class="ph-bold ph-trash text-sm text-rose-600"></i> <span>Xóa</span>
+              </button>
+            </div>
+            {% endif %}
           </div>
         </div>
         {% empty %}
         <div class="text-center py-3 text-xs text-slate-400">
           Chưa có khoản chi phí phát sinh nào được kê khai.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 7. CHỨNG TỪ & HÌNH ẢNH ĐÃ NỘP (ACCORDION THU GỌN) -->
+    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200">
+      <button type="button" onclick="toggleDocumentsAccordion()" class="w-full flex items-center justify-between text-left">
+        <div class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="ph-bold ph-files text-teal-700 text-sm"></i>
+          <span>Chứng Từ & Hình Ảnh Đã Nộp ({{ documents|length }} file)</span>
+        </div>
+        <div class="flex items-center gap-1 text-slate-400 text-xs">
+          <span id="documentsToggleLabel" class="text-[11px] font-normal">Mở xem</span>
+          <i id="documentsToggleIcon" class="ph-bold ph-caret-down"></i>
+        </div>
+      </button>
+
+      <div id="documentsWrapper" class="hidden mt-3 pt-3 border-t border-slate-100 space-y-2.5">
+        {% for doc in documents %}
+        <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex items-center justify-between text-xs gap-2">
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            {% if doc.file_path %}
+            <a href="{{ doc.file_path }}" target="_blank" class="w-12 h-12 rounded-xl bg-slate-200 border border-slate-300 overflow-hidden shrink-0 block relative group" title="Xem ảnh đầy đủ">
+              <img src="{{ doc.file_path }}" class="w-full h-full object-cover" alt="{{ doc.title }}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-slate-400\'><i class=\'ph-bold ph-file-text text-lg\'></i></div>';">
+              <span class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"><i class="ph-bold ph-magnifying-glass-plus text-sm"></i></span>
+            </a>
+            {% else %}
+            <div class="w-12 h-12 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center text-xl shrink-0">
+              <i class="ph-bold ph-signature"></i>
+            </div>
+            {% endif %}
+            <div class="overflow-hidden">
+              <div class="font-bold text-slate-900 truncate">{{ doc.title }}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5 flex flex-wrap gap-x-2">
+                <span>{{ doc.created_at|date:"H:i d/m" }}</span>
+                {% if doc.extracted_container_no %}<span>Cont: <strong class="font-mono text-teal-800">{{ doc.extracted_container_no }}</strong></span>{% endif %}
+                {% if doc.extracted_seal_no %}<span>Seal: <strong class="font-mono text-slate-800">{{ doc.extracted_seal_no }}</strong></span>{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" onclick="openEditDocModal({{ doc.id }}, '{{ doc.title|escapejs }}', '{{ doc.extracted_container_no|default:''|escapejs }}', '{{ doc.extracted_seal_no|default:''|escapejs }}', '{{ doc.ocr_raw_text|default:''|escapejs }}')"
+              class="p-2 bg-slate-200/80 hover:bg-teal-100 text-slate-700 hover:text-teal-900 rounded-xl text-xs font-bold inline-flex items-center gap-1 touch-btn" title="Hiệu chỉnh thông tin chứng từ">
+              <i class="ph-bold ph-pencil-simple text-sm text-teal-700"></i> <span class="hidden sm:inline">Sửa</span>
+            </button>
+            <button type="button" onclick="deleteDriverDocument({{ doc.id }}, '{{ doc.title|escapejs }}')"
+              class="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 border border-rose-200 rounded-xl text-xs font-bold inline-flex items-center gap-1 touch-btn" title="Xóa ảnh chụp nhầm">
+              <i class="ph-bold ph-trash text-sm text-rose-600"></i> <span class="hidden sm:inline">Xóa</span>
+            </button>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-3 text-xs text-slate-400">
+          Chưa có chứng từ hoặc hình ảnh nào được tải lên.
         </div>
         {% endfor %}
       </div>
@@ -828,9 +902,11 @@
       <div class="flex-1 overflow-y-auto space-y-3.5 pr-1 text-xs overscroll-contain">
         <!-- Khối 1: Container 1 & Booking -->
         <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
-          <div class="text-[11px] font-black uppercase tracking-wider text-teal-800 flex items-center gap-1.5">
-            <i class="ph-bold ph-cube"></i>
-            <span>Container & Booking Chính</span>
+          <div class="flex items-center justify-between font-black text-[11px] uppercase tracking-wider text-teal-800">
+            <span class="flex items-center gap-1.5"><i class="ph-bold ph-cube"></i> Container & Booking Chính</span>
+            <button type="button" onclick="closeTripDetailsModal(); openEditContainerModal();" class="px-2.5 py-1 bg-teal-100 hover:bg-teal-200 text-teal-900 rounded-lg text-[10.5px] font-bold inline-flex items-center gap-1 touch-btn">
+              <i class="ph-bold ph-pencil-simple"></i> Sửa số Cont / Seal
+            </button>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -1260,6 +1336,169 @@
           <button type="submit" id="btnSubmitIncident" class="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white font-black text-sm rounded-xl shadow-md touch-btn flex items-center justify-center gap-2">
             <i class="ph-bold ph-warning-octagon text-lg"></i>
             <span>GỬI CẢNH BÁO KHẨN TỚI ĐIỀU ĐỘ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 7: HIỆU CHỈNH KHOẢN CHI PHÍ KÊ NHẦM -->
+  <div id="editExpenseModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto shadow-2xl space-y-4 overscroll-contain">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
+            <i class="ph-bold ph-pencil-simple text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Sửa Khoản Chi Phí</h3>
+            <p class="text-[11px] text-slate-500">Hiệu chỉnh số tiền hoặc danh mục nếu kê nhầm</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeEditExpenseModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center touch-btn">
+          <i class="ph-bold ph-x text-sm"></i>
+        </button>
+      </div>
+
+      <form id="editExpenseForm" onsubmit="submitEditExpense(event)" class="space-y-3.5">
+        <input type="hidden" id="editExpenseId" value="">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Loại chi phí <span class="text-rose-500">*</span></label>
+          <select id="editExpenseCategory" required class="w-full text-xs font-bold rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 bg-white">
+            <option value="TOLL_FEE">Vé Cầu Đường / BOT</option>
+            <option value="LIFT_ON">Nâng Cont (Cảng/ICD)</option>
+            <option value="LIFT_OFF">Hạ Cont (Cảng/ICD)</option>
+            <option value="CONTAINER_DEPOSIT">Cược Vỏ Container</option>
+            <option value="WEIGHING">Phiếu Cân Xe</option>
+            <option value="LABOR_STEVEDORING">Bốc Xếp / Đóng Hàng</option>
+            <option value="OTHER">Chi Phí Khác</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Số tiền thực chi (VNĐ) <span class="text-rose-500">*</span></label>
+          <input type="number" id="editExpenseAmount" required min="1000" step="1000" placeholder="vd: 220000"
+            class="w-full text-sm font-black font-mono rounded-xl border border-slate-300 p-2.5 focus:border-teal-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Số hóa đơn / Vé BOT (Nếu có):</label>
+          <input type="text" id="editExpenseInvoice" placeholder="vd: HD-00123"
+            class="w-full text-xs rounded-xl border border-slate-300 p-2.5 focus:border-teal-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Ghi chú chi tiết:</label>
+          <textarea id="editExpenseNotes" rows="2" placeholder="Ghi rõ lý do điều chỉnh..."
+            class="w-full text-xs rounded-xl border border-slate-300 p-2.5 focus:border-teal-500"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" onclick="closeEditExpenseModal()" class="w-1/3 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs touch-btn">
+            Hủy bỏ
+          </button>
+          <button type="submit" id="btnSubmitEditExpense" class="w-2/3 py-3 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs rounded-xl shadow-md touch-btn flex items-center justify-center gap-1.5">
+            <i class="ph-bold ph-check text-base"></i>
+            <span>LƯU CẬP NHẬT</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 8: HIỆU CHỈNH CHỨNG TỪ ĐÃ NỘP NHẦM -->
+  <div id="editDocModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto shadow-2xl space-y-4 overscroll-contain">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
+            <i class="ph-bold ph-pencil-simple text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Sửa Thông Tin Chứng Từ</h3>
+            <p class="text-[11px] text-slate-500">Cập nhật lại số Cont, số Seal hoặc tên chứng từ</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeEditDocModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center touch-btn">
+          <i class="ph-bold ph-x text-sm"></i>
+        </button>
+      </div>
+
+      <form id="editDocForm" onsubmit="submitEditDoc(event)" class="space-y-3.5">
+        <input type="hidden" id="editDocId" value="">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Tên / Loại chứng từ <span class="text-rose-500">*</span></label>
+          <input type="text" id="editDocTitle" required class="w-full text-xs font-bold rounded-xl border border-slate-300 p-2.5 focus:border-teal-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Số Container</label>
+            <input type="text" id="editDocContNo" class="w-full text-xs font-mono font-bold uppercase rounded-xl border border-slate-300 p-2.5 focus:border-teal-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Số Seal</label>
+            <input type="text" id="editDocSealNo" class="w-full text-xs font-mono font-bold uppercase rounded-xl border border-slate-300 p-2.5 focus:border-teal-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Ghi chú bổ sung:</label>
+          <textarea id="editDocNotes" rows="2" placeholder="Ghi chú thêm..."
+            class="w-full text-xs rounded-xl border border-slate-300 p-2.5 focus:border-teal-500"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" onclick="closeEditDocModal()" class="w-1/3 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs touch-btn">
+            Hủy bỏ
+          </button>
+          <button type="submit" id="btnSubmitEditDoc" class="w-2/3 py-3 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs rounded-xl shadow-md touch-btn flex items-center justify-center gap-1.5">
+            <i class="ph-bold ph-check text-base"></i>
+            <span>LƯU CHỨNG TỪ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 9: SỬA NHANH SỐ CONT & SỐ SEAL TRÊN CHUYẾN -->
+  <div id="editContainerModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto shadow-2xl space-y-4 overscroll-contain">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+            <i class="ph-bold ph-cube text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Sửa Số Cont & Seal Chuyến</h3>
+            <p class="text-[11px] text-slate-500">Cập nhật số vỏ cont thực tế bác tài bốc tại bãi</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeEditContainerModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center touch-btn">
+          <i class="ph-bold ph-x text-sm"></i>
+        </button>
+      </div>
+
+      <form id="editContainerForm" onsubmit="submitEditContainer(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Số Container thực tế <span class="text-rose-500">*</span></label>
+          <input type="text" id="editTripContNo" value="{{ trip.container_number }}" required placeholder="vd: TEMU1234567"
+            class="w-full text-sm font-mono font-black uppercase rounded-xl border border-slate-300 p-2.5 focus:border-teal-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Số Seal niêm phong thực tế</label>
+          <input type="text" id="editTripSealNo" value="{{ trip.seal_number }}" placeholder="vd: SEAL987654"
+            class="w-full text-sm font-mono font-bold uppercase rounded-xl border border-slate-300 p-2.5 focus:border-teal-500">
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" onclick="closeEditContainerModal()" class="w-1/3 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs touch-btn">
+            Hủy bỏ
+          </button>
+          <button type="submit" id="btnSubmitEditContainer" class="w-2/3 py-3 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs rounded-xl shadow-md touch-btn flex items-center justify-center gap-1.5">
+            <i class="ph-bold ph-check text-base"></i>
+            <span>LƯU SỐ CONT & SEAL</span>
           </button>
         </div>
       </form>
@@ -2154,6 +2393,23 @@
       }
     }
 
+    function toggleDocumentsAccordion() {
+      const wrapper = document.getElementById('documentsWrapper');
+      const icon = document.getElementById('documentsToggleIcon');
+      const label = document.getElementById('documentsToggleLabel');
+      if (!wrapper) return;
+      const isHidden = wrapper.classList.contains('hidden');
+      if (isHidden) {
+        wrapper.classList.remove('hidden');
+        if (icon) icon.className = "ph-bold ph-caret-up";
+        if (label) label.innerText = "Thu gọn";
+      } else {
+        wrapper.classList.add('hidden');
+        if (icon) icon.className = "ph-bold ph-caret-down";
+        if (label) label.innerText = "Mở xem";
+      }
+    }
+
     // 8. ĐẶT LỊCH NHẮC HẸN TRÊN ĐIỆN THOẠI (ICS / NATIVE CALENDAR)
     function addToPhoneCalendar() {
       const tripCode = '{{ trip.trip_code|escapejs }}';
@@ -2222,8 +2478,294 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
 
-    // 9. HỖ TRỢ OFFLINE KHI MẤT SÓNG 4G & TỰ ĐỘNG ĐỒNG BỘ (OFFLINE QUEUE SYNC)
+    // =========================================================================
+    // 9. HIỆU CHỈNH & XÓA KÊ KHAI NHẦM (CHI PHÍ, CHỨNG TỪ, SỐ CONTAINER / SEAL)
+    // =========================================================================
+
+    // --- SỬA / XÓA CHI PHÍ ---
+    function openEditExpenseModal(id, category, amount, notes, invoiceNumber) {
+      document.getElementById('editExpenseId').value = id;
+      document.getElementById('editExpenseCategory').value = category || 'TOLL_FEE';
+      document.getElementById('editExpenseAmount').value = amount || '';
+      document.getElementById('editExpenseInvoice').value = invoiceNumber || '';
+      document.getElementById('editExpenseNotes').value = notes || '';
+      
+      const modal = document.getElementById('editExpenseModal');
+      if (modal) {
+        lockBodyScroll();
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeEditExpenseModal() {
+      const modal = document.getElementById('editExpenseModal');
+      if (modal && !modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+        unlockBodyScroll();
+      }
+    }
+
+    async function submitEditExpense(event) {
+      event.preventDefault();
+      const id = document.getElementById('editExpenseId').value;
+      const category = document.getElementById('editExpenseCategory').value;
+      const amount = parseInt(document.getElementById('editExpenseAmount').value, 10);
+      const invoiceNumber = document.getElementById('editExpenseInvoice').value.trim();
+      const notes = document.getElementById('editExpenseNotes').value.trim();
+      const btn = document.getElementById('btnSubmitEditExpense');
+
+      if (!amount || isNaN(amount) || amount <= 0) {
+        alert("Vui lòng nhập số tiền hợp lệ (> 0 đ)!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Đang lưu...";
+
+      try {
+        const csrfToken = getCsrfToken();
+        const headers = {
+          'Content-Type': 'application/json',
+          'X-Trip-Hash': TRIP_HASH
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
+        const res = await fetch(`/api/trips/${TRIP_HASH}/expenses/${id}/`, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify({
+            category: category,
+            amount: amount,
+            invoice_number: invoiceNumber,
+            notes: notes
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (navigator.vibrate) navigator.vibrate(40);
+          showToast("✓ Đã cập nhật khoản chi phí thành công!", true);
+          closeEditExpenseModal();
+          setTimeout(() => window.location.reload(), 500);
+        } else {
+          alert(`Lỗi: ${data.error || 'Không thể cập nhật chi phí'}`);
+        }
+      } catch (err) {
+        alert("Lỗi kết nối mạng, vui lòng thử lại.");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="ph-bold ph-check text-base"></i><span>LƯU CẬP NHẬT</span>`;
+      }
+    }
+
+    async function deleteDriverExpense(id, categoryName, amount) {
+      if (!confirm(`Bác tài có chắc chắn muốn XÓA khoản chi phí "${categoryName}" (${amount.toLocaleString('vi-VN')} đ) do kê nhầm?`)) {
+        return;
+      }
+
+      showToast("Đang xóa khoản chi phí...", false);
+
+      try {
+        const csrfToken = getCsrfToken();
+        const headers = {
+          'X-Trip-Hash': TRIP_HASH
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
+        const res = await fetch(`/api/trips/${TRIP_HASH}/expenses/${id}/`, {
+          method: 'DELETE',
+          headers: headers
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (navigator.vibrate) navigator.vibrate([40, 40]);
+          showToast("✓ Đã xóa khoản chi phí kê nhầm thành công!", true);
+          setTimeout(() => window.location.reload(), 500);
+        } else {
+          alert(`Lỗi: ${data.error || 'Không thể xóa chi phí'}`);
+        }
+      } catch (err) {
+        alert("Lỗi kết nối mạng khi xóa chi phí.");
+        console.error(err);
+      }
+    }
+
+    // --- SỬA / XÓA CHỨNG TỪ ---
+    function openEditDocModal(id, title, contNo, sealNo, notes) {
+      document.getElementById('editDocId').value = id;
+      document.getElementById('editDocTitle').value = title || '';
+      document.getElementById('editDocContNo').value = contNo || '';
+      document.getElementById('editDocSealNo').value = sealNo || '';
+      document.getElementById('editDocNotes').value = notes || '';
+
+      const modal = document.getElementById('editDocModal');
+      if (modal) {
+        lockBodyScroll();
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeEditDocModal() {
+      const modal = document.getElementById('editDocModal');
+      if (modal && !modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+        unlockBodyScroll();
+      }
+    }
+
+    async function submitEditDoc(event) {
+      event.preventDefault();
+      const id = document.getElementById('editDocId').value;
+      const title = document.getElementById('editDocTitle').value.trim();
+      const contNo = document.getElementById('editDocContNo').value.trim();
+      const sealNo = document.getElementById('editDocSealNo').value.trim();
+      const notes = document.getElementById('editDocNotes').value.trim();
+      const btn = document.getElementById('btnSubmitEditDoc');
+
+      btn.disabled = true;
+      btn.innerText = "Đang lưu...";
+
+      try {
+        const csrfToken = getCsrfToken();
+        const headers = {
+          'Content-Type': 'application/json',
+          'X-Trip-Hash': TRIP_HASH
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
+        const res = await fetch(`/api/trips/${TRIP_HASH}/documents/${id}/`, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify({
+            title: title,
+            container_no: contNo,
+            seal_no: sealNo,
+            notes: notes
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (navigator.vibrate) navigator.vibrate(40);
+          showToast("✓ Đã cập nhật thông tin chứng từ thành công!", true);
+          closeEditDocModal();
+          setTimeout(() => window.location.reload(), 500);
+        } else {
+          alert(`Lỗi: ${data.error || 'Không thể cập nhật chứng từ'}`);
+        }
+      } catch (err) {
+        alert("Lỗi kết nối mạng khi sửa chứng từ.");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="ph-bold ph-check text-base"></i><span>LƯU CHỨNG TỪ</span>`;
+      }
+    }
+
+    async function deleteDriverDocument(id, title) {
+      if (!confirm(`Bác tài có chắc chắn muốn XÓA ảnh/chứng từ "${title}"?`)) {
+        return;
+      }
+
+      showToast("Đang xóa chứng từ...", false);
+
+      try {
+        const csrfToken = getCsrfToken();
+        const headers = {
+          'X-Trip-Hash': TRIP_HASH
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
+        const res = await fetch(`/api/trips/${TRIP_HASH}/documents/${id}/`, {
+          method: 'DELETE',
+          headers: headers
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (navigator.vibrate) navigator.vibrate([40, 40]);
+          showToast("✓ Đã xóa ảnh chứng từ thành công!", true);
+          setTimeout(() => window.location.reload(), 500);
+        } else {
+          alert(`Lỗi: ${data.error || 'Không thể xóa chứng từ'}`);
+        }
+      } catch (err) {
+        alert("Lỗi kết nối mạng khi xóa chứng từ.");
+        console.error(err);
+      }
+    }
+
+    // --- SỬA SỐ CONT & SỐ SEAL TRÊN CHUYẾN ---
+    function openEditContainerModal() {
+      const modal = document.getElementById('editContainerModal');
+      if (modal) {
+        lockBodyScroll();
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeEditContainerModal() {
+      const modal = document.getElementById('editContainerModal');
+      if (modal && !modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+        unlockBodyScroll();
+      }
+    }
+
+    async function submitEditContainer(event) {
+      event.preventDefault();
+      const contNo = document.getElementById('editTripContNo').value.trim().toUpperCase();
+      const sealNo = document.getElementById('editTripSealNo').value.trim().toUpperCase();
+      const btn = document.getElementById('btnSubmitEditContainer');
+
+      if (!contNo) {
+        alert("Vui lòng nhập số vỏ container!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Đang lưu...";
+
+      try {
+        const csrfToken = getCsrfToken();
+        const headers = {
+          'Content-Type': 'application/json',
+          'X-Trip-Hash': TRIP_HASH
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
+        const res = await fetch(`/api/trips/${TRIP_HASH}/`, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify({
+            container_number: contNo,
+            seal_number: sealNo
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && (data.success || data.id || data.trip_code)) {
+          if (navigator.vibrate) navigator.vibrate(40);
+          showToast("✓ Đã cập nhật số Cont và Seal cho chuyến xe thành công!", true);
+          closeEditContainerModal();
+          setTimeout(() => window.location.reload(), 500);
+        } else {
+          alert(`Lỗi: ${data.error || 'Không thể cập nhật số Container'}`);
+        }
+      } catch (err) {
+        alert("Lỗi kết nối mạng khi sửa số Container.");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="ph-bold ph-check text-base"></i><span>LƯU SỐ CONT & SEAL</span>`;
+      }
+    }
+
+    // 10. HỖ TRỢ OFFLINE KHI MẤT SÓNG 4G & TỰ ĐỘNG ĐỒNG BỘ (OFFLINE QUEUE SYNC)
     const OFFLINE_QUEUE_KEY = `driver_offline_queue_${TRIP_HASH}`;
 
     function queueOfflineAction(actionType, payload) {
