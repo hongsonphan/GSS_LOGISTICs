@@ -104,3 +104,164 @@ class DriverTokenRevocationTestCase(TestCase):
             content_type='application/json'
         )
         self.assertEqual(api_milestone_new.status_code, 200)
+
+class DriverPortalMistakeCorrectionTestCase(TestCase):
+    """Kiểm thử tính năng hiệu chỉnh kê khai nhầm trên màn hình Tài Xế (Chi phí, Chứng từ, Số Cont/Seal)."""
+    def setUp(self):
+        self.client = Client()
+        self.customer = Customer.objects.create(code="CUST_TEST2", name="Công Ty Giao Nhận ABC")
+        self.driver = Employee.objects.create(
+            code="DRV_01", full_name="Trần Văn Tài", nickname="Tài Trần",
+            phone_number="0903333333", role=EmployeeRole.DRIVER
+        )
+        self.vehicle = Vehicle.objects.create(
+            license_plate="50E-999.99",
+            vehicle_type=VehicleType.TRACTOR,
+            registration_expiry=timezone.now().date(),
+            insurance_expiry=timezone.now().date()
+        )
+        self.trip = DispatchTrip.objects.create(
+            trip_code="TVL-TEST-CORRECT-01",
+            customer=self.customer,
+            driver=self.driver,
+            vehicle=self.vehicle,
+            container_number="TEST1234567",
+            seal_number="SEAL111",
+            pickup_location="CẢNG CÁT LÁI",
+            warehouse_location="KHO THỦ ĐỨC",
+            dropoff_location="BÃI PHÚC LONG",
+            status=TripStatus.DISPATCHED,
+            dispatched_at=timezone.now()
+        )
+        self.token = self.trip.driver_token
+
+    def test_driver_portal_view_renders_correctly(self):
+        res = self.client.get(f'/driver/{self.token}/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "TVL-TEST-CORRECT-01")
+        self.assertContains(res, "Trần Văn Tài")
+        self.assertContains(res, "50E-999.99")
+        self.assertContains(res, "Chi Phí Đã Kê")
+        self.assertContains(res, "Chứng Từ & Hình Ảnh Đã Nộp")
+        self.assertContains(res, "Sửa Khoản Chi Phí")
+        self.assertContains(res, "Sửa Thông Tin Chứng Từ")
+
+    def test_driver_expense_correction_lifecycle(self):
+        # 1. Kê khai chi phí ban đầu (vd: 220.000đ vé BOT)
+        add_res = self.client.post(
+            f'/api/trips/{self.token}/expenses/',
+            data=json.dumps({
+                'category': 'TOLL_FEE',
+                'amount': 220000,
+                'notes': 'Vé BOT cầu Đồng Nai',
+                'invoice_number': 'BOT-001'
+            }),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(add_res.status_code, 200)
+        from apps.billing.models import TripExpense
+        exp = TripExpense.objects.filter(trip=self.trip, is_deleted=False).first()
+        self.assertIsNotNone(exp)
+        self.assertEqual(exp.amount, 220000)
+
+        # 2. Tài xế phát hiện kê nhầm số tiền -> Hiệu chỉnh sửa lại thành 180.000đ qua PUT API
+        edit_res = self.client.put(
+            f'/api/trips/{self.token}/expenses/{exp.id}/',
+            data=json.dumps({
+                'category': 'TOLL_FEE',
+                'amount': 180000,
+                'notes': 'Sửa lại đúng giá vé BOT 180k',
+                'invoice_number': 'BOT-001'
+            }),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(edit_res.status_code, 200)
+        exp.refresh_from_db()
+        self.assertEqual(exp.amount, 180000)
+        self.assertEqual(exp.notes, 'Sửa lại đúng giá vé BOT 180k')
+
+        # 3. Tài xế kê nhầm hẳn 1 khoản khác (vd nâng cont 500k) và muốn XÓA
+        add_res2 = self.client.post(
+            f'/api/trips/{self.token}/expenses/',
+            data=json.dumps({
+                'category': 'LIFT_ON',
+                'amount': 500000,
+                'notes': 'Kê nhầm chuyến khác'
+            }),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(add_res2.status_code, 200)
+        exp2 = TripExpense.objects.filter(trip=self.trip, category='LIFT_ON', is_deleted=False).first()
+        self.assertIsNotNone(exp2)
+
+        # Xóa khoản chi phí kê nhầm
+        del_res = self.client.delete(
+            f'/api/trips/{self.token}/expenses/{exp2.id}/',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(del_res.status_code, 200)
+        exp2.refresh_from_db()
+        self.assertTrue(exp2.is_deleted)
+
+    def test_driver_document_correction_lifecycle(self):
+        # 1. Tạo chứng từ (vd: Giám định vỏ cont với số Cont ban đầu)
+        add_doc_res = self.client.post(
+            f'/api/trips/{self.token}/documents/',
+            data={
+                'doc_type': 'Ảnh giám định vỏ Cont',
+                'container_no': 'TEMU9999999',
+                'seal_no': 'SEAL888'
+            },
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(add_doc_res.status_code, 200)
+        from apps.documents.models import TripDocument
+        doc = TripDocument.objects.filter(trip=self.trip, is_deleted=False).first()
+        self.assertIsNotNone(doc)
+        self.assertEqual(doc.extracted_container_no, 'TEMU9999999')
+
+        # 2. Tài xế nhận thấy nhập nhầm số Seal/Cont -> Sửa lại qua PUT API
+        edit_doc_res = self.client.put(
+            f'/api/trips/{self.token}/documents/{doc.id}/',
+            data=json.dumps({
+                'title': 'Ảnh giám định vỏ Cont (Đã sửa)',
+                'container_no': 'TEMU1111111',
+                'seal_no': 'SEAL777',
+                'notes': 'Bác tài cập nhật lại đúng số cont bốc'
+            }),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(edit_doc_res.status_code, 200)
+        doc.refresh_from_db()
+        self.assertEqual(doc.extracted_container_no, 'TEMU1111111')
+        self.assertEqual(doc.extracted_seal_no, 'SEAL777')
+
+        # 3. Tài xế chụp trùng 1 ảnh và muốn xóa bớt
+        del_doc_res = self.client.delete(
+            f'/api/trips/{self.token}/documents/{doc.id}/',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(del_doc_res.status_code, 200)
+        doc.refresh_from_db()
+        self.assertTrue(doc.is_deleted)
+
+    def test_driver_update_container_seal_on_trip(self):
+        # Cập nhật trực tiếp số Container / Seal của chuyến xe
+        res = self.client.put(
+            f'/api/trips/{self.token}/',
+            data=json.dumps({
+                'container_number': 'TGHU8888888',
+                'seal_number': 'SEAL9999'
+            }),
+            content_type='application/json',
+            HTTP_X_TRIP_HASH=self.token
+        )
+        self.assertEqual(res.status_code, 200)
+        self.trip.refresh_from_db()
+        self.assertEqual(self.trip.container_number, 'TGHU8888888')
+        self.assertEqual(self.trip.seal_number, 'SEAL9999')
+

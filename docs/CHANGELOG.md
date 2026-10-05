@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.7.1] - 2026-10-05 (Sửa Lỗi Accordion Màn Hình Tài Xế & Bổ Sung Tính Năng Hiệu Chỉnh Kê Khai Nhầm)
+
+### 1. Sửa Lỗi Tương Tác Màn Hình Tài Xế (Driver Portal UI Fix):
+- **Khắc phục lỗi cú pháp JavaScript toàn trang (`templates/driver_portal.html`):**
+  * Sửa lỗi thiếu dấu đóng ngoặc nhọn `}` trong hàm `addToPhoneCalendar()`, kích hoạt lại 100% sự kiện mở/đóng accordion mốc thời gian, chi phí, chứng từ, lộ trình và chi tiết vận đơn.
+
+### 2. Tính Năng Hiệu Chỉnh Khi Kê Khai Nhầm (Driver Mistake Correction):
+- **Hiệu chỉnh & Xóa Chi Phí Kê Nhầm:**
+  * Thêm nút **[Sửa]** và **[Xóa]** trực tiếp trên từng khoản chi trong accordion *Chi Phí Đã Kê*, mở modal `editExpenseModal` cho phép cập nhật số tiền, danh mục, hóa đơn và ghi chú trước khi chuyến xe chốt sổ.
+- **Hiệu chỉnh & Xóa Chứng Từ Nộp Nhầm (`TripDocumentDetailAPIView`):**
+  * Thêm API `PUT` & `DELETE` tại `/api/trips/<trip_code>/documents/<doc_id>/` hỗ trợ sửa tên chứng từ, số Cont/Seal hoặc Soft-delete ảnh nộp trùng/nhầm.
+  * Thêm accordion *Chứng Từ & Hình Ảnh Đã Nộp* với thumbnail preview và các nút tương tác nhanh.
+- **Sửa Nhanh Số Cont & Số Seal Thực Tế Bốc Tại Bãi:**
+  * Thêm modal `editContainerModal` cho phép tài xế cập nhật trực tiếp số vỏ Cont và số chì Seal thực tế.
+- **Kiểm Thử Tự Động:** Bổ sung `DriverPortalMistakeCorrectionTestCase`, đạt **71/71 Unit Tests PASSED (100%)**.
+
+---
+
 ## [2.7.0] - 2026-10-05 (Xây Dựng Hoàn Chỉnh Phân Hệ CRUD Hồ Sơ Nhân Sự & Đội Ngũ Tài Xế /hr)
 
 ### 1. Phân Hệ Hành Chính & Nhân Sự Toàn Diện (`apps/personnel/` & `/hr`):
