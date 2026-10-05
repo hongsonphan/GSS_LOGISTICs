@@ -6193,7 +6193,7 @@ function switchTab(tabId, updateHistory = true) {
             'xe-bai': 'Xe & Bãi',
             'nhan-su': 'Hành chính & Nhân sự',
             'ke-toan': 'Tài chính & Kế toán',
-            'quyet-toan': 'Quyết Toán Gom Chuyến',
+            'quyet-toan': (previousActiveTab === 'ke-toan' ? 'Kế toán | Quyết toán chuyến' : 'Điều vận | Quyết toán chuyến'),
             'hai-quan': 'Dịch vụ Hải quan',
             'bao-cao': 'Báo cáo & Thống kê',
             'cai-dat': 'Cài đặt'
@@ -7794,6 +7794,37 @@ function populateSettlementTargetOptions(groupBy, preselectedId = null) {
                 targetSelect.appendChild(opt);
             });
         }
+    } else if (groupBy === 'customer') {
+        if (targetLabel) targetLabel.innerText = 'Chọn Khách Hàng:';
+        if (masterDataFormOptionsCache?.customers && masterDataFormOptionsCache.customers.length > 0) {
+            masterDataFormOptionsCache.customers.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = c.label || `${c.company_name || c.name || c.short_name || 'Khách hàng'}`;
+                if (preselectedId && String(c.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        } else if (window.rawCustomersList && window.rawCustomersList.length > 0) {
+            window.rawCustomersList.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = `${c.company_name || c.name || c.short_name || 'Khách hàng'}`;
+                if (preselectedId && String(c.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        } else {
+            fetchWithAuth('/api/customers/').then(r => r.json()).then(data => {
+                const list = data.customers || data.results || (Array.isArray(data) ? data : []);
+                window.rawCustomersList = list;
+                list.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.innerText = `${c.company_name || c.name || c.short_name || 'Khách hàng'}`;
+                    if (preselectedId && String(c.id) === String(preselectedId)) opt.selected = true;
+                    targetSelect.appendChild(opt);
+                });
+            }).catch(() => {});
+        }
     } else if (groupBy === 'vehicle') {
         if (targetLabel) targetLabel.innerText = 'Chọn Đầu Xe:';
         if (masterDataFormOptionsCache?.vehicles && masterDataFormOptionsCache.vehicles.length > 0) {
@@ -7908,6 +7939,7 @@ async function loadSettlementData() {
     let url = `/api/accounting/driver-settlements/batch-preview/?group_by=${groupBy}&from_date=${fromDate}&to_date=${toDate}`;
     if (groupBy === 'driver' && targetId) url += `&driver_id=${targetId}`;
     if (groupBy === 'vehicle' && targetId) url += `&vehicle_id=${targetId}`;
+    if (groupBy === 'customer' && targetId) url += `&customer_id=${targetId}`;
 
     const tbody = document.getElementById('page-settle-tbody');
     if (tbody) {

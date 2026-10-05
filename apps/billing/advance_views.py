@@ -18,7 +18,9 @@ from apps.billing.models import (
     DriverAdvanceStatus,
     AdvanceSourceType,
     SettlementDiffType,
-    TripExpense
+    TripExpense,
+    ApprovalStatus,
+    PaymentMethod
 )
 from apps.dispatch.models import DispatchTrip, TripStatus
 from apps.personnel.models import Employee, Department, EmployeeRole
@@ -491,7 +493,8 @@ class DriverBatchSettlementQueryAPIView(APIView):
         to_date_str = request.query_params.get('to_date')
         driver_id = request.query_params.get('driver_id')
         vehicle_id = request.query_params.get('vehicle_id')
-        group_by = request.query_params.get('group_by', 'driver') # 'driver', 'vehicle', 'date'
+        customer_id = request.query_params.get('customer_id')
+        group_by = request.query_params.get('group_by', 'driver') # 'driver', 'customer', 'vehicle', 'date'
         settle_filter = request.query_params.get('settlement_status', 'ALL') # 'ALL', 'PENDING', 'SETTLED'
 
         trips_qs = DispatchTrip.objects.filter(is_deleted=False).select_related(
@@ -519,6 +522,9 @@ class DriverBatchSettlementQueryAPIView(APIView):
 
         if vehicle_id:
             trips_qs = trips_qs.filter(vehicle_id=vehicle_id)
+
+        if customer_id:
+            trips_qs = trips_qs.filter(customer_id=customer_id)
 
         if settle_filter == 'PENDING':
             trips_qs = trips_qs.filter(is_expenses_settled=False)
@@ -571,19 +577,25 @@ class DriverBatchSettlementQueryAPIView(APIView):
             }
 
             # Xác định khóa gom nhóm
-            if group_by == 'vehicle':
+            if group_by == 'customer':
+                group_key = f"cust_{trip.customer_id or 0}"
+                cust_name = trip.customer.name if trip.customer else 'Khách Vãng Lai'
+                cust_phone = trip.customer.phone if (trip.customer and trip.customer.phone) else ''
+                group_label = f"Khách Hàng: {cust_name}"
+                group_sub = f"Mã KH: {trip.customer.code if trip.customer else '-'} {(' · SĐT: ' + cust_phone) if cust_phone else ''}"
+            elif group_by == 'vehicle':
                 group_key = f"xe_{trip.vehicle_id or 0}"
-                group_label = f"Đầu xe: {trip.vehicle.license_plate if trip.vehicle else 'Chưa gán xe'}"
+                group_label = f"Đầu Xe: {trip.vehicle.license_plate if trip.vehicle else 'Chưa gán xe'}"
                 group_sub = f"Tài xế phụ trách: {(trip.driver.nickname or trip.driver.full_name) if trip.driver else '-'}"
             elif group_by == 'date':
                 d_str = trip.loading_date.strftime('%d/%m/%Y') if trip.loading_date else 'Không ngày'
                 group_key = f"date_{trip.loading_date.strftime('%Y%m%d') if trip.loading_date else 'none'}"
-                group_label = f"Ngày vận hành: {d_str}"
+                group_label = f"Ngày Vận Hành: {d_str}"
                 group_sub = f"Các chuyến chạy trong ngày {d_str}"
             else: # default: driver
                 group_key = f"driver_{trip.driver_id or 0}"
                 driver_name = (trip.driver.nickname or trip.driver.full_name) if trip.driver else 'Chưa gán tài xế'
-                group_label = f"Bác tài: {driver_name}"
+                group_label = f"Tài Xế: {driver_name}"
                 group_sub = f"SĐT: {trip.driver.phone_number if trip.driver else '-'} | Xe thường trực: {trip.vehicle.license_plate if trip.vehicle else '-'}"
 
             if group_key not in grouped_data:
