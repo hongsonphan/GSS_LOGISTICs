@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.5.0] - 2026-10-05 (Trung Tâm Báo Cáo Quản Trị Hợp Nhất /reports, Quyết Toán Chuyến Xe & Backlog Chuyển Kỳ, Công Nợ Phải Thu AR & Tuổi Đơn Tồn Đọng)
+
+### 1. Bối Cảnh Nghiệp Vụ & Bài Toán Quản Trị:
+- **Hợp nhất Báo cáo Đa Chiều:** Di chuyển và tập trung toàn bộ các báo cáo tài chính, công nợ, quyết toán, tạm ứng, chi hộ và vận hành về một trung tâm duy nhất tại phân hệ `/reports`.
+- **Cơ chế Deep-Linking Thông Minh:** Từ bất kỳ phân hệ tác nghiệp nào (Kế toán `/accounting`, Điều vận `/dispatch`, Kinh doanh `/sales`, Xe bãi `/fleet`, Nhân sự `/hr`), người dùng khi bấm vào liên kết Báo cáo sẽ được chuyển thẳng sang `/reports` và tự động kích hoạt đúng Tab báo cáo tương ứng qua hàm `openReportTab(reportId, periodOverride)`.
+- **Quản lý Quyết Toán Gối Đầu & Nợ Chuyến:** Giải quyết triệt để bài toán thực tế của doanh nghiệp vận tải:
+  * Ví dụ: Tháng 8 chạy 30 chuyến nhưng chỉ chốt quyết toán 20 chuyến (do thiếu chứng từ POD hoặc do lệch chu kỳ chốt đối soát 25-24 của khách hàng) ➔ 10 chuyến tồn chuyển sang tháng 9.
+  * Đến tháng 9: Quyết toán 8 chuyến của tháng 8 + các chuyến tháng 9 ➔ Còn nợ 2 chuyến tháng 8 chuyển tiếp sang tháng 10.
+  * Phân loại trực quan 4 trạng thái:
+    1. `Trong kỳ ➔ Đã Quyết Toán` (Current Period Settled)
+    2. `Trong kỳ ➔ Chưa Quyết Toán (Đọng)` (Current Period Unsettled)
+    3. `Tồn kỳ trước ➔ Đã Quyết Toán đợt này` (Backlog Settled)
+    4. `Tồn kỳ trước ➔ Chưa Quyết Toán (Nợ tiếp)` (Backlog Pending)
+- **Bổ sung Thông Tin Xe - Tài:** Bổ sung Đầu Kéo, Biển số xe, Phân loại Xe Nhà / Xe Bạn (3PL) và Tên Bác Tài trong tất cả các báo cáo quyết toán và tuổi đơn.
+
+### 2. Chi Tiết 3 Báo Cáo Quản Trị Chuyên Biệt Bổ Sung Vào /reports:
+1. **Báo Cáo 12 (`report-12` / `report_settlement_backlog`): Báo Cáo Quyết Toán Chuyến Xe & Backlog**
+   - Theo dõi chi tiết từng chuyến xe: Mã chuyến, Ngày chạy, Khách hàng, Biển số xe kéo & xe hạ, Bác tài, Doanh thu cước, Chi phí vận hành, Chi hộ, Lợi nhuận gộp, Biên LN %, Tình trạng chứng từ POD, Phân loại chuyến và Người/Ngày chốt sổ.
+2. **Báo Cáo 13 (`report-13` / `report_ar_aging`): Báo Cáo Theo Dõi Công Nợ Phải Thu (AR) & Thu Tiền**
+   - Theo dõi công nợ theo từng Khách Hàng: Doanh thu cước, Tiền chi hộ, Tổng phải thu, Đã thu hồi (từ Sổ Quỹ CashTransaction), Còn phải thu, và Phân bổ tuổi nợ 4 cấp độ: Trong hạn (<=30 ngày), Quá hạn (31-60 ngày), Quá hạn (61-90 ngày), Nợ xấu (>90 ngày).
+3. **Báo Cáo 14 (`report-14` / `report_unsettled_aging`): Báo Cáo Tuổi Đơn Tồn Đọng Chưa Quyết Toán**
+   - Quét toàn bộ hệ thống phát hiện các chuyến xe chưa khóa sổ chi phí, tính số ngày tồn đọng (`days_unsettled`), phân cấp mức độ cảnh báo (Bình thường 0-7N, Đốc thúc POD 8-15N, Cảnh báo 16-30N, Cực gấp >30N) và tự động nhận diện nguyên nhân vướng mắc (Thiếu POD gốc, Chi phí chờ duyệt, Nợ kỳ 25-24).
+
+### 3. Chi Tiết Kỹ Thuật Đã Triển Khai:
+- **Backend API (`apps/dispatch/reports_api.py`):** Mở rộng `ReportsAPIView` tính toán trả về 3 dataset `report12_settlement_backlog`, `report13_ar_aging`, `report14_unsettled_aging` cùng các chỉ số KPI tóm tắt.
+- **Giao Diện HTML (`templates/views/view_reports.html`):** Thêm 3 Subtabs (12, 13, 14) trên thanh Subtab bar, kèm 12 KPI Metric Cards và 3 Bảng Kê dữ liệu chuyên dụng chuẩn mực ERP.
+- **Frontend JavaScript (`static/js/app.js`):** Định nghĩa `window.openReportTab(reportId, periodOverride)`, mở rộng `loadReportsData()`, viết các hàm render `renderReport12`, `renderReport13`, `renderReport14` kèm bộ lọc đa tiêu chí và sắp xếp cột.
+- **Tích Hợp Liên Kết Phân Hệ (`templates/views/view_accounting.html`):** Cập nhật nút Subtab 8 thành nút điều hướng trực tiếp sang `/reports`.
+- **Kiểm Thử Toàn Diện (`core/tests.py`):** Thêm test case `test_reports_12_13_14_settlement_and_aging`, toàn bộ 60/60 tests pass 100%.
+
 ## [2.4.1] - 2026-10-02 (Cơ Chế Cấp Mới Link Driver Portal & Tự Động Vô Hiệu Hóa Link Của Tài Xế Cũ)
 
 ### 1. Bối Cảnh Nghiệp Vụ & Bài Toán Chống Ghi Đè Dữ Liệu:
