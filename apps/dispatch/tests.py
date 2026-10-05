@@ -1,6 +1,7 @@
 import json
 from django.test import TestCase, Client
 from django.utils import timezone
+from django.contrib.auth.models import User
 from apps.customers.models import Customer
 from apps.fleet.models import Vehicle, VehicleType
 from apps.personnel.models import Employee, EmployeeRole
@@ -320,4 +321,75 @@ class DriverPortalMistakeCorrectionTestCase(TestCase):
         )
         self.assertEqual(lock_res.status_code, 400)
         self.assertIn("hoàn tất", lock_res.json().get('error', '').lower())
+
+
+class QuotationEnterprisePrintAPITest(TestCase):
+    """Kiểm thử tính năng Báo giá, Ghi chú điều khoản & Mẫu in Doanh Nghiệp."""
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(username='sales_admin', email='sales@trienvo.com', password='password123')
+        self.client.force_login(self.user)
+        self.customer = Customer.objects.create(
+            code='CUST_MOL',
+            name='CÔNG TY TNHH MOL LOGISTICS VIỆT NAM',
+            tax_code='0301234567',
+            address='KCN VSIP 2, Bình Dương',
+            contact_person='Mr. Nguyễn Văn A',
+            phone='0987123456'
+        )
+
+    def test_create_and_retrieve_quotation_with_notes_and_template(self):
+        # 1. Tạo Báo giá kèm Ghi chú điều khoản và Kiểu mẫu in
+        payload = {
+            'action': 'create_quotation',
+            'customer': self.customer.name,
+            'origin_zone': 'Cát Lái (TP.HCM)',
+            'destination_zone': 'Bình Dương (VSIP 2)',
+            'estimated_km': 35,
+            'route_description': 'CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG',
+            'unit_price': 3800000,
+            'monthly_trips': 20,
+            'status': 'NEGOTIATING',
+            'notes': '- Đơn giá chưa VAT 8%\n- Phí bốc xếp tại kho khách hàng\n- Neo xe sau 12h: 1.500.000 đ/đêm',
+            'template_type': 'STANDARD',
+            'contact_person': 'Mr. Nguyễn Văn A',
+            'contact_phone': '0987123456',
+            'cargo_type': 'Container 40HC'
+        }
+        res = self.client.post('/api/sales/', data=json.dumps(payload), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data.get('success'))
+        quote_id = data.get('quotation_id')
+
+        # 2. Truy xuất chi tiết Báo giá qua QuotationDetailAPIView
+        detail_res = self.client.get(f'/api/quotations/{quote_id}/')
+        self.assertEqual(detail_res.status_code, 200)
+        q_data = detail_res.json()
+        self.assertEqual(q_data['customer_name'], self.customer.name)
+        self.assertEqual(q_data['template_type'], 'STANDARD')
+        self.assertEqual(q_data['contact_person'], 'Mr. Nguyễn Văn A')
+        self.assertEqual(q_data['cargo_type'], 'Container 40HC')
+        self.assertIn('Neo xe sau 12h', q_data['notes'])
+        self.assertEqual(q_data['unit_price'], 3800000.0)
+        self.assertEqual(q_data['expected_revenue'], 76000000.0)
+        self.assertEqual(q_data['estimated_km'], 40) # Tự động làm tròn bước 10km (35 -> 40km)
+
+        # 3. Cập nhật đổi kiểu mẫu sang TABLE_MATRIX và sửa ghi chú
+        update_payload = {
+            'template_type': 'TABLE_MATRIX',
+            'notes': 'Cập nhật ghi chú mẫu ma trận đối tác To/From'
+        }
+        put_res = self.client.put(f'/api/quotations/{quote_id}/', data=json.dumps(update_payload), content_type='application/json')
+        self.assertEqual(put_res.status_code, 200)
+        
+        # 4. Kiểm tra trong danh sách Sales Overview
+        sales_overview_res = self.client.get('/api/sales/')
+        self.assertEqual(sales_overview_res.status_code, 200)
+        quotes = sales_overview_res.json().get('quotations', [])
+        found = [q for q in quotes if q['id'] == quote_id]
+        self.assertTrue(len(found) > 0)
+        self.assertEqual(found[0]['template_type'], 'TABLE_MATRIX')
+        self.assertEqual(found[0]['customer_tax_code'], '0301234567')
+
 

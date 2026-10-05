@@ -571,16 +571,19 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     display: none !important;
 }
 
-/* ── 8. PRINT STYLES FOR VOUCHERS (MẪU 01-TT / 02-TT) ── */
+/* ── 8. PRINT STYLES FOR VOUCHERS & QUOTATIONS ── */
 @media print {
     body * {
         visibility: hidden !important;
     }
     #modal-cash-voucher-print,
-    #modal-cash-voucher-print * {
+    #modal-cash-voucher-print *,
+    #modal-quotation-print,
+    #modal-quotation-print * {
         visibility: visible !important;
     }
-    #modal-cash-voucher-print {
+    #modal-cash-voucher-print,
+    #modal-quotation-print {
         position: fixed !important;
         left: 0 !important;
         top: 0 !important;
@@ -597,20 +600,25 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     .no-print {
         display: none !important;
     }
-    #cash-voucher-printable-area {
+    #cash-voucher-printable-area,
+    #quotation-printable-area {
         width: 100% !important;
         max-width: 100% !important;
         border: none !important;
         box-shadow: none !important;
         margin: 0 !important;
-        padding: 10mm 15mm !important;
+        padding: 8mm 12mm !important;
         background: white !important;
         color: #000 !important;
-        font-size: 11pt !important;
+        font-size: 10pt !important;
+    }
+    #quotation-printable-area table th,
+    #quotation-printable-area table td {
+        border-color: #333 !important;
     }
     @page {
         size: A4 portrait;
-        margin: 10mm;
+        margin: 8mm;
     }
 }
 

@@ -2441,6 +2441,10 @@ class SalesAPIView(APIView):
                 'code': q.quotation_code,
                 'customer': q.customer.name,
                 'customer_id': q.customer.id,
+                'customer_tax_code': q.customer.tax_code or '',
+                'customer_address': q.customer.address or '',
+                'customer_phone': q.customer.phone or '',
+                'customer_contact': q.customer.contact_person or '',
                 'origin_zone': q.origin_zone or '',
                 'destination_zone': q.destination_zone or '',
                 'estimated_km': q.estimated_km or 0,
@@ -2449,7 +2453,15 @@ class SalesAPIView(APIView):
                 'monthly_trips': q.expected_trips_monthly,
                 'expected_revenue': q.expected_revenue,
                 'status': q.get_status_display(),
-                'status_raw': q.status
+                'status_raw': q.status,
+                'notes': q.notes or '',
+                'template_type': q.template_type or 'STANDARD',
+                'contact_person': q.contact_person or '',
+                'contact_phone': q.contact_phone or '',
+                'contact_email': q.contact_email or '',
+                'cargo_type': q.cargo_type or 'Hàng tổng hợp / Container',
+                'valid_until': q.valid_until.strftime('%Y-%m-%d') if q.valid_until else '',
+                'created_at': q.created_at.strftime('%d/%m/%Y') if q.created_at else ''
             })
 
         # Sắp xếp chuẩn nghiệp vụ: Booking nào gấp gần nhất hiển thị lên trên đầu
@@ -2704,6 +2716,14 @@ class SalesAPIView(APIView):
             while Quotation.all_objects.filter(quotation_code=q_code).exists():
                 q_counter += 1
                 q_code = f"BG-{now_m_d}-{q_counter:02d}"
+
+            valid_until_d = None
+            if data.get('valid_until'):
+                try:
+                    valid_until_d = datetime.datetime.strptime(data.get('valid_until').strip(), '%Y-%m-%d').date()
+                except Exception:
+                    pass
+
             quotation = Quotation.objects.create(
                 quotation_code=q_code,
                 customer=customer,
@@ -2713,7 +2733,14 @@ class SalesAPIView(APIView):
                 route_description=data.get('route_description', '').strip(),
                 unit_price=float(data.get('unit_price') or 4000000),
                 expected_trips_monthly=int(data.get('monthly_trips') or 10),
-                status=data.get('status', 'NEGOTIATING')
+                status=data.get('status', 'NEGOTIATING'),
+                notes=data.get('notes', '').strip(),
+                template_type=data.get('template_type', 'STANDARD').strip(),
+                contact_person=data.get('contact_person', '').strip(),
+                contact_phone=data.get('contact_phone', '').strip(),
+                contact_email=data.get('contact_email', '').strip(),
+                cargo_type=data.get('cargo_type', 'Hàng tổng hợp / Container').strip(),
+                valid_until=valid_until_d
             )
             return Response({'success': True, 'message': f'Tạo Báo Giá {quotation.quotation_code} thành công!', 'quotation_id': quotation.id})
 
@@ -2724,7 +2751,7 @@ class QuotationDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Báo Giá."""
     permission_classes = [IsSalesOrDirector]
     def get(self, request, pk):
-        q = Quotation.objects.filter(pk=pk, is_deleted=False).first()
+        q = Quotation.objects.filter(pk=pk, is_deleted=False).select_related('customer').first()
         if not q:
             return Response({'error': 'Không tìm thấy báo giá'}, status=status.HTTP_404_NOT_FOUND)
         return Response({
@@ -2732,6 +2759,10 @@ class QuotationDetailAPIView(APIView):
             'quotation_code': q.quotation_code,
             'customer_id': q.customer.id,
             'customer_name': q.customer.name,
+            'customer_tax_code': q.customer.tax_code or '',
+            'customer_address': q.customer.address or '',
+            'customer_phone': q.customer.phone or '',
+            'customer_contact': q.customer.contact_person or '',
             'origin_zone': q.origin_zone or '',
             'destination_zone': q.destination_zone or '',
             'estimated_km': q.estimated_km or 0,
@@ -2740,7 +2771,16 @@ class QuotationDetailAPIView(APIView):
             'expected_trips_monthly': q.expected_trips_monthly,
             'expected_revenue': float(q.expected_revenue),
             'status': q.status,
-            'status_display': q.get_status_display()
+            'status_display': q.get_status_display(),
+            'notes': q.notes or '',
+            'template_type': q.template_type or 'STANDARD',
+            'contact_person': q.contact_person or q.customer.contact_person or '',
+            'contact_phone': q.contact_phone or q.customer.phone or '',
+            'contact_email': q.contact_email or '',
+            'cargo_type': q.cargo_type or 'Hàng tổng hợp / Container',
+            'valid_until': q.valid_until.strftime('%Y-%m-%d') if q.valid_until else '',
+            'created_at': q.created_at.strftime('%d/%m/%Y') if q.created_at else '',
+            'created_at_iso': q.created_at.strftime('%Y-%m-%d') if q.created_at else ''
         })
 
     def put(self, request, pk):
@@ -2770,6 +2810,26 @@ class QuotationDetailAPIView(APIView):
             q.expected_trips_monthly = int(data['expected_trips_monthly'])
         if 'status' in data and data['status']:
             q.status = data['status']
+        if 'notes' in data:
+            q.notes = data['notes']
+        if 'template_type' in data and data['template_type']:
+            q.template_type = data['template_type'].strip()
+        if 'contact_person' in data:
+            q.contact_person = data['contact_person'].strip()
+        if 'contact_phone' in data:
+            q.contact_phone = data['contact_phone'].strip()
+        if 'contact_email' in data:
+            q.contact_email = data['contact_email'].strip()
+        if 'cargo_type' in data:
+            q.cargo_type = data['cargo_type'].strip()
+        if 'valid_until' in data:
+            if data['valid_until']:
+                try:
+                    q.valid_until = datetime.datetime.strptime(data['valid_until'].strip(), '%Y-%m-%d').date()
+                except Exception:
+                    pass
+            else:
+                q.valid_until = None
         q.save()
         return Response({
             'success': True,
@@ -2784,7 +2844,9 @@ class QuotationDetailAPIView(APIView):
                 'unit_price': float(q.unit_price),
                 'expected_trips_monthly': q.expected_trips_monthly,
                 'expected_revenue': float(q.expected_revenue),
-                'status': q.status
+                'status': q.status,
+                'notes': q.notes,
+                'template_type': q.template_type
             }
         })
 

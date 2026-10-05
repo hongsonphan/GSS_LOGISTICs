@@ -84,6 +84,23 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
         ],
         default='NEGOTIATING'
     )
+    # Bổ sung ghi chú điều khoản & mẫu in chứng từ
+    notes = models.TextField(blank=True, default='', help_text="Điều khoản & ghi chú báo giá (VAT, bốc xếp, phí neo, điều khoản thương mại)")
+    template_type = models.CharField(
+        max_length=30,
+        default='STANDARD',
+        choices=[
+            ('STANDARD', 'Mẫu 1: Tiêu Chuẩn Doanh Nghiệp (Quốc hiệu & Điều khoản TVL)'),
+            ('TABLE_MATRIX', 'Mẫu 2: Bảng Cước & Khung Đối Tác (To/From Matrix)'),
+            ('PROJECT_DETAIL', 'Mẫu 3: Chi Tiết Dịch Vụ & Lộ Trình Dự Án'),
+        ],
+        help_text="Mẫu in báo giá"
+    )
+    contact_person = models.CharField(max_length=100, blank=True, default='', help_text="Đại diện khách hàng / Attn")
+    contact_phone = models.CharField(max_length=50, blank=True, default='', help_text="SĐT liên hệ khách hàng")
+    contact_email = models.CharField(max_length=100, blank=True, default='', help_text="Email liên hệ khách hàng")
+    cargo_type = models.CharField(max_length=150, blank=True, default='Hàng tổng hợp / Container', help_text="Loại hàng hóa / Quy cách xe cont")
+    valid_until = models.DateField(null=True, blank=True, help_text="Hiệu lực báo giá đến ngày")
 
     def save(self, *args, **kwargs):
         if self.estimated_km and self.estimated_km > 0:
