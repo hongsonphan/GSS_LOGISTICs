@@ -259,6 +259,52 @@ let currentDonutType = 'fleet';
 let bgdDataCache = null;
 let previousActiveTab = 'dashboard';
 let currentDashboardPeriod = '7_days';
+let currentDashboardCustomStart = null;
+let currentDashboardCustomEnd = null;
+
+function getDateRangeForPeriod(period, customStart, customEnd) {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = now.getMonth(); // 0-indexed
+    
+    const fmt = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
+    if (period === 'today') {
+        const tStr = fmt(now);
+        return { fromDate: tStr, toDate: tStr };
+    }
+    if (period === '7_days') {
+        const past = new Date(now);
+        past.setDate(now.getDate() - 6);
+        return { fromDate: fmt(past), toDate: fmt(now) };
+    }
+    if (period === 'this_month') {
+        const first = new Date(yyyy, mm, 1);
+        const last = new Date(yyyy, mm + 1, 0);
+        return { fromDate: fmt(first), toDate: fmt(last) };
+    }
+    if (period === 'this_quarter') {
+        const qStartMonth = Math.floor(mm / 3) * 3;
+        const first = new Date(yyyy, qStartMonth, 1);
+        const last = new Date(yyyy, qStartMonth + 3, 0);
+        return { fromDate: fmt(first), toDate: fmt(last) };
+    }
+    if (period === 'this_year') {
+        return { fromDate: `${yyyy}-01-01`, toDate: `${yyyy}-12-31` };
+    }
+    if (period === 'custom' && customStart && customEnd) {
+        return { fromDate: customStart, toDate: customEnd };
+    }
+    const past = new Date(now);
+    past.setDate(now.getDate() - 6);
+    return { fromDate: fmt(past), toDate: fmt(now) };
+}
+window.getDateRangeForPeriod = getDateRangeForPeriod;
 
 function toggleDashboardPeriodDropdown(e) {
     if (e) e.stopPropagation();
@@ -266,9 +312,6 @@ function toggleDashboardPeriodDropdown(e) {
     if (menu) menu.classList.toggle('hidden');
 }
 window.toggleDashboardPeriodDropdown = toggleDashboardPeriodDropdown;
-
-let currentDashboardCustomStart = null;
-let currentDashboardCustomEnd = null;
 
 function setDashboardPeriod(period, label) {
     currentDashboardPeriod = period;
@@ -291,7 +334,64 @@ function setDashboardPeriod(period, label) {
     const menu = document.getElementById('topbar-period-menu');
     if (menu) menu.classList.add('hidden');
 
-    loadDashboardData(period);
+    const dateRange = getDateRangeForPeriod(period, currentDashboardCustomStart, currentDashboardCustomEnd);
+
+    // Đồng bộ vào các input ngày của Quyết toán nếu có
+    const settleFrom = document.getElementById('settle-from-date');
+    const settleTo = document.getElementById('settle-to-date');
+    if (settleFrom) settleFrom.value = dateRange.fromDate;
+    if (settleTo) settleTo.value = dateRange.toDate;
+
+    // Đồng bộ vào các input ngày của Kế toán nếu có
+    const acctFrom = document.getElementById('acct-rep-from-date');
+    const acctTo = document.getElementById('acct-rep-to-date');
+    if (acctFrom) acctFrom.value = dateRange.fromDate;
+    if (acctTo) acctTo.value = dateRange.toDate;
+
+    // Nhận diện view hiện tại và tải dữ liệu tương ứng
+    const activeView = document.querySelector('.view:not(.hidden-view)');
+    const currentTab = activeView ? activeView.id.replace('view-', '') : 'dashboard';
+
+    if (currentTab === 'dashboard') {
+        loadDashboardData(period);
+    } else if (currentTab === 'quyet-toan') {
+        loadSettlementData();
+    } else if (currentTab === 'ke-toan') {
+        if (currentAccountingSubTab === 'acct-reports') {
+            loadAccountingReportData();
+        } else {
+            switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
+        }
+    } else if (currentTab === 'bao-cao') {
+        const reportPeriodMap = {
+            'today': 'today',
+            '7_days': 'week',
+            'this_month': 'month',
+            'this_quarter': 'quarter',
+            'this_year': 'all',
+            'custom': 'month'
+        };
+        const rPeriod = reportPeriodMap[period] || 'week';
+        if (typeof changeReportPeriod === 'function') {
+            changeReportPeriod(rPeriod);
+        } else {
+            loadReportsData();
+        }
+    } else if (currentTab === 'dieu-van') {
+        loadTripsData();
+    } else if (currentTab === 'kinh-doanh') {
+        loadSalesData();
+    } else if (currentTab === 'hai-quan') {
+        fetchCustomsDeclarations();
+    } else if (currentTab === 'xe-bai') {
+        loadFleetData();
+    } else if (currentTab === 'nhan-su') {
+        loadHRData();
+    } else if (currentTab === 'cai-dat') {
+        loadMasterData();
+    } else {
+        loadDashboardData(period);
+    }
 }
 window.setDashboardPeriod = setDashboardPeriod;
 
@@ -351,6 +451,46 @@ function applyDashboardCustomDate() {
     setDashboardPeriod('custom', customLabel);
 }
 window.applyDashboardCustomDate = applyDashboardCustomDate;
+
+function refreshCurrentView() {
+    const activeView = document.querySelector('.view:not(.hidden-view)');
+    const currentTab = activeView ? activeView.id.replace('view-', '') : 'dashboard';
+
+    if (currentTab === 'dashboard') {
+        loadDashboardData();
+    } else if (currentTab === 'dieu-van') {
+        loadTripsData();
+    } else if (currentTab === 'kinh-doanh') {
+        loadSalesData();
+    } else if (currentTab === 'ke-toan') {
+        if (currentAccountingSubTab === 'acct-reports') {
+            loadAccountingReportData();
+        } else {
+            switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
+        }
+    } else if (currentTab === 'quyet-toan') {
+        loadSettlementData();
+    } else if (currentTab === 'hai-quan') {
+        fetchCustomsDeclarations();
+    } else if (currentTab === 'bao-cao') {
+        loadReportsData();
+    } else if (currentTab === 'xe-bai') {
+        loadFleetData();
+    } else if (currentTab === 'nhan-su') {
+        loadHRData();
+    } else if (currentTab === 'cai-dat') {
+        loadMasterData();
+    } else if (currentTab === 'trip-detail' && currentActiveTripCode) {
+        viewTripDetail(currentActiveTripCode, false);
+    } else {
+        loadDashboardData();
+    }
+
+    if (typeof showToast === 'function') {
+        showToast('success', 'Đã làm mới dữ liệu mới nhất từ máy chủ!', 'Đồng Bộ Dữ Liệu');
+    }
+}
+window.refreshCurrentView = refreshCurrentView;
 
 // Close dropdown and popover on click outside
 document.addEventListener('click', (e) => {
@@ -6253,14 +6393,44 @@ function switchTab(tabId, updateHistory = true) {
         topbarTitleEl.innerText = TAB_NAME_MAP[tabId] || 'Dashboard Tổng quan';
     }
 
-    // Toggle Cụm Điều Khiển Dashboard trên Topbar
+    // Cụm Bộ Chọn Kỳ Toàn Cục luôn hiển thị trên Topbar
     const dashboardActionsEl = document.getElementById('topbar-dashboard-actions');
     if (dashboardActionsEl) {
+        dashboardActionsEl.classList.remove('hidden');
+    }
+
+    // Nút Ẩn / Hiện Biểu Đồ chỉ hiển thị ở Dashboard
+    const btnToggleCharts = document.getElementById('btn-toggle-dashboard-charts');
+    if (btnToggleCharts) {
         if (tabId === 'dashboard') {
-            dashboardActionsEl.classList.remove('hidden');
+            btnToggleCharts.classList.remove('hidden');
         } else {
-            dashboardActionsEl.classList.add('hidden');
+            btnToggleCharts.classList.add('hidden');
         }
+    }
+
+    // Đồng bộ khoảng ngày hiện tại vào các view có bộ lọc ngày
+    const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
+    if (tabId === 'quyet-toan') {
+        const settleFrom = document.getElementById('settle-from-date');
+        const settleTo = document.getElementById('settle-to-date');
+        if (settleFrom) settleFrom.value = globalDates.fromDate;
+        if (settleTo) settleTo.value = globalDates.toDate;
+    } else if (tabId === 'ke-toan') {
+        const acctFrom = document.getElementById('acct-rep-from-date');
+        const acctTo = document.getElementById('acct-rep-to-date');
+        if (acctFrom) acctFrom.value = globalDates.fromDate;
+        if (acctTo) acctTo.value = globalDates.toDate;
+    } else if (tabId === 'bao-cao') {
+        const reportPeriodMap = {
+            'today': 'today',
+            '7_days': 'week',
+            'this_month': 'month',
+            'this_quarter': 'quarter',
+            'this_year': 'all',
+            'custom': 'month'
+        };
+        currentReportPeriod = reportPeriodMap[currentDashboardPeriod] || 'week';
     }
 
     // Cập nhật URL sạch trên thanh địa chỉ trình duyệt (Loại bỏ hoàn toàn dấu #)

@@ -19,7 +19,7 @@
                 Dashboard Tổng quan
             </h1>
 
-            <!-- Cụm Điều Khiển Dashboard trên Topbar (Ẩn khi sang tab khác) -->
+            <!-- Cụm Bộ Chọn Kỳ Toàn Cục & Thao Tác Topbar -->
             <div id="topbar-dashboard-actions" class="flex items-center space-x-2 pl-3 border-l border-slate-200">
                 <!-- Dropdown chọn kỳ báo cáo -->
                 <div class="relative" id="dashboard-period-dropdown-container">
@@ -78,7 +78,7 @@
                     </div>
                 </div>
 
-                <!-- Nút Ẩn / Hiện Biểu Đồ -->
+                <!-- Nút Ẩn / Hiện Biểu Đồ (Chỉ xuất hiện tại Dashboard) -->
                 <button id="btn-toggle-dashboard-charts" onclick="toggleDashboardCharts()" 
                     class="px-2.5 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 rounded-lg text-xs font-bold font-heading transition-colors flex items-center space-x-1.5 border border-slate-200 shadow-2xs active:scale-95 cursor-pointer" 
                     title="Ẩn/Hiện biểu đồ để xem chi tiết Bảng Phân Tích">
@@ -86,8 +86,8 @@
                     <span id="text-toggle-charts">Ẩn Biểu Đồ</span>
                 </button>
 
-                <!-- Nút Làm Mới -->
-                <button onclick="loadDashboardData()" 
+                <!-- Nút Làm Mới Toàn Cục -->
+                <button onclick="refreshCurrentView()" 
                     class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold font-heading transition-colors flex items-center space-x-1.5 border border-slate-200 shadow-2xs active:scale-95 cursor-pointer" 
                     title="Tải lại số liệu mới nhất">
                     <i class="ph ph-arrows-clockwise text-sm text-teal-700"></i>
