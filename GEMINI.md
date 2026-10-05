@@ -5,6 +5,7 @@
 > 2. **`CODING_STANDARDS.md`** (tại gốc dự án): Chuẩn mực kiến trúc, Database ORM, quy ước đặt tên, Defensive Backend và Design Tokens đồng bộ hệ sinh thái BIM.
 > 3. **Bảo vệ toàn vẹn dữ liệu vận tải & chứng từ:** Mọi thông tin vận đơn, biên bản giao nhận (POD), báo cáo sự cố (OS&D) và lịch sử GPS là dữ liệu pháp lý bất khả xâm phạm (Không dùng Hard-Delete).
 > 4. **Quy trình trạng thái đơn hàng:** Tuyệt đối tuân thủ State Machine của chuỗi cung ứng, không nhảy cóc trạng thái vận chuyển.
+> 5. **Quy tắc Chống Lỗi Hồi Quy & Giới Hạn Phạm Vi (Zero-Regression & Scope Containment):** Chỉ can thiệp đúng phạm vi yêu cầu, đánh giá tác động liên đới toàn diện, bảo đảm sau mỗi lần chỉnh sửa/thêm tính năng thì không phát sinh bất kỳ lỗi nào ở các chức năng cũ (100% tests passed).
 
 ---
 

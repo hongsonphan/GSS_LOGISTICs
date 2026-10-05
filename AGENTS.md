@@ -34,12 +34,15 @@ Trước khi viết hoặc sửa code (Model, API, State Machine, Tracking, Bill
 
 ---
 
-## 3. Surgical Changes & Traceability Sanctity
+## 3. Surgical Changes, Scope Containment & Zero-Regression
 
-**Chỉ can thiệp đúng tệp cần thiết. Bất khả xâm phạm chuỗi truy vết vận tải.**
+**Chỉ can thiệp đúng phạm vi yêu cầu. Tuyệt đối không để việc sửa/thêm tính năng mới làm phát sinh lỗi ở các tính năng cũ.**
 
 Khi chỉnh sửa mã nguồn hoặc cấu trúc dữ liệu:
-- **Bảo toàn lịch sử vết vết (No Hard-Delete on Audit Trails):** Mọi bản ghi về vị trí, sự kiện quét mã (barcode/QR), thay đổi trạng thái đơn, hình ảnh POD và biên bản khiếu nại là chứng cứ pháp lý giải quyết tranh chấp; tuyệt đối không dùng lệnh xóa cứng (`.delete()`), chỉ dùng Soft-Delete và Audit Logging.
+- **Tập trung đúng trọng tâm yêu cầu (Scope Containment):** Chỉ sửa đúng tệp, đúng hàm, đúng component mà người dùng yêu cầu. Tuyệt đối không chỉnh sửa lan man ngoài phạm vi gây xáo trộn codebase.
+- **Đánh giá tác động liên đới (Impact Assessment):** Trước khi sửa/xóa bất kỳ hàm JS, biến, CSS class, component template hoặc API endpoint nào, bắt buộc rà soát toàn bộ các phân hệ phụ thuộc để hiệu chỉnh đồng bộ, đảm bảo tính toàn vẹn 100% của hệ thống.
+- **Bảo toàn tính nguyên vẹn cú pháp:** Giữ nghiêm ngặt cấu trúc cú pháp (đặc biệt các thẻ HTML, dấu ngoặc nhọn `{}` trong inline JavaScript/CSS) để lỗi cục bộ không gây tê liệt toàn trang.
+- **Bảo toàn lịch sử truy vết (No Hard-Delete on Audit Trails):** Mọi bản ghi về vị trí, sự kiện quét mã (barcode/QR), thay đổi trạng thái đơn, hình ảnh POD và biên bản khiếu nại là chứng cứ pháp lý giải quyết tranh chấp; tuyệt đối không dùng lệnh xóa cứng (`.delete()`), chỉ dùng Soft-Delete và Audit Logging.
 - **Không làm ảnh hưởng đến các phân hệ lân cận:** Khi sửa module Quản lý đội xe (Fleet) hoặc Kho (WMS), không làm đứt gãy luồng Tính cước vận chuyển (Freight Billing) hay Tích hợp đơn vị vận chuyển bên thứ 3 (3PL APIs).
 - **Tuân thủ quy ước đặt tên & thiết kế chung:** Sử dụng PascalCase cho Models, snake_case cho fields/APIs; bảng màu đồng bộ hệ thống BIM (Teal chủ đạo, Emerald thành công, Amber cảnh báo, Rose lỗi/hỏng hóc).
 - **Dọn sạch rác phát sinh:** Tự thu dọn các tọa độ mock test, dữ liệu đơn hàng giả lập và migrations thừa sau khi hoàn tất kiểm thử.
@@ -54,6 +57,8 @@ Mọi tính năng và sửa đổi phải được kiểm chứng bằng kịch 
 - "Thêm quy trình xử lý hàng hỏng hóc/thiếu hụt (OS&D)" → "Tạo biên bản sự cố kèm ảnh chụp → Cập nhật trạng thái đơn → Kích hoạt thông báo cho bộ phận CSKH/Điều phối → Kiểm tra dữ liệu ghi nhận đầy đủ".
 - "Tính giá cước vận chuyển" → "Kiểm thử công thức so sánh giữa Trọng lượng thực (Gross Weight) và Trọng lượng thể tích (Volumetric Weight: $D \times R \times C / 5000$) → Khớp đúng số liệu bảng giá hợp đồng".
 - "API đồng bộ tọa độ GPS xe" → "Gửi payload vị trí → Lưu trữ mốc tracking hợp lệ → Trả về HTTP 200 trong < 200ms".
+
+- **Bắt buộc kiểm thử hồi quy toàn diện (Full Regression Testing):** Sau mỗi đợt bổ sung hoặc chỉnh sửa, chạy toàn bộ bộ kiểm thử tự động của dự án (`python manage.py test --keepdb`) và kiểm tra console/runtime để xác nhận 100% tính năng mới và các tính năng cũ liên quan đều chạy trơn tru, không phát sinh bất kỳ lỗi hồi quy nào.
 
 Với các tác vụ nhiều bước, luôn tóm tắt kế hoạch:
 ```

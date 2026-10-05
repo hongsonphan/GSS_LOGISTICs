@@ -183,3 +183,20 @@ Toàn bộ các Form tạo mới, chỉnh sửa (Modal Popup, Full Page Form, Dr
 - **Danh sách file đã chọn:** Hiển thị thẻ file gọn gàng gồm icon định dạng, tên tệp rút gọn, dung lượng và nút xóa `✕`.
 - **Thêm nhanh danh mục (`+`):** Tất cả dropdown danh mục đều có nút `+` nhỏ kế bên label để bật popup tạo mới không gián đoạn luồng làm việc.
 
+---
+
+## VI. QUY CHUẨN CHỐNG LỖI HỒI QUY & GIỚI HẠN PHẠM VI (ZERO-REGRESSION & SCOPE CONTAINMENT)
+
+### 1. Nguyên Tắc Giới Hạn Phạm Vi Sửa Đổi (Scope Containment)
+- **Tập trung tuyệt đối vào mục tiêu yêu cầu:** Khi người dùng yêu cầu chỉnh sửa hoặc thêm mới tính năng A, chỉ can thiệp vào đúng các tệp, hàm, component và API liên quan trực tiếp đến A.
+- **Không tự ý refactor diện rộng:** CẤM tự ý sửa đổi cấu trúc hoặc định dạng lại các tệp không liên quan để tránh gây xung đột (merge conflicts) hoặc phát sinh lỗi tiềm ẩn.
+
+### 2. Đánh Giá Tác Động Liên Đới (Impact Assessment)
+- Trước khi đổi tên/xóa/sửa tham số của bất kỳ hàm JavaScript chung (`app.js`, modal handler), API endpoint hoặc Model field nào, bắt buộc rà soát toàn bộ các phân hệ/views đang gọi đến nó.
+- Nếu có tác động liên đới, phải cập nhật đồng bộ 100% các điểm phụ thuộc ngay trong cùng một lượt thực thi.
+
+### 3. Quy Trình Kiểm Thử Hồi Quy Bắt Buộc (Mandatory Regression Testing)
+- **Kiểm thử tự động 100% Passed:** Sau mỗi đợt chỉnh sửa mã nguồn, bắt buộc chạy `python manage.py test --keepdb` để bảo đảm toàn bộ unit test của tất cả các phân hệ đều vượt qua (100% PASS).
+- **Kiểm tra cú pháp & Console:** Rà soát kỹ các khối lệnh JavaScript (dấu ngoặc nhọn `{}`, dấu phẩy, cú pháp template Django) để không làm phát sinh lỗi `SyntaxError` làm tê liệt giao diện người dùng.
+
+
