@@ -58,14 +58,16 @@ Mọi tính năng và sửa đổi phải được kiểm chứng bằng kịch 
 - "Tính giá cước vận chuyển" → "Kiểm thử công thức so sánh giữa Trọng lượng thực (Gross Weight) và Trọng lượng thể tích (Volumetric Weight: $D \times R \times C / 5000$) → Khớp đúng số liệu bảng giá hợp đồng".
 - "API đồng bộ tọa độ GPS xe" → "Gửi payload vị trí → Lưu trữ mốc tracking hợp lệ → Trả về HTTP 200 trong < 200ms".
 
-- **Bắt buộc kiểm thử hồi quy toàn diện (Full Regression Testing):** Sau mỗi đợt bổ sung hoặc chỉnh sửa, chạy toàn bộ bộ kiểm thử tự động của dự án (`python manage.py test --keepdb`) và kiểm tra console/runtime để xác nhận 100% tính năng mới và các tính năng cũ liên quan đều chạy trơn tru, không phát sinh bất kỳ lỗi hồi quy nào.
+- **Bắt buộc kiểm thử hồi quy toàn diện (Full Regression Testing & Frontend JS Syntax Verification):**
+  * **Frontend Verification:** Bắt buộc chạy `node -c static/js/app.js` và `node -c static/js/column_manager.js` trước mỗi lần commit/deploy để đảm bảo 100% cú pháp JS chuẩn mực, không có biến `let`/`const` bị khai báo trùng lặp (Uncaught SyntaxError) làm tê liệt điều hướng trang và các nút bấm.
+  * **Backend & System Verification:** Chạy toàn bộ bộ kiểm thử tự động của dự án (`python manage.py test --keepdb` - bao gồm `FrontendSyntaxIntegrityTestCase`) để xác nhận 100% tính năng mới và các tính năng cũ liên quan đều chạy trơn tru, không phát sinh bất kỳ lỗi hồi quy nào.
 
 Với các tác vụ nhiều bước, luôn tóm tắt kế hoạch:
 ```
-1. [Bước code/sửa file] → Verify: [Kiểm thử logic / Unit Test / Kiểm tra luồng trạng thái]
-2. [Bước code/sửa file] → Verify: [Kiểm thử logic / Unit Test / Kiểm tra luồng trạng thái]
+1. [Bước code/sửa file] → Verify: [Kiểm thử cú pháp JS: node -c static/js/app.js / Unit Test: python manage.py test --keepdb]
+2. [Bước code/sửa file] → Verify: [Kiểm thử cú pháp JS / Unit Test / Kiểm tra luồng trạng thái]
 ```
 
 ---
 
-**Bộ quy tắc này hiệu quả khi:** Dữ liệu vận chuyển và truy vết POD luôn chính xác 100%, không xảy ra đứt gãy trạng thái đơn, giao diện hiện trường thao tác mượt mà không lỗi giật lag, và mọi giả định nghiệp vụ đều được làm rõ trước khi lập trình.
+**Bộ quy tắc này hiệu quả khi:** Dữ liệu vận chuyển và truy vết POD luôn chính xác 100%, không xảy ra đứt gãy trạng thái đơn, mã nguồn JavaScript chạy mượt mà không lỗi cú pháp làm đứng giao diện, giao diện hiện trường thao tác mượt mà không lỗi giật lag, và mọi giả định nghiệp vụ đều được làm rõ trước khi lập trình.

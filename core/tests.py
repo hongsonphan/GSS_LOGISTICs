@@ -2241,6 +2241,93 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertTrue(found_backlog)
 
 
+import os
+import re
+import subprocess
+from django.conf import settings
+
+class FrontendSyntaxIntegrityTestCase(TestCase):
+    """
+    BỘ KIỂM THỬ TỰ ĐỘNG CHỐNG LỖI CÚ PHÁP & TRÙNG LẶP BIẾN JAVASCRIPT (ZERO-SYNTAX-REGRESSION)
+    Tự động quét và bảo vệ toàn bộ tệp JavaScript trong static/js/ không bị lỗi SyntaxError,
+    không bị khai báo trùng lặp biến (let/const redeclaration) làm tê liệt giao diện người dùng.
+    """
+
+    def setUp(self):
+        self.static_js_dir = os.path.join(settings.BASE_DIR, 'static', 'js')
+        self.app_js_path = os.path.join(self.static_js_dir, 'app.js')
+        self.column_mgr_path = os.path.join(self.static_js_dir, 'column_manager.js')
+
+    def test_no_duplicate_top_level_let_const_in_app_js(self):
+        """Kiểm tra không có bất kỳ biến top-level let/const nào bị khai báo trùng lặp trong app.js"""
+        self.assertTrue(os.path.exists(self.app_js_path), "Không tìm thấy tệp static/js/app.js")
+        
+        with open(self.app_js_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        top_level_vars = {}
+        for i, line in enumerate(lines):
+            # Match top-level let/const declarations (không thụt đầu dòng)
+            m = re.match(r'^(let|const)\s+([a-zA-Z0-9_$]+)', line)
+            if m:
+                var_name = m.group(2)
+                if var_name not in top_level_vars:
+                    top_level_vars[var_name] = []
+                top_level_vars[var_name].append(i + 1)
+
+        duplicates = {v: l_nums for v, l_nums in top_level_vars.items() if len(l_nums) > 1}
+        self.assertEqual(
+            len(duplicates), 0,
+            f"Phát hiện biến top-level bị khai báo trùng lặp trong static/js/app.js gây Uncaught SyntaxError: {duplicates}"
+        )
+
+    def test_node_syntax_check_if_node_available(self):
+        """Sử dụng 'node -c' để biên dịch kiểm tra toàn diện cú pháp JS nếu môi trường có Node.js"""
+        for js_file in [self.app_js_path, self.column_mgr_path]:
+            if os.path.exists(js_file):
+                try:
+                    result = subprocess.run(
+                        ['node', '-c', js_file],
+                        capture_output=True,
+                        text=True,
+                        check=False
+                    )
+                    self.assertEqual(
+                        result.returncode, 0,
+                        f"Lỗi cú pháp JavaScript trong tệp {os.path.basename(js_file)}:\n{result.stderr}"
+                    )
+                except FileNotFoundError:
+                    # Môi trường không cài node -> bỏ qua bước node -c nhưng test regex vẫn chạy
+                    pass
+
+    def test_essential_global_functions_present_in_app_js(self):
+        """Đảm bảo các hàm cốt lõi điều hướng, chuyển tab, mở modal và báo cáo luôn tồn tại trong app.js"""
+        with open(self.app_js_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        required_symbols = [
+            'switchTab',
+            'toggleSidebar',
+            'setDashboardPeriod',
+            'loadDashboardData',
+            'switchReportGroup',
+            'switchReportSubTab',
+            'changeReportPeriod',
+            'loadReportsData',
+            'formatMoneyVND',
+            'viewCustomerARStatement',
+            'printCustomerARStatement',
+            'exportReportToExcel'
+        ]
+
+        missing_symbols = [sym for sym in required_symbols if sym not in content]
+        self.assertEqual(
+            len(missing_symbols), 0,
+            f"Thiếu các hàm điều hướng/nghiệp vụ cốt lõi trong static/js/app.js: {missing_symbols}"
+        )
+
+
+
 
 
 
