@@ -2,6 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.3] - 2026-10-05 (Tự Động Mở Phiếu Thu/Chi Khi Quyết Toán & Khai Báo Chi Nhánh / Bãi Xe Hệ Thống)
+
+### 1. Tự Động Mở Ngay Phiếu Thu / Phiếu Chi Khi Quyết Toán Chuyến:
+- **Tự động mở Modal Phiếu Thu / Chi khi bấm "Xác Nhận Quyết Toán Gom":**
+  * Ngay khi hoàn tất quyết toán gom nhiều chuyến xe (hoặc quyết toán hoàn ứng đơn lẻ), hệ thống tự động khởi tạo bút toán Sổ Quỹ (`CashTransaction`) và bật ngay **Modal Xem & In Phiếu Thu / Phiếu Chi chuẩn Mẫu 01-TT / 02-TT BTC**.
+  * Hỗ trợ đầy đủ các tình huống:
+    - **Thu hoàn ứng tiền thừa (`INFLOW`):** Khi Tạm ứng > Thực chi (Tài xế nộp lại tiền thừa).
+    - **Chi bù vượt ứng (`OUTFLOW`):** Khi Thực chi > Tạm ứng (Công ty/Điều vận chi bù tiền phát sinh).
+    - **Đối soát khớp đúng (`0 đ`):** Tự động lập chứng từ đối soát cân bằng và mở phiếu xác nhận.
+- **Nâng cấp quyền hạn `CashBookDetailAPIView`:** Mở rộng cho cả Điều phối viên và Kế toán viên (`IsDispatcherOrAccountant`) để việc in ấn chứng từ hiện trường không bị chặn quyền.
+
+### 2. Bổ Sung Khai Báo Chi Nhánh & Bãi Đỗ Xe Hệ Thống:
+- Thêm các trường dữ liệu mới vào `CompanyProfile`:
+  * **Chi nhánh:** `branch_name`, `branch_address`, `branch_phone`.
+  * **Bãi xe & Depot:** `fleet_yard_name`, `fleet_yard_address`, `fleet_yard_hotline`.
+  * **Chính sách:** `notes` (Ghi chú & chính sách vận hành toàn hệ thống).
+- Giao diện 6 nhóm thẻ thông tin trực quan và Modal hiệu chỉnh đồng bộ trên phân hệ `/settings`.
+
+### 3. Kiểm Thử & Triển Khai:
+- **79/79 Tests Tự Động PASSED 100%**.
+- Triển khai và khởi chạy ổn định trên máy chủ VPS (`port 8085`).
+
+---
+
 ## [2.8.2] - 2026-10-05 (Chuẩn Hóa Logo Khách Hàng Triền Võ & Trải Nghiệm Xem Full Viền Tờ A4)
 
 ### 1. Phân Tách Tuyệt Đối Logo Công Ty Khách Hàng (Triền Võ) & Logo Phần Mềm (BIM):
