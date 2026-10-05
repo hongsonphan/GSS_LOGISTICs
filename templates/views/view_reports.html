@@ -139,10 +139,16 @@
                 <div class="flex items-center gap-2">
                     <input type="text" id="filter-rep1-search" oninput="applyReport1Filters()" placeholder="Tìm biển số, tài xế..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-52 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep1-pnl-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh ẩn/hiện và sắp xếp thứ tự các cột">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep1-pnl-table" data-table-title="Báo Cáo P&L Từng Đầu Xe">
                     <thead>
                         <tr>
                             <th onclick="toggleReport1Sort('plate')" class="cursor-pointer">Biển Số Xe</th>
@@ -200,15 +206,23 @@
 
         <!-- Bảng Tóm Tắt Theo Hãng Tàu (Shipping Lines Matrix) -->
         <div class="erp-table-container flex flex-col shadow-sm">
-            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
                 <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
                     <i class="ph-bold ph-boat text-teal-700"></i>
                     Tổng Hợp Container Theo Hãng Tàu (Shipping Lines Matrix)
                 </h3>
-                <span class="text-xs text-slate-500 font-medium">Theo dõi cảnh báo phạt theo từng hãng tàu (Maersk, ONE, SITC...)</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 font-medium hidden sm:inline">Theo dõi cảnh báo phạt theo từng hãng tàu</span>
+                    <button type="button" onclick="openColumnCustomizer('rep2-shipping-lines-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột bảng hãng tàu">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep2-shipping-lines-table" data-table-title="Tổng Hợp DEM/DET Theo Hãng Tàu">
                     <thead>
                         <tr>
                             <th>Hãng Tàu</th>
@@ -233,11 +247,19 @@
                     <i class="ph-bold ph-barcode text-teal-700"></i>
                     Bảng Giám Sát Vỏ Container & Theo Dõi Phạt Lưu Cont Hãng Tàu
                 </h3>
-                <input type="text" id="filter-rep2-search" oninput="applyReport2Filters()" placeholder="Tìm số cont, khách, hãng tàu..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep2-search" oninput="applyReport2Filters()" placeholder="Tìm số cont, khách, hãng tàu..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep2-containers-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột bảng chi tiết vỏ cont">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep2-containers-table" data-table-title="Chi Tiết Vỏ Cont & Hạn DEM/DET">
                     <thead>
                         <tr>
                             <th>Số Container</th>
@@ -293,11 +315,19 @@
                     <i class="ph-bold ph-timer text-teal-700"></i>
                     Bảng Nhật Ký Tuân Thủ Mốc Giờ Vận Chuyển & Phân Loại Sự Cố Trễ Chuyến
                 </h3>
-                <input type="text" id="filter-rep3-search" oninput="applyReport3Filters()" placeholder="Tìm mã chuyến, tuyến, nguyên nhân..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep3-search" oninput="applyReport3Filters()" placeholder="Tìm mã chuyến, tuyến, nguyên nhân..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep3-otp-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột bảng OTP">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep3-otp-table" data-table-title="Đúng Giờ & Chỉ Số OTP/SLA">
                     <thead>
                         <tr>
                             <th>Mã Chuyến</th>
@@ -353,11 +383,19 @@
                     <i class="ph-bold ph-hand-coins text-teal-700"></i>
                     Bảng Kê Chi Phí Chi Hộ Khách Hàng Chờ Hoàn Ứng (Reimbursable Ledger)
                 </h3>
-                <input type="text" id="filter-rep4-search" oninput="applyReport4Filters()" placeholder="Tìm khách hàng, số HĐ, loại phí..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep4-search" oninput="applyReport4Filters()" placeholder="Tìm khách hàng, số HĐ, loại phí..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep4-expenses-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột chi phí chi hộ">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep4-expenses-table" data-table-title="Chi Phí Tuyến & Thu Hồi Chi Hộ">
                     <thead>
                         <tr>
                             <th>Mã Chuyến</th>
@@ -407,11 +445,19 @@
                     <i class="ph-bold ph-arrows-split text-teal-700"></i>
                     Bảng Giám Sát Cắt Kéo (Drop & Hook) & Nhật Ký Xe Chờ Hạ Sau 0H
                 </h3>
-                <input type="text" id="filter-rep5-search" oninput="applyReport5Filters()" placeholder="Tìm mã chuyến, cont, xe..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep5-search" oninput="applyReport5Filters()" placeholder="Tìm mã chuyến, cont, xe..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep5-layover-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột cắt kéo & lưu đêm">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep5-layover-table" data-table-title="Cắt Kéo & Lưu Xe Sau 0H">
                     <thead>
                         <tr>
                             <th>Mã Chuyến</th>
@@ -461,11 +507,19 @@
                     <i class="ph-bold ph-first-aid text-rose-600"></i>
                     Bảng Ghi Nhận Sự Cố & Biên Bản Hiện Trường (OS&D Registry)
                 </h3>
-                <input type="text" id="filter-rep6-search" oninput="applyReport6Filters()" placeholder="Tìm số cont, mã chuyến, mô tả..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep6-search" oninput="applyReport6Filters()" placeholder="Tìm số cont, mã chuyến, mô tả..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep6-osd-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột bảng sự cố OS&D">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep6-osd-table" data-table-title="Ngoại Lệ & Sự Cố OS&D">
                     <thead>
                         <tr>
                             <th>Mã Chuyến</th>
@@ -523,11 +577,19 @@
                     <i class="ph-bold ph-buildings text-teal-700"></i>
                     Bảng Phân Tích Doanh Thu, Sản Lượng TEU & Tuyến Chủ Lực Khách Hàng
                 </h3>
-                <input type="text" id="filter-rep7-search" oninput="applyReport7Filters()" placeholder="Tìm tên khách, mã KH, tuyến..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep7-search" oninput="applyReport7Filters()" placeholder="Tìm tên khách, mã KH, tuyến..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep7-customer-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột bảng khách hàng">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep7-customer-table" data-table-title="Doanh Thu Khách Hàng & Sản Lượng TEU">
                     <thead>
                         <tr>
                             <th onclick="toggleReport7Sort('customer_name')" class="cursor-pointer">Tên Khách Hàng</th>
@@ -586,11 +648,19 @@
                     <i class="ph-bold ph-handshake text-teal-700"></i>
                     Bảng Đối Soát & Công Nợ Theo Nhà Xe Thầu Phụ (Master Subcontractors)
                 </h3>
-                <input type="text" id="filter-rep8-search" oninput="applyReport8Filters()" placeholder="Tìm nhà xe, tài khoản, SĐT..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep8-search" oninput="applyReport8Filters()" placeholder="Tìm nhà xe, tài khoản, SĐT..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep8-subcontractor-summary-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột tổng hợp thầu phụ">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep8-subcontractor-summary-table" data-table-title="Công Nợ Nhà Xe Thầu Phụ">
                     <thead>
                         <tr>
                             <th>Nhà Xe Thầu Phụ</th>
@@ -613,15 +683,23 @@
 
         <!-- Bảng 2: Bảng Kê Chi Tiết Từng Chuyến Xe Ngoài -->
         <div class="erp-table-container flex flex-col shadow-sm">
-            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
                 <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
                     <i class="ph-bold ph-list-dashes text-indigo-700"></i>
                     Bảng Kê Chi Tiết Chuyến Xe Ngoài Thuê Chạy
                 </h3>
-                <span class="text-xs text-slate-500 font-medium">Chi tiết cước và tạm ứng theo từng chuyến xe</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 font-medium hidden sm:inline">Chi tiết cước & tạm ứng từng chuyến</span>
+                    <button type="button" onclick="openColumnCustomizer('rep8-subcontractor-trips-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột chuyến xe ngoài">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep8-subcontractor-trips-table" data-table-title="Bảng Kê Chuyến Xe Ngoài">
                     <thead>
                         <tr>
                             <th>Mã Chuyến</th>
@@ -680,11 +758,19 @@
                     <i class="ph-bold ph-identification-badge text-teal-700"></i>
                     Bảng Quyết Toán Lương Chuyến, Phụ Cấp & Đánh Giá Năng Suất Tài Xế
                 </h3>
-                <input type="text" id="filter-rep9-search" oninput="applyReport9Filters()" placeholder="Tìm tên tài xế, mã NV, SĐT..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep9-search" oninput="applyReport9Filters()" placeholder="Tìm tên tài xế, mã NV, SĐT..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep9-driver-payroll-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột bảng lương tài xế">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep9-driver-payroll-table" data-table-title="Lương Chuyến & Năng Suất Tài Xế">
                     <thead>
                         <tr>
                             <th onclick="toggleReport9Sort('driver_name')" class="cursor-pointer">Tài Xế</th>
@@ -750,11 +836,19 @@
                         Cấp 1: Cty ➔ Điều Vận
                     </span>
                 </div>
-                <input type="text" id="filter-rep10-search" oninput="applyReport10Filters()" placeholder="Tìm điều phối viên, mã phiếu quỹ, ghi chú..." 
-                    class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="filter-rep10-search" oninput="applyReport10Filters()" placeholder="Tìm điều phối viên, mã phiếu quỹ, ghi chú..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep10-dispatcher-funds-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột sổ quỹ điều vận">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep10-dispatcher-funds-table" data-table-title="Sổ Quỹ Tạm Ứng Điều Vận">
                     <thead>
                         <tr>
                             <th onclick="toggleReport10Sort('code')" class="cursor-pointer">Mã Phiếu Quỹ</th>
@@ -799,7 +893,7 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiền Thừa Tài Xế Phải Nộp</span>
                 <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep11-stat-refund-due">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Khoản tạm ứng nhiều hơn thực chi</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1">Khoản tạm ứng nhiều hơn thực chi</p>
             </div>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiền Vượt Ứng Cần Chi Bù</span>
@@ -814,7 +908,7 @@
                 <div class="flex items-center gap-2">
                     <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
                         <i class="ph-bold ph-hand-coins text-amber-600"></i>
-                        Bảng Đối Soát Tạm Ứng & Chi Phí Phát Sinh Từng Chuyến Xe (Điều Vận Quản Lý)
+                        Bảng Đối Soát Tạm Ứng & Chi Phí Phát Sinh Từng Chuyến Xe (Điều Vận QuẢN Lý)
                     </h3>
                     <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                         Cấp 2: Điều Vận ➔ Tài Xế
@@ -828,10 +922,16 @@
                     </select>
                     <input type="text" id="filter-rep11-search" oninput="applyReport11Filters()" placeholder="Tìm tài xế, biển số xe, mã chuyến, khách..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep11-driver-advances-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột tạm ứng tài xế">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep11-driver-advances-table" data-table-title="Tạm Ứng & Chi Phí Tài Xế">
                     <thead>
                         <tr>
                             <th onclick="toggleReport11Sort('trip_code')" class="cursor-pointer">Mã Chuyến / TUTX</th>
@@ -906,10 +1006,16 @@
                     </select>
                     <input type="text" id="filter-rep12-search" oninput="applyReport12Filters()" placeholder="Tìm biển số xe, tài xế, mã chuyến, khách..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep12-settlement-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột quyết toán chuyến xe">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep12-settlement-table" data-table-title="Bảng Kê Quyết Toán Chuyến Xe & Backlog">
                     <thead>
                         <tr>
                             <th onclick="toggleReport12Sort('trip_code')" class="cursor-pointer">Mã Chuyến</th>
@@ -945,7 +1051,7 @@
         <!-- 4 Metric Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-700">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Công Nợ Phải Thu (AR)</span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Công NỢ Phải Thu (AR)</span>
                 <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep13-stat-total-ar">0 đ</p>
                 <p class="text-xs text-slate-500 font-medium mt-1" id="rep13-stat-rev-reim">Cước: 0 đ · Chi hộ: 0 đ</p>
             </div>
@@ -978,10 +1084,16 @@
                 <div class="flex items-center gap-2">
                     <input type="text" id="filter-rep13-search" oninput="applyReport13Filters()" placeholder="Tìm tên khách hàng, mã KH, MST..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep13-ar-aging-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột tuổi nợ AR">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep13-ar-aging-table" data-table-title="Báo Cáo Công Nợ Phải Thu & Tuổi Nợ">
                     <thead>
                         <tr>
                             <th onclick="toggleReport13Sort('customer_name')" class="cursor-pointer">Khách Hàng</th>
@@ -1055,10 +1167,16 @@
                     </select>
                     <input type="text" id="filter-rep14-search" oninput="applyReport14Filters()" placeholder="Tìm biển số, tài xế, khách, mã chuyến..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600">
+                    <button type="button" onclick="openColumnCustomizer('rep14-unsettled-aging-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột tuổi đơn tồn đọng">
+                        <i class="ph-bold ph-columns text-teal-700"></i>
+                        <span>Cột</span>
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap">
+                <table class="erp-table whitespace-nowrap" id="rep14-unsettled-aging-table" data-table-title="Báo Cáo Tuổi Đơn Tồn Chưa Quyết Toán">
                     <thead>
                         <tr>
                             <th onclick="toggleReport14Sort('trip_code')" class="cursor-pointer">Mã Chuyến</th>
