@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.7.3] - 2026-10-05 (Bổ Sung Ghi Chú Điều Khoản & 3 Mẫu In Báo Giá Chuẩn Doanh Nghiệp Triền Võ)
+
+### 1. Bổ Sung Mục "3. Ghi Chú & Điều Khoản Báo Giá" (Quotation Notes & Terms):
+- **Cơ sở dữ liệu & API:** Thêm các trường `notes`, `template_type`, `contact_person`, `contact_phone`, `contact_email`, `cargo_type`, `valid_until` vào model `Quotation`.
+- **Form Báo Giá (`modal_quotation.html`):**
+  * Tích hợp thêm Card 3: "3. Ghi Chú, Điều Khoản & Mẫu In Báo Giá Ký Kết" ngay sau mục "2. Đơn Giá Cước & Sản Lượng Kế Hoạch".
+  * Hỗ trợ các nút chọn nhanh mẫu ghi chú: Kéo Cont FCL, Xe Tải FTL, Điều chỉnh theo giá dầu Diesel.
+  * Tích hợp nút bấm "Xem & In Báo Giá" trực tiếp từ modal lập báo giá.
+
+### 2. Thiết Kế & Kích Hoạt 3 Kiểu Mẫu In Báo Giá Ký Kết Doanh Nghiệp (`modal_quotation_print.html`):
+- **Mẫu 1: Tiêu Chuẩn Doanh Nghiệp (TVL Standard):** Đầy đủ Quốc hiệu, Tiêu ngữ, Logo TVL, Bảng cước vận chuyển, Doanh thu kế toán bằng số & chữ (`numberToWordsVN`), Điều khoản thương mại chi tiết & 2 vị trí chữ ký (Đại diện Khách hàng & Đại diện TVL).
+- **Mẫu 2: Bảng Cước & Khung Đối Tác (To / From Matrix):** Định dạng 2 cột Người gửi - Người nhận rõ ràng, ma trận tải trọng & tuyến đường.
+- **Mẫu 3: Chi Tiết Dịch Vụ Dự Án (ETA / ETD):** Bảng chi tiết dịch vụ vận tải, lịch trình và ký duyệt Giám đốc.
+- **Công cụ chuyển đổi mẫu in:** Cho phép chuyển đổi nhanh 3 kiểu mẫu in trực tiếp trên thanh công cụ xem trước.
+- **Tối ưu in ấn:** Thiết lập `@media print` trang A4 sắc nét, tự động ẩn thanh điều hướng và giao diện web.
+- **Nút In trên bảng:** Bổ sung nút In Báo Giá (`ph-bold ph-printer`) trên từng dòng bảng Báo giá Kinh doanh.
+- **Kiểm thử tự động:** Thêm `QuotationEnterprisePrintAPITest`, **77/77 Unit Tests PASSED (100%)**.
+
+---
+
 ## [2.7.2] - 2026-10-05 (Kiểm Soát Máy Trạng Thái & Khóa Nút Báo Mốc Tiến Độ Zero-Jump & Completed Lock)
 
 ### 1. Khóa Cứng Mốc Khi Chuyến Xe Hoàn Tất (COMPLETED Lock):
