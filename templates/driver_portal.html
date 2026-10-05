@@ -2223,15 +2223,75 @@
       link.click();
       document.body.removeChild(link);
 
-      showToast("✓ Đã tạo file lịch hẹn (.ics)! Bác tài mở file để lưu vào Lịch/Báo thức điện thoại.", true);
+    // 9. HỖ TRỢ OFFLINE KHI MẤT SÓNG 4G & TỰ ĐỘNG ĐỒNG BỘ (OFFLINE QUEUE SYNC)
+    const OFFLINE_QUEUE_KEY = `driver_offline_queue_${TRIP_HASH}`;
+
+    function queueOfflineAction(actionType, payload) {
+      try {
+        const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+        queue.push({
+          actionType,
+          payload,
+          timestamp: new Date().toISOString()
+        });
+        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+        showToast("📦 Đã lưu thao tác ngoại tuyến. Sẽ tự động gửi lại ngay khi có sóng 4G!", true);
+      } catch (e) {
+        console.error("Queue offline error", e);
+      }
     }
 
-    // 9. HỖ TRỢ OFFLINE KHI MẤT SÓNG 4G
+    async function syncOfflineQueue() {
+      if (!navigator.onLine) return;
+      try {
+        const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+        if (!queue || queue.length === 0) return;
+
+        showToast("⚡ Đang tự động gửi lại các mốc đã lưu ngoại tuyến...", true);
+        const remaining = [];
+
+        for (const item of queue) {
+          if (item.actionType === 'milestone') {
+            try {
+              const res = await fetch(`/api/trips/${TRIP_HASH}/milestones/`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Trip-Hash': TRIP_HASH,
+                  'X-CSRFToken': getCsrfToken() || ''
+                },
+                body: JSON.stringify(item.payload)
+              });
+              if (!res.ok) remaining.push(item);
+            } catch (err) {
+              remaining.push(item);
+            }
+          } else {
+            remaining.push(item);
+          }
+        }
+
+        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remaining));
+        if (remaining.length === 0) {
+          showToast("✓ Đã đồng bộ toàn bộ dữ liệu ngoại tuyến thành công!", true);
+          setTimeout(() => window.location.reload(), 1200);
+        }
+      } catch (e) {
+        console.error("Sync error", e);
+      }
+    }
+
     window.addEventListener('online', () => {
-      showToast("⚡ Đã kết nối lại mạng 4G! Hệ thống sẵn sàng.", true);
+      showToast("⚡ Đã kết nối lại mạng 4G! Đang kiểm tra dữ liệu cần đồng bộ...", true);
+      syncOfflineQueue();
     });
     window.addEventListener('offline', () => {
-      showToast("⚠️ Mất sóng 4G. Vui lòng di chuyển tới nơi có mạng để gửi dữ liệu.", false);
+      showToast("⚠️ Bác tài đang mất sóng 4G. Mọi thao tác sẽ được lưu tạm và gửi tự động khi có mạng.", false);
+    });
+
+    // Tự động rà soát hàng đợi khi mở portal
+    document.addEventListener('DOMContentLoaded', () => {
+      if (navigator.onLine) syncOfflineQueue();
     });
   </script>
 </body>

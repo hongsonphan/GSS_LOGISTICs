@@ -9621,6 +9621,7 @@ function switchMasterDataTab(tabKey) {
     currentMasterDataTab = tabKey;
     masterDataPagination.currentPage = 1;
 
+    // 1. Highlight Sub-tab button
     document.querySelectorAll('.md-tab-btn').forEach(btn => {
         btn.classList.remove('active', 'border-teal-600', 'text-teal-800');
         btn.classList.add('border-transparent', 'text-slate-500');
@@ -9629,6 +9630,17 @@ function switchMasterDataTab(tabKey) {
     if (activeBtn) {
         activeBtn.classList.add('active', 'border-teal-600', 'text-teal-800');
         activeBtn.classList.remove('border-transparent', 'text-slate-500');
+    }
+
+    // 2. Highlight Top KPI Pill
+    document.querySelectorAll('.md-kpi-pill').forEach(pill => {
+        pill.classList.remove('ring-2', 'ring-teal-600', 'bg-teal-50/60', 'border-teal-400');
+        pill.classList.add('bg-white', 'border-slate-200');
+    });
+    const activePill = document.querySelector(`[data-md-pill="${tabKey}"]`);
+    if (activePill) {
+        activePill.classList.remove('bg-white', 'border-slate-200');
+        activePill.classList.add('ring-2', 'ring-teal-600', 'bg-teal-50/60', 'border-teal-400');
     }
 
     const labels = {

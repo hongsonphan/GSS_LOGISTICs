@@ -7,6 +7,9 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.personnel.models import Employee
 
+from django.utils.http import url_has_allowed_host_and_scheme
+import json
+
 @never_cache
 @csrf_exempt
 def login_view(request):
@@ -16,7 +19,12 @@ def login_view(request):
     Hỗ trợ xác thực kép: Django Session Cookie + JWT Access Token.
     @csrf_exempt đảm bảo người dùng và demo roles không bị chặn bởi lỗi 403 CSRF token mismatch khi chuyển tài khoản hoặc bấm nút Back.
     """
-    next_url = request.GET.get('next') or request.POST.get('next') or '/'
+    raw_next_url = request.GET.get('next') or request.POST.get('next') or '/'
+    # Bảo vệ chống Open Redirect & XSS
+    if raw_next_url and url_has_allowed_host_and_scheme(raw_next_url, allowed_hosts={request.get_host()}):
+        next_url = raw_next_url
+    else:
+        next_url = '/'
 
     if request.user.is_authenticated:
         return redirect(next_url)
@@ -49,24 +57,27 @@ def login_view(request):
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
 
+            # JSON dumps an toàn tuyệt đối, chống XSS injection
+            safe_access = json.dumps(access_token)
+            safe_refresh = json.dumps(refresh_token)
+            safe_redirect_target = json.dumps(next_url)
+
             # Trả về trang trung gian lưu token vào localStorage và chuyển tiếp
-            html_redirect = f"""
-            <!DOCTYPE html>
-            <html lang="vi">
-            <head>
-                <meta charset="UTF-8">
-                <title>Đang đăng nhập...</title>
-                <script>
-                    localStorage.setItem('access_token', '{access_token}');
-                    localStorage.setItem('refresh_token', '{refresh_token}');
-                    window.location.href = "{next_url}";
-                </script>
-            </head>
-            <body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0fdfa; color: #0d9488;">
-                <p>Đăng nhập thành công. Đang tải không gian làm việc...</p>
-            </body>
-            </html>
-            """
+            html_redirect = f"""<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đang đăng nhập...</title>
+    <script>
+        localStorage.setItem('access_token', {safe_access});
+        localStorage.setItem('refresh_token', {safe_refresh});
+        window.location.href = {safe_redirect_target};
+    </script>
+</head>
+<body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0fdfa; color: #0d9488;">
+    <p>Đăng nhập thành công. Đang tải không gian làm việc...</p>
+</body>
+</html>"""
             return HttpResponse(html_redirect)
         else:
             return render(request, 'login.html', {

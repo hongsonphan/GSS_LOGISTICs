@@ -1,5 +1,7 @@
 import os
+import io
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
 
 ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.pdf']
@@ -61,6 +63,57 @@ def validate_uploaded_document(file_obj, max_size=MAX_UPLOAD_SIZE_BYTES):
             raise ValidationError("Tệp ảnh bị lỗi cấu trúc, không thể mở hoặc đọc được.")
 
     return True
+
+def optimize_and_resize_image(file_obj, max_dimension=1920, quality=85):
+    """
+    Tự động nén và thu nhỏ ảnh chụp POD/EIR từ điện thoại tài xế:
+    - Giữ tỷ lệ khung hình, giới hạn chiều dài/rộng tối đa max_dimension (1920px).
+    - Nén JPEG chất lượng cao 85% để đọc rõ chữ ký & mã cont nhưng dung lượng < 1MB.
+    """
+    ext = os.path.splitext(file_obj.name)[1].lower()
+    if ext not in ['.jpg', '.jpeg', '.png']:
+        return file_obj
+
+    try:
+        file_obj.seek(0)
+        img = Image.open(file_obj)
+
+        # Chuyển đổi RGBA sang RGB nếu là JPEG
+        if img.mode in ('RGBA', 'P') and ext in ['.jpg', '.jpeg']:
+            img = img.convert('RGB')
+
+        # Thu nhỏ nếu kích thước vượt quá max_dimension
+        width, height = img.size
+        if width > max_dimension or height > max_dimension:
+            if width > height:
+                new_width = max_dimension
+                new_height = int(height * (max_dimension / width))
+            else:
+                new_height = max_dimension
+                new_width = int(width * (max_dimension / height))
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+        output = io.BytesIO()
+        if ext == '.png':
+            img.save(output, format='PNG', optimize=True)
+            content_type = 'image/png'
+        else:
+            img.save(output, format='JPEG', quality=quality, optimize=True)
+            content_type = 'image/jpeg'
+
+        output.seek(0)
+        optimized_file = InMemoryUploadedFile(
+            output,
+            'file',
+            file_obj.name,
+            content_type,
+            output.getbuffer().nbytes,
+            None
+        )
+        return optimized_file
+    except Exception:
+        file_obj.seek(0)
+        return file_obj
 
 def sanitize_filename(filename):
     """Làm sạch tên file, chống tấn công Directory Traversal (../) và ký tự đặc biệt."""

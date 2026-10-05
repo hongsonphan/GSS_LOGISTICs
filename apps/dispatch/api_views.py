@@ -1,6 +1,6 @@
 import datetime
 import os
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -1947,27 +1947,32 @@ class TripSettleExpensesAPIView(APIView):
         accountant = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or \
                      Employee.objects.filter(role=EmployeeRole.ACCOUNTANT).first() or trip.dispatcher
 
-        trip.is_expenses_settled = True
-        trip.settled_at = timezone.now()
-        trip.settled_by = accountant
-        trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by'])
+        with transaction.atomic():
+            locked_trip = DispatchTrip.objects.select_for_update().filter(id=trip.id).first()
+            if not locked_trip:
+                return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Cập nhật toàn bộ các khoản chi sang SETTLED
-        trip.expenses.filter(is_deleted=False).update(
-            status=ApprovalStatus.SETTLED,
-            approved_at=timezone.now(),
-            approved_by=accountant
-        )
+            locked_trip.is_expenses_settled = True
+            locked_trip.settled_at = timezone.now()
+            locked_trip.settled_by = accountant
+            locked_trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by'])
 
-        trip.update_financials()
+            # Cập nhật toàn bộ các khoản chi sang SETTLED
+            locked_trip.expenses.filter(is_deleted=False).update(
+                status=ApprovalStatus.SETTLED,
+                approved_at=timezone.now(),
+                approved_by=accountant
+            )
+
+            locked_trip.update_financials()
 
         return Response({
             'success': True,
-            'message': f'Kế toán đã chốt sổ chi phí cho chuyến xe {trip.trip_code} thành công!',
-            'settled_at': trip.settled_at.strftime('%H:%M %d/%m/%Y'),
+            'message': f'Kế toán đã chốt sổ chi phí cho chuyến xe {locked_trip.trip_code} thành công!',
+            'settled_at': locked_trip.settled_at.strftime('%H:%M %d/%m/%Y'),
             'settled_by': accountant.nickname or accountant.full_name if accountant else 'Kế toán',
-            'cached_expense': trip.cached_expense,
-            'cached_profit': trip.cached_profit,
+            'cached_expense': locked_trip.cached_expense,
+            'cached_profit': locked_trip.cached_profit,
         })
 
 class TripUnsettleExpensesAPIView(APIView):
@@ -1979,23 +1984,28 @@ class TripUnsettleExpensesAPIView(APIView):
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
-        trip.is_expenses_settled = False
-        trip.settled_at = None
-        trip.settled_by = None
-        trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by'])
+        with transaction.atomic():
+            locked_trip = DispatchTrip.objects.select_for_update().filter(id=trip.id).first()
+            if not locked_trip:
+                return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Mở khóa các khoản chi phí trở lại APPROVED
-        trip.expenses.filter(status=ApprovalStatus.SETTLED).update(
-            status=ApprovalStatus.APPROVED
-        )
+            locked_trip.is_expenses_settled = False
+            locked_trip.settled_at = None
+            locked_trip.settled_by = None
+            locked_trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by'])
 
-        trip.update_financials()
+            # Mở khóa các khoản chi phí trở lại APPROVED
+            locked_trip.expenses.filter(status=ApprovalStatus.SETTLED).update(
+                status=ApprovalStatus.APPROVED
+            )
+
+            locked_trip.update_financials()
 
         return Response({
             'success': True,
-            'message': f'Đã mở khóa sổ kế toán cho chuyến xe {trip.trip_code}. Chi phí có thể chỉnh sửa.',
-            'cached_expense': trip.cached_expense,
-            'cached_profit': trip.cached_profit,
+            'message': f'Đã mở khóa sổ kế toán cho chuyến xe {locked_trip.trip_code}. Chi phí có thể chỉnh sửa.',
+            'cached_expense': locked_trip.cached_expense,
+            'cached_profit': locked_trip.cached_profit,
         })
 
 class TripAddDocumentAPIView(APIView):
@@ -2044,10 +2054,12 @@ class TripAddDocumentAPIView(APIView):
 
         created_docs = []
         from django.core.files.storage import default_storage
+        from core.validators import validate_uploaded_document, sanitize_filename, optimize_and_resize_image
         for idx, ufile in enumerate(uploaded_files):
             try:
                 validate_uploaded_document(ufile)
-                saved_name = default_storage.save(f"documents/{trip.trip_code}_{sanitize_filename(ufile.name)}", ufile)
+                optimized_ufile = optimize_and_resize_image(ufile)
+                saved_name = default_storage.save(f"documents/{trip.trip_code}_{sanitize_filename(optimized_ufile.name)}", optimized_ufile)
                 file_path_str = f"/media/{saved_name}"
                 title_str = doc_name if len(uploaded_files) == 1 else f"{doc_name} (#{idx+1})"
                 doc = TripDocument.objects.create(

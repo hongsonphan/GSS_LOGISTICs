@@ -84,7 +84,7 @@ class AccountingAdvancesAPIView(APIView):
         # 2. Tạm Ứng Chuyến Cho Tài Xế
         driver_advances_qs = DriverTripAdvance.objects.filter(is_deleted=False).select_related(
             'trip', 'trip__customer', 'trip__vehicle', 'driver', 'dispatcher_fund', 'settled_by'
-        ).order_by('-advance_date', '-id')
+        ).prefetch_related('trip__expenses').order_by('-advance_date', '-id')
 
         driver_advances_data = []
         total_driver_advance_amount = 0
@@ -96,9 +96,12 @@ class AccountingAdvancesAPIView(APIView):
 
         for a in driver_advances_qs:
             # Lấy tổng chi phí thực tế của chuyến (nếu chưa chốt)
-            trip_expenses_sum = sum(
-                e.amount for e in a.trip.expenses.filter(is_deleted=False)
-            ) if a.trip else 0
+            if a.trip:
+                trip_expenses_sum = sum(
+                    e.amount for e in a.trip.expenses.all() if not e.is_deleted
+                )
+            else:
+                trip_expenses_sum = 0
 
             # Nếu đã settled thì lấy theo a.actual_spent, nếu chưa thì tạm tính theo trip_expenses_sum
             actual_spent = int(a.actual_spent) if a.status == DriverAdvanceStatus.SETTLED else int(trip_expenses_sum)
@@ -278,37 +281,38 @@ class DispatcherFundActionAPIView(APIView):
     permission_classes = [IsAccountant]
 
     def post(self, request, pk):
-        fund = DispatcherAdvanceFund.objects.filter(id=pk, is_deleted=False).first()
-        if not fund:
-            return Response({'error': 'Không tìm thấy phiếu tạm ứng quỹ'}, status=status.HTTP_404_NOT_FOUND)
-
         action = request.data.get('action') # approve, settle, reject
         notes = request.data.get('notes', '').strip()
         curr_emp = getattr(request.user, 'employee', None)
 
-        if action == 'approve':
-            if fund.status != FundStatus.PENDING:
-                return Response({'error': f'Phiếu đang ở trạng thái "{fund.get_status_display()}", không thể duyệt lại'}, status=status.HTTP_400_BAD_REQUEST)
-            fund.status = FundStatus.APPROVED
-            fund.approved_by = curr_emp
-            fund.approved_at = timezone.now()
-            fund.save()
-            return Response({'success': True, 'message': f'Đã duyệt xuất quỹ {fund.code} số tiền {fund.amount:,} đ'})
+        with transaction.atomic():
+            fund = DispatcherAdvanceFund.objects.select_for_update().filter(id=pk, is_deleted=False).first()
+            if not fund:
+                return Response({'error': 'Không tìm thấy phiếu tạm ứng quỹ'}, status=status.HTTP_404_NOT_FOUND)
 
-        elif action == 'settle':
-            if fund.status != FundStatus.APPROVED:
-                return Response({'error': 'Chỉ có thể quyết toán hoàn ứng quỹ đang lưu hành (APPROVED)'}, status=status.HTTP_400_BAD_REQUEST)
-            fund.status = FundStatus.SETTLED
-            fund.settled_by = curr_emp
-            fund.settled_at = timezone.now()
-            fund.settlement_notes = notes or 'Kế toán đã nhận đủ chứng từ và thu hồi số dư hoàn ứng về công ty.'
-            fund.save()
-            return Response({'success': True, 'message': f'Đã quyết toán hoàn tất quỹ điều vận {fund.code} về công ty'})
+            if action == 'approve':
+                if fund.status != FundStatus.PENDING:
+                    return Response({'error': f'Phiếu đang ở trạng thái "{fund.get_status_display()}", không thể duyệt lại'}, status=status.HTTP_400_BAD_REQUEST)
+                fund.status = FundStatus.APPROVED
+                fund.approved_by = curr_emp
+                fund.approved_at = timezone.now()
+                fund.save()
+                return Response({'success': True, 'message': f'Đã duyệt xuất quỹ {fund.code} số tiền {fund.amount:,} đ'})
 
-        elif action == 'reject':
-            fund.status = FundStatus.REJECTED
-            fund.save()
-            return Response({'success': True, 'message': f'Đã từ chối cấp quỹ {fund.code}'})
+            elif action == 'settle':
+                if fund.status != FundStatus.APPROVED:
+                    return Response({'error': 'Chỉ có thể quyết toán hoàn ứng quỹ đang lưu hành (APPROVED)'}, status=status.HTTP_400_BAD_REQUEST)
+                fund.status = FundStatus.SETTLED
+                fund.settled_by = curr_emp
+                fund.settled_at = timezone.now()
+                fund.settlement_notes = notes or 'Kế toán đã nhận đủ chứng từ và thu hồi số dư hoàn ứng về công ty.'
+                fund.save()
+                return Response({'success': True, 'message': f'Đã quyết toán hoàn tất quỹ điều vận {fund.code} về công ty'})
+
+            elif action == 'reject':
+                fund.status = FundStatus.REJECTED
+                fund.save()
+                return Response({'success': True, 'message': f'Đã từ chối cấp quỹ {fund.code}'})
 
         return Response({'error': 'Thao tác không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -327,15 +331,6 @@ class DriverAdvanceCreateAPIView(APIView):
         advance_source = request.data.get('advance_source', AdvanceSourceType.DISPATCHER_FUND)
         purpose = request.data.get('purpose', 'Chi phí cầu đường BOT, nâng hạ, cược cont').strip()
         notes = request.data.get('notes', '').strip()
-
-        trip = DispatchTrip.objects.filter(id=trip_id, is_deleted=False).first()
-        if not trip:
-            return Response({'error': 'Vui lòng chọn chuyến xe hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
-
-        driver = Employee.objects.filter(id=driver_id, is_deleted=False).first() if driver_id else trip.driver
-        if not driver:
-            return Response({'error': 'Chuyến xe này chưa được gán tài xế nhận tạm ứng'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             amount = int(str(amount_raw).replace('.', '').replace(',', '').strip())
         except (ValueError, TypeError):
@@ -343,20 +338,6 @@ class DriverAdvanceCreateAPIView(APIView):
 
         if amount <= 0:
             return Response({'error': 'Số tiền tạm ứng chuyến phải lớn hơn 0 đ'}, status=status.HTTP_400_BAD_REQUEST)
-
-        fund = None
-        if advance_source == AdvanceSourceType.DISPATCHER_FUND:
-            if dispatcher_fund_id:
-                fund = DispatcherAdvanceFund.objects.filter(id=dispatcher_fund_id, is_deleted=False, status=FundStatus.APPROVED).first()
-            else:
-                # Tự động lấy quỹ điều vận đang còn dư khả dụng
-                fund = DispatcherAdvanceFund.objects.filter(status=FundStatus.APPROVED, is_deleted=False).first()
-
-            if not fund:
-                return Response({'error': 'Không tìm thấy Quỹ Điều Vận khả dụng để trích tiền. Vui lòng chọn "Công ty chi trực tiếp" hoặc tạo Quỹ Điều Vận mới.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if fund.remaining_balance < amount:
-                return Response({'error': f'Số dư Quỹ Điều Vận ({fund.code}) chỉ còn {fund.remaining_balance:,} đ, không đủ để tạm ứng {amount:,} đ'}, status=status.HTTP_400_BAD_REQUEST)
 
         advance_date = timezone.now().date()
         if advance_date_raw:
@@ -375,6 +356,28 @@ class DriverAdvanceCreateAPIView(APIView):
         code = f"{date_prefix}-{seq:04d}"
 
         with transaction.atomic():
+            trip = DispatchTrip.objects.select_for_update().filter(id=trip_id, is_deleted=False).first()
+            if not trip:
+                return Response({'error': 'Vui lòng chọn chuyến xe hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+
+            driver = Employee.objects.filter(id=driver_id, is_deleted=False).first() if driver_id else trip.driver
+            if not driver:
+                return Response({'error': 'Chuyến xe này chưa được gán tài xế nhận tạm ứng'}, status=status.HTTP_400_BAD_REQUEST)
+
+            fund = None
+            if advance_source == AdvanceSourceType.DISPATCHER_FUND:
+                if dispatcher_fund_id:
+                    fund = DispatcherAdvanceFund.objects.select_for_update().filter(id=dispatcher_fund_id, is_deleted=False, status=FundStatus.APPROVED).first()
+                else:
+                    # Tự động lấy quỹ điều vận đang còn dư khả dụng
+                    fund = DispatcherAdvanceFund.objects.select_for_update().filter(status=FundStatus.APPROVED, is_deleted=False).first()
+
+                if not fund:
+                    return Response({'error': 'Không tìm thấy Quỹ Điều Vận khả dụng để trích tiền. Vui lòng chọn "Công ty chi trực tiếp" hoặc tạo Quỹ Điều Vận mới.'}, status=status.HTTP_400_BAD_REQUEST)
+
+                if fund.remaining_balance < amount:
+                    return Response({'error': f'Số dư Quỹ Điều Vận ({fund.code}) chỉ còn {fund.remaining_balance:,} đ, không đủ để tạm ứng {amount:,} đ'}, status=status.HTTP_400_BAD_REQUEST)
+
             advance = DriverTripAdvance.objects.create(
                 code=code,
                 trip=trip,
@@ -407,46 +410,45 @@ class DriverAdvanceSettleAPIView(APIView):
     permission_classes = [IsDispatcherOrAccountant]
 
     def post(self, request, pk):
-        advance = DriverTripAdvance.objects.filter(id=pk, is_deleted=False).select_related('trip', 'driver', 'dispatcher_fund').first()
-        if not advance:
-            return Response({'error': 'Không tìm thấy phiếu tạm ứng chuyến'}, status=status.HTTP_404_NOT_FOUND)
-
-        if advance.status == DriverAdvanceStatus.SETTLED:
-            return Response({'error': 'Phiếu tạm ứng này đã được quyết toán hoàn ứng trước đó'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Lấy số tiền thực chi từ request hoặc tự động tính từ các khoản TripExpense của chuyến
-        actual_spent_raw = request.data.get('actual_spent')
-        settlement_notes = request.data.get('settlement_notes', '').strip()
-
-        if actual_spent_raw is not None and str(actual_spent_raw).strip() != '':
-            try:
-                actual_spent = int(str(actual_spent_raw).replace('.', '').replace(',', '').strip())
-            except ValueError:
-                return Response({'error': 'Số tiền thực tế chi không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            # Tự động tính từ các hóa đơn chứng từ đã tạo trên chuyến
-            trip_expenses = advance.trip.expenses.filter(is_deleted=False)
-            actual_spent = int(sum(e.amount for e in trip_expenses))
-
-        advance_amt = int(advance.amount)
-        diff = advance_amt - actual_spent
-
-        refund_amount = 0
-        reimburse_amount = 0
-        if diff > 0:
-            # Tạm ứng nhiều hơn thực chi -> Tài xế trả lại tiền thừa
-            diff_type = SettlementDiffType.DRIVER_REFUND
-            refund_amount = diff
-        elif diff < 0:
-            # Thực chi nhiều hơn tạm ứng -> Cty / Điều vận chi bù thêm
-            diff_type = SettlementDiffType.COMPANY_REIMBURSE
-            reimburse_amount = abs(diff)
-        else:
-            diff_type = SettlementDiffType.BALANCED
-
-        curr_emp = getattr(request.user, 'employee', None)
-
         with transaction.atomic():
+            advance = DriverTripAdvance.objects.select_for_update().filter(id=pk, is_deleted=False).first()
+            if not advance:
+                return Response({'error': 'Không tìm thấy phiếu tạm ứng chuyến'}, status=status.HTTP_404_NOT_FOUND)
+
+            if advance.status == DriverAdvanceStatus.SETTLED:
+                return Response({'error': 'Phiếu tạm ứng này đã được quyết toán hoàn ứng trước đó'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Lấy số tiền thực chi từ request hoặc tự động tính từ các khoản TripExpense của chuyến
+            actual_spent_raw = request.data.get('actual_spent')
+            settlement_notes = request.data.get('settlement_notes', '').strip()
+
+            if actual_spent_raw is not None and str(actual_spent_raw).strip() != '':
+                try:
+                    actual_spent = int(str(actual_spent_raw).replace('.', '').replace(',', '').strip())
+                except ValueError:
+                    return Response({'error': 'Số tiền thực tế chi không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # Tự động tính từ các hóa đơn chứng từ đã tạo trên chuyến
+                trip_expenses = advance.trip.expenses.filter(is_deleted=False)
+                actual_spent = int(sum(e.amount for e in trip_expenses))
+
+            advance_amt = int(advance.amount)
+            diff = advance_amt - actual_spent
+
+            refund_amount = 0
+            reimburse_amount = 0
+            if diff > 0:
+                # Tạm ứng nhiều hơn thực chi -> Tài xế trả lại tiền thừa
+                diff_type = SettlementDiffType.DRIVER_REFUND
+                refund_amount = diff
+            elif diff < 0:
+                # Thực chi nhiều hơn tạm ứng -> Cty / Điều vận chi bù thêm
+                diff_type = SettlementDiffType.COMPANY_REIMBURSE
+                reimburse_amount = abs(diff)
+            else:
+                diff_type = SettlementDiffType.BALANCED
+
+            curr_emp = getattr(request.user, 'employee', None)
             advance.status = DriverAdvanceStatus.SETTLED
             advance.actual_spent = actual_spent
             advance.settlement_diff_type = diff_type

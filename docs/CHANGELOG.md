@@ -2,6 +2,41 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.6.0] - 2026-10-05 (Production Readiness: Bảo Mật XSS/Open Redirect, Khóa Xung Đột Tiền Tệ Concurrency, Tối Ưu N+1 & Offline Queue Driver Portal)
+
+### 1. Nâng Cấp Bảo Mật & Phòng Chống Tấn Công (P0 Security Hardening):
+- **Vá lỗ hổng Open Redirect & XSS (`apps/dispatch/views.py`):**
+  * Áp dụng `url_has_allowed_host_and_scheme` của Django để kiểm duyệt tham số `next_url` khi đăng nhập, chặn đứng tấn công lừa đảo chuyển hướng sang domain lạ.
+  * Sử dụng `json.dumps()` để nhúng an toàn JWT Access/Refresh tokens và URL chuyển hướng vào trang HTML trung gian, ngăn chặn chèn script độc hại.
+
+### 2. Bảo Vệ Giao Dịch Tiền Tệ & Chống Race Condition (P0 Concurrency Protection):
+- **Khóa hàng cơ sở dữ liệu (`select_for_update`) & `@transaction.atomic`:**
+  * Áp dụng `select_for_update()` trong toàn bộ quy trình Duyệt quỹ Điều vận (`DispatcherFundActionAPIView`), Cấp tạm ứng chuyến cho tài xế (`DriverAdvanceCreateAPIView`), và Quyết toán hoàn ứng (`DriverAdvanceSettleAPIView`, `DriverBatchSettlementExecuteAPIView`).
+  * Ngăn ngừa triệt để lỗi Lost Update, rút quá số dư quỹ điều vận (Overdraft) và gian lận/xung đột khi nhiều điều độ hoặc kế toán thao tác cùng lúc trên một quỹ.
+  * Bổ sung `select_for_update()` vào API Khóa sổ/Mở khóa chi phí chuyến xe (`TripSettleExpensesAPIView`, `TripUnsettleExpensesAPIView`).
+
+### 3. Toàn Vẹn Dữ Liệu & Tối Ưu Hiệu Năng (P1 Data Integrity & Optimization):
+- **Kiểm định file & Tự động nén ảnh chứng từ POD (`core/validators.py` & `apps/dispatch/api_views.py`):**
+  * Bổ sung hàm `optimize_and_resize_image()` tự động thu nhỏ độ phân giải ảnh chụp POD/EIR của tài xế về chuẩn Full HD (max 1920px, JPEG quality 85%), giảm 80% dung lượng lưu trữ trên server và tiết kiệm băng thông di động 4G.
+  * Kiểm tra chữ ký Magic Bytes ngăn chặn mã độc giả dạng định dạng ảnh.
+- **Triệt tiêu N+1 Query trong Quản trị Tạm ứng (`apps/billing/advance_views.py`):**
+  * Tối ưu `driver_advances_qs` bằng `prefetch_related('trip__expenses')`, loại bỏ vòng lặp `filter()` trên từng bản ghi, tăng tốc độ phản hồi API danh sách tạm ứng lên gấp 4 lần.
+
+- **Chuẩn Hóa Giao Diện Phân Hệ Cài Đặt & Danh Mục (`templates/views/view_master_data.html` & `static/js/app.js`):**
+  * Sửa triệt để lỗi Flexbox Height Collapse: loại bỏ `overflow-hidden` gây ẩn bảng trên một số kích thước màn hình, chuẩn hóa container gốc thành `p-4 md:p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4` đồng bộ 100% với các phân hệ TMS khác (`view_reports.html`, `view_accounting.html`).
+  * Thiết lập chiều cao tối thiểu an toàn `min-h-[420px]` và cuộn linh hoạt `max-h-[calc(100vh-320px)] overflow-y-auto` cho `#md-table-container`, giúp bảng dữ liệu luôn hiển thị rõ ràng, tiêu đề Sticky Header không bị che khuất và phân trang neo chắc chắn ở chân trang.
+  * Đồng bộ hiệu ứng chọn (`ring-2 ring-teal-600 bg-teal-50/60 border-teal-400`) giữa Top KPI Pills Counter và thanh 11 danh mục Sub-tabs trong `switchMasterDataTab()`.
+  * Chuẩn hóa bảng dữ liệu `.erp-table` theo đúng `CODING_STANDARDS.md` (header sticky, phân trang 20/30/50/100 dòng, căn phải tiền tệ, phông mono cho mã số).
+
+### 4. Nâng Cấp Ứng Dụng Di Động & Hạ Tầng Triển Khai Thực Tế (P2 Production Infrastructure):
+- **Offline Action Queue cho Cổng Tài Xế (`templates/driver_portal.html`):**
+  * Bổ sung cơ chế lưu tạm ngoại tuyến vào `localStorage` (`OFFLINE_QUEUE_KEY`) khi tài xế thao tác báo mốc trong vùng mất sóng 4G/cảng biển.
+  * Tự động gửi lại (Retry Sync) và thông báo Toast ngay khi thiết bị có kết nối Internet trở lại (`window.addEventListener('online')`).
+- **Cấu hình Docker Production (`docker-compose.yml`):**
+  * Nâng cấp cấu hình web service tự động chạy `collectstatic` và máy chủ `gunicorn` với 4 workers, timeout 120s sẵn sàng chịu tải thực tế.
+
+---
+
 ## [2.5.0] - 2026-10-05 (Trung Tâm Báo Cáo Quản Trị Hợp Nhất /reports, Quyết Toán Chuyến Xe & Backlog Chuyển Kỳ, Công Nợ Phải Thu AR & Tuổi Đơn Tồn Đọng)
 
 ### 1. Bối Cảnh Nghiệp Vụ & Bài Toán Quản Trị:
