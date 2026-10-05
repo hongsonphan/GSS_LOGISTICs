@@ -8678,6 +8678,11 @@ async function submitSettleAdvanceForm(e) {
             showToast('success', data.message, 'Quyết Toán Hoàn Ứng Thành Công');
             closeSettleAdvanceModal();
             loadAccountingAdvancesData();
+            if (data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code) {
+                setTimeout(() => {
+                    openCashVoucherModal(data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code);
+                }, 300);
+            }
         } else {
             showToast('danger', data.error || 'Không thể quyết toán');
         }

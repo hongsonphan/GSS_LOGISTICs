@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 
 from core.security import GracefulJWTAuthentication
-from core.permissions import IsAccountant
+from core.permissions import IsAccountant, IsDispatcherOrAccountant
 from apps.billing.models import (
     TripExpense,
     ReimbursementStatus,
@@ -440,7 +440,7 @@ class CashBookDetailAPIView(APIView):
     API Chi Tiết Phiếu Thu / Phiếu Chi (Xem & In Chứng Từ Mẫu 01-TT / 02-TT).
     """
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
-    permission_classes = [IsAccountant]
+    permission_classes = [IsDispatcherOrAccountant]
 
     def get(self, request, pk):
         try:

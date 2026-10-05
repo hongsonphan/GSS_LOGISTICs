@@ -473,13 +473,79 @@ class DriverAdvanceSettleAPIView(APIView):
                 advance.trip.advance_settlement_status = 'SETTLED'
                 advance.trip.save(update_fields=['advance_settlement_status'])
 
+            # Tự động lập Phiếu Thu / Phiếu Chi vào Sổ Quỹ
+            today_date = timezone.now().date()
+            if diff > 0:
+                tx_type = TransactionType.INFLOW
+                tx_category = CashFlowCategory.ADVANCE_REFUND
+                tx_amount = refund_amount
+                tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
+                partner_name = advance.driver.full_name if advance.driver else 'Tài xế'
+                tx_notes = f"Thu hoàn ứng tiền thừa chuyến {advance.trip.trip_code}: {advance.code}"
+            elif diff < 0:
+                tx_type = TransactionType.OUTFLOW
+                tx_category = CashFlowCategory.ADVANCE_REIMBURSE
+                tx_amount = reimburse_amount
+                tx_prefix = f"PC-{today_date.strftime('%Y%m')}"
+                partner_name = advance.driver.full_name if advance.driver else 'Tài xế'
+                tx_notes = f"Chi bù vượt ứng chuyến {advance.trip.trip_code}: {advance.code}"
+            else:
+                tx_type = TransactionType.INFLOW
+                tx_category = CashFlowCategory.ADVANCE_REFUND
+                tx_amount = 0
+                tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
+                partner_name = advance.driver.full_name if advance.driver else 'Tài xế'
+                tx_notes = f"Thu hoàn ứng đối soát cân bằng (0 đ) chuyến {advance.trip.trip_code}: {advance.code}"
+
+            last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
+            seq = 1
+            if last_tx and last_tx.code.split('-')[-1].isdigit():
+                seq = int(last_tx.code.split('-')[-1]) + 1
+            cash_tx_code = f"{tx_prefix}-{seq:04d}"
+
+            cash_tx = CashTransaction.objects.create(
+                code=cash_tx_code,
+                transaction_type=tx_type,
+                payment_method=PaymentMethod.BANK,
+                category=tx_category,
+                amount=tx_amount,
+                transaction_date=today_date,
+                partner_type='DRIVER',
+                partner_name=partner_name,
+                ref_code=advance.trip.trip_code,
+                created_by=curr_emp,
+                notes=settlement_notes or tx_notes
+            )
+
         return Response({
             'success': True,
             'message': f'Đã quyết toán hoàn ứng chuyến {advance.code} thành công!',
             'difference': diff,
             'diff_type': diff_type,
             'refund_amount': refund_amount,
-            'reimburse_amount': reimburse_amount
+            'reimburse_amount': reimburse_amount,
+            'cash_transaction_id': cash_tx.id,
+            'cash_transaction_code': cash_tx.code,
+            'cash_transaction': {
+                'id': cash_tx.id,
+                'code': cash_tx.code,
+                'transaction_type': cash_tx.transaction_type,
+                'transaction_type_label': cash_tx.get_transaction_type_display(),
+                'payment_method': cash_tx.payment_method,
+                'payment_method_label': cash_tx.get_payment_method_display(),
+                'category': cash_tx.category,
+                'category_label': cash_tx.get_category_display(),
+                'amount': int(cash_tx.amount),
+                'transaction_date': cash_tx.transaction_date.strftime('%d/%m/%Y'),
+                'transaction_date_iso': cash_tx.transaction_date.strftime('%Y-%m-%d'),
+                'day': cash_tx.transaction_date.strftime('%d'),
+                'month': cash_tx.transaction_date.strftime('%m'),
+                'year': cash_tx.transaction_date.strftime('%Y'),
+                'partner_name': cash_tx.partner_name,
+                'ref_code': cash_tx.ref_code,
+                'created_by': (cash_tx.created_by.nickname or cash_tx.created_by.full_name) if cash_tx.created_by else '',
+                'notes': cash_tx.notes
+            }
         })
 
 
@@ -733,8 +799,9 @@ class DriverBatchSettlementExecuteAPIView(APIView):
             # 5. Xử lý Chênh lệch toàn đợt vào Sổ Quỹ Thu Chi
             net_diff = total_advance_all - total_spent_all # >0: thu lại tiền thừa, <0: chi trả bù
             cash_tx_code = ''
+            cash_tx = None
 
-            if auto_create_cash and net_diff != 0:
+            if auto_create_cash:
                 today_date = now.date()
                 if net_diff > 0:
                     # Thu tiền thừa từ tài xế
@@ -742,16 +809,24 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                     tx_category = CashFlowCategory.ADVANCE_REFUND
                     tx_amount = net_diff
                     tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
-                    partner_name = (trips.first().driver.full_name if trips.first().driver else 'Tài xế')
+                    partner_name = (trips.first().driver.full_name if (trips.first() and trips.first().driver) else 'Tài xế')
                     tx_notes = f"Thu hoàn ứng tiền thừa quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
-                else:
+                elif net_diff < 0:
                     # Chi bù tiền vượt ứng cho tài xế
                     tx_type = TransactionType.OUTFLOW
                     tx_category = CashFlowCategory.ADVANCE_REIMBURSE
                     tx_amount = abs(net_diff)
                     tx_prefix = f"PC-{today_date.strftime('%Y%m')}"
-                    partner_name = (trips.first().driver.full_name if trips.first().driver else 'Tài xế')
+                    partner_name = (trips.first().driver.full_name if (trips.first() and trips.first().driver) else 'Tài xế')
                     tx_notes = f"Chi bù vượt ứng quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
+                else:
+                    # net_diff == 0: Phiếu thu hoàn ứng cân bằng / đối soát 0 đ
+                    tx_type = TransactionType.INFLOW
+                    tx_category = CashFlowCategory.ADVANCE_REFUND
+                    tx_amount = 0
+                    tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
+                    partner_name = (trips.first().driver.full_name if (trips.first() and trips.first().driver) else 'Tài xế')
+                    tx_notes = f"Thu hoàn ứng đối soát cân bằng (0 đ) quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
 
                 last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
                 seq = 1

@@ -214,3 +214,19 @@ class DriverBatchSettlementTests(TestCase):
         res_code = self.client.get(url_by_code)
         self.assertEqual(res_code.status_code, status.HTTP_200_OK)
         self.assertEqual(res_code.data['transaction']['id'], tx.id)
+
+    def test_single_driver_advance_settle_creates_voucher(self):
+        """Kiểm tra quyết toán 1 phiếu hoàn ứng đơn lẻ tự động sinh phiếu thu/chi và trả về cash_transaction."""
+        self.client.force_authenticate(user=self.accountant_user)
+        url = f'/api/accounting/driver-advances/{self.adv1.id}/settle/'
+        payload = {
+            'actual_spent': 400000,
+            'settlement_notes': 'Quyết toán đơn lẻ test'
+        }
+        res = self.client.post(url, data=payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data['success'])
+        self.assertIn('cash_transaction', res.data)
+        self.assertIn('cash_transaction_id', res.data)
+        self.assertEqual(res.data['cash_transaction']['amount'], 600000) # 1,000,000 - 400,000 = 600,000 thừa
+        self.assertEqual(res.data['cash_transaction']['transaction_type'], 'INFLOW')
