@@ -2462,6 +2462,7 @@ class SalesAPIView(APIView):
 
             q_results.append({
                 'id': q.id,
+                'hashid': q.hashid,
                 'code': q.quotation_code,
                 'customer': q.customer.name,
                 'customer_id': q.customer.id,
@@ -2874,7 +2875,16 @@ class QuotationDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Báo Giá."""
     permission_classes = [IsSalesOrDirector]
     def get(self, request, pk):
-        q = Quotation.objects.filter(pk=pk, is_deleted=False).select_related('customer').prefetch_related('items').first()
+        from core.security import decode_quotation_hashid
+        q = None
+        if isinstance(pk, int) or (isinstance(pk, str) and pk.isdigit()):
+            q = Quotation.objects.filter(pk=int(pk), is_deleted=False).select_related('customer').prefetch_related('items').first()
+        elif isinstance(pk, str):
+            decoded_id = decode_quotation_hashid(pk)
+            if decoded_id:
+                q = Quotation.objects.filter(pk=decoded_id, is_deleted=False).select_related('customer').prefetch_related('items').first()
+            if not q:
+                q = Quotation.objects.filter(quotation_code=pk, is_deleted=False).select_related('customer').prefetch_related('items').first()
         if not q:
             return Response({'error': 'Không tìm thấy báo giá'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -2896,6 +2906,7 @@ class QuotationDetailAPIView(APIView):
 
         return Response({
             'id': q.id,
+            'hashid': q.hashid,
             'quotation_code': q.quotation_code,
             'customer_id': q.customer.id,
             'customer_name': q.customer.name,

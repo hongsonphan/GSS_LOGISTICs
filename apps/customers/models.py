@@ -153,6 +153,12 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
             return sum((it.unit_price * it.expected_trips_monthly) for it in items)
         return self.unit_price * self.expected_trips_monthly
 
+    @property
+    def hashid(self):
+        """Mã hoá id thành hashid an toàn cho định tuyến URL."""
+        from core.security import get_quotation_hashid
+        return get_quotation_hashid(self.id)
+
     def __str__(self):
         return f"[{self.quotation_code}] {self.customer.name} - {self.route_description}"
 

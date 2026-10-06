@@ -6087,6 +6087,422 @@ async function saveQuotation(e) {
     }
 }
 
+// =========================================================================
+// TOÀN BỘ LOGIC MÀN HÌNH BÁO GIÁ DẠNG TRANG RIÊNG BIỆT (DEDICATED FULL-PAGE VIEW)
+// URL Chuẩn: /sales/quotations/<hashid>
+// =========================================================================
+
+let currentActiveFullpageQuotation = null;
+
+function onFullpageQuotationPricingMethodChange(method) {
+    const fuelBox = document.getElementById('fullpage-quote-fuel-box');
+    if (fuelBox) {
+        if (method === 'FUEL_ADJUSTED') {
+            fuelBox.classList.remove('hidden');
+            updateFullpageFuelFormulaText();
+        } else {
+            fuelBox.classList.add('hidden');
+        }
+    }
+}
+
+function updateFullpageFuelFormulaText() {
+    const basePrice = parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000;
+    const step = parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000;
+    const ratio = parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 3.5;
+    const formulaEl = document.getElementById('fullpage-quote-fuel-formula-display');
+    if (formulaEl) {
+        formulaEl.innerText = `Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi ${new Intl.NumberFormat('vi-VN').format(step)} đ/lít so với giá cơ sở (${new Intl.NumberFormat('vi-VN').format(basePrice)} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng ${ratio}%.`;
+    }
+}
+
+function setFullpageQuickQuoteNote(type) {
+    const noteEl = document.getElementById('fullpage-quote-notes');
+    if (noteEl && DEFAULT_QUOTATION_NOTES[type]) {
+        noteEl.value = DEFAULT_QUOTATION_NOTES[type];
+    }
+}
+
+function addFullpageQuotationRouteRow(data = {}) {
+    const tbody = document.getElementById('fullpage-quote-routes-tbody');
+    if (!tbody) return;
+
+    const rowIdx = tbody.children.length + 1;
+    const routeDesc = data.route_description || data.route || '';
+    const cargoType = data.cargo_type || document.getElementById('fullpage-quote-cargo-type')?.value || 'Cont 40HC';
+    const estKm = data.estimated_km !== undefined ? data.estimated_km : 30;
+    const unitPrice = data.unit_price !== undefined ? data.unit_price : 3800000;
+    const trips = data.expected_trips_monthly !== undefined ? data.expected_trips_monthly : (data.monthly_trips || 20);
+    const lineTotal = Number(unitPrice) * Number(trips);
+
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50/80 transition-colors fullpage-quote-route-row';
+    tr.innerHTML = `
+        <td class="p-3 text-center font-bold text-slate-500 fullpage-row-stt">${rowIdx}</td>
+        <td class="p-3">
+            <input type="text" value="${escapeHtml(routeDesc)}" placeholder="VD: CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG" required
+                class="fullpage-item-route w-full h-8.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-900 text-xs">
+        </td>
+        <td class="p-3">
+            <select class="fullpage-item-cargo w-full h-8.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600">
+                <option value="Cont 40HC" ${cargoType === 'Cont 40HC' ? 'selected' : ''}>Cont 40HC</option>
+                <option value="Cont 20GP" ${cargoType === 'Cont 20GP' ? 'selected' : ''}>Cont 20GP</option>
+                <option value="Cont 45ft" ${cargoType === 'Cont 45ft' ? 'selected' : ''}>Cont 45ft</option>
+                <option value="Cont Flatrack / Lạnh" ${cargoType.includes('Flatrack') ? 'selected' : ''}>Cont Flatrack/RF</option>
+                <option value="Xe tải 5 tấn" ${cargoType.includes('5 tấn') ? 'selected' : ''}>Xe tải 5T</option>
+                <option value="Xe tải 10 tấn" ${cargoType.includes('10 tấn') ? 'selected' : ''}>Xe tải 10T</option>
+                <option value="Xe tải 15 tấn" ${cargoType.includes('15 tấn') ? 'selected' : ''}>Xe tải 15T</option>
+                <option value="Hàng rời / FTL" ${cargoType.includes('Hàng rời') ? 'selected' : ''}>Hàng rời / FTL</option>
+            </select>
+        </td>
+        <td class="p-3 text-center">
+            <input type="number" step="10" min="0" value="${estKm}" 
+                class="fullpage-item-km w-20 h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs text-center tabular-nums">
+        </td>
+        <td class="p-3 text-right">
+            <input type="text" inputmode="numeric" value="${formatNumberVN(unitPrice)}" oninput="calculateFullpageQuotationItemsTotal()" placeholder="0"
+                class="fullpage-item-price input-number-vn w-32 h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-teal-800 text-xs text-right tabular-nums">
+        </td>
+        <td class="p-3 text-center">
+            <input type="text" inputmode="numeric" value="${formatNumberVN(trips)}" oninput="calculateFullpageQuotationItemsTotal()" placeholder="1"
+                class="fullpage-item-trips input-number-vn w-24 h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-mono font-bold text-slate-800 text-xs text-center tabular-nums">
+        </td>
+        <td class="p-3 text-right font-black text-teal-900 font-mono tabular-nums fullpage-item-line-total text-xs">
+            ${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ
+        </td>
+        <td class="p-3 text-center">
+            <button type="button" onclick="removeFullpageQuotationRouteRow(this)" title="Xóa tuyến này"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">
+                <i class="ph-bold ph-trash text-sm"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+
+    const priceInput = tr.querySelector('.fullpage-item-price');
+    const tripsInput = tr.querySelector('.fullpage-item-trips');
+    if (priceInput) attachAutoNumberFormat(priceInput, () => calculateFullpageQuotationItemsTotal());
+    if (tripsInput) attachAutoNumberFormat(tripsInput, () => calculateFullpageQuotationItemsTotal());
+
+    calculateFullpageQuotationItemsTotal();
+}
+
+function removeFullpageQuotationRouteRow(button) {
+    const tbody = document.getElementById('fullpage-quote-routes-tbody');
+    if (!tbody) return;
+    const tr = button.closest('tr');
+    if (tr) tr.remove();
+
+    if (tbody.children.length === 0) {
+        addFullpageQuotationRouteRow({ route_description: '', unit_price: 3800000, expected_trips_monthly: 10 });
+    } else {
+        Array.from(tbody.children).forEach((row, idx) => {
+            const sttEl = row.querySelector('.fullpage-row-stt');
+            if (sttEl) sttEl.innerText = idx + 1;
+        });
+        calculateFullpageQuotationItemsTotal();
+    }
+}
+
+function calculateFullpageQuotationItemsTotal() {
+    const tbody = document.getElementById('fullpage-quote-routes-tbody');
+    if (!tbody) return;
+
+    let totalRevenue = 0;
+    let totalTrips = 0;
+    const rows = Array.from(tbody.querySelectorAll('tr.fullpage-quote-route-row'));
+
+    rows.forEach(row => {
+        const priceInput = row.querySelector('.fullpage-item-price');
+        const tripsInput = row.querySelector('.fullpage-item-trips');
+        const lineTotalEl = row.querySelector('.fullpage-item-line-total');
+
+        const price = parseNumberVN(priceInput?.value) || 0;
+        const trips = parseNumberVN(tripsInput?.value) || 0;
+        const lineTotal = price * trips;
+
+        if (lineTotalEl) {
+            lineTotalEl.innerText = `${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ`;
+        }
+        totalRevenue += lineTotal;
+        totalTrips += trips;
+    });
+
+    const badgeEl = document.getElementById('fullpage-quote-routes-count-badge');
+    if (badgeEl) badgeEl.innerText = `${rows.length} tuyến`;
+
+    const tripsLabel = document.getElementById('fullpage-quote-total-trips-label');
+    if (tripsLabel) tripsLabel.innerText = `${new Intl.NumberFormat('vi-VN').format(totalTrips)} chuyến/tháng`;
+
+    const revEl = document.getElementById('fullpage-quote-preview-revenue');
+    if (revEl) {
+        revEl.innerText = `${new Intl.NumberFormat('vi-VN').format(totalRevenue)} đ`;
+    }
+}
+
+async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
+    await loadMasterDataFormOptions();
+    populateMasterDataDropdowns();
+
+    const form = document.getElementById('form-fullpage-quotation');
+    if (form) form.reset();
+
+    const routesTbody = document.getElementById('fullpage-quote-routes-tbody');
+    if (routesTbody) routesTbody.innerHTML = '';
+
+    const idInput = document.getElementById('fullpage-quote-id');
+    const hashidInput = document.getElementById('fullpage-quote-hashid');
+    const codeEl = document.getElementById('fullpage-quote-code');
+    const statusBadge = document.getElementById('fullpage-quote-status-badge');
+    const customerEl = document.getElementById('fullpage-quote-customer');
+    const dateEl = document.getElementById('fullpage-quote-date');
+
+    if (codeEl) codeEl.innerText = 'Đang tải...';
+    if (statusBadge) statusBadge.innerText = 'Vui lòng chờ';
+
+    try {
+        const res = await fetchWithAuth(`/api/quotations/${quoteIdentifier}/`);
+        if (!res.ok) throw new Error('Không thể tải chi tiết báo giá');
+        const q = await res.json();
+        currentActiveFullpageQuotation = q;
+
+        const quoteHash = q.hashid || q.id;
+        if (idInput) idInput.value = q.id;
+        if (hashidInput) hashidInput.value = quoteHash;
+        if (codeEl) codeEl.innerText = q.quotation_code || `BG-${q.id}`;
+        if (dateEl) dateEl.innerText = q.created_at || '--/--/----';
+
+        // Cập nhật URL chuẩn Semantic Path kèm HashID bảo mật: /sales/quotations/<hashid>
+        if (updateHistory && window.history && window.history.pushState) {
+            const quotePath = `/sales/quotations/${quoteHash}`;
+            if (window.location.pathname !== quotePath) {
+                window.history.pushState({ view: 'quotation-detail', quoteIdentifier: quoteHash }, '', quotePath);
+            }
+        }
+
+        // Lưu vết view trước đó để nút Quay lại hoạt động chuẩn xác
+        const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+        if (currentActiveView && currentActiveView.id !== 'view-quotation-detail') {
+            previousActiveTab = currentActiveView.id.replace('view-', '');
+        }
+
+        // Ẩn tất cả view, hiện view-quotation-detail
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+        const detailView = document.getElementById('view-quotation-detail');
+        if (detailView) detailView.classList.remove('hidden-view');
+
+        // Điền dữ liệu vào form
+        if (customerEl) setSelectValueCaseInsensitive(customerEl, q.customer_name);
+
+        const methodEl = document.getElementById('fullpage-quote-pricing-method');
+        if (methodEl) methodEl.value = q.pricing_method || 'MULTI_ROUTE';
+
+        const p0Input = document.getElementById('fullpage-quote-base-fuel-price');
+        if (p0Input) p0Input.value = formatNumberVN(q.base_fuel_price || 21000);
+        const stepInput = document.getElementById('fullpage-quote-fuel-step');
+        if (stepInput) stepInput.value = formatNumberVN(q.fuel_step_vnd || 1000);
+        const ratioInput = document.getElementById('fullpage-quote-fuel-ratio');
+        if (ratioInput) ratioInput.value = q.fuel_ratio_percent || 3.5;
+
+        onFullpageQuotationPricingMethodChange(q.pricing_method || 'MULTI_ROUTE');
+
+        const statusEl = document.getElementById('fullpage-quote-status');
+        if (statusEl) statusEl.value = q.status;
+
+        // Cập nhật badge trạng thái trên topbar
+        if (statusBadge) {
+            statusBadge.innerText = q.status_display || q.status;
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' +
+                (q.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                 q.status === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                 q.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                 'bg-teal-50 text-teal-800 border-teal-200');
+        }
+
+        const tplEl = document.getElementById('fullpage-quote-template-type');
+        if (tplEl) tplEl.value = q.template_type || 'STANDARD';
+        const cargoEl = document.getElementById('fullpage-quote-cargo-type');
+        if (cargoEl) cargoEl.value = q.cargo_type || 'Container 40HC / Hàng tổng hợp';
+        const contactPersonEl = document.getElementById('fullpage-quote-contact-person');
+        if (contactPersonEl) contactPersonEl.value = q.contact_person || '';
+        const contactPhoneEl = document.getElementById('fullpage-quote-contact-phone');
+        if (contactPhoneEl) contactPhoneEl.value = q.contact_phone || '';
+        const contactEmailEl = document.getElementById('fullpage-quote-contact-email');
+        if (contactEmailEl) contactEmailEl.value = q.contact_email || '';
+        const validUntilEl = document.getElementById('fullpage-quote-valid-until');
+        if (validUntilEl) validUntilEl.value = q.valid_until || '';
+        const notesEl = document.getElementById('fullpage-quote-notes');
+        if (notesEl) notesEl.value = q.notes || DEFAULT_QUOTATION_NOTES.fcl;
+
+        if (q.items && q.items.length > 0) {
+            q.items.forEach(it => addFullpageQuotationRouteRow(it));
+        } else {
+            addFullpageQuotationRouteRow({
+                route_description: q.route_description,
+                cargo_type: q.cargo_type || 'Cont 40HC',
+                estimated_km: q.estimated_km || 30,
+                unit_price: q.unit_price || 3800000,
+                expected_trips_monthly: q.expected_trips_monthly || 10
+            });
+        }
+
+        initAllNumberInputs();
+    } catch (err) {
+        console.error('Lỗi tải chi tiết báo giá trang riêng:', err);
+        showToast('error', 'Không thể tải thông tin báo giá', 'Lỗi');
+        backToQuotations();
+    }
+}
+
+function backToQuotations() {
+    const detailView = document.getElementById('view-quotation-detail');
+    if (detailView) detailView.classList.add('hidden-view');
+
+    if (previousActiveTab && previousActiveTab !== 'quotation-detail') {
+        switchTab(previousActiveTab, true);
+    } else {
+        switchTab('kinh-doanh', true);
+    }
+}
+
+function copyQuotationPageLink() {
+    const quoteHash = document.getElementById('fullpage-quote-hashid')?.value || document.getElementById('fullpage-quote-id')?.value;
+    if (!quoteHash) {
+        showToast('warning', 'Không tìm thấy mã báo giá để sao chép', 'Cảnh Báo');
+        return;
+    }
+    const fullUrl = `${window.location.origin}/sales/quotations/${quoteHash}`;
+    navigator.clipboard.writeText(fullUrl).then(() => {
+        showToast('success', `Đã sao chép link báo giá:\n${fullUrl}`, 'Thành Công');
+    }).catch(() => {
+        prompt('Sao chép link báo giá:', fullUrl);
+    });
+}
+
+function printQuotationFromFullPage() {
+    if (currentActiveFullpageQuotation) {
+        openQuotationPrintModal(currentActiveFullpageQuotation);
+    } else {
+        const id = document.getElementById('fullpage-quote-id')?.value;
+        if (id) openQuotationPrintModal(id);
+    }
+}
+
+async function saveFullpageQuotation(e) {
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
+    const id = document.getElementById('fullpage-quote-id')?.value;
+    const customer = document.getElementById('fullpage-quote-customer')?.value?.trim();
+    const pricingMethod = document.getElementById('fullpage-quote-pricing-method')?.value || 'MULTI_ROUTE';
+    const baseFuelPrice = parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000;
+    const fuelStep = parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000;
+    const fuelRatio = parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 3.5;
+    const statusVal = document.getElementById('fullpage-quote-status')?.value || 'NEGOTIATING';
+    const templateType = document.getElementById('fullpage-quote-template-type')?.value || 'STANDARD';
+    const cargoType = document.getElementById('fullpage-quote-cargo-type')?.value || 'Container 40HC / Hàng tổng hợp';
+    const contactPerson = document.getElementById('fullpage-quote-contact-person')?.value?.trim() || '';
+    const contactPhone = document.getElementById('fullpage-quote-contact-phone')?.value?.trim() || '';
+    const contactEmail = document.getElementById('fullpage-quote-contact-email')?.value?.trim() || '';
+    const validUntil = document.getElementById('fullpage-quote-valid-until')?.value || '';
+    const notes = document.getElementById('fullpage-quote-notes')?.value || '';
+
+    if (!customer) {
+        showToast('warning', 'Vui lòng chọn khách hàng hợp lệ trong danh mục!', 'Thiếu Thông Tin');
+        return;
+    }
+
+    const rows = Array.from(document.querySelectorAll('#fullpage-quote-routes-tbody tr.fullpage-quote-route-row'));
+    const items = [];
+    rows.forEach(row => {
+        const route = row.querySelector('.fullpage-item-route')?.value?.trim();
+        const cargo = row.querySelector('.fullpage-item-cargo')?.value || cargoType;
+        const km = parseInt(row.querySelector('.fullpage-item-km')?.value) || 0;
+        const price = parseNumberVN(row.querySelector('.fullpage-item-price')?.value) || 0;
+        const trips = parseNumberVN(row.querySelector('.fullpage-item-trips')?.value) || 1;
+
+        if (route) {
+            items.push({
+                route_description: route,
+                cargo_type: cargo,
+                estimated_km: km,
+                unit_price: price,
+                expected_trips_monthly: trips
+            });
+        }
+    });
+
+    if (items.length === 0) {
+        showToast('warning', 'Vui lòng nhập ít nhất 1 tuyến đường báo giá hợp lệ!', 'Thiếu Thông Tin');
+        return;
+    }
+
+    const submitBtn = document.getElementById('btn-fullpage-save-quote');
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-base"></i> <span>Đang lưu...</span>';
+    }
+
+    try {
+        let res;
+        const payload = {
+            customer: customer,
+            pricing_method: pricingMethod,
+            base_fuel_price: baseFuelPrice,
+            fuel_step_vnd: fuelStep,
+            fuel_ratio_percent: fuelRatio,
+            status: statusVal,
+            template_type: templateType,
+            cargo_type: cargoType,
+            contact_person: contactPerson,
+            contact_phone: contactPhone,
+            contact_email: contactEmail,
+            valid_until: validUntil,
+            notes: notes,
+            items: items,
+            route_description: items[0].route_description,
+            unit_price: items[0].unit_price,
+            expected_trips_monthly: items[0].expected_trips_monthly,
+            monthly_trips: items[0].expected_trips_monthly,
+            estimated_km: items[0].estimated_km
+        };
+
+        if (id) {
+            res = await fetchWithAuth(`/api/quotations/${id}/`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+        } else {
+            payload.action = 'create_quotation';
+            res = await fetchWithAuth('/api/sales/', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        }
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi lưu báo giá');
+
+        showToast('success', data.message || 'Lưu báo giá thành công!', 'Thành Công');
+        // Làm mới dữ liệu ngầm
+        if (typeof loadSalesData === 'function') loadSalesData();
+
+        // Cập nhật lại view với dữ liệu mới
+        if (id) {
+            viewQuotationDetail(id, false);
+        }
+    } catch (err) {
+        console.error('Lỗi lưu báo giá trang riêng:', err);
+        showToast('error', err.message || 'Không thể lưu báo giá', 'Lỗi');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+    }
+}
+
 let currentPrintingQuotation = null;
 
 async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
@@ -6493,6 +6909,19 @@ window.printQuotationVoucher = printQuotationVoucher;
 window.openQuotationPrintModal = openQuotationPrintModal;
 window.closeQuotationPrintModal = closeQuotationPrintModal;
 window.switchQuotationPrintTemplate = switchQuotationPrintTemplate;
+
+// Các hàm cho trang riêng Báo giá
+window.viewQuotationDetail = viewQuotationDetail;
+window.backToQuotations = backToQuotations;
+window.addFullpageQuotationRouteRow = addFullpageQuotationRouteRow;
+window.removeFullpageQuotationRouteRow = removeFullpageQuotationRouteRow;
+window.calculateFullpageQuotationItemsTotal = calculateFullpageQuotationItemsTotal;
+window.onFullpageQuotationPricingMethodChange = onFullpageQuotationPricingMethodChange;
+window.updateFullpageFuelFormulaText = updateFullpageFuelFormulaText;
+window.setFullpageQuickQuoteNote = setFullpageQuickQuoteNote;
+window.copyQuotationPageLink = copyQuotationPageLink;
+window.printQuotationFromFullPage = printQuotationFromFullPage;
+window.saveFullpageQuotation = saveFullpageQuotation;
 
 function onBookingTypeChange() {
     const type = document.getElementById('booking-type')?.value;
@@ -7558,12 +7987,16 @@ function renderQuotationsTable(quotations) {
             methodBadge = `<span class="text-amber-800 font-semibold text-xs">Giá Dầu</span>`;
         }
 
+        const quoteHash = s.hashid || s.id;
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors';
         tr.innerHTML = `
             <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">
                 <div class="flex flex-col">
-                    <span>${formatCodeCompact(s.code)}</span>
+                    <a href="/sales/quotations/${quoteHash}" onclick="event.preventDefault(); viewQuotationDetail('${quoteHash}');" 
+                        class="hover:text-teal-700 hover:underline transition-colors cursor-pointer" title="Mở trang toàn màn hình: /sales/quotations/${quoteHash}">
+                        ${formatCodeCompact(s.code)}
+                    </a>
                     ${methodBadge ? `<div class="mt-0.5">${methodBadge}</div>` : ''}
                 </div>
             </td>
@@ -7578,22 +8011,27 @@ function renderQuotationsTable(quotations) {
             </td>
             <td class="p-3.5 text-center">
                 <div class="flex items-center justify-center space-x-1.5">
-                    <!-- 1. In Báo Giá Chuẩn Doanh Nghiệp -->
-                    <button onclick="openQuotationPrintModal(${s.id})" title="In Báo Giá Ký Kết" 
+                    <!-- 1. Mở Trang Toàn Màn Hình -->
+                    <button onclick="viewQuotationDetail('${quoteHash}')" title="Mở trang báo giá riêng biệt (Toàn màn hình)" 
                         class="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 hover:text-teal-900 border border-teal-200 transition-colors">
+                        <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                    </button>
+                    <!-- 2. In Báo Giá Chuẩn Doanh Nghiệp -->
+                    <button onclick="openQuotationPrintModal(${s.id})" title="In Báo Giá Ký Kết" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-colors">
                         <i class="ph-bold ph-printer text-sm"></i>
                     </button>
-                    <!-- 2. Xem chi tiết Báo Giá (Chế độ chỉ đọc) -->
-                    <button onclick="openModalQuotation(${s.id}, true)" title="Xem chi tiết báo giá" 
+                    <!-- 3. Xem chi tiết Báo Giá dạng Modal -->
+                    <button onclick="openModalQuotation(${s.id}, true)" title="Xem chi tiết báo giá (Cửa sổ Pop-up)" 
                         class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors">
                         <i class="ph-bold ph-eye text-sm"></i>
                     </button>
-                    <!-- 3. Sửa Báo Giá (Chế độ chỉnh sửa) -->
+                    <!-- 4. Sửa Báo Giá -->
                     <button onclick="openModalQuotation(${s.id}, false)" title="Chỉnh sửa báo giá" 
                         class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 transition-colors">
                         <i class="ph-bold ph-pencil-simple text-sm"></i>
                     </button>
-                    <!-- 4. Xóa Báo Giá -->
+                    <!-- 5. Xóa Báo Giá -->
                     <button onclick="deleteQuotation(${s.id})" title="Xóa báo giá" 
                         class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors">
                         <i class="ph-bold ph-trash text-sm"></i>
@@ -16588,6 +17026,20 @@ function resolveInitialRoute() {
         viewTripDetail(tripIdentifier, false);
         if (window.history && window.history.replaceState) {
             window.history.replaceState({ view: 'trip-detail', tripIdentifier }, '', `/dispatch/trips/${tripIdentifier}`);
+        }
+        return;
+    }
+
+    // 1.1. Kiểm tra deep-link chi tiết báo giá trang riêng: /sales/quotations/<hashid>
+    const quoteMatch = pathname.match(/^\/sales\/quotations\/([a-zA-Z0-9_-]+)/) || (hash.startsWith('quotation/') ? hash.match(/^quotation\/([a-zA-Z0-9_-]+)/) : null);
+    if (quoteMatch && quoteMatch[1]) {
+        const quoteIdentifier = quoteMatch[1];
+        switchTab('kinh-doanh', false);
+        if (typeof viewQuotationDetail === 'function') {
+            viewQuotationDetail(quoteIdentifier, false);
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'quotation-detail', quoteIdentifier }, '', `/sales/quotations/${quoteIdentifier}`);
         }
         return;
     }

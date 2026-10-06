@@ -29,8 +29,20 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * Hỗ trợ kéo thả co giãn linh hoạt (`resize-y`), font chữ rõ nét (`text-xs sm:text-[13px] font-mono leading-relaxed`).
   * Các nút mẫu nhanh (Kéo Cont FCL, Xe Tải FTL, Theo Giá Dầu) được nâng kích thước nút bấm (`px-2 py-0.5 text-xs font-bold`) dễ bấm hơn.
 
-### 3. Đồng Bộ Hệ Thống & Kiểm Thử:
-- Đồng bộ hoàn chỉnh giữa `static/js/modules/sales.js`, `static/js/app.js` và `templates/components/modal_quotation.html`.
+### 3. Phân Hệ Chi Tiết Báo Giá Dạng Trang Riêng Biệt (Dedicated Full-Page View):
+- **Kiến trúc Clean Semantic URL & HashID:**
+  * Hỗ trợ mở Báo Giá thành một trang toàn màn hình với URL chuyên nghiệp: `https://logistics.bim.info.vn/sales/quotations/<hashid>` (hoặc theo mã `BG.YYMM.NNN`).
+  * Tích hợp HashID bảo mật hai chiều (`get_quotation_hashid`, `decode_quotation_hashid`) trên model `Quotation` và endpoint API `QuotationDetailAPIView`.
+  * Deep-link trực tiếp: Khi truy cập link hoặc chia sẻ đường dẫn cho đồng nghiệp, hệ thống tự động phân giải URL và load toàn bộ dữ liệu báo giá vào chế độ Full-Page.
+- **Giao diện làm việc rộng rãi & trực quan (Dedicated Workspace):**
+  * Tệp template riêng biệt: [templates/views/view_quotation_detail.html](file:///E:/Bim_Logistics/templates/views/view_quotation_detail.html).
+  * Header thanh thoát kèm nút "Quay Lại", nút "Sao Chép Link" trực tiếp, nút "Xem & In A4", và nút "Lưu Thay Đổi".
+  * Bảng ma trận đa tuyến mở rộng toàn màn hình giúp nhập hàng chục tuyến đường cho khách hàng không bị chật chội.
+  * Khung soạn thảo Ghi chú & Điều khoản thương mại rộng thoáng (9 dòng mặc định, hỗ trợ kéo giãn).
+  * Tích hợp nút mở nhanh tại bảng danh sách Báo giá (icon `ph-arrow-square-out`) và mã báo giá trở thành link bấm trực tiếp.
+
+### 4. Đồng Bộ Hệ Thống & Kiểm Thử:
+- Đồng bộ hoàn chỉnh giữa `static/js/modules/sales.js`, `static/js/modules/reports.js`, `static/js/app.js`, `config/urls.py`, và `templates/index.html`.
 - Đảm bảo 100% cú pháp JS không lỗi (`node -c`).
 - 86/86 Unit & System Tests PASSED 100%.
 

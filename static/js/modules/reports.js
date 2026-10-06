@@ -2958,6 +2958,20 @@ function resolveInitialRoute() {
         return;
     }
 
+    // 1.1. Kiểm tra deep-link chi tiết báo giá trang riêng: /sales/quotations/<hashid>
+    const quoteMatch = pathname.match(/^\/sales\/quotations\/([a-zA-Z0-9_-]+)/) || (hash.startsWith('quotation/') ? hash.match(/^quotation\/([a-zA-Z0-9_-]+)/) : null);
+    if (quoteMatch && quoteMatch[1]) {
+        const quoteIdentifier = quoteMatch[1];
+        switchTab('kinh-doanh', false);
+        if (typeof viewQuotationDetail === 'function') {
+            viewQuotationDetail(quoteIdentifier, false);
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'quotation-detail', quoteIdentifier }, '', `/sales/quotations/${quoteIdentifier}`);
+        }
+        return;
+    }
+
     // 2. Chuyển đổi tương thích ngược: nếu người dùng vào từ link cũ có hash (#dieu-van, #kinh-doanh...)
     if (hash) {
         const cleanHash = hash.replace(/^\/+/, '');

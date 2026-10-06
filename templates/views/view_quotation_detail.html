@@ -1,0 +1,352 @@
+<!-- 6.1 VIEW CHI TIẾT BÁO GIÁ TUYẾN CƯỚC (DEDICATED FULL-PAGE VIEW) -->
+<div id="view-quotation-detail" class="view hidden-view h-full flex flex-col bg-slate-50 overflow-hidden relative animate-fade-in">
+    <!-- Top Header Bar -->
+    <div class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-10 shadow-xs shrink-0">
+        <div class="flex items-center min-w-0">
+            <button type="button" onclick="backToQuotations()"
+                class="mr-3.5 p-2 hover:bg-slate-100 rounded-xl text-slate-500 hover:text-slate-800 transition-colors bg-slate-50 border border-slate-200 inline-flex items-center justify-center cursor-pointer shadow-2xs"
+                title="Quay lại danh sách báo giá & kinh doanh">
+                <i class="ph-bold ph-arrow-left text-lg"></i>
+            </button>
+            <div class="min-w-0">
+                <div class="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-heading tracking-tight" id="fullpage-quote-code">BG-XXXX</h2>
+                    <span id="fullpage-quote-status-badge"
+                        class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider bg-slate-100 text-slate-700 font-heading">
+                        Đang tải...
+                    </span>
+                    <span id="fullpage-quote-pricing-badge"
+                        class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                        Ma trận đa tuyến
+                    </span>
+                </div>
+                <p class="text-xs font-semibold text-slate-500 mt-0.5 flex items-center truncate">
+                    <span>Khách hàng:</span>
+                    <strong class="ml-1 text-slate-900 font-heading truncate max-w-[280px] sm:max-w-md" id="fullpage-quote-customer">...</strong>
+                    <span class="mx-2 text-slate-300">·</span>
+                    <span id="fullpage-quote-date" class="text-slate-500 font-medium">--/--/----</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Cụm Nút Hành Động Header -->
+        <div class="flex items-center space-x-2 shrink-0">
+            <!-- 1. Sao chép link trang -->
+            <button type="button" onclick="copyQuotationPageLink()"
+                class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading"
+                title="Sao chép đường dẫn trực tiếp của báo giá này để gửi đồng nghiệp">
+                <i class="ph-bold ph-link mr-1.5 text-sm text-teal-700"></i>
+                <span class="hidden sm:inline">Sao Chép Link</span>
+            </button>
+
+            <!-- 2. Nút Xem & In A4 -->
+            <button type="button" onclick="printQuotationFromFullPage()"
+                class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading"
+                title="Xem bản in A4 chuẩn doanh nghiệp và in ấn">
+                <i class="ph-bold ph-printer mr-1.5 text-sm text-teal-400"></i>
+                <span>Xem & In A4</span>
+            </button>
+
+            <!-- 3. Nút Lưu Báo Giá -->
+            <button type="button" id="btn-fullpage-save-quote" onclick="saveFullpageQuotation(event)"
+                class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-check-circle mr-1.5 text-base"></i>
+                <span id="btn-fullpage-save-text">Lưu Thay Đổi</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Scrollable Form Body -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/60">
+        <div class="max-w-7xl mx-auto space-y-4">
+            
+            <form id="form-fullpage-quotation" onsubmit="saveFullpageQuotation(event); return false;" novalidate class="space-y-4">
+                <input type="hidden" id="fullpage-quote-id" value="">
+                <input type="hidden" id="fullpage-quote-hashid" value="">
+
+                <!-- CARD 1: THÔNG TIN KHÁCH HÀNG & PHƯƠNG THỨC ĐỊNH GIÁ -->
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-user-circle text-teal-700 text-base"></i>
+                            <span>1. Khách Hàng & Cơ Chế Định Giá Cước</span>
+                        </h4>
+                        <span class="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200 font-heading">Phân hệ Sales / BD</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-5">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Tìm Khách Hàng / MST
+                            </label>
+                            <div class="relative">
+                                <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                                <input type="text" id="fullpage-quote-customer-search" oninput="filterCustomerSelectOptions('fullpage-quote-customer-search', 'fullpage-quote-customer')" 
+                                    placeholder="Gõ tên khách hàng hoặc mã số thuế..." 
+                                    class="w-full h-9.5 pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 text-xs text-slate-800 transition-all font-medium">
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-7">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block font-bold text-slate-700 text-xs truncate">
+                                    Khách Hàng / Đối Tác Doanh Nghiệp <span class="text-rose-500">*</span>
+                                </label>
+                                <button type="button" onclick="openMasterDataModalQuick('customers', 'fullpage-quote-customer')" 
+                                    class="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded-md border border-teal-200 flex items-center gap-1 transition-colors cursor-pointer">
+                                    <i class="ph-bold ph-plus text-xs"></i> Thêm KH Mới
+                                </button>
+                            </div>
+                            <select id="fullpage-quote-customer" required 
+                                class="w-full h-9.5 px-3 py-1 bg-white border border-slate-200 rounded-xl focus:border-teal-600 font-bold text-slate-900 text-xs transition-all">
+                                <option value="">-- Chọn Khách Hàng Trong Danh Mục --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2 border-t border-slate-100">
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-teal-950 text-xs mb-1">
+                                <i class="ph-bold ph-sliders-horizontal text-teal-700"></i> Phương Thức Báo Giá & Định Giá <span class="text-rose-500">*</span>
+                            </label>
+                            <select id="fullpage-quote-pricing-method" onchange="onFullpageQuotationPricingMethodChange(this.value)"
+                                class="w-full h-9.5 px-3 py-1 bg-white border border-teal-300 rounded-xl font-bold text-teal-950 text-xs focus:border-teal-600 focus:ring-1 focus:ring-teal-500 transition-all">
+                                <option value="MULTI_ROUTE">1. Báo giá theo tuyến đường (Ma trận đa tuyến)</option>
+                                <option value="FUEL_ADJUSTED">2. Báo giá có điều chỉnh theo biến động giá dầu DO 0.05S</option>
+                                <option value="FLAT_CHARTER">3. Báo giá trọn gói / bao chuyến định kỳ</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Quy Cách Hàng Hóa Mặc Định
+                            </label>
+                            <input type="text" id="fullpage-quote-cargo-type" placeholder="VD: Container 40HC / Hàng xuất khẩu..." value="Container 40HC / Hàng tổng hợp"
+                                class="w-full h-9.5 px-3.5 py-1 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 font-medium text-slate-800 text-xs">
+                        </div>
+                    </div>
+
+                    <!-- KHU VỰC CẤU HÌNH BIẾN ĐỘNG XĂNG DẦU -->
+                    <div id="fullpage-quote-fuel-box" class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80 space-y-2.5 hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black text-amber-950 uppercase tracking-wide flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-gas-pump text-amber-700 text-base"></i>
+                                <span>Cơ Chế Gắn Biến Động Giá Dầu DO 0.05S Petrolimex</span>
+                            </span>
+                            <span class="text-[10.5px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">Công thức cước động</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-700 text-[11px] mb-1">Giá Dầu Cơ Sở P0 (đ/lít)</label>
+                                <div class="relative">
+                                    <input type="text" inputmode="numeric" id="fullpage-quote-base-fuel-price" value="21.000" oninput="updateFullpageFuelFormulaText()"
+                                        class="input-number-vn w-full h-8.5 px-3 py-1 bg-white border border-amber-300 rounded-lg font-mono font-bold text-amber-950 text-xs pr-12 text-right">
+                                    <span class="absolute right-2.5 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">đ/lít</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block font-bold text-slate-700 text-[11px] mb-1">Mỗi Bước Nhảy Giá Dầu</label>
+                                <div class="relative">
+                                    <input type="text" inputmode="numeric" id="fullpage-quote-fuel-step" value="1.000" oninput="updateFullpageFuelFormulaText()"
+                                        class="input-number-vn w-full h-8.5 px-3 py-1 bg-white border border-amber-300 rounded-lg font-mono font-bold text-amber-950 text-xs pr-12 text-right">
+                                    <span class="absolute right-2.5 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">đ/lít</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block font-bold text-slate-700 text-[11px] mb-1">Tỷ Lệ Điều Chỉnh Cước (%)</label>
+                                <div class="relative">
+                                    <input type="number" step="0.1" id="fullpage-quote-fuel-ratio" value="3.5" oninput="updateFullpageFuelFormulaText()"
+                                        class="w-full h-8.5 px-3 py-1 bg-white border border-amber-300 rounded-lg font-mono font-bold text-amber-950 text-xs pr-8 text-right">
+                                    <span class="absolute right-2.5 top-2 text-slate-400 font-bold text-[10px] pointer-events-none">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-2.5 bg-white/95 rounded-lg border border-amber-200 text-xs text-amber-950 leading-relaxed font-medium">
+                            <span class="font-bold text-amber-950">Quy tắc điều chỉnh:</span> 
+                            <span id="fullpage-quote-fuel-formula-display">Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi 1.000 đ/lít so với giá cơ sở (21.000 đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng 3.5%.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: DANH SÁCH TUYẾN ĐƯỜNG (MULTI-ROUTE MATRIX) -->
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div class="flex items-center space-x-2.5">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                                <i class="ph-bold ph-path text-teal-700 text-base"></i>
+                                <span>2. Danh Sách Tuyến Đường Báo Giá (Bảng Ma Trận Cước)</span>
+                            </h4>
+                            <span id="fullpage-quote-routes-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-100 text-teal-800 font-heading">1 tuyến</span>
+                        </div>
+                        <button type="button" onclick="addFullpageQuotationRouteRow()" 
+                            class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer font-heading">
+                            <i class="ph-bold ph-plus-circle text-base"></i>
+                            <span>+ Thêm Tuyến Đường</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                        <span class="font-medium flex items-center gap-1.5">
+                            <i class="ph-bold ph-info text-teal-700 text-sm"></i>
+                            <span>Cho phép khai báo không giới hạn tuyến đường cho cùng một khách hàng. Hệ thống tự động tính tổng doanh thu kế hoạch.</span>
+                        </span>
+                        <span class="text-slate-400 text-xs hidden sm:inline">Tự động đồng bộ sang hợp đồng & đơn booking</span>
+                    </div>
+
+                    <!-- Bảng các dòng tuyến đường dạng rộng -->
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs">
+                        <table class="w-full border-collapse text-xs text-left" id="table-fullpage-quote-routes">
+                            <thead class="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-3 text-center w-10">STT</th>
+                                    <th class="p-3 min-w-[280px]">Lộ Trình / Tuyến Đường Vận Chuyển <span class="text-rose-500">*</span></th>
+                                    <th class="p-3 w-36">Loại Cont / Xe</th>
+                                    <th class="p-3 text-center w-24">Cự Ly (KM)</th>
+                                    <th class="p-3 text-right w-36">Đơn Giá Cước (VNĐ) <span class="text-rose-500">*</span></th>
+                                    <th class="p-3 text-center w-32">Sản Lượng (Chuyến/Tháng)</th>
+                                    <th class="p-3 text-right w-36">Thành Tiền / Tháng</th>
+                                    <th class="p-3 text-center w-12">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fullpage-quote-routes-tbody" class="divide-y divide-slate-100 bg-white">
+                                <!-- Rendered dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tổng doanh thu & Chu kỳ bán hàng -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2">
+                        <div class="md:col-span-8 bg-teal-50/80 p-4 rounded-xl border border-teal-200 flex flex-wrap items-center justify-between gap-3">
+                            <div class="space-y-1">
+                                <span class="text-xs font-bold text-teal-950 uppercase tracking-wider flex items-center gap-1.5 font-heading">
+                                    <i class="ph-bold ph-calculator text-teal-700 text-base"></i>
+                                    <span>Tổng Doanh Thu Kế Hoạch / Tháng (Toàn bộ các tuyến)</span>
+                                </span>
+                                <p class="text-xs text-slate-600 font-medium">
+                                    Tổng sản lượng cam kết: <strong id="fullpage-quote-total-trips-label" class="text-teal-900 font-bold">20 chuyến/tháng</strong>
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <span id="fullpage-quote-preview-revenue" class="text-2xl sm:text-3xl font-black text-teal-900 tabular-nums font-heading tracking-tight">76.000.000 đ</span>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                            <label class="block font-bold text-slate-800 text-xs">
+                                Giai Đoạn Chu Trình Báo Giá (Sales Funnel) <span class="text-rose-500">*</span>
+                            </label>
+                            <select id="fullpage-quote-status" class="w-full h-9 px-3 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-900 text-xs transition-all">
+                                <option value="NEGOTIATING">1. Đang thương lượng (Chờ chốt)</option>
+                                <option value="PENDING_APPROVAL">2. Chờ Ban Giám Đốc duyệt</option>
+                                <option value="APPROVED">3. Đã duyệt (Ký hợp đồng)</option>
+                                <option value="REJECTED">4. Từ chối / Không chốt</option>
+                                <option value="EXPIRED">5. Hết hiệu lực</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 3: GHI CHÚ, ĐIỀU KHOẢN & MẪU IN BÁO GIÁ KÝ KẾT -->
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
+                            <i class="ph-bold ph-note-pencil text-teal-700 text-base"></i>
+                            <span>3. Ghi Chú, Điều Khoản Thương Mại & Thông Tin In Báo Giá</span>
+                        </h4>
+                        <span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200 font-heading">Trình Ký & Pháp Lý</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Kiểu Mẫu Báo Giá Khi In <span class="text-rose-500">*</span>
+                            </label>
+                            <select id="fullpage-quote-template-type" class="w-full h-9.5 px-3 py-1 bg-white border border-slate-200 rounded-xl focus:border-teal-600 font-bold text-slate-800 text-xs transition-all">
+                                <option value="STANDARD">Mẫu 1: Tiêu Chuẩn Doanh Nghiệp (Quốc Hiệu TVL & Bảng Tuyến)</option>
+                                <option value="TABLE_MATRIX">Mẫu 2: Bảng Cước & Khung Đối Tác (To / From Matrix)</option>
+                                <option value="PROJECT_DETAIL">Mẫu 3: Chi Tiết Dịch Vụ Dự Án & Lịch Trình (ETA/ETD)</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Người Nhận Báo Giá (Attn)
+                            </label>
+                            <input type="text" id="fullpage-quote-contact-person" placeholder="VD: Mr. Nguyễn Văn A - Trưởng Phòng Mua Hàng"
+                                class="w-full h-9.5 px-3.5 py-1 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 text-xs font-medium">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                SĐT / Hotline Khách Hàng
+                            </label>
+                            <input type="text" id="fullpage-quote-contact-phone" placeholder="VD: 0987 123 456"
+                                class="w-full h-9.5 px-3.5 py-1 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 text-xs font-medium">
+                        </div>
+
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Email Khách Hàng
+                            </label>
+                            <input type="email" id="fullpage-quote-contact-email" placeholder="VD: contact@customer.com"
+                                class="w-full h-9.5 px-3.5 py-1 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 text-xs font-medium">
+                        </div>
+
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Hiệu Lực Đến Ngày (Valid Until)
+                            </label>
+                            <input type="date" id="fullpage-quote-valid-until"
+                                class="w-full h-9.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 text-xs font-medium font-mono">
+                        </div>
+                    </div>
+
+                    <!-- Textarea Ghi Chú & Điều Khoản Rộng Thoáng -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                            <label class="block font-bold text-slate-700 text-xs flex items-center gap-1.5">
+                                <i class="ph-bold ph-note-pencil text-teal-700"></i>
+                                <span>Nội Dung Ghi Chú & Điều Khoản Thương Mại (Hiển thị đầy đủ khi in phiếu báo giá A4)</span>
+                            </label>
+                            <div class="flex items-center gap-1.5 text-xs">
+                                <span class="text-slate-400 font-medium text-[11px]">Mẫu nhanh:</span>
+                                <button type="button" onclick="setFullpageQuickQuoteNote('fcl')" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 transition-colors cursor-pointer text-xs">Kéo Cont FCL</button>
+                                <button type="button" onclick="setFullpageQuickQuoteNote('ftl')" class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold border border-indigo-200 transition-colors cursor-pointer text-xs">Xe Tải FTL</button>
+                                <button type="button" onclick="setFullpageQuickQuoteNote('fuel')" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold border border-amber-200 transition-colors cursor-pointer text-xs">Theo Giá Dầu</button>
+                            </div>
+                        </div>
+                        <textarea id="fullpage-quote-notes" rows="9" placeholder="Nhập các điều khoản: VAT, phí bốc xếp, cược vỏ, thời gian lưu xe neo mooc, cam kết dịch vụ..."
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-500 text-xs sm:text-sm text-slate-800 font-mono leading-relaxed transition-all resize-y min-h-[180px]"></textarea>
+                    </div>
+                </div>
+
+                <!-- Footer Save & Print Bar -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between flex-wrap gap-3">
+                    <button type="button" onclick="backToQuotations()" 
+                        class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer font-heading">
+                        <i class="ph-bold ph-arrow-left mr-1"></i> Quay Lại
+                    </button>
+                    <div class="flex items-center space-x-2.5">
+                        <button type="button" onclick="printQuotationFromFullPage()" 
+                            class="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer font-heading">
+                            <i class="ph-bold ph-printer text-base text-teal-400"></i>
+                            <span>Xem & In Báo Giá (A4)</span>
+                        </button>
+                        <button type="submit" id="btn-fullpage-save-quote-bottom"
+                            class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i class="ph-bold ph-check-circle text-base"></i>
+                            <span>Lưu Báo Giá</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>

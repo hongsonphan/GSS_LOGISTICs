@@ -88,6 +88,16 @@ def decode_tracking_hashid(hashid_str: str) -> int | None:
     return decode_id(hashid_str, domain='TRACKING')
 
 
+def get_quotation_hashid(quote_id: int) -> str:
+    """Helper mã hóa ID Báo Giá thành chuỗi HashID bảo mật cho URL SPA."""
+    return encode_id(quote_id, domain='QUOTATION')
+
+
+def decode_quotation_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã HashID Báo Giá về số nguyên ID ban đầu."""
+    return decode_id(hashid_str, domain='QUOTATION')
+
+
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class GracefulJWTAuthentication(JWTAuthentication):
