@@ -9242,7 +9242,7 @@ function populateSettlementTargetOptions(groupBy, preselectedId = null) {
                 targetSelect.appendChild(opt);
             });
         } else {
-            fetchWithAuth('/api/customers/').then(r => r.json()).then(data => {
+            fetchWithAuth('/api/master-data/customers/').then(r => r.json()).then(data => {
                 const list = data.customers || data.results || (Array.isArray(data) ? data : []);
                 window.rawCustomersList = list;
                 list.forEach(c => {

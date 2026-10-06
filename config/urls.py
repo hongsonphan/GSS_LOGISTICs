@@ -47,6 +47,7 @@ from apps.billing.finance_reports_api import (
     AccountingReportsAPIView,
     AccountingReportDrilldownAPIView,
 )
+from apps.master_data.api_views import CustomerMasterListCreateAPIView
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -113,6 +114,7 @@ urlpatterns = [
     path('api/personnel/', include('apps.personnel.urls')),
     path('api/personnel/payroll/', PersonnelPayrollAPIView.as_view(), name='api-personnel-payroll'),
     path('api/fleet/', FleetAPIView.as_view(), name='api-fleet'),
+    path('api/customers/', CustomerMasterListCreateAPIView.as_view(), name='api-customers-alias'),
     path('api/bookings/active/', BookingActiveAPIView.as_view(), name='api-bookings-active'),
     path('api/sales/', SalesAPIView.as_view(), name='api-sales'),
     path('api/quotations/<int:pk>/', QuotationDetailAPIView.as_view(), name='api-quotation-detail'),
