@@ -2,7 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [2.8.9] - 2026-10-06 (Chuẩn Hóa Tài Nguyên Tĩnh Favicon, Robots.txt & Tối Ưu Hệ Thống Toàn Diện)
+## [2.9.0] - 2026-10-06 (Tái Cấu Trúc Toàn Diện Frontend: Modular JavaScript Architecture)
+
+### 1. Phân Tách Mã Nguồn Khối Lớn (Modular Subsystems):
+- Tách khối mã nguồn nguyên khối thành thư mục chuyên biệt `static/js/modules/` theo từng phân hệ nghiệp vụ:
+  * `core.js`: Bộ tiện ích dùng chung, bộ định dạng số tiền VNĐ, xác thực JWT & CSRF, Modal xác nhận.
+  * `dashboard.js`: Xử lý phân tích dữ liệu Ban Giám Đốc, biểu đồ Chart.js và P&L sản lượng.
+  * `dispatch.js`: Quản lý điều vận, CRUD lệnh điều động, gán xe/tài xế, theo dõi tiến độ chuyến xe.
+  * `sales.js`: Nghiệp vụ CRM Báo giá cước đa chặng, cơ chế bù trừ xăng dầu DO và quản lý Booking.
+  * `fleet.js`: Quản trị đội xe, rơ-moóc, trạm bãi và trạng thái phương tiện.
+  * `hr.js`: Quản lý danh bạ nhân sự, phân quyền vai trò và bảng lương tài xế.
+  * `accounting.js`: Quản lý tạm ứng/hoàn ứng, sổ quỹ tiền mặt/ngân hàng, đối soát công nợ thầu phụ và thu hồi chi hộ.
+  * `customs.js`: Phân hệ tờ khai hải quan điện tử VNACCS/VCIS và quản lý ngày miễn phí lưu bãi.
+  * `reports.js`: Trung tâm phân tích BI 14 mẫu báo cáo vận tải và in ấn xuất báo cáo Excel/PDF.
+  * `master_data.js`: Quản lý danh mục biểu phí lương, phụ cấp, cự ly tuyến đường và khách hàng.
+  * `router.js`: Điều hướng Clean Semantic URL và quản lý đóng mở modal.
+- Khắc phục triệt để lỗi ngoại lệ `ReferenceError` ngắt quãng JavaScript khi gọi inline events.
+
+### 2. Kiểm Thử & Triển Khai:
+- **86/86 Unit Tests PASSED 100%**.
+- **10/10 User Journeys PASSED 100%**.
+- Kiểm tra cú pháp toàn bộ các module `node -c static/js/modules/*.js` đạt 100% hợp lệ.
+
+---
 
 ### 1. Chuẩn Hóa Tài Nguyên Tĩnh & SEO / Bot Crawl Protection:
 - **Tích hợp Favicon Doanh nghiệp:**
