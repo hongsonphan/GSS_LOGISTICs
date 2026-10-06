@@ -98,17 +98,17 @@ async function fetchWithAuth(url, options = {}) {
 }
 
 const STATUS_STYLE_MAP = {
-    'COMPLETED': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    'DELIVERED': 'bg-teal-100 text-teal-800 border-teal-300',
-    'RETURNING_EMPTY': 'bg-purple-100 text-purple-800 border-purple-300',
-    'UNLOADING': 'bg-orange-100 text-orange-800 border-orange-300',
-    'AT_WAREHOUSE': 'bg-indigo-100 text-indigo-800 border-indigo-300',
-    'IN_TRANSIT': 'bg-amber-100 text-amber-800 border-amber-300',
-    'CONTAINER_PICKED': 'bg-cyan-100 text-cyan-800 border-cyan-300',
-    'ACCEPTED': 'bg-blue-100 text-blue-800 border-blue-300',
-    'DISPATCHED': 'bg-teal-100 text-teal-800 border-teal-300',
-    'DRAFT': 'bg-slate-100 text-slate-700 border-slate-300',
-    'CANCELLED': 'bg-rose-100 text-rose-800 border-rose-300',
+    'COMPLETED': 'text-emerald-700 font-semibold',
+    'DELIVERED': 'text-teal-700 font-semibold',
+    'RETURNING_EMPTY': 'text-purple-700 font-semibold',
+    'UNLOADING': 'text-orange-700 font-semibold',
+    'AT_WAREHOUSE': 'text-indigo-700 font-semibold',
+    'IN_TRANSIT': 'text-amber-700 font-semibold',
+    'CONTAINER_PICKED': 'text-cyan-700 font-semibold',
+    'ACCEPTED': 'text-blue-700 font-semibold',
+    'DISPATCHED': 'text-teal-700 font-semibold',
+    'DRAFT': 'text-slate-600 font-semibold',
+    'CANCELLED': 'text-rose-700 font-semibold',
 };
 
 const STATUS_NAME_MAP = {

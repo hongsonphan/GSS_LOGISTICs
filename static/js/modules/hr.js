@@ -121,14 +121,14 @@ function renderEmployeesTable(items) {
                 <div>${escapeHtml(emp.full_name)}</div>
                 ${emp.username ? `<div class="text-[11px] text-slate-400 font-normal">@${escapeHtml(emp.username)}</div>` : ''}
             </td>
-            <td class="py-2.5 px-3.5 text-xs font-semibold text-slate-700 border-r border-slate-200">${emp.nickname ? `<span class="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-md border border-amber-200">${escapeHtml(emp.nickname)}</span>` : '—'}</td>
+            <td class="py-2.5 px-3.5 text-xs font-semibold text-slate-700 border-r border-slate-200">${emp.nickname ? `<span class="text-slate-800 font-medium">${escapeHtml(emp.nickname)}</span>` : '—'}</td>
             <td class="py-2.5 px-3.5 text-xs border-r border-slate-200 font-mono">
                 <div class="font-bold text-slate-800">${escapeHtml(emp.phone_number || '—')}</div>
                 ${emp.zalo_id ? `<div class="text-[11px] text-teal-600 font-medium">Zalo: ${escapeHtml(emp.zalo_id)}</div>` : ''}
             </td>
             <td class="py-2.5 px-3.5 text-xs font-medium text-slate-700 border-r border-slate-200">${escapeHtml(emp.department_label || emp.department)}</td>
             <td class="py-2.5 px-3.5 text-xs font-bold border-r border-slate-200">
-                <span class="px-2 py-0.5 rounded-md ${emp.role === 'DRIVER' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : (emp.role === 'DIRECTOR' ? 'bg-purple-50 text-purple-800 border border-purple-200' : 'bg-blue-50 text-blue-800 border border-blue-200')}">
+                <span class="${emp.role === 'DRIVER' ? 'text-emerald-700' : (emp.role === 'DIRECTOR' ? 'text-purple-700' : 'text-blue-700')}">
                     ${escapeHtml(emp.role_label || emp.role)}
                 </span>
             </td>
@@ -139,8 +139,8 @@ function renderEmployeesTable(items) {
                 ` : '<span class="text-slate-400">—</span>'}
             </td>
             <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200 tabular-nums">${formatMoney(emp.base_salary)}</td>
-            <td class="py-2.5 px-3.5 text-center border-r border-slate-200 text-xs font-semibold ${emp.is_active ? 'text-emerald-700' : 'text-slate-400'}">
-                ${emp.is_active ? '<span class="inline-flex items-center gap-1 text-emerald-700 font-bold"><i class="ph-fill ph-check-circle text-sm"></i> Đang làm</span>' : '<span class="inline-flex items-center gap-1 text-slate-400"><i class="ph-fill ph-minus-circle text-sm"></i> Tạm ngưng</span>'}
+            <td class="py-2.5 px-3.5 text-center border-r border-slate-200 text-xs font-semibold whitespace-nowrap">
+                ${emp.is_active ? '<span class="text-emerald-700 font-bold">Đang làm</span>' : '<span class="text-slate-400 font-medium">Tạm ngưng</span>'}
             </td>
             <td class="py-2.5 px-3.5 text-center">
                 <div class="flex items-center justify-center space-x-1">

@@ -436,27 +436,27 @@ function renderDispatchTable(trips) {
                     <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                 </div>
             </td>
-            <td class="px-3 py-2 text-center">
-                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider font-heading inline-block ${statusCls}">
+            <td class="px-3 py-2 text-center whitespace-nowrap">
+                <span class="text-xs ${statusCls}">
                     ${escapeHtml(trip.status_label)}
                 </span>
                 ${trip.status === 'DISPATCHED' ? `
-                    <div class="mt-1">
+                    <div class="mt-0.5 text-[11px] font-medium">
                         ${trip.acceptance_sla_status === 'DECLINED' || trip.declined_at ? `
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-700 text-white border border-rose-900 inline-flex items-center gap-1 shadow-sm" title="Tài xế đã TỪ CHỐI nhận chuyến: ${escapeHtml(trip.decline_reason || 'Không rõ lý do')}">
-                                <i class="ph-bold ph-x-circle"></i> TX TỪ CHỐI (${trip.minutes_since_dispatch}p)
+                            <span class="text-rose-700 font-bold" title="Tài xế đã TỪ CHỐI nhận chuyến: ${escapeHtml(trip.decline_reason || 'Không rõ lý do')}">
+                                TX từ chối (${trip.minutes_since_dispatch}p)
                             </span>
                         ` : trip.acceptance_sla_status === 'OVERDUE' ? `
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-600 text-white border border-rose-700 inline-flex items-center gap-1 animate-pulse" title="Tài xế chưa nhận chuyến sau hơn 60 phút - Cần đổi xe hoặc gọi điện">
-                                <i class="ph-bold ph-warning-circle"></i> Quá hạn (${trip.minutes_since_dispatch}p)
+                            <span class="text-rose-600 font-bold" title="Tài xế chưa nhận chuyến sau hơn 60 phút">
+                                Quá hạn (${trip.minutes_since_dispatch}p)
                             </span>
                         ` : trip.acceptance_sla_status === 'WARNING' ? `
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-500 text-white border border-amber-600 inline-flex items-center gap-1" title="Chờ tài xế xác nhận nhận chuyến">
-                                <i class="ph-bold ph-clock"></i> Chờ TX (${trip.minutes_since_dispatch}p)
+                            <span class="text-amber-700" title="Chờ tài xế xác nhận nhận chuyến">
+                                Chờ TX (${trip.minutes_since_dispatch}p)
                             </span>
                         ` : `
-                            <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-200 inline-flex items-center gap-1" title="Đã phát lệnh qua Zalo/App">
-                                <i class="ph ph-paper-plane-tilt"></i> Chờ nhận (${trip.minutes_since_dispatch}p)
+                            <span class="text-slate-500" title="Đã phát lệnh qua Zalo/App">
+                                Chờ nhận (${trip.minutes_since_dispatch}p)
                             </span>
                         `}
                     </div>

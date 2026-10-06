@@ -94,17 +94,17 @@ async function fetchWithAuth(url, options = {}) {
 }
 
 const STATUS_STYLE_MAP = {
-    'COMPLETED': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    'DELIVERED': 'bg-teal-100 text-teal-800 border-teal-300',
-    'RETURNING_EMPTY': 'bg-purple-100 text-purple-800 border-purple-300',
-    'UNLOADING': 'bg-orange-100 text-orange-800 border-orange-300',
-    'AT_WAREHOUSE': 'bg-indigo-100 text-indigo-800 border-indigo-300',
-    'IN_TRANSIT': 'bg-amber-100 text-amber-800 border-amber-300',
-    'CONTAINER_PICKED': 'bg-cyan-100 text-cyan-800 border-cyan-300',
-    'ACCEPTED': 'bg-blue-100 text-blue-800 border-blue-300',
-    'DISPATCHED': 'bg-teal-100 text-teal-800 border-teal-300',
-    'DRAFT': 'bg-slate-100 text-slate-700 border-slate-300',
-    'CANCELLED': 'bg-rose-100 text-rose-800 border-rose-300',
+    'COMPLETED': 'text-emerald-700 font-semibold',
+    'DELIVERED': 'text-teal-700 font-semibold',
+    'RETURNING_EMPTY': 'text-purple-700 font-semibold',
+    'UNLOADING': 'text-orange-700 font-semibold',
+    'AT_WAREHOUSE': 'text-indigo-700 font-semibold',
+    'IN_TRANSIT': 'text-amber-700 font-semibold',
+    'CONTAINER_PICKED': 'text-cyan-700 font-semibold',
+    'ACCEPTED': 'text-blue-700 font-semibold',
+    'DISPATCHED': 'text-teal-700 font-semibold',
+    'DRAFT': 'text-slate-600 font-semibold',
+    'CANCELLED': 'text-rose-700 font-semibold',
 };
 
 const STATUS_NAME_MAP = {
@@ -823,11 +823,11 @@ function renderDashboardPnlTable(trips) {
             viewTripDetail(item.trip_code);
         };
 
-        let statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 font-heading">${escapeHtml(item.status_label || item.status)}</span>`;
+        let statusBadge = `<span class="text-xs font-semibold text-slate-600">${escapeHtml(item.status_label || item.status)}</span>`;
         if (item.status === 'COMPLETED') {
-            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading">Đã hoàn tất</span>`;
+            statusBadge = `<span class="text-xs font-semibold text-emerald-700">Đã hoàn tất</span>`;
         } else if (['IN_TRANSIT', 'ACCEPTED', 'CONTAINER_PICKED', 'AT_WAREHOUSE', 'UNLOADING', 'RETURNING_EMPTY'].includes(item.status)) {
-            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-heading">Đang vận hành</span>`;
+            statusBadge = `<span class="text-xs font-semibold text-amber-700">Đang vận hành</span>`;
         }
 
         const marginVal = item.margin_percent || 0;
@@ -1515,27 +1515,27 @@ function renderDispatchTable(trips) {
                     <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                 </div>
             </td>
-            <td class="px-3 py-2 text-center">
-                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider font-heading inline-block ${statusCls}">
+            <td class="px-3 py-2 text-center whitespace-nowrap">
+                <span class="text-xs ${statusCls}">
                     ${escapeHtml(trip.status_label)}
                 </span>
                 ${trip.status === 'DISPATCHED' ? `
-                    <div class="mt-1">
+                    <div class="mt-0.5 text-[11px] font-medium">
                         ${trip.acceptance_sla_status === 'DECLINED' || trip.declined_at ? `
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-700 text-white border border-rose-900 inline-flex items-center gap-1 shadow-sm" title="Tài xế đã TỪ CHỐI nhận chuyến: ${escapeHtml(trip.decline_reason || 'Không rõ lý do')}">
-                                <i class="ph-bold ph-x-circle"></i> TX TỪ CHỐI (${trip.minutes_since_dispatch}p)
+                            <span class="text-rose-700 font-bold" title="Tài xế đã TỪ CHỐI nhận chuyến: ${escapeHtml(trip.decline_reason || 'Không rõ lý do')}">
+                                TX từ chối (${trip.minutes_since_dispatch}p)
                             </span>
                         ` : trip.acceptance_sla_status === 'OVERDUE' ? `
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-600 text-white border border-rose-700 inline-flex items-center gap-1 animate-pulse" title="Tài xế chưa nhận chuyến sau hơn 60 phút - Cần đổi xe hoặc gọi điện">
-                                <i class="ph-bold ph-warning-circle"></i> Quá hạn (${trip.minutes_since_dispatch}p)
+                            <span class="text-rose-600 font-bold" title="Tài xế chưa nhận chuyến sau hơn 60 phút">
+                                Quá hạn (${trip.minutes_since_dispatch}p)
                             </span>
                         ` : trip.acceptance_sla_status === 'WARNING' ? `
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-500 text-white border border-amber-600 inline-flex items-center gap-1" title="Chờ tài xế xác nhận nhận chuyến">
-                                <i class="ph-bold ph-clock"></i> Chờ TX (${trip.minutes_since_dispatch}p)
+                            <span class="text-amber-700" title="Chờ tài xế xác nhận nhận chuyến">
+                                Chờ TX (${trip.minutes_since_dispatch}p)
                             </span>
                         ` : `
-                            <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-200 inline-flex items-center gap-1" title="Đã phát lệnh qua Zalo/App">
-                                <i class="ph ph-paper-plane-tilt"></i> Chờ nhận (${trip.minutes_since_dispatch}p)
+                            <span class="text-slate-500" title="Đã phát lệnh qua Zalo/App">
+                                Chờ nhận (${trip.minutes_since_dispatch}p)
                             </span>
                         `}
                     </div>
@@ -5122,14 +5122,14 @@ function renderEmployeesTable(items) {
                 <div>${escapeHtml(emp.full_name)}</div>
                 ${emp.username ? `<div class="text-[11px] text-slate-400 font-normal">@${escapeHtml(emp.username)}</div>` : ''}
             </td>
-            <td class="py-2.5 px-3.5 text-xs font-semibold text-slate-700 border-r border-slate-200">${emp.nickname ? `<span class="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-md border border-amber-200">${escapeHtml(emp.nickname)}</span>` : '—'}</td>
+            <td class="py-2.5 px-3.5 text-xs font-semibold text-slate-700 border-r border-slate-200">${emp.nickname ? `<span class="text-slate-800 font-medium">${escapeHtml(emp.nickname)}</span>` : '—'}</td>
             <td class="py-2.5 px-3.5 text-xs border-r border-slate-200 font-mono">
                 <div class="font-bold text-slate-800">${escapeHtml(emp.phone_number || '—')}</div>
                 ${emp.zalo_id ? `<div class="text-[11px] text-teal-600 font-medium">Zalo: ${escapeHtml(emp.zalo_id)}</div>` : ''}
             </td>
             <td class="py-2.5 px-3.5 text-xs font-medium text-slate-700 border-r border-slate-200">${escapeHtml(emp.department_label || emp.department)}</td>
             <td class="py-2.5 px-3.5 text-xs font-bold border-r border-slate-200">
-                <span class="px-2 py-0.5 rounded-md ${emp.role === 'DRIVER' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : (emp.role === 'DIRECTOR' ? 'bg-purple-50 text-purple-800 border border-purple-200' : 'bg-blue-50 text-blue-800 border border-blue-200')}">
+                <span class="${emp.role === 'DRIVER' ? 'text-emerald-700' : (emp.role === 'DIRECTOR' ? 'text-purple-700' : 'text-blue-700')}">
                     ${escapeHtml(emp.role_label || emp.role)}
                 </span>
             </td>
@@ -5140,8 +5140,8 @@ function renderEmployeesTable(items) {
                 ` : '<span class="text-slate-400">—</span>'}
             </td>
             <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200 tabular-nums">${formatMoney(emp.base_salary)}</td>
-            <td class="py-2.5 px-3.5 text-center border-r border-slate-200 text-xs font-semibold ${emp.is_active ? 'text-emerald-700' : 'text-slate-400'}">
-                ${emp.is_active ? '<span class="inline-flex items-center gap-1 text-emerald-700 font-bold"><i class="ph-fill ph-check-circle text-sm"></i> Đang làm</span>' : '<span class="inline-flex items-center gap-1 text-slate-400"><i class="ph-fill ph-minus-circle text-sm"></i> Tạm ngưng</span>'}
+            <td class="py-2.5 px-3.5 text-center border-r border-slate-200 text-xs font-semibold whitespace-nowrap">
+                ${emp.is_active ? '<span class="text-emerald-700 font-bold">Đang làm</span>' : '<span class="text-slate-400 font-medium">Tạm ngưng</span>'}
             </td>
             <td class="py-2.5 px-3.5 text-center">
                 <div class="flex items-center justify-center space-x-1">
@@ -7123,12 +7123,12 @@ function renderBookingsTable(bookings) {
             : 'hover:bg-slate-50 transition-colors';
         
         const statusBadge = b.status === 'PENDING_DISPATCH' 
-            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-block">Chờ điều xe</span>'
+            ? '<span class="text-xs font-semibold text-amber-700 whitespace-nowrap">Chờ điều xe</span>'
             : b.status === 'PARTIALLY_DISPATCHED'
-            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-teal-100 text-teal-800 border border-teal-200 inline-block">Đang điều xe</span>'
+            ? '<span class="text-xs font-semibold text-teal-700 whitespace-nowrap">Đang điều xe</span>'
             : b.status === 'COMPLETED'
-            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block">Đã đủ cont</span>'
-            : '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-rose-100 text-rose-800 border border-rose-200 inline-block">Đã hủy</span>';
+            ? '<span class="text-xs font-semibold text-emerald-700 whitespace-nowrap">Đã đủ cont</span>'
+            : '<span class="text-xs font-semibold text-rose-700 whitespace-nowrap">Đã hủy</span>';
 
         const urgentBadge = b.is_urgent ? `
             <span class="ml-1 px-1.5 py-0.2 rounded text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200 inline-flex items-center gap-0.5">
@@ -7498,10 +7498,10 @@ function renderQuotationsTable(quotations) {
     }
 
     quotations.forEach(s => {
-        let statusCls = 'bg-teal-100 text-teal-800';
-        if (s.status.includes('Đã duyệt')) statusCls = 'bg-emerald-100 text-emerald-800';
-        if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'bg-amber-100 text-amber-800';
-        if (s.status.includes('Từ chối') || s.status.includes('hết hiệu lực')) statusCls = 'bg-rose-100 text-rose-800';
+        let statusCls = 'text-teal-700 font-semibold';
+        if (s.status.includes('Đã duyệt')) statusCls = 'text-emerald-700 font-semibold';
+        if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'text-amber-700 font-semibold';
+        if (s.status.includes('Từ chối') || s.status.includes('hết hiệu lực')) statusCls = 'text-rose-700 font-semibold';
 
         const hasMultiRoutes = (s.items_count && s.items_count > 1) || (s.items && s.items.length > 1);
         const routeCount = s.items_count || (s.items ? s.items.length : 1);
@@ -7512,14 +7512,14 @@ function renderQuotationsTable(quotations) {
             routeDisplay = `
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="font-bold text-slate-900">${escapeHtml(s.route)}</span>
-                    <span class="px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px] border border-indigo-200">+${routeCount - 1} tuyến khác</span>
+                    <span class="text-indigo-700 font-semibold text-xs">+${routeCount - 1} tuyến khác</span>
                 </div>
             `;
         }
 
         let methodBadge = '';
         if (isFuelAdj) {
-            methodBadge = `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200"><i class="ph-bold ph-gas-pump"></i> Giá Dầu</span>`;
+            methodBadge = `<span class="text-amber-800 font-semibold text-xs">Giá Dầu</span>`;
         }
 
         const tr = document.createElement('tr');
@@ -7537,8 +7537,8 @@ function renderQuotationsTable(quotations) {
             <td class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>
             <td class="p-3.5 text-center font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(s.monthly_trips || 0)} <span class="text-xs text-slate-400 font-normal">chuyến</span></td>
             <td class="p-3.5 text-right font-black text-emerald-700 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(s.expected_revenue)} đ</td>
-            <td class="p-3.5">
-                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(s.status)}</span>
+            <td class="p-3.5 whitespace-nowrap">
+                <span class="text-xs ${statusCls}">${escapeHtml(s.status)}</span>
             </td>
             <td class="p-3.5 text-center">
                 <div class="flex items-center justify-center space-x-1.5">

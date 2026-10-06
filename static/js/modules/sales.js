@@ -1476,12 +1476,12 @@ function renderBookingsTable(bookings) {
             : 'hover:bg-slate-50 transition-colors';
         
         const statusBadge = b.status === 'PENDING_DISPATCH' 
-            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-block">Chờ điều xe</span>'
+            ? '<span class="text-xs font-semibold text-amber-700 whitespace-nowrap">Chờ điều xe</span>'
             : b.status === 'PARTIALLY_DISPATCHED'
-            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-teal-100 text-teal-800 border border-teal-200 inline-block">Đang điều xe</span>'
+            ? '<span class="text-xs font-semibold text-teal-700 whitespace-nowrap">Đang điều xe</span>'
             : b.status === 'COMPLETED'
-            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block">Đã đủ cont</span>'
-            : '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase bg-rose-100 text-rose-800 border border-rose-200 inline-block">Đã hủy</span>';
+            ? '<span class="text-xs font-semibold text-emerald-700 whitespace-nowrap">Đã đủ cont</span>'
+            : '<span class="text-xs font-semibold text-rose-700 whitespace-nowrap">Đã hủy</span>';
 
         const urgentBadge = b.is_urgent ? `
             <span class="ml-1 px-1.5 py-0.2 rounded text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200 inline-flex items-center gap-0.5">
@@ -1851,10 +1851,10 @@ function renderQuotationsTable(quotations) {
     }
 
     quotations.forEach(s => {
-        let statusCls = 'bg-teal-100 text-teal-800';
-        if (s.status.includes('Đã duyệt')) statusCls = 'bg-emerald-100 text-emerald-800';
-        if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'bg-amber-100 text-amber-800';
-        if (s.status.includes('Từ chối') || s.status.includes('hết hiệu lực')) statusCls = 'bg-rose-100 text-rose-800';
+        let statusCls = 'text-teal-700 font-semibold';
+        if (s.status.includes('Đã duyệt')) statusCls = 'text-emerald-700 font-semibold';
+        if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'text-amber-700 font-semibold';
+        if (s.status.includes('Từ chối') || s.status.includes('hết hiệu lực')) statusCls = 'text-rose-700 font-semibold';
 
         const hasMultiRoutes = (s.items_count && s.items_count > 1) || (s.items && s.items.length > 1);
         const routeCount = s.items_count || (s.items ? s.items.length : 1);
@@ -1865,14 +1865,14 @@ function renderQuotationsTable(quotations) {
             routeDisplay = `
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="font-bold text-slate-900">${escapeHtml(s.route)}</span>
-                    <span class="px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px] border border-indigo-200">+${routeCount - 1} tuyến khác</span>
+                    <span class="text-indigo-700 font-semibold text-xs">+${routeCount - 1} tuyến khác</span>
                 </div>
             `;
         }
 
         let methodBadge = '';
         if (isFuelAdj) {
-            methodBadge = `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200"><i class="ph-bold ph-gas-pump"></i> Giá Dầu</span>`;
+            methodBadge = `<span class="text-amber-800 font-semibold text-xs">Giá Dầu</span>`;
         }
 
         const tr = document.createElement('tr');
@@ -1890,8 +1890,8 @@ function renderQuotationsTable(quotations) {
             <td class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>
             <td class="p-3.5 text-center font-bold text-teal-700 tabular-nums text-sm">${new Intl.NumberFormat('vi-VN').format(s.monthly_trips || 0)} <span class="text-xs text-slate-400 font-normal">chuyến</span></td>
             <td class="p-3.5 text-right font-black text-emerald-700 tabular-nums font-heading text-sm">${new Intl.NumberFormat('vi-VN').format(s.expected_revenue)} đ</td>
-            <td class="p-3.5">
-                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(s.status)}</span>
+            <td class="p-3.5 whitespace-nowrap">
+                <span class="text-xs ${statusCls}">${escapeHtml(s.status)}</span>
             </td>
             <td class="p-3.5 text-center">
                 <div class="flex items-center justify-center space-x-1.5">

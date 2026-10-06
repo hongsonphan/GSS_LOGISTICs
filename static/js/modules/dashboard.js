@@ -249,11 +249,11 @@ function renderDashboardPnlTable(trips) {
             viewTripDetail(item.trip_code);
         };
 
-        let statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 font-heading">${escapeHtml(item.status_label || item.status)}</span>`;
+        let statusBadge = `<span class="text-xs font-semibold text-slate-600">${escapeHtml(item.status_label || item.status)}</span>`;
         if (item.status === 'COMPLETED') {
-            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-heading">Đã hoàn tất</span>`;
+            statusBadge = `<span class="text-xs font-semibold text-emerald-700">Đã hoàn tất</span>`;
         } else if (['IN_TRANSIT', 'ACCEPTED', 'CONTAINER_PICKED', 'AT_WAREHOUSE', 'UNLOADING', 'RETURNING_EMPTY'].includes(item.status)) {
-            statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-heading">Đang vận hành</span>`;
+            statusBadge = `<span class="text-xs font-semibold text-amber-700">Đang vận hành</span>`;
         }
 
         const marginVal = item.margin_percent || 0;
