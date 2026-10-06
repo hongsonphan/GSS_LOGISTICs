@@ -5278,6 +5278,130 @@ async function loadHRData() {
     }
 }
 
+function toggleHRSort(col) {
+    if (hrSortColumn === col) {
+        hrSortDirection = hrSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        hrSortColumn = col;
+        hrSortDirection = 'asc';
+    }
+    applyHRFilters();
+}
+
+function clearHRSearch() {
+    const input = document.getElementById('filter-hr-search');
+    if (input) input.value = '';
+    applyHRFilters();
+}
+
+function resetHRFilters() {
+    const input = document.getElementById('filter-hr-search');
+    if (input) input.value = '';
+    hrSortColumn = null;
+    hrSortDirection = 'asc';
+    applyHRFilters();
+}
+
+function applyHRFilters() {
+    if (!rawHRData || !Array.isArray(rawHRData)) return;
+
+    const filterSearch = document.getElementById('filter-hr-search')?.value?.trim().toLowerCase() || '';
+    const clearBtn = document.getElementById('btn-clear-hr-search');
+    if (clearBtn) {
+        if (filterSearch) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    let list = rawHRData.filter(item => {
+        if (filterSearch) {
+            const combinedText = [
+                item.code,
+                item.name
+            ].filter(Boolean).join(' ').toLowerCase();
+            if (!combinedText.includes(filterSearch)) return false;
+        }
+        return true;
+    });
+
+    const filteredCountEl = document.getElementById('hr-filtered-count');
+    if (filteredCountEl) filteredCountEl.innerText = list.length;
+    const totalCountEl = document.getElementById('hr-total-count');
+    if (totalCountEl) totalCountEl.innerText = rawHRData.length;
+
+    // Cập nhật trạng thái hiển thị của các icon sắp xếp cột
+    const sortKeys = ['code', 'name', 'trips', 'base_salary', 'trip_salary', 'advance', 'net_salary'];
+    sortKeys.forEach(k => {
+        const icon = document.getElementById(`sort-icon-hr-${k}`);
+        if (icon) {
+            if (hrSortColumn === k) {
+                icon.className = hrSortDirection === 'asc' 
+                    ? 'ph-bold ph-arrow-up text-teal-600 text-xs' 
+                    : 'ph-bold ph-arrow-down text-teal-600 text-xs';
+            } else {
+                icon.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
+            }
+        }
+    });
+
+    if (hrSortColumn) {
+        list.sort((a, b) => {
+            let valA = a[hrSortColumn];
+            let valB = b[hrSortColumn];
+            if (valA === null || valA === undefined) valA = '';
+            if (valB === null || valB === undefined) valB = '';
+
+            if (typeof valA === 'string') {
+                return hrSortDirection === 'asc'
+                    ? valA.localeCompare(valB, 'vi')
+                    : valB.localeCompare(valA, 'vi');
+            } else {
+                return hrSortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+            }
+        });
+    }
+
+    renderHRPayrollTable(list);
+}
+
+function renderHRPayrollTable(items) {
+    const tbody = document.getElementById('hr-tbody');
+    if (!tbody) return;
+
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="p-8 text-center text-slate-400 font-medium">
+                    <i class="ph ph-receipt text-3xl mb-2 text-slate-300 block"></i>
+                    Không có dữ liệu lương chuyến trong kỳ đã chọn.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = items.map(item => `
+        <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+            <td class="py-2.5 px-3.5 font-mono font-bold text-teal-900 border-r border-slate-200 text-xs">${escapeHtml(item.code || '')}</td>
+            <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-sm">${escapeHtml(item.name || '')}</td>
+            <td class="py-2.5 px-3.5 text-center font-bold text-slate-800 border-r border-slate-200 text-xs">
+                <span class="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">${item.trips || 0}</span>
+            </td>
+            <td class="py-2.5 px-3.5 text-right font-mono text-xs font-semibold text-slate-700 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(item.base_salary || 0)} đ</td>
+            <td class="py-2.5 px-3.5 text-right font-mono text-xs font-bold text-teal-700 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(item.trip_salary || 0)} đ</td>
+            <td class="py-2.5 px-3.5 text-right font-mono text-xs font-semibold text-rose-600 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(item.advance || 0)} đ</td>
+            <td class="py-2.5 px-3.5 text-right font-mono text-xs font-bold text-emerald-700">${new Intl.NumberFormat('vi-VN').format(item.net_salary || 0)} đ</td>
+        </tr>
+    `).join('');
+    
+    // Tự động đồng bộ ẩn/hiện cột nếu ColumnManager đang hoạt động
+    if (window.BimTableColumnManager && typeof window.BimTableColumnManager.instances === 'object') {
+        const mgr = window.BimTableColumnManager.instances['personnel-payroll-table'];
+        if (mgr && typeof mgr.apply === 'function') {
+            mgr.apply();
+        }
+    }
+}
+
 // --- 7. ĐỘI XE & BÃI ---
 let rawFleetVehicles = [];
 let fleetSortColumn = null;
@@ -17711,4 +17835,240 @@ window.onSettlementTripSelectionChange = onSettlementTripSelectionChange;
 window.executePageSettlementSubmit = executePageSettlementSubmit;
 window.exportSettlementToExcel = exportSettlementToExcel;
 
+
+// ==============================================================================
+// GLOBAL WINDOW EXPORTS (ĐỒNG BỘ 100% INLINE HANDLERS & BROWSER CONTEXT)
+// ==============================================================================
+// 1. Điều hướng & Chuyển Tab / SubTab
+window.switchTab = typeof switchTab !== 'undefined' ? switchTab : window.switchTab;
+window.switchSalesSubTab = typeof switchSalesSubTab !== 'undefined' ? switchSalesSubTab : undefined;
+window.switchHRSubTab = typeof switchHRSubTab !== 'undefined' ? switchHRSubTab : undefined;
+window.switchMasterDataTab = typeof switchMasterDataTab !== 'undefined' ? switchMasterDataTab : undefined;
+window.switchAccountingSubTab = typeof switchAccountingSubTab !== 'undefined' ? switchAccountingSubTab : window.switchAccountingSubTab;
+window.switchReportGroup = typeof switchReportGroup !== 'undefined' ? switchReportGroup : undefined;
+window.switchReportSubTab = typeof switchReportSubTab !== 'undefined' ? switchReportSubTab : undefined;
+window.switchDonutChart = typeof switchDonutChart !== 'undefined' ? switchDonutChart : undefined;
+window.toggleSidebar = typeof toggleSidebar !== 'undefined' ? toggleSidebar : undefined;
+window.toggleDashboardCharts = typeof toggleDashboardCharts !== 'undefined' ? toggleDashboardCharts : undefined;
+window.refreshCurrentView = typeof refreshCurrentView !== 'undefined' ? refreshCurrentView : undefined;
+window.applyDashboardCustomDate = typeof applyDashboardCustomDate !== 'undefined' ? applyDashboardCustomDate : undefined;
+
+// 2. Phân Hệ Điều Vận (Dispatch)
+window.loadTripsData = typeof loadTripsData !== 'undefined' ? loadTripsData : undefined;
+window.applyDispatchFilters = typeof applyDispatchFilters !== 'undefined' ? applyDispatchFilters : undefined;
+window.clearDispatchSearch = typeof clearDispatchSearch !== 'undefined' ? clearDispatchSearch : undefined;
+window.resetDispatchFilters = typeof resetDispatchFilters !== 'undefined' ? resetDispatchFilters : undefined;
+window.toggleDispatchSort = typeof toggleDispatchSort !== 'undefined' ? toggleDispatchSort : undefined;
+window.openModal = typeof openModal !== 'undefined' ? openModal : undefined;
+window.closeModal = typeof closeModal !== 'undefined' ? closeModal : undefined;
+window.openModalEditTrip = typeof openModalEditTrip !== 'undefined' ? openModalEditTrip : undefined;
+window.viewTripDetail = typeof viewTripDetail !== 'undefined' ? viewTripDetail : undefined;
+window.confirmTripManually = typeof confirmTripManually !== 'undefined' ? confirmTripManually : undefined;
+window.deleteOrCancelTrip = typeof deleteOrCancelTrip !== 'undefined' ? deleteOrCancelTrip : undefined;
+window.submitNewTrip = typeof submitNewTrip !== 'undefined' ? submitNewTrip : undefined;
+window.openReassignDriverModal = typeof openReassignDriverModal !== 'undefined' ? openReassignDriverModal : undefined;
+window.closeReassignDriverModal = typeof closeReassignDriverModal !== 'undefined' ? closeReassignDriverModal : undefined;
+window.submitReassignDriver = typeof submitReassignDriver !== 'undefined' ? submitReassignDriver : undefined;
+window.openModalDetention = typeof openModalDetention !== 'undefined' ? openModalDetention : undefined;
+window.closeModalDetention = typeof closeModalDetention !== 'undefined' ? closeModalDetention : undefined;
+window.openModalAddExpense = typeof openModalAddExpense !== 'undefined' ? openModalAddExpense : undefined;
+window.closeModalAddExpense = typeof closeModalAddExpense !== 'undefined' ? closeModalAddExpense : undefined;
+window.submitAddExpense = typeof submitAddExpense !== 'undefined' ? submitAddExpense : undefined;
+window.openModalEditExpense = typeof openModalEditExpense !== 'undefined' ? openModalEditExpense : undefined;
+window.closeModalEditExpense = typeof closeModalEditExpense !== 'undefined' ? closeModalEditExpense : undefined;
+window.submitEditExpense = typeof submitEditExpense !== 'undefined' ? submitEditExpense : undefined;
+window.toggleDropHookMode = typeof toggleDropHookMode !== 'undefined' ? toggleDropHookMode : undefined;
+window.toggleTwinContMode = typeof toggleTwinContMode !== 'undefined' ? toggleTwinContMode : undefined;
+window.onDriverLeg1Change = typeof onDriverLeg1Change !== 'undefined' ? onDriverLeg1Change : undefined;
+window.onDriverLeg2Change = typeof onDriverLeg2Change !== 'undefined' ? onDriverLeg2Change : undefined;
+window.setCurrentTimeToDropoff = typeof setCurrentTimeToDropoff !== 'undefined' ? setCurrentTimeToDropoff : undefined;
+window.setQuickAppointment = typeof setQuickAppointment !== 'undefined' ? setQuickAppointment : undefined;
+window.setTripCutoffTime = typeof setTripCutoffTime !== 'undefined' ? setTripCutoffTime : undefined;
+window.syncTripCutoff = typeof syncTripCutoff !== 'undefined' ? syncTripCutoff : undefined;
+
+// 3. Phân Hệ Kinh Doanh (Sales & Quotes & Bookings)
+window.loadSalesData = typeof loadSalesData !== 'undefined' ? loadSalesData : undefined;
+window.applyQuoteFilters = typeof applyQuoteFilters !== 'undefined' ? applyQuoteFilters : undefined;
+window.clearQuoteSearch = typeof clearQuoteSearch !== 'undefined' ? clearQuoteSearch : undefined;
+window.resetQuoteFilters = typeof resetQuoteFilters !== 'undefined' ? resetQuoteFilters : undefined;
+window.toggleQuoteSort = typeof toggleQuoteSort !== 'undefined' ? toggleQuoteSort : undefined;
+window.applyBookingFilters = typeof applyBookingFilters !== 'undefined' ? applyBookingFilters : undefined;
+window.clearBookingSearch = typeof clearBookingSearch !== 'undefined' ? clearBookingSearch : undefined;
+window.resetBookingFilters = typeof resetBookingFilters !== 'undefined' ? resetBookingFilters : undefined;
+window.toggleBookingSort = typeof toggleBookingSort !== 'undefined' ? toggleBookingSort : undefined;
+window.openModalQuotation = typeof openModalQuotation !== 'undefined' ? openModalQuotation : undefined;
+window.saveQuotation = typeof saveQuotation !== 'undefined' ? saveQuotation : undefined;
+window.openModalBooking = typeof openModalBooking !== 'undefined' ? openModalBooking : undefined;
+window.saveBooking = typeof saveBooking !== 'undefined' ? saveBooking : undefined;
+window.handleBookingFilesSelect = typeof handleBookingFilesSelect !== 'undefined' ? handleBookingFilesSelect : undefined;
+window.handleSaleBookingFilesSelect = typeof handleSaleBookingFilesSelect !== 'undefined' ? handleSaleBookingFilesSelect : undefined;
+window.onBookingSelected = typeof onBookingSelected !== 'undefined' ? onBookingSelected : undefined;
+window.onBookingTypeChange = typeof onBookingTypeChange !== 'undefined' ? onBookingTypeChange : undefined;
+window.onQuotationPricingMethodChange = typeof onQuotationPricingMethodChange !== 'undefined' ? onQuotationPricingMethodChange : undefined;
+window.addQuotationRouteRow = typeof addQuotationRouteRow !== 'undefined' ? addQuotationRouteRow : undefined;
+window.switchQuotationPrintTemplate = typeof switchQuotationPrintTemplate !== 'undefined' ? switchQuotationPrintTemplate : undefined;
+window.printQuotationFromModal = typeof printQuotationFromModal !== 'undefined' ? printQuotationFromModal : undefined;
+window.closeQuotationPrintModal = typeof closeQuotationPrintModal !== 'undefined' ? closeQuotationPrintModal : undefined;
+window.printQuotationVoucher = typeof printQuotationVoucher !== 'undefined' ? printQuotationVoucher : undefined;
+window.syncBookingClosingTime = typeof syncBookingClosingTime !== 'undefined' ? syncBookingClosingTime : undefined;
+window.syncBookingSiTime = typeof syncBookingSiTime !== 'undefined' ? syncBookingSiTime : undefined;
+
+// 4. Phân Hệ Đội Xe & Rơ-moóc (Fleet)
+window.loadFleetData = typeof loadFleetData !== 'undefined' ? loadFleetData : undefined;
+window.applyFleetFilters = typeof applyFleetFilters !== 'undefined' ? applyFleetFilters : undefined;
+window.clearFleetSearch = typeof clearFleetSearch !== 'undefined' ? clearFleetSearch : undefined;
+window.resetFleetFilters = typeof resetFleetFilters !== 'undefined' ? resetFleetFilters : undefined;
+window.toggleFleetSort = typeof toggleFleetSort !== 'undefined' ? toggleFleetSort : undefined;
+
+// 5. Phân Hệ Nhân Sự & Bảng Lương (HR & Payroll)
+window.loadHRData = typeof loadHRData !== 'undefined' ? loadHRData : undefined;
+window.loadEmployeesData = typeof loadEmployeesData !== 'undefined' ? loadEmployeesData : undefined;
+window.loadHRPayrollData = typeof loadHRPayrollData !== 'undefined' ? loadHRPayrollData : undefined;
+window.applyHRFilters = typeof applyHRFilters !== 'undefined' ? applyHRFilters : undefined;
+window.clearHRSearch = typeof clearHRSearch !== 'undefined' ? clearHRSearch : undefined;
+window.resetHRFilters = typeof resetHRFilters !== 'undefined' ? resetHRFilters : undefined;
+window.toggleHRSort = typeof toggleHRSort !== 'undefined' ? toggleHRSort : undefined;
+window.openCreateEmployeeModal = typeof openCreateEmployeeModal !== 'undefined' ? openCreateEmployeeModal : undefined;
+window.closeEmployeeModal = typeof closeEmployeeModal !== 'undefined' ? closeEmployeeModal : undefined;
+window.submitEmployeeForm = typeof submitEmployeeForm !== 'undefined' ? submitEmployeeForm : undefined;
+window.filterEmployeesTable = typeof filterEmployeesTable !== 'undefined' ? filterEmployeesTable : undefined;
+window.handleEmployeeRoleChange = typeof handleEmployeeRoleChange !== 'undefined' ? handleEmployeeRoleChange : undefined;
+
+// 6. Phân Hệ Tài Chính & Kế Toán (Accounting)
+window.loadAccountingData = typeof loadAccountingData !== 'undefined' ? loadAccountingData : undefined;
+window.loadCashBookData = typeof loadCashBookData !== 'undefined' ? loadCashBookData : undefined;
+window.loadReimbursablesData = typeof loadReimbursablesData !== 'undefined' ? loadReimbursablesData : undefined;
+window.loadSubcontractorData = typeof loadSubcontractorData !== 'undefined' ? loadSubcontractorData : undefined;
+window.loadBotAuditData = typeof loadBotAuditData !== 'undefined' ? loadBotAuditData : undefined;
+window.filterAccountingTable = typeof filterAccountingTable !== 'undefined' ? filterAccountingTable : undefined;
+window.toggleAccountingSort = typeof toggleAccountingSort !== 'undefined' ? toggleAccountingSort : undefined;
+window.resetAccountingFilters = typeof resetAccountingFilters !== 'undefined' ? resetAccountingFilters : undefined;
+window.clearAccountingSearch = typeof clearAccountingSearch !== 'undefined' ? clearAccountingSearch : undefined;
+window.exportAccountingToExcel = typeof exportAccountingToExcel !== 'undefined' ? exportAccountingToExcel : undefined;
+window.exportCashBookToExcel = typeof exportCashBookToExcel !== 'undefined' ? exportCashBookToExcel : undefined;
+window.exportReimbursablesToExcel = typeof exportReimbursablesToExcel !== 'undefined' ? exportReimbursablesToExcel : undefined;
+window.exportSubcontractorToExcel = typeof exportSubcontractorToExcel !== 'undefined' ? exportSubcontractorToExcel : undefined;
+window.exportBotAuditToExcel = typeof exportBotAuditToExcel !== 'undefined' ? exportBotAuditToExcel : undefined;
+window.openCreateCashTransactionModal = typeof openCreateCashTransactionModal !== 'undefined' ? openCreateCashTransactionModal : undefined;
+window.closeCashTransactionModal = typeof closeCashTransactionModal !== 'undefined' ? closeCashTransactionModal : undefined;
+window.handleSaveCashTransaction = typeof handleSaveCashTransaction !== 'undefined' ? handleSaveCashTransaction : undefined;
+window.openCreateDebitNoteModal = typeof openCreateDebitNoteModal !== 'undefined' ? openCreateDebitNoteModal : undefined;
+window.closeDebitNoteModal = typeof closeDebitNoteModal !== 'undefined' ? closeDebitNoteModal : undefined;
+window.handleSaveDebitNote = typeof handleSaveDebitNote !== 'undefined' ? handleSaveDebitNote : undefined;
+window.openSettleDebitNoteModal = typeof openSettleDebitNoteModal !== 'undefined' ? openSettleDebitNoteModal : undefined;
+window.closeSubcontractorModal = typeof closeSubcontractorModal !== 'undefined' ? closeSubcontractorModal : undefined;
+window.handleSaveSubcontractor = typeof handleSaveSubcontractor !== 'undefined' ? handleSaveSubcontractor : undefined;
+window.openDispatcherFundModal = typeof openDispatcherFundModal !== 'undefined' ? openDispatcherFundModal : undefined;
+window.closeDispatcherFundModal = typeof closeDispatcherFundModal !== 'undefined' ? closeDispatcherFundModal : undefined;
+window.submitDispatcherFundForm = typeof submitDispatcherFundForm !== 'undefined' ? submitDispatcherFundForm : undefined;
+window.openDriverAdvanceModal = typeof openDriverAdvanceModal !== 'undefined' ? openDriverAdvanceModal : undefined;
+window.closeDriverAdvanceModal = typeof closeDriverAdvanceModal !== 'undefined' ? closeDriverAdvanceModal : undefined;
+window.submitDriverAdvanceForm = typeof submitDriverAdvanceForm !== 'undefined' ? submitDriverAdvanceForm : undefined;
+window.closeSettleAdvanceModal = typeof closeSettleAdvanceModal !== 'undefined' ? closeSettleAdvanceModal : undefined;
+window.submitSettleAdvanceForm = typeof submitSettleAdvanceForm !== 'undefined' ? submitSettleAdvanceForm : undefined;
+window.onAdvanceTripChange = typeof onAdvanceTripChange !== 'undefined' ? onAdvanceTripChange : undefined;
+window.toggleAdvanceSourceType = typeof toggleAdvanceSourceType !== 'undefined' ? toggleAdvanceSourceType : undefined;
+window.applyDriverAdvancesFilter = typeof applyDriverAdvancesFilter !== 'undefined' ? applyDriverAdvancesFilter : undefined;
+window.selectAllReimbursables = typeof selectAllReimbursables !== 'undefined' ? selectAllReimbursables : undefined;
+window.toggleCheckAllReimbursables = typeof toggleCheckAllReimbursables !== 'undefined' ? toggleCheckAllReimbursables : undefined;
+window.toggleBehalfCheckbox = typeof toggleBehalfCheckbox !== 'undefined' ? toggleBehalfCheckbox : undefined;
+window.calculateSettlementDiff = typeof calculateSettlementDiff !== 'undefined' ? calculateSettlementDiff : undefined;
+window.calculateSubcontractorMargin = typeof calculateSubcontractorMargin !== 'undefined' ? calculateSubcontractorMargin : undefined;
+window.onCashTypeChange = typeof onCashTypeChange !== 'undefined' ? onCashTypeChange : undefined;
+window.onPaymentMethodChange = typeof onPaymentMethodChange !== 'undefined' ? onPaymentMethodChange : undefined;
+window.printCashVoucher = typeof printCashVoucher !== 'undefined' ? printCashVoucher : undefined;
+window.closeCashVoucherModal = typeof closeCashVoucherModal !== 'undefined' ? closeCashVoucherModal : undefined;
+window.setVoucherPrintMode = typeof setVoucherPrintMode !== 'undefined' ? setVoucherPrintMode : undefined;
+window.printCurrentCustomerStatement = typeof printCurrentCustomerStatement !== 'undefined' ? printCurrentCustomerStatement : undefined;
+window.closeCustomerARStatementModal = typeof closeCustomerARStatementModal !== 'undefined' ? closeCustomerARStatementModal : undefined;
+window.filterCustomerSelectOptions = typeof filterCustomerSelectOptions !== 'undefined' ? filterCustomerSelectOptions : undefined;
+
+// 7. Phân Hệ Quyết Toán Gom Chuyến (Driver Settlements)
+window.openBatchSettlementModal = typeof openBatchSettlementModal !== 'undefined' ? openBatchSettlementModal : undefined;
+window.closeBatchSettlementModal = typeof closeBatchSettlementModal !== 'undefined' ? closeBatchSettlementModal : () => {};
+window.loadBatchSettlementPreview = typeof loadBatchSettlementPreview !== 'undefined' ? loadBatchSettlementPreview : (typeof loadSettlementData !== 'undefined' ? loadSettlementData : undefined);
+window.onBatchGroupByChange = typeof onBatchGroupByChange !== 'undefined' ? onBatchGroupByChange : (typeof onSettlementGroupByChange !== 'undefined' ? onSettlementGroupByChange : undefined);
+window.toggleSelectAllBatchTrips = typeof toggleSelectAllBatchTrips !== 'undefined' ? toggleSelectAllBatchTrips : (typeof toggleMasterSettlementCheckbox !== 'undefined' ? toggleMasterSettlementCheckbox : undefined);
+window.executeBatchSettlementSubmit = typeof executeBatchSettlementSubmit !== 'undefined' ? executeBatchSettlementSubmit : (typeof executePageSettlementSubmit !== 'undefined' ? executePageSettlementSubmit : undefined);
+
+// 8. Phân Hệ Hải Quan (Customs)
+window.fetchCustomsDeclarations = typeof fetchCustomsDeclarations !== 'undefined' ? fetchCustomsDeclarations : undefined;
+window.openCustomsModal = typeof openCustomsModal !== 'undefined' ? openCustomsModal : undefined;
+window.closeCustomsModal = typeof closeCustomsModal !== 'undefined' ? closeCustomsModal : undefined;
+window.submitCustomsDeclarationForm = typeof submitCustomsDeclarationForm !== 'undefined' ? submitCustomsDeclarationForm : undefined;
+window.exportCustomsExcel = typeof exportCustomsExcel !== 'undefined' ? exportCustomsExcel : undefined;
+window.debounceCustomsSearch = typeof debounceCustomsSearch !== 'undefined' ? debounceCustomsSearch : undefined;
+window.onCustomsOfficeChange = typeof onCustomsOfficeChange !== 'undefined' ? onCustomsOfficeChange : undefined;
+window.onSplitRatioChange = typeof onSplitRatioChange !== 'undefined' ? onSplitRatioChange : undefined;
+window.onFreeDaysChange = typeof onFreeDaysChange !== 'undefined' ? onFreeDaysChange : undefined;
+
+// 9. Phân Hệ Báo Cáo & Thống Kê (Reports)
+window.loadReportsData = typeof loadReportsData !== 'undefined' ? loadReportsData : undefined;
+window.exportReportToExcel = typeof exportReportToExcel !== 'undefined' ? exportReportToExcel : undefined;
+window.changeReportPeriod = typeof changeReportPeriod !== 'undefined' ? changeReportPeriod : undefined;
+window.toggleReportViewMode = typeof toggleReportViewMode !== 'undefined' ? toggleReportViewMode : undefined;
+window.printReportDocument = typeof printReportDocument !== 'undefined' ? printReportDocument : undefined;
+window.closeReportPrintModal = typeof closeReportPrintModal !== 'undefined' ? closeReportPrintModal : undefined;
+window.setReportPrintOrientation = typeof setReportPrintOrientation !== 'undefined' ? setReportPrintOrientation : undefined;
+window.onReportPrintTypeChanged = typeof onReportPrintTypeChanged !== 'undefined' ? onReportPrintTypeChanged : undefined;
+window.executePrintReportDocument = typeof executePrintReportDocument !== 'undefined' ? executePrintReportDocument : undefined;
+window.applyReport1Filters = typeof applyReport1Filters !== 'undefined' ? applyReport1Filters : undefined;
+window.applyReport2Filters = typeof applyReport2Filters !== 'undefined' ? applyReport2Filters : undefined;
+window.applyReport3Filters = typeof applyReport3Filters !== 'undefined' ? applyReport3Filters : undefined;
+window.applyReport4Filters = typeof applyReport4Filters !== 'undefined' ? applyReport4Filters : undefined;
+window.applyReport5Filters = typeof applyReport5Filters !== 'undefined' ? applyReport5Filters : undefined;
+window.applyReport6Filters = typeof applyReport6Filters !== 'undefined' ? applyReport6Filters : undefined;
+window.applyReport7Filters = typeof applyReport7Filters !== 'undefined' ? applyReport7Filters : undefined;
+window.applyReport8Filters = typeof applyReport8Filters !== 'undefined' ? applyReport8Filters : undefined;
+window.applyReport9Filters = typeof applyReport9Filters !== 'undefined' ? applyReport9Filters : undefined;
+window.applyReport10Filters = typeof applyReport10Filters !== 'undefined' ? applyReport10Filters : undefined;
+window.applyReport11Filters = typeof applyReport11Filters !== 'undefined' ? applyReport11Filters : undefined;
+window.applyReport12Filters = typeof applyReport12Filters !== 'undefined' ? applyReport12Filters : undefined;
+window.applyReport13Filters = typeof applyReport13Filters !== 'undefined' ? applyReport13Filters : undefined;
+window.applyReport14Filters = typeof applyReport14Filters !== 'undefined' ? applyReport14Filters : undefined;
+window.toggleReport1Sort = typeof toggleReport1Sort !== 'undefined' ? toggleReport1Sort : undefined;
+window.toggleReport2Sort = typeof toggleReport2Sort !== 'undefined' ? toggleReport2Sort : undefined;
+window.toggleReport3Sort = typeof toggleReport3Sort !== 'undefined' ? toggleReport3Sort : undefined;
+window.toggleReport4Sort = typeof toggleReport4Sort !== 'undefined' ? toggleReport4Sort : undefined;
+window.toggleReport5Sort = typeof toggleReport5Sort !== 'undefined' ? toggleReport5Sort : undefined;
+window.toggleReport6Sort = typeof toggleReport6Sort !== 'undefined' ? toggleReport6Sort : undefined;
+window.toggleReport7Sort = typeof toggleReport7Sort !== 'undefined' ? toggleReport7Sort : undefined;
+window.toggleReport8TripSort = typeof toggleReport8TripSort !== 'undefined' ? toggleReport8TripSort : undefined;
+window.toggleReport8SubSort = typeof toggleReport8SubSort !== 'undefined' ? toggleReport8SubSort : undefined;
+window.toggleReport9Sort = typeof toggleReport9Sort !== 'undefined' ? toggleReport9Sort : undefined;
+window.toggleReport10Sort = typeof toggleReport10Sort !== 'undefined' ? toggleReport10Sort : undefined;
+window.toggleReport11Sort = typeof toggleReport11Sort !== 'undefined' ? toggleReport11Sort : undefined;
+window.toggleReport12Sort = typeof toggleReport12Sort !== 'undefined' ? toggleReport12Sort : undefined;
+window.toggleReport13Sort = typeof toggleReport13Sort !== 'undefined' ? toggleReport13Sort : undefined;
+window.toggleReport14Sort = typeof toggleReport14Sort !== 'undefined' ? toggleReport14Sort : undefined;
+
+// 10. Phân Hệ Cài Đặt Danh Mục (Master Data)
+window.loadMasterData = typeof loadMasterData !== 'undefined' ? loadMasterData : undefined;
+window.openCreateMasterDataModal = typeof openCreateMasterDataModal !== 'undefined' ? openCreateMasterDataModal : undefined;
+window.openMasterDataModalQuick = typeof openMasterDataModalQuick !== 'undefined' ? openMasterDataModalQuick : undefined;
+window.closeMasterDataModal = typeof closeMasterDataModal !== 'undefined' ? closeMasterDataModal : undefined;
+window.submitMasterDataForm = typeof submitMasterDataForm !== 'undefined' ? submitMasterDataForm : undefined;
+window.filterMasterDataTable = typeof filterMasterDataTable !== 'undefined' ? filterMasterDataTable : undefined;
+window.reloadActiveMasterDataTab = typeof reloadActiveMasterDataTab !== 'undefined' ? reloadActiveMasterDataTab : undefined;
+window.changeMasterDataPageSize = typeof changeMasterDataPageSize !== 'undefined' ? changeMasterDataPageSize : undefined;
+
+// 11. Dashboard & OCR & Tiện ích chung
+window.loadDashboardData = typeof loadDashboardData !== 'undefined' ? loadDashboardData : undefined;
+window.applyDashboardPnlFilters = typeof applyDashboardPnlFilters !== 'undefined' ? applyDashboardPnlFilters : undefined;
+window.clearDashboardPnlSearch = typeof clearDashboardPnlSearch !== 'undefined' ? clearDashboardPnlSearch : undefined;
+window.resetDashboardPnlFilters = typeof resetDashboardPnlFilters !== 'undefined' ? resetDashboardPnlFilters : undefined;
+window.toggleDashboardPnlSort = typeof toggleDashboardPnlSort !== 'undefined' ? toggleDashboardPnlSort : undefined;
+window.openOcrApp = typeof openOcrApp !== 'undefined' ? openOcrApp : undefined;
+window.startOcrScan = typeof startOcrScan !== 'undefined' ? startOcrScan : undefined;
+window.submitOcrData = typeof submitOcrData !== 'undefined' ? submitOcrData : undefined;
+window.openSimContactModal = typeof openSimContactModal !== 'undefined' ? openSimContactModal : undefined;
+window.openSimIncidentModal = typeof openSimIncidentModal !== 'undefined' ? openSimIncidentModal : undefined;
+window.closeSimIncidentModal = typeof closeSimIncidentModal !== 'undefined' ? closeSimIncidentModal : undefined;
+window.submitSimIncident = typeof submitSimIncident !== 'undefined' ? submitSimIncident : undefined;
+window.openSimRouteDetailsModal = typeof openSimRouteDetailsModal !== 'undefined' ? openSimRouteDetailsModal : undefined;
+window.closeSimRouteDetailsModal = typeof closeSimRouteDetailsModal !== 'undefined' ? closeSimRouteDetailsModal : undefined;
+window.openSimTripDetailsModal = typeof openSimTripDetailsModal !== 'undefined' ? openSimTripDetailsModal : undefined;
+window.closeSimTripDetailsModal = typeof closeSimTripDetailsModal !== 'undefined' ? closeSimTripDetailsModal : undefined;
+window.toggleSimTimelineAccordion = typeof toggleSimTimelineAccordion !== 'undefined' ? toggleSimTimelineAccordion : undefined;
+window.toggleSimExpenseAccordion = typeof toggleSimExpenseAccordion !== 'undefined' ? toggleSimExpenseAccordion : undefined;
 
