@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.12] - 2026-10-06 (Chuẩn Hoá Đồng Bộ Typography & Font Size Bảng Báo Cáo Toàn Nền Tảng)
+
+### 1. Chuẩn Hóa Phông Chữ & Kích Thước Bảng Báo Cáo & Danh Mục (Enterprise Table Typography Standard):
+- **Đồng bộ Typography toàn app theo CODING_STANDARDS.md:**
+  - Tiêu đề cột `<th>`: `font-heading` (`Plus Jakarta Sans`), cỡ chữ chuẩn `12.5px`, `font-bold text-slate-700 uppercase tracking-wider`, chiều cao cố định `36px`, `sticky top-0`.
+  - Ô dữ liệu `<td>`: `font-body` (`Be Vietnam Pro`), cỡ chữ chuẩn `13px`, `line-height: 1.4`, màu chữ chuẩn `text-slate-900 / #1e293b`.
+  - Dòng phụ (Sub-text): `font-body`, cỡ chữ chuẩn `11.5px`, `font-medium text-slate-500`, `mt-0.5`.
+  - Số liệu tiền tệ, cước phí, sản lượng, mã đơn, số container: `font-mono` / `tabular-nums`, `font-bold`, canh phải `text-right`.
+- **Cập nhật CSS cốt lõi & Cache Busting:**
+  - Bổ sung quy tắc đa tầng trong `static/css/main.css` áp dụng tự động cho `.erp-table`, `.bim-table` và toàn bộ các thẻ `<table>` trong các modal popup, card chi tiết, bảng báo cáo.
+  - Nâng version CSS cache busting trong `templates/base.html` lên `?v=2.9.12`.
+- **Đồng bộ class các bảng dữ liệu còn thiếu:**
+  - Bổ sung class `.erp-table` cho bảng tờ khai Hải quan (`view_customs.html`), bảng ma trận tuyến báo giá (`view_quotation_detail.html`, `modal_quotation.html`), bảng container booking (`view_booking_detail.html`, `modal_booking.html`), và bảng tiến độ 11 bước (`view_trip_detail.html`).
+- **Tệp cập nhật:** [main.css](file:///E:/Bim_Logistics/static/css/main.css), [base.html](file:///E:/Bim_Logistics/templates/base.html), [view_customs.html](file:///E:/Bim_Logistics/templates/views/view_customs.html), [view_quotation_detail.html](file:///E:/Bim_Logistics/templates/views/view_quotation_detail.html), [view_booking_detail.html](file:///E:/Bim_Logistics/templates/views/view_booking_detail.html), [view_trip_detail.html](file:///E:/Bim_Logistics/templates/views/view_trip_detail.html), [modal_booking.html](file:///E:/Bim_Logistics/templates/components/modal_booking.html), [modal_quotation.html](file:///E:/Bim_Logistics/templates/components/modal_quotation.html).
+
 ## [2.9.11] - 2026-10-06 (Chuẩn Hoá Tạo Lệnh Điều Động Sang Trang Riêng: Điều Vận | Tạo Lệnh Điều Động)
 
 ### 1. Nâng Cấp Luồng Tạo Lệnh Điều Động Sang Trang Riêng Toàn Màn Hình:
