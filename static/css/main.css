@@ -576,17 +576,21 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     body * {
         visibility: hidden !important;
     }
-    #modal-cash-voucher-print,
-    #modal-cash-voucher-print *,
-    #modal-quotation-print,
-    #modal-quotation-print *,
-    #modal-report-print,
-    #modal-report-print * {
-        visibility: visible !important;
+
+    /* Tuyệt đối ẩn các phần tử no-print hoặc đang đóng/ẩn */
+    .no-print,
+    .hidden,
+    .hidden-view,
+    #modal-cash-voucher-print.hidden,
+    #modal-quotation-print.hidden,
+    #modal-report-print.hidden {
+        display: none !important;
+        visibility: hidden !important;
     }
-    #modal-cash-voucher-print,
-    #modal-quotation-print,
-    #modal-report-print {
+
+    /* 1. Modal Báo Giá Cước (Chỉ in khi đang mở hoặc có cờ is-printing-quotation) */
+    body.is-printing-quotation #modal-quotation-print:not(.hidden),
+    body:not(.is-printing-voucher):not(.is-printing-report) #modal-quotation-print:not(.hidden) {
         position: fixed !important;
         left: 0 !important;
         top: 0 !important;
@@ -599,9 +603,76 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         z-index: 999999 !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
+        visibility: visible !important;
     }
-    .no-print {
+    body.is-printing-quotation #modal-quotation-print:not(.hidden) *,
+    body:not(.is-printing-voucher):not(.is-printing-report) #modal-quotation-print:not(.hidden) * {
+        visibility: visible !important;
+    }
+
+    /* Khi in Báo Giá: Ẩn tuyệt đối các modal khác */
+    body.is-printing-quotation #modal-cash-voucher-print,
+    body.is-printing-quotation #modal-report-print {
         display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* 2. Modal Phiếu Thu / Chi */
+    body.is-printing-voucher #modal-cash-voucher-print:not(.hidden),
+    body:not(.is-printing-quotation):not(.is-printing-report) #modal-cash-voucher-print:not(.hidden) {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        z-index: 999999 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        visibility: visible !important;
+    }
+    body.is-printing-voucher #modal-cash-voucher-print:not(.hidden) *,
+    body:not(.is-printing-quotation):not(.is-printing-report) #modal-cash-voucher-print:not(.hidden) * {
+        visibility: visible !important;
+    }
+
+    /* Khi in Phiếu Thu/Chi: Ẩn tuyệt đối các modal khác */
+    body.is-printing-voucher #modal-quotation-print,
+    body.is-printing-voucher #modal-report-print {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* 3. Modal Báo Cáo Quản Trị */
+    body.is-printing-report #modal-report-print:not(.hidden),
+    body:not(.is-printing-quotation):not(.is-printing-voucher) #modal-report-print:not(.hidden) {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        z-index: 999999 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        visibility: visible !important;
+    }
+    body.is-printing-report #modal-report-print:not(.hidden) *,
+    body:not(.is-printing-quotation):not(.is-printing-voucher) #modal-report-print:not(.hidden) * {
+        visibility: visible !important;
+    }
+
+    /* Khi in Báo Cáo: Ẩn tuyệt đối các modal khác */
+    body.is-printing-report #modal-quotation-print,
+    body.is-printing-report #modal-cash-voucher-print {
+        display: none !important;
+        visibility: hidden !important;
     }
     
     /* ── A. KHUNG BÁO GIÁ & BÁO CÁO ── */

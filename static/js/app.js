@@ -6168,6 +6168,8 @@ function switchQuotationPrintTemplate(templateType) {
 }
 
 function printQuotationVoucher() {
+    document.body.classList.add('is-printing-quotation');
+    document.body.classList.remove('is-printing-voucher', 'is-printing-report');
     window.print();
 }
 
@@ -10430,6 +10432,8 @@ function closeCashVoucherModal() {
 }
 
 function printCashVoucher() {
+    document.body.classList.add('is-printing-voucher');
+    document.body.classList.remove('is-printing-quotation', 'is-printing-report');
     window.print();
 }
 
@@ -16229,8 +16233,15 @@ function renderReportPrintContent(reportKey) {
 }
 
 function executePrintReportDocument() {
+    document.body.classList.add('is-printing-report');
+    document.body.classList.remove('is-printing-quotation', 'is-printing-voucher');
     window.print();
 }
+
+// Tự động gỡ bỏ cờ in ấn sau khi đóng hộp thoại In của trình duyệt
+window.addEventListener('afterprint', () => {
+    document.body.classList.remove('is-printing-quotation', 'is-printing-voucher', 'is-printing-report');
+});
 
 function closeReportPrintModal() {
     const modal = document.getElementById('modal-report-print');
