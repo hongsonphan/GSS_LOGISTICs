@@ -5783,25 +5783,23 @@ function calculateQuotationItemsTotal() {
 }
 
 const DEFAULT_QUOTATION_NOTES = {
-    fcl: `- Đơn giá trên chưa bao gồm thuế giá trị gia tăng VAT (8% / 10%).
-- Chưa bao gồm phí bốc xếp hàng hóa & phí nâng hạ tại kho của Quý khách.
-- Xe vận tải đúng tải trọng, tuân thủ nghiêm ngặt Luật Giao thông đường bộ.
-- Thời gian neo xe: Miễn phí 12 giờ đầu kể từ khi xe đến kho; Phí neo tính sau 12h: Neo xe đầu kéo 1.500.000 VNĐ/đêm, Neo Mooc 1.000.000 VNĐ/đêm.
-- Phía Triền Võ Logistics chịu toàn bộ chi phí nhiên liệu, lương lái xe và vé cầu đường BOT.
-- Rất mong nhận được sự hợp tác lâu dài từ Quý Công ty.`,
+    fcl: `1. Đơn giá trên chưa bao gồm thuế giá trị gia tăng (VAT 8% / 10%). Đã bao gồm chi phí nhiên liệu, lương lái xe và phí cầu đường BOT.
+2. Chưa bao gồm phí nâng hạ cont tại cảng/ICD và phí bốc xếp hàng hóa tại kho của Quý khách hàng.
+3. Thời gian lưu xe (Free-time): Miễn phí 12 giờ đầu kể từ khi xe đến kho; Phí neo tính sau 12h: Xe đầu kéo 1.500.000 VNĐ/đêm, Rơ-moóc 1.000.000 VNĐ/đêm.
+4. Triền Võ Logistics cam kết điều xe đúng chủng loại, đảm bảo tải trọng quy định, bảo toàn nguyên vẹn seal chì và phẩm chất hàng hóa.
+5. Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành.`,
 
-    ftl: `- Đơn giá trên chưa bao gồm thuế giá trị gia tăng VAT và không bao gồm bốc xếp.
-- Xe vận tải cam kết đi đúng tải trọng quy định pháp luật.
-- Phía công ty thuê vận chuyển chịu cung cấp đầy đủ hóa đơn, chứng từ hợp pháp của hàng hóa.
-- Phía TVL chịu toàn bộ chi phí nhiên liệu, lương tài xế, phí bảo trì phương tiện và vé BOT.
-- Rất mong sự hợp tác từ Quý Công ty!`,
+    ftl: `1. Đơn giá trên chưa bao gồm thuế VAT (8% / 10%) và chưa bao gồm chi phí bốc xếp tại hai đầu kho.
+2. Đã bao gồm chi phí xăng dầu, lương tài xế, bảo trì phương tiện và vé trạm BOT.
+3. Xe vận tải cam kết chạy đúng tải trọng và tuân thủ tuyệt đối Luật Giao thông đường bộ.
+4. Quý khách hàng chịu trách nhiệm chuẩn bị hóa đơn, chứng từ vận chuyển hợp pháp theo hàng hóa.
+5. Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành.`,
 
-    fuel: `- Đơn giá trên chưa bao gồm thuế VAT.
-- Phí bốc xếp tại kho do khách hàng chịu trách nhiệm.
-- Đơn giá áp dụng theo mức giá dầu Diesel cơ sở tại thời điểm báo giá.
-- Khi giá dầu thị trường biến động theo từng bước quy định, hai bên sẽ điều chỉnh đơn giá cước tương ứng.
-- Phí Neo tính sau 12h kể từ khi xe đến kho: Neo xe: 1.500.000 VNĐ/đêm, Neo Mooc: 1.000.000 VNĐ/đêm.
-- Hotline hỗ trợ 24/7: 0965 559 561 (Phòng Kinh Doanh).`
+    fuel: `1. Đơn giá trên chưa bao gồm thuế VAT (8% / 10%) và phí bốc xếp tại kho khách hàng.
+2. Đơn giá cước áp dụng theo mức giá dầu Diesel DO 0.05S cơ sở tại thời điểm phát hành báo giá.
+3. Khi giá dầu thị trường Petrolimex biến động theo từng bước quy định, hai bên sẽ tự động điều chỉnh đơn giá cước tương ứng.
+4. Thời gian neo xe: Miễn phí 12 giờ đầu; Phí neo tính sau 12h: Xe đầu kéo 1.500.000 VNĐ/đêm, Rơ-moóc 1.000.000 VNĐ/đêm.
+5. Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành.`
 };
 
 function setQuickQuoteNote(type) {
@@ -11244,11 +11242,11 @@ function reloadActiveMasterDataTab() {
 
 function syncCompanyProfileToPrintForms() {
     const comp = masterDataCache['company'] || window.SYSTEM_COMPANY || {};
-    const compName = comp.company_name || 'CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ';
+    const compName = comp.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ';
     const compAddress = comp.headquarters_address || comp.address || '153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh';
     const compTax = comp.tax_code || '0314567890';
-    const compPhone = comp.hotline || comp.phone || '0965.559.561';
-    const compEmail = comp.email || 'Phongkinhdoanh.tvl@trienvo.com';
+    const compPhone = comp.hotline || comp.phone || '0965 559 561';
+    const compEmail = comp.email || 'phongkinhdoanh.tvl@trienvo.com';
     
     // Đảm bảo luôn lấy logo chính thức của Công ty Triền Võ (không lấy logo phần mềm BIM)
     let compLogo = comp.logo_url || '/static/images/trienvo_logo.png';

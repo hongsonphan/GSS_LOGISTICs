@@ -694,6 +694,11 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         visibility: hidden !important;
     }
     
+    @page {
+        size: A4 portrait;
+        margin: 8mm 12mm;
+    }
+
     /* ── A. KHUNG BÁO GIÁ IN TRÊN A4 (1 MÀU DOANH NGHIỆP) ── */
     #quotation-printable-area {
         width: 100% !important;
@@ -707,30 +712,41 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         color: #000000 !important;
         font-size: 8.5pt !important;
         line-height: 1.35 !important;
+        page-break-inside: avoid !important;
     }
     #quotation-printable-area * {
         border-radius: 0 !important;
         box-shadow: none !important;
+        color: #000000 !important;
     }
     #quotation-printable-area table {
         width: 100% !important;
         border-collapse: collapse !important;
         border: 1px solid #000000 !important;
-        margin: 4px 0 !important;
+        margin: 3px 0 !important;
     }
     #quotation-printable-area table th,
     #quotation-printable-area table td {
         border: 1px solid #000000 !important;
-        padding: 3px 5px !important;
+        padding: 3px 4px !important;
         color: #000000 !important;
         background: transparent !important;
     }
     #quotation-printable-area table thead th {
-        background-color: #f8fafc !important;
+        background-color: #f1f5f9 !important;
         font-weight: bold !important;
         color: #000000 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+    }
+    #quotation-printable-area table tfoot td {
+        background-color: #f8fafc !important;
+        font-weight: bold !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    #quotation-printable-area tr {
+        page-break-inside: avoid !important;
     }
     #quotation-printable-area #print-q1-fuel-box,
     #quotation-printable-area #print-q2-fuel-box,
@@ -742,6 +758,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         border-radius: 0 !important;
         background: transparent !important;
         color: #000000 !important;
+        padding: 3px 6px !important;
     }
 
     /* ── B. KHUNG BÁO CÁO ── */
