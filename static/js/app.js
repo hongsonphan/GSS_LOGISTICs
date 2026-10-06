@@ -6835,11 +6835,15 @@ function switchSalesSubTab(tabName) {
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-teal-700">Sale Admin / CS (Chăm sóc Khách hàng)</strong> — Booking hãng tàu, kiểm soát SI/CY cut-off, chuyển giao điều xe';
         }
-        if (typeof applyBookingFilters === 'function') {
-            applyBookingFilters();
-        }
-        if (window.BimTableColumnManager) {
-            window.BimTableColumnManager.apply('sales-bookings-table');
+        if (!rawSalesBookings || rawSalesBookings.length === 0) {
+            loadSalesData();
+        } else {
+            if (typeof applyBookingFilters === 'function') {
+                applyBookingFilters();
+            }
+            if (window.BimTableColumnManager) {
+                window.BimTableColumnManager.apply('sales-bookings-table');
+            }
         }
     }
 }
@@ -6855,37 +6859,46 @@ function populateBookingFilterDropdowns(bookings) {
     // 1. Dropdown Khách hàng
     const custSelect = document.getElementById('filter-bk-customer');
     if (custSelect) {
-        const currentVal = custSelect.value;
-        const customers = [...new Set(bookings.map(b => b.customer).filter(Boolean))].sort();
+        const currentVal = custSelect.value || '';
+        const customers = [...new Set(bookings.map(b => (b.customer || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
         let html = '<option value="">-- Tất cả Khách hàng --</option>';
         customers.forEach(c => {
-            html += `<option value="${escapeHtml(c)}" ${c === currentVal ? 'selected' : ''}>${escapeHtml(c)}</option>`;
+            html += `<option value="${escapeHtml(c)}" ${c.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${escapeHtml(c)}</option>`;
         });
         custSelect.innerHTML = html;
+        if (currentVal && customers.some(c => c.toLowerCase() === currentVal.toLowerCase())) {
+            custSelect.value = currentVal;
+        }
     }
 
     // 2. Dropdown Hãng tàu
     const shipSelect = document.getElementById('filter-bk-shipping-line');
     if (shipSelect) {
-        const currentVal = shipSelect.value;
-        const shippingLines = [...new Set(bookings.map(b => b.shipping_line).filter(Boolean))].sort();
+        const currentVal = shipSelect.value || '';
+        const shippingLines = [...new Set(bookings.map(b => (b.shipping_line || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
         let html = '<option value="">-- Tất cả Hãng tàu --</option>';
         shippingLines.forEach(s => {
-            html += `<option value="${escapeHtml(s)}" ${s === currentVal ? 'selected' : ''}>${escapeHtml(s)}</option>`;
+            html += `<option value="${escapeHtml(s)}" ${s.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${escapeHtml(s)}</option>`;
         });
         shipSelect.innerHTML = html;
+        if (currentVal && shippingLines.some(s => s.toLowerCase() === currentVal.toLowerCase())) {
+            shipSelect.value = currentVal;
+        }
     }
 
     // 3. Dropdown Loại Cont
     const sizeSelect = document.getElementById('filter-bk-cont-size');
     if (sizeSelect) {
-        const currentVal = sizeSelect.value;
-        const sizes = [...new Set(bookings.map(b => b.container_size).filter(Boolean))].sort();
+        const currentVal = sizeSelect.value || '';
+        const sizes = [...new Set(bookings.map(b => (b.container_size || '').trim()).filter(Boolean))].sort();
         let html = '<option value="">-- Tất cả Loại Cont --</option>';
         sizes.forEach(s => {
-            html += `<option value="${escapeHtml(s)}" ${s === currentVal ? 'selected' : ''}>Cont ${escapeHtml(s)}</option>`;
+            html += `<option value="${escapeHtml(s)}" ${s.toUpperCase() === currentVal.toUpperCase() ? 'selected' : ''}>Cont ${escapeHtml(s)}</option>`;
         });
         sizeSelect.innerHTML = html;
+        if (currentVal && sizes.some(s => s.toUpperCase() === currentVal.toUpperCase())) {
+            sizeSelect.value = currentVal;
+        }
     }
 }
 
@@ -6927,7 +6940,8 @@ function clearBookingSearch() {
 }
 
 function applyBookingFilters() {
-    if (!rawSalesBookings || !Array.isArray(rawSalesBookings)) return;
+    if (!rawSalesBookings) rawSalesBookings = [];
+    if (!Array.isArray(rawSalesBookings)) rawSalesBookings = [];
 
     const filterCust = document.getElementById('filter-bk-customer')?.value?.trim().toLowerCase() || '';
     const filterShip = document.getElementById('filter-bk-shipping-line')?.value?.trim().toLowerCase() || '';
@@ -6943,9 +6957,10 @@ function applyBookingFilters() {
 
     // Tiến hành lọc
     let list = rawSalesBookings.filter(b => {
-        if (filterCust && (b.customer || '').toLowerCase() !== filterCust) return false;
-        if (filterShip && (b.shipping_line || '').toLowerCase() !== filterShip) return false;
-        if (filterSize && (b.container_size || '').toUpperCase() !== filterSize) return false;
+        if (!b) return false;
+        if (filterCust && (b.customer || '').trim().toLowerCase() !== filterCust) return false;
+        if (filterShip && (b.shipping_line || '').trim().toLowerCase() !== filterShip) return false;
+        if (filterSize && (b.container_size || '').trim().toUpperCase() !== filterSize) return false;
 
         if (filterStatus) {
             if (filterStatus === 'URGENT') {
@@ -6987,6 +7002,13 @@ function applyBookingFilters() {
         let valA = a[bookingSortColumn];
         let valB = b[bookingSortColumn];
 
+        if (bookingSortColumn === 'loading_date') {
+            valA = a.loading_date_iso || a.loading_date || '';
+            valB = b.loading_date_iso || b.loading_date || '';
+            const cmp = valA.localeCompare(valB);
+            return bookingSortDirection === 'asc' ? cmp : -cmp;
+        }
+
         if (bookingSortColumn === 'price') {
             valA = parseFloat(valA) || 0;
             valB = parseFloat(valB) || 0;
@@ -7026,6 +7048,9 @@ function applyBookingFilters() {
     });
 
     renderBookingsTable(list);
+    if (window.BimTableColumnManager) {
+        window.BimTableColumnManager.apply('sales-bookings-table');
+    }
 }
 
 function renderBookingsTable(bookings) {
@@ -7246,10 +7271,9 @@ async function loadSalesData() {
         }
 
         // Cập nhật danh sách Bookings với bộ lọc & sắp xếp theo ngày/cột
-        rawSalesBookings = data.bookings || [];
+        rawSalesBookings = data.bookings || data.items || data.results || (Array.isArray(data) ? data : []);
         populateBookingFilterDropdowns(rawSalesBookings);
         applyBookingFilters();
-
 
         // Cập nhật danh sách Báo Giá Tuyến Cước với bộ lọc & sắp xếp
         rawSalesQuotations = data.quotations || [];

@@ -2509,7 +2509,11 @@ class SalesAPIView(APIView):
         if to_date:
             try:
                 td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
-                bookings = bookings.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
+                bookings = bookings.filter(
+                    Q(loading_date__lte=td) | 
+                    Q(loading_date__isnull=True, created_at__date__lte=td) |
+                    Q(status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED])
+                )
             except Exception:
                 pass
 
