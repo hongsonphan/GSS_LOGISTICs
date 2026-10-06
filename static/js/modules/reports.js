@@ -2900,6 +2900,23 @@ function executePrintReportDocument() {
     window.print();
 }
 
+// Tự động gán cờ in ấn nếu người dùng bấm phím tắt Ctrl+P khi modal đang mở
+window.addEventListener('beforeprint', () => {
+    const voucherModal = document.getElementById('modal-cash-voucher-print');
+    const quoteModal = document.getElementById('modal-quotation-print');
+    const reportModal = document.getElementById('modal-report-print');
+    if (voucherModal && !voucherModal.classList.contains('hidden')) {
+        document.body.classList.add('is-printing-voucher');
+        document.body.classList.remove('is-printing-quotation', 'is-printing-report');
+    } else if (quoteModal && !quoteModal.classList.contains('hidden')) {
+        document.body.classList.add('is-printing-quotation');
+        document.body.classList.remove('is-printing-voucher', 'is-printing-report');
+    } else if (reportModal && !reportModal.classList.contains('hidden')) {
+        document.body.classList.add('is-printing-report');
+        document.body.classList.remove('is-printing-voucher', 'is-printing-quotation');
+    }
+});
+
 // Tự động gỡ bỏ cờ in ấn sau khi đóng hộp thoại In của trình duyệt
 window.addEventListener('afterprint', () => {
     document.body.classList.remove('is-printing-quotation', 'is-printing-voucher', 'is-printing-report');

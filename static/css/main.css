@@ -596,104 +596,99 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     display: none !important;
 }
 
-/* ── 8. PRINT STYLES FOR VOUCHERS, QUOTATIONS & REPORTS ── */
+/* ── 8. PRINT STYLES FOR VOUCHERS, QUOTATIONS & REPORTS (CHUẨN IN WYSIWYG A4 DOANH NGHIỆP) ── */
 @media print {
-    body * {
-        visibility: hidden !important;
+    /* 1. Reset Root & Body: Khử triệt để class="flex h-screen" của body để không còn chia cột với sidebar */
+    html, body {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        display: block !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
-    /* Tuyệt đối ẩn các phần tử no-print hoặc đang đóng/ẩn */
-    .no-print,
-    .hidden,
-    .hidden-view,
-    #modal-cash-voucher-print.hidden,
-    #modal-quotation-print.hidden,
-    #modal-report-print.hidden {
+    /* 2. Loại bỏ hoàn toàn tất cả các phần tử con trực tiếp của body khỏi layout dòng chảy (Sidebar 256px, Main Content, Toasts, các modal khác) */
+    body > * {
         display: none !important;
-        visibility: hidden !important;
     }
 
-    /* Reset toàn bộ khung modal cha để biến thành trang giấy in phẳng hoàn toàn */
-    #modal-quotation-print,
-    #modal-quotation-print div,
-    #modal-cash-voucher-print,
-    #modal-cash-voucher-print div,
-    #modal-report-print,
-    #modal-report-print div {
+    /* 3. Hiển thị DUY NHẤT Modal đang in (loại bỏ hiệu ứng flex popup, đính trực tiếp từ góc 0,0 của trang in) */
+    body.is-printing-voucher #modal-cash-voucher-print,
+    body.is-printing-quotation #modal-quotation-print,
+    body.is-printing-report #modal-report-print,
+    body:not(.is-printing-voucher):not(.is-printing-quotation):not(.is-printing-report) #modal-cash-voucher-print:not(.hidden),
+    body:not(.is-printing-voucher):not(.is-printing-quotation):not(.is-printing-report) #modal-quotation-print:not(.hidden),
+    body:not(.is-printing-voucher):not(.is-printing-quotation):not(.is-printing-report) #modal-report-print:not(.hidden) {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        visibility: visible !important;
+    }
+
+    /* Đảm bảo tuyệt đối nếu đang in 1 modal thì các modal còn lại không hiển thị */
+    body.is-printing-voucher #modal-quotation-print,
+    body.is-printing-voucher #modal-report-print,
+    body.is-printing-quotation #modal-cash-voucher-print,
+    body.is-printing-quotation #modal-report-print,
+    body.is-printing-report #modal-quotation-print,
+    body.is-printing-report #modal-cash-voucher-print {
+        display: none !important;
+    }
+
+    /* 4. Reset khung bọc trung gian của modal (Cấp 2: dialog box, Cấp 3: scroll wrapper) thành container phẳng, không padding, không flexbox lệch tâm */
+    #modal-cash-voucher-print > div,
+    #modal-quotation-print > div,
+    #modal-report-print > div,
+    #report-print-modal-dialog,
+    #modal-cash-voucher-print > div > div:not(.no-print),
+    #modal-quotation-print > div > div:not(.no-print),
+    #modal-report-print > div > div:not(.no-print),
+    #report-print-scroll-container {
         position: static !important;
         width: 100% !important;
         max-width: 100% !important;
         height: auto !important;
         max-height: none !important;
         min-height: 0 !important;
-        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
         border: none !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
         overflow: visible !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-    }
-
-    /* 1. Modal Báo Giá Cước (Chỉ in khi đang mở hoặc có cờ is-printing-quotation) */
-    body.is-printing-quotation #modal-quotation-print:not(.hidden),
-    body:not(.is-printing-voucher):not(.is-printing-report) #modal-quotation-print:not(.hidden) {
         display: block !important;
         visibility: visible !important;
     }
-    body.is-printing-quotation #modal-quotation-print:not(.hidden) *,
-    body:not(.is-printing-voucher):not(.is-printing-report) #modal-quotation-print:not(.hidden) * {
-        visibility: visible !important;
-    }
 
-    /* Khi in Báo Giá: Ẩn tuyệt đối các modal khác */
-    body.is-printing-quotation #modal-cash-voucher-print,
-    body.is-printing-quotation #modal-report-print {
+    /* 5. Ẩn tất cả toolbar, nút bấm, và phần tử được đánh dấu ẩn */
+    .no-print,
+    .no-print *,
+    .hidden,
+    .hidden-view {
         display: none !important;
         visibility: hidden !important;
     }
 
-    /* 2. Modal Phiếu Thu / Chi */
-    body.is-printing-voucher #modal-cash-voucher-print:not(.hidden),
-    body:not(.is-printing-quotation):not(.is-printing-report) #modal-cash-voucher-print:not(.hidden) {
-        display: block !important;
-        visibility: visible !important;
-    }
-    body.is-printing-voucher #modal-cash-voucher-print:not(.hidden) *,
-    body:not(.is-printing-quotation):not(.is-printing-report) #modal-cash-voucher-print:not(.hidden) * {
-        visibility: visible !important;
-    }
-
-    /* Khi in Phiếu Thu/Chi: Ẩn tuyệt đối các modal khác */
-    body.is-printing-voucher #modal-quotation-print,
-    body.is-printing-voucher #modal-report-print {
-        display: none !important;
-        visibility: hidden !important;
-    }
-
-    /* 3. Modal Báo Cáo Quản Trị */
-    body.is-printing-report #modal-report-print:not(.hidden),
-    body:not(.is-printing-quotation):not(.is-printing-voucher) #modal-report-print:not(.hidden) {
-        display: block !important;
-        visibility: visible !important;
-    }
-    body.is-printing-report #modal-report-print:not(.hidden) *,
-    body:not(.is-printing-quotation):not(.is-printing-voucher) #modal-report-print:not(.hidden) * {
-        visibility: visible !important;
-    }
-
-    /* Khi in Báo Cáo: Ẩn tuyệt đối các modal khác */
-    body.is-printing-report #modal-quotation-print,
-    body.is-printing-report #modal-cash-voucher-print {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    
+    /* 6. Cấu hình lề trang in A4 chuẩn */
     @page {
         size: A4 portrait;
-        margin: 8mm 12mm;
+        margin: 6mm 8mm;
     }
 
     /* ── A. KHUNG BÁO GIÁ IN TRÊN A4 (1 MÀU DOANH NGHIỆP) ── */
@@ -703,18 +698,20 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         border: none !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
         padding: 0 !important;
         background: #ffffff !important;
         color: #000000 !important;
         font-size: 8.5pt !important;
         line-height: 1.35 !important;
+        box-sizing: border-box !important;
         page-break-inside: avoid !important;
     }
     #quotation-printable-area * {
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        color: #000000 !important;
+        box-sizing: border-box !important;
+    }
+    #quotation-printable-area .overflow-x-auto {
+        overflow: visible !important;
     }
     #quotation-printable-area table {
         width: 100% !important;
@@ -765,32 +762,39 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         border: none !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        margin: 0 !important;
-        padding: 2mm 4mm !important;
-        background: white !important;
-        color: #000 !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
         font-size: 8.5pt !important;
+        box-sizing: border-box !important;
+    }
+    #report-printable-area .overflow-x-auto {
+        overflow: visible !important;
     }
     #report-printable-area table th,
     #report-printable-area table td {
-        border-color: #333 !important;
+        border-color: #333333 !important;
         padding: 3px 5px !important;
     }
     #report-printable-area table {
         width: 100% !important;
         table-layout: auto !important;
+        border-collapse: collapse !important;
     }
 
-    /* ── B. KHUNG PHIẾU THU / CHI (2 LIÊN A5 TRÊN 1 TRANG A4) ── */
+    /* ── C. KHUNG PHIẾU THU / CHI (2 LIÊN A5 TRÊN 1 TRANG A4) ── */
     #cash-voucher-printable-area {
         width: 100% !important;
         max-width: 100% !important;
         border: none !important;
+        border-radius: 0 !important;
         box-shadow: none !important;
-        margin: 0 !important;
-        padding: 2mm 6mm !important;
-        background: white !important;
-        color: #000 !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-sizing: border-box !important;
     }
 
     /* Chế độ 2 Liên A5 trên 1 trang A4 */
@@ -799,13 +803,14 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         flex-direction: column !important;
         justify-content: space-between !important;
         height: 100% !important;
-        max-height: 285mm !important;
+        max-height: 282mm !important;
+        box-sizing: border-box !important;
     }
     #cash-voucher-printable-area.voucher-mode-dual .voucher-slip {
         height: 136mm !important;
         max-height: 136mm !important;
         box-sizing: border-box !important;
-        padding: 1mm 2mm !important;
+        padding: 2mm 4mm !important;
         font-size: 8pt !important;
         line-height: 1.25 !important;
         overflow: hidden !important;
@@ -821,15 +826,16 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         padding-bottom: 2mm !important;
     }
     #cash-voucher-printable-area.voucher-mode-dual .voucher-cut-separator {
-        height: 8mm !important;
+        height: 6mm !important;
         margin: 0 !important;
         display: block !important;
     }
 
     /* Chế độ 1 Liên Đơn */
     #cash-voucher-printable-area.voucher-mode-single .voucher-slip-1 {
-        padding: 10mm !important;
-        font-size: 10pt !important;
+        padding: 8mm 12mm !important;
+        font-size: 9.5pt !important;
+        line-height: 1.4 !important;
     }
     #cash-voucher-printable-area.voucher-mode-single .voucher-slip-2,
     #cash-voucher-printable-area.voucher-mode-single .voucher-cut-separator {

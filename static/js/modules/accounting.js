@@ -2280,7 +2280,7 @@ function setVoucherPrintMode(mode = 'dual') {
     }
 
     // Thiết lập khổ in chuẩn A4 dọc
-    setDynamicPrintPageStyle(mode === 'dual' ? '@page { size: A4 portrait; margin: 3mm 4mm; }' : '@page { size: A4 portrait; margin: 8mm; }');
+    setDynamicPrintPageStyle(mode === 'dual' ? '@page { size: A4 portrait; margin: 4mm 6mm; }' : '@page { size: A4 portrait; margin: 8mm 10mm; }');
 }
 
 async function openCashVoucherModal(txDataOrId) {

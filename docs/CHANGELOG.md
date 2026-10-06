@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.4] - 2026-10-06 (Khắc Phục Dứt Điểm Lệch Phải Trang In: Khử Flex Sidebar Khi Print, Căn Giữa Chuẩn WYSIWYG A4)
+
+### 1. Khắc Phục Lỗi Lệch Phải Khi In Ấn (Fix Print Right-Shift Layout Bug):
+- **Nguyên nhân gốc rễ:** Thẻ `<body>` có thuộc tính `class="flex h-screen"`. Khi in, `visibility: hidden` trên toàn trang chỉ ẩn nội dung chứ không loại bỏ phần tử thanh điều hướng trái (`#sidebar` 256px) khỏi dòng chảy flexbox layout, khiến toàn bộ modal in bị đẩy lệch sang phải 256px tạo khoảng trắng lớn ở mép trái giấy in A4. Đồng thời selector cũ `#modal-... div` ép 100% độ rộng lên tất cả các thẻ con làm vỡ bảng biểu, header và cột chữ ký.
+- **Giải pháp triệt để:**
+  * Reset `html, body` trong `@media print` sang `display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important;`.
+  * Thiết lập `body > * { display: none !important; }` để loại bỏ 100% Sidebar, Main App, Toast và các modal khỏi layout in.
+  * Chỉ cho phép duy nhất modal đang in hiển thị dạng `display: block !important;` xuất phát từ toạ độ (0, 0) của trang giấy.
+  * Reset chính xác 2 cấp khung bọc trung gian của modal (dialog box và scroll wrapper) thành block trong suốt không đệm (`padding: 0 !important; margin: 0 !important;`), không flexbox căn lệch tâm.
+  * Bảo toàn 100% cấu trúc layout nội bộ (`grid-cols-5`, `flex justify-between`, table borders) của Phiếu Thu/Chi (`#cash-voucher-printable-area`), Báo Giá Cước (`#quotation-printable-area`) và Báo Cáo Quản Trị (`#report-printable-area`).
+  * Khổ in A4 được căn giữa hoàn hảo (`margin: 0 auto !important;`) với lề in chuẩn `@page { size: A4 portrait; margin: 6mm 8mm; }`, đạt chuẩn in thực tế "nhìn thấy sao in ra y như vậy" (WYSIWYG 1:1).
+  * Bổ sung lắng nghe sự kiện `beforeprint` để tự động kích hoạt cờ in kể cả khi người dùng bấm phím tắt `Ctrl + P`.
+
+---
+
 ## [2.9.3] - 2026-10-06 (Chuẩn Hoá Giao Diện Bảng Dữ Liệu: Loại Bỏ Badge Viền/Hộp Màu, Dùng Màu Chữ Tinh Gọn)
 
 ### 1. Tinh Gọn Ô Trạng Thái & Thông Tin Bảng Dữ Liệu (Clean Text-Only Styling):

@@ -683,6 +683,9 @@ function switchQuotationPrintTemplate(templateType) {
 }
 
 function printQuotationVoucher() {
+    if (typeof setDynamicPrintPageStyle === 'function') {
+        setDynamicPrintPageStyle('@page { size: A4 portrait; margin: 6mm 8mm; }');
+    }
     document.body.classList.add('is-printing-quotation');
     document.body.classList.remove('is-printing-voucher', 'is-printing-report');
     window.print();
