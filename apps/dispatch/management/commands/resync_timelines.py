@@ -1,14 +1,11 @@
-"""
-Management command: Đồng bộ lại timeline 10 bước cho TẤT CẢ chuyến xe trong DB.
-Dùng sau khi thay đổi logic build_10_step_timeline_spec() để áp dụng cho dữ liệu cũ.
-"""
+import sys
 from django.core.management.base import BaseCommand
 from apps.dispatch.models import DispatchTrip, TripStatus
 from apps.dispatch.timeline_service import sync_trip_10_step_timeline, get_derived_7_milestones
 
 
 class Command(BaseCommand):
-    help = 'Re-sync 10-step timeline và trích xuất 7 mốc thời gian kho cho tất cả chuyến xe trong DB'
+    help = 'Re-sync 11-step timeline và trích xuất 7 mốc thời gian kho cho tất cả chuyến xe trong DB'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -23,6 +20,17 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        if hasattr(sys.stdout, 'reconfigure'):
+            try:
+                sys.stdout.reconfigure(encoding='utf-8')
+            except Exception:
+                pass
+        if hasattr(sys.stderr, 'reconfigure'):
+            try:
+                sys.stderr.reconfigure(encoding='utf-8')
+            except Exception:
+                pass
+
         if options['trip']:
             trips = DispatchTrip.objects.filter(trip_code=options['trip'])
             if not trips.exists():

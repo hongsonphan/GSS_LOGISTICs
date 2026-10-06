@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.8] - 2026-10-06 (Chuẩn Hoá Quy Trình Điều Vận 11 Bước: Bổ Sung Mốc Hạ Rỗng Riêng Biệt)
+
+### 1. Chuẩn Hóa Quy Trình Điều Vận 11 Bước Thực Tế (TMS 11-Step Standardized Workflow):
+- **Tách bạch bước vận chuyển về bãi và hạ cont:** Bổ sung bước riêng biệt **Bước 10: Đã hạ Cont: lấy phiếu EIR hạ bãi**, nâng cấp toàn bộ hệ thống từ quy trình 10 bước lên 11 bước chuẩn:
+  1. `Nhận Booking` (Kinh doanh tiếp nhận & lệnh cấp cont)
+  2. `Phát lệnh Điều vận: Tài xế` (Phân công xe, tài xế, lệnh Zalo/App)
+  3. `Xác nhận chuyến: Tài xế [...] đã nhận chuyến` (Xác nhận từ App tài xế)
+  4. `Tài xế Xuất phát & Hẹn giờ đến` (Đến bãi cont/cảng lấy hàng)
+  5. `Đã đến Cổng kho` (Check-in cổng bảo vệ kho khách hàng)
+  6. `Bắt đầu Đóng/ Trả: tại [Tên kho]/ [dock kho]` (Vào dock, tháo niêm phong)
+  7. `Đóng hàng/ Xuống hàng xong` (Hoàn tất bốc xếp tại dock)
+  8. `Đã ký đủ chứng từ Giao/ Nhận (POD)` (Biên bản giao nhận có chữ ký)
+  9. `Vận chuyển về Bãi hạ Rỗng/ Cảng Xuất: [Tên bãi/ cảng]` (Kéo cont rời kho về bãi)
+  10. `Đã hạ Cont: lấy phiếu EIR hạ bãi` (Cẩu hạ cont, nhận phiếu EIR hạ bãi)
+  11. `Tổng hợp chi phí & Đối soát Thanh toán` (Kế toán chốt sổ)
+- **Cập nhật Backend State Progression:** Nâng cấp hàm `build_10_step_timeline_spec`, bộ lọc dọn dẹp `step_number__gt=11` và hàm `sync_trip_10_step_timeline` trong `apps/dispatch/timeline_service.py`.
+- **Cập nhật Giao diện Chi Tiết Chuyến:** Cập nhật tiêu đề và lưới tiến độ sang "Quy trình điều vận 11 bước" trong `templates/views/view_trip_detail.html`.
+- **Đồng bộ toàn bộ cơ sở dữ liệu:** Thực thi `python manage.py resync_timelines --all` cập nhật thành công 46/46 chuyến xe trong hệ thống sang 11 bước chuẩn.
+- **Tệp cập nhật:** [timeline_service.py](file:///E:/Bim_Logistics/apps/dispatch/timeline_service.py), [resync_timelines.py](file:///E:/Bim_Logistics/apps/dispatch/management/commands/resync_timelines.py), [view_trip_detail.html](file:///E:/Bim_Logistics/templates/views/view_trip_detail.html), [OPERATIONAL_WORKFLOW.md](file:///E:/Bim_Logistics/docs/OPERATIONAL_WORKFLOW.md).
+
 ## [2.9.7] - 2026-10-06 (Chuẩn Hoá Tạo & Sửa Báo Giá Sang Trang Riêng & Chuẩn Hoá Giờ 08:00)
 
 ### 1. Nâng Cấp Luồng Tạo & Chỉnh Sửa Báo Giá Sang Trang Riêng Toàn Màn Hình:

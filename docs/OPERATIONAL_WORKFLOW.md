@@ -1,42 +1,45 @@
 # BIM LOGISTICS — OPERATIONAL WORKFLOW (TMS)
-**Tài liệu Đặc tả Quy trình Điều vận & Máy trạng thái 10 Bước**
+**Tài liệu Đặc tả Quy trình Điều vận & Máy trạng thái 11 Bước Chuẩn**
 
-Phiên bản: 1.0  
+Phiên bản: 2.0  
 Áp dụng: Bộ phận Điều vận, Đội xe, Kế toán và Ban Giám Đốc Triền Võ Logistics
 
 ---
 
-## 1. QUY TRÌNH 10 BƯỚC THỰC TẾ
+## 1. QUY TRÌNH 11 BƯỚC CHUẨN THỰC TẾ
 
 ```
-[B1. Tiếp nhận & Chuẩn bị lệnh]
+[B1. Nhận Booking (Kinh doanh tiếp nhận & lệnh cấp cont)]
                │
                ▼
-[B2. Phát lệnh Zalo / App (18:00)]
+[B2. Phát lệnh Điều vận (Điều xe, tài xế, phân công phương tiện)]
                │
                ▼
-[B3. Tài xế xác nhận lệnh]
+[B3. Xác nhận chuyến (Tài xế bấm nhận chuyến trên App/Zalo)]
                │
                ▼
-[B4. Lấy Cont / Hàng (Kiểm tra vỏ cont, seal, EIR)]
+[B4. Tài xế Xuất phát & Hẹn giờ đến (Bãi lấy cont / Điểm lấy hàng)]
                │
                ▼
-[B5. Vận chuyển theo lộ trình duyệt]
+[B5. Đã đến Cổng kho (Check-in cổng bảo vệ kho khách hàng)]
                │
                ▼
-[B6. Giao nhận tại kho KH (4 Mốc thời gian)]
+[B6. Bắt đầu Đóng / Trả (Vào dock kho, tháo niêm/chuẩn bị bốc dỡ)]
                │
                ▼
-[B7. Hoàn tất chứng từ giao nhận (Ký POD)]
+[B7. Đóng hàng / Xuống hàng xong (Hoàn tất bốc xếp tại dock)]
                │
                ▼
-[B8. Hạ Cont & Trả rỗng (EIR hạ cont)]
+[B8. Đã ký đủ chứng từ Giao / Nhận (POD biên bản giao nhận có chữ ký)]
                │
                ▼
-[B9. Xử lý sự cố & Chi phí phát sinh (OCR duyệt)]
+[B9. Vận chuyển về Bãi hạ Rỗng / Cảng Xuất (Kéo cont rời kho về bãi)]
                │
                ▼
-[B10. Tổng hợp chi phí & Đối chiếu thanh toán]
+[B10. Đã hạ Cont: lấy phiếu (Cẩu hạ cont, nhận phiếu EIR hạ bãi)]
+               │
+               ▼
+[B11. Tổng hợp chi phí & Đối soát Thanh toán (Kế toán chốt sổ)]
 ```
 
 ---

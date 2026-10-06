@@ -131,16 +131,26 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
         t_wh_out = f"Sau đóng hàng"
 
     # Bước 9: Vận chuyển về bãi hạ
+    if trip.dropoff_appointment_time and trip.dropoff_appointment_time != '-':
+        t_dropoff_transit = f"Hẹn: {trip.dropoff_appointment_time}"
+    elif trip.actual_gate_out_at:
+        t_dropoff_transit = format_vietnam_time(trip.actual_gate_out_at + timedelta(minutes=30))
+    else:
+        t_dropoff_transit = f"Đang kéo về bãi {date_str}" if trip.status in [TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED] else ""
+
+    # Bước 10: Đã hạ Cont / Phiếu EIR hạ bãi
     if trip.actual_dropoff_time and trip.actual_dropoff_time != '-':
         t_dropoff = trip.actual_dropoff_time
     elif trip.actual_dropoff_at:
         t_dropoff = format_vietnam_time(trip.actual_dropoff_at)
-    elif trip.dropoff_appointment_time and trip.dropoff_appointment_time != '-':
-        t_dropoff = f"Hẹn: {trip.dropoff_appointment_time}"
+    elif docs_by_type.get(DocumentType.EIR_DROPOFF):
+        t_dropoff = format_vietnam_time(docs_by_type[DocumentType.EIR_DROPOFF]['created_at'])
+    elif trip.status == TripStatus.COMPLETED:
+        t_dropoff = trip.actual_gate_out_time or f"Đã hạ bãi {date_str}"
     else:
-        t_dropoff = f"Đang kéo về bãi {date_str}" if trip.status in [TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED] else ""
+        t_dropoff = ""
 
-    # Bước 10: Tổng hợp chi phí & Đối soát
+    # Bước 11: Tổng hợp chi phí & Đối soát
     if trip.settled_at:
         t_settle = format_vietnam_time(trip.settled_at)
     else:
@@ -172,8 +182,8 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     if weight_url:
         step7_docs.append({'name': 'Phiếu Cân xe', 'url': weight_url})
     step8_docs = [{'name': 'Biên bản giao nhận POD có chữ ký', 'url': pod_url}] if pod_url else []
-    step9_docs = [{'name': 'Phiếu EIR hạ cont', 'url': eir_dropoff_url}] if eir_dropoff_url else []
-    step10_docs = [{'name': 'Bảng kê chi phí & Hóa đơn điện tử', 'url': invoice_url}] if invoice_url else []
+    step10_docs = [{'name': 'Phiếu EIR hạ cont', 'url': eir_dropoff_url}] if eir_dropoff_url else []
+    step11_docs = [{'name': 'Bảng kê chi phí & Hóa đơn điện tử', 'url': invoice_url}] if invoice_url else []
 
     specs = [
         {
@@ -227,7 +237,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
         },
         {
             'step': 8,
-            'title': 'Hoàn tất Chứng từ Giao nhận (Ký POD)',
+            'title': 'Đã ký đủ chứng từ Giao / Nhận (POD)',
             'time': t_wh_out,
             'docs': step8_docs,
             'actor': driver_actor
@@ -235,23 +245,63 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
         {
             'step': 9,
             'title': f'Vận chuyển về Bãi hạ Rỗng / Cảng Xuất ({dropoff_name})',
-            'time': t_dropoff,
-            'docs': step9_docs,
+            'time': t_dropoff_transit,
+            'docs': [],
             'actor': driver_actor
         },
         {
             'step': 10,
+            'title': f'Đã hạ Cont: lấy phiếu EIR hạ bãi ({dropoff_name})',
+            'time': t_dropoff,
+            'docs': step10_docs,
+            'actor': driver_actor
+        },
+        {
+            'step': 11,
             'title': 'Tổng hợp chi phí & Đối soát thanh toán',
             'time': t_settle,
-            'docs': step10_docs,
+            'docs': step11_docs,
             'actor': accountant_actor
         }
     ]
 
+    # Xác định bước mục tiêu đang diễn ra (target_active_step) theo State Machine 11 bước
+    if trip.status == TripStatus.COMPLETED:
+        target_active_step = 99  # Tất cả 11 bước đều hoàn thành
+    elif trip.status == TripStatus.CANCELLED:
+        target_active_step = -1  # Đã hủy, không có bước nào active
+    elif trip.status == TripStatus.DRAFT:
+        target_active_step = 2   # Bước 1 (Booking) xong, Bước 2 (Lập & Phát lệnh) active
+    elif trip.status == TripStatus.DISPATCHED:
+        target_active_step = 3   # Bước 2 (Phát lệnh) xong, Bước 3 (Chờ tài xế xác nhận) active
+    elif trip.status == TripStatus.ACCEPTED:
+        target_active_step = 4   # Bước 3 (Xác nhận) xong, Bước 4 (Xuất phát & Hẹn giờ lấy cont) active
+    elif trip.status in [TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT]:
+        target_active_step = 5   # Bước 4 (Lấy cont) xong, Bước 5 (Đến cổng kho) active
+    elif trip.status == TripStatus.AT_WAREHOUSE:
+        target_active_step = 6   # Bước 5 (Cổng kho) xong, Bước 6 (Bắt đầu đóng/trả hàng) active
+    elif trip.status == TripStatus.UNLOADING:
+        target_active_step = 7   # Bước 6 (Bắt đầu) xong, Bước 7 (Đóng/xuống hàng xong) active
+    elif trip.status == TripStatus.DELIVERED:
+        if pod_url or (trip.actual_gate_out_time and trip.actual_gate_out_time != '-') or trip.actual_gate_out_at:
+            target_active_step = 9   # Đã có POD/rời kho -> Bước 8 xong, Bước 9 (Vận chuyển về bãi) active
+        else:
+            target_active_step = 8   # Bước 7 xong, Bước 8 (Ký chứng từ POD) active
+    elif trip.status == TripStatus.RETURNING_EMPTY:
+        has_eir = bool(eir_dropoff_url or (trip.actual_dropoff_time and trip.actual_dropoff_time != '-') or trip.actual_dropoff_at)
+        if has_eir:
+            target_active_step = 11  # Đã hạ cont và có EIR -> Bước 9, 10 xong, Bước 11 (Đối soát chi phí) active
+        else:
+            if trip.dropoff_appointment_time and trip.dropoff_appointment_time != '-':
+                target_active_step = 10  # Đã đến bãi hẹn -> Bước 9 xong, Bước 10 (Đang cẩu hạ cont / lấy phiếu) active
+            else:
+                target_active_step = 9   # Đang trên đường vận chuyển về bãi hạ
+    else:
+        target_active_step = 1
+
     result = []
     for s in specs:
         step_num = s['step']
-        # Tính toán done / active / actor
         if trip.status == TripStatus.COMPLETED:
             is_done = True
             is_active = False
@@ -262,31 +312,13 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
             is_active = False
             time_val = 'Đã hủy'
             actor_val = '—'
-        elif trip.status == TripStatus.DRAFT:
-            if step_num == 1:
-                is_done = True
-                is_active = False
-                time_val = s['time']
-                actor_val = s.get('actor', '—')
-            elif step_num == 2:
-                is_done = False
-                is_active = True
-                time_val = s['time'] if s['time'] and 'date_str' not in s['time'] else 'Đang chuẩn bị'
-                actor_val = s.get('actor', '—')
-            else:
-                is_done = False
-                is_active = False
-                time_val = ''
-                actor_val = '—'
         else:
-            # Các trạng thái vận hành khác
-            target_step = curr_idx + 1
-            if step_num < target_step:
+            if step_num < target_active_step:
                 is_done = True
                 is_active = False
                 time_val = s['time']
                 actor_val = s.get('actor', '—')
-            elif step_num == target_step:
+            elif step_num == target_active_step:
                 is_done = False
                 is_active = True
                 time_val = s['time'] if s['time'] else 'Đang thực hiện'
@@ -311,8 +343,8 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
 
 def sync_trip_10_step_timeline(trip: DispatchTrip):
     """
-    Đồng bộ hoặc khởi tạo chính xác 10 bản ghi TripTimelineItem cho chuyến xe trong Database.
-    Xóa sạch mọi bản ghi thừa (> 10) để bảo toàn kiến trúc 10 bước chuẩn.
+    Đồng bộ hoặc khởi tạo chính xác 11 bản ghi TripTimelineItem cho chuyến xe trong Database (SOP 11 bước chuẩn).
+    Xóa sạch mọi bản ghi thừa (> 11) để bảo toàn kiến trúc 11 bước chuẩn.
     """
     timeline_specs = build_10_step_timeline_spec(trip)
 
@@ -328,8 +360,12 @@ def sync_trip_10_step_timeline(trip: DispatchTrip):
             }
         )
 
-    # Dọn dẹp bản ghi trùng lặp hoặc mốc log thừa > 10 nếu có
-    trip.timeline_items.filter(step_number__gt=10).delete()
+    # Dọn dẹp bản ghi trùng lặp hoặc mốc log thừa > 11 nếu có
+    trip.timeline_items.filter(step_number__gt=11).delete()
+
+# Alias đồng bộ tương thích ngược
+sync_trip_timeline = sync_trip_10_step_timeline
+build_timeline_spec = build_10_step_timeline_spec
 
 def get_derived_7_milestones(trip: DispatchTrip):
     """
