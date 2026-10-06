@@ -5570,7 +5570,12 @@ function addQuotationRouteRow(data = {}) {
         </td>
     `;
     tbody.appendChild(tr);
-    initAllNumberInputs();
+
+    const priceInput = tr.querySelector('.quote-item-price');
+    const tripsInput = tr.querySelector('.quote-item-trips');
+    if (priceInput) attachAutoNumberFormat(priceInput, () => calculateQuotationItemsTotal());
+    if (tripsInput) attachAutoNumberFormat(tripsInput, () => calculateQuotationItemsTotal());
+
     calculateQuotationItemsTotal();
 }
 
@@ -6274,6 +6279,26 @@ async function deleteQuotation(quoteId) {
         showToast('error', err.message || 'Lỗi xóa báo giá', 'Lỗi');
     }
 }
+
+// Gắn toàn bộ hàm quản lý Báo giá lên window để đảm bảo inline onclick luôn hoạt động 100%
+window.onQuotationPricingMethodChange = onQuotationPricingMethodChange;
+window.updateFuelFormulaText = updateFuelFormulaText;
+window.addQuotationRouteRow = addQuotationRouteRow;
+window.removeQuotationRouteRow = removeQuotationRouteRow;
+window.calculateQuotationItemsTotal = calculateQuotationItemsTotal;
+window.setQuickQuoteNote = setQuickQuoteNote;
+window.openModalQuotation = openModalQuotation;
+window.closeModalQuotation = closeModalQuotation;
+window.saveQuotation = saveQuotation;
+window.submitQuotation = saveQuotation;
+window.editQuotation = editQuotation;
+window.deleteQuotation = deleteQuotation;
+window.changeQuotationStatus = changeQuotationStatus;
+window.printQuotationFromModal = printQuotationFromModal;
+window.printQuotationVoucher = printQuotationVoucher;
+window.openQuotationPrintModal = openQuotationPrintModal;
+window.closeQuotationPrintModal = closeQuotationPrintModal;
+window.switchQuotationPrintTemplate = switchQuotationPrintTemplate;
 
 function onBookingTypeChange() {
     const type = document.getElementById('booking-type')?.value;

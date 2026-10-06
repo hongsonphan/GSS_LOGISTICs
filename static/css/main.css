@@ -588,21 +588,37 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         visibility: hidden !important;
     }
 
+    /* Reset toàn bộ khung modal cha để biến thành trang giấy in phẳng hoàn toàn */
+    #modal-quotation-print,
+    #modal-quotation-print > div,
+    #modal-quotation-print > div > div,
+    #modal-cash-voucher-print,
+    #modal-cash-voucher-print > div,
+    #modal-cash-voucher-print > div > div,
+    #modal-report-print,
+    #modal-report-print > div,
+    #modal-report-print > div > div {
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        background: #ffffff !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
     /* 1. Modal Báo Giá Cước (Chỉ in khi đang mở hoặc có cờ is-printing-quotation) */
     body.is-printing-quotation #modal-quotation-print:not(.hidden),
     body:not(.is-printing-voucher):not(.is-printing-report) #modal-quotation-print:not(.hidden) {
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background: white !important;
-        padding: 0 !important;
-        margin: 0 !important;
         display: block !important;
-        z-index: 999999 !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
         visibility: visible !important;
     }
     body.is-printing-quotation #modal-quotation-print:not(.hidden) *,
@@ -620,18 +636,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     /* 2. Modal Phiếu Thu / Chi */
     body.is-printing-voucher #modal-cash-voucher-print:not(.hidden),
     body:not(.is-printing-quotation):not(.is-printing-report) #modal-cash-voucher-print:not(.hidden) {
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background: white !important;
-        padding: 0 !important;
-        margin: 0 !important;
         display: block !important;
-        z-index: 999999 !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
         visibility: visible !important;
     }
     body.is-printing-voucher #modal-cash-voucher-print:not(.hidden) *,
@@ -649,18 +654,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     /* 3. Modal Báo Cáo Quản Trị */
     body.is-printing-report #modal-report-print:not(.hidden),
     body:not(.is-printing-quotation):not(.is-printing-voucher) #modal-report-print:not(.hidden) {
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background: white !important;
-        padding: 0 !important;
-        margin: 0 !important;
         display: block !important;
-        z-index: 999999 !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
         visibility: visible !important;
     }
     body.is-printing-report #modal-report-print:not(.hidden) *,
@@ -675,21 +669,69 @@ h1, h2, h3, h4, h5, h6, .font-heading {
         visibility: hidden !important;
     }
     
-    /* ── A. KHUNG BÁO GIÁ & BÁO CÁO ── */
-    #quotation-printable-area,
+    /* ── A. KHUNG BÁO GIÁ IN TRÊN A4 (1 MÀU DOANH NGHIỆP) ── */
+    #quotation-printable-area {
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 8.5pt !important;
+        line-height: 1.35 !important;
+    }
+    #quotation-printable-area * {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+    #quotation-printable-area table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        border: 1px solid #000000 !important;
+        margin: 4px 0 !important;
+    }
+    #quotation-printable-area table th,
+    #quotation-printable-area table td {
+        border: 1px solid #000000 !important;
+        padding: 3px 5px !important;
+        color: #000000 !important;
+        background: transparent !important;
+    }
+    #quotation-printable-area table thead th {
+        background-color: #f8fafc !important;
+        font-weight: bold !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    #quotation-printable-area #print-q1-fuel-box,
+    #quotation-printable-area #print-q2-fuel-box,
+    #quotation-printable-area #print-q3-fuel-box,
+    #quotation-printable-area #print-q1-notes-content,
+    #quotation-printable-area #print-q2-notes,
+    #quotation-printable-area #print-q3-notes {
+        border: 1px solid #000000 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        color: #000000 !important;
+    }
+
+    /* ── B. KHUNG BÁO CÁO ── */
     #report-printable-area {
         width: 100% !important;
         max-width: 100% !important;
         border: none !important;
+        border-radius: 0 !important;
         box-shadow: none !important;
         margin: 0 !important;
-        padding: 4mm 6mm !important;
+        padding: 2mm 4mm !important;
         background: white !important;
         color: #000 !important;
         font-size: 8.5pt !important;
     }
-    #quotation-printable-area table th,
-    #quotation-printable-area table td,
     #report-printable-area table th,
     #report-printable-area table td {
         border-color: #333 !important;

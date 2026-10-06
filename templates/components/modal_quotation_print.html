@@ -44,7 +44,7 @@
 
         <!-- Printable Area Wrapper (View Full Viền Tờ A4) -->
         <div class="p-2 sm:p-6 overflow-y-auto bg-slate-200/80 flex-1 flex justify-center">
-            <div id="quotation-printable-area" class="w-full max-w-4xl bg-white p-6 sm:p-10 rounded-lg shadow-md border border-slate-300 text-slate-900 font-sans leading-relaxed text-xs sm:text-sm">
+            <div id="quotation-printable-area" class="w-full max-w-4xl bg-white p-6 sm:p-10 border border-slate-300 text-slate-900 font-sans leading-relaxed text-xs sm:text-sm">
                 
                 <!-- ========================================================================= -->
                 <!-- MẪU 1: TIÊU CHUẨN DOANH NGHIỆP (QUỐC HIỆU & ĐIỀU KHOẢN TVL) -->
@@ -133,21 +133,20 @@
                     </div>
 
                     <!-- Số tiền bằng chữ -->
-                    <div class="text-xs text-slate-800 italic flex items-baseline gap-1.5 bg-slate-50 p-2 rounded-lg border border-slate-300">
+                    <div class="text-xs text-slate-900 italic flex items-baseline gap-1.5 py-1">
                         <span class="font-bold not-italic">Bằng chữ:</span>
                         <span class="font-bold text-slate-950" id="print-q1-total-words">Bảy mươi sáu triệu đồng chẵn.</span>
                     </div>
 
                     <!-- 5. Khối Quy Chuẩn Điều Chỉnh Theo Giá Xăng Dầu DO 0.05S (Chỉ hiển thị khi có cơ chế xăng dầu) -->
-                    <div id="print-q1-fuel-box" class="p-2.5 rounded-lg border border-amber-300 bg-amber-50/50 space-y-1 text-xs text-slate-800 hidden">
-                        <div class="flex items-center gap-1.5 font-bold text-amber-950 uppercase text-[11px]">
-                            <i class="ph-bold ph-gas-pump text-amber-700"></i>
+                    <div id="print-q1-fuel-box" class="p-2.5 border border-slate-400 bg-white space-y-1 text-xs text-slate-900 hidden">
+                        <div class="flex items-center gap-1.5 font-bold text-slate-950 uppercase text-[11px]">
                             <span>* CƠ CHẾ ĐIỀU CHỈNH CƯỚC THEO BIẾN ĐỘNG GIÁ DẦU DIESEL DO 0.05S:</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 py-1 text-center font-medium border-y border-amber-200">
-                            <div>Giá dầu DO cơ sở (P0): <strong id="print-q1-fuel-p0" class="text-amber-950">21.000 đ/lít</strong></div>
-                            <div>Biên độ biến động: <strong id="print-q1-fuel-step" class="text-amber-950">±1.000 đ/lít</strong></div>
-                            <div>Tỷ lệ điều chỉnh: <strong id="print-q1-fuel-ratio" class="text-amber-950">±3.5% cước</strong></div>
+                        <div class="grid grid-cols-3 gap-2 py-1 text-center font-medium border-y border-slate-300">
+                            <div>Giá dầu DO cơ sở (P0): <strong id="print-q1-fuel-p0" class="text-slate-950 font-bold">21.000 đ/lít</strong></div>
+                            <div>Biên độ biến động: <strong id="print-q1-fuel-step" class="text-slate-950 font-bold">±1.000 đ/lít</strong></div>
+                            <div>Tỷ lệ điều chỉnh: <strong id="print-q1-fuel-ratio" class="text-slate-950 font-bold">±3.5% cước</strong></div>
                         </div>
                         <p class="text-[11px] text-slate-700 leading-tight italic" id="print-q1-fuel-formula">
                             Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng 3.5%.
@@ -159,7 +158,7 @@
                         <h5 class="font-bold uppercase text-slate-900 tracking-wider text-[11px] flex items-center gap-1">
                             <span>* GHI CHÚ & ĐIỀU KHOẢN DỊCH VỤ:</span>
                         </h5>
-                        <div class="bg-white p-2.5 rounded-lg border border-slate-300 space-y-0.5 whitespace-pre-line leading-relaxed text-slate-700 font-sans" id="print-q1-notes-content">
+                        <div class="bg-white p-2.5 border border-slate-400 space-y-0.5 whitespace-pre-line leading-relaxed text-slate-800 font-sans" id="print-q1-notes-content">
 - Đơn giá trên chưa bao gồm thuế giá trị gia tăng VAT (8% / 10%).
 - Chưa bao gồm phí bốc xếp hàng hóa tại kho của Quý khách hàng.
 - Xe vận tải đúng tải trọng quy định, tuân thủ nghiêm chỉnh Luật Giao thông đường bộ.
@@ -260,7 +259,7 @@
                     </div>
 
                     <!-- Khối Cơ chế xăng dầu Mẫu 2 -->
-                    <div id="print-q2-fuel-box" class="p-2 rounded border border-slate-900 bg-slate-50 space-y-1 text-xs hidden">
+                    <div id="print-q2-fuel-box" class="p-2 border border-slate-900 space-y-1 text-xs hidden">
                         <p class="font-bold uppercase text-slate-900">* ĐIỀU CHỈNH THEO GIÁ DẦU DO 0.05S:</p>
                         <p class="text-[11px] text-slate-700" id="print-q2-fuel-desc">Mỗi khi giá dầu thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước điều chỉnh tương ứng 3.5%.</p>
                     </div>
@@ -268,7 +267,7 @@
                     <!-- Ghi chú Mẫu 2 -->
                     <div class="space-y-1 text-xs text-slate-800">
                         <p class="font-bold uppercase">* GHI CHÚ & ĐIỀU KHOẢN:</p>
-                        <div class="whitespace-pre-line leading-relaxed text-slate-700 font-sans" id="print-q2-notes">
+                        <div class="p-2 border border-slate-900 whitespace-pre-line leading-relaxed text-slate-700 font-sans" id="print-q2-notes">
 * Đơn giá chưa bao gồm VAT và không bốc xếp.
 * Xe vận tải đúng tải trọng, tuân thủ quy định pháp luật về vận chuyển hàng hóa đường bộ.
 * Phía TVL chịu toàn bộ chi phí nhiên liệu, lương lái xe, sửa chữa xe và vé BOT.
@@ -308,7 +307,7 @@
 
                     <!-- Tiêu đề BÁO GIÁ CƯỚC VẬN CHUYỂN -->
                     <div class="text-center py-1.5 space-y-0.5">
-                        <h2 class="text-lg sm:text-xl font-black uppercase tracking-wider text-teal-900 font-heading">BÁO GIÁ CƯỚC VẬN CHUYỂN DỊCH VỤ</h2>
+                        <h2 class="text-lg sm:text-xl font-black uppercase tracking-wider text-slate-900 font-heading">BÁO GIÁ CƯỚC VẬN CHUYỂN DỊCH VỤ</h2>
                         <p class="text-xs text-slate-500 font-mono" id="print-q3-code">Số: BG-1005-01</p>
                     </div>
 
@@ -339,28 +338,28 @@
                             <tfoot class="bg-slate-50 font-bold">
                                 <tr>
                                     <td colspan="4" class="border border-slate-300 p-2 text-right uppercase">Tổng Cộng Cước Phí:</td>
-                                    <td colspan="2" class="border border-slate-300 p-2 text-right font-black text-teal-900 font-mono text-sm" id="print-q3-grand-total">76.000.000 VNĐ</td>
+                                    <td colspan="2" class="border border-slate-300 p-2 text-right font-black text-slate-900 font-mono text-sm" id="print-q3-grand-total">76.000.000 VNĐ</td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
 
                     <!-- Bằng chữ Mẫu 3 -->
-                    <div class="text-xs text-slate-800 italic bg-slate-50 p-2 rounded border border-slate-200">
+                    <div class="text-xs text-slate-900 italic py-1 flex items-baseline gap-1.5">
                         <span class="font-bold not-italic">Viết bằng chữ:</span>
                         <span class="font-bold text-slate-950" id="print-q3-words">Bảy mươi sáu triệu đồng chẵn.</span>
                     </div>
 
                     <!-- Khối Cơ chế xăng dầu Mẫu 3 -->
-                    <div id="print-q3-fuel-box" class="p-2 rounded border border-teal-200 bg-teal-50/60 space-y-1 text-xs hidden">
-                        <p class="font-bold uppercase text-teal-950">* CƠ CHẾ ĐIỀU CHỈNH THEO GIÁ XĂNG DẦU:</p>
-                        <p class="text-[11px] text-teal-900" id="print-q3-fuel-desc">Mỗi khi giá dầu thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước điều chỉnh tương ứng 3.5%.</p>
+                    <div id="print-q3-fuel-box" class="p-2 border border-slate-400 space-y-1 text-xs hidden">
+                        <p class="font-bold uppercase text-slate-950">* CƠ CHẾ ĐIỀU CHỈNH THEO GIÁ XĂNG DẦU:</p>
+                        <p class="text-[11px] text-slate-800" id="print-q3-fuel-desc">Mỗi khi giá dầu thay đổi 1.000 đ/lít so với giá cơ sở, đơn giá cước điều chỉnh tương ứng 3.5%.</p>
                     </div>
 
                     <!-- Ghi chú Mẫu 3 -->
                     <div class="space-y-1 text-xs text-slate-800">
                         <p class="font-bold uppercase">* ĐIỀU KHOẢN KÈM THEO:</p>
-                        <div class="whitespace-pre-line leading-relaxed text-slate-700 font-sans" id="print-q3-notes">
+                        <div class="p-2 border border-slate-400 whitespace-pre-line leading-relaxed text-slate-700 font-sans" id="print-q3-notes">
 - Trên đây là báo giá dịch vụ vận chuyển cho đơn hàng của Quý công ty, rất mong được hợp tác.
 - Đơn giá chưa bao gồm VAT và các chi phí phát sinh ngoài thỏa thuận.
 - Xin chân thành cảm ơn!

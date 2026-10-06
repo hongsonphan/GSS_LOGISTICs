@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.8] - 2026-10-06 (Kích Hoạt Nút Thêm Tuyến Động & Chuẩn Hóa Bản In A4 1 Màu Không Bo Viền)
+
+### 1. Kích Hoạt & Cố Định Nút "+ Thêm Tuyến Đường":
+- **Gắn hàm lên phạm vi toàn cục (`window`):** Xuất toàn bộ các hàm thao tác Báo giá (`window.addQuotationRouteRow`, `window.removeQuotationRouteRow`, `window.calculateQuotationItemsTotal`, `window.onQuotationPricingMethodChange`...) lên `window` để đảm bảo các sự kiện `onclick` hoạt động 100% không bị ngắt quãng.
+- **Tự động gắn bộ định dạng số VNĐ (`input-number-vn`):** Tích hợp trình lắng nghe định dạng số trực tiếp cho từng dòng tuyến đường mới sinh ra, tự động cập nhật Thành tiền và Tổng doanh thu ngay khi nhập đơn giá hoặc sản lượng.
+
+### 2. Chuẩn Hóa Bản In A4 Doanh Nghiệp (Phẳng, Đơn Sắc, Không Bo Viền):
+- **Loại bỏ hoàn toàn bo viền & bóng mờ khi in:**
+  * Reset toàn bộ các lớp wrapper của Modal in (`#modal-quotation-print`, dialog containers) trong `@media print` về `position: static !important; background: #ffffff !important; border: none !important; border-radius: 0 !important; box-shadow: none !important;`.
+  * Khung `#quotation-printable-area` in trực tiếp lên trang giấy A4 trắng không viền ngoài, không viền cong bo tròn.
+  * Bảng biểu kẻ viền đen nét mảnh chuẩn mực (`border: 1px solid #000000`).
+  * Loại bỏ các khối thẻ bo góc (Bằng chữ, Ghi chú, Cơ chế xăng dầu) chuyển sang văn bản hành chính phẳng, chuẩn 1 màu đơn sắc chuyên nghiệp.
+
+### 3. Kiểm Thử & Triển Khai:
+- **86/86 Unit Tests PASSED 100%**.
+- `node -c static/js/app.js` PASSED.
+
+---
+
 ## [2.8.7] - 2026-10-06 (Khắc Phục Xung Đột Modal In & Cách Ly Độc Lập Mẫu In Báo Giá / Phiếu Thu Chi / Báo Cáo)
 
 ### 1. Khắc Phục Triệt Để Xung Đột `@media print`:
