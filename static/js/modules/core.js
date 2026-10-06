@@ -156,6 +156,40 @@ function formatMoney(n) {
     return new Intl.NumberFormat('vi-VN').format(Math.round(Number(n))) + ' đ';
 }
 
+function formatTimeString(timeStr) {
+    if (!timeStr) return '';
+    const s = String(timeStr).trim();
+    if (!s || s === '-') return '';
+    // Format 8H, 8h, 8 -> 08:00
+    const matchSimpleH = s.match(/^(\d{1,2})\s*[hH]$/i) || s.match(/^(\d{1,2})$/);
+    if (matchSimpleH) {
+        const hour = parseInt(matchSimpleH[1], 10);
+        if (hour >= 0 && hour <= 23) {
+            return `${String(hour).padStart(2, '0')}:00`;
+        }
+    }
+    // Format 8H30, 8h30, 16H30 -> 08:30, 16:30
+    const matchHMinute = s.match(/^(\d{1,2})\s*[hH]\s*(\d{1,2})$/i);
+    if (matchHMinute) {
+        const hour = parseInt(matchHMinute[1], 10);
+        const minute = parseInt(matchHMinute[2], 10);
+        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+    }
+    // Format 8:30 -> 08:30
+    const matchColon = s.match(/^(\d{1,2}):(\d{1,2})$/);
+    if (matchColon) {
+        const hour = parseInt(matchColon[1], 10);
+        const minute = parseInt(matchColon[2], 10);
+        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+    }
+    // Giữ nguyên chuỗi nếu chứa ngày (vd: 18/09/2026 - 13H00)
+    return s;
+}
+
 function attachAutoNumberFormat(inputEl, onChangeCallback) {
     if (!inputEl || inputEl.dataset.hasNumberFormatter) return;
     inputEl.dataset.hasNumberFormatter = 'true';

@@ -248,7 +248,7 @@ class BookingOrder(TimeStampedModel, SoftDeleteModel):
     vgm_cutoff = models.CharField(max_length=100, blank=True, help_text="Hạn chót nộp phiếu cân tải trọng VGM")
     closing_time = models.CharField(max_length=100, blank=True, help_text="Hạn chót cắt máng CY / Closing Time")
     loading_date = models.DateField(null=True, blank=True, help_text="Ngày hẹn đóng hàng")
-    loading_time = models.CharField(max_length=20, default='8H', blank=True, help_text="Giờ hẹn đóng hàng")
+    loading_time = models.CharField(max_length=20, default='08:00', blank=True, help_text="Giờ hẹn đóng hàng")
     free_time_detention = models.IntegerField(default=7, help_text="Số ngày miễn phí lưu vỏ (DET)")
     free_time_demurrage = models.IntegerField(default=7, help_text="Số ngày miễn phí lưu bãi (DEM)")
 

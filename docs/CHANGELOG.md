@@ -2,6 +2,18 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.7] - 2026-10-06 (Chuẩn Hoá Tạo & Sửa Báo Giá Sang Trang Riêng & Chuẩn Hoá Giờ 08:00)
+
+### 1. Nâng Cấp Luồng Tạo & Chỉnh Sửa Báo Giá Sang Trang Riêng Toàn Màn Hình:
+- **Tạo báo giá trang riêng (`openCreateQuotationPage`):** Nút **"Tạo Báo Giá Mới"** tại phân hệ Sales chuyển hướng trực tiếp sang trang soạn thảo toàn màn hình (`/sales/quotations/new`) thay vì mở pop-up modal chật hẹp, mở rộng không gian nhập liệu đa tuyến, ma trận cước, công thức giá dầu và điều khoản thương mại.
+- **Nút sửa báo giá trực tiếp:** Chuyển nút sửa từ mở modal sang mở thẳng trang riêng (`viewQuotationDetail(quoteHash)`).
+- **Hỗ trợ định tuyến & Deep-link:** Tự động điều hướng và đồng bộ URL khi tạo mới hoặc xem/sửa báo giá; sau khi lưu mới tự động chuyển hướng đến `/sales/quotations/<hashid>`.
+
+### 2. Chuẩn Hóa Triệt Để Định Dạng Giờ Sang Chuẩn `HH:mm` (Ví Dụ: `08:00`):
+- **Hàm tiện ích `formatTimeString`:** Tự động nhận diện và chuyển đổi mọi định dạng nhập tắt (`8H`, `8h`, `8`, `8:00`, `16H30`) thành chuẩn giờ quốc tế (`08:00`, `16:30`).
+- **Backend & Models Default:** Chuyển toàn bộ giá trị fallback và default từ `'8H'` sang `'08:00'` trong `BookingOrder.loading_time`, `DispatchTrip` và API dispatch.
+- **Tệp cập nhật:** [core.js](file:///E:/Bim_Logistics/static/js/modules/core.js), [sales.js](file:///E:/Bim_Logistics/static/js/modules/sales.js), [dispatch.js](file:///E:/Bim_Logistics/static/js/modules/dispatch.js), [app.js](file:///E:/Bim_Logistics/static/js/app.js), [view_sales.html](file:///E:/Bim_Logistics/templates/views/view_sales.html), [models.py](file:///E:/Bim_Logistics/apps/customers/models.py), [api_views.py](file:///E:/Bim_Logistics/apps/dispatch/api_views.py).
+
 ## [2.9.6] - 2026-10-06 (Chuẩn Hoá Ô Ngày Giờ Bảng Dữ Liệu Dạng Plain Text Không Dùng Badge)
 
 ### 1. Tối Giản Trình Bày Ô Ngày Giờ (Clean Datetime Cell Formatting):

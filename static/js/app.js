@@ -152,6 +152,40 @@ function formatMoney(n) {
     return new Intl.NumberFormat('vi-VN').format(Math.round(Number(n))) + ' đ';
 }
 
+function formatTimeString(timeStr) {
+    if (!timeStr) return '';
+    const s = String(timeStr).trim();
+    if (!s || s === '-') return '';
+    // Format 8H, 8h, 8 -> 08:00
+    const matchSimpleH = s.match(/^(\d{1,2})\s*[hH]$/i) || s.match(/^(\d{1,2})$/);
+    if (matchSimpleH) {
+        const hour = parseInt(matchSimpleH[1], 10);
+        if (hour >= 0 && hour <= 23) {
+            return `${String(hour).padStart(2, '0')}:00`;
+        }
+    }
+    // Format 8H30, 8h30, 16H30 -> 08:30, 16:30
+    const matchHMinute = s.match(/^(\d{1,2})\s*[hH]\s*(\d{1,2})$/i);
+    if (matchHMinute) {
+        const hour = parseInt(matchHMinute[1], 10);
+        const minute = parseInt(matchHMinute[2], 10);
+        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+    }
+    // Format 8:30 -> 08:30
+    const matchColon = s.match(/^(\d{1,2}):(\d{1,2})$/);
+    if (matchColon) {
+        const hour = parseInt(matchColon[1], 10);
+        const minute = parseInt(matchColon[2], 10);
+        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+    }
+    // Giữ nguyên chuỗi nếu chứa ngày (vd: 18/09/2026 - 13H00)
+    return s;
+}
+
 function attachAutoNumberFormat(inputEl, onChangeCallback) {
     if (!inputEl || inputEl.dataset.hasNumberFormatter) return;
     inputEl.dataset.hasNumberFormatter = 'true';
@@ -1399,7 +1433,7 @@ function renderDispatchTable(trips) {
                 <div class="flex items-center space-x-1.5 text-[12px] font-semibold text-slate-700">
                     <i class="ph ph-calendar text-slate-400 text-xs shrink-0"></i>
                     <span>${escapeHtml(trip.loading_date || '-')}</span>
-                    ${trip.loading_time ? `<span class="text-slate-300 font-normal">|</span><span class="text-slate-700 font-bold">${escapeHtml(trip.loading_time)}</span>` : ''}
+                    ${trip.loading_time ? `<span class="text-slate-300 font-normal">|</span><span class="text-slate-700 font-bold">${escapeHtml(formatTimeString(trip.loading_time))}</span>` : ''}
                 </div>
             </td>
             <td class="px-3 py-2 border-r border-slate-200/70">
@@ -6240,7 +6274,92 @@ function calculateFullpageQuotationItemsTotal() {
     }
 }
 
+async function openCreateQuotationPage(updateHistory = true) {
+    await loadMasterDataFormOptions();
+    populateMasterDataDropdowns();
+
+    const form = document.getElementById('form-fullpage-quotation');
+    if (form) form.reset();
+
+    const routesTbody = document.getElementById('fullpage-quote-routes-tbody');
+    if (routesTbody) routesTbody.innerHTML = '';
+
+    const idInput = document.getElementById('fullpage-quote-id');
+    const hashidInput = document.getElementById('fullpage-quote-hashid');
+    const codeEl = document.getElementById('fullpage-quote-code');
+    const statusBadge = document.getElementById('fullpage-quote-status-badge');
+    const customerEl = document.getElementById('fullpage-quote-customer');
+    const dateEl = document.getElementById('fullpage-quote-date');
+
+    if (idInput) idInput.value = '';
+    if (hashidInput) hashidInput.value = '';
+    if (codeEl) codeEl.innerText = 'TẠO BÁO GIÁ MỚI';
+    if (statusBadge) {
+        statusBadge.innerText = 'Đang thương lượng';
+        statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading bg-teal-50 text-teal-800 border-teal-200';
+    }
+    if (dateEl) {
+        dateEl.innerText = new Date().toLocaleDateString('vi-VN');
+    }
+
+    // Cập nhật URL chuẩn Semantic Path: /sales/quotations/new
+    if (updateHistory && window.history && window.history.pushState) {
+        const quotePath = '/sales/quotations/new';
+        if (window.location.pathname !== quotePath) {
+            window.history.pushState({ view: 'quotation-create' }, '', quotePath);
+        }
+    }
+
+    // Lưu vết view trước đó để nút Quay lại hoạt động chuẩn xác
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-quotation-detail') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    // Ẩn tất cả view, hiện view-quotation-detail
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const detailView = document.getElementById('view-quotation-detail');
+    if (detailView) detailView.classList.remove('hidden-view');
+
+    // Thiết lập giá trị mặc định cho form tạo mới
+    const methodEl = document.getElementById('fullpage-quote-pricing-method');
+    if (methodEl) methodEl.value = 'MULTI_ROUTE';
+
+    const p0Input = document.getElementById('fullpage-quote-base-fuel-price');
+    if (p0Input) p0Input.value = formatNumberVN(21000);
+    const stepInput = document.getElementById('fullpage-quote-fuel-step');
+    if (stepInput) stepInput.value = formatNumberVN(1000);
+    const ratioInput = document.getElementById('fullpage-quote-fuel-ratio');
+    if (ratioInput) ratioInput.value = 3.5;
+
+    onFullpageQuotationPricingMethodChange('MULTI_ROUTE');
+
+    const statusEl = document.getElementById('fullpage-quote-status');
+    if (statusEl) statusEl.value = 'NEGOTIATING';
+
+    const tplEl = document.getElementById('fullpage-quote-template-type');
+    if (tplEl) tplEl.value = 'STANDARD';
+    const cargoEl = document.getElementById('fullpage-quote-cargo-type');
+    if (cargoEl) cargoEl.value = 'Container 40HC / Hàng tổng hợp';
+    const notesEl = document.getElementById('fullpage-quote-notes');
+    if (notesEl) notesEl.value = DEFAULT_QUOTATION_NOTES.fcl;
+
+    // Mặc định thêm 1 dòng mẫu
+    addFullpageQuotationRouteRow({
+        route_description: 'CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG',
+        cargo_type: 'Cont 40HC',
+        estimated_km: 30,
+        unit_price: 3800000,
+        expected_trips_monthly: 10
+    });
+
+    initAllNumberInputs();
+}
+
 async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
+    if (!quoteIdentifier || quoteIdentifier === 'new') {
+        return openCreateQuotationPage(updateHistory);
+    }
     await loadMasterDataFormOptions();
     populateMasterDataDropdowns();
 
@@ -6489,8 +6608,11 @@ async function saveFullpageQuotation(e) {
         if (typeof loadSalesData === 'function') loadSalesData();
 
         // Cập nhật lại view với dữ liệu mới
-        if (id) {
-            viewQuotationDetail(id, false);
+        const targetId = id || data.quotation_id;
+        if (targetId) {
+            viewQuotationDetail(targetId, true);
+        } else {
+            backToQuotations();
         }
     } catch (err) {
         console.error('Lỗi lưu báo giá trang riêng:', err);
@@ -6911,6 +7033,7 @@ window.closeQuotationPrintModal = closeQuotationPrintModal;
 window.switchQuotationPrintTemplate = switchQuotationPrintTemplate;
 
 // Các hàm cho trang riêng Báo giá
+window.openCreateQuotationPage = openCreateQuotationPage;
 window.viewQuotationDetail = viewQuotationDetail;
 window.backToQuotations = backToQuotations;
 window.addFullpageQuotationRouteRow = addFullpageQuotationRouteRow;
@@ -7624,7 +7747,7 @@ function renderBookingsTable(bookings) {
                         <i class="ph-bold ph-calendar-blank text-slate-400 text-xs shrink-0"></i>
                         <span>${b.loading_date}</span>
                     </p>
-                    ${b.loading_time ? `<p class="text-xs text-slate-500 font-medium mt-0.5 pl-4">${b.loading_time}</p>` : ''}
+                    ${b.loading_time ? `<p class="text-xs text-slate-500 font-medium mt-0.5 pl-4">${formatTimeString(b.loading_time)}</p>` : ''}
                 </div>
             </td>
             <td class="p-3.5">
@@ -8026,9 +8149,9 @@ function renderQuotationsTable(quotations) {
                         class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors">
                         <i class="ph-bold ph-eye text-sm"></i>
                     </button>
-                    <!-- 4. Sửa Báo Giá -->
-                    <button onclick="openModalQuotation(${s.id}, false)" title="Chỉnh sửa báo giá" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 transition-colors">
+                    <!-- 4. Sửa Báo Giá Toàn Màn Hình -->
+                    <button onclick="viewQuotationDetail('${quoteHash}')" title="Chỉnh sửa báo giá (Toàn màn hình)" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 transition-colors cursor-pointer">
                         <i class="ph-bold ph-pencil-simple text-sm"></i>
                     </button>
                     <!-- 5. Xóa Báo Giá -->

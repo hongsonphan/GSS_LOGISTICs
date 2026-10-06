@@ -320,7 +320,7 @@ function renderDispatchTable(trips) {
                 <div class="flex items-center space-x-1.5 text-[12px] font-semibold text-slate-700">
                     <i class="ph ph-calendar text-slate-400 text-xs shrink-0"></i>
                     <span>${escapeHtml(trip.loading_date || '-')}</span>
-                    ${trip.loading_time ? `<span class="text-slate-300 font-normal">|</span><span class="text-slate-700 font-bold">${escapeHtml(trip.loading_time)}</span>` : ''}
+                    ${trip.loading_time ? `<span class="text-slate-300 font-normal">|</span><span class="text-slate-700 font-bold">${escapeHtml(formatTimeString(trip.loading_time))}</span>` : ''}
                 </div>
             </td>
             <td class="px-3 py-2 border-r border-slate-200/70">
