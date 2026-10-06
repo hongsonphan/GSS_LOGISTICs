@@ -607,16 +607,16 @@ async function openCreateQuotationPage(updateHistory = true) {
     const hashidInput = document.getElementById('fullpage-quote-hashid');
     const codeEl = document.getElementById('fullpage-quote-code');
     const statusBadge = document.getElementById('fullpage-quote-status-badge');
-    const customerEl = document.getElementById('fullpage-quote-customer');
+    const pricingBadge = document.getElementById('fullpage-quote-pricing-badge');
+    const headerCustEl = document.getElementById('fullpage-quote-header-customer');
     const dateEl = document.getElementById('fullpage-quote-date');
 
     if (idInput) idInput.value = '';
     if (hashidInput) hashidInput.value = '';
-    if (codeEl) codeEl.innerText = 'TẠO BÁO GIÁ MỚI';
-    if (statusBadge) {
-        statusBadge.innerText = 'Đang thương lượng';
-        statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading bg-teal-50 text-teal-800 border-teal-200';
-    }
+    if (codeEl) codeEl.innerText = 'Tạo Báo giá';
+    if (statusBadge) statusBadge.classList.add('hidden');
+    if (pricingBadge) pricingBadge.classList.add('hidden');
+    if (headerCustEl) headerCustEl.innerText = 'Chưa chọn khách hàng';
     if (dateEl) {
         dateEl.innerText = new Date().toLocaleDateString('vi-VN');
     }
@@ -710,8 +710,8 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
         if (hashidInput) hashidInput.value = quoteHash;
         if (codeEl) codeEl.innerText = q.quotation_code || `BG-${q.id}`;
         
-        const custHeaderName = document.getElementById('fullpage-quote-customer');
-        const topHeaderCust = document.querySelector('#view-quotation-detail #fullpage-quote-customer');
+        const headerCustEl = document.getElementById('fullpage-quote-header-customer');
+        if (headerCustEl) headerCustEl.innerText = q.customer_name || '...';
         if (dateEl) dateEl.innerText = q.created_at || '--/--/----';
 
         // Cập nhật URL chuẩn Semantic Path kèm HashID bảo mật: /sales/quotations/<hashid>
@@ -753,12 +753,17 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
 
         // Cập nhật badge trạng thái trên topbar
         if (statusBadge) {
+            statusBadge.classList.remove('hidden');
             statusBadge.innerText = q.status_display || q.status;
             statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' +
                 (q.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
                  q.status === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-800 border-amber-200' :
                  q.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
                  'bg-teal-50 text-teal-800 border-teal-200');
+        }
+        const pricingBadge = document.getElementById('fullpage-quote-pricing-badge');
+        if (pricingBadge) {
+            pricingBadge.classList.remove('hidden');
         }
 
         const tplEl = document.getElementById('fullpage-quote-template-type');
@@ -793,6 +798,15 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
         console.error('Lỗi tải chi tiết báo giá trang riêng:', err);
         showToast('error', 'Không thể tải thông tin báo giá', 'Lỗi');
         backToQuotations();
+    }
+}
+
+function onFullpageQuoteCustomerChange() {
+    const sel = document.getElementById('fullpage-quote-customer');
+    const headerCust = document.getElementById('fullpage-quote-header-customer');
+    if (sel && headerCust) {
+        const text = sel.options[sel.selectedIndex]?.text || '';
+        headerCust.innerText = (text && !text.startsWith('--')) ? text : 'Chưa chọn khách hàng';
     }
 }
 

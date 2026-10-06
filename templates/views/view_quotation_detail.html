@@ -9,11 +9,14 @@
                 <i class="ph-bold ph-arrow-left text-lg"></i>
             </button>
             <div class="min-w-0">
-                <div class="flex items-center space-x-2.5 flex-wrap gap-y-1">
-                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-heading tracking-tight" id="fullpage-quote-code">BG-XXXX</h2>
+                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                    <h2 class="text-lg sm:text-xl font-black text-slate-900 font-heading tracking-tight flex items-center flex-wrap">
+                        <a href="javascript:void(0)" onclick="backToQuotations()" class="text-slate-600 hover:text-teal-700 transition-colors">Sale & Booking</a>
+                        <span class="mx-2 text-slate-300 font-normal">|</span>
+                        <span id="fullpage-quote-code" class="text-slate-900">Tạo Báo giá</span>
+                    </h2>
                     <span id="fullpage-quote-status-badge"
-                        class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider bg-slate-100 text-slate-700 font-heading">
-                        Đang tải...
+                        class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading">
                     </span>
                     <span id="fullpage-quote-pricing-badge"
                         class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
@@ -22,7 +25,7 @@
                 </div>
                 <p class="text-xs font-semibold text-slate-500 mt-0.5 flex items-center truncate">
                     <span>Khách hàng:</span>
-                    <strong class="ml-1 text-slate-900 font-heading truncate max-w-[280px] sm:max-w-md" id="fullpage-quote-customer">...</strong>
+                    <strong class="ml-1 text-slate-900 font-heading truncate max-w-[280px] sm:max-w-md" id="fullpage-quote-header-customer">Chưa chọn khách hàng</strong>
                     <span class="mx-2 text-slate-300">·</span>
                     <span id="fullpage-quote-date" class="text-slate-500 font-medium">--/--/----</span>
                 </p>
@@ -97,7 +100,7 @@
                                     <i class="ph-bold ph-plus text-xs"></i> Thêm KH Mới
                                 </button>
                             </div>
-                            <select id="fullpage-quote-customer" required 
+                            <select id="fullpage-quote-customer" required onchange="if(typeof onFullpageQuoteCustomerChange==='function') onFullpageQuoteCustomerChange();"
                                 class="w-full h-9.5 px-3 py-1 bg-white border border-slate-200 rounded-xl focus:border-teal-600 font-bold text-slate-900 text-xs transition-all">
                                 <option value="">-- Chọn Khách Hàng Trong Danh Mục --</option>
                             </select>

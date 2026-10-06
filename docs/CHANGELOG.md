@@ -2,6 +2,14 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.9] - 2026-10-06 (Chuẩn Hoá Tiêu Đề Báo Giá Breadcrumb: Sale & Booking | Tạo Báo Giá & Loại Bỏ Thẻ Thừa)
+
+### 1. Chuẩn Hóa Tiêu Đề Điều Hướng Trang Báo Giá (Breadcrumb Header Alignment):
+- **Loại bỏ thẻ tiêu đề in hoa thô cứng & badge thừa:** Bỏ dòng chữ `TẠO BÁO GIÁ MỚI` cùng các thẻ badge trạng thái (`[ĐANG THƯƠNG LƯỢNG]`, `[Ma trận đa tuyến]`) không cần thiết khi đang ở chế độ soạn thảo báo giá mới.
+- **Trình bày cấu trúc Breadcrumb thanh lịch:** Trình bày chuẩn mực theo cấu trúc `Sale & Booking | Tạo Báo giá` (nhấp vào `Sale & Booking` để quay lại danh sách kinh doanh).
+- **Phân tách ID khách hàng tránh xung đột:** Phân định rõ `fullpage-quote-header-customer` hiển thị tên khách hàng trên header và `<select id="fullpage-quote-customer">` trong form nhập liệu. Tự động phản chiếu tên khách hàng lên header ngay khi chọn dropdown.
+- **Tệp cập nhật:** [view_quotation_detail.html](file:///E:/Bim_Logistics/templates/views/view_quotation_detail.html), [sales.js](file:///E:/Bim_Logistics/static/js/modules/sales.js), [app.js](file:///E:/Bim_Logistics/static/js/app.js).
+
 ## [2.9.8] - 2026-10-06 (Chuẩn Hoá Quy Trình Điều Vận 11 Bước: Bổ Sung Mốc Hạ Rỗng Riêng Biệt)
 
 ### 1. Chuẩn Hóa Quy Trình Điều Vận 11 Bước Thực Tế (TMS 11-Step Standardized Workflow):
