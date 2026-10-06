@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.7] - 2026-10-06 (Khắc Phục Xung Đột Modal In & Cách Ly Độc Lập Mẫu In Báo Giá / Phiếu Thu Chi / Báo Cáo)
+
+### 1. Khắc Phục Triệt Để Xung Đột `@media print`:
+- **Nguyên nhân cốt lõi:** Trong `static/css/main.css`, selector `@media print` trước đây áp dụng đồng thời `display: block !important` và `visibility: visible !important` cho cả 3 modal (`#modal-cash-voucher-print`, `#modal-quotation-print`, `#modal-report-print`). Vì `#modal-report-print` nằm sau cùng trong cây DOM HTML, khi mở modal Báo Giá và bấm "In", trình duyệt bị ép hiển thị đè mẫu "Báo cáo Quản trị/Hiệu suất đội xe" lên trên bản Báo Giá.
+- **Giải pháp xử lý dứt điểm:**
+  * **CSS Isolation:** Thiết lập cơ chế phân tách và cách ly tuyệt đối 3 ngữ cảnh in ấn. Bất kỳ modal nào có class `.hidden` hoặc `.hidden-view` đều bị áp đặt `display: none !important; visibility: hidden !important;` khi in.
+  * **JS Context Flagging:** Trong `static/js/app.js`, các hàm `printQuotationVoucher()`, `printCashVoucher()`, `executePrintReportDocument()` tự động gán class ngữ cảnh (`is-printing-quotation`, `is-printing-voucher`, `is-printing-report`) lên `document.body` trước khi gọi `window.print()`, đồng thời tự động dọn sạch cờ sau sự kiện `afterprint`.
+- **Kết quả:** Khi bấm In Báo Giá, bản in ra giấy/PDF hiển thị chính xác 100% mẫu **Báo Giá Cước Vận Chuyển A4 WYSIWYG** (không bị đè bởi bất kỳ mẫu báo cáo nào khác).
+
+### 2. Kiểm Thử & Triển Khai:
+- **86/86 Unit Tests PASSED 100%**.
+- `node -c static/js/app.js` PASSED không lỗi cú pháp.
+- Triển khai và khởi động lại dịch vụ thành công trên VPS (`149.118.60.194:8085`).
+
+---
+
 ## [2.8.6] - 2026-10-05 (Nâng Cấp Phân Hệ Sales: Báo Giá Đa Tuyến Đường Động, Cơ Chế Định Giá Xăng Dầu & In A4 WYSIWYG)
 
 ### 1. Nâng Cấp Phương Thức Định Giá & Mô Hình Báo Giá (Pricing Models):
