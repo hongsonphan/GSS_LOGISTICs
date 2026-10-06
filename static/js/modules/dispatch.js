@@ -215,6 +215,20 @@ function applyDispatchFilters() {
             let valA = a[dispatchSortColumn];
             let valB = b[dispatchSortColumn];
 
+            if (dispatchSortColumn === 'trip_id') {
+                const idA = (a.id || '').toString();
+                const idB = (b.id || '').toString();
+                const cmp = idA.localeCompare(idB, 'vi', { numeric: true });
+                return dispatchSortDirection === 'asc' ? cmp : -cmp;
+            }
+
+            if (dispatchSortColumn === 'loading_date') {
+                valA = a.loading_date_iso || a.loading_date || '';
+                valB = b.loading_date_iso || b.loading_date || '';
+                const cmp = valA.localeCompare(valB);
+                return dispatchSortDirection === 'asc' ? cmp : -cmp;
+            }
+
             if (dispatchSortColumn === 'expense') {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
@@ -236,7 +250,7 @@ function applyDispatchFilters() {
     }
 
     // Cập nhật icon sort thead
-    const sortCols = ['loading_date', 'customer', 'container', 'vehicle', 'expense', 'status'];
+    const sortCols = ['trip_id', 'loading_date', 'customer', 'container', 'vehicle', 'expense', 'status'];
     sortCols.forEach(col => {
         const iconEl = document.getElementById(`sort-icon-dispatch-${col}`);
         if (iconEl) {
@@ -261,7 +275,7 @@ function renderDispatchTable(trips) {
     if (!trips || trips.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center py-12 text-slate-400">
+                <td colspan="9" class="text-center py-12 text-slate-400">
                     <div class="flex flex-col items-center justify-center">
                         <i class="ph ph-magnifying-glass text-4xl mb-2 text-slate-300"></i>
                         <p class="font-medium text-sm text-slate-500">Không tìm thấy chuyến xe nào phù hợp với bộ lọc</p>
@@ -291,20 +305,22 @@ function renderDispatchTable(trips) {
         };
         
         tr.innerHTML = `
-            <td class="px-3 py-2 border-r border-slate-200/70">
+            <td class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap">
                 <div class="flex items-center space-x-2">
                     <a href="/dispatch/trips/${tripIdentifier}" 
                        onclick="event.preventDefault(); event.stopPropagation(); viewTripDetail('${tripIdentifier}');" 
-                       class="font-bold text-teal-700 hover:text-teal-900 hover:underline font-heading text-[13.5px] inline-flex items-center gap-1 group/link"
+                       class="font-bold text-teal-700 hover:text-teal-900 hover:underline font-heading font-mono text-[13px] inline-flex items-center gap-1 group/link"
                        title="Xem chi tiết lệnh điều động ${trip.id}">
-                        <span>${escapeHtml(trip.id)}</span>
+                        <span>${escapeHtml(formatCodeCompact(trip.id))}</span>
                         <i class="ph ph-arrow-up-right text-[11px] opacity-0 group-hover/link:opacity-100 transition-opacity text-teal-600"></i>
                     </a>
                 </div>
-                <div class="flex items-center space-x-1.5 text-[11.5px] font-medium text-slate-500 mt-0.5">
-                    <i class="ph ph-calendar text-slate-400 text-xs"></i>
+            </td>
+            <td class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap">
+                <div class="flex items-center space-x-1.5 text-[12px] font-semibold text-slate-700">
+                    <i class="ph ph-calendar text-slate-400 text-xs shrink-0"></i>
                     <span>${escapeHtml(trip.loading_date)}</span>
-                    ${trip.loading_time ? `<span class="text-teal-800 bg-teal-100/80 px-1 py-0.2 rounded font-bold text-[11px]">${escapeHtml(trip.loading_time)}</span>` : ''}
+                    ${trip.loading_time ? `<span class="text-teal-800 bg-teal-100/80 px-1 py-0.2 rounded font-bold text-[10.5px]">${escapeHtml(trip.loading_time)}</span>` : ''}
                 </div>
             </td>
             <td class="px-3 py-2 border-r border-slate-200/70">

@@ -128,6 +128,16 @@ const STATUS_NAME_MAP = {
 // =========================================================================
 // CHUẨN HOÁ ĐỊNH DẠNG SỐ & PHÂN CÁCH HÀNG NGÀN (VIETNAMESE NUMBER FORMATTING)
 // =========================================================================
+/**
+ * Chuẩn hóa các mã chứng từ, mã chuyến, mã booking:
+ * Thay khoảng trắng bằng dấu chấm để thu gọn độ rộng cột và chống tràn bảng
+ */
+function formatCodeCompact(code) {
+    if (code === null || code === undefined) return '';
+    return String(code).trim().replace(/\s+/g, '.');
+}
+window.formatCodeCompact = formatCodeCompact;
+
 function formatNumberVN(val) {
     if (val === null || val === undefined || val === '') return '';
     const clean = String(val).replace(/\D/g, '');

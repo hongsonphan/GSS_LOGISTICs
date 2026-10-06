@@ -1385,8 +1385,10 @@ function applyBookingFilters() {
 
     // Sắp xếp
     list.sort((a, b) => {
-        let valA = a[bookingSortColumn];
-        let valB = b[bookingSortColumn];
+        if (bookingSortColumn === 'booking_code') {
+            const cmp = (a.booking_code || '').toString().localeCompare((b.booking_code || '').toString(), 'vi', { numeric: true });
+            return bookingSortDirection === 'asc' ? cmp : -cmp;
+        }
 
         if (bookingSortColumn === 'loading_date') {
             valA = a.loading_date_iso || a.loading_date || '';
@@ -1416,6 +1418,7 @@ function applyBookingFilters() {
 
     // Cập nhật visual icons trên thead
     const sortIcons = {
+        'booking_code': document.getElementById('sort-icon-booking_code'),
         'loading_date': document.getElementById('sort-icon-loading_date'),
         'progress_percent': document.getElementById('sort-icon-progress_percent'),
         'closing_time': document.getElementById('sort-icon-closing_time'),
@@ -1447,7 +1450,7 @@ function renderBookingsTable(bookings) {
     if (!bookings || bookings.length === 0) {
         bkBody.innerHTML = `
             <tr>
-                <td colspan="9" class="p-8 text-center text-slate-400 italic">
+                <td colspan="10" class="p-8 text-center text-slate-400 italic">
                     <div class="flex flex-col items-center justify-center space-y-2">
                         <i class="ph-bold ph-magnifying-glass text-3xl text-slate-300"></i>
                         <p class="font-medium text-sm">Không tìm thấy đơn hàng / booking nào phù hợp với bộ lọc hiện tại.</p>
@@ -1495,15 +1498,17 @@ function renderBookingsTable(bookings) {
         const cleanLoc = (s) => (s || '-').replace(/\([^)]*\)/g, '').trim();
 
         tr.innerHTML = `
-            <td class="p-3.5">
+            <td class="p-3.5 whitespace-nowrap">
                 <div class="flex items-center flex-wrap gap-1">
-                    <span class="font-black text-slate-900 font-heading text-sm">${b.booking_code}</span>
+                    <span class="font-black text-slate-900 font-heading font-mono text-sm">${escapeHtml(formatCodeCompact(b.booking_code))}</span>
                     ${urgentBadge}
                     ${dropHookBadge}
                 </div>
-                <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+            </td>
+            <td class="p-3.5 whitespace-nowrap">
+                <div class="text-xs text-slate-700 font-semibold flex items-center gap-1">
                     <i class="ph-bold ph-calendar-blank text-slate-400"></i> ${b.loading_date} · ${b.loading_time}
-                </p>
+                </div>
             </td>
             <td class="p-3.5">
                 <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${b.customer}">${b.customer}</p>

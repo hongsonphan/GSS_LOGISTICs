@@ -292,8 +292,9 @@
                 <table class="erp-table whitespace-nowrap" id="accounting-advances-table" data-table-title="Bảng Kê Tạm Ứng & Hoàn Ứng Tài Xế">
                     <thead>
                         <tr>
-                            <th data-col-key="code" data-col-name="Mã Phiếu Ứng" data-col-locked="true">Mã Phiếu Ứng</th>
-                            <th data-col-key="trip_date" data-col-name="Mã Chuyến & Ngày">Mã Chuyến & Ngày</th>
+                            <th data-col-key="code" data-col-name="Mã Phiếu Ứng" data-col-locked="true" class="w-28 font-mono">Mã Phiếu Ứng</th>
+                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" class="w-28 font-mono">Mã Chuyến</th>
+                            <th data-col-key="advance_date" data-col-name="Ngày Ứng" class="w-24 text-center">Ngày Ứng</th>
                             <th data-col-key="customer" data-col-name="Khách Hàng">Khách Hàng</th>
                             <th data-col-key="driver_vehicle" data-col-name="Tài Xế & Xe">Tài Xế & Xe</th>
                             <th data-col-key="advance_amount" data-col-name="Tiền Tạm Ứng" class="text-right">Tiền Tạm Ứng</th>
@@ -520,11 +521,19 @@
                 <table class="erp-table whitespace-nowrap" id="accounting-pnl-table" data-table-title="Bảng Đối Soát Chi Phí & Lãi Lỗ Chuyến Xe">
                     <thead>
                         <tr>
-                            <!-- 1. Mã Chuyến & Ngày Chạy -->
-                            <th data-col-key="trip_code" data-col-name="Mã Chuyến & Ngày Chạy" data-col-locked="true" onclick="toggleAccountingSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã Chuyến">
+                            <!-- 1. Mã Chuyến -->
+                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleAccountingSort('trip_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 font-mono" title="Click để sắp xếp theo Mã Chuyến">
                                 <div class="flex items-center gap-1.5">
-                                    <span>Mã Chuyến & Ngày Chạy</span>
+                                    <span>Mã Chuyến</span>
                                     <i id="sort-icon-acct-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 2. Ngày Chạy -->
+                            <th data-col-key="loading_date" data-col-name="Ngày Chạy" onclick="toggleAccountingSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 text-center" title="Click để sắp xếp theo Ngày Chạy">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <span>Ngày Chạy</span>
+                                    <i id="sort-icon-acct-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
 
@@ -718,7 +727,8 @@
                             <th data-col-key="checkbox" data-col-name="Chọn" data-col-locked="true" class="w-8 text-center">
                                 <input type="checkbox" id="reimburse-check-all" onchange="toggleCheckAllReimbursables(this)" class="rounded text-teal-600 focus:ring-teal-500">
                             </th>
-                            <th data-col-key="trip_date" data-col-name="Mã Chuyến / Ngày" data-col-locked="true">Mã Chuyến / Ngày</th>
+                            <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" class="w-28 font-mono">Mã Chuyến</th>
+                            <th data-col-key="created_at" data-col-name="Ngày Chi" class="w-24 text-center">Ngày Chi</th>
                             <th data-col-key="customer" data-col-name="Khách Hàng">Khách Hàng</th>
                             <th data-col-key="container" data-col-name="Số Cont / Booking">Số Cont / Booking</th>
                             <th data-col-key="category" data-col-name="Khoản Mục Chi Hộ">Khoản Mục Chi Hộ</th>

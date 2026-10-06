@@ -12,7 +12,7 @@ async function loadAccountingData() {
     if (tbody) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="10" class="p-8 text-center text-slate-400 font-medium">
                     <i class="ph ph-spinner-gap animate-spin text-2xl mb-2 inline-block text-emerald-600"></i>
                     <p>Đang tải dữ liệu đối soát chi phí & báo cáo kế toán...</p>
                 </td>
@@ -55,7 +55,7 @@ async function loadAccountingData() {
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="p-8 text-center text-rose-500 font-bold">
+                    <td colspan="10" class="p-8 text-center text-rose-500 font-bold">
                         <i class="ph-bold ph-warning-circle text-2xl mb-1 inline-block"></i>
                         <p>Không thể tải dữ liệu đối soát chi phí kế toán. Vui lòng thử lại.</p>
                     </td>
@@ -72,7 +72,7 @@ function renderAccountingTable(list) {
     if (!list || list.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="10" class="p-8 text-center text-slate-400 font-medium">
                     <i class="ph ph-receipt text-3xl mb-1 inline-block text-slate-300"></i>
                     <p>Không có dữ liệu đối soát chuyến xe phù hợp với bộ lọc.</p>
                 </td>
@@ -97,11 +97,13 @@ function renderAccountingTable(list) {
                </span>`;
 
         tr.innerHTML = `
-            <td class="p-3.5">
-                <p class="font-black text-teal-800 font-heading text-sm cursor-pointer hover:underline" onclick="viewTripDetail('${item.trip_code}')">
-                    ${item.trip_code}
+            <td class="p-3.5 whitespace-nowrap">
+                <p class="font-black text-teal-800 font-mono text-sm cursor-pointer hover:underline" onclick="viewTripDetail('${item.trip_code}')">
+                    ${escapeHtml(formatCodeCompact(item.trip_code))}
                 </p>
-                <p class="text-xs text-slate-500 font-medium mt-0.5">${item.loading_date || '-'}</p>
+            </td>
+            <td class="p-3.5 whitespace-nowrap text-center text-xs font-semibold text-slate-700">
+                ${escapeHtml(item.loading_date || '-')}
             </td>
             <td class="p-3.5">
                 <p class="font-bold text-slate-900 text-sm max-w-[190px] truncate" title="${item.customer_name}">${item.customer_name}</p>
@@ -139,7 +141,7 @@ function renderAccountingTable(list) {
                     </p>
                 ` : ''}
             </td>
-            <td class="p-3.5 text-center">
+            <td class="p-3.5 text-center cell-actions">
                 <div class="flex items-center justify-center space-x-1.5">
                     <!-- Xem chi tiết đối soát -->
                     <button onclick="viewTripDetail('${item.trip_code}')" title="Soi chứng từ & chi tiết khoản chi" 
@@ -296,6 +298,12 @@ function filterAccountingTable() {
             let valA = a[acctSortColumn];
             let valB = b[acctSortColumn];
 
+            if (acctSortColumn === 'loading_date') {
+                const timeA = valA ? new Date(valA).getTime() || 0 : 0;
+                const timeB = valB ? new Date(valB).getTime() || 0 : 0;
+                return acctSortDirection === 'asc' ? timeA - timeB : timeB - timeA;
+            }
+
             if (['revenue', 'expense', 'profit', 'invoices_count'].includes(acctSortColumn)) {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
@@ -316,7 +324,7 @@ function filterAccountingTable() {
     }
 
     // Cập nhật icon sort thead
-    const sortCols = ['trip_code', 'customer_name', 'driver_name', 'revenue', 'expense', 'profit', 'invoices_count', 'is_settled'];
+    const sortCols = ['trip_code', 'loading_date', 'customer_name', 'driver_name', 'revenue', 'expense', 'profit', 'invoices_count', 'is_settled'];
     sortCols.forEach(col => {
         const iconEl = document.getElementById(`sort-icon-acct-${col}`);
         if (iconEl) {
@@ -556,7 +564,7 @@ function renderDriverAdvancesTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy phiếu tạm ứng chuyến nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy phiếu tạm ứng chuyến nào phù hợp</td></tr>`;
         return;
     }
 
@@ -592,11 +600,11 @@ function renderDriverAdvancesTable(list) {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
-                <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.code)}</td>
-                <td>
-                    <a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(item.trip_code)}</a>
-                    <p class="text-[11px] text-slate-400">${item.advance_date}</p>
+                <td class="font-black text-slate-900 font-mono text-xs whitespace-nowrap">${escapeHtml(formatCodeCompact(item.code))}</td>
+                <td class="whitespace-nowrap">
+                    <a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(formatCodeCompact(item.trip_code))}</a>
                 </td>
+                <td class="text-[11px] text-slate-600 font-medium whitespace-nowrap text-center">${escapeHtml(item.advance_date || '-')}</td>
                 <td class="text-xs font-semibold text-slate-800 max-w-[170px] truncate" title="${escapeHtml(item.customer_name)}">${escapeHtml(item.customer_name)}</td>
                 <td class="text-xs text-slate-800">
                     <p class="font-bold">${escapeHtml(item.driver_name)}</p>
@@ -1227,7 +1235,7 @@ function renderSettlementTable(data) {
         // Group Header Row
         html += `
             <tr class="bg-teal-50/80 font-bold text-slate-800 border-y border-teal-200 group-header-row" data-group-index="${gIdx}">
-                <td colspan="11" class="py-2.5 px-3">
+                <td colspan="12" class="py-2.5 px-3">
                     <div class="flex items-center justify-between flex-wrap gap-2">
                         <div class="flex items-center gap-2">
                             <span class="w-6 h-6 rounded-lg bg-teal-800 text-white flex items-center justify-center text-xs font-black">
@@ -1279,9 +1287,11 @@ function renderSettlementTable(data) {
                             ${isChecked ? 'checked' : ''} onchange="onSettlementTripSelectionChange()"
                             class="page-settle-checkbox batch-trip-checkbox w-4 h-4 text-teal-600 rounded cursor-pointer">
                     </td>
-                    <td class="py-2.5 px-3 font-semibold text-slate-900 font-mono">
-                        <div class="font-bold text-teal-900">${escapeHtml(t.trip_code)}</div>
-                        <div class="text-[11px] text-slate-500 font-normal">${escapeHtml(t.loading_date)}</div>
+                    <td class="py-2.5 px-3 font-semibold text-slate-900 font-mono whitespace-nowrap">
+                        <div class="font-bold text-teal-900">${escapeHtml(formatCodeCompact(t.trip_code))}</div>
+                    </td>
+                    <td class="py-2.5 px-3 whitespace-nowrap text-xs font-semibold text-slate-700 text-center">
+                        ${escapeHtml(t.loading_date || '-')}
                     </td>
                     <td class="py-2.5 px-3">
                         <div class="font-bold text-slate-800 truncate max-w-[200px]" title="${escapeHtml(t.customer_name)}">${escapeHtml(t.customer_name)}</div>
@@ -1310,7 +1320,7 @@ function renderSettlementTable(data) {
                     <td class="py-2.5 px-3 text-center">
                         ${settleStatusBadge}
                     </td>
-                    <td class="py-2.5 px-3 text-center">
+                    <td class="py-2.5 px-3 text-center cell-actions">
                         <button type="button" onclick="viewTripDetail('${escapeHtml(t.trip_code)}')" class="px-2 py-0.5 rounded text-[11px] font-bold bg-white hover:bg-teal-700 hover:text-white text-teal-700 border border-teal-200 transition-colors shadow-2xs font-heading">
                             Chi tiết
                         </button>
@@ -1321,7 +1331,7 @@ function renderSettlementTable(data) {
     });
 
     if (totalTripsInView === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-12 text-slate-400 font-semibold"><i class="ph-bold ph-info text-3xl mb-2 block"></i> Không có chuyến xe nào khớp với bộ lọc trạng thái.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center py-12 text-slate-400 font-semibold"><i class="ph-bold ph-info text-3xl mb-2 block"></i> Không có chuyến xe nào khớp với bộ lọc trạng thái.</td></tr>`;
         if (badgeInfo) badgeInfo.innerHTML = 'Hiển thị: <strong>0</strong> chuyến';
         onSettlementTripSelectionChange();
         return;
@@ -1782,7 +1792,7 @@ function renderReimbursablesTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy khoản chi hộ nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy khoản chi hộ nào phù hợp</td></tr>`;
         updateSelectedReimbursablesUI();
         return;
     }
@@ -1816,9 +1826,11 @@ function renderReimbursablesTable(list) {
                 <td class="text-center">
                     <input type="checkbox" value="${item.id}" ${isChecked} onchange="toggleReimbursableCheck(${item.id}, this)" class="rounded text-teal-600 focus:ring-teal-500">
                 </td>
-                <td>
-                    <div class="font-bold text-teal-800 font-heading">[${escapeHtml(item.trip_code)}]</div>
-                    <div class="text-[11px] text-slate-400 font-medium">${item.created_at}</div>
+                <td class="whitespace-nowrap">
+                    <div class="font-bold text-teal-800 font-mono text-xs">${escapeHtml(formatCodeCompact(item.trip_code))}</div>
+                </td>
+                <td class="whitespace-nowrap text-center text-[11px] text-slate-600 font-medium">
+                    ${escapeHtml(item.created_at || '-')}
                 </td>
                 <td>
                     <div class="font-bold text-slate-800 max-w-[180px] truncate" title="${escapeHtml(item.customer_name)}">${escapeHtml(item.customer_name)}</div>

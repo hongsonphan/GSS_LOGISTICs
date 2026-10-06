@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.1] - 2026-10-06 (Refactor Toàn Bộ Data Table: Tách Cột Mã & Ngày, Sắp Xếp Timestamp, Cố Định Cột Thao Tác)
+
+### 1. Tách Biệt Cột Mã & Cột Ngày Tháng (Data Table Refactoring):
+- **Phân hệ Điều Vận (`view_dispatch.html`):** Tách cột gộp "MÃ / LỊCH ĐÓNG" thành 2 cột riêng biệt `[Mã Chuyến]` (font monospace, định dạng gọn `formatCodeCompact`) và `[Lịch Đóng]`. Bổ sung tính năng Sort độc lập theo Timestamp cho cột Ngày tháng và Sort theo Mã.
+- **Phân hệ Đơn Hàng / Báo Giá / Sale (`view_sales.html`):** Tách cột gộp "MÃ ĐƠN / LỊCH ĐÓNG" thành 2 cột riêng biệt `[Mã Đơn]` và `[Lịch Đóng]`. Hỗ trợ sắp xếp Timestamp cho Lịch đóng và Mã đơn.
+- **Phân hệ Quyết Toán Chuyến Xe (`view_settlement.html`):** Tách cột gộp "Mã Chuyến & Ngày Chạy" thành 2 cột riêng biệt `[Mã Chuyến]` và `[Ngày Chạy]`. Điều chỉnh cấu trúc colspan từ 11 thành 12.
+- **Phân hệ Đối Soát Kế Toán P&L (`view_accounting.html`):** Tách cột gộp "Mã Chuyến & Ngày Chạy" thành 2 cột riêng biệt `[Mã Chuyến]` và `[Ngày Chạy]`, hỗ trợ Sort theo Timestamp cho `loading_date` và icon tương tác trực quan. Điều chỉnh colspan từ 9 thành 10.
+- **Phân hệ Tạm Ứng & Hoàn Ứng Tài Xế (`view_accounting.html`):** Tách cột gộp "Mã Chuyến & Ngày" thành 2 cột riêng biệt `[Mã Chuyến]` và `[Ngày Ứng]`. Điều chỉnh colspan từ 10 thành 11.
+- **Phân hệ Chi Hộ & Thu Hồi Debit Note (`view_accounting.html`):** Tách cột gộp "Mã Chuyến / Ngày" thành 2 cột riêng biệt `[Mã Chuyến]` và `[Ngày Chi]`. Điều chỉnh colspan từ 11 thành 12.
+
+### 2. Định Dạng Mã Gọn Gàng & Chống Tràn Cột (UI/UX Table Balancing):
+- **Hàm tiện ích `formatCodeCompact(code)`:** Thay thế khoảng trắng dư thừa trong các mã vận đơn/phiếu/chuyến bằng dấu chấm (`.`) giúp mã hiển thị gọn gàng, tăng diện tích trình bày thông tin nghiệp vụ.
+- **Cố định cột Thao tác (Sticky Actions Column):** Bổ sung CSS sticky pinning `.erp-table th[data-col-key="actions"]` và `.cell-actions` ở mép phải (`right: 0`), đảm bảo bảng cuộn ngang mượt mà không bao giờ bị vỡ bố cục hoặc che mất các nút Thao tác/Chi tiết.
+- **Tự động cân chỉnh chiều rộng (Column Auto-Width):** Sử dụng các utility `w-28 font-mono`, `whitespace-nowrap`, và `text-center` cho các cột Mã và Ngày tháng.
+
+### 3. Kiểm Thử Hồi Quy Toàn Diện:
+- **86/86 Unit & System Tests PASSED 100%**.
+- **10/10 Critical User Journeys PASSED 100%**.
+- **100% JS Syntax Checks PASSED** trên toàn bộ `app.js`, `column_manager.js` và tất cả các tệp trong thư mục `static/js/modules/`.
+
+---
+
 ## [2.9.0] - 2026-10-06 (Tái Cấu Trúc Toàn Diện Frontend: Modular JavaScript Architecture)
 
 ### 1. Phân Tách Mã Nguồn Khối Lớn (Modular Subsystems):

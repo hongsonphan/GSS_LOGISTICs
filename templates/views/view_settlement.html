@@ -198,7 +198,8 @@
                         <th data-col-key="checkbox" data-col-name="Chọn" data-col-locked="true" class="w-10 text-center">
                             <input type="checkbox" id="settle-master-checkbox" onchange="toggleMasterSettlementCheckbox(this)" class="w-4 h-4 text-teal-600 rounded cursor-pointer">
                         </th>
-                        <th data-col-key="trip_code" data-col-name="Mã Chuyến & Ngày" data-col-locked="true">Mã Chuyến & Ngày Chạy</th>
+                        <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" class="w-28 font-mono">Mã Chuyến</th>
+                        <th data-col-key="loading_date" data-col-name="Ngày Chạy" class="w-28 text-center">Ngày Chạy</th>
                         <th data-col-key="customer_route" data-col-name="Khách Hàng & Tuyến">Khách Hàng & Tuyến Vận Tải</th>
                         <th data-col-key="driver_vehicle" data-col-name="Tài Xế & Biển Số">Tài Xế & Đầu Xe</th>
                         <th data-col-key="container_seal" data-col-name="Cont & Seal">Số Cont / Seal</th>
@@ -212,7 +213,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs" id="page-settle-tbody">
                     <tr>
-                        <td colspan="11" class="text-center py-12 text-slate-400 font-medium">
+                        <td colspan="12" class="text-center py-12 text-slate-400 font-medium">
                             <i class="ph-bold ph-spinner ph-spin text-3xl mb-2 block text-teal-600"></i>
                             Đang chuẩn bị danh sách chuyến xe quyết toán...
                         </td>

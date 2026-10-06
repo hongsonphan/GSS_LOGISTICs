@@ -408,6 +408,31 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     border-right: none;
 }
 
+/* Tự động căn chỉnh & Giữ cố định cột Thao tác (Sticky Actions Column) chống che khuất */
+.erp-table th[data-col-key="actions"],
+.erp-table td:last-child.cell-actions,
+.erp-table td.actions-cell,
+.bim-table th[data-col-key="actions"],
+.bim-table td:last-child.cell-actions {
+    position: sticky;
+    right: 0;
+    z-index: 5;
+    background-color: #ffffff;
+    box-shadow: -2px 0 5px -1px rgba(0, 0, 0, 0.06);
+}
+
+.erp-table thead th[data-col-key="actions"],
+.bim-table thead th[data-col-key="actions"] {
+    z-index: 15;
+    background-color: #f2f5f8;
+}
+
+.erp-table tbody tr:hover td:last-child.cell-actions,
+.erp-table tbody tr:hover td.actions-cell,
+.bim-table tbody tr:hover td:last-child.cell-actions {
+    background-color: #f0fdfa !important;
+}
+
 /* Hàng dữ liệu đơn (Single-line row): chiều cao chuẩn ~34px - 36px */
 .erp-table tbody td, .bim-table tbody td {
     padding: 6px 12px;

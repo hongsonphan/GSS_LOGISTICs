@@ -137,10 +137,18 @@
             <table class="erp-table whitespace-nowrap" id="dispatch-trips-table" data-table-title="Danh Sách Điều Vận Chuyến Xe">
                 <thead>
                     <tr>
-                        <!-- 1. Mã / Lịch Đóng (Có sắp xếp) -->
-                        <th data-col-key="loading_date" data-col-name="Mã / Lịch Đóng" data-col-locked="true" onclick="toggleDispatchSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Lịch Đóng / Khởi hành">
+                        <!-- 1. Mã Chuyến (Có sắp xếp) -->
+                        <th data-col-key="trip_id" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleDispatchSort('trip_id')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-32" title="Click để sắp xếp theo Mã Chuyến">
                             <div class="flex items-center gap-1.5">
-                                <span>Mã / Lịch Đóng</span>
+                                <span>Mã Chuyến</span>
+                                <i id="sort-icon-dispatch-trip_id" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 2. Lịch Đóng / Ngày Chạy (Sort theo timestamp) -->
+                        <th data-col-key="loading_date" data-col-name="Lịch Đóng" onclick="toggleDispatchSort('loading_date')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-36" title="Click để sắp xếp theo Lịch Đóng / Khởi hành">
+                            <div class="flex items-center gap-1.5">
+                                <span>Lịch Đóng</span>
                                 <i id="sort-icon-dispatch-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                             </div>
                         </th>
