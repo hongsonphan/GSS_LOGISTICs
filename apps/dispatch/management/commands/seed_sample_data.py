@@ -214,47 +214,56 @@ class Command(BaseCommand):
             cust_map[code] = (c, field)
 
         # 9. Quotations (Báo giá đa tuyến - Tạo đúng ngày hôm nay)
-        Quotation.objects.filter(customer__in=[c[0] for c in cust_map.values()]).delete()
         for idx, (code, (cust, field)) in enumerate(cust_map.items()):
             q_code = f"BG-{today.strftime('%m%d')}-{str(idx+1).zfill(2)}"
-            q = Quotation.objects.create(
-                quotation_code=q_code,
-                customer=cust,
-                origin_zone='Cảng Cát Lái, TP.HCM',
-                destination_zone=cust.address.split(',')[0],
-                estimated_km=35 + idx * 10,
-                route_description=f"Cảng Cát Lái ➔ {cust.address.split(',')[0]}",
-                unit_price=Decimal(3500000 + idx * 300000),
-                expected_trips_monthly=15,
-                status='APPROVED',
-                pricing_method='MULTI_ROUTE',
-                cargo_type=f'Cont 40HC - {field}',
-                valid_until=today + datetime.timedelta(days=90),
-                notes='Bảng giá cước vận chuyển chuẩn áp dụng quý hiện tại.'
-            )
+            q = Quotation.all_objects.filter(quotation_code=q_code).first()
+            if q:
+                q.is_deleted = False
+                q.customer = cust
+                q.status = 'APPROVED'
+                q.cargo_type = f'Cont 40HC - {field}'
+                q.valid_until = today + datetime.timedelta(days=90)
+                q.save()
+            else:
+                q = Quotation.objects.create(
+                    quotation_code=q_code,
+                    customer=cust,
+                    origin_zone='Cảng Cát Lái, TP.HCM',
+                    destination_zone=cust.address.split(',')[0],
+                    estimated_km=35 + idx * 10,
+                    route_description=f"Cảng Cát Lái ➔ {cust.address.split(',')[0]}",
+                    unit_price=Decimal(3500000 + idx * 300000),
+                    expected_trips_monthly=15,
+                    status='APPROVED',
+                    pricing_method='MULTI_ROUTE',
+                    cargo_type=f'Cont 40HC - {field}',
+                    valid_until=today + datetime.timedelta(days=90),
+                    notes='Bảng giá cước vận chuyển chuẩn áp dụng quý hiện tại.'
+                )
             # Add multi-routes (QuotationItem)
-            QuotationItem.objects.create(
-                quotation=q,
-                route_description=f"Cảng Cát Lái ➔ {cust.address.split(',')[0]}",
-                origin_zone='Cảng Cát Lái, TP.HCM',
-                destination_zone=cust.address,
-                cargo_type='Cont 40HC',
-                estimated_km=35 + idx * 10,
-                unit_price=Decimal(3500000 + idx * 300000),
-                expected_trips_monthly=15,
-                notes='Tuyến chính container 40HC'
-            )
-            QuotationItem.objects.create(
-                quotation=q,
-                route_description=f"Cảng SP-ITC ➔ {cust.address.split(',')[0]}",
-                origin_zone='Cảng SP-ITC, Q9, TP.HCM',
-                destination_zone=cust.address,
-                cargo_type='Cont 20GP',
-                estimated_km=40 + idx * 10,
-                unit_price=Decimal(3200000 + idx * 250000),
-                expected_trips_monthly=10,
-                notes='Tuyến phụ container 20GP'
-            )
+            if not q.items.filter(is_deleted=False).exists():
+                QuotationItem.objects.create(
+                    quotation=q,
+                    route_description=f"Cảng Cát Lái ➔ {cust.address.split(',')[0]}",
+                    origin_zone='Cảng Cát Lái, TP.HCM',
+                    destination_zone=cust.address,
+                    cargo_type='Cont 40HC',
+                    estimated_km=35 + idx * 10,
+                    unit_price=Decimal(3500000 + idx * 300000),
+                    expected_trips_monthly=15,
+                    notes='Tuyến chính container 40HC'
+                )
+                QuotationItem.objects.create(
+                    quotation=q,
+                    route_description=f"Cảng SP-ITC ➔ {cust.address.split(',')[0]}",
+                    origin_zone='Cảng SP-ITC, Q9, TP.HCM',
+                    destination_zone=cust.address,
+                    cargo_type='Cont 20GP',
+                    estimated_km=40 + idx * 10,
+                    unit_price=Decimal(3200000 + idx * 250000),
+                    expected_trips_monthly=10,
+                    notes='Tuyến phụ container 20GP'
+                )
 
         # 10. Bookings (Đơn hàng vận chuyển)
         booking_list = []
@@ -330,6 +339,45 @@ class Command(BaseCommand):
                 }
             )
             trips.append(t)
+
+        # 11b. Dispatch Trips cho Nhà Xe Thầu Phụ (Xe bạn 3PL)
+        sub_trips_data = [
+            (f"TVL-{today.strftime('%m%d')}-091", booking_list[0], Decimal(3200000), 'Thuê xe bạn Hoàng Nam kéo cont 40HC'),
+            (f"TVL-{today.strftime('%m%d')}-092", booking_list[1], Decimal(3000000), 'Thuê xe bạn Minh Thư kéo cont 20GP'),
+        ]
+        for s_code, b, sub_cost, note in sub_trips_data:
+            st, _ = DispatchTrip.objects.get_or_create(
+                trip_code=s_code,
+                defaults={
+                    'shipment_type': ShipmentType.EXPORT,
+                    'customer': b.customer,
+                    'booking_order': b,
+                    'vehicle': veh_map['51C-777.89'],
+                    'trailer': trl_map['51R-444.22'],
+                    'driver': emp_map['TX001'],
+                    'dispatcher': emp_map['DD001'],
+                    'container_number': f"SITU8812901",
+                    'seal_number': 'SIT90123',
+                    'container_type': '40HC',
+                    'booking_or_bill': b.booking_number,
+                    'pickup_location': b.pickup_location,
+                    'warehouse_location': b.delivery_location,
+                    'dropoff_location': b.dropoff_location,
+                    'loading_date': today,
+                    'loading_time': '09:00',
+                    'status': TripStatus.DELIVERED,
+                    'dispatched_at': now - datetime.timedelta(hours=8),
+                    'accepted_at': now - datetime.timedelta(hours=7),
+                    'planned_start_time': now - datetime.timedelta(hours=6),
+                    'actual_start_time': now - datetime.timedelta(hours=6),
+                    'cached_revenue': b.selling_freight_price,
+                    'cached_expense': sub_cost,
+                    'cached_profit': b.selling_freight_price - sub_cost,
+                    'cached_margin_percent': Decimal(25.0),
+                    'special_notes': note
+                }
+            )
+            trips.append(st)
 
         # 12. Reimbursable & Operation Expenses (Chi Hộ & Phí Hiện Trường)
         for idx, t in enumerate(trips):

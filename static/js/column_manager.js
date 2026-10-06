@@ -220,6 +220,12 @@
                         merged.push(Object.assign({}, c));
                     });
 
+                    // Đảm bảo không bao giờ toàn bộ các cột bị ẩn do cache cũ
+                    const visibleCols = merged.filter(function(c) { return c.visible; });
+                    if (visibleCols.length === 0) {
+                        merged.forEach(function(c) { c.visible = true; });
+                    }
+
                     this.columns = merged;
                     return;
                 }

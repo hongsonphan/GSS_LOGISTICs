@@ -6812,6 +6812,12 @@ function switchSalesSubTab(tabName) {
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-indigo-700">Nhân viên Kinh doanh (NVKD)</strong> — Khảo sát tuyến, chào giá, đàm phán hợp đồng';
         }
+        if (typeof applyQuoteFilters === 'function') {
+            applyQuoteFilters();
+        }
+        if (window.BimTableColumnManager) {
+            window.BimTableColumnManager.apply('sales-quotations-table');
+        }
     } else if (tabName === 'bookings') {
         if (subtabQuotes) subtabQuotes.classList.add('hidden');
         if (subtabBookings) subtabBookings.classList.remove('hidden');
@@ -6828,6 +6834,12 @@ function switchSalesSubTab(tabName) {
         }
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-teal-700">Sale Admin / CS (Chăm sóc Khách hàng)</strong> — Booking hãng tàu, kiểm soát SI/CY cut-off, chuyển giao điều xe';
+        }
+        if (typeof applyBookingFilters === 'function') {
+            applyBookingFilters();
+        }
+        if (window.BimTableColumnManager) {
+            window.BimTableColumnManager.apply('sales-bookings-table');
         }
     }
 }
