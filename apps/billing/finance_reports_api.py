@@ -238,8 +238,13 @@ class CustomerReimbursablesAPIView(APIView):
             )
 
             # Tự động tạo 1 phiếu thu vào Sổ Quỹ Thu - Chi (CashTransaction)
-            today_str = now.strftime('%Y%m%d')
-            pt_code = f"PT-DN-{today_str}-{now.strftime('%H%M%S')}"
+            yymm = now.strftime('%y%m')
+            tx_prefix = f"PT.{yymm}."
+            last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
+            seq = 1
+            if last_tx and last_tx.code.split('.')[-1].isdigit():
+                seq = int(last_tx.code.split('.')[-1]) + 1
+            pt_code = f"{tx_prefix}{seq:03d}"
             ref = debit_note_number or f"EXP-{len(expense_ids)}-ITEMS"
 
             CashTransaction.objects.create(
@@ -659,8 +664,13 @@ class SubcontractorSettlementsAPIView(APIView):
             # Tự động lập phiếu chi Sổ Quỹ cho số tiền còn lại phải thanh toán
             pt_code = None
             if rem > 0:
-                today_str = now.strftime('%Y%m%d')
-                pt_code = f"PC-3PL-{today_str}-{now.strftime('%H%M%S')}"
+                yymm = now.strftime('%y%m')
+                tx_prefix = f"PC.{yymm}."
+                last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
+                seq = 1
+                if last_tx and last_tx.code.split('.')[-1].isdigit():
+                    seq = int(last_tx.code.split('.')[-1]) + 1
+                pt_code = f"{tx_prefix}{seq:03d}"
                 CashTransaction.objects.create(
                     code=pt_code,
                     transaction_type=TransactionType.OUTFLOW,

@@ -725,9 +725,14 @@ function printQuotationFromModal() {
         }
     });
 
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const defaultDraftCode = `BG.${yy}${mm}.${String(id || 1).padStart(3, '0')}`;
+
     const quoteData = {
         id: id,
-        quotation_code: id ? `BG-${id}` : 'BG-DRAFT',
+        quotation_code: id ? defaultDraftCode : 'BG.DRAFT',
         customer_name: customer.replace(/^[^-]+-\s*/, '').trim(),
         pricing_method: pricingMethod,
         base_fuel_price: baseFuelPrice,
