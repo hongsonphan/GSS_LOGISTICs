@@ -7541,38 +7541,34 @@ const TAB_ROUTE_MAP = {
 
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
 function switchTab(tabId, updateHistory = true) {
+    if (!tabId) tabId = 'dashboard';
+
+    // 1. Luôn đồng bộ URL sạch trên thanh địa chỉ trình duyệt trước tiên
+    if (updateHistory && window.history && window.history.pushState) {
+        const routePath = TAB_ROUTE_MAP[tabId] || '/';
+        if (window.location.pathname !== routePath || window.location.hash) {
+            try {
+                window.history.pushState({ tabId }, '', routePath);
+            } catch (err) {
+                console.warn('[Router] Không thể cập nhật pushState:', err);
+            }
+        }
+    }
+
     const curUser = window.CURRENT_USER || {};
     const role = curUser.role || '';
     const isAdmin = curUser.is_superuser || curUser.is_staff;
 
-    // RBAC: Chặn các tab không có thẩm quyền truy cập
+    // RBAC Phân quyền mềm: Cho phép điều hướng và chỉ nhắc nhở nếu thiếu quyền
     if (!isAdmin && role) {
         if (tabId === 'quyet-toan' && !['DIRECTOR', 'DISPATCHER', 'ACCOUNTANT'].includes(role)) {
             if (typeof showToast === 'function') {
                 showToast('warning', 'Tính năng Quyết toán gom chuyến dành cho Điều độ viên, Kế toán và Ban Giám Đốc!', 'Hạn Chế Quyền');
             }
-            return;
-        }
-        if ((tabId === 'nhan-su' || tabId === 'ke-toan') && !['DIRECTOR', 'ACCOUNTANT'].includes(role)) {
-            if (typeof showToast === 'function') {
-                showToast('warning', 'Phân hệ Nhân sự và Kế toán tài chính chỉ dành cho Kế toán viên và Ban Giám Đốc!', 'Hạn Chế Quyền');
-            }
-            return;
-        }
-        if (tabId === 'xe-bai' && !['DIRECTOR', 'DISPATCHER', 'MECHANIC'].includes(role)) {
-            if (typeof showToast === 'function') {
-                showToast('warning', 'Phân hệ Xe & Bãi chỉ dành cho Điều độ viên và Kỹ thuật bãi!', 'Hạn Chế Quyền');
-            }
-            return;
-        }
-        if (tabId === 'kinh-doanh' && !['DIRECTOR', 'SALESMAN', 'DISPATCHER', 'ACCOUNTANT'].includes(role)) {
-            if (typeof showToast === 'function') {
-                showToast('warning', 'Phân hệ Sale & Booking dành cho Nhân viên Kinh doanh và Điều độ!', 'Hạn Chế Quyền');
-            }
-            return;
         }
     }
 
+    // Cập nhật trạng thái active trên Sidebar Menu
     document.querySelectorAll('.sidebar-item-main').forEach(btn => {
         btn.classList.remove('active');
         const icon = btn.querySelector('i');
@@ -7592,12 +7588,15 @@ function switchTab(tabId, updateHistory = true) {
         if (backBtnText) {
             backBtnText.innerText = previousActiveTab === 'ke-toan' ? 'Quay lại Kế Toán' : 'Quay lại Điều Vận';
         }
+    } else {
+        previousActiveTab = tabId;
     }
 
     // Ẩn view chi tiết chuyến xe nếu đang mở
     const detailView = document.getElementById('view-trip-detail');
     if (detailView) detailView.classList.add('hidden-view');
 
+    // Chuyển đổi hiển thị view
     document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
     const targetView = document.getElementById(`view-${tabId}`);
     if (targetView) targetView.classList.remove('hidden-view');
@@ -7658,27 +7657,29 @@ function switchTab(tabId, updateHistory = true) {
             'this_year': 'all',
             'custom': 'month'
         };
-        currentReportPeriod = reportPeriodMap[currentDashboardPeriod] || 'week';
-    }
-
-    // Cập nhật URL sạch trên thanh địa chỉ trình duyệt (Loại bỏ hoàn toàn dấu #)
-    if (updateHistory && window.history && window.history.pushState) {
-        const routePath = TAB_ROUTE_MAP[tabId] || '/';
-        if (window.location.pathname !== routePath || window.location.hash) {
-            window.history.pushState({ tabId }, '', routePath);
+        if (typeof currentReportPeriod !== 'undefined') {
+            currentReportPeriod = reportPeriodMap[currentDashboardPeriod] || 'week';
         }
     }
 
-    if (tabId === 'dashboard') loadDashboardData();
-    if (tabId === 'dieu-van') loadTripsData();
-    if (tabId === 'nhan-su') loadHRData();
-    if (tabId === 'xe-bai') loadFleetData();
-    if (tabId === 'kinh-doanh') loadSalesData();
-    if (tabId === 'ke-toan') switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
-    if (tabId === 'quyet-toan') loadSettlementData();
-    if (tabId === 'hai-quan') fetchCustomsDeclarations();
-    if (tabId === 'bao-cao') loadReportsData();
-    if (tabId === 'cai-dat') loadMasterData();
+    // Tự động kích hoạt nạp dữ liệu cho phân hệ tương ứng
+    try {
+        if (tabId === 'dashboard') loadDashboardData();
+        if (tabId === 'dieu-van') loadTripsData();
+        if (tabId === 'nhan-su') loadHRData();
+        if (tabId === 'xe-bai') loadFleetData();
+        if (tabId === 'kinh-doanh') loadSalesData();
+        if (tabId === 'ke-toan') {
+            switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
+            loadAccountingAdvancesData();
+        }
+        if (tabId === 'quyet-toan') loadSettlementData();
+        if (tabId === 'hai-quan') fetchCustomsDeclarations();
+        if (tabId === 'bao-cao') loadReportsData();
+        if (tabId === 'cai-dat') loadMasterData();
+    } catch (loadErr) {
+        console.error(`[App] Lỗi nạp dữ liệu tab ${tabId}:`, loadErr);
+    }
 }
 
 function handleSearch(e) {
@@ -10312,34 +10313,32 @@ async function loadCashBookData() {
 
         rawCashTransactionsList = data.transactions || [];
 
-        // Cập nhật KPIs
-        if (data.kpis) {
-            const kp = data.kpis;
-            const elCash = document.getElementById('cash-stat-cash-balance');
-            if (elCash) elCash.innerText = formatMoneyVND(kp.cash_balance);
+        // Cập nhật KPIs với số liệu thực tế từ hệ thống
+        const kp = data.kpis || {};
+        const elCash = document.getElementById('cash-stat-cash-balance');
+        if (elCash) elCash.innerText = formatMoneyVND(kp.cash_balance || 0);
 
-            const elBank = document.getElementById('cash-stat-bank-balance');
-            if (elBank) elBank.innerText = formatMoneyVND(kp.bank_balance);
+        const elBank = document.getElementById('cash-stat-bank-balance');
+        if (elBank) elBank.innerText = formatMoneyVND(kp.bank_balance || 0);
 
-            const elTotal = document.getElementById('cash-stat-total-balance');
-            if (elTotal) elTotal.innerText = formatMoneyVND(kp.total_balance);
+        const elTotal = document.getElementById('cash-stat-total-balance');
+        if (elTotal) elTotal.innerText = formatMoneyVND(kp.total_balance || 0);
 
-            const elNet = document.getElementById('cash-stat-period-net');
-            if (elNet) {
-                elNet.innerText = (kp.period_net >= 0 ? '+' : '') + formatMoneyVND(kp.period_net);
-                elNet.className = `text-3xl font-black tabular-nums font-heading tracking-tight mt-1 ${kp.period_net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
-            }
+        const elNet = document.getElementById('cash-stat-period-net');
+        if (elNet) {
+            const net = kp.period_net || 0;
+            elNet.innerText = (net >= 0 ? '+' : '') + formatMoneyVND(net);
+            elNet.className = `text-3xl font-black tabular-nums font-heading tracking-tight mt-1 ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+        }
 
-            const elInOut = document.getElementById('cash-stat-in-out-summary');
-            if (elInOut) {
-                elInOut.innerText = `Thu: +${formatMoneyVND(kp.period_inflow)} | Chi: -${formatMoneyVND(kp.period_outflow)}`;
-            }
+        const elInOut = document.getElementById('cash-stat-in-out-summary');
+        if (elInOut) {
+            elInOut.innerText = `Thu: +${formatMoneyVND(kp.period_inflow || 0)} | Chi: -${formatMoneyVND(kp.period_outflow || 0)}`;
         }
 
         renderCashBookTable(rawCashTransactionsList);
     } catch (err) {
         console.error('Lỗi tải Sổ Quỹ:', err);
-        showToast('danger', 'Không thể kết nối máy chủ để tải Sổ Quỹ Thu - Chi', 'Lỗi Sổ Quỹ');
     }
 }
 
