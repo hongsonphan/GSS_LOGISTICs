@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.3] - 2026-10-06 (Chuẩn Hoá Giao Diện Bảng Dữ Liệu: Loại Bỏ Badge Viền/Hộp Màu, Dùng Màu Chữ Tinh Gọn)
+
+### 1. Tinh Gọn Ô Trạng Thái & Thông Tin Bảng Dữ Liệu (Clean Text-Only Styling):
+- **Loại bỏ toàn bộ badge dạng viên thuốc (pill), border khung viền, nền màu đậm (`bg-*`, `border-*`, `rounded-*`) và các icon trang trí** trong các ô bảng dữ liệu gây chậm render trang và rối mắt.
+- **Áp dụng chuẩn quốc tế ERP:** Trình bày text thuần túy gọn gàng, sử dụng màu chữ ngữ nghĩa (`font-semibold`/`font-bold`, `text-xs`) để phân biệt trạng thái:
+  * **Trạng thái Chuyến xe Điều vận (`trips-table`):** Hiển thị text trực tiếp với màu chữ (`text-emerald-700` cho hoàn tất/có POD, `text-amber-700` cho đang chạy, `text-rose-700` cho từ chối/quá hạn, `text-slate-700` cho các trạng thái khác). Rút gọn SLA text không dùng icon/badge.
+  * **Bảng Báo giá & Hợp đồng Sale (`sales-quotations-table`):** Chuyển nhãn hợp đồng sang text tinh gọn (`text-emerald-700` cho Đã duyệt, `text-amber-700` cho Chờ duyệt/Thương lượng, `text-rose-700` cho Từ chối, `text-teal-700` cho bản thảo). Nhãn phụ phương thức tính cước và số tuyến bổ sung chuyển về text thuần.
+  * **Bảng Nhân sự & Lái xe (`employees-table`):** 
+    - Cột **Biệt danh:** Chuyển từ badge nền vàng sang text thông thường (`text-slate-800 font-medium`).
+    - Cột **Chức vụ:** Bỏ nền và viền, hiển thị text rõ nét với màu phân cấp (`text-emerald-700` cho Tài xế, `text-purple-700` cho Giám đốc, `text-blue-700` cho nhân viên/điều độ).
+    - Cột **Trạng thái làm việc:** Bỏ icon tích tròn, hiển thị text trực quan: `Đang làm` (`text-emerald-700 font-bold`) hoặc `Tạm ngưng` (`text-slate-400 font-medium`).
+  * **Bảng Đơn hàng Booking (`sales-bookings-table`):** Chuyển trạng thái sang text thuần túy (`Chờ điều xe`, `Đang điều xe`, `Đã đủ cont`, `Đã hủy`).
+  * **Bảng Dashboard PnL (`dashboard-pnl-table`):** Chuyển nhãn hoàn tất và đang vận hành sang text màu tinh gọn.
+
+### 2. Đồng Bộ & Kiểm Thử Hệ Thống:
+- Đồng bộ chuẩn xác giữa `static/js/app.js` và toàn bộ tệp mô-đun trong `static/js/modules/` (`core.js`, `dispatch.js`, `sales.js`, `hr.js`, `dashboard.js`).
+- 100% cú pháp JS vượt qua kiểm tra (`node -c`).
+- 86/86 Unit & System Tests PASSED 100%.
+- 10/10 Critical User Journeys PASSED 100%.
+- Đã commit và triển khai lên Production VPS (`logistics.bim.info.vn`), chạy mượt mà.
+
+---
+
 ## [2.9.2] - 2026-10-06 (Chuẩn Hoá Mã Giao Dịch [XX.YYMM.NNN] & Bổ Sung Cột Ngày Tháng Dashboard & Báo Giá)
 
 ### 1. Chuẩn Hoá Toàn Bộ Mã Giao Dịch Vận Tải & Kế Toán:
