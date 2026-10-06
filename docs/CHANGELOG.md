@@ -22,8 +22,15 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * Trạng thái điều vận: `text-xs font-semibold`.
   * Hạn SI (`si_cutoff`): `text-xs text-slate-500`.
 
-### 2. Đồng Bộ Hệ Thống & Kiểm Thử:
-- Đồng bộ hoàn chỉnh giữa `static/js/modules/sales.js` và `static/js/app.js`.
+### 2. Tiện Ích Mở Rộng Ô Ghi Chú & Điều Khoản Báo Giá (Expandable Terms & Notes Textarea):
+- **Bổ sung nút bấm "Mở Rộng Ô" / "Thu Gọn" trực quan:**
+  * Thêm nút điều khiển tại góc trên bên phải thanh công cụ mẫu nhanh: icon `ph-arrows-out-simple` / `ph-arrows-in-simple`.
+  * Khi bấm mở rộng: Ô textarea chuyển từ 5 dòng (`min-h-[110px]`) lên 14 dòng (`min-h-[280px]`), tự động cuộn đến vùng soạn thảo và focus con trỏ để gõ các điều khoản dài, hợp đồng chi tiết cực kỳ thoải mái.
+  * Hỗ trợ kéo thả co giãn linh hoạt (`resize-y`), font chữ rõ nét (`text-xs sm:text-[13px] font-mono leading-relaxed`).
+  * Các nút mẫu nhanh (Kéo Cont FCL, Xe Tải FTL, Theo Giá Dầu) được nâng kích thước nút bấm (`px-2 py-0.5 text-xs font-bold`) dễ bấm hơn.
+
+### 3. Đồng Bộ Hệ Thống & Kiểm Thử:
+- Đồng bộ hoàn chỉnh giữa `static/js/modules/sales.js`, `static/js/app.js` và `templates/components/modal_quotation.html`.
 - Đảm bảo 100% cú pháp JS không lỗi (`node -c`).
 - 86/86 Unit & System Tests PASSED 100%.
 

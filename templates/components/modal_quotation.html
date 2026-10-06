@@ -273,19 +273,28 @@
 
                 <!-- Textarea Ghi Chú & Điều Khoản -->
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="block font-bold text-slate-700 text-xs">
-                            Nội Dung Ghi Chú & Điều Khoản Thương Mại (Hiển thị khi in phiếu)
+                    <div class="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
+                        <label class="block font-bold text-slate-700 text-xs flex items-center gap-1.5">
+                            <i class="ph-bold ph-note-pencil text-teal-700"></i>
+                            <span>Nội Dung Ghi Chú & Điều Khoản Thương Mại (Hiển thị khi in phiếu)</span>
                         </label>
-                        <div class="flex items-center gap-1 text-[10px]">
-                            <span class="text-slate-400 font-medium">Mẫu nhanh:</span>
-                            <button type="button" onclick="setQuickQuoteNote('fcl')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200">Kéo Cont FCL</button>
-                            <button type="button" onclick="setQuickQuoteNote('ftl')" class="px-1.5 py-0.2 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold border border-indigo-200">Xe Tải FTL</button>
-                            <button type="button" onclick="setQuickQuoteNote('fuel')" class="px-1.5 py-0.2 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold border border-amber-200">Theo Giá Dầu</button>
+                        <div class="flex items-center gap-1.5 text-xs">
+                            <span class="text-slate-400 font-medium text-[11px]">Mẫu nhanh:</span>
+                            <button type="button" onclick="setQuickQuoteNote('fcl')" class="px-2 py-0.5 rounded-md bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 transition-colors cursor-pointer text-xs">Kéo Cont FCL</button>
+                            <button type="button" onclick="setQuickQuoteNote('ftl')" class="px-2 py-0.5 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold border border-indigo-200 transition-colors cursor-pointer text-xs">Xe Tải FTL</button>
+                            <button type="button" onclick="setQuickQuoteNote('fuel')" class="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold border border-amber-200 transition-colors cursor-pointer text-xs">Theo Giá Dầu</button>
+                            <span class="text-slate-200">|</span>
+                            <!-- Nút bấm phóng to / thu nhỏ khung soạn thảo -->
+                            <button type="button" id="btn-toggle-quote-notes" onclick="toggleQuoteNotesExpand()" 
+                                class="px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-700 font-bold border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-xs" 
+                                title="Bấm để phóng to khung soạn thảo điều khoản giúp dễ gõ">
+                                <i id="icon-toggle-quote-notes" class="ph-bold ph-arrows-out-simple text-teal-700 text-sm"></i>
+                                <span id="text-toggle-quote-notes">Mở Rộng Ô</span>
+                            </button>
                         </div>
                     </div>
-                    <textarea id="quote-notes" rows="4" placeholder="Nhập các điều khoản: VAT, bốc xếp, phí neo xe, cam kết dịch vụ..."
-                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 text-xs text-slate-800 font-mono leading-relaxed transition-all"></textarea>
+                    <textarea id="quote-notes" rows="5" placeholder="Nhập các điều khoản: VAT, bốc xếp, phí neo xe, cam kết dịch vụ..."
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-500 text-xs sm:text-[13px] text-slate-800 font-mono leading-relaxed transition-all resize-y min-h-[110px]"></textarea>
                 </div>
             </div>
 

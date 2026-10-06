@@ -5818,6 +5818,34 @@ function setQuickQuoteNote(type) {
     }
 }
 
+function toggleQuoteNotesExpand() {
+    const noteEl = document.getElementById('quote-notes');
+    const iconEl = document.getElementById('icon-toggle-quote-notes');
+    const textEl = document.getElementById('text-toggle-quote-notes');
+    const btnEl = document.getElementById('btn-toggle-quote-notes');
+    if (!noteEl) return;
+
+    const isExpanded = noteEl.getAttribute('data-expanded') === 'true';
+    if (isExpanded) {
+        noteEl.rows = 5;
+        noteEl.style.minHeight = '110px';
+        noteEl.removeAttribute('data-expanded');
+        if (iconEl) iconEl.className = 'ph-bold ph-arrows-out-simple text-teal-700 text-sm';
+        if (textEl) textEl.textContent = 'Mở Rộng Ô';
+        if (btnEl) btnEl.title = 'Bấm để phóng to khung soạn thảo điều khoản giúp dễ gõ';
+    } else {
+        noteEl.rows = 14;
+        noteEl.style.minHeight = '280px';
+        noteEl.setAttribute('data-expanded', 'true');
+        if (iconEl) iconEl.className = 'ph-bold ph-arrows-in-simple text-amber-700 text-sm';
+        if (textEl) textEl.textContent = 'Thu Gọn';
+        if (btnEl) btnEl.title = 'Bấm để thu nhỏ khung soạn thảo điều khoản';
+        // Cuộn mượt đến textarea để người dùng tiện soạn thảo
+        noteEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        noteEl.focus();
+    }
+}
+
 async function openModalQuotation(quoteId = null, isReadOnly = false) {
     await loadMasterDataFormOptions();
     populateMasterDataDropdowns();
@@ -6452,6 +6480,7 @@ window.addQuotationRouteRow = addQuotationRouteRow;
 window.removeQuotationRouteRow = removeQuotationRouteRow;
 window.calculateQuotationItemsTotal = calculateQuotationItemsTotal;
 window.setQuickQuoteNote = setQuickQuoteNote;
+window.toggleQuoteNotesExpand = toggleQuoteNotesExpand;
 window.openModalQuotation = openModalQuotation;
 window.closeModalQuotation = () => closeModal('modal-quotation');
 window.saveQuotation = saveQuotation;
