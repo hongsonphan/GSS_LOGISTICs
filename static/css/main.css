@@ -615,14 +615,11 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
     /* Reset toàn bộ khung modal cha để biến thành trang giấy in phẳng hoàn toàn */
     #modal-quotation-print,
-    #modal-quotation-print > div,
-    #modal-quotation-print > div > div,
+    #modal-quotation-print div,
     #modal-cash-voucher-print,
-    #modal-cash-voucher-print > div,
-    #modal-cash-voucher-print > div > div,
+    #modal-cash-voucher-print div,
     #modal-report-print,
-    #modal-report-print > div,
-    #modal-report-print > div > div {
+    #modal-report-print div {
         position: static !important;
         width: 100% !important;
         max-width: 100% !important;

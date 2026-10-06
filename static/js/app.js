@@ -10632,7 +10632,7 @@ async function openCashVoucherModal(txDataOrId) {
     const dateFormattedText = `Ngày ${day} tháng ${month} năm ${year}`;
     const signDateFormattedText = `Ngày ${day}/${month}/${year}`;
     const amountWords = numberToWordsVN(tx.amount);
-    const amountFormatted = (formatMoneyVND(tx.amount) || '0') + ' đ';
+    const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
     const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
     const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe vận tải Triền Võ Logistics';
     const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
