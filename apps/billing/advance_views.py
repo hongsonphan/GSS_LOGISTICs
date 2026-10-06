@@ -475,33 +475,34 @@ class DriverAdvanceSettleAPIView(APIView):
 
             # Tự động lập Phiếu Thu / Phiếu Chi vào Sổ Quỹ
             today_date = timezone.now().date()
+            yymm = today_date.strftime('%y%m')
             if diff > 0:
                 tx_type = TransactionType.INFLOW
                 tx_category = CashFlowCategory.ADVANCE_REFUND
                 tx_amount = refund_amount
-                tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
+                tx_prefix = f"PT.{yymm}."
                 partner_name = advance.driver.full_name if advance.driver else 'Tài xế'
                 tx_notes = f"Thu hoàn ứng tiền thừa chuyến {advance.trip.trip_code}: {advance.code}"
             elif diff < 0:
                 tx_type = TransactionType.OUTFLOW
                 tx_category = CashFlowCategory.ADVANCE_REIMBURSE
                 tx_amount = reimburse_amount
-                tx_prefix = f"PC-{today_date.strftime('%Y%m')}"
+                tx_prefix = f"PC.{yymm}."
                 partner_name = advance.driver.full_name if advance.driver else 'Tài xế'
                 tx_notes = f"Chi bù vượt ứng chuyến {advance.trip.trip_code}: {advance.code}"
             else:
                 tx_type = TransactionType.INFLOW
                 tx_category = CashFlowCategory.ADVANCE_REFUND
                 tx_amount = 0
-                tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
+                tx_prefix = f"PT.{yymm}."
                 partner_name = advance.driver.full_name if advance.driver else 'Tài xế'
                 tx_notes = f"Thu hoàn ứng đối soát cân bằng (0 đ) chuyến {advance.trip.trip_code}: {advance.code}"
 
             last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
             seq = 1
-            if last_tx and last_tx.code.split('-')[-1].isdigit():
-                seq = int(last_tx.code.split('-')[-1]) + 1
-            cash_tx_code = f"{tx_prefix}-{seq:04d}"
+            if last_tx and last_tx.code.split('.')[-1].isdigit():
+                seq = int(last_tx.code.split('.')[-1]) + 1
+            cash_tx_code = f"{tx_prefix}{seq:03d}"
 
             cash_tx = CashTransaction.objects.create(
                 code=cash_tx_code,
@@ -803,12 +804,13 @@ class DriverBatchSettlementExecuteAPIView(APIView):
 
             if auto_create_cash:
                 today_date = now.date()
+                yymm = today_date.strftime('%y%m')
                 if net_diff > 0:
                     # Thu tiền thừa từ tài xế
                     tx_type = TransactionType.INFLOW
                     tx_category = CashFlowCategory.ADVANCE_REFUND
                     tx_amount = net_diff
-                    tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
+                    tx_prefix = f"PT.{yymm}."
                     partner_name = (trips.first().driver.full_name if (trips.first() and trips.first().driver) else 'Tài xế')
                     tx_notes = f"Thu hoàn ứng tiền thừa quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
                 elif net_diff < 0:
@@ -816,7 +818,7 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                     tx_type = TransactionType.OUTFLOW
                     tx_category = CashFlowCategory.ADVANCE_REIMBURSE
                     tx_amount = abs(net_diff)
-                    tx_prefix = f"PC-{today_date.strftime('%Y%m')}"
+                    tx_prefix = f"PC.{yymm}."
                     partner_name = (trips.first().driver.full_name if (trips.first() and trips.first().driver) else 'Tài xế')
                     tx_notes = f"Chi bù vượt ứng quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
                 else:
@@ -824,15 +826,15 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                     tx_type = TransactionType.INFLOW
                     tx_category = CashFlowCategory.ADVANCE_REFUND
                     tx_amount = 0
-                    tx_prefix = f"PT-{today_date.strftime('%Y%m')}"
+                    tx_prefix = f"PT.{yymm}."
                     partner_name = (trips.first().driver.full_name if (trips.first() and trips.first().driver) else 'Tài xế')
                     tx_notes = f"Thu hoàn ứng đối soát cân bằng (0 đ) quyết toán gom {len(trip_ids)} chuyến: {', '.join(settled_trip_codes[:5])}"
 
                 last_tx = CashTransaction.objects.filter(code__startswith=tx_prefix).order_by('-id').first()
                 seq = 1
-                if last_tx and last_tx.code.split('-')[-1].isdigit():
-                    seq = int(last_tx.code.split('-')[-1]) + 1
-                cash_tx_code = f"{tx_prefix}-{seq:04d}"
+                if last_tx and last_tx.code.split('.')[-1].isdigit():
+                    seq = int(last_tx.code.split('.')[-1]) + 1
+                cash_tx_code = f"{tx_prefix}{seq:03d}"
 
                 cash_tx = CashTransaction.objects.create(
                     code=cash_tx_code,

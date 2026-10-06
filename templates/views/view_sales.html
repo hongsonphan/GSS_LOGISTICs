@@ -250,14 +250,22 @@
                     <thead>
                         <tr>
                             <!-- 1. Mã Báo Giá (Có sắp xếp) -->
-                            <th data-col-key="code" data-col-name="Mã Báo Giá" data-col-locked="true" onclick="toggleQuoteSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Mã Báo Giá">
+                            <th data-col-key="code" data-col-name="Mã Báo Giá" data-col-locked="true" onclick="toggleQuoteSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 font-mono" title="Click để sắp xếp theo Mã Báo Giá">
                                 <div class="flex items-center gap-1.5">
                                     <span>Mã Báo Giá</span>
                                     <i id="sort-icon-quote-code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                                 </div>
                             </th>
 
-                            <!-- 2. Khách Hàng (Có sắp xếp) -->
+                            <!-- 2. Ngày Báo Giá (Có sắp xếp) -->
+                            <th data-col-key="created_at" data-col-name="Ngày Báo Giá" onclick="toggleQuoteSort('created_at')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 text-center" title="Click để sắp xếp theo Ngày Báo Giá">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <span>Ngày Báo Giá</span>
+                                    <i id="sort-icon-quote-created_at" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                                </div>
+                            </th>
+
+                            <!-- 3. Khách Hàng (Có sắp xếp) -->
                             <th data-col-key="customer" data-col-name="Khách Hàng" onclick="toggleQuoteSort('customer')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Khách Hàng">
                                 <div class="flex items-center gap-1.5">
                                     <span>Khách Hàng</span>

@@ -381,6 +381,8 @@ class DashboardBGDAPIView(APIView):
         for t in period_trips_qs:
             trips_pnl.append({
                 'trip_code': t.trip_code,
+                'loading_date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else (t.created_at.strftime('%d/%m/%Y') if t.created_at else '-'),
+                'loading_date_iso': t.loading_date.strftime('%Y-%m-%d') if t.loading_date else (t.created_at.strftime('%Y-%m-%d') if t.created_at else ''),
                 'customer_name': t.customer.name if t.customer else 'Khách hàng',
                 'route': f"{t.pickup_location} ➔ {t.warehouse_location}" if (t.pickup_location and t.warehouse_location) else (t.customer.name if t.customer else 'Tuyến vận tải'),
                 'driver_name': (t.driver.nickname or t.driver.full_name) if t.driver else 'Chưa gán',
@@ -2664,13 +2666,14 @@ class SalesAPIView(APIView):
             delivery_loc = Location.objects.filter(name__iexact=delivery_str).first() or Location.objects.filter(name__icontains=delivery_str).first()
             dropoff_loc = Location.objects.filter(name__iexact=dropoff_str).first() or Location.objects.filter(name__icontains=dropoff_str).first()
 
-            line_tag = data.get('shipping_line', 'SGN')[:3].upper() if data.get('shipping_line') else 'ORD'
-            now_m_d = timezone.now().strftime('%m%d')
-            b_counter = BookingOrder.all_objects.filter(booking_code__startswith=f"BK-{line_tag}-{now_m_d}-").count() + 1
-            booking_code = f"BK-{line_tag}-{now_m_d}-{b_counter:02d}"
+            now = timezone.now()
+            yymm = now.strftime('%y%m')
+            bk_prefix = f"BK.{yymm}."
+            b_counter = BookingOrder.all_objects.filter(booking_code__startswith=bk_prefix).count() + 1
+            booking_code = f"{bk_prefix}{b_counter:03d}"
             while BookingOrder.all_objects.filter(booking_code=booking_code).exists():
                 b_counter += 1
-                booking_code = f"BK-{line_tag}-{now_m_d}-{b_counter:02d}"
+                booking_code = f"{bk_prefix}{b_counter:03d}"
             
             loading_date = data.get('loading_date')
             if not loading_date:
@@ -2748,12 +2751,14 @@ class SalesAPIView(APIView):
             if not customer:
                 return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
 
-            now_m_d = timezone.now().strftime('%m%d')
-            q_counter = Quotation.all_objects.filter(quotation_code__startswith=f"BG-{now_m_d}-").count() + 1
-            q_code = f"BG-{now_m_d}-{q_counter:02d}"
+            now = timezone.now()
+            yymm = now.strftime('%y%m')
+            q_prefix = f"BG.{yymm}."
+            q_counter = Quotation.all_objects.filter(quotation_code__startswith=q_prefix).count() + 1
+            q_code = f"{q_prefix}{q_counter:03d}"
             while Quotation.all_objects.filter(quotation_code=q_code).exists():
                 q_counter += 1
-                q_code = f"BG-{now_m_d}-{q_counter:02d}"
+                q_code = f"{q_prefix}{q_counter:03d}"
 
             valid_until_d = None
             if data.get('valid_until'):

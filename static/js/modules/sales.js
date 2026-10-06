@@ -1749,6 +1749,7 @@ function applyQuoteFilters() {
         if (filterSearch) {
             const combinedText = [
                 q.code,
+                q.created_at,
                 q.customer,
                 q.route,
                 q.status,
@@ -1775,6 +1776,21 @@ function applyQuoteFilters() {
             let valA = a[quoteSortColumn];
             let valB = b[quoteSortColumn];
 
+            if (quoteSortColumn === 'created_at') {
+                const parseDate = (dStr) => {
+                    if (!dStr) return 0;
+                    const parts = dStr.split('/');
+                    if (parts.length === 3) {
+                        return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+                    }
+                    const t = new Date(dStr).getTime();
+                    return isNaN(t) ? 0 : t;
+                };
+                const timeA = parseDate(valA);
+                const timeB = parseDate(valB);
+                return quoteSortDirection === 'asc' ? timeA - timeB : timeB - timeA;
+            }
+
             if (['unit_price', 'monthly_trips', 'expected_revenue'].includes(quoteSortColumn)) {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
@@ -1789,7 +1805,7 @@ function applyQuoteFilters() {
     }
 
     // Cập nhật icons thead
-    const sortCols = ['code', 'customer', 'route', 'unit_price', 'monthly_trips', 'expected_revenue', 'status'];
+    const sortCols = ['code', 'created_at', 'customer', 'route', 'unit_price', 'monthly_trips', 'expected_revenue', 'status'];
     sortCols.forEach(col => {
         const iconEl = document.getElementById(`sort-icon-quote-${col}`);
         if (iconEl) {
@@ -1814,7 +1830,7 @@ function renderQuotationsTable(quotations) {
     if (!quotations || quotations.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center py-10 text-slate-400">
+                <td colspan="9" class="text-center py-10 text-slate-400">
                     <div class="flex flex-col items-center justify-center">
                         <i class="ph ph-magnifying-glass text-3xl mb-2 text-slate-300"></i>
                         <p class="font-medium text-sm text-slate-500">Không tìm thấy báo giá nào phù hợp với bộ lọc</p>
@@ -1859,10 +1875,11 @@ function renderQuotationsTable(quotations) {
         tr.innerHTML = `
             <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">
                 <div class="flex flex-col">
-                    <span>${escapeHtml(s.code)}</span>
+                    <span>${formatCodeCompact(s.code)}</span>
                     ${methodBadge ? `<div class="mt-0.5">${methodBadge}</div>` : ''}
                 </div>
             </td>
+            <td class="p-3.5 text-center whitespace-nowrap text-xs font-semibold text-slate-700">${escapeHtml(s.created_at || '-')}</td>
             <td class="p-3.5 font-bold text-slate-900 text-sm">${escapeHtml(s.customer)}</td>
             <td class="p-3.5 font-medium text-slate-700 text-[13px]">${routeDisplay}</td>
             <td class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>

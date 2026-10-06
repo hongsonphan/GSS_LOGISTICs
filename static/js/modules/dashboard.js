@@ -188,6 +188,18 @@ function applyDashboardPnlFilters() {
                 return dashboardPnlSortDirection === 'asc' ? valA - valB : valB - valA;
             }
 
+            if (dashboardPnlSortColumn === 'loading_date') {
+                const timeA = a.loading_date_iso ? new Date(a.loading_date_iso).getTime() || 0 : 0;
+                const timeB = b.loading_date_iso ? new Date(b.loading_date_iso).getTime() || 0 : 0;
+                return dashboardPnlSortDirection === 'asc' ? timeA - timeB : timeB - timeA;
+            }
+
+            if (['revenue', 'expense', 'profit', 'margin_percent'].includes(dashboardPnlSortColumn)) {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+                return dashboardPnlSortDirection === 'asc' ? valA - valB : valB - valA;
+            }
+
             valA = (valA || '').toString();
             valB = (valB || '').toString();
             const cmp = valA.localeCompare(valB, 'vi');
@@ -196,7 +208,7 @@ function applyDashboardPnlFilters() {
     }
 
     // Cập nhật icon sort thead
-    const sortCols = ['trip_code', 'customer_name', 'driver_name', 'container_number', 'revenue', 'expense', 'profit', 'margin_percent', 'status'];
+    const sortCols = ['trip_code', 'loading_date', 'customer_name', 'driver_name', 'container_number', 'revenue', 'expense', 'profit', 'margin_percent', 'status'];
     sortCols.forEach(col => {
         const iconEl = document.getElementById(`sort-icon-pnl-${col}`);
         if (iconEl) {
@@ -221,7 +233,7 @@ function renderDashboardPnlTable(trips) {
     if (!trips || trips.length === 0) {
         pnlTbody.innerHTML = `
             <tr>
-                <td colspan="10" class="text-center py-8 text-slate-400">
+                <td colspan="11" class="text-center py-8 text-slate-400">
                     <p class="font-medium text-xs text-slate-500">Không tìm thấy chuyến xe nào phù hợp</p>
                 </td>
             </tr>
@@ -248,11 +260,14 @@ function renderDashboardPnlTable(trips) {
         const barColor = marginVal >= 50 ? 'bg-emerald-500' : (marginVal >= 25 ? 'bg-amber-500' : 'bg-rose-500');
 
         tr.innerHTML = `
-            <td class="py-1.5 px-3 border-r border-slate-200/70 font-black text-teal-800 font-heading text-[13px]">
+            <td class="py-1.5 px-3 border-r border-slate-200/70 font-black text-teal-800 font-mono text-[13px] whitespace-nowrap">
                 <div class="flex items-center space-x-1">
-                    <span>${escapeHtml(item.trip_code)}</span>
+                    <span>${escapeHtml(formatCodeCompact(item.trip_code))}</span>
                     <i class="ph ph-arrow-square-out text-slate-400 group-hover:text-teal-600 transition-colors text-xs"></i>
                 </div>
+            </td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70 whitespace-nowrap text-center text-xs font-semibold text-slate-700">
+                ${escapeHtml(item.loading_date || '-')}
             </td>
             <td class="py-1.5 px-3 border-r border-slate-200/70">
                 <p class="font-bold text-slate-900 text-[13px] leading-tight">${escapeHtml(item.customer_name)}</p>

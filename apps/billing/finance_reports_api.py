@@ -407,9 +407,14 @@ class CashBookAPIView(APIView):
             t_date = timezone.now().date()
 
         # Tạo mã phiếu
-        now = timezone.now()
         prefix = "PT" if t_type == TransactionType.INFLOW else "PC"
-        code = f"{prefix}-{t_date.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+        yymm = t_date.strftime('%y%m')
+        prefix_full = f"{prefix}.{yymm}."
+        last_tx = CashTransaction.objects.filter(code__startswith=prefix_full).order_by('-id').first()
+        seq = 1
+        if last_tx and last_tx.code.split('.')[-1].isdigit():
+            seq = int(last_tx.code.split('.')[-1]) + 1
+        code = f"{prefix_full}{seq:03d}"
 
         tx = CashTransaction.objects.create(
             code=code,

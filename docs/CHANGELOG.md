@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.2] - 2026-10-06 (Chuẩn Hoá Mã Giao Dịch [XX.YYMM.NNN] & Bổ Sung Cột Ngày Tháng Dashboard & Báo Giá)
+
+### 1. Chuẩn Hoá Toàn Bộ Mã Giao Dịch Vận Tải & Kế Toán:
+- Định dạng thống nhất theo chuẩn `[Mã 2 ký tự].[Năm 2 ký tự][Tháng 2 ký tự].[Số 3 ký tự]` (`XX.YYMM.NNN`):
+  * **Lệnh Điều Vận (Trip Code):** Sinh theo chuẩn `DV.{yymm}.{counter:03d}` (Ví dụ: `DV.2610.001`, `DV.2610.099`).
+  * **Đơn Hàng Booking:** Sinh theo chuẩn `BK.{yymm}.{counter:03d}` (Ví dụ: `BK.2610.001`, `BK.2610.009`).
+  * **Báo Giá Tuyến Cước (Quotation):** Sinh theo chuẩn `BG.{yymm}.{counter:03d}` (Ví dụ: `BG.2610.001`).
+  * **Phiếu Thu Sổ Quỹ (Receipt Voucher):** Sinh theo chuẩn `PT.{yymm}.{seq:03d}` (Ví dụ: `PT.2610.001`, `PT.2611.022`).
+  * **Phiếu Chi Sổ Quỹ (Payment Voucher):** Sinh theo chuẩn `PC.{yymm}.{seq:03d}` (Ví dụ: `PC.2610.001`, `PC.2611.025`).
+
+### 2. Bổ Sung Cột Ngày Tháng Năm Cho Các Bảng Dữ Liệu:
+- **Bảng Dashboard Hiệu Suất & PnL (`dashboard-pnl-table`):**
+  * Bổ sung cột "Ngày Chạy" (`loading_date`), định dạng `DD/MM/YYYY`, căn giữa, hiển thị rõ ràng.
+  * Hỗ trợ sắp xếp Timestamp hai chiều (Asc/Desc) cho cột Ngày Chạy.
+  * Cập nhật `colspan` dòng trống từ 10 lên 11.
+- **Bảng Báo Giá Tuyến & Hợp Đồng CRM (`sales-quotations-table`):**
+  * Bổ sung cột "Ngày Báo Giá" (`created_at`), định dạng `DD/MM/YYYY`, căn giữa.
+  * Bổ sung chức năng sắp xếp Timestamp cho Ngày Báo Giá (`quoteSortColumn === 'created_at'`).
+  * Thêm `created_at` vào bộ lọc tìm kiếm văn bản đa năng.
+  * Cập nhật `colspan` dòng trống từ 8 lên 9.
+
+### 3. Đồng Bộ Kiến Trúc & Kiểm Thử Toàn Diện:
+- Đồng bộ tuyệt đối giữa `static/js/app.js` và các modules trong `static/js/modules/` (`sales.js`, `dashboard.js`).
+- 86/86 Unit & System Tests PASSED 100%.
+- 10/10 Critical User Journeys PASSED 100%.
+- 100% JS Syntax checks PASSED.
+
+---
+
 ## [2.9.1] - 2026-10-06 (Refactor Toàn Bộ Data Table: Tách Cột Mã & Ngày, Sắp Xếp Timestamp, Cố Định Cột Thao Tác)
 
 ### 1. Tách Biệt Cột Mã & Cột Ngày Tháng (Data Table Refactoring):

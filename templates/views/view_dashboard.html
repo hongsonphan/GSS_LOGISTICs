@@ -290,14 +290,22 @@
                 <thead class="sticky top-0 bg-slate-100 z-10 border-b border-slate-300 shadow-2xs select-none">
                     <tr>
                         <!-- 1. Mã Chuyến -->
-                        <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleDashboardPnlSort('trip_code')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Mã Chuyến">
+                        <th data-col-key="trip_code" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleDashboardPnlSort('trip_code')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors w-28 font-mono" title="Sắp xếp theo Mã Chuyến">
                             <div class="flex items-center gap-1">
                                 <span>Mã Chuyến</span>
                                 <i id="sort-icon-pnl-trip_code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                             </div>
                         </th>
 
-                        <!-- 2. Khách Hàng & Tuyến -->
+                        <!-- 2. Ngày Chạy -->
+                        <th data-col-key="loading_date" data-col-name="Ngày Chạy" onclick="toggleDashboardPnlSort('loading_date')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors w-28 text-center" title="Sắp xếp theo Ngày Chạy">
+                            <div class="flex items-center justify-center gap-1">
+                                <span>Ngày Chạy</span>
+                                <i id="sort-icon-pnl-loading_date" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 3. Khách Hàng & Tuyến -->
                         <th data-col-key="customer_name" data-col-name="Khách Hàng & Tuyến" onclick="toggleDashboardPnlSort('customer_name')" class="py-2 px-3 text-[12px] 2xl:text-[12.5px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200/90 select-none cursor-pointer hover:bg-slate-200/70 transition-colors" title="Sắp xếp theo Khách Hàng">
                             <div class="flex items-center gap-1">
                                 <span>Khách Hàng & Tuyến</span>

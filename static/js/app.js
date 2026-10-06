@@ -762,6 +762,12 @@ function applyDashboardPnlFilters() {
             let valA = a[dashboardPnlSortColumn];
             let valB = b[dashboardPnlSortColumn];
 
+            if (dashboardPnlSortColumn === 'loading_date') {
+                const timeA = a.loading_date_iso ? new Date(a.loading_date_iso).getTime() || 0 : 0;
+                const timeB = b.loading_date_iso ? new Date(b.loading_date_iso).getTime() || 0 : 0;
+                return dashboardPnlSortDirection === 'asc' ? timeA - timeB : timeB - timeA;
+            }
+
             if (['revenue', 'expense', 'profit', 'margin_percent'].includes(dashboardPnlSortColumn)) {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
@@ -776,7 +782,7 @@ function applyDashboardPnlFilters() {
     }
 
     // Cập nhật icon sort thead
-    const sortCols = ['trip_code', 'customer_name', 'driver_name', 'container_number', 'revenue', 'expense', 'profit', 'margin_percent', 'status'];
+    const sortCols = ['trip_code', 'loading_date', 'customer_name', 'driver_name', 'container_number', 'revenue', 'expense', 'profit', 'margin_percent', 'status'];
     sortCols.forEach(col => {
         const iconEl = document.getElementById(`sort-icon-pnl-${col}`);
         if (iconEl) {
@@ -801,7 +807,7 @@ function renderDashboardPnlTable(trips) {
     if (!trips || trips.length === 0) {
         pnlTbody.innerHTML = `
             <tr>
-                <td colspan="10" class="text-center py-8 text-slate-400">
+                <td colspan="11" class="text-center py-8 text-slate-400">
                     <p class="font-medium text-xs text-slate-500">Không tìm thấy chuyến xe nào phù hợp</p>
                 </td>
             </tr>
@@ -828,11 +834,14 @@ function renderDashboardPnlTable(trips) {
         const barColor = marginVal >= 50 ? 'bg-emerald-500' : (marginVal >= 25 ? 'bg-amber-500' : 'bg-rose-500');
 
         tr.innerHTML = `
-            <td class="py-1.5 px-3 border-r border-slate-200/70 font-black text-teal-800 font-heading text-[13px]">
+            <td class="py-1.5 px-3 border-r border-slate-200/70 font-black text-teal-800 font-mono text-[13px] whitespace-nowrap">
                 <div class="flex items-center space-x-1">
-                    <span>${escapeHtml(item.trip_code)}</span>
+                    <span>${escapeHtml(formatCodeCompact(item.trip_code))}</span>
                     <i class="ph ph-arrow-square-out text-slate-400 group-hover:text-teal-600 transition-colors text-xs"></i>
                 </div>
+            </td>
+            <td class="py-1.5 px-3 border-r border-slate-200/70 whitespace-nowrap text-center text-xs font-semibold text-slate-700">
+                ${escapeHtml(item.loading_date || '-')}
             </td>
             <td class="py-1.5 px-3 border-r border-slate-200/70">
                 <p class="font-bold text-slate-900 text-[13px] leading-tight">${escapeHtml(item.customer_name)}</p>
@@ -7387,6 +7396,7 @@ function applyQuoteFilters() {
         if (filterSearch) {
             const combinedText = [
                 q.code,
+                q.created_at,
                 q.customer,
                 q.route,
                 q.status,
@@ -7413,6 +7423,21 @@ function applyQuoteFilters() {
             let valA = a[quoteSortColumn];
             let valB = b[quoteSortColumn];
 
+            if (quoteSortColumn === 'created_at') {
+                const parseDate = (dStr) => {
+                    if (!dStr) return 0;
+                    const parts = dStr.split('/');
+                    if (parts.length === 3) {
+                        return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+                    }
+                    const t = new Date(dStr).getTime();
+                    return isNaN(t) ? 0 : t;
+                };
+                const timeA = parseDate(valA);
+                const timeB = parseDate(valB);
+                return quoteSortDirection === 'asc' ? timeA - timeB : timeB - timeA;
+            }
+
             if (['unit_price', 'monthly_trips', 'expected_revenue'].includes(quoteSortColumn)) {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
@@ -7427,7 +7452,7 @@ function applyQuoteFilters() {
     }
 
     // Cập nhật icons thead
-    const sortCols = ['code', 'customer', 'route', 'unit_price', 'monthly_trips', 'expected_revenue', 'status'];
+    const sortCols = ['code', 'created_at', 'customer', 'route', 'unit_price', 'monthly_trips', 'expected_revenue', 'status'];
     sortCols.forEach(col => {
         const iconEl = document.getElementById(`sort-icon-quote-${col}`);
         if (iconEl) {
@@ -7452,7 +7477,7 @@ function renderQuotationsTable(quotations) {
     if (!quotations || quotations.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center py-10 text-slate-400">
+                <td colspan="9" class="text-center py-10 text-slate-400">
                     <div class="flex flex-col items-center justify-center">
                         <i class="ph ph-magnifying-glass text-3xl mb-2 text-slate-300"></i>
                         <p class="font-medium text-sm text-slate-500">Không tìm thấy báo giá nào phù hợp với bộ lọc</p>
@@ -7497,10 +7522,11 @@ function renderQuotationsTable(quotations) {
         tr.innerHTML = `
             <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">
                 <div class="flex flex-col">
-                    <span>${escapeHtml(s.code)}</span>
+                    <span>${formatCodeCompact(s.code)}</span>
                     ${methodBadge ? `<div class="mt-0.5">${methodBadge}</div>` : ''}
                 </div>
             </td>
+            <td class="p-3.5 text-center whitespace-nowrap text-xs font-semibold text-slate-700">${escapeHtml(s.created_at || '-')}</td>
             <td class="p-3.5 font-bold text-slate-900 text-sm">${escapeHtml(s.customer)}</td>
             <td class="p-3.5 font-medium text-slate-700 text-[13px]">${routeDisplay}</td>
             <td class="p-3.5 font-semibold text-slate-700 tabular-nums text-sm text-right">${new Intl.NumberFormat('vi-VN').format(s.unit_price)} đ</td>
