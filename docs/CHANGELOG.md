@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.13] - 2026-10-06 (Kiểm Tra Toàn Diện Tính Năng CRUD, Báo Cáo & Liên Thông Số Liệu Toàn Hệ Thống)
+
+### 1. Kiểm Tra & Xác Thực Tính Liên Thông Nghiệp Vụ Toàn Trình (End-to-End Data Integrity):
+- **Chu trình Kinh doanh ➔ Điều vận ➔ Kế toán (Sale ➔ Dispatch ➔ Accounting):**
+  - Khách hàng (`Customer`) ➔ Báo giá (`Quotation`) ➔ Đơn hàng (`BookingOrder`) ➔ Chuyến xe (`DispatchTrip`): Số liệu cước bán, quy cách cont và tuyến đường vận chuyển liên thông 100%.
+  - Tiến độ chuyến xe (`11-Step Timeline`): Tự động phát sinh chuẩn hóa đủ 11 bước vận hành từ Nhận Booking đến Quyết toán cho tất cả các chuyến xe được tạo lập hoặc kích hoạt điều vận.
+  - Chi phí chuyến (`TripExpense`) & Tạm ứng (`DriverTripAdvance`): Chi phí hoạt động, chi hộ khách hàng (`Debit Note`) liên kết chặt chẽ với chuyến xe, tính toán tức thời Doanh thu, Chi phí và Lợi nhuận gộp thực tế (`cached_revenue`, `cached_expense`, `cached_profit`).
+  - Sổ quỹ tiền mặt & Ngân hàng (`CashTransaction`): Tự động ghi nhận phiếu thu/chi khi quyết toán hoàn ứng tài xế hoặc thu tiền chi hộ từ khách hàng theo Mẫu S03a-DN.
+- **Hoàn thiện API Báo Cáo Kế Toán Đa Chiều (`AccountingReportsAPIView`):**
+  - Bổ sung nhánh xử lý `BY_CASHFLOW` / `CASH_FLOW` cho Báo Cáo Sổ Quỹ & Dòng Tiền Thu - Chi Vận Tải, tổng hợp dòng tiền ròng, tồn quỹ tiền mặt và tài khoản ngân hàng phân loại theo từng hạng mục nghiệp vụ.
+  - Xác thực thành công 100% cho 5 phân hệ báo cáo tài chính kế toán: `BY_CUSTOMER`, `BY_SUBCONTRACTOR`, `BY_DRIVER`, `BY_ROUTE`, `BY_CASHFLOW`.
+- **Kiểm thử hồi quy toàn diện (Zero-Regression Verification):**
+  - Chạy toàn bộ bộ kiểm thử tự động của dự án: 86/86 test cases đều vượt qua xuất sắc (`OK`).
+- **Tệp cập nhật:** [finance_reports_api.py](file:///E:/Bim_Logistics/apps/billing/finance_reports_api.py), [CHANGELOG.md](file:///E:/Bim_Logistics/docs/CHANGELOG.md).
+
 ## [2.9.12] - 2026-10-06 (Chuẩn Hoá Đồng Bộ Typography & Font Size Bảng Báo Cáo Toàn Nền Tảng)
 
 ### 1. Chuẩn Hóa Phông Chữ & Kích Thước Bảng Báo Cáo & Danh Mục (Enterprise Table Typography Standard):

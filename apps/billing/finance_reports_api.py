@@ -1275,6 +1275,89 @@ class AccountingReportsAPIView(APIView):
                 'rows': rows
             }, status=status.HTTP_200_OK)
 
+        # ---------------------------------------------------------------------
+        # 5. BÁO CÁO DÒNG TIỀN & SỔ QUỸ THU - CHI (BY_CASHFLOW)
+        # ---------------------------------------------------------------------
+        elif report_type in ['BY_CASHFLOW', 'CASH_FLOW']:
+            all_tx = CashTransaction.objects.filter(is_deleted=False)
+
+            # Bộ lọc thời gian cho giao dịch tiền
+            if from_date:
+                try:
+                    fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
+                    all_tx = all_tx.filter(transaction_date__gte=fd)
+                except ValueError:
+                    pass
+            if to_date:
+                try:
+                    td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
+                    all_tx = all_tx.filter(transaction_date__lte=td)
+                except ValueError:
+                    pass
+
+            total_inflow = all_tx.filter(transaction_type=TransactionType.INFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+            total_outflow = all_tx.filter(transaction_type=TransactionType.OUTFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+            net_cash_flow = total_inflow - total_outflow
+
+            cash_inflow = all_tx.filter(payment_method=PaymentMethod.CASH, transaction_type=TransactionType.INFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+            cash_outflow = all_tx.filter(payment_method=PaymentMethod.CASH, transaction_type=TransactionType.OUTFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+            cash_balance = cash_inflow - cash_outflow
+
+            bank_inflow = all_tx.filter(payment_method=PaymentMethod.BANK, transaction_type=TransactionType.INFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+            bank_outflow = all_tx.filter(payment_method=PaymentMethod.BANK, transaction_type=TransactionType.OUTFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+            bank_balance = bank_inflow - bank_outflow
+
+            # Gom nhóm theo hạng mục thu chi
+            categories_map = {}
+            for tx in all_tx.order_by('-transaction_date', '-id'):
+                cat_key = tx.category or 'OTHER'
+                cat_label = tx.get_category_display() if hasattr(tx, 'get_category_display') else cat_key
+
+                if cat_key not in categories_map:
+                    categories_map[cat_key] = {
+                        'category_key': cat_key,
+                        'category_label': cat_label,
+                        'inflow': 0,
+                        'outflow': 0,
+                        'transactions_count': 0,
+                        'net_amount': 0,
+                    }
+
+                amt = int(tx.amount)
+                categories_map[cat_key]['transactions_count'] += 1
+                if tx.transaction_type == TransactionType.INFLOW:
+                    categories_map[cat_key]['inflow'] += amt
+                    categories_map[cat_key]['net_amount'] += amt
+                else:
+                    categories_map[cat_key]['outflow'] += amt
+                    categories_map[cat_key]['net_amount'] -= amt
+
+            rows = list(categories_map.values())
+            rows.sort(key=lambda x: (x['inflow'] + x['outflow']), reverse=True)
+
+            return Response({
+                'success': True,
+                'report_type': 'BY_CASHFLOW',
+                'report_title': 'Báo Cáo Sổ Quỹ & Dòng Tiền Thu - Chi Vận Tải (Mẫu S03a-DN)',
+                'kpis': {
+                    'total_inflow': int(total_inflow),
+                    'total_outflow': int(total_outflow),
+                    'net_cash_flow': int(net_cash_flow),
+                    'cash_balance': int(cash_balance),
+                    'bank_balance': int(bank_balance),
+                    'total_balance': int(cash_balance + bank_balance),
+                    'transactions_count': all_tx.count(),
+                },
+                'headers': [
+                    {'key': 'category_label', 'label': 'Hạng Mục Dòng Tiền', 'align': 'left'},
+                    {'key': 'transactions_count', 'label': 'Số Bút Toán', 'align': 'center'},
+                    {'key': 'inflow', 'label': 'Tổng Thu Vào (VNĐ)', 'align': 'right'},
+                    {'key': 'outflow', 'label': 'Tổng Chi Ra (VNĐ)', 'align': 'right'},
+                    {'key': 'net_amount', 'label': 'Dòng Tiền Ròng (+/-)', 'align': 'right'},
+                ],
+                'rows': rows
+            }, status=status.HTTP_200_OK)
+
         return Response({'error': 'Loại báo cáo không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
 
 
