@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.10] - 2026-10-06 (Chuẩn Hoá Tiếp Nhận Đơn / Booking Sang Trang Riêng: Sale & Booking | Tạo Booking)
+
+### 1. Nâng Cấp Luồng Tiếp Nhận Đơn Hàng / Booking Sang Trang Riêng Toàn Màn Hình:
+- **Tạo Booking trang riêng (`openCreateBookingPage`):** Nút **"Tiếp Nhận Đơn / Booking Mới"** tại phân hệ Sales chuyển hướng trực tiếp sang trang soạn thảo toàn màn hình (`/sales/bookings/new`) thay vì mở pop-up modal chật hẹp, mở rộng không gian nhập liệu với 5 thẻ chức năng:
+  1. *Thông tin Dịch vụ & Khách Hàng* (Loại nghiệp vụ Cont Xuất/Nhập/Nội địa, Hãng tàu, Số Booking, Tàu/Chuyến, Khách hàng).
+  2. *Hàng Hóa & Lộ Trình 3 Điểm Vận Chuyển* (Quy cách Cont, Loại hàng, HS Code, Điểm Lấy rỗng/Hạ bãi, Kho đóng/dỡ, Cảng/Bãi hạ rỗng).
+  3. *Kế Hoạch Đóng Hàng, Hạn Cut-off & Cước Vận Chuyển* (Ngày/Giờ hẹn đóng cont chuẩn `HH:mm`, Giờ Closing/SI, Free DET/DEM, Cước bán dự kiến).
+  4. *Tài Liệu Đính Kèm & Lệnh Cấp Cont* (Đính kèm nhiều tài liệu PDF/Ảnh, hiển thị danh sách trực quan, xem trước và xóa).
+  5. *Tiến Độ Container Thuộc Booking* (Bảng thống kê toàn bộ các chuyến xe/container đã phát lệnh từ booking này).
+- **Cấu trúc Breadcrumb Header tiêu chuẩn:** Trình bày `Sale & Booking | Tạo Booking` khi tạo mới hoặc `Sale & Booking | [Mã Booking]` khi xem chi tiết (kèm badge trạng thái và phân loại). Nhấp vào `Sale & Booking` hoặc nút `[<-]` để quay lại danh sách kinh doanh.
+- **Tự động phản chiếu tên khách hàng:** Tên khách hàng trên header (`fullpage-booking-header-customer`) tự động cập nhật ngay khi chọn dropdown.
+- **Xem & Hiệu chỉnh Booking trên trang riêng:** Cập nhật các nút Xem, Sửa, và đường link Mã Booking trong bảng danh sách đơn hàng sang gọi `viewBookingDetail(b.id, true)` mở trang riêng (`/sales/bookings/<id>`).
+- **SPA Routing & Deep-link:** Bổ sung regex định tuyến `/sales/bookings/new` và `/sales/bookings/<id>` trong `app.js` và backend Django `urls.py`. Hỗ trợ nút Back/Forward của trình duyệt và nút "Sao Chép Link".
+- **Tệp cập nhật:** [view_booking_detail.html](file:///E:/Bim_Logistics/templates/views/view_booking_detail.html), [view_sales.html](file:///E:/Bim_Logistics/templates/views/view_sales.html), [index.html](file:///E:/Bim_Logistics/templates/index.html), [urls.py](file:///E:/Bim_Logistics/config/urls.py), [sales.js](file:///E:/Bim_Logistics/static/js/modules/sales.js), [app.js](file:///E:/Bim_Logistics/static/js/app.js).
+
 ## [2.9.9] - 2026-10-06 (Chuẩn Hoá Tiêu Đề Báo Giá Breadcrumb: Sale & Booking | Tạo Báo Giá & Loại Bỏ Thẻ Thừa)
 
 ### 1. Chuẩn Hóa Tiêu Đề Điều Hướng Trang Báo Giá (Breadcrumb Header Alignment):

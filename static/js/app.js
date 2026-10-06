@@ -6641,6 +6641,653 @@ async function saveFullpageQuotation(e) {
     }
 }
 
+// ==============================================================================
+// 8.1. DEDICATED FULL-PAGE BOOKING VIEW (SALE & BOOKING | TẠO BOOKING)
+// ==============================================================================
+let fullpageBookingFilesList = [];
+let fullpageBookingExistingDocs = [];
+let currentActiveFullpageBooking = null;
+
+function handleFullpageBookingFilesSelect(input) {
+    if (!input || !input.files || input.files.length === 0) return;
+
+    for (let i = 0; i < input.files.length; i++) {
+        const file = input.files[i];
+        if (file.size > 10 * 1024 * 1024) {
+            showToast('warning', `File "${file.name}" vượt quá 10MB. Vui lòng chọn file nhẹ hơn.`, 'File Quá Dung Lượng');
+            continue;
+        }
+        const isDuplicate = fullpageBookingFilesList.some(f => f.name === file.name && f.size === file.size);
+        if (!isDuplicate) {
+            fullpageBookingFilesList.push(file);
+        }
+    }
+    input.value = '';
+    renderFullpageBookingFilesList();
+}
+
+function removeFullpageBookingNewFile(index) {
+    if (index >= 0 && index < fullpageBookingFilesList.length) {
+        fullpageBookingFilesList.splice(index, 1);
+        renderFullpageBookingFilesList();
+    }
+}
+
+async function deleteFullpageBookingExistingDoc(docId) {
+    const bookingId = document.getElementById('fullpage-booking-id')?.value;
+    if (!bookingId || !docId) {
+        fullpageBookingExistingDocs = fullpageBookingExistingDocs.filter(d => d.id !== docId);
+        renderFullpageBookingFilesList();
+        return;
+    }
+
+    const confirmed = await showConfirmModal({
+        title: 'Xóa Tài Liệu Booking',
+        message: 'Bạn có chắc chắn muốn xóa tài liệu này khỏi Booking không?\n\nThao tác sẽ gỡ bỏ tệp đính kèm khỏi hệ thống.',
+        confirmText: 'Xác Nhận Xóa',
+        cancelText: 'Huỷ bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/bookings/${bookingId}/documents/${docId}/`, {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || 'Lỗi khi xóa tài liệu');
+
+        fullpageBookingExistingDocs = fullpageBookingExistingDocs.filter(d => d.id !== docId);
+        renderFullpageBookingFilesList();
+        showToast('success', 'Đã xóa tài liệu đính kèm', 'Thành Công');
+    } catch (err) {
+        console.error('Lỗi xóa document:', err);
+        showToast('error', err.message || 'Không thể xóa tài liệu đính kèm', 'Lỗi');
+    }
+}
+
+function renderFullpageBookingFilesList() {
+    const listArea = document.getElementById('fullpage-booking-order-files-list');
+    const summary = document.getElementById('fullpage-booking-order-files-summary');
+    if (!listArea) return;
+
+    let itemsHtml = '';
+    const totalCount = fullpageBookingExistingDocs.length + fullpageBookingFilesList.length;
+
+    fullpageBookingExistingDocs.forEach(doc => {
+        const isPdf = (doc.name || doc.url || '').toLowerCase().endsWith('.pdf');
+        itemsHtml += `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 border border-teal-200 shadow-2xs text-xs">
+                <div class="flex items-center space-x-2 truncate pr-2">
+                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0"></i>
+                    <div class="truncate">
+                        <p class="font-bold text-teal-900 truncate" title="${doc.name || 'File Booking'}">${doc.name || 'File Booking'}</p>
+                        <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'}</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1 shrink-0">
+                    <a href="${doc.url}" target="_blank" rel="noopener noreferrer" 
+                        class="p-1 rounded text-teal-700 hover:text-teal-900 hover:bg-teal-100 transition-colors" title="Mở file">
+                        <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                    </a>
+                    ${doc.id ? `
+                        <button type="button" onclick="deleteFullpageBookingExistingDoc(${doc.id})" 
+                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors" title="Xóa tài liệu này">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    fullpageBookingFilesList.forEach((file, idx) => {
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+        const sizeKb = (file.size / 1024).toFixed(0);
+        const sizeStr = file.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
+
+        itemsHtml += `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-amber-50 border border-amber-200 shadow-2xs text-xs">
+                <div class="flex items-center space-x-2 truncate pr-2">
+                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-amber-600'} text-base shrink-0"></i>
+                    <div class="truncate">
+                        <p class="font-bold text-amber-900 truncate" title="${file.name}">${file.name}</p>
+                        <span class="text-[10px] text-amber-700 font-semibold font-mono">(${sizeStr} - Chờ tải lên)</span>
+                    </div>
+                </div>
+                <button type="button" onclick="removeFullpageBookingNewFile(${idx})" 
+                    class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-100 transition-colors shrink-0" title="Hủy tệp này">
+                    <i class="ph-bold ph-x text-sm"></i>
+                </button>
+            </div>
+        `;
+    });
+
+    listArea.innerHTML = itemsHtml;
+    if (summary) {
+        if (totalCount === 0) {
+            summary.innerHTML = '<i class="ph ph-info text-teal-600"></i> Chưa có tệp nào được đính kèm';
+            summary.className = 'text-xs text-slate-500 italic mb-2';
+        } else {
+            summary.innerHTML = `<i class="ph-bold ph-check-circle text-teal-600"></i> Đã chọn <strong>${totalCount}</strong> tệp đính kèm (${fullpageBookingExistingDocs.length} tệp đã lưu, ${fullpageBookingFilesList.length} tệp mới)`;
+            summary.className = 'text-xs text-teal-800 font-medium mb-2';
+        }
+    }
+}
+
+function clearFullpageBookingFileSelection() {
+    fullpageBookingFilesList = [];
+    fullpageBookingExistingDocs = [];
+    const input = document.getElementById('fullpage-booking-order-file');
+    if (input) input.value = '';
+    renderFullpageBookingFilesList();
+}
+
+function onFullpageBookingTypeChange() {
+    const type = document.getElementById('fullpage-booking-type')?.value;
+    const typeBadge = document.getElementById('fullpage-booking-type-badge');
+    const shipInput = document.getElementById('fullpage-booking-shipping-line');
+    const pickupInput = document.getElementById('fullpage-booking-pickup');
+    const dropoffInput = document.getElementById('fullpage-booking-dropoff');
+
+    if (typeBadge) {
+        typeBadge.innerText = type === 'DOMESTIC' ? 'Vận Chuyển Nội Địa' : (type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Kéo Cont Xuất Khẩu');
+    }
+
+    if (type === 'DOMESTIC') {
+        if (shipInput && !shipInput.value) shipInput.value = 'NỘI ĐỊA';
+        if (pickupInput && !pickupInput.value) pickupInput.placeholder = 'Kho bốc / Nhà máy A...';
+        if (dropoffInput && !dropoffInput.value) dropoffInput.placeholder = 'Kho dỡ / Điểm giao B...';
+    } else if (type === 'EXPORT_FCL') {
+        if (shipInput && shipInput.value === 'NỘI ĐỊA') shipInput.value = '';
+        if (pickupInput) pickupInput.placeholder = 'VD: Bãi cấp rỗng Solog, Sowatco...';
+        if (dropoffInput) dropoffInput.placeholder = 'VD: Cảng Gemalink, Cát Lái...';
+    } else if (type === 'IMPORT_FCL') {
+        if (shipInput && shipInput.value === 'NỘI ĐỊA') shipInput.value = '';
+        if (pickupInput) pickupInput.placeholder = 'VD: Cảng Cát Lái, Cái Mép...';
+        if (dropoffInput) dropoffInput.placeholder = 'VD: Bãi trả rỗng Tân Cảng...';
+    }
+}
+
+function onFullpageBookingCustomerChange() {
+    const sel = document.getElementById('fullpage-booking-customer');
+    const headerCust = document.getElementById('fullpage-booking-header-customer');
+    if (sel && headerCust) {
+        const text = sel.options[sel.selectedIndex]?.text || '';
+        headerCust.innerText = (text && !text.startsWith('--')) ? text : 'Chưa chọn khách hàng';
+    }
+}
+
+function onFullpageBookingDateChange() {
+    const dateInput = document.getElementById('fullpage-booking-loading-date');
+    const headerDate = document.getElementById('fullpage-booking-header-date');
+    if (dateInput && headerDate) {
+        headerDate.innerText = dateInput.value ? `Hẹn đóng: ${formatDateVN(dateInput.value)}` : 'Hẹn đóng: --/--/----';
+    }
+}
+
+function syncFullpageBookingClosingTime() {
+    const date = document.getElementById('fullpage-booking-closing-date')?.value || '';
+    const time = document.getElementById('fullpage-booking-closing-time-val')?.value || '17:00';
+    const target = document.getElementById('fullpage-booking-closing-time');
+    if (target) {
+        target.value = date ? `${time} ${formatDateVN(date)}` : '';
+    }
+}
+
+function syncFullpageBookingSiTime() {
+    const date = document.getElementById('fullpage-booking-si-date')?.value || '';
+    const time = document.getElementById('fullpage-booking-si-time-val')?.value || '12:00';
+    const target = document.getElementById('fullpage-booking-si-cutoff');
+    if (target) {
+        target.value = date ? `${time} ${formatDateVN(date)}` : '';
+    }
+}
+
+function parseClosingTimeToFullpageInputs(closingStr) {
+    const dateInput = document.getElementById('fullpage-booking-closing-date');
+    const timeInput = document.getElementById('fullpage-booking-closing-time-val');
+    const hiddenInput = document.getElementById('fullpage-booking-closing-time');
+    if (hiddenInput) hiddenInput.value = closingStr || '';
+    if (!closingStr) return;
+
+    const parts = closingStr.trim().split(' ');
+    if (parts.length >= 2) {
+        if (timeInput) timeInput.value = parts[0];
+        const dateParts = parts[1].split('/');
+        if (dateParts.length === 3 && dateInput) {
+            dateInput.value = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+        }
+    }
+}
+
+function parseSiCutoffToFullpageInputs(siStr) {
+    const dateInput = document.getElementById('fullpage-booking-si-date');
+    const timeInput = document.getElementById('fullpage-booking-si-time-val');
+    const hiddenInput = document.getElementById('fullpage-booking-si-cutoff');
+    if (hiddenInput) hiddenInput.value = siStr || '';
+    if (!siStr) return;
+
+    const parts = siStr.trim().split(' ');
+    if (parts.length >= 2) {
+        if (timeInput) timeInput.value = parts[0];
+        const dateParts = parts[1].split('/');
+        if (dateParts.length === 3 && dateInput) {
+            dateInput.value = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+        }
+    }
+}
+
+async function openCreateBookingPage(updateHistory = true) {
+    await loadMasterDataFormOptions();
+    populateMasterDataDropdowns();
+
+    const form = document.getElementById('form-fullpage-booking');
+    if (form) form.reset();
+
+    const idInput = document.getElementById('fullpage-booking-id');
+    const titleCodeEl = document.getElementById('fullpage-booking-title-code');
+    const statusBadge = document.getElementById('fullpage-booking-status-badge');
+    const typeBadge = document.getElementById('fullpage-booking-type-badge');
+    const headerCust = document.getElementById('fullpage-booking-header-customer');
+    const headerDate = document.getElementById('fullpage-booking-header-date');
+    const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
+    const tripsSection = document.getElementById('fullpage-booking-trips-section');
+
+    if (idInput) idInput.value = '';
+    if (titleCodeEl) titleCodeEl.innerText = 'Tạo Booking';
+    if (statusBadge) statusBadge.classList.add('hidden');
+    if (typeBadge) {
+        typeBadge.classList.remove('hidden');
+        typeBadge.innerText = 'Kéo Cont Xuất Khẩu';
+    }
+    if (headerCust) headerCust.innerText = 'Chưa chọn khách hàng';
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (headerDate) headerDate.innerText = `Hẹn đóng: ${new Date().toLocaleDateString('vi-VN')}`;
+    if (saveBtnText) saveBtnText.innerText = 'Tiếp Nhận Đơn Hàng';
+    if (tripsSection) tripsSection.classList.add('hidden');
+
+    const dateInput = document.getElementById('fullpage-booking-loading-date');
+    if (dateInput) dateInput.value = todayStr;
+    const timeInput = document.getElementById('fullpage-booking-loading-time');
+    if (timeInput) timeInput.value = '08:00';
+    const closingDateInput = document.getElementById('fullpage-booking-closing-date');
+    if (closingDateInput) closingDateInput.value = todayStr;
+    const closingTimeValInput = document.getElementById('fullpage-booking-closing-time-val');
+    if (closingTimeValInput) closingTimeValInput.value = '17:00';
+    syncFullpageBookingClosingTime();
+
+    const siDateInput = document.getElementById('fullpage-booking-si-date');
+    if (siDateInput) siDateInput.value = todayStr;
+    const siTimeValInput = document.getElementById('fullpage-booking-si-time-val');
+    if (siTimeValInput) siTimeValInput.value = '12:00';
+    syncFullpageBookingSiTime();
+
+    const totalInput = document.getElementById('fullpage-booking-total-containers');
+    if (totalInput) totalInput.value = formatNumberVN(1);
+    const detInput = document.getElementById('fullpage-booking-det');
+    if (detInput) detInput.value = formatNumberVN(7);
+    const demInput = document.getElementById('fullpage-booking-dem');
+    if (demInput) demInput.value = formatNumberVN(7);
+    const priceInput = document.getElementById('fullpage-booking-price');
+    if (priceInput) priceInput.value = formatNumberVN(4000000);
+
+    clearFullpageBookingFileSelection();
+    onFullpageBookingTypeChange();
+
+    if (updateHistory && window.history && window.history.pushState) {
+        const bookingPath = '/sales/bookings/new';
+        if (window.location.pathname !== bookingPath) {
+            window.history.pushState({ view: 'booking-create' }, '', bookingPath);
+        }
+    }
+
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-booking-detail') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const detailView = document.getElementById('view-booking-detail');
+    if (detailView) detailView.classList.remove('hidden-view');
+
+    initAllNumberInputs();
+}
+
+async function viewBookingDetail(bookingId, updateHistory = true) {
+    if (!bookingId || bookingId === 'new') {
+        return openCreateBookingPage(updateHistory);
+    }
+    await loadMasterDataFormOptions();
+    populateMasterDataDropdowns();
+
+    const form = document.getElementById('form-fullpage-booking');
+    if (form) form.reset();
+
+    const idInput = document.getElementById('fullpage-booking-id');
+    const titleCodeEl = document.getElementById('fullpage-booking-title-code');
+    const statusBadge = document.getElementById('fullpage-booking-status-badge');
+    const typeBadge = document.getElementById('fullpage-booking-type-badge');
+    const headerCust = document.getElementById('fullpage-booking-header-customer');
+    const headerDate = document.getElementById('fullpage-booking-header-date');
+    const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
+    const tripsSection = document.getElementById('fullpage-booking-trips-section');
+
+    if (titleCodeEl) titleCodeEl.innerText = 'Đang tải...';
+    if (saveBtnText) saveBtnText.innerText = 'Cập Nhật Đơn Hàng';
+
+    try {
+        const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);
+        if (!res.ok) throw new Error('Không thể tải chi tiết đơn hàng / booking');
+        const b = await res.json();
+        currentActiveFullpageBooking = b;
+
+        if (idInput) idInput.value = b.id;
+        if (titleCodeEl) titleCodeEl.innerText = b.booking_code || `BK-${b.id}`;
+        if (headerCust) headerCust.innerText = b.customer_name || '...';
+        if (headerDate) headerDate.innerText = `Hẹn đóng: ${b.loading_date ? formatDateVN(b.loading_date) : '--/--/----'}`;
+
+        if (statusBadge) {
+            statusBadge.classList.remove('hidden');
+            statusBadge.innerText = b.status_display || b.status;
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' +
+                (b.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                 b.status === 'PARTIALLY_DISPATCHED' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                 b.status === 'CANCELLED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                 'bg-teal-50 text-teal-800 border-teal-200');
+        }
+        if (typeBadge) {
+            typeBadge.classList.remove('hidden');
+            typeBadge.innerText = b.booking_type_display || (b.booking_type === 'DOMESTIC' ? 'Vận Chuyển Nội Địa' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Kéo Cont Xuất Khẩu'));
+        }
+
+        if (updateHistory && window.history && window.history.pushState) {
+            const bookingPath = `/sales/bookings/${b.id}`;
+            if (window.location.pathname !== bookingPath) {
+                window.history.pushState({ view: 'booking-detail', bookingId: b.id }, '', bookingPath);
+            }
+        }
+
+        const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+        if (currentActiveView && currentActiveView.id !== 'view-booking-detail') {
+            previousActiveTab = currentActiveView.id.replace('view-', '');
+        }
+
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+        const detailView = document.getElementById('view-booking-detail');
+        if (detailView) detailView.classList.remove('hidden-view');
+
+        const typeEl = document.getElementById('fullpage-booking-type');
+        if (typeEl) typeEl.value = b.booking_type || 'EXPORT_FCL';
+        const custEl = document.getElementById('fullpage-booking-customer');
+        if (custEl) setSelectValueCaseInsensitive(custEl, b.customer_name);
+        const numEl = document.getElementById('fullpage-booking-number');
+        if (numEl) numEl.value = b.booking_number || '';
+        const shipEl = document.getElementById('fullpage-booking-shipping-line');
+        if (shipEl) shipEl.value = b.shipping_line || '';
+        const vesEl = document.getElementById('fullpage-booking-vessel');
+        if (vesEl) vesEl.value = b.vessel_voyage || '';
+        const sizeEl = document.getElementById('fullpage-booking-container-size');
+        if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '40HC');
+        const totalEl = document.getElementById('fullpage-booking-total-containers');
+        if (totalEl) totalEl.value = formatNumberVN(b.total_containers || 1);
+        const comEl = document.getElementById('fullpage-booking-commodity');
+        if (comEl) comEl.value = b.commodity || '';
+        const hsEl = document.getElementById('fullpage-booking-hs-code');
+        if (hsEl) hsEl.value = b.hs_code || '';
+
+        const pickEl = document.getElementById('fullpage-booking-pickup');
+        if (pickEl) setSelectValueCaseInsensitive(pickEl, b.pickup_location);
+        const delEl = document.getElementById('fullpage-booking-delivery');
+        if (delEl) setSelectValueCaseInsensitive(delEl, b.delivery_location);
+        const dropEl = document.getElementById('fullpage-booking-dropoff');
+        if (dropEl) setSelectValueCaseInsensitive(dropEl, b.dropoff_location);
+
+        const dateEl = document.getElementById('fullpage-booking-loading-date');
+        if (dateEl) dateEl.value = b.loading_date || '';
+        const timeEl = document.getElementById('fullpage-booking-loading-time');
+        if (timeEl) timeEl.value = formatTimeString(b.loading_time || '08:00');
+
+        parseClosingTimeToFullpageInputs(b.closing_time);
+        parseSiCutoffToFullpageInputs(b.si_cutoff);
+
+        const detEl = document.getElementById('fullpage-booking-det');
+        if (detEl) detEl.value = formatNumberVN(b.free_time_detention || 7);
+        const demEl = document.getElementById('fullpage-booking-dem');
+        if (demEl) demEl.value = formatNumberVN(b.free_time_demurrage || 7);
+        const priceEl = document.getElementById('fullpage-booking-price');
+        if (priceEl) priceEl.value = formatNumberVN(b.selling_freight_price || 4000000);
+        const statusEl = document.getElementById('fullpage-booking-status');
+        if (statusEl) statusEl.value = b.status || 'PENDING_DISPATCH';
+        const notesEl = document.getElementById('fullpage-booking-notes');
+        if (notesEl) notesEl.value = b.notes || '';
+
+        fullpageBookingFilesList = [];
+        fullpageBookingExistingDocs = [];
+        if (b.documents && b.documents.length > 0) {
+            fullpageBookingExistingDocs = b.documents.map(d => ({
+                id: d.id,
+                name: d.file_name || d.title || 'File Booking',
+                url: d.file_url || (d.file_path ? `/media/${d.file_path}` : '#'),
+                size_formatted: d.file_size_formatted || ''
+            }));
+        } else if (b.booking_file_url) {
+            fullpageBookingExistingDocs.push({
+                id: null,
+                name: b.booking_file_name || 'File Booking gốc',
+                url: b.booking_file_url,
+                size_formatted: ''
+            });
+        }
+        renderFullpageBookingFilesList();
+
+        if (tripsSection) {
+            tripsSection.classList.remove('hidden');
+            const tripsCountBadge = document.getElementById('fullpage-booking-trips-count-badge');
+            const tripsTbody = document.getElementById('fullpage-booking-trips-tbody');
+
+            if (b.trips && b.trips.length > 0) {
+                if (tripsCountBadge) {
+                    tripsCountBadge.innerText = `${b.dispatched_containers || b.trips.length} / ${b.total_containers} Container`;
+                }
+                tripsTbody.innerHTML = b.trips.map(t => {
+                    const statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10.5px] font-bold border ${t.status_badge_class || 'bg-slate-100 text-slate-700'}">${t.status_display || t.status}</span>`;
+                    const modeBadge = t.is_split_trip 
+                        ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Cắt Kéo (2 Chặng)</span>`
+                        : `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Nguyên Chuyến (FTL)</span>`;
+                    return `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-2.5">
+                                <p class="font-bold text-slate-900 font-mono text-xs">${t.trip_code}</p>
+                                <p class="text-[11px] font-mono text-indigo-700 font-bold">${t.container_number || '-'}</p>
+                            </td>
+                            <td class="p-2.5">${modeBadge}</td>
+                            <td class="p-2.5">
+                                <p class="font-bold text-slate-900">${t.driver || '-'}</p>
+                                <p class="text-[11px] text-slate-500 font-medium">Xe: ${t.vehicle || '-'}</p>
+                            </td>
+                            <td class="p-2.5">
+                                ${t.is_split_trip ? `
+                                    <p class="font-bold text-amber-900">${t.dropoff_driver || 'Chưa gán'}</p>
+                                    <p class="text-[11px] text-slate-500 font-medium">Xe: ${t.dropoff_vehicle || '-'}</p>
+                                ` : `
+                                    <span class="text-slate-400 italic text-[11px]">(Tài xế chặng 1)</span>
+                                `}
+                            </td>
+                            <td class="p-2.5 text-[11px] text-slate-700 leading-tight">
+                                ${t.pickup_location || '-'} ➔ ${t.delivery_location || '-'}
+                            </td>
+                            <td class="p-2.5">${statusBadge}</td>
+                            <td class="p-2.5 text-center">
+                                <button type="button" onclick="viewTripDetail('${t.trip_code}')" 
+                                    class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold transition-colors inline-flex items-center gap-1 font-heading" title="Xem chi tiết chuyến xe">
+                                    <i class="ph-bold ph-arrow-square-out"></i> Xem
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                if (tripsCountBadge) {
+                    tripsCountBadge.innerText = `0 / ${b.total_containers} Container`;
+                }
+                tripsTbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="p-4 text-center text-slate-400 italic text-xs">
+                            Chưa có container nào được phát lệnh điều xe từ Booking này. Bấm "Điều Xe" bên ngoài để phát lệnh.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        onFullpageBookingTypeChange();
+        initAllNumberInputs();
+    } catch (err) {
+        console.error('Lỗi tải chi tiết booking trang riêng:', err);
+        showToast('error', 'Không thể tải thông tin đơn hàng / booking', 'Lỗi');
+        backToBookings();
+    }
+}
+
+function backToBookings() {
+    const detailView = document.getElementById('view-booking-detail');
+    if (detailView) detailView.classList.add('hidden-view');
+
+    if (previousActiveTab && previousActiveTab !== 'booking-detail') {
+        switchTab(previousActiveTab, true);
+    } else {
+        switchTab('kinh-doanh', true);
+    }
+}
+
+function copyBookingPageLink() {
+    const id = document.getElementById('fullpage-booking-id')?.value;
+    if (!id) {
+        showToast('warning', 'Đơn hàng chưa được lưu để lấy link chia sẻ', 'Cảnh Báo');
+        return;
+    }
+    const fullUrl = `${window.location.origin}/sales/bookings/${id}`;
+    navigator.clipboard.writeText(fullUrl).then(() => {
+        showToast('success', `Đã sao chép link đơn hàng:\n${fullUrl}`, 'Thành Công');
+    }).catch(() => {
+        prompt('Sao chép link đơn hàng:', fullUrl);
+    });
+}
+
+async function saveFullpageBooking(e) {
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
+    const id = document.getElementById('fullpage-booking-id')?.value;
+    const bookingType = document.getElementById('fullpage-booking-type')?.value || 'EXPORT_FCL';
+    const customer = document.getElementById('fullpage-booking-customer')?.value?.trim();
+    const bookingNumber = document.getElementById('fullpage-booking-number')?.value?.trim();
+    const shippingLine = document.getElementById('fullpage-booking-shipping-line')?.value?.trim();
+    const vessel = document.getElementById('fullpage-booking-vessel')?.value?.trim();
+    const containerSize = document.getElementById('fullpage-booking-container-size')?.value || '40HC';
+    const totalContainers = parseNumberVN(document.getElementById('fullpage-booking-total-containers')?.value) || 1;
+    const commodity = document.getElementById('fullpage-booking-commodity')?.value?.trim();
+    const hsCode = document.getElementById('fullpage-booking-hs-code')?.value?.trim();
+    const pickup = document.getElementById('fullpage-booking-pickup')?.value?.trim();
+    const delivery = document.getElementById('fullpage-booking-delivery')?.value?.trim();
+    const dropoff = document.getElementById('fullpage-booking-dropoff')?.value?.trim();
+    const loadingDate = document.getElementById('fullpage-booking-loading-date')?.value;
+    const loadingTime = formatTimeString(document.getElementById('fullpage-booking-loading-time')?.value?.trim() || '08:00');
+    syncFullpageBookingClosingTime();
+    syncFullpageBookingSiTime();
+    const closingTime = document.getElementById('fullpage-booking-closing-time')?.value?.trim();
+    const siCutoff = document.getElementById('fullpage-booking-si-cutoff')?.value?.trim();
+    const det = parseNumberVN(document.getElementById('fullpage-booking-det')?.value) || 7;
+    const dem = parseNumberVN(document.getElementById('fullpage-booking-dem')?.value) || 7;
+    const price = parseNumberVN(document.getElementById('fullpage-booking-price')?.value) || 0;
+    const statusVal = document.getElementById('fullpage-booking-status')?.value || 'PENDING_DISPATCH';
+    const notes = document.getElementById('fullpage-booking-notes')?.value?.trim();
+
+    if (!customer || !bookingNumber || !pickup || !delivery || !dropoff) {
+        showToast('warning', 'Vui lòng điền đủ: Khách hàng, Số đơn/booking và Lộ trình 3 điểm', 'Thiếu Thông Tin');
+        return;
+    }
+
+    const submitBtn = document.getElementById('btn-fullpage-save-booking');
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-base"></i> <span>Đang lưu...</span>';
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'create_booking');
+        formData.append('booking_type', bookingType);
+        formData.append('customer', customer);
+        formData.append('booking_number', bookingNumber);
+        formData.append('shipping_line', shippingLine);
+        formData.append('vessel_voyage', vessel);
+        formData.append('container_size', containerSize);
+        formData.append('total_containers', totalContainers);
+        formData.append('commodity', commodity);
+        formData.append('hs_code', hsCode);
+        formData.append('pickup_location', pickup);
+        formData.append('delivery_location', delivery);
+        formData.append('dropoff_location', dropoff);
+        formData.append('loading_date', loadingDate || '');
+        formData.append('loading_time', loadingTime);
+        formData.append('closing_time', closingTime || '');
+        formData.append('si_cutoff', siCutoff || '');
+        formData.append('free_time_detention', det);
+        formData.append('free_time_demurrage', dem);
+        formData.append('selling_freight_price', price);
+        formData.append('status', statusVal);
+        formData.append('notes', notes || '');
+
+        if (fullpageBookingFilesList && fullpageBookingFilesList.length > 0) {
+            formData.append('booking_file', fullpageBookingFilesList[0]);
+            fullpageBookingFilesList.forEach(file => {
+                formData.append('booking_files', file);
+            });
+        }
+
+        let res;
+        if (id) {
+            res = await fetchWithAuth(`/api/bookings/${id}/`, {
+                method: 'PUT',
+                body: formData
+            });
+        } else {
+            res = await fetchWithAuth('/api/sales/', {
+                method: 'POST',
+                body: formData
+            });
+        }
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi lưu đơn hàng / booking');
+
+        showToast('success', data.message || 'Lưu đơn hàng / booking thành công!', 'Thành Công');
+        clearFullpageBookingFileSelection();
+        loadSalesData();
+        loadActiveBookingsForModal();
+
+        const savedId = id || data.booking_id || data.id;
+        if (savedId) {
+            viewBookingDetail(savedId, true);
+        } else {
+            backToBookings();
+        }
+    } catch (err) {
+        console.error('Error saving fullpage booking:', err);
+        showToast('error', err.message || 'Không thể lưu đơn hàng / booking', 'Lỗi');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+    }
+}
+
 let currentPrintingQuotation = null;
 
 async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
@@ -7084,6 +7731,12 @@ function onBookingTypeChange() {
 }
 
 async function openModalBooking(bookingId = null, isReadOnly = false) {
+    if (!bookingId) {
+        return openCreateBookingPage(true);
+    } else {
+        return viewBookingDetail(bookingId, true);
+    }
+
     await loadMasterDataFormOptions();
     populateMasterDataDropdowns();
 
@@ -17174,11 +17827,29 @@ function resolveInitialRoute() {
     if (quoteMatch && quoteMatch[1]) {
         const quoteIdentifier = quoteMatch[1];
         switchTab('kinh-doanh', false);
-        if (typeof viewQuotationDetail === 'function') {
-            viewQuotationDetail(quoteIdentifier, false);
+        if (quoteIdentifier === 'new') {
+            if (typeof openCreateQuotationPage === 'function') openCreateQuotationPage(false);
+        } else {
+            if (typeof viewQuotationDetail === 'function') viewQuotationDetail(quoteIdentifier, false);
         }
         if (window.history && window.history.replaceState) {
             window.history.replaceState({ view: 'quotation-detail', quoteIdentifier }, '', `/sales/quotations/${quoteIdentifier}`);
+        }
+        return;
+    }
+
+    // 1.2. Kiểm tra deep-link tiếp nhận đơn / booking trang riêng: /sales/bookings/<id>
+    const bookingMatch = pathname.match(/^\/sales\/bookings\/([a-zA-Z0-9_-]+)/) || (hash.startsWith('booking/') ? hash.match(/^booking\/([a-zA-Z0-9_-]+)/) : null);
+    if (bookingMatch && bookingMatch[1]) {
+        const bookingIdentifier = bookingMatch[1];
+        switchTab('kinh-doanh', false);
+        if (bookingIdentifier === 'new') {
+            if (typeof openCreateBookingPage === 'function') openCreateBookingPage(false);
+        } else {
+            if (typeof viewBookingDetail === 'function') viewBookingDetail(bookingIdentifier, false);
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'booking-detail', bookingIdentifier }, '', `/sales/bookings/${bookingIdentifier}`);
         }
         return;
     }
@@ -17217,14 +17888,39 @@ function resolveInitialRoute() {
 window.addEventListener('popstate', (event) => {
     const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/);
+    const quoteMatch = pathname.match(/^\/sales\/quotations\/([a-zA-Z0-9_-]+)/);
+    const bookingMatch = pathname.match(/^\/sales\/bookings\/([a-zA-Z0-9_-]+)/);
+
     if (tripMatch && tripMatch[1]) {
         switchTab('dieu-van', false);
         viewTripDetail(tripMatch[1], false);
+    } else if (quoteMatch && quoteMatch[1]) {
+        switchTab('kinh-doanh', false);
+        if (quoteMatch[1] === 'new') {
+            if (typeof openCreateQuotationPage === 'function') openCreateQuotationPage(false);
+        } else {
+            if (typeof viewQuotationDetail === 'function') viewQuotationDetail(quoteMatch[1], false);
+        }
+    } else if (bookingMatch && bookingMatch[1]) {
+        switchTab('kinh-doanh', false);
+        if (bookingMatch[1] === 'new') {
+            if (typeof openCreateBookingPage === 'function') openCreateBookingPage(false);
+        } else {
+            if (typeof viewBookingDetail === 'function') viewBookingDetail(bookingMatch[1], false);
+        }
     } else {
         const targetTab = ROUTE_TAB_MAP[pathname] || 'dashboard';
-        const detailView = document.getElementById('view-trip-detail');
-        if (detailView && !detailView.classList.contains('hidden-view')) {
-            detailView.classList.add('hidden-view');
+        const tripDetailView = document.getElementById('view-trip-detail');
+        if (tripDetailView && !tripDetailView.classList.contains('hidden-view')) {
+            tripDetailView.classList.add('hidden-view');
+        }
+        const quoteDetailView = document.getElementById('view-quotation-detail');
+        if (quoteDetailView && !quoteDetailView.classList.contains('hidden-view')) {
+            quoteDetailView.classList.add('hidden-view');
+        }
+        const bookingDetailView = document.getElementById('view-booking-detail');
+        if (bookingDetailView && !bookingDetailView.classList.contains('hidden-view')) {
+            bookingDetailView.classList.add('hidden-view');
         }
         switchTab(targetTab, false);
     }
