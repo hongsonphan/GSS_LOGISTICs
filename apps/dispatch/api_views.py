@@ -2407,7 +2407,11 @@ class SalesAPIView(APIView):
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
-                quotations = quotations.filter(created_at__date__gte=fd)
+                quotations = quotations.filter(
+                    Q(created_at__date__gte=fd) | 
+                    Q(valid_until__gte=fd) | 
+                    Q(status__in=['APPROVED', 'NEGOTIATING', 'PENDING_APPROVAL'])
+                )
             except Exception:
                 pass
         if to_date:
@@ -2495,7 +2499,11 @@ class SalesAPIView(APIView):
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
-                bookings = bookings.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
+                bookings = bookings.filter(
+                    Q(loading_date__gte=fd) | 
+                    Q(loading_date__isnull=True, created_at__date__gte=fd) |
+                    Q(status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED])
+                )
             except Exception:
                 pass
         if to_date:
