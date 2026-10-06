@@ -43,107 +43,107 @@
         </div>
 
         <!-- Printable Area Wrapper (View Full Viền Tờ A4) -->
-        <div class="p-2 sm:p-6 overflow-y-auto bg-slate-200/80 flex-1 flex justify-center">
-            <div id="quotation-printable-area" class="w-full max-w-4xl bg-white p-6 sm:p-10 border border-slate-300 text-slate-900 font-sans leading-relaxed text-xs sm:text-sm">
+        <div class="p-3 sm:p-8 overflow-y-auto bg-slate-200/80 flex-1 flex justify-center">
+            <div id="quotation-printable-area" class="w-full max-w-[840px] bg-white p-6 sm:p-12 border border-slate-300 shadow-xl rounded-sm text-slate-900 font-sans leading-relaxed text-xs">
                 
                 <!-- ========================================================================= -->
                 <!-- MẪU 1: TIÊU CHUẨN DOANH NGHIỆP (QUỐC HIỆU & ĐIỀU KHOẢN TVL) -->
                 <!-- ========================================================================= -->
                 <div id="quote-tpl-standard" class="quote-print-template space-y-3">
                     <!-- 1. Header: Logo TVL + Quốc Hiệu Tiêu Ngữ -->
-                    <div class="flex justify-between items-start gap-4 pb-2 border-b border-slate-300">
+                    <div class="flex justify-between items-start gap-4 pb-3 border-b border-slate-300">
                         <!-- Logo TVL & Brand -->
-                        <div class="flex items-center gap-3">
-                            <img src="/static/images/trienvo_logo.png" alt="Trien Vo Logistics" class="h-14 sm:h-16 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/trienvo_logo.png'">
-                            <div class="space-y-0.5">
-                                <h4 class="font-black text-xs sm:text-sm text-slate-900 uppercase font-heading print-comp-name">CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ</h4>
-                                <p class="text-[10px] sm:text-[10.5px] text-slate-700 leading-tight print-comp-address">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh</p>
-                                <p class="text-[10px] sm:text-[10.5px] text-slate-700 leading-tight print-comp-contact">MST: 0314567890 • Hotline: 0965 559 561 • Email: phongkinhdoanh.tvl@trienvo.com</p>
+                        <div class="flex items-center gap-3.5">
+                            <img src="/static/images/trienvo_logo.png" alt="Trien Vo Logistics" class="h-12 w-auto object-contain shrink-0 print-comp-logo" onerror="this.src='/media/trienvo_logo.png'">
+                            <div class="space-y-0.5 text-left">
+                                <h4 class="font-black text-xs sm:text-[13px] text-slate-900 uppercase font-heading tracking-tight print-comp-name">CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ</h4>
+                                <p class="text-[10px] text-slate-600 leading-tight print-comp-address">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh</p>
+                                <p class="text-[9.5px] text-slate-600 leading-tight print-comp-contact">MST: 0314567890 • Hotline: 0965 559 561 • Email: phongkinhdoanh.tvl@trienvo.com</p>
                             </div>
                         </div>
 
                         <!-- Quốc hiệu Tiêu ngữ -->
                         <div class="text-center space-y-0.5 shrink-0 min-w-[210px]">
-                            <p class="font-bold text-[11px] uppercase tracking-tight text-slate-900">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
-                            <p class="font-bold text-[11px] text-slate-800">Độc lập - Tự do - Hạnh phúc</p>
-                            <div class="w-24 h-[1px] bg-slate-800 mx-auto my-1"></div>
-                            <p class="text-[10.5px] italic text-slate-700 pt-0.5" id="print-q1-date-place">
+                            <p class="font-bold text-[10.5px] uppercase tracking-wide text-slate-900">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+                            <p class="font-bold text-[10.5px] text-slate-800">Độc lập - Tự do - Hạnh phúc</p>
+                            <div class="w-20 h-[1px] bg-slate-800 mx-auto my-1"></div>
+                            <p class="text-[10px] italic text-slate-600 pt-0.5" id="print-q1-date-place">
                                 Tp. Hồ Chí Minh, ngày 06 tháng 10 năm 2026
                             </p>
                         </div>
                     </div>
 
                     <!-- 2. Tiêu Đề Báo Giá -->
-                    <div class="text-center py-1 space-y-0.5">
+                    <div class="text-center py-2 space-y-1">
                         <h2 class="text-lg sm:text-xl font-black uppercase tracking-wider text-slate-950 font-heading">
                             BÁO GIÁ CƯỚC VẬN CHUYỂN
                         </h2>
-                        <p class="text-xs text-slate-700 font-mono font-bold" id="print-q1-code-sub">Số: BG-1005-01</p>
+                        <div class="inline-block bg-teal-50 border border-teal-200 px-3 py-0.5 rounded text-xs font-mono font-bold text-teal-800" id="print-q1-code-sub">Số: BG-1005-01</div>
                     </div>
 
                     <!-- 3. Kính Gửi Khách Hàng -->
-                    <div class="space-y-1.5 text-slate-900 text-xs leading-relaxed">
+                    <div class="space-y-2 text-slate-800 text-xs leading-relaxed pt-1">
                         <div class="flex items-baseline gap-2">
-                            <span class="font-bold shrink-0 text-slate-900">Kính gửi:</span>
-                            <span class="font-black text-slate-950 uppercase text-xs sm:text-sm" id="print-q1-customer-name">CÔNG TY TNHH MOL LOGISTICS VIỆT NAM</span>
+                            <span class="font-bold text-slate-900 shrink-0">Kính gửi:</span>
+                            <span class="font-black text-slate-950 uppercase text-xs sm:text-sm tracking-tight" id="print-q1-customer-name">CÔNG TY TNHH MOL LOGISTICS VIỆT NAM</span>
                         </div>
-                        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-800 border-b border-slate-200 pb-1.5">
-                            <div><span class="font-bold">Người nhận (Attn):</span> <span id="print-q1-contact-person" class="font-medium">Phòng Xuất Nhập Khẩu / Logistics</span></div>
-                            <div><span class="font-bold">Điện thoại:</span> <span id="print-q1-contact-phone" class="font-medium font-mono">0987 123 456</span></div>
-                            <div><span class="font-bold">Địa chỉ:</span> <span id="print-q1-customer-address" class="font-medium">Khu Công Nghiệp VSIP 2, Bình Dương</span></div>
-                            <div><span class="font-bold">Mã số thuế:</span> <span id="print-q1-tax-code" class="font-mono font-medium">0301234567</span></div>
+                        <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-xs text-slate-700 border-b border-slate-200 pb-2">
+                            <div><span class="font-bold text-slate-900">Người nhận (Attn):</span> <span id="print-q1-contact-person" class="font-medium text-slate-800">Phòng Xuất Nhập Khẩu / Logistics</span></div>
+                            <div><span class="font-bold text-slate-900">Điện thoại:</span> <span id="print-q1-contact-phone" class="font-medium font-mono text-slate-800">0987 123 456</span></div>
+                            <div><span class="font-bold text-slate-900">Địa chỉ:</span> <span id="print-q1-customer-address" class="font-medium text-slate-800">Khu Công Nghiệp VSIP 2, Bình Dương</span></div>
+                            <div><span class="font-bold text-slate-900">Mã số thuế:</span> <span id="print-q1-tax-code" class="font-mono text-slate-800">0301234567</span></div>
                         </div>
-                        <p class="text-xs text-slate-800 leading-relaxed pt-0.5 text-justify">
+                        <p class="text-xs text-slate-700 leading-relaxed pt-0.5 text-justify">
                             Lời đầu tiên, <strong>Công ty TNHH Thương Mại Dịch Vụ Vận Tải Triền Võ (TVL Logistics)</strong> xin gửi lời chào trân trọng và lời chúc phát triển thịnh vượng đến Quý khách hàng. Căn cứ nhu cầu vận chuyển của Quý công ty, chúng tôi xin trân trọng gửi bảng báo giá cước vận tải chi tiết như sau:
                         </p>
                     </div>
 
                     <!-- 4. Bảng Báo Giá Chi Tiết (Hỗ trợ nhiều dòng tuyến đường) -->
-                    <div class="overflow-x-auto pt-0.5">
-                        <table class="w-full border-collapse border border-slate-400 text-xs text-left">
+                    <div class="overflow-x-auto pt-1">
+                        <table class="w-full border-collapse border border-slate-300 text-xs text-left">
                             <thead class="bg-slate-100 font-bold text-slate-900">
                                 <tr>
-                                    <th class="border border-slate-400 p-2 text-center w-9">STT</th>
-                                    <th class="border border-slate-400 p-2">Lộ Trình / Tuyến Vận Chuyển</th>
-                                    <th class="border border-slate-400 p-2 text-center w-24">Quy Cách / Loại Cont</th>
-                                    <th class="border border-slate-400 p-2 text-center w-16">Cự Ly</th>
-                                    <th class="border border-slate-400 p-2 text-right w-28">Đơn Giá Cước (VNĐ)</th>
-                                    <th class="border border-slate-400 p-2 text-center w-20">Sản Lượng DK</th>
-                                    <th class="border border-slate-400 p-2 text-right w-32">Thành Tiền / Tháng</th>
+                                    <th class="border border-slate-300 p-2 text-center w-10 text-[11px] uppercase">STT</th>
+                                    <th class="border border-slate-300 p-2 text-[11px] uppercase">Lộ Trình / Tuyến Vận Chuyển</th>
+                                    <th class="border border-slate-300 p-2 text-center w-24 text-[11px] uppercase">Quy Cách / Loại Cont</th>
+                                    <th class="border border-slate-300 p-2 text-center w-16 text-[11px] uppercase">Cự Ly</th>
+                                    <th class="border border-slate-300 p-2 text-right w-28 text-[11px] uppercase">Đơn Giá Cước (VNĐ)</th>
+                                    <th class="border border-slate-300 p-2 text-center w-20 text-[11px] uppercase">Sản Lượng DK</th>
+                                    <th class="border border-slate-300 p-2 text-right w-32 text-[11px] uppercase">Thành Tiền / Tháng</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200" id="print-q1-table-body">
                                 <tr>
-                                    <td class="border border-slate-400 p-2 text-center font-bold">1</td>
-                                    <td class="border border-slate-400 p-2 font-bold text-slate-900">CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG</td>
-                                    <td class="border border-slate-400 p-2 text-center">Cont 40HC</td>
-                                    <td class="border border-slate-400 p-2 text-center font-semibold tabular-nums">30 km</td>
-                                    <td class="border border-slate-400 p-2 text-right font-bold text-slate-950 tabular-nums">3.800.000 đ</td>
-                                    <td class="border border-slate-400 p-2 text-center font-semibold tabular-nums">20 chuyến</td>
-                                    <td class="border border-slate-400 p-2 text-right font-black text-slate-950 tabular-nums">76.000.000 đ</td>
+                                    <td class="border border-slate-300 p-2 text-center font-bold">1</td>
+                                    <td class="border border-slate-300 p-2 font-bold text-slate-900">CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG</td>
+                                    <td class="border border-slate-300 p-2 text-center">Cont 40HC</td>
+                                    <td class="border border-slate-300 p-2 text-center font-semibold tabular-nums">30 km</td>
+                                    <td class="border border-slate-300 p-2 text-right font-bold text-slate-950 tabular-nums">3.800.000 đ</td>
+                                    <td class="border border-slate-300 p-2 text-center font-semibold tabular-nums">20 chuyến</td>
+                                    <td class="border border-slate-300 p-2 text-right font-black text-slate-950 tabular-nums">76.000.000 đ</td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-slate-50 font-bold">
                                 <tr>
-                                    <td colspan="4" class="border border-slate-400 p-2 text-right uppercase">Tổng Doanh Thu Kế Hoạch Dự Kiến (Chưa VAT):</td>
-                                    <td colspan="3" class="border border-slate-400 p-2 text-right font-black text-slate-950 font-mono text-sm" id="print-q1-grand-total">76.000.000 VNĐ</td>
+                                    <td colspan="4" class="border border-slate-300 p-2.5 text-right uppercase text-[11px] text-slate-800">Tổng Doanh Thu Kế Hoạch Dự Kiến (Chưa VAT):</td>
+                                    <td colspan="3" class="border border-slate-300 p-2.5 text-right font-black text-slate-950 font-mono text-sm" id="print-q1-grand-total">76.000.000 VNĐ</td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
 
                     <!-- Số tiền bằng chữ -->
-                    <div class="text-xs text-slate-900 italic flex items-baseline gap-1.5 py-0.5">
-                        <span class="font-bold not-italic">Bằng chữ:</span>
+                    <div class="text-xs text-slate-800 italic flex items-baseline gap-1.5 py-1">
+                        <span class="font-bold not-italic text-slate-900">Bằng chữ:</span>
                         <span class="font-bold text-slate-950" id="print-q1-total-words">Bảy mươi sáu triệu đồng chẵn.</span>
                     </div>
 
                     <!-- 5. Khối Quy Chuẩn Điều Chỉnh Theo Giá Xăng Dầu DO 0.05S (Chỉ hiển thị khi có cơ chế xăng dầu) -->
-                    <div id="print-q1-fuel-box" class="p-2 border border-slate-400 bg-white space-y-1 text-xs text-slate-900 hidden">
+                    <div id="print-q1-fuel-box" class="p-2.5 border border-slate-300 rounded bg-white space-y-1 text-xs text-slate-900 hidden">
                         <div class="flex items-center gap-1.5 font-bold text-slate-950 uppercase text-[11px]">
                             <span>* CƠ CHẾ ĐIỀU CHỈNH CƯỚC THEO BIẾN ĐỘNG GIÁ DẦU DIESEL DO 0.05S:</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 py-1 text-center font-medium border-y border-slate-300">
+                        <div class="grid grid-cols-3 gap-2 py-1 text-center font-medium border-y border-slate-200">
                             <div>Giá dầu DO cơ sở (P0): <strong id="print-q1-fuel-p0" class="text-slate-950 font-bold">21.000 đ/lít</strong></div>
                             <div>Biên độ biến động: <strong id="print-q1-fuel-step" class="text-slate-950 font-bold">±1.000 đ/lít</strong></div>
                             <div>Tỷ lệ điều chỉnh: <strong id="print-q1-fuel-ratio" class="text-slate-950 font-bold">±3.5% cước</strong></div>
@@ -154,11 +154,11 @@
                     </div>
 
                     <!-- 6. Ghi Chú & Điều Khoản (Notes) -->
-                    <div class="space-y-1 pt-0.5 text-xs text-slate-800">
+                    <div class="space-y-1.5 pt-1 text-xs text-slate-800">
                         <h5 class="font-bold uppercase text-slate-900 tracking-wider text-[11px] flex items-center gap-1">
                             <span>* ĐIỀU KHOẢN & QUY ĐỊNH DỊCH VỤ VẬN TẢI:</span>
                         </h5>
-                        <div class="bg-white p-2.5 border border-slate-400 space-y-0.5 whitespace-pre-line leading-relaxed text-slate-800 font-sans text-xs" id="print-q1-notes-content">
+                        <div class="bg-slate-50/70 p-3 border border-slate-300 rounded space-y-0.5 whitespace-pre-line leading-relaxed text-slate-700 font-sans text-xs" id="print-q1-notes-content">
 1. Đơn giá trên chưa bao gồm thuế giá trị gia tăng (VAT 8% / 10%). Đã bao gồm chi phí nhiên liệu, lương lái xe và phí cầu đường BOT.
 2. Chưa bao gồm phí nâng hạ cont tại cảng/ICD và phí bốc xếp hàng hóa tại kho của Quý khách hàng.
 3. Thời gian lưu xe (Free-time): Miễn phí 12 giờ đầu kể từ khi xe đến kho; Phí neo tính sau 12h: Xe đầu kéo 1.500.000 VNĐ/đêm, Rơ-moóc 1.000.000 VNĐ/đêm.
@@ -168,23 +168,27 @@
                     </div>
 
                     <!-- 7. Lời Kết & Thông Tin Hotline -->
-                    <div class="text-[11px] sm:text-[11.5px] space-y-0.5 text-slate-700 pt-0.5">
+                    <div class="text-[11px] space-y-0.5 text-slate-600 pt-1">
                         <p>Rất mong nhận được sự quan tâm và cơ hội hợp tác lâu dài cùng Quý Khách Hàng.</p>
-                        <p class="font-bold text-slate-900">Hotline: <span class="text-teal-800 font-black">0965 559 561</span> – Phòng Kinh Doanh & Điều Vận • Email: <span class="text-teal-800 font-semibold">phongkinhdoanh.tvl@trienvo.com</span></p>
+                        <p class="font-medium text-slate-800">Hotline: <strong class="text-teal-800 font-bold">0965 559 561</strong> – Phòng Kinh Doanh & Điều Vận • Email: <strong class="text-teal-800 font-semibold">phongkinhdoanh.tvl@trienvo.com</strong></p>
                     </div>
 
                     <!-- 8. Chữ Ký Xác Nhận 2 Bên -->
-                    <div class="grid grid-cols-2 gap-6 pt-3 text-center text-xs">
-                        <div class="space-y-1">
-                            <p class="font-bold uppercase text-slate-900">ĐẠI DIỆN KHÁCH HÀNG</p>
-                            <p class="italic text-[10.5px] text-slate-500">(Ký, ghi rõ họ tên & đóng dấu)</p>
-                            <div class="h-16"></div>
-                            <p class="font-bold text-slate-900" id="print-q1-sign-customer">Đại diện khách hàng</p>
+                    <div class="grid grid-cols-2 gap-8 pt-6 pb-2 text-center text-xs">
+                        <div class="space-y-1 flex flex-col justify-between">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">ĐẠI DIỆN KHÁCH HÀNG</p>
+                                <p class="italic text-[10.5px] text-slate-500">(Ký, ghi rõ họ tên & đóng dấu)</p>
+                            </div>
+                            <div class="h-20"></div>
+                            <p class="font-bold text-slate-900 uppercase" id="print-q1-sign-customer">Đại diện khách hàng</p>
                         </div>
-                        <div class="space-y-1">
-                            <p class="font-bold uppercase text-slate-900 print-comp-name">CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ</p>
-                            <p class="italic text-[10.5px] text-slate-500">(Ký, ghi rõ họ tên & đóng dấu)</p>
-                            <div class="h-16"></div>
+                        <div class="space-y-1 flex flex-col justify-between">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900 print-comp-name">CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ</p>
+                                <p class="italic text-[10.5px] text-slate-500">(Ký, ghi rõ họ tên & đóng dấu)</p>
+                            </div>
+                            <div class="h-20"></div>
                             <p class="font-bold text-slate-900 uppercase">GIÁM ĐỐC / TRƯỞNG PHÒNG KINH DOANH</p>
                         </div>
                     </div>

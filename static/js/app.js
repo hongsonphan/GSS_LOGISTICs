@@ -6331,7 +6331,7 @@ function switchQuotationPrintTemplate(templateType) {
 
 function printQuotationVoucher() {
     if (typeof setDynamicPrintPageStyle === 'function') {
-        setDynamicPrintPageStyle('@page { size: A4 portrait; margin: 6mm 8mm; }');
+        setDynamicPrintPageStyle('@page { size: A4 portrait; margin: 12mm 15mm 12mm 16mm; }');
     }
     document.body.classList.add('is-printing-quotation');
     document.body.classList.remove('is-printing-voucher', 'is-printing-report');
@@ -10582,7 +10582,7 @@ function setVoucherPrintMode(mode = 'dual') {
     }
 
     // Thiết lập khổ in chuẩn A4 dọc
-    setDynamicPrintPageStyle(mode === 'dual' ? '@page { size: A4 portrait; margin: 4mm 6mm; }' : '@page { size: A4 portrait; margin: 8mm 10mm; }');
+    setDynamicPrintPageStyle(mode === 'dual' ? '@page { size: A4 portrait; margin: 8mm 10mm; }' : '@page { size: A4 portrait; margin: 15mm 18mm; }');
 }
 
 async function openCashVoucherModal(txDataOrId) {

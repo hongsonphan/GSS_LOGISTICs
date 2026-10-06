@@ -2,18 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [2.9.4] - 2026-10-06 (Khắc Phục Dứt Điểm Lệch Phải Trang In: Khử Flex Sidebar Khi Print, Căn Giữa Chuẩn WYSIWYG A4)
+## [2.9.4] - 2026-10-06 (Khắc Phục Dứt Điểm Lệch Phải & Chuẩn Hoá Thẩm Mỹ Lề Trang In A4 Doanh Nghiệp)
 
 ### 1. Khắc Phục Lỗi Lệch Phải Khi In Ấn (Fix Print Right-Shift Layout Bug):
-- **Nguyên nhân gốc rễ:** Thẻ `<body>` có thuộc tính `class="flex h-screen"`. Khi in, `visibility: hidden` trên toàn trang chỉ ẩn nội dung chứ không loại bỏ phần tử thanh điều hướng trái (`#sidebar` 256px) khỏi dòng chảy flexbox layout, khiến toàn bộ modal in bị đẩy lệch sang phải 256px tạo khoảng trắng lớn ở mép trái giấy in A4. Đồng thời selector cũ `#modal-... div` ép 100% độ rộng lên tất cả các thẻ con làm vỡ bảng biểu, header và cột chữ ký.
+- **Nguyên nhân gốc rễ:** Thẻ `<body>` có thuộc tính `class="flex h-screen"`. Khi in, `visibility: hidden` trên toàn trang chỉ ẩn nội dung chứ không loại bỏ phần tử thanh điều hướng trái (`#sidebar` 256px) khỏi dòng chảy flexbox layout, khiến toàn bộ modal in bị đẩy lệch sang phải 256px tạo khoảng trắng lớn ở mép trái giấy in A4.
 - **Giải pháp triệt để:**
   * Reset `html, body` trong `@media print` sang `display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important;`.
   * Thiết lập `body > * { display: none !important; }` để loại bỏ 100% Sidebar, Main App, Toast và các modal khỏi layout in.
   * Chỉ cho phép duy nhất modal đang in hiển thị dạng `display: block !important;` xuất phát từ toạ độ (0, 0) của trang giấy.
-  * Reset chính xác 2 cấp khung bọc trung gian của modal (dialog box và scroll wrapper) thành block trong suốt không đệm (`padding: 0 !important; margin: 0 !important;`), không flexbox căn lệch tâm.
-  * Bảo toàn 100% cấu trúc layout nội bộ (`grid-cols-5`, `flex justify-between`, table borders) của Phiếu Thu/Chi (`#cash-voucher-printable-area`), Báo Giá Cước (`#quotation-printable-area`) và Báo Cáo Quản Trị (`#report-printable-area`).
-  * Khổ in A4 được căn giữa hoàn hảo (`margin: 0 auto !important;`) với lề in chuẩn `@page { size: A4 portrait; margin: 6mm 8mm; }`, đạt chuẩn in thực tế "nhìn thấy sao in ra y như vậy" (WYSIWYG 1:1).
+  * Reset chính xác 2 cấp khung bọc trung gian của modal thành block trong suốt không đệm, không flexbox căn lệch tâm.
   * Bổ sung lắng nghe sự kiện `beforeprint` để tự động kích hoạt cờ in kể cả khi người dùng bấm phím tắt `Ctrl + P`.
+
+### 2. Chuẩn Hoá Thẩm Mỹ Lề Trang & Typography Bản In (A4 Enterprise Print Aesthetics):
+- **Thiết lập lề in chuẩn văn bản hành chính & hợp đồng doanh nghiệp:**
+  * Cấu hình `@page { size: A4 portrait; margin: 12mm 15mm 12mm 16mm; }` (Top: 12mm, Right: 15mm, Bottom: 12mm, Left: 16mm - chuẩn đóng gáy kẹp file).
+  * Vùng in `#quotation-printable-area` có đệm an toàn `padding: 4mm 6mm !important;`, tổng khoảng cách từ mép giấy đạt 16mm trên/dưới, 22mm lề trái, 21mm lề phải — tài liệu thoáng đãng, sang trọng, không bị dính sát mép cắt hay tràn mép giấy.
+  * Khung xem trước trên Web Modal được định dạng như một tờ giấy A4 thực tế (`max-w-[840px]`, `p-6 sm:p-12`, `bg-white shadow-xl rounded-sm`).
+- **Nâng cấp thẩm mỹ Bảng báo giá và Chữ ký:**
+  * Bảng cước sử dụng viền mỏng thanh lịch (`border: 1px solid #64748b`, cell `border: 1px solid #94a3b8`, cell padding `5px 8px`), thead xám bạc (`#f1f5f9`), chân bảng tổng tiền viền đôi sắc sảo.
+  * Hộp điều khoản vận tải bo góc tinh tế (`bg-slate-50/70`, `border: 1px solid #cbd5e1`, padding `8px 12px`, font chữ thoáng).
+  * Khung chữ ký 2 bên (Đại diện khách hàng & Triền Võ Logistics) căn đều 2 mép với khoảng trống ký cao 80px (`h-20`), tên công ty in hoa trang trọng ở chân chữ ký.
+  * Đồng bộ lề và tỷ lệ trang in cho Phiếu Thu/Chi (`#cash-voucher-printable-area`) và Báo Cáo Quản Trị (`#report-printable-area`).
 
 ---
 
