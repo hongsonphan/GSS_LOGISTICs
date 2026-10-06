@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.8.9] - 2026-10-06 (Chuẩn Hóa Tài Nguyên Tĩnh Favicon, Robots.txt & Tối Ưu Hệ Thống Toàn Diện)
+
+### 1. Chuẩn Hóa Tài Nguyên Tĩnh & SEO / Bot Crawl Protection:
+- **Tích hợp Favicon Doanh nghiệp:**
+  * Khởi tạo file biểu tượng chuẩn `static/favicon.ico` đa kích thước (32x32, 16x16) trích xuất từ logo chuẩn của thương hiệu.
+  * Khai báo thẻ link favicon trong `templates/base.html`.
+  * Bổ sung route điều hướng trực tiếp `/favicon.ico` trong `config/urls.py` chuyển hướng về `/static/favicon.ico`, giải quyết triệt để lỗi 404 trong nhật ký Gunicorn/Nginx.
+- **Bảo Vệ Hệ Thống Với Robots.txt:**
+  * Bổ sung `static/robots.txt` chặn các bot thu thập dữ liệu rà soát cổng `/admin/` và `/api/`.
+  * Định tuyến `/robots.txt` qua `RedirectView` tại `config/urls.py`.
+
+### 2. Kiểm Thử Toàn Diện & Trạng Thái Hệ Thống:
+- **86/86 Unit & System Tests PASSED 100%**.
+- **10/10 Critical User Journeys PASSED 100%**.
+- **12/12 API Table Endpoints phản hồi HTTP 200 OK**.
+- **JavaScript Syntax Check (`node -c`) đạt 100% không phát sinh lỗi.**
+
+---
+
 ## [2.8.8] - 2026-10-06 (Kích Hoạt Nút Thêm Tuyến Động & Chuẩn Hóa Bản In A4 1 Màu Không Bo Viền)
 
 ### 1. Kích Hoạt & Cố Định Nút "+ Thêm Tuyến Đường":

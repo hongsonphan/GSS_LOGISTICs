@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic.base import RedirectView
 
 from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view
 from apps.dispatch.api_views import (
@@ -58,6 +59,8 @@ from rest_framework_simplejwt.views import (
 from core.auth_views import CurrentUserAPIView
 
 urlpatterns = [
+    path('favicon.ico', RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
+    path('robots.txt', RedirectView.as_view(url='/static/robots.txt', permanent=True)),
     path('admin/', admin.site.urls),
     
     # Giao diện Web SPA & Xác thực
