@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.11] - 2026-10-06 (Chuẩn Hoá Tạo Lệnh Điều Động Sang Trang Riêng: Điều Vận | Tạo Lệnh Điều Động)
+
+### 1. Nâng Cấp Luồng Tạo Lệnh Điều Động Sang Trang Riêng Toàn Màn Hình:
+- **Tạo Lệnh Điều Động trang riêng (`openCreateTripPage`):** Nút **"Tạo Lệnh Điều Động"** tại phân hệ Điều vận và nút **"Điều Xe"** từ bảng danh sách Booking (`dispatchFromBooking`) chuyển hướng trực tiếp sang trang chuyên biệt toàn màn hình (`/dispatch/trips/new`) thay vì mở pop-up modal chật hẹp, mở rộng không gian nhập liệu với 6 khối chức năng hoàn chỉnh:
+  1. *Kế Thừa Thông Tin Từ Booking / Báo Giá* (Dropdown chọn Booking đang chờ điều xe để tự động điền 9 trường dữ liệu và kế thừa file đính kèm).
+  2. *Thông Tin Khách Hàng & Vận Đơn* (Khách hàng, Loại hình Nhập/Xuất/Nội địa, Loại Cont/Xe, Toggle Ghép 2 Cont 20ft Twin).
+  3. *Thông Tin Container & Chì* (Cont 1 và Cont 2 với số Cont, Seal, Booking, Trọng lượng VGM).
+  4. *Đính Kèm File Booking / Lệnh Cấp Rỗng* (Hỗ trợ kéo thả / chọn nhiều file Ảnh hoặc PDF, xem trước và xóa trực quan).
+  5. *Quản Lý Hạn Cut-Off, Cửa Dock & Hạn Free DEM/DET, Giám Định EIR* (Hạn Cắt CY/SI, Hóa đơn TM, Cửa xuất dock kho, Giờ hẹn đóng hàng chuẩn `HH:mm`, Hạn mượn vỏ DET, Giám định vỏ EIR).
+  6. *Lộ Trình Vận Chuyển 3 Điểm & Phân Công Tài Xế* (Nơi Lấy - Đóng/Trả - Nơi Hạ; Hỗ trợ Chạy thẳng 1 tài hoặc Chế độ Cắt Kéo / Drop & Hook 2 tài xế kèm tỷ lệ phân chia thù lao).
+- **Cấu trúc Breadcrumb Header tiêu chuẩn:** Trình bày `Điều vận | Tạo Lệnh Điều Động` (nhấp vào `Điều vận` hoặc nút `[<-]` để quay lại danh sách điều vận).
+- **Tự động sao chép Zalo & Điều hướng chi tiết chuyến:** Sau khi lưu lệnh thành công, hệ thống tự động sao chép nội dung Lệnh điều xe cho tài xế, mở Zalo tài xế nếu có SĐT, và chuyển hướng trực tiếp sang trang Chi tiết Chuyến xe vừa tạo (`viewTripDetail`).
+- **SPA Routing & Deep-link:** Bổ sung xử lý route `/dispatch/trips/new` (kèm param `?booking_id=...`) trong `resolveInitialRoute` và sự kiện `popstate` của trình duyệt.
+- **Tệp cập nhật:** [view_create_trip.html](file:///E:/Bim_Logistics/templates/views/view_create_trip.html), [view_dispatch.html](file:///E:/Bim_Logistics/templates/views/view_dispatch.html), [index.html](file:///E:/Bim_Logistics/templates/index.html), [dispatch.js](file:///E:/Bim_Logistics/static/js/modules/dispatch.js), [router.js](file:///E:/Bim_Logistics/static/js/modules/router.js), [reports.js](file:///E:/Bim_Logistics/static/js/modules/reports.js), [app.js](file:///E:/Bim_Logistics/static/js/app.js).
+
 ## [2.9.10] - 2026-10-06 (Chuẩn Hoá Tiếp Nhận Đơn / Booking Sang Trang Riêng: Sale & Booking | Tạo Booking)
 
 ### 1. Nâng Cấp Luồng Tiếp Nhận Đơn Hàng / Booking Sang Trang Riêng Toàn Màn Hình:

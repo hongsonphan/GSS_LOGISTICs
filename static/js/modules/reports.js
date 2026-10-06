@@ -2946,14 +2946,20 @@ function resolveInitialRoute() {
     const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     const hash = window.location.hash ? window.location.hash.replace('#', '').replace(/^\/+/, '') : '';
 
-    // 1. Kiểm tra deep-link chi tiết chuyến xe: /dispatch/trips/<hashid> hoặc legacy #/trip/<hashid>
+    // 1. Kiểm tra deep-link chi tiết chuyến xe: /dispatch/trips/<hashid> hoặc /dispatch/trips/new
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/) || (hash.startsWith('trip/') ? hash.match(/^trip\/([a-zA-Z0-9_-]+)/) : null);
     if (tripMatch && tripMatch[1]) {
         const tripIdentifier = tripMatch[1];
         switchTab('dieu-van', false);
-        viewTripDetail(tripIdentifier, false);
+        if (tripIdentifier === 'new') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('booking_id');
+            if (typeof openCreateTripPage === 'function') openCreateTripPage(bookingId, false);
+        } else {
+            viewTripDetail(tripIdentifier, false);
+        }
         if (window.history && window.history.replaceState) {
-            window.history.replaceState({ view: 'trip-detail', tripIdentifier }, '', `/dispatch/trips/${tripIdentifier}`);
+            window.history.replaceState({ view: tripIdentifier === 'new' ? 'create-trip' : 'trip-detail', tripIdentifier }, '', window.location.pathname + window.location.search);
         }
         return;
     }
@@ -2963,11 +2969,29 @@ function resolveInitialRoute() {
     if (quoteMatch && quoteMatch[1]) {
         const quoteIdentifier = quoteMatch[1];
         switchTab('kinh-doanh', false);
-        if (typeof viewQuotationDetail === 'function') {
-            viewQuotationDetail(quoteIdentifier, false);
+        if (quoteIdentifier === 'new') {
+            if (typeof openCreateQuotationPage === 'function') openCreateQuotationPage(false);
+        } else {
+            if (typeof viewQuotationDetail === 'function') viewQuotationDetail(quoteIdentifier, false);
         }
         if (window.history && window.history.replaceState) {
             window.history.replaceState({ view: 'quotation-detail', quoteIdentifier }, '', `/sales/quotations/${quoteIdentifier}`);
+        }
+        return;
+    }
+
+    // 1.2. Kiểm tra deep-link tiếp nhận đơn / booking trang riêng: /sales/bookings/<id>
+    const bookingMatch = pathname.match(/^\/sales\/bookings\/([a-zA-Z0-9_-]+)/) || (hash.startsWith('booking/') ? hash.match(/^booking\/([a-zA-Z0-9_-]+)/) : null);
+    if (bookingMatch && bookingMatch[1]) {
+        const bookingIdentifier = bookingMatch[1];
+        switchTab('kinh-doanh', false);
+        if (bookingIdentifier === 'new') {
+            if (typeof openCreateBookingPage === 'function') openCreateBookingPage(false);
+        } else {
+            if (typeof viewBookingDetail === 'function') viewBookingDetail(bookingIdentifier, false);
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'booking-detail', bookingIdentifier }, '', `/sales/bookings/${bookingIdentifier}`);
         }
         return;
     }
@@ -3006,14 +3030,49 @@ function resolveInitialRoute() {
 window.addEventListener('popstate', (event) => {
     const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/);
+    const quoteMatch = pathname.match(/^\/sales\/quotations\/([a-zA-Z0-9_-]+)/);
+    const bookingMatch = pathname.match(/^\/sales\/bookings\/([a-zA-Z0-9_-]+)/);
+
     if (tripMatch && tripMatch[1]) {
         switchTab('dieu-van', false);
-        viewTripDetail(tripMatch[1], false);
+        if (tripMatch[1] === 'new') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('booking_id');
+            if (typeof openCreateTripPage === 'function') openCreateTripPage(bookingId, false);
+        } else {
+            viewTripDetail(tripMatch[1], false);
+        }
+    } else if (quoteMatch && quoteMatch[1]) {
+        switchTab('kinh-doanh', false);
+        if (quoteMatch[1] === 'new') {
+            if (typeof openCreateQuotationPage === 'function') openCreateQuotationPage(false);
+        } else {
+            if (typeof viewQuotationDetail === 'function') viewQuotationDetail(quoteMatch[1], false);
+        }
+    } else if (bookingMatch && bookingMatch[1]) {
+        switchTab('kinh-doanh', false);
+        if (bookingMatch[1] === 'new') {
+            if (typeof openCreateBookingPage === 'function') openCreateBookingPage(false);
+        } else {
+            if (typeof viewBookingDetail === 'function') viewBookingDetail(bookingMatch[1], false);
+        }
     } else {
         const targetTab = ROUTE_TAB_MAP[pathname] || 'dashboard';
-        const detailView = document.getElementById('view-trip-detail');
-        if (detailView && !detailView.classList.contains('hidden-view')) {
-            detailView.classList.add('hidden-view');
+        const tripDetailView = document.getElementById('view-trip-detail');
+        if (tripDetailView && !tripDetailView.classList.contains('hidden-view')) {
+            tripDetailView.classList.add('hidden-view');
+        }
+        const createTripView = document.getElementById('view-create-trip');
+        if (createTripView && !createTripView.classList.contains('hidden-view')) {
+            createTripView.classList.add('hidden-view');
+        }
+        const quoteDetailView = document.getElementById('view-quotation-detail');
+        if (quoteDetailView && !quoteDetailView.classList.contains('hidden-view')) {
+            quoteDetailView.classList.add('hidden-view');
+        }
+        const bookingDetailView = document.getElementById('view-booking-detail');
+        if (bookingDetailView && !bookingDetailView.classList.contains('hidden-view')) {
+            bookingDetailView.classList.add('hidden-view');
         }
         switchTab(targetTab, false);
     }

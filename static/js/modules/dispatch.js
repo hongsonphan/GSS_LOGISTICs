@@ -3204,6 +3204,74 @@ function backToTrips() {
     }
 }
 
+function backToDispatch() {
+    const createTripView = document.getElementById('view-create-trip');
+    if (createTripView) createTripView.classList.add('hidden-view');
+    if (previousActiveTab && previousActiveTab !== 'create-trip') {
+        switchTab(previousActiveTab, true);
+    } else {
+        switchTab('dieu-van', true);
+    }
+}
+
+async function openCreateTripPage(bookingId = null, updateHistory = true) {
+    await loadMasterDataFormOptions();
+    populateMasterDataDropdowns();
+
+    const form = document.getElementById('form-create-trip');
+    if (form) form.reset();
+
+    clearBookingFileSelection();
+
+    const chk = document.getElementById('chk-drop-hook');
+    if (chk) {
+        chk.checked = false;
+        toggleDropHookMode(false);
+    }
+    const chkTwin = document.getElementById('chk-twin-cont');
+    if (chkTwin) {
+        chkTwin.checked = false;
+        toggleTwinContMode(false);
+    }
+
+    initDefaultDatesForCreateTrip();
+    onFreeDaysChange();
+
+    await loadActiveBookingsForModal(bookingId);
+
+    const inheritedBadge = document.getElementById('fullpage-trip-badge-inherited');
+    if (inheritedBadge) {
+        if (bookingId) {
+            inheritedBadge.classList.remove('hidden');
+        } else {
+            inheritedBadge.classList.add('hidden');
+        }
+    }
+
+    if (updateHistory && window.history && window.history.pushState) {
+        const tripNewPath = bookingId ? `/dispatch/trips/new?booking_id=${bookingId}` : '/dispatch/trips/new';
+        if (window.location.pathname !== '/dispatch/trips/new') {
+            window.history.pushState({ view: 'create-trip', bookingId }, '', tripNewPath);
+        }
+    }
+
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-create-trip') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const createTripView = document.getElementById('view-create-trip');
+    if (createTripView) createTripView.classList.remove('hidden-view');
+
+    const topbarTitleEl = document.getElementById('topbar-page-title');
+    if (topbarTitleEl) {
+        topbarTitleEl.innerText = 'Điều vận | Tạo Lệnh Điều Động';
+    }
+
+    initAllNumberInputs();
+}
+
 // --- XỬ LÝ ĐÍNH KÈM FILE BOOKING / LỆNH CẤP RỖNG (TRIP DISPATCH & SALE) ---
 let currentInheritedBookingFile = null;
 let tripBookingFilesList = [];
@@ -3790,7 +3858,10 @@ async function submitNewTrip() {
         const result = await res.json().catch(() => ({}));
         if (res.ok && result.success) {
             closeModal('modal-create-trip');
-            document.getElementById('form-create-trip').reset();
+            const createTripView = document.getElementById('view-create-trip');
+            if (createTripView) createTripView.classList.add('hidden-view');
+            const formCreateTrip = document.getElementById('form-create-trip');
+            if (formCreateTrip) formCreateTrip.reset();
             clearBookingFileSelection();
             loadTripsData();
 
@@ -3806,6 +3877,14 @@ async function submitNewTrip() {
                 window.open(`https://zalo.me/${cleanPhone}`, '_blank');
             } else {
                 showToast('success', result.message || 'Tạo lệnh điều động thành công!', 'Thành công');
+            }
+
+            // Chuyển hướng xem chi tiết chuyến xe vừa tạo
+            const targetTripCode = result.trip_code || result.id;
+            if (targetTripCode) {
+                viewTripDetail(targetTripCode, true);
+            } else {
+                backToDispatch();
             }
         } else {
             let errorMsg = result.message || result.error || result.detail;
@@ -3922,5 +4001,11 @@ async function submitOcrData() {
             showToast('danger', 'Lỗi khi gửi chứng từ hoàn tất.');
         }
     }
+}
+
+// Window Global Exports cho Điều Vận
+if (typeof window !== 'undefined') {
+    window.openCreateTripPage = openCreateTripPage;
+    window.backToDispatch = backToDispatch;
 }
 

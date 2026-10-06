@@ -4317,6 +4317,74 @@ function backToTrips() {
     }
 }
 
+function backToDispatch() {
+    const createTripView = document.getElementById('view-create-trip');
+    if (createTripView) createTripView.classList.add('hidden-view');
+    if (previousActiveTab && previousActiveTab !== 'create-trip') {
+        switchTab(previousActiveTab, true);
+    } else {
+        switchTab('dieu-van', true);
+    }
+}
+
+async function openCreateTripPage(bookingId = null, updateHistory = true) {
+    await loadMasterDataFormOptions();
+    populateMasterDataDropdowns();
+
+    const form = document.getElementById('form-create-trip');
+    if (form) form.reset();
+
+    clearBookingFileSelection();
+
+    const chk = document.getElementById('chk-drop-hook');
+    if (chk) {
+        chk.checked = false;
+        toggleDropHookMode(false);
+    }
+    const chkTwin = document.getElementById('chk-twin-cont');
+    if (chkTwin) {
+        chkTwin.checked = false;
+        toggleTwinContMode(false);
+    }
+
+    initDefaultDatesForCreateTrip();
+    onFreeDaysChange();
+
+    await loadActiveBookingsForModal(bookingId);
+
+    const inheritedBadge = document.getElementById('fullpage-trip-badge-inherited');
+    if (inheritedBadge) {
+        if (bookingId) {
+            inheritedBadge.classList.remove('hidden');
+        } else {
+            inheritedBadge.classList.add('hidden');
+        }
+    }
+
+    if (updateHistory && window.history && window.history.pushState) {
+        const tripNewPath = bookingId ? `/dispatch/trips/new?booking_id=${bookingId}` : '/dispatch/trips/new';
+        if (window.location.pathname !== '/dispatch/trips/new') {
+            window.history.pushState({ view: 'create-trip', bookingId }, '', tripNewPath);
+        }
+    }
+
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-create-trip') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const createTripView = document.getElementById('view-create-trip');
+    if (createTripView) createTripView.classList.remove('hidden-view');
+
+    const topbarTitleEl = document.getElementById('topbar-page-title');
+    if (topbarTitleEl) {
+        topbarTitleEl.innerText = 'Điều vận | Tạo Lệnh Điều Động';
+    }
+
+    initAllNumberInputs();
+}
+
 // --- XỬ LÝ ĐÍNH KÈM FILE BOOKING / LỆNH CẤP RỖNG (TRIP DISPATCH & SALE) ---
 let currentInheritedBookingFile = null;
 let tripBookingFilesList = [];
@@ -4903,7 +4971,10 @@ async function submitNewTrip() {
         const result = await res.json().catch(() => ({}));
         if (res.ok && result.success) {
             closeModal('modal-create-trip');
-            document.getElementById('form-create-trip').reset();
+            const createTripView = document.getElementById('view-create-trip');
+            if (createTripView) createTripView.classList.add('hidden-view');
+            const formCreateTrip = document.getElementById('form-create-trip');
+            if (formCreateTrip) formCreateTrip.reset();
             clearBookingFileSelection();
             loadTripsData();
 
@@ -4919,6 +4990,14 @@ async function submitNewTrip() {
                 window.open(`https://zalo.me/${cleanPhone}`, '_blank');
             } else {
                 showToast('success', result.message || 'Tạo lệnh điều động thành công!', 'Thành công');
+            }
+
+            // Chuyển hướng xem chi tiết chuyến xe vừa tạo
+            const targetTripCode = result.trip_code || result.id;
+            if (targetTripCode) {
+                viewTripDetail(targetTripCode, true);
+            } else {
+                backToDispatch();
             }
         } else {
             let errorMsg = result.message || result.error || result.detail;
@@ -9532,7 +9611,11 @@ function onBookingSelected(bookingId) {
 }
 
 async function dispatchFromBooking(bookingId) {
-    await openModal('modal-create-trip', bookingId);
+    if (typeof openCreateTripPage === 'function') {
+        await openCreateTripPage(bookingId, true);
+    } else {
+        await openModal('modal-create-trip', bookingId);
+    }
 }
 
 async function openModal(id, extraParam = null) { 
@@ -17810,14 +17893,20 @@ function resolveInitialRoute() {
     const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     const hash = window.location.hash ? window.location.hash.replace('#', '').replace(/^\/+/, '') : '';
 
-    // 1. Kiểm tra deep-link chi tiết chuyến xe: /dispatch/trips/<hashid> hoặc legacy #/trip/<hashid>
+    // 1. Kiểm tra deep-link chi tiết chuyến xe: /dispatch/trips/<hashid> hoặc /dispatch/trips/new
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/) || (hash.startsWith('trip/') ? hash.match(/^trip\/([a-zA-Z0-9_-]+)/) : null);
     if (tripMatch && tripMatch[1]) {
         const tripIdentifier = tripMatch[1];
         switchTab('dieu-van', false);
-        viewTripDetail(tripIdentifier, false);
+        if (tripIdentifier === 'new') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('booking_id');
+            if (typeof openCreateTripPage === 'function') openCreateTripPage(bookingId, false);
+        } else {
+            viewTripDetail(tripIdentifier, false);
+        }
         if (window.history && window.history.replaceState) {
-            window.history.replaceState({ view: 'trip-detail', tripIdentifier }, '', `/dispatch/trips/${tripIdentifier}`);
+            window.history.replaceState({ view: tripIdentifier === 'new' ? 'create-trip' : 'trip-detail', tripIdentifier }, '', window.location.pathname + window.location.search);
         }
         return;
     }
@@ -17893,7 +17982,13 @@ window.addEventListener('popstate', (event) => {
 
     if (tripMatch && tripMatch[1]) {
         switchTab('dieu-van', false);
-        viewTripDetail(tripMatch[1], false);
+        if (tripMatch[1] === 'new') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('booking_id');
+            if (typeof openCreateTripPage === 'function') openCreateTripPage(bookingId, false);
+        } else {
+            viewTripDetail(tripMatch[1], false);
+        }
     } else if (quoteMatch && quoteMatch[1]) {
         switchTab('kinh-doanh', false);
         if (quoteMatch[1] === 'new') {
@@ -17913,6 +18008,10 @@ window.addEventListener('popstate', (event) => {
         const tripDetailView = document.getElementById('view-trip-detail');
         if (tripDetailView && !tripDetailView.classList.contains('hidden-view')) {
             tripDetailView.classList.add('hidden-view');
+        }
+        const createTripView = document.getElementById('view-create-trip');
+        if (createTripView && !createTripView.classList.contains('hidden-view')) {
+            createTripView.classList.add('hidden-view');
         }
         const quoteDetailView = document.getElementById('view-quotation-detail');
         if (quoteDetailView && !quoteDetailView.classList.contains('hidden-view')) {
@@ -19522,4 +19621,6 @@ window.openSimTripDetailsModal = typeof openSimTripDetailsModal !== 'undefined' 
 window.closeSimTripDetailsModal = typeof closeSimTripDetailsModal !== 'undefined' ? closeSimTripDetailsModal : undefined;
 window.toggleSimTimelineAccordion = typeof toggleSimTimelineAccordion !== 'undefined' ? toggleSimTimelineAccordion : undefined;
 window.toggleSimExpenseAccordion = typeof toggleSimExpenseAccordion !== 'undefined' ? toggleSimExpenseAccordion : undefined;
+window.openCreateTripPage = typeof openCreateTripPage !== 'undefined' ? openCreateTripPage : undefined;
+window.backToDispatch = typeof backToDispatch !== 'undefined' ? backToDispatch : undefined;
 

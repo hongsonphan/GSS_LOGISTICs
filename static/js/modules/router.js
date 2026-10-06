@@ -699,7 +699,11 @@ function onBookingSelected(bookingId) {
 }
 
 async function dispatchFromBooking(bookingId) {
-    await openModal('modal-create-trip', bookingId);
+    if (typeof openCreateTripPage === 'function') {
+        await openCreateTripPage(bookingId, true);
+    } else {
+        await openModal('modal-create-trip', bookingId);
+    }
 }
 
 async function openModal(id, extraParam = null) { 
