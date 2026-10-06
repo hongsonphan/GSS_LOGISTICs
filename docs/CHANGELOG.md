@@ -18,6 +18,7 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * `master_data.js`: Quản lý danh mục biểu phí lương, phụ cấp, cự ly tuyến đường và khách hàng.
   * `router.js`: Điều hướng Clean Semantic URL và quản lý đóng mở modal.
 - Khắc phục triệt để lỗi ngoại lệ `ReferenceError` ngắt quãng JavaScript khi gọi inline events.
+- **Tối ưu UI màn hình Quyết Toán Gom Chuyến (`quyet-toan`):** Ẩn cụm nút chọn kỳ toàn cục trên Topbar khi người dùng chuyển sang màn hình Quyết toán chuyến xe (vì giao diện phân hệ này đã tích hợp đầy đủ bộ lọc thời gian chuyên biệt Từ ngày - Đến ngày kèm các preset nhanh).
 
 ### 2. Kiểm Thử & Triển Khai:
 - **86/86 Unit Tests PASSED 100%**.

@@ -112,10 +112,14 @@ function switchTab(tabId, updateHistory = true) {
         topbarTitleEl.innerText = TAB_NAME_MAP[tabId] || 'Dashboard Tổng quan';
     }
 
-    // Cụm Bộ Chọn Kỳ Toàn Cục luôn hiển thị trên Topbar
+    // Cụm Bộ Chọn Kỳ Toàn Cục trên Topbar: Ẩn tại màn hình Quyết Toán (đã có bộ lọc từ ngày - đến ngày chuyên biệt)
     const dashboardActionsEl = document.getElementById('topbar-dashboard-actions');
     if (dashboardActionsEl) {
-        dashboardActionsEl.classList.remove('hidden');
+        if (tabId === 'quyet-toan') {
+            dashboardActionsEl.classList.add('hidden');
+        } else {
+            dashboardActionsEl.classList.remove('hidden');
+        }
     }
 
     // Nút Ẩn / Hiện Biểu Đồ chỉ hiển thị ở Dashboard
