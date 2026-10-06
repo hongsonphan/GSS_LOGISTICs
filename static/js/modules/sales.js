@@ -1508,36 +1508,40 @@ function renderBookingsTable(bookings) {
         tr.innerHTML = `
             <td class="p-3.5 whitespace-nowrap">
                 <div class="flex items-center flex-wrap gap-1">
-                    <span class="font-black text-slate-900 font-heading font-mono text-sm">${escapeHtml(formatCodeCompact(b.booking_code))}</span>
+                    <span class="font-bold text-slate-900 font-heading font-mono text-sm">${escapeHtml(formatCodeCompact(b.booking_code))}</span>
                     ${urgentBadge}
                     ${dropHookBadge}
                 </div>
             </td>
             <td class="p-3.5 whitespace-nowrap">
-                <div class="text-xs text-slate-700 font-semibold flex items-center gap-1">
-                    <i class="ph-bold ph-calendar-blank text-slate-400"></i> ${b.loading_date} · ${b.loading_time}
+                <div class="flex flex-col">
+                    <p class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                        <i class="ph-bold ph-calendar-blank text-slate-400 text-xs shrink-0"></i>
+                        <span>${b.loading_date}</span>
+                    </p>
+                    ${b.loading_time ? `<p class="text-xs text-slate-500 font-medium mt-0.5 pl-4">${b.loading_time}</p>` : ''}
                 </div>
             </td>
             <td class="p-3.5">
-                <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${b.customer}">${b.customer}</p>
-                <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
-                    <span class="px-1.5 py-0.5 rounded font-bold border text-[11px] ${svcCls}">${svcTag}</span>
-                    <span class="font-bold text-teal-800 truncate max-w-[120px]">${b.shipping_line}</span>
+                <p class="font-bold text-slate-900 text-sm truncate max-w-[200px]" title="${escapeHtml(b.customer)}">${escapeHtml(b.customer)}</p>
+                <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 truncate">
+                    <span class="font-bold text-teal-800">${svcTag}</span>
+                    ${b.shipping_line ? `<span class="text-slate-300">·</span><span class="font-medium text-slate-600 truncate max-w-[120px]">${escapeHtml(b.shipping_line)}</span>` : ''}
                 </p>
             </td>
-            <td class="p-3.5 font-mono text-sm">
-                <p class="font-black text-indigo-900">${b.booking_number || '-'}</p>
-                <p class="text-xs text-slate-400 font-normal truncate max-w-[120px]">${b.vessel_voyage || '-'}</p>
+            <td class="p-3.5 font-mono">
+                <p class="font-bold text-indigo-950 text-sm truncate max-w-[150px] font-mono">${escapeHtml(b.booking_number || '-')}</p>
+                <p class="text-xs text-slate-500 font-medium truncate max-w-[150px] mt-0.5 font-sans">${escapeHtml(b.vessel_voyage || '-')}</p>
             </td>
             <td class="p-3.5">
-                <div class="flex items-center gap-1.5">
-                    <span class="px-1.5 py-0.5 rounded font-black text-xs bg-slate-100 text-slate-800 border border-slate-200 uppercase">${b.container_size}</span>
-                    <span class="text-sm font-semibold text-slate-800 truncate max-w-[130px]" title="${b.commodity || 'Hàng hóa'}">${b.commodity || 'Hàng hóa'}</span>
+                <div class="flex flex-col">
+                    <p class="font-bold text-slate-900 text-sm">Cont ${escapeHtml(b.container_size)}</p>
+                    <p class="text-xs text-slate-500 font-medium truncate max-w-[140px] mt-0.5" title="${escapeHtml(b.commodity || 'Hàng hóa')}">${escapeHtml(b.commodity || 'Hàng hóa')}</p>
                 </div>
             </td>
             <td class="p-3.5">
                 <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="font-black text-slate-900 text-sm tabular-nums">${b.progress}</span>
+                    <span class="font-bold text-slate-900 text-sm tabular-nums">${b.progress}</span>
                     <div class="w-12 bg-slate-200 rounded-full h-1.5 overflow-hidden">
                         <div class="bg-teal-600 h-1.5 rounded-full" style="width: ${b.progress_percent}%"></div>
                     </div>
@@ -1545,15 +1549,15 @@ function renderBookingsTable(bookings) {
                 <div>${statusBadge}</div>
             </td>
             <td class="p-3.5">
-                <div class="text-[13px] leading-snug space-y-0.5 max-w-[220px]">
+                <div class="text-sm leading-snug space-y-0.5 max-w-[230px]">
                     <p class="truncate text-slate-700"><strong class="text-teal-700 font-bold">1. Lấy:</strong> ${cleanLoc(b.pickup)}</p>
-                    <p class="truncate text-slate-900 font-semibold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
+                    <p class="truncate text-slate-900 font-bold"><strong class="text-slate-900 font-bold">2. Kho:</strong> ${cleanLoc(b.delivery)}</p>
                     ${b.dropoff ? `<p class="truncate text-slate-700"><strong class="text-indigo-700 font-bold">3. Hạ:</strong> ${cleanLoc(b.dropoff)}</p>` : ''}
                 </div>
             </td>
-            <td class="p-3.5 font-mono text-sm">
-                <p class="font-bold text-rose-700">${b.closing_time || '-'}</p>
-                ${b.si_cutoff ? `<p class="text-[11px] text-slate-400 mt-0.5 font-sans">SI: ${b.si_cutoff}</p>` : ''}
+            <td class="p-3.5 font-mono">
+                <p class="font-bold text-rose-700 text-sm">${b.closing_time || '-'}</p>
+                ${b.si_cutoff ? `<p class="text-xs text-slate-500 mt-0.5 font-sans">SI: ${b.si_cutoff}</p>` : ''}
             </td>
             <td class="p-3.5 text-right font-black text-slate-900 text-sm tabular-nums">
                 ${new Intl.NumberFormat('vi-VN').format(b.price)} đ

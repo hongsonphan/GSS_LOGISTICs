@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.5] - 2026-10-06 (Đồng Bộ Font Size Bảng Dữ Liệu Theo [TÊN KHÁCH HÀNG] & Subtext Giảm 1 Size)
+
+### 1. Đồng Bộ Phân Cấp Typography Cột Bảng (Table Typography Alignment):
+- **Quy chuẩn kích thước văn bản chính (Primary Text):** Toàn bộ nội dung chính của các cột trong bảng Đơn hàng Booking (`sales-bookings-table`) được chuẩn hoá đồng bộ theo kích thước của cột `[TÊN KHÁCH HÀNG]` (`text-sm` font-bold/font-semibold, 14px):
+  * **Cột Lịch Đóng:** Ngày hẹn nâng từ `text-xs` lên `text-sm font-bold text-slate-900`.
+  * **Cột Mã Đơn:** Mã đơn `text-sm font-bold text-slate-900 font-mono`.
+  * **Cột Số Booking:** Số booking `text-sm font-bold text-indigo-950 font-mono`.
+  * **Cột Loại Cont & Hàng:** Loại cont `text-sm font-bold text-slate-900` (`Cont 40HC` / `Cont 20GP`), bỏ badge bao bọc.
+  * **Cột Tiến Độ Điều Xe:** Tỷ lệ số lượng cont `text-sm font-bold text-slate-900 tabular-nums`.
+  * **Cột Lộ Trình Vận Chuyển:** Địa điểm Lấy/Kho/Hạ nâng lên `text-sm leading-snug`.
+  * **Cột Hạn Cắt Máng (CY):** Giờ closing time `text-sm font-bold text-rose-700`.
+  * **Cột Cước Thỏa Thuận:** Đơn giá cước `text-sm font-black text-slate-900 tabular-nums`.
+- **Quy chuẩn thông tin phụ (Subtext):** Nhỏ hơn đúng 1 size (`text-xs`, 12px, font-medium):
+  * Giờ đóng hàng (`loading_time`): `text-xs text-slate-500 font-medium`.
+  * Dịch vụ & Hãng tàu (`svcTag`, `shipping_line`): `text-xs text-slate-500 font-medium`.
+  * Tàu/Chuyến (`vessel_voyage`): `text-xs text-slate-500 font-medium`.
+  * Tên mặt hàng (`commodity`): `text-xs text-slate-500 font-medium`.
+  * Trạng thái điều vận: `text-xs font-semibold`.
+  * Hạn SI (`si_cutoff`): `text-xs text-slate-500`.
+
+### 2. Đồng Bộ Hệ Thống & Kiểm Thử:
+- Đồng bộ hoàn chỉnh giữa `static/js/modules/sales.js` và `static/js/app.js`.
+- Đảm bảo 100% cú pháp JS không lỗi (`node -c`).
+- 86/86 Unit & System Tests PASSED 100%.
+
+---
+
 ## [2.9.4] - 2026-10-06 (Khắc Phục Dứt Điểm Lệch Phải & Chuẩn Hoá Thẩm Mỹ Lề Trang In A4 Doanh Nghiệp)
 
 ### 1. Khắc Phục Lỗi Lệch Phải Khi In Ấn (Fix Print Right-Shift Layout Bug):
