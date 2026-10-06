@@ -2,6 +2,13 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.6] - 2026-10-06 (Chuẩn Hoá Ô Ngày Giờ Bảng Dữ Liệu Dạng Plain Text Không Dùng Badge)
+
+### 1. Tối Giản Trình Bày Ô Ngày Giờ (Clean Datetime Cell Formatting):
+- **Loại bỏ badge / pill wrapper:** Bỏ hoàn toàn thẻ badge (`bg-teal-100/80 text-teal-800 rounded font-bold`) bao quanh phần giờ tại các ô hiển thị ngày giờ trong bảng điều phối xe (`renderTripsTable`) và bảng booking.
+- **Quy chuẩn định dạng text sạch:** Trình bày liền mạch theo chuẩn `Ngày | Giờ` (ví dụ: `06/10/2026 | 09:00`), sử dụng ký tự phân cách pipe mờ (`<span class="text-slate-300">|</span>`) và giữ icon lịch `ph-calendar`, tăng tính thanh thoát, chuyên nghiệp và đồng bộ thị giác.
+- **Tệp cập nhật:** [dispatch.js](file:///E:/Bim_Logistics/static/js/modules/dispatch.js), [app.js](file:///E:/Bim_Logistics/static/js/app.js).
+
 ## [2.9.5] - 2026-10-06 (Đồng Bộ Font Size Bảng Dữ Liệu Theo [TÊN KHÁCH HÀNG] & Subtext Giảm 1 Size)
 
 ### 1. Đồng Bộ Phân Cấp Typography Cột Bảng (Table Typography Alignment):
