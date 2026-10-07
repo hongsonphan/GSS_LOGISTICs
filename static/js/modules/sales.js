@@ -223,7 +223,7 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
     if (!quoteId) {
         if (idInput) idInput.value = '';
         if (titleEl) titleEl.innerText = 'Thêm Báo Giá Tuyến Cước Mới';
-        if (btnText) btnText.innerText = 'Lưu Báo Giá';
+        if (btnText) btnText.innerText = 'Lưu';
 
         const methodEl = document.getElementById('quote-pricing-method');
         if (methodEl) methodEl.value = 'MULTI_ROUTE';
@@ -254,7 +254,7 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
     } else {
         if (idInput) idInput.value = quoteId;
         if (titleEl) titleEl.innerText = isReadOnly ? 'Đang tải chi tiết báo giá...' : 'Đang tải thông tin báo giá...';
-        if (btnText) btnText.innerText = 'Cập Nhật Báo Giá';
+        if (btnText) btnText.innerText = 'Lưu';
 
         try {
             const res = await fetchWithAuth(`/api/quotations/${quoteId}/`);
@@ -1435,7 +1435,7 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
         currentEditingBookingId = null;
         if (idInput) idInput.value = '';
         if (titleEl) titleEl.innerText = 'Tiếp Nhận Đơn Đặt Hàng / Booking Mới Từ Khách Hàng';
-        if (btnText) btnText.innerText = 'Tiếp Nhận Đơn Hàng';
+        if (btnText) btnText.innerText = 'Lưu';
         const dateInput = document.getElementById('booking-loading-date');
         if (dateInput) dateInput.value = todayStr;
         const timeInput = document.getElementById('booking-loading-time');
@@ -1464,7 +1464,7 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
         currentEditingBookingId = bookingId;
         if (idInput) idInput.value = bookingId;
         if (titleEl) titleEl.innerText = isReadOnly ? 'Đang tải chi tiết đơn hàng / booking...' : 'Đang tải thông tin đơn hàng / booking...';
-        if (btnText) btnText.innerText = 'Cập Nhật Đơn Hàng';
+        if (btnText) btnText.innerText = 'Lưu';
 
         try {
             const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);
@@ -1963,7 +1963,7 @@ async function openCreateBookingPage(updateHistory = true) {
     const typeBadge = document.getElementById('fullpage-booking-type-badge');
     const headerCust = document.getElementById('fullpage-booking-header-customer');
     const headerDate = document.getElementById('fullpage-booking-header-date');
-    const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
+    const saveBtnText = document.getElementById('btn-fullpage-save-booking-bottom-text') || document.getElementById('btn-fullpage-save-booking-text');
     const tripsSection = document.getElementById('fullpage-booking-trips-section');
 
     if (idInput) idInput.value = '';
@@ -1976,7 +1976,7 @@ async function openCreateBookingPage(updateHistory = true) {
     if (headerCust) headerCust.innerText = 'Chưa chọn khách hàng';
     const todayStr = new Date().toISOString().split('T')[0];
     if (headerDate) headerDate.innerText = `Hẹn đóng: ${new Date().toLocaleDateString('vi-VN')}`;
-    if (saveBtnText) saveBtnText.innerText = 'Tiếp Nhận Đơn Hàng';
+    if (saveBtnText) saveBtnText.innerText = 'Lưu';
     if (tripsSection) tripsSection.classList.add('hidden');
 
     const dateInput = document.getElementById('fullpage-booking-loading-date');
@@ -2042,11 +2042,11 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
     const typeBadge = document.getElementById('fullpage-booking-type-badge');
     const headerCust = document.getElementById('fullpage-booking-header-customer');
     const headerDate = document.getElementById('fullpage-booking-header-date');
-    const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
+    const saveBtnText = document.getElementById('btn-fullpage-save-booking-bottom-text') || document.getElementById('btn-fullpage-save-booking-text');
     const tripsSection = document.getElementById('fullpage-booking-trips-section');
 
     if (titleCodeEl) titleCodeEl.innerText = 'Đang tải...';
-    if (saveBtnText) saveBtnText.innerText = 'Cập Nhật Đơn Hàng';
+    if (saveBtnText) saveBtnText.innerText = 'Lưu';
 
     try {
         const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);

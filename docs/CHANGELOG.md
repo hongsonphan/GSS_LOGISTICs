@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.25] - 2026-10-07 (Chuẩn Hóa Nhãn Nút Bấm CRUD & Loại Bỏ Nút Sao Chép Link)
+
+### 1. Chuẩn Hóa Nhãn Nút CRUD Toàn Hệ Thống (Standardized Action Buttons):
+- **Quy chuẩn 4 nhãn hành động cốt lõi:**
+  * **"Xem & In"**: Thống nhất dùng "Xem & In" (loại bỏ hậu tố "Báo Giá", "A4" như trước: "Xem & In Báo Giá (A4)" ➔ "Xem & In").
+  * **"Tạo mới"**: Chuẩn hóa nút khởi tạo, thêm dòng hoặc mở trang tạo mới:
+    - Nút danh sách: `Tạo Báo Giá Mới` ➔ `Tạo mới`, `Tiếp Nhận Đơn / Booking Mới` ➔ `Tạo mới`.
+    - Nút trong bảng: `+ Thêm Tuyến Đường` ➔ `+ Tạo mới`.
+  * **"Lưu"**: Thống nhất nhãn nút submit/lưu thông tin (thay thế toàn bộ "Lưu Báo Giá", "Tiếp Nhận Đơn Hàng", "Cập Nhật Đơn Hàng" ➔ `Lưu`).
+  * **"Hiệu chỉnh"**: Chuẩn hóa hành động chỉnh sửa hồ sơ/bản ghi khi cần thiết.
+- **Áp dụng đồng bộ:** Cập nhật trên cả giao diện toàn màn hình (`view_quotation_detail.html`, `view_booking_detail.html`, `view_sales.html`) và các Modal popups (`modal_quotation.html`, `modal_booking.html`) cùng logic JavaScript (`app.js`, `modules/sales.js`).
+
+### 2. Loại Bỏ Nút "Sao Chép Link":
+- Loại bỏ hoàn toàn nút `Sao Chép Link` tại Footer Action Bar của form Báo Giá (`view_quotation_detail.html`) và Đơn Hàng/Booking (`view_booking_detail.html`), giúp thanh thao tác dưới chân form gọn gàng, chỉ tập trung vào 2 thao tác trọng tâm: **Xem & In** và **Lưu**.
+
+---
+
 ## [2.9.24] - 2026-10-07 (Tự Động Cập Nhật Ngày Hiệu Lực Hoặc Auto 30 Ngày Vào Bản In Báo Giá)
 
 ### 1. Đồng Bộ Hóa Ngày Hiệu Lực (Validity Synchronization):

@@ -6097,7 +6097,7 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
     if (!quoteId) {
         if (idInput) idInput.value = '';
         if (titleEl) titleEl.innerText = 'Thêm Báo Giá Tuyến Cước Mới';
-        if (btnText) btnText.innerText = 'Lưu Báo Giá';
+        if (btnText) btnText.innerText = 'Lưu';
 
         const methodEl = document.getElementById('quote-pricing-method');
         if (methodEl) methodEl.value = 'MULTI_ROUTE';
@@ -6128,7 +6128,7 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
     } else {
         if (idInput) idInput.value = quoteId;
         if (titleEl) titleEl.innerText = isReadOnly ? 'Đang tải chi tiết báo giá...' : 'Đang tải thông tin báo giá...';
-        if (btnText) btnText.innerText = 'Cập Nhật Báo Giá';
+        if (btnText) btnText.innerText = 'Lưu';
 
         try {
             const res = await fetchWithAuth(`/api/quotations/${quoteId}/`);
@@ -6718,7 +6718,7 @@ function backToQuotations() {
 function copyQuotationPageLink() {
     const quoteHash = document.getElementById('fullpage-quote-hashid')?.value || document.getElementById('fullpage-quote-id')?.value;
     if (!quoteHash) {
-        showToast('warning', 'Báo giá chưa được lưu để lấy liên kết chia sẻ. Vui lòng bấm "Lưu Báo Giá" trước!', 'Cảnh Báo');
+        showToast('warning', 'Báo giá chưa được lưu để lấy liên kết chia sẻ. Vui lòng bấm "Lưu" trước!', 'Cảnh Báo');
         return;
     }
     const fullUrl = `${window.location.origin}/sales/quotations/${quoteHash}`;
@@ -7214,7 +7214,7 @@ async function openCreateBookingPage(updateHistory = true) {
         const typeBadge = document.getElementById('fullpage-booking-type-badge');
         const headerCust = document.getElementById('fullpage-booking-header-customer');
         const headerDate = document.getElementById('fullpage-booking-header-date');
-        const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
+        const saveBtnText = document.getElementById('btn-fullpage-save-booking-bottom-text') || document.getElementById('btn-fullpage-save-booking-text');
         const tripsSection = document.getElementById('fullpage-booking-trips-section');
 
         currentActiveFullpageBooking = null;
@@ -7228,32 +7228,32 @@ async function openCreateBookingPage(updateHistory = true) {
         if (headerCust) headerCust.innerText = 'Chưa chọn khách hàng';
         const todayStr = new Date().toISOString().split('T')[0];
         if (headerDate) headerDate.innerText = `Hẹn đóng: ${new Date().toLocaleDateString('vi-VN')}`;
-        if (saveBtnText) saveBtnText.innerText = 'Tiếp Nhận Đơn Hàng';
+        if (saveBtnText) saveBtnText.innerText = 'Lưu';
         if (tripsSection) tripsSection.classList.add('hidden');
 
         const dateInput = document.getElementById('fullpage-booking-loading-date');
-        if (dateInput) dateInput.value = todayStr;
         const timeInput = document.getElementById('fullpage-booking-loading-time');
-        if (timeInput) timeInput.value = '08:00';
         const closingDateInput = document.getElementById('fullpage-booking-closing-date');
-        if (closingDateInput) closingDateInput.value = todayStr;
         const closingTimeValInput = document.getElementById('fullpage-booking-closing-time-val');
+        if (dateInput) dateInput.value = todayStr;
+        if (timeInput) timeInput.value = '08:00';
+        if (closingDateInput) closingDateInput.value = todayStr;
         if (closingTimeValInput) closingTimeValInput.value = '17:00';
         if (typeof syncFullpageBookingClosingTime === 'function') syncFullpageBookingClosingTime();
 
         const siDateInput = document.getElementById('fullpage-booking-si-date');
-        if (siDateInput) siDateInput.value = todayStr;
         const siTimeValInput = document.getElementById('fullpage-booking-si-time-val');
+        if (siDateInput) siDateInput.value = todayStr;
         if (siTimeValInput) siTimeValInput.value = '12:00';
         if (typeof syncFullpageBookingSiTime === 'function') syncFullpageBookingSiTime();
 
         const totalInput = document.getElementById('fullpage-booking-total-containers');
-        if (totalInput) totalInput.value = formatNumberVN(1);
         const detInput = document.getElementById('fullpage-booking-det');
-        if (detInput) detInput.value = formatNumberVN(7);
         const demInput = document.getElementById('fullpage-booking-dem');
-        if (demInput) demInput.value = formatNumberVN(7);
         const priceInput = document.getElementById('fullpage-booking-price');
+        if (totalInput) totalInput.value = formatNumberVN(1);
+        if (detInput) detInput.value = formatNumberVN(7);
+        if (demInput) demInput.value = formatNumberVN(7);
         if (priceInput) priceInput.value = formatNumberVN(4000000);
 
         if (typeof clearFullpageBookingFileSelection === 'function') clearFullpageBookingFileSelection();
@@ -7288,11 +7288,11 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
     const typeBadge = document.getElementById('fullpage-booking-type-badge');
     const headerCust = document.getElementById('fullpage-booking-header-customer');
     const headerDate = document.getElementById('fullpage-booking-header-date');
-    const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
+    const saveBtnText = document.getElementById('btn-fullpage-save-booking-bottom-text') || document.getElementById('btn-fullpage-save-booking-text');
     const tripsSection = document.getElementById('fullpage-booking-trips-section');
 
     if (titleCodeEl) titleCodeEl.innerText = 'Đang tải...';
-    if (saveBtnText) saveBtnText.innerText = 'Cập Nhật Đơn Hàng';
+    if (saveBtnText) saveBtnText.innerText = 'Lưu';
 
     try {
         const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);
@@ -8219,7 +8219,7 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
         currentEditingBookingId = null;
         if (idInput) idInput.value = '';
         if (titleEl) titleEl.innerText = 'Tiếp Nhận Đơn Đặt Hàng / Booking Mới Từ Khách Hàng';
-        if (btnText) btnText.innerText = 'Tiếp Nhận Đơn Hàng';
+        if (btnText) btnText.innerText = 'Lưu';
         const dateInput = document.getElementById('booking-loading-date');
         if (dateInput) dateInput.value = todayStr;
         const timeInput = document.getElementById('booking-loading-time');
@@ -8248,7 +8248,7 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
         currentEditingBookingId = bookingId;
         if (idInput) idInput.value = bookingId;
         if (titleEl) titleEl.innerText = isReadOnly ? 'Đang tải chi tiết đơn hàng / booking...' : 'Đang tải thông tin đơn hàng / booking...';
-        if (btnText) btnText.innerText = 'Cập Nhật Đơn Hàng';
+        if (btnText) btnText.innerText = 'Lưu';
 
         try {
             const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);
