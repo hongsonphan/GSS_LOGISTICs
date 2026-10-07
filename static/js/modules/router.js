@@ -649,7 +649,7 @@ function onBookingSelected(bookingId) {
     }
 
     const loadTimeEl = document.getElementById('inp-load-time');
-    if (loadTimeEl) loadTimeEl.value = `${b.loading_date_display || ''} - ${b.loading_time || '8H'}`.trim();
+    if (loadTimeEl) loadTimeEl.value = `${b.loading_date_display || ''} - ${b.loading_time || '08:00'}`.trim();
 
     const pickupEl = document.getElementById('inp-pickup');
     if (pickupEl) setSelectValueCaseInsensitive(pickupEl, b.pickup_location);

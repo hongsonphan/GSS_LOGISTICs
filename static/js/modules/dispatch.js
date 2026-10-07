@@ -742,7 +742,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
 
         // Lịch đóng hàng & Cắt máng
         const loadSchedEl = document.getElementById('detail-loading-schedule');
-        if (loadSchedEl) loadSchedEl.innerText = `${trip.loading_date} (Giờ: ${trip.loading_time || '8H'})`;
+        if (loadSchedEl) loadSchedEl.innerText = `${trip.loading_date} (Giờ: ${trip.loading_time || '08:00'})`;
         const cutoffEl = document.getElementById('detail-cutoff');
         if (cutoffEl) cutoffEl.innerText = trip.cutoff || '-';
         const notesEl = document.getElementById('detail-cargo-notes');
@@ -3752,7 +3752,7 @@ async function submitNewTrip() {
     const cutoff = document.getElementById('inp-cutoff')?.value || '';
     const commercial_invoice = document.getElementById('inp-invoice') ? document.getElementById('inp-invoice').value.trim() : '';
     const warehouse_dock = document.getElementById('inp-dock') ? document.getElementById('inp-dock').value.trim() : '';
-    const loading_time = document.getElementById('inp-load-time') ? document.getElementById('inp-load-time').value.trim() : '8H';
+    const loading_time = document.getElementById('inp-load-time') ? document.getElementById('inp-load-time').value.trim() : '08:00';
     const cont_location_type = document.getElementById('inp-cont-loc') ? document.getElementById('inp-cont-loc').value.trim() : 'NHÀ MÁY';
 
     // Trường Cont thứ 2 (Kẹp 20ft)

@@ -128,7 +128,7 @@
               <span class="text-[9.5px] bg-amber-200 text-amber-900 font-bold px-1.5 py-0.2 rounded">Báo thức</span>
             </div>
             <div class="text-[11px] text-amber-800 truncate mt-0.5">
-              Hẹn đóng hàng: <strong>{{ trip.loading_time|default:'8H' }}</strong> ({% if trip.loading_date %}{{ trip.loading_date|date:'d/m/Y' }}{% else %}Hôm nay{% endif %})
+              Hẹn đóng hàng: <strong>{{ trip.loading_time|default:'08:00' }}</strong> ({% if trip.loading_date %}{{ trip.loading_date|date:'d/m/Y' }}{% else %}Hôm nay{% endif %})
             </div>
           </div>
         </div>
@@ -2499,7 +2499,7 @@
     // 8. ĐẶT LỊCH NHẮC HẸN TRÊN ĐIỆN THOẠI (ICS / NATIVE CALENDAR)
     function addToPhoneCalendar() {
       const tripCode = '{{ trip.trip_code|escapejs }}';
-      const loadingTime = '{{ trip.loading_time|default:"8H"|escapejs }}';
+      const loadingTime = '{{ trip.loading_time|default:"08:00"|escapejs }}';
       const loadingDate = '{% if trip.loading_date %}{{ trip.loading_date|date:"Y-m-d" }}{% else %}{{ today_iso|default:"" }}{% endif %}';
       const pickup = '{{ trip.pickup_location|escapejs }}';
       const warehouse = '{{ trip.warehouse_location|escapejs }}';
