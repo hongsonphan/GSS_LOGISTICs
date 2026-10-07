@@ -1,7 +1,7 @@
 # FEATURES.md — BIM LOGISTICS PLATFORM
 ## Tài liệu Đặc tả Tính năng Đầy đủ (Living Document)
 
-> **Phiên bản:** 2.9.15 | **Cập nhật lần cuối:** 2026-10-07
+> **Phiên bản:** 2.9.20 | **Cập nhật lần cuối:** 2026-10-07
 > **Trạng thái:** Production-Ready
 > **Công ty:** Triền Võ Logistics (BIM Ecosystem)
 > **Mục đích:** Tài liệu này ghi nhận **toàn bộ tính năng đã được lập trình và triển khai** trên nền tảng BIM Logistics, được cập nhật liên tục sau mỗi thay đổi. Dùng để tham khảo trước khi phát triển tính năng mới (tránh viết lại những gì đã có).
@@ -28,6 +28,14 @@
 13. [Phân hệ 12: Quản lý Danh mục Master Data](#13-phân-hệ-12-quản-lý-danh-mục-master-data)
 14. [Tính năng Kỹ thuật nền tảng (Core)](#14-tính-năng-kỹ-thuật-nền-tảng-core)
 15. [Bảo mật & Phân quyền](#15-bảo-mật--phân-quyền)
+16. [Chi tiết UI — Bảng Điều vận (view_dispatch.html)](#16-chi-tiết-ui--bảng-điều-vận-view_dispatchhtml)
+17. [Chi tiết UI — Phân hệ Kế toán (view_accounting.html)](#17-chi-tiết-ui--phân-hệ-kế-toán-view_accountinghtml)
+18. [Chi tiết UI — Quyết toán Gom chuyến (view_settlement.html)](#18-chi-tiết-ui--quyết-toán-gom-chuyến-view_settlementhtml)
+19. [Chi tiết UI — Hệ thống Báo cáo (view_reports.html)](#19-chi-tiết-ui--hệ-thống-báo-cáo-view_reportshtml)
+20. [Phân hệ Sự cố Vận tải (OS&D — TripException)](#20-phân-hệ-sự-cố-vận-tải-osd--tripexception)
+21. [Phân hệ Chứng từ Pháp lý (TripDocument)](#21-phân-hệ-chứng-từ-pháp-lý-tripdocument)
+22. [Tổng hợp Models & Counts](#22-tổng-hợp-models--counts)
+23. [Hướng dẫn Cập nhật Tài liệu này](#-hướng-dẫn-cập-nhật-tài-liệu-này)
 
 ---
 
@@ -466,11 +474,198 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 | Mã hóa mật khẩu (Argon2/PBKDF2) | ✅ Django default |
 | JWT Token Blacklist (Đăng xuất an toàn) | ✅ `simplejwt` blacklist |
 | Rate Limiting API | ✅ Cấu hình riêng |
-| HashID chống IDOR | ✅ `hashids` library |
-| No Hard-Delete dữ liệu pháp lý | ✅ SoftDeleteModel |
+| HashID chống IDOR | ✅ `hashids` library — `/trips/<hashid>/` thay vì `/trips/1/` |
+| No Hard-Delete dữ liệu pháp lý | ✅ SoftDeleteModel toàn hệ thống |
 | CORS & CSRF Protection | ✅ Django middleware |
 | File upload validation (PDF/Image ≤ 5MB) | ✅ API validation |
-| Permission classes theo role | ✅ `IsAdminOrDirector`, `IsDriver`... |
+| Permission classes theo role | ✅ `IsAdminOrDirector`, `IsDriver`, `IsDispatcher`... |
+| Driver Token rotate khi đổi tài xế | ✅ `revoked_driver_tokens` |
+
+---
+
+## 16. Chi tiết UI — Bảng Điều vận (view_dispatch.html)
+
+### 16.1 Bộ lọc đa cột (Column Filters Bar)
+| Filter | Loại | Tùy chọn đặc biệt |
+|---|---|---|
+| Khách hàng | Dropdown | Tất cả khách hàng |
+| Tài xế / Đầu xe | Dropdown | Tất cả tài xế & xe |
+| Trạng thái | Dropdown | Đang điều vận, Đang vận chuyển, Đã giao, Hoàn thành, Chờ nhận lệnh, **Cắt Kéo (Drop & Hook)**, **Ghép 2 Cont 20ft**, **Cảnh báo Quá hạn Free DET** |
+| Loại hình | Dropdown | Hàng Nhập FCL, Hàng Xuất FCL, Nội Địa |
+| Tìm kiếm đa năng | Text | Tìm số cont, seal, booking, mã chuyến, invoice... |
+
+### 16.2 Các cột của bảng dispatch (có thể ẩn/hiện & sắp xếp)
+| Cột | Sắp xếp | Nội dung |
+|---|---|---|
+| STT | Không | Số thứ tự cố định |
+| Mã Chuyến | ✅ | Mã `TVL-MMDD-XXX` |
+| Lịch Đóng | ✅ | Ngày & giờ hẹn đóng/khởi hành |
+| Khách hàng & Kho | ✅ | Tên KH + Kho giao hàng |
+| Booking / Cont / Seal | ✅ | Số B/L, Số container, Số seal |
+| Invoice / Dock | Không | Số hóa đơn thương mại, Cửa dock |
+| Xe Kéo & Xe Hạ | ✅ | Biển số xe chặng 1 & chặng 2 (Cắt kéo) |
+| Lưu Ý & Vị Trí Cont | Không | Ghi chú điều độ, vị trí bãi cont |
+| Nơi Lấy ➔ Nơi Hạ | ✅ | Tuyến đường 3 điểm |
+| Trạng thái | ✅ | Badge màu theo TripStatus |
+
+### 16.3 Tính năng bổ sung trên bảng
+- **Ẩn/hiện chuyến đã hoàn thành** — toggle 1 click
+- **Tùy chỉnh cột** — modal column manager, lưu preference
+- **Đặt lại bộ lọc** — 1 click reset về mặc định
+- **Bộ đếm hiển thị:** `X / Y chuyến xe`
+- **KPI Cards:** Tổng chuyến tháng | Đang chạy hôm nay | Chờ duyệt phí | Cảnh báo Cắt Máng
+
+---
+
+## 17. Chi tiết UI — Phân hệ Kế toán (view_accounting.html)
+
+### 17.1 Cấu trúc 7 Subtab
+
+| Tab | Nội dung | Badge |
+|---|---|---|
+| **Sổ Quỹ Thu - Chi** | Hạch toán mẫu S03a-DN, Tiền mặt & Ngân hàng | — |
+| **Tạm Ứng Tài Xế** | Danh sách TUTX, trạng thái hoàn ứng | 🔶 Số chưa hoàn |
+| **Quỹ Điều Vận** | Quản lý TUDV, số dư quỹ | 🔷 Số đang lưu hành |
+| **Khóa Sổ Chuyến Xe** | Danh sách chuyến chờ/đã chốt sổ | — |
+| **Khoản Chi Hộ** | Debit Note, trạng thái thu hồi | 🟢 Số chờ thu |
+| **Xe Bạn (3PL)** | Quyết toán cước xe thầu phụ | 🔴 Số chờ quyết toán |
+| **Vé BOT Tuyến** | Đối chiếu cầu đường theo tuyến | — |
+
+### 17.2 KPI Cards Sổ Quỹ
+- **Tồn Quỹ Tiền Mặt** — Tiền mặt tại két công ty
+- **Số Dư Tài Khoản Ngân hàng** — Tài khoản thanh toán
+- **Tổng Tồn Quỹ Toàn Cty** — Tiền mặt + Ngân hàng
+- **Dòng Tiền Thuần Trong Kỳ** — Thu: X | Chi: Y
+
+### 17.3 Thao tác
+- **Lập Phiếu Thu** (`PT-YYYY-XXX`) — Modal tạo mới
+- **Lập Phiếu Chi** (`PC-YYYY-XXX`) — Modal tạo mới
+- **Xuất Excel** — Toàn bộ sổ quỹ theo kỳ lọc
+- **Quyết Toán Chuyến** — Chuyển sang `view_settlement`
+
+---
+
+## 18. Chi tiết UI — Quyết toán Gom chuyến (view_settlement.html)
+
+### 18.1 Bộ lọc gom nhóm
+- **Gom nhóm theo:** Tài Xế | Khách Hàng | Đầu Xe
+- **Kỳ thời gian:** Từ ngày – Đến ngày + Preset nhanh: Hôm nay / Tuần này / Tháng này / Tháng trước
+- **Trạng thái sổ:** Chờ quyết toán | Tất cả | Đã quyết toán (Khóa)
+- **Tìm kiếm:** mã chuyến, cont, tuyến, tài xế
+
+### 18.2 KPI Cards đối soát
+- Chuyến được chọn / Tổng chuyến
+- Tổng Đã Tạm Ứng (TUTX)
+- Tổng Thực Chi Hợp Lệ
+- Chênh lệch hoàn ứng (Hoàn lại / Chi bù)
+
+---
+
+## 19. Chi tiết UI — Hệ thống Báo cáo (view_reports.html)
+
+**14 báo cáo** chia thành 4 nhóm nghiệp vụ, lọc theo kỳ: Hôm nay / Tuần / Tháng / Quý / Năm / Tất cả. Xuất Excel & In báo cáo.
+
+### Nhóm 1: Doanh thu & Hiệu suất Đội xe (3 báo cáo)
+| # | Tên báo cáo | Nội dung chính |
+|---|---|---|
+| BC-1 | **Hiệu Suất Đội Xe & P&L** | Tỷ lệ xe nhà khai thác, sản lượng chuyến, P&L tổng hợp |
+| BC-7 | **Doanh Thu Khách & Sản Lượng TEU** | Doanh thu theo từng khách hàng, TEU quy đổi |
+| BC-4 | **Chi Phí Tuyến & Hoàn Chi Hộ** | Chi phí theo tuyến, trạng thái thu hồi Debit Note |
+
+### Nhóm 2: Vận hành & Sự cố (4 báo cáo)
+| # | Tên báo cáo | Nội dung chính |
+|---|---|---|
+| BC-2 | **Vỏ Cont & DEM/DET Hãng Tàu** | Cảnh báo hết hạn free DEM/DET, chi phí phạt lưu |
+| BC-3 | **Đúng Giờ & Chất Lượng OTP** | On-Time Performance theo từng tuyến/kho |
+| BC-5 | **Cắt Kéo & Lưu Xe Sau 0H** | Thống kê Drop & Hook, phí lưu xe qua đêm |
+| BC-6 | **Ngoại Lệ & Sự Cố (OS&D)** | Kẹt cảng, kẹt kho, hỏng cont, tai nạn, hỏng xe |
+
+### Nhóm 3: Lương chuyến & Tạm ứng (4 báo cáo)
+| # | Tên báo cáo | Nội dung chính |
+|---|---|---|
+| BC-10 | **Quỹ Tạm Ứng Điều Vận (Kế Toán QL)** | Tình trạng quỹ TUDV, số dư, hoàn ứng |
+| BC-11 | **Tạm Ứng & Chi Phí Tài Xế (Điều Vận QL)** | TUTX chưa hoàn ứng, chi tiết từng tài xế |
+| BC-9 | **Lương Chuyến & Tài Xế** | Bảng lương tạm tính theo sản lượng thực tế |
+| BC-8 | **Quyết Toán Xe Thầu Phụ 3PL** | Đối soát cước xe bạn, tình trạng thanh toán |
+
+### Nhóm 4: Công nợ Khách (3 báo cáo)
+| # | Tên báo cáo | Nội dung chính |
+|---|---|---|
+| BC-13 | **Công Nợ Phải Thu (AR)** | Cước chưa thu theo từng khách hàng |
+| BC-12 | **Quyết Toán Chuyến & Backlog** | Chuyến chưa chốt sổ, phân tích tồn đọng |
+| BC-14 | **Tuổi Đơn Tồn Đọng Chưa Chốt** | Ranking chuyến tồn đọng lâu nhất (aging) |
+
+---
+
+## 20. Phân hệ Sự cố Vận tải (OS&D — TripException)
+
+**Model:** `apps/exceptions/models.py`
+
+### 20.1 Loại sự cố (ExceptionType)
+| Loại | Mô tả |
+|---|---|
+| `PORT_CONGESTION` | Kẹt Cảng / Kẹt Bãi |
+| `WAREHOUSE_DELAY` | Kho không nhận / Kẹt Kho |
+| `DAMAGED_CONTAINER` | Vỏ Cont Hư Hỏng (Thủng/Rách/Bẩn) |
+| `TRAFFIC_ACCIDENT` | Va chạm / Tai nạn giao thông |
+| `VEHICLE_BREAKDOWN` | Xe hỏng hóc giữa đường |
+| `OTHER` | Sự cố khác |
+
+### 20.2 Mức độ nghiêm trọng (ExceptionSeverity)
+- `LOW` — Nhẹ (Không ảnh hưởng tiến độ)
+- `MEDIUM` — Trung bình (Chậm trễ 1–3 giờ)
+- `HIGH` — Nghiêm trọng (Cắt máng, Hỏng hàng)
+- `CRITICAL` — Khẩn cấp (Tai nạn, Đền bù)
+
+### 20.3 Thông tin ghi nhận
+- Chuyến xe liên quan, Loại sự cố, Mức độ, Mô tả chi tiết
+- Ảnh hiện trường (`evidence_image_path`)
+- Người báo cáo (Driver/Dispatcher)
+- Phương án giải quyết từ điều độ (`resolution_note`)
+- Trạng thái: `Chưa xử lý` / `Đã xử lý` + Thời điểm xử lý xong
+
+---
+
+## 21. Phân hệ Chứng từ Pháp lý (TripDocument)
+
+**Model:** `apps/documents/models.py`
+
+### 21.1 Loại chứng từ (DocumentType)
+| Loại | Mô tả |
+|---|---|
+| `EIR_PICKUP` | Phiếu EIR Lấy Cont |
+| `EIR_DROPOFF` | Phiếu EIR Hạ Cont |
+| `POD` | Biên bản giao nhận có chữ ký (POD) |
+| `WEIGHT_TICKET` | Phiếu Cân Hàng/Xe |
+| `CONTAINER_CHECK` | Ảnh giám định vỏ Cont |
+| `SEAL_IMAGE` | Ảnh Niêm Phong Chì (Seal) |
+| `INCIDENT_PHOTO` | Ảnh Hiện Trường Sự Cố |
+| `INVOICE` | Hóa đơn GTGT nâng hạ / cước |
+| `BOOKING_NOTE` | File Booking / Lệnh cấp rỗng |
+
+### 21.2 Tính năng OCR AI
+- `ocr_raw_text` — Dữ liệu OCR thô trích xuất từ tài liệu
+- `ocr_confidence` — Độ tin cậy nhận diện (%)
+- `extracted_container_no` — Số cont tự động nhận diện
+- `extracted_seal_no` — Số seal tự động nhận diện
+- **Nghiệm thu** bởi điều phối viên: `is_verified`, `verified_by`, `verified_at`
+
+---
+
+## 22. Tổng hợp Models & Counts
+
+| App | Model chính | Số model | Ghi chú |
+|---|---|---|---|
+| `dispatch` | `DispatchTrip`, `TripTimelineItem` | 2 | Hạt nhân hệ thống |
+| `billing` | `TripExpense`, `DispatcherAdvanceFund`, `DriverTripAdvance`, `CashTransaction` | 4 | Tài chính & sổ quỹ |
+| `customers` | `Customer`, `RouteTariff`, `Quotation`, `QuotationItem`, `BookingOrder`, `BookingDocument` | 6 | CRM & Sales |
+| `fleet` | `Vehicle`, `Trailer` | 2 | Đội xe |
+| `personnel` | `Employee` | 1 | Nhân sự |
+| `master_data` | `Location`, `ContainerType`, `ExpenseItem`, `DriverSalaryTariff`, `DriverAllowanceCatalog`, `ShippingLine`, `Subcontractor`, `CompanyProfile` | 8 | Danh mục |
+| `documents` | `TripDocument` | 1 | Chứng từ pháp lý |
+| `exceptions` | `TripException` | 1 | Sự cố OS&D |
+| `customs` | *(đang phát triển)* | — | Hải quan |
+| **Tổng** | | **25 models** | |
 
 ---
 
@@ -487,9 +682,9 @@ Khi thêm tính năng mới hoặc thay đổi tính năng hiện có, **bắt b
 
 > **Template thêm tính năng mới:**
 > ```markdown
-> ### X.Y Tên tính năng
+> ### X.Y Tên tính năng mới
+> - **View:** `view_xxx.html` | **API:** `METHOD /api/path/` | **Model:** `ModelName`
 > - Mô tả ngắn gọn tính năng làm gì
-> - API endpoint (nếu có): `METHOD /api/path/`
-> - Model liên quan: `ModelName`
-> - Trạng thái/choices đặc biệt (nếu có)
+> - Các trạng thái/choices đặc biệt (nếu có)
+> - Business logic quan trọng (nếu có)
 > ```

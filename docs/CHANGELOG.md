@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.20] - 2026-10-07 (Rà Soát Codebase Toàn Diện & Viết Lại Tài Liệu Tính Năng FEATURES.md Chuẩn Living Document)
+
+### 1. Rà Soát Codebase & Viết Lại docs/FEATURES.md:
+- **Khảo sát toàn diện mã nguồn thực tế:** Đối chiếu 25 Models trên 9 Apps (`dispatch`, `billing`, `customers`, `fleet`, `personnel`, `master_data`, `documents`, `exceptions`, `customs`) và 14 View templates frontend SPA.
+- **Cấu trúc Living Document chuyên nghiệp:**
+  * Bổ sung mục lục chi tiết 15+ phần cùng quy ước cập nhật đồng bộ Documentation-as-Code.
+  * Chi tiết hóa nghiệp vụ TMS/WMS: State Machine 11 bước, Cắt Kéo (Drop & Hook), Chở ghép kẹp 2 cont 20ft, Kiểm soát DEM/DET free-time, Định giá cước xăng dầu (Fuel-adjusted), Mẫu in báo giá đa dạng.
+  * Đặc tả chi tiết 7 Subtabs Kế toán, Sổ Quỹ Thu - Chi Mẫu S03a-DN, Tạm ứng 2 cấp (Quỹ Điều Vận & Tạm ứng chuyến), Chốt sổ chi phí, Đối soát xe bạn 3PL, Thu hồi chi hộ Debit Note.
+  * Thống kê đầy đủ 14 Báo cáo quản trị chia 4 nhóm nghiệp vụ (Doanh thu & Hiệu suất đội xe, Vận hành & Sự cố OS&D, Lương chuyến & Tạm ứng, Công nợ khách AR).
+  * Chi tiết hóa giao diện bảng Điều Vận: Hệ thống bộ lọc đa cột, tùy biến ẩn/hiện và sắp xếp cột.
+  * Module Sự cố ngoại lệ OS&D và Module Chứng từ số kèm năng lực nhận diện OCR AI.
+  * Bảng tổng hợp 25 Django models và hướng dẫn quy trình cập nhật tài liệu khi mở rộng mã nguồn sau này.
+
+---
+
 ## [2.9.19] - 2026-10-07 (Tinh Gọn Topbar Bản In, Khắc Phục Lỗi Trang Trắng Khi In & Đồng Bộ Đổi Mẫu In)
 
 ### 1. Tinh Gọn Topbar Bản In Báo Giá (Hình 1):
