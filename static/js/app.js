@@ -6485,6 +6485,7 @@ async function openCreateQuotationPage(updateHistory = true) {
     const headerCustEl = document.getElementById('fullpage-quote-header-customer');
     const dateEl = document.getElementById('fullpage-quote-date');
 
+    currentActiveFullpageQuotation = null;
     if (idInput) idInput.value = '';
     if (hashidInput) hashidInput.value = '';
     if (codeEl) codeEl.innerText = 'Tạo Báo giá';
@@ -6717,7 +6718,7 @@ function backToQuotations() {
 function copyQuotationPageLink() {
     const quoteHash = document.getElementById('fullpage-quote-hashid')?.value || document.getElementById('fullpage-quote-id')?.value;
     if (!quoteHash) {
-        showToast('warning', 'Không tìm thấy mã báo giá để sao chép', 'Cảnh Báo');
+        showToast('warning', 'Báo giá chưa được lưu để lấy liên kết chia sẻ. Vui lòng bấm "Lưu Báo Giá" trước!', 'Cảnh Báo');
         return;
     }
     const fullUrl = `${window.location.origin}/sales/quotations/${quoteHash}`;
@@ -6729,11 +6730,83 @@ function copyQuotationPageLink() {
 }
 
 function printQuotationFromFullPage() {
+    const id = document.getElementById('fullpage-quote-id')?.value;
+    const customerSelect = document.getElementById('fullpage-quote-customer');
+    const customerName = customerSelect?.value ? (customerSelect.options[customerSelect.selectedIndex]?.text || customerSelect.value) : '';
+
+    // Lấy danh sách các tuyến đường từ bảng trên form
+    const rows = Array.from(document.querySelectorAll('#fullpage-quote-routes-tbody tr.fullpage-quote-route-row'));
+    const items = [];
+    rows.forEach(row => {
+        const route = row.querySelector('.fullpage-item-route')?.value?.trim();
+        const cargo = row.querySelector('.fullpage-item-cargo')?.value?.trim() || 'Container 40HC';
+        const km = parseInt(row.querySelector('.fullpage-item-km')?.value) || 0;
+        const price = parseNumberVN(row.querySelector('.fullpage-item-price')?.value) || 0;
+        const trips = parseNumberVN(row.querySelector('.fullpage-item-trips')?.value) || 1;
+        if (route || price > 0) {
+            items.push({
+                route_description: route || 'Tuyến vận chuyển',
+                cargo_type: cargo,
+                estimated_km: km,
+                unit_price: price,
+                expected_trips_monthly: trips
+            });
+        }
+    });
+
+    // Nếu đang ở màn hình tạo mới (hoặc không có id trong DB)
+    if (!id || !currentActiveFullpageQuotation) {
+        if (!customerName || customerName.startsWith('--')) {
+            showToast('warning', 'Vui lòng chọn Khách Hàng trước khi xem và in báo giá!', 'Cần Chọn Khách Hàng');
+            customerSelect?.focus();
+            return;
+        }
+        if (items.length === 0) {
+            showToast('warning', 'Vui lòng nhập ít nhất 1 tuyến đường có đơn giá cước để xem và in!', 'Thiếu Tuyến Đường');
+            return;
+        }
+
+        // Tìm thêm thông tin chi tiết khách hàng từ master data cache nếu có
+        let customerInfo = null;
+        if (window.masterDataCache?.customers && Array.isArray(window.masterDataCache.customers)) {
+            customerInfo = window.masterDataCache.customers.find(c => c.name === customerSelect.value || c.short_name === customerSelect.value);
+        }
+
+        const draftQuote = {
+            id: 'draft',
+            quotation_code: 'BG-DRAFT (BẢN XEM TRƯỚC)',
+            created_at: new Date().toISOString(),
+            date: new Date().toLocaleDateString('vi-VN'),
+            customer_name: customerName,
+            customer_tax_code: customerInfo?.tax_code || '',
+            customer_address: customerInfo?.address || '',
+            pricing_method: document.getElementById('fullpage-quote-pricing-method')?.value || 'MULTI_ROUTE',
+            base_fuel_price: parseNumberVN(document.getElementById('fullpage-quote-base-fuel-price')?.value) || 21000,
+            fuel_step_vnd: parseNumberVN(document.getElementById('fullpage-quote-fuel-step')?.value) || 1000,
+            fuel_ratio_percent: parseFloat(document.getElementById('fullpage-quote-fuel-ratio')?.value) || 3.5,
+            cargo_type: document.getElementById('fullpage-quote-cargo-type')?.value || 'Container 40HC / Hàng tổng hợp',
+            contact_person: document.getElementById('fullpage-quote-contact-person')?.value?.trim() || '',
+            contact_phone: document.getElementById('fullpage-quote-contact-phone')?.value?.trim() || '',
+            contact_email: document.getElementById('fullpage-quote-contact-email')?.value?.trim() || '',
+            valid_until: document.getElementById('fullpage-quote-valid-until')?.value || '',
+            notes: document.getElementById('fullpage-quote-notes')?.value || '',
+            template_type: document.getElementById('fullpage-quote-template-type')?.value || 'STANDARD',
+            items: items,
+            unit_price: items[0]?.unit_price || 0,
+            route_description: items[0]?.route_description || '',
+            estimated_km: items[0]?.estimated_km || 0,
+            expected_trips_monthly: items[0]?.expected_trips_monthly || 1
+        };
+
+        openQuotationPrintModal(draftQuote);
+        return;
+    }
+
+    // Nếu đã có báo giá trong DB
     if (currentActiveFullpageQuotation) {
         openQuotationPrintModal(currentActiveFullpageQuotation);
-    } else {
-        const id = document.getElementById('fullpage-quote-id')?.value;
-        if (id) openQuotationPrintModal(id);
+    } else if (id) {
+        openQuotationPrintModal(id);
     }
 }
 
@@ -6758,6 +6831,7 @@ async function saveFullpageQuotation(e) {
 
     if (!customer) {
         showToast('warning', 'Vui lòng chọn khách hàng hợp lệ trong danh mục!', 'Thiếu Thông Tin');
+        document.getElementById('fullpage-quote-customer')?.focus();
         return;
     }
 
@@ -6786,7 +6860,7 @@ async function saveFullpageQuotation(e) {
         return;
     }
 
-    const submitBtn = document.getElementById('btn-fullpage-save-quote');
+    const submitBtn = document.getElementById('btn-fullpage-save-quote-bottom') || document.getElementById('btn-fullpage-save-quote');
     const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
         submitBtn.disabled = true;
@@ -7143,6 +7217,7 @@ async function openCreateBookingPage(updateHistory = true) {
         const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
         const tripsSection = document.getElementById('fullpage-booking-trips-section');
 
+        currentActiveFullpageBooking = null;
         if (idInput) idInput.value = '';
         if (titleCodeEl) titleCodeEl.innerText = 'Tạo Booking';
         if (statusBadge) statusBadge.classList.add('hidden');
@@ -7459,12 +7534,33 @@ async function saveFullpageBooking(e) {
     const statusVal = document.getElementById('fullpage-booking-status')?.value || 'PENDING_DISPATCH';
     const notes = document.getElementById('fullpage-booking-notes')?.value?.trim();
 
-    if (!customer || !bookingNumber || !pickup || !delivery || !dropoff) {
-        showToast('warning', 'Vui lòng điền đủ: Khách hàng, Số đơn/booking và Lộ trình 3 điểm', 'Thiếu Thông Tin');
+    if (!customer) {
+        showToast('warning', 'Vui lòng chọn Khách Hàng trong danh mục!', 'Thiếu Thông Tin');
+        document.getElementById('fullpage-booking-customer')?.focus();
+        return;
+    }
+    if (!bookingNumber) {
+        showToast('warning', 'Vui lòng nhập Số Booking / Mã Đơn Hàng!', 'Thiếu Thông Tin');
+        document.getElementById('fullpage-booking-number')?.focus();
+        return;
+    }
+    if (!pickup) {
+        showToast('warning', 'Vui lòng nhập Nơi Lấy Hàng / Rỗng (Điểm 1)!', 'Thiếu Thông Tin');
+        document.getElementById('fullpage-booking-pickup')?.focus();
+        return;
+    }
+    if (!delivery) {
+        showToast('warning', 'Vui lòng nhập Nơi Giao Hàng / Đóng Hàng (Điểm 2)!', 'Thiếu Thông Tin');
+        document.getElementById('fullpage-booking-delivery')?.focus();
+        return;
+    }
+    if (!dropoff) {
+        showToast('warning', 'Vui lòng nhập Nơi Hạ Rỗng / Trả Bãi (Điểm 3)!', 'Thiếu Thông Tin');
+        document.getElementById('fullpage-booking-dropoff')?.focus();
         return;
     }
 
-    const submitBtn = document.getElementById('btn-fullpage-save-booking');
+    const submitBtn = document.getElementById('btn-fullpage-save-booking-bottom') || document.getElementById('btn-fullpage-save-booking');
     const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
         submitBtn.disabled = true;
