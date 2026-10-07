@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.22] - 2026-10-07 (Khắc Phục Nút In & Lưu Trên Tạo Mới Báo Giá Và Tiếp Nhận Booking)
+
+### 1. Phân hệ Báo Giá Tuyến Cước (Quotation Management):
+- **Kích hoạt chế độ In Xem Trước Dự Thảo (Draft Print Preview):**
+  * Sửa hàm `printQuotationFromFullPage()` trong `static/js/app.js`: Khi người dùng đang ở giao diện "Tạo Mới Báo Giá" (`/sales/quotations/new`) chưa lưu DB, hệ thống tự động gom toàn bộ dữ liệu trên form (Khách hàng, Ma trận tuyến, Cơ chế dầu, Điều khoản...) thành đối tượng dự thảo (`BG-DRAFT (BẢN XEM TRƯỚC)`) và mở ngay màn hình xem & in phiếu báo giá A4.
+  * Validation thân thiện: Nếu chưa chọn khách hàng hoặc thiếu tuyến, hệ thống hiển thị thông báo Toast cảnh báo và tự động trỏ focus vào ô nhập liệu cần thiết.
+- **Kích hoạt hiệu lực nút "Lưu Báo Giá":**
+  * Sửa selector nút submit `btn-fullpage-save-quote-bottom` trong `saveFullpageQuotation()` và bổ sung `onclick="saveFullpageQuotation(event)"` vào nút lưu footer của `view_quotation_detail.html`.
+  * Sau khi lưu thành công, hệ thống hiển thị mã báo giá vừa tạo (VD: `BG.2610.008`), cập nhật giao diện chi tiết và lưu URL semantic tương ứng.
+- **Bảo toàn dữ liệu khi quay lại từ màn hình In:**
+  * Hiệu chỉnh `closeQuotationPrintModal()` để khi người dùng bấm nút "Quay Lại" từ màn hình in về form soạn thảo báo giá, form được giữ nguyên vẹn 100% dữ liệu đang nhập mà không bị gọi lại API ghi đè dữ liệu.
+  * Bổ sung nút **Sao Chép Link** đồng bộ ở footer của trang Báo giá.
+
+### 2. Phân hệ Tiếp Nhận Đơn Hàng / Booking:
+- **Chuẩn hóa nút "Tiếp Nhận Đơn Hàng" / Lưu Booking:**
+  * Hiệu chỉnh `saveFullpageBooking()` đồng bộ selector nút `btn-fullpage-save-booking-bottom`.
+  * Nâng cấp validation chi tiết: Thay vì thông báo chung chung, hệ thống chỉ rõ từng trường còn thiếu (Khách hàng, Số đơn/booking, Điểm lấy rỗng, Kho đóng hàng, Điểm hạ bãi) và tự động cuộn/focus đến ô tương ứng.
+  * Xóa cache `currentActiveFullpageBooking = null` khi mở form tạo mới booking để tránh lẫn lộn dữ liệu đơn cũ.
+
+---
+
 ## [2.9.21] - 2026-10-07 (Chuẩn Hóa Đồng Bộ Định Dạng Tiêu Đề Topbar Toàn Hệ Thống: Phân Hệ | Trang Con | Thao Tác)
 
 ### 1. Chuẩn Hóa Tiêu Đề Topbar (Breadcrumb Standard):
