@@ -382,6 +382,26 @@
                     </div>
                 </div>
 
+                <!-- Footer Save Bar -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between flex-wrap gap-3">
+                    <button type="button" onclick="backToBookings()" 
+                        class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer font-heading">
+                        <i class="ph-bold ph-arrow-left mr-1"></i> Quay Lại
+                    </button>
+                    <div class="flex items-center space-x-2.5">
+                        <button type="button" onclick="copyBookingPageLink()" 
+                            class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer font-heading">
+                            <i class="ph-bold ph-link text-base text-teal-700"></i>
+                            <span>Sao Chép Link</span>
+                        </button>
+                        <button type="button" id="btn-fullpage-save-booking-bottom" onclick="saveFullpageBooking(event)"
+                            class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i class="ph-bold ph-check-circle text-base"></i>
+                            <span id="btn-fullpage-save-booking-bottom-text">Tiếp Nhận Đơn Hàng</span>
+                        </button>
+                    </div>
+                </div>
+
             </form>
         </div>
     </div>

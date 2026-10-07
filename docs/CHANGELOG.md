@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.21] - 2026-10-07 (Chuẩn Hóa Đồng Bộ Định Dạng Tiêu Đề Topbar Toàn Hệ Thống: Phân Hệ | Trang Con | Thao Tác)
+
+### 1. Chuẩn Hóa Tiêu Đề Topbar (Breadcrumb Standard):
+- **Quy tắc thống nhất toàn ứng dụng:** Tiêu đề Topbar chỉ hiển thị cấu trúc `Tên phân hệ | Tên trang con (nếu có) | Thao tác`.
+  * *Ví dụ:* `Sale & Booking | Tạo Mới Booking`
+  * *Ví dụ:* `Sale & Booking | Báo Giá | BG.2610.004`
+  * *Ví dụ:* `Điều Vận | Tạo Lệnh Điều Động`
+  * *Ví dụ:* `Hành Chính & Nhân Sự | Tạo Mới Nhân Sự`
+  * *Ví dụ:* `Dịch Vụ Hải Quan | Tạo Mới Tờ Khai Hải Quan`
+- **Loại bỏ hoàn toàn Badges và Nút bấm trên Topbar:**
+  * Ẩn triệt để các thẻ badge trạng thái/phân loại (`Chuyến xe FCL`, `Kế thừa Booking`, `Ma trận đa tuyến`,...) khỏi thanh Topbar.
+  * Di dời và loại bỏ tất cả các nút bấm hành động (`Hủy Bỏ`, `Xác Nhận & Phát Lệnh Zalo`, `Lưu Hồ Sơ`, `Tiếp Nhận Đơn Hàng`) khỏi Topbar, bố trí 100% tại thanh tác vụ phía cuối Form để thuận tiện thao tác tự nhiên theo luồng nhập liệu.
+  * Bổ sung thanh tác vụ Footer chuẩn (Nút Quay lại, Sao chép link, Tiếp nhận đơn) tại trang chi tiết Booking `view_booking_detail.html`.
+
+---
+
 ## [2.9.20] - 2026-10-07 (Rà Soát Codebase Toàn Diện & Viết Lại Tài Liệu Tính Năng FEATURES.md Chuẩn Living Document)
 
 ### 1. Rà Soát Codebase & Viết Lại docs/FEATURES.md:

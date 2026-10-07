@@ -4396,25 +4396,11 @@ async function openCreateTripPage(bookingId = null, updateHistory = true) {
 
     setTopbarFullpageMode({
         backFn: backToDispatch,
-        prefix: 'Điều vận',
+        prefix: 'Điều Vận',
         title: 'Tạo Lệnh Điều Động',
-        subText: 'Phân bổ xe, tài xế, quản lý vỏ cont & kế thừa trực tiếp từ Booking/Báo giá',
-        badgesHtml: `
-            <span class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 uppercase tracking-wider font-heading" id="topbar-trip-badge-inherited">Kế thừa Booking</span>
-            <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">Chuyến xe FCL</span>
-        `,
-        actionsHtml: `
-            <button type="button" onclick="backToDispatch()"
-                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-x mr-1.5 text-sm"></i>
-                <span class="hidden sm:inline">Hủy Bỏ</span>
-            </button>
-            <button type="button" id="btn-submit-trip-fullpage" onclick="submitNewTrip()"
-                class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-paper-plane-tilt mr-1.5 text-base"></i>
-                <span id="btn-submit-trip-text">Xác Nhận & Phát Lệnh Zalo</span>
-            </button>
-        `
+        subText: '',
+        badgesHtml: '',
+        actionsHtml: ''
     });
 
     initAllNumberInputs();
@@ -5371,22 +5357,11 @@ function openCreateEmployeePage(updateHistory = true) {
 
     setTopbarFullpageMode({
         backFn: backToPersonnel,
-        prefix: 'Nhân Sự & Đội Xe',
-        title: 'Khai Báo Nhân Sự Mới',
-        subText: 'Thêm mới cán bộ, nhân viên, tài xế vào danh bạ BIM Logistics',
-        badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Hồ Sơ Mới</span>',
-        actionsHtml: `
-            <button type="button" onclick="backToPersonnel()"
-                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-x mr-1.5 text-sm"></i>
-                <span class="hidden sm:inline">Hủy Bỏ</span>
-            </button>
-            <button type="button" onclick="document.getElementById('form-employee')?.requestSubmit()"
-                class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-check mr-1.5 text-base"></i>
-                <span>Lưu Hồ Sơ</span>
-            </button>
-        `
+        prefix: 'Hành Chính & Nhân Sự',
+        title: 'Tạo Mới Nhân Sự',
+        subText: '',
+        badgesHtml: '',
+        actionsHtml: ''
     });
 }
 
@@ -5427,26 +5402,11 @@ function openEditEmployeePage(id, updateHistory = true) {
 
     setTopbarFullpageMode({
         backFn: backToPersonnel,
-        prefix: 'Nhân Sự & Đội Xe',
-        title: `Hồ Sơ ${emp.full_name} (${emp.code || id})`,
-        subText: `Vị trí: <strong class="text-slate-900">${emp.role_label || emp.role}</strong> · SĐT: ${emp.phone_number || '—'}`,
-        badgesHtml: `
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${emp.is_active ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}">
-                ${emp.is_active ? 'Đang làm việc' : 'Tạm ngưng'}
-            </span>
-        `,
-        actionsHtml: `
-            <button type="button" onclick="backToPersonnel()"
-                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-x mr-1.5 text-sm"></i>
-                <span class="hidden sm:inline">Hủy Bỏ</span>
-            </button>
-            <button type="button" onclick="document.getElementById('form-employee')?.requestSubmit()"
-                class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-check mr-1.5 text-base"></i>
-                <span>Cập Nhật Hồ Sơ</span>
-            </button>
-        `
+        prefix: 'Hành Chính & Nhân Sự',
+        title: `Hồ Sơ Nhân Sự | ${emp.full_name} (${emp.code || id})`,
+        subText: '',
+        badgesHtml: '',
+        actionsHtml: ''
     });
 }
 
@@ -6557,9 +6517,9 @@ async function openCreateQuotationPage(updateHistory = true) {
     setTopbarFullpageMode({
         backFn: backToQuotations,
         prefix: 'Sale & Booking',
-        title: 'Tạo Báo giá',
-        subText: 'Khách hàng: <strong class="text-slate-900" id="topbar-quote-customer">Chưa chọn khách hàng</strong> · <span class="text-slate-500">' + new Date().toLocaleDateString('vi-VN') + '</span>',
-        badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Ma trận đa tuyến</span>',
+        title: 'Tạo Mới Báo Giá',
+        subText: '',
+        badgesHtml: '',
         actionsHtml: ''
     });
 
@@ -6656,19 +6616,11 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
 
         setTopbarFullpageMode({
             backFn: backToQuotations,
-            prefix: 'Sale & Báo giá',
-            title: `Báo Giá ${q.quotation_code || ('BG-' + q.id)}`,
-            subText: `Khách hàng: <strong class="text-slate-900" id="topbar-quote-customer">${escapeHtml(q.customer_name || 'Chưa chọn khách hàng')}</strong> · <span class="text-slate-500">${q.created_at || '--/--/----'}</span>`,
-            badgesHtml: `
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${
-                    q.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                    q.status === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                    q.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
-                    'bg-teal-50 text-teal-800 border-teal-200'
-                }" id="topbar-quote-status-badge">${q.status_display || q.status}</span>
-                <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Ma trận đa tuyến</span>
-            `,
-        actionsHtml: ''
+            prefix: 'Sale & Booking',
+            title: `Báo Giá | ${q.quotation_code || ('BG-' + q.id)}`,
+            subText: '',
+            badgesHtml: '',
+            actionsHtml: ''
         });
 
         // Điền dữ liệu vào form
@@ -7166,21 +7118,10 @@ async function openCreateBookingPage(updateHistory = true) {
         setTopbarFullpageMode({
             backFn: backToBookings,
             prefix: 'Sale & Booking',
-            title: 'Tạo Đơn Hàng / Booking',
-            subText: 'Khách hàng: <strong class="text-slate-900" id="topbar-booking-customer">Chưa chọn khách hàng</strong> · <span class="text-slate-500" id="topbar-booking-date">Hẹn đóng: ' + new Date().toLocaleDateString('vi-VN') + '</span>',
-            badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200" id="topbar-booking-type-badge">Kéo Cont Xuất Khẩu</span>',
-            actionsHtml: `
-                <button type="button" onclick="copyBookingPageLink()"
-                    class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
-                    <span class="hidden sm:inline">Sao Chép Link</span>
-                </button>
-                <button type="button" id="btn-fullpage-save-booking" onclick="saveFullpageBooking(event)"
-                    class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-check-circle mr-1 text-base"></i>
-                    <span id="btn-fullpage-save-booking-text">Tiếp Nhận Đơn Hàng</span>
-                </button>
-            `
+            title: 'Tạo Mới Booking',
+            subText: '',
+            badgesHtml: '',
+            actionsHtml: ''
         });
 
         if (updateHistory && window.history && window.history.pushState) {
@@ -7325,29 +7266,10 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
         setTopbarFullpageMode({
             backFn: backToBookings,
             prefix: 'Sale & Booking',
-            title: `Đơn Hàng ${b.booking_code || ('BK-' + b.id)}`,
-            subText: `Khách hàng: <strong class="text-slate-900" id="topbar-booking-customer">${escapeHtml(b.customer_name || 'Chưa chọn khách hàng')}</strong> · <span class="text-slate-500" id="topbar-booking-date">Hẹn đóng: ${bookingDateStr}</span>`,
-            badgesHtml: `
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${
-                    b.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                    b.status === 'PARTIALLY_DISPATCHED' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                    b.status === 'CANCELLED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
-                    'bg-teal-50 text-teal-800 border-teal-200'
-                }" id="topbar-booking-status-badge">${b.status_display || b.status}</span>
-                <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200" id="topbar-booking-type-badge">${bookingTypeLabel}</span>
-            `,
-            actionsHtml: `
-                <button type="button" onclick="copyBookingPageLink()"
-                    class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
-                    <span class="hidden sm:inline">Sao Chép Link</span>
-                </button>
-                <button type="button" id="btn-fullpage-save-booking" onclick="saveFullpageBooking(event)"
-                    class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-check-circle mr-1 text-base"></i>
-                    <span id="btn-fullpage-save-booking-text">Cập Nhật Đơn Hàng</span>
-                </button>
-            `
+            title: `Booking | ${b.booking_code || ('BK-' + b.id)}`,
+            subText: '',
+            badgesHtml: '',
+            actionsHtml: ''
         });
 
         const typeEl = document.getElementById('fullpage-booking-type');
@@ -9276,21 +9198,24 @@ function setTopbarFullpageMode(config) {
     const titleEl = document.getElementById('topbar-fullpage-title');
     if (titleEl) titleEl.innerText = config.title || '';
 
+    // Chuẩn hóa giao diện: Ẩn triệt để badges, subText và action buttons trên Topbar (đã chuyển xuống footer form)
     const badgesContainer = document.getElementById('topbar-fullpage-badges');
-    if (badgesContainer) badgesContainer.innerHTML = config.badgesHtml || '';
+    if (badgesContainer) {
+        badgesContainer.innerHTML = '';
+        badgesContainer.classList.add('hidden');
+    }
 
     const subEl = document.getElementById('topbar-fullpage-sub');
     if (subEl) {
-        if (config.subText) {
-            subEl.innerHTML = config.subText;
-            subEl.classList.remove('hidden');
-        } else {
-            subEl.classList.add('hidden');
-        }
+        subEl.innerHTML = '';
+        subEl.classList.add('hidden');
     }
 
     const actionsContainer = document.getElementById('topbar-fullpage-actions');
-    if (actionsContainer) actionsContainer.innerHTML = config.actionsHtml || '';
+    if (actionsContainer) {
+        actionsContainer.innerHTML = '';
+        actionsContainer.classList.add('hidden');
+    }
 }
 
 function resetTopbarStandardMode(tabId) {
@@ -18722,29 +18647,11 @@ async function openCustomsPage(id = null, updateHistory = true) {
 
             setTopbarFullpageMode({
                 backFn: backToCustoms,
-                prefix: 'Thủ Tục Hải Quan',
-                title: `Tờ Khai ${item.declaration_number}`,
-                subText: `Doanh nghiệp: <strong class="text-slate-900">${escapeHtml(item.customer_name || '—')}</strong> · Chi cục: ${item.customs_office_name || item.customs_office_code || '02CI'}`,
-                badgesHtml: `
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${laneBadgeClass}">
-                        ${laneLabel}
-                    </span>
-                    <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
-                        ${item.status_display || item.status}
-                    </span>
-                `,
-                actionsHtml: `
-                    <button type="button" onclick="backToCustoms()"
-                        class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                        <i class="ph-bold ph-x mr-1.5 text-sm"></i>
-                        <span class="hidden sm:inline">Hủy Bỏ</span>
-                    </button>
-                    <button type="button" onclick="document.getElementById('form-customs-declaration')?.requestSubmit()"
-                        class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                        <i class="ph-bold ph-check mr-1.5 text-base"></i>
-                        <span>Cập Nhật Tờ Khai</span>
-                    </button>
-                `
+                prefix: 'Dịch Vụ Hải Quan',
+                title: `Tờ Khai | ${item.declaration_number}`,
+                subText: '',
+                badgesHtml: '',
+                actionsHtml: ''
             });
         } catch (err) {
             showToast('Lỗi: ' + err.message, 'error');
@@ -18755,22 +18662,11 @@ async function openCustomsPage(id = null, updateHistory = true) {
         document.getElementById('cust-decl-number').readOnly = false;
         setTopbarFullpageMode({
             backFn: backToCustoms,
-            prefix: 'Thủ Tục Hải Quan',
-            title: 'Khai Báo Tờ Khai Hải Quan Điện Tử',
-            subText: 'Đăng ký thông quan hệ thống VNACCS/VCIS, phân luồng hải quan và đối soát chuyến xe',
-            badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">VNACCS / VCIS</span>',
-            actionsHtml: `
-                <button type="button" onclick="backToCustoms()"
-                    class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-x mr-1.5 text-sm"></i>
-                    <span class="hidden sm:inline">Hủy Bỏ</span>
-                </button>
-                <button type="button" onclick="document.getElementById('form-customs-declaration')?.requestSubmit()"
-                    class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-check mr-1.5 text-base"></i>
-                    <span>Lưu Tờ Khai</span>
-                </button>
-            `
+            prefix: 'Dịch Vụ Hải Quan',
+            title: 'Tạo Mới Tờ Khai Hải Quan',
+            subText: '',
+            badgesHtml: '',
+            actionsHtml: ''
         });
     }
 }

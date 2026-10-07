@@ -97,25 +97,24 @@
         </div>
 
         <!-- Cụm Tiêu Đề Breadcrumb & Thao Tác Dành Riêng Cho Các Trang Chi Tiết Toàn Màn Hình -->
+        <!-- Định dạng chuẩn: Tên phân hệ | Tên trang con (nếu có) | Thao tác (không chứa badge và không chứa nút thừa) -->
         <div id="topbar-fullpage-wrapper" class="hidden flex items-center space-x-3 min-w-0">
             <button id="topbar-fullpage-back-btn" type="button" onclick="if(window.topbarBackHandler) window.topbarBackHandler();" 
                 class="p-2 mr-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl border border-slate-200 bg-slate-50 inline-flex items-center justify-center cursor-pointer shadow-2xs transition-colors shrink-0" 
                 title="Quay lại">
                 <i class="ph-bold ph-arrow-left text-base"></i>
             </button>
-            <div class="flex flex-col justify-center min-w-0">
-                <div class="flex items-center space-x-2 flex-wrap">
-                    <h2 class="text-base sm:text-lg font-black text-slate-900 font-heading tracking-tight flex items-center flex-wrap">
-                        <span id="topbar-fullpage-prefix" class="text-slate-600 hover:text-teal-700 cursor-pointer transition-colors" onclick="if(window.topbarBackHandler) window.topbarBackHandler();">Sale & Booking</span>
-                        <span class="mx-2 text-slate-300 font-normal">|</span>
-                        <span id="topbar-fullpage-title" class="text-slate-900">Tạo Báo giá</span>
-                    </h2>
-                    <div id="topbar-fullpage-badges" class="flex items-center gap-1.5"></div>
-                </div>
-                <p id="topbar-fullpage-sub" class="text-[11px] font-semibold text-slate-500 truncate mt-0.5 hidden"></p>
+            <div class="flex items-center min-w-0">
+                <h2 class="text-base sm:text-lg font-black text-slate-900 font-heading tracking-tight flex items-center flex-wrap">
+                    <span id="topbar-fullpage-prefix" class="text-slate-600 hover:text-teal-700 cursor-pointer transition-colors" onclick="if(window.topbarBackHandler) window.topbarBackHandler();">Sale & Booking</span>
+                    <span id="topbar-fullpage-separator-1" class="mx-2 text-slate-300 font-normal">|</span>
+                    <span id="topbar-fullpage-title" class="text-slate-900">Tạo mới Booking</span>
+                </h2>
+                <!-- Giữ container ẩn để bảo toàn tương thích mã nguồn cũ nếu có script ghi vào -->
+                <div id="topbar-fullpage-badges" class="hidden"></div>
+                <p id="topbar-fullpage-sub" class="hidden"></p>
+                <div id="topbar-fullpage-actions" class="hidden"></div>
             </div>
-            <!-- Cụm Nút Hành Động Contextual của trang con đưa thẳng lên Topbar -->
-            <div id="topbar-fullpage-actions" class="flex items-center space-x-2 shrink-0 ml-2"></div>
         </div>
     </div>
     <div class="flex items-center space-x-3">
