@@ -7799,10 +7799,22 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     // 3. Điền dữ liệu MẪU 3: PROJECT_DETAIL
     const p3Code = document.getElementById('print-q3-code');
-    if (p3Code) p3Code.innerText = `Số: ${q.quotation_code || q.code || ''}`;
+    if (p3Code) p3Code.innerText = `REF: ${q.quotation_code || q.code || ('TVL-BG-' + q.id)}`;
 
-    const p3Cust = document.getElementById('print-q3-customer');
+    const p3Cust = document.getElementById('print-q3-client-name') || document.getElementById('print-q3-customer');
     if (p3Cust) p3Cust.innerText = q.customer_name || q.customer || '';
+
+    const p3Contact = document.getElementById('print-q3-client-contact');
+    if (p3Contact) p3Contact.innerText = q.contact_person || q.customer_contact || 'Phòng Xuất Nhập Khẩu';
+
+    const p3Phone = document.getElementById('print-q3-client-phone');
+    if (p3Phone) p3Phone.innerText = [q.contact_phone || q.customer_phone, q.contact_email].filter(Boolean).join(' / ') || '0965 559 561';
+
+    const p3Cargo = document.getElementById('print-q3-cargo-desc');
+    if (p3Cargo) p3Cargo.innerText = q.cargo_type || 'Container 40HC / Hàng xuất nhập khẩu';
+
+    const p3Validity = document.getElementById('print-q3-validity');
+    if (p3Validity) p3Validity.innerText = q.valid_until ? (`Áp dụng đến ${formatDateVN(q.valid_until)}`) : 'Có hiệu lực trong vòng 30 ngày';
 
     const p3Tbody = document.getElementById('print-q3-tbody');
     if (p3Tbody) {
@@ -7810,12 +7822,13 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
             const lineTotal = Number(it.unit_price || 0) * Number(it.expected_trips_monthly || 1);
             return `
                 <tr>
-                    <td class="border border-slate-300 p-2 text-center">${idx + 1}</td>
-                    <td class="border border-slate-300 p-2 font-bold">${escapeHtml(it.route_description || it.route || '')}</td>
-                    <td class="border border-slate-300 p-2 text-center">${escapeHtml(it.cargo_type || q.cargo_type || 'Cont 40HC')}</td>
-                    <td class="border border-slate-300 p-2 text-center font-semibold">${new Intl.NumberFormat('vi-VN').format(it.expected_trips_monthly || 1)} chuyến</td>
-                    <td class="border border-slate-300 p-2 text-right font-mono">${new Intl.NumberFormat('vi-VN').format(it.unit_price || 0)} đ</td>
-                    <td class="border border-slate-300 p-2 text-right font-black font-mono">${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ</td>
+                    <td class="border border-slate-900 p-2 text-center font-bold">${idx + 1}</td>
+                    <td class="border border-slate-900 p-2 font-bold text-slate-900">${escapeHtml(it.route_description || it.route || '')}</td>
+                    <td class="border border-slate-900 p-2 text-center">${escapeHtml(it.cargo_type || q.cargo_type || 'Cont 40HC')}</td>
+                    <td class="border border-slate-900 p-2 text-center">${it.estimated_km || 0} km</td>
+                    <td class="border border-slate-900 p-2 text-right font-mono font-bold">${new Intl.NumberFormat('vi-VN').format(it.unit_price || 0)} đ</td>
+                    <td class="border border-slate-900 p-2 text-center font-semibold">${new Intl.NumberFormat('vi-VN').format(it.expected_trips_monthly || 1)} chuyến</td>
+                    <td class="border border-slate-900 p-2 text-right font-black font-mono text-slate-950">${new Intl.NumberFormat('vi-VN').format(lineTotal)} đ</td>
                 </tr>
             `;
         }).join('');
@@ -7860,16 +7873,10 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     setTopbarFullpageMode({
         backFn: closeQuotationPrintModal,
         prefix: 'Sale & Báo Giá',
-        title: `Bản In Báo Giá [${q.quotation_code || q.code || ('BG-' + q.id)}]`,
-        subText: `Khách hàng: <strong class="text-slate-900">${escapeHtml(q.customer_name || q.customer || 'Chưa chọn khách hàng')}</strong> · <span class="text-slate-500">Khổ A4 Chuẩn Doanh Nghiệp</span>`,
-        badgesHtml: `<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Khổ A4 Chuẩn TVL</span>`,
-        actionsHtml: `
-            <button type="button" onclick="printQuotationVoucher()"
-                class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-printer mr-1 text-base"></i>
-                <span>In Ngay (A4)</span>
-            </button>
-        `
+        title: 'Bản In Báo Giá',
+        subText: '',
+        badgesHtml: '',
+        actionsHtml: ''
     });
 
     const modal = document.getElementById('modal-quotation-print');
@@ -7907,16 +7914,16 @@ function closeQuotationPrintModal() {
 function switchQuotationPrintTemplate(templateType) {
     const tplStandard = document.getElementById('quote-tpl-standard');
     const tplMatrix = document.getElementById('quote-tpl-matrix');
-    const tplDetail = document.getElementById('quote-tpl-detail');
+    const tplProject = document.getElementById('quote-tpl-project') || document.getElementById('quote-tpl-detail');
 
     if (tplStandard) tplStandard.classList.add('hidden');
     if (tplMatrix) tplMatrix.classList.add('hidden');
-    if (tplDetail) tplDetail.classList.add('hidden');
+    if (tplProject) tplProject.classList.add('hidden');
 
     if (templateType === 'TABLE_MATRIX') {
         if (tplMatrix) tplMatrix.classList.remove('hidden');
     } else if (templateType === 'PROJECT_DETAIL') {
-        if (tplDetail) tplDetail.classList.remove('hidden');
+        if (tplProject) tplProject.classList.remove('hidden');
     } else {
         if (tplStandard) tplStandard.classList.remove('hidden');
     }
@@ -7924,12 +7931,21 @@ function switchQuotationPrintTemplate(templateType) {
 
 function printQuotationVoucher() {
     if (typeof setDynamicPrintPageStyle === 'function') {
-        setDynamicPrintPageStyle('@page { size: A4 portrait; margin: 12mm 15mm 12mm 16mm; }');
+        setDynamicPrintPageStyle('@page { size: A4 portrait; margin: 10mm 12mm 10mm 14mm; }');
     }
     document.body.classList.add('is-printing-quotation');
     document.body.classList.remove('is-printing-voucher', 'is-printing-report');
-    window.print();
+    setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+            document.body.classList.remove('is-printing-quotation');
+        }, 800);
+    }, 60);
 }
+
+window.addEventListener('afterprint', () => {
+    document.body.classList.remove('is-printing-quotation', 'is-printing-voucher', 'is-printing-report');
+});
 
 function printQuotationFromModal() {
     const id = document.getElementById('quote-id')?.value;

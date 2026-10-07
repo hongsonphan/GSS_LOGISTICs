@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.19] - 2026-10-07 (Tinh Gọn Topbar Bản In, Khắc Phục Lỗi Trang Trắng Khi In & Đồng Bộ Đổi Mẫu In)
+
+### 1. Tinh Gọn Topbar Bản In Báo Giá (Hình 1):
+- **Chỉ giữ lại tiêu đề chuẩn:** `Sale & Báo Giá | Bản In Báo Giá` trên Topbar.
+- **Loại bỏ thông tin lặp:** Bỏ mã báo giá lặp lại trong tiêu đề, bỏ phụ đề khách hàng, bỏ badge `Khổ A4 Chuẩn TVL` và nút `In Ngay (A4)` trên Topbar vì toàn bộ thông tin và thao tác đã được bố trí ở trang bên dưới.
+
+### 2. Sửa Nhãn Nút In & Khắc Phục Triệt Để Trang Trắng Khi Preview In (Hình 3):
+- **Chuẩn hóa nhãn nút:** Đổi từ `In Ngay (A4)` thành `In Ngay` ngắn gọn, trực quan.
+- **Sửa lỗi Preview in bị trang trắng:**
+  * Nguyên nhân: Do quy tắc `@media print` có `body > * { display: none !important; }` đã vô tình ẩn container cha `div.flex-1` và `<main id="main-views">` chứa `#view-quotation-print`.
+  * Khắc phục: Bổ sung quy tắc ghi đè hiển thị `display: block !important;` cho `body.is-printing-quotation > div.flex-1` và `#main-views`, đồng thời ẩn `header` và `aside`. Khung A4 `#quotation-printable-area` giờ đây hiển thị 100% nội dung sắc nét khi bấm in hoặc xuất PDF.
+  * Thêm `setTimeout` đồng bộ và listener `afterprint` dọn sạch class in sau khi in.
+
+### 3. Đồng Bộ Chuyển Đổi Các Kiểu Mẫu In (Hình 2):
+- **Sửa ID bộ chọn:** Đồng bộ ID `quote-tpl-project` và `quote-tpl-detail` trong hàm `switchQuotationPrintTemplate`.
+- **Render đầy đủ dữ liệu thực:** Bổ sung điền đầy đủ dữ liệu báo giá thực tế vào Mẫu 2 (Bảng cước & khung đối tác To/From) và Mẫu 3 (Chi tiết dịch vụ dự án & ETA/ETD) bao gồm tên khách hàng, người liên hệ, hotline, bảng cước 7 cột và chữ ký đại diện.
+
+---
+
 ## [2.9.18] - 2026-10-07 (Chuyển Đổi Bản In Báo Giá A4 Thành Dedicated Page & Triệt Tiêu Modal Xem Báo Giá)
 
 ### 1. Bỏ Ô Chọn Mẫu In Trong Form Báo Giá (Hình 1):

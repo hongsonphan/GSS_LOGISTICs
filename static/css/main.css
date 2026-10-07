@@ -685,6 +685,31 @@ div[id^="view-"] table:not(.erp-table) tbody td {
         visibility: visible !important;
     }
 
+    /* Đảm bảo khung cha chứa view-quotation-print không bị ẩn bởi body > * */
+    body.is-printing-quotation > div.flex-1,
+    body.is-printing-quotation #main-views {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    body.is-printing-quotation header,
+    body.is-printing-quotation aside,
+    body.is-printing-quotation #topbar,
+    body.is-printing-quotation #topbar-fullpage-wrapper,
+    body.is-printing-quotation #topbar-standard-wrapper {
+        display: none !important;
+    }
+
     /* Đảm bảo tuyệt đối nếu đang in 1 modal thì các modal còn lại không hiển thị */
     body.is-printing-voucher #view-quotation-print,
     body.is-printing-voucher #modal-quotation-print,

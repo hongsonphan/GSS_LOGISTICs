@@ -32,7 +32,7 @@
                 <button type="button" onclick="printQuotationVoucher()" 
                     class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
                     <i class="ph-bold ph-printer text-base"></i>
-                    <span>In Ngay (A4)</span>
+                    <span>In Ngay</span>
                 </button>
             </div>
         </div>
@@ -269,10 +269,13 @@
 
                     <!-- Chữ Ký Mẫu 2 -->
                     <div class="grid grid-cols-2 gap-8 pt-4 pb-2 text-center text-xs">
-                        <div>
-                            <p class="font-bold uppercase">XÁC NHẬN CỦA KHÁCH HÀNG</p>
+                        <div class="space-y-1 flex flex-col justify-between">
+                            <div>
+                                <p class="font-bold uppercase text-slate-900">XÁC NHẬN CỦA KHÁCH HÀNG</p>
+                                <p class="italic text-[10.5px] text-slate-500">(Ký & ghi rõ họ tên)</p>
+                            </div>
                             <div class="h-16"></div>
-                            <p class="text-slate-400 italic">(Ký & ghi rõ họ tên)</p>
+                            <p class="font-bold text-slate-900 uppercase" id="print-q2-sign-cust">Đại diện khách hàng</p>
                         </div>
                         <div>
                             <p class="font-bold uppercase print-comp-name">TRIỀN VÕ LOGISTICS</p>
