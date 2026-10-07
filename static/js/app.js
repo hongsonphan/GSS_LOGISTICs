@@ -7927,13 +7927,21 @@ function closeQuotationPrintModal() {
     }
 
     // Khôi phục view trước đó
-    if (previousViewBeforeQuotationPrint === 'view-quotation-detail' && currentPrintingQuotation) {
+    if (previousViewBeforeQuotationPrint === 'view-quotation-detail') {
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
         const detailView = document.getElementById('view-quotation-detail');
         if (detailView) detailView.classList.remove('hidden-view');
-        if (typeof viewQuotationDetail === 'function') {
-            viewQuotationDetail(currentPrintingQuotation.id || currentPrintingQuotation.hashid, false);
-        }
+        
+        const quoteId = document.getElementById('fullpage-quote-id')?.value;
+        const quoteCode = document.getElementById('fullpage-quote-code')?.innerText || '';
+        setTopbarFullpageMode({
+            backFn: backToQuotations,
+            prefix: 'Sale & Booking',
+            title: quoteId ? `Báo Giá | ${quoteCode || ('BG-' + quoteId)}` : 'Tạo Mới Báo Giá',
+            subText: '',
+            badgesHtml: '',
+            actionsHtml: ''
+        });
     } else {
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
         const salesView = document.getElementById('view-sales');
