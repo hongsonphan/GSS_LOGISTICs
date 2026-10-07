@@ -3143,6 +3143,14 @@ function closeSimTripDetailsModal() {
     if (modal) modal.classList.add('hidden-view');
 }
 
+function editTripFromSimModal() {
+    closeSimTripDetailsModal();
+    if (typeof openModalEditTrip === 'function') {
+        openModalEditTrip(currentActiveTripCode);
+    }
+}
+window.editTripFromSimModal = editTripFromSimModal;
+
 function openSimIncidentModal() {
     const modal = document.getElementById('modal-sim-incident');
     if (modal) modal.classList.remove('hidden-view');

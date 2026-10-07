@@ -1365,6 +1365,42 @@ window.deleteQuotation = deleteQuotation;
 window.changeQuotationStatus = changeQuotationStatus;
 window.printQuotationFromModal = printQuotationFromModal;
 window.printQuotationVoucher = printQuotationVoucher;
+function editQuotationFromPrint() {
+    const q = currentPrintingQuotation;
+    closeQuotationPrintModal();
+    if (q && (q.hashid || q.id)) {
+        viewQuotationDetail(q.hashid || q.id);
+    }
+}
+window.editQuotationFromPrint = editQuotationFromPrint;
+window.enableEditQuotationModal = function() {
+    const form = document.getElementById('form-quotation');
+    if (form) {
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+    }
+    const titleEl = document.getElementById('modal-quotation-title');
+    if (titleEl && !titleEl.innerText.startsWith('Hiệu Chỉnh')) {
+        titleEl.innerText = titleEl.innerText.replace('Chi Tiết', 'Hiệu Chỉnh');
+    }
+    const editModalBtn = document.getElementById('btn-edit-quote-modal');
+    if (editModalBtn) editModalBtn.classList.add('hidden');
+    const submitBtn = document.getElementById('btn-submit-quote');
+    if (submitBtn) submitBtn.style.display = 'inline-flex';
+};
+window.enableEditBookingModal = function() {
+    const form = document.getElementById('form-booking');
+    if (form) {
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+    }
+    const titleEl = document.getElementById('modal-booking-title');
+    if (titleEl && !titleEl.innerText.startsWith('Hiệu Chỉnh')) {
+        titleEl.innerText = titleEl.innerText.replace('Chi Tiết', 'Hiệu Chỉnh');
+    }
+    const editModalBtn = document.getElementById('btn-edit-booking-modal');
+    if (editModalBtn) editModalBtn.classList.add('hidden');
+    const submitBtn = document.getElementById('btn-submit-booking');
+    if (submitBtn) submitBtn.style.display = 'inline-flex';
+};
 window.openQuotationPrintModal = openQuotationPrintModal;
 window.closeQuotationPrintModal = closeQuotationPrintModal;
 window.switchQuotationPrintTemplate = switchQuotationPrintTemplate;

@@ -893,8 +893,12 @@
             </div>
         </div>
 
-        <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
-            <button type="button" onclick="closeSimTripDetailsModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors">
+        <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+            <button type="button" id="btn-edit-trip-from-sim-details" onclick="editTripFromSimModal()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold font-heading transition-colors flex items-center gap-1.5 cursor-pointer">
+                <i class="ph-bold ph-pencil-simple text-sm"></i>
+                <span>Hiệu Chỉnh</span>
+            </button>
+            <button type="button" onclick="closeSimTripDetailsModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
                 Đóng
             </button>
         </div>

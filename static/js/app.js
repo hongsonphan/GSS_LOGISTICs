@@ -4273,6 +4273,14 @@ function closeSimTripDetailsModal() {
     if (modal) modal.classList.add('hidden-view');
 }
 
+function editTripFromSimModal() {
+    closeSimTripDetailsModal();
+    if (typeof openModalEditTrip === 'function') {
+        openModalEditTrip(currentActiveTripCode);
+    }
+}
+window.editTripFromSimModal = editTripFromSimModal;
+
 function openSimIncidentModal() {
     const modal = document.getElementById('modal-sim-incident');
     if (modal) modal.classList.remove('hidden-view');
@@ -6090,8 +6098,12 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
     const routesTbody = document.getElementById('quote-routes-tbody');
     if (routesTbody) routesTbody.innerHTML = '';
 
+    const editModalBtn = document.getElementById('btn-edit-quote-modal');
     if (submitBtn) {
         submitBtn.style.display = isReadOnly ? 'none' : 'inline-flex';
+    }
+    if (editModalBtn) {
+        editModalBtn.classList.toggle('hidden', !isReadOnly);
     }
 
     if (!quoteId) {
@@ -6201,6 +6213,23 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
     initAllNumberInputs();
     openModal('modal-quotation');
 }
+
+function enableEditQuotationModal() {
+    const form = document.getElementById('form-quotation');
+    if (form) {
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+    }
+    const titleEl = document.getElementById('modal-quotation-title');
+    const quoteCode = document.getElementById('quote-code')?.value || '';
+    if (titleEl && !titleEl.innerText.startsWith('Hiệu Chỉnh')) {
+        titleEl.innerText = titleEl.innerText.replace('Chi Tiết', 'Hiệu Chỉnh');
+    }
+    const editModalBtn = document.getElementById('btn-edit-quote-modal');
+    if (editModalBtn) editModalBtn.classList.add('hidden');
+    const submitBtn = document.getElementById('btn-submit-quote');
+    if (submitBtn) submitBtn.style.display = 'inline-flex';
+}
+window.enableEditQuotationModal = enableEditQuotationModal;
 
 async function saveQuotation(e) {
     if (e && typeof e.preventDefault === 'function') {
@@ -8149,6 +8178,14 @@ window.deleteQuotation = deleteQuotation;
 window.changeQuotationStatus = changeQuotationStatus;
 window.printQuotationFromModal = printQuotationFromModal;
 window.printQuotationVoucher = printQuotationVoucher;
+function editQuotationFromPrint() {
+    const q = currentPrintingQuotation;
+    closeQuotationPrintModal();
+    if (q && (q.hashid || q.id)) {
+        viewQuotationDetail(q.hashid || q.id);
+    }
+}
+window.editQuotationFromPrint = editQuotationFromPrint;
 window.openQuotationPrintModal = openQuotationPrintModal;
 window.closeQuotationPrintModal = closeQuotationPrintModal;
 window.switchQuotationPrintTemplate = switchQuotationPrintTemplate;
@@ -8209,8 +8246,12 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
     const btnText = document.getElementById('btn-save-booking-text');
     const idInput = document.getElementById('booking-id');
 
+    const editModalBtn = document.getElementById('btn-edit-booking-modal');
     if (submitBtn) {
         submitBtn.style.display = isReadOnly ? 'none' : 'inline-flex';
+    }
+    if (editModalBtn) {
+        editModalBtn.classList.toggle('hidden', !isReadOnly);
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -8381,6 +8422,22 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
     initAllNumberInputs();
     openModal('modal-booking');
 }
+
+function enableEditBookingModal() {
+    const form = document.getElementById('form-booking');
+    if (form) {
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+    }
+    const titleEl = document.getElementById('modal-booking-title');
+    if (titleEl && !titleEl.innerText.startsWith('Hiệu Chỉnh')) {
+        titleEl.innerText = titleEl.innerText.replace('Chi Tiết', 'Hiệu Chỉnh');
+    }
+    const editModalBtn = document.getElementById('btn-edit-booking-modal');
+    if (editModalBtn) editModalBtn.classList.add('hidden');
+    const submitBtn = document.getElementById('btn-submit-booking');
+    if (submitBtn) submitBtn.style.display = 'inline-flex';
+}
+window.enableEditBookingModal = enableEditBookingModal;
 
 async function saveBooking(e) {
     if (e && typeof e.preventDefault === 'function') {

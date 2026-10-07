@@ -2,6 +2,31 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.26] - 2026-10-07 (Bổ Sung Nút "Hiệu Chỉnh" Vào Tất Cả Màn Hình & Modal Xem Chi Tiết)
+
+### 1. Bổ Sung Nút "Hiệu Chỉnh" Tại Màn Hình & Modal Xem Bản In Báo Giá:
+- **Thanh Toolbar Bản In Báo Giá A4 Toàn Màn Hình (`view_quotation_print.html`):**
+  * Thêm nút **"Hiệu Chỉnh"** (`btn-edit-quote-from-print`) với màu cam vàng `bg-amber-600 hover:bg-amber-700` ngay bên cạnh nút "In Ngay".
+  * Khi người dùng xem bản in xong muốn chỉnh sửa lại báo giá, bấm nút "Hiệu Chỉnh" sẽ tự động đóng màn hình xem in và mở ngay màn hình chi tiết báo giá để hiệu chỉnh thông tin tức thì (`editQuotationFromPrint()`).
+- **Modal Popup Xem Bản In Báo Giá (`modal_quotation_print.html`):**
+  * Thêm nút **"Hiệu Chỉnh"** (`btn-edit-quote-from-modal-print`) trên thanh công cụ xem in, hỗ trợ chuyển nhanh sang form hiệu chỉnh.
+
+### 2. Bổ Sung Nút "Hiệu Chỉnh" Tại Modal Chi Tiết Báo Giá & Booking:
+- **Modal Báo Giá (`modal_quotation.html`):**
+  * Bổ sung nút **"Hiệu Chỉnh"** (`btn-edit-quote-modal`) tại footer modal.
+  * Khi mở modal ở chế độ Xem chi tiết (`isReadOnly = true`), nút "Lưu" ẩn và nút "Hiệu Chỉnh" hiển thị.
+  * Khi bấm "Hiệu Chỉnh", hệ thống kích hoạt hàm `enableEditQuotationModal()`, tự động mở khóa (remove disabled) cho tất cả trường input/select/textarea, chuyển tiêu đề modal sang "Hiệu Chỉnh..." và hiển thị nút "Lưu" để cập nhật dữ liệu.
+- **Modal Booking / Đơn Hàng (`modal_booking.html`):**
+  * Bổ sung nút **"Hiệu Chỉnh"** (`btn-edit-booking-modal`) tại footer modal.
+  * Khi mở ở chế độ Xem (`isReadOnly = true`), nút "Hiệu Chỉnh" hiển thị; khi bấm, kích hoạt `enableEditBookingModal()`, gỡ khóa toàn bộ các trường trên form và hiển thị nút "Lưu".
+
+### 3. Bổ Sung Nút "Hiệu Chỉnh" Tại Modal Xem Chi Tiết Vận Đơn & Container Hiện Trường:
+- **Modal Simulator Chi Tiết Cont & Lệnh (`modal-sim-trip-details` trong `view_trip_detail.html`):**
+  * Bổ sung nút **"Hiệu Chỉnh"** (`btn-edit-trip-from-sim-details`) cạnh nút "Đóng".
+  * Bấm nút sẽ chuyển thẳng sang mở modal "Hiệu chỉnh chuyến xe / lệnh điều động" (`openModalEditTrip`) một cách mượt mà.
+
+---
+
 ## [2.9.25] - 2026-10-07 (Chuẩn Hóa Nhãn Nút Bấm CRUD & Loại Bỏ Nút Sao Chép Link)
 
 ### 1. Chuẩn Hóa Nhãn Nút CRUD Toàn Hệ Thống (Standardized Action Buttons):
