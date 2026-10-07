@@ -2,6 +2,20 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.17] - 2026-10-07 (Khắc Phục Nút Thao Tác Topbar Báo Giá & Tối Ưu Nút Tiếp Nhận Booking Mới)
+
+### 1. Khắc Phục Trùng Lặp Nút Thao Tác Báo Giá (Hình 1):
+- **Bỏ nhóm nút thao tác trên Topbar Báo Giá:** Loại bỏ cụm nút `[Sao Chép Link] [Xem & In A4] [Lưu Thay Đổi]` khỏi Topbar trang Báo Giá (`openCreateQuotationPage` và `viewQuotationDetail`) vì phía dưới chân form báo giá (`view_quotation_detail.html`) đã có sẵn Footer Bar đầy đủ các nút tương ứng.
+- Giữ nguyên nhãn trạng thái và badge phương thức tính cước trực quan trên Topbar.
+
+### 2. Khắc Phục Hiệu Lực Nút Tiếp Nhận Booking Mới (Hình 2):
+- **Bust Browser Cache:** Cập nhật version query string của `app.js` và `column_manager.js` từ `?v=2.9.2` lên `?v=2.9.16` trong `templates/base.html`, ngăn ngừa lỗi trình duyệt dùng file cache cũ chưa cập nhật export hàm.
+- **Tối ưu tức thì (Instant Transition) cho `openCreateBookingPage`:** Chuyển các lệnh render giao diện và Topbar lên đầu hàm, thực hiện ngay lập tức khi click nút.
+- **Bọc Try/Catch an toàn:** Đưa quá trình nạp Master Data bất đồng bộ (`loadMasterDataFormOptions()`) vào khối try/catch an toàn, không làm gián đoạn luồng mở trang tạo Booking.
+- **Gán hàm toàn cục an toàn:** Thêm `type="button"` và gán tường minh `window.openCreateBookingPage` ngay sau định nghĩa hàm trong `static/js/app.js`.
+
+---
+
 ## [2.9.16] - 2026-10-07 (Tối Ưu Giao Diện Toàn Màn Hình Lên Topbar, Chuyển Modal Sang Dedicated Pages & Chuẩn Hóa Cột STT)
 
 ### 1. Đồng Bộ Header Toàn Màn Hình Lên Topbar & Loại Bỏ Header Con Trùng Lặp:

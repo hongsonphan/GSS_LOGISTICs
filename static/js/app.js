@@ -6541,23 +6541,7 @@ async function openCreateQuotationPage(updateHistory = true) {
         title: 'Tạo Báo giá',
         subText: 'Khách hàng: <strong class="text-slate-900" id="topbar-quote-customer">Chưa chọn khách hàng</strong> · <span class="text-slate-500">' + new Date().toLocaleDateString('vi-VN') + '</span>',
         badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Ma trận đa tuyến</span>',
-        actionsHtml: `
-            <button type="button" onclick="copyQuotationPageLink()"
-                class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
-                <span class="hidden sm:inline">Sao Chép Link</span>
-            </button>
-            <button type="button" onclick="printQuotationFromFullPage()"
-                class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-printer mr-1 text-sm text-teal-400"></i>
-                <span>Xem & In A4</span>
-            </button>
-            <button type="button" id="btn-fullpage-save-quote" onclick="saveFullpageQuotation(event)"
-                class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-check-circle mr-1 text-base"></i>
-                <span id="btn-fullpage-save-text">Lưu Thay Đổi</span>
-            </button>
-        `
+        actionsHtml: ''
     });
 
     // Thiết lập giá trị mặc định cho form tạo mới
@@ -6665,23 +6649,7 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
                 }" id="topbar-quote-status-badge">${q.status_display || q.status}</span>
                 <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Ma trận đa tuyến</span>
             `,
-            actionsHtml: `
-                <button type="button" onclick="copyQuotationPageLink()"
-                    class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
-                    <span class="hidden sm:inline">Sao Chép Link</span>
-                </button>
-                <button type="button" onclick="printQuotationFromFullPage()"
-                    class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-printer mr-1 text-sm text-teal-400"></i>
-                    <span>Xem & In A4</span>
-                </button>
-                <button type="button" id="btn-fullpage-save-quote" onclick="saveFullpageQuotation(event)"
-                    class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                    <i class="ph-bold ph-check-circle mr-1 text-base"></i>
-                    <span id="btn-fullpage-save-text">Lưu Thay Đổi</span>
-                </button>
-            `
+        actionsHtml: ''
         });
 
         // Điền dữ liệu vào form
@@ -7162,100 +7130,112 @@ function parseSiCutoffToFullpageInputs(siStr) {
 }
 
 async function openCreateBookingPage(updateHistory = true) {
-    await loadMasterDataFormOptions();
-    populateMasterDataDropdowns();
-
-    const form = document.getElementById('form-fullpage-booking');
-    if (form) form.reset();
-
-    const idInput = document.getElementById('fullpage-booking-id');
-    const titleCodeEl = document.getElementById('fullpage-booking-title-code');
-    const statusBadge = document.getElementById('fullpage-booking-status-badge');
-    const typeBadge = document.getElementById('fullpage-booking-type-badge');
-    const headerCust = document.getElementById('fullpage-booking-header-customer');
-    const headerDate = document.getElementById('fullpage-booking-header-date');
-    const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
-    const tripsSection = document.getElementById('fullpage-booking-trips-section');
-
-    if (idInput) idInput.value = '';
-    if (titleCodeEl) titleCodeEl.innerText = 'Tạo Booking';
-    if (statusBadge) statusBadge.classList.add('hidden');
-    if (typeBadge) {
-        typeBadge.classList.remove('hidden');
-        typeBadge.innerText = 'Kéo Cont Xuất Khẩu';
-    }
-    if (headerCust) headerCust.innerText = 'Chưa chọn khách hàng';
-    const todayStr = new Date().toISOString().split('T')[0];
-    if (headerDate) headerDate.innerText = `Hẹn đóng: ${new Date().toLocaleDateString('vi-VN')}`;
-    if (saveBtnText) saveBtnText.innerText = 'Tiếp Nhận Đơn Hàng';
-    if (tripsSection) tripsSection.classList.add('hidden');
-
-    const dateInput = document.getElementById('fullpage-booking-loading-date');
-    if (dateInput) dateInput.value = todayStr;
-    const timeInput = document.getElementById('fullpage-booking-loading-time');
-    if (timeInput) timeInput.value = '08:00';
-    const closingDateInput = document.getElementById('fullpage-booking-closing-date');
-    if (closingDateInput) closingDateInput.value = todayStr;
-    const closingTimeValInput = document.getElementById('fullpage-booking-closing-time-val');
-    if (closingTimeValInput) closingTimeValInput.value = '17:00';
-    syncFullpageBookingClosingTime();
-
-    const siDateInput = document.getElementById('fullpage-booking-si-date');
-    if (siDateInput) siDateInput.value = todayStr;
-    const siTimeValInput = document.getElementById('fullpage-booking-si-time-val');
-    if (siTimeValInput) siTimeValInput.value = '12:00';
-    syncFullpageBookingSiTime();
-
-    const totalInput = document.getElementById('fullpage-booking-total-containers');
-    if (totalInput) totalInput.value = formatNumberVN(1);
-    const detInput = document.getElementById('fullpage-booking-det');
-    if (detInput) detInput.value = formatNumberVN(7);
-    const demInput = document.getElementById('fullpage-booking-dem');
-    if (demInput) demInput.value = formatNumberVN(7);
-    const priceInput = document.getElementById('fullpage-booking-price');
-    if (priceInput) priceInput.value = formatNumberVN(4000000);
-
-    clearFullpageBookingFileSelection();
-    onFullpageBookingTypeChange();
-
-    if (updateHistory && window.history && window.history.pushState) {
-        const bookingPath = '/sales/bookings/new';
-        if (window.location.pathname !== bookingPath) {
-            window.history.pushState({ view: 'booking-create' }, '', bookingPath);
+    try {
+        const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+        if (currentActiveView && currentActiveView.id !== 'view-booking-detail') {
+            previousActiveTab = currentActiveView.id.replace('view-', '');
         }
+
+        // Ẩn tất cả view, hiện view-booking-detail ngay lập tức
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+        const detailView = document.getElementById('view-booking-detail');
+        if (detailView) {
+            detailView.classList.remove('hidden-view');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        setTopbarFullpageMode({
+            backFn: backToBookings,
+            prefix: 'Sale & Booking',
+            title: 'Tạo Đơn Hàng / Booking',
+            subText: 'Khách hàng: <strong class="text-slate-900" id="topbar-booking-customer">Chưa chọn khách hàng</strong> · <span class="text-slate-500" id="topbar-booking-date">Hẹn đóng: ' + new Date().toLocaleDateString('vi-VN') + '</span>',
+            badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200" id="topbar-booking-type-badge">Kéo Cont Xuất Khẩu</span>',
+            actionsHtml: `
+                <button type="button" onclick="copyBookingPageLink()"
+                    class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
+                    <span class="hidden sm:inline">Sao Chép Link</span>
+                </button>
+                <button type="button" id="btn-fullpage-save-booking" onclick="saveFullpageBooking(event)"
+                    class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-check-circle mr-1 text-base"></i>
+                    <span id="btn-fullpage-save-booking-text">Tiếp Nhận Đơn Hàng</span>
+                </button>
+            `
+        });
+
+        if (updateHistory && window.history && window.history.pushState) {
+            const bookingPath = '/sales/bookings/new';
+            if (window.location.pathname !== bookingPath) {
+                window.history.pushState({ view: 'booking-create' }, '', bookingPath);
+            }
+        }
+
+        const form = document.getElementById('form-fullpage-booking');
+        if (form) form.reset();
+
+        const idInput = document.getElementById('fullpage-booking-id');
+        const titleCodeEl = document.getElementById('fullpage-booking-title-code');
+        const statusBadge = document.getElementById('fullpage-booking-status-badge');
+        const typeBadge = document.getElementById('fullpage-booking-type-badge');
+        const headerCust = document.getElementById('fullpage-booking-header-customer');
+        const headerDate = document.getElementById('fullpage-booking-header-date');
+        const saveBtnText = document.getElementById('btn-fullpage-save-booking-text');
+        const tripsSection = document.getElementById('fullpage-booking-trips-section');
+
+        if (idInput) idInput.value = '';
+        if (titleCodeEl) titleCodeEl.innerText = 'Tạo Booking';
+        if (statusBadge) statusBadge.classList.add('hidden');
+        if (typeBadge) {
+            typeBadge.classList.remove('hidden');
+            typeBadge.innerText = 'Kéo Cont Xuất Khẩu';
+        }
+        if (headerCust) headerCust.innerText = 'Chưa chọn khách hàng';
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (headerDate) headerDate.innerText = `Hẹn đóng: ${new Date().toLocaleDateString('vi-VN')}`;
+        if (saveBtnText) saveBtnText.innerText = 'Tiếp Nhận Đơn Hàng';
+        if (tripsSection) tripsSection.classList.add('hidden');
+
+        const dateInput = document.getElementById('fullpage-booking-loading-date');
+        if (dateInput) dateInput.value = todayStr;
+        const timeInput = document.getElementById('fullpage-booking-loading-time');
+        if (timeInput) timeInput.value = '08:00';
+        const closingDateInput = document.getElementById('fullpage-booking-closing-date');
+        if (closingDateInput) closingDateInput.value = todayStr;
+        const closingTimeValInput = document.getElementById('fullpage-booking-closing-time-val');
+        if (closingTimeValInput) closingTimeValInput.value = '17:00';
+        if (typeof syncFullpageBookingClosingTime === 'function') syncFullpageBookingClosingTime();
+
+        const siDateInput = document.getElementById('fullpage-booking-si-date');
+        if (siDateInput) siDateInput.value = todayStr;
+        const siTimeValInput = document.getElementById('fullpage-booking-si-time-val');
+        if (siTimeValInput) siTimeValInput.value = '12:00';
+        if (typeof syncFullpageBookingSiTime === 'function') syncFullpageBookingSiTime();
+
+        const totalInput = document.getElementById('fullpage-booking-total-containers');
+        if (totalInput) totalInput.value = formatNumberVN(1);
+        const detInput = document.getElementById('fullpage-booking-det');
+        if (detInput) detInput.value = formatNumberVN(7);
+        const demInput = document.getElementById('fullpage-booking-dem');
+        if (demInput) demInput.value = formatNumberVN(7);
+        const priceInput = document.getElementById('fullpage-booking-price');
+        if (priceInput) priceInput.value = formatNumberVN(4000000);
+
+        if (typeof clearFullpageBookingFileSelection === 'function') clearFullpageBookingFileSelection();
+        if (typeof onFullpageBookingTypeChange === 'function') onFullpageBookingTypeChange();
+        if (typeof initAllNumberInputs === 'function') initAllNumberInputs();
+
+        try {
+            if (typeof loadMasterDataFormOptions === 'function') await loadMasterDataFormOptions();
+            if (typeof populateMasterDataDropdowns === 'function') populateMasterDataDropdowns();
+        } catch (mErr) {
+            console.warn('loadMasterDataFormOptions error:', mErr);
+        }
+    } catch (err) {
+        console.error('Error in openCreateBookingPage:', err);
     }
-
-    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
-    if (currentActiveView && currentActiveView.id !== 'view-booking-detail') {
-        previousActiveTab = currentActiveView.id.replace('view-', '');
-    }
-
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
-    const detailView = document.getElementById('view-booking-detail');
-    if (detailView) detailView.classList.remove('hidden-view');
-
-    setTopbarFullpageMode({
-        backFn: backToBookings,
-        prefix: 'Sale & Booking',
-        title: 'Tạo Đơn Hàng / Booking',
-        subText: 'Khách hàng: <strong class="text-slate-900" id="topbar-booking-customer">Chưa chọn khách hàng</strong> · <span class="text-slate-500" id="topbar-booking-date">Hẹn đóng: ' + new Date().toLocaleDateString('vi-VN') + '</span>',
-        badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200" id="topbar-booking-type-badge">Kéo Cont Xuất Khẩu</span>',
-        actionsHtml: `
-            <button type="button" onclick="copyBookingPageLink()"
-                class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
-                <span class="hidden sm:inline">Sao Chép Link</span>
-            </button>
-            <button type="button" id="btn-fullpage-save-booking" onclick="saveFullpageBooking(event)"
-                class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-check-circle mr-1 text-base"></i>
-                <span id="btn-fullpage-save-booking-text">Tiếp Nhận Đơn Hàng</span>
-            </button>
-        `
-    });
-
-    initAllNumberInputs();
 }
+window.openCreateBookingPage = openCreateBookingPage;
 
 async function viewBookingDetail(bookingId, updateHistory = true) {
     if (!bookingId || bookingId === 'new') {
