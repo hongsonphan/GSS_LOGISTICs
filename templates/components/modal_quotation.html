@@ -221,21 +221,10 @@
                 </div>
 
                 <!-- Cụm Chọn Mẫu In & Thông Tin Người Nhận -->
+                <input type="hidden" id="quote-template-type" value="STANDARD">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
-                    <!-- Kiểu Mẫu Báo Giá (col 6) -->
-                    <div class="md:col-span-6">
-                        <label class="block font-bold text-slate-700 text-xs mb-1">
-                            Kiểu Mẫu Báo Giá Khi In <span class="text-rose-500">*</span>
-                        </label>
-                        <select id="quote-template-type" class="w-full h-8.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-800 text-xs transition-all">
-                            <option value="STANDARD">Mẫu 1: Tiêu Chuẩn Doanh Nghiệp (Quốc Hiệu TVL & Bảng Tuyến)</option>
-                            <option value="TABLE_MATRIX">Mẫu 2: Bảng Cước & Khung Đối Tác (To / From Matrix)</option>
-                            <option value="PROJECT_DETAIL">Mẫu 3: Chi Tiết Dịch Vụ Dự Án & Lịch Trình (ETA/ETD)</option>
-                        </select>
-                    </div>
-
-                    <!-- Người Nhận Báo Giá (col 6) -->
-                    <div class="md:col-span-6">
+                    <!-- Người Nhận Báo Giá (col 12) -->
+                    <div class="md:col-span-12">
                         <label class="block font-bold text-slate-700 text-xs mb-1">
                             Người Nhận Báo Giá (Attn)
                         </label>

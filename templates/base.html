@@ -79,7 +79,6 @@
     {% include 'components/modal_column_customizer.html' %}
     {% include 'components/modal_confirm.html' %}
     {% include 'components/modal_cash_voucher_print.html' %}
-    {% include 'components/modal_quotation_print.html' %}
     {% include 'components/modal_report_print.html' %}
 
     <!-- 4. GRACEFUL TOAST NOTIFICATION CONTAINER (Bim_ERP-Solutions Standard) -->
@@ -99,8 +98,8 @@
             is_superuser: {{ request.user.is_superuser|yesno:"true,false" }}
         };
     </script>
-    <script src="{% static 'js/column_manager.js' %}?v=2.9.16"></script>
-    <script src="{% static 'js/app.js' %}?v=2.9.16"></script>
+    <script src="{% static 'js/column_manager.js' %}?v=2.9.17"></script>
+    <script src="{% static 'js/app.js' %}?v=2.9.17"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

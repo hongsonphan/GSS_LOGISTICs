@@ -663,11 +663,13 @@ div[id^="view-"] table:not(.erp-table) tbody td {
         display: none !important;
     }
 
-    /* 3. Hiển thị DUY NHẤT Modal đang in (loại bỏ hiệu ứng flex popup, đính trực tiếp từ góc 0,0 của trang in) */
+    /* 3. Hiển thị DUY NHẤT Modal/View đang in (loại bỏ hiệu ứng flex popup, đính trực tiếp từ góc 0,0 của trang in) */
     body.is-printing-voucher #modal-cash-voucher-print,
+    body.is-printing-quotation #view-quotation-print,
     body.is-printing-quotation #modal-quotation-print,
     body.is-printing-report #modal-report-print,
     body:not(.is-printing-voucher):not(.is-printing-quotation):not(.is-printing-report) #modal-cash-voucher-print:not(.hidden),
+    body:not(.is-printing-voucher):not(.is-printing-quotation):not(.is-printing-report) #view-quotation-print:not(.hidden-view),
     body:not(.is-printing-voucher):not(.is-printing-quotation):not(.is-printing-report) #modal-quotation-print:not(.hidden),
     body:not(.is-printing-voucher):not(.is-printing-quotation):not(.is-printing-report) #modal-report-print:not(.hidden) {
         display: block !important;
@@ -684,10 +686,12 @@ div[id^="view-"] table:not(.erp-table) tbody td {
     }
 
     /* Đảm bảo tuyệt đối nếu đang in 1 modal thì các modal còn lại không hiển thị */
+    body.is-printing-voucher #view-quotation-print,
     body.is-printing-voucher #modal-quotation-print,
     body.is-printing-voucher #modal-report-print,
     body.is-printing-quotation #modal-cash-voucher-print,
     body.is-printing-quotation #modal-report-print,
+    body.is-printing-report #view-quotation-print,
     body.is-printing-report #modal-quotation-print,
     body.is-printing-report #modal-cash-voucher-print {
         display: none !important;
@@ -695,10 +699,12 @@ div[id^="view-"] table:not(.erp-table) tbody td {
 
     /* 4. Reset khung bọc trung gian của modal (Cấp 2: dialog box, Cấp 3: scroll wrapper) thành container phẳng, không padding, không flexbox lệch tâm */
     #modal-cash-voucher-print > div,
+    #view-quotation-print > div,
     #modal-quotation-print > div,
     #modal-report-print > div,
     #report-print-modal-dialog,
     #modal-cash-voucher-print > div > div:not(.no-print),
+    #view-quotation-print > div > div:not(.no-print),
     #modal-quotation-print > div > div:not(.no-print),
     #modal-report-print > div > div:not(.no-print),
     #report-print-scroll-container {

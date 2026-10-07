@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.18] - 2026-10-07 (Chuyển Đổi Bản In Báo Giá A4 Thành Dedicated Page & Triệt Tiêu Modal Xem Báo Giá)
+
+### 1. Bỏ Ô Chọn Mẫu In Trong Form Báo Giá (Hình 1):
+- **Loại bỏ dropdown thừa:** Bỏ ô chọn `Kiểu Mẫu Báo Giá Khi In *` khỏi giao diện form chi tiết Báo Giá (`view_quotation_detail.html`), chuyển thành trường ẩn `fullpage-quote-template-type` mặc định `STANDARD`.
+- **Mở rộng layout:** Ô `Người Nhận Báo Giá (Attn)` mở rộng chiếm trọn chiều ngang (`col-span-12`), tạo bố cục nhập liệu thoáng đãng.
+- **Lý do nghiệp vụ:** Màn hình xem trước bản in đã có sẵn thanh công cụ chọn mẫu in trực quan (WYSIWYG), không cần chọn lặp lại trong form.
+
+### 2. Mở Rộng Bản In Báo Giá A4 Thành Trang Chuyên Biệt Toàn Màn Hình (Hình 2):
+- **Tạo Dedicated Full-Page View (`templates/views/view_quotation_print.html`):** Thay thế modal popup chật hẹp bằng trang toàn màn hình với nền xám chuẩn studio, tờ giấy A4 hiển thị phẳng phiu, shadow-xl sang trọng ở giữa màn hình.
+- **Tích hợp Topbar Fullpage Mode:** Nút Quay Lại (`Quay Lại`), Tiêu đề bản in kèm mã báo giá và tên khách hàng, nút `In Ngay (A4)`.
+- **Thanh Toolbar điều khiển bản in:** Đặt ở đầu trang cho phép chuyển đổi tức thì giữa Mẫu 1 (Tiêu chuẩn TVL), Mẫu 2 (Bảng cước & đối tác To/From), Mẫu 3 (Dự án & ETA/ETD) và in ngay.
+- **Bảo toàn 100% định dạng in ấn (@media print):** Cập nhật CSS in ấn trong `static/css/main.css` để khi in ra giấy hoặc xuất PDF giữ trọn vẹn khổ A4 portrait chuẩn mực.
+
+### 3. Liên Thông Nút Thao Tác Bảng Báo Giá Sang Trang Toàn Màn Hình (Hình 3):
+- **Triệt tiêu Modal Xem Báo Giá cũ:** Cập nhật hàm `openModalQuotation` để tự động chuyển hướng sang `viewQuotationDetail(quoteId)` hoặc `openCreateQuotationPage()`, không bao giờ bật modal popup cũ lên nữa.
+- **Chuẩn hóa cột Thao Tác trong Bảng Báo Giá:**
+  * Nút Con mắt (`ph-eye`): Mở trực tiếp trang Báo Giá Toàn Màn Hình (`viewQuotationDetail`).
+  * Nút Máy in (`ph-printer`): Mở trực tiếp trang Bản In A4 Toàn Màn Hình (`openQuotationPrintModal`).
+  * Nút Thùng rác (`ph-trash`): Xóa báo giá.
+
+---
+
 ## [2.9.17] - 2026-10-07 (Khắc Phục Nút Thao Tác Topbar Báo Giá & Tối Ưu Nút Tiếp Nhận Booking Mới)
 
 ### 1. Khắc Phục Trùng Lặp Nút Thao Tác Báo Giá (Hình 1):

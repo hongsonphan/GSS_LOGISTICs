@@ -6095,6 +6095,11 @@ function toggleQuoteNotesExpand() {
 }
 
 async function openModalQuotation(quoteId = null, isReadOnly = false) {
+    if (quoteId) {
+        return viewQuotationDetail(quoteId);
+    } else {
+        return openCreateQuotationPage();
+    }
     await loadMasterDataFormOptions();
     populateMasterDataDropdowns();
 
@@ -7601,8 +7606,13 @@ async function saveFullpageBooking(e) {
 }
 
 let currentPrintingQuotation = null;
+let previousViewBeforeQuotationPrint = null;
 
 async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
+    const curActive = document.querySelector('.view:not(.hidden-view)');
+    if (curActive && curActive.id !== 'view-quotation-print') {
+        previousViewBeforeQuotationPrint = curActive.id;
+    }
     let q = null;
     if (typeof quoteIdOrData === 'object' && quoteIdOrData !== null) {
         q = quoteIdOrData;
@@ -7839,16 +7849,58 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     switchQuotationPrintTemplate(selectedTemplate);
 
+    // Mở View Toàn Màn Hình view-quotation-print (không dùng modal popup)
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const printView = document.getElementById('view-quotation-print');
+    if (printView) {
+        printView.classList.remove('hidden-view');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    setTopbarFullpageMode({
+        backFn: closeQuotationPrintModal,
+        prefix: 'Sale & Báo Giá',
+        title: `Bản In Báo Giá [${q.quotation_code || q.code || ('BG-' + q.id)}]`,
+        subText: `Khách hàng: <strong class="text-slate-900">${escapeHtml(q.customer_name || q.customer || 'Chưa chọn khách hàng')}</strong> · <span class="text-slate-500">Khổ A4 Chuẩn Doanh Nghiệp</span>`,
+        badgesHtml: `<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Khổ A4 Chuẩn TVL</span>`,
+        actionsHtml: `
+            <button type="button" onclick="printQuotationVoucher()"
+                class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-printer mr-1 text-base"></i>
+                <span>In Ngay (A4)</span>
+            </button>
+        `
+    });
+
     const modal = document.getElementById('modal-quotation-print');
     if (modal) {
-        modal.classList.remove('hidden');
+        modal.classList.add('hidden');
     }
 }
 
 function closeQuotationPrintModal() {
+    const printView = document.getElementById('view-quotation-print');
+    if (printView) printView.classList.add('hidden-view');
+
     const modal = document.getElementById('modal-quotation-print');
     if (modal) {
         modal.classList.add('hidden');
+    }
+
+    // Khôi phục view trước đó
+    if (previousViewBeforeQuotationPrint === 'view-quotation-detail' && currentPrintingQuotation) {
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+        const detailView = document.getElementById('view-quotation-detail');
+        if (detailView) detailView.classList.remove('hidden-view');
+        if (typeof viewQuotationDetail === 'function') {
+            viewQuotationDetail(currentPrintingQuotation.id || currentPrintingQuotation.hashid, false);
+        }
+    } else {
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+        const salesView = document.getElementById('view-sales');
+        if (salesView) salesView.classList.remove('hidden-view');
+        restoreTopbarStandardMode();
+        if (typeof switchSalesSubtab === 'function') switchSalesSubtab('quotations');
     }
 }
 
@@ -9121,29 +9173,19 @@ function renderQuotationsTable(quotations) {
             </td>
             <td class="p-3.5 text-center">
                 <div class="flex items-center justify-center space-x-1.5">
-                    <!-- 1. Mở Trang Toàn Màn Hình -->
-                    <button onclick="viewQuotationDetail('${quoteHash}')" title="Mở trang báo giá riêng biệt (Toàn màn hình)" 
-                        class="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 hover:text-teal-900 border border-teal-200 transition-colors">
-                        <i class="ph-bold ph-arrow-square-out text-sm"></i>
-                    </button>
-                    <!-- 2. In Báo Giá Chuẩn Doanh Nghiệp -->
-                    <button onclick="openQuotationPrintModal(${s.id})" title="In Báo Giá Ký Kết" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-colors">
-                        <i class="ph-bold ph-printer text-sm"></i>
-                    </button>
-                    <!-- 3. Xem chi tiết Báo Giá dạng Modal -->
-                    <button onclick="openModalQuotation(${s.id}, true)" title="Xem chi tiết báo giá (Cửa sổ Pop-up)" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors">
+                    <!-- 1. Xem & Sửa Báo Giá Toàn Màn Hình -->
+                    <button type="button" onclick="viewQuotationDetail('${quoteHash}')" title="Xem & Sửa Báo Giá (Toàn màn hình)" 
+                        class="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 hover:text-teal-900 border border-teal-200 transition-colors cursor-pointer">
                         <i class="ph-bold ph-eye text-sm"></i>
                     </button>
-                    <!-- 4. Sửa Báo Giá Toàn Màn Hình -->
-                    <button onclick="viewQuotationDetail('${quoteHash}')" title="Chỉnh sửa báo giá (Toàn màn hình)" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 transition-colors cursor-pointer">
-                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                    <!-- 2. Xem Trước & In Báo Giá A4 Toàn Màn Hình -->
+                    <button type="button" onclick="openQuotationPrintModal('${quoteHash}')" title="Xem Trước & In Báo Giá A4 (Toàn màn hình)" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-colors cursor-pointer">
+                        <i class="ph-bold ph-printer text-sm"></i>
                     </button>
-                    <!-- 5. Xóa Báo Giá -->
-                    <button onclick="deleteQuotation(${s.id})" title="Xóa báo giá" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors">
+                    <!-- 3. Xóa Báo Giá -->
+                    <button type="button" onclick="deleteQuotation(${s.id})" title="Xóa báo giá" 
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 border border-slate-200 transition-colors cursor-pointer">
                         <i class="ph-bold ph-trash text-sm"></i>
                     </button>
                 </div>
