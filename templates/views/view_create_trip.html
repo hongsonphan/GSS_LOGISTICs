@@ -1,52 +1,6 @@
 <!-- 2.3 VIEW TẠO LỆNH ĐIỀU ĐỘNG CHUYẾN XE (DEDICATED FULL-PAGE VIEW) -->
 <div id="view-create-trip" class="view hidden-view h-full flex flex-col bg-slate-50 overflow-hidden relative animate-fade-in">
-    <!-- Top Header Bar -->
-    <div class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-10 shadow-xs shrink-0">
-        <div class="flex items-center min-w-0">
-            <button type="button" onclick="backToDispatch()"
-                class="mr-3.5 p-2 hover:bg-slate-100 rounded-xl text-slate-500 hover:text-slate-800 transition-colors bg-slate-50 border border-slate-200 inline-flex items-center justify-center cursor-pointer shadow-2xs"
-                title="Quay lại danh sách chuyến xe điều vận">
-                <i class="ph-bold ph-arrow-left text-lg"></i>
-            </button>
-            <div class="min-w-0">
-                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
-                    <h2 class="text-lg sm:text-xl font-black text-slate-900 font-heading tracking-tight flex items-center flex-wrap">
-                        <a href="javascript:void(0)" onclick="backToDispatch()" class="text-slate-600 hover:text-teal-700 transition-colors">Điều vận</a>
-                        <span class="mx-2 text-slate-300 font-normal">|</span>
-                        <span id="fullpage-trip-title" class="text-slate-900">Tạo Lệnh Điều Động</span>
-                    </h2>
-                    <span id="fullpage-trip-badge-inherited"
-                        class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 uppercase tracking-wider font-heading">
-                        Kế thừa từ Booking
-                    </span>
-                    <span id="fullpage-trip-type-badge"
-                        class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                        Chuyến xe FCL
-                    </span>
-                </div>
-                <p class="text-xs font-semibold text-slate-500 mt-0.5 flex items-center truncate" id="fullpage-trip-subtitle">
-                    <span>Phân bổ xe, tài xế, quản lý vỏ cont & kế thừa trực tiếp từ Booking/Báo giá</span>
-                </p>
-            </div>
-        </div>
-
-        <!-- Cụm Nút Hành Động Header -->
-        <div class="flex items-center space-x-2 shrink-0">
-            <!-- 1. Nút Hủy / Quay lại -->
-            <button type="button" onclick="backToDispatch()"
-                class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-x mr-1.5 text-sm"></i>
-                <span class="hidden sm:inline">Hủy Bỏ</span>
-            </button>
-
-            <!-- 2. Nút Xác Nhận & Phát Lệnh Zalo -->
-            <button type="button" id="btn-submit-trip-fullpage" onclick="submitNewTrip()"
-                class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
-                <i class="ph-bold ph-paper-plane-tilt mr-1.5 text-base"></i>
-                <span id="btn-submit-trip-text">Xác Nhận & Phát Lệnh Zalo</span>
-            </button>
-        </div>
-    </div>
+    <!-- Main Scrollable Form Body (Header đã được chuyển lên Topbar) -->
 
     <!-- Main Scrollable Form Body -->
     <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/60">

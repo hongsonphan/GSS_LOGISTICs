@@ -1388,7 +1388,7 @@ function renderDispatchTable(trips) {
     if (!trips || trips.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center py-12 text-slate-400">
+                <td colspan="9" class="text-center py-12 text-slate-400">
                     <div class="flex flex-col items-center justify-center">
                         <i class="ph ph-magnifying-glass text-4xl mb-2 text-slate-300"></i>
                         <p class="font-medium text-sm text-slate-500">Không tìm thấy chuyến xe nào phù hợp với bộ lọc</p>
@@ -1403,7 +1403,7 @@ function renderDispatchTable(trips) {
         return;
     }
 
-    trips.forEach(trip => {
+    trips.forEach((trip, idx) => {
         const typeColor = trip.type_raw === 'IMPORT' ? 'bg-blue-100 text-blue-700' : 
                           trip.type_raw === 'EXPORT' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700';
         const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
@@ -1418,6 +1418,9 @@ function renderDispatchTable(trips) {
         };
         
         tr.innerHTML = `
+            <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200/70 font-mono text-xs tabular-nums">
+                ${idx + 1}
+            </td>
             <td class="px-3 py-2 border-r border-slate-200/70 whitespace-nowrap">
                 <div class="flex items-center space-x-2">
                     <a href="/dispatch/trips/${tripIdentifier}" 
@@ -4377,10 +4380,28 @@ async function openCreateTripPage(bookingId = null, updateHistory = true) {
     const createTripView = document.getElementById('view-create-trip');
     if (createTripView) createTripView.classList.remove('hidden-view');
 
-    const topbarTitleEl = document.getElementById('topbar-page-title');
-    if (topbarTitleEl) {
-        topbarTitleEl.innerText = 'Điều vận | Tạo Lệnh Điều Động';
-    }
+    setTopbarFullpageMode({
+        backFn: backToDispatch,
+        prefix: 'Điều vận',
+        title: 'Tạo Lệnh Điều Động',
+        subText: 'Phân bổ xe, tài xế, quản lý vỏ cont & kế thừa trực tiếp từ Booking/Báo giá',
+        badgesHtml: `
+            <span class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 uppercase tracking-wider font-heading" id="topbar-trip-badge-inherited">Kế thừa Booking</span>
+            <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">Chuyến xe FCL</span>
+        `,
+        actionsHtml: `
+            <button type="button" onclick="backToDispatch()"
+                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-x mr-1.5 text-sm"></i>
+                <span class="hidden sm:inline">Hủy Bỏ</span>
+            </button>
+            <button type="button" id="btn-submit-trip-fullpage" onclick="submitNewTrip()"
+                class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-paper-plane-tilt mr-1.5 text-base"></i>
+                <span id="btn-submit-trip-text">Xác Nhận & Phát Lệnh Zalo</span>
+            </button>
+        `
+    });
 
     initAllNumberInputs();
 }
@@ -5219,7 +5240,7 @@ function renderEmployeesTable(items) {
     if (!items || items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="10" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="11" class="p-8 text-center text-slate-400 font-medium">
                     <i class="ph ph-user-circle text-3xl mb-2 text-slate-300 block"></i>
                     Không tìm thấy nhân sự nào phù hợp với bộ lọc.
                 </td>
@@ -5228,8 +5249,9 @@ function renderEmployeesTable(items) {
         return;
     }
 
-    tbody.innerHTML = items.map(emp => `
+    tbody.innerHTML = items.map((emp, index) => `
         <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+            <td class="py-2.5 px-3.5 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs tabular-nums select-none w-12">${index + 1}</td>
             <td class="py-2.5 px-3.5 font-mono font-bold text-teal-900 border-r border-slate-200 text-xs">${escapeHtml(emp.code)}</td>
             <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-sm">
                 <div>${escapeHtml(emp.full_name)}</div>
@@ -5296,17 +5318,69 @@ function openCreateEmployeeModal() {
     document.getElementById('emp-is-active').value = 'true';
 
     handleEmployeeRoleChange();
-    document.getElementById('modal-employee').classList.remove('hidden');
 }
 
-function openEditEmployeeModal(id) {
+function openCreateEmployeePage(updateHistory = true) {
+    document.getElementById('emp-edit-id').value = '';
+    const form = document.getElementById('form-employee');
+    if (form) form.reset();
+
+    document.getElementById('emp-code').value = '';
+    document.getElementById('emp-full-name').value = '';
+    document.getElementById('emp-nickname').value = '';
+    document.getElementById('emp-phone').value = '';
+    document.getElementById('emp-zalo').value = '';
+    document.getElementById('emp-department').value = 'FLEET';
+    document.getElementById('emp-role').value = 'DRIVER';
+    document.getElementById('emp-license-number').value = '';
+    document.getElementById('emp-license-expiry').value = '';
+    document.getElementById('emp-base-salary').value = '5,000,000';
+    document.getElementById('emp-is-active').value = 'true';
+
+    handleEmployeeRoleChange();
+
+    if (updateHistory && window.history && window.history.pushState) {
+        const path = '/personnel/employees/new';
+        if (window.location.pathname !== path) {
+            window.history.pushState({ view: 'employee-form' }, '', path);
+        }
+    }
+
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-employee-form') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const formView = document.getElementById('view-employee-form');
+    if (formView) formView.classList.remove('hidden-view');
+
+    setTopbarFullpageMode({
+        backFn: backToPersonnel,
+        prefix: 'Nhân Sự & Đội Xe',
+        title: 'Khai Báo Nhân Sự Mới',
+        subText: 'Thêm mới cán bộ, nhân viên, tài xế vào danh bạ BIM Logistics',
+        badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Hồ Sơ Mới</span>',
+        actionsHtml: `
+            <button type="button" onclick="backToPersonnel()"
+                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-x mr-1.5 text-sm"></i>
+                <span class="hidden sm:inline">Hủy Bỏ</span>
+            </button>
+            <button type="button" onclick="document.getElementById('form-employee')?.requestSubmit()"
+                class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-check mr-1.5 text-base"></i>
+                <span>Lưu Hồ Sơ</span>
+            </button>
+        `
+    });
+}
+
+function openEditEmployeePage(id, updateHistory = true) {
     const emp = (rawEmployeesList || []).find(e => e.id === id);
     if (!emp) return;
 
     document.getElementById('emp-edit-id').value = id;
-    document.getElementById('emp-modal-title').innerText = 'Chỉnh Sửa Hồ Sơ Nhân Sự';
-    document.getElementById('emp-modal-subtitle').innerText = `ID #${id} • Cập nhật thông tin cán bộ / tài xế`;
-
     document.getElementById('emp-code').value = emp.code || '';
     document.getElementById('emp-full-name').value = emp.full_name || '';
     document.getElementById('emp-nickname').value = emp.nickname || '';
@@ -5320,12 +5394,69 @@ function openEditEmployeeModal(id) {
     document.getElementById('emp-is-active').value = emp.is_active ? 'true' : 'false';
 
     handleEmployeeRoleChange();
-    document.getElementById('modal-employee').classList.remove('hidden');
+
+    if (updateHistory && window.history && window.history.pushState) {
+        const path = `/personnel/employees/${id}`;
+        if (window.location.pathname !== path) {
+            window.history.pushState({ view: 'employee-form', employeeId: id }, '', path);
+        }
+    }
+
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-employee-form') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const formView = document.getElementById('view-employee-form');
+    if (formView) formView.classList.remove('hidden-view');
+
+    setTopbarFullpageMode({
+        backFn: backToPersonnel,
+        prefix: 'Nhân Sự & Đội Xe',
+        title: `Hồ Sơ ${emp.full_name} (${emp.code || id})`,
+        subText: `Vị trí: <strong class="text-slate-900">${emp.role_label || emp.role}</strong> · SĐT: ${emp.phone_number || '—'}`,
+        badgesHtml: `
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${emp.is_active ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}">
+                ${emp.is_active ? 'Đang làm việc' : 'Tạm ngưng'}
+            </span>
+        `,
+        actionsHtml: `
+            <button type="button" onclick="backToPersonnel()"
+                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-x mr-1.5 text-sm"></i>
+                <span class="hidden sm:inline">Hủy Bỏ</span>
+            </button>
+            <button type="button" onclick="document.getElementById('form-employee')?.requestSubmit()"
+                class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-check mr-1.5 text-base"></i>
+                <span>Cập Nhật Hồ Sơ</span>
+            </button>
+        `
+    });
+}
+
+function backToPersonnel() {
+    const formView = document.getElementById('view-employee-form');
+    if (formView) formView.classList.add('hidden-view');
+
+    if (previousActiveTab && previousActiveTab !== 'employee-form') {
+        switchTab(previousActiveTab, true);
+    } else {
+        switchTab('nhan-su', true);
+    }
+}
+
+function openCreateEmployeeModal() {
+    openCreateEmployeePage();
+}
+
+function openEditEmployeeModal(id) {
+    openEditEmployeePage(id);
 }
 
 function closeEmployeeModal() {
-    const modal = document.getElementById('modal-employee');
-    if (modal) modal.classList.add('hidden');
+    backToPersonnel();
 }
 
 async function submitEmployeeForm(event) {
@@ -5368,7 +5499,7 @@ async function submitEmployeeForm(event) {
         if (typeof showToast === 'function') {
             showToast('success', data.message || 'Đã lưu hồ sơ nhân sự thành công!', 'Thành Công');
         }
-        closeEmployeeModal();
+        backToPersonnel();
         loadEmployeesData();
     } catch (err) {
         console.error('Lỗi gửi form nhân sự:', err);
@@ -5518,7 +5649,7 @@ function renderHRPayrollTable(items) {
     if (!items || items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="8" class="p-8 text-center text-slate-400 font-medium">
                     <i class="ph ph-receipt text-3xl mb-2 text-slate-300 block"></i>
                     Không có dữ liệu lương chuyến trong kỳ đã chọn.
                 </td>
@@ -5527,8 +5658,9 @@ function renderHRPayrollTable(items) {
         return;
     }
 
-    tbody.innerHTML = items.map(item => `
+    tbody.innerHTML = items.map((item, index) => `
         <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+            <td class="py-2.5 px-3.5 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs tabular-nums select-none w-12">${index + 1}</td>
             <td class="py-2.5 px-3.5 font-mono font-bold text-teal-900 border-r border-slate-200 text-xs">${escapeHtml(item.code || '')}</td>
             <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-sm">${escapeHtml(item.name || '')}</td>
             <td class="py-2.5 px-3.5 text-center font-bold text-slate-800 border-r border-slate-200 text-xs">
@@ -5684,7 +5816,7 @@ function renderFleetTable(vehicles) {
     if (!vehicles || vehicles.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center py-10 text-slate-400">
+                <td colspan="7" class="text-center py-10 text-slate-400">
                     <div class="flex flex-col items-center justify-center">
                         <i class="ph ph-truck text-3xl mb-2 text-slate-300"></i>
                         <p class="font-medium text-sm text-slate-500">Không tìm thấy phương tiện nào phù hợp với bộ lọc</p>
@@ -5699,7 +5831,7 @@ function renderFleetTable(vehicles) {
         return;
     }
 
-    vehicles.forEach(v => {
+    vehicles.forEach((v, idx) => {
         let statusCls = 'bg-emerald-100 text-emerald-800';
         if (v.is_reg_expired) statusCls = 'bg-rose-100 text-rose-700 font-black';
         else if (v.is_reg_warning || v.is_maint_warning || v.is_ins_warning) statusCls = 'bg-amber-100 text-amber-700 font-bold';
@@ -5723,6 +5855,9 @@ function renderFleetTable(vehicles) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors border-b border-slate-200/80';
         tr.innerHTML = `
+            <td class="p-4 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
+                ${idx + 1}
+            </td>
             <td class="p-4 font-black text-slate-900 font-heading text-sm">${escapeHtml(v.plate)}</td>
             <td class="p-4 font-medium text-slate-700 text-sm">
                 <div>${escapeHtml(v.type)}</div>
@@ -6400,6 +6535,31 @@ async function openCreateQuotationPage(updateHistory = true) {
     const detailView = document.getElementById('view-quotation-detail');
     if (detailView) detailView.classList.remove('hidden-view');
 
+    setTopbarFullpageMode({
+        backFn: backToQuotations,
+        prefix: 'Sale & Booking',
+        title: 'Tạo Báo giá',
+        subText: 'Khách hàng: <strong class="text-slate-900" id="topbar-quote-customer">Chưa chọn khách hàng</strong> · <span class="text-slate-500">' + new Date().toLocaleDateString('vi-VN') + '</span>',
+        badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Ma trận đa tuyến</span>',
+        actionsHtml: `
+            <button type="button" onclick="copyQuotationPageLink()"
+                class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
+                <span class="hidden sm:inline">Sao Chép Link</span>
+            </button>
+            <button type="button" onclick="printQuotationFromFullPage()"
+                class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-printer mr-1 text-sm text-teal-400"></i>
+                <span>Xem & In A4</span>
+            </button>
+            <button type="button" id="btn-fullpage-save-quote" onclick="saveFullpageQuotation(event)"
+                class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-check-circle mr-1 text-base"></i>
+                <span id="btn-fullpage-save-text">Lưu Thay Đổi</span>
+            </button>
+        `
+    });
+
     // Thiết lập giá trị mặc định cho form tạo mới
     const methodEl = document.getElementById('fullpage-quote-pricing-method');
     if (methodEl) methodEl.value = 'MULTI_ROUTE';
@@ -6491,6 +6651,39 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
         const detailView = document.getElementById('view-quotation-detail');
         if (detailView) detailView.classList.remove('hidden-view');
 
+        setTopbarFullpageMode({
+            backFn: backToQuotations,
+            prefix: 'Sale & Báo giá',
+            title: `Báo Giá ${q.quotation_code || ('BG-' + q.id)}`,
+            subText: `Khách hàng: <strong class="text-slate-900" id="topbar-quote-customer">${escapeHtml(q.customer_name || 'Chưa chọn khách hàng')}</strong> · <span class="text-slate-500">${q.created_at || '--/--/----'}</span>`,
+            badgesHtml: `
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${
+                    q.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                    q.status === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                    q.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                    'bg-teal-50 text-teal-800 border-teal-200'
+                }" id="topbar-quote-status-badge">${q.status_display || q.status}</span>
+                <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">Ma trận đa tuyến</span>
+            `,
+            actionsHtml: `
+                <button type="button" onclick="copyQuotationPageLink()"
+                    class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
+                    <span class="hidden sm:inline">Sao Chép Link</span>
+                </button>
+                <button type="button" onclick="printQuotationFromFullPage()"
+                    class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-printer mr-1 text-sm text-teal-400"></i>
+                    <span>Xem & In A4</span>
+                </button>
+                <button type="button" id="btn-fullpage-save-quote" onclick="saveFullpageQuotation(event)"
+                    class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-check-circle mr-1 text-base"></i>
+                    <span id="btn-fullpage-save-text">Lưu Thay Đổi</span>
+                </button>
+            `
+        });
+
         // Điền dữ liệu vào form
         if (customerEl) setSelectValueCaseInsensitive(customerEl, q.customer_name);
 
@@ -6562,9 +6755,12 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
 function onFullpageQuoteCustomerChange() {
     const sel = document.getElementById('fullpage-quote-customer');
     const headerCust = document.getElementById('fullpage-quote-header-customer');
-    if (sel && headerCust) {
+    const topbarCust = document.getElementById('topbar-quote-customer');
+    if (sel) {
         const text = sel.options[sel.selectedIndex]?.text || '';
-        headerCust.innerText = (text && !text.startsWith('--')) ? text : 'Chưa chọn khách hàng';
+        const custName = (text && !text.startsWith('--')) ? text : 'Chưa chọn khách hàng';
+        if (headerCust) headerCust.innerText = custName;
+        if (topbarCust) topbarCust.innerText = custName;
     }
 }
 
@@ -6893,17 +7089,23 @@ function onFullpageBookingTypeChange() {
 function onFullpageBookingCustomerChange() {
     const sel = document.getElementById('fullpage-booking-customer');
     const headerCust = document.getElementById('fullpage-booking-header-customer');
-    if (sel && headerCust) {
+    const topbarCust = document.getElementById('topbar-booking-customer');
+    if (sel) {
         const text = sel.options[sel.selectedIndex]?.text || '';
-        headerCust.innerText = (text && !text.startsWith('--')) ? text : 'Chưa chọn khách hàng';
+        const custName = (text && !text.startsWith('--')) ? text : 'Chưa chọn khách hàng';
+        if (headerCust) headerCust.innerText = custName;
+        if (topbarCust) topbarCust.innerText = custName;
     }
 }
 
 function onFullpageBookingDateChange() {
     const dateInput = document.getElementById('fullpage-booking-loading-date');
     const headerDate = document.getElementById('fullpage-booking-header-date');
-    if (dateInput && headerDate) {
-        headerDate.innerText = dateInput.value ? `Hẹn đóng: ${formatDateVN(dateInput.value)}` : 'Hẹn đóng: --/--/----';
+    const topbarDate = document.getElementById('topbar-booking-date');
+    if (dateInput) {
+        const dateStr = dateInput.value ? `Hẹn đóng: ${formatDateVN(dateInput.value)}` : 'Hẹn đóng: --/--/----';
+        if (headerDate) headerDate.innerText = dateStr;
+        if (topbarDate) topbarDate.innerText = dateStr;
     }
 }
 
@@ -7032,6 +7234,26 @@ async function openCreateBookingPage(updateHistory = true) {
     const detailView = document.getElementById('view-booking-detail');
     if (detailView) detailView.classList.remove('hidden-view');
 
+    setTopbarFullpageMode({
+        backFn: backToBookings,
+        prefix: 'Sale & Booking',
+        title: 'Tạo Đơn Hàng / Booking',
+        subText: 'Khách hàng: <strong class="text-slate-900" id="topbar-booking-customer">Chưa chọn khách hàng</strong> · <span class="text-slate-500" id="topbar-booking-date">Hẹn đóng: ' + new Date().toLocaleDateString('vi-VN') + '</span>',
+        badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200" id="topbar-booking-type-badge">Kéo Cont Xuất Khẩu</span>',
+        actionsHtml: `
+            <button type="button" onclick="copyBookingPageLink()"
+                class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
+                <span class="hidden sm:inline">Sao Chép Link</span>
+            </button>
+            <button type="button" id="btn-fullpage-save-booking" onclick="saveFullpageBooking(event)"
+                class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                <i class="ph-bold ph-check-circle mr-1 text-base"></i>
+                <span id="btn-fullpage-save-booking-text">Tiếp Nhận Đơn Hàng</span>
+            </button>
+        `
+    });
+
     initAllNumberInputs();
 }
 
@@ -7097,6 +7319,37 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
         const detailView = document.getElementById('view-booking-detail');
         if (detailView) detailView.classList.remove('hidden-view');
+
+        const bookingTypeLabel = b.booking_type_display || (b.booking_type === 'DOMESTIC' ? 'Vận Chuyển Nội Địa' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Kéo Cont Xuất Khẩu'));
+        const bookingDateStr = b.loading_date ? formatDateVN(b.loading_date) : '--/--/----';
+
+        setTopbarFullpageMode({
+            backFn: backToBookings,
+            prefix: 'Sale & Booking',
+            title: `Đơn Hàng ${b.booking_code || ('BK-' + b.id)}`,
+            subText: `Khách hàng: <strong class="text-slate-900" id="topbar-booking-customer">${escapeHtml(b.customer_name || 'Chưa chọn khách hàng')}</strong> · <span class="text-slate-500" id="topbar-booking-date">Hẹn đóng: ${bookingDateStr}</span>`,
+            badgesHtml: `
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${
+                    b.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                    b.status === 'PARTIALLY_DISPATCHED' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                    b.status === 'CANCELLED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                    'bg-teal-50 text-teal-800 border-teal-200'
+                }" id="topbar-booking-status-badge">${b.status_display || b.status}</span>
+                <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200" id="topbar-booking-type-badge">${bookingTypeLabel}</span>
+            `,
+            actionsHtml: `
+                <button type="button" onclick="copyBookingPageLink()"
+                    class="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-link mr-1 text-sm text-teal-700"></i>
+                    <span class="hidden sm:inline">Sao Chép Link</span>
+                </button>
+                <button type="button" id="btn-fullpage-save-booking" onclick="saveFullpageBooking(event)"
+                    class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-check-circle mr-1 text-base"></i>
+                    <span id="btn-fullpage-save-booking-text">Cập Nhật Đơn Hàng</span>
+                </button>
+            `
+        });
 
         const typeEl = document.getElementById('fullpage-booking-type');
         if (typeEl) typeEl.value = b.booking_type || 'EXPORT_FCL';
@@ -8434,7 +8687,7 @@ function renderBookingsTable(bookings) {
     if (!bookings || bookings.length === 0) {
         bkBody.innerHTML = `
             <tr>
-                <td colspan="9" class="p-8 text-center text-slate-400 italic">
+                <td colspan="10" class="p-8 text-center text-slate-400 italic">
                     <div class="flex flex-col items-center justify-center space-y-2">
                         <i class="ph-bold ph-magnifying-glass text-3xl text-slate-300"></i>
                         <p class="font-medium text-sm">Không tìm thấy đơn hàng / booking nào phù hợp với bộ lọc hiện tại.</p>
@@ -8448,7 +8701,7 @@ function renderBookingsTable(bookings) {
         return;
     }
 
-    bookings.forEach(b => {
+    bookings.forEach((b, idx) => {
         const tr = document.createElement('tr');
         tr.className = b.is_urgent 
             ? 'hover:bg-amber-50/70 bg-amber-50/25 transition-colors' 
@@ -8482,6 +8735,9 @@ function renderBookingsTable(bookings) {
         const cleanLoc = (s) => (s || '-').replace(/\([^)]*\)/g, '').trim();
 
         tr.innerHTML = `
+            <td class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
+                ${idx + 1}
+            </td>
             <td class="p-3.5 whitespace-nowrap">
                 <div class="flex items-center flex-wrap gap-1">
                     <span class="font-bold text-slate-900 font-heading font-mono text-sm">${escapeHtml(formatCodeCompact(b.booking_code))}</span>
@@ -8818,7 +9074,7 @@ function renderQuotationsTable(quotations) {
     if (!quotations || quotations.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="text-center py-10 text-slate-400">
+                <td colspan="10" class="text-center py-10 text-slate-400">
                     <div class="flex flex-col items-center justify-center">
                         <i class="ph ph-magnifying-glass text-3xl mb-2 text-slate-300"></i>
                         <p class="font-medium text-sm text-slate-500">Không tìm thấy báo giá nào phù hợp với bộ lọc</p>
@@ -8833,7 +9089,7 @@ function renderQuotationsTable(quotations) {
         return;
     }
 
-    quotations.forEach(s => {
+    quotations.forEach((s, idx) => {
         let statusCls = 'text-teal-700 font-semibold';
         if (s.status.includes('Đã duyệt')) statusCls = 'text-emerald-700 font-semibold';
         if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'text-amber-700 font-semibold';
@@ -8862,6 +9118,9 @@ function renderQuotationsTable(quotations) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors';
         tr.innerHTML = `
+            <td class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
+                ${idx + 1}
+            </td>
             <td class="p-3.5 font-black text-indigo-950 font-heading text-sm">
                 <div class="flex flex-col">
                     <a href="/sales/quotations/${quoteHash}" onclick="event.preventDefault(); viewQuotationDetail('${quoteHash}');" 
@@ -8944,6 +9203,51 @@ const TAB_ROUTE_MAP = {
     'cai-dat': '/settings'
 };
 
+// --- QUẢN LÝ CHẾ ĐỘ HIỂN THỊ TOPBAR LINH HOẠT (FULLPAGE BREADCRUMB VS STANDARD TABS) ---
+function setTopbarFullpageMode(config) {
+    const stdWrapper = document.getElementById('topbar-standard-wrapper');
+    const fullWrapper = document.getElementById('topbar-fullpage-wrapper');
+    if (stdWrapper) stdWrapper.classList.add('hidden');
+    if (fullWrapper) fullWrapper.classList.remove('hidden');
+
+    window.topbarBackHandler = config.backFn || function() {
+        if (typeof previousActiveTab !== 'undefined' && previousActiveTab) {
+            switchTab(previousActiveTab, true);
+        } else {
+            switchTab('dashboard', true);
+        }
+    };
+
+    const prefixEl = document.getElementById('topbar-fullpage-prefix');
+    if (prefixEl) prefixEl.innerText = config.prefix || 'Hệ Thống';
+
+    const titleEl = document.getElementById('topbar-fullpage-title');
+    if (titleEl) titleEl.innerText = config.title || '';
+
+    const badgesContainer = document.getElementById('topbar-fullpage-badges');
+    if (badgesContainer) badgesContainer.innerHTML = config.badgesHtml || '';
+
+    const subEl = document.getElementById('topbar-fullpage-sub');
+    if (subEl) {
+        if (config.subText) {
+            subEl.innerHTML = config.subText;
+            subEl.classList.remove('hidden');
+        } else {
+            subEl.classList.add('hidden');
+        }
+    }
+
+    const actionsContainer = document.getElementById('topbar-fullpage-actions');
+    if (actionsContainer) actionsContainer.innerHTML = config.actionsHtml || '';
+}
+
+function resetTopbarStandardMode(tabId) {
+    const stdWrapper = document.getElementById('topbar-standard-wrapper');
+    const fullWrapper = document.getElementById('topbar-fullpage-wrapper');
+    if (fullWrapper) fullWrapper.classList.add('hidden');
+    if (stdWrapper) stdWrapper.classList.remove('hidden');
+}
+
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
 function switchTab(tabId, updateHistory = true) {
     if (!tabId) tabId = 'dashboard';
@@ -8972,6 +9276,9 @@ function switchTab(tabId, updateHistory = true) {
             }
         }
     }
+
+    // Khôi phục Topbar về chế độ tiêu chuẩn khi đổi tab
+    resetTopbarStandardMode(tabId);
 
     // Cập nhật trạng thái active trên Sidebar Menu
     document.querySelectorAll('.sidebar-item-main').forEach(btn => {
@@ -9015,9 +9322,11 @@ function switchTab(tabId, updateHistory = true) {
             'dieu-van': 'Điều vận',
             'xe-bai': 'Xe & Bãi',
             'nhan-su': 'Hành chính & Nhân sự',
+            'employee-form': 'Hành chính & Nhân sự',
             'ke-toan': 'Tài chính & Kế toán',
             'quyet-toan': (previousActiveTab === 'ke-toan' ? 'Kế toán | Quyết toán chuyến' : 'Điều vận | Quyết toán chuyến'),
             'hai-quan': 'Dịch vụ Hải quan',
+            'customs-form': 'Dịch vụ Hải quan',
             'bao-cao': 'Báo cáo & Thống kê',
             'cai-dat': 'Cài đặt & Danh mục'
         };
@@ -9180,21 +9489,34 @@ function populateMasterDataDropdowns() {
     fillSelect('inp-vehicle-leg1', vehicles, '-- Tự động theo tài xế --', 'plate', 'label');
     fillSelect('inp-dropoff-vehicle', vehicles, '-- Tự động theo tài xế --', 'plate', 'label');
 
-    // Modal Booking (modal-booking)
+    // Modal Báo Giá (modal-quotation & fullpage view)
+    fillSelect('quote-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
+    fillSelect('fullpage-quote-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
+    
+    // Modal Booking (modal-booking & fullpage view)
     fillSelect('booking-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
     fillSelect('booking-pickup', locations?.pickup_options, '-- Chọn Điểm Lấy --', 'name', 'label');
     fillSelect('booking-delivery', locations?.warehouse_options, '-- Chọn Kho Khách --', 'name', 'label');
     fillSelect('booking-dropoff', locations?.dropoff_options, '-- Chọn Điểm Hạ --', 'name', 'label');
 
-    // Datalist Hãng Tàu cho Booking
+    fillSelect('fullpage-booking-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
+    fillSelect('fullpage-booking-pickup', locations?.pickup_options, '-- Chọn Cảng / Depot Lấy Cont --', 'name', 'label');
+    fillSelect('fullpage-booking-delivery', locations?.warehouse_options, '-- Chọn Kho Khách Hàng --', 'name', 'label');
+    fillSelect('fullpage-booking-dropoff', locations?.dropoff_options, '-- Chọn Nơi Hạ Cont --', 'name', 'label');
+
+    // Datalist Hãng Tàu cho Booking (Modal & Fullpage)
     const slDatalist = document.getElementById('shipping-lines-datalist');
     if (slDatalist && Array.isArray(shipping_lines)) {
         slDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days}d / DET: ${sl.free_det_days}d)</option>`).join('');
     }
+    const fullpageSlDatalist = document.getElementById('fullpage-shipping-lines-datalist');
+    if (fullpageSlDatalist && Array.isArray(shipping_lines)) {
+        fullpageSlDatalist.innerHTML = shipping_lines.map(sl => `<option value="${sl.code}">${sl.name} (DEM: ${sl.free_dem_days}d / DET: ${sl.free_det_days}d)</option>`).join('');
+    }
 
-    // Modal Báo Giá (modal-quotation)
-    fillSelect('quote-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
-    
+    // Modal Hải Quan & Fullpage Hải Quan
+    fillSelect('cust-customer-id', customers, '-- Chọn Doanh Nghiệp / Chủ Hàng --', 'id', 'name');
+
     // Tuyến đường mẫu Báo giá
     const quotePreset = document.getElementById('quote-route-preset');
     if (quotePreset && Array.isArray(routes)) {
@@ -9720,7 +10042,7 @@ function renderAccountingTable(list) {
     if (!list || list.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="10" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="11" class="p-8 text-center text-slate-400 font-medium">
                     <i class="ph ph-receipt text-3xl mb-1 inline-block text-slate-300"></i>
                     <p>Không có dữ liệu đối soát chuyến xe phù hợp với bộ lọc.</p>
                 </td>
@@ -9730,7 +10052,7 @@ function renderAccountingTable(list) {
     }
 
     tbody.innerHTML = '';
-    list.forEach(item => {
+    list.forEach((item, idx) => {
         const tr = document.createElement('tr');
         tr.className = item.is_settled 
             ? 'hover:bg-slate-50 transition-colors' 
@@ -9745,6 +10067,9 @@ function renderAccountingTable(list) {
                </span>`;
 
         tr.innerHTML = `
+            <td class="p-3.5 text-center font-mono text-xs font-bold text-slate-500 tabular-nums select-none border-r border-slate-200/70 w-12">
+                ${idx + 1}
+            </td>
             <td class="p-3.5 whitespace-nowrap">
                 <p class="font-black text-teal-800 font-mono text-sm cursor-pointer hover:underline" onclick="viewTripDetail('${item.trip_code}')">
                     ${escapeHtml(formatCodeCompact(item.trip_code))}
@@ -10212,11 +10537,11 @@ function renderDriverAdvancesTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy phiếu tạm ứng chuyến nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy phiếu tạm ứng chuyến nào phù hợp</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(item => {
+    tbody.innerHTML = list.map((item, index) => {
         const isSettled = item.status === 'SETTLED';
         const statusBadge = isSettled
             ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đã Hoàn Ứng</span>`
@@ -10248,6 +10573,9 @@ function renderDriverAdvancesTable(list) {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
+                <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">
+                    ${index + 1}
+                </td>
                 <td class="font-black text-slate-900 font-mono text-xs whitespace-nowrap">${escapeHtml(formatCodeCompact(item.code))}</td>
                 <td class="whitespace-nowrap">
                     <a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(formatCodeCompact(item.trip_code))}</a>
@@ -10292,11 +10620,11 @@ function renderDispatcherFundsTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu Quỹ tạm ứng điều vận nào</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Chưa có phiếu Quỹ tạm ứng điều vận nào</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(item => {
+    tbody.innerHTML = list.map((item, index) => {
         let statusBadge = '';
         if (item.status === 'APPROVED') {
             statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đang Lưu Hành</span>`;
@@ -10310,6 +10638,9 @@ function renderDispatcherFundsTable(list) {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
+                <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">
+                    ${index + 1}
+                </td>
                 <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.code)}</td>
                 <td class="text-xs font-bold text-indigo-900">${escapeHtml(item.dispatcher_name)}</td>
                 <td class="text-xs text-slate-600 tabular-nums">${item.advance_date}</td>
@@ -10935,6 +11266,9 @@ function renderSettlementTable(data) {
                             ${isChecked ? 'checked' : ''} onchange="onSettlementTripSelectionChange()"
                             class="page-settle-checkbox batch-trip-checkbox w-4 h-4 text-teal-600 rounded cursor-pointer">
                     </td>
+                    <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">
+                        ${pageAllTripsList.length}
+                    </td>
                     <td class="py-2.5 px-3 font-semibold text-slate-900 font-mono whitespace-nowrap">
                         <div class="font-bold text-teal-900">${escapeHtml(formatCodeCompact(t.trip_code))}</div>
                     </td>
@@ -11440,12 +11774,12 @@ function renderReimbursablesTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy khoản chi hộ nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy khoản chi hộ nào phù hợp</td></tr>`;
         updateSelectedReimbursablesUI();
         return;
     }
 
-    tbody.innerHTML = list.map(item => {
+    tbody.innerHTML = list.map((item, index) => {
         const isChecked = selectedReimbursableIds.has(item.id) ? 'checked' : '';
         const isCollected = item.reimbursement_status === 'COLLECTED';
         const isBilled = item.reimbursement_status === 'BILLED';
@@ -11473,6 +11807,9 @@ function renderReimbursablesTable(list) {
             <tr class="hover:bg-teal-50/30 transition-colors">
                 <td class="text-center">
                     <input type="checkbox" value="${item.id}" ${isChecked} onchange="toggleReimbursableCheck(${item.id}, this)" class="rounded text-teal-600 focus:ring-teal-500">
+                </td>
+                <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">
+                    ${index + 1}
                 </td>
                 <td class="whitespace-nowrap">
                     <div class="font-bold text-teal-800 font-mono text-xs">${escapeHtml(formatCodeCompact(item.trip_code))}</div>
@@ -11772,11 +12109,11 @@ function renderCashBookTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy giao dịch thu chi nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy giao dịch thu chi nào phù hợp</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(item => {
+    tbody.innerHTML = list.map((item, index) => {
         const isInflow = item.transaction_type === 'INFLOW';
         const typeBadge = isInflow
             ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">➕ Thu Tiền</span>`
@@ -11791,6 +12128,9 @@ function renderCashBookTable(list) {
 
         return `
             <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">
+                    ${index + 1}
+                </td>
                 <td>
                     <div class="font-bold text-slate-800 font-mono text-xs">${escapeHtml(item.code)}</div>
                 </td>
@@ -12213,11 +12553,11 @@ function renderSubcontractorTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe bạn nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy chuyến xe bạn nào phù hợp</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(item => {
+    tbody.innerHTML = list.map((item, index) => {
         const isSettled = item.subcontractor_settlement_status === 'SETTLED';
         const isPartial = item.subcontractor_settlement_status === 'PARTIAL';
 
@@ -12232,6 +12572,7 @@ function renderSubcontractorTable(list) {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
+                <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">${index + 1}</td>
                 <td>
                     <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
                     <div class="text-[11px] text-slate-400">${item.created_at}</div>
@@ -12433,11 +12774,11 @@ function renderBotAuditTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu vé cầu đường BOT nào</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu vé cầu đường BOT nào</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(item => {
+    tbody.innerHTML = list.map((item, index) => {
         let badge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">Bình thường</span>';
         if (item.warning_level === 'HIGH') {
             badge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">⚠️ Vượt định mức (+${item.variance_percent}%)</span>`;
@@ -12457,6 +12798,7 @@ function renderBotAuditTable(list) {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
+                <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">${index + 1}</td>
                 <td>
                     <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
                 </td>
@@ -18226,18 +18568,41 @@ function onCustomsOfficeChange(selectEl) {
     selectEl.setAttribute('data-office-name', names[val] || 'Chi cục Hải quan');
 }
 
-async function openCustomsModal(id = null) {
-    const modal = document.getElementById('modal-customs-declaration');
-    if (!modal) return;
+function backToCustoms() {
+    const formView = document.getElementById('view-customs-form');
+    if (formView) formView.classList.add('hidden-view');
 
+    if (previousActiveTab && previousActiveTab !== 'customs-form') {
+        switchTab(previousActiveTab, true);
+    } else {
+        switchTab('hai-quan', true);
+    }
+}
+
+async function openCustomsPage(id = null, updateHistory = true) {
     // Reset form
     document.getElementById('customs-edit-id').value = id || '';
-    document.getElementById('form-customs-declaration').reset();
+    const form = document.getElementById('form-customs-declaration');
+    if (form) form.reset();
     document.getElementById('cust-decl-date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('cust-current-doc-link').classList.add('hidden');
+    const docLinkDiv = document.getElementById('cust-current-doc-link');
+    if (docLinkDiv) docLinkDiv.classList.add('hidden');
 
-    const titleEl = document.getElementById('customs-modal-title');
-    const submitBtn = document.getElementById('cust-submit-btn');
+    if (updateHistory && window.history && window.history.pushState) {
+        const path = id ? `/customs/declarations/${id}` : '/customs/declarations/new';
+        if (window.location.pathname !== path) {
+            window.history.pushState({ view: 'customs-form', customsId: id }, '', path);
+        }
+    }
+
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-customs-form') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const formView = document.getElementById('view-customs-form');
+    if (formView) formView.classList.remove('hidden-view');
 
     // Nạp danh sách khách hàng vào dropdown
     const custSelect = document.getElementById('cust-customer-id');
@@ -18265,13 +18630,11 @@ async function openCustomsModal(id = null) {
             tripSelect.innerHTML = '<option value="">-- Chưa gán chuyến xe --</option>' +
                 trips.map(t => `<option value="${t.id}">${t.trip_code} - ${t.driver_name || 'TX'} (${t.container_number || 'No Cont'})</option>`).join('');
         } catch (e) {
-            console.warn('Could not load trips for customs modal', e);
+            console.warn('Could not load trips for customs form', e);
         }
     }
 
     if (id) {
-        if (titleEl) titleEl.innerText = 'Cập Nhật Tờ Khai Hải Quan';
-        if (submitBtn) submitBtn.innerHTML = '<i class="ph-bold ph-check text-base"></i><span>Cập Nhật Tờ Khai</span>';
         try {
             const res = await fetchWithAuth(`/api/customs/declarations/${id}/`);
             if (!res.ok) throw new Error('Không thể tải chi tiết tờ khai');
@@ -18295,28 +18658,77 @@ async function openCustomsModal(id = null) {
             document.getElementById('cust-reimbursable-fee').value = item.reimbursable_fee || 0;
             document.getElementById('cust-inspection-notes').value = item.inspection_notes || '';
 
-            if (item.document_url) {
-                const docLinkDiv = document.getElementById('cust-current-doc-link');
+            if (item.document_url && docLinkDiv) {
                 const docLinkA = docLinkDiv.querySelector('a');
-                docLinkA.href = item.document_url;
+                if (docLinkA) docLinkA.href = item.document_url;
                 docLinkDiv.classList.remove('hidden');
             }
+
+            const laneBadgeClass = item.customs_lane === 'GREEN' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                (item.customs_lane === 'YELLOW' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200');
+            const laneLabel = item.customs_lane === 'GREEN' ? 'Luồng Xanh' : (item.customs_lane === 'YELLOW' ? 'Luồng Vàng' : 'Luồng Đỏ');
+
+            setTopbarFullpageMode({
+                backFn: backToCustoms,
+                prefix: 'Thủ Tục Hải Quan',
+                title: `Tờ Khai ${item.declaration_number}`,
+                subText: `Doanh nghiệp: <strong class="text-slate-900">${escapeHtml(item.customer_name || '—')}</strong> · Chi cục: ${item.customs_office_name || item.customs_office_code || '02CI'}`,
+                badgesHtml: `
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${laneBadgeClass}">
+                        ${laneLabel}
+                    </span>
+                    <span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                        ${item.status_display || item.status}
+                    </span>
+                `,
+                actionsHtml: `
+                    <button type="button" onclick="backToCustoms()"
+                        class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                        <i class="ph-bold ph-x mr-1.5 text-sm"></i>
+                        <span class="hidden sm:inline">Hủy Bỏ</span>
+                    </button>
+                    <button type="button" onclick="document.getElementById('form-customs-declaration')?.requestSubmit()"
+                        class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                        <i class="ph-bold ph-check mr-1.5 text-base"></i>
+                        <span>Cập Nhật Tờ Khai</span>
+                    </button>
+                `
+            });
         } catch (err) {
             showToast('Lỗi: ' + err.message, 'error');
+            backToCustoms();
             return;
         }
     } else {
-        if (titleEl) titleEl.innerText = 'Khai Báo Tờ Khai Hải Quan Điện Tử';
-        if (submitBtn) submitBtn.innerHTML = '<i class="ph-bold ph-check text-base"></i><span>Lưu Tờ Khai Hải Quan</span>';
         document.getElementById('cust-decl-number').readOnly = false;
+        setTopbarFullpageMode({
+            backFn: backToCustoms,
+            prefix: 'Thủ Tục Hải Quan',
+            title: 'Khai Báo Tờ Khai Hải Quan Điện Tử',
+            subText: 'Đăng ký thông quan hệ thống VNACCS/VCIS, phân luồng hải quan và đối soát chuyến xe',
+            badgesHtml: '<span class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">VNACCS / VCIS</span>',
+            actionsHtml: `
+                <button type="button" onclick="backToCustoms()"
+                    class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-x mr-1.5 text-sm"></i>
+                    <span class="hidden sm:inline">Hủy Bỏ</span>
+                </button>
+                <button type="button" onclick="document.getElementById('form-customs-declaration')?.requestSubmit()"
+                    class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center transition-all cursor-pointer font-heading">
+                    <i class="ph-bold ph-check mr-1.5 text-base"></i>
+                    <span>Lưu Tờ Khai</span>
+                </button>
+            `
+        });
     }
+}
 
-    modal.classList.remove('hidden');
+async function openCustomsModal(id = null) {
+    return openCustomsPage(id);
 }
 
 function closeCustomsModal() {
-    const modal = document.getElementById('modal-customs-declaration');
-    if (modal) modal.classList.add('hidden');
+    backToCustoms();
 }
 
 async function submitCustomsDeclarationForm(e) {
@@ -18374,7 +18786,7 @@ async function submitCustomsDeclarationForm(e) {
         }
 
         showToast(data.message || 'Lưu tờ khai thành công!', 'success');
-        closeCustomsModal();
+        backToCustoms();
         fetchCustomsDeclarations();
     } catch (err) {
         showToast('Lỗi: ' + err.message, 'error');
@@ -19624,3 +20036,16 @@ window.toggleSimExpenseAccordion = typeof toggleSimExpenseAccordion !== 'undefin
 window.openCreateTripPage = typeof openCreateTripPage !== 'undefined' ? openCreateTripPage : undefined;
 window.backToDispatch = typeof backToDispatch !== 'undefined' ? backToDispatch : undefined;
 
+// 12. Full-page Navigation & Topbar Controller Exports
+window.openCreateBookingPage = typeof openCreateBookingPage !== 'undefined' ? openCreateBookingPage : undefined;
+window.viewBookingDetail = typeof viewBookingDetail !== 'undefined' ? viewBookingDetail : undefined;
+window.backToBookings = typeof backToBookings !== 'undefined' ? backToBookings : undefined;
+window.saveFullpageBooking = typeof saveFullpageBooking !== 'undefined' ? saveFullpageBooking : undefined;
+window.copyBookingPageLink = typeof copyBookingPageLink !== 'undefined' ? copyBookingPageLink : undefined;
+window.openCreateEmployeePage = typeof openCreateEmployeePage !== 'undefined' ? openCreateEmployeePage : undefined;
+window.openEditEmployeePage = typeof openEditEmployeePage !== 'undefined' ? openEditEmployeePage : undefined;
+window.backToPersonnel = typeof backToPersonnel !== 'undefined' ? backToPersonnel : undefined;
+window.openCustomsPage = typeof openCustomsPage !== 'undefined' ? openCustomsPage : undefined;
+window.backToCustoms = typeof backToCustoms !== 'undefined' ? backToCustoms : undefined;
+window.setTopbarFullpageMode = typeof setTopbarFullpageMode !== 'undefined' ? setTopbarFullpageMode : undefined;
+window.resetTopbarStandardMode = typeof resetTopbarStandardMode !== 'undefined' ? resetTopbarStandardMode : undefined;

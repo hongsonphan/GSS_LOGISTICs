@@ -19,11 +19,17 @@
     <!-- 3. Phân hệ Nhân sự & Tiền lương Tạm tính -->
     {% include 'views/view_personnel.html' %}
 
+    <!-- 3.1. Phân hệ Tạo / Sửa Nhân Sự Mới (Dedicated Full-Page View) -->
+    {% include 'views/view_employee_form.html' %}
+
     <!-- 4. Phân hệ Quản lý Đội xe, Rơ-moóc & Bãi -->
     {% include 'views/view_fleet.html' %}
 
     <!-- 5. Phân hệ Thủ tục Hải Quan Điện Tử -->
     {% include 'views/view_customs.html' %}
+
+    <!-- 5.1. Phân hệ Khai Báo Tờ Khai Hải Quan Điện Tử (Dedicated Full-Page View) -->
+    {% include 'views/view_customs_form.html' %}
 
     <!-- 6. Phân hệ Kinh Doanh, Báo giá & Hợp đồng (CRM) -->
     {% include 'views/view_sales.html' %}

@@ -1,348 +1,495 @@
-# BIM LOGISTICS — TÍNH NĂNG ĐÃ XÂY DỰNG (FEATURES DOCUMENTATION)
+# FEATURES.md — BIM LOGISTICS PLATFORM
+## Tài liệu Đặc tả Tính năng Đầy đủ (Living Document)
 
-> **Phiên bản:** 1.4.9 | **Cập nhật:** 21/09/2026  
-> Tài liệu ghi nhận đầy đủ tất cả tính năng đã được thiết kế, lập trình và triển khai trên nền tảng BIM Logistics.
+> **Phiên bản:** 2.9.15 | **Cập nhật lần cuối:** 2026-10-07
+> **Trạng thái:** Production-Ready
+> **Công ty:** Triền Võ Logistics (BIM Ecosystem)
+> **Mục đích:** Tài liệu này ghi nhận **toàn bộ tính năng đã được lập trình và triển khai** trên nền tảng BIM Logistics, được cập nhật liên tục sau mỗi thay đổi. Dùng để tham khảo trước khi phát triển tính năng mới (tránh viết lại những gì đã có).
+
+> [!IMPORTANT]
+> **Quy ước cập nhật:** Bất kỳ khi nào thêm tính năng mới hoặc thay đổi tính năng cũ, bắt buộc cập nhật file này đồng thời với `docs/CHANGELOG.md`.
 
 ---
 
-## PHÂN HỆ 1: TỔNG QUAN DASHBOARD (Ban Giám Đốc)
+## MỤC LỤC
 
-### 1.1 Mục đích
-Dashboard chiến lược được thiết kế theo chuẩn quốc tế TMS Dashboard (Transport Management KPI Board), giúp Ban Giám Đốc đọc nhanh toàn bộ tình hình vận hành trong dưới 30 giây.
+1. [Kiến trúc & Stack kỹ thuật](#1-kiến-trúc--stack-kỹ-thuật)
+2. [Phân hệ 1: Dashboard Ban Giám Đốc](#2-phân-hệ-1-dashboard-ban-giám-đốc)
+3. [Phân hệ 2: Kinh doanh & Báo giá (Sales & Quotation)](#3-phân-hệ-2-kinh-doanh--báo-giá)
+4. [Phân hệ 3: Tiếp nhận Booking & Đơn hàng](#4-phân-hệ-3-tiếp-nhận-booking--đơn-hàng)
+5. [Phân hệ 4: Điều vận & Phát lệnh (Dispatch)](#5-phân-hệ-4-điều-vận--phát-lệnh)
+6. [Phân hệ 5: Chi tiết Chuyến xe & P&L](#6-phân-hệ-5-chi-tiết-chuyến-xe--pl)
+7. [Phân hệ 6: Quản lý Chi phí & Kế toán](#7-phân-hệ-6-quản-lý-chi-phí--kế-toán)
+8. [Phân hệ 7: Tạm ứng & Hoàn ứng](#8-phân-hệ-7-tạm-ứng--hoàn-ứng)
+9. [Phân hệ 8: Báo cáo Tài chính Đa chiều](#9-phân-hệ-8-báo-cáo-tài-chính-đa-chiều)
+10. [Phân hệ 9: Quản lý Đội xe & Rơ-moóc](#10-phân-hệ-9-quản-lý-đội-xe--rơ-moóc)
+11. [Phân hệ 10: Nhân sự & Lương chuyến](#11-phân-hệ-10-nhân-sự--lương-chuyến)
+12. [Phân hệ 11: Dịch vụ Hải quan](#12-phân-hệ-11-dịch-vụ-hải-quan)
+13. [Phân hệ 12: Quản lý Danh mục Master Data](#13-phân-hệ-12-quản-lý-danh-mục-master-data)
+14. [Tính năng Kỹ thuật nền tảng (Core)](#14-tính-năng-kỹ-thuật-nền-tảng-core)
+15. [Bảo mật & Phân quyền](#15-bảo-mật--phân-quyền)
 
-### 1.2 Các Thẻ KPI Trụ Cột (4 Card)
+---
 
-| KPI | Nội dung | Màu sắc |
+## 1. Kiến trúc & Stack kỹ thuật
+
+| Lớp | Công nghệ | Ghi chú |
 |---|---|---|
-| **Doanh thu Tháng** | Tổng cước phí vận chuyển từ tất cả chuyến xe (kể cả đang chạy) | Teal/Emerald |
-| **Chi phí Vận hành** | Tổng chi phí thực tế phát sinh + Operating Ratio % | Rose |
-| **Lợi nhuận Gộp** | Doanh thu - Chi phí thực tế; Biên lợi nhuận % (Gross Margin) | Emerald |
+| **Backend** | Django 4.x (Python) | Modular Monolith — tách biệt `core/` và `apps/` |
+| **Database** | SQLite3 (dev) / PostgreSQL (prod) | Kế thừa `TimeStampedModel` + `SoftDeleteModel` |
+| **REST API** | Django REST Framework | JWT Auth + Session Auth, Base URL `localhost:8085` |
+| **Frontend** | Vanilla JS SPA (`app.js` ~1MB) | Không reload trang, 14 view, quản lý cột động |
+| **Styling** | Tailwind CSS | Design Tokens BIM: Teal/Emerald/Amber/Rose |
+| **Charts** | Chart.js | Revenue/expense bar chart, trend lines |
+| **Auth** | `simplejwt` + Django Sessions | JWT (4h access, 7d refresh) + Token Blacklist |
+| **Media** | File upload cục bộ | `booking_files/`, `receipts/`, `documents/`, `incidents/` |
+
+### Cấu trúc Apps
+```
+apps/
+├── dispatch/       → Điều vận, Lệnh xe, State Machine
+├── billing/        → Chi phí, Tạm ứng, Sổ quỹ
+├── customers/      → Khách hàng, Biểu cước, Báo giá, Booking
+├── fleet/          → Đội xe, Rơ-moóc
+├── personnel/      → Nhân sự, Tài xế
+├── master_data/    → Danh mục: Địa điểm, Loại cont, Chi phí, Hãng tàu...
+├── documents/      → Chứng từ đính kèm (EIR, POD, BOL)
+├── exceptions/     → Sự cố vận tải (OS&D)
+└── customs/        → Dịch vụ Hải quan
+```
+
+---
+
+## 2. Phân hệ 1: Dashboard Ban Giám Đốc
+
+**View:** `view_dashboard.html` | **API:** `GET /api/dashboard/` | **Quyền:** `IsAdminOrDirector`
+
+### 2.1 Thẻ KPI Trụ Cột (4 Card)
+| KPI | Nội dung | Màu |
+|---|---|---|
+| **Doanh thu Tháng** | Tổng cước phí từ tất cả chuyến (kể cả đang chạy) | Teal |
+| **Chi phí Vận hành** | Tổng chi phí thực tế + Operating Ratio % | Rose |
+| **Lợi nhuận Gộp** | Doanh thu − Chi phí; Gross Margin % | Emerald |
 | **Năng suất OTD** | On-Time Delivery Rate % + số chuyến hoàn tất hôm nay | Teal |
 
-### 1.3 Dòng Tài chính & Quỹ Khả Dụng
+### 2.2 Dòng Tài chính
+- Hiển thị song song Doanh thu | Chi phí trên cùng hàng
+- **Quỹ Khả Dụng:** Tách biệt Tiền mặt (Quỹ cty) vs. Tài khoản Ngân hàng
+- **Kế hoạch chi tuần:** Số tiền dự kiến phải chi trong 7 ngày tới
 
-- **Doanh thu | Chi phí:** Hiển thị song song trên cùng 1 hàng
-- **Quỹ Khả Dụng — Tiền mặt | Ngân hàng:** Phân tách rõ ràng hai nguồn tiền để BGĐ theo dõi dòng tiền
+### 2.3 Bảng Phân tích P&L Chuyến xe
+- Hiển thị **8 chuyến xe mới nhất** với đầy đủ: Mã chuyến, Khách hàng, Tuyến đường, Tài xế, Xe, Container, Doanh thu, Chi phí, Lợi nhuận, Margin %, Trạng thái
+- Nhấp vào dòng → Mở màn hình chi tiết chuyến
 
-### 1.4 Các Khối Phân Tích Chuyên Sâu
+### 2.4 Bảng trạng thái Đội xe (Fleet Overview)
+- Tổng quan: `Đang chạy` | `Nằm bãi` | `Bảo trì`
+- Danh sách từng xe với trạng thái và tài xế hiện tại
 
-#### A. Bảng Phân Tích P&L Chuyến Xe Gần Nhất
-- Hiển thị 8 chuyến xe mới nhất với đầy đủ: Mã chuyến, Khách hàng, Tuyến đường, Tài xế, Xe, Container, Doanh thu, Chi phí, Lợi nhuận, Biên lợi nhuận %, Trạng thái
-- Nhấp vào từng dòng → Mở ngay màn hình Chi Tiết Chuyến Xe
+### 2.5 Biểu đồ xu hướng (Chart.js)
+- Bar chart: Doanh thu vs. Chi phí theo ngày/tuần/tháng
+- Line chart: Số chuyến xe hoàn thành theo thời gian
 
-#### B. Trạng Thái Đội Xe (Fleet Status)
-- Số xe đang chở hàng (Active)
-- Số xe sẵn sàng tại bãi (Idle / Available)
-- Số xe bảo trì (Maintenance)
-- Fleet Utilization Rate %
+---
 
-#### C. Booking & Hải quan
-- Số Booking chờ điều xe / đang điều / đã hoàn tất
-- Phân luồng tờ khai Hải quan: Luồng Xanh / Vàng / Đỏ
+## 3. Phân hệ 2: Kinh doanh & Báo giá
 
-#### D. Nhân sự Vận hành
-- Số tài xế đang chạy / nghỉ phép
+**View:** `view_sales.html`, `view_quotation_detail.html` | **API:** `GET/POST /api/sales/`, `POST /api/sales/quotations/`
 
-### 1.5 Biểu Đồ (Charts — Chart.js 4)
+### 3.1 Quản lý Báo giá (Quotation)
+- **Tạo Báo giá mới:** Mã báo giá tự động (`BG-MMDD-XX`), chọn Khách hàng, nhập tuyến đường đa điểm, đơn giá cước, sản lượng tháng dự kiến
+- **Báo giá đa tuyến (QuotationItem):** 1 báo giá chứa nhiều dòng tuyến đường với giá cước riêng biệt
+- **3 Phương thức định giá:**
+  - `MULTI_ROUTE` — Báo giá theo ma trận tuyến đường
+  - `FUEL_ADJUSTED` — Điều chỉnh theo biến động giá dầu DO (công thức phụ phí xăng dầu tự động)
+  - `FLAT_CHARTER` — Trọn gói / Bao chuyến / Theo tháng
+- **Trạng thái báo giá:** `Đang thương lượng` → `Chờ BGĐ duyệt` → `Đã duyệt` / `Từ chối` / `Hết hiệu lực`
+- **3 Mẫu in báo giá (Print Template):**
+  - Mẫu 1: Tiêu chuẩn Doanh nghiệp (Quốc hiệu & Điều khoản TVL)
+  - Mẫu 2: Bảng cước & Khung đối tác (To/From Matrix)
+  - Mẫu 3: Chi tiết Dịch vụ & Lộ trình Dự án
+- **Hiệu lực báo giá:** Quản lý ngày hết hiệu lực, thông tin người phụ trách và liên hệ
 
-| Biểu đồ | Loại | Mô tả |
+### 3.2 Quản lý Biểu cước Tuyến (RouteTariff)
+- Biểu cước theo từng tuyến của từng khách hàng: Nơi lấy → Kho giao → Nơi hạ
+- Lưu: Đơn giá cước, Định mức lương tài xế, Định mức vé BOT chuẩn tuyến
+- Phân vùng khu vực: `origin_zone` / `destination_zone` (Bình Dương, Đồng Nai, Tây Ninh...)
+- Tính km tự động làm tròn bước 10km
+
+### 3.3 Quản lý Khách hàng (Customer)
+- CRUD: Mã KH, Tên, MST, Địa chỉ, Đầu mối liên hệ, SĐT
+- Liên kết: Biểu cước tuyến, Booking, Chuyến xe
+
+---
+
+## 4. Phân hệ 3: Tiếp nhận Booking & Đơn hàng
+
+**View:** `view_sales.html`, `view_booking_detail.html` | **API:** `POST /api/sales/`, `GET /api/bookings/active/`
+
+### 4.1 Tạo Booking Order
+- **Mã booking tự động:** `BK-YYYY-MMDD-XX`
+- **3 loại dịch vụ:** Kéo Cont Xuất FCL | Kéo Cont Nhập FCL | Vận chuyển Nội địa FTL
+- **Thông tin vận đơn hãng tàu:** Số Booking, Hãng tàu, Tàu/Chuyến, Cảng đích
+- **Lộ trình 3 điểm:** Nơi cấp rỗng → Kho đóng/dỡ → Nơi hạ bãi
+- **Hàng hóa:** Tên loại hàng, HS Code, Quy cách cont (40HC/20GP/45G1...)
+- **3 Mốc cut-off hãng tàu:** SI Cutoff | VGM Cutoff | CY Closing Time
+- **Theo dõi tiến độ phát lệnh:** Tổng cont cần điều / Số cont đã phát lệnh / Còn lại
+- **Trạng thái:** `Chờ điều xe` → `Đang điều xe` → `Đã điều đủ xe` / `Hủy`
+- **Đính kèm đa file:** Upload nhiều file booking (ảnh/PDF) vào `BookingDocument`
+
+### 4.2 Booking chờ điều xe (Active Bookings)
+- API riêng `GET /api/bookings/active/` để điều vận xem nhanh các booking cần phát lệnh
+- Hiển thị: Số cont còn lại, ngày đóng hàng, tuyến đường
+
+---
+
+## 5. Phân hệ 4: Điều vận & Phát lệnh
+
+**View:** `view_dispatch.html`, `view_create_trip.html` | **API:** `GET/POST /api/trips/`
+
+### 5.1 Tạo Lệnh điều động (DispatchTrip)
+- **Mã chuyến tự động:** `TVL-MMDD-XXX`
+- **Kế thừa từ Booking:** Tự động điền thông tin tuyến đường, container type, cutoff từ BookingOrder
+- **3 loại hàng:** Hàng Nhập | Hàng Xuất | Nội địa
+- **Phân công tài nguyên:** Xe (Vehicle) + Rơ-moóc (Trailer) + Tài xế + Điều độ viên
+- **Thông tin Container:** Số cont, Số seal, Số B/L hoặc Booking, Hãng tàu, Tàu/Chuyến, Cảng đích, VGM, Bay Location
+- **Thông tin hiện trường:** Số phiếu EIR, Số Invoice, Cửa Dock bốc hàng, Ghi chú
+- **Lịch kho:** Ngày hẹn đóng, Giờ hẹn, ETA kho, 5 mốc thời gian thực tế
+- **Upload file Booking:** Ảnh/PDF ≤ 5MB, tự động tạo `TripDocument` loại `BOOKING_NOTE`
+- **Tình trạng vỏ Cont (EIR Condition):** `Nguyên vẹn` | `Có hư hỏng (lập biên bản)` | `Bẩn/Cần vệ sinh`
+
+### 5.2 Nghiệp vụ Cắt Kéo (Drop & Hook — 2 Chặng)
+- **`is_split_trip = True`:** Tách biệt tài xế/xe chặng lấy cont và chặng hạ bãi
+- Phân công riêng: Tài xế hạ cont (Chặng 2), Xe hạ, Rơ-moóc hạ
+- Tỷ lệ chia lương chuyến tự động theo `driver_split_ratio`
+
+### 5.3 Nghiệp vụ Chở Ghép 2 Cont 20ft (Twin 20ft Drayage)
+- **`is_twin_container = True`:** Chở 2 container 20ft trên cùng 1 đầu kéo
+- Lưu riêng: Số cont 2, Số seal 2, Số B/L 2, VGM 2, Ghi chú hàng 2
+
+### 5.4 Quản lý Hạn Free-time DEM/DET
+- Khai báo: Số ngày DEM miễn phí, Số ngày DET miễn phí
+- Lưu ngày hết hạn (`det_expiry_date`, `dem_expiry_date`) — indexed để cảnh báo trước deadline
+
+### 5.5 State Machine 11 Bước Điều vận
+
+```
+DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
+     → AT_WAREHOUSE → UNLOADING → DELIVERED → RETURNING_EMPTY
+     → COMPLETED → (CANCELLED)
+```
+
+- Mỗi chuyển trạng thái ghi timestamp tự động (`dispatched_at`, `accepted_at`...)
+- API chuyển trạng thái: `POST /api/trips/{trip_code}/transition/`
+- Chặn nhảy cóc trạng thái sai thứ tự qua `TripWorkflowTransitionAPIView`
+
+### 5.6 Driver Portal (Token-based)
+- Tự động sinh `driver_token` (URL-safe, 16 bytes) cho mỗi chuyến
+- Thu hồi token cũ khi đổi tài xế (`revoked_driver_tokens`)
+- Tài xế truy cập qua link token duy nhất (không cần đăng nhập)
+
+### 5.7 Bộ lọc & Tìm kiếm Danh sách chuyến
+- Tìm theo: Mã chuyến, Số cont, Tên khách, Biển số xe, Tài xế
+- Lọc theo: Trạng thái, Loại hàng (Nhập/Xuất/Nội địa), Ngày tạo
+- Phân trang kết quả
+
+### 5.8 Tiêu chí KPI Điều vận (trong response danh sách)
+- Tổng chuyến trong tháng, đang chạy, hoàn thành hôm nay
+- OTD Rate (%), doanh thu tháng, chi phí vận hành
+
+---
+
+## 6. Phân hệ 5: Chi tiết Chuyến xe & P&L
+
+**View:** `view_trip_detail.html` | **API:** `GET /api/trips/{trip_code}/`
+
+### 6.1 Thông tin tổng hợp đầu trang
+- Mã chuyến, Khách hàng, Loại hàng, Trạng thái (badge màu)
+- Lộ trình 3 điểm: Nơi lấy → Kho → Nơi hạ
+- Phân công: Tài xế, Xe, Rơ-moóc, Điều độ viên
+- Số container, Seal, Booking/B/L, Hãng tàu, Tàu/Chuyến
+
+### 6.2 Timeline 11 Bước (`TripTimelineItem`)
+- Hiển thị trực quan 11 mốc vận hành theo chiều dọc
+- Mỗi bước: Trạng thái (Done ✅ / Active 🔵 / Pending ⬜), Tiêu đề, Thời gian thực tế
+- Tự động cập nhật khi chuyển trạng thái
+
+### 6.3 5 Mốc Thời gian tại Kho Khách hàng
+| Mốc | Nội dung |
+|---|---|
+| Ngày & Giờ hẹn đóng | Lịch khách hàng yêu cầu |
+| ETA Kho | Giờ xe dự kiến đến |
+| Kho gọi xe vào | Giờ bảo vệ/kho kêu xe vào cổng |
+| Xe vào cổng (thực tế) | `actual_gate_in_time` |
+| Kho gọi kéo ra / Xe ra cổng | `actual_gate_out_time` |
+
+### 6.4 Bảng Kê Chi phí 8 Mục (TripExpense Table)
+| Danh mục | Mã |
+|---|---|
+| Nâng cont | `LIFT_ON` |
+| Hạ cont | `LIFT_OFF` |
+| Cược cont | `CONTAINER_DEPOSIT` |
+| Cân xe | `WEIGHING` |
+| Bốc xếp | `LABOR_STEVEDORING` |
+| Vé cầu đường BOT | `TOLL_FEE` |
+| Chi phí khác | `OTHER` |
+| *(Chi hộ KH — riêng biệt)* | `is_on_behalf_of_customer` |
+
+**Thông tin mỗi khoản chi:**
+- Đơn vị phát hành, Số hóa đơn, Mã tra cứu HĐĐT, Link tra cứu
+- Số tiền trước thuế, Thuế suất VAT, Tiền thuế, Thành tiền
+- Ảnh chứng từ đính kèm
+- Chặng phát sinh (Chặng 1 / Chặng 2 / Toàn trình / Công ty)
+- Trạng thái duyệt: `Chờ duyệt` / `Đã duyệt` / `Từ chối` / `Đã chốt sổ`
+
+### 6.5 Tổng P&L Chuyến xe (Tự động cập nhật)
+- **Cước vận chuyển (Revenue):** Từ biểu cước tuyến hoặc nhập tay
+- **Tổng chi phí (Expense):** Tổng các khoản đã duyệt (loại trừ chi hộ KH)
+- **Lợi nhuận gộp (Profit):** Revenue − Expense
+- **Biên lợi nhuận (Margin %):** Tự động tính, cache vào `cached_margin_percent`
+- **Cơ chế Denormalization:** `update_financials()` chạy tự động mỗi khi thêm/sửa/xóa chi phí
+
+### 6.6 Giả lập Driver App (1-Chạm)
+- Nút: Xác nhận chuyến | Lấy Cont | Đến kho | Đóng hàng | Giao hàng | Hạ rỗng
+- Mỗi nút ghi timestamp tương ứng vào `DispatchTrip`
+
+### 6.7 Upload Chứng từ (TripDocument)
+- Upload: EIR lấy cont, EIR hạ cont, POD giao hàng, Booking Note
+- Lưu: Tên file, loại chứng từ, ngày upload, link tải
+
+---
+
+## 7. Phân hệ 6: Quản lý Chi phí & Kế toán
+
+**View:** `view_accounting.html` | **API:** `POST /api/trips/{trip_code}/expenses/`
+
+### 7.1 Thêm / Sửa Chi phí Phát sinh
+- Thêm khoản chi từ Web Admin hoặc giả lập Driver App
+- Chọn danh mục từ `ExpenseItem` (Master Data động)
+- Nhập: Số tiền, Số HĐ, Mã tra cứu HĐĐT, Link tra cứu, Upload ảnh chứng từ
+- Gắn thuế VAT (8% / 10% / 0%)
+
+### 7.2 Cơ chế Chi hộ Khách hàng (Debit Note)
+- Đánh dấu `is_on_behalf_of_customer = True` — tách riêng khỏi chi phí vận hành
+- Trạng thái thu hồi: `Chờ thu` → `Đã xuất Debit Note` → `Đã thu hồi tiền`
+- Số Debit Note gom nhóm (`DN-2026-XXX`)
+
+### 7.3 Chốt sổ Kế toán (Settle/Unsettle)
+- `POST /api/trips/{trip_code}/settle/` — Khóa toàn bộ chi phí, ngăn sửa/xóa
+- `POST /api/trips/{trip_code}/unsettle/` — Mở khóa để điều chỉnh (có quyền)
+- Ghi nhận: Người chốt sổ + Thời điểm chốt
+
+### 7.4 Sổ quỹ Thu-Chi (CashTransaction — Mẫu S03a-DN)
+- Ghi nhận tự động phiếu thu/chi khi quyết toán hoàn ứng tài xế hoặc thu tiền chi hộ
+- **Dòng Thu:** Cước vận tải từ KH, Thu hồi chi hộ, Hoàn ứng tiền thừa tài xế
+- **Dòng Chi:** Tạm ứng quỹ điều vận, Tạm ứng chuyến xe, Chi bù hoàn ứng, Thanh toán xe bạn, Mua xăng dầu, Nạp ETC, Sửa chữa xe
+- Phân tách **Tiền mặt** vs **Ngân hàng**
+- Mã phiếu tự động: `PT-YYYY-XXX` (thu) / `PC-YYYY-XXX` (chi)
+
+---
+
+## 8. Phân hệ 7: Tạm ứng & Hoàn ứng
+
+**View:** `view_settlement.html` | **API:** `apps/billing/advance_views.py`
+
+### 8.1 Quỹ Tạm ứng Điều vận Cấp 1 (DispatcherAdvanceFund)
+- Công ty tạm ứng cho Điều vận để phục vụ chi phí đội xe
+- Mã phiếu: `TUDV-YYYY-XXX`
+- Trạng thái: `Chờ duyệt cấp quỹ` → `Đang lưu hành` → `Đã quyết toán hoàn ứng` / `Từ chối`
+- Theo dõi số dư: Tiền ứng − Tiền đã cấp cho tài xế + Tiền tài xế hoàn lại
+
+### 8.2 Tạm ứng Chuyến xe Cấp 2 (DriverTripAdvance)
+- Tạm ứng theo từng chuyến cho từng Tài xế
+- Mã phiếu: `TUTX-YYYY-XXX`
+- Nguồn tiền: `Trích từ Quỹ điều vận` / `Công ty chi trực tiếp`
+- Trạng thái: `Đang tạm ứng` → `Đã hoàn ứng` / `Đã hủy`
+- Quyết toán: Thực chi vs Tạm ứng → `Khớp đúng` / `Tài xế hoàn tiền thừa` / `Công ty chi bù`
+
+### 8.3 Quyết toán Nhà xe Thầu phụ / Xe bạn (3PL)
+- Cước thỏa thuận trả xe bạn, Số tiền đã tạm ứng trước
+- Trạng thái: `Chờ quyết toán` / `Thanh toán 1 phần` / `Đã quyết toán xong`
+
+---
+
+## 9. Phân hệ 8: Báo cáo Tài chính Đa chiều
+
+**View:** `view_reports.html` | **API:** `apps/billing/finance_reports_api.py`
+
+### 9.1 Các chiều phân tích (5 Report Types)
+| Báo cáo | Endpoint | Nội dung |
 |---|---|---|
-| Xu hướng 7 ngày | Line Chart | Doanh thu / Chi phí / Lợi nhuận theo ngày |
-| Phân bổ Đội xe | Doughnut Chart | Active / Idle / Maintenance |
-| Phân luồng Hải quan | Doughnut Chart | Xanh / Vàng / Đỏ |
-| Phân tích P&L | Bar Chart (ngang) | Top khách hàng theo doanh thu |
+| `BY_CUSTOMER` | `/api/reports/` | Doanh thu, chi phí, lợi nhuận theo từng Khách hàng |
+| `BY_SUBCONTRACTOR` | `/api/reports/` | Chi phí và đối soát cước theo từng Nhà xe Thầu phụ |
+| `BY_DRIVER` | `/api/reports/` | Sản lượng chuyến, lương tạm tính theo từng Tài xế |
+| `BY_ROUTE` | `/api/reports/` | Hiệu suất sinh lời theo từng Tuyến đường |
+| `BY_CASHFLOW` | `/api/reports/` | Sổ quỹ & Dòng tiền Thu-Chi, tồn quỹ tiền mặt + ngân hàng |
+
+### 9.2 Báo cáo chuyến xe (DispatchTrip Reports)
+- **`apps/dispatch/reports_api.py`:** Xuất báo cáo hoạt động đội xe, P&L từng chuyến
 
 ---
 
-## PHÂN HỆ 2: SALE & BOOKING
+## 10. Phân hệ 9: Quản lý Đội xe & Rơ-moóc
 
-### 2.1 Sub-tab: Báo Giá Tuyến Cước (Quotation)
+**View:** `view_fleet.html` | **API:** `GET /api/fleet/`
 
-**Bảng danh sách báo giá** gồm:
-- Mã báo giá (BG-0916-01...)
-- Khách hàng
-- Tuyến đường (Pickup → Delivery → Dropoff)
-- Đơn giá cước (VNĐ/chuyến)
-- Số chuyến dự kiến/tháng
-- Doanh thu dự kiến
-- Trạng thái (Đang thương lượng / Chờ BGĐ duyệt / Đã duyệt / Từ chối / Hết hiệu lực)
-- Nút **Tạo Báo Giá** → Modal `modal_quotation.html`
+### 10.1 Quản lý Đầu kéo (Vehicle)
+- **4 Loại xe:** Đầu kéo Container | Xe tải 10T | Xe tải 2T | Van/Xe nhỏ
+- **2 Loại sở hữu:** Xe nhà (Đội xe công ty) | Xe bạn (Thuê ngoài/3PL)
+- **4 Trạng thái:** Đang chạy | Nằm bãi | Bảo trì | Ngừng sử dụng
+- **Thông tin kỹ thuật:** Tải trọng (kg), Hãng xe (Freightliner, Hyundai, Hino...)
+- **Cảnh báo tự động:**
+  - ⚠️ Hạn đăng kiểm còn ≤ 15 ngày hoặc đã hết hạn
+  - ⚠️ Hạn bảo trì còn ≤ 7 ngày hoặc đã hết hạn
+- Gán Tài xế hiện tại, ngày bảo trì lần cuối và tiếp theo
 
-**Modal Tạo/Sửa Báo Giá** gồm:
-- Chọn khách hàng (Dropdown)
-- Nhập tuyến đường (Lấy → Kho → Hạ)
-- Đơn giá cước (có format số phân cách hàng ngàn)
-- Số chuyến dự kiến/tháng
-- Ghi chú điều khoản đặc biệt
-- Trạng thái ban đầu
-
-### 2.2 Sub-tab: Tiếp Nhận Booking
-
-**Bảng Booking** gồm:
-- Mã Booking (BK-2026-...)
-- Khách hàng & Loại hàng
-- Tuyến đường
-- Số Cont / Số Booking hãng tàu
-- Giá cước đã ký
-- Tiến độ điều xe (Chờ / Đang / Hoàn tất)
-- Nút **Nhận Booking** → Modal `modal_booking.html`
-
-**Modal Tiếp Nhận Booking** gồm:
-- Mã Booking (tự sinh hoặc nhập)
-- Chọn khách hàng
-- Loại hình vận chuyển (Xuất FCL / Nhập FCL / Nội địa FTL)
-- Thông tin Container (Số booking, Số cont, Hãng tàu, Tàu/Chuyến)
-- Cảng lấy / Kho đóng / Cảng hạ
-- Giá cước bán ra (Selling Freight Price)
-- Ngày đóng hàng / Hạn cắt máng
-- Hóa đơn thương mại (Commercial Invoice)
+### 10.2 Quản lý Rơ-moóc (Trailer)
+- Biển số, Loại moóc (Xương 40ft, Cổ cò...), Tải trọng
+- Hạn đăng kiểm + Cảnh báo ≤ 15 ngày
 
 ---
 
-## PHÂN HỆ 3: ĐIỀU VẬN (Dispatch Management)
+## 11. Phân hệ 10: Nhân sự & Lương chuyến
 
-### 3.1 Bảng Danh Sách Chuyến Xe
+**View:** `view_personnel.html` | **API:** `GET /api/personnel/`
 
-**Cột hiển thị (8 cột chuẩn):**
+### 11.1 Quản lý Nhân sự (Employee)
+- **7 Phòng ban:** Điều Vận | Đội Xe & Bãi | Kinh Doanh | Hải Quan | Nhân Sự | Kế Toán | Ban Giám Đốc
+- **6 Vai trò:** Giám đốc | Điều độ viên | Tài xế | Kế toán | Nhân viên KD | Kỹ thuật viên
+- Thông tin: Mã NV, Biệt danh hiện trường (BỤI 94, LIBRA...), SĐT, Zalo ID
+- Dành cho tài xế: Số GPLX, Hạn GPLX, Lương cơ bản, Tiền tạm ứng tháng
 
-| Cột | Nội dung |
+### 11.2 Bảng lương Tài xế Tạm tính
+- Tính lương theo sản lượng chuyến thực tế trong tháng
+- Dựa trên `driver_allowance` của từng chuyến + phụ cấp
+- Phân biệt: Lương chặng 1 / Lương chặng 2 (Cắt kéo)
+
+---
+
+## 12. Phân hệ 11: Dịch vụ Hải quan
+
+**View:** `view_customs.html` | **API:** `GET /api/customs/`
+
+### 12.1 Phân luồng Tờ khai Hải quan
+- **3 Luồng:** Xanh (Thông quan tự động) | Vàng (Kiểm tra hồ sơ) | Đỏ (Kiểm tra thực tế hàng hóa)
+- Theo dõi trạng thái từng tờ khai
+- *Phân hệ đang trong giai đoạn mở rộng*
+
+---
+
+## 13. Phân hệ 12: Quản lý Danh mục Master Data
+
+**View:** `view_master_data.html` | **API:** `GET /api/master-data/form-options/`, `GET /api/master-data/summary/`
+
+### 13.1 Danh mục Địa điểm (Location)
+- 5 Loại: `Cảng Biển` | `Cảng Cạn (ICD)` | `Bãi Rỗng/Depot` | `Kho Hàng/Nhà Máy` | `Bãi Đỗ Xe Công ty`
+- Thông tin: Mã, Tên, Địa chỉ, Tỉnh/TP, Đầu mối liên hệ
+
+### 13.2 Danh mục Quy cách Container & Xe (ContainerType)
+- Mã chuẩn: `40HC`, `20DC`, `45G1`, `40GP`...
+- Thông số: Hệ số TEU, Tải trọng (kg), Thể tích CBM
+
+### 13.3 Danh mục Khoản mục Chi phí (ExpenseItem) — Dynamic Catalog
+- 8 Nhóm: Nâng | Hạ | BOT | Cược | Cân xe | Bốc xếp | HĐĐT Cảng | Khác
+- Định mức tiền ngầm định, Yêu cầu có HĐĐT hay không
+
+### 13.4 Biểu phí Lương chuyến Tài xế (DriverSalaryTariff)
+- Theo nhóm khu vực: Củ Chi, Long An, Tây Ninh, Bình Dương, Đồng Nai, Vũng Tàu...
+- Theo tuyến chi tiết (KCN, Nhà máy cụ thể)
+- Khu vực lấy/hạ chuẩn + Cự ly (km) + Mức lương chuyến
+
+### 13.5 Danh mục Phụ cấp Tài xế (DriverAllowanceCatalog)
+- 3 Loại: Phụ thêm Cảng xa | Phụ thu Kiểm hóa | Phụ cấp Tác nghiệp đặc thù
+- VD: Cảng Cái Mép +200k, Cảng Hiệp Phước +150k, Kiểm hóa +50k/lần
+
+### 13.6 Danh mục Hãng Tàu (ShippingLine)
+- Mã chuẩn: MAEU, ONE, COSCO, SITC, EVERGREEN, CMA, MSC...
+- Thông tin: SĐT, Email, Website cổng tra cứu eDO
+- Ngày DEM/DET miễn phí mặc định của từng hãng
+
+### 13.7 Danh mục Nhà xe Thầu phụ / 3PL (Subcontractor)
+- Tên công ty, MST, Đầu mối điều xe
+- Tài khoản ngân hàng thụ hưởng cho đối soát cước
+
+### 13.8 Thông tin Công ty & Cài đặt Hệ thống (CompanyProfile)
+- Pháp nhân: Tên, MST, Đại diện, GPLX vận tải
+- Tài khoản ngân hàng, Logo, Địa chỉ trụ sở + Chi nhánh
+- Tham số hệ thống: VAT mặc định, Giá dầu tham chiếu, Hệ số CBM
+
+### 13.9 API Form Options
+- `GET /api/master-data/form-options/` — Tổng hợp tất cả dropdown options cho form giao diện
+- `GET /api/master-data/summary/` — Số lượng bản ghi mỗi danh mục
+
+---
+
+## 14. Tính năng Kỹ thuật nền tảng (Core)
+
+### 14.1 Cơ sở dữ liệu & ORM
+- **Soft-Delete toàn hệ thống:** `is_deleted=True`, `deleted_at` — không bao giờ xóa cứng dữ liệu vận tải
+- **Audit Timestamps:** `created_at`, `updated_at` trên mọi model
+- **Bảo vệ khóa ngoại:** `on_delete=PROTECT` trên các bảng trọng yếu (Customer, Driver, Vehicle, Trip)
+- **Denormalization P&L:** `cached_revenue`, `cached_expense`, `cached_profit`, `cached_margin_percent` tự động cập nhật qua `update_financials()`
+- **Index:** `trip_code`, `container_number`, `booking_or_bill`, `license_plate`, `status`, `created_at`
+
+### 14.2 Signals & Automation
+- Tự động cập nhật P&L khi thêm/sửa/xóa `TripExpense`
+- Tự động cập nhật `advance_settlement_status` trên `DispatchTrip`
+- `resync_timelines` management command: Đồng bộ lại toàn bộ timeline 11 bước
+
+### 14.3 Frontend SPA (Single Page Application)
+- **`static/js/app.js` (~1MB):** Engine SPA trung tâm, quản lý routing 14 view không reload trang
+- **`static/js/column_manager.js`:** Quản lý hiển thị/ẩn cột trong bảng, lưu preference người dùng
+- **14 View:** dashboard, dispatch, trip-detail, sales, booking-detail, accounting, settlement, fleet, personnel, reports, master-data, customs, quotation-detail, create-trip
+
+### 14.4 Tracking & Traceability
+- `TripTimelineItem`: 11 mốc vận hành chuẩn hóa, tự động tạo khi phát lệnh
+- `tracking_hashid`: Token Capability riêng cho Customer Tracking Portal
+- `driver_token`: Token Capability riêng cho Driver App (auto-rotate khi đổi tài xế)
+
+### 14.5 Management Commands
+- `python manage.py resync_timelines` — Đồng bộ lại timeline 11 bước cho tất cả chuyến
+- `python manage.py seed_sample_data` — Tạo dữ liệu mẫu cho demo/dev
+
+### 14.6 Kiểm thử Tự động
+- **86 Test cases** (tính đến v2.9.13) — 100% passed
+- `FrontendSyntaxIntegrityTestCase`: Tự động kiểm tra cú pháp JS mỗi lần test
+- Chạy: `python manage.py test --keepdb`
+- Kiểm tra JS: `node -c static/js/app.js && node -c static/js/column_manager.js`
+
+---
+
+## 15. Bảo mật & Phân quyền
+
+*(Chi tiết đầy đủ tại [`SECURITY_AUDIT.md`](file:///E:/Bim_Logistics/SECURITY_AUDIT.md))*
+
+| Tiêu chuẩn | Trạng thái |
 |---|---|
-| Mã / Lịch Đóng | Mã chuyến (TVL-MMYY-NNN) + Ngày giờ đóng hàng |
-| Khách hàng & Kho | Tên khách + Tên kho giao hàng |
-| Booking / Cont / Seal | Số booking + Số cont + Số seal |
-| Invoice / Dock | Hóa đơn thương mại + Cửa Dock bốc hàng |
-| Xe Kéo & Xe Hạ | Biển số xe kéo + Badge Xe Nhà / Xe Bạn + Xe hạ (nếu khác) |
-| Lưu Ý & Vị Trí Cont | Lưu ý đặc biệt + Badge vị trí cont (Nhà máy / Bãi / Cảng) |
-| Nơi Lấy ➔ Nơi Hạ | Lộ trình 3 điểm |
-| Trạng thái | Badge màu theo trạng thái |
-
-**Tính năng:**
-- Tìm kiếm real-time (Mã chuyến / Số cont / Khách hàng / Biển số)
-- Lọc theo trạng thái
-- Nhấp vào dòng → Mở Chi tiết chuyến xe
-- Nút **+ Tạo Lệnh Điều Động** → Modal `modal_create_trip.html`
-
-### 3.2 Modal Tạo Lệnh Điều Động
-
-Gồm đầy đủ các trường thực tế từ bảng Excel điều độ:
-- Khách hàng / Loại hình (Nhập / Xuất / Nội địa)
-- Tài xế + Xe kéo
-- Số Cont / Loại Cont / Số Seal / Booking
-- Lộ trình 3 điểm: Cảng lấy → Kho khách → Cảng hạ
-- Ngày giờ đóng hàng + Hạn Cắt máng (Cutoff)
-- Hóa đơn thương mại + Cửa Dock
-- Vị trí vỏ cont (Nhà máy / Bãi TVL / Cảng/Depot)
-- Lưu ý điều vận
-- Thông tin EIR: Hãng tàu, Tàu/Chuyến, Cảng đích, VGM
+| Mã hóa mật khẩu (Argon2/PBKDF2) | ✅ Django default |
+| JWT Token Blacklist (Đăng xuất an toàn) | ✅ `simplejwt` blacklist |
+| Rate Limiting API | ✅ Cấu hình riêng |
+| HashID chống IDOR | ✅ `hashids` library |
+| No Hard-Delete dữ liệu pháp lý | ✅ SoftDeleteModel |
+| CORS & CSRF Protection | ✅ Django middleware |
+| File upload validation (PDF/Image ≤ 5MB) | ✅ API validation |
+| Permission classes theo role | ✅ `IsAdminOrDirector`, `IsDriver`... |
 
 ---
 
-## PHÂN HỆ 4: CHI TIẾT CHUYẾN XE (Trip Detail)
+## 📝 Hướng dẫn Cập nhật Tài liệu này
 
-### 4.1 Khung Tổng Quan Chuyến
+Khi thêm tính năng mới hoặc thay đổi tính năng hiện có, **bắt buộc cập nhật** theo quy trình:
 
-- Header: Mã chuyến + Badge trạng thái + Loại hình + Khách hàng
-- 4 thẻ thông tin cơ bản: Số Xe & Tài xế / Số Cont & Vị trí / Seal & Booking / Invoice & Dock
-- Lộ trình 3 điểm với icon màu sắc phân biệt
-
-### 4.2 Theo Dõi 5 Mốc Thời Gian Kho Khách
-
-| Mốc | Mô tả |
-|---|---|
-| ETA Dự kiến | Giờ xe dự kiến đến cổng kho |
-| Kho Gọi Vào | Giờ bộ phận kho gọi xe vào cổng |
-| Xe Vào Thực Tế | Giờ xe thực tế vào cổng kho |
-| Kho Gọi Ra | Giờ bộ phận kho gọi xe kéo cont ra |
-| Xe Ra Thực Tế | Giờ xe thực tế kéo ra |
-
-> **Ứng dụng:** Tính thời gian chờ đợi, xử lý tranh chấp phạt lưu xe.
-
-### 4.3 Bảng Kê Chi Phí 8 Mục (Chuẩn Triền Võ)
-
-| STT | Khoản mục | Phân loại |
-|---|---|---|
-| 1 | HĐ điện tử | Thông tin tra cứu HĐĐT cảng/depot |
-| 2 | Nâng (Lift On) | Phí nâng cont lên xe |
-| 3 | Hạ (Lift Off) | Phí hạ cont xuống bãi |
-| 4 | Cược cont | Tiền cược container |
-| 5 | Cân xe | Phí cân xe tại trạm |
-| 6 | Bốc xếp | Phí bốc xếp kho |
-| 7 | Vé cầu đường | Phí BOT, cầu đường |
-| 8 | Chi phí khác | Phí lưu bãi, vá vỏ, sửa chữa gấp... |
-
-**Tính năng Bảng Kê:**
-- Hỗ trợ accordion: Bấm vào dòng tổng hợp → Xổ ra từng vé chi tiết
-- Hiển thị đầy đủ: Số HĐ, Mã tra cứu HĐĐT, Link tra cứu online, Đơn vị phát hành, Trạng thái duyệt
-- Nút Sửa / Xóa trên từng khoản chi (theo phân quyền)
-- **Banner Khóa Sổ** khi đã chốt sổ Kế toán
-
-**Công thức tài chính bất biến (Zero Variance):**
 ```
-Tổng Chi Phí = Σ(Khoản chi trong bảng kê thực tế)
-Lợi Nhuận Gộp = Doanh Thu Cước - Tổng Chi Phí
-Biên Lợi Nhuận = (Lợi Nhuận Gộp / Doanh Thu Cước) × 100%
+1. Hoàn thành code + test pass
+2. Cập nhật section tương ứng trong FEATURES.md này
+3. Thêm entry vào docs/CHANGELOG.md với phiên bản mới
+4. Commit cả 3 thay đổi trong cùng 1 commit
 ```
 
-### 4.4 Box P&L Tóm Tắt (3 Thẻ)
-
-- **Doanh Thu Cước:** Giá cước xuất hóa đơn
-- **Tổng Chi Phí Thực Tế:** Tổng các khoản chi đã ghi nhận (khớp 100% bảng kê)
-- **Lợi Nhuận Gộp (Margin):** Số tiền + Tỷ lệ %
-
-### 4.5 Timeline 10 Bước Điều Vận
-
-Hiển thị trực quan từng bước tiến độ theo thời gian thực:
-```
-B1. Điều độ phát lệnh Zalo
-B2. Tài xế nhận lệnh
-B3. Lấy Cont / Hàng (EIR)
-B4. Di chuyển trên đường
-B5. Báo mốc kho (Sắp đến / Đến cổng / Bắt đầu / Xong)
-B6. Giao nhận hàng (POD)
-B7. Hạ vỏ cont / Trả hàng
-B8. Hoàn tất EIR hạ
-B9. Kê khai chi phí
-B10. Đối soát & Chốt sổ
-```
-
-### 4.6 Chứng Từ Số & Hóa Đơn Đính Kèm
-
-- EIR Lấy Cont / EIR Hạ Cont
-- Biên bản giao nhận (POD)
-- Hóa đơn điện tử nâng/hạ cảng
-
-### 4.7 Giao Diện App Tài Xế Giả Lập (Driver Mobile Simulator)
-
-Giao diện điện thoại giả lập trực tiếp trong màn hình chi tiết chuyến, hiển thị:
-
-- **Báo mốc kho 1 chạm (Bước 6 SOP):**
-  - 🚗 Sắp đến kho (Báo trước 30p)
-  - 📍 Đến cổng kho (Check-in)
-  - 📦 Đang dỡ/đóng hàng
-  - ✅ Đóng xong (Chuẩn bị hạ bãi)
-
-- **Chi phí tài xế đã kê:** Tổng tiền + Danh sách từng khoản (có Sửa/Xóa nếu đang PENDING)
-- **Thông tin Vỏ Cont / EIR:** Số Cont, Số EIR, Hãng tàu
-- **Nút chụp chứng từ:** Chụp EIR / Chụp POD
-
-### 4.8 Quản Lý Trạng Thái Chốt Sổ Kế Toán
-
-- Nút **🔒 Chốt Sổ Kế Toán:** Khóa cứng toàn bộ bảng kê chi phí
-- Nút **🔓 Mở Sổ:** Dành cho Kế toán trưởng mở khóa khi cần hiệu chỉnh
-- Mọi chi phí khi chốt sổ chuyển sang `SETTLED` — bất khả xâm phạm
-
----
-
-## PHÂN HỆ 5: QUẢN LÝ KẾ TOÁN
-
-### 5.1 KPI Kế Toán (4 Thẻ)
-
-- Tổng doanh thu vận tải
-- Tổng chi phí thực tế
-- Lợi nhuận gộp
-- Số chuyến chờ chốt sổ / đã chốt sổ
-
-### 5.2 Bảng Đối Soát Chi Phí
-
-Danh sách tất cả chuyến xe với:
-- Mã chuyến, ngày đóng hàng, khách hàng, tuyến đường, tài xế, xe, container
-- Doanh thu / Chi phí / Lợi nhuận / Biên lợi nhuận
-- Số lượng chứng từ đính kèm / Số hóa đơn có mã tra cứu
-- Trạng thái chốt sổ (Chưa chốt / Đã chốt)
-- Thông tin người chốt sổ + thời gian chốt
-
----
-
-## PHÂN HỆ 6: XE & BÃI (Fleet Management)
-
-### 6.1 KPI Đội Xe (3 Thẻ)
-
-- Xe đang hoạt động (Active)
-- Xe sẵn sàng tại bãi (Idle)
-- Xe đang bảo trì (Maintenance)
-
-### 6.2 Danh Sách Phương Tiện
-
-| Cột | Nội dung |
-|---|---|
-| Biển số / Loại xe | Biển số (font-mono) + Badge loại xe |
-| Nguồn xe | Xe Nhà (Teal) / Xe Bạn (Amber) |
-| Tài xế chỉ định | Tên tài xế thường lái |
-| Hạn đăng kiểm | Ngày hết hạn + Cảnh báo sắp hết |
-| Bảo trì định kỳ | Ngày bảo trì tiếp theo |
-| Trạng thái | Active / Idle / Maintenance |
-
-**Tính năng phân loại nguồn xe:**
-- **Xe Nhà (OWNED):** Badge Teal — đội xe công ty sở hữu
-- **Xe Bạn (SUBCONTRACTOR):** Badge Amber — xe thuê ngoài / 3PL
-
----
-
-## PHÂN HỆ 7: HÀNH CHÍNH & NHÂN SỰ
-
-### 7.1 KPI Nhân Sự (3 Thẻ)
-
-- Tổng nhân sự đang làm việc
-- Tài xế đang chạy hàng
-- Tài xế đang nghỉ phép
-
-### 7.2 Bảng Lương Chuyến Tạm Tính
-
-| Cột | Nội dung |
-|---|---|
-| Mã NV / Tài xế | Mã nhân viên + Tên đầy đủ |
-| Số chuyến tháng | Tổng số chuyến đã thực hiện |
-| Lương cơ bản | Lương cố định hàng tháng |
-| Lương chuyến | = Số chuyến × Định mức lương/chuyến |
-| Tạm ứng | Số tiền đã tạm ứng |
-| Thực lãnh | = Lương cơ bản + Lương chuyến - Tạm ứng |
-
----
-
-## PHÂN HỆ 8: DỊCH VỤ HẢI QUAN (Customs Service)
-
-> **Trạng thái:** Placeholder — Phát triển sau
-
-**Đã xây dựng khung:**
-- 3 KPI: Luồng Xanh / Vàng / Đỏ (với số lượng tờ khai)
-- Khung giao diện sẵn sàng mở rộng
-
----
-
-## TÍNH NĂNG KỸ THUẬT XUYÊN SUỐT
-
-### A. Single Page Application (SPA)
-- Không reload trang khi chuyển phân hệ
-- Sidebar navigation điều hướng bằng `showView()` JavaScript
-- URL hash routing cơ bản (`#dispatch`, `#sales`...)
-
-### B. Số Format Hàng Ngàn
-- Tất cả số tiền hiển thị theo chuẩn Việt Nam: `1.548.000 đ`
-- Dùng `Intl.NumberFormat('vi-VN')` + suffix ` đ`
-- Áp dụng đồng bộ cả bảng, form nhập và box P&L
-
-### C. Real-time Search & Filter
-- Tìm kiếm real-time trên bảng điều vận (không cần bấm Enter)
-- Lọc theo trạng thái dropdown
-
-### D. Toast Notifications
-- Thông báo thành công / lỗi / cảnh báo góc phải màn hình
-- Tự động biến mất sau 4 giây
-- Màu sắc: Emerald (success), Rose (danger), Amber (warning), Teal (info)
-
-### E. Responsive Design
-- Tailwind CSS responsive breakpoints: `sm:`, `md:`, `xl:`
-- Dashboard co giãn từ 1 cột (mobile) lên 4 cột (desktop)
-- Bảng dữ liệu có scroll ngang trên màn hình nhỏ
-
-### F. OCR Simulator
-- Modal `modal_ocr.html` mô phỏng tài xế chụp ảnh chứng từ
-- Giả lập kết quả OCR trích xuất số Cont, Seal, Số HĐ
-
-### G. Vòng Đời Chi Phí 3 Cấp Độ (Expense Lifecycle)
-
-| Trạng thái | Ý nghĩa | Quyền tài xế | Quyền điều độ |
-|---|---|---|---|
-| `PENDING` | Vừa kê khai, chờ duyệt | Sửa / Xóa | Sửa / Duyệt / Xóa |
-| `APPROVED` | Đã duyệt, vào P&L | Không sửa/xóa | Mở lại / Sửa |
-| `SETTLED` | Kế toán đã chốt sổ | Không thao tác | Không thao tác |
+> **Template thêm tính năng mới:**
+> ```markdown
+> ### X.Y Tên tính năng
+> - Mô tả ngắn gọn tính năng làm gì
+> - API endpoint (nếu có): `METHOD /api/path/`
+> - Model liên quan: `ModelName`
+> - Trạng thái/choices đặc biệt (nếu có)
+> ```

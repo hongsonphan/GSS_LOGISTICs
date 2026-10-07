@@ -249,6 +249,9 @@
                 <table class="erp-table whitespace-nowrap" id="sales-quotations-table" data-table-title="Bảng Báo Giá Tuyến & Hợp Đồng CRM">
                     <thead>
                         <tr>
+                            <!-- 0. STT Cố Định -->
+                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
+
                             <!-- 1. Mã Báo Giá (Có sắp xếp) -->
                             <th data-col-key="code" data-col-name="Mã Báo Giá" data-col-locked="true" onclick="toggleQuoteSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-28 font-mono" title="Click để sắp xếp theo Mã Báo Giá">
                                 <div class="flex items-center gap-1.5">
@@ -491,6 +494,9 @@
                 <table class="erp-table whitespace-nowrap" id="sales-bookings-table" data-table-title="Danh Sách Đơn Hàng Booking">
                     <thead>
                         <tr>
+                            <!-- Cột 0: STT Cố Định -->
+                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
+
                             <!-- Cột 1: Mã Đơn Hàng (Sắp xếp theo mã) -->
                             <th data-col-key="booking_code" data-col-name="Mã Đơn" data-col-locked="true" onclick="toggleBookingSort('booking_code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-32" title="Click để sắp xếp theo Mã Đơn">
                                 <div class="flex items-center gap-1.5">

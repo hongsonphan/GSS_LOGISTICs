@@ -2,6 +2,49 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.16] - 2026-10-07 (Tối Ưu Giao Diện Toàn Màn Hình Lên Topbar, Chuyển Modal Sang Dedicated Pages & Chuẩn Hóa Cột STT)
+
+### 1. Đồng Bộ Header Toàn Màn Hình Lên Topbar & Loại Bỏ Header Con Trùng Lặp:
+- **Tái cấu trúc Topbar Kép (`templates/components/topbar.html`):** Thiết kế cơ chế linh hoạt chuyển đổi giữa `#topbar-standard-wrapper` (cho màn hình danh sách, báo cáo thông thường) và `#topbar-fullpage-wrapper` (cho các trang chuyên biệt/toàn màn hình).
+- **Đưa thông tin và nút thao tác trực tiếp lên Topbar:** Nút Quay Lại (`Quay lại`), Breadcrumb điều hướng đa cấp, Badge trạng thái động, Phụ đề tóm tắt ngữ cảnh (`subtitle`) và nhóm nút thao tác chuyên biệt (`#topbar-fullpage-actions` như Lưu, Hủy, In phiếu, Sao chép link) được đưa trực tiếp lên Topbar chính.
+- **Xóa bỏ dứt điểm header con trùng lặp:** Loại bỏ hoàn toàn khối header phụ bên dưới nội dung trang tại:
+  - Chi tiết Báo Giá (`view_quotation_detail.html`)
+  - Tạo Chuyến Xe Điều Động (`view_create_trip.html`)
+  - Chi tiết Đơn Hàng / Booking (`view_booking_detail.html`)
+
+### 2. Khắc Phục Dữ Liệu Dropdown Khách Hàng & Nút Tiếp Nhận Đơn Mới:
+- **Sửa dropdown Khách Hàng (`populateMasterDataDropdowns`):** Bổ sung nạp danh sách khách hàng vào `fullpage-quote-customer` (trang báo giá) và `fullpage-booking-customer` (trang booking), đồng thời điền đầy đủ các datalist cảng/kho/nơi hạ cont rỗng.
+- **Kích hoạt nút Tiếp Nhận Booking Mới:** Xuất đầy đủ `window.openCreateBookingPage` và các hàm liên quan ở cuối `static/js/app.js` giải quyết dứt điểm lỗi click không phản hồi.
+
+### 3. Chuyển Đổi Modal Nhân Sự & Hải Quan Sang Dedicated Full-Page View:
+- **Tạo Nhân Sự Mới (`view_employee_form.html`):** Thay thế modal popup chật hẹp bằng trang toàn màn hình với đầy đủ các khối: Thông tin định danh & CCCD, Vị trí & Chức danh, Hồ sơ giấy phép lái xe, Thông tin bảo hiểm & Ngân hàng.
+- **Khai Báo Tờ Khai Hải Quan Điện Tử (`view_customs_form.html`):** Chuyển từ modal popup sang trang chuyên biệt với bố cục tối ưu: Thông tin tờ khai & Chi cục hải quan, Doanh nghiệp & Đại lý hải quan, Phân luồng & Kết quả thông quan, Vận đơn & Danh sách container kèm theo.
+- Tích hợp 2 view mới vào `templates/index.html` và quản trị qua `openCreateEmployeePage`, `openEditEmployeePage`, `openCustomsPage`.
+
+### 4. Bổ Sung Chuẩn Cột STT Cho Toàn Bộ Bảng Dữ Liệu:
+- **Cột STT đầu tiên ở tất cả các bảng:** Bổ sung cột STT (Số Thứ Tự) ở cả `<thead>` và `<tbody>` trên toàn hệ thống với độ rộng chuẩn `w-12`, canh giữa `text-center`, font chữ `font-mono tabular-nums text-xs font-bold text-slate-500` và khóa cột `data-col-locked="true"` an toàn với `column_manager.js`.
+- Bổ sung ở các bảng:
+  - Điều vận (`dispatch-trips-table`)
+  - Báo giá & Đơn hàng Booking (`sales-quotations-table`, `sales-bookings-table`)
+  - Đội xe (`fleet-vehicles-table`)
+  - Nhân sự & Bảng lương (`employees-table`, `personnel-payroll-table`)
+  - Kế toán (Sổ quỹ, Tạm ứng tài xế, Quỹ điều phối, Báo cáo PnL, Chi hộ khách hàng, Quyết toán xe bạn 3PL, Đối soát vé BOT)
+  - Quyết toán chuyến xe (`settlement-trips-table`)
+  - Tờ khai Hải quan (`customs-table`)
+
+### 5. Kiểm Thử & Kiểm Tra Hồi Quy (Zero-Regression):
+- Kiểm tra cú pháp JavaScript: `node -c static/js/app.js; node -c static/js/column_manager.js` (100% Valid).
+- Bộ kiểm thử tự động của dự án: 86/86 test cases đều vượt qua xuất sắc (`Ran 86 tests in 24.569s - OK`).
+
+---
+
+## [2.9.15] - 2026-10-07 (Nâng Cấp GEMINI.md Thành Bản Đồ Tài Liệu Cho AI Agent)
+
+### Documentation — Agent Instruction Upgrade
+- **Nâng cấp:** `GEMINI.md` từ 14 dòng redirect đơn giản thành **Bản đồ tài liệu đầy đủ** (Documentation Map): bổ sung bảng ánh xạ tác vụ → file tài liệu tương ứng, giúp Agent luôn biết chủ động đọc đúng file trước khi thực hiện.
+- **Sửa lỗi:** Hoàn thành rename `.agents/rules/logistics_engineering_and_safety_rule.md` → `data-integrity-rules.md` (lần trước bị lỗi silent).
+- **Tệp cập nhật:** [`GEMINI.md`](file:///E:/Bim_Logistics/GEMINI.md), [`docs/CHANGELOG.md`](file:///E:/Bim_Logistics/docs/CHANGELOG.md).
+
 ## [2.9.13] - 2026-10-06 (Kiểm Tra Toàn Diện Tính Năng CRUD, Báo Cáo & Liên Thông Số Liệu Toàn Hệ Thống)
 
 ### 1. Kiểm Tra & Xác Thực Tính Liên Thông Nghiệp Vụ Toàn Trình (End-to-End Data Integrity):

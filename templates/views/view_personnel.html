@@ -128,6 +128,7 @@
                 <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="employees-table" data-table-title="Hồ Sơ Cán Bộ & Tài Xế">
                     <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
                         <tr>
+                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 w-12 select-none">STT</th>
                             <th data-col-key="code" data-col-name="Mã NV" data-col-locked="true" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Mã NV</th>
                             <th data-col-key="full_name" data-col-name="Họ Và Tên" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Họ Và Tên</th>
                             <th data-col-key="nickname" data-col-name="Biệt Danh" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Biệt Danh</th>
@@ -210,6 +211,9 @@
                 <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="personnel-payroll-table" data-table-title="Bảng Lương & Nhân Sự Vận Hành">
                     <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
                         <tr>
+                            <!-- 0. STT Cố Định -->
+                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 w-12 select-none">STT</th>
+
                             <!-- 1. Mã NV -->
                             <th data-col-key="code" data-col-name="Mã NV" data-col-locked="true" onclick="toggleHRSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Mã NV">
                                 <div class="flex items-center gap-1.5">

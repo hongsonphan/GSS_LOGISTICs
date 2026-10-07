@@ -137,6 +137,9 @@
             <table class="erp-table whitespace-nowrap" id="dispatch-trips-table" data-table-title="Danh Sách Điều Vận Chuyến Xe">
                 <thead>
                     <tr>
+                        <!-- 0. STT Cố Định -->
+                        <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
+
                         <!-- 1. Mã Chuyến (Có sắp xếp) -->
                         <th data-col-key="trip_id" data-col-name="Mã Chuyến" data-col-locked="true" onclick="toggleDispatchSort('trip_id')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors w-32" title="Click để sắp xếp theo Mã Chuyến">
                             <div class="flex items-center gap-1.5">
