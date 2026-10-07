@@ -2,6 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.24] - 2026-10-07 (Tự Động Cập Nhật Ngày Hiệu Lực Hoặc Auto 30 Ngày Vào Bản In Báo Giá)
+
+### 1. Đồng Bộ Hóa Ngày Hiệu Lực (Validity Synchronization):
+- **Cơ chế tính toán ngày hiệu lực thông minh:**
+  * Nếu người dùng nhập ngày tại ô "Hiệu Lực Đến Ngày (Valid Until)": Hệ thống tự động lấy chính xác ngày đó (format định dạng `DD/MM/YYYY`) và cập nhật lên bản in.
+  * Nếu người dùng để trống / không nhập: Hệ thống tự động tính ngày hiệu lực = Ngày ban hành + 30 ngày (auto 30 ngày).
+- **Cập nhật đồng bộ các vị trí trên Bản in Báo giá A4:**
+  * **Mẫu 1 (Tiêu Chuẩn TVL):** Thêm trường thông tin `Hiệu lực đến ngày:` ngay trong bảng thông tin khách hàng ở phần đầu trang; đồng thời tự động cập nhật điều khoản số 5: `Báo giá có hiệu lực đến ngày DD/MM/YYYY` (hoặc `Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành (đến ngày DD/MM/YYYY)` nếu auto 30 ngày).
+  * **Mẫu 2 (Bảng Cước To/From):** Tự động cập nhật dòng điều khoản hiệu lực theo ngày đã chọn hoặc auto 30 ngày.
+  * **Mẫu 3 (Chi Tiết Dự Án):** Cập nhật trường `Thời Gian Áp Dụng: Áp dụng đến ngày DD/MM/YYYY` và điều khoản tương ứng.
+
+---
+
 ## [2.9.23] - 2026-10-07 (Chuẩn Hóa Giao Diện Bản In Báo Giá & Tinh Gọn Nhãn Trường Khách Hàng)
 
 ### 1. Bản In Báo Giá A4 (Quotation Print Template):

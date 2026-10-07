@@ -7691,7 +7691,42 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     const amountInWords = (typeof numberToWordsVN === 'function') ? numberToWordsVN(grandTotal) : `${new Intl.NumberFormat('vi-VN').format(grandTotal)} đồng`;
     const createdDate = q.created_at || (new Date().toLocaleDateString('vi-VN'));
-    const notesText = q.notes || DEFAULT_QUOTATION_NOTES.fcl;
+
+    // Xử lý thông tin ngày hiệu lực (Valid Until): Nếu có nhập thì dùng ngày đó, nếu không thì auto 30 ngày
+    let validUntilDateStr = '';
+    let isAuto30Days = false;
+    if (q.valid_until) {
+        validUntilDateStr = formatDateVN(q.valid_until);
+    }
+    if (!validUntilDateStr) {
+        isAuto30Days = true;
+        const baseDate = q.created_at ? new Date(q.created_at) : new Date();
+        const targetDate = isNaN(baseDate.getTime()) ? new Date() : baseDate;
+        const autoDate = new Date(targetDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const day = String(autoDate.getDate()).padStart(2, '0');
+        const month = String(autoDate.getMonth() + 1).padStart(2, '0');
+        const year = autoDate.getFullYear();
+        validUntilDateStr = `${day}/${month}/${year}`;
+    }
+
+    const validityClause = isAuto30Days
+        ? `Báo giá có hiệu lực trong vòng 30 ngày kể từ ngày ban hành (đến ngày ${validUntilDateStr}).`
+        : `Báo giá có hiệu lực đến ngày ${validUntilDateStr}.`;
+
+    const validityHeaderStr = isAuto30Days
+        ? `${validUntilDateStr} (Trong 30 ngày)`
+        : `Đến ngày ${validUntilDateStr}`;
+
+    // Tự động cập nhật dòng điều khoản hiệu lực trong nội dung ghi chú
+    let notesText = q.notes || DEFAULT_QUOTATION_NOTES.fcl;
+    if (/(?:Báo giá có hiệu lực|Báo giá có giá trị)/i.test(notesText)) {
+        notesText = notesText.replace(/(?:^|\n)(\s*(?:\d+\.|\-|\*)\s*)?(?:Báo giá có hiệu lực|Báo giá có giá trị)[^\n\r]*/gi, (match, prefix) => {
+            const p = prefix || '';
+            return `\n${p}${validityClause}`;
+        }).trim();
+    } else {
+        notesText = `${notesText}\n- ${validityClause}`;
+    }
 
     const now = new Date();
     const datePlaceStr = `Tp. Hồ Chí Minh, ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
@@ -7723,6 +7758,9 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     const p1Tax = document.getElementById('print-q1-tax-code');
     if (p1Tax) p1Tax.innerText = q.customer_tax_code || 'Chưa cập nhật';
+
+    const p1ValidUntil = document.getElementById('print-q1-valid-until');
+    if (p1ValidUntil) p1ValidUntil.innerText = validityHeaderStr;
 
     // Render bảng Mẫu 1
     const p1Tbody = document.getElementById('print-q1-table-body');
@@ -7846,7 +7884,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
     if (p3Cargo) p3Cargo.innerText = q.cargo_type || 'Container 40HC / Hàng xuất nhập khẩu';
 
     const p3Validity = document.getElementById('print-q3-validity');
-    if (p3Validity) p3Validity.innerText = q.valid_until ? (`Áp dụng đến ${formatDateVN(q.valid_until)}`) : 'Có hiệu lực trong vòng 30 ngày';
+    if (p3Validity) p3Validity.innerText = `Áp dụng ${validityHeaderStr.toLowerCase()}`;
 
     const p3Tbody = document.getElementById('print-q3-tbody');
     if (p3Tbody) {
