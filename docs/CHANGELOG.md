@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.23] - 2026-10-07 (Chuẩn Hóa Giao Diện Bản In Báo Giá & Tinh Gọn Nhãn Trường Khách Hàng)
+
+### 1. Bản In Báo Giá A4 (Quotation Print Template):
+- **Bỏ bọc Badge ở Số Báo giá:**
+  * Loại bỏ nền và khung viền badge màu xanh ngọc (`bg-teal-50 border border-teal-200`) tại khối mã số báo giá dưới tiêu đề "BÁO GIÁ CƯỚC VẬN CHUYỂN".
+  * Tăng kích thước thêm 1 size (lên `text-sm font-bold text-slate-800`), căn giữa trang trí trang nhã và chuẩn hóa văn bản in ấn văn phòng.
+- **Đồng bộ Font chữ Tổng doanh thu kế hoạch:**
+  * Loại bỏ `font-mono` tại ô Tổng cộng dự kiến (`print-q1-grand-total`, `print-q2-grand-total`, `print-q3-grand-total`).
+  * Sử dụng thống nhất font sans-serif với `tabular-nums font-black text-slate-950 font-sans` hoàn toàn đồng điệu với cột đơn giá và thành tiền của các dòng trong bảng ma trận cước.
+
+### 2. Tinh Gọn Nhãn Trường Người Nhận:
+- **Loại bỏ chữ viết tắt tiếng Anh (Attn):**
+  * Đổi toàn bộ nhãn `Người Nhận Báo Giá (Attn)` và `Người nhận (Attn):` thành tiếng Việt chuẩn: `Người nhận Báo giá` trên cả Form chi tiết báo giá và Bản in A4 (bao gồm cả modal popups và dedicated full-page views).
+
+---
+
 ## [2.9.22] - 2026-10-07 (Khắc Phục Nút In & Lưu Trên Tạo Mới Báo Giá Và Tiếp Nhận Booking)
 
 ### 1. Phân hệ Báo Giá Tuyến Cước (Quotation Management):
