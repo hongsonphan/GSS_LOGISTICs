@@ -11,6 +11,8 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * *Ví dụ:* `Điều Vận | Tạo Lệnh Điều Động`
   * *Ví dụ:* `Hành Chính & Nhân Sự | Tạo Mới Nhân Sự`
   * *Ví dụ:* `Dịch Vụ Hải Quan | Tạo Mới Tờ Khai Hải Quan`
+- **Loại bỏ nút mũi tên Quay lại thừa trên Topbar:**
+  * Xóa bỏ nút icon mũi tên `topbar-fullpage-back-btn` trên Topbar. Khi người dùng click trực tiếp vào văn bản `[Tên phân hệ]` (có hiệu ứng hover màu xanh ngọc), hệ thống sẽ tự động điều hướng quay trở lại phân hệ cha tương ứng.
 - **Loại bỏ hoàn toàn Badges và Nút bấm trên Topbar:**
   * Ẩn triệt để các thẻ badge trạng thái/phân loại (`Chuyến xe FCL`, `Kế thừa Booking`, `Ma trận đa tuyến`,...) khỏi thanh Topbar.
   * Di dời và loại bỏ tất cả các nút bấm hành động (`Hủy Bỏ`, `Xác Nhận & Phát Lệnh Zalo`, `Lưu Hồ Sơ`, `Tiếp Nhận Đơn Hàng`) khỏi Topbar, bố trí 100% tại thanh tác vụ phía cuối Form để thuận tiện thao tác tự nhiên theo luồng nhập liệu.
