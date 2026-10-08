@@ -2,6 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.27] - 2026-10-07 (Bổ Sung Nút Sửa Footer, Loại Bỏ Nút Sửa Danh Sách & Chuẩn Hóa Font Table 13px / Sub 12px)
+
+### 1. Bổ Sung Nút "Sửa" Trong Màn Hình Báo Giá & Booking Toàn Màn Hình:
+- **Màn hình Chi Tiết Báo Giá (`view_quotation_detail.html`):**
+  * Thêm nút **"Sửa"** (`btn-fullpage-edit-quote-bottom`) với màu cam vàng `bg-amber-600 hover:bg-amber-700 text-white` vào footer bar (cạnh nút "Xem & In" và "Lưu").
+  * Kích hoạt hàm `enableFullpageQuotationEdit()` trong `app.js` và `modules/sales.js`, cho phép người dùng mở khóa và chỉnh sửa nhanh thông tin báo giá khi xem lại đơn cũ.
+- **Màn hình Chi Tiết Đơn Hàng / Booking (`view_booking_detail.html`):**
+  * Thêm nút **"Sửa"** (`btn-fullpage-edit-booking-bottom`) với màu cam vàng `bg-amber-600 hover:bg-amber-700 text-white` vào footer bar cạnh nút "Lưu".
+  * Kích hoạt hàm `enableFullpageBookingEdit()` trong `app.js` và `modules/sales.js`, hỗ trợ sửa đổi trực tiếp các thông số đơn hàng.
+
+### 2. Loại Bỏ Nút "Sửa" Ngoài Cột Thao Tác Bảng Danh Sách Booking:
+- **Bảng Danh Sách Đơn Hàng Booking (`view_sales.html`, `app.js`, `modules/sales.js`):**
+  * Bỏ icon cây bút chì (nút Sửa) tại cột "Thao tác" ngoài bảng danh sách booking.
+  * Giữ nguyên các thao tác trực quan: **"Điều Xe"** (nút màu teal), **"Xem"** (icon con mắt `ph-eye`) và **"Xóa"** (icon thùng rác `ph-trash`).
+  * Luồng vận hành: người dùng bấm Xem để vào màn hình chi tiết booking và bấm "Sửa" ngay bên trong khi cần chỉnh sửa.
+
+### 3. Chuẩn Hóa Typography Toàn Hệ Thống: Font Chuẩn 13px & Font Sub 12px:
+- **Quy chuẩn Font-Size Bảng Biểu & Báo Cáo (`main.css`):**
+  * Đặt kích thước chữ chuẩn cho toàn bộ các bảng (`.erp-table`, `table`, `.bim-table` và các bảng trong phân hệ Báo cáo & Thống kê): **font chuẩn 13px** (`font-size: 13px !important`).
+  * Tất cả các dòng mô tả phụ, nhãn phụ trợ, sub-text (`.erp-subtext`, `.sub-text`, `.text-sub`, `p.text-xs`, `span.text-xs` trong bảng): **chuẩn hóa đúng 12px** (`font-size: 12px !important`).
+  * Tiêu đề các cột (`th`) chuẩn 13px bold, đảm bảo trải nghiệm đọc thông thoáng, rõ nét, đồng nhất trên toàn bộ 14 báo cáo và các bảng TMS.
+
+---
+
 ## [2.9.26] - 2026-10-07 (Bổ Sung Nút "Hiệu Chỉnh" Vào Tất Cả Màn Hình & Modal Xem Chi Tiết)
 
 ### 1. Bổ Sung Nút "Hiệu Chỉnh" Tại Màn Hình & Modal Xem Bản In Báo Giá:

@@ -6839,6 +6839,36 @@ function printQuotationFromFullPage() {
     }
 }
 
+function enableFullpageQuotationEdit() {
+    const form = document.getElementById('form-fullpage-quotation');
+    if (form) {
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+    }
+    const editBtn = document.getElementById('btn-fullpage-edit-quote-bottom');
+    if (editBtn) editBtn.classList.add('hidden');
+    const saveBtn = document.getElementById('btn-fullpage-save-quote-bottom');
+    if (saveBtn) saveBtn.classList.remove('hidden');
+    const codeEl = document.getElementById('fullpage-quote-code');
+    if (codeEl && !codeEl.innerText.includes('Hiệu Chỉnh') && !codeEl.innerText.includes('Sửa')) {
+        showToast('info', 'Đã chuyển sang chế độ Sửa Báo giá. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
+    }
+}
+window.enableFullpageQuotationEdit = enableFullpageQuotationEdit;
+
+function enableFullpageBookingEdit() {
+    const form = document.getElementById('form-fullpage-booking');
+    if (form) {
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+    }
+    const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
+    if (editBtn) editBtn.classList.add('hidden');
+    const saveBtn = document.getElementById('btn-fullpage-save-booking-bottom');
+    if (saveBtn) saveBtn.classList.remove('hidden');
+    showToast('info', 'Đã chuyển sang chế độ Sửa Đơn Hàng / Booking. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
+}
+window.enableFullpageBookingEdit = enableFullpageBookingEdit;
+
+
 async function saveFullpageQuotation(e) {
     if (e && typeof e.preventDefault === 'function') {
         e.preventDefault();
@@ -8989,19 +9019,14 @@ function renderBookingsTable(bookings) {
                             <i class="ph-bold ph-check"></i> Đủ xe
                         </span>
                     `}
-                    <!-- 1. Xem chi tiết Booking (Chế độ chỉ đọc) -->
+                    <!-- 1. Xem chi tiết Booking (Toàn màn hình) -->
                     <button onclick="openModalBooking(${b.id}, true)" title="Xem chi tiết đơn hàng" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors">
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors cursor-pointer">
                         <i class="ph-bold ph-eye text-sm"></i>
                     </button>
-                    <!-- 2. Sửa Booking (Chế độ chỉnh sửa) -->
-                    <button onclick="openModalBooking(${b.id}, false)" title="Hiệu chỉnh đơn hàng" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-700 transition-colors">
-                        <i class="ph-bold ph-pencil-simple text-sm"></i>
-                    </button>
-                    <!-- 3. Xóa Booking -->
+                    <!-- 2. Xóa Booking -->
                     <button onclick="deleteBooking(${b.id})" title="Xóa đơn hàng" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors">
+                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors cursor-pointer">
                         <i class="ph-bold ph-trash text-sm"></i>
                     </button>
                 </div>

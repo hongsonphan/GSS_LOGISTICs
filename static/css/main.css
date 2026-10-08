@@ -467,7 +467,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .erp-table-subtext,
 .bim-subtext {
     font-family: var(--font-body) !important;
-    font-size: 11.5px !important;
+    font-size: 12px !important;
     color: #64748b;
     font-weight: 500;
     line-height: 1.25;
@@ -503,15 +503,35 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     text-decoration: underline;
 }
 
-/* ── 5.1 QUY CHUẨN ĐỒNG BỘ TYPOGRAPHY BẢNG BÁO CÁO & MODAL TRÌNH BÀY (BIM UNIFIED TABLE TYPOGRAPHY) ── */
-/* Mọi thẻ <table> trong phân hệ báo cáo, danh mục, giao dịch và modal đều đồng bộ font size & font-family */
+/* ── 5.1 QUY CHUẨN ĐỒNG BỘ TYPOGRAPHY BẢNG BÁO CÁO & BẢNG BIỂU HỆ THỐNG (BIM UNIFIED TABLE TYPOGRAPHY) ── */
+/* Mọi bảng dữ liệu, báo cáo thống kê, modal: font chuẩn là 13px, font phụ/sub là 12px */
 table th, .erp-table th, .bim-table th {
     font-family: var(--font-heading) !important;
+    font-size: 13px !important;
     letter-spacing: -0.01em;
 }
 
 table td, .erp-table td, .bim-table td {
     font-family: var(--font-body) !important;
+    font-size: 13px !important;
+}
+
+/* Quy chuẩn dòng phụ, nhãn sub, ghi chú nhỏ trong bảng và báo cáo: đúng chuẩn 12px */
+.erp-table td .text-sub,
+.erp-table td .sub-text,
+.erp-table td p.text-xs,
+.erp-table td span.text-xs,
+.erp-table td .text-[11px],
+.erp-table td .text-[10.5px],
+.erp-table td .text-[10px],
+div[id^="view-"] table td .text-sub,
+div[id^="view-"] table td .sub-text,
+div[id^="view-"] table td p.text-xs,
+div[id^="view-"] table td span.text-xs,
+div[id^="view-"] table td .text-[11px],
+div[id^="view-"] table td .text-[10.5px],
+div[id^="view-"] table td .text-[10px] {
+    font-size: 12px !important;
 }
 
 /* Đảm bảo số liệu tiền tệ, mã đơn, biển số, container hiển thị font mono / tabular-nums chuẩn mực */
@@ -526,18 +546,18 @@ table td .font-mono,
 /* Chuẩn hóa font-size các bảng trong popup modal và card chi tiết */
 .modal-body table,
 .card-table,
-div[id^="view-"] table:not(.erp-table) {
-    font-size: 13px;
+div[id^="view-"] table {
+    font-size: 13px !important;
     font-family: var(--font-family-primary);
 }
 
-div[id^="view-"] table:not(.erp-table) thead th {
+div[id^="view-"] table thead th {
     font-family: var(--font-heading) !important;
-    font-size: 12.5px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
 }
 
-div[id^="view-"] table:not(.erp-table) tbody td {
+div[id^="view-"] table tbody td {
     font-family: var(--font-body) !important;
     font-size: 13px !important;
 }
