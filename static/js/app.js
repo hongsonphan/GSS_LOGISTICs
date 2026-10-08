@@ -6496,12 +6496,30 @@ function calculateFullpageQuotationItemsTotal() {
     }
 }
 
+function setFullpageSaveButtonState(btnId, isEnabled) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (isEnabled) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        btn.classList.add('bg-teal-700', 'hover:bg-teal-800', 'cursor-pointer');
+    } else {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        btn.classList.remove('hover:bg-teal-800', 'cursor-pointer');
+    }
+}
+window.setFullpageSaveButtonState = setFullpageSaveButtonState;
+
 async function openCreateQuotationPage(updateHistory = true) {
     await loadMasterDataFormOptions();
     populateMasterDataDropdowns();
 
     const form = document.getElementById('form-fullpage-quotation');
-    if (form) form.reset();
+    if (form) {
+        form.reset();
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+    }
 
     const routesTbody = document.getElementById('fullpage-quote-routes-tbody');
     if (routesTbody) routesTbody.innerHTML = '';
@@ -6524,6 +6542,11 @@ async function openCreateQuotationPage(updateHistory = true) {
     if (dateEl) {
         dateEl.innerText = new Date().toLocaleDateString('vi-VN');
     }
+
+    // Nút Sửa ẩn đi vì đang ở chế độ Tạo Mới; Nút Lưu sáng lên
+    const editBtn = document.getElementById('btn-fullpage-edit-quote-bottom');
+    if (editBtn) editBtn.classList.add('hidden');
+    setFullpageSaveButtonState('btn-fullpage-save-quote-bottom', true);
 
     // Cập nhật URL chuẩn Semantic Path: /sales/quotations/new
     if (updateHistory && window.history && window.history.pushState) {
@@ -6713,6 +6736,21 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
             });
         }
 
+        // CHẾ ĐỘ XEM BẢN GHI ĐÃ CÓ:
+        // 1. Khóa toàn bộ các input/select/textarea của form
+        if (form) {
+            form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+            form.querySelectorAll('button:not(#btn-fullpage-edit-quote-bottom):not([onclick*="backToQuotations"]):not([onclick*="printQuotation"])').forEach(el => el.disabled = true);
+        }
+        // 2. Nút Sửa hiển thị rõ để bấm khi cần sửa
+        const editBtn = document.getElementById('btn-fullpage-edit-quote-bottom');
+        if (editBtn) {
+            editBtn.classList.remove('hidden');
+            editBtn.disabled = false;
+        }
+        // 3. Nút Lưu mờ đi, chỉ sáng lên khi người dùng bấm Sửa
+        setFullpageSaveButtonState('btn-fullpage-save-quote-bottom', false);
+
         initAllNumberInputs();
     } catch (err) {
         console.error('Lỗi tải chi tiết báo giá trang riêng:', err);
@@ -6846,8 +6884,7 @@ function enableFullpageQuotationEdit() {
     }
     const editBtn = document.getElementById('btn-fullpage-edit-quote-bottom');
     if (editBtn) editBtn.classList.add('hidden');
-    const saveBtn = document.getElementById('btn-fullpage-save-quote-bottom');
-    if (saveBtn) saveBtn.classList.remove('hidden');
+    setFullpageSaveButtonState('btn-fullpage-save-quote-bottom', true);
     const codeEl = document.getElementById('fullpage-quote-code');
     if (codeEl && !codeEl.innerText.includes('Hiệu Chỉnh') && !codeEl.innerText.includes('Sửa')) {
         showToast('info', 'Đã chuyển sang chế độ Sửa Báo giá. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
@@ -6862,8 +6899,7 @@ function enableFullpageBookingEdit() {
     }
     const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
     if (editBtn) editBtn.classList.add('hidden');
-    const saveBtn = document.getElementById('btn-fullpage-save-booking-bottom');
-    if (saveBtn) saveBtn.classList.remove('hidden');
+    setFullpageSaveButtonState('btn-fullpage-save-booking-bottom', true);
     showToast('info', 'Đã chuyển sang chế độ Sửa Đơn Hàng / Booking. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
 }
 window.enableFullpageBookingEdit = enableFullpageBookingEdit;
@@ -7265,7 +7301,10 @@ async function openCreateBookingPage(updateHistory = true) {
         }
 
         const form = document.getElementById('form-fullpage-booking');
-        if (form) form.reset();
+        if (form) {
+            form.reset();
+            form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+        }
 
         const idInput = document.getElementById('fullpage-booking-id');
         const titleCodeEl = document.getElementById('fullpage-booking-title-code');
@@ -7289,6 +7328,11 @@ async function openCreateBookingPage(updateHistory = true) {
         if (headerDate) headerDate.innerText = `Hẹn đóng: ${new Date().toLocaleDateString('vi-VN')}`;
         if (saveBtnText) saveBtnText.innerText = 'Lưu';
         if (tripsSection) tripsSection.classList.add('hidden');
+
+        // Nút Sửa ẩn đi vì đang ở chế độ Tạo Mới; Nút Lưu sáng lên
+        const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
+        if (editBtn) editBtn.classList.add('hidden');
+        setFullpageSaveButtonState('btn-fullpage-save-booking-bottom', true);
 
         const dateInput = document.getElementById('fullpage-booking-loading-date');
         const timeInput = document.getElementById('fullpage-booking-loading-time');
@@ -7529,6 +7573,21 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
                 `;
             }
         }
+
+        // CHẾ ĐỘ XEM BẢN GHI ĐÃ CÓ:
+        // 1. Khóa toàn bộ input/select/textarea của form
+        if (form) {
+            form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+            form.querySelectorAll('button:not(#btn-fullpage-edit-booking-bottom):not([onclick*="backToBookings"]):not([onclick*="viewTripDetail"])').forEach(el => el.disabled = true);
+        }
+        // 2. Nút Sửa hiển thị rõ để bấm khi cần sửa
+        const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
+        if (editBtn) {
+            editBtn.classList.remove('hidden');
+            editBtn.disabled = false;
+        }
+        // 3. Nút Lưu mờ đi, chỉ sáng lên khi người dùng bấm Sửa
+        setFullpageSaveButtonState('btn-fullpage-save-booking-bottom', false);
 
         onFullpageBookingTypeChange();
         initAllNumberInputs();

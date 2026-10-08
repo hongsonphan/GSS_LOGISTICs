@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.28] - 2026-10-08 (Đồng Bộ Trạng Thái Tương Tác Nút Sửa & Lưu Trong Màn Hình Báo Giá & Booking)
+
+### 1. Khắc Phục Lỗi Mất Nút "Sửa" Sau Khi Lưu:
+- **Nguyên nhân cốt lõi:** Khi người dùng bấm nút "Sửa", nút được gán class `hidden`. Sau khi bấm "Lưu" thành công, hệ thống tải lại chi tiết bản ghi nhưng trước đó chưa có logic khôi phục hiển thị cho nút "Sửa".
+- **Giải pháp xử lý:**
+  * Tại `viewQuotationDetail()` và `viewBookingDetail()`, bổ sung logic hiển thị lại nút "Sửa" (`classList.remove('hidden')` và `disabled = false`).
+  * Khóa lại toàn bộ các trường nhập liệu (`input, select, textarea, button`) về trạng thái chỉ đọc (readonly) sau khi lưu thành công hoặc khi vừa mở xem bản ghi đã có.
+
+### 2. Chuẩn Hóa Logic UX Cho Nút "Lưu" (Active / Disabled Theo Ngữ Cảnh):
+- **Trạng thái Xem Bản Ghi Cũ (Readonly):**
+  * Nút "Sửa" hiển thị rõ ràng (`bg-amber-600 hover:bg-amber-700`).
+  * Nút "Lưu" chuyển sang trạng thái mờ (`disabled = true`, `opacity-50`, `cursor-not-allowed`, `pointer-events-none`).
+- **Trạng thái Tạo Mới (New Record):**
+  * Mở khóa toàn bộ các trường nhập liệu.
+  * Nút "Sửa" tự động ẩn đi (`hidden`).
+  * Nút "Lưu" sáng lên và sẵn sàng kích hoạt (`disabled = false`, màu xanh teal chuẩn mực).
+- **Trạng thái Sau Khi Bấm "Sửa" (Editing Mode):**
+  * Nút "Sửa" ẩn đi (`hidden`).
+  * Nút "Lưu" sáng lên (`disabled = false`, kích hoạt đầy đủ hiệu ứng tương tác).
+  * Mở khóa toàn bộ các trường input/select/textarea để người dùng hiệu chỉnh.
+
+---
+
 ## [2.9.27] - 2026-10-07 (Bổ Sung Nút Sửa Footer, Loại Bỏ Nút Sửa Danh Sách & Chuẩn Hóa Font Table 13px / Sub 12px)
 
 ### 1. Bổ Sung Nút "Sửa" Trong Màn Hình Báo Giá & Booking Toàn Màn Hình:
