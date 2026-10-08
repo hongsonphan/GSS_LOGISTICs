@@ -521,16 +521,21 @@ table td, .erp-table td, .bim-table td {
 .erp-table td .sub-text,
 .erp-table td p.text-xs,
 .erp-table td span.text-xs,
-.erp-table td .text-[11px],
-.erp-table td .text-[10.5px],
-.erp-table td .text-[10px],
+.erp-table td [class*="text-[11px]"],
+.erp-table td [class*="text-[10.5px]"],
+.erp-table td [class*="text-[10px]"],
+.erp-table td [class*="text-[9px]"],
+.erp-subtext,
+.erp-table-subtext,
+.bim-subtext,
 div[id^="view-"] table td .text-sub,
 div[id^="view-"] table td .sub-text,
 div[id^="view-"] table td p.text-xs,
 div[id^="view-"] table td span.text-xs,
-div[id^="view-"] table td .text-[11px],
-div[id^="view-"] table td .text-[10.5px],
-div[id^="view-"] table td .text-[10px] {
+div[id^="view-"] table td [class*="text-[11px]"],
+div[id^="view-"] table td [class*="text-[10.5px]"],
+div[id^="view-"] table td [class*="text-[10px]"],
+div[id^="view-"] table td [class*="text-[9px]"] {
     font-size: 12px !important;
 }
 
