@@ -241,8 +241,15 @@
                             <label class="block font-bold text-slate-700 text-xs truncate">Giờ Hẹn Tại Kho</label>
                             <span class="text-[9.5px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">24h</span>
                         </div>
-                        <input type="time" id="booking-loading-time" value="08:00" 
-                            class="w-full h-8.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs">
+                        <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" id="booking-loading-time" value="08:00" placeholder="08:00"
+                            class="w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs text-center font-mono">
+                        <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
+                            <span class="font-medium text-slate-400">Giờ:</span>
+                            <button type="button" onclick="setBookingLoadingTime('08:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">08:00</button>
+                            <button type="button" onclick="setBookingLoadingTime('10:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">10:00</button>
+                            <button type="button" onclick="setBookingLoadingTime('13:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">13:00</button>
+                            <button type="button" onclick="setBookingLoadingTime('18:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">18:00</button>
+                        </div>
                     </div>
 
                     <!-- Hạn Cắt Máng CY (col 3) -->
@@ -254,10 +261,17 @@
                         <div class="grid grid-cols-5 gap-1">
                             <input type="date" id="booking-closing-date" onchange="syncBookingClosingTime()"
                                 class="col-span-3 w-full h-8.5 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-rose-700 text-xs">
-                            <input type="time" id="booking-closing-time-val" value="17:00" onchange="syncBookingClosingTime()"
-                                class="col-span-2 w-full h-8.5 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-rose-700 text-xs">
+                            <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" id="booking-closing-time-val" value="17:00" placeholder="17:00" onchange="syncBookingClosingTime()"
+                                class="col-span-2 w-full h-8.5 px-1 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-rose-700 text-xs text-center font-mono">
                         </div>
                         <input type="hidden" id="booking-closing-time">
+                        <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
+                            <span class="font-medium text-slate-400">Giờ:</span>
+                            <button type="button" onclick="setBookingClosingTime('12:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">12:00</button>
+                            <button type="button" onclick="setBookingClosingTime('17:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">17:00</button>
+                            <button type="button" onclick="setBookingClosingTime('20:00')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">20:00</button>
+                            <button type="button" onclick="setBookingClosingTime('23:59')" class="px-1.5 py-0.2 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors">23:59</button>
+                        </div>
                     </div>
 
                     <!-- Hạn SI Cut-off (col 3) -->
@@ -269,10 +283,17 @@
                         <div class="grid grid-cols-5 gap-1">
                             <input type="date" id="booking-si-date" onchange="syncBookingSiTime()"
                                 class="col-span-3 w-full h-8.5 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-medium text-slate-800 text-xs">
-                            <input type="time" id="booking-si-time-val" value="12:00" onchange="syncBookingSiTime()"
-                                class="col-span-2 w-full h-8.5 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-medium text-slate-800 text-xs">
+                            <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" id="booking-si-time-val" value="12:00" placeholder="12:00" onchange="syncBookingSiTime()"
+                                class="col-span-2 w-full h-8.5 px-1 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-medium text-slate-800 text-xs text-center font-mono">
                         </div>
                         <input type="hidden" id="booking-si-cutoff">
+                        <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
+                            <span class="font-medium text-slate-400">Giờ:</span>
+                            <button type="button" onclick="setBookingSiTime('11:00')" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors">11:00</button>
+                            <button type="button" onclick="setBookingSiTime('12:00')" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors">12:00</button>
+                            <button type="button" onclick="setBookingSiTime('16:00')" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors">16:00</button>
+                            <button type="button" onclick="setBookingSiTime('17:00')" class="px-1.5 py-0.2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors">17:00</button>
+                        </div>
                     </div>
                 </div>
 

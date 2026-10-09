@@ -171,42 +171,163 @@ function formatTimeString(timeStr) {
     const s = String(timeStr).trim();
     if (!s || s === '-') return '';
 
-    // Chuẩn hóa định dạng có hoặc không có AM/PM (vd: 19:00 PM, 7:30 PM, 08:00 AM, 17:00) sang 24h chuẩn (HH:mm)
+    // Chuẩn hóa định dạng có hoặc không có AM/PM (vd: 19:00 PM, 7:30 PM, 08:00 AM, 17:00, 5:00 PM) sang 24h chuẩn (HH:mm)
     const matchTimeAmPm = s.match(/^(\d{1,2}):(\d{1,2})(?::\d{1,2})?\s*([aApP][mM])?$/i);
     if (matchTimeAmPm) {
         let hour = parseInt(matchTimeAmPm[1], 10);
-        const minute = parseInt(matchTimeAmPm[2], 10);
+        let minute = parseInt(matchTimeAmPm[2], 10);
         const ampm = matchTimeAmPm[3] ? matchTimeAmPm[3].toUpperCase() : null;
         if (ampm === 'PM' && hour < 12) {
             hour += 12;
         } else if (ampm === 'AM' && hour === 12) {
             hour = 0;
         }
-        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
-            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-        }
+        if (hour > 23) hour = 23;
+        if (minute > 59) minute = 59;
+        return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+
+    // Format 4 chữ số liền: 1700 -> 17:00, 0830 -> 08:30
+    const match4Digits = s.match(/^(\d{2})(\d{2})$/);
+    if (match4Digits) {
+        let hour = parseInt(match4Digits[1], 10);
+        let minute = parseInt(match4Digits[2], 10);
+        if (hour > 23) hour = 23;
+        if (minute > 59) minute = 59;
+        return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+
+    // Format 3 chữ số liền: 830 -> 08:30, 915 -> 09:15
+    const match3Digits = s.match(/^(\d{1})(\d{2})$/);
+    if (match3Digits) {
+        let hour = parseInt(match3Digits[1], 10);
+        let minute = parseInt(match3Digits[2], 10);
+        if (hour > 23) hour = 23;
+        if (minute > 59) minute = 59;
+        return `0${hour}:${String(minute).padStart(2, '0')}`;
     }
 
     // Format 8H, 8h, 8 -> 08:00
     const matchSimpleH = s.match(/^(\d{1,2})\s*[hH]$/i) || s.match(/^(\d{1,2})$/);
     if (matchSimpleH) {
-        const hour = parseInt(matchSimpleH[1], 10);
-        if (hour >= 0 && hour <= 23) {
-            return `${String(hour).padStart(2, '0')}:00`;
-        }
+        let hour = parseInt(matchSimpleH[1], 10);
+        if (hour > 23) hour = 23;
+        return `${String(hour).padStart(2, '0')}:00`;
     }
     // Format 8H30, 8h30, 16H30 -> 08:30, 16:30
     const matchHMinute = s.match(/^(\d{1,2})\s*[hH]\s*(\d{1,2})$/i);
     if (matchHMinute) {
-        const hour = parseInt(matchHMinute[1], 10);
-        const minute = parseInt(matchHMinute[2], 10);
-        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
-            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-        }
+        let hour = parseInt(matchHMinute[1], 10);
+        let minute = parseInt(matchHMinute[2], 10);
+        if (hour > 23) hour = 23;
+        if (minute > 59) minute = 59;
+        return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     }
-    // Giữ nguyên chuỗi nếu chứa ngày (vd: 18/09/2026 - 13H00)
+
+    // Format khi gõ kèm dấu hai chấm: "8:" -> 08:00, "17:" -> 17:00
+    const matchHColon = s.match(/^(\d{1,2}):$/);
+    if (matchHColon) {
+        let hour = parseInt(matchHColon[1], 10);
+        if (hour > 23) hour = 23;
+        return `${String(hour).padStart(2, '0')}:00`;
+    }
+
     return s;
 }
+
+function formatAndValidate24hTimeInput(inputEl) {
+    if (!inputEl) return;
+    const raw = inputEl.value.trim();
+    if (!raw) return;
+    const formatted = formatTimeString(raw);
+    if (formatted && /^([01]\d|2[0-3]):[0-5]\d$/.test(formatted)) {
+        inputEl.value = formatted;
+    }
+}
+
+function handle24hTimeInputMask(e) {
+    const input = e.target;
+    let val = input.value.replace(/[^\d:]/g, '');
+    if (val.length === 2 && !val.includes(':') && e.inputType !== 'deleteContentBackward') {
+        val = val + ':';
+    }
+    if (val.length > 5) {
+        val = val.slice(0, 5);
+    }
+    input.value = val;
+}
+
+function attach24hTimeInput(inputEl) {
+    if (!inputEl || inputEl.dataset.has24hTimeMask) return;
+    inputEl.dataset.has24hTimeMask = 'true';
+    inputEl.setAttribute('autocomplete', 'off');
+    inputEl.setAttribute('inputmode', 'numeric');
+    inputEl.setAttribute('maxlength', '5');
+
+    inputEl.addEventListener('input', handle24hTimeInputMask);
+    inputEl.addEventListener('blur', function() {
+        const prev = this.value;
+        formatAndValidate24hTimeInput(this);
+        if (this.value !== prev) {
+            this.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
+}
+
+function initAll24hTimeInputs() {
+    document.querySelectorAll('input[data-time-24h="true"]').forEach(attach24hTimeInput);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initAll24hTimeInputs();
+});
+function setTripLoadTime(timeStr) {
+    const el = document.getElementById('inp-load-time');
+    if (el) {
+        el.value = timeStr;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+function setBookingLoadingTime(timeStr) {
+    const el = document.getElementById('booking-loading-time');
+    if (el) {
+        el.value = timeStr;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+function setFullpageBookingLoadingTime(timeStr) {
+    const el = document.getElementById('fullpage-booking-loading-time');
+    if (el) {
+        el.value = timeStr;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+function setFullpageBookingClosingTime(timeStr) {
+    const el = document.getElementById('fullpage-booking-closing-time-val');
+    if (el) {
+        el.value = timeStr;
+        if (typeof syncFullpageBookingClosingTime === 'function') syncFullpageBookingClosingTime();
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+function setFullpageBookingSiTime(timeStr) {
+    const el = document.getElementById('fullpage-booking-si-time-val');
+    if (el) {
+        el.value = timeStr;
+        if (typeof syncFullpageBookingSiTime === 'function') syncFullpageBookingSiTime();
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
 
 function attachAutoNumberFormat(inputEl, onChangeCallback) {
     if (!inputEl || inputEl.dataset.hasNumberFormatter) return;
@@ -20326,3 +20447,16 @@ window.openCustomsPage = typeof openCustomsPage !== 'undefined' ? openCustomsPag
 window.backToCustoms = typeof backToCustoms !== 'undefined' ? backToCustoms : undefined;
 window.setTopbarFullpageMode = typeof setTopbarFullpageMode !== 'undefined' ? setTopbarFullpageMode : undefined;
 window.resetTopbarStandardMode = typeof resetTopbarStandardMode !== 'undefined' ? resetTopbarStandardMode : undefined;
+
+window.formatTimeString = formatTimeString;
+window.formatAndValidate24hTimeInput = formatAndValidate24hTimeInput;
+window.attach24hTimeInput = attach24hTimeInput;
+window.initAll24hTimeInputs = initAll24hTimeInputs;
+window.setTripCutoffTime = typeof setTripCutoffTime !== 'undefined' ? setTripCutoffTime : undefined;
+window.setTripLoadTime = typeof setTripLoadTime !== 'undefined' ? setTripLoadTime : undefined;
+window.setBookingClosingTime = typeof setBookingClosingTime !== 'undefined' ? setBookingClosingTime : undefined;
+window.setBookingSiTime = typeof setBookingSiTime !== 'undefined' ? setBookingSiTime : undefined;
+window.setBookingLoadingTime = typeof setBookingLoadingTime !== 'undefined' ? setBookingLoadingTime : undefined;
+window.setFullpageBookingClosingTime = typeof setFullpageBookingClosingTime !== 'undefined' ? setFullpageBookingClosingTime : undefined;
+window.setFullpageBookingSiTime = typeof setFullpageBookingSiTime !== 'undefined' ? setFullpageBookingSiTime : undefined;
+window.setFullpageBookingLoadingTime = typeof setFullpageBookingLoadingTime !== 'undefined' ? setFullpageBookingLoadingTime : undefined;

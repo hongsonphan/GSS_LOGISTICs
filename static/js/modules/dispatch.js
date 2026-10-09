@@ -4030,3 +4030,54 @@ if (typeof window !== 'undefined') {
     window.backToDispatch = backToDispatch;
 }
 
+
+
+function setTripLoadTime(timeStr) {
+    const el = document.getElementById('inp-load-time');
+    if (el) {
+        el.value = timeStr;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+function setBookingLoadingTime(timeStr) {
+    const el = document.getElementById('booking-loading-time');
+    if (el) {
+        el.value = timeStr;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+function setFullpageBookingLoadingTime(timeStr) {
+    const el = document.getElementById('fullpage-booking-loading-time');
+    if (el) {
+        el.value = timeStr;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+function setFullpageBookingClosingTime(timeStr) {
+    const el = document.getElementById('fullpage-booking-closing-time-val');
+    if (el) {
+        el.value = timeStr;
+        if (typeof syncFullpageBookingClosingTime === 'function') syncFullpageBookingClosingTime();
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+function setFullpageBookingSiTime(timeStr) {
+    const el = document.getElementById('fullpage-booking-si-time-val');
+    if (el) {
+        el.value = timeStr;
+        if (typeof syncFullpageBookingSiTime === 'function') syncFullpageBookingSiTime();
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+window.setTripLoadTime = setTripLoadTime;
+window.setBookingLoadingTime = setBookingLoadingTime;

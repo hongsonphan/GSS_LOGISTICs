@@ -318,11 +318,15 @@
                 />
                 <input
                   id="inp-cutoff-time"
-                  type="time"
-                  step="60"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="5"
+                  list="list-times-24h"
+                  data-time-24h="true"
                   value="17:00"
+                  placeholder="17:00"
                   onchange="syncTripCutoff()"
-                  class="col-span-2 form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold text-xs px-1 py-1 h-8.5 focus:ring-rose-500"
+                  class="col-span-2 form-input text-rose-800 bg-rose-50/70 border-rose-300 font-bold text-xs text-center px-1 py-1 h-8.5 focus:ring-rose-500 font-mono"
                 />
               </div>
               <input type="hidden" id="inp-cutoff" />
@@ -362,17 +366,21 @@
               </div>
               <input
                 id="inp-load-time"
-                type="time"
-                step="60"
+                type="text"
+                inputmode="numeric"
+                maxlength="5"
+                list="list-times-24h"
+                data-time-24h="true"
                 value="08:00"
-                class="form-input h-8.5 px-2.5 py-1 font-bold text-slate-800 text-xs w-full"
+                placeholder="08:00"
+                class="form-input h-8.5 px-2 py-1 font-bold text-slate-800 text-xs text-center w-full font-mono"
               />
               <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
                 <span class="font-medium text-slate-400">Giờ:</span>
-                <button type="button" onclick="document.getElementById('inp-load-time').value='08:00'" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">08:00</button>
-                <button type="button" onclick="document.getElementById('inp-load-time').value='13:00'" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">13:00</button>
-                <button type="button" onclick="document.getElementById('inp-load-time').value='18:00'" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">18:00</button>
-                <button type="button" onclick="document.getElementById('inp-load-time').value='20:00'" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">20:00</button>
+                <button type="button" onclick="setTripLoadTime('08:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">08:00</button>
+                <button type="button" onclick="setTripLoadTime('13:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">13:00</button>
+                <button type="button" onclick="setTripLoadTime('18:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">18:00</button>
+                <button type="button" onclick="setTripLoadTime('20:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">20:00</button>
               </div>
             </div>
             <div>

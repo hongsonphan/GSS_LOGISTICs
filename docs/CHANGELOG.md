@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.30] - 2026-10-09 (Chuyển Đổi Triệt Để Toàn Bộ Ô Chọn Giờ Sang Hệ 24h Chuẩn - Loại Bỏ Native 12h/SA/CH)
+
+### 1. Triệt Tiêu Bộ Chọn Native 12h Của Trình Duyệt:
+- **Nguyên nhân người dùng phản ánh:** Thẻ `<input type="time">` kích hoạt pop-up chọn giờ native của trình duyệt Chromium/Edge trên Windows hiển thị 3 cột: Giờ (01-12), Phút (00-59), và SA/CH (AM/PM), gây bất tiện và không đúng chuẩn 24h của ngành logistics.
+- **Giải pháp chuyển đổi:**
+  * Chuyển đổi 100% các ô giờ (`inp-cutoff-time`, `inp-load-time`, `booking-loading-time`, `booking-closing-time-val`, `booking-si-time-val`, `fullpage-booking-loading-time`, `fullpage-booking-closing-time-val`, `fullpage-booking-si-time-val`) từ `type="time"` sang `type="text"`.
+  * Cấu hình các thuộc tính: `inputmode="numeric"`, `maxlength="5"`, `data-time-24h="true"`, `autocomplete="off"`, font chữ `font-mono font-bold text-center`.
+- **Datalist Khung Giờ 24h Toàn Cục (`#list-times-24h`):** Bổ sung danh sách chọn nhanh các mốc giờ 24h (00:00 -> 23:59) vào `base.html`, hỗ trợ gợi ý mượt mà không xung đột CSS hay pop-up OS.
+
+### 2. Bộ Xử Lý Tự Động Định Dạng & Kiểm Tra Giờ 24h (`attach24hTimeInput`):
+- **Tự động chèn dấu `:` và mask số:** Người dùng gõ `1700` -> tự chuyển thành `17:00`, gõ `830` -> `08:30`, gõ `8` -> `08:00`.
+- **Giới hạn an toàn:** Tự động khống chế giờ $\le 23$ và phút $\le 59$.
+- **Quick-select chips:** Bổ sung các nút bấm chọn giờ 1 chạm (08:00, 10:00, 12:00, 13:00, 17:00, 20:00, 23:59) dưới từng trường giờ tại Form Tạo chuyến, Modal Điều vận, Modal Booking và Màn hình Chi tiết Booking.
+- **Đồng bộ sự kiện:** Tự động kích hoạt sự kiện `change` khi người dùng nhập hoặc bấm chọn, đảm bảo tính liên tục của các hàm nghiệp vụ (`syncTripCutoff`, `syncBookingClosingTime`, `syncBookingSiTime`, `syncFullpageBookingClosingTime`, `syncFullpageBookingSiTime`).
+
+---
+
 ## [2.9.29] - 2026-10-09 (Tùy Biến Tỷ Lệ Thù Lao Cắt Kéo & Chuẩn Hóa Hệ 24 Giờ Toàn Hệ Thống)
 
 ### 1. Tùy Biến Tỷ Lệ Phân Chia Thù Lao Tài Xế (Cắt Kéo / Drop & Hook):
