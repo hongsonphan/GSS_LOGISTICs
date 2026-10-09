@@ -2,7 +2,7 @@
 <div id="view-cash-voucher-detail" class="view hidden-view min-h-[calc(100vh-4rem)] bg-slate-100 py-6 sm:py-8 space-y-4 animate-fade-in">
     <div class="max-w-5xl mx-auto px-2 sm:px-4 space-y-4">
         
-        <!-- Thanh Toolbar Điều Khiển Toàn Màn Hình (Ẩn khi in ấn qua no-print) -->
+        <!-- Thanh Header Tiêu Đề Toàn Màn Hình (Ẩn khi in ấn qua no-print) -->
         <div id="fullpage-voucher-top-toolbar" class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
             <div class="flex items-center space-x-3">
                 <button type="button" onclick="backToAccountingCashbook()" 
@@ -12,55 +12,9 @@
                 </button>
                 <div class="h-4 w-px bg-slate-200"></div>
                 <div class="flex items-center gap-2">
-                    <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900" id="fullpage-voucher-top-title">Chứng Từ Sổ Quỹ Thu Chi</h3>
+                    <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900" id="fullpage-voucher-top-title">Chi Tiết Chứng Từ Sổ Quỹ Thu Chi</h3>
                     <span id="fullpage-voucher-badge-code" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono">-</span>
                 </div>
-            </div>
-
-            <!-- Controls: Chọn Chế Độ In + Sửa + Lưu + In Phiếu (Chỉ dùng khi Xem chi tiết) -->
-            <div id="fullpage-voucher-view-actions" class="flex items-center gap-2.5 flex-wrap">
-                <!-- Nút chuyển chế độ: 2 Liên / 1 Trang A4 vs 1 Liên Đơn -->
-                <div class="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
-                    <button type="button" id="btn-fullpage-voucher-mode-dual" onclick="setFullpageVoucherPrintMode('dual')" 
-                        class="px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-emerald-700 text-white shadow-xs cursor-pointer">
-                        <i class="ph-bold ph-copy"></i>
-                        <span>2 Liên / A4 (A5 x 2)</span>
-                    </button>
-                    <button type="button" id="btn-fullpage-voucher-mode-single" onclick="setFullpageVoucherPrintMode('single')" 
-                        class="px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer">
-                        <i class="ph-bold ph-file-text"></i>
-                        <span>1 Liên Đơn</span>
-                    </button>
-                </div>
-
-                <!-- Nút SỬA -->
-                <button type="button" id="btn-fullpage-edit-voucher" onclick="enableFullpageVoucherEdit()" 
-                    class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
-                    <i class="ph-bold ph-pencil-simple text-base"></i>
-                    <span>Sửa</span>
-                </button>
-
-                <!-- Nút LƯU (Mờ mặc định khi chỉ xem, sáng lên khi bấm Sửa) -->
-                <button type="button" id="btn-fullpage-save-voucher" onclick="saveFullpageVoucher()" disabled 
-                    class="px-5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all opacity-50 cursor-not-allowed pointer-events-none">
-                    <i class="ph-bold ph-check-circle text-base"></i>
-                    <span>Lưu</span>
-                </button>
-
-                <!-- Nút XÓA (Soft-delete có modal xác nhận) -->
-                <button type="button" id="btn-fullpage-delete-voucher" onclick="confirmDeleteCashVoucher()" 
-                    class="px-3.5 py-1.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-rose-300 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                    title="Xóa phiếu khỏi sổ quỹ">
-                    <i class="ph-bold ph-trash text-base"></i>
-                    <span>Xóa</span>
-                </button>
-
-                <!-- Nút IN PHIẾU -->
-                <button type="button" onclick="printFullpageCashVoucher()" 
-                    class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
-                    <i class="ph-bold ph-printer text-base text-emerald-400"></i>
-                    <span>In Phiếu</span>
-                </button>
             </div>
         </div>
 
@@ -152,18 +106,34 @@
                         class="w-full p-3 border border-slate-200 rounded-xl font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600"></textarea>
                 </div>
 
-                <!-- Cụm Nút Hành Động Ở Dưới Chân Form (Bottom Action Bar) -->
-                <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                    <button type="button" onclick="backToAccountingCashbook()" 
-                        class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 font-heading border border-slate-200">
-                        <i class="ph-bold ph-arrow-left text-sm"></i>
-                        <span>Quay Lại Sổ Quỹ</span>
-                    </button>
+                <!-- Cụm Nút Hành Động Ở Dưới Chân Form (Bottom Action Bar: Quay lại, In, Xóa, Hủy, Lưu) -->
+                <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="backToAccountingCashbook()" 
+                            class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 font-heading border border-slate-200">
+                            <i class="ph-bold ph-arrow-left text-sm"></i>
+                            <span>Quay Lại Sổ Quỹ</span>
+                        </button>
+
+                        <!-- Nút Xóa phiếu (chỉ hiển thị khi đang xem/sửa phiếu đã có) -->
+                        <button type="button" id="btn-form-delete-voucher" onclick="confirmDeleteCashVoucher()" 
+                            class="hidden px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Xóa phiếu khỏi sổ quỹ">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                            <span>Xóa Phiếu</span>
+                        </button>
+                    </div>
 
                     <div class="flex items-center gap-2.5">
-                        <button type="button" id="btn-form-cancel-edit" onclick="cancelFullpageVoucherEdit()" class="hidden px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold font-heading transition-all cursor-pointer">
-                            <span>Hủy Bỏ Sửa</span>
+                        <!-- Nút In Phiếu (chỉ hiển thị khi đang xem/sửa phiếu đã có) -->
+                        <button type="button" id="btn-form-print-voucher" onclick="printCurrentFormVoucher()" 
+                            class="hidden px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="In phiếu khổ A4">
+                            <i class="ph-bold ph-printer text-base text-emerald-400"></i>
+                            <span>In Phiếu</span>
                         </button>
+
+                        <!-- Nút Lưu / Cập Nhật -->
                         <button type="submit" id="btn-form-submit-voucher" 
                             class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-2 transition-all cursor-pointer">
                             <i class="ph-bold ph-check-circle text-base"></i>
@@ -174,8 +144,8 @@
             </form>
         </div>
 
-        <!-- Khổ giấy A4 hiển thị toàn trang (WYSIWYG Chuẩn Bộ Tài Chính) -->
-        <div id="fullpage-voucher-printable-container" class="flex justify-center overflow-x-auto pb-8">
+        <!-- Khổ giấy A4 hiển thị toàn trang (Chỉ dùng ngầm khi in ấn, ẩn trên giao diện màn hình) -->
+        <div id="fullpage-voucher-printable-container" class="hidden justify-center overflow-x-auto pb-8">
             <div id="fullpage-cash-voucher-printable-area" class="w-full max-w-[840px] bg-white p-6 sm:p-8 rounded-lg shadow-xl border border-slate-300 text-slate-900 font-sans text-xs space-y-4 voucher-mode-dual">
                 
                 <!-- ==================== LIÊN 1 ==================== -->

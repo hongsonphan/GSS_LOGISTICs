@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.36] - 2026-10-09 (Kế Toán Sổ Quỹ: Nút Xem Mở Thẳng Màn Hình Form Nhập/Hiệu Chỉnh, Bỏ Hoàn Toàn Tờ Phôi In Màn Hình)
+
+### 1. Nút "Xem" Mở Thẳng Form Chi Tiết & Hiệu Chỉnh Trực Tiếp:
+- **Đồng nhất trải nghiệm người dùng (`viewCashVoucherDetail`):**
+  * Bấm nút **Xem** ở bảng Sổ Quỹ sẽ mở thẳng màn hình Form nhập liệu chuyên nghiệp (giống như lúc tạo mới), các trường thông tin đã được điền đầy đủ dữ liệu chứng từ.
+  * Ẩn hoàn toàn tờ phôi in A4 trên giao diện (chỉ dùng ngầm khi in), giúp màn hình trực quan, sạch sẽ, không bị cuộn dài hay hiển thị 2 tờ in thừa thãi.
+  * Cho phép người dùng xem và hiệu chỉnh ngay lập tức các trường số tiền, tài khoản, đối tác, lý do...
+- **Cụm Nút Thao Tác Đặt Tại Chân Form (Bottom Action Bar):**
+  * Nút **Quay Lại Sổ Quỹ** (bên trái).
+  * Nút **Xóa Phiếu** (màu đỏ tinh tế, cảnh báo an toàn).
+  * Nút **In Phiếu** (kích hoạt hộp thoại in A4 native ngay tại form).
+  * Nút **Cập Nhật Phiếu** (màu Teal nổi bật).
+
+---
+
 ## [2.9.35] - 2026-10-09 (Kế Toán Sổ Quỹ: In Nhanh Tại Chỗ Không Chuyển Trang & Tối Ưu Form Nhập Liệu Thuần Túy)
 
 ### 1. In Phiếu Trực Tiếp Khổ A4 Ngay Tại Bảng Sổ Quỹ (Không Chuyển Màn Hình):
