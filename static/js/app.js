@@ -170,6 +170,23 @@ function formatTimeString(timeStr) {
     if (!timeStr) return '';
     const s = String(timeStr).trim();
     if (!s || s === '-') return '';
+
+    // Chuẩn hóa định dạng có hoặc không có AM/PM (vd: 19:00 PM, 7:30 PM, 08:00 AM, 17:00) sang 24h chuẩn (HH:mm)
+    const matchTimeAmPm = s.match(/^(\d{1,2}):(\d{1,2})(?::\d{1,2})?\s*([aApP][mM])?$/i);
+    if (matchTimeAmPm) {
+        let hour = parseInt(matchTimeAmPm[1], 10);
+        const minute = parseInt(matchTimeAmPm[2], 10);
+        const ampm = matchTimeAmPm[3] ? matchTimeAmPm[3].toUpperCase() : null;
+        if (ampm === 'PM' && hour < 12) {
+            hour += 12;
+        } else if (ampm === 'AM' && hour === 12) {
+            hour = 0;
+        }
+        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+    }
+
     // Format 8H, 8h, 8 -> 08:00
     const matchSimpleH = s.match(/^(\d{1,2})\s*[hH]$/i) || s.match(/^(\d{1,2})$/);
     if (matchSimpleH) {
@@ -183,15 +200,6 @@ function formatTimeString(timeStr) {
     if (matchHMinute) {
         const hour = parseInt(matchHMinute[1], 10);
         const minute = parseInt(matchHMinute[2], 10);
-        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
-            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-        }
-    }
-    // Format 8:30 -> 08:30
-    const matchColon = s.match(/^(\d{1,2}):(\d{1,2})$/);
-    if (matchColon) {
-        const hour = parseInt(matchColon[1], 10);
-        const minute = parseInt(matchColon[2], 10);
         if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
             return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
         }
@@ -4506,12 +4514,20 @@ function parseAndSetDateTimeFields(rawStr, dateInputId, timeInputId, hiddenInput
         }
     }
 
-    // Check Time HH:MM or HHhMM or HHh
-    const timeMatch = val.match(/\b(\d{1,2}):(\d{2})\b/);
-    if (timeMatch) {
-        const hh = String(timeMatch[1]).padStart(2, '0');
-        const mm = String(timeMatch[2]).padStart(2, '0');
-        foundTime = `${hh}:${mm}`;
+    // Check Time HH:MM (có thể kèm AM/PM) or HHhMM or HHh
+    const timeAmPmMatch = val.match(/\b(\d{1,2}):(\d{2})(?::\d{2})?\s*([aApP][mM])?\b/i);
+    if (timeAmPmMatch) {
+        let hhNum = parseInt(timeAmPmMatch[1], 10);
+        const mmNum = parseInt(timeAmPmMatch[2], 10);
+        const ampm = timeAmPmMatch[3] ? timeAmPmMatch[3].toUpperCase() : null;
+        if (ampm === 'PM' && hhNum < 12) {
+            hhNum += 12;
+        } else if (ampm === 'AM' && hhNum === 12) {
+            hhNum = 0;
+        }
+        if (hhNum >= 0 && hhNum <= 23 && mmNum >= 0 && mmNum <= 59) {
+            foundTime = `${String(hhNum).padStart(2, '0')}:${String(mmNum).padStart(2, '0')}`;
+        }
     } else {
         const hourOnlyMatch = val.match(/\b(\d{1,2})h(?:(\d{2}))?\b/i);
         if (hourOnlyMatch) {
@@ -4926,7 +4942,12 @@ async function submitNewTrip() {
         vehicle = document.getElementById('inp-vehicle-leg1')?.value || '';
         dropoff_driver = document.getElementById('inp-dropoff-driver')?.value || '';
         dropoff_vehicle = document.getElementById('inp-dropoff-vehicle')?.value || '';
-        driver_split_ratio = parseFloat(document.getElementById('inp-driver-split-ratio')?.value) || 50;
+        const splitRatioVal = document.getElementById('inp-driver-split-ratio')?.value;
+        if (splitRatioVal === 'custom') {
+            driver_split_ratio = parseFloat(document.getElementById('inp-custom-split-ratio-leg1')?.value) || 50;
+        } else {
+            driver_split_ratio = parseFloat(splitRatioVal) || 50;
+        }
     } else {
         driver = document.getElementById('inp-driver')?.value || '';
     }
@@ -10076,7 +10097,31 @@ function onDriverLeg2Change(driverNickname) {
 }
 
 function onSplitRatioChange(ratio) {
-    const r = parseInt(ratio) || 50;
+    const customDiv = document.getElementById('div-custom-split-ratio');
+    if (ratio === 'custom') {
+        if (customDiv) customDiv.classList.remove('hidden');
+        const customInput = document.getElementById('inp-custom-split-ratio-leg1');
+        const r = parseInt(customInput?.value, 10) || 50;
+        onCustomSplitRatioInput(r);
+    } else {
+        if (customDiv) customDiv.classList.add('hidden');
+        const r = parseInt(ratio, 10) || 50;
+        const badgeLeg1 = document.getElementById('badge-ratio-leg1');
+        const badgeLeg2 = document.getElementById('badge-ratio-leg2');
+        if (badgeLeg1) badgeLeg1.innerText = `Tỷ lệ: ${r}%`;
+        if (badgeLeg2) badgeLeg2.innerText = `Tỷ lệ: ${100 - r}%`;
+    }
+}
+
+function onCustomSplitRatioInput(val) {
+    let r = parseInt(val, 10);
+    if (isNaN(r)) r = 50;
+    if (r < 0) r = 0;
+    if (r > 100) r = 100;
+    
+    const leg2Input = document.getElementById('inp-custom-split-ratio-leg2');
+    if (leg2Input) leg2Input.value = 100 - r;
+
     const badgeLeg1 = document.getElementById('badge-ratio-leg1');
     const badgeLeg2 = document.getElementById('badge-ratio-leg2');
     if (badgeLeg1) badgeLeg1.innerText = `Tỷ lệ: ${r}%`;
@@ -20193,6 +20238,7 @@ window.exportCustomsExcel = typeof exportCustomsExcel !== 'undefined' ? exportCu
 window.debounceCustomsSearch = typeof debounceCustomsSearch !== 'undefined' ? debounceCustomsSearch : undefined;
 window.onCustomsOfficeChange = typeof onCustomsOfficeChange !== 'undefined' ? onCustomsOfficeChange : undefined;
 window.onSplitRatioChange = typeof onSplitRatioChange !== 'undefined' ? onSplitRatioChange : undefined;
+window.onCustomSplitRatioInput = typeof onCustomSplitRatioInput !== 'undefined' ? onCustomSplitRatioInput : undefined;
 window.onFreeDaysChange = typeof onFreeDaysChange !== 'undefined' ? onFreeDaysChange : undefined;
 
 // 9. Phân Hệ Báo Cáo & Thống Kê (Reports)

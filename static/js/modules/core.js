@@ -160,6 +160,23 @@ function formatTimeString(timeStr) {
     if (!timeStr) return '';
     const s = String(timeStr).trim();
     if (!s || s === '-') return '';
+
+    // Chuẩn hóa định dạng có hoặc không có AM/PM (vd: 19:00 PM, 7:30 PM, 08:00 AM, 17:00) sang 24h chuẩn (HH:mm)
+    const matchTimeAmPm = s.match(/^(\d{1,2}):(\d{1,2})(?::\d{1,2})?\s*([aApP][mM])?$/i);
+    if (matchTimeAmPm) {
+        let hour = parseInt(matchTimeAmPm[1], 10);
+        const minute = parseInt(matchTimeAmPm[2], 10);
+        const ampm = matchTimeAmPm[3] ? matchTimeAmPm[3].toUpperCase() : null;
+        if (ampm === 'PM' && hour < 12) {
+            hour += 12;
+        } else if (ampm === 'AM' && hour === 12) {
+            hour = 0;
+        }
+        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+    }
+
     // Format 8H, 8h, 8 -> 08:00
     const matchSimpleH = s.match(/^(\d{1,2})\s*[hH]$/i) || s.match(/^(\d{1,2})$/);
     if (matchSimpleH) {
@@ -173,15 +190,6 @@ function formatTimeString(timeStr) {
     if (matchHMinute) {
         const hour = parseInt(matchHMinute[1], 10);
         const minute = parseInt(matchHMinute[2], 10);
-        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
-            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-        }
-    }
-    // Format 8:30 -> 08:30
-    const matchColon = s.match(/^(\d{1,2}):(\d{1,2})$/);
-    if (matchColon) {
-        const hour = parseInt(matchColon[1], 10);
-        const minute = parseInt(matchColon[2], 10);
         if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
             return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
         }

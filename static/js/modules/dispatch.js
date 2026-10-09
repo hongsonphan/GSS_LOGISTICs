@@ -3372,12 +3372,20 @@ function parseAndSetDateTimeFields(rawStr, dateInputId, timeInputId, hiddenInput
         }
     }
 
-    // Check Time HH:MM or HHhMM or HHh
-    const timeMatch = val.match(/\b(\d{1,2}):(\d{2})\b/);
-    if (timeMatch) {
-        const hh = String(timeMatch[1]).padStart(2, '0');
-        const mm = String(timeMatch[2]).padStart(2, '0');
-        foundTime = `${hh}:${mm}`;
+    // Check Time HH:MM (có thể kèm AM/PM) or HHhMM or HHh
+    const timeAmPmMatch = val.match(/\b(\d{1,2}):(\d{2})(?::\d{2})?\s*([aApP][mM])?\b/i);
+    if (timeAmPmMatch) {
+        let hhNum = parseInt(timeAmPmMatch[1], 10);
+        const mmNum = parseInt(timeAmPmMatch[2], 10);
+        const ampm = timeAmPmMatch[3] ? timeAmPmMatch[3].toUpperCase() : null;
+        if (ampm === 'PM' && hhNum < 12) {
+            hhNum += 12;
+        } else if (ampm === 'AM' && hhNum === 12) {
+            hhNum = 0;
+        }
+        if (hhNum >= 0 && hhNum <= 23 && mmNum >= 0 && mmNum <= 59) {
+            foundTime = `${String(hhNum).padStart(2, '0')}:${String(mmNum).padStart(2, '0')}`;
+        }
     } else {
         const hourOnlyMatch = val.match(/\b(\d{1,2})h(?:(\d{2}))?\b/i);
         if (hourOnlyMatch) {
@@ -3792,7 +3800,12 @@ async function submitNewTrip() {
         vehicle = document.getElementById('inp-vehicle-leg1')?.value || '';
         dropoff_driver = document.getElementById('inp-dropoff-driver')?.value || '';
         dropoff_vehicle = document.getElementById('inp-dropoff-vehicle')?.value || '';
-        driver_split_ratio = parseFloat(document.getElementById('inp-driver-split-ratio')?.value) || 50;
+        const splitRatioVal = document.getElementById('inp-driver-split-ratio')?.value;
+        if (splitRatioVal === 'custom') {
+            driver_split_ratio = parseFloat(document.getElementById('inp-custom-split-ratio-leg1')?.value) || 50;
+        } else {
+            driver_split_ratio = parseFloat(splitRatioVal) || 50;
+        }
     } else {
         driver = document.getElementById('inp-driver')?.value || '';
     }

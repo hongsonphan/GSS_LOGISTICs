@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.29] - 2026-10-09 (Tùy Biến Tỷ Lệ Thù Lao Cắt Kéo & Chuẩn Hóa Hệ 24 Giờ Toàn Hệ Thống)
+
+### 1. Tùy Biến Tỷ Lệ Phân Chia Thù Lao Tài Xế (Cắt Kéo / Drop & Hook):
+- **Bổ sung lựa chọn tùy biến:** Thêm option `-- Tùy biến tỷ lệ riêng (%) --` vào dropdown tỷ lệ phân chia thù lao (`inp-driver-split-ratio`) trên cả Form trang Tạo chuyến (`view_create_trip.html`) và Modal điều vận (`modal_create_trip.html`).
+- **Giao diện nhập liệu tương tác 2 chiều:**
+  * Khi chọn Tùy biến, hệ thống hiển thị khối nhập riêng gồm Chặng 1 (%) và Chặng 2 (%).
+  * Ô nhập Chặng 1 (`inp-custom-split-ratio-leg1`) chấp nhận giá trị 0% - 100%, tự động bù trừ sang Chặng 2 (`inp-custom-split-ratio-leg2 = 100 - Chặng 1`).
+  * Đồng bộ trực quan thời gian thực lên Badge thù lao của Chặng 1 (`badge-ratio-leg1`) và Chặng 2 (`badge-ratio-leg2`).
+- **Thu thập dữ liệu nhất quán:** Cập nhật hàm `submitTripCreateForm` và `submitNewTrip` trong `static/js/app.js` và `static/js/modules/dispatch.js` để đọc chính xác giá trị tùy biến khi gửi backend và thông báo Zalo điều xe.
+- **Dọn dẹp mã nguồn:** Loại bỏ khối Section 3 trùng lặp trong `modal_create_trip.html`.
+
+### 2. Chuẩn Hóa Toàn Diện Hệ 24 Giờ (24-Hour Time Format):
+- **Xử lý chuỗi thời gian sạch sẽ (`formatTimeString`):** Nâng cấp hàm xử lý thời gian trong `static/js/app.js` và `static/js/modules/core.js` để bóc tách triệt để các định dạng `19:00 PM`, `08:00 AM`, `7:30 PM`, chuyển đổi chính xác sang chuẩn 24h (`HH:mm`), triệt tiêu hoàn toàn lỗi dính hậu tố AM/PM.
+- **Trình phân tích ngày giờ (`parseAndSetDateTimeFields`):** Nâng cấp regex bóc tách thời gian trong `app.js` và `modules/dispatch.js` để tự động nhận dạng chuỗi AM/PM từ dữ liệu kế thừa và quy đổi sang 24h chuẩn.
+- **Giao diện nhập liệu:** Bổ sung badge chỉ dẫn `24h`, thiết lập `step="60"` và các nút quick-select (08:00, 13:00, 18:00, 20:00) cho trường "Giờ Hẹn Đóng Hàng" (`inp-load-time`), đảm bảo hiển thị đồng nhất trên mọi thiết bị.
+
+---
+
 ## [2.9.28] - 2026-10-08 (Đồng Bộ Trạng Thái Tương Tác Nút Sửa & Lưu Trong Màn Hình Báo Giá & Booking)
 
 ### 1. Khắc Phục Lỗi Mất Nút "Sửa" Sau Khi Lưu:

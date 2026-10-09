@@ -327,13 +327,22 @@
                         <div>
                             <div class="flex items-center justify-between h-5 mb-1">
                                 <label class="block font-bold text-slate-700 text-xs truncate" for="inp-load-time">Giờ Hẹn Đóng Hàng</label>
+                                <span class="text-[9.5px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">24h</span>
                             </div>
                             <input
                                 id="inp-load-time"
                                 type="time"
+                                step="60"
                                 value="08:00"
                                 class="form-input h-9 px-2.5 py-1 font-bold text-slate-800 text-xs w-full rounded-lg"
                             />
+                            <div class="flex items-center gap-1 mt-1 text-[9.5px] text-slate-500 flex-wrap">
+                                <span class="font-medium text-slate-400">Giờ:</span>
+                                <button type="button" onclick="document.getElementById('inp-load-time').value='08:00'" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">08:00</button>
+                                <button type="button" onclick="document.getElementById('inp-load-time').value='13:00'" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">13:00</button>
+                                <button type="button" onclick="document.getElementById('inp-load-time').value='18:00'" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">18:00</button>
+                                <button type="button" onclick="document.getElementById('inp-load-time').value='20:00'" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">20:00</button>
+                            </div>
                         </div>
                         <div>
                             <div class="flex items-center justify-between h-5 mb-1">
@@ -584,7 +593,42 @@
                                     <option value="60">Chặng 1: 60% (Lấy xa) - Chặng 2: 40%</option>
                                     <option value="40">Chặng 1: 40% - Chặng 2: 60% (Hạ xa/chờ cảng)</option>
                                     <option value="70">Chặng 1: 70% - Chặng 2: 30%</option>
+                                    <option value="custom">-- Tùy biến tỷ lệ riêng (%) --</option>
                                 </select>
+                                
+                                <!-- Khung nhập tùy biến tỷ lệ thù lao Chặng 1 & Chặng 2 -->
+                                <div id="div-custom-split-ratio" class="hidden mt-2 p-2.5 bg-amber-50/80 border border-amber-200 rounded-lg">
+                                    <div class="text-[11px] font-bold text-amber-950 mb-1.5 flex items-center gap-1">
+                                        <i class="ph-bold ph-sliders-horizontal text-amber-700"></i> Nhập tỷ lệ thù lao (%) cho 2 chặng:
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[10.5px] font-bold text-teal-900 mb-0.5">Chặng 1 (%)</label>
+                                            <input
+                                                id="inp-custom-split-ratio-leg1"
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="1"
+                                                value="50"
+                                                oninput="onCustomSplitRatioInput(this.value)"
+                                                class="form-input h-8 px-2 py-1 font-bold text-teal-900 text-xs w-full rounded-md border-teal-300 focus:ring-teal-500"
+                                                placeholder="50"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10.5px] font-bold text-indigo-900 mb-0.5">Chặng 2 (%)</label>
+                                            <input
+                                                id="inp-custom-split-ratio-leg2"
+                                                type="number"
+                                                readonly
+                                                value="50"
+                                                class="form-input h-8 px-2 py-1 font-bold text-indigo-900 bg-slate-100 text-xs w-full rounded-md border-indigo-200 cursor-not-allowed"
+                                                placeholder="50"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <div class="flex items-center justify-between h-5 mb-1">
