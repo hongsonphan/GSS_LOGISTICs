@@ -47,6 +47,14 @@
                     <span>Lưu</span>
                 </button>
 
+                <!-- Nút XÓA (Soft-delete có modal xác nhận) -->
+                <button type="button" id="btn-fullpage-delete-voucher" onclick="confirmDeleteCashVoucher()" 
+                    class="px-3.5 py-1.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-rose-300 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Xóa phiếu khỏi sổ quỹ">
+                    <i class="ph-bold ph-trash text-base"></i>
+                    <span>Xóa</span>
+                </button>
+
                 <!-- Nút IN PHIẾU -->
                 <button type="button" onclick="printFullpageCashVoucher()" 
                     class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">

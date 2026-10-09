@@ -559,6 +559,27 @@ class CashBookDetailAPIView(APIView):
             }
         }, status=status.HTTP_200_OK)
 
+    @transaction.atomic
+    def delete(self, request, pk):
+        """Xóa mềm phiếu thu hoặc phiếu chi sổ quỹ (Soft-delete)."""
+        try:
+            if str(pk).isdigit():
+                t = CashTransaction.objects.get(id=int(pk), is_deleted=False)
+            else:
+                t = CashTransaction.objects.get(code=pk, is_deleted=False)
+        except CashTransaction.DoesNotExist:
+            return Response({'error': 'Không tìm thấy phiếu thu/chi tương ứng'}, status=status.HTTP_404_NOT_FOUND)
+
+        code = t.code
+        t_type_display = t.get_transaction_type_display()
+        t.is_deleted = True
+        t.save(update_fields=['is_deleted'])
+
+        return Response({
+            'success': True,
+            'message': f"Đã xóa thành công {t_type_display} [{code}] khỏi sổ quỹ!"
+        }, status=status.HTTP_200_OK)
+
 
 class SubcontractorSettlementsAPIView(APIView):
     """

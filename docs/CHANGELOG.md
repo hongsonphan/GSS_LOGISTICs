@@ -2,6 +2,31 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.34] - 2026-10-09 (Kế Toán Sổ Quỹ: Trang Nhập Lập Phiếu Thu/Chi Toàn Màn Hình, Tách Biệt Nút Xem - In & Bộ 3 Nút Sửa - Lưu - Xóa Chuẩn ERP)
+
+### 1. Lập Phiếu Thu / Phiếu Chi Trên Trang Riêng (Không Dùng Modal):
+- **Trang Chuyên Biệt Toàn Màn Hình (`openCreateCashVoucherPage`):**
+  * Chuyển hẳn việc Lập Phiếu Thu (`INFLOW`) và Lập Phiếu Chi (`OUTFLOW`) sang trang riêng toàn màn hình (`view_cash_voucher_detail.html`) thay vì pop-up modal.
+  * Hỗ trợ URL định tuyến ngữ nghĩa: `/accounting/vouchers/new?type=inflow` hoặc `?type=outflow`.
+  * Khởi tạo form soạn thảo thời gian thực (Live Preview): Vừa nhập dữ liệu vừa cập nhật tức thì tờ phôi in khổ A4 (chuẩn TT 200/2014/TT-BTC).
+  * Tự động bật sáng nút **Lưu** (màu Teal) ở trạng thái sẵn sàng ghi nhận chứng từ; ẩn các nút Sửa/Xóa đối với chứng từ mới chưa lưu.
+
+### 2. Tách Biệt Nút "Xem" Và "In" Riêng Biệt Tại Cột Thao Tác Sổ Quỹ:
+- **Cột Thao Tác Bảng Sổ Quỹ (`renderCashBookTable`):**
+  * Nút **Xem** (icon `ph-eye` màu ngọc bích): Mở trang chi tiết phiếu toàn màn hình, hỗ trợ đọc chứng từ chi tiết, xem liên 1 & liên 2.
+  * Nút **In** (icon `ph-printer` màu than slate): Nạp nhanh chứng từ và mở ngay hộp thoại in ấn A4 native của trình duyệt (`openDirectPrintCashVoucher`), thao tác 1 chạm cực nhanh cho kế toán hiện trường.
+
+### 3. Bộ 3 Phím Chức Năng Chuẩn Mực Trong Màn Hình Xem: "Sửa - Lưu - Xóa":
+- **Nút Sửa (`enableFullpageVoucherEdit`):** Bấm vào hiển thị Panel chỉnh sửa thông tin, nút **Lưu** sáng lên cho phép cập nhật.
+- **Nút Lưu (`saveFullpageVoucher`):**
+  * Mờ và khóa an toàn (`disabled`, `opacity-50`, `pointer-events-none`) ở chế độ chỉ đọc.
+  * Sáng nổi bật khi Lập mới hoặc bấm Sửa. Xử lý đồng thời cả `POST` (tạo mới) và `PUT` (cập nhật).
+- **Nút Xóa (`confirmDeleteCashVoucher`):**
+  * Tích hợp hộp thoại xác nhận hủy bỏ an toàn (`showConfirmModal`).
+  * Thực thi Soft-delete (`DELETE /api/accounting/cashbook/<id>/`), bảo toàn lịch sử kiểm toán pháp lý theo quy chuẩn logistics BIM.
+
+---
+
 ## [2.9.33] - 2026-10-09 (Loại Bỏ Hoàn Toàn Dấu Mũi Tên Datalist Indicator Trong Tất Cả Ô Chọn Giờ 24H)
 
 ### 1. Triệt Tiêu Mũi Tên Tam Giác Native Indicator Trong Ô Nhập Giờ:
