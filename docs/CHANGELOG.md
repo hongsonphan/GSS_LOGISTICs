@@ -2,6 +2,38 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.38] - 2026-10-09 (Toàn Hệ Thống: Chuẩn Hóa Nút Quay Lại & Topbar Breadcrumb Về Đúng Tên Trang Mẹ Cho Toàn Bộ Trang Con)
+
+### 1. Chuẩn Hóa Điều Hướng Topbar Khi Ở Trang Con (Child Page / Fullpage Mode):
+- **Hoán đổi thông minh nút góc trái Topbar (`#btn-toggle-sidebar` vs `#btn-topbar-back`):**
+  * **Khi ở Trang Mẹ (Dashboard, Điều vận, Kế toán, Xe bãi...):** Hiển thị nút Toggle Sidebar `[|<]` để mở/đóng thanh điều hướng bên trái.
+  * **Khi ở Trang Con (Phiếu Thu/Chi, Chi tiết chuyến xe, Tạo chuyến xe, Hồ sơ nhân sự, Tờ khai hải quan, Booking, Báo giá, Quyết toán):**
+    - Tự động ẩn nút Toggle Sidebar và thay bằng **Nút Quay Lại `[ < ]`** (`#btn-topbar-back`).
+    - Title của nút: `Quay lại [Tên Trang Mẹ]`. Bấm vào sẽ kích hoạt handler đưa người dùng quay thẳng về trang mẹ tương ứng.
+- **Breadcrumb Prefix Trên Topbar:**
+  * Hiển thị rõ tên Trang Mẹ: ví dụ `Tài chính & Kế toán | Chi Tiết Phiếu Thu PT...`.
+  * Click vào tên Trang Mẹ trên breadcrumb cũng tự động kích hoạt lệnh quay về trang mẹ đúng tên.
+
+### 2. Đồng Bộ Tên Nút Quay Lại Khắp Mọi Trang Con Trên Toàn Ứng Dụng:
+- **Phiếu Thu / Chi (`view-cash-voucher-detail`):**
+  * Nút quay lại (cả Header Toolbar và Bottom Action Bar): Đổi thành **`Quay Lại Tài chính & Kế toán`** (thay vì "Quay Lại Sổ Quỹ").
+- **Tạo Lệnh Điều Động (`view-create-trip`):**
+  * Nút chân form: Đổi thành **`Quay Lại Điều Vận`** (thay vì "Hủy Bỏ").
+- **Chi Tiết Chuyến Xe (`view-trip-detail`):**
+  * Nút điều hướng đầu trang: Bổ sung nhãn chuẩn động **`Quay Lại [Tài chính & Kế toán / Điều Vận]`** theo nguồn mở.
+- **Hồ Sơ Nhân Sự (`view-employee-form`):**
+  * Nút chân form: Đổi thành **`Quay Lại Hành chính & Nhân sự`** (thay vì "Hủy Bỏ").
+- **Tờ Khai Hải Quan (`view-customs-form`):**
+  * Nút chân form: Đổi thành **`Quay Lại Dịch vụ Hải quan`** (thay vì "Hủy Bỏ").
+- **Chi Tiết Booking (`view-booking-detail`):**
+  * Nút chân form: Đổi thành **`Quay Lại Sale & Booking`** (thay vì "Quay Lại").
+- **Chi Tiết Báo Giá (`view-quotation-detail`) & Bản In A4 (`view-quotation-print`):**
+  * Nút chân form/toolbar: Đổi thành **`Quay Lại Sale & Booking`** (thay vì "Quay Lại").
+- **Quyết Toán Gom Chuyến Xe (`view-quyet-toan`):**
+  * Bổ sung Toolbar quay lại đầu trang với nhãn động **`Quay Lại [Tài chính & Kế toán / Điều Vận]`**.
+
+---
+
 ## [2.9.37] - 2026-10-09 (Kế Toán Sổ Quỹ: Thống Nhất Cụm Nút Hành Động Bên Phải: Xóa - In - Lưu Cho Cả Phiếu Thu & Chi)
 
 ### 1. Chuẩn Hóa Bố Trí Cụm Nút Hành Động Ở Chân Form:

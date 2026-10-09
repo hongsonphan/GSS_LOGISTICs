@@ -13,6 +13,11 @@
             </svg>
         </button>
 
+        <!-- Nút Quay Lại Trang Mẹ (Hiển thị khi ở Trang Con / Fullpage Mode) -->
+        <button id="btn-topbar-back" onclick="if(window.topbarBackHandler) window.topbarBackHandler();" class="hidden p-2 mr-3.5 text-slate-700 hover:text-teal-700 hover:bg-slate-100 rounded-xl border border-slate-300 shadow-2xs transition-all active:scale-95 shrink-0 flex items-center justify-center bg-white cursor-pointer" title="Quay lại trang mẹ">
+            <i class="ph-bold ph-arrow-left text-lg text-slate-700"></i>
+        </button>
+
         <!-- Tiêu Đề Phân Hệ Hiện Tại (Cập nhật động theo tab) -->
         <div id="topbar-standard-wrapper" class="flex items-center space-x-3">
             <h1 id="topbar-page-title" class="text-base md:text-lg font-black text-slate-900 tracking-tight font-heading">

@@ -1785,12 +1785,16 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const detailView = document.getElementById('view-trip-detail');
         if (detailView) detailView.classList.remove('hidden-view');
 
-        // Cập nhật Tiêu đề Phân hệ trên Topbar
-        const topbarTitleEl = document.getElementById('topbar-page-title');
-        if (topbarTitleEl) {
-            const originTab = (previousActiveTab === 'ke-toan' ? 'Kế toán' : 'Điều vận');
-            topbarTitleEl.innerText = `${originTab} | Chi tiết chuyến ${trip.id || trip.trip_code || ''}`;
-        }
+        // Cập nhật Tiêu đề Phân hệ & Breadcrumb trên Topbar
+        const originPrefix = (previousActiveTab === 'ke-toan' ? 'Tài chính & Kế toán' : 'Điều Vận');
+        setTopbarFullpageMode({
+            backFn: backToTrips,
+            prefix: originPrefix,
+            title: `Chi tiết chuyến | ${trip.id || trip.trip_code || ''}`
+        });
+
+        const tripBackLabel = document.getElementById('trip-detail-back-label');
+        if (tripBackLabel) tripBackLabel.innerText = `Quay Lại ${originPrefix}`;
 
         window.currentTripDetail = trip;
 
@@ -8202,7 +8206,7 @@ async function openQuotationPrintModal(quoteIdOrData, templateType = null) {
 
     setTopbarFullpageMode({
         backFn: closeQuotationPrintModal,
-        prefix: 'Sale & Báo Giá',
+        prefix: 'Sale & Booking',
         title: 'Bản In Báo Giá',
         subText: '',
         badgesHtml: '',
@@ -8241,10 +8245,8 @@ function closeQuotationPrintModal() {
             actionsHtml: ''
         });
     } else {
-        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
-        const salesView = document.getElementById('view-sales');
-        if (salesView) salesView.classList.remove('hidden-view');
-        restoreTopbarStandardMode();
+        resetTopbarStandardMode('kinh-doanh');
+        switchTab('kinh-doanh', true);
         if (typeof switchSalesSubtab === 'function') switchSalesSubtab('quotations');
     }
 }
@@ -9609,6 +9611,14 @@ function setTopbarFullpageMode(config) {
     if (stdWrapper) stdWrapper.classList.add('hidden');
     if (fullWrapper) fullWrapper.classList.remove('hidden');
 
+    const btnSidebar = document.getElementById('btn-toggle-sidebar');
+    const btnBack = document.getElementById('btn-topbar-back');
+    if (btnSidebar) btnSidebar.classList.add('hidden');
+    if (btnBack) {
+        btnBack.classList.remove('hidden');
+        btnBack.title = `Quay lại ${config.prefix || 'trang mẹ'}`;
+    }
+
     window.topbarBackHandler = config.backFn || function() {
         if (typeof previousActiveTab !== 'undefined' && previousActiveTab) {
             switchTab(previousActiveTab, true);
@@ -9618,7 +9628,10 @@ function setTopbarFullpageMode(config) {
     };
 
     const prefixEl = document.getElementById('topbar-fullpage-prefix');
-    if (prefixEl) prefixEl.innerText = config.prefix || 'Hệ Thống';
+    if (prefixEl) {
+        prefixEl.innerText = config.prefix || 'Hệ Thống';
+        prefixEl.title = `Quay lại ${config.prefix || 'trang mẹ'}`;
+    }
 
     const titleEl = document.getElementById('topbar-fullpage-title');
     if (titleEl) titleEl.innerText = config.title || '';
@@ -9648,6 +9661,11 @@ function resetTopbarStandardMode(tabId) {
     const fullWrapper = document.getElementById('topbar-fullpage-wrapper');
     if (fullWrapper) fullWrapper.classList.add('hidden');
     if (stdWrapper) stdWrapper.classList.remove('hidden');
+
+    const btnSidebar = document.getElementById('btn-toggle-sidebar');
+    const btnBack = document.getElementById('btn-topbar-back');
+    if (btnBack) btnBack.classList.add('hidden');
+    if (btnSidebar) btnSidebar.classList.remove('hidden');
 }
 
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
@@ -9698,9 +9716,15 @@ function switchTab(tabId, updateHistory = true) {
     }
 
     if (tabId === 'quyet-toan') {
+        const originPrefix = (previousActiveTab === 'ke-toan' ? 'Tài chính & Kế toán' : 'Điều Vận');
+        setTopbarFullpageMode({
+            backFn: returnFromSettlementView,
+            prefix: originPrefix,
+            title: 'Quyết Toán Gom Chuyến Xe'
+        });
         const backBtnText = document.getElementById('settle-back-btn-text');
         if (backBtnText) {
-            backBtnText.innerText = previousActiveTab === 'ke-toan' ? 'Quay lại Kế Toán' : 'Quay lại Điều Vận';
+            backBtnText.innerText = `Quay Lại ${originPrefix}`;
         }
     } else {
         previousActiveTab = tabId;
@@ -12991,6 +13015,13 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
         const detailView = document.getElementById('view-cash-voucher-detail');
         if (detailView) detailView.classList.remove('hidden-view');
 
+        // Cập nhật Topbar Breadcrumb & Nút Quay Lại Trang Mẹ
+        setTopbarFullpageMode({
+            backFn: backToAccountingCashbook,
+            prefix: 'Tài chính & Kế toán',
+            title: isInflow ? `Chi Tiết Phiếu Thu | ${voucherCode}` : `Chi Tiết Phiếu Chi | ${voucherCode}`
+        });
+
         // 1. CẬP NHẬT HEADER TRÊN CÙNG
         const topTitle = document.getElementById('fullpage-voucher-top-title');
         if (topTitle) topTitle.innerText = isInflow ? 'Chi Tiết Phiếu Thu Tiền' : 'Chi Tiết Phiếu Chi Tiền';
@@ -13305,6 +13336,13 @@ function openCreateCashVoucherPage(defaultType = 'INFLOW') {
     const detailView = document.getElementById('view-cash-voucher-detail');
     if (detailView) detailView.classList.remove('hidden-view');
 
+    // Cập nhật Topbar Breadcrumb & Nút Quay Lại Trang Mẹ
+    setTopbarFullpageMode({
+        backFn: backToAccountingCashbook,
+        prefix: 'Tài chính & Kế toán',
+        title: isInflow ? 'Lập Phiếu Thu Mới' : 'Lập Phiếu Chi Mới'
+    });
+
     // 1. ẨN HOÀN TOÀN TỜ PHÔI IN A4 KHI LẬP PHIẾU MỚI (Form thuần túy theo yêu cầu)
     const printContainer = document.getElementById('fullpage-voucher-printable-container');
     if (printContainer) printContainer.classList.add('hidden');
@@ -13479,6 +13517,7 @@ function backToAccountingCashbook() {
     const detailView = document.getElementById('view-cash-voucher-detail');
     if (detailView) detailView.classList.add('hidden-view');
 
+    resetTopbarStandardMode('ke-toan');
     switchTab('ke-toan', true);
 }
 

@@ -1,6 +1,22 @@
 <!-- 2.2. PHÂN HỆ QUYẾT TOÁN GOM CHUYẾN XE (BATCH TRIP SETTLEMENT VIEW) -->
 <div id="view-quyet-toan" class="view hidden-view p-4 sm:p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
 
+    <!-- Toolbar Điều Hướng Trở Về -->
+    <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between gap-3 shrink-0 no-print">
+        <div class="flex items-center space-x-3">
+            <button type="button" onclick="returnFromSettlementView()" 
+                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 font-heading border border-slate-200 shadow-2xs">
+                <i class="ph-bold ph-arrow-left"></i>
+                <span id="settle-back-btn-text">Quay Lại Điều Vận</span>
+            </button>
+            <div class="h-4 w-px bg-slate-200"></div>
+            <div class="flex items-center gap-2">
+                <h3 class="font-bold text-sm sm:text-base font-heading text-slate-900">Quyết Toán Gom Chuyến Xe</h3>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-50 text-teal-800 border border-teal-200 font-heading">Batch Settlement</span>
+            </div>
+        </div>
+    </div>
+
     <!-- 1. BỘ LỌC ĐIỀU KHIỂN GOM NHÓM & KỲ QUYẾT TOÁN -->
     <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3 shrink-0">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 text-xs font-medium">
