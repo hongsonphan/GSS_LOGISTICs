@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.37] - 2026-10-09 (Kế Toán Sổ Quỹ: Thống Nhất Cụm Nút Hành Động Bên Phải: Xóa - In - Lưu Cho Cả Phiếu Thu & Chi)
+
+### 1. Chuẩn Hóa Bố Trí Cụm Nút Hành Động Ở Chân Form:
+- **Nguyên tắc công thái học (Bottom Action Bar):**
+  * **Bên trái:** Nút duy nhất **Quay Lại Sổ Quỹ** để quay về danh sách chứng từ.
+  * **Bên phải:** Toàn bộ cụm nút hành động nghiệp vụ được nhóm liền kề:
+    - **Nút Xóa:** Đặt ngoài cùng bên trái cụm hành động, cảnh báo an toàn.
+    - **Nút In Phiếu:** Bấm để kích hoạt hộp thoại in khổ A4 ngay tại form.
+    - **Nút Lưu:** Nút chính nổi bật (Primary Action) màu Teal (`Lưu Phiếu` khi tạo mới / `Lưu Thay Đổi` khi xem & sửa).
+- **Phân định trạng thái nút Tạo mới vs Xem/Sửa:**
+  * **Khi Tạo mới:** Chỉ hiển thị nút **Lưu Phiếu** (Ẩn các nút Xóa và In Phiếu vì chứng từ chưa tồn tại).
+  * **Sau khi Lưu thành công hoặc Khi bấm Xem phiếu cũ:** Hiển thị đầy đủ cả 3 nút **Xóa**, **In Phiếu** và **Lưu Thay Đổi** để thao tác thuận tiện.
+  * Áp dụng thống nhất cho cả **Phiếu Thu** và **Phiếu Chi**.
+
+---
+
 ## [2.9.36] - 2026-10-09 (Kế Toán Sổ Quỹ: Nút Xem Mở Thẳng Màn Hình Form Nhập/Hiệu Chỉnh, Bỏ Hoàn Toàn Tờ Phôi In Màn Hình)
 
 ### 1. Nút "Xem" Mở Thẳng Form Chi Tiết & Hiệu Chỉnh Trực Tiếp:

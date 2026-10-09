@@ -13031,7 +13031,7 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
         const btnPrint = document.getElementById('btn-form-print-voucher');
         if (btnPrint) btnPrint.classList.remove('hidden');
         const submitBtnText = document.getElementById('btn-form-submit-voucher-text');
-        if (submitBtnText) submitBtnText.innerText = 'Cập Nhật Phiếu';
+        if (submitBtnText) submitBtnText.innerText = 'Lưu Thay Đổi';
 
         // 5. Điền dữ liệu vào các ô input form
         document.getElementById('edit-voucher-id').value = tx.id || '';
@@ -13342,8 +13342,12 @@ function openCreateCashVoucherPage(defaultType = 'INFLOW') {
             ? 'text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200'
             : 'text-xs font-bold text-rose-800 bg-rose-50 px-3 py-1 rounded-full border border-rose-200';
     }
-    const cancelEditBtn = document.getElementById('btn-form-cancel-edit');
-    if (cancelEditBtn) cancelEditBtn.classList.add('hidden');
+
+    // 4. Ở chế độ TẠO MỚI: Chỉ hiển thị nút "Lưu Phiếu" bên phải (Ẩn các nút Xóa và In)
+    const btnDelete = document.getElementById('btn-form-delete-voucher');
+    if (btnDelete) btnDelete.classList.add('hidden');
+    const btnPrint = document.getElementById('btn-form-print-voucher');
+    if (btnPrint) btnPrint.classList.add('hidden');
     const submitBtnText = document.getElementById('btn-form-submit-voucher-text');
     if (submitBtnText) submitBtnText.innerText = isInflow ? 'Lưu Phiếu Thu' : 'Lưu Phiếu Chi';
 

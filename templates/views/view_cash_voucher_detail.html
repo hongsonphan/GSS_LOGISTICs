@@ -106,26 +106,26 @@
                         class="w-full p-3 border border-slate-200 rounded-xl font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600"></textarea>
                 </div>
 
-                <!-- Cụm Nút Hành Động Ở Dưới Chân Form (Bottom Action Bar: Quay lại, In, Xóa, Hủy, Lưu) -->
+                <!-- Cụm Nút Hành Động Ở Dưới Chân Form: Trái (Quay lại) - Phải (Xóa, In, Lưu/Cập nhật) -->
                 <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="backToAccountingCashbook()" 
-                            class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 font-heading border border-slate-200">
-                            <i class="ph-bold ph-arrow-left text-sm"></i>
-                            <span>Quay Lại Sổ Quỹ</span>
-                        </button>
+                    <!-- Bên trái: Nút Quay lại -->
+                    <button type="button" onclick="backToAccountingCashbook()" 
+                        class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 font-heading border border-slate-200">
+                        <i class="ph-bold ph-arrow-left text-sm"></i>
+                        <span>Quay Lại Sổ Quỹ</span>
+                    </button>
 
-                        <!-- Nút Xóa phiếu (chỉ hiển thị khi đang xem/sửa phiếu đã có) -->
+                    <!-- Bên phải: Toàn bộ nút hành động nghiệp vụ (Xóa, In, Lưu) -->
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <!-- Nút XÓA (Chỉ hiện khi xem phiếu đã lưu) -->
                         <button type="button" id="btn-form-delete-voucher" onclick="confirmDeleteCashVoucher()" 
-                            class="hidden px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            class="hidden px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-rose-300 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                             title="Xóa phiếu khỏi sổ quỹ">
                             <i class="ph-bold ph-trash text-sm"></i>
-                            <span>Xóa Phiếu</span>
+                            <span>Xóa</span>
                         </button>
-                    </div>
 
-                    <div class="flex items-center gap-2.5">
-                        <!-- Nút In Phiếu (chỉ hiển thị khi đang xem/sửa phiếu đã có) -->
+                        <!-- Nút IN (Chỉ hiện khi xem phiếu đã lưu) -->
                         <button type="button" id="btn-form-print-voucher" onclick="printCurrentFormVoucher()" 
                             class="hidden px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                             title="In phiếu khổ A4">
@@ -133,7 +133,7 @@
                             <span>In Phiếu</span>
                         </button>
 
-                        <!-- Nút Lưu / Cập Nhật -->
+                        <!-- Nút LƯU (Tạo mới: "Lưu Phiếu" | Xem/Sửa: "Lưu Thay Đổi") -->
                         <button type="submit" id="btn-form-submit-voucher" 
                             class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-2 transition-all cursor-pointer">
                             <i class="ph-bold ph-check-circle text-base"></i>
