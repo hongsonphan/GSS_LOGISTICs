@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.32] - 2026-10-09 (Phân Hệ Kế Toán: Chuẩn Hóa Nút Thu Chi & Chuyển Đổi Xem/In Phiếu Thành Trang Riêng Có Sửa/Lưu)
+
+### 1. Chuẩn Hóa Nhãn Nút Lập Phiếu Thu / Chi:
+- Loại bỏ các dấu thừa `+` và `-` trong text nhãn nút tại thanh công cụ Sổ Quỹ (`view_accounting.html`), đồng bộ nhãn sạch sẽ: `Lập Phiếu Thu` và `Lập Phiếu Chi`.
+- Đổi tiêu đề cột bảng Sổ Quỹ từ `In Phiếu` thành `Thao Tác` với nút `Xem / In` chuyên nghiệp.
+
+### 2. Chuyển Đổi Màn Hình Phiếu Thu / Chi Thành Trang Riêng Toàn Màn Hình (Dedicated Full-Page View):
+- **Trang Chuyên Biệt (`view_cash_voucher_detail.html`):**
+  * Tích hợp URL chuẩn: `/accounting/vouchers/<id_or_code>`, hỗ trợ deep-link và back/forward trình duyệt mượt mà.
+  * Hiển thị biểu mẫu Phiếu Thu (Mẫu 01-TT) / Phiếu Chi (Mẫu 02-TT) theo chuẩn Bộ Tài Chính (Thông tư 200/2014/TT-BTC & TT 133/2016/TT-BTC) khổ A4 WYSIWYG.
+  * Hỗ trợ 2 chế độ in ấn: `2 Liên / A4 (A5 x 2)` (chuẩn có đường cắt phân cách) và `1 Liên Đơn`.
+- **Cơ Chế Sửa / Lưu / In Tương Tác Chuẩn UX:**
+  * **Trạng thái Mặc định (Chỉ Xem):** Hiển thị chứng từ rõ ràng, nút **Sửa** sẵn sàng, nút **Lưu** ở trạng thái mờ (`disabled`, `opacity-50`, `pointer-events-none`) để chống bấm nhầm.
+  * **Trạng thái Chỉnh Sửa:** Bấm nút **Sửa** sẽ mở Panel hiệu chỉnh dữ liệu (Loại giao dịch, Hình thức thanh toán, Khoản mục, Số tiền VNĐ có format phân cách, Ngày hạch toán, Đối tác nộp/nhận tiền, Diễn giải lý do), đồng thời nút **Lưu** sẽ sáng màu Teal nổi bật cho phép lưu dữ liệu.
+  * **Xem trước thời gian thực (Live Preview):** Khi sửa các trường trong form, nội dung trên tờ phiếu in A4 cập nhật ngay lập tức.
+  * **Backend API (`CashBookDetailAPIView`):** Bổ sung phương thức `PUT` xử lý cập nhật giao dịch Sổ Quỹ an toàn (`@transaction.atomic`), lưu lịch sử và đồng bộ dữ liệu.
+
+---
+
 ## [2.9.31] - 2026-10-09 (BIM 24-Hour Interactive TimePicker Popover — Khôi Phục Pick Time Đầy Đủ Với Chuẩn 24H)
 
 ### 1. Khôi Phục & Nâng Cấp Bộ Chọn Giờ Tương Tác Chuẩn 24H (BIM 24h TimePicker):

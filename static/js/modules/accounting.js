@@ -2167,11 +2167,11 @@ function renderCashBookTable(list) {
                     ${escapeHtml(item.notes || '-')}
                 </td>
                 <td class="text-center">
-                    <button type="button" onclick="openCashVoucherModal('${escapeHtml(item.id || item.code)}')" 
+                    <button type="button" onclick="viewCashVoucherDetail('${escapeHtml(item.id || item.code)}')" 
                         class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
-                        title="Xem chi tiết & In phiếu Thu/Chi">
-                        <i class="ph-bold ph-printer text-emerald-700"></i>
-                        <span>In Phiếu</span>
+                        title="Xem chi tiết, Sửa, Lưu & In phiếu Thu/Chi">
+                        <i class="ph-bold ph-eye text-emerald-700"></i>
+                        <span>Xem / In</span>
                     </button>
                 </td>
             </tr>
@@ -2404,6 +2404,392 @@ window.printCashVoucher = printCashVoucher;
 window.setVoucherPrintMode = setVoucherPrintMode;
 window.setDynamicPrintPageStyle = setDynamicPrintPageStyle;
 window.numberToWordsVN = numberToWordsVN;
+
+// ==============================================================================
+// 9.5b. PHÂN HỆ XEM, SỬA, LƯU & IN PHIẾU THU / CHI TOÀN MÀN HÌNH (DEDICATED FULL-PAGE VIEW)
+// URL Chuẩn: /accounting/vouchers/<id_or_code>
+// ==============================================================================
+let currentActiveFullpageVoucher = null;
+let currentFullpageVoucherPrintMode = 'dual';
+
+function setFullpageVoucherSaveButtonState(isEnabled) {
+    const btn = document.getElementById('btn-fullpage-save-voucher');
+    if (!btn) return;
+    if (isEnabled) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        btn.classList.add('bg-teal-700', 'hover:bg-teal-800', 'cursor-pointer');
+    } else {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        btn.classList.remove('hover:bg-teal-800', 'cursor-pointer');
+    }
+}
+
+function setFullpageVoucherPrintMode(mode = 'dual') {
+    currentFullpageVoucherPrintMode = mode;
+    const printArea = document.getElementById('fullpage-cash-voucher-printable-area');
+    const btnDual = document.getElementById('btn-fullpage-voucher-mode-dual');
+    const btnSingle = document.getElementById('btn-fullpage-voucher-mode-single');
+
+    if (printArea) {
+        if (mode === 'dual') {
+            printArea.classList.add('voucher-mode-dual');
+            printArea.classList.remove('voucher-mode-single');
+        } else {
+            printArea.classList.add('voucher-mode-single');
+            printArea.classList.remove('voucher-mode-dual');
+        }
+    }
+
+    if (btnDual && btnSingle) {
+        if (mode === 'dual') {
+            btnDual.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-emerald-700 text-white shadow-xs cursor-pointer';
+            btnSingle.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer';
+        } else {
+            btnSingle.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-emerald-700 text-white shadow-xs cursor-pointer';
+            btnDual.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer';
+        }
+    }
+
+    setDynamicPrintPageStyle(mode === 'dual' ? '@page { size: A4 portrait; margin: 8mm 10mm; }' : '@page { size: A4 portrait; margin: 15mm 18mm; }');
+}
+
+function renderFullpageVoucherContent(tx) {
+    if (!tx) return;
+    const isInflow = tx.transaction_type === 'INFLOW';
+    const titleText = isInflow ? 'PHIẾU THU' : 'PHIẾU CHI';
+    const topTitleText = isInflow ? 'Phiếu Thu Sổ Quỹ (Mẫu 01-TT BTC)' : 'Phiếu Chi Sổ Quỹ (Mẫu 02-TT BTC)';
+    const templateNoText = isInflow ? 'Mẫu số 01 - TT' : 'Mẫu số 02 - TT';
+    const debitAcc = isInflow ? (tx.payment_method === 'BANK' ? '1121' : '1111') : '1411 / 331 / 642';
+    const creditAcc = isInflow ? '1411 / 131 / 711' : (tx.payment_method === 'BANK' ? '1121' : '1111');
+    const partnerLabel = isInflow ? 'Họ tên người nộp tiền:' : 'Họ tên người nhận tiền:';
+    const signPartnerRole = isInflow ? 'Người Nộp Tiền' : 'Người Nhận Tiền';
+    const reasonLabel = isInflow ? 'Lý do nộp:' : 'Lý do chi:';
+
+    let day = tx.day || '', month = tx.month || '', year = tx.year || '';
+    if (!day && tx.transaction_date) {
+        const parts = tx.transaction_date.split('/');
+        if (parts.length === 3) {
+            day = parts[0]; month = parts[1]; year = parts[2];
+        }
+    }
+    if (!day) {
+        const now = new Date();
+        day = String(now.getDate()).padStart(2, '0');
+        month = String(now.getMonth() + 1).padStart(2, '0');
+        year = String(now.getFullYear());
+    }
+
+    const dateFormattedText = `Ngày ${day} tháng ${month} năm ${year}`;
+    const signDateFormattedText = `Ngày ${day}/${month}/${year}`;
+    const amountWords = numberToWordsVN(tx.amount);
+    const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
+    const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
+    const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe vận tải Triền Võ Logistics';
+    const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
+    const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
+
+    const topTitleEl = document.getElementById('fullpage-voucher-top-title');
+    if (topTitleEl) topTitleEl.innerText = topTitleText;
+
+    const badgeCodeEl = document.getElementById('fullpage-voucher-badge-code');
+    if (badgeCodeEl) {
+        badgeCodeEl.innerText = tx.code || '-';
+        badgeCodeEl.className = isInflow 
+            ? 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono'
+            : 'px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-50 text-rose-800 border border-rose-200 font-mono';
+    }
+
+    const copy2Badge = document.getElementById('fullpage-voucher-copy-2-badge');
+    if (copy2Badge) {
+        copy2Badge.innerText = isInflow ? 'Liên 2: Giao cho người nộp tiền' : 'Liên 2: Giao cho người nhận tiền';
+    }
+
+    const setAllAreaClassText = (cls, val) => {
+        document.querySelectorAll(`#fullpage-cash-voucher-printable-area .${cls}`).forEach(el => {
+            el.innerText = val;
+        });
+    };
+
+    setAllAreaClassText('v-template-no', templateNoText);
+    setAllAreaClassText('v-code', tx.code || '-');
+    setAllAreaClassText('v-debit-acc', debitAcc);
+    setAllAreaClassText('v-credit-acc', creditAcc);
+    setAllAreaClassText('v-title', titleText);
+    setAllAreaClassText('v-date', dateFormattedText);
+    setAllAreaClassText('v-sign-date', signDateFormattedText);
+    setAllAreaClassText('v-partner-label', partnerLabel);
+    setAllAreaClassText('v-sign-partner-role', signPartnerRole);
+    setAllAreaClassText('v-partner-name', tx.partner_name || 'Tài xế / Đối tác');
+    setAllAreaClassText('v-department', departmentFormatted);
+    setAllAreaClassText('v-reason-label', reasonLabel);
+    setAllAreaClassText('v-reason', reasonFormatted);
+    setAllAreaClassText('v-amount', amountFormatted);
+    setAllAreaClassText('v-method', methodFormatted);
+    setAllAreaClassText('v-amount-words', amountWords);
+    setAllAreaClassText('v-received-words', amountWords);
+    setAllAreaClassText('v-creator-name', tx.created_by || 'Kế toán viên');
+    setAllAreaClassText('v-attachments', attachmentsFormatted);
+
+    syncCompanyProfileToPrintForms();
+}
+
+async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
+    if (!voucherIdentifier) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/accounting/cashbook/${voucherIdentifier}/`);
+        if (!res.ok) throw new Error('Không thể tải chứng từ sổ quỹ');
+        const data = await res.json();
+        const tx = data.transaction;
+        currentActiveFullpageVoucher = tx;
+
+        const voucherCode = tx.code || tx.id;
+
+        // Cập nhật URL chuẩn: /accounting/vouchers/<code_or_id>
+        if (updateHistory && window.history && window.history.pushState) {
+            const voucherPath = `/accounting/vouchers/${voucherCode}`;
+            if (window.location.pathname !== voucherPath) {
+                window.history.pushState({ view: 'cash-voucher-detail', voucherIdentifier: voucherCode }, '', voucherPath);
+            }
+        }
+
+        // Lưu vết view trước đó
+        const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+        if (currentActiveView && currentActiveView.id !== 'view-cash-voucher-detail') {
+            previousActiveTab = currentActiveView.id.replace('view-', '');
+        }
+
+        // Ẩn tất cả views, hiển thị view-cash-voucher-detail
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+        const detailView = document.getElementById('view-cash-voucher-detail');
+        if (detailView) detailView.classList.remove('hidden-view');
+
+        // Render nội dung phiếu A4
+        renderFullpageVoucherContent(tx);
+
+        // Ẩn khung edit, reset nút Sửa & Lưu về trạng thái xem ban đầu
+        const editPanel = document.getElementById('fullpage-voucher-edit-panel');
+        if (editPanel) editPanel.classList.add('hidden');
+        const editBtn = document.getElementById('btn-fullpage-edit-voucher');
+        if (editBtn) editBtn.classList.remove('hidden');
+        setFullpageVoucherSaveButtonState(false);
+
+        // Điền dữ liệu vào form edit sẵn sàng nếu người dùng bấm Sửa
+        document.getElementById('edit-voucher-id').value = tx.id || '';
+        document.getElementById('edit-voucher-code').value = tx.code || '';
+        document.getElementById('edit-voucher-type').value = tx.transaction_type || 'INFLOW';
+        document.getElementById('edit-voucher-method').value = tx.payment_method || 'BANK';
+        populateEditVoucherCategories(tx.transaction_type || 'INFLOW', tx.category);
+        document.getElementById('edit-voucher-amount').value = formatNumberVN(tx.amount || 0);
+        document.getElementById('edit-voucher-date').value = tx.transaction_date_iso || '';
+        document.getElementById('edit-voucher-ref').value = tx.ref_code || '';
+        document.getElementById('edit-voucher-partner-type').value = tx.partner_type || '';
+        document.getElementById('edit-voucher-partner-name').value = tx.partner_name || '';
+        document.getElementById('edit-voucher-notes').value = tx.notes || '';
+
+        setFullpageVoucherPrintMode('dual');
+        initAllNumberInputs();
+    } catch (err) {
+        console.error('Lỗi tải chi tiết phiếu thu chi:', err);
+        showToast('error', 'Không thể tải chứng từ sổ quỹ', 'Lỗi');
+        backToAccountingCashbook();
+    }
+}
+
+function populateEditVoucherCategories(type, selectedCategory = '') {
+    const catSelect = document.getElementById('edit-voucher-category');
+    if (!catSelect) return;
+    if (type === 'INFLOW') {
+        catSelect.innerHTML = `
+            <option value="FREIGHT_REVENUE">Thu cước vận tải từ khách hàng</option>
+            <option value="REIMBURSABLE_COLLECTION">Thu hồi chi hộ (Debit Note)</option>
+            <option value="ADVANCE_REFUND">Thu hoàn ứng tiền thừa (Tài xế/Điều vận)</option>
+            <option value="OTHER_INFLOW">Thu khác</option>
+        `;
+    } else {
+        catSelect.innerHTML = `
+            <option value="DISPATCHER_FUND_ADVANCE">Chi tạm ứng Quỹ Điều vận</option>
+            <option value="DRIVER_TRIP_ADVANCE">Chi tạm ứng Chuyến xe (Tài xế)</option>
+            <option value="ADVANCE_REIMBURSE">Chi bù vượt ứng (Hoàn ứng tài xế)</option>
+            <option value="SUBCONTRACTOR_PAYMENT">Chi thanh toán Thầu phụ / Xe bạn</option>
+            <option value="FUEL_PAYMENT">Chi mua xăng dầu</option>
+            <option value="ETC_TOPUP">Chi nạp tiền tài khoản BOT/ETC</option>
+            <option value="VEHICLE_MAINTENANCE">Chi bảo dưỡng sửa xe</option>
+            <option value="OTHER_OUTFLOW">Chi phí khác</option>
+        `;
+    }
+    if (selectedCategory) {
+        catSelect.value = selectedCategory;
+    }
+}
+
+function onEditVoucherTypeChange() {
+    const type = document.getElementById('edit-voucher-type')?.value;
+    populateEditVoucherCategories(type);
+    if (currentActiveFullpageVoucher) {
+        currentActiveFullpageVoucher.transaction_type = type;
+        renderFullpageVoucherContent(currentActiveFullpageVoucher);
+    }
+}
+
+function onEditVoucherMethodChange() {
+    const method = document.getElementById('edit-voucher-method')?.value;
+    if (currentActiveFullpageVoucher) {
+        currentActiveFullpageVoucher.payment_method = method;
+        renderFullpageVoucherContent(currentActiveFullpageVoucher);
+    }
+}
+
+function updateLiveVoucherAmount(val) {
+    const num = parseNumberVN(val);
+    if (currentActiveFullpageVoucher) {
+        currentActiveFullpageVoucher.amount = num;
+        renderFullpageVoucherContent(currentActiveFullpageVoucher);
+    }
+}
+
+function updateLiveVoucherDate(isoDate) {
+    if (currentActiveFullpageVoucher && isoDate) {
+        const parts = isoDate.split('-');
+        if (parts.length === 3) {
+            currentActiveFullpageVoucher.year = parts[0];
+            currentActiveFullpageVoucher.month = parts[1];
+            currentActiveFullpageVoucher.day = parts[2];
+            currentActiveFullpageVoucher.transaction_date = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            renderFullpageVoucherContent(currentActiveFullpageVoucher);
+        }
+    }
+}
+
+function updateLiveVoucherPartnerName(val) {
+    if (currentActiveFullpageVoucher) {
+        currentActiveFullpageVoucher.partner_name = val;
+        renderFullpageVoucherContent(currentActiveFullpageVoucher);
+    }
+}
+
+function updateLiveVoucherPartnerType(val) {
+    if (currentActiveFullpageVoucher) {
+        currentActiveFullpageVoucher.partner_type = val;
+        renderFullpageVoucherContent(currentActiveFullpageVoucher);
+    }
+}
+
+function updateLiveVoucherRef(val) {
+    if (currentActiveFullpageVoucher) {
+        currentActiveFullpageVoucher.ref_code = val;
+        renderFullpageVoucherContent(currentActiveFullpageVoucher);
+    }
+}
+
+function updateLiveVoucherReason(val) {
+    if (currentActiveFullpageVoucher) {
+        currentActiveFullpageVoucher.notes = val;
+        renderFullpageVoucherContent(currentActiveFullpageVoucher);
+    }
+}
+
+function enableFullpageVoucherEdit() {
+    const editPanel = document.getElementById('fullpage-voucher-edit-panel');
+    if (editPanel) editPanel.classList.remove('hidden');
+
+    const editBtn = document.getElementById('btn-fullpage-edit-voucher');
+    if (editBtn) editBtn.classList.add('hidden');
+
+    setFullpageVoucherSaveButtonState(true);
+    showToast('info', 'Đã chuyển sang chế độ Sửa Phiếu. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
+}
+
+async function saveFullpageVoucher() {
+    const id = document.getElementById('edit-voucher-id')?.value;
+    if (!id) return;
+
+    const type = document.getElementById('edit-voucher-type')?.value;
+    const method = document.getElementById('edit-voucher-method')?.value;
+    const category = document.getElementById('edit-voucher-category')?.value;
+    const amountVal = parseNumberVN(document.getElementById('edit-voucher-amount')?.value);
+    const dateVal = document.getElementById('edit-voucher-date')?.value;
+    const refCode = document.getElementById('edit-voucher-ref')?.value?.trim();
+    const partnerType = document.getElementById('edit-voucher-partner-type')?.value;
+    const partnerName = document.getElementById('edit-voucher-partner-name')?.value?.trim();
+    const notes = document.getElementById('edit-voucher-notes')?.value?.trim();
+
+    if (!amountVal || amountVal <= 0) {
+        showToast('warning', 'Số tiền giao dịch phải lớn hơn 0 đ!', 'Cảnh Báo');
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/accounting/cashbook/${id}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                transaction_type: type,
+                payment_method: method,
+                category: category,
+                amount: amountVal,
+                transaction_date: dateVal,
+                ref_code: refCode,
+                partner_type: partnerType,
+                partner_name: partnerName,
+                notes: notes
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || 'Cập nhật phiếu thành công!', 'Thành Công');
+            // Ẩn panel sửa
+            const editPanel = document.getElementById('fullpage-voucher-edit-panel');
+            if (editPanel) editPanel.classList.add('hidden');
+            const editBtn = document.getElementById('btn-fullpage-edit-voucher');
+            if (editBtn) editBtn.classList.remove('hidden');
+            setFullpageVoucherSaveButtonState(false);
+
+            // Tải lại chi tiết mới nhất
+            viewCashVoucherDetail(id, false);
+            // Đồng bộ dữ liệu bảng Sổ Quỹ
+            loadCashBookData();
+        } else {
+            showToast('danger', data.error || 'Có lỗi xảy ra khi lưu', 'Lỗi Lưu Phiếu');
+        }
+    } catch (err) {
+        console.error('Lỗi lưu chứng từ:', err);
+        showToast('danger', 'Lỗi kết nối máy chủ', 'Lỗi');
+    }
+}
+
+function printFullpageCashVoucher() {
+    document.body.classList.add('is-printing-voucher');
+    document.body.classList.remove('is-printing-quotation', 'is-printing-report');
+    window.print();
+}
+
+function backToAccountingCashbook() {
+    const detailView = document.getElementById('view-cash-voucher-detail');
+    if (detailView) detailView.classList.add('hidden-view');
+
+    switchTab('ke-toan', true);
+}
+
+window.viewCashVoucherDetail = viewCashVoucherDetail;
+window.backToAccountingCashbook = backToAccountingCashbook;
+window.enableFullpageVoucherEdit = enableFullpageVoucherEdit;
+window.saveFullpageVoucher = saveFullpageVoucher;
+window.printFullpageCashVoucher = printFullpageCashVoucher;
+window.setFullpageVoucherPrintMode = setFullpageVoucherPrintMode;
+window.setFullpageVoucherSaveButtonState = setFullpageVoucherSaveButtonState;
+window.onEditVoucherTypeChange = onEditVoucherTypeChange;
+window.onEditVoucherMethodChange = onEditVoucherMethodChange;
+window.updateLiveVoucherAmount = updateLiveVoucherAmount;
+window.updateLiveVoucherDate = updateLiveVoucherDate;
+window.updateLiveVoucherPartnerName = updateLiveVoucherPartnerName;
+window.updateLiveVoucherPartnerType = updateLiveVoucherPartnerType;
+window.updateLiveVoucherRef = updateLiveVoucherRef;
+window.updateLiveVoucherReason = updateLiveVoucherReason;
+
 
 function openCreateCashTransactionModal(defaultType = 'INFLOW') {
     const modal = document.getElementById('modal-cash-transaction');

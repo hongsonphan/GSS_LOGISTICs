@@ -490,6 +490,75 @@ class CashBookDetailAPIView(APIView):
             }
         }, status=status.HTTP_200_OK)
 
+    @transaction.atomic
+    def put(self, request, pk):
+        """Cập nhật phiếu thu hoặc phiếu chi sổ quỹ."""
+        try:
+            if str(pk).isdigit():
+                t = CashTransaction.objects.select_related('created_by').get(id=int(pk), is_deleted=False)
+            else:
+                t = CashTransaction.objects.select_related('created_by').get(code=pk, is_deleted=False)
+        except CashTransaction.DoesNotExist:
+            return Response({'error': 'Không tìm thấy phiếu thu/chi tương ứng'}, status=status.HTTP_404_NOT_FOUND)
+
+        t_type = request.data.get('transaction_type')
+        p_method = request.data.get('payment_method')
+        category = request.data.get('category')
+        amount_val = request.data.get('amount')
+        trans_date_str = request.data.get('transaction_date')
+        partner_type = request.data.get('partner_type')
+        partner_name = request.data.get('partner_name')
+        ref_code = request.data.get('ref_code')
+        bank_name = request.data.get('bank_name')
+        bank_account = request.data.get('bank_account')
+        notes = request.data.get('notes')
+
+        if t_type and t_type in [TransactionType.INFLOW, TransactionType.OUTFLOW]:
+            t.transaction_type = t_type
+        if p_method:
+            t.payment_method = p_method
+        if category:
+            t.category = category
+        if amount_val is not None:
+            try:
+                amt = Decimal(str(amount_val).replace('.', '').replace(',', ''))
+                if amt <= 0:
+                    raise ValueError
+                t.amount = amt
+            except Exception:
+                return Response({'error': 'Số tiền giao dịch không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
+        if trans_date_str:
+            try:
+                t.transaction_date = datetime.datetime.strptime(trans_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        if partner_type is not None:
+            t.partner_type = partner_type
+        if partner_name is not None:
+            t.partner_name = str(partner_name).strip()
+        if ref_code is not None:
+            t.ref_code = str(ref_code).strip()
+        if bank_name is not None:
+            t.bank_name = str(bank_name).strip()
+        if bank_account is not None:
+            t.bank_account = str(bank_account).strip()
+        if notes is not None:
+            t.notes = str(notes).strip()
+
+        t.save()
+
+        return Response({
+            'success': True,
+            'message': f"Đã cập nhật chứng từ [{t.code}] thành công!",
+            'transaction': {
+                'id': t.id,
+                'code': t.code,
+                'transaction_type': t.transaction_type,
+                'amount': int(t.amount),
+                'transaction_date': t.transaction_date.strftime('%d/%m/%Y') if t.transaction_date else ''
+            }
+        }, status=status.HTTP_200_OK)
+
 
 class SubcontractorSettlementsAPIView(APIView):
     """
