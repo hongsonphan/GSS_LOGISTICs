@@ -14190,18 +14190,32 @@ function switchMasterDataTab(tabKey) {
     const tableContainer = document.getElementById('md-table-container');
     const paginationContainer = document.getElementById('md-pagination-container');
     const companyView = document.getElementById('md-company-view');
+    const rolesView = document.getElementById('md-roles-permissions-view');
+    const createBtnContainer = document.getElementById('md-create-btn-label')?.parentElement;
 
     if (tabKey === 'company') {
+        if (createBtnContainer) createBtnContainer.style.display = '';
         if (filterToolbar) filterToolbar.classList.add('hidden');
         if (tableContainer) tableContainer.classList.add('hidden');
         if (paginationContainer) paginationContainer.classList.add('hidden');
+        if (rolesView) rolesView.classList.add('hidden');
         if (companyView) companyView.classList.remove('hidden');
         loadCompanyProfile();
+    } else if (tabKey === 'roles_permissions') {
+        if (createBtnContainer) createBtnContainer.style.display = 'none';
+        if (filterToolbar) filterToolbar.classList.add('hidden');
+        if (tableContainer) tableContainer.classList.add('hidden');
+        if (paginationContainer) paginationContainer.classList.add('hidden');
+        if (companyView) companyView.classList.add('hidden');
+        if (rolesView) rolesView.classList.remove('hidden');
+        loadRolesPermissionsData();
     } else {
+        if (createBtnContainer) createBtnContainer.style.display = '';
         if (filterToolbar) filterToolbar.classList.remove('hidden');
         if (tableContainer) tableContainer.classList.remove('hidden');
         if (paginationContainer) paginationContainer.classList.remove('hidden');
         if (companyView) companyView.classList.add('hidden');
+        if (rolesView) rolesView.classList.add('hidden');
         loadActiveMasterDataTab();
     }
 }
@@ -14209,6 +14223,8 @@ function switchMasterDataTab(tabKey) {
 function reloadActiveMasterDataTab() {
     if (currentMasterDataTab === 'company') {
         loadCompanyProfile();
+    } else if (currentMasterDataTab === 'roles_permissions') {
+        loadRolesPermissionsData();
     } else {
         loadActiveMasterDataTab();
     }
@@ -14531,6 +14547,305 @@ function renderCompanyProfileView(company) {
         </div>
     `;
 }
+
+let rolesPermissionsDataCache = null;
+
+async function loadRolesPermissionsData() {
+    const container = document.getElementById('md-roles-permissions-view');
+    if (container) {
+        container.innerHTML = `
+            <div class="p-12 text-center text-slate-400">
+                <i class="ph ph-spinner animate-spin text-3xl mb-2 text-teal-600 block"></i>
+                Đang tải hệ thống phân quyền & vai trò người dùng...
+            </div>
+        `;
+    }
+
+    try {
+        const res = await fetchWithAuth('/api/master-data/roles-permissions/');
+        if (!res.ok) throw new Error(`Máy chủ phản hồi lỗi ${res.status}`);
+        const data = await res.json();
+        rolesPermissionsDataCache = data;
+        renderRolesPermissionsView(data);
+    } catch (err) {
+        console.error('Lỗi tải dữ liệu phân quyền:', err);
+        if (container) {
+            container.innerHTML = `
+                <div class="p-12 text-center text-rose-500 font-bold">
+                    <i class="ph-bold ph-warning-circle text-3xl mb-2 block"></i>
+                    Lỗi tải thông tin phân quyền: ${err.message || 'Không thể kết nối máy chủ.'}
+                </div>
+            `;
+        }
+    }
+}
+window.loadRolesPermissionsData = loadRolesPermissionsData;
+
+function renderRolesPermissionsView(data) {
+    const container = document.getElementById('md-roles-permissions-view');
+    if (!container) return;
+    if (!data) return;
+
+    const summary = data.summary || {};
+    const roles = data.roles || [];
+    const users = data.users || [];
+
+    const groupOptionsHtml = roles.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+
+    container.innerHTML = `
+        <div class="max-w-7xl mx-auto space-y-6">
+            <!-- Header Banner -->
+            <div class="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 border border-teal-700/40">
+                <div class="flex items-start md:items-center space-x-4">
+                    <div class="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-teal-500/20 backdrop-blur-md border border-teal-400/30 flex items-center justify-center text-3xl font-black text-teal-300 shadow-inner shrink-0">
+                        <i class="ph-bold ph-shield-check"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/30 text-teal-200 border border-teal-400/30">
+                                Django Role-Based Access Control (RBAC)
+                            </span>
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                                Native Django Admin Auth
+                            </span>
+                        </div>
+                        <h2 class="text-lg md:text-xl font-black font-heading tracking-tight text-white">
+                            Quản Trị Phân Quyền & Vai Trò Hệ Thống
+                        </h2>
+                        <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                            Quản lý nhóm quyền chuẩn Django Auth (Ban Giám Đốc, Điều Phối Viên, Kế Toán Cước, Kinh Doanh, Tài Xế) và gán phân quyền tài khoản người dùng nội bộ.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Button: Open Django Admin -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="/admin/auth/group/" target="_blank" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-teal-300 hover:text-white rounded-xl text-xs font-bold border border-teal-500/40 shadow-xs flex items-center space-x-1.5 transition-all">
+                        <i class="ph-bold ph-gear text-sm"></i>
+                        <span>Cấu Hình Chi Tiết Nhóm (Admin)</span>
+                        <i class="ph ph-arrow-square-out text-xs"></i>
+                    </a>
+                    <a href="/admin/auth/user/" target="_blank" class="px-3.5 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-md flex items-center space-x-1.5 transition-all">
+                        <i class="ph-bold ph-user-gear text-sm"></i>
+                        <span>Quản Lý User (Admin)</span>
+                        <i class="ph ph-arrow-square-out text-xs"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- KPI Summary Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex items-center space-x-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl shrink-0">
+                        <i class="ph-bold ph-users-three"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tổng Tài Khoản</div>
+                        <div class="text-xl font-black text-slate-800">${summary.total_users || 0}</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex items-center space-x-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl shrink-0">
+                        <i class="ph-bold ph-user-check"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Đang Hoạt Động</div>
+                        <div class="text-xl font-black text-emerald-700">${summary.active_users || 0}</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex items-center space-x-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-xl shrink-0">
+                        <i class="ph-bold ph-shield-check"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nhóm Vai Trò</div>
+                        <div class="text-xl font-black text-blue-800">${summary.total_groups || 0}</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex items-center space-x-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center text-xl shrink-0">
+                        <i class="ph-bold ph-identification-card"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nhân Sự Quản Trị</div>
+                        <div class="text-xl font-black text-purple-800">${summary.staff_count || 0}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Roles Matrix Cards -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <i class="ph-bold ph-shield-check text-teal-700"></i>
+                        <span>1. Danh Sách Nhóm Quyền & Quyền Hạn Tiêu Biểu (Django Groups)</span>
+                    </h3>
+                    <span class="text-xs text-slate-500 font-medium">${roles.length} nhóm vai trò</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${roles.map(r => {
+                        let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
+                        let iconName = 'ph-users';
+                        if (r.name.includes('Giám Đốc')) {
+                            badgeColor = 'bg-rose-50 text-rose-800 border-rose-200';
+                            iconName = 'ph-crown';
+                        } else if (r.name.includes('Điều Phối')) {
+                            badgeColor = 'bg-teal-50 text-teal-800 border-teal-200';
+                            iconName = 'ph-git-branch';
+                        } else if (r.name.includes('Kế Toán')) {
+                            badgeColor = 'bg-blue-50 text-blue-800 border-blue-200';
+                            iconName = 'ph-calculator';
+                        } else if (r.name.includes('Kinh Doanh')) {
+                            badgeColor = 'bg-purple-50 text-purple-800 border-purple-200';
+                            iconName = 'ph-chart-line-up';
+                        } else if (r.name.includes('Tài Xế')) {
+                            badgeColor = 'bg-amber-50 text-amber-800 border-amber-200';
+                            iconName = 'ph-steering-wheel';
+                        }
+                        return `
+                            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow space-y-3 flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-base ${badgeColor}">
+                                                <i class="ph-bold ${iconName}"></i>
+                                            </div>
+                                            <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(r.name)}</h4>
+                                        </div>
+                                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">
+                                            ${r.user_count} thành viên
+                                        </span>
+                                    </div>
+                                    <div class="text-xs text-slate-500 mb-2">
+                                        Tổng số quyền: <strong class="text-slate-800 font-mono">${r.permission_count}</strong> permissions
+                                    </div>
+                                    <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100 space-y-1">
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quyền mẫu:</div>
+                                        <div class="flex flex-wrap gap-1">
+                                            ${(r.permissions || []).slice(0, 6).map(p => `
+                                                <span class="inline-block text-[10px] font-medium bg-white text-slate-600 px-1.5 py-0.5 rounded border border-slate-200" title="${escapeHtml(p.name)}">
+                                                    ${escapeHtml(p.codename)}
+                                                </span>
+                                            `).join('') || '<span class="text-[11px] text-slate-400 italic">Chưa cấp quyền cụ thể</span>'}
+                                            ${r.permissions && r.permissions.length > 6 ? `<span class="text-[10px] text-slate-400 font-bold self-center">+${r.permission_count - 6} quyền khác</span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                    <a href="/admin/auth/group/${r.id}/change/" target="_blank" class="text-xs font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1">
+                                        <span>Chỉnh sửa quyền</span>
+                                        <i class="ph ph-arrow-square-out text-xs"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+
+            <!-- Users Permissions Assignment Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden space-y-3 p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <i class="ph-bold ph-user-list text-teal-700"></i>
+                            <span>2. Danh Sách Người Dùng & Phân Bổ Nhóm Vai Trò</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Thay đổi nhóm vai trò trực tiếp từ bảng dưới hoặc quản lý nâng cao tại Django Admin.</p>
+                    </div>
+                    <div class="text-xs font-bold text-slate-500">
+                        Hiển thị <span class="text-teal-800 font-black">${users.length}</span> tài khoản
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse erp-table text-xs whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
+                                <th class="p-3">Tài Khoản</th>
+                                <th class="p-3">Họ Tên / Nhân Sự</th>
+                                <th class="p-3">Số Điện Thoại</th>
+                                <th class="p-3">Nhóm Vai Trò (Django Group)</th>
+                                <th class="p-3 text-center">Trạng Thái</th>
+                                <th class="p-3 text-center">Truy Cập Admin</th>
+                                <th class="p-3">Đăng Nhập Cuối</th>
+                                <th class="p-3 text-center">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium">
+                            ${users.map(u => {
+                                const activeBadge = u.is_active 
+                                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoạt động</span>'
+                                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Đã khóa</span>';
+                                
+                                const staffBadge = u.is_staff 
+                                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Có (Staff)</span>'
+                                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-400">Không</span>';
+
+                                return `
+                                    <tr class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="p-3 font-mono font-bold text-slate-800">
+                                            <div class="flex items-center gap-1.5">
+                                                <i class="ph ph-user text-slate-400"></i>
+                                                <span>${escapeHtml(u.username)}</span>
+                                                ${u.is_superuser ? '<i class="ph-fill ph-crown text-amber-500" title="Superuser (Toàn quyền)"></i>' : ''}
+                                            </div>
+                                        </td>
+                                        <td class="p-3">
+                                            <div class="font-bold text-slate-900">${escapeHtml(u.full_name)}</div>
+                                            <div class="text-[11px] text-slate-400">${escapeHtml(u.role_in_employee || u.email || '')}</div>
+                                        </td>
+                                        <td class="p-3 font-mono text-slate-600">${escapeHtml(u.phone || '-')}</td>
+                                        <td class="p-3">
+                                            <select onchange="updateUserRoleGroup(${u.id}, this.value)" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-teal-500 focus:outline-hidden shadow-2xs">
+                                                <option value="0" ${!u.primary_group_id ? 'selected' : ''}>-- Chưa gán nhóm --</option>
+                                                ${roles.map(r => `
+                                                    <option value="${r.id}" ${u.primary_group_id === r.id ? 'selected' : ''}>${escapeHtml(r.name)}</option>
+                                                `).join('')}
+                                            </select>
+                                        </td>
+                                        <td class="p-3 text-center">${activeBadge}</td>
+                                        <td class="p-3 text-center">${staffBadge}</td>
+                                        <td class="p-3 text-slate-500 font-mono text-[11px]">${escapeHtml(u.last_login)}</td>
+                                        <td class="p-3 text-center">
+                                            <a href="/admin/auth/user/${u.id}/change/" target="_blank" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-[11px] inline-flex items-center gap-1 transition-colors" title="Mở trang chỉnh sửa chi tiết Django Admin">
+                                                <i class="ph ph-sliders"></i>
+                                                <span>Admin</span>
+                                                <i class="ph ph-arrow-square-out text-[10px]"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function updateUserRoleGroup(userId, groupId) {
+    try {
+        const res = await fetchWithAuth('/api/master-data/roles-permissions/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                group_id: groupId
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Cập nhật phân quyền thất bại');
+        showToast('success', data.message || 'Cập nhật phân quyền thành công');
+        loadRolesPermissionsData();
+    } catch (err) {
+        console.error('Lỗi cập nhật nhóm vai trò:', err);
+        showToast('error', err.message || 'Không thể cập nhật phân quyền', 'Lỗi');
+        loadRolesPermissionsData();
+    }
+}
+window.updateUserRoleGroup = updateUserRoleGroup;
 
 async function loadActiveMasterDataTab() {
     const tableBody = document.getElementById('md-table-body');

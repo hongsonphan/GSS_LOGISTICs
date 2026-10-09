@@ -16,6 +16,8 @@ class CurrentUserAPIView(APIView):
             'email': user.email,
             'is_staff': user.is_staff,
             'is_superuser': user.is_superuser,
+            'groups': list(user.groups.values_list('name', flat=True)),
+            'permissions': list(user.get_all_permissions()),
             'employee': {
                 'code': employee.code,
                 'full_name': employee.full_name,

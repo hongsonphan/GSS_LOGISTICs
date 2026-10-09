@@ -531,7 +531,7 @@ def calculate_dem_det_status(trip):
                 'color': 'amber',
                 'is_overdue': False
             }
-        elif delta <= 3:
+        elif delta <= 2:
             det_info = {
                 'badge': 'ATTENTION',
                 'status': 'ATTENTION',

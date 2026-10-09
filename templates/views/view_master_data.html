@@ -9,6 +9,10 @@
                     <i class="ph-bold ph-buildings text-base text-teal-700"></i>
                     <span>Khai Báo Hệ Thống</span>
                 </button>
+                <button onclick="switchMasterDataTab('roles_permissions')" data-md-tab="roles_permissions" class="md-tab-btn px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
+                    <i class="ph-bold ph-shield-check text-base text-blue-600"></i>
+                    <span>Phân Quyền & Vai Trò</span>
+                </button>
                 <button onclick="switchMasterDataTab('driver_tariffs')" data-md-tab="driver_tariffs" class="md-tab-btn active px-3 py-2 text-xs md:text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer">
                     <i class="ph-bold ph-money text-base text-emerald-600"></i>
                     <span>Biểu Phí Lương Chuyến</span>
@@ -95,6 +99,11 @@
         <!-- Dynamic Company Profile Dashboard View (Shown when tab is 'company') -->
         <div id="md-company-view" class="hidden p-4 md:p-6 overflow-y-auto min-h-[420px] max-h-[calc(100vh-260px)] bg-slate-50/50">
             <!-- Populated dynamically via JavaScript renderCompanyProfileView -->
+        </div>
+
+        <!-- Dynamic Roles & Permissions View (Shown when tab is 'roles_permissions') -->
+        <div id="md-roles-permissions-view" class="hidden p-4 md:p-6 overflow-y-auto min-h-[420px] max-h-[calc(100vh-260px)] bg-slate-50/50 space-y-6">
+            <!-- Populated dynamically via JavaScript renderRolesPermissionsView -->
         </div>
 
         <!-- Dynamic Data Table Container (Sticky Header & Scrollable Body) -->
