@@ -163,16 +163,35 @@
                     </div>
                 </div>
 
-                <!-- Footer Actions -->
-                <div class="pt-3 flex items-center justify-end space-x-3">
+                <!-- Footer Actions: Cụm 4 nút chuẩn [Xóa, In, Sửa, Lưu] -->
+                <div class="pt-3 flex items-center justify-between flex-wrap gap-3">
                     <button type="button" onclick="backToCustoms()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer border border-slate-200 shadow-2xs flex items-center gap-1.5">
                         <i class="ph-bold ph-arrow-left"></i>
                         <span>Quay Lại Dịch vụ Hải quan</span>
                     </button>
-                    <button type="submit" id="cust-submit-btn" class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center space-x-2 transition-all cursor-pointer">
-                        <i class="ph-bold ph-check text-base"></i>
-                        <span>Lưu Tờ Khai Hải Quan</span>
-                    </button>
+                    <div class="flex items-center space-x-2.5 flex-wrap">
+                        <button type="button" id="btn-customs-delete-bottom" onclick="confirmDeleteCurrentCustomsDeclaration()"
+                            class="hidden px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-rose-300 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Xóa tờ khai hải quan">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                            <span>Xóa</span>
+                        </button>
+                        <button type="button" id="btn-customs-print-bottom" onclick="printCurrentCustomsDeclaration()"
+                            class="hidden px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="In tờ khai hải quan">
+                            <i class="ph-bold ph-printer text-base text-teal-400"></i>
+                            <span>In</span>
+                        </button>
+                        <button type="button" id="btn-customs-edit-bottom" onclick="enableCustomsEdit()"
+                            class="hidden px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i class="ph-bold ph-pencil-simple text-base"></i>
+                            <span>Sửa</span>
+                        </button>
+                        <button type="submit" id="cust-submit-btn" class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center space-x-2 transition-all cursor-pointer">
+                            <i class="ph-bold ph-check text-base"></i>
+                            <span id="cust-submit-btn-text">Lưu Tờ Khai Hải Quan</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

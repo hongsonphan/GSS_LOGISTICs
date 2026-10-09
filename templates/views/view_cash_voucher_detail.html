@@ -133,6 +133,14 @@
                             <span>In Phiếu</span>
                         </button>
 
+                        <!-- Nút SỬA (Chỉ hiện khi xem phiếu đã lưu) -->
+                        <button type="button" id="btn-form-edit-voucher" onclick="enableFullpageVoucherEdit()" 
+                            class="hidden px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Bật chế độ chỉnh sửa thông tin phiếu">
+                            <i class="ph-bold ph-pencil-simple text-sm"></i>
+                            <span>Sửa</span>
+                        </button>
+
                         <!-- Nút LƯU (Tạo mới: "Lưu Phiếu" | Xem/Sửa: "Lưu Thay Đổi") -->
                         <button type="submit" id="btn-form-submit-voucher" 
                             class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-2 transition-all cursor-pointer">

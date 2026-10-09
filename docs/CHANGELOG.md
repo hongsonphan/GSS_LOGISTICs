@@ -2,7 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [2.9.38] - 2026-10-09 (Toàn Hệ Thống: Chuẩn Hóa Nút Quay Lại & Topbar Breadcrumb Về Đúng Tên Trang Mẹ Cho Toàn Bộ Trang Con)
+## [2.9.39] - 2026-10-09 (Toàn Hệ Thống: Chuẩn Hóa Cột Thao Tác [Xem & In] Và Bộ 4 Nút Chuẩn [Xóa - In - Sửa - Lưu] Màn Hình Con)
+
+### 1. Chuẩn Hóa Toàn Diện Cột "Thao Tác" Bên Ngoài Các Bảng Danh Sách:
+- **Nguyên tắc vàng:** Cột "Thao tác" trên toàn bộ các bảng quản lý (Sổ Quỹ, Báo Giá, Booking, Tờ Khai Hải Quan, Hồ Sơ Nhân Sự) **CHỈ CÓ ĐÚNG 2 NÚT:**
+  1. **Nút "Xem" (Icon con mắt Emerald):** Mở màn hình trang con xem chi tiết toàn màn hình.
+  2. **Nút "In" (Icon máy in Slate):** Kích hoạt thẳng lệnh in trực tiếp (`window.print()`) khổ A4 của trình duyệt ngay lập tức mà KHÔNG chuyển trang hay mở form.
+- **Rút gọn các nút thao tác thừa:**
+  * Bảng Booking (`sales-bookings-tbody`): Bỏ nút "Điều xe" và nút "Xóa" riêng lẻ; quy về đúng 2 nút `[Xem]` và `[In]`.
+  * Bảng Báo Giá (`sales-tbody`): Bỏ nút "Xóa" riêng lẻ; quy về đúng 2 nút `[Xem]` và `[In]`.
+  * Bảng Tờ Khai Hải Quan (`customs-table-body`): Bỏ nút toggle/sửa/xóa rườm rà; quy về đúng 2 nút `[Xem]` và `[In]`.
+  * Bảng Nhân Sự (`employees-tbody`): Bỏ nút sửa/xóa; quy về đúng 2 nút `[Xem]` và `[In]`.
+
+### 2. Chuẩn Hóa Bộ 4 Nút Hành Động Ở Chân Form Chi Tiết [Xóa - In - Sửa - Lưu]:
+- **Bố trí công thái học chuẩn SaaS:**
+  * **Bên trái chân form:** Nút `Quay Lại [Tên Trang Mẹ]` chuẩn xác.
+  * **Bên phải chân form:** Nhóm 4 nút theo thứ tự: `[Xóa]` (Rose) $\rightarrow$ `[In]` (Dark/Emerald) $\rightarrow$ `[Sửa]` (Amber) $\rightarrow$ `[Lưu]` (Teal).
+- **Máy trạng thái form (State Machine Readonly / Edit):**
+  * **Trường hợp Tạo Mới:** Form mở sẵn cho nhập liệu, ẩn hoàn toàn các nút `[Xóa]`, `[In]`, `[Sửa]`, chỉ hiển thị duy nhất nút `[Lưu]`. Sau khi lưu thành công, hệ thống tự động chuyển sang chế độ Xem với đầy đủ bộ 4 nút.
+  * **Trường hợp Xem Chi Tiết:** Form ban đầu ở chế độ chỉ đọc (`readonly`/`disabled`); 3 nút `[Xóa]`, `[In]`, `[Sửa]` sáng rõ; nút `[Lưu]` bị làm mờ (`disabled`).
+  * **Khi bấm nút `[Sửa]`:** Mở khóa toàn bộ các trường nhập liệu; nút `[Lưu]` kích hoạt sáng rõ; nút `[Sửa]` ẩn/mờ đi.
+- **Áp dụng đồng bộ cho cả 4 phân hệ:**
+  * Sổ Quỹ Thu / Chi (`view_cash_voucher_detail.html` & `app.js`)
+  * Kinh Doanh Báo Giá (`view_quotation_detail.html` & `app.js`)
+  * Tiếp Nhận Booking (`view_booking_detail.html` & `app.js`)
+  * Tờ Khai Hải Quan (`view_customs_form.html` & `app.js`)
+  * Hồ Sơ Nhân Sự (`view_employee_form.html` & `app.js`)
+
+---
+
+
 
 ### 1. Chuẩn Hóa Điều Hướng Topbar Khi Ở Trang Con (Child Page / Fullpage Mode):
 - **Hoán đổi thông minh nút góc trái Topbar (`#btn-toggle-sidebar` vs `#btn-topbar-back`):**

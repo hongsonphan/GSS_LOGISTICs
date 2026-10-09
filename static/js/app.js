@@ -5433,9 +5433,21 @@ function renderEmployeesTable(items) {
                 ${emp.is_active ? '<span class="text-emerald-700 font-bold">Đang làm</span>' : '<span class="text-slate-400 font-medium">Tạm ngưng</span>'}
             </td>
             <td class="py-2.5 px-3.5 text-center">
-                <div class="flex items-center justify-center space-x-1">
-                    <button onclick="openEditEmployeeModal(${emp.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa hồ sơ"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
-                    <button onclick="deleteEmployeeItem(${emp.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Tạm ngưng công tác"><i class="ph-bold ph-user-minus text-sm"></i></button>
+                <div class="inline-flex items-center gap-1.5 justify-center">
+                    <!-- 1. Xem Hồ Sơ (Toàn màn hình) -->
+                    <button type="button" onclick="openEditEmployeePage(${emp.id})" 
+                        class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Xem chi tiết, Sửa, Lưu & Tạm ngưng hồ sơ">
+                        <i class="ph-bold ph-eye text-emerald-700"></i>
+                        <span>Xem</span>
+                    </button>
+                    <!-- 2. In nhanh Hồ Sơ khổ A4 -->
+                    <button type="button" onclick="openDirectPrintEmployee(${emp.id})" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="In nhanh hồ sơ nhân sự khổ A4">
+                        <i class="ph-bold ph-printer text-slate-700"></i>
+                        <span>In</span>
+                    </button>
                 </div>
             </td>
         </tr>
@@ -5505,9 +5517,16 @@ function openCreateEmployeePage(updateHistory = true) {
         previousActiveTab = currentActiveView.id.replace('view-', '');
     }
 
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
-    const formView = document.getElementById('view-employee-form');
-    if (formView) formView.classList.remove('hidden-view');
+    // Ở chế độ Tạo Mới: Form mở sẵn, ẩn Xóa/In/Sửa, chỉ hiện Lưu
+    setEmployeeFormReadOnly(false);
+    const delBtn = document.getElementById('btn-employee-delete-bottom');
+    if (delBtn) delBtn.classList.add('hidden');
+    const printBtn = document.getElementById('btn-employee-print-bottom');
+    if (printBtn) printBtn.classList.add('hidden');
+    const editBtn = document.getElementById('btn-employee-edit-bottom');
+    if (editBtn) editBtn.classList.add('hidden');
+    const submitBtnText = document.getElementById('emp-submit-btn-text');
+    if (submitBtnText) submitBtnText.innerText = 'Lưu Hồ Sơ Nhân Sự';
 
     setTopbarFullpageMode({
         backFn: backToPersonnel,
@@ -5553,6 +5572,11 @@ function openEditEmployeePage(id, updateHistory = true) {
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
     const formView = document.getElementById('view-employee-form');
     if (formView) formView.classList.remove('hidden-view');
+
+    // Ở chế độ Xem bản ghi: Khóa form, hiện Xóa, In, Sửa; làm mờ Lưu
+    setEmployeeFormReadOnly(true);
+    const submitBtnText = document.getElementById('emp-submit-btn-text');
+    if (submitBtnText) submitBtnText.innerText = 'Lưu Thay Đổi';
 
     setTopbarFullpageMode({
         backFn: backToPersonnel,
@@ -5627,8 +5651,13 @@ async function submitEmployeeForm(event) {
         if (typeof showToast === 'function') {
             showToast('success', data.message || 'Đã lưu hồ sơ nhân sự thành công!', 'Thành Công');
         }
-        backToPersonnel();
-        loadEmployeesData();
+        await loadEmployeesData();
+        const savedId = editId || data.id || data.employee?.id;
+        if (savedId) {
+            openEditEmployeePage(savedId, true);
+        } else {
+            backToPersonnel();
+        }
     } catch (err) {
         console.error('Lỗi gửi form nhân sự:', err);
         if (typeof showToast === 'function') {
@@ -6689,7 +6718,11 @@ async function openCreateQuotationPage(updateHistory = true) {
         dateEl.innerText = new Date().toLocaleDateString('vi-VN');
     }
 
-    // Nút Sửa ẩn đi vì đang ở chế độ Tạo Mới; Nút Lưu sáng lên
+    // Ở chế độ Tạo Mới: Ẩn Xóa, In, Sửa; Nút Lưu sáng lên
+    const delBtn = document.getElementById('btn-fullpage-delete-quote-bottom');
+    if (delBtn) delBtn.classList.add('hidden');
+    const printBtn = document.getElementById('btn-fullpage-print-quote-bottom');
+    if (printBtn) printBtn.classList.add('hidden');
     const editBtn = document.getElementById('btn-fullpage-edit-quote-bottom');
     if (editBtn) editBtn.classList.add('hidden');
     setFullpageSaveButtonState('btn-fullpage-save-quote-bottom', true);
@@ -6886,9 +6919,19 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
         // 1. Khóa toàn bộ các input/select/textarea của form
         if (form) {
             form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
-            form.querySelectorAll('button:not(#btn-fullpage-edit-quote-bottom):not([onclick*="backToQuotations"]):not([onclick*="printQuotation"])').forEach(el => el.disabled = true);
+            form.querySelectorAll('button:not(#btn-fullpage-edit-quote-bottom):not(#btn-fullpage-delete-quote-bottom):not(#btn-fullpage-print-quote-bottom):not([onclick*="backToQuotations"]):not([onclick*="printQuotation"])').forEach(el => el.disabled = true);
         }
-        // 2. Nút Sửa hiển thị rõ để bấm khi cần sửa
+        // 2. Hiển thị đủ bộ nút Xóa, In, Sửa
+        const delBtn = document.getElementById('btn-fullpage-delete-quote-bottom');
+        if (delBtn) {
+            delBtn.classList.remove('hidden');
+            delBtn.disabled = false;
+        }
+        const printBtn = document.getElementById('btn-fullpage-print-quote-bottom');
+        if (printBtn) {
+            printBtn.classList.remove('hidden');
+            printBtn.disabled = false;
+        }
         const editBtn = document.getElementById('btn-fullpage-edit-quote-bottom');
         if (editBtn) {
             editBtn.classList.remove('hidden');
@@ -7475,7 +7518,11 @@ async function openCreateBookingPage(updateHistory = true) {
         if (saveBtnText) saveBtnText.innerText = 'Lưu';
         if (tripsSection) tripsSection.classList.add('hidden');
 
-        // Nút Sửa ẩn đi vì đang ở chế độ Tạo Mới; Nút Lưu sáng lên
+        // Ở chế độ Tạo Mới: Ẩn Xóa, In, Sửa; Nút Lưu sáng lên
+        const delBtn = document.getElementById('btn-fullpage-delete-booking-bottom');
+        if (delBtn) delBtn.classList.add('hidden');
+        const printBtn = document.getElementById('btn-fullpage-print-booking-bottom');
+        if (printBtn) printBtn.classList.add('hidden');
         const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
         if (editBtn) editBtn.classList.add('hidden');
         setFullpageSaveButtonState('btn-fullpage-save-booking-bottom', true);
@@ -7724,9 +7771,19 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
         // 1. Khóa toàn bộ input/select/textarea của form
         if (form) {
             form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
-            form.querySelectorAll('button:not(#btn-fullpage-edit-booking-bottom):not([onclick*="backToBookings"]):not([onclick*="viewTripDetail"])').forEach(el => el.disabled = true);
+            form.querySelectorAll('button:not(#btn-fullpage-edit-booking-bottom):not(#btn-fullpage-delete-booking-bottom):not(#btn-fullpage-print-booking-bottom):not([onclick*="backToBookings"]):not([onclick*="viewTripDetail"])').forEach(el => el.disabled = true);
         }
-        // 2. Nút Sửa hiển thị rõ để bấm khi cần sửa
+        // 2. Hiển thị đủ bộ nút Xóa, In, Sửa
+        const delBtn = document.getElementById('btn-fullpage-delete-booking-bottom');
+        if (delBtn) {
+            delBtn.classList.remove('hidden');
+            delBtn.disabled = false;
+        }
+        const printBtn = document.getElementById('btn-fullpage-print-booking-bottom');
+        if (printBtn) {
+            printBtn.classList.remove('hidden');
+            printBtn.disabled = false;
+        }
         const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
         if (editBtn) {
             editBtn.classList.remove('hidden');
@@ -9211,26 +9268,20 @@ function renderBookingsTable(bookings) {
                 ${new Intl.NumberFormat('vi-VN').format(b.price)} đ
             </td>
             <td class="p-3.5 text-center">
-                <div class="flex items-center justify-center space-x-1.5">
-                    ${b.status !== 'COMPLETED' && b.status !== 'CANCELLED' ? `
-                        <button onclick="dispatchFromBooking(${b.id})" class="px-2.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1 font-heading" title="Điều xe ngay">
-                            <i class="ph-bold ph-paper-plane-tilt text-xs"></i>
-                            <span>Điều Xe</span>
-                        </button>
-                    ` : `
-                        <span class="px-2 py-1 text-xs text-emerald-700 font-bold flex items-center gap-0.5">
-                            <i class="ph-bold ph-check"></i> Đủ xe
-                        </span>
-                    `}
-                    <!-- 1. Xem chi tiết Booking (Toàn màn hình) -->
-                    <button onclick="openModalBooking(${b.id}, true)" title="Xem chi tiết đơn hàng" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 transition-colors cursor-pointer">
-                        <i class="ph-bold ph-eye text-sm"></i>
+                <div class="inline-flex items-center gap-1.5 justify-center">
+                    <!-- 1. Xem Booking (Toàn màn hình) -->
+                    <button type="button" onclick="openModalBooking(${b.id}, true)" 
+                        class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Xem chi tiết, Sửa, Lưu & Xóa đơn hàng">
+                        <i class="ph-bold ph-eye text-emerald-700"></i>
+                        <span>Xem</span>
                     </button>
-                    <!-- 2. Xóa Booking -->
-                    <button onclick="deleteBooking(${b.id})" title="Xóa đơn hàng" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors cursor-pointer">
-                        <i class="ph-bold ph-trash text-sm"></i>
+                    <!-- 2. In nhanh Booking khổ A4 -->
+                    <button type="button" onclick="openDirectPrintBooking(${b.id})" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="In nhanh phiếu Booking khổ A4">
+                        <i class="ph-bold ph-printer text-slate-700"></i>
+                        <span>In</span>
                     </button>
                 </div>
             </td>
@@ -9551,21 +9602,20 @@ function renderQuotationsTable(quotations) {
                 <span class="text-xs ${statusCls}">${escapeHtml(s.status)}</span>
             </td>
             <td class="p-3.5 text-center">
-                <div class="flex items-center justify-center space-x-1.5">
-                    <!-- 1. Xem & Sửa Báo Giá Toàn Màn Hình -->
-                    <button type="button" onclick="viewQuotationDetail('${quoteHash}')" title="Xem & Sửa Báo Giá (Toàn màn hình)" 
-                        class="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 hover:text-teal-900 border border-teal-200 transition-colors cursor-pointer">
-                        <i class="ph-bold ph-eye text-sm"></i>
+                <div class="inline-flex items-center gap-1.5 justify-center">
+                    <!-- 1. Xem Báo Giá (Toàn màn hình) -->
+                    <button type="button" onclick="viewQuotationDetail('${quoteHash}')" 
+                        class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Xem chi tiết, Sửa, Lưu & Xóa báo giá">
+                        <i class="ph-bold ph-eye text-emerald-700"></i>
+                        <span>Xem</span>
                     </button>
-                    <!-- 2. Xem Trước & In Báo Giá A4 Toàn Màn Hình -->
-                    <button type="button" onclick="openQuotationPrintModal('${quoteHash}')" title="Xem Trước & In Báo Giá A4 (Toàn màn hình)" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-colors cursor-pointer">
-                        <i class="ph-bold ph-printer text-sm"></i>
-                    </button>
-                    <!-- 3. Xóa Báo Giá -->
-                    <button type="button" onclick="deleteQuotation(${s.id})" title="Xóa báo giá" 
-                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 border border-slate-200 transition-colors cursor-pointer">
-                        <i class="ph-bold ph-trash text-sm"></i>
+                    <!-- 2. In nhanh Báo Giá khổ A4 -->
+                    <button type="button" onclick="openDirectPrintQuotation('${quoteHash}')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="In nhanh Báo giá khổ A4">
+                        <i class="ph-bold ph-printer text-slate-700"></i>
+                        <span>In</span>
                     </button>
                 </div>
             </td>
@@ -13056,11 +13106,13 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
             formBadge.className = 'text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
         }
 
-        // 4. HIỂN THỊ CÁC NÚT THAO TÁC Ở CHÂN FORM
+        // 4. HIỂN THỊ BỘ 4 NÚT THAO TÁC Ở CHÂN FORM
         const btnDelete = document.getElementById('btn-form-delete-voucher');
         if (btnDelete) btnDelete.classList.remove('hidden');
         const btnPrint = document.getElementById('btn-form-print-voucher');
         if (btnPrint) btnPrint.classList.remove('hidden');
+        const btnEdit = document.getElementById('btn-form-edit-voucher');
+        if (btnEdit) btnEdit.classList.remove('hidden');
         const submitBtnText = document.getElementById('btn-form-submit-voucher-text');
         if (submitBtnText) submitBtnText.innerText = 'Lưu Thay Đổi';
 
@@ -13076,6 +13128,9 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
         document.getElementById('edit-voucher-partner-type').value = tx.partner_type || '';
         document.getElementById('edit-voucher-partner-name').value = tx.partner_name || '';
         document.getElementById('edit-voucher-notes').value = tx.notes || '';
+
+        // Ban đầu khóa form ở chế độ Chỉ Xem: Nút Sửa sáng, nút Lưu mờ
+        setFullpageVoucherReadOnly(true);
 
         initAllNumberInputs();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -13179,15 +13234,62 @@ function updateLiveVoucherReason(val) {
     }
 }
 
+function setFullpageVoucherReadOnly(isReadOnly) {
+    const fields = [
+        'edit-voucher-type', 'edit-voucher-method', 'edit-voucher-category',
+        'edit-voucher-amount', 'edit-voucher-date', 'edit-voucher-ref',
+        'edit-voucher-partner-type', 'edit-voucher-partner-name', 'edit-voucher-notes'
+    ];
+    fields.forEach(fid => {
+        const el = document.getElementById(fid);
+        if (!el) return;
+        if (isReadOnly) {
+            el.disabled = true;
+            el.classList.add('bg-slate-50', 'cursor-not-allowed');
+        } else {
+            el.disabled = false;
+            el.classList.remove('bg-slate-50', 'cursor-not-allowed');
+        }
+    });
+
+    const editBtn = document.getElementById('btn-form-edit-voucher');
+    const submitBtn = document.getElementById('btn-form-submit-voucher');
+    const formBadge = document.getElementById('fullpage-voucher-form-badge');
+
+    if (isReadOnly) {
+        if (editBtn) {
+            editBtn.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+            editBtn.disabled = false;
+        }
+        if (submitBtn) {
+            submitBtn.classList.add('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+            submitBtn.disabled = true;
+        }
+        if (formBadge) {
+            formBadge.innerText = 'Chế độ: Đang Xem';
+            formBadge.className = 'text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200';
+        }
+    } else {
+        if (editBtn) {
+            editBtn.classList.add('opacity-50', 'pointer-events-none');
+            editBtn.disabled = true;
+        }
+        if (submitBtn) {
+            submitBtn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+            submitBtn.disabled = false;
+        }
+        if (formBadge) {
+            formBadge.innerText = 'Chế độ: Đang Chỉnh Sửa';
+            formBadge.className = 'text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
+        }
+    }
+}
+
 function enableFullpageVoucherEdit() {
-    const editPanel = document.getElementById('fullpage-voucher-edit-panel');
-    if (editPanel) editPanel.classList.remove('hidden');
-
-    const editBtn = document.getElementById('btn-fullpage-edit-voucher');
-    if (editBtn) editBtn.classList.add('hidden');
-
-    setFullpageVoucherSaveButtonState(true);
-    showToast('info', 'Đã chuyển sang chế độ Sửa Phiếu. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
+    setFullpageVoucherReadOnly(false);
+    const amountInput = document.getElementById('edit-voucher-amount');
+    if (amountInput) amountInput.focus();
+    showToast('info', 'Đã chuyển sang chế độ Sửa Phiếu. Bạn có thể thay đổi thông tin và bấm "Lưu Thay Đổi".', 'Chế Độ Sửa');
 }
 
 function cancelFullpageVoucherEdit() {
@@ -19715,11 +19817,21 @@ function renderCustomsTable(list) {
                     ${formatMoney(d.reimbursable_fee)}
                 </td>
                 <td class="py-2.5 px-3 text-center">
-                    <div class="flex items-center justify-center space-x-1">
-                        ${clearBtn}
-                        ${docBtn}
-                        <button onclick="openCustomsModal(${d.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
-                        <button onclick="deleteCustomsDeclaration(${d.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa tờ khai"><i class="ph-bold ph-trash text-sm"></i></button>
+                    <div class="inline-flex items-center gap-1.5 justify-center">
+                        <!-- 1. Xem Tờ Khai (Toàn màn hình) -->
+                        <button type="button" onclick="openCustomsPage(${d.id})" 
+                            class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Xem chi tiết, Sửa, Lưu & Xóa tờ khai">
+                            <i class="ph-bold ph-eye text-emerald-700"></i>
+                            <span>Xem</span>
+                        </button>
+                        <!-- 2. In nhanh Tờ Khai khổ A4 -->
+                        <button type="button" onclick="openDirectPrintCustoms(${d.id})" 
+                            class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="In nhanh tờ khai hải quan khổ A4">
+                            <i class="ph-bold ph-printer text-slate-700"></i>
+                            <span>In</span>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -19850,6 +19962,10 @@ async function openCustomsPage(id = null, updateHistory = true) {
                 badgesHtml: '',
                 actionsHtml: ''
             });
+            // Khi xem tờ khai đã có: Bật chế độ readonly, sáng Xóa, In, Sửa; mờ Lưu
+            setCustomsFormReadOnly(true);
+            const submitBtnText = document.getElementById('cust-submit-btn-text');
+            if (submitBtnText) submitBtnText.innerText = 'Lưu Thay Đổi';
         } catch (err) {
             showToast('Lỗi: ' + err.message, 'error');
             backToCustoms();
@@ -19857,6 +19973,17 @@ async function openCustomsPage(id = null, updateHistory = true) {
         }
     } else {
         document.getElementById('cust-decl-number').readOnly = false;
+        // Khi tạo mới: Mở khóa form, ẩn Xóa/In/Sửa, chỉ hiện Lưu
+        setCustomsFormReadOnly(false);
+        const delBtn = document.getElementById('btn-customs-delete-bottom');
+        if (delBtn) delBtn.classList.add('hidden');
+        const printBtn = document.getElementById('btn-customs-print-bottom');
+        if (printBtn) printBtn.classList.add('hidden');
+        const editBtn = document.getElementById('btn-customs-edit-bottom');
+        if (editBtn) editBtn.classList.add('hidden');
+        const submitBtnText = document.getElementById('cust-submit-btn-text');
+        if (submitBtnText) submitBtnText.innerText = 'Lưu Tờ Khai Hải Quan';
+
         setTopbarFullpageMode({
             backFn: backToCustoms,
             prefix: 'Dịch Vụ Hải Quan',
@@ -19931,8 +20058,13 @@ async function submitCustomsDeclarationForm(e) {
         }
 
         showToast(data.message || 'Lưu tờ khai thành công!', 'success');
-        backToCustoms();
         fetchCustomsDeclarations();
+        const savedId = id || data.declaration_id || data.id;
+        if (savedId) {
+            openCustomsPage(savedId, true);
+        } else {
+            backToCustoms();
+        }
     } catch (err) {
         showToast('Lỗi: ' + err.message, 'error');
     }
@@ -21384,4 +21516,563 @@ window.selectBim24hMinute = selectBim24hMinute;
 window.setBim24hPickerTime = setBim24hPickerTime;
 window.setBim24hPickerNow = setBim24hPickerNow;
 window.confirmBim24hTimePicker = confirmBim24hTimePicker;
+
+// =========================================================================
+// CHUẨN HÓA BỘ 4 NÚT & IN TRỰC TIẾP (QUOTATION, BOOKING, CUSTOMS, EMPLOYEE)
+// =========================================================================
+
+/**
+ * 1. BÁO GIÁ: In trực tiếp từ bảng danh sách mà không chuyển view
+ */
+async function openDirectPrintQuotation(quoteIdentifier) {
+    if (!quoteIdentifier) return;
+    try {
+        await openQuotationPrintModal(quoteIdentifier);
+        printQuotationVoucher();
+    } catch (e) {
+        console.error('Lỗi in nhanh báo giá:', e);
+        showToast('error', 'Không thể mở lệnh in nhanh báo giá', 'Lỗi In');
+    }
+}
+window.openDirectPrintQuotation = openDirectPrintQuotation;
+
+/**
+ * Xác nhận xóa báo giá đang mở trong form chi tiết
+ */
+function confirmDeleteCurrentQuotation() {
+    const id = document.getElementById('fullpage-quote-id')?.value;
+    if (!id) {
+        showToast('warning', 'Chưa có báo giá nào được lưu để xóa!', 'Thông Báo');
+        return;
+    }
+    deleteQuotation(id);
+}
+window.confirmDeleteCurrentQuotation = confirmDeleteCurrentQuotation;
+
+/**
+ * 2. BOOKING / ĐƠN HÀNG: In trực tiếp từ bảng danh sách & từ form chi tiết
+ */
+function printCurrentBookingSlip() {
+    const id = document.getElementById('fullpage-booking-id')?.value;
+    if (!id) {
+        showToast('warning', 'Vui lòng lưu đơn hàng / booking trước khi in ấn!', 'Thông Báo');
+        return;
+    }
+    openDirectPrintBooking(id);
+}
+window.printCurrentBookingSlip = printCurrentBookingSlip;
+
+async function openDirectPrintBooking(bookingId) {
+    if (!bookingId) return;
+    try {
+        let b = (rawSalesBookings || []).find(item => item.id == bookingId);
+        if (!b) {
+            const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);
+            if (res.ok) b = await res.json();
+        }
+        if (!b) throw new Error('Không tìm thấy thông tin booking');
+
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Phiếu Tiếp Nhận Booking - ${b.booking_code || ('BK-' + b.id)}</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px 30px; color: #1e293b; font-size: 13px; line-height: 1.5; }
+                    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
+                    .title { text-align: center; font-size: 18px; font-weight: 800; color: #0f766e; text-transform: uppercase; margin: 12px 0 20px 0; }
+                    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+                    .meta-table td { padding: 6px 10px; border: 1px solid #cbd5e1; }
+                    .meta-table td.label { font-weight: bold; background: #f8fafc; width: 22%; color: #334155; }
+                    .signatures { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; }
+                    .sig-box { width: 30%; }
+                    .sig-title { font-weight: bold; margin-bottom: 60px; }
+                    @media print { body { margin: 0; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div>
+                        <div style="font-size: 15px; font-weight: 800; text-transform: uppercase; color: #0f766e;">TRIỀN VÕ LOGISTICS</div>
+                        <div style="font-size: 11px; color: #64748b;">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP.HCM • Hotline: 0965.559.561</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold; font-family: monospace; font-size: 14px; color: #0f766e;">${b.booking_code || ('BK-' + b.id)}</div>
+                        <div style="font-size: 11px; color: #64748b;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
+                    </div>
+                </div>
+
+                <div class="title">PHIẾU TIẾP NHẬN ĐƠN HÀNG VẬN TẢI / BOOKING</div>
+
+                <table class="meta-table">
+                    <tr>
+                        <td class="label">Khách Hàng:</td>
+                        <td style="font-weight: bold; font-size: 14px;">${b.customer_name || b.customer || '-'}</td>
+                        <td class="label">Số Booking / PO:</td>
+                        <td style="font-family: monospace; font-weight: bold;">${b.booking_number || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Phân Loại Dịch Vụ:</td>
+                        <td>${b.booking_type_display || (b.booking_type === 'DOMESTIC' ? 'Vận Chuyển Nội Địa' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Kéo Cont Xuất Khẩu'))}</td>
+                        <td class="label">Hãng Tàu / Tàu:</td>
+                        <td>${b.shipping_line || '-'} ${b.vessel_voyage ? ('/ ' + b.vessel_voyage) : ''}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Loại Cont & Số lượng:</td>
+                        <td>${b.container_size || '40HC'} — Số lượng: <strong>${b.total_containers || 1} cont</strong></td>
+                        <td class="label">Hàng Hóa / Trọng Lượng:</td>
+                        <td>${b.commodity || 'Hàng tổng hợp'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Nơi Lấy Rỗng / Hàng:</td>
+                        <td colspan="3">${b.pickup_location || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Nơi Đóng / Giao Hàng:</td>
+                        <td colspan="3" style="font-weight: bold;">${b.delivery_location || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Nơi Hạ Bãi / Trả Vỏ:</td>
+                        <td colspan="3">${b.dropoff_location || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Hẹn Đóng Hàng:</td>
+                        <td style="font-weight: bold; color: #0f766e;">${b.loading_date ? (b.loading_date + ' ' + (b.loading_time || '')) : '-'}</td>
+                        <td class="label">Hạn Cắt Máng (CY):</td>
+                        <td style="font-weight: bold; color: #e11d48;">${b.closing_time || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Cước Thỏa Thuận:</td>
+                        <td style="font-weight: bold; font-size: 14px; color: #047857;">${new Intl.NumberFormat('vi-VN').format(b.price || 0)} đ</td>
+                        <td class="label">Trạng Thái Đơn:</td>
+                        <td>${b.status_display || b.status || 'ĐÃ TIẾP NHẬN'}</td>
+                    </tr>
+                </table>
+
+                <div class="signatures">
+                    <div class="sig-box">
+                        <div class="sig-title">Khách Hàng</div>
+                        <div>(Ký & ghi rõ họ tên)</div>
+                    </div>
+                    <div class="sig-box">
+                        <div class="sig-title">Điều Phối Vận Tải</div>
+                        <div>(Ký & ghi rõ họ tên)</div>
+                    </div>
+                    <div class="sig-box">
+                        <div class="sig-title">Người Lập Phiếu</div>
+                        <div>(Ký & ghi rõ họ tên)</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 300);
+    } catch (e) {
+        console.error('Lỗi in booking:', e);
+        showToast('error', 'Không thể mở lệnh in đơn hàng / booking', 'Lỗi In');
+    }
+}
+window.openDirectPrintBooking = openDirectPrintBooking;
+
+/**
+ * Xác nhận xóa booking đang mở trong form chi tiết
+ */
+function confirmDeleteCurrentBooking() {
+    const id = document.getElementById('fullpage-booking-id')?.value;
+    if (!id) {
+        showToast('warning', 'Chưa có đơn hàng nào được lưu để xóa!', 'Thông Báo');
+        return;
+    }
+    deleteBooking(id);
+}
+window.confirmDeleteCurrentBooking = confirmDeleteCurrentBooking;
+
+/**
+ * 3. HẢI QUAN: Khóa form, mở sửa, xóa và in trực tiếp
+ */
+function setCustomsFormReadOnly(isReadOnly) {
+    const form = document.getElementById('form-customs-declaration');
+    if (form) {
+        form.querySelectorAll('input:not(#customs-edit-id), select, textarea').forEach(el => {
+            el.disabled = isReadOnly;
+            if (isReadOnly) {
+                el.classList.add('bg-slate-50', 'cursor-not-allowed');
+            } else {
+                el.classList.remove('bg-slate-50', 'cursor-not-allowed');
+            }
+        });
+    }
+    const delBtn = document.getElementById('btn-customs-delete-bottom');
+    const printBtn = document.getElementById('btn-customs-print-bottom');
+    const editBtn = document.getElementById('btn-customs-edit-bottom');
+    const saveBtn = document.getElementById('cust-submit-btn');
+
+    if (isReadOnly) {
+        if (delBtn) delBtn.classList.remove('hidden');
+        if (printBtn) printBtn.classList.remove('hidden');
+        if (editBtn) {
+            editBtn.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+            editBtn.disabled = false;
+        }
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        }
+    } else {
+        if (editBtn) editBtn.classList.add('hidden');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        }
+    }
+}
+window.setCustomsFormReadOnly = setCustomsFormReadOnly;
+
+function enableCustomsEdit() {
+    setCustomsFormReadOnly(false);
+    showToast('info', 'Đã bật chế độ Sửa Tờ Khai. Bạn có thể hiệu chỉnh thông tin và bấm Lưu.', 'Chế Độ Sửa');
+}
+window.enableCustomsEdit = enableCustomsEdit;
+
+function confirmDeleteCurrentCustomsDeclaration() {
+    const id = document.getElementById('customs-edit-id')?.value;
+    if (!id) {
+        showToast('warning', 'Chưa có tờ khai nào được lưu để xóa!', 'Thông Báo');
+        return;
+    }
+    deleteCustomsDeclaration(id);
+}
+window.confirmDeleteCurrentCustomsDeclaration = confirmDeleteCurrentCustomsDeclaration;
+
+function printCurrentCustomsDeclaration() {
+    const id = document.getElementById('customs-edit-id')?.value;
+    if (!id) {
+        showToast('warning', 'Vui lòng lưu tờ khai hải quan trước khi in ấn!', 'Thông Báo');
+        return;
+    }
+    openDirectPrintCustoms(id);
+}
+window.printCurrentCustomsDeclaration = printCurrentCustomsDeclaration;
+
+async function openDirectPrintCustoms(customsId) {
+    if (!customsId) return;
+    try {
+        const res = await fetchWithAuth(`/api/customs/declarations/${customsId}/`);
+        if (!res.ok) throw new Error('Không thể tải dữ liệu tờ khai');
+        const item = await res.json();
+
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Tờ Khai Hải Quan - ${item.declaration_number}</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px 30px; color: #1e293b; font-size: 13px; line-height: 1.5; }
+                    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
+                    .title { text-align: center; font-size: 18px; font-weight: 800; color: #0f766e; text-transform: uppercase; margin: 12px 0 20px 0; }
+                    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+                    .meta-table td { padding: 6px 10px; border: 1px solid #cbd5e1; }
+                    .meta-table td.label { font-weight: bold; background: #f8fafc; width: 22%; color: #334155; }
+                    .signatures { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; }
+                    .sig-box { width: 30%; }
+                    .sig-title { font-weight: bold; margin-bottom: 60px; }
+                    @media print { body { margin: 0; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div>
+                        <div style="font-size: 15px; font-weight: 800; text-transform: uppercase; color: #0f766e;">TRIỀN VÕ LOGISTICS — PHÒNG THỦ TỤC HẢI QUAN</div>
+                        <div style="font-size: 11px; color: #64748b;">Hotline thông quan: 0965.559.561 • VNACCS/VCIS EDI Gateway</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold; font-family: monospace; font-size: 14px; color: #0f766e;">TK: ${item.declaration_number}</div>
+                        <div style="font-size: 11px; color: #64748b;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
+                    </div>
+                </div>
+
+                <div class="title">PHIẾU THEO DÕI & XÁC NHẬN THỦ TỤC HẢI QUAN</div>
+
+                <table class="meta-table">
+                    <tr>
+                        <td class="label">Số Tờ Khai:</td>
+                        <td style="font-family: monospace; font-weight: bold; font-size: 14px;">${item.declaration_number}</td>
+                        <td class="label">Ngày Đăng Ký:</td>
+                        <td>${item.declaration_date || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Doanh Nghiệp / Chủ Hàng:</td>
+                        <td style="font-weight: bold;">${item.customer_name || '-'}</td>
+                        <td class="label">Chiều / Loại Hình:</td>
+                        <td><strong>${item.direction === 'IMPORT' ? 'NHẬP KHẨU' : 'XUẤT KHẨU'}</strong> (${item.declaration_type || 'A11'})</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Chi Cục Hải Quan:</td>
+                        <td colspan="3">${item.customs_office_code || ''} - ${item.customs_office_name || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Phân Luồng Hải Quan:</td>
+                        <td style="font-weight: bold; color: ${item.customs_lane === 'GREEN' ? '#047857' : (item.customs_lane === 'YELLOW' ? '#d97706' : '#e11d48')};">
+                            ${item.customs_lane === 'GREEN' ? 'LUỒNG XANH (Thông quan)' : (item.customs_lane === 'YELLOW' ? 'LUỒNG VÀNG (Kiểm tra hồ sơ)' : 'LUỒNG ĐỎ (Kiểm tra thực tế hàng)')}
+                        </td>
+                        <td class="label">Trạng Thái:</td>
+                        <td style="font-weight: bold;">${item.status || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Số Vận Đơn (B/L):</td>
+                        <td style="font-family: monospace;">${item.bill_of_lading || '-'}</td>
+                        <td class="label">Số Container:</td>
+                        <td style="font-family: monospace;">${item.container_numbers || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Chuyến Xe Gán:</td>
+                        <td>${item.trip_code || 'Chưa gán xe'}</td>
+                        <td class="label">Tình Trạng Thuế:</td>
+                        <td><strong>${item.is_tax_paid ? 'ĐÃ NỘP THUẾ' : 'CHƯA NỘP THUẾ'}</strong> (${new Intl.NumberFormat('vi-VN').format(item.tax_amount_vnd || 0)} đ)</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Phí Dịch Vụ Khai HQ:</td>
+                        <td style="font-weight: bold; color: #0f766e;">${new Intl.NumberFormat('vi-VN').format(item.customs_service_fee || 0)} đ</td>
+                        <td class="label">Chi Hộ Kiểm Hóa:</td>
+                        <td style="font-weight: bold; color: #d97706;">${new Intl.NumberFormat('vi-VN').format(item.reimbursable_fee || 0)} đ</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Ghi Chú Tiến Độ:</td>
+                        <td colspan="3">${item.inspection_notes || 'Không có ghi chú thêm.'}</td>
+                    </tr>
+                </table>
+
+                <div class="signatures">
+                    <div class="sig-box">
+                        <div class="sig-title">Đại Diện Doanh Nghiệp</div>
+                        <div>(Ký & ghi rõ họ tên)</div>
+                    </div>
+                    <div class="sig-box">
+                        <div class="sig-title">Cán Bộ Hải Quan Tiếp Nhận</div>
+                        <div>(Ký & đóng dấu)</div>
+                    </div>
+                    <div class="sig-box">
+                        <div class="sig-title">Nhân Viên Hiện Trường (Ops)</div>
+                        <div>(Ký & ghi rõ họ tên)</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 300);
+    } catch (e) {
+        console.error('Lỗi in tờ khai hải quan:', e);
+        showToast('error', 'Không thể mở lệnh in tờ khai hải quan', 'Lỗi In');
+    }
+}
+window.openDirectPrintCustoms = openDirectPrintCustoms;
+
+/**
+ * 4. NHÂN SỰ: Khóa form, mở sửa, xóa và in trực tiếp
+ */
+function setEmployeeFormReadOnly(isReadOnly) {
+    const form = document.getElementById('form-employee');
+    if (form) {
+        form.querySelectorAll('input:not(#emp-edit-id), select').forEach(el => {
+            el.disabled = isReadOnly;
+            if (isReadOnly) {
+                el.classList.add('bg-slate-50', 'cursor-not-allowed');
+            } else {
+                el.classList.remove('bg-slate-50', 'cursor-not-allowed');
+            }
+        });
+    }
+    const delBtn = document.getElementById('btn-employee-delete-bottom');
+    const printBtn = document.getElementById('btn-employee-print-bottom');
+    const editBtn = document.getElementById('btn-employee-edit-bottom');
+    const saveBtn = document.getElementById('emp-submit-btn');
+
+    if (isReadOnly) {
+        if (delBtn) delBtn.classList.remove('hidden');
+        if (printBtn) printBtn.classList.remove('hidden');
+        if (editBtn) {
+            editBtn.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+            editBtn.disabled = false;
+        }
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        }
+    } else {
+        if (editBtn) editBtn.classList.add('hidden');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        }
+    }
+}
+window.setEmployeeFormReadOnly = setEmployeeFormReadOnly;
+
+function enableEmployeeEdit() {
+    setEmployeeFormReadOnly(false);
+    showToast('info', 'Đã bật chế độ Sửa Hồ Sơ. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
+}
+window.enableEmployeeEdit = enableEmployeeEdit;
+
+function confirmDeleteCurrentEmployee() {
+    const id = document.getElementById('emp-edit-id')?.value;
+    if (!id) {
+        showToast('warning', 'Chưa có hồ sơ nhân sự nào được lưu để tạm ngưng!', 'Thông Báo');
+        return;
+    }
+    deleteEmployeeItem(id);
+}
+window.confirmDeleteCurrentEmployee = confirmDeleteCurrentEmployee;
+
+function printCurrentEmployeeProfile() {
+    const id = document.getElementById('emp-edit-id')?.value;
+    if (!id) {
+        showToast('warning', 'Vui lòng lưu hồ sơ nhân sự trước khi in ấn!', 'Thông Báo');
+        return;
+    }
+    openDirectPrintEmployee(id);
+}
+window.printCurrentEmployeeProfile = printCurrentEmployeeProfile;
+
+async function openDirectPrintEmployee(empId) {
+    if (!empId) return;
+    try {
+        let emp = (rawEmployeesList || []).find(e => e.id == empId);
+        if (!emp) {
+            const res = await fetchWithAuth(`/api/personnel/employees/${empId}/`);
+            if (res.ok) emp = await res.json();
+        }
+        if (!emp) throw new Error('Không tìm thấy thông tin nhân sự');
+
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Hồ Sơ Nhân Sự - ${emp.full_name}</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px 30px; color: #1e293b; font-size: 13px; line-height: 1.5; }
+                    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
+                    .title { text-align: center; font-size: 18px; font-weight: 800; color: #0f766e; text-transform: uppercase; margin: 12px 0 20px 0; }
+                    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+                    .meta-table td { padding: 6px 10px; border: 1px solid #cbd5e1; }
+                    .meta-table td.label { font-weight: bold; background: #f8fafc; width: 22%; color: #334155; }
+                    .signatures { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; }
+                    .sig-box { width: 30%; }
+                    .sig-title { font-weight: bold; margin-bottom: 60px; }
+                    @media print { body { margin: 0; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div>
+                        <div style="font-size: 15px; font-weight: 800; text-transform: uppercase; color: #0f766e;">TRIỀN VÕ LOGISTICS — PHÒNG HÀNH CHÍNH NHÂN SỰ</div>
+                        <div style="font-size: 11px; color: #64748b;">Hotline: 0965.559.561 • Hệ thống Quản trị Nhân sự & Đội xe</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold; font-family: monospace; font-size: 14px; color: #0f766e;">MÃ NV: ${emp.code || emp.id}</div>
+                        <div style="font-size: 11px; color: #64748b;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
+                    </div>
+                </div>
+
+                <div class="title">SƠ YẾU HỒ SƠ CÁN BỘ / TÀI XẾ DOANH NGHIỆP</div>
+
+                <table class="meta-table">
+                    <tr>
+                        <td class="label">Họ Và Tên:</td>
+                        <td style="font-weight: bold; font-size: 15px;">${emp.full_name}</td>
+                        <td class="label">Biệt Danh / Tên Thường Gọi:</td>
+                        <td>${emp.nickname || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Phòng Ban:</td>
+                        <td><strong>${emp.department || 'Đội Xe (FLEET)'}</strong></td>
+                        <td class="label">Chức Vụ / Vị Trí:</td>
+                        <td><strong>${emp.role_label || emp.role}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Số Điện Thoại:</td>
+                        <td style="font-weight: bold;">${emp.phone_number || '-'}</td>
+                        <td class="label">Zalo / Liên Lạc:</td>
+                        <td>${emp.zalo_id || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Số GPLX (Bằng lái):</td>
+                        <td style="font-family: monospace; font-weight: bold;">${emp.license_number || '-'}</td>
+                        <td class="label">Hạn Dùng GPLX:</td>
+                        <td>${emp.license_expiry || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Mức Lương Cơ Bản:</td>
+                        <td style="font-weight: bold; font-size: 14px; color: #0f766e;">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</td>
+                        <td class="label">Tình Trạng Công Tác:</td>
+                        <td><strong>${emp.is_active ? 'ĐANG LÀM VIỆC' : 'TẠM NGƯNG CÔNG TÁC'}</strong></td>
+                    </tr>
+                </table>
+
+                <div class="signatures">
+                    <div class="sig-box">
+                        <div class="sig-title">Nhân Sự Được Khai Báo</div>
+                        <div>(Ký & ghi rõ họ tên)</div>
+                    </div>
+                    <div class="sig-box">
+                        <div class="sig-title">Trưởng Bộ Phận / Điều Hành</div>
+                        <div>(Ký & ghi rõ họ tên)</div>
+                    </div>
+                    <div class="sig-box">
+                        <div class="sig-title">Ban Giám Đốc Phê Duyệt</div>
+                        <div>(Ký & đóng dấu)</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 300);
+    } catch (e) {
+        console.error('Lỗi in hồ sơ nhân sự:', e);
+        showToast('error', 'Không thể mở lệnh in hồ sơ nhân sự', 'Lỗi In');
+    }
+}
+window.openDirectPrintEmployee = openDirectPrintEmployee;
 
