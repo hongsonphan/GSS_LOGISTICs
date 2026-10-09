@@ -241,8 +241,13 @@
                             <label class="block font-bold text-slate-700 text-xs truncate">Giờ Hẹn Tại Kho</label>
                             <span class="text-[9.5px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">24h</span>
                         </div>
-                        <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" id="booking-loading-time" value="08:00" placeholder="08:00"
-                            class="w-full h-8.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs text-center font-mono">
+                        <div class="relative flex items-center">
+                            <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" data-time-picker-24h="true" id="booking-loading-time" value="08:00" placeholder="08:00" onclick="openBim24hTimePicker(this, event)"
+                                class="w-full h-8.5 pl-2 pr-7 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-teal-600 font-bold text-slate-800 text-xs text-center font-mono cursor-pointer">
+                            <button type="button" tabindex="-1" onclick="openBim24hTimePicker(document.getElementById('booking-loading-time'), event)" class="absolute right-2 text-teal-600 hover:text-teal-800 p-0.5" title="Chọn giờ 24h">
+                                <i class="ph-bold ph-clock text-sm"></i>
+                            </button>
+                        </div>
                         <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
                             <span class="font-medium text-slate-400">Giờ:</span>
                             <button type="button" onclick="setBookingLoadingTime('08:00')" class="px-1.5 py-0.2 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold transition-colors">08:00</button>
@@ -261,8 +266,13 @@
                         <div class="grid grid-cols-5 gap-1">
                             <input type="date" id="booking-closing-date" onchange="syncBookingClosingTime()"
                                 class="col-span-3 w-full h-8.5 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-rose-700 text-xs">
-                            <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" id="booking-closing-time-val" value="17:00" placeholder="17:00" onchange="syncBookingClosingTime()"
-                                class="col-span-2 w-full h-8.5 px-1 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-rose-700 text-xs text-center font-mono">
+                            <div class="col-span-2 relative flex items-center">
+                                <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" data-time-picker-24h="true" id="booking-closing-time-val" value="17:00" placeholder="17:00" onchange="syncBookingClosingTime()" onclick="openBim24hTimePicker(this, event)"
+                                    class="w-full h-8.5 pl-1 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-bold text-rose-700 text-xs text-center font-mono cursor-pointer">
+                                <button type="button" tabindex="-1" onclick="openBim24hTimePicker(document.getElementById('booking-closing-time-val'), event)" class="absolute right-1 text-rose-500 hover:text-rose-700 p-0.5" title="Chọn giờ 24h">
+                                    <i class="ph-bold ph-clock text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                         <input type="hidden" id="booking-closing-time">
                         <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">
@@ -283,8 +293,13 @@
                         <div class="grid grid-cols-5 gap-1">
                             <input type="date" id="booking-si-date" onchange="syncBookingSiTime()"
                                 class="col-span-3 w-full h-8.5 px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-medium text-slate-800 text-xs">
-                            <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" id="booking-si-time-val" value="12:00" placeholder="12:00" onchange="syncBookingSiTime()"
-                                class="col-span-2 w-full h-8.5 px-1 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-medium text-slate-800 text-xs text-center font-mono">
+                            <div class="col-span-2 relative flex items-center">
+                                <input type="text" inputmode="numeric" maxlength="5" list="list-times-24h" data-time-24h="true" data-time-picker-24h="true" id="booking-si-time-val" value="12:00" placeholder="12:00" onchange="syncBookingSiTime()" onclick="openBim24hTimePicker(this, event)"
+                                    class="w-full h-8.5 pl-1 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white font-medium text-slate-800 text-xs text-center font-mono cursor-pointer">
+                                <button type="button" tabindex="-1" onclick="openBim24hTimePicker(document.getElementById('booking-si-time-val'), event)" class="absolute right-1 text-slate-500 hover:text-slate-700 p-0.5" title="Chọn giờ 24h">
+                                    <i class="ph-bold ph-clock text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                         <input type="hidden" id="booking-si-cutoff">
                         <div class="flex items-center gap-1 mt-0.5 text-[9.5px] text-slate-500 flex-wrap">

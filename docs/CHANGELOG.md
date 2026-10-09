@@ -2,10 +2,34 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [2.9.30] - 2026-10-09 (Chuyển Đổi Triệt Để Toàn Bộ Ô Chọn Giờ Sang Hệ 24h Chuẩn - Loại Bỏ Native 12h/SA/CH)
+## [2.9.31] - 2026-10-09 (BIM 24-Hour Interactive TimePicker Popover — Khôi Phục Pick Time Đầy Đủ Với Chuẩn 24H)
 
-### 1. Triệt Tiêu Bộ Chọn Native 12h Của Trình Duyệt:
-- **Nguyên nhân người dùng phản ánh:** Thẻ `<input type="time">` kích hoạt pop-up chọn giờ native của trình duyệt Chromium/Edge trên Windows hiển thị 3 cột: Giờ (01-12), Phút (00-59), và SA/CH (AM/PM), gây bất tiện và không đúng chuẩn 24h của ngành logistics.
+### 1. Khôi Phục & Nâng Cấp Bộ Chọn Giờ Tương Tác Chuẩn 24H (BIM 24h TimePicker):
+- **Bối cảnh & Nghiệp vụ:** Người dùng yêu cầu khôi phục tính năng chọn giờ tương tác (Pick Time) nhưng bắt buộc tuân thủ 100% hệ 24 giờ của ngành Logistics, không để native Chromium/Edge kích hoạt giao diện 12h kèm SA/CH gây khó khăn.
+- **Thành phần Popover Chọn Giờ Toàn Cục (`#bim-24h-timepicker-popover` trong `base.html`):**
+  * Tích hợp popover nổi `z-[9999]` với giao diện thiết kế hiện đại, đồng bộ Design System của BIM Logistics.
+  * Hiển thị Giờ thời gian thực lớn theo định dạng 24H (`HH:mm`), kèm badge `HỆ 24H`.
+  * **2 cột cuộn độc lập chuyên nghiệp:**
+    - Cột **GIỜ**: Hiển thị đầy đủ 24 giờ (`00`, `01`, ..., `23`).
+    - Cột **PHÚT**: Hiển thị đầy đủ từ `00` đến `55` (bước 5 phút) và các mốc chi tiết.
+  * **Thanh mốc giờ nhanh 1 chạm:** `08:00`, `10:00`, `12:00`, `13:00`, `17:00`, `20:00`, `23:59`.
+  * Nút "Giờ hiện tại" và nút "Xác nhận".
+- **Icon Đồng Hồ Tương Tác (`ph-clock`):**
+  * Bổ sung nút icon đồng hồ trực quan bên phải mọi ô giờ tại:
+    - Màn hình Tạo chuyến (`view_create_trip.html`): Giờ Cắt Máng (`#inp-cutoff-time`), Giờ Hẹn Đóng Hàng (`#inp-load-time`).
+    - Modal Tạo chuyến (`modal_create_trip.html`): Giờ Cắt Máng, Giờ Hẹn Đóng Hàng.
+    - Màn hình Chi tiết Booking (`view_booking_detail.html`): Giờ Đóng Hàng, Giờ Closing, Giờ SI.
+    - Modal Booking (`modal_booking.html`): Giờ Đóng Hàng, Giờ Closing, Giờ SI.
+  * Người dùng có thể click vào icon đồng hồ hoặc click trực tiếp vào ô input để mở popover chọn giờ. Vẫn hỗ trợ gõ phím trực tiếp mượt mà.
+- **Logic Điều Khiển Toàn Cục (`static/js/app.js` & `static/js/modules/core.js`):**
+  * Tích hợp `initBim24hTimePickerDOM()`, `openBim24hTimePicker()`, `selectBim24hHour()`, `selectBim24hMinute()`, `confirmBim24hTimePicker()`, `closeBim24hTimePicker()`.
+  * Tự động tính toán vị trí hiển thị popover thông minh bên dưới/trên ô input mục tiêu.
+  * Tự động cuộn mượt (smooth scroll) đến đúng giờ và phút đang được chọn.
+  * Tự động kích hoạt sự kiện `change` và `input` để đồng bộ thời gian thực với các hàm nghiệp vụ logistics liên quan.
+
+---
+
+
 - **Giải pháp chuyển đổi:**
   * Chuyển đổi 100% các ô giờ (`inp-cutoff-time`, `inp-load-time`, `booking-loading-time`, `booking-closing-time-val`, `booking-si-time-val`, `fullpage-booking-loading-time`, `fullpage-booking-closing-time-val`, `fullpage-booking-si-time-val`) từ `type="time"` sang `type="text"`.
   * Cấu hình các thuộc tính: `inputmode="numeric"`, `maxlength="5"`, `data-time-24h="true"`, `autocomplete="off"`, font chữ `font-mono font-bold text-center`.

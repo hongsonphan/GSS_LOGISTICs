@@ -124,6 +124,60 @@
     <!-- 4. GRACEFUL TOAST NOTIFICATION CONTAINER (Bim_ERP-Solutions Standard) -->
     <div id="toast-container"></div>
 
+    <!-- 4.1. BIM 24-HOUR TIME PICKER POPOVER (Interactive 24h Time Selection) -->
+    <div id="bim-24h-timepicker-popover" class="fixed z-[9999] hidden bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3 w-64 backdrop-blur-md select-none transition-all">
+        <!-- Popover Header -->
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                <i class="ph-bold ph-clock text-teal-600 text-sm"></i>
+                <span>Chọn Giờ (24h)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span id="bim-tp-display" class="font-mono font-black text-xs text-teal-900 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">17:00</span>
+                <button type="button" onclick="closeBim24hTimePicker()" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition-colors" title="Đóng">
+                    <i class="ph-bold ph-x text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2 Columns Picker (Hours 00-23, Minutes 00-59) -->
+        <div class="grid grid-cols-2 gap-2 text-center">
+            <!-- Hour Column -->
+            <div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Giờ (00-23)</div>
+                <div id="bim-tp-hours-list" class="h-44 overflow-y-auto space-y-1 pr-0.5" style="scrollbar-width: thin;"></div>
+            </div>
+
+            <!-- Minute Column -->
+            <div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phút (00-59)</div>
+                <div id="bim-tp-minutes-list" class="h-44 overflow-y-auto space-y-1 pr-0.5" style="scrollbar-width: thin;"></div>
+            </div>
+        </div>
+
+        <!-- Presets bar -->
+        <div class="mt-2.5 pt-2 border-t border-slate-100">
+            <div class="text-[9.5px] font-medium text-slate-400 mb-1">Mốc nhanh:</div>
+            <div class="flex flex-wrap gap-1">
+                <button type="button" onclick="setBim24hPickerTime('08', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">08:00</button>
+                <button type="button" onclick="setBim24hPickerTime('10', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">10:00</button>
+                <button type="button" onclick="setBim24hPickerTime('12', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">12:00</button>
+                <button type="button" onclick="setBim24hPickerTime('13', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">13:00</button>
+                <button type="button" onclick="setBim24hPickerTime('17', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 hover:bg-rose-100 text-rose-800 transition-colors">17:00</button>
+                <button type="button" onclick="setBim24hPickerTime('20', '00')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors">20:00</button>
+                <button type="button" onclick="setBim24hPickerTime('23', '59')" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 hover:bg-rose-100 text-rose-800 transition-colors">23:59</button>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100">
+            <button type="button" onclick="setBim24hPickerNow()" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 transition-colors">Giờ hiện tại</button>
+            <button type="button" onclick="confirmBim24hTimePicker()" class="px-3 py-1 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold shadow-xs transition-colors">
+                Xác nhận
+            </button>
+        </div>
+    </div>
+
     <!-- 5. MODULAR JAVASCRIPT & CURRENT USER CONTEXT -->
     <script>
         window.CURRENT_USER = {
