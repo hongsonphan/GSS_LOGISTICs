@@ -2,6 +2,17 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.33] - 2026-10-09 (Loại Bỏ Hoàn Toàn Dấu Mũi Tên Datalist Indicator Trong Tất Cả Ô Chọn Giờ 24H)
+
+### 1. Triệt Tiêu Mũi Tên Tam Giác Native Indicator Trong Ô Nhập Giờ:
+- **Nguyên nhân kỹ thuật:** Thuộc tính `list="list-times-24h"` trên thẻ `<input>` kích hoạt native drop-down indicator `::-webkit-calendar-picker-indicator` / `::-webkit-list-button` của trình duyệt nhân Chromium, tạo ra icon mũi tên đè chèn lên icon đồng hồ `ph-clock`.
+- **Giải pháp bảo vệ kép (Double Defense):**
+  * **HTML:** Loại bỏ hoàn toàn thuộc tính `list="list-times-24h"` khỏi tất cả các ô thời gian trên hệ thống (`view_create_trip.html`, `modal_create_trip.html`, `view_booking_detail.html`, `modal_booking.html`) và gỡ bỏ `<datalist id="list-times-24h">` trong `base.html`.
+  * **CSS:** Bổ sung rule CSS trong `static/css/main.css` ẩn triệt để mọi pseudo-element indicator và button native trên các input có attribute `data-time-24h` và `data-time-picker-24h`.
+- **Trải nghiệm giao diện:** Ô giờ hiển thị sạch sẽ, chữ đậm font-mono rõ nét, giữ nguyên icon đồng hồ `ph-clock` để mở popover chọn giờ 24h tương tác thuận tiện.
+
+---
+
 ## [2.9.32] - 2026-10-09 (Phân Hệ Kế Toán: Chuẩn Hóa Nút Thu Chi & Chuyển Đổi Xem/In Phiếu Thành Trang Riêng Có Sửa/Lưu)
 
 ### 1. Chuẩn Hóa Nhãn Nút Lập Phiếu Thu / Chi:
