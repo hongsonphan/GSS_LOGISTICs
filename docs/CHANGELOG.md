@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.40] - 2026-10-10 (Cài Đặt Quản Trị: Phân Quyền & Vai Trò Khai Thác Nguyên Bản Django Auth RBAC & Admin Site)
+
+### 1. Khai Thác Nguyên Bản Phân Quyền Django (Django Native Auth RBAC):
+- **Tận dụng `django.contrib.auth.models` (Group, Permission, User):**
+  * Tích hợp 5 Nhóm vai trò nghiệp vụ vận tải:
+    1. **Ban Giám Đốc:** Toàn quyền quản trị hệ thống (`104 permissions`).
+    2. **Điều Phối Viên:** Quyền điều vận, quản lý đội xe, tiếp nhận booking và danh mục (`54 permissions`).
+    3. **Kế Toán Cước:** Quyền sổ quỹ, chi phí chuyến, tạm ứng - hoàn ứng, biểu cước và đối soát thầu phụ (`36 permissions`).
+    4. **Kinh Doanh (Sales):** Quyền khách hàng, báo giá, tiếp nhận booking (`42 permissions`).
+    5. **Tài Xế Hiện Trường:** Quyền hạn portal tài xế hiện trường.
+  * Đăng ký (Register) toàn bộ 26 Models của tất cả các ứng dụng Logistics (`apps.dispatch`, `apps.billing`, `apps.customers`, `apps.fleet`, `apps.personnel`, `apps.master_data`, `apps.customs`) vào Django Admin (`admin.site.register`) kèm `list_display`, `list_filter`, `search_fields` và Inlines chuẩn mực.
+  * Tự động sinh ra đầy đủ 4 quyền `add_`, `change_`, `delete_`, `view_` cho từng phân hệ trong bảng `auth_permission`.
+
+### 2. Xây Dựng Sub-Tab "Phân Quyền & Vai Trò" Trong Cài Đặt Quản Trị (`view-cai-dat`):
+- **Giao diện quản trị phân quyền trực quan:**
+  * Bổ sung sub-tab **Phân Quyền & Vai Trò** (`roles_permissions`) vào thanh điều hướng Cài đặt bên cạnh *Khai Báo Hệ Thống*, *Biểu Phí Lương Chuyến*...
+  * **Thẻ thống kê KPI:** Tổng tài khoản (Users), Tài khoản đang hoạt động, Tổng nhóm vai trò (Groups), Nhân sự có quyền quản trị (`is_staff`).
+  * **Ma trận Nhóm vai trò (Role Cards):** Hiển thị trực quan từng nhóm, số lượng thành viên, tổng số quyền hạn (permissions) và danh sách mã quyền đại diện. Có nút bấm liên kết mở thẳng trang cấu hình chi tiết tại Django Admin (`/admin/auth/group/<id>/change/`).
+  * **Bảng phân bổ tài khoản người dùng:** Liệt kê toàn bộ người dùng, họ tên nhân sự, số điện thoại, trạng thái hoạt động, cờ `is_staff`, thời gian đăng nhập và hộp chọn Dropdown cho phép Ban Giám Đốc thay đổi nhóm vai trò của tài khoản ngay lập tức.
+  * **Nút liên kết nhanh Django Admin:** Nút `[Cấu Hình Chi Tiết Nhóm (Admin)]` (`/admin/auth/group/`) và `[Quản Lý User (Admin)]` (`/admin/auth/user/`) hỗ trợ quản trị viên thao tác cấu hình bảo mật chuyên sâu.
+
+### 3. API Quản Lý Phân Quyền (`/api/master-data/roles-permissions/` & `api/auth/me/`):
+- **API `RolesPermissionsAPIView`:**
+  * `GET`: Truy xuất danh sách Groups kèm quyền hạn, Users kèm vai trò và thống kê tổng hợp.
+  * `POST`: Cho phép Ban Giám Đốc/Admin gán nhanh Group cho người dùng với cơ chế atomic transaction bảo toàn dữ liệu.
+- **Bổ sung `groups` và `permissions` vào `CurrentUserAPIView` (`/api/auth/me/`)**: Giúp giao diện SPA kiểm tra quyền người dùng để ẩn/hiện chức năng linh hoạt.
+
+---
+
 ## [2.9.39] - 2026-10-09 (Toàn Hệ Thống: Chuẩn Hóa Cột Thao Tác [Xem & In] Và Bộ 4 Nút Chuẩn [Xóa - In - Sửa - Lưu] Màn Hình Con)
 
 ### 1. Chuẩn Hóa Toàn Diện Cột "Thao Tác" Bên Ngoài Các Bảng Danh Sách:
