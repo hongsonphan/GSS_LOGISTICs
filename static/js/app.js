@@ -12990,10 +12990,21 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
         const detailView = document.getElementById('view-cash-voucher-detail');
         if (detailView) detailView.classList.remove('hidden-view');
 
-        // Render nội dung phiếu A4
+        // CHẾ ĐỘ XEM CHI TIẾT:
+        // 1. Hiển thị thanh Toolbar trên cùng với các nút Sửa, Lưu, Xóa, In Phiếu
+        const topToolbar = document.getElementById('fullpage-voucher-top-toolbar');
+        if (topToolbar) topToolbar.classList.remove('hidden');
+        const viewActions = document.getElementById('fullpage-voucher-view-actions');
+        if (viewActions) viewActions.classList.remove('hidden');
+
+        // 2. Hiển thị tờ phôi in A4
+        const printContainer = document.getElementById('fullpage-voucher-printable-container');
+        if (printContainer) printContainer.classList.remove('hidden');
+
+        // 3. Render nội dung phiếu A4
         renderFullpageVoucherContent(tx);
 
-        // Ẩn khung edit, reset nút Sửa, Xóa & Lưu về trạng thái xem ban đầu
+        // 4. Ẩn khung edit form ban đầu
         const editPanel = document.getElementById('fullpage-voucher-edit-panel');
         if (editPanel) editPanel.classList.add('hidden');
         const editBtn = document.getElementById('btn-fullpage-edit-voucher');
@@ -13001,6 +13012,24 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
         const deleteBtn = document.getElementById('btn-fullpage-delete-voucher');
         if (deleteBtn) deleteBtn.classList.remove('hidden');
         setFullpageVoucherSaveButtonState(false);
+
+        // 5. Cập nhật header và badge của panel form nếu bấm Sửa
+        const formIcon = document.getElementById('fullpage-voucher-form-icon');
+        if (formIcon) formIcon.className = 'ph-bold ph-pencil-circle';
+        const formTitle = document.getElementById('fullpage-voucher-form-title');
+        if (formTitle) formTitle.innerText = 'Hiệu Chỉnh Thông Tin Phiếu Thu / Chi';
+        const formSubtitle = document.getElementById('fullpage-voucher-form-subtitle');
+        if (formSubtitle) formSubtitle.innerText = 'Thay đổi thông tin chứng từ và bấm Lưu để cập nhật';
+        const formBadge = document.getElementById('fullpage-voucher-form-badge');
+        if (formBadge) {
+            formBadge.innerText = 'Đang ở chế độ Sửa';
+            formBadge.className = 'text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200';
+            formBadge.classList.remove('hidden');
+        }
+        const cancelEditBtn = document.getElementById('btn-form-cancel-edit');
+        if (cancelEditBtn) cancelEditBtn.classList.remove('hidden');
+        const submitBtnText = document.getElementById('btn-form-submit-voucher-text');
+        if (submitBtnText) submitBtnText.innerText = 'Cập Nhật Phiếu';
 
         // Điền dữ liệu vào form edit sẵn sàng nếu người dùng bấm Sửa
         document.getElementById('edit-voucher-id').value = tx.id || '';
@@ -13128,9 +13157,24 @@ function enableFullpageVoucherEdit() {
     showToast('info', 'Đã chuyển sang chế độ Sửa Phiếu. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
 }
 
+function cancelFullpageVoucherEdit() {
+    const id = document.getElementById('edit-voucher-id')?.value;
+    if (id) {
+        // Nếu đang sửa phiếu đã có: đóng panel form sửa, quay về preview A4
+        const editPanel = document.getElementById('fullpage-voucher-edit-panel');
+        if (editPanel) editPanel.classList.add('hidden');
+        const editBtn = document.getElementById('btn-fullpage-edit-voucher');
+        if (editBtn) editBtn.classList.remove('hidden');
+        setFullpageVoucherSaveButtonState(false);
+    } else {
+        // Đang tạo mới phiếu: hủy và quay về Sổ Quỹ
+        backToAccountingCashbook();
+    }
+}
+
 async function saveFullpageVoucher() {
     const id = document.getElementById('edit-voucher-id')?.value;
-    if (!id) return;
+    const isNew = !id;
 
     const type = document.getElementById('edit-voucher-type')?.value;
     const method = document.getElementById('edit-voucher-method')?.value;
@@ -13148,8 +13192,6 @@ async function saveFullpageVoucher() {
     }
 
     try {
-
-        const isNew = !id;
         const url = isNew ? '/api/accounting/cashbook/' : `/api/accounting/cashbook/${id}/`;
         const methodHttp = isNew ? 'POST' : 'PUT';
 
@@ -13176,21 +13218,15 @@ async function saveFullpageVoucher() {
             const returnedId = data.transaction_id || (data.transaction ? data.transaction.id : id);
             showToast('success', data.message || (isNew ? 'Lập phiếu mới thành công!' : 'Cập nhật phiếu thành công!'), 'Thành Công');
             
-            // Ẩn panel sửa
-            const editPanel = document.getElementById('fullpage-voucher-edit-panel');
-            if (editPanel) editPanel.classList.add('hidden');
-            const editBtn = document.getElementById('btn-fullpage-edit-voucher');
-            if (editBtn) editBtn.classList.remove('hidden');
-            const deleteBtn = document.getElementById('btn-fullpage-delete-voucher');
-            if (deleteBtn) deleteBtn.classList.remove('hidden');
-            setFullpageVoucherSaveButtonState(false);
-
-            // Nạp lại dữ liệu chi tiết phiếu vừa lập / sửa
-            if (returnedId) {
-                viewCashVoucherDetail(returnedId, true);
-            }
             // Đồng bộ dữ liệu bảng Sổ Quỹ
             loadCashBookData();
+
+            // Chuyển sang màn hình xem chi tiết phiếu vừa lập / sửa kèm phôi in A4
+            if (returnedId) {
+                viewCashVoucherDetail(returnedId, true);
+            } else {
+                backToAccountingCashbook();
+            }
         } else {
             showToast('danger', data.error || 'Có lỗi xảy ra khi lưu', 'Lỗi Lưu Phiếu');
         }
@@ -13240,37 +13276,13 @@ function confirmDeleteCashVoucher() {
 }
 
 /**
- * Mở trang toàn màn hình để lập Phiếu Thu / Phiếu Chi mới (Không dùng Modal)
+ * Mở trang Form riêng biệt để lập Phiếu Thu / Phiếu Chi mới (Không cần bản preview in kèm theo)
  */
 function openCreateCashVoucherPage(defaultType = 'INFLOW') {
     const isInflow = defaultType === 'INFLOW';
     const todayIso = new Date().toISOString().slice(0, 10);
     const parts = todayIso.split('-');
     const nowDay = parts[2], nowMonth = parts[1], nowYear = parts[0];
-
-    // Khởi tạo đối tượng giả lập để live-preview lên tờ phiếu in A4
-    currentActiveFullpageVoucher = {
-        id: null,
-        code: isInflow ? 'PT.TẠO-MỚI' : 'PC.TẠO-MỚI',
-        transaction_type: defaultType,
-        payment_method: 'BANK',
-        category: isInflow ? 'FREIGHT_REVENUE' : 'DISPATCHER_FUND_ADVANCE',
-        category_label: isInflow ? 'Thu cước vận tải từ khách hàng' : 'Chi tạm ứng Quỹ Điều vận',
-        amount: 0,
-        transaction_date: `${nowDay}/${nowMonth}/${nowYear}`,
-        transaction_date_iso: todayIso,
-        day: nowDay,
-        month: nowMonth,
-        year: nowYear,
-        partner_type: '',
-        partner_type_label: '',
-        partner_name: '',
-        ref_code: '',
-        bank_name: '',
-        bank_account: '',
-        created_by: window.BIM_CURRENT_USER ? (window.BIM_CURRENT_USER.full_name || window.BIM_CURRENT_USER.username) : 'Kế toán viên',
-        notes: ''
-    };
 
     // Cập nhật URL chuẩn cho chế độ tạo mới: /accounting/vouchers/new?type=...
     if (window.history && window.history.pushState) {
@@ -13291,7 +13303,49 @@ function openCreateCashVoucherPage(defaultType = 'INFLOW') {
     const detailView = document.getElementById('view-cash-voucher-detail');
     if (detailView) detailView.classList.remove('hidden-view');
 
-    // Nạp dữ liệu vào form edit
+    // 1. ẨN HOÀN TOÀN TỜ PHÔI IN A4 KHI LẬP PHIẾU MỚI (Form thuần túy theo yêu cầu)
+    const printContainer = document.getElementById('fullpage-voucher-printable-container');
+    if (printContainer) printContainer.classList.add('hidden');
+
+    // 2. ẨN CÁC NÚT XEM/IN CỦA TOOLBAR TRÊN CÙNG
+    const viewActions = document.getElementById('fullpage-voucher-view-actions');
+    if (viewActions) viewActions.classList.add('hidden');
+
+    // Cập nhật tiêu đề Top Toolbar
+    const topTitleEl = document.getElementById('fullpage-voucher-top-title');
+    if (topTitleEl) topTitleEl.innerText = isInflow ? 'Lập Phiếu Thu Mới (Tiền Vào Quỹ)' : 'Lập Phiếu Chi Mới (Tiền Ra Khỏi Quỹ)';
+    const badgeCodeEl = document.getElementById('fullpage-voucher-badge-code');
+    if (badgeCodeEl) {
+        badgeCodeEl.innerText = isInflow ? 'PHIẾU THU MỚI' : 'PHIẾU CHI MỚI';
+        badgeCodeEl.className = isInflow 
+            ? 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono'
+            : 'px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-50 text-rose-800 border border-rose-200 font-mono';
+    }
+
+    // 3. HIỂN THỊ FORM NHẬP LIỆU CHUẨN
+    const editPanel = document.getElementById('fullpage-voucher-edit-panel');
+    if (editPanel) editPanel.classList.remove('hidden');
+
+    // Cập nhật Header & Subtitle của Form
+    const formIcon = document.getElementById('fullpage-voucher-form-icon');
+    if (formIcon) formIcon.className = isInflow ? 'ph-bold ph-arrow-down-left text-emerald-700' : 'ph-bold ph-arrow-up-right text-rose-700';
+    const formTitle = document.getElementById('fullpage-voucher-form-title');
+    if (formTitle) formTitle.innerText = isInflow ? 'Mẫu Lập Phiếu Thu Tiền' : 'Mẫu Lập Phiếu Chi Tiền';
+    const formSubtitle = document.getElementById('fullpage-voucher-form-subtitle');
+    if (formSubtitle) formSubtitle.innerText = 'Nhập thông tin giao dịch quỹ bên dưới, các nút thao tác nằm ở chân form';
+    const formBadge = document.getElementById('fullpage-voucher-form-badge');
+    if (formBadge) {
+        formBadge.innerText = 'Tạo Phiếu Mới';
+        formBadge.className = isInflow 
+            ? 'text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200'
+            : 'text-xs font-bold text-rose-800 bg-rose-50 px-3 py-1 rounded-full border border-rose-200';
+    }
+    const cancelEditBtn = document.getElementById('btn-form-cancel-edit');
+    if (cancelEditBtn) cancelEditBtn.classList.add('hidden');
+    const submitBtnText = document.getElementById('btn-form-submit-voucher-text');
+    if (submitBtnText) submitBtnText.innerText = isInflow ? 'Lưu Phiếu Thu' : 'Lưu Phiếu Chi';
+
+    // Nạp dữ liệu mặc định vào form
     document.getElementById('edit-voucher-id').value = '';
     document.getElementById('edit-voucher-code').value = '';
     document.getElementById('edit-voucher-type').value = defaultType;
@@ -13304,41 +13358,99 @@ function openCreateCashVoucherPage(defaultType = 'INFLOW') {
     document.getElementById('edit-voucher-partner-name').value = '';
     document.getElementById('edit-voucher-notes').value = '';
 
-    // Render phiếu live
-    renderFullpageVoucherContent(currentActiveFullpageVoucher);
-
-    // Mở luôn Panel soạn thảo (chế độ Tạo mới)
-    const editPanel = document.getElementById('fullpage-voucher-edit-panel');
-    if (editPanel) editPanel.classList.remove('hidden');
-
-    // Ẩn nút Sửa & Xóa khi đang Tạo Mới (vì chưa có record để sửa hay xóa)
-    const editBtn = document.getElementById('btn-fullpage-edit-voucher');
-    if (editBtn) editBtn.classList.add('hidden');
-    const deleteBtn = document.getElementById('btn-fullpage-delete-voucher');
-    if (deleteBtn) deleteBtn.classList.add('hidden');
-
-    // Sáng nút Lưu sẵn sàng
-    setFullpageVoucherSaveButtonState(true);
-    setFullpageVoucherPrintMode('dual');
     initAllNumberInputs();
-
-    // Cuộn mượt lên đầu trang
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /**
- * Nút In riêng ngoài màn hình chính Sổ Quỹ: Nạp và mở lệnh in trực tiếp phiếu A4
+ * Nút In riêng ngoài màn hình chính Sổ Quỹ: Nạp và mở hộp thoại in native trực tiếp khổ A4 mà KHÔNG chuyển trang
  */
 async function openDirectPrintCashVoucher(voucherIdentifier) {
     if (!voucherIdentifier) return;
     try {
-        await viewCashVoucherDetail(voucherIdentifier, false);
-        // Sau khi đã render ra khổ A4, kích hoạt lệnh in ngay
-        setTimeout(() => {
-            printFullpageCashVoucher();
-        }, 350);
+        const res = await fetchWithAuth(`/api/accounting/cashbook/${voucherIdentifier}/`);
+        if (!res.ok) throw new Error('Không thể tải chứng từ sổ quỹ để in');
+        const data = await res.json();
+        const tx = data.transaction;
+        if (!tx) throw new Error('Không có dữ liệu chứng từ');
+
+        // Nạp dữ liệu vào modal in ẩn #cash-voucher-printable-area
+        const isInflow = tx.transaction_type === 'INFLOW';
+        const titleText = isInflow ? 'PHIẾU THU' : 'PHIẾU CHI';
+        const topTitleText = isInflow ? 'Phiếu Thu Sổ Quỹ (Mẫu 01-TT BTC)' : 'Phiếu Chi Sổ Quỹ (Mẫu 02-TT BTC)';
+        const templateNoText = isInflow ? 'Mẫu số 01 - TT' : 'Mẫu số 02 - TT';
+        const debitAcc = isInflow ? (tx.payment_method === 'BANK' ? '1121' : '1111') : '1411 / 331 / 642';
+        const creditAcc = isInflow ? '1411 / 131 / 711' : (tx.payment_method === 'BANK' ? '1121' : '1111');
+        const partnerLabel = isInflow ? 'Họ tên người nộp tiền:' : 'Họ tên người nhận tiền:';
+        const signPartnerRole = isInflow ? 'Người Nộp Tiền' : 'Người Nhận Tiền';
+        const reasonLabel = isInflow ? 'Lý do nộp:' : 'Lý do chi:';
+
+        let day = tx.day || '', month = tx.month || '', year = tx.year || '';
+        if (!day && tx.transaction_date) {
+            const parts = tx.transaction_date.split('/');
+            if (parts.length === 3) {
+                day = parts[0]; month = parts[1]; year = parts[2];
+            }
+        }
+        if (!day) {
+            const now = new Date();
+            day = String(now.getDate()).padStart(2, '0');
+            month = String(now.getMonth() + 1).padStart(2, '0');
+            year = String(now.getFullYear());
+        }
+
+        const dateFormattedText = `Ngày ${day} tháng ${month} năm ${year}`;
+        const signDateFormattedText = `Ngày ${day}/${month}/${year}`;
+        const amountWords = numberToWordsVN(tx.amount);
+        const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
+        const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
+        const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe vận tải Triền Võ Logistics';
+        const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
+        const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
+
+        const setAreaClassText = (cls, val) => {
+            document.querySelectorAll(`#cash-voucher-printable-area .${cls}`).forEach(el => {
+                el.innerText = val;
+            });
+        };
+
+        const modalTitle = document.getElementById('voucher-modal-top-title');
+        if (modalTitle) modalTitle.innerText = topTitleText;
+        const footerCode = document.getElementById('print-v-footer-code');
+        if (footerCode) footerCode.innerText = tx.code || '-';
+        const copy2Badge = document.getElementById('voucher-copy-2-badge');
+        if (copy2Badge) copy2Badge.innerText = isInflow ? 'Liên 2: Giao cho người nộp tiền' : 'Liên 2: Giao cho người nhận tiền';
+
+        setAreaClassText('v-template-no', templateNoText);
+        setAreaClassText('v-code', tx.code || '-');
+        setAreaClassText('v-debit-acc', debitAcc);
+        setAreaClassText('v-credit-acc', creditAcc);
+        setAreaClassText('v-title', titleText);
+        setAreaClassText('v-date', dateFormattedText);
+        setAreaClassText('v-sign-date', signDateFormattedText);
+        setAreaClassText('v-partner-label', partnerLabel);
+        setAreaClassText('v-sign-partner-role', signPartnerRole);
+        setAreaClassText('v-partner-name', tx.partner_name || 'Tài xế / Đối tác');
+        setAreaClassText('v-department', departmentFormatted);
+        setAreaClassText('v-reason-label', reasonLabel);
+        setAreaClassText('v-reason', reasonFormatted);
+        setAreaClassText('v-amount', amountFormatted);
+        setAreaClassText('v-method', methodFormatted);
+        setAreaClassText('v-amount-words', amountWords);
+        setAreaClassText('v-received-words', amountWords);
+        setAreaClassText('v-creator-name', tx.created_by || 'Kế toán viên');
+        setAreaClassText('v-attachments', attachmentsFormatted);
+
+        syncCompanyProfileToPrintForms();
+        setVoucherPrintMode('dual');
+
+        // Bật class in ấn trực tiếp và gọi window.print() ngay tại trang Sổ Quỹ mà KHÔNG đổi view
+        document.body.classList.add('is-printing-voucher');
+        document.body.classList.remove('is-printing-quotation', 'is-printing-report');
+        window.print();
     } catch (e) {
         console.error('Lỗi in nhanh phiếu:', e);
+        showToast('danger', 'Không thể mở lệnh in nhanh chứng từ', 'Lỗi In Phiếu');
     }
 }
 
@@ -13361,6 +13473,7 @@ window.openCreateCashVoucherPage = openCreateCashVoucherPage;
 window.confirmDeleteCashVoucher = confirmDeleteCashVoucher;
 window.backToAccountingCashbook = backToAccountingCashbook;
 window.enableFullpageVoucherEdit = enableFullpageVoucherEdit;
+window.cancelFullpageVoucherEdit = cancelFullpageVoucherEdit;
 window.saveFullpageVoucher = saveFullpageVoucher;
 window.printFullpageCashVoucher = printFullpageCashVoucher;
 window.setFullpageVoucherPrintMode = setFullpageVoucherPrintMode;

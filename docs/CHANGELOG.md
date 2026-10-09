@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.35] - 2026-10-09 (Kế Toán Sổ Quỹ: In Nhanh Tại Chỗ Không Chuyển Trang & Tối Ưu Form Nhập Liệu Thuần Túy)
+
+### 1. In Phiếu Trực Tiếp Khổ A4 Ngay Tại Bảng Sổ Quỹ (Không Chuyển Màn Hình):
+- **Cơ chế In Native Tại Chỗ (`openDirectPrintCashVoucher`):**
+  * Khi bấm nút **In** ở cột Thao tác bảng Sổ Quỹ, hệ thống lập tức tải dữ liệu chứng từ và nạp ngầm vào khổ A4 `#cash-voucher-printable-area`.
+  * Kích hoạt lớp in chuyên dụng `is-printing-voucher` và mở thẳng hộp thoại in native của trình duyệt (`window.print()`).
+  * Người dùng giữ nguyên vị trí làm việc tại bảng Sổ Quỹ, hoàn toàn không bị chuyển trang hay mở view chi tiết.
+
+### 2. Tách Biệt Hoàn Toàn Form Lập Phiếu Nhập Liệu Thuần Túy & Bản Xem In:
+- **Chế độ Lập Mới (`openCreateCashVoucherPage`):**
+  * Ẩn hoàn toàn tờ phôi giấy in A4 `#fullpage-voucher-printable-container`, tránh giao diện rối rắm khi đang nhập liệu.
+  * Ẩn thanh công cụ in ấn ở trên cùng; hiển thị Card Form nhập liệu chuyên nghiệp, rộng rãi, chuẩn UX của hệ thống ERP.
+  * Cụm nút hành động được bố trí ngay dưới chân form (**Bottom Action Bar**): Nút **Quay lại Sổ Quỹ** và Nút **Lưu Phiếu** (Màu Teal nổi bật), đúng quy chuẩn thao tác điền form từ trên xuống dưới.
+- **Chế độ Xem Chi Tiết (`viewCashVoucherDetail`):**
+  * Hiển thị đầy đủ thanh Topbar thao tác (Quay lại, Chế độ 2 Liên/1 Liên, Sửa, Lưu, Xóa, In Phiếu).
+  * Hiển thị tờ phôi in A4 chuẩn Bộ Tài Chính (TT 200/2014/TT-BTC & TT 133/2016/TT-BTC).
+  * Khi bấm **Sửa**, panel hiệu chỉnh mở ra kèm nút **Lưu** sáng lên; dưới form có nút **Hủy Bỏ Sửa** và **Cập Nhật Phiếu**.
+
+---
+
 ## [2.9.34] - 2026-10-09 (Kế Toán Sổ Quỹ: Trang Nhập Lập Phiếu Thu/Chi Toàn Màn Hình, Tách Biệt Nút Xem - In & Bộ 3 Nút Sửa - Lưu - Xóa Chuẩn ERP)
 
 ### 1. Lập Phiếu Thu / Phiếu Chi Trên Trang Riêng (Không Dùng Modal):
