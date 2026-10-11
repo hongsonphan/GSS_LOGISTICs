@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.44] - 2026-10-11 (Thống Nhất Chuẩn Hóa 100% Nhãn Nút Lưu Thành "Lưu" Toàn Hệ Thống)
+
+### 1. Chuẩn Hóa Nhãn Nút "Lưu" (Universal Save Button Label):
+- **Loại bỏ triệt để các biến thể chữ không đồng bộ:**
+  * Thay thế toàn bộ các nhãn: `"Lưu Thay Đổi"`, `"Lưu thay đổi"`, `"Lưu Phiếu"`, `"Lưu Hồ Sơ"`, `"Lưu Hồ Sơ Nhân Sự"`, `"Lưu Tờ Khai Hải Quan"`, `"Lưu Bản Ghi"`, `"Lưu Thỏa Thuận Cước"`, `"Lưu Chi Phí"` thành nhãn duy nhất: **`"Lưu"`**.
+  * Giữ nguyên tính nhất quán tuyệt đối giữa trạng thái Tạo Mới và Chế độ Sửa/Xem Chi Tiết trên thanh công cụ chuẩn 4 nút (`Sửa | Lưu | In | Xóa`).
+- **Cập nhật đồng bộ trong Frontend JavaScript & HTML Templates:**
+  * `static/js/app.js`: Chuẩn hóa gán nhãn `Lưu` cho module Điều phối/Sửa chuyến xe, Hồ sơ Nhân sự, Sổ Quỹ Thu/Chi, Tờ khai Hải quan, Thỏa thuận Xe Bạn Subcontractor.
+  * `static/js/modules/dispatch.js`: Đồng bộ nhãn nút Lưu trong form cập nhật chuyến xe.
+  * `templates/components/modal_customs_declaration.html`: Chuyển sang `Lưu`.
+  * `templates/components/modal_edit_trip.html`: Chuyển sang `Lưu`.
+  * `templates/components/modal_employee.html`: Chuyển sang `Lưu`.
+  * `templates/components/modal_master_data.html`: Chuyển sang `Lưu`.
+  * `templates/components/modal_subcontractor_settle.html`: Chuyển sang `Lưu`.
+  * `templates/views/view_cash_voucher_detail.html`: Chuyển sang `Lưu`.
+  * `templates/views/view_trip_detail.html`: Chuyển sang `Lưu`.
+
 ## [2.9.43] - 2026-10-11 (Chuẩn Hóa Hoàn Toàn Lề Bản In Khổ A4 [Top, Bottom, Left, Right] & Bổ Sung Khung .print-sheet Chuẩn Nghị Định 30/2020/NĐ-CP)
 
 ### 1. Chuẩn Hóa Lề Trang In (Print Margins Standard):

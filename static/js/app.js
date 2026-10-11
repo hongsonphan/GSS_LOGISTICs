@@ -3686,7 +3686,7 @@ async function submitEditTripForm() {
     } finally {
         if (btnSave) {
             btnSave.disabled = false;
-            btnSave.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i> Lưu Thay Đổi';
+            btnSave.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i> Lưu';
         }
     }
 }
@@ -5530,7 +5530,7 @@ function openCreateEmployeePage(updateHistory = true) {
     const editBtn = document.getElementById('btn-employee-edit-bottom');
     if (editBtn) editBtn.classList.add('hidden');
     const submitBtnText = document.getElementById('emp-submit-btn-text');
-    if (submitBtnText) submitBtnText.innerText = 'Lưu Hồ Sơ Nhân Sự';
+    if (submitBtnText) submitBtnText.innerText = 'Lưu';
 
     setTopbarFullpageMode({
         backFn: backToPersonnel,
@@ -5580,7 +5580,7 @@ function openEditEmployeePage(id, updateHistory = true) {
     // Ở chế độ Xem bản ghi: Khóa form, hiện Xóa, In, Sửa; làm mờ Lưu
     setEmployeeFormReadOnly(true);
     const submitBtnText = document.getElementById('emp-submit-btn-text');
-    if (submitBtnText) submitBtnText.innerText = 'Lưu Thay Đổi';
+    if (submitBtnText) submitBtnText.innerText = 'Lưu';
 
     setTopbarFullpageMode({
         backFn: backToPersonnel,
@@ -13118,7 +13118,7 @@ async function viewCashVoucherDetail(voucherIdentifier, updateHistory = true) {
         const btnEdit = document.getElementById('btn-form-edit-voucher');
         if (btnEdit) btnEdit.classList.remove('hidden');
         const submitBtnText = document.getElementById('btn-form-submit-voucher-text');
-        if (submitBtnText) submitBtnText.innerText = 'Lưu Thay Đổi';
+        if (submitBtnText) submitBtnText.innerText = 'Lưu';
 
         // 5. Điền dữ liệu vào các ô input form
         document.getElementById('edit-voucher-id').value = tx.id || '';
@@ -13293,7 +13293,7 @@ function enableFullpageVoucherEdit() {
     setFullpageVoucherReadOnly(false);
     const amountInput = document.getElementById('edit-voucher-amount');
     if (amountInput) amountInput.focus();
-    showToast('info', 'Đã chuyển sang chế độ Sửa Phiếu. Bạn có thể thay đổi thông tin và bấm "Lưu Thay Đổi".', 'Chế Độ Sửa');
+    showToast('info', 'Đã chuyển sang chế độ Sửa Phiếu. Bạn có thể thay đổi thông tin và bấm "Lưu".', 'Chế Độ Sửa');
 }
 
 function cancelFullpageVoucherEdit() {
@@ -13493,7 +13493,7 @@ function openCreateCashVoucherPage(defaultType = 'INFLOW') {
     const btnPrint = document.getElementById('btn-form-print-voucher');
     if (btnPrint) btnPrint.classList.add('hidden');
     const submitBtnText = document.getElementById('btn-form-submit-voucher-text');
-    if (submitBtnText) submitBtnText.innerText = isInflow ? 'Lưu Phiếu Thu' : 'Lưu Phiếu Chi';
+    if (submitBtnText) submitBtnText.innerText = 'Lưu';
 
     // Nạp dữ liệu mặc định vào form
     document.getElementById('edit-voucher-id').value = '';
@@ -13914,7 +13914,7 @@ function openSubcontractorModal(tripId, mode = 'update_cost') {
     } else {
         settleSection.classList.add('hidden');
         titleEl.innerText = 'Thỏa Thuận Cước & Tạm Ứng Xe Bạn';
-        labelEl.innerText = 'Lưu Thỏa Thuận Cước';
+        labelEl.innerText = 'Lưu';
     }
 
     calculateSubcontractorMargin();
@@ -20298,7 +20298,7 @@ async function openCustomsPage(id = null, updateHistory = true) {
             // Khi xem tờ khai đã có: Bật chế độ readonly, sáng Xóa, In, Sửa; mờ Lưu
             setCustomsFormReadOnly(true);
             const submitBtnText = document.getElementById('cust-submit-btn-text');
-            if (submitBtnText) submitBtnText.innerText = 'Lưu Thay Đổi';
+            if (submitBtnText) submitBtnText.innerText = 'Lưu';
         } catch (err) {
             showToast('Lỗi: ' + err.message, 'error');
             backToCustoms();
@@ -20315,7 +20315,7 @@ async function openCustomsPage(id = null, updateHistory = true) {
         const editBtn = document.getElementById('btn-customs-edit-bottom');
         if (editBtn) editBtn.classList.add('hidden');
         const submitBtnText = document.getElementById('cust-submit-btn-text');
-        if (submitBtnText) submitBtnText.innerText = 'Lưu Tờ Khai Hải Quan';
+        if (submitBtnText) submitBtnText.innerText = 'Lưu';
 
         setTopbarFullpageMode({
             backFn: backToCustoms,

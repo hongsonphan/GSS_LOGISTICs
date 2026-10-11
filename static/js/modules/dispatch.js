@@ -2423,7 +2423,7 @@ async function submitEditTripForm() {
     } finally {
         if (btnSave) {
             btnSave.disabled = false;
-            btnSave.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i> Lưu Thay Đổi';
+            btnSave.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i> Lưu';
         }
     }
 }
