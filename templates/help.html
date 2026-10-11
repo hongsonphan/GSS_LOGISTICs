@@ -969,29 +969,52 @@
                 </div>
 
                 <!-- 1. DASHBOARD TỔNG QUAN -->
-                <section id="sec-input-dashboard" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
+                <section id="sec-input-dashboard" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">1. Hướng Dẫn Thao Tác Trên Dashboard Tổng Quan</h3>
-                    <div class="text-sm text-slate-700 space-y-3">
-                        <div>
-                            <p class="font-bold text-slate-900">1.1. Lọc dữ liệu theo kỳ:</p>
-                            <p>Tại góc trên cùng bên phải màn hình Dashboard, nhấp vào thanh chọn thời gian. Chọn một trong các mốc:</p>
-                            <ul class="list-disc pl-6 space-y-1">
-                                <li><strong>Hôm nay:</strong> Giám sát các chuyến xe đang chạy và doanh thu phát sinh trong ngày.</li>
-                                <li><strong>Tháng này / Quý này:</strong> Đánh giá tiến độ hoàn thành chỉ tiêu doanh thu và lợi nhuận gộp.</li>
-                                <li><strong>Tùy chọn ngày:</strong> Chọn Từ ngày ... Đến ngày ... để kiểm tra số liệu kiểm toán cụ thể.</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <p class="font-bold text-slate-900">1.2. Xem dòng tiền & quỹ khả dụng:</p>
-                            <p>Khu vực bên phải Dashboard hiển thị 2 thẻ số dư:</p>
-                            <ul class="list-disc pl-6 space-y-1">
-                                <li><strong>Tiền mặt tại két:</strong> Thể hiện số tiền mặt thực tế thủ quỹ đang nắm giữ để tiếp quỹ cho Điều phối viên.</li>
-                                <li><strong>Tài khoản ngân hàng:</strong> Thể hiện số dư các tài khoản thanh toán nhận tiền cước chuyển khoản từ khách hàng.</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <p class="font-bold text-slate-900">1.3. Mở nhanh chi tiết chuyến từ bảng P&L:</p>
-                            <p>Tại bảng P&L ở nửa dưới Dashboard, nhấp chuột trực tiếp vào bất kỳ dòng chuyến xe nào (hoặc bấm vào Mã Chuyến màu xanh, ví dụ: <code>TVL-1011-001</code>). Hệ thống sẽ chuyển ngay sang màn hình <strong>Chi Tiết Chuyến Xe</strong> để kiểm tra chứng từ POD và danh sách các khoản chi phí.</p>
+                    
+                    <div class="text-sm text-slate-700 space-y-4">
+                        <p>Dashboard là trung tâm chỉ huy số của hệ thống, tự động cập nhật thời gian thực về tiến độ vận chuyển, doanh thu, lợi nhuận gộp và dòng tiền tại quỹ.</p>
+                        
+                        <div class="space-y-3">
+                            <h4 class="text-base font-bold text-slate-900 font-heading">1.1. Chi tiết các bộ lọc & ô chỉ số KPI:</h4>
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô / Bộ Lọc</th>
+                                            <th class="p-2.5 w-36">Kiểu Dữ Liệu</th>
+                                            <th class="p-2.5">Ý Nghĩa Nghiệp Vụ & Hướng Dẫn Thao Tác</th>
+                                            <th class="p-2.5 w-60">Xử Lý Khi Thiếu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Bộ Lọc Kỳ Thời Gian</td>
+                                            <td class="p-2.5 text-slate-600">Nút chọn nhanh & Lịch</td>
+                                            <td class="p-2.5">Chọn mốc thời gian phân tích: <em>Hôm nay</em> (giám sát ca chạy), <em>Tháng này</em>, <em>Quý này</em>, hoặc chọn <em>Từ ngày ... Đến ngày ...</em> để kiểm tra số liệu kiểm toán.</td>
+                                            <td class="p-2.5 text-slate-500">Mặc định hiển thị dữ liệu tháng hiện tại nếu không chọn.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Thẻ Dòng Tiền Tại Két</td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5">Hiển thị số tiền mặt khả dụng hiện có tại két công ty. Phục vụ cấp tiếp quỹ cho Điều phối viên xuất tạm ứng cho tài xế.</td>
+                                            <td class="p-2.5 text-slate-600">Nếu quỹ thiếu tiền: Vào menu <strong>Tài chính & Kế toán</strong> ➔ Tab <strong>Sổ Quỹ Thu Chi</strong> ➔ Bấm nút <strong>+ Lập Phiếu Thu</strong> để nộp bổ sung tiền vào két.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Thẻ Tài Khoản Ngân Hàng</td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5">Tổng số dư các tài khoản thanh toán nhận tiền cước từ khách hàng và thanh toán chi phí xe thầu phụ.</td>
+                                            <td class="p-2.5 text-slate-600">Bấm trực tiếp vào thẻ số dư để chuyển sang xem sao kê Sổ Quỹ Ngân Hàng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Bảng Phân Tích P&L Chuyến</td>
+                                            <td class="p-2.5 text-slate-600">Bảng ma trận dữ liệu</td>
+                                            <td class="p-2.5">Thống kê chi tiết từng mã chuyến: Doanh thu cước, Chi phí trực tiếp (Dầu, Cầu đường, Nâng hạ), Lợi nhuận gộp và Tỷ suất LN.</td>
+                                            <td class="p-2.5 text-teal-800 font-medium">👉 Nhấp chuột vào bất kỳ dòng nào hoặc bấm Mã Chuyến (màu xanh) để mở ngay màn hình <strong>Chi Tiết Chuyến Xe</strong>.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -1001,36 +1024,252 @@
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">2. Hướng Dẫn Thao Tác Phân Hệ Sale & Booking</h3>
 
                     <!-- 2.1 TẠO BÁO GIÁ -->
-                    <div id="sec-input-quotation" class="scroll-mt-24 space-y-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">2.1. Hướng Dẫn Tạo Mới Bảng Báo Giá</h4>
-                        <div class="text-sm text-slate-700 space-y-2">
-                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Sale & Booking</strong> ➔ Bấm nút <strong>+ Tạo Báo Giá Mới</strong> ở góc trên bên phải.</p>
-                            <p><strong>• Các trường thông tin cần nhập:</strong></p>
-                            <ul class="list-disc pl-6 space-y-1">
-                                <li><strong>Khách Hàng (*):</strong> Chọn khách hàng doanh nghiệp từ danh mục.</li>
-                                <li><strong>Tuyến Đường (*):</strong> Chọn Điểm Đi (Ví dụ: Cảng Cát Lái) và Điểm Đến (Ví dụ: KCN Nhơn Trạch).</li>
-                                <li><strong>Loại Container (*):</strong> Chọn 20GP, 40HC, hoặc Hàng Rời FTL.</li>
-                                <li><strong>Đơn Giá Cước (VNĐ) (*):</strong> Nhập giá cước vận chuyển đề xuất.</li>
-                                <li><strong>Hiệu Lực Báo Giá:</strong> Ngày bắt đầu và ngày kết thúc hiệu lực giá.</li>
-                            </ul>
-                            <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu Báo Giá</strong>. Để in ấn bản A4 gửi khách hàng, bấm nút <strong>In Báo Giá</strong>.</p>
+                    <div id="sec-input-quotation" class="scroll-mt-24 space-y-3">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">2.1. Hướng Dẫn Chi Tiết Từng Ô Tạo Mới Bảng Báo Giá Tuyến Cước</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Sale & Booking</strong> ➔ Bấm nút <strong>+ Tạo Báo Giá Mới</strong> ở góc trên bên phải màn hình để mở Form Báo Giá Tuyến Cước.</p>
+                            
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tìm Khách Hàng / MST</td>
+                                            <td class="p-2.5 text-slate-600">Văn bản tìm kiếm</td>
+                                            <td class="p-2.5">Gõ tên doanh nghiệp hoặc mã số thuế để lọc danh sách khách hàng hiển thị trong ô kế bên.</td>
+                                            <td class="p-2.5 text-slate-500">Giúp tìm nhanh trong danh sách hàng trăm khách hàng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Khách Hàng / Đối Tác <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Chọn doanh nghiệp khách hàng nhận báo giá. Trường bắt buộc phải chọn để lưu báo giá.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Thêm KH]</strong> nằm ngay góc trên bên phải nhãn ô này. Popup tạo khách hàng sẽ mở ra ngay, nhập Tên + MST rồi bấm <em>Lưu</em>; khách hàng mới sẽ tự động được chọn vào ô mà không mất dữ liệu đang gõ!
+                                                <br><span class="text-[11px] text-slate-500 font-normal">(Hoặc vào Cài đặt ➔ Khách Hàng ➔ Thêm Mới Khách Hàng).</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Phương Thức Báo Giá & Định Giá <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">
+                                                Chọn 1 trong 3 cơ chế tính cước thương mại:<br>
+                                                <strong>1. Báo giá theo tuyến đường:</strong> Cước cố định theo danh sách tuyến.<br>
+                                                <strong>2. Báo giá theo giá dầu DO 0.05S:</strong> Cước thả nổi theo giá công bố Petrolimex.<br>
+                                                <strong>3. Báo giá trọn gói / bao chuyến:</strong> Thuê bao nguyên tháng/chuyến.
+                                            </td>
+                                            <td class="p-2.5 text-slate-500">Khi chọn phương thức 2, khối cấu hình giá dầu sẽ tự động mở ra bên dưới.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Giá Dầu Cơ Sở P0 (đ/lít)</td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (đ/lít)</td>
+                                            <td class="p-2.5">Giá dầu DO thời điểm thỏa thuận hợp đồng (Ví dụ: <code>21.000</code> đ/lít). Tự động định dạng dấu chấm phân cách.</td>
+                                            <td class="p-2.5 text-slate-500">Mặc định hiển thị giá dầu DO kỳ gần nhất. Có thể sửa theo thỏa thuận.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Mỗi Bước Nhảy & Tỷ Lệ Điều Chỉnh (%)</td>
+                                            <td class="p-2.5 text-slate-600">Số tiền & Phần trăm</td>
+                                            <td class="p-2.5">Quy định biên độ thay đổi (Ví dụ: Mỗi <code>1.000</code> đ/lít thay đổi thì điều chỉnh cước <code>3.5%</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Hệ thống tự hiển thị câu giải thích công thức minh bạch.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Lộ Trình / Mô Tả Tuyến Đường <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Văn bản dòng tuyến</td>
+                                            <td class="p-2.5">Nhập tuyến đường chi tiết (Ví dụ: <em>Cảng Cát Lái ➔ KCN Nhơn Trạch ➔ Trả rỗng Cát Lái</em>).</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Tạo mới]</strong> ở góc trên bên phải Bảng Tuyến Đường để thêm các dòng tuyến tiếp theo cho cùng một khách hàng.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Loại Cont / Xe & Cự Ly (KM)</td>
+                                            <td class="p-2.5 text-slate-600">Dropdown & Số km</td>
+                                            <td class="p-2.5">Chọn loại cont (<code>40HC</code>, <code>20GP</code>, <code>45G1</code>, <code>Xe tải 15T</code>) và cự ly chạy ước tính.</td>
+                                            <td class="p-2.5 text-slate-600">Nếu thiếu quy cách xe: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Quy Cách</strong> để tạo mới.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Đơn Giá Cước (VNĐ) <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5">Đơn giá cước vận chuyển cho 1 chuyến xe (Ví dụ: <code>3.800.000</code> đ).</td>
+                                            <td class="p-2.5 text-slate-500">Tự động định dạng tiền tệ Việt Nam. Bắt buộc nhập > 0.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Sản Lượng (Chuyến/Tháng)</td>
+                                            <td class="p-2.5 text-slate-600">Số nguyên</td>
+                                            <td class="p-2.5">Số chuyến cam kết trong tháng (Ví dụ: <code>20</code>). Hệ thống tự nhân thành tiền và tính tổng doanh thu kế hoạch.</td>
+                                            <td class="p-2.5 text-slate-500">Mặc định là 1 chuyến nếu khách chạy đơn lẻ.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Giai Đoạn Báo Giá (Funnel) <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Chọn trạng thái: <em>1. Đang thương lượng</em>, <em>2. Chờ BGĐ duyệt</em>, <em>3. Đã duyệt (Ký HĐ)</em>, <em>4. Từ chối</em>, <em>5. Hết hiệu lực</em>.</td>
+                                            <td class="p-2.5 text-slate-500">Mặc định khi tạo mới là "Đang thương lượng".</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Người Nhận, SĐT & Email</td>
+                                            <td class="p-2.5 text-slate-600">Văn bản / Số / Email</td>
+                                            <td class="p-2.5">Thông tin liên hệ trực tiếp của đầu mối phụ trách logistics phía khách hàng (Ví dụ: <em>Mr. Nguyễn Văn A - 0987123456</em>).</td>
+                                            <td class="p-2.5 text-slate-500">Thông tin này tự động in lên đầu Bảng Báo Giá trình ký.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hiệu Lực Đến Ngày</td>
+                                            <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                            <td class="p-2.5">Hạn chót hiệu lực của báo giá trước khi cần cập nhật lại giá cước thị trường.</td>
+                                            <td class="p-2.5 text-slate-500">Hệ thống tự cảnh báo khi báo giá quá hạn hiệu lực.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Ghi Chú & Điều Khoản Thương Mại</td>
+                                            <td class="p-2.5 text-slate-600">Đoạn văn bản lớn</td>
+                                            <td class="p-2.5">Quy định điều khoản: Chưa VAT, chi phí nâng hạ bãi khách trả, thời gian chờ bốc xếp, cước lưu đêm...</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm các nút mẫu nhanh:</strong> [Kéo Cont FCL], [Xe Tải FTL], [Theo Giá Dầu] để chèn sẵn toàn bộ điều khoản mẫu chuẩn. Bấm [Mở Rộng Ô] để phóng to khung soạn thảo.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Thao tác hoàn tất:</strong> Bấm nút <strong>Lưu</strong> để lưu vào hệ thống. Bấm nút <strong>Xem & In</strong> để mở bản in khổ A4 có đầy đủ logo, bảng ma trận tuyến và chữ ký trình duyệt.</p>
                         </div>
                     </div>
 
                     <!-- 2.2 TẠO BOOKING -->
-                    <div id="sec-input-booking" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">2.2. Hướng Dẫn Tạo Mới Booking</h4>
-                        <div class="text-sm text-slate-700 space-y-2">
+                    <div id="sec-input-booking" class="scroll-mt-24 space-y-3 pt-4">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">2.2. Hướng Dẫn Chi Tiết Từng Ô Tạo Mới Booking / Tiếp Nhận Đơn Vận Chuyển</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
                             <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Sale & Booking</strong> ➔ Tab <strong>Danh Sách Booking</strong> ➔ Bấm nút <strong>+ Tạo Booking Mới</strong>.</p>
-                            <p><strong>• Các trường thông tin cần nhập:</strong></p>
-                            <ul class="list-disc pl-6 space-y-1">
-                                <li><strong>Số Booking Hãng Tàu (*):</strong> Mã booking in trên lệnh cấp cont (Ví dụ: <code>ONE-SGN-123456</code>).</li>
-                                <li><strong>Hãng Tàu (*):</strong> Chọn từ danh mục (MAERSK, ONE, EVERGREEN...).</li>
-                                <li><strong>Số Lượng & Quy Cách Container (*):</strong> Số lượng vỏ (Ví dụ: 02 x 40HC).</li>
-                                <li><strong>Nơi Lấy Rỗng & Nơi Hạ Bãi (*):</strong> Cảng hoặc Depot chỉ định.</li>
-                                <li><strong>Hạn Đóng Hàng (Closing Time):</strong> Giờ và ngày cắt máng tại cảng.</li>
-                            </ul>
-                            <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu Booking</strong>. Dữ liệu sẽ sẵn sàng để bộ phận Điều vận nhận lệnh kéo cont.</p>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Phân Loại Dịch Vụ <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Chọn loại hình: <em>Kéo Cont Xuất Khẩu</em>, <em>Kéo Cont Nhập Khẩu</em>, hoặc <em>Vận Chuyển Nội Địa</em>.</td>
+                                            <td class="p-2.5 text-slate-500">Giúp hệ thống tự điều chỉnh các trường điểm lấy/hạ cont tương ứng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Khách Hàng <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Chọn khách hàng đặt đơn vận chuyển. Có ô tìm kiếm nhanh bên cạnh để gõ tên/MST.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Thêm KH]</strong> ngay cạnh nhãn ô. Nhập Tên doanh nghiệp + MST rồi bấm <em>Lưu</em>, hệ thống tự động lưu và chọn ngay khách hàng này vào đơn.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số Booking / PO <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Mã chữ/số in hoa</td>
+                                            <td class="p-2.5">Số booking in trên lệnh cấp cont hãng tàu hoặc số Purchase Order của khách (Ví dụ: <code>ONE-SGN-276081838</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Bắt buộc nhập. Tự động chuyển thành chữ IN HOA.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hãng Tàu</td>
+                                            <td class="p-2.5 text-slate-600">Gợi ý tự động (Datalist)</td>
+                                            <td class="p-2.5">Gõ tên hãng tàu biển phát hành booking (Ví dụ: <em>MAERSK, ONE, EVERGREEN, COSCO, CMA CGM...</em>).</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Thêm]</strong> ngay góc phải nhãn "Hãng Tàu" để khai báo mới hãng tàu biển vào hệ thống.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tên Tàu & Chuyến (Vessel/Voy)</td>
+                                            <td class="p-2.5 text-slate-600">Văn bản</td>
+                                            <td class="p-2.5">Tên tàu mẹ vận chuyển đường biển và số hiệu chuyến (Ví dụ: <code>CAP SAN LAZARO / 001N</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Dùng để điều phối viên theo dõi lịch tàu cập/rời cảng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Loại Cont / Xe & Số Lượng <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select & Số lượng</td>
+                                            <td class="p-2.5">Chọn loại cont (<code>40HC</code>, <code>20GP</code>, <code>45G1</code>) và tổng số lượng vỏ cont cần điều xe (Ví dụ: <code>02</code> cont).</td>
+                                            <td class="p-2.5 text-slate-500">Mỗi vỏ cont sau này sẽ được Điều vận cấp 1 lệnh điều xe tương ứng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tên Hàng Hóa & Mã HS Code</td>
+                                            <td class="p-2.5 text-slate-600">Văn bản & Mã số</td>
+                                            <td class="p-2.5">Mô tả mặt hàng thực tế đóng trong cont (Ví dụ: <em>Máy cắt cỏ Ryobi</em>) và mã phân loại hải quan (Ví dụ: <code>8433.11</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Phục vụ thủ tục hải quan và khai báo tải trọng khi qua trạm cân.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">1. Điểm Lấy Cont <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Depot hoặc Cảng nơi tài xế bốc vỏ cont rỗng lên rơ-moóc (Ví dụ: <em>Depot Transimex, Cát Lái</em>).</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Thêm]</strong> ngay cạnh nhãn ô. Chọn loại Cảng/Depot, nhập Tên và Địa chỉ rồi bấm <em>Lưu</em>, bãi mới sẽ tự động hiển thị trong ô.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">2. Kho Đóng / Dỡ <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Địa chỉ nhà máy hoặc kho hàng của khách nơi đóng hàng vào cont (Ví dụ: <em>Kho Tân Vạn D2, KCN VSIP 2</em>).</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Thêm]</strong> ngay cạnh nhãn ô để tạo nhanh địa điểm kho khách hàng mới.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">3. Điểm Hạ / Trả Cont <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Cảng hạ cont hàng xuất (Ví dụ: <em>Cảng SP-ITC, Tân Cảng Hiệp Phước</em>) hoặc bãi trả rỗng cho cont nhập.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Thêm]</strong> ngay cạnh nhãn ô để khai báo nhanh bãi hạ mới.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Ngày Hẹn Đóng & Giờ Tại Kho <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Lịch & Đồng hồ 24h</td>
+                                            <td class="p-2.5">Ngày và giờ hẹn tài xế phải có mặt tại cổng kho khách hàng để bốc/dỡ hàng.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Nhấp vào ô giờ để mở đồng hồ chọn giờ chuẩn 24h, hoặc bấm các nút chọn nhanh: <strong>[08:00]</strong>, <strong>[10:00]</strong>, <strong>[13:00]</strong>, <strong>[18:00]</strong>.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hạn Cắt Máng CY (Closing Time)</td>
+                                            <td class="p-2.5 text-slate-600">Ngày & Giờ (24h)</td>
+                                            <td class="p-2.5">Thời hạn chót cảng nhận cont hạ bãi trước khi đóng máng xếp dỡ lên tàu. Rất quan trọng để tránh rớt tàu.</td>
+                                            <td class="p-2.5 text-rose-800 font-semibold bg-rose-50/50">
+                                                👉 Bấm các nút chọn nhanh: <strong>[12:00]</strong>, <strong>[17:00]</strong>, <strong>[20:00]</strong>, <strong>[23:59]</strong>. Ô tự động đồng bộ ngày giờ.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hạn SI Cut-off</td>
+                                            <td class="p-2.5 text-slate-600">Ngày & Giờ (24h)</td>
+                                            <td class="p-2.5">Hạn gửi thông tin chi tiết vận đơn Shipping Instruction cho hãng tàu biển.</td>
+                                            <td class="p-2.5 text-slate-600">Bấm các nút chọn nhanh: [11:00], [12:00], [16:00], [17:00].</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Free DET & Free DEM (Ngày)</td>
+                                            <td class="p-2.5 text-slate-600">Số ngày miễn phí</td>
+                                            <td class="p-2.5">Số ngày miễn phí mượn vỏ cont (DET) và lưu bãi cảng (DEM) hãng tàu cho phép (Thường là <code>7</code> ngày).</td>
+                                            <td class="p-2.5 text-slate-500">Hệ thống dùng số ngày này để tính ngày hết hạn trả vỏ cont, cảnh báo tiền phạt.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Cước Vận Chuyển <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5">Giá cước vận chuyển thỏa thuận cho 1 cont (Ví dụ: <code>4.000.000</code> đ).</td>
+                                            <td class="p-2.5 text-slate-500">Tự động điền theo biểu cước nếu đã có báo giá duyệt.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Đính Kèm File Lệnh Cấp Rỗng / Booking</td>
+                                            <td class="p-2.5 text-slate-600">Tệp đính kèm (Dropzone)</td>
+                                            <td class="p-2.5">Tải lên file ảnh chụp hoặc PDF của Lệnh cấp vỏ cont rỗng từ hãng tàu (Hỗ trợ JPG, PNG, PDF tối đa 10MB).</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Bấm vào khung nét đứt hoặc kéo thả file vào. Tệp này sẽ tự động liên thông sang Điều vận để tài xế xem trên điện thoại.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Thao tác hoàn tất:</strong> Bấm nút <strong>Lưu Booking</strong>. Đơn hàng chuyển sang trạng thái <em>Chờ điều xe</em>, sẵn sàng để Điều phối viên phát lệnh vận chuyển.</p>
                         </div>
                     </div>
                 </section>
@@ -1040,37 +1279,197 @@
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">3. Hướng Dẫn Thao Tác Phân Hệ Điều Vận</h3>
 
                     <!-- 3.1 TẠO LỆNH ĐIỀU XE -->
-                    <div id="sec-input-trip-create" class="scroll-mt-24 space-y-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">3.1. Tạo Lệnh Điều Xe Mới</h4>
-                        <div class="text-sm text-slate-700 space-y-2">
-                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Điều vận</strong> ➔ Bấm nút <strong>+ Phát Lệnh Điều Xe</strong>.</p>
-                            <p><strong>• Các trường thông tin cần nhập:</strong></p>
-                            <ul class="list-disc pl-6 space-y-1">
-                                <li><strong>Chọn Đơn Hàng / Booking (*):</strong> Chọn booking đã được tạo sẵn từ Sale.</li>
-                                <li><strong>Hình Thức Xe (*):</strong> Chọn <code>Xe Công Ty</code> hoặc <code>Xe Thầu Phụ 3PL</code>.</li>
-                                <li><strong>Xe Đầu Kéo & Rơ-Moóc (*):</strong> Chọn biển số xe và moóc còn trống lịch.</li>
-                                <li><strong>Tài Xế Phụ Trách (*):</strong> Chọn tài xế chính thực hiện chuyến.</li>
-                                <li><strong>Tạm Ứng Chuyến (VNĐ):</strong> Nhập số tiền tạm ứng cho tài xế mua dầu hoặc đóng phí cầu đường.</li>
-                            </ul>
-                            <p><strong>• Hoàn tất:</strong> Bấm <strong>Phát Lệnh Điều Xe</strong>. Hệ thống sẽ cấp Mã Chuyến tự động và đẩy thông báo đến điện thoại tài xế.</p>
+                    <div id="sec-input-trip-create" class="scroll-mt-24 space-y-3">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">3.1. Hướng Dẫn Chi Tiết Từng Ô Tạo Mới Lệnh Điều Động Chuyến Xe</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Điều vận</strong> ➔ Bấm nút <strong>+ Phát Lệnh Điều Xe</strong> ở đầu trang.</p>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Kế Thừa Từ Booking (Sale)</td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Chọn đơn hàng/booking đang chờ điều xe. Hệ thống tự động điền sẵn 9 trường (Khách hàng, Lộ trình 3 điểm, Loại cont, Cắt CY, Giờ hẹn...).</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Tạo Booking Mới]</strong> ngay trên góc phải khối này nếu đơn hàng chưa có booking từ Sale. Hoặc để trống nếu nhập chuyến xe thủ công.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Ghép 2 Cont 20ft (Twin 20ft)</td>
+                                            <td class="p-2.5 text-slate-600">Nút bật/tắt (Toggle)</td>
+                                            <td class="p-2.5">Bật toggle này nếu 1 xe đầu kéo kẹp đôi 2 vỏ cont 20ft cùng lộ trình để tối ưu chi phí và tăng thu nhập tài xế.</td>
+                                            <td class="p-2.5 text-slate-500">Khi bật, hộp nhập thông tin Container #2 sẽ tự động xuất hiện.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Khách Hàng / Chủ Hàng <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Search + Select</td>
+                                            <td class="p-2.5">Chọn chủ hàng vận chuyển. Có ô tìm kiếm nhanh theo tên/MST.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Thêm KH]</strong> ngay góc phải nhãn ô để tạo nhanh khách hàng mới trực tiếp vào hệ thống.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Loại Hình & Loại Cont <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Chọn Loại hình (<em>Nhập, Xuất, Nội địa</em>) và Quy cách cont (<code>40HC</code>, <code>20GP</code>, <code>45G1</code>, <code>2x20DC</code>, <code>Xe tải 15T</code>...).</td>
+                                            <td class="p-2.5 text-slate-600">Cần thêm quy cách: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Quy Cách</strong>.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số Booking, Số Cont & Số Seal</td>
+                                            <td class="p-2.5 text-slate-600">Mã chữ/số in hoa</td>
+                                            <td class="p-2.5">Nhập Số cont (Ví dụ: <code>MRKU6074874</code> - 4 chữ + 7 số) và Số niêm chì hãng tàu (Ví dụ: <code>MLVN1739611</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Nếu tài xế chưa lấy được cont, có thể để trống và tài xế sẽ cập nhật sau trên điện thoại.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Trọng Lượng VGM (Tấn)</td>
+                                            <td class="p-2.5 text-slate-600">Số thập phân</td>
+                                            <td class="p-2.5">Khối lượng toàn bộ vỏ cont và hàng hóa (Ví dụ: <code>24.5 Tấn</code>) phục vụ phiếu cân xe và khai báo cảng.</td>
+                                            <td class="p-2.5 text-slate-500">Nhập theo phiếu cân điện tử hoặc chứng từ VGM.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Cắt CY / SI & Giờ Hẹn Đóng</td>
+                                            <td class="p-2.5 text-slate-600">Lịch & Giờ 24h</td>
+                                            <td class="p-2.5">Thời hạn chót hạ bãi và giờ hẹn có mặt tại nhà máy.</td>
+                                            <td class="p-2.5 text-slate-600">Có các nút chọn nhanh giờ chuẩn: [12:00], [17:00], [23:59] và [08:00], [13:00], [18:00].</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hóa Đơn TM (Invoice) & Cửa Dock</td>
+                                            <td class="p-2.5 text-slate-600">Mã văn bản</td>
+                                            <td class="p-2.5">Số invoice thương mại đi kèm hàng (Ví dụ: <code>VCC33970</code>) và cửa dock bốc hàng tại kho (Ví dụ: <code>D2</code>, <code>DOCK 5</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Giúp tài xế vào cổng nhà máy được bảo vệ hướng dẫn đúng vị trí bốc hàng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Free DET & Giám Định Vỏ (EIR)</td>
+                                            <td class="p-2.5 text-slate-600">Số ngày & Tình trạng</td>
+                                            <td class="p-2.5">Số ngày miễn phí mượn vỏ (DET) và tình trạng vỏ cont: <em>Nguyên Vẹn</em>, <em>Có Hư Hỏng Từ Trước</em>, <em>Cần Vệ Sinh</em>.</td>
+                                            <td class="p-2.5 text-amber-800 font-semibold bg-amber-50/50">
+                                                👉 Nếu vỏ cont bị móp/rách: Chọn "Có Hư Hỏng Từ Trước" và nhập chi tiết vào ô <em>Ghi Chú Hư Hỏng</em> để tránh bị hãng tàu phạt oan khi trả vỏ!
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Lộ Trình 3 Điểm (Lấy - Đóng/Trả - Hạ) <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">3 ô Select độc lập</td>
+                                            <td class="p-2.5">
+                                                <strong>1. Nơi Lấy:</strong> Cảng hoặc Depot lấy cont.<br>
+                                                <strong>2. Nơi Đóng/Trả:</strong> Kho nhà máy của khách.<br>
+                                                <strong>3. Nơi Hạ:</strong> Cảng hạ xuất hoặc depot trả rỗng.
+                                            </td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [+ Thêm]</strong> ở từng ô tương ứng nếu địa điểm chưa có trong danh mục. Popup Cảng & Kho bãi sẽ mở ra để khai báo tức thì.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tài Xế Nhận Lệnh (Toàn trình) <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Chọn tài xế chính thực hiện chuyến xe. Hệ thống tự động gán xe đầu kéo phụ trách của tài xế đó.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 <strong>Bấm nút [Danh mục]</strong> ngay cạnh nhãn ô để xem Biểu phí lương chuyến. Nếu chưa có hồ sơ tài xế: Vào <strong>Hành chính & Nhân sự</strong> ➔ <strong>+ Thêm Nhân Viên Mới</strong> (chức vụ Tài xế).
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Chế Độ Cắt Kéo (Drop & Hook - 2 Tài)</td>
+                                            <td class="p-2.5 text-slate-600">Nút bật/tắt (Toggle)</td>
+                                            <td class="p-2.5">Bật toggle nếu chuyến xe chia làm 2 chặng: Tài xế 1 lấy cont về kho cắt moóc; Tài xế 2 sau đó móc moóc kéo đi cảng hạ.</td>
+                                            <td class="p-2.5 text-slate-600">Khi bật: Chọn Tài xế Chặng 1, Tài xế Chặng 2 và chọn <strong>Tỷ Lệ Phân Chia Thù Lao</strong> (50-50, 60-40, hoặc tùy biến %).</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Thao tác hoàn tất:</strong> Bấm nút <strong>Xác Nhận & Phát Lệnh Zalo</strong>. Hệ thống tự động cấp Mã Chuyến (Ví dụ: <code>TVL-2610-001</code>), gửi tin nhắn Zalo kèm đường dẫn điều xe đến điện thoại tài xế.</p>
                         </div>
                     </div>
 
                     <!-- 3.2 CẮT KÉO & GHÉP CONT -->
                     <div id="sec-input-split-twin" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">3.2. Cắt Kéo & Ghép 2 Cont 20ft</h4>
+                        <h4 class="text-base font-bold text-slate-900 font-heading">3.2. Cắt Kéo (Drop & Hook) & Ghép 2 Cont 20ft</h4>
                         <div class="text-sm text-slate-700 space-y-2">
-                            <p><strong>• Khi nào sử dụng:</strong> Khi có 2 đơn hàng cont 20ft cùng lộ trình hoặc khi cần đổi đầu kéo giữa chặng.</p>
-                            <p><strong>• Thao tác:</strong> Tại màn hình Lệnh điều xe, bấm nút <strong>Ghép 2 Cont</strong> ➔ Chọn cont thứ hai cần kẹp đôi ➔ Hệ thống tự động tính toán lại lương chuyến và mức tiêu hao dầu.</p>
+                            <p><strong>• Khi nào sử dụng Cắt Kéo (Drop & Hook):</strong> Khi kho khách hàng đóng hàng lâu (mất 6 - 12 tiếng) hoặc kho yêu cầu gửi vỏ cont qua đêm. Tài xế kéo cont đến cắt moóc lại kho, đầu kéo quay về nhận chuyến khác. Hôm sau tài xế khác đến móc moóc kéo đi cảng hạ.</p>
+                            <p><strong>• Khi nào sử dụng Ghép 2 Cont:</strong> Khi có 2 lô hàng cont 20ft cùng xuất phát từ một cảng về cùng một khu công nghiệp. Bật tính năng ghép cont giúp giảm 40% chi phí dầu và tăng năng suất xe.</p>
                         </div>
                     </div>
 
                     <!-- 3.3 KÊ KHAI CHI PHÍ & CHI HỘ -->
-                    <div id="sec-input-expense-behalf" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">3.3. Kê Khai Chi Phí & Chi Hộ</h4>
-                        <div class="text-sm text-slate-700 space-y-2">
-                            <p><strong>• Nơi thực hiện:</strong> Mở Chi tiết chuyến xe ➔ Tab <strong>Chi Phí Chuyến</strong> ➔ Bấm <strong>+ Thêm Khoản Chi</strong>.</p>
-                            <p><strong>• Các trường:</strong> Khoản mục chi (Dầu DO, Cầu đường, Nâng hạ, Lưu đêm), Số tiền, Có hóa đơn VAT không, và tích chọn <strong>Chi hộ khách hàng</strong> nếu đây là khoản cước khách phải thanh toán lại.</p>
+                    <div id="sec-input-expense-behalf" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">3.3. Hướng Dẫn Chi Tiết Từng Ô Kê Khai Chi Phí & Chi Hộ Khách Hàng</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Mở <strong>Chi Tiết Chuyến Xe</strong> ➔ Tại bảng kê chi phí, bấm nút <strong>+ Thêm Khoản Chi</strong>.</p>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Khoản Mục Chi Phí <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">
+                                                Chọn đúng tính chất chi phí:<br>
+                                                - <code>LIFT_ON</code>: Phí nâng cont rỗng/hàng tại cảng/depot.<br>
+                                                - <code>LIFT_OFF</code>: Phí hạ cont tại cảng/ICD.<br>
+                                                - <code>CONTAINER_DEPOSIT</code>: Cược cont hãng tàu.<br>
+                                                - <code>WEIGHING</code>: Phí cân xe / trạm cân VGM.<br>
+                                                - <code>LABOR_STEVEDORING</code>: Bốc xếp, trút hàng.<br>
+                                                - <code>TOLL_FEE</code>: Vé cầu đường (BOT/ePass/VETC).<br>
+                                                - <code>OTHER</code>: Chi phí khác (Vá vỏ, lưu bãi, rửa cont).
+                                            </td>
+                                            <td class="p-2.5 text-slate-600">
+                                                👉 Nếu cần thêm khoản chi mới: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Khoản Chi</strong> ➔ Bấm <strong>+ Thêm Mới Khoản Chi</strong>.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tài Xế & Đầu Kéo (Chặng) <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Chọn tài xế và biển số xe đã thực chi khoản tiền này (Đặc biệt quan trọng trong chuyến cắt kéo 2 tài để quyết toán hoàn ứng đúng người).</td>
+                                            <td class="p-2.5 text-slate-500">Mặc định hiển thị thông tin tài xế thực hiện chuyến.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Thành Tiền (VNĐ) <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5">Số tiền thực tế trên biên lai/hóa đơn (Ví dụ: <code>1.518.000</code> đ). Tự động định dạng dấu chấm phân cách.</td>
+                                            <td class="p-2.5 text-slate-500">Bắt buộc nhập số tiền > 0.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số Hóa Đơn & Mã Tra Cứu HĐĐT</td>
+                                            <td class="p-2.5 text-slate-600">Mã chữ/số in hoa</td>
+                                            <td class="p-2.5">Số hóa đơn điện tử (Ví dụ: <code>138001</code>) và Mã tra cứu bí mật in trên phiếu (Ví dụ: <code>HD11202609-06654</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Kế toán dùng mã này để đối soát tự động hóa đơn thuế GTGT.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Đơn Vị Thu & Link Tra Cứu</td>
+                                            <td class="p-2.5 text-slate-600">Tên đơn vị & Link URL</td>
+                                            <td class="p-2.5">Tên đơn vị xuất hóa đơn (Ví dụ: <em>Cảng ICD Tây Nam</em>) và đường dẫn cổng tra cứu HĐĐT.</td>
+                                            <td class="p-2.5 text-slate-500">Dán link giúp kế toán bấm 1 chạm để mở hóa đơn gốc.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Chi Hộ Khách Hàng (On-Behalf)</td>
+                                            <td class="p-2.5 text-slate-600">Nút bật/tắt (Toggle)</td>
+                                            <td class="p-2.5">
+                                                <strong>BẬT TOGGLE NÀY NẾU ĐÂY LÀ KHOẢN CÔNG TY CHI TRẢ HỘ KHÁCH HÀNG:</strong> Phí nâng hạ cảng, cược vỏ cont, lưu bãi...<br>
+                                                <em>Tác dụng nghiệp vụ:</em> Hệ thống tự động tách khoản này vào <strong>Debit Note Chi Hộ</strong> để đòi tiền khách hàng, không tính vào chi phí nội bộ chuyến xe!
+                                            </td>
+                                            <td class="p-2.5 text-amber-800 font-semibold bg-amber-50/50">
+                                                👉 Bật toggle này sẽ đảm bảo tính chính xác 100% của lợi nhuận gộp P&L chuyến xe.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Thao tác hoàn tất:</strong> Bấm nút <strong>Lưu Khoản Chi</strong>. Khoản chi lập tức được ghi vào Bảng kê chi phí Triền Võ và cập nhật vào tiến độ đối soát hoàn ứng.</p>
                         </div>
                     </div>
 
@@ -1078,45 +1477,222 @@
                     <div id="sec-input-driver-mobile" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">3.4. Báo 6 Mốc Vận Chuyển Trên Điện Thoại (Driver Portal)</h4>
                         <div class="text-sm text-slate-700 space-y-2">
-                            <p>Tài xế mở liên kết chuyến xe trên điện thoại thông minh và thực hiện chạm xác nhận theo 6 mốc:</p>
+                            <p>Tài xế mở liên kết điều xe trên Zalo hoặc trình duyệt điện thoại (giao diện thao tác tối giản 2 chạm, hỗ trợ chế độ mạng yếu/offline):</p>
                             <ul class="list-disc pl-6 space-y-1">
-                                <li><strong>Mốc 1 - Nhận Cont Rỗng:</strong> Bấm khi hoàn tất bốc vỏ cont lên moóc tại bãi rỗng.</li>
-                                <li><strong>Mốc 2 - Đến Kho Đóng Hàng:</strong> Bấm khi xe đến cổng nhà máy khách hàng.</li>
-                                <li><strong>Mốc 3 - Hoàn Tất Đóng Hàng / Kẹp Chì:</strong> Nhập số niêm chì (Seal no) và bấm xác nhận.</li>
-                                <li><strong>Mốc 4 - Xuất Phát Về Cảng:</strong> Bấm khi xe bắt đầu lăn bánh rời kho khách.</li>
-                                <li><strong>Mốc 5 - Đến Cảng / Hạ Bãi:</strong> Bấm khi cont đã hạ an toàn tại bãi cảng.</li>
-                                <li><strong>Mốc 6 - Chụp Ảnh POD / EIR:</strong> Dùng camera điện thoại chụp phiếu giao nhận hàng (POD) và phiếu hạ bãi (EIR) có đầy đủ chữ ký.</li>
+                                <li><strong>Mốc 1 - Nhận Cont Rỗng:</strong> Bấm xác nhận khi nhận vỏ cont tại depot. Nhập số cont và số chì nếu có thay đổi.</li>
+                                <li><strong>Mốc 2 - Đến Kho Đóng Hàng:</strong> Bấm khi xe đến cổng nhà máy khách hàng (hệ thống tự lấy tọa độ GPS đối soát).</li>
+                                <li><strong>Mốc 3 - Hoàn Tất Đóng Hàng / Kẹp Chì:</strong> Nhập số niêm chì (Seal) chính thức và bấm xác nhận.</li>
+                                <li><strong>Mốc 4 - Xuất Phát Về Cảng:</strong> Bấm khi xe bắt đầu lăn bánh rời kho khách hàng.</li>
+                                <li><strong>Mốc 5 - Đến Cảng / Hạ Bãi:</strong> Bấm khi cont đã hạ an toàn tại bãi cảng hạ.</li>
+                                <li><strong>Mốc 6 - Chụp Ảnh POD / EIR:</strong> Dùng camera điện thoại chụp phiếu giao nhận hàng (POD) và phiếu hạ bãi (EIR) có chữ ký rõ ràng. Ảnh tự động tải lên máy chủ và kích hoạt trạng thái <em>POD Verified</em>.</li>
                             </ul>
                         </div>
                     </div>
                 </section>
 
                 <!-- 4. XE & BÃI -->
-                <section id="sec-input-fleet" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
+                <section id="sec-input-fleet" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">4. Hướng Dẫn Thao Tác Phân Hệ Xe & Bãi</h3>
-                    <div class="text-sm text-slate-700 space-y-3">
-                        <div id="sec-input-vehicles" class="scroll-mt-24">
-                            <p class="font-bold text-slate-900">4.1. Khai báo Xe & Hạn kiểm định:</p>
-                            <p>Vào menu <strong>Xe & Bãi</strong> ➔ Tab <strong>Danh Sách Xe</strong> ➔ Bấm <strong>Thêm Xe Mới</strong>. Nhập đầy đủ biển số, hạn đăng kiểm và định mức dầu.</p>
+
+                    <!-- 4.1 XE ĐẦU KÉO -->
+                    <div id="sec-input-vehicles" class="scroll-mt-24 space-y-3">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">4.1. Hướng Dẫn Chi Tiết Khai Báo Xe Đầu Kéo & Hạn Kiểm Định</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Xe & Bãi</strong> ➔ Tab <strong>Danh Sách Xe</strong> ➔ Bấm nút <strong>+ Thêm Xe Mới</strong> (hoặc vào <strong>Cài đặt</strong> ➔ Tab <strong>Đầu Kéo & Xe</strong>).</p>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Biển Số Xe <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Mã chữ/số in hoa</td>
+                                            <td class="p-2.5">Biển số kiểm soát phương tiện (Ví dụ: <code>51C-889.99</code>). Bắt buộc và duy nhất.</td>
+                                            <td class="p-2.5 text-slate-500">Tự động chuẩn hóa chữ in hoa và định dạng biển số chuẩn Việt Nam.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Loại Phương Tiện <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn loại xe: <em>Đầu kéo Container</em>, <em>Xe tải thùng 15T</em>, <em>Xe tải 8T</em>, <em>Xe tải 5T</em>...</td>
+                                            <td class="p-2.5 text-slate-500">Phục vụ phân bổ chuyến phù hợp tải trọng hàng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Định Mức Dầu Tiêu Chuẩn (Lít/100km)</td>
+                                            <td class="p-2.5 text-slate-600">Số thập phân</td>
+                                            <td class="p-2.5">Định mức tiêu hao dầu DO cơ sở (Ví dụ: <code>32.5</code> lít/100km đối với đầu kéo Frightliner/Maxxforce).</td>
+                                            <td class="p-2.5 text-slate-500">Hệ thống dùng số này để tính toán lượng dầu khoán theo cự ly GPS của chuyến xe.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hạn Đăng Kiểm Xe <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                            <td class="p-2.5">Ngày hết hạn sổ đăng kiểm kiểm định an toàn kỹ thuật phương tiện.</td>
+                                            <td class="p-2.5 text-amber-800 font-semibold bg-amber-50/50">
+                                                👉 Hệ thống tự động cảnh báo màu đỏ trước 15 ngày khi xe sắp đến hạn đăng kiểm trên Dashboard.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hạn Bảo Hiểm TNDS / Thân Vỏ <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                            <td class="p-2.5">Ngày hết hạn bảo hiểm trách nhiệm dân sự bắt buộc và bảo hiểm thân vỏ xe.</td>
+                                            <td class="p-2.5 text-slate-500">Giúp phòng hành chính chủ động mua gia hạn bảo hiểm kịp thời.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tài Xế Phụ Trách Mặc Định</td>
+                                            <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
+                                            <td class="p-2.5">Gán tài xế nhận xe chuyên trách để khi phát lệnh điều xe, hệ thống tự động gán xe này.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Nếu chưa có tên tài xế: Vào menu <strong>Hành chính & Nhân sự</strong> ➔ Bấm <strong>+ Thêm Nhân Viên Mới</strong> (chức vụ Tài xế) để tạo hồ sơ trước.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
                         </div>
-                        <div id="sec-input-trailers" class="scroll-mt-24">
-                            <p class="font-bold text-slate-900">4.2. Khai báo Rơ-moóc & Bảo dưỡng:</p>
-                            <p>Vào menu <strong>Xe & Bãi</strong> ➔ Tab <strong>Rơ-Moóc</strong> ➔ Bấm <strong>Thêm Rơ-Moóc</strong>. Quản lý hạn đăng kiểm moóc và lịch đảo lốp xe định kỳ.</p>
+                    </div>
+
+                    <!-- 4.2 RƠ MOOC -->
+                    <div id="sec-input-trailers" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">4.2. Hướng Dẫn Chi Tiết Khai Báo Rơ-Moóc & Bảo Dưỡng</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Xe & Bãi</strong> ➔ Tab <strong>Rơ-Moóc</strong> ➔ Bấm nút <strong>+ Thêm Rơ-Moóc</strong> (hoặc vào <strong>Cài đặt</strong> ➔ Tab <strong>Rơ-Moóc</strong>).</p>
+                            
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Biển Số Moóc <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Mã chữ/số in hoa</td>
+                                            <td class="p-2.5">Biển số kiểm soát rơ-moóc (Ví dụ: <code>51R-123.45</code>). Bắt buộc và duy nhất.</td>
+                                            <td class="p-2.5 text-slate-500">Tự động chuyển chữ in hoa chuẩn mực.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Loại Moóc <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn loại kết cấu: <em>Moóc Xương 40ft (3 trục)</em>, <em>Moóc Xương 20ft</em>, <em>Moóc Cổ Cò 40ft</em>, <em>Moóc Sàn 40ft...</em></td>
+                                            <td class="p-2.5 text-slate-500">Quan trọng để điều phối gán đúng moóc khi chạy cont nặng hoặc cont cao.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hạn Đăng Kiểm Moóc <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                            <td class="p-2.5">Ngày hết hạn kiểm định chất lượng an toàn kỹ thuật moóc.</td>
+                                            <td class="p-2.5 text-slate-500">Hệ thống theo dõi hạn đăng kiểm tự động như đầu kéo.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tải Trọng Chở Hàng (Tấn)</td>
+                                            <td class="p-2.5 text-slate-600">Số thập phân</td>
+                                            <td class="p-2.5">Khối lượng hàng hóa chuyên chở thiết kế cho phép (Ví dụ: <code>31.5 Tấn</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Đối chiếu với trọng lượng VGM của container.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
                         </div>
                     </div>
                 </section>
 
                 <!-- 5. HÀNH CHÍNH & NHÂN SỰ -->
-                <section id="sec-input-hr" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
+                <section id="sec-input-hr" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">5. Hướng Dẫn Thao Tác Phân Hệ Hành Chính & Nhân Sự</h3>
-                    <div class="text-sm text-slate-700 space-y-3">
-                        <div id="sec-input-hr-staff" class="scroll-mt-24">
-                            <p class="font-bold text-slate-900">5.1. Quản lý Hồ sơ nhân sự:</p>
-                            <p>Vào menu <strong>Hành chính & Nhân sự</strong> ➔ Bấm <strong>+ Thêm Nhân Viên Mới</strong>. Điền họ tên, số điện thoại, vai trò quyền hạn và phân công xe phụ trách.</p>
+
+                    <!-- 5.1 HỒ SƠ NHÂN SỰ -->
+                    <div id="sec-input-hr-staff" class="scroll-mt-24 space-y-3">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">5.1. Hướng Dẫn Chi Tiết Khai Báo Hồ Sơ Cán Bộ Nhân Viên & Đội Ngũ Tài Xế</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Hành chính & Nhân sự</strong> ➔ Bấm nút <strong>+ Thêm Nhân Viên Mới</strong> ở góc trên bên phải màn hình.</p>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Mã Nhân Viên <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Mã chữ/số in hoa</td>
+                                            <td class="p-2.5">Mã định danh duy nhất của nhân viên (Ví dụ: <code>TX012</code> cho tài xế, <code>DD002</code> cho điều phối, <code>KT001</code> cho kế toán).</td>
+                                            <td class="p-2.5 text-slate-500">Bắt buộc nhập. Mã duy nhất không được trùng lặp.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Họ Và Tên Đầy Đủ <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Văn bản</td>
+                                            <td class="p-2.5">Họ tên chính xác theo Căn cước công dân (Ví dụ: <em>Nguyễn Văn An</em>).</td>
+                                            <td class="p-2.5 text-slate-500">Tên này tự động in trên Lệnh điều xe, Bảng lương và Phiếu chi.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Biệt Danh (Nickname)</td>
+                                            <td class="p-2.5 text-slate-600">Văn bản ngắn</td>
+                                            <td class="p-2.5">Biệt danh gọi bộ đàm hoặc tên thường gọi tại bãi xe (Ví dụ: <em>BỤI 94, AN CHỢ LỚN</em>).</td>
+                                            <td class="p-2.5 text-slate-500">Giúp điều phối viên nhận diện nhanh khi gọi xe khẩn cấp.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số Điện Thoại <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Số điện thoại</td>
+                                            <td class="p-2.5">Số điện thoại nhận cuộc gọi điều xe (Ví dụ: <code>0901234567</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Bắt buộc phải có để hệ thống bấm gọi nhanh từ phần mềm.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số Zalo Liên Lạc</td>
+                                            <td class="p-2.5 text-slate-600">Số điện thoại Zalo</td>
+                                            <td class="p-2.5">Số điện thoại đăng ký tài khoản Zalo để hệ thống tự động gửi Lệnh Điều Động và tin nhắn báo mốc.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Nhập đúng số Zalo để kích hoạt nút [Nhắn Zalo Tài Xế] trên màn hình điều xe.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Phòng Ban <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn phòng ban: <em>Đội Xe & Bãi (FLEET)</em>, <em>Phòng Điều Vận (DISPATCH)</em>, <em>Kế Toán Tài Chính (ACCOUNTING)</em>, <em>Phòng Kinh Doanh (SALES)</em>, <em>Hành Chính Nhân Sự (HR)</em>...</td>
+                                            <td class="p-2.5 text-slate-500">Phục vụ phân quyền truy cập chức năng hệ thống.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Chức Vụ / Vai Trò <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn vai trò: <em>Tài xế (DRIVER)</em>, <em>Điều độ viên (DISPATCHER)</em>, <em>Kế toán viên (ACCOUNTANT)</em>, <em>Nhân viên Kinh doanh (SALESMAN)</em>...</td>
+                                            <td class="p-2.5 text-slate-500">Khi chọn vai trò Tài xế, khung GPLX sẽ tự động mở ra.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số GPLX & Ngày Hết Hạn Bằng Lái</td>
+                                            <td class="p-2.5 text-slate-600">Mã bằng & Lịch</td>
+                                            <td class="p-2.5">Số giấy phép lái xe hạng FC/FE và ngày hết hạn hiệu lực của bằng.</td>
+                                            <td class="p-2.5 text-amber-800 font-semibold bg-amber-50/50">
+                                                👉 Hệ thống tự cảnh báo màu đỏ trước 30 ngày để tài xế kịp thời đổi bằng, đảm bảo pháp lý giao thông.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>. Hồ sơ nhân sự được lưu vào hệ thống và tài xế lập tức xuất hiện trong danh sách điều xe.</p>
                         </div>
-                        <div id="sec-input-hr-payroll" class="scroll-mt-24">
-                            <p class="font-bold text-slate-900">5.2. Chấm công & Tính lương chuyến:</p>
-                            <p>Vào tab <strong>Bảng Lương Chuyến</strong> ➔ Chọn tháng cần tính ➔ Bấm <strong>Tổng Hợp Lương Chuyến</strong>. Hệ thống tự động quét toàn bộ chuyến xe hoàn thành của từng tài xế để tính ra tổng lương chính xác.</p>
+                    </div>
+
+                    <!-- 5.2 CHẤM CÔNG & LƯƠNG CHUYẾN -->
+                    <div id="sec-input-hr-payroll" class="scroll-mt-24 space-y-2 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">5.2. Chấm Công & Tính Lương Chuyến Tự Động</h4>
+                        <div class="text-sm text-slate-700 space-y-2">
+                            <p><strong>• Thao tác:</strong> Vào tab <strong>Bảng Lương Chuyến</strong> ➔ Chọn tháng cần tính (Ví dụ: <em>Tháng 10/2026</em>) ➔ Bấm nút <strong>Tổng Hợp Lương Chuyến</strong>.</p>
+                            <p><strong>• Cơ chế tính tự động:</strong> Phần mềm tự quét 100% các chuyến xe đã hoàn thành (trạng thái <em>POD Verified</em> hoặc <em>Settled</em>) của từng tài xế, áp đúng đơn giá lương theo tuyến từ Danh mục <strong>Biểu Phí Lương Chuyến</strong>, tự nhân hệ số ghép 2 cont và cộng các khoản phụ cấp kiểm hóa, lưu đêm để ra tổng thu nhập chính xác.</p>
                         </div>
                     </div>
                 </section>
@@ -1126,81 +1702,309 @@
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">6. Hướng Dẫn Thao Tác Phân Hệ Tài Chính & Kế Toán</h3>
 
                     <!-- 6.1 CẤP QUỸ ĐIỀU VẬN -->
-                    <div id="sec-input-fund-level1" class="scroll-mt-24 space-y-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">6.1. Cấp Quỹ Điều Vận</h4>
-                        <div class="text-sm text-slate-700 space-y-2">
-                            <p><strong>• Ý nghĩa:</strong> Thủ quỹ xuất tiền mặt từ két công ty để bàn giao hạn mức tiền mặt cho Điều phối viên nắm giữ để chủ động tạm ứng cho các tài xế chạy đêm.</p>
-                            <p><strong>• Thao tác:</strong> Vào menu <strong>Tài chính & Kế toán</strong> ➔ Tab <strong>Quỹ Điều Vận</strong> ➔ Bấm <strong>+ Lập Phiếu Tiếp Quỹ</strong> ➔ Nhập Số tiền (Ví dụ: <code>20.000.000 đ</code>), chọn Người nhận quỹ và bấm <strong>Lưu & In Phiếu Chi</strong>.</p>
+                    <div id="sec-input-fund-level1" class="scroll-mt-24 space-y-3">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">6.1. Hướng Dẫn Cấp Quỹ Tạm Ứng Cho Điều Vận (Cấp 1)</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Ý nghĩa:</strong> Thủ quỹ xuất tiền mặt từ két công ty để bàn giao hạn mức tiền mặt cho Điều phối viên nắm giữ, chủ động tạm ứng cho tài xế chạy ca đêm.</p>
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Tài chính & Kế toán</strong> ➔ Tab <strong>Quỹ Điều Vận</strong> ➔ Bấm nút <strong>+ Lập Phiếu Tiếp Quỹ</strong>.</p>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Điều Phối Viên Nhận Quỹ <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn nhân viên điều phối trực tiếp chịu trách nhiệm quản lý túi tiền mặt tạm ứng.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Nếu chưa có tên nhân viên trong danh sách: Vào <strong>Hành chính & Nhân sự</strong> ➔ Bấm <strong>+ Thêm Nhân Viên Mới</strong> (chọn phòng ban *DISPATCH*).
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số Tiền Tạm Ứng (VNĐ) <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5">Số tiền mặt bàn giao từ két công ty (Ví dụ: <code>20.000.000</code> đ). Tự động định dạng dấu chấm phân cách.</td>
+                                            <td class="p-2.5 text-slate-500">Bắt buộc nhập số tiền > 0.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Ngày Xuất Quỹ <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                            <td class="p-2.5">Ngày thủ quỹ thực tế xuất tiền giao cho điều phối viên.</td>
+                                            <td class="p-2.5 text-slate-500">Mặc định là ngày hôm nay.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Mục Đích / Ghi Chú Tiếp Quỹ</td>
+                                            <td class="p-2.5 text-slate-600">Văn bản</td>
+                                            <td class="p-2.5">Ghi rõ đợt cấp quỹ (Ví dụ: <em>Tiếp quỹ điều phối tuần 42 phục vụ xe chạy ca đêm và phí nâng hạ cảng</em>).</td>
+                                            <td class="p-2.5 text-slate-500">In ra phiếu chi tiền mặt để hai bên ký nhận bàn giao.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Hoàn tất:</strong> Bấm <strong>Lưu & In Phiếu Chi</strong>.</p>
                         </div>
                     </div>
 
                     <!-- 6.2 CẤP TẠM ỨNG TÀI XẾ -->
                     <div id="sec-input-advance-level2" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">6.2. Cấp Tạm Ứng Tài Xế</h4>
+                        <h4 class="text-base font-bold text-slate-900 font-heading">6.2. Hướng Dẫn Cấp Tạm Ứng Tài Xế (Cấp 2)</h4>
                         <div class="text-sm text-slate-700 space-y-2">
-                            <p>Điều phối viên xuất tiền từ Quỹ điều vận cho tài xế khi phát lệnh điều xe (hoặc tài xế nhận tạm ứng chuyển khoản qua ngân hàng). Hệ thống tự động ghi nhận dư nợ tạm ứng theo từng mã chuyến xe.</p>
+                            <p><strong>• Thao tác:</strong> Tại màn hình Lệnh điều xe hoặc trong Chi tiết chuyến xe ➔ Nhập <strong>Số tiền tạm ứng</strong> (Ví dụ: <code>2.500.000</code> đ) ➔ Chọn nguồn tiền: <em>Từ Quỹ Điều Phối Viên</em> hoặc <em>Chuyển khoản công ty</em> ➔ Bấm <strong>Xác Nhận Tạm Ứng</strong>. Tiền tự động ghi nợ vào mã chuyến xe của tài xế.</p>
                         </div>
                     </div>
 
                     <!-- 6.3 QUYẾT TOÁN HOÀN ỨNG -->
                     <div id="sec-input-settle-advance" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">6.3. Quyết Toán Hoàn Ứng</h4>
+                        <h4 class="text-base font-bold text-slate-900 font-heading">6.3. Quyết Toán Hoàn Ứng Sau Chuyến Xe</h4>
                         <div class="text-sm text-slate-700 space-y-2">
-                            <p>Sau khi chuyến xe hoàn tất, tài xế nộp lại chứng từ chi phí thực tế. Kế toán đối chiếu:</p>
+                            <p>Sau khi chuyến xe hoàn tất và tài xế nộp lại chứng từ chi phí thực tế, kế toán mở Chi tiết chuyến xe ➔ Bấm <strong>+ Quyết Toán Hoàn Ứng</strong>. Hệ thống tự động tính toán:</p>
                             <p class="font-mono text-xs font-bold text-teal-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200">Số Tiền Chênh Lệch = Tạm Ứng Nhận - Tổng Chi Phí Thực Tế Duyệt</p>
-                            <p>Nếu thừa tiền: Tài xế nộp lại quỹ. Nếu thiếu tiền: Thủ quỹ chi bổ sung cho tài xế.</p>
+                            <ul class="list-disc pl-6 space-y-1">
+                                <li><strong>Nếu Chênh Lệch > 0 (Thừa tiền):</strong> Tài xế nộp lại tiền thừa vào quỹ điều vận ➔ Hệ thống tự sinh Phiếu Thu Hoàn Ứng.</li>
+                                <li><strong>Nếu Chênh Lệch &lt; 0 (Thiếu tiền):</strong> Tài xế đã chi vượt tiền túi ➔ Thủ quỹ chi bù phần thiếu cho tài xế ➔ Hệ thống tự sinh Phiếu Chi Bổ Sung.</li>
+                            </ul>
                         </div>
                     </div>
 
                     <!-- 6.4 LẬP PHIẾU THU / PHIẾU CHI -->
-                    <div id="sec-input-cash-voucher" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">6.4. Lập Phiếu Thu / Phiếu Chi Sổ Quỹ</h4>
-                        <div class="text-sm text-slate-700 space-y-2">
-                            <p>Vào tab <strong>Sổ Quỹ Thu Chi</strong> ➔ Bấm <strong>+ Lập Phiếu Thu</strong> hoặc <strong>+ Lập Phiếu Chi</strong>. Chọn đúng tài khoản tiền mặt hoặc tài khoản ngân hàng để ghi sổ quỹ chuẩn mực.</p>
+                    <div id="sec-input-cash-voucher" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">6.4. Hướng Dẫn Chi Tiết Lập Phiếu Thu / Phiếu Chi Vào Sổ Quỹ</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Tài chính & Kế toán</strong> ➔ Tab <strong>Sổ Quỹ Thu Chi</strong> ➔ Bấm nút <strong>+ Lập Phiếu Thu</strong> hoặc <strong>+ Lập Phiếu Chi</strong>.</p>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                            <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Loại Giao Dịch <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn <em>Phiếu Thu (Tiền vào quỹ)</em> hoặc <em>Phiếu Chi (Tiền ra khỏi quỹ)</em>.</td>
+                                            <td class="p-2.5 text-slate-500">Quyết định hướng ghi tăng/giảm số dư sổ quỹ.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Hình Thức Thanh Toán <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn <em>Quỹ Tiền Mặt (Tại công ty)</em> hoặc <em>Tài khoản Ngân Hàng (Chuyển khoản)</em>.</td>
+                                            <td class="p-2.5 text-slate-500">Tự động định tuyến vào Sổ quỹ tiền mặt hoặc Sổ tiền gửi ngân hàng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Khoản Mục Thu / Chi <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn khoản mục hạch toán: Thu cước khách hàng, Thu hoàn ứng tài xế, Chi tiếp quỹ điều vận, Chi trả xe thầu phụ, Chi sửa xe...</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Nếu cần thêm khoản mục mới: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Khoản Chi</strong> ➔ Bấm <strong>+ Thêm Mới Khoản Chi</strong>.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số Tiền Giao Dịch (VNĐ) <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5">Số tiền thực tế nộp vào hoặc chi ra khỏi quỹ. Tự động định dạng dấu chấm phân cách.</td>
+                                            <td class="p-2.5 text-slate-500">Bắt buộc nhập số tiền > 0.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Ngày Hạch Toán Sổ Quỹ <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                            <td class="p-2.5">Ngày chứng từ ghi sổ quỹ theo quy chuẩn kế toán.</td>
+                                            <td class="p-2.5 text-slate-500">Mặc định là ngày hôm nay.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Phân Loại & Tên Đối Tác</td>
+                                            <td class="p-2.5 text-slate-600">Select & Văn bản</td>
+                                            <td class="p-2.5">Chọn nhóm đối tác (<em>Khách hàng, Tài xế, Điều phối, Thầu phụ, Nhà cung cấp</em>) và tên người nộp/nhận tiền.</td>
+                                            <td class="p-2.5 text-slate-500">Phục vụ theo dõi công nợ chi tiết theo từng đối tượng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Mã Tham Chiếu / Chứng Từ Gốc</td>
+                                            <td class="p-2.5 text-slate-600">Mã chữ/số</td>
+                                            <td class="p-2.5">Nhập mã chuyến xe liên quan (<code>TVL-...</code>), số hóa đơn, hoặc số hợp đồng.</td>
+                                            <td class="p-2.5 text-slate-500">Giúp kiểm toán truy ngược về chuyến xe gốc trong 1 click.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Diễn Giải Lý Do Thu / Chi</td>
+                                            <td class="p-2.5 text-slate-600">Đoạn văn bản</td>
+                                            <td class="p-2.5">Ghi rõ nội dung thu chi để in lên Phiếu Thu / Phiếu Chi (Mẫu 01-TT, 02-TT).</td>
+                                            <td class="p-2.5 text-slate-500">Ví dụ: <em>Thu tiền cước chuyến TVL-2610-001 của Công ty ABC đợt 1</em>.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p><strong>• Hoàn tất:</strong> Bấm <strong>Lưu Phiếu Sổ Quỹ</strong>. Bấm nút In Phiếu để in văn bản A4 chuẩn mực kế toán có đủ chữ ký Giám đốc, Kế toán trưởng, Thủ quỹ và Người nộp/nhận.</p>
                         </div>
                     </div>
 
                     <!-- 6.5 QUYẾT TOÁN XE THẦU PHỤ -->
                     <div id="sec-input-subcontractor-settle" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">6.5. Quyết Toán Xe Thầu Phụ 3PL</h4>
+                        <h4 class="text-base font-bold text-slate-900 font-heading">6.5. Quyết Toán Công Nợ Xe Thầu Phụ 3PL</h4>
                         <div class="text-sm text-slate-700 space-y-2">
-                            <p>Vào tab <strong>Công Nợ Xe Bạn</strong> ➔ Chọn nhà xe thầu phụ ➔ Tích chọn các chuyến xe đã hoàn tất POD ➔ Bấm <strong>Tạo Bảng Quyết Toán Đợt</strong> để chuyển tiền cước thuê ngoài.</p>
+                            <p><strong>• Thao tác:</strong> Vào tab <strong>Công Nợ Xe Bạn</strong> ➔ Chọn nhà xe thầu phụ ➔ Tích chọn các chuyến xe đã hoàn tất POD ➔ Bấm <strong>Tạo Bảng Quyết Toán Đợt</strong>.</p>
+                            <p><strong>• Hướng dẫn khi chưa có Nhà xe thầu phụ trong danh mục:</strong> Vào <strong>Cài đặt</strong> ➔ Tab <strong>Nhà Xe Thầu Phụ</strong> ➔ Bấm nút <strong>+ Thêm Mới Đối Tác Xe Thầu Phụ</strong>. Nhập Tên nhà xe, Người đại diện, Số điện thoại và Số tài khoản ngân hàng thụ hưởng rồi bấm <strong>Lưu</strong>.</p>
                         </div>
                     </div>
                 </section>
 
                 <!-- 7. DỊCH VỤ HẢI QUAN -->
-                <section id="sec-input-customs" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
+                <section id="sec-input-customs" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">7. Hướng Dẫn Thao Tác Phân Hệ Dịch Vụ Hải Quan</h3>
-                    <div class="text-sm text-slate-700 space-y-2">
+
+                    <div class="text-sm text-slate-700 space-y-3">
                         <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Dịch vụ Hải quan</strong> ➔ Bấm nút <strong>+ Tạo Hồ Sơ Tờ Khai Mới</strong>.</p>
-                        <p><strong>• Nhập thông tin:</strong> Số tờ khai hải quan, Phân luồng tờ khai (Xanh / Vàng / Đỏ), Chi cục hải quan tiếp nhận, Ngày thông quan và Danh sách số container liên quan.</p>
-                        <p><strong>• Hoàn tất:</strong> Bấm <strong>Lưu Tờ Khai</strong> để liên kết trực tiếp với Lệnh điều xe vận chuyển.</p>
+
+                        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                            <table class="w-full text-left text-xs erp-table border-collapse">
+                                <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-2.5 w-44">Tên Ô Nhập Liệu</th>
+                                        <th class="p-2.5 w-32">Định Dạng</th>
+                                        <th class="p-2.5">Mục Đích & Quy Chuẩn Nhập Liệu</th>
+                                        <th class="p-2.5 w-64">Hướng Dẫn Khi Chưa Có Dữ Liệu / Cần Tạo Mới</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Số Tờ Khai VNACCS <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">12 chữ số</td>
+                                            <td class="p-2.5">Số tờ khai hải quan điện tử chính thức cấp từ hệ thống VNACCS/VCIS (Ví dụ: <code>106883921100</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Bắt buộc nhập. Tự động kiểm tra độ dài 12 chữ số.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Ngày Đăng Ký Tờ Khai <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                            <td class="p-2.5">Ngày tiếp nhận và cấp số tờ khai trên cổng thông tin hải quan.</td>
+                                            <td class="p-2.5 text-slate-500">Mặc định là ngày hôm nay.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Doanh Nghiệp / Khách Hàng <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn doanh nghiệp chủ hàng đứng tên mở tờ khai.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Nếu chưa có trong danh sách: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Khách Hàng</strong> ➔ Bấm <strong>+ Thêm Mới Khách Hàng</strong> để khai báo tên và mã số thuế.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Chiều Vận Chuyển & Loại Hình VNACCS <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Chọn <em>Hàng Nhập Khẩu</em> hoặc <em>Hàng Xuất Khẩu</em>, và chọn mã loại hình (Ví dụ: <code>A11</code> - Nhập kinh doanh, <code>A12</code> - Nhập sản xuất, <code>B11</code> - Xuất kinh doanh, <code>E62</code> - Xuất gia công).</td>
+                                            <td class="p-2.5 text-slate-500">Theo đúng mã loại hình khai báo trên tờ khai điện tử.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Chi Cục Hải Quan Tiếp Nhận <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select / Text</td>
+                                            <td class="p-2.5">Chi cục hải quan cửa khẩu làm thủ tục (Ví dụ: <em>02CI - Chi cục HQ Cảng Sài Gòn KV 1, 02IK - Cảng Sài Gòn KV 4...</em>).</td>
+                                            <td class="p-2.5 text-slate-500">Phục vụ phân công nhân viên hiện trường đi làm thủ tục thông quan.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Phân Luồng Tờ Khai <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">
+                                                Chọn kết quả phân luồng từ hệ thống hải quan:<br>
+                                                - <strong>Luồng Xanh:</strong> Thông quan ngay, miễn kiểm tra hồ sơ và hàng.<br>
+                                                - <strong>Luồng Vàng:</strong> Kiểm tra hồ sơ giấy chứng từ.<br>
+                                                - <strong>Luồng Đỏ:</strong> Kiểm tra thực tế hàng hóa tại cảng (Kiểm hóa).
+                                            </td>
+                                            <td class="p-2.5 text-amber-800 font-semibold bg-amber-50/50">
+                                                👉 Khi phân luồng Đỏ: Hệ thống tự động kích hoạt nghiệp vụ phụ cấp kiểm hóa cho tài xế/nhân viên hiện trường.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Ngày Thông Quan Thực Tế</td>
+                                            <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                            <td class="p-2.5">Ngày công chức hải quan ký xác nhận thông quan chính thức và in mã vạch.</td>
+                                            <td class="p-2.5 text-slate-500">Cập nhật khi hoàn tất thủ tục.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Danh Sách Container & Lệnh Điều Xe Đi Kèm</td>
+                                            <td class="p-2.5 text-slate-600">Mã cont / Mã chuyến</td>
+                                            <td class="p-2.5">Nhập các số container thuộc tờ khai và liên kết với Mã chuyến xe tương ứng trong hệ thống.</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Giúp điều phối viên và khách hàng theo dõi song hành: Vừa thấy tiến độ thông quan tờ khai, vừa thấy vị trí GPS xe chở container.
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu Tờ Khai</strong>.</p>
                     </div>
                 </section>
 
                 <!-- 8. BÁO CÁO & THỐNG KÊ -->
-                <section id="sec-input-reports" class="help-section scroll-mt-24 space-y-4 pb-8">
+                <section id="sec-input-reports" class="help-section scroll-mt-24 space-y-6 pb-8">
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">8. Hướng Dẫn Tra Cứu, Lọc, Tùy Biến Cột & In 14 Báo Cáo BI</h3>
+
                     <div class="text-sm text-slate-700 space-y-3">
-                        <p>Vào menu <strong>Báo cáo & Thống kê</strong> ➔ Chọn 1 trong 14 báo cáo quản trị:</p>
-                        <ul class="list-disc pl-6 space-y-1">
-                            <li><strong>Báo Cáo 01:</strong> Nhật trình điều vận chi tiết theo ngày.</li>
-                            <li><strong>Báo Cáo 02:</strong> Bảng kê doanh thu vận tải theo khách hàng.</li>
-                            <li><strong>Báo Cáo 03:</strong> Báo cáo phân tích lãi lỗ (P&L) từng chuyến xe.</li>
-                            <li><strong>Báo Cáo 04:</strong> Báo cáo tiêu hao dầu và chi phí nhiên liệu.</li>
-                            <li><strong>Báo Cáo 05:</strong> Bảng tổng hợp công nợ khách hàng và đối soát.</li>
-                            <li><strong>Báo Cáo 06:</strong> Bảng đối soát chi hộ cảng và nâng hạ.</li>
-                            <li><strong>Báo Cáo 07:</strong> Báo cáo thanh toán xe thầu phụ 3PL.</li>
-                            <li><strong>Báo Cáo 08:</strong> Bảng lương chuyến tài xế chi tiết.</li>
-                            <li><strong>Báo Cáo 09:</strong> Báo cáo sổ quỹ tiền mặt và tài khoản ngân hàng.</li>
-                            <li><strong>Báo Cáo 10:</strong> Báo cáo sự cố bất thường OS&D và tổn thất.</li>
-                            <li><strong>Báo Cáo 11:</strong> Báo cáo hiệu suất khai thác đầu kéo và moóc.</li>
-                            <li><strong>Báo Cáo 12:</strong> Báo cáo tỷ lệ giao hàng đúng hẹn OTD %.</li>
-                            <li><strong>Báo Cáo 13:</strong> Báo cáo theo dõi hạn đăng kiểm phương tiện.</li>
-                            <li><strong>Báo Cáo 14:</strong> Báo cáo tổng hợp tình hình thông quan hải quan.</li>
-                        </ul>
-                        <p><strong>• Thao tác In Ấn:</strong> Chọn bộ lọc thời gian ➔ Bấm nút <strong>In Báo Cáo</strong> ở góc trên bên phải. Bản in tự động căn chỉnh khổ giấy A4 chuẩn mực theo quy chuẩn văn bản.</p>
+                        <p>Vào menu <strong>Báo cáo & Thống kê</strong> để truy cập trung tâm báo cáo phân tích dữ liệu chuyên sâu với 14 biểu mẫu chuẩn quốc tế:</p>
+
+                        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                            <table class="w-full text-left text-xs erp-table border-collapse">
+                                <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-2.5 w-44">Tên Ô / Công Cụ</th>
+                                        <th class="p-2.5 w-32">Thao Tác</th>
+                                        <th class="p-2.5">Mục Đích & Hướng Dẫn Chi Tiết</th>
+                                        <th class="p-2.5 w-64">Ghi Chú & Tùy Biến</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Chọn Biểu Mẫu Báo Cáo</td>
+                                        <td class="p-2.5 text-slate-600">Select danh sách</td>
+                                        <td class="p-2.5">
+                                            Chọn 1 trong 14 báo cáo BI quản trị:<br>
+                                            <em>01. Nhật trình điều vận chi tiết; 02. Doanh thu theo khách hàng; 03. P&L lãi lỗ từng chuyến; 04. Tiêu hao nhiên liệu dầu DO; 05. Công nợ khách hàng; 06. Đối soát chi hộ cảng; 07. Quyết toán xe thầu phụ; 08. Lương chuyến tài xế; 09. Sổ quỹ tiền mặt & ngân hàng; 10. Sự cố OS&D; 11. Hiệu suất xe & moóc; 12. Giao hàng đúng hẹn OTD %; 13. Hạn đăng kiểm xe; 14. Tổng hợp thông quan hải quan.</em>
+                                        </td>
+                                        <td class="p-2.5 text-slate-500">Mỗi báo cáo có các chỉ số tính toán và cột dữ liệu riêng biệt.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Bộ Lọc Thời Gian</td>
+                                        <td class="p-2.5 text-slate-600">Nút nhanh & Lịch</td>
+                                        <td class="p-2.5">Chọn nhanh: <em>Tháng này</em>, <em>Tháng trước</em>, <em>Quý này</em>, hoặc chọn <em>Từ ngày ... Đến ngày ...</em> cụ thể.</td>
+                                        <td class="p-2.5 text-slate-500">Bấm nút <strong>Lọc Dữ Liệu</strong> để hệ thống kết xuất số liệu mới nhất.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Lọc Khách Hàng / Xe / Tài Xế</td>
+                                        <td class="p-2.5 text-slate-600">Dropdown lọc</td>
+                                        <td class="p-2.5">Lọc dữ liệu chính xác cho 1 khách hàng cụ thể hoặc 1 đầu xe cụ thể để gửi bảng kê đối soát riêng.</td>
+                                        <td class="p-2.5 text-slate-500">Để trống để xem toàn bộ toàn đội xe.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Nút [Tùy Biến Cột] (Column Manager)</td>
+                                        <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">Bấm biểu tượng bánh răng</td>
+                                        <td class="p-2.5">
+                                            Mở bảng tùy biến cột: Tích chọn bật/tắt các cột thông tin cần xem hoặc muốn ẩn đi khi in ấn; kéo thả vị trí để sắp xếp thứ tự cột theo yêu cầu.
+                                        </td>
+                                        <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                            👉 Cấu hình cột được lưu tự động trên trình duyệt, không bị mất khi tải lại trang!
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Nút [Xuất Excel]</td>
+                                        <td class="p-2.5 text-emerald-800 font-semibold bg-emerald-50/50">Bấm nút xuất file</td>
+                                        <td class="p-2.5">Tải về máy tính file Excel <code>.xlsx</code> chứa toàn bộ dữ liệu báo cáo có định dạng chuẩn, giữ nguyên công thức và phân cách số tiền.</td>
+                                        <td class="p-2.5 text-slate-500">Dùng để chuyển dữ liệu vào phần mềm kế toán (MISA, FAST).</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Nút [In Báo Cáo]</td>
+                                        <td class="p-2.5 text-slate-800 font-semibold bg-slate-50">Bấm nút máy in</td>
+                                        <td class="p-2.5">Mở giao diện in ấn chuyên nghiệp, tự động căn chỉnh khổ giấy A4 (khổ ngang Landscape hoặc khổ dọc Portrait), loại bỏ các thanh công cụ thừa để xuất bản in sạch đẹp hoặc lưu thành file PDF.</td>
+                                        <td class="p-2.5 text-slate-500">Chuẩn mực in ấn công văn hành chính.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
 

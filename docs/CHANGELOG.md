@@ -2,6 +2,34 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.0] - 2026-10-11 (Đại Tu Toàn Diện Mục III Sổ Tay /helps: Chi Tiết Từng Ô 100% & Hướng Dẫn Thao Tác Tạo Mới Nhanh)
+
+### 1. Chi Tiết Hóa 100% Từng Ô Nhập Liệu Trong Mục III (Hướng Dẫn Nhập Liệu):
+- **Phân Hệ 1 (Dashboard):** Chi tiết từng ô bộ lọc kỳ, thẻ dòng tiền tại két, thẻ tài khoản ngân hàng và ma trận P&L chuyến xe.
+- **Phân Hệ 2 (Sale & Booking):**
+  * **2.1 Tạo Báo Giá Tuyến Cước:** Chi tiết 13 trường dữ liệu (Khách hàng, cơ chế trượt giá dầu Petrolimex, cự ly km, đơn giá, sản lượng, funnel bán hàng, điều khoản thương mại FCL/FTL/Giá dầu).
+  * **2.2 Tạo Mới Booking:** Chi tiết 16 trường (Phân loại dịch vụ, số booking/PO, hãng tàu, vessel/voy, loại cont, lộ trình 3 điểm, giờ hẹn 24h, hạn cắt CY, SI cutoff, free DET/DEM, file lệnh cấp rỗng).
+- **Phân Hệ 3 (Điều Vận):**
+  * **3.1 Tạo Lệnh Điều Động:** Chi tiết khối kế thừa 9 trường từ Booking, toggle ghép 2 cont 20ft, số cont, seal, VGM, cắt CY, invoice, cửa dock, giờ hẹn 24h, hạn free DET, giám định EIR vỏ cont, lộ trình 3 điểm, phân công tài xế, chế độ Cắt Kéo (Drop & Hook 2 tài xế) và tỷ lệ phân chia thù lao.
+  * **3.3 Kê Khai Chi Phí & Chi Hộ:** Chi tiết khoản mục nâng/hạ/cược/cân/bốc xếp/cầu đường, số HĐĐT, mã tra cứu, link hóa đơn và đặc biệt là toggle Chi hộ khách hàng (On-Behalf) tự động tách vào Debit Note.
+- **Phân Hệ 4 (Xe & Bãi):** Khai báo xe đầu kéo, định mức dầu tiêu chuẩn, hạn đăng kiểm, hạn bảo hiểm TNDS, rơ-moóc, tải trọng và lịch đảo lốp.
+- **Phân Hệ 5 (Hành Chính & Nhân Sự):** Khai báo hồ sơ nhân sự, mã NV, CCCD, Zalo ID, phân quyền, GPLX hạng FC/FE, hạn bằng lái và cơ chế tính lương chuyến tự động.
+- **Phân Hệ 6 (Tài Chính & Kế Toán):** Cấp quỹ điều vận Cấp 1, tạm ứng tài xế Cấp 2, quyết toán hoàn ứng thừa/thiếu, lập phiếu thu/chi sổ quỹ (mẫu 01-TT, 02-TT) và quyết toán xe thầu phụ 3PL.
+- **Phân Hệ 7 (Dịch Vụ Hải Quan):** 12 chữ số tờ khai VNACCS, phân luồng Xanh/Vàng/Đỏ, loại hình hải quan và liên kết trực tiếp mã cont với chuyến xe.
+- **Phân Hệ 8 (Báo Cáo & Thống Kê):** 14 báo cáo BI quản trị, bộ lọc thời gian, column customizer tùy biến cột, xuất Excel và in A4.
+
+### 2. Chuẩn Hóa Chỉ Dẫn Tạo Mới / Khi Không Tìm Thấy Dữ Liệu:
+- Hướng dẫn rõ ràng vị trí và tên các nút thao tác nhanh:
+  * Nút **[+ Thêm KH]** để khai báo khách hàng tức thì từ trong form Báo giá, Booking và Lệnh điều xe.
+  * Nút **[+ Thêm]** tại Hãng tàu và Lộ trình 3 điểm (Nơi lấy, Kho đóng/dỡ, Nơi hạ) để tạo Cảng/Depot/Kho bãi mà không làm gián đoạn nhập liệu.
+  * Nút **[+ Tạo Booking Mới]** trên đầu form Điều vận.
+  * Nút **[Danh mục]** để cấu hình biểu phí thù lao tài xế.
+  * Cơ chế Universal Quick-Add tự động reload và chọn ngay bản ghi mới vào ô tương ứng mà không làm mất dữ liệu người dùng đang nhập dở.
+
+### 3. Kiểm Thử Hệ Thống (Zero-Regression):
+- Vượt qua toàn bộ 90/90 unit tests (`python manage.py test --keepdb`).
+- Cú pháp JavaScript hợp lệ 100% (`node -c static/js/app.js`).
+
 ## [v1.9] - 2026-10-11 (Phân Định Rạch Ròi 3 Tiến Trình Nghiệp Vụ, Bỏ Fallback Ngày Tạo & Chuẩn Hóa State Machine Đối Soát Công Nợ)
 
 ### 1. Phân Định Rạch Ròi 3 Tiến Trình Nghiệp Vụ Logistics:
