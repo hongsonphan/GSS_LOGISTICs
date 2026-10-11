@@ -1261,10 +1261,10 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertFalse(disp_data['can_view_finance'])
         self.assertEqual(disp_data['summary']['total_revenue'], 0)
         self.assertEqual(disp_data['summary']['total_profit'], 0)
-        # Các số liệu tài chính của Report 7, 8, 9 phải được MASK về 0
-        self.assertEqual(disp_data['report7_customer_analytics']['total_customer_revenue'], 0)
-        self.assertEqual(disp_data['report8_subcontractor_settlements']['total_gross_payable'], 0)
-        self.assertEqual(disp_data['report9_driver_payroll_performance']['total_payroll_fund'], 0)
+        # Theo quy chuẩn phân quyền mới: Báo cáo không có quyền được ẨN HOÀN TOÀN (None) chứ không mask dữ liệu
+        self.assertIsNone(disp_data['report7_customer_analytics'])
+        self.assertIsNone(disp_data['report8_subcontractor_settlements'])
+        self.assertIsNone(disp_data['report9_driver_payroll_performance'])
 
 
     def test_accounting_advance_and_settlement_workflow(self):

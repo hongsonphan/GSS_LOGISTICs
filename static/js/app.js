@@ -10226,7 +10226,10 @@ function switchTab(tabId, updateHistory = true) {
         }
         if (tabId === 'quyet-toan') loadSettlementData();
         if (tabId === 'hai-quan') fetchCustomsDeclarations();
-        if (tabId === 'bao-cao') loadReportsData();
+        if (tabId === 'bao-cao') {
+            initReportPermissions();
+            loadReportsData();
+        }
         if (tabId === 'cai-dat') loadMasterData();
     } catch (loadErr) {
         console.error(`[App] Lỗi nạp dữ liệu tab ${tabId}:`, loadErr);
@@ -15182,15 +15185,22 @@ function renderRolesPermissionsView(data) {
                                         <td class="p-3 text-center">${activeBadge}</td>
                                         <td class="p-3 text-center">${staffBadge}</td>
                                         <td class="p-3 text-slate-500 font-mono text-[11px]">${escapeHtml(u.last_login)}</td>
-                                        ${isCurrentAdmin ? `
-                                        <td class="p-3 text-center">
-                                            <a href="/admin/auth/user/${u.id}/change/" target="_blank" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-[11px] inline-flex items-center gap-1 transition-colors" title="Mở trang chỉnh sửa chi tiết Django Admin">
-                                                <i class="ph ph-sliders"></i>
-                                                <span>Admin</span>
-                                                <i class="ph ph-arrow-square-out text-[10px]"></i>
-                                            </a>
+                                        <td class="p-3 text-center whitespace-nowrap">
+                                            <div class="inline-flex items-center gap-1.5">
+                                                <button onclick="openUserPermissionsModal(${u.id})" class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200/80 rounded-lg font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all" title="Xem và tùy biến chi tiết phân quyền hệ thống & 14 báo cáo cho nhân sự này">
+                                                    <i class="ph-bold ph-shield-check text-xs text-teal-600"></i>
+                                                    <span>Phân Quyền</span>
+                                                    ${u.has_custom_permissions ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" title="Đã có cấu hình quyền tùy biến riêng lẻ"></span>' : ''}
+                                                </button>
+                                                ${isCurrentAdmin ? `
+                                                <a href="/admin/auth/user/${u.id}/change/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-[11px] inline-flex items-center gap-1 transition-colors" title="Mở trang chỉnh sửa chi tiết Django Admin">
+                                                    <i class="ph ph-sliders"></i>
+                                                    <span>Admin</span>
+                                                    <i class="ph ph-arrow-square-out text-[10px]"></i>
+                                                </a>
+                                                ` : ''}
+                                            </div>
                                         </td>
-                                        ` : ''}
                                     </tr>
                                 `;
                             }).join('')}
@@ -15199,8 +15209,275 @@ function renderRolesPermissionsView(data) {
                 </div>
             </div>
         </div>
+
+        <!-- Modal Tùy Biến Phân Quyền Cho Người Dùng -->
+        <div id="modal-user-permissions" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs hidden transition-opacity">
+            <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                <!-- Modal Header -->
+                <div class="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white flex items-center justify-between border-b border-teal-700/40 shrink-0">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 text-xl font-black">
+                            <i class="ph-bold ph-shield-check"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-base font-black font-heading text-white">Tùy Biến Phân Quyền Cá Nhân</h3>
+                                <span id="modal-perm-username-badge" class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-teal-500/30 text-teal-200 border border-teal-400/30">user</span>
+                            </div>
+                            <p class="text-xs text-slate-300 mt-0.5" id="modal-perm-user-desc">
+                                Người dùng kế thừa quyền từ Nhóm Vai Trò và có thể thêm hoặc bớt quyền xem báo cáo / thao tác riêng lẻ.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeUserPermissionsModal()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+                        <i class="ph-bold ph-x text-base"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1 divide-y divide-slate-100">
+                    <!-- Section 1: Nhóm Vai Trò -->
+                    <div class="space-y-2 pb-4">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            1. Nhóm Vai Trò Nghiệp Vụ (Django Group)
+                        </label>
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <select id="modal-perm-group-select" onchange="onModalGroupChanged(this.value)" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-hidden shadow-2xs max-w-md w-full">
+                                <option value="0">-- Chưa gán nhóm (Không có quyền nhóm) --</option>
+                            </select>
+                            <span class="text-xs text-slate-400 italic">
+                                * Khi đổi nhóm, các quyền mặc định của nhóm sẽ được chọn trước. Bạn có thể tick thêm hoặc bỏ bớt bên dưới.
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Danh sách quyền phân loại theo Module -->
+                    <div class="space-y-4 pt-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                    2. Danh Sách Quyền Phân Hệ & Báo Cáo
+                                </label>
+                                <p class="text-xs text-slate-400 mt-0.5">
+                                    Được phân quyền: hiển thị và cho phép truy cập. Không được phân quyền: ẩn hoàn toàn phân hệ/báo cáo.
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs font-medium">
+                                <button type="button" onclick="toggleAllModalPermissions(true)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-[11px] transition-colors">
+                                    Chọn tất cả
+                                </button>
+                                <button type="button" onclick="toggleAllModalPermissions(false)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-[11px] transition-colors">
+                                    Bỏ chọn tất cả
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Accordion Modules Container -->
+                        <div id="modal-perm-modules-container" class="space-y-3">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+                    <div class="text-xs text-slate-500" id="modal-perm-stats-text">
+                        Đang chọn: <strong class="text-teal-700 font-bold" id="modal-perm-selected-count">0</strong> quyền
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="closeUserPermissionsModal()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 transition-colors">
+                            Hủy Bỏ
+                        </button>
+                        <button type="button" id="btn-save-user-perms" onclick="saveUserPermissionsModal()" class="px-5 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-sm inline-flex items-center gap-1.5 transition-all">
+                            <i class="ph-bold ph-floppy-disk text-sm"></i>
+                            <span>Lưu Phân Quyền</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 }
+
+let currentEditingUserId = null;
+
+function openUserPermissionsModal(userId) {
+    if (!rolesPermissionsDataCache) return;
+    const user = (rolesPermissionsDataCache.users || []).find(u => u.id === Number(userId));
+    if (!user) {
+        showToast('error', 'Không tìm thấy thông tin tài khoản người dùng!');
+        return;
+    }
+
+    currentEditingUserId = userId;
+    const modal = document.getElementById('modal-user-permissions');
+    if (!modal) return;
+
+    // Set User Title & Badge
+    const badge = document.getElementById('modal-perm-username-badge');
+    if (badge) badge.textContent = `${user.username} (${user.full_name})`;
+
+    const desc = document.getElementById('modal-perm-user-desc');
+    if (desc) desc.textContent = `${user.role_in_employee || 'Nhân sự'} | Email: ${user.email || 'Chưa có'} | Đăng nhập cuối: ${user.last_login}`;
+
+    // Fill Group Select
+    const groupSelect = document.getElementById('modal-perm-group-select');
+    if (groupSelect) {
+        const roles = rolesPermissionsDataCache.roles || [];
+        groupSelect.innerHTML = `
+            <option value="0" ${!user.primary_group_id ? 'selected' : ''}>-- Chưa gán nhóm (Không có quyền nhóm) --</option>
+            ${roles.map(r => `
+                <option value="${r.id}" ${user.primary_group_id === r.id ? 'selected' : ''}>${escapeHtml(r.name)} (${r.permission_count} quyền)</option>
+            `).join('')}
+        `;
+    }
+
+    // Render Modules & Checkboxes
+    const container = document.getElementById('modal-perm-modules-container');
+    const modules = rolesPermissionsDataCache.modules || [];
+    const effectivePermsSet = new Set(user.effective_permissions || []);
+
+    if (container) {
+        container.innerHTML = modules.map(m => {
+            return `
+                <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                    <div class="bg-slate-50 px-3.5 py-2.5 flex items-center justify-between border-b border-slate-100 cursor-pointer" onclick="togglePermModuleCollapse('${m.id}')">
+                        <div class="flex items-center space-x-2">
+                            <i class="ph-bold ${m.icon || 'ph-folder'} text-teal-700 text-sm"></i>
+                            <span class="text-xs font-bold text-slate-800">${escapeHtml(m.name)}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-600">
+                                ${(m.permissions || []).length} quyền
+                            </span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button type="button" onclick="event.stopPropagation(); toggleModuleCheckboxes('${m.id}', true)" class="text-[10px] text-teal-700 hover:underline font-bold">Chọn nhóm này</button>
+                            <span class="text-slate-300">|</span>
+                            <button type="button" onclick="event.stopPropagation(); toggleModuleCheckboxes('${m.id}', false)" class="text-[10px] text-slate-500 hover:underline font-bold">Bỏ nhóm này</button>
+                            <i id="icon-chevron-${m.id}" class="ph-bold ph-caret-down text-slate-400 text-xs ml-1 transition-transform"></i>
+                        </div>
+                    </div>
+                    <div id="module-body-${m.id}" class="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 bg-white">
+                        ${(m.permissions || []).map(p => {
+                            const isChecked = effectivePermsSet.has(p.full_code);
+                            const isReport = p.app_label === 'reports';
+                            return `
+                                <label class="flex items-start space-x-2 p-1.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer text-xs select-none ${isReport ? 'bg-teal-50/20' : ''}">
+                                    <input type="checkbox" name="user_modal_perm" value="${p.full_code}" data-module="${m.id}" ${isChecked ? 'checked' : ''} onchange="updateModalPermStats()" class="mt-0.5 rounded text-teal-600 focus:ring-teal-500 border-slate-300">
+                                    <div class="min-w-0">
+                                        <div class="text-[11.5px] font-bold text-slate-800 leading-tight">${escapeHtml(p.name)}</div>
+                                        <div class="text-[10px] font-mono text-slate-400 truncate" title="${p.full_code}">${p.codename}</div>
+                                    </div>
+                                </label>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    updateModalPermStats();
+    modal.classList.remove('hidden');
+}
+window.openUserPermissionsModal = openUserPermissionsModal;
+
+function closeUserPermissionsModal() {
+    const modal = document.getElementById('modal-user-permissions');
+    if (modal) modal.classList.add('hidden');
+    currentEditingUserId = null;
+}
+window.closeUserPermissionsModal = closeUserPermissionsModal;
+
+function togglePermModuleCollapse(moduleId) {
+    const body = document.getElementById(`module-body-${moduleId}`);
+    const icon = document.getElementById(`icon-chevron-${moduleId}`);
+    if (body) {
+        body.classList.toggle('hidden');
+        if (icon) {
+            icon.classList.toggle('rotate-180');
+        }
+    }
+}
+window.togglePermModuleCollapse = togglePermModuleCollapse;
+
+function toggleModuleCheckboxes(moduleId, check) {
+    const checkboxes = document.querySelectorAll(`input[name="user_modal_perm"][data-module="${moduleId}"]`);
+    checkboxes.forEach(cb => { cb.checked = Boolean(check); });
+    updateModalPermStats();
+}
+window.toggleModuleCheckboxes = toggleModuleCheckboxes;
+
+function toggleAllModalPermissions(check) {
+    const checkboxes = document.querySelectorAll('input[name="user_modal_perm"]');
+    checkboxes.forEach(cb => { cb.checked = Boolean(check); });
+    updateModalPermStats();
+}
+window.toggleAllModalPermissions = toggleAllModalPermissions;
+
+function onModalGroupChanged(groupId) {
+    if (!rolesPermissionsDataCache) return;
+    const roles = rolesPermissionsDataCache.roles || [];
+    const grp = roles.find(r => r.id === Number(groupId));
+    if (!grp) return;
+
+    const grpPermsSet = new Set(grp.permission_codes || []);
+    const checkboxes = document.querySelectorAll('input[name="user_modal_perm"]');
+    checkboxes.forEach(cb => {
+        cb.checked = grpPermsSet.has(cb.value);
+    });
+    updateModalPermStats();
+}
+window.onModalGroupChanged = onModalGroupChanged;
+
+function updateModalPermStats() {
+    const countEl = document.getElementById('modal-perm-selected-count');
+    const checked = document.querySelectorAll('input[name="user_modal_perm"]:checked');
+    if (countEl) countEl.textContent = checked.length;
+}
+window.updateModalPermStats = updateModalPermStats;
+
+async function saveUserPermissionsModal() {
+    if (!currentEditingUserId) return;
+    const saveBtn = document.getElementById('btn-save-user-perms');
+    const groupSelect = document.getElementById('modal-perm-group-select');
+    const groupId = groupSelect ? groupSelect.value : null;
+
+    const checkedInputs = document.querySelectorAll('input[name="user_modal_perm"]:checked');
+    const selectedPermissions = Array.from(checkedInputs).map(cb => cb.value);
+
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-sm"></i> Đang lưu...';
+    }
+
+    try {
+        const res = await fetchWithAuth('/api/master-data/roles-permissions/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: currentEditingUserId,
+                group_id: groupId,
+                permissions: selectedPermissions
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Lưu phân quyền thất bại');
+
+        showToast('success', data.message || 'Cập nhật phân quyền người dùng thành công!');
+        closeUserPermissionsModal();
+        await loadRolesPermissionsData();
+    } catch (err) {
+        console.error('Lỗi khi lưu phân quyền:', err);
+        showToast('error', err.message || 'Không thể lưu phân quyền', 'Lỗi');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i><span>Lưu Phân Quyền</span>';
+        }
+    }
+}
+window.saveUserPermissionsModal = saveUserPermissionsModal;
 
 async function updateUserRoleGroup(userId, groupId) {
     try {
@@ -17318,14 +17595,111 @@ const REPORT_GROUP_MAPPING = {
     'group-4': ['report-13', 'report-12', 'report-14']
 };
 
+const REPORT_PERMISSION_MAPPING = {
+    'report-1': 'reports.view_report_pnl',
+    'report-7': 'reports.view_report_customer_rev',
+    'report-4': 'reports.view_report_route_cost',
+    'report-2': 'reports.view_report_dem_det',
+    'report-3': 'reports.view_report_otp',
+    'report-5': 'reports.view_report_layover',
+    'report-6': 'reports.view_report_incidents',
+    'report-10': 'reports.view_report_dispatcher_funds',
+    'report-11': 'reports.view_report_driver_advances',
+    'report-9': 'reports.view_report_driver_salary',
+    'report-8': 'reports.view_report_subcontractor',
+    'report-13': 'reports.view_report_ar_aging',
+    'report-12': 'reports.view_report_settlement_backlog',
+    'report-14': 'reports.view_report_unsettled_aging'
+};
+
+function canAccessReport(reportId) {
+    if (!window.CURRENT_USER) return false;
+    if (window.CURRENT_USER.is_superuser) return true;
+    const perm = REPORT_PERMISSION_MAPPING[reportId];
+    if (!perm) return true;
+    return typeof window.hasUserPermission === 'function' ? window.hasUserPermission(perm) : false;
+}
+
+function initReportPermissions() {
+    let firstAllowedGroup = null;
+    let firstAllowedReport = null;
+
+    // 1. Kiểm tra từng subtab button và content container
+    Object.keys(REPORT_PERMISSION_MAPPING).forEach(repId => {
+        const num = repId.replace('report-', '');
+        const btn = document.getElementById(`report-tab-btn-${num}`);
+        const content = document.getElementById(`subtab-${repId}`);
+        const allowed = canAccessReport(repId);
+
+        if (btn) {
+            if (allowed) {
+                btn.removeAttribute('data-forbidden');
+                btn.style.display = '';
+            } else {
+                btn.setAttribute('data-forbidden', 'true');
+                btn.style.display = 'none';
+                btn.classList.add('hidden');
+            }
+        }
+        if (content && !allowed) {
+            content.classList.add('hidden');
+        }
+    });
+
+    // 2. Kiểm tra từng Nhóm lớn (group-1, group-2, group-3, group-4)
+    Object.entries(REPORT_GROUP_MAPPING).forEach(([grpId, repList]) => {
+        const num = grpId.replace('group-', '');
+        const cardBtn = document.getElementById(`report-group-btn-${num}`);
+        const allowedInGroup = repList.filter(r => canAccessReport(r));
+
+        if (cardBtn) {
+            // Cập nhật badge số lượng báo cáo thực tế được quyền xem
+            const badge = cardBtn.querySelector('span.rounded-full');
+            if (badge) {
+                badge.innerText = `${allowedInGroup.length} BC`;
+            }
+
+            if (allowedInGroup.length === 0) {
+                // ẨN HOÀN TOÀN Card Nhóm nếu không có báo cáo nào được xem!
+                cardBtn.style.display = 'none';
+                cardBtn.setAttribute('data-forbidden', 'true');
+                cardBtn.classList.add('hidden');
+            } else {
+                cardBtn.style.display = '';
+                cardBtn.removeAttribute('data-forbidden');
+                cardBtn.classList.remove('hidden');
+                if (!firstAllowedGroup) {
+                    firstAllowedGroup = grpId;
+                    firstAllowedReport = allowedInGroup[0];
+                }
+            }
+        }
+    });
+
+    // 3. Nếu nhóm hiện tại hoặc subtab hiện tại không được phép xem -> nhảy sang báo cáo hợp lệ đầu tiên
+    if (!canAccessReport(currentActiveReportSubtab) || (firstAllowedGroup && currentActiveReportGroup !== firstAllowedGroup && !REPORT_GROUP_MAPPING[currentActiveReportGroup]?.some(r => canAccessReport(r)))) {
+        if (firstAllowedGroup && firstAllowedReport) {
+            switchReportGroup(firstAllowedGroup, false);
+            switchReportSubTab(firstAllowedReport);
+        }
+    } else {
+        applyReportGroupFilterToButtons();
+    }
+}
+
 function switchReportGroup(groupId, autoSwitchFirstChild = true) {
+    const cardBtn = document.getElementById(`report-group-btn-${groupId.replace('group-', '')}`);
+    if (cardBtn && cardBtn.getAttribute('data-forbidden') === 'true') {
+        return; // Nhóm bị cấm truy cập
+    }
+
     currentActiveReportGroup = groupId;
 
     // Cập nhật trạng thái hiển thị của 4 Card Nhóm Lớn
     ['group-1', 'group-2', 'group-3', 'group-4'].forEach(g => {
         const num = g.replace('group-', '');
         const btn = document.getElementById(`report-group-btn-${num}`);
-        if (!btn) return;
+        if (!btn || btn.getAttribute('data-forbidden') === 'true') return;
         if (g === groupId) {
             btn.classList.add('active', 'border-teal-600', 'shadow-xs', 'ring-2', 'ring-teal-600/20');
             btn.classList.remove('border-slate-200', 'hover:border-slate-300', 'shadow-2xs');
@@ -17338,8 +17712,8 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
     // Lọc hiển thị các nút subtab con nếu ở chế độ 'group'
     applyReportGroupFilterToButtons();
 
-    // Tự động kích hoạt báo cáo đầu tiên của nhóm nếu báo cáo hiện tại không nằm trong nhóm này
-    const groupReports = REPORT_GROUP_MAPPING[groupId] || [];
+    // Tự động kích hoạt báo cáo đầu tiên của nhóm mà USER CÓ QUYỀN XEM
+    const groupReports = (REPORT_GROUP_MAPPING[groupId] || []).filter(r => canAccessReport(r));
     if (autoSwitchFirstChild && !groupReports.includes(currentActiveReportSubtab)) {
         if (groupReports.length > 0) {
             switchReportSubTab(groupReports[0]);
@@ -17374,6 +17748,13 @@ function toggleReportViewMode(mode) {
 function applyReportGroupFilterToButtons() {
     const subtabButtons = document.querySelectorAll('.report-subtab-btn');
     subtabButtons.forEach(btn => {
+        // Nếu bị cấm quyền thì ẩn hoàn toàn tuyệt đối
+        if (btn.getAttribute('data-forbidden') === 'true') {
+            btn.classList.add('hidden');
+            btn.style.display = 'none';
+            return;
+        }
+        btn.style.display = '';
         const btnGroup = btn.getAttribute('data-report-group');
         if (currentReportViewMode === 'all' || btnGroup === currentActiveReportGroup) {
             btn.classList.remove('hidden');
@@ -17384,6 +17765,13 @@ function applyReportGroupFilterToButtons() {
 }
 
 function switchReportSubTab(subtabId) {
+    if (!canAccessReport(subtabId)) {
+        if (typeof showToast === 'function') {
+            showToast('Bạn không có quyền truy cập báo cáo này!', 'warning');
+        }
+        return;
+    }
+
     currentActiveReportSubtab = subtabId;
 
     // Tự động nhận diện và kích hoạt Nhóm cha tương ứng
@@ -17414,9 +17802,12 @@ function switchReportSubTab(subtabId) {
         activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
         activeBtn.classList.add('bg-teal-700', 'text-white', 'shadow-sm', 'active');
         activeBtn.classList.remove('hidden'); // Đảm bảo nút được nhìn thấy
+        activeBtn.style.display = '';
     }
 }
 
+window.canAccessReport = canAccessReport;
+window.initReportPermissions = initReportPermissions;
 window.switchReportGroup = switchReportGroup;
 window.toggleReportViewMode = toggleReportViewMode;
 window.switchReportSubTab = switchReportSubTab;
@@ -17600,7 +17991,6 @@ async function loadReportsData() {
 function renderReport1(data) {
     const s = data.summary || {};
     const r1 = data.report1_fleet_utilization || {};
-    const canViewFinance = (data.can_view_finance !== false);
 
     const elOwnedRatio = document.getElementById('rep1-stat-owned-ratio');
     if (elOwnedRatio) elOwnedRatio.innerText = `${s.owned_ratio || 0.0}%`;
@@ -17609,24 +17999,22 @@ function renderReport1(data) {
     if (elNoteOwned) elNoteOwned.innerText = `Xe Nhà: ${r1.owned_trips || 0} chuyến · Xe Bạn: ${r1.partner_trips || 0} chuyến`;
 
     const elRev = document.getElementById('rep1-stat-revenue');
-    if (elRev) elRev.innerText = canViewFinance ? formatMoneyVND(s.total_revenue || 0) : '*** (Bảo mật)';
+    if (elRev) elRev.innerText = formatMoneyVND(s.total_revenue || 0);
 
     const elExp = document.getElementById('rep1-stat-expense');
-    if (elExp) elExp.innerText = canViewFinance ? formatMoneyVND(s.total_expense || 0) : '*** (Bảo mật)';
+    if (elExp) elExp.innerText = formatMoneyVND(s.total_expense || 0);
 
     const elProfit = document.getElementById('rep1-stat-profit');
-    if (elProfit) elProfit.innerText = canViewFinance ? formatMoneyVND(s.total_profit || 0) : '*** (Bảo mật)';
+    if (elProfit) elProfit.innerText = formatMoneyVND(s.total_profit || 0);
 
     const elMargin = document.getElementById('rep1-stat-margin');
-    if (elMargin) elMargin.innerText = canViewFinance ? `Biên LN gộp: ${s.margin_avg || 0.0}%` : 'Biên LN: Nội bộ BGD';
+    if (elMargin) elMargin.innerText = `Biên LN gộp: ${s.margin_avg || 0.0}%`;
 
     rep1DataCache = r1.fleet_pnl || [];
-    rep1DataCache._can_view_finance = canViewFinance;
     applyReport1Filters();
 }
 
 function applyReport1Filters() {
-    const canViewFinance = (rep1DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep1-search')?.value || '').toLowerCase().trim();
     let list = rep1DataCache.filter(item => {
         if (!searchVal) return true;
@@ -17674,10 +18062,10 @@ function applyReport1Filters() {
         const marginColor = item.margin_percent >= 20 ? 'bg-emerald-100 text-emerald-800' :
                             (item.margin_percent >= 10 ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800');
 
-        const revDisplay = canViewFinance ? formatMoneyVND(item.revenue) : '***';
-        const expDisplay = canViewFinance ? formatMoneyVND(item.expense) : '***';
-        const profitDisplay = canViewFinance ? formatMoneyVND(item.profit) : '***';
-        const marginDisplay = canViewFinance ? `${item.margin_percent}%` : '***';
+        const revDisplay = formatMoneyVND(item.revenue);
+        const expDisplay = formatMoneyVND(item.expense);
+        const profitDisplay = formatMoneyVND(item.profit);
+        const marginDisplay = `${item.margin_percent}%`;
 
         return `
             <tr class="hover:bg-teal-50/30 transition-colors">
@@ -18277,30 +18665,27 @@ function toggleReport6Sort(col) {
 // -------------------------------------------------------------
 function renderReport7(data) {
     const r7 = data.report7_customer_analytics || {};
-    const canViewFinance = (data.can_view_finance !== false);
 
     const elTeu = document.getElementById('rep7-stat-teu');
     if (elTeu) elTeu.innerText = `${r7.total_system_teu || 0.0} TEU`;
 
     const elRev = document.getElementById('rep7-stat-rev');
-    if (elRev) elRev.innerText = canViewFinance ? formatMoneyVND(r7.total_customer_revenue || 0) : '*** (Bảo mật)';
+    if (elRev) elRev.innerText = formatMoneyVND(r7.total_customer_revenue || 0);
 
     const elTop = document.getElementById('rep7-stat-top');
     if (elTop) elTop.innerText = r7.top_key_account || '-';
 
     const elTopShare = document.getElementById('rep7-stat-top-share');
-    if (elTopShare) elTopShare.innerText = canViewFinance ? `Đóng góp ${r7.top_key_account_share || 0.0}% doanh thu` : 'Tỷ trọng: Nội bộ BGD';
+    if (elTopShare) elTopShare.innerText = `Đóng góp ${r7.top_key_account_share || 0.0}% doanh thu`;
 
     const elAvg = document.getElementById('rep7-stat-avg');
     if (elAvg) elAvg.innerText = `${r7.avg_teu_per_trip || 0.0} TEU`;
 
     rep7DataCache = r7.customers || [];
-    rep7DataCache._can_view_finance = canViewFinance;
     applyReport7Filters();
 }
 
 function applyReport7Filters() {
-    const canViewFinance = (rep7DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep7-search')?.value || '').toLowerCase().trim();
 
     let list = rep7DataCache.filter(item => {
@@ -18339,9 +18724,9 @@ function applyReport7Filters() {
     const avgMargin = list.length > 0 ? (list.reduce((sum, item) => sum + (Number(item.margin_percent) || 0), 0) / list.length).toFixed(1) : '0.0';
 
     tbody.innerHTML = list.map((item, index) => {
-        const revDisplay = canViewFinance ? formatMoneyVND(item.revenue) : '***';
-        const shareDisplay = canViewFinance ? `${item.revenue_share}%` : '***';
-        const marginDisplay = canViewFinance ? `${item.margin_percent}%` : '***';
+        const revDisplay = formatMoneyVND(item.revenue);
+        const shareDisplay = `${item.revenue_share}%`;
+        const marginDisplay = `${item.margin_percent}%`;
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -18371,9 +18756,9 @@ function applyReport7Filters() {
                 <td class="text-center font-mono font-bold tabular-nums">${total40}</td>
                 <td class="text-center font-mono font-bold tabular-nums">${total45}</td>
                 <td></td>
-                <td class="text-right font-mono font-black text-indigo-700 tabular-nums">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
+                <td class="text-right font-mono font-black text-indigo-700 tabular-nums">${formatMoneyVND(totalRev)}</td>
                 <td class="text-center font-mono font-bold tabular-nums">100.0%</td>
-                <td class="text-center font-mono font-bold tabular-nums">${canViewFinance ? `${avgMargin}%` : '***'}</td>
+                <td class="text-center font-mono font-bold tabular-nums">${avgMargin}%</td>
             </tr>
         `;
     }
@@ -18394,24 +18779,21 @@ function toggleReport7Sort(col) {
 // -------------------------------------------------------------
 function renderReport8(data) {
     const r8 = data.report8_subcontractor_settlements || {};
-    const canViewFinance = (data.can_view_finance !== false);
 
     const elTrips = document.getElementById('rep8-stat-trips');
     if (elTrips) elTrips.innerText = `${r8.total_subcontractor_trips || 0} Chuyến`;
 
     const elGross = document.getElementById('rep8-stat-gross');
-    if (elGross) elGross.innerText = canViewFinance ? formatMoneyVND(r8.total_gross_payable || 0) : '*** (Bảo mật)';
+    if (elGross) elGross.innerText = formatMoneyVND(r8.total_gross_payable || 0);
 
     const elSettled = document.getElementById('rep8-stat-settled');
-    if (elSettled) elSettled.innerText = canViewFinance ? formatMoneyVND(r8.total_subcontractor_settled || 0) : '*** (Bảo mật)';
+    if (elSettled) elSettled.innerText = formatMoneyVND(r8.total_subcontractor_settled || 0);
 
     const elBalance = document.getElementById('rep8-stat-balance');
-    if (elBalance) elBalance.innerText = canViewFinance ? formatMoneyVND(r8.total_balance_due || 0) : '*** (Bảo mật)';
+    if (elBalance) elBalance.innerText = formatMoneyVND(r8.total_balance_due || 0);
 
     rep8SubcontractorsCache = r8.subcontractors || [];
-    rep8SubcontractorsCache._can_view_finance = canViewFinance;
     rep8TripsCache = r8.trips || [];
-    rep8TripsCache._can_view_finance = canViewFinance;
 
     applyReport8Filters();
 }
@@ -18437,7 +18819,6 @@ function toggleReport8TripSort(col) {
 }
 
 function applyReport8Filters() {
-    const canViewFinance = (rep8SubcontractorsCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep8-search')?.value || '').toLowerCase().trim();
 
     // 1. Render Bảng Nhà xe thầu phụ
@@ -18472,10 +18853,10 @@ function applyReport8Filters() {
             const sumBal = subList.reduce((sum, item) => sum + (Number(item.balance_due) || 0), 0);
 
             subTbody.innerHTML = subList.map((s, index) => {
-                const grossDisp = canViewFinance ? formatMoneyVND(s.gross_payable) : '***';
-                const advDisp = canViewFinance ? formatMoneyVND(s.advance_amount) : '***';
-                const settledDisp = canViewFinance ? formatMoneyVND(s.settled_amount) : '***';
-                const balDisp = canViewFinance ? formatMoneyVND(s.balance_due) : '***';
+                const grossDisp = formatMoneyVND(s.gross_payable);
+                const advDisp = formatMoneyVND(s.advance_amount);
+                const settledDisp = formatMoneyVND(s.settled_amount);
+                const balDisp = formatMoneyVND(s.balance_due);
 
                 let statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">${escapeHtml(s.settlement_status)}</span>`;
                 if (s.balance_due <= 0) {
@@ -18506,10 +18887,10 @@ function applyReport8Filters() {
                     <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
                         <td colspan="4" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${subList.length} Nhà Xe Thầu Phụ</td>
                         <td class="text-center font-mono font-black tabular-nums">${sumTrips}</td>
-                        <td class="text-right font-mono font-black tabular-nums text-slate-900">${canViewFinance ? formatMoneyVND(sumGross) : '***'}</td>
-                        <td class="text-right font-mono font-bold tabular-nums text-slate-600">${canViewFinance ? formatMoneyVND(sumAdv) : '***'}</td>
-                        <td class="text-right font-mono font-bold tabular-nums text-emerald-700">${canViewFinance ? formatMoneyVND(sumSettled) : '***'}</td>
-                        <td class="text-right font-mono font-black tabular-nums text-rose-700 bg-rose-50/80">${canViewFinance ? formatMoneyVND(sumBal) : '***'}</td>
+                        <td class="text-right font-mono font-black tabular-nums text-slate-900">${formatMoneyVND(sumGross)}</td>
+                        <td class="text-right font-mono font-bold tabular-nums text-slate-600">${formatMoneyVND(sumAdv)}</td>
+                        <td class="text-right font-mono font-bold tabular-nums text-emerald-700">${formatMoneyVND(sumSettled)}</td>
+                        <td class="text-right font-mono font-black tabular-nums text-rose-700 bg-rose-50/80">${formatMoneyVND(sumBal)}</td>
                         <td></td>
                     </tr>
                 `;
@@ -18550,9 +18931,9 @@ function applyReport8Filters() {
             const sumBal = tripList.reduce((sum, item) => sum + (Number(item.balance) || 0), 0);
 
             tripsTbody.innerHTML = tripList.map((t, index) => {
-                const costDisp = canViewFinance ? formatMoneyVND(t.gross_cost) : '***';
-                const advDisp = canViewFinance ? formatMoneyVND(t.advance) : '***';
-                const balDisp = canViewFinance ? formatMoneyVND(t.balance) : '***';
+                const costDisp = formatMoneyVND(t.gross_cost);
+                const advDisp = formatMoneyVND(t.advance);
+                const balDisp = formatMoneyVND(t.balance);
 
                 return `
                     <tr class="hover:bg-slate-50 transition-colors">
@@ -18576,9 +18957,9 @@ function applyReport8Filters() {
                 tripsTfoot.innerHTML = `
                     <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
                         <td colspan="8" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${tripList.length} Chuyến Xe Ngoài</td>
-                        <td class="text-right font-mono font-black tabular-nums text-slate-900">${canViewFinance ? formatMoneyVND(sumGross) : '***'}</td>
-                        <td class="text-right font-mono font-bold tabular-nums text-slate-600">${canViewFinance ? formatMoneyVND(sumAdv) : '***'}</td>
-                        <td class="text-right font-mono font-black tabular-nums text-rose-700">${canViewFinance ? formatMoneyVND(sumBal) : '***'}</td>
+                        <td class="text-right font-mono font-black tabular-nums text-slate-900">${formatMoneyVND(sumGross)}</td>
+                        <td class="text-right font-mono font-bold tabular-nums text-slate-600">${formatMoneyVND(sumAdv)}</td>
+                        <td class="text-right font-mono font-black tabular-nums text-rose-700">${formatMoneyVND(sumBal)}</td>
                         <td></td>
                     </tr>
                 `;
@@ -18592,28 +18973,25 @@ function applyReport8Filters() {
 // -------------------------------------------------------------
 function renderReport9(data) {
     const r9 = data.report9_driver_payroll_performance || {};
-    const canViewFinance = (data.can_view_finance !== false);
 
     const elFund = document.getElementById('rep9-stat-fund');
-    if (elFund) elFund.innerText = canViewFinance ? formatMoneyVND(r9.total_payroll_fund || 0) : '*** (Bảo mật)';
+    if (elFund) elFund.innerText = formatMoneyVND(r9.total_payroll_fund || 0);
 
     const elDrivers = document.getElementById('rep9-stat-drivers');
     if (elDrivers) elDrivers.innerText = `${r9.active_drivers_count || 0} Tài xế`;
 
     const elAvg = document.getElementById('rep9-stat-avg');
-    if (elAvg) elAvg.innerText = canViewFinance ? `${formatMoneyVND(r9.avg_salary_per_driver || 0)}/TX` : '*** / TX';
+    if (elAvg) elAvg.innerText = `${formatMoneyVND(r9.avg_salary_per_driver || 0)}/TX`;
 
     const elTop = document.getElementById('rep9-stat-top');
     if (elTop) elTop.innerText = r9.top_driver_name || '-';
 
     rep9DataCache = r9.drivers || [];
-    rep9DataCache._can_view_finance = canViewFinance;
 
     applyReport9Filters();
 }
 
 function applyReport9Filters() {
-    const canViewFinance = (rep9DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep9-search')?.value || '').toLowerCase().trim();
 
     let list = rep9DataCache.filter(item => {
@@ -18654,11 +19032,11 @@ function applyReport9Filters() {
     const totalIncidents = list.reduce((sum, item) => sum + (Number(item.incident_count) || 0), 0);
 
     tbody.innerHTML = list.map((item, index) => {
-        const baseDisp = canViewFinance ? formatMoneyVND(item.base_trip_salary) : '***';
-        const layoverDisp = canViewFinance ? formatMoneyVND(item.layover_allowance) : '***';
-        const specialDisp = canViewFinance ? formatMoneyVND(item.special_allowances) : '***';
-        const advDisp = canViewFinance ? formatMoneyVND(item.total_advances) : '***';
-        const netDisp = canViewFinance ? formatMoneyVND(item.net_salary) : '***';
+        const baseDisp = formatMoneyVND(item.base_trip_salary);
+        const layoverDisp = formatMoneyVND(item.layover_allowance);
+        const specialDisp = formatMoneyVND(item.special_allowances);
+        const advDisp = formatMoneyVND(item.total_advances);
+        const netDisp = formatMoneyVND(item.net_salary);
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -18688,11 +19066,11 @@ function applyReport9Filters() {
                 <td colspan="4" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Tài Xế</td>
                 <td class="text-center font-mono font-black tabular-nums">${totalTrips}</td>
                 <td class="text-center font-mono font-black text-teal-800 tabular-nums">${totalSplit}</td>
-                <td class="text-right font-mono font-bold tabular-nums text-slate-800">${canViewFinance ? formatMoneyVND(totalBase) : '***'}</td>
-                <td class="text-right font-mono font-bold tabular-nums text-amber-700">${canViewFinance ? formatMoneyVND(totalLayover) : '***'}</td>
-                <td class="text-right font-mono font-medium tabular-nums text-slate-600">${canViewFinance ? formatMoneyVND(totalSpecial) : '***'}</td>
-                <td class="text-right font-mono font-medium tabular-nums text-rose-600">${canViewFinance ? formatMoneyVND(totalAdv) : '***'}</td>
-                <td class="text-right font-mono font-black tabular-nums text-emerald-700 bg-emerald-50/80">${canViewFinance ? formatMoneyVND(totalNet) : '***'}</td>
+                <td class="text-right font-mono font-bold tabular-nums text-slate-800">${formatMoneyVND(totalBase)}</td>
+                <td class="text-right font-mono font-bold tabular-nums text-amber-700">${formatMoneyVND(totalLayover)}</td>
+                <td class="text-right font-mono font-medium tabular-nums text-slate-600">${formatMoneyVND(totalSpecial)}</td>
+                <td class="text-right font-mono font-medium tabular-nums text-rose-600">${formatMoneyVND(totalAdv)}</td>
+                <td class="text-right font-mono font-black tabular-nums text-emerald-700 bg-emerald-50/80">${formatMoneyVND(totalNet)}</td>
                 <td class="text-center font-mono font-bold tabular-nums">${avgOtp}%</td>
                 <td class="text-center font-mono font-black tabular-nums ${totalIncidents > 0 ? 'text-rose-700' : 'text-slate-400'}">${totalIncidents}</td>
             </tr>
@@ -19045,7 +19423,6 @@ function toggleReport11Sort(col) {
 // -------------------------------------------------------------
 function renderReport12(data) {
     const r12 = data.report12_settlement_backlog || {};
-    const canViewFinance = (data.can_view_finance !== false);
 
     const elTrips = document.getElementById('rep12-stat-trips');
     if (elTrips) elTrips.innerText = `${r12.settled_trips_count || 0} / ${r12.total_trips_count || 0}`;
@@ -19054,24 +19431,22 @@ function renderReport12(data) {
     if (elNoteSettled) elNoteSettled.innerText = `Đã chốt sổ: ${r12.settled_trips_count || 0} · Chưa chốt: ${r12.unsettled_trips_count || 0}`;
 
     const elSettledRev = document.getElementById('rep12-stat-settled-rev');
-    if (elSettledRev) elSettledRev.innerText = canViewFinance ? formatMoneyVND(r12.settled_revenue || 0) : '*** (Bảo mật)';
+    if (elSettledRev) elSettledRev.innerText = formatMoneyVND(r12.settled_revenue || 0);
 
     const elSettledProfit = document.getElementById('rep12-stat-settled-profit');
-    if (elSettledProfit) elSettledProfit.innerText = canViewFinance ? `Lợi nhuận chốt: ${formatMoneyVND(r12.settled_profit || 0)}` : 'Lợi nhuận: ***';
+    if (elSettledProfit) elSettledProfit.innerText = `Lợi nhuận chốt: ${formatMoneyVND(r12.settled_profit || 0)}`;
 
     const elUnsettledRev = document.getElementById('rep12-stat-unsettled-rev');
-    if (elUnsettledRev) elUnsettledRev.innerText = canViewFinance ? formatMoneyVND(r12.unsettled_revenue || 0) : '*** (Bảo mật)';
+    if (elUnsettledRev) elUnsettledRev.innerText = formatMoneyVND(r12.unsettled_revenue || 0);
 
     const elCarryover = document.getElementById('rep12-stat-carryover');
     if (elCarryover) elCarryover.innerText = `${r12.carryover_trips_count || 0} Chuyến`;
 
     rep12DataCache = r12.trips || [];
-    rep12DataCache._can_view_finance = canViewFinance;
     applyReport12Filters();
 }
 
 function applyReport12Filters() {
-    const canViewFinance = (rep12DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep12-search')?.value || '').toLowerCase().trim();
     const statusVal = document.getElementById('filter-rep12-status')?.value || 'ALL';
 
@@ -19122,21 +19497,21 @@ function applyReport12Filters() {
         tfoot.innerHTML = `
             <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
                 <td colspan="8" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
-                <td class="text-right text-slate-900 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
-                <td class="text-right text-rose-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
-                <td class="text-right text-indigo-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalReim) : '***'}</td>
-                <td class="text-right text-emerald-700 font-mono font-black bg-emerald-50/40 p-2">${canViewFinance ? formatMoneyVND(totalProfit) : '***'}</td>
-                <td class="text-center font-mono font-bold ${parseFloat(avgMargin) >= 20 ? 'text-emerald-700' : 'text-amber-700'} p-2">${canViewFinance ? `${avgMargin}%` : '***'}</td>
+                <td class="text-right text-slate-900 font-mono font-black p-2">${formatMoneyVND(totalRev)}</td>
+                <td class="text-right text-rose-700 font-mono font-black p-2">${formatMoneyVND(totalExp)}</td>
+                <td class="text-right text-indigo-700 font-mono font-black p-2">${formatMoneyVND(totalReim)}</td>
+                <td class="text-right text-emerald-700 font-mono font-black bg-emerald-50/40 p-2">${formatMoneyVND(totalProfit)}</td>
+                <td class="text-center font-mono font-bold ${parseFloat(avgMargin) >= 20 ? 'text-emerald-700' : 'text-amber-700'} p-2">${avgMargin}%</td>
                 <td colspan="4" class="p-2"></td>
             </tr>
         `;
     }
 
     tbody.innerHTML = list.map((item, index) => {
-        const revDisp = canViewFinance ? formatMoneyVND(item.revenue) : '***';
-        const expDisp = canViewFinance ? formatMoneyVND(item.expense) : '***';
-        const reimDisp = canViewFinance ? formatMoneyVND(item.reimbursable) : '***';
-        const profDisp = canViewFinance ? formatMoneyVND(item.profit) : '***';
+        const revDisp = formatMoneyVND(item.revenue);
+        const expDisp = formatMoneyVND(item.expense);
+        const reimDisp = formatMoneyVND(item.reimbursable);
+        const profDisp = formatMoneyVND(item.profit);
 
         let categoryBadge = '';
         if (item.category_tag === 'BACKLOG_SETTLED') {
@@ -19198,7 +19573,7 @@ function applyReport12Filters() {
                 <td class="text-right text-xs text-rose-700 tabular-nums">${expDisp}</td>
                 <td class="text-right text-xs text-indigo-700 tabular-nums">${reimDisp}</td>
                 <td class="text-right text-xs font-black text-emerald-700 tabular-nums bg-emerald-50/40">${profDisp}</td>
-                <td class="text-center text-xs font-bold tabular-nums ${item.margin_percent >= 20 ? 'text-emerald-700' : 'text-amber-700'}">${canViewFinance ? `${item.margin_percent}%` : '***'}</td>
+                <td class="text-center text-xs font-bold tabular-nums ${item.margin_percent >= 20 ? 'text-emerald-700' : 'text-amber-700'}">${item.margin_percent}%</td>
                 <td class="text-center text-xs">${podBadge}</td>
                 <td class="text-center text-xs">${categoryBadge}</td>
                 <td class="text-center text-xs">${settlementBadge}</td>
@@ -19229,30 +19604,27 @@ let currentStatementCustomer = null;
 
 function renderReport13(data) {
     const r13 = data.report13_ar_aging || {};
-    const canViewFinance = (data.can_view_finance !== false);
 
     const elTotalAr = document.getElementById('rep13-stat-total-ar');
-    if (elTotalAr) elTotalAr.innerText = canViewFinance ? formatMoneyVND(r13.total_receivable || 0) : '*** (Bảo mật)';
+    if (elTotalAr) elTotalAr.innerText = formatMoneyVND(r13.total_receivable || 0);
 
     const elRevReim = document.getElementById('rep13-stat-rev-reim');
-    if (elRevReim) elRevReim.innerText = canViewFinance ? `Cước: ${formatMoneyVND(r13.total_freight_revenue || 0)} · Chi hộ: ${formatMoneyVND(r13.total_reimbursable || 0)}` : '***';
+    if (elRevReim) elRevReim.innerText = `Cước: ${formatMoneyVND(r13.total_freight_revenue || 0)} · Chi hộ: ${formatMoneyVND(r13.total_reimbursable || 0)}`;
 
     const elCollected = document.getElementById('rep13-stat-collected');
-    if (elCollected) elCollected.innerText = canViewFinance ? formatMoneyVND(r13.total_collected || 0) : '*** (Bảo mật)';
+    if (elCollected) elCollected.innerText = formatMoneyVND(r13.total_collected || 0);
 
     const elBalance = document.getElementById('rep13-stat-balance');
-    if (elBalance) elBalance.innerText = canViewFinance ? formatMoneyVND(r13.total_remaining_balance || 0) : '*** (Bảo mật)';
+    if (elBalance) elBalance.innerText = formatMoneyVND(r13.total_remaining_balance || 0);
 
     const elOverdue = document.getElementById('rep13-stat-overdue');
-    if (elOverdue) elOverdue.innerText = canViewFinance ? formatMoneyVND(r13.total_overdue || 0) : '*** (Bảo mật)';
+    if (elOverdue) elOverdue.innerText = formatMoneyVND(r13.total_overdue || 0);
 
     rep13DataCache = r13.customers || [];
-    rep13DataCache._can_view_finance = canViewFinance;
     applyReport13Filters();
 }
 
 function applyReport13Filters() {
-    const canViewFinance = (rep13DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep13-search')?.value || '').toLowerCase().trim();
 
     let list = rep13DataCache.filter(item => {
@@ -19268,8 +19640,8 @@ function applyReport13Filters() {
         let valB = b[rep13SortCol];
         if (typeof valA === 'string') valA = valA.toLowerCase();
         if (typeof valB === 'string') valB = valB.toLowerCase();
-        if (valA < valB) return rep13SortAsc ? -1 : 1;
-        if (valA > valB) return rep13SortAsc ? 1 : -1;
+        if (valA < valB) return rep1SortAsc ? -1 : 1;
+        if (valA > valB) return rep1SortAsc ? 1 : -1;
         return 0;
     });
 
@@ -19303,30 +19675,30 @@ function applyReport13Filters() {
                 <td colspan="2" class="p-2 uppercase text-slate-900 font-heading">TỔNG CỘNG: ${list.length} Khách Hàng</td>
                 <td class="text-center font-bold font-mono text-slate-900 p-2">${totalTrips}</td>
                 <td class="text-center font-bold text-xs p-2"><span class="text-emerald-700">${totalSettledTrips}</span> / <span class="text-amber-700">${totalUnsettledTrips}</span></td>
-                <td class="text-right text-slate-900 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalFreight) : '***'}</td>
-                <td class="text-right text-slate-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalReim) : '***'}</td>
-                <td class="text-right text-slate-950 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalReceivable) : '***'}</td>
-                <td class="text-right text-emerald-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalCollected) : '***'}</td>
-                <td class="text-right text-indigo-700 font-mono font-black bg-indigo-50/50 p-2">${canViewFinance ? formatMoneyVND(totalBalance) : '***'}</td>
-                <td class="text-right text-emerald-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalCurrent) : '***'}</td>
-                <td class="text-right text-amber-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(total31) : '***'}</td>
-                <td class="text-right text-orange-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(total61) : '***'}</td>
-                <td class="text-right text-rose-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalOver90) : '***'}</td>
+                <td class="text-right text-slate-900 font-mono font-bold p-2">${formatMoneyVND(totalFreight)}</td>
+                <td class="text-right text-slate-700 font-mono font-bold p-2">${formatMoneyVND(totalReim)}</td>
+                <td class="text-right text-slate-950 font-mono font-black p-2">${formatMoneyVND(totalReceivable)}</td>
+                <td class="text-right text-emerald-700 font-mono font-black p-2">${formatMoneyVND(totalCollected)}</td>
+                <td class="text-right text-indigo-700 font-mono font-black bg-indigo-50/50 p-2">${formatMoneyVND(totalBalance)}</td>
+                <td class="text-right text-emerald-700 font-mono font-bold p-2">${formatMoneyVND(totalCurrent)}</td>
+                <td class="text-right text-amber-700 font-mono font-bold p-2">${formatMoneyVND(total31)}</td>
+                <td class="text-right text-orange-700 font-mono font-bold p-2">${formatMoneyVND(total61)}</td>
+                <td class="text-right text-rose-700 font-mono font-black p-2">${formatMoneyVND(totalOver90)}</td>
                 <td class="p-2"></td>
             </tr>
         `;
     }
 
     tbody.innerHTML = list.map((item, index) => {
-        const freightDisp = canViewFinance ? formatMoneyVND(item.freight_revenue) : '***';
-        const reimDisp = canViewFinance ? formatMoneyVND(item.reimbursable_amount) : '***';
-        const totalDisp = canViewFinance ? formatMoneyVND(item.total_receivable) : '***';
-        const collectedDisp = canViewFinance ? formatMoneyVND(item.collected_amount) : '***';
-        const balanceDisp = canViewFinance ? formatMoneyVND(item.remaining_balance) : '***';
-        const currentDisp = canViewFinance ? formatMoneyVND(item.aging_current) : '***';
-        const aging31Disp = canViewFinance ? formatMoneyVND(item.aging_31_60) : '***';
-        const aging61Disp = canViewFinance ? formatMoneyVND(item.aging_61_90) : '***';
-        const agingOver90Disp = canViewFinance ? formatMoneyVND(item.aging_over_90) : '***';
+        const freightDisp = formatMoneyVND(item.freight_revenue);
+        const reimDisp = formatMoneyVND(item.reimbursable_amount);
+        const totalDisp = formatMoneyVND(item.total_receivable);
+        const collectedDisp = formatMoneyVND(item.collected_amount);
+        const balanceDisp = formatMoneyVND(item.remaining_balance);
+        const currentDisp = formatMoneyVND(item.aging_current);
+        const aging31Disp = formatMoneyVND(item.aging_31_60);
+        const aging61Disp = formatMoneyVND(item.aging_61_90);
+        const agingOver90Disp = formatMoneyVND(item.aging_over_90);
 
         const custIdSafe = escapeHtml(String(item.customer_id || item.customer_code || ''));
 
@@ -19624,16 +19996,14 @@ function toggleReport13Sort(col) {
 // -------------------------------------------------------------
 function renderReport14(data) {
     const r14 = data.report14_unsettled_aging || {};
-    const canViewFinance = (data.can_view_finance !== false);
-
     const elTotal = document.getElementById('rep14-stat-total-unsettled');
     if (elTotal) elTotal.innerText = `${r14.total_unsettled_count || 0} Chuyến`;
 
     const elRevStuck = document.getElementById('rep14-stat-rev-stuck');
-    if (elRevStuck) elRevStuck.innerText = canViewFinance ? formatMoneyVND(r14.total_unsettled_revenue || 0) : '*** (Bảo mật)';
+    if (elRevStuck) elRevStuck.innerText = formatMoneyVND(r14.total_unsettled_revenue || 0);
 
     const elExpStuck = document.getElementById('rep14-stat-exp-stuck');
-    if (elExpStuck) elExpStuck.innerText = canViewFinance ? `Chi phí đang ứng: ${formatMoneyVND(r14.total_unsettled_expense || 0)}` : 'Chi phí: ***';
+    if (elExpStuck) elExpStuck.innerText = `Chi phí đang ứng: ${formatMoneyVND(r14.total_unsettled_expense || 0)}`;
 
     const elOver30 = document.getElementById('rep14-stat-over-30');
     if (elOver30) elOver30.innerText = `${r14.over_30_days_count || 0} Chuyến`;
@@ -19642,12 +20012,10 @@ function renderReport14(data) {
     if (elMissingPod) elMissingPod.innerText = `${r14.missing_pod_count || 0} Chuyến`;
 
     rep14DataCache = r14.records || [];
-    rep14DataCache._can_view_finance = canViewFinance;
     applyReport14Filters();
 }
 
 function applyReport14Filters() {
-    const canViewFinance = (rep14DataCache._can_view_finance !== false);
     const searchVal = (document.getElementById('filter-rep14-search')?.value || '').toLowerCase().trim();
     const levelVal = document.getElementById('filter-rep14-level')?.value || 'ALL';
 
@@ -19694,16 +20062,16 @@ function applyReport14Filters() {
                 <td colspan="3" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Đơn Tồn:</td>
                 <td class="text-center font-bold text-rose-700 font-mono p-2">TB ${avgDays} ngày</td>
                 <td colspan="4" class="p-2"></td>
-                <td class="text-right text-slate-900 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
-                <td class="text-right text-rose-700 font-mono font-bold p-2">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
+                <td class="text-right text-slate-900 font-mono font-bold p-2">${formatMoneyVND(totalRev)}</td>
+                <td class="text-right text-rose-700 font-mono font-bold p-2">${formatMoneyVND(totalExp)}</td>
                 <td colspan="3" class="p-2"></td>
             </tr>
         `;
     }
 
     tbody.innerHTML = list.map((item, index) => {
-        const revDisp = canViewFinance ? formatMoneyVND(item.revenue) : '***';
-        const expDisp = canViewFinance ? formatMoneyVND(item.expense) : '***';
+        const revDisp = formatMoneyVND(item.revenue);
+        const expDisp = formatMoneyVND(item.expense);
 
         let levelBadge = '';
         if (item.aging_level === 'CRITICAL') {

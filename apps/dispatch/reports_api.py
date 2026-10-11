@@ -1317,16 +1317,70 @@ class ReportsAPIView(APIView):
                 'status_label': t.get_status_display()
             })
 
+        # -------------------------------------------------------------
+        # KIỂM TRA QUYỀN TRUY CẬP TỪNG BÁO CÁO (DJANGO PERMISSIONS CHUẨN)
+        # -------------------------------------------------------------
+        u = request.user
+        is_sup = bool(u.is_superuser)
+        emp = getattr(u, 'employee', None)
+        role = emp.role if emp else None
+
+        # Helper kiểm tra quyền có bị loại trừ tường minh không
+        excluded_perms = set()
+        if emp and emp.pk:
+            excluded_perms = {
+                f"{p.content_type.app_label}.{p.codename}"
+                for p in emp.excluded_permissions.select_related('content_type').all()
+            }
+
+        def check_report_perm(perm_codename, allowed_roles=None):
+            if is_sup:
+                return True
+            full_code = f"reports.{perm_codename}"
+            # 1. Nếu bị loại trừ tường minh -> Chặn ngay lập tức
+            if full_code in excluded_perms:
+                return False
+            # 2. Nếu có Django permission (từ Group hoặc user_permissions) -> Cho phép
+            if u.has_perm(full_code):
+                return True
+            # 3. Fallback theo vai trò Employee / Group nếu user chưa được gán permission object cụ thể
+            if allowed_roles and role in allowed_roles:
+                return True
+            return False
+
+        # Định nghĩa các nhóm vai trò mặc định cho từng báo cáo:
+        # Báo cáo Tài chính P&L, Cước, Thầu phụ, Lương, Quỹ: DIRECTOR, ACCOUNTANT
+        finance_roles = [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT]
+        # Báo cáo Vận hành (DEM/DET, OTP, Tuyến, Hạ bãi, Sự cố): DIRECTOR, ACCOUNTANT, DISPATCHER
+        ops_roles = [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT, EmployeeRole.DISPATCHER]
+
+        can_pnl = check_report_perm('view_report_pnl', finance_roles)
+        can_dem_det = check_report_perm('view_report_dem_det', ops_roles)
+        can_otp = check_report_perm('view_report_otp', ops_roles)
+        can_route = check_report_perm('view_report_route_cost', ops_roles)
+        can_layover = check_report_perm('view_report_layover', ops_roles)
+        can_incidents = check_report_perm('view_report_incidents', ops_roles)
+        can_cust_rev = check_report_perm('view_report_customer_rev', finance_roles)
+        can_sub = check_report_perm('view_report_subcontractor', finance_roles)
+        can_drv_sal = check_report_perm('view_report_driver_salary', finance_roles)
+        can_funds = check_report_perm('view_report_dispatcher_funds', finance_roles)
+        can_advances = check_report_perm('view_report_driver_advances', finance_roles + [EmployeeRole.DISPATCHER])
+        can_settle = check_report_perm('view_report_settlement_backlog', finance_roles)
+        can_ar = check_report_perm('view_report_ar_aging', finance_roles)
+        can_unsettled = check_report_perm('view_report_unsettled_aging', finance_roles)
+
+        can_view_finance = can_pnl
+
         # Phản hồi JSON hoàn chỉnh cho 14 Báo Cáo Chuẩn Kế Hoạch & Quyết Toán
         data = {
             'period': period,
             'can_view_finance': can_view_finance,
             'summary': {
                 'total_trips': total_trips,
-                'total_revenue': total_revenue,
-                'total_expense': total_expense,
-                'total_profit': total_profit,
-                'margin_avg': margin_avg,
+                'total_revenue': total_revenue if can_pnl else 0,
+                'total_expense': total_expense if can_pnl else 0,
+                'total_profit': total_profit if can_pnl else 0,
+                'margin_avg': margin_avg if can_pnl else 0.0,
                 'owned_ratio': owned_ratio,
                 'partner_trips': partner_trips,
                 'split_trips_count': split_trips_count,
@@ -1358,7 +1412,7 @@ class ReportsAPIView(APIView):
                 'partner_trips': partner_trips,
                 'fleet_pnl': fleet_pnl,
                 'driver_scorecards': driver_scorecards
-            },
+            } if can_pnl else None,
             'report2_container_dem_det': {
                 'safe_count': det_safe_count,
                 'warning_count': det_warning_count,
@@ -1366,7 +1420,7 @@ class ReportsAPIView(APIView):
                 'estimated_fines': estimated_fines_total,
                 'containers': dem_det_list,
                 'shipping_lines_summary': shipping_lines_summary
-            },
+            } if can_dem_det else None,
             'report3_on_time_performance': {
                 'otp_rate': otp_rate,
                 'pickup_on_time': otp_pickup_on_time,
@@ -1374,7 +1428,7 @@ class ReportsAPIView(APIView):
                 'closing_on_time': otp_closing_on_time,
                 'delay_reasons': delay_reasons,
                 'trips': otp_trips_data
-            },
+            } if can_otp else None,
             'report4_expenses_reimbursement': {
                 'total_bot': total_bot,
                 'total_fuel': total_fuel,
@@ -1383,18 +1437,18 @@ class ReportsAPIView(APIView):
                 'total_reimbursable_collected': total_reimbursable_collected,
                 'pending_reimbursement': total_reimbursable - total_reimbursable_collected,
                 'items': reimbursable_expenses
-            },
+            } if can_route else None,
             'report5_drop_hook_and_layover': {
                 'overnight_trips_count': overnight_trips_count,
                 'total_detention_fees': total_detention_fees,
                 'total_overnight_allowances': total_overnight_allowances,
                 'records': drop_hook_and_layover_list
-            },
+            } if can_layover else None,
             'report6_osd_exceptions': {
                 'damaged_cont_count': damaged_cont_count,
                 'broken_seal_count': broken_seal_count,
                 'incidents': osd_list
-            },
+            } if can_incidents else None,
             'report7_customer_analytics': {
                 'total_system_teu': round(total_system_teu, 2),
                 'total_customer_revenue': total_revenue,
@@ -1402,7 +1456,7 @@ class ReportsAPIView(APIView):
                 'top_key_account_share': top_key_account_share,
                 'avg_teu_per_trip': avg_teu_per_trip,
                 'customers': customer_analytics_list
-            },
+            } if can_cust_rev else None,
             'report8_subcontractor_settlements': {
                 'total_subcontractor_trips': total_subcontractor_trips,
                 'total_gross_payable': total_gross_payable,
@@ -1411,14 +1465,14 @@ class ReportsAPIView(APIView):
                 'total_balance_due': total_balance_due,
                 'subcontractors': subcontractors_summary,
                 'trips': subcontractor_trips_data
-            },
+            } if can_sub else None,
             'report9_driver_payroll_performance': {
                 'total_payroll_fund': total_payroll_fund,
                 'active_drivers_count': active_drivers_count,
                 'avg_salary_per_driver': avg_salary_per_driver,
                 'top_driver_name': top_driver_name,
                 'drivers': driver_payroll_list
-            },
+            } if can_drv_sal else None,
             'report10_dispatcher_funds': {
                 'total_funds_granted': total_funds_granted,
                 'total_disbursed': total_disbursed_funds,
@@ -1428,7 +1482,7 @@ class ReportsAPIView(APIView):
                 'active_funds_count': active_funds_count,
                 'settled_funds_count': settled_funds_count,
                 'funds': funds_list
-            },
+            } if can_funds else None,
             'report11_driver_advances_expenses': {
                 'total_driver_advances': total_driver_advances,
                 'total_actual_expenses': total_driver_actual_expenses,
@@ -1437,7 +1491,7 @@ class ReportsAPIView(APIView):
                 'pending_settlement_count': pending_driver_settlement_count,
                 'settled_count': settled_driver_advances_count,
                 'trips': driver_advances_trips_data
-            },
+            } if can_advances else None,
             'report12_settlement_backlog': {
                 'total_trips_count': settlement_total_count,
                 'settled_trips_count': settlement_settled_count,
@@ -1447,7 +1501,7 @@ class ReportsAPIView(APIView):
                 'settled_profit': settlement_settled_prof,
                 'unsettled_revenue': settlement_unsettled_rev,
                 'trips': settlement_trips_data
-            },
+            } if can_settle else None,
             'report13_ar_aging': {
                 'total_receivable': total_ar_receivable,
                 'total_freight_revenue': total_ar_freight,
@@ -1456,7 +1510,7 @@ class ReportsAPIView(APIView):
                 'total_remaining_balance': total_ar_balance,
                 'total_overdue': total_ar_overdue,
                 'customers': ar_summary_list
-            },
+            } if can_ar else None,
             'report14_unsettled_aging': {
                 'total_unsettled_count': len(unsettled_aging_records),
                 'total_unsettled_revenue': unsettled_total_rev_stuck,
@@ -1464,7 +1518,7 @@ class ReportsAPIView(APIView):
                 'over_30_days_count': unsettled_over_30_count,
                 'missing_pod_count': unsettled_missing_pod_count,
                 'records': unsettled_aging_records
-            }
+            } if can_unsettled else None
         }
 
         return Response(data)

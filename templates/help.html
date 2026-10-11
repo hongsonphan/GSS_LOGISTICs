@@ -1313,7 +1313,7 @@
             }
         }
 
-        // Xử lý click bookmark mượt mà và nhấp nháy highlight vào đúng vị trí
+        // Xử lý click bookmark mượt mà và nhấp nháy highlight vào đúng vị trí (Khớp chuẩn 100% cho mọi mục lớn & mục nhỏ 2.1, 3.1... 6.5)
         document.addEventListener('DOMContentLoaded', () => {
             const navLinks = document.querySelectorAll('#help-tree-nav .nav-link');
             navLinks.forEach(link => {
@@ -1324,7 +1324,16 @@
                         const targetEl = document.getElementById(targetId);
                         if (targetEl) {
                             e.preventDefault();
-                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            
+                            // Tính toán chính xác tuyệt đối tọa độ cuộn trừ bù Topbar (80px)
+                            const headerOffset = 80;
+                            const elementPosition = targetEl.getBoundingClientRect().top;
+                            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                            
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
                             history.pushState(null, null, href);
                             
                             // Hiệu ứng flash highlight để người dùng nhận diện ngay bookmark vừa đến
@@ -1332,13 +1341,30 @@
                             void targetEl.offsetWidth; // force reflow
                             targetEl.classList.add('highlight-flash');
                             
-                            // Cập nhật active link
+                            // Cập nhật active link trên cây mục lục
                             navLinks.forEach(l => l.classList.remove('active'));
                             this.classList.add('active');
                         }
                     }
                 });
             });
+
+            // Tự động định vị đúng vị trí khi mở link có sẵn hash (ví dụ: /helps#sec-input-quotation)
+            if (window.location.hash) {
+                const initialTarget = document.querySelector(window.location.hash);
+                if (initialTarget) {
+                    setTimeout(() => {
+                        const headerOffset = 80;
+                        const elementPosition = initialTarget.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                        initialTarget.classList.add('highlight-flash');
+                    }, 150);
+                }
+            }
 
             const sections = document.querySelectorAll('section[id], div[id^="sec-"]');
 

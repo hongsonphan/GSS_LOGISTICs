@@ -152,7 +152,23 @@
             full_name: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.full_name|escapejs }}{% else %}{{ request.user.username|escapejs }}{% endif %}",
             nickname: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.nickname|escapejs }}{% else %}{% endif %}",
             is_staff: {{ request.user.is_staff|yesno:"true,false" }},
-            is_superuser: {{ request.user.is_superuser|yesno:"true,false" }}
+            is_superuser: {{ request.user.is_superuser|yesno:"true,false" }},
+            permissions: [
+                {% if request.user.is_authenticated %}
+                    {% for p in request.user.get_all_permissions %}"{{ p|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}
+                {% endif %}
+            ]
+        };
+
+        window.hasUserPermission = function(permCodename) {
+            if (!window.CURRENT_USER) return false;
+            if (window.CURRENT_USER.is_superuser) return true;
+            const perms = window.CURRENT_USER.permissions || [];
+            if (!permCodename) return false;
+            if (permCodename.includes('.')) {
+                return perms.includes(permCodename);
+            }
+            return perms.some(p => p.endsWith('.' + permCodename) || p === permCodename);
         };
     </script>
     <script src="{% static 'js/column_manager.js' %}?v=2.9.39"></script>

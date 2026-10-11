@@ -35,6 +35,12 @@ class Employee(TimeStampedModel, SoftDeleteModel):
     base_salary = models.DecimalField(max_digits=12, decimal_places=0, default=5000000)
     current_advance = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Tiền tạm ứng trong tháng")
     is_active = models.BooleanField(default=True)
+    excluded_permissions = models.ManyToManyField(
+        'auth.Permission',
+        blank=True,
+        related_name='excluded_employees',
+        verbose_name="Quyền bị loại trừ khỏi nhóm"
+    )
 
     class Meta:
         ordering = ['code']
