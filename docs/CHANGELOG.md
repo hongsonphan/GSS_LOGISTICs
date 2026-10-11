@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.2] - 2026-10-11 (Chuẩn Hóa Phân Quyền Quản Lý Tài Xế, Cắt Kéo & Tối Ưu Bố Cục Giao Diện Điều Vận)
+
+### 1. Phân Quyền Quản Lý Tài Xế & Chuẩn Hóa Giao Diện Tạo Chuyến:
+- **Loại bỏ nút "+ Danh mục" tại ô Tài xế:** Gỡ bỏ nút gọi modal `driver_tariffs` cạnh ô chọn tài xế trên cả màn hình Tạo chuyến (`view_create_trip.html`) và Modal Tạo chuyến (`modal_create_trip.html`) để tránh người dùng hiểu nhầm đây là nút thêm tài xế mới.
+- **Quy định nghiệp vụ Tài xế:** Dữ liệu tài xế được nạp tự động (load) từ phân hệ **Hành chính & Nhân sự**. Bộ phận Điều vận không tự ý tạo tài xế. Bổ sung nhãn `Nạp từ Nhân sự` và ghi chú: *"Nếu chưa có tên tài xế, vui lòng liên hệ phòng Nhân sự để bổ sung hồ sơ."*
+
+### 2. Tối Ưu Bố Cục Chế Độ Cắt Kéo (Drop & Hook) & Khắc Phục Khoảng Trống:
+- **Cân đối bố cục:** Mở rộng khối Cắt kéo; chuyển ô Ghi chú bàn giao mooc (`inp-notes-drop-hook`) thành `<textarea rows="4">` (view) và `<textarea rows="3">` (modal) rộng rãi, chuyên nghiệp để điều vận ghi chép rõ thời gian cắt mooc, vị trí đậu mooc, kiểm tra niêm phong kẹp chì (seal) và yêu cầu chụp ảnh vỏ cont.
+- **Hộp chỉ dẫn phân quyền:** Bổ sung hộp thông tin chuẩn nghiệp vụ bên cạnh tỷ lệ phân chia thù lao, giải quyết triệt để khoảng trống hẫng thị giác phía dưới card.
+
+### 3. Cập Nhật Sổ Tay Hướng Dẫn Sử Dụng (/helps):
+- **Quy Trình Phối Hợp Liên Phòng Ban (SOP):** Bổ sung khối quy định phân quyền và ma trận phối hợp 4 phòng ban chuyên trách (Nhân sự, Đội xe, Kinh doanh, Kế toán & Admin) ngay đầu Mục III của `/helps`.
+- **Hướng dẫn Mục 3.1 & 3.2 (Điều vận):** Cập nhật chi tiết quy trình xử lý khi thiếu tài xế (phải liên hệ phòng Nhân sự) cho cả chuyến chạy thẳng và chuyến Cắt kéo 2 tài.
+
+### 4. Kiểm Thử Hệ Thống (Zero-Regression):
+- 91/91 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`).
+- Cú pháp JavaScript hợp lệ 100% (`node -c static/js/app.js` & `node -c static/js/column_manager.js`).
+
 ## [v2.1] - 2026-10-11 (Chuẩn Hóa 4 Tiến Trình Quyết Toán Nghiệp Vụ & Quy Tắc Ghi Nhận Công Nợ AR Khách Hàng)
 
 ### 1. Phân Định Rạch Ròi 4 Tiến Trình Nghiệp Vụ Vận Tải:

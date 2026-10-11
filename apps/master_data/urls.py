@@ -14,6 +14,7 @@ from apps.master_data.api_views import (
     TrailerMasterListCreateAPIView, TrailerMasterDetailAPIView,
     SubcontractorListCreateAPIView, SubcontractorDetailAPIView,
     CompanyProfileAPIView,
+    OpeningBalanceListCreateAPIView, OpeningBalanceDetailAPIView,
 )
 from apps.master_data.permission_views import RolesPermissionsAPIView
 
@@ -21,9 +22,11 @@ urlpatterns = [
     path('summary/', MasterDataSummaryAPIView.as_view(), name='master-summary'),
     path('form-options/', MasterDataFormOptionsAPIView.as_view(), name='master-form-options'),
     
-    # 0. Khai báo Hệ Thống / Thông Tin Công Ty & Phân Quyền
+    # 0. Khai báo Hệ Thống / Thông Tin Công Ty, Phân Quyền & Số Dư Đầu Kỳ
     path('company/', CompanyProfileAPIView.as_view(), name='master-company-profile'),
     path('roles-permissions/', RolesPermissionsAPIView.as_view(), name='master-roles-permissions'),
+    path('opening-balances/', OpeningBalanceListCreateAPIView.as_view(), name='master-opening-balances'),
+    path('opening-balances/<int:pk>/', OpeningBalanceDetailAPIView.as_view(), name='master-opening-balance-detail'),
 
     # 1. Địa điểm / Cảng bãi
     path('locations/', LocationListCreateAPIView.as_view(), name='master-locations'),

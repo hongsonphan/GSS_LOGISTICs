@@ -963,9 +963,62 @@
                 <!-- ========================================================================= -->
 
                 <div id="sec-group-3">
-                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 uppercase font-heading tracking-tight border-b-2 border-slate-900 pb-3 mt-12 mb-8">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 uppercase font-heading tracking-tight border-b-2 border-slate-900 pb-3 mt-12 mb-6">
                         III. HƯỚNG DẪN NHẬP LIỆU
                     </h2>
+
+                    <!-- NGUYÊN TẮC PHÂN QUYỀN & QUY TRÌNH PHỐI HỢP LIÊN PHÒNG BAN -->
+                    <div class="mb-8 p-4 sm:p-5 bg-gradient-to-r from-teal-50/80 via-slate-50 to-amber-50/60 border-l-4 border-teal-600 rounded-r-xl border-y border-r border-slate-200/80 space-y-3">
+                        <div class="flex items-center gap-2 text-teal-900 font-black text-sm uppercase tracking-wide">
+                            <i class="ph-bold ph-shield-check text-teal-600 text-lg"></i>
+                            <span>Nguyên Tắc Phân Quyền & Quy Trình Phối Hợp Liên Phòng Ban Khi Thiếu Dữ Liệu (SOP)</span>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            Hệ thống <strong>BIM Logistics ERP</strong> vận hành theo cơ chế phân quyền chức năng nghiêm ngặt (Role-Based Access Control) nhằm bảo đảm tính toàn vẹn dữ liệu, an toàn tài chính và chứng từ pháp lý. Mỗi danh mục gốc (Master Data) chỉ do đúng một phòng ban nghiệp vụ chuyên trách khởi tạo và quản lý:
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-xs">
+                            <div class="p-3 bg-white border border-teal-200/80 rounded-lg shadow-sm space-y-1.5">
+                                <div class="font-bold text-teal-950 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
+                                    <span>1. Phân hệ Hành chính - Nhân sự (HR):</span>
+                                </div>
+                                <p class="text-[11.5px] text-slate-600 leading-relaxed">
+                                    • <strong>Dữ liệu phụ trách:</strong> Hồ sơ Nhân viên, Tài xế, Bằng lái xe, Số điện thoại, Hạn khám sức khỏe.<br>
+                                    • <strong>Nguyên tắc vận hành:</strong> Bộ phận Điều vận và Kế toán <em>KHÔNG ĐƯỢC PHÉP</em> tự ý tạo tài xế trên màn hình điều vận. Trường hợp ô chọn Tài xế chưa có tên người cần phân công ➔ <strong>Liên hệ ngay phòng Nhân sự</strong> để họ tạo mới hồ sơ nhân viên lái xe tại phân hệ Nhân sự.
+                                </p>
+                            </div>
+                            <div class="p-3 bg-white border border-blue-200/80 rounded-lg shadow-sm space-y-1.5">
+                                <div class="font-bold text-blue-950 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                                    <span>2. Phân hệ Quản lý Đội xe (Fleet):</span>
+                                </div>
+                                <p class="text-[11.5px] text-slate-600 leading-relaxed">
+                                    • <strong>Dữ liệu phụ trách:</strong> Xe đầu kéo, Rơ-moóc, Thiết bị giám sát GPS, Hạn đăng kiểm, Bảo hiểm TNDS, Định mức tiêu hao nhiên liệu.<br>
+                                    • <strong>Nguyên tắc:</strong> Nếu thiếu biển số xe hoặc rơ-moóc trong danh sách điều động ➔ <strong>Liên hệ Quản lý Đội xe</strong> để cập nhật dữ liệu phương tiện.
+                                </p>
+                            </div>
+                            <div class="p-3 bg-white border border-amber-200/80 rounded-lg shadow-sm space-y-1.5">
+                                <div class="font-bold text-amber-950 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
+                                    <span>3. Phân hệ Kinh doanh & Khách hàng (Sale/CRM):</span>
+                                </div>
+                                <p class="text-[11.5px] text-slate-600 leading-relaxed">
+                                    • <strong>Dữ liệu phụ trách:</strong> Danh mục Khách hàng, Hợp đồng nguyên tắc, Biểu phí tuyến đường (Tariff), Hãng tàu biển.<br>
+                                    • <strong>Nguyên tắc:</strong> Nhân viên điều vận nếu không có quyền tạo khách hàng mới ➔ <strong>Liên hệ phòng Kinh doanh (Sale)</strong> để khai báo khách hàng và cập nhật biểu cước hợp đồng.
+                                </p>
+                            </div>
+                            <div class="p-3 bg-white border border-rose-200/80 rounded-lg shadow-sm space-y-1.5">
+                                <div class="font-bold text-rose-950 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-rose-600 shrink-0"></span>
+                                    <span>4. Phân hệ Tài chính - Kế toán & Admin:</span>
+                                </div>
+                                <p class="text-[11.5px] text-slate-600 leading-relaxed">
+                                    • <strong>Dữ liệu phụ trách:</strong> Tài khoản ngân hàng, Loại chi phí chuyến, Nhà xe thầu phụ (Subcontractor), Sổ quỹ tiền mặt.<br>
+                                    • <strong>Quy định chuyển cấp (Escalation):</strong> Khi người dùng không vào được phân hệ hoặc bị thông báo <em>"Bạn không có quyền truy cập chức năng này"</em> ➔ <strong>Liên hệ ngay Quản trị viên hệ thống (Admin) hoặc Trưởng phòng phụ trách</strong> để được cấp quyền hoặc hỗ trợ nhập liệu.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 1. DASHBOARD TỔNG QUAN -->
@@ -1370,16 +1423,31 @@
                                         <tr>
                                             <td class="p-2.5 font-bold text-slate-900">Tài Xế Nhận Lệnh (Toàn trình) <span class="text-rose-500 font-bold">(*)</span></td>
                                             <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
-                                            <td class="p-2.5">Chọn tài xế chính thực hiện chuyến xe. Hệ thống tự động gán xe đầu kéo phụ trách của tài xế đó.</td>
-                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
-                                                👉 <strong>Bấm nút [Danh mục]</strong> ngay cạnh nhãn ô để xem Biểu phí lương chuyến. Nếu chưa có hồ sơ tài xế: Vào <strong>Hành chính & Nhân sự</strong> ➔ <strong>+ Thêm Nhân Viên Mới</strong> (chức vụ Tài xế).
+                                            <td class="p-2.5">
+                                                Chọn tài xế chính điều động toàn trình chuyến xe. Hệ thống tự động gán xe đầu kéo phụ trách theo hồ sơ của tài xế đó.<br>
+                                                <span class="text-slate-500 text-[11px]">• Dữ liệu được nạp tự động (load) từ danh mục nhân sự đang hoạt động.</span>
+                                            </td>
+                                            <td class="p-2.5 text-amber-900 font-semibold bg-amber-50/60 border border-amber-200/60 rounded">
+                                                🔒 <strong>Phân quyền Nhân sự:</strong> Bộ phận Điều vận <em>không được phép tự ý thêm tài xế</em> trên màn hình này.
+                                                <br><span class="text-[11px] text-slate-700 font-normal">👉 Nếu danh sách chưa có tên tài xế: <strong>Báo ngay phòng Hành chính - Nhân sự</strong> để họ tạo hồ sơ nhân viên lái xe tại phân hệ Nhân sự. Sau khi Nhân sự lưu xong, danh sách tại đây sẽ tự động nạp tên tài xế mới ngay lập tức.</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <td class="p-2.5 font-bold text-slate-900">Chế Độ Cắt Kéo (Drop & Hook - 2 Tài)</td>
                                             <td class="p-2.5 text-slate-600">Nút bật/tắt (Toggle)</td>
-                                            <td class="p-2.5">Bật toggle nếu chuyến xe chia làm 2 chặng: Tài xế 1 lấy cont về kho cắt moóc; Tài xế 2 sau đó móc moóc kéo đi cảng hạ.</td>
-                                            <td class="p-2.5 text-slate-600">Khi bật: Chọn Tài xế Chặng 1, Tài xế Chặng 2 và chọn <strong>Tỷ Lệ Phân Chia Thù Lao</strong> (50-50, 60-40, hoặc tùy biến %).</td>
+                                            <td class="p-2.5">
+                                                Bật toggle khi chuyến xe chia làm 2 chặng độc lập:<br>
+                                                <strong>• Chặng 1:</strong> Lấy vỏ cont tại Cảng/Depot ➔ kéo về kho khách hàng cắt mooc để đóng/dỡ hàng.<br>
+                                                <strong>• Chặng 2:</strong> Móc mooc tại kho ➔ kéo đi hạ bãi Cảng xuất hoặc trả rỗng.<br>
+                                                Hệ thống tự động phân tách thù lao theo tỷ lệ % và tách biệt trách nhiệm kẹp chì seal vỏ cont giữa 2 tài xế.
+                                            </td>
+                                            <td class="p-2.5 text-slate-700 bg-teal-50/50 border border-teal-200/60 rounded">
+                                                <div class="space-y-1">
+                                                    <div><strong>1. Chọn Tài xế Chặng 1 & Chặng 2:</strong> Nếu thiếu tên tài xế nào ➔ <strong>Liên hệ phòng Nhân sự</strong> để bổ sung. Điều vận không tự ý thêm.</div>
+                                                    <div><strong>2. Tỷ lệ phân chia lương:</strong> Mặc định 50% - 50%, hoặc 60% - 40%, 40% - 60%, hoặc chọn <em>Tùy biến %</em> để nhập tỷ lệ riêng.</div>
+                                                    <div><strong>3. Ghi chú & Biên bản bàn giao mooc:</strong> Nhập vào ô văn bản mở rộng (thời gian cắt mooc, yêu cầu chụp ảnh kẹp chì seal, vị trí đỗ mooc tại kho) để tự động gửi Zalo cho cả 2 tài xế.</div>
+                                                </div>
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1389,11 +1457,24 @@
                     </div>
 
                     <!-- 3.2 CẮT KÉO & GHÉP CONT -->
-                    <div id="sec-input-split-twin" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">3.2. Cắt Kéo (Drop & Hook) & Ghép 2 Cont 20ft</h4>
-                        <div class="text-sm text-slate-700 space-y-2">
-                            <p><strong>• Khi nào sử dụng Cắt Kéo (Drop & Hook):</strong> Khi kho khách hàng đóng hàng lâu (mất 6 - 12 tiếng) hoặc kho yêu cầu gửi vỏ cont qua đêm. Tài xế kéo cont đến cắt moóc lại kho, đầu kéo quay về nhận chuyến khác. Hôm sau tài xế khác đến móc moóc kéo đi cảng hạ.</p>
-                            <p><strong>• Khi nào sử dụng Ghép 2 Cont:</strong> Khi có 2 lô hàng cont 20ft cùng xuất phát từ một cảng về cùng một khu công nghiệp. Bật tính năng ghép cont giúp giảm 40% chi phí dầu và tăng năng suất xe.</p>
+                    <div id="sec-input-split-twin" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">3.2. Quy Chuẩn Vận Hành Cắt Kéo (Drop & Hook) & Ghép 2 Cont 20ft</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+                                <div class="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
+                                    <i class="ph-bold ph-arrows-split text-teal-600"></i>
+                                    <span>Quy trình điều động Cắt Kéo (Drop & Hook):</span>
+                                </div>
+                                <p class="leading-relaxed text-slate-600">
+                                    Áp dụng khi nhà máy khách hàng đóng hàng kéo dài (6 - 12 tiếng) hoặc lưu mooc qua đêm. Giúp giải phóng xe đầu kéo quay về nhận chuyến khác, không lãng phí thời gian chờ đợi.
+                                </p>
+                                <ul class="list-disc pl-5 space-y-1 text-slate-600">
+                                    <li><strong>Quản lý tài xế 2 chặng:</strong> Danh sách tài xế Chặng 1 và Chặng 2 được nạp từ phân hệ Nhân sự. Nhân viên điều phối <em>không tự tạo tài xế</em>; nếu thiếu người chạy chuyến, điều vận phải liên hệ trực tiếp phòng Nhân sự để bổ sung hồ sơ lái xe.</li>
+                                    <li><strong>Phân chia thù lao:</strong> Chọn định mức 50% - 50% hoặc tùy biến tỷ lệ phù hợp với quãng đường thực tế giữa 2 chặng để đảm bảo công bằng thu nhập cho lái xe.</li>
+                                    <li><strong>Biên bản bàn giao & Seal cont:</strong> Ghi rõ yêu cầu trong ô <em>Ghi chú & Biên bản bàn giao mooc tại kho</em> (giờ cắt mooc, tình trạng vỏ cont, yêu cầu tài xế Chặng 1 chụp ảnh số seal trước khi ngắt mooc, tài xế Chặng 2 kiểm tra đối chiếu seal khi móc mooc kéo đi). Nội dung này sẽ tự động đính kèm vào tin nhắn Zalo phát lệnh cho cả 2 tài xế.</li>
+                                </ul>
+                            </div>
+                            <p><strong>• Khi nào sử dụng Ghép 2 Cont (Twin 20ft):</strong> Khi có 2 lô hàng cont 20ft cùng xuất phát từ một cảng/depot về cùng một cụm khu công nghiệp. Bật tính năng ghép cont giúp giảm 40% chi phí dầu và tăng năng suất vận tải của xe.</p>
                         </div>
                     </div>
 

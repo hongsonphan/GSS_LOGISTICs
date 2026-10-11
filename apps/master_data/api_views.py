@@ -13,7 +13,8 @@ from apps.master_data.models import (
     ContainerType, ContainerCategory,
     ExpenseItem, ExpenseCategoryGroup,
     DriverSalaryTariff, DriverAllowanceCatalog, AllowanceCategory,
-    ShippingLine, Subcontractor, CompanyProfile
+    ShippingLine, Subcontractor, CompanyProfile,
+    OpeningBalance, OpeningBalanceCategory
 )
 from apps.customers.models import Customer, RouteTariff
 from apps.fleet.models import Vehicle, Trailer, VehicleType, VehicleOwnership, VehicleStatus
@@ -1301,4 +1302,222 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
         })
 
 
+class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
+    """
+    API Quản lý Số dư đầu kỳ (Opening Balances):
+    - GET: Lấy danh sách số dư, KPIs tổng hợp và danh mục phân loại.
+    - POST: Thêm mới số dư đầu kỳ.
+    """
+    def get(self, request):
+        category = request.query_params.get('category', '').strip()
+        search = request.query_params.get('search', '').strip()
 
+        all_balances = OpeningBalance.objects.all()
+
+        # Tính toán KPIs tổng quan
+        total_cash_bank = 0
+        total_customer_ar = 0
+        total_subcontractor_ap = 0
+        total_driver_advance = 0
+        total_dispatcher_fund = 0
+
+        for b in all_balances:
+            amt = float(b.amount)
+            if b.category in [OpeningBalanceCategory.CASH_FUND, OpeningBalanceCategory.BANK_ACCOUNT]:
+                total_cash_bank += amt if b.is_debit else -amt
+            elif b.category == OpeningBalanceCategory.CUSTOMER_AR:
+                total_customer_ar += amt if b.is_debit else -amt
+            elif b.category == OpeningBalanceCategory.SUBCONTRACTOR_AP:
+                total_subcontractor_ap += amt if not b.is_debit else -amt
+            elif b.category == OpeningBalanceCategory.DRIVER_ADVANCE:
+                total_driver_advance += amt if b.is_debit else -amt
+            elif b.category == OpeningBalanceCategory.DISPATCHER_FUND:
+                total_dispatcher_fund += amt if b.is_debit else -amt
+
+        filtered_qs = all_balances
+        if category:
+            filtered_qs = filtered_qs.filter(category=category)
+        if search:
+            filtered_qs = filtered_qs.filter(
+                Q(entity_name__icontains=search) |
+                Q(entity_code__icontains=search) |
+                Q(notes__icontains=search)
+            )
+
+        items = []
+        for b in filtered_qs:
+            items.append({
+                'id': b.id,
+                'category': b.category,
+                'category_display': b.get_category_display(),
+                'entity_code': b.entity_code,
+                'entity_name': b.entity_name,
+                'opening_date': b.opening_date.strftime('%Y-%m-%d') if b.opening_date else '',
+                'amount': float(b.amount),
+                'is_debit': b.is_debit,
+                'notes': b.notes,
+                'created_at': b.created_at.strftime('%d/%m/%Y %H:%M') if b.created_at else '',
+            })
+
+        # Danh mục phân loại
+        categories = [
+            {'value': k, 'label': label}
+            for k, label in OpeningBalanceCategory.choices
+        ]
+
+        # Gợi ý đối tượng từ dữ liệu hiện có
+        customers = list(Customer.objects.all().values('code', 'name'))
+        subcontractors = list(Subcontractor.objects.filter(is_active=True).values('code', 'name'))
+        drivers = list(Employee.objects.filter(is_active=True, role='DRIVER').values('code', 'full_name', 'nickname'))
+        if not drivers:
+            drivers = list(Employee.objects.filter(is_active=True).values('code', 'full_name', 'nickname'))
+
+        return Response({
+            'success': True,
+            'kpis': {
+                'total_cash_bank': total_cash_bank,
+                'total_customer_ar': total_customer_ar,
+                'total_subcontractor_ap': total_subcontractor_ap,
+                'total_driver_advance': total_driver_advance,
+                'total_dispatcher_fund': total_dispatcher_fund,
+                'total_records': all_balances.count(),
+            },
+            'items': items,
+            'categories': categories,
+            'suggestions': {
+                'customers': customers,
+                'subcontractors': subcontractors,
+                'drivers': drivers,
+            }
+        })
+
+    def post(self, request):
+        data = request.data
+        category = data.get('category', '').strip()
+        entity_code = data.get('entity_code', '').strip()
+        entity_name = data.get('entity_name', '').strip()
+        opening_date = data.get('opening_date', '').strip()
+        amount_raw = data.get('amount', 0)
+        is_debit = bool(data.get('is_debit', True))
+        notes = data.get('notes', '').strip()
+
+        if not entity_name:
+            return Response({'error': 'Tên đối tượng hoặc khoản mục là bắt buộc.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not opening_date:
+            return Response({'error': 'Ngày chốt số dư đầu kỳ là bắt buộc.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            amount = float(amount_raw)
+            if amount < 0:
+                return Response({'error': 'Số tiền phải lớn hơn hoặc bằng 0.'}, status=status.HTTP_400_BAD_REQUEST)
+        except (ValueError, TypeError):
+            return Response({'error': 'Số tiền không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if category not in [c[0] for c in OpeningBalanceCategory.choices]:
+            category = OpeningBalanceCategory.CASH_FUND
+
+        record = OpeningBalance.objects.create(
+            category=category,
+            entity_code=entity_code,
+            entity_name=entity_name,
+            opening_date=opening_date,
+            amount=amount,
+            is_debit=is_debit,
+            notes=notes,
+        )
+
+        return Response({
+            'success': True,
+            'message': f'Đã ghi nhận số dư đầu kỳ cho "{record.entity_name}" thành công!',
+            'data': {
+                'id': record.id,
+                'category': record.category,
+                'category_display': record.get_category_display(),
+                'entity_code': record.entity_code,
+                'entity_name': record.entity_name,
+                'opening_date': record.opening_date.strftime('%Y-%m-%d') if record.opening_date else '',
+                'amount': float(record.amount),
+                'is_debit': record.is_debit,
+                'notes': record.notes,
+            }
+        }, status=status.HTTP_201_CREATED)
+
+
+class OpeningBalanceDetailAPIView(MasterDataBaseAPIView):
+    """API Cập nhật & Xóa Số dư đầu kỳ."""
+    def get(self, request, pk):
+        try:
+            b = OpeningBalance.objects.get(pk=pk)
+        except OpeningBalance.DoesNotExist:
+            return Response({'error': 'Không tìm thấy bản ghi số dư.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'success': True,
+            'data': {
+                'id': b.id,
+                'category': b.category,
+                'category_display': b.get_category_display(),
+                'entity_code': b.entity_code,
+                'entity_name': b.entity_name,
+                'opening_date': b.opening_date.strftime('%Y-%m-%d') if b.opening_date else '',
+                'amount': float(b.amount),
+                'is_debit': b.is_debit,
+                'notes': b.notes,
+            }
+        })
+
+    def put(self, request, pk):
+        try:
+            record = OpeningBalance.objects.get(pk=pk)
+        except OpeningBalance.DoesNotExist:
+            return Response({'error': 'Không tìm thấy bản ghi số dư.'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'category' in data and data['category'] in [c[0] for c in OpeningBalanceCategory.choices]:
+            record.category = data['category']
+        if 'entity_code' in data:
+            record.entity_code = data['entity_code'].strip()
+        if 'entity_name' in data and data['entity_name'].strip():
+            record.entity_name = data['entity_name'].strip()
+        if 'opening_date' in data and data['opening_date'].strip():
+            record.opening_date = data['opening_date'].strip()
+        if 'amount' in data:
+            try:
+                amt = float(data['amount'])
+                if amt >= 0:
+                    record.amount = amt
+            except (ValueError, TypeError):
+                pass
+        if 'is_debit' in data:
+            record.is_debit = bool(data['is_debit'])
+        if 'notes' in data:
+            record.notes = data['notes'].strip()
+
+        record.save()
+        return Response({
+            'success': True,
+            'message': 'Đã cập nhật số dư đầu kỳ thành công!',
+            'data': {
+                'id': record.id,
+                'category': record.category,
+                'category_display': record.get_category_display(),
+                'entity_code': record.entity_code,
+                'entity_name': record.entity_name,
+                'opening_date': record.opening_date.strftime('%Y-%m-%d') if record.opening_date else '',
+                'amount': float(record.amount),
+                'is_debit': record.is_debit,
+                'notes': record.notes,
+            }
+        })
+
+    def delete(self, request, pk):
+        try:
+            record = OpeningBalance.objects.get(pk=pk)
+        except OpeningBalance.DoesNotExist:
+            return Response({'error': 'Không tìm thấy bản ghi số dư.'}, status=status.HTTP_404_NOT_FOUND)
+
+        record.delete()
+        return Response({
+            'success': True,
+            'message': f'Đã xóa số dư đầu kỳ "{record.entity_name}".'
+        })

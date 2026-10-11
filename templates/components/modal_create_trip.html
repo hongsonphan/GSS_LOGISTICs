@@ -547,20 +547,23 @@
           </div>
 
           <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
+          <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
           <div id="section-direct-dispatch" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div>
               <div class="flex items-center justify-between h-5 mb-1">
                 <label class="block font-bold text-slate-700 text-xs truncate" for="inp-driver">
                   Tài xế nhận lệnh (Toàn trình) <span class="text-rose-500">*</span>
                 </label>
-                <button type="button" onclick="openMasterDataModalQuick('driver_tariffs', 'inp-driver')" 
-                  class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 flex items-center gap-0.5">
-                  <i class="ph-bold ph-plus text-[9.5px]"></i> Danh mục
-                </button>
+                <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1">
+                  <i class="ph-bold ph-identification-badge text-teal-600"></i> Nạp từ Nhân sự
+                </span>
               </div>
               <select id="inp-driver" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full">
                 <option value="">-- Chọn tài xế điều động --</option>
               </select>
+              <p class="mt-1 text-[10px] text-slate-500 italic flex items-center gap-1">
+                <i class="ph ph-info text-amber-600"></i> Nếu chưa có tên tài xế, vui lòng liên hệ phòng Nhân sự để bổ sung hồ sơ.
+              </p>
               <div id="err-driver" class="field-error-msg hidden"></div>
             </div>
             <div>
@@ -575,8 +578,6 @@
               />
             </div>
           </div>
-
-
 
           <!-- Mode 2: Chế độ Cắt Kéo / 2 Chặng (Ẩn mặc định, hiện khi bật toggle) -->
           <div id="section-drop-hook-dispatch" class="hidden-view space-y-2.5 pt-0.5">
@@ -598,7 +599,10 @@
                   <span class="text-[10.5px] text-teal-700 font-bold" id="badge-ratio-leg1">Tỷ lệ: 50%</span>
                 </div>
                 <div>
-                  <label class="form-label text-teal-950 mb-0.5 text-[11px] font-bold" for="inp-driver-leg1">Tài xế Lấy Cont <span class="text-rose-500">*</span></label>
+                  <div class="flex items-center justify-between mb-0.5">
+                    <label class="form-label text-teal-950 text-[11px] font-bold" for="inp-driver-leg1">Tài xế Lấy Cont <span class="text-rose-500">*</span></label>
+                    <span class="text-[9.5px] text-teal-700 bg-teal-100/60 px-1.5 py-0.2 rounded font-medium">Nhân sự</span>
+                  </div>
                   <select id="inp-driver-leg1" onchange="onDriverLeg1Change(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
                     <option value="">-- Chọn tài xế lấy cont --</option>
                   </select>
@@ -622,7 +626,10 @@
                   <span class="text-[10.5px] text-indigo-700 font-bold" id="badge-ratio-leg2">Tỷ lệ: 50%</span>
                 </div>
                 <div>
-                  <label class="form-label text-indigo-950 mb-0.5 text-[11px] font-bold" for="inp-dropoff-driver">Tài xế Hạ Cont <span class="text-rose-500">*</span></label>
+                  <div class="flex items-center justify-between mb-0.5">
+                    <label class="form-label text-indigo-950 text-[11px] font-bold" for="inp-dropoff-driver">Tài xế Hạ Cont <span class="text-rose-500">*</span></label>
+                    <span class="text-[9.5px] text-indigo-700 bg-indigo-100/60 px-1.5 py-0.2 rounded font-medium">Nhân sự</span>
+                  </div>
                   <select id="inp-dropoff-driver" onchange="onDriverLeg2Change(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
                     <option value="">-- Chọn tài xế hạ cont --</option>
                   </select>
@@ -637,9 +644,9 @@
               </div>
             </div>
 
-            <!-- Tỷ lệ phân chia lương tài xế -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
-              <div>
+            <!-- Tỷ lệ phân chia lương tài xế & Ghi chú bàn giao mooc tại kho -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-0.5">
+              <div class="space-y-2">
                 <label class="form-label mb-0.5 text-xs font-bold" for="inp-driver-split-ratio">Tỷ lệ phân chia thù lao (Chặng 1 / Chặng 2)</label>
                 <select id="inp-driver-split-ratio" onchange="onSplitRatioChange(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
                   <option value="50">Chia đều 50% - 50% (Định mức tiêu chuẩn)</option>
@@ -650,7 +657,7 @@
                 </select>
 
                 <!-- Khung nhập tùy biến tỷ lệ thù lao Chặng 1 & Chặng 2 -->
-                <div id="div-custom-split-ratio" class="hidden mt-2 p-2 bg-amber-50/80 border border-amber-200 rounded-lg">
+                <div id="div-custom-split-ratio" class="hidden p-2 bg-amber-50/80 border border-amber-200 rounded-lg">
                   <div class="text-[10.5px] font-bold text-amber-950 mb-1 flex items-center gap-1">
                     <i class="ph-bold ph-sliders-horizontal text-amber-700"></i> Nhập tỷ lệ thù lao (%) cho 2 chặng:
                   </div>
@@ -682,15 +689,25 @@
                     </div>
                   </div>
                 </div>
+
+                <div class="p-2 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] text-slate-600 space-y-0.5">
+                  <div class="font-bold text-slate-700 flex items-center gap-1">
+                    <i class="ph-bold ph-user-check text-teal-600"></i> Quản lý Tài xế & Phân quyền:
+                  </div>
+                  <div>Danh sách tài xế do <strong>phòng Hành chính - Nhân sự</strong> quản lý. Bộ phận Điều vận không tự tạo mới tài xế. Nếu chưa có tên tài xế trên danh sách, vui lòng liên hệ phòng Nhân sự để bổ sung.</div>
+                </div>
               </div>
               <div>
-                <label class="form-label mb-0.5 text-xs font-bold" for="inp-notes-drop-hook">Ghi chú bàn giao mooc tại kho</label>
-                <input
+                <label class="form-label mb-0.5 text-xs font-bold" for="inp-notes-drop-hook">Ghi chú & Biên bản bàn giao mooc tại kho</label>
+                <textarea
                   id="inp-notes-drop-hook"
-                  type="text"
-                  placeholder="VD: Cắt mooc lúc 18H tại Kho Tân Vạn D2, chụp ảnh số seal trước khi bàn giao..."
-                  class="form-input h-8.5 px-2 py-1 bg-amber-50/40 border-amber-200 text-amber-950 font-medium text-xs"
-                />
+                  rows="3"
+                  placeholder="VD: Cắt mooc lúc 18H tại Kho Tân Vạn D2. Yêu cầu tài xế Chặng 1 chụp ảnh số seal và tình trạng vỏ cont trước khi cắt mooc. Tài xế Chặng 2 kiểm tra seal trước khi móc mooc..."
+                  class="form-input p-2 bg-amber-50/40 border-amber-200 text-amber-950 font-medium text-xs w-full rounded-lg resize-none leading-relaxed"
+                ></textarea>
+                <p class="mt-1 text-[10px] text-slate-500 italic">
+                  * Thông tin này sẽ được đính kèm vào Lệnh Điều Động Zalo gửi trực tiếp cho cả 2 tài xế.
+                </p>
               </div>
             </div>
           </div>

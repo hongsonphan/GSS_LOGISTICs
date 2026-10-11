@@ -268,3 +268,43 @@ class CompanyProfile(TimeStampedModel, SoftDeleteModel):
         return obj
 
 
+class OpeningBalanceCategory(models.TextChoices):
+    CASH_FUND = 'CASH_FUND', 'Tiền mặt & Quỹ nội bộ'
+    BANK_ACCOUNT = 'BANK_ACCOUNT', 'Tiền gửi Ngân hàng'
+    DISPATCHER_FUND = 'DISPATCHER_FUND', 'Quỹ Tạm ứng Điều vận'
+    DRIVER_ADVANCE = 'DRIVER_ADVANCE', 'Công nợ Tạm ứng Tài xế'
+    CUSTOMER_AR = 'CUSTOMER_AR', 'Công nợ Phải thu Khách hàng'
+    SUBCONTRACTOR_AP = 'SUBCONTRACTOR_AP', 'Công nợ Phải trả Thầu phụ / Xe bạn'
+    OTHER = 'OTHER', 'Số dư khác'
+
+
+class OpeningBalance(TimeStampedModel, SoftDeleteModel):
+    """
+    Số dư đầu kỳ tài chính (Tiền mặt, Ngân hàng, Quỹ điều vận, Công nợ tài xế, Công nợ khách hàng, Thầu phụ).
+    Dành cho quản trị Admin cấu hình số dư ban đầu khi đưa hệ thống vào vận hành.
+    """
+    category = models.CharField(max_length=30, choices=OpeningBalanceCategory.choices, default=OpeningBalanceCategory.CASH_FUND, db_index=True)
+    entity_code = models.CharField(max_length=50, blank=True, help_text="Mã đối tượng (Mã KH, Mã Tài xế, Số TK...)")
+    entity_name = models.CharField(max_length=200, help_text="Tên đối tượng / Tên quỹ / Tên tài khoản")
+    opening_date = models.DateField(help_text="Ngày chốt số dư đầu kỳ")
+    amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số dư đầu kỳ (VNĐ)")
+    is_debit = models.BooleanField(default=True, help_text="True: Dư Nợ (Phải thu/Tồn quỹ); False: Dư Có (Phải trả/Nợ cty)")
+    notes = models.TextField(blank=True, help_text="Diễn giải chứng từ / hợp đồng / căn cứ số dư")
+    created_by = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_opening_balances'
+    )
+
+    class Meta:
+        ordering = ['category', 'entity_name']
+        verbose_name = 'Số dư đầu kỳ'
+        verbose_name_plural = 'Danh mục Số dư đầu kỳ'
+
+    def __str__(self):
+        sign = "+" if self.is_debit else "-"
+        return f"[{self.get_category_display()}] {self.entity_name}: {sign}{self.amount:,} đ ({self.opening_date})"
+
+
