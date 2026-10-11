@@ -5,8 +5,8 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 ## [v1.6] - 2026-10-11 (Chuẩn Hóa Tiêu Đề Tab Trình Duyệt, Tái Cấu Trúc Menu Profile Avatar & Bản Quyền HDSD)
 
 ### 1. Chuẩn Hóa Tiêu Đề Tab Trình Duyệt (Browser Tab Titles):
-- **Trang Chính Ứng Dụng (`templates/base.html`):** Rút gọn từ `Bim Logistics - Hệ thống Quản lý Vận tải` thành `Hệ thống Quản lý Vận tải` (kèm favicon hệ thống), giúp tab trình duyệt không bị cắt cụt chữ trên thanh tab.
-- **Trang Hướng Dẫn Sử Dụng (`templates/help.html`):** Rút gọn từ `Sổ Tay Hướng Dẫn Sử Dụng - BIM Logistics` thành `Hướng dẫn sử dụng`.
+- **Trang Chính Ứng Dụng (`templates/base.html`):** Chuẩn hóa thành `Hệ thống Quản lý Vận tải - BIM LOGISTICS` (đưa thương hiệu ra phía sau, giúp tab trình duyệt ưu tiên hiển thị nội dung chính mà vẫn giữ trọn nhận diện thương hiệu).
+- **Trang Hướng Dẫn Sử Dụng (`templates/help.html`):** Chuẩn hóa thành `Hướng dẫn sử dụng - BIM LOGISTICS`.
 
 ### 2. Chuẩn Hóa Chân Trang & Bản Quyền (`templates/help.html`):
 - Cập nhật dòng bản quyền chuẩn hóa toàn diện cả trên bản xem trực tiếp và bản in A4: `© 2026 Bản quyền thuộc BIM LOGISTICS`.
