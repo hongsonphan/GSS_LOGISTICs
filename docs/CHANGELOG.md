@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v1.9] - 2026-10-11 (Phân Định Rạch Ròi 3 Tiến Trình Nghiệp Vụ, Bỏ Fallback Ngày Tạo & Chuẩn Hóa State Machine Đối Soát Công Nợ)
+
+### 1. Phân Định Rạch Ròi 3 Tiến Trình Nghiệp Vụ Logistics:
+- **Tiến trình 1 - Vận Hành Chuyến Xe (Trip Operations):** Vòng đời từ `DRAFT` ➔ `DISPATCHED` ➔ `AT_WAREHOUSE` ➔ `IN_TRANSIT` ➔ `DELIVERED` ➔ `COMPLETED`. Chỉ những chuyến đã hoàn tất giao hàng & hạ cont mới đạt trạng thái `COMPLETED`. Các chuyến dở dang (`AT_WAREHOUSE`, `DISPATCHED`) là đơn hàng đang thực hiện (WIP), tuyệt đối không đưa vào công nợ AR.
+- **Tiến trình 2 - Quyết Toán Tài Xế (Driver Trip Settlement - Nội bộ):** Đối soát giữa Tạm ứng (`DriverTripAdvance`) và Chi phí thực tế (`TripExpense`) của chuyến xe khi tài xế hoàn tất hành trình (`status == COMPLETED`), chốt thừa/thiếu và đánh dấu `is_expenses_settled = True`. Tiến trình này hoàn toàn độc lập với việc Khách hàng đã thanh toán cước hay chưa.
+- **Tiến trình 3 - Đối Soát Công Nợ Khách Hàng (Customer AR Reconciliation - Thương mại):** Chỉ những chuyến xe **ĐÃ HOÀN THÀNH (`COMPLETED`)** và **ĐÃ CÓ CHỨNG TỪ GIAO NHẬN (POD/EIR)** có ngày chạy thực tế `loading_date` trong kỳ mới được đưa vào Báo cáo 13 và Bảng kê đối soát SOA. Bổ sung trường `customer_reconciled`, `customer_soa_code`, `customer_reconciled_at`, `customer_reconciled_by` trên model `DispatchTrip`.
+
+### 2. Loại Bỏ Triệt Để Fallback Ngày Tạo (`created_at`):
+- Toàn bộ các bộ lọc kỳ báo cáo doanh thu, chi phí, công nợ AR và quyết toán chuyến xe chuyển sang chỉ lọc thuần túy theo **Ngày Vận Hành Thực Tế (`loading_date`)**.
+- Các chuyến thiếu ngày chạy hoặc đang chạy dở dang không bị fallback gán nhầm vào kỳ báo cáo mà được hiển thị tại Báo cáo 14 (Theo dõi đơn tồn đọng / WIP).
+
+### 3. Nâng Cấp Bảng Kê Đối Soát Khách Hàng (SOA Full-Page):
+- Tách bạch 2 cột trạng thái độc lập trên giao diện SOA:
+  * **Cột "Quyết Toán Tài Xế (Nội Bộ)":** `Đã Chốt Sổ Tài Xế` (Xanh) vs `Chờ Quyết Toán` (Vàng).
+  * **Cột "Đối Soát Khách Hàng (SOA)":** `Đã Đối Soát (SOA)` (Xanh lá) vs `Chờ Đối Soát` (Vàng) kèm mã SOA.
+- Bổ sung nút thao tác trực tiếp: Chốt/Mở lại từng dòng và Chốt đối soát toàn bộ bảng kê qua API `CustomerARReconciliationAPIView`.
+- Thêm bộ lọc trạng thái đối soát: `Tất cả` / `Chờ đối soát` / `Đã chốt đối soát SOA`.
+
+### 4. Kiểm Thử Hệ Thống & Triển Khai (Zero-Regression):
+- Vượt qua 90/90 unit tests (`python manage.py test --keepdb`). Cú pháp JavaScript hợp lệ 100% (`node -c static/js/app.js`).
+- Triển khai đồng bộ lên VPS Production (`149.118.60.194:8085`).
+
 ## [v1.8] - 2026-10-11 (Chuẩn Hóa Số Liệu Công Nợ AR, Nâng Cấp SOA Full-Page View & Mở Rộng Quyết Toán Gom Chuyến Xe)
 
 ### 1. Chuẩn Hóa Logic Tính Toán Công Nợ Phải Thu (AR Math Integrity):
