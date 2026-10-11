@@ -182,51 +182,19 @@ function switchMasterDataTab(tabKey) {
     const openingBalanceView = document.getElementById('md-opening-balance-view');
     const createBtnContainer = document.getElementById('md-create-btn') || document.getElementById('md-create-btn-label')?.parentElement;
 
-    if (tabKey === 'company') {
-        if (createBtnContainer) createBtnContainer.style.display = '';
-        if (filterToolbar) filterToolbar.classList.add('hidden');
-        if (tableContainer) tableContainer.classList.add('hidden');
-        if (paginationContainer) paginationContainer.classList.add('hidden');
-        if (rolesView) rolesView.classList.add('hidden');
-        if (openingBalanceView) openingBalanceView.classList.add('hidden');
-        if (companyView) companyView.classList.remove('hidden');
-        loadCompanyProfile();
-    } else if (tabKey === 'roles_permissions') {
-        if (createBtnContainer) createBtnContainer.style.display = 'none';
-        if (filterToolbar) filterToolbar.classList.add('hidden');
-        if (tableContainer) tableContainer.classList.add('hidden');
-        if (paginationContainer) paginationContainer.classList.add('hidden');
-        if (companyView) companyView.classList.add('hidden');
-        if (openingBalanceView) openingBalanceView.classList.add('hidden');
-        if (rolesView) rolesView.classList.remove('hidden');
-        loadRolesPermissionsData();
-    } else if (tabKey === 'opening_balance') {
-        if (createBtnContainer) createBtnContainer.style.display = 'none';
-        if (filterToolbar) filterToolbar.classList.add('hidden');
-        if (tableContainer) tableContainer.classList.add('hidden');
-        if (paginationContainer) paginationContainer.classList.add('hidden');
-        if (companyView) companyView.classList.add('hidden');
-        if (rolesView) rolesView.classList.add('hidden');
-        if (openingBalanceView) openingBalanceView.classList.remove('hidden');
-        loadOpeningBalanceData();
-    } else {
-        if (createBtnContainer) createBtnContainer.style.display = '';
-        if (filterToolbar) filterToolbar.classList.remove('hidden');
-        if (tableContainer) tableContainer.classList.remove('hidden');
-        if (paginationContainer) paginationContainer.classList.remove('hidden');
-        if (companyView) companyView.classList.add('hidden');
-        if (rolesView) rolesView.classList.add('hidden');
-        if (openingBalanceView) openingBalanceView.classList.add('hidden');
-        loadActiveMasterDataTab();
-    }
+    if (createBtnContainer) createBtnContainer.style.display = '';
+    if (filterToolbar) filterToolbar.classList.remove('hidden');
+    if (tableContainer) tableContainer.classList.remove('hidden');
+    if (paginationContainer) paginationContainer.classList.remove('hidden');
+    if (companyView) companyView.classList.add('hidden');
+    if (rolesView) rolesView.classList.add('hidden');
+    if (openingBalanceView) openingBalanceView.classList.add('hidden');
+
+    loadActiveMasterDataTab();
 }
 
 function reloadActiveMasterDataTab() {
-    if (currentMasterDataTab === 'company') {
-        loadCompanyProfile();
-    } else {
-        loadActiveMasterDataTab();
-    }
+    loadActiveMasterDataTab();
 }
 
 function syncCompanyProfileToPrintForms() {

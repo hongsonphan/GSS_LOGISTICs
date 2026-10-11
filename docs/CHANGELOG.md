@@ -2,22 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [v2.8] - 2026-10-11 (Tái Cấu Trúc Phân Hệ Cài Đặt — Quy Hoạch 5 Nhóm Danh Mục Chuẩn UI/UX 2 Tầng)
+## [v2.8] - 2026-10-11 (Tái Cấu Trúc Phân Hệ Cài Đặt — Quy Hoạch 5 Nhóm Danh Mục & Đồng Nhất 100% Dạng Bảng Dòng Records Chuẩn ERP)
 
-### 1. Tái Cấu Trúc Giao Diện Cài Đặt & Master Data (Enterprise 2-Tier Architecture):
-- **Khử bỏ hoàn toàn 14 tab chen chúc ngang:** Gom toàn bộ 14 danh mục cốt lõi vào **5 Nhóm Cài Đặt Chính** logic, mạch lạc, trực quan và không gây rối mắt:
-  * **1. Khai Báo Ban Đầu (`initial_setup`):** Thông Tin Công Ty (`company`), Vai Trò & Phân Quyền (`roles_permissions`).
-  * **2. Tài Chính & Quản Trị (`finance_admin`):** Số Dư Ban Đầu (`opening_balance`), Khoản Mục Chi (`expenses`), Biểu Phí Lương Chuyến (`driver_tariffs`), Phụ Cấp & Kiểm Hóa (`allowances`).
-  * **3. Khách Hàng & Đối Tác (`partners`):** Khách Hàng (`customers`), Biểu Cước Khách (`tariffs`), Thầu Phụ & Nhà Cung Cấp (`subcontractors`).
-  * **4. Mạng Lưới & Địa Điểm (`locations_network`):** Cảng & Kho Bãi (`locations`), Hãng Tàu (`shipping_lines`).
-  * **5. Phương Tiện & Thiết Bị (`fleet_equipment`):** Đầu Kéo & Xe (`vehicles`), Rơ-Moóc (`trailers`), Quy Cách Cont & Xe (`containers`).
-- **Giao diện 2 tầng mượt mà:**
-  * **Tầng 1 (Category Groups Bar):** 5 nút nhóm danh mục tinh tế, nổi bật, chọn nhóm nào tự động hiển thị các sub-tab tương ứng.
-  * **Tầng 2 (Sub-Items Bar):** Hiển thị danh mục con của nhóm đang chọn kèm nút thao tác hành động chuẩn mực (`Tạo mới` / `Sửa`).
-  * **Tầng 3 (Data Workspace):** Bảng dữ liệu chuẩn ERP (`.erp-table`), bộ lọc tìm kiếm, tùy biến cột, phân trang chuẩn quốc tế.
-- **Frontend Controller (`static/js/app.js` & `modules/master_data.js`):**
-  * Bổ sung bộ điều khiển `switchMasterDataGroup(groupKey, targetSubTab)` và tự động nhận diện nhóm cha trong `switchMasterDataTab(tabKey)`.
-  * Xuất biến toàn cục `window.switchMasterDataGroup`.
+### 1. Đồng Nhất 100% Giao Diện Dạng Dòng (Table Records) Chuẩn ERP — Loại Bỏ Hoàn Toàn Cách Trình Bày Thẻ:
+- **Xóa bỏ triệt để các khối giao diện dạng thẻ / card grid / gradient banner riêng lẻ:**
+  * Loại bỏ thẻ khối `#md-company-view` (Thông tin công ty), `#md-roles-permissions-view` (Vai trò & Phân quyền), và `#md-opening-balance-view` (Số dư đầu kỳ).
+  * Quy chuẩn toàn bộ 14 danh mục thuộc 5 nhóm lớn vào **duy nhất 1 cấu trúc bảng dữ liệu phẳng chuẩn mực ERP** (`#md-main-table` trong `#md-table-container`), có đầy đủ các cột thông tin nghiệp vụ và nút **"Sửa"** (hoặc Xóa) trực tiếp trên từng dòng record.
+- **Chi tiết giao diện bảng dòng cho 3 phân mục trước đây dùng thẻ:**
+  * **Thông Tin Công Ty (`company`):** Hiển thị dòng record với các cột: Tên Doanh Nghiệp (Pháp Nhân), Tên Viết Tắt, Mã Số Thuế, Hotline / SĐT, Email, Địa Chỉ Trụ Sở Chính, Người Đại Diện, Tài Khoản Ngân Hàng, VAT / Giá Dầu và nút thao tác **"Sửa"** (mở modal cập nhật hồ sơ pháp nhân).
+  * **Vai Trò & Phân Quyền (`roles_permissions`):** Hiển thị danh sách các vai trò theo dòng với các cột: Mã Vai Trò, Tên Vai Trò / Nhóm Quyền, Mô Tả Chức Năng, Số Nhân Sự, Phạm Vi Quyền, Trạng Thái và nút thao tác **"Sửa"** (mở cấu hình phân quyền).
+  * **Số Dư Ban Đầu (`opening_balance`):** Hiển thị danh sách số dư theo dòng với các cột: Tài Khoản Kế Toán, Tên Đối Tượng / Quỹ, Mã Đối Tượng, Ngày Chốt, Dư Nợ Đầu Kỳ (VNĐ), Dư Có Đầu Kỳ (VNĐ), Ghi Chú và cụm thao tác **"Sửa"** / **"Xóa"**. Nút "Tạo mới" trên toolbar mở modal khai báo số dư đầu kỳ mới.
+- **Tái cấu trúc điều hướng 2 tầng:**
+  * **Tầng 1 (Category Groups):** 5 nhóm lớn gồm: *Khai Báo Ban Đầu*, *Tài Chính & Quản Trị*, *Khách Hàng & Đối Tác*, *Mạng Lưới & Địa Điểm*, *Phương Tiện & Thiết Bị*.
+  * **Tầng 2 (Sub-Items):** Các sub-tab tương ứng từng nhóm, đồng bộ hoàn hảo với bộ lọc và toolbar tìm kiếm.
+- **Frontend & Backend Unification:**
+  * Cập nhật `static/js/app.js` và `static/js/modules/master_data.js`: `switchMasterDataTab` luôn hiển thị `#md-table-container`, nạp API tương ứng cho 14 danh mục và render dữ liệu phân trang.
+  * Cập nhật `apps/master_data/api_views.py` (`CompanyProfileAPIView`, `OpeningBalanceListCreateAPIView`) và `permission_views.py` (`RolesPermissionsAPIView`): bổ sung cấu trúc `results` / `items` chuẩn REST API để nạp trực tiếp vào data table.
 
 ### 2. Kiểm Thử Hệ Thống (Zero-Regression):
 - 92/92 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`).

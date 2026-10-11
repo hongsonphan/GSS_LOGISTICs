@@ -120,8 +120,15 @@ class RolesPermissionsAPIView(APIView):
         # 1. Danh sách các nhóm vai trò (Roles / Groups)
         # Chuẩn hóa 4 nhóm vai trò chính: Ban Giám Đốc (Admin), Điều Phối Viên, Kế Toán Cước, Quản Lý Nhân Sự
         # Loại trừ hoàn toàn nhóm Tài xế khỏi hệ thống tài khoản
-        target_group_names = ['Ban Giám Đốc', 'Điều Phối Viên', 'Kế Toán Cước', 'Quản Lý Nhân Sự']
-        groups = Group.objects.filter(name__in=target_group_names).prefetch_related('permissions__content_type', 'user_set').order_by('id')
+        groups = Group.objects.prefetch_related('permissions__content_type', 'user_set').order_by('id')
+        desc_map = {
+            'Ban Giám Đốc': 'Quản trị viên tối cao, xem toàn bộ báo cáo doanh thu & chi phí, phê duyệt thanh toán',
+            'Điều Phối Viên': 'Lập lệnh điều động, gán xe & tài xế, theo dõi hành trình và cập nhật mốc giao nhận',
+            'Kế Toán Cước': 'Đối soát công nợ khách hàng, kiểm duyệt chi phí chuyến, lập phiếu thu chi sổ quỹ',
+            'Quản Lý Nhân Sự': 'Quản lý hồ sơ cán bộ nhân viên, tính lương chuyến và tạm ứng cho tài xế',
+            'Kinh Doanh': 'Báo giá dịch vụ, quản lý hợp đồng tuyến và tiếp nhận đơn đặt hàng (Booking)',
+            'Hải Quan': 'Thủ tục hải quan điện tử, truyền tờ khai thông quan và giám sát bãi cảng',
+        }
         roles_data = []
         for g in groups:
             grp_perms = [
@@ -130,10 +137,13 @@ class RolesPermissionsAPIView(APIView):
             ]
             roles_data.append({
                 'id': g.id,
+                'code': f"ROLE_{g.id}",
                 'name': g.name,
+                'description': desc_map.get(g.name, f'Nhóm vai trò nghiệp vụ: {g.name}'),
                 'user_count': g.user_set.filter(is_active=True).exclude(employee__role='DRIVER').count(),
                 'permission_count': g.permissions.count(),
                 'permission_codes': grp_perms,
+                'is_active': True,
             })
 
         # 2. Danh sách người dùng nội bộ (Users) - Loại trừ Tài xế vì tài xế không dùng tài khoản hệ thống
@@ -198,6 +208,8 @@ class RolesPermissionsAPIView(APIView):
             'summary': summary,
             'is_current_admin': is_current_admin,
             'roles': roles_data,
+            'results': roles_data,
+            'items': roles_data,
             'users': users_data,
             'modules': modules_data,
         })

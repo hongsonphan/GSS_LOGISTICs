@@ -14643,55 +14643,19 @@ function switchMasterDataTab(tabKey) {
     const openingBalanceView = document.getElementById('md-opening-balance-view');
     const createBtnContainer = document.getElementById('md-create-btn') || document.getElementById('md-create-btn-label')?.parentElement;
 
-    if (tabKey === 'company') {
-        if (createBtnContainer) createBtnContainer.style.display = '';
-        if (filterToolbar) filterToolbar.classList.add('hidden');
-        if (tableContainer) tableContainer.classList.add('hidden');
-        if (paginationContainer) paginationContainer.classList.add('hidden');
-        if (rolesView) rolesView.classList.add('hidden');
-        if (openingBalanceView) openingBalanceView.classList.add('hidden');
-        if (companyView) companyView.classList.remove('hidden');
-        loadCompanyProfile();
-    } else if (tabKey === 'roles_permissions') {
-        if (createBtnContainer) createBtnContainer.style.display = 'none';
-        if (filterToolbar) filterToolbar.classList.add('hidden');
-        if (tableContainer) tableContainer.classList.add('hidden');
-        if (paginationContainer) paginationContainer.classList.add('hidden');
-        if (companyView) companyView.classList.add('hidden');
-        if (openingBalanceView) openingBalanceView.classList.add('hidden');
-        if (rolesView) rolesView.classList.remove('hidden');
-        loadRolesPermissionsData();
-    } else if (tabKey === 'opening_balance') {
-        if (createBtnContainer) createBtnContainer.style.display = 'none';
-        if (filterToolbar) filterToolbar.classList.add('hidden');
-        if (tableContainer) tableContainer.classList.add('hidden');
-        if (paginationContainer) paginationContainer.classList.add('hidden');
-        if (companyView) companyView.classList.add('hidden');
-        if (rolesView) rolesView.classList.add('hidden');
-        if (openingBalanceView) openingBalanceView.classList.remove('hidden');
-        loadOpeningBalanceData();
-    } else {
-        if (createBtnContainer) createBtnContainer.style.display = '';
-        if (filterToolbar) filterToolbar.classList.remove('hidden');
-        if (tableContainer) tableContainer.classList.remove('hidden');
-        if (paginationContainer) paginationContainer.classList.remove('hidden');
-        if (companyView) companyView.classList.add('hidden');
-        if (rolesView) rolesView.classList.add('hidden');
-        if (openingBalanceView) openingBalanceView.classList.add('hidden');
-        loadActiveMasterDataTab();
-    }
+    if (createBtnContainer) createBtnContainer.style.display = '';
+    if (filterToolbar) filterToolbar.classList.remove('hidden');
+    if (tableContainer) tableContainer.classList.remove('hidden');
+    if (paginationContainer) paginationContainer.classList.remove('hidden');
+    if (companyView) companyView.classList.add('hidden');
+    if (rolesView) rolesView.classList.add('hidden');
+    if (openingBalanceView) openingBalanceView.classList.add('hidden');
+
+    loadActiveMasterDataTab();
 }
 
 function reloadActiveMasterDataTab() {
-    if (currentMasterDataTab === 'company') {
-        loadCompanyProfile();
-    } else if (currentMasterDataTab === 'roles_permissions') {
-        loadRolesPermissionsData();
-    } else if (currentMasterDataTab === 'opening_balance') {
-        loadOpeningBalanceData();
-    } else {
-        loadActiveMasterDataTab();
-    }
+    loadActiveMasterDataTab();
 }
 
 function syncCompanyProfileToPrintForms() {
@@ -16315,9 +16279,12 @@ async function loadActiveMasterDataTab() {
     const tableBody = document.getElementById('md-table-body');
     if (!tableBody) return;
 
-    tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>Đang tải dữ liệu...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>Đang tải dữ liệu danh mục...</td></tr>`;
 
     const endpoints = {
+        'company': '/api/master-data/company/',
+        'roles_permissions': '/api/master-data/roles-permissions/',
+        'opening_balance': '/api/master-data/opening-balances/',
         'driver_tariffs': '/api/master-data/driver-tariffs/',
         'allowances': '/api/master-data/allowances/',
         'locations': '/api/master-data/locations/',
@@ -16339,7 +16306,24 @@ async function loadActiveMasterDataTab() {
             throw new Error(`Máy chủ phản hồi lỗi ${res.status}: ${res.statusText}`);
         }
         const data = await res.json();
-        const items = data.results || [];
+        
+        let items = [];
+        if (currentMasterDataTab === 'company') {
+            const profile = data.data || data;
+            masterDataCache['company'] = profile;
+            window.SYSTEM_COMPANY = profile;
+            syncCompanyProfileToPrintForms();
+            items = data.results || data.items || (profile && (profile.company_name || profile.short_name) ? [profile] : []);
+        } else if (currentMasterDataTab === 'roles_permissions') {
+            rolesPermissionsDataCache = data;
+            items = data.results || data.items || data.roles || [];
+        } else if (currentMasterDataTab === 'opening_balance') {
+            openingBalanceState.data = data;
+            items = data.results || data.items || [];
+        } else {
+            items = data.results || [];
+        }
+
         masterDataCache[currentMasterDataTab] = items;
         masterDataPagination.filteredItems = items;
         masterDataPagination.currentPage = 1;
@@ -16348,7 +16332,7 @@ async function loadActiveMasterDataTab() {
         renderMasterDataPagedView();
     } catch (err) {
         console.error('Lỗi tải danh mục:', err);
-        tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}</td></tr>`;
         renderMasterDataPagination(0, 0, 0, 1, 1);
     }
 }
@@ -16358,7 +16342,17 @@ function setupMasterDataSecondaryFilter(items) {
     if (!select) return;
 
     let optionsHtml = '<option value="ALL">Tất cả</option>';
-    if (currentMasterDataTab === 'driver_tariffs') {
+    if (currentMasterDataTab === 'company') {
+        optionsHtml = '<option value="ALL">Tất cả thông tin</option>';
+    } else if (currentMasterDataTab === 'roles_permissions') {
+        optionsHtml = '<option value="ALL">Tất cả vai trò</option>';
+    } else if (currentMasterDataTab === 'opening_balance') {
+        const accs = [...new Set(items.map(i => `${i.account_code || ''} - ${i.account_name || ''}`).filter(a => a.trim() !== '-'))];
+        accs.forEach(a => { 
+            const code = a.split(' - ')[0];
+            optionsHtml += `<option value="${code}">${a}</option>`; 
+        });
+    } else if (currentMasterDataTab === 'driver_tariffs') {
         const areas = [...new Set(items.map(i => i.area_group))];
         areas.forEach(a => { optionsHtml += `<option value="${a}">${a}</option>`; });
     } else if (currentMasterDataTab === 'allowances') {
@@ -16400,7 +16394,8 @@ function filterMasterDataTable() {
         // Subfilter match
         let matchesSub = true;
         if (subFilter !== 'ALL') {
-            if (currentMasterDataTab === 'driver_tariffs') matchesSub = item.area_group === subFilter;
+            if (currentMasterDataTab === 'opening_balance') matchesSub = (item.account_code || '').startsWith(subFilter);
+            else if (currentMasterDataTab === 'driver_tariffs') matchesSub = item.area_group === subFilter;
             else if (currentMasterDataTab === 'allowances') matchesSub = (item.category_label === subFilter || item.category === subFilter);
             else if (currentMasterDataTab === 'locations') matchesSub = (item.location_type_label === subFilter || item.location_type === subFilter);
             else if (currentMasterDataTab === 'expenses') matchesSub = (item.group_type_label === subFilter || item.group_type === subFilter);
@@ -16556,8 +16551,112 @@ function renderMasterDataTable(items, total = items.length) {
         return;
     }
 
+    // 0. KHAI BÁO CÔNG TY (HỒ SƠ DOANH NGHIỆP)
+    if (currentMasterDataTab === 'company') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Doanh Nghiệp (Pháp Nhân)</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Viết Tắt</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hotline / SĐT</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Email Liên Hệ</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Trụ Sở Chính</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Đại Diện Pháp Luật</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tài Khoản Ngân Hàng</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">VAT / Giá Dầu</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2.5 px-3 text-[13px] font-bold text-teal-950 border-r border-slate-200">${escapeHtml(item.company_name || 'CÔNG TY TNHH VẬN TẢI TRIỀN VÕ')}</td>
+                <td class="py-2.5 px-3 text-[12px] font-bold text-teal-700 border-r border-slate-200">${escapeHtml(item.short_name || 'TRIỀN VÕ LOGISTICS')}</td>
+                <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-slate-800 border-r border-slate-200">${escapeHtml(item.tax_code || '—')}</td>
+                <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-emerald-700 border-r border-slate-200">${escapeHtml(item.phone || item.hotline || '—')}</td>
+                <td class="py-2.5 px-3 text-[12px] text-blue-700 border-r border-slate-200">${escapeHtml(item.email || '—')}</td>
+                <td class="py-2.5 px-3 text-[12px] text-slate-700 max-w-xs truncate border-r border-slate-200" title="${escapeHtml(item.address || item.headquarters_address || '')}">${escapeHtml(item.address || item.headquarters_address || '—')}</td>
+                <td class="py-2.5 px-3 text-[12px] text-slate-800 border-r border-slate-200">${item.representative_name ? `${escapeHtml(item.representative_name)} (${escapeHtml(item.representative_role || 'Đại diện')})` : '—'}</td>
+                <td class="py-2.5 px-3 text-[12px] font-mono text-slate-800 border-r border-slate-200">${item.bank_account_number ? `${escapeHtml(item.bank_account_number)} • ${escapeHtml(item.bank_name || '')}` : '—'}</td>
+                <td class="py-2.5 px-3 text-[12px] text-center border-r border-slate-200 font-mono font-bold text-slate-800">VAT: ${item.default_vat_rate || 8}% • Dầu: ${formatMoney(item.fuel_reference_price || 21000)}</td>
+                <td class="py-2.5 px-3 text-center">
+                    <button onclick="openCreateMasterDataModal()" class="px-3 py-1 text-xs font-bold text-teal-700 hover:text-white hover:bg-teal-700 border border-teal-600 rounded-lg transition-colors cursor-pointer inline-flex items-center space-x-1" title="Chỉnh sửa khai báo công ty">
+                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        <span>Sửa</span>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 0.1 VAI TRÒ & PHÂN QUYỀN
+    else if (currentMasterDataTab === 'roles_permissions') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Vai Trò</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Vai Trò / Nhóm Quyền</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mô Tả Chức Năng Nghiệp Vụ</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Số Nhân Sự</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Phạm Vi Quyền</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-teal-800 border-r border-slate-200">${escapeHtml(item.code || String(item.id))}</td>
+                <td class="py-2.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name)}</td>
+                <td class="py-2.5 px-3 text-[12px] text-slate-600 border-r border-slate-200">${escapeHtml(item.description || 'Quản lý phân quyền theo nhóm nghiệp vụ')}</td>
+                <td class="py-2.5 px-3 text-center border-r border-slate-200">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">${item.user_count || 0} nhân sự</span>
+                </td>
+                <td class="py-2.5 px-3 text-center border-r border-slate-200">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">${item.permission_count || 0} quyền</span>
+                </td>
+                <td class="py-2.5 px-3 text-center border-r border-slate-200 text-xs font-semibold text-emerald-700">Đang kích hoạt</td>
+                <td class="py-2.5 px-3 text-center">
+                    <a href="/admin/auth/group/${item.id}/change/" target="_blank" class="px-2.5 py-1 text-xs font-bold text-teal-700 hover:text-white hover:bg-teal-700 border border-teal-600 rounded-lg transition-colors cursor-pointer inline-flex items-center space-x-1" title="Cấu hình nhóm & quyền">
+                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        <span>Sửa</span>
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+    }
+    // 0.2 SỐ DƯ ĐẦU KỲ KẾ TOÁN
+    else if (currentMasterDataTab === 'opening_balance') {
+        tableHead.innerHTML = `
+            <tr>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tài Khoản Kế Toán</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đối Tượng / Quỹ</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Đối Tượng</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ngày Chốt</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Dư Nợ Đầu Kỳ (VNĐ)</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Dư Có Đầu Kỳ (VNĐ)</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
+                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+            </tr>
+        `;
+        tableBody.innerHTML = items.map(item => `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">
+                    <span class="text-teal-800 font-black">${escapeHtml(item.account_code || '')}</span> - ${escapeHtml(item.account_name || '')}
+                </td>
+                <td class="py-2.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.entity_name || '')}</td>
+                <td class="py-2.5 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${escapeHtml(item.entity_code || item.bank_account_number || '—')}</td>
+                <td class="py-2.5 px-3 text-[12px] font-mono text-center text-slate-700 border-r border-slate-200">${escapeHtml(item.opening_date || item.balance_date || '2026-01-01')}</td>
+                <td class="py-2.5 px-3 text-[13px] font-bold text-emerald-700 text-right font-mono tabular-nums border-r border-slate-200">${item.debit_amount > 0 ? formatMoney(item.debit_amount) : '—'}</td>
+                <td class="py-2.5 px-3 text-[13px] font-bold text-rose-700 text-right font-mono tabular-nums border-r border-slate-200">${item.credit_amount > 0 ? formatMoney(item.credit_amount) : '—'}</td>
+                <td class="py-2.5 px-3 text-[12px] text-slate-500 max-w-xs truncate border-r border-slate-200">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="deleteOpeningBalanceItem(${item.id}, '${escapeHtml(item.entity_name || '')}')" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
     // 1. BIỂU PHÍ LƯƠNG CHUYẾN
-    if (currentMasterDataTab === 'driver_tariffs') {
+    else if (currentMasterDataTab === 'driver_tariffs') {
         tableHead.innerHTML = `
             <tr>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Khu Vực Kho</th>
@@ -16975,7 +17074,13 @@ async function openCreateMasterDataModal() {
         return;
     }
 
+    if (currentMasterDataTab === 'roles_permissions') {
+        window.open('/admin/auth/group/add/', '_blank');
+        return;
+    }
+
     const titles = {
+        'opening_balance': 'Khai Báo Số Dư Đầu Kỳ Mới',
         'driver_tariffs': 'Thêm Tuyến Lương Chuyến Mới',
         'allowances': 'Thêm Phụ Cấp / Kiểm Hóa Mới',
         'locations': 'Thêm Cảng / Kho Bãi Mới',
@@ -17001,6 +17106,10 @@ async function openEditMasterDataModal(id) {
     if (currentMasterDataTab === 'company') {
         return openCreateMasterDataModal();
     }
+    if (currentMasterDataTab === 'roles_permissions') {
+        window.open(`/admin/auth/group/${id}/change/`, '_blank');
+        return;
+    }
     const items = masterDataCache[currentMasterDataTab] || [];
     const item = items.find(i => i.id === id);
     if (!item) return;
@@ -17009,6 +17118,7 @@ async function openEditMasterDataModal(id) {
     document.getElementById('md-catalog-key').value = currentMasterDataTab;
 
     const titles = {
+        'opening_balance': 'Chỉnh Sửa Số Dư Đầu Kỳ Kế Toán',
         'driver_tariffs': 'Chỉnh Sửa Tuyến Lương Chuyến',
         'allowances': 'Chỉnh Sửa Phụ Cấp / Kiểm Hóa',
         'locations': 'Chỉnh Sửa Cảng / Kho Bãi',
@@ -17943,6 +18053,74 @@ function injectMasterDataModalFields(data) {
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hợp tác</label>
             </div>
         `;
+    } else if (currentMasterDataTab === 'opening_balance') {
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tài Khoản Kế Toán <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-ob-account" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                        <option value="1111" ${d.account_code === '1111' ? 'selected' : ''}>1111 - Tiền Mặt Tại Quỹ</option>
+                        <option value="1121" ${d.account_code === '1121' ? 'selected' : ''}>1121 - Tiền Gửi Ngân Hàng MB Bank</option>
+                        <option value="1122" ${d.account_code === '1122' ? 'selected' : ''}>1122 - Tiền Gửi Ngân Hàng Vietcombank</option>
+                        <option value="131" ${d.account_code === '131' ? 'selected' : ''}>131 - Phải Thu Khách Hàng</option>
+                        <option value="141" ${d.account_code === '141' ? 'selected' : ''}>141 - Tạm Ứng Nhân Viên / Tài Xế</option>
+                        <option value="331" ${d.account_code === '331' ? 'selected' : ''}>331 - Phải Trả Nhà Cung Cấp / Thầu Phụ</option>
+                        <option value="334" ${d.account_code === '334' ? 'selected' : ''}>334 - Phải Trả Người Lao Động (Lương Tài Xế)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ngày Chốt Số Dư Đầu Kỳ <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="date" id="mdf-ob-date" value="${d.opening_date || d.balance_date || '2026-01-01'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-800 w-full" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Đối Tượng / Quỹ / Tài Khoản <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-ob-name" value="${escapeHtml(d.entity_name || '')}" placeholder="VD: Quỹ tiền mặt Triền Võ, KH Công ty ABC, Tài xế Nguyễn Văn A..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tượng / Biển Số / Mã NV</label>
+                    </div>
+                    <input type="text" id="mdf-ob-code" value="${escapeHtml(d.entity_code || '')}" placeholder="Mã KH, Mã TX..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tính Chất Số Dư <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-ob-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
+                        <option value="debit" ${(d.debit_amount > 0 || d.is_debit !== false) ? 'selected' : ''}>Dư Nợ (Tiền, Tài sản, Phải thu)</option>
+                        <option value="credit" ${(d.credit_amount > 0 && !d.debit_amount) ? 'selected' : ''}>Dư Có (Phải trả, Nợ phải thanh toán)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Tiền (VNĐ) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-ob-amount" value="${formatNumberVN(d.debit_amount > 0 ? d.debit_amount : (d.credit_amount > 0 ? d.credit_amount : (d.amount || 0)))}" placeholder="VD: 50.000.000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 text-right input-number-vn w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Tài Khoản NH (Nếu có)</label>
+                    </div>
+                    <input type="text" id="mdf-ob-bank-acc" value="${escapeHtml(d.bank_account_number || '')}" placeholder="Số TK ngân hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú / Căn Cứ Chứng Từ</label>
+                </div>
+                <input type="text" id="mdf-ob-notes" value="${escapeHtml(d.notes || '')}" placeholder="Căn cứ biên bản đối chiếu công nợ, sao kê ngân hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+            </div>
+        `;
     }
 
     // Tự động khởi tạo format hàng ngàn cho tất cả input tiền tệ / số trong modal
@@ -17960,6 +18138,7 @@ async function submitMasterDataForm(e) {
 
     const endpoints = {
         'company': '/api/master-data/company/',
+        'opening_balance': isEdit ? `/api/master-data/opening-balances/${editId}/` : '/api/master-data/opening-balances/',
         'driver_tariffs': isEdit ? `/api/master-data/driver-tariffs/${editId}/` : '/api/master-data/driver-tariffs/',
         'allowances': isEdit ? `/api/master-data/allowances/${editId}/` : '/api/master-data/allowances/',
         'locations': isEdit ? `/api/master-data/locations/${editId}/` : '/api/master-data/locations/',
@@ -17974,7 +18153,22 @@ async function submitMasterDataForm(e) {
     };
 
     let payload = {};
-    if (tabKey === 'company') {
+    if (tabKey === 'opening_balance') {
+        const isDebit = document.getElementById('mdf-ob-type')?.value === 'debit';
+        const amount = parseNumberVN(document.getElementById('mdf-ob-amount')?.value) || 0;
+        payload = {
+            account_code: document.getElementById('mdf-ob-account')?.value || '1111',
+            opening_date: document.getElementById('mdf-ob-date')?.value || '2026-01-01',
+            entity_name: document.getElementById('mdf-ob-name')?.value || '',
+            entity_code: document.getElementById('mdf-ob-code')?.value || '',
+            bank_account_number: document.getElementById('mdf-ob-bank-acc')?.value || '',
+            debit_amount: isDebit ? amount : 0,
+            credit_amount: !isDebit ? amount : 0,
+            amount: amount,
+            is_debit: isDebit,
+            notes: document.getElementById('mdf-ob-notes')?.value || ''
+        };
+    } else if (tabKey === 'company') {
         payload = {
             company_name: document.getElementById('mdf-cp-name')?.value || '',
             short_name: document.getElementById('mdf-cp-short-name')?.value || '',
