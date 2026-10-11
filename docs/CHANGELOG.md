@@ -2,6 +2,20 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v1.4] - 2026-10-11 (Tinh Gọn Toàn Diện Giao Diện Sổ Tay /helps & Chuẩn Hóa Điều Hướng Hệ Thống)
+
+### 1. Tinh Gọn & Chuẩn Hóa Giao Diện Sổ Tay Hướng Dẫn Sử Dụng (`/helps`):
+- **Bỏ Nút In Trùng Lặp Trên Banner:** Loại bỏ nút "In Sổ Tay Khổ A4" trên Hero Banner màu xanh do trên Topbar cố định đã có nút In Sổ Tay.
+- **Loại Bỏ Thanh Tìm Kiếm Cục Bộ & Nút In Phụ:** Bỏ hoàn toàn thanh công cụ tìm kiếm phụ và nút in ở đầu tài liệu để trang hiển thị liền mạch theo chuẩn tài liệu A4 in ấn chuyên nghiệp.
+- **Loại Bỏ Huy Hiệu Màu Mè (Badge Elimination):** Thay thế toàn bộ các khối badge `PHẦN I`, `PHẦN II`, `PHẦN III` và các thẻ `PHẦN I.x`, `PHẦN III.x` bằng tiêu đề văn bản hành chính phẳng `<h2>` border-b màu đen chuẩn tài liệu công văn, triệt tiêu cảm giác thẻ AI rời rạc.
+- **Đồng Bộ Nút Thu Gọn/Mở Rộng Mục Lục Chuẩn SVG:**
+  * Bổ sung nút thu gọn mục lục bằng biểu tượng SVG hình chữ nhật chia cột có mũi tên đảo chiều (`icon-help-arrow-in`, `icon-help-arrow-out`) đồng bộ tuyệt đối với nút toggle Sidebar trên Topbar chính của hệ thống.
+  * Đồng bộ biểu tượng thu gọn tại tiêu đề `MỤC LỤC HƯỚNG DẪN` sang chuẩn SVG đồng nhất.
+
+### 2. Tinh Gọn Sidebar Chính Của Ứng Dụng (`templates/components/sidebar.html`):
+- **Loại bỏ mục "Trợ giúp & HDSD" trên Sidebar:** Xóa liên kết trùng lặp trên thanh điều hướng bên trái vì trên Topbar toàn hệ thống đã có nút icon trợ giúp chuyển trực tiếp đến `/helps`.
+- **Kiểm Thử Toàn Diện (Zero-Regression):** Vượt qua 89/89 unit tests (`python manage.py test --keepdb`), cú pháp JS kiểm tra 100% hợp lệ (`node -c static/js/app.js` và `node -c static/js/column_manager.js`).
+
 ## [v1.3] - 2026-10-11 (Đặc Tả Kế Hoạch Triển Khai On-Premise Doanh Nghiệp — Chuẩn Mô Hình MISA)
 
 ### Nghiên Cứu & Thiết Kế Kiến Trúc Triển Khai Cho Khách Hàng (MISA On-Premise Model):
