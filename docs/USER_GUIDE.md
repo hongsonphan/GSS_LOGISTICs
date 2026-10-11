@@ -1,523 +1,380 @@
 # SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG BIM LOGISTICS (TMS)
-## Cẩm Nang Thao Tác Cầm Tay Chỉ Việc — Hướng Dẫn Từng Bước Cho Người Dùng Mới
+## Quy Trình Vận Hành Tiêu Chuẩn & Cẩm Nang Thao Tác Cầm Tay Chỉ Việc
 
-> **Đơn vị vận hành:** Công ty TNHH Vận Tải Triền Võ (BIM Logistics Platform)  
-> **Phiên bản:** 2.9.46 | **Hỗ trợ trực tuyến:** `https://logistics.bim.info.vn/helps`  
-> **Hotline hỗ trợ kỹ thuật:** 0965.559.561
-
----
-
-## NGUYÊN TẮC THAO TÁC CHUNG TOÀN HỆ THỐNG
-
-1. **Nhận biết trường bắt buộc:** Tất cả các ô nhập liệu có dấu sao đỏ **`*`** là thông tin bắt buộc phải nhập. Nếu để trống, hệ thống sẽ báo lỗi và không cho phép lưu.
-2. **Nút Lưu chuẩn hóa:** Nút lưu dữ liệu trên toàn bộ các màn hình và hộp thoại luôn mang tên duy nhất là **`Lưu`** (có màu xanh Teal viền, rê chuột vào sẽ hiển thị màu nền đầy đủ).
-3. **Quy tắc an toàn dữ liệu:** Hệ thống áp dụng cơ chế xóa mềm an toàn (*Soft-Delete*). Khi bạn bấm nút **`Xóa`**, dữ liệu chỉ bị ẩn đi chứ không bao giờ bị xóa vĩnh viễn khỏi cơ sở dữ liệu để bảo vệ chứng cứ pháp lý và lịch sử truy vết vận tải.
+> **Đơn vị ban hành:** Công ty TNHH Vận Tải Triền Võ (BIM Logistics Platform)  
+> **Phiên bản tài liệu:** v2.9.48 | **Tra cứu trực tuyến:** `https://logistics.bim.info.vn/helps`  
+> **Tổng đài hỗ trợ 24/7:** 0965.559.561 | **Email:** support@trienvo.com  
 
 ---
 
-## MỤC LỤC HƯỚNG DẪN THAO TÁC NHANH
+## 3 NGUYÊN TẮC BẤT BIẾN KHI THAO TÁC TRÊN TOÀN BỘ HỆ THỐNG
 
-1. [Cách Tạo Khách Hàng Mới](#1-cách-tạo-khách-hàng-mới)
-2. [Cách Lập Bảng Báo Giá Vận Tải Mới & Duyệt Báo Giá](#2-cách-lập-bảng-báo-giá-vận-tải-mới--duyệt-báo-giá)
-3. [Cách Tiếp Nhận Booking / Đơn Hàng Mới Từ Hãng Tàu & Khách Hàng](#3-cách-tiếp-nhận-booking--đơn-hàng-mới-từ-hãng-tàu--khách-hàng)
-4. [Cách Tạo Lệnh Điều Động Chuyến Xe Mới (Phát Lệnh Cho Xe)](#4-cách-tạo-lệnh-điều-động-chuyến-xe-mới-phát-lệnh-cho-xe)
-5. [Cách Xử Lý Chuyến Cắt Kéo (2 Chặng) & Ghép 2 Cont 20ft](#5-cách-xử-lý-chuyến-cắt-kéo-2-chặng--ghép-2-cont-20ft)
-6. [Cách Kê Khai Chi Phí Vận Hành & Khoản Chi Hộ Khách Hàng](#6-cách-kê-khai-chi-phí-vận-hành--khoản-chi-hộ-khách-hàng)
-7. [Cách Tài Xế Báo 6 Mốc Kho & Chụp Ảnh POD/EIR Trên Điện Thoại](#7-cách-tài-xế-báo-6-mốc-kho--chụp-ảnh-podeir-trên-điện-thoại)
-8. [Cách Thêm Mới Đầu Kéo & Rơ-Moóc Vào Đội Xe](#8-cách-thêm-mới-đầu-kéo--rơ-moóc-vào-đội-xe)
-9. [Cách Thêm Hồ Sơ Nhân Viên / Bác Tài Mới](#9-cách-thêm-hồ-sơ-nhân-viên--bác-tài-mới)
-10. [Cách Kế Toán Cấp Quỹ Tạm Ứng Điều Vận Cấp 1](#10-cách-kế-toán-cấp-quỹ-tạm-ứng-điều-vận-cấp-1)
-11. [Cách Điều Vận Cấp Tạm Ứng Dọc Đường Cho Tài Xế Cấp 2](#11-cách-điều-vận-cấp-tạm-ứng-dọc-đường-cho-tài-xế-cấp-2)
-12. [Cách Quyết Toán Hoàn Ứng Chuyến Xe & Cân Đối Sổ Quỹ](#12-cách-quyết-toán-hoàn-ứng-chuyến-xe--cân-đối-sổ-quỹ)
-13. [Cách Tạo Phiếu Thu / Phiếu Chi Sổ Quỹ Mẫu S03a-DN](#13-cách-tạo-phiếu-thu--phiếu-chi-sổ-quỹ-mẫu-s03a-dn)
-14. [Cách Thỏa Thuận Cước & Quyết Toán Xe Bạn / Thầu Phụ 3PL](#14-cách-thỏa-thuận-cước--quyết-toán-xe-bạn--thầu-phụ-3pl)
-15. [Cách Khai Báo & Quản Lý Tờ Khai Hải Quan Điện Tử](#15-cách-khai-báo--quản-lý-tờ-khai-hải-quan-điện-tử)
-16. [Cách Quyết Toán Gom Chuyến Xe Hàng Loạt (Batch Settlement)](#16-cách-quyết-toán-gom-chuyến-xe-hàng-loạt-batch-settlement)
-17. [Cách Xem, Lọc, Tùy Chỉnh Cột & In 14 Báo Cáo BI Khổ A4](#17-cách-xem-lọc-tùy-chỉnh-cột--in-14-báo-cáo-bi-khổ-a4)
-18. [Cách Quản Lý Danh Mục Gốc (Địa Điểm, Hãng Tàu, Khoản Mục Chi Phí)](#18-cách-quản-lý-danh-mục-gốc-địa-điểm-hãng-tàu-khoản-mục-chi-phí)
+1. **Trường thông tin bắt buộc (`*`):** Tất cả các ô nhập liệu có dấu hoa thị màu đỏ `*` bắt buộc phải điền đầy đủ dữ liệu. Hệ thống sẽ chặn và cảnh báo nếu để trống.
+2. **Nút "Lưu" thống nhất:** Nút bấm hoàn tất hoặc xác nhận dữ liệu trên mọi màn hình và hộp thoại luôn mang tên duy nhất là chữ **`Lưu`**.
+3. **Bảo toàn dữ liệu pháp lý (Soft-Delete):** Thao tác Xóa không bao giờ xóa vĩnh viễn dữ liệu pháp lý (vận đơn, POD, chi phí, GPS). Bản ghi chỉ bị ẩn (`is_deleted=True`) để bảo vệ chứng cứ pháp lý và lịch sử truy vết vận tải.
 
 ---
 
-## 1. CÁCH TẠO KHÁCH HÀNG MỚI
+# MỤC LỤC CHÍNH
 
-*Dành cho: Nhân viên Kinh doanh, Kế toán, Quản trị viên.*
-
-### Bước 1: Điều hướng vào màn hình tạo khách hàng
-- **Cách 1 (Từ menu Cài đặt):** Trên thanh điều hướng bên trái (Sidebar), bấm vào menu **`Cài đặt`** ➔ Chọn thẻ danh mục **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`** (nút màu xanh góc trên bên phải).
-- **Cách 2 (Từ phân hệ Kinh doanh):** Bấm vào menu **`Sale & Booking`** ➔ Chọn tab con **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`**.
-
-### Bước 2: Nhập thông tin khách hàng trên hộp thoại
-Điền đầy đủ thông tin vào các trường (chú ý các trường có dấu `*` bắt buộc):
-1. **Mã Khách Hàng `*`:** Nhập mã viết tắt viết hoa không dấu (Ví dụ: `SAMSUNG`, `VINFAST`, `NESTLE`, `KH-001`). Mã này không được trùng lặp.
-2. **Tên Doanh Nghiệp / Khách Hàng `*`:** Nhập tên đầy đủ theo giấy phép ĐKKD (Ví dụ: `CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM`).
-3. **Mã Số Thuế (MST) `*`:** Nhập đúng mã số thuế 10 số hoặc 13 số để phục vụ xuất hóa đơn và đối soát công nợ.
-4. **Địa Chỉ Trụ Sở `*`:** Nhập địa chỉ đăng ký kinh doanh của công ty khách hàng.
-5. **Người Liên Hệ / Đại Diện:** Nhập họ tên người phụ trách điều vận hoặc kế toán phía khách hàng (Ví dụ: `Anh Tuấn - Điều phối kho`).
-6. **Số Điện Thoại Liên Hệ `*`:** Nhập số di động hoặc máy bàn để liên lạc khẩn cấp khi giao nhận hàng.
-7. **Email Nhận Hóa Đơn / Báo Giá:** Nhập email để hệ thống gửi liên kết báo giá và chứng từ điện tử.
-8. **Kỳ Hạn Thanh Toán (Công nợ):** Nhập số ngày cho phép nợ (Ví dụ: `30` ngày kể từ ngày nhận đủ POD).
-
-### Bước 3: Lưu và hoàn tất
-- Kiểm tra lại các trường có dấu `*`.
-- Bấm nút **`Lưu`** ở góc dưới bên phải hộp thoại.
-- Thông báo *"Đã lưu bản ghi thành công!"* xuất hiện. Khách hàng mới sẽ hiển thị ngay trong danh sách.
-
----
-
-## 2. CÁCH LẬP BẢNG BÁO GIÁ VẬN TẢI MỚI & DUYỆT BÁO GIÁ
-
-*Dành cho: Nhân viên Kinh doanh, Trưởng phòng Sales, Ban Giám Đốc.*
-
-### Bước 1: Vào phân hệ Báo giá
-- Trên thanh điều hướng bên trái, bấm vào menu **`Sale & Booking`**.
-- Tại hàng tab phía trên, chọn tab **`Báo Giá`**.
-- Bấm nút **`+ Tạo Báo Giá Mới`** (nút màu teal góc phải).
-
-### Bước 2: Nhập thông tin chung của Báo giá
-1. **Khách Hàng `*`:** Bấm vào danh sách thả xuống, chọn khách hàng cần báo giá (Ví dụ: `CÔNG TY TNHH SAMSUNG ELECTRONICS`).
-2. **Ngày Hiệu Lực `*`:** Chọn ngày bắt đầu áp dụng cước phí (Mặc định là ngày hôm nay).
-3. **Ngày Hết Hạn `*`:** Chọn hạn chót báo giá (Thường là 30 ngày sau).
-4. **Phương Thức Định Giá `*`:**
-   - Chọn **`Theo ma trận tuyến đường (MULTI_ROUTE)`**: Áp dụng đơn giá cố định cho từng tuyến cụ thể.
-   - Chọn **`Điều chỉnh theo giá dầu DO (FUEL_ADJUSTED)`**: Tự động tăng/giảm cước khi giá dầu thị trường biến động.
-   - Chọn **`Bao chuyến / Trọn gói tháng (FLAT_CHARTER)`**: Thu cước theo tháng hoặc chuyến bao xe.
-5. **Giá Dầu DO Tham Chiếu:** Nhập giá dầu DO tại thời điểm báo giá (Ví dụ: `18.500` đ/lít) nếu chọn phương thức biến động theo dầu.
-6. **Điều Khoản Thanh Toán & Ghi Chú:** Ghi rõ điều khoản thanh toán (Ví dụ: Chuyển khoản trong 30 ngày sau khi nhận hóa đơn và đủ POD gốc).
-
-### Bước 3: Thêm các tuyến đường và đơn giá cước
-- Tại khu vực **"Chi Tiết Các Tuyến Đường Vận Chuyển"**, bấm nút **`+ Thêm Tuyến Đường`**.
-- Nhập thông tin từng dòng tuyến:
-  * **Tên Tuyến / Lộ Trình `*`:** Nhập nơi đi và nơi đến (Ví dụ: `Cảng Cát Lái ➔ KCN VSIP 1, Bình Dương`).
-  * **Loại Container `*`:** Chọn `20DC`, `40HC`, `45G1`...
-  * **Đơn Giá Cước (VNĐ) `*`:** Nhập số tiền cước thu khách (Ví dụ: `3.500.000` đ).
-  * **Định Mức Lương Tài Xế (VNĐ):** Nhập mức lương khoán chuyến cho tài xế chạy tuyến này (Ví dụ: `450.000` đ).
-  * **Định Mức Vé Cầu Đường BOT (VNĐ):** Nhập tiền vé BOT định mức tuyến (Ví dụ: `280.000` đ).
-- Có thể bấm **`+ Thêm Tuyến Đường`** nhiều lần để thêm các tuyến khác trong cùng một bản báo giá.
-
-### Bước 4: Lưu báo giá
-- Bấm nút **`Lưu`** ở góc dưới. Hệ thống tự động sinh Mã báo giá dạng `BG-MMDD-XX`.
-- Báo giá ban đầu ở trạng thái **`Đang thương lượng`** (màu xanh dương).
-
-### Bước 5: Duyệt và in báo giá gửi khách hàng
-- Khi Ban Giám Đốc hoặc Trưởng phòng đồng ý: Mở chi tiết báo giá ➔ Bấm nút **`Duyệt Báo Giá`** ➔ Trạng thái chuyển sang **`Đã Duyệt`** (màu xanh ngọc).
-- Bấm nút **`In Báo Giá A4`** ➔ Chọn 1 trong 3 mẫu in doanh nghiệp ➔ Trình duyệt mở bản in chuẩn A4 sẵn sàng in ra giấy hoặc lưu thành file PDF gửi khách hàng.
+- [PHẦN I: MÔ TẢ PHÂN HỆ & TÍNH NĂNG CỐT LÕI](#phần-i-mô-tả-phân-hệ--tính-năng-cốt-lõi)
+  - [1. Nền Tảng Vận Hành & Phân Quyền Vai Trò (RBAC)](#1-nền-tảng-vận-hành--phân-quyền-vai-trò-rbac)
+  - [2. Dashboard Ban Giám Đốc (Executive BI)](#2-dashboard-ban-giám-đốc-executive-bi)
+  - [3. Phân Hệ Sale & Booking (CRM, Báo Giá & Đơn Hàng)](#3-phân-hệ-sale--booking-crm-báo-giá--đơn-hàng)
+  - [4. Phân Hệ Điều Vận & Chuyến Xe (TMS Core Engine)](#4-phân-hệ-điều-vận--chuyến-xe-tms-core-engine)
+  - [5. Phân Hệ Quản Lý Đội Xe, Bãi & Nhân Sự (Fleet & HR)](#5-phân-hệ-quản-lý-đội-xe-bãi--nhân-sự-fleet--hr)
+  - [6. Phân Hệ Tài Chính, Tạm Ứng & Sổ Quỹ (Accounting & Cash Flow)](#6-phân-hệ-tài-chính-tạm-ứng--sổ-quỹ-accounting--cash-flow)
+  - [7. Phân Hệ Thủ Tục Hải Quan Điện Tử (Customs Declaration)](#7-phân-hệ-thủ-tục-hải-quan-điện-tử-customs-declaration)
+  - [8. Hệ Thống 14 Báo Cáo Thông Minh BI Vận Tải](#8-hệ-thống-14-báo-cáo-thông-minh-bi-vận-tải)
+- [PHẦN II: HƯỚNG DẪN CÀI ĐẶT DANH MỤC GỐC (MASTER DATA)](#phần-ii-hướng-dẫn-cài-đặt-danh-mục-gốc-master-data)
+  - [1. Tạo Mới Khách Hàng (Customer)](#1-tạo-mới-khách-hàng-customer)
+  - [2. Cài Đặt Địa Điểm Cảng, Depot & Kho Hàng (Locations)](#2-cài-đặt-địa-điểm-cảng-depot--kho-hàng-locations)
+  - [3. Cài Đặt Danh Mục Hãng Tàu (Shipping Lines)](#3-cài-đặt-danh-mục-hãng-tàu-shipping-lines)
+  - [4. Cài Đặt Khoản Mục Chi Phí Vận Tải (Expense Catalog)](#4-cài-đặt-khoản-mục-chi-phí-vận-tải-expense-catalog)
+  - [5. Cài Đặt Biểu Cước Lương Chuyến Theo Tuyến Đường (Route Payroll Rates)](#5-cài-đặt-biểu-cước-lương-chuyến-theo-tuyến-đường-route-payroll-rates)
+  - [6. Hồ Sơ Doanh Nghiệp & Tài Khoản Ngân Hàng Thụ Hưởng (Company Profile)](#6-hồ-sơ-doanh-nghiệp--tài-khoản-ngân-hàng-thụ-hưởng-company-profile)
+- [PHẦN III: HƯỚNG DẪN THAO TÁC NHẬP LIỆU CHI TIẾT](#phần-iii-hướng-dẫn-thao-tác-nhập-liệu-chi-tiết)
+  - [1. Dashboard Ban Giám Đốc](#1-dashboard-ban-giám-đốc)
+  - [2. Phân Hệ Sale & Booking](#2-phân-hệ-sale--booking)
+    - [2.1. Hướng Dẫn Tạo Mới Bảng Báo Giá (Quotation) & Duyệt Báo Giá](#21-hướng-dẫn-tạo-mới-bảng-báo-giá-quotation--duyệt-báo-giá)
+    - [2.2. Hướng Dẫn Tiếp Nhận Booking / Đơn Hàng Vận Tải Mới](#22-hướng-dẫn-tiếp-nhận-booking--đơn-hàng-vận-tải-mới)
+  - [3. Phân Hệ Điều Vận & Chuyến Xe](#3-phân-hệ-điều-vận--chuyến-xe)
+    - [3.1. Hướng Dẫn Lập Lệnh Điều Xe Mới (Phát Lệnh Cho Phương Tiện)](#31-hướng-dẫn-lập-lệnh-điều-xe-mới-phát-lệnh-cho-phương-tiện)
+    - [3.2. Hướng Dẫn Xử Lý Chuyến Cắt Kéo (2 Chặng) & Chở Ghép 2 Cont 20ft](#32-hướng-dẫn-xử-lý-chuyến-cắt-kéo-2-chặng--chở-ghép-2-cont-20ft)
+    - [3.3. Hướng Dẫn Kê Khai Chi Phí Vận Hành & Khoản Chi Hộ Khách Hàng (Debit Note)](#33-hướng-dẫn-kê-khai-chi-phí-vận-hành--khoản-chi-hộ-khách-hàng-debit-note)
+    - [3.4. Hướng Dẫn Bác Tài Báo 6 Mốc Kho & Chụp Ảnh POD/EIR Trên Điện Thoại](#34-hướng-dẫn-bác-tài-báo-6-mốc-kho--chụp-ảnh-podeir-trên-điện-thoại)
+  - [4. Phân Hệ Kế Toán, Tạm Ứng & Sổ Quỹ](#4-phân-hệ-kế-toán-tạm-ứng--sổ-quỹ)
+    - [4.1. Hướng Dẫn Kế Toán Cấp Quỹ Điều Vận Cấp 1](#41-hướng-dẫn-kế-toán-cấp-quỹ-điều-vận-cấp-1)
+    - [4.2. Hướng Dẫn Điều Vận Cấp Tạm Ứng Dọc Đường Cho Tài Xế Cấp 2](#42-hướng-dẫn-điều-vận-cấp-tạm-ứng-dọc-đường-cho-tài-xế-cấp-2)
+    - [4.3. Hướng Dẫn Quyết Toán Hoàn Ứng Chuyến Xe & Cân Đối Sổ Quỹ](#43-hướng-dẫn-quyết-toán-hoàn-ứng-chuyến-xe--cân-đối-sổ-quỹ)
+    - [4.4. Hướng Dẫn Tạo Phiếu Thu / Phiếu Chi Sổ Quỹ Mẫu S03a-DN](#44-hướng-dẫn-tạo-phiếu-thu--phiếu-chi-sổ-quỹ-mẫu-s03a-dn)
+    - [4.5. Hướng Dẫn Thỏa Thuận Cước & Quyết Toán Xe Bạn / Thầu Phụ 3PL](#45-hướng-dẫn-thỏa-thuận-cước--quyết-toán-xe-bạn--thầu-phụ-3pl)
+    - [4.6. Hướng Dẫn Quyết Toán Gom Chuyến Xe Hàng Loạt (Batch Settlement)](#46-hướng-dẫn-quyết-toán-gom-chuyến-xe-hàng-loạt-batch-settlement)
+  - [5. Phân Hệ Dịch Vụ Hải Quan Điện Tử](#5-phân-hệ-dịch-vụ-hải-quan-điện-tử)
+  - [6. Hướng Dẫn Tra Cứu, Lọc, Tùy Biến Cột & In 14 Báo Cáo BI Khổ A4](#6-hướng-dẫn-tra-cứu-lọc-tùy-biến-cột--in-14-báo-cáo-bi-khổ-a4)
 
 ---
 
-## 3. CÁCH TIẾP NHẬN BOOKING / ĐƠN HÀNG MỚI TỪ HÃNG TÀU & KHÁCH HÀNG
+# PHẦN I: MÔ TẢ PHÂN HỆ & TÍNH NĂNG CỐT LÕI
 
-*Dành cho: Nhân viên Kinh doanh, Điều phối viên.*
+## 1. Nền Tảng Vận Hành & Phân Quyền Vai Trò (RBAC)
 
-### Bước 1: Vào phân hệ Booking
-- Trên thanh điều hướng bên trái, bấm vào menu **`Sale & Booking`**.
-- Chọn tab **`Booking & Đơn Hàng`**.
-- Bấm nút **`+ Tiếp Nhận Booking`** (nút màu teal).
+Nền tảng **BIM Logistics Platform** được thiết kế theo mô hình điều hành khép kín (Full-cycle Logistics TMS) chuyên biệt cho vận tải đường bộ Container FCL, hàng rời FTL và dịch vụ cảng biển tại Việt Nam.
 
-### Bước 2: Nhập thông tin đơn hàng / booking
-1. **Khách Hàng `*`:** Chọn khách hàng gửi đơn vận chuyển.
-2. **Số Booking / Số B/L `*`:** Nhập mã số booking do hãng tàu cấp (Ví dụ: `ONEBKK123456`) hoặc số vận đơn đường biển B/L.
-3. **Hãng Tàu `*`:** Nhập hoặc chọn hãng tàu (MAEU, ONE, COSCO, EVERGREEN, CMA-CGM, SITC...).
-4. **Loại Dịch Vụ `*`:** 
-   - Chọn **`Hàng Xuất (EXPORT)`**: Kéo cont rỗng từ depot đến kho khách đóng hàng rồi hạ cảng xuất.
-   - Chọn **`Hàng Nhập (IMPORT)`**: Kéo cont có hàng từ cảng về kho khách dỡ hàng rồi trả rỗng.
-   - Chọn **`Nội Địa (DOMESTIC)`**: Vận chuyển hàng hóa nguyên chuyến giữa các tỉnh thành.
-5. **Loại Container `*`:** Chọn `20DC`, `40HC`, `45G1`, `20RF` (cont lạnh)...
-6. **Số Lượng Container `*`:** Nhập tổng số lượng vỏ cont cần điều phối (Ví dụ: `5` cont).
-7. **Nơi Cấp Cont Rỗng `*`:** Chọn Depot hoặc Cảng chỉ định lấy vỏ rỗng (Ví dụ: `Depot Tân Cảng Suối Tiên`).
-8. **Kho Đóng / Dỡ Hàng `*`:** Chọn nhà máy hoặc kho hàng của khách hàng (Ví dụ: `Kho Samsung - KCN Yên Phong`).
-9. **Nơi Hạ Cont Hàng `*`:** Chọn Cảng đích hạ cont (Ví dụ: `Cảng Cát Lái - Bãi Terminal 1`).
-10. **Hạn Cắt Máng (CY Closing Time) `*`:** Chọn ngày và giờ cut-off đóng bãi của tàu (Ví dụ: `12/10/2026 18:00`). **Rất quan trọng để cảnh báo trễ tàu.**
-11. **Tên Tàu & Số Chuyến:** Nhập tên tàu biển và số chuyến (Ví dụ: `ONE CONTINUITY / 025W`).
-12. **Đính Kèm File Lệnh:** Bấm nút chọn file để đính kèm file ảnh chụp hoặc PDF của lệnh giao hàng (Booking Confirmation).
+### Chu Trình Luồng Dữ Liệu 7 Bước Khép Kín:
+```
+1. Báo Giá Tuyến ➔ 2. Booking Hãng Tàu ➔ 3. Phát Lệnh Điều Xe ➔ 4. Tài Xế Báo 6 Mốc ➔ 5. Thu POD/EIR ➔ 6. Quyết Toán Chuyến ➔ 7. Xuất HĐ & Sổ Quỹ
+```
 
-### Bước 3: Lưu và phát lệnh
-- Bấm nút **`Lưu`**.
-- Đơn hàng được tạo thành công với mã `BK-YYYY-MMDD-XX` ở trạng thái **`Chờ điều xe`**.
-- Tại danh sách booking, bạn có thể bấm nút **`Phát Lệnh Xe`** để chuyển trực tiếp thông tin sang lập chuyến xe vận chuyển.
+### Bảng Phân Quyền Vai Trò Người Dùng:
+| Vai Trò | Mã Quyền | Phạm Vi Quyền Hạn & Thao Tác Cho Phép |
+|---|---|---|
+| **Ban Giám Đốc** | `DIRECTOR` | Toàn quyền hệ thống, phê duyệt báo giá, giám sát P&L chi phí, duyệt cấp quỹ và xem toàn bộ 14 báo cáo BI. |
+| **Điều Phối Viên** | `DISPATCHER` | Tạo và phân công chuyến xe, cắt kéo, chở ghép 20ft, cấp tạm ứng cho tài xế, quản lý mốc kho và biên bản sự cố OS&D. |
+| **Kế Toán Vận Tải** | `ACCOUNTANT` | Quản lý sổ quỹ thu-chi, duyệt chi phí chuyến, quản lý quỹ điều vận, quyết toán xe bạn 3PL, thu hồi chi hộ và đối soát nợ. |
+| **Kinh Doanh (Sales)** | `SALESMAN` | Tạo báo giá, tiếp nhận booking order từ chủ hàng, quản lý danh bạ khách hàng và in mẫu báo giá A4 gửi đối tác. |
+| **Quản Lý Xe & Bãi** | `MECHANIC` | Quản trị danh mục đầu kéo, rơ-moóc, theo dõi hạn đăng kiểm, lịch bảo dưỡng kỹ thuật và định vị xe nằm bãi. |
+| **Tài Xế Xe Đầu Kéo** | `DRIVER` | Truy cập Driver Portal qua Capability URL riêng trên điện thoại, báo 6 mốc kho, chụp ảnh biên bản POD/EIR và kê khai chi phí. |
 
 ---
 
-## 4. CÁCH TẠO LỆNH ĐIỀU ĐỘNG CHUYẾN XE MỚI (PHÁT LỆNH CHO XE)
+## 2. Dashboard Ban Giám Đốc (Executive BI)
 
-*Dành cho: Điều phối viên, Quản lý Đội xe.*
-
-### Bước 1: Vào phân hệ Điều vận
-- Trên thanh điều hướng bên trái, bấm vào menu **`Điều vận`**.
-- Bấm nút **`+ Lệnh Điều Xe Mới`** (nút màu teal góc trên bên phải).
-
-### Bước 2: Chọn Booking gốc (Nếu có)
-- Tại mục **"Kế thừa từ Booking"**, nếu chuyến này nằm trong một lô hàng đã tiếp nhận, hãy chọn mã Booking tương ứng.
-- Hệ thống sẽ **tự động điền trước 100%**: Tên khách hàng, loại cont, lộ trình lấy rỗng, kho đóng hàng, cảng hạ và hạn cut-off, giúp bạn tiết kiệm thời gian và tránh sai sót.
-
-### Bước 3: Phân công phương tiện và tài xế
-1. **Xe Đầu Kéo `*`:** Bấm chọn biển số xe đầu kéo đang ở trạng thái rảnh tại bãi (Ví dụ: `51C-123.45`).
-2. **Rơ-Moóc `*`:** Bấm chọn biển số rơ-moóc xương hoặc cổ cò phù hợp với kích cỡ cont (Ví dụ: `51R-098.76`).
-3. **Bác Tài Chính `*`:** Bấm chọn bác tài phụ trách điều khiển xe chặng 1 (Ví dụ: `Nguyễn Văn Bình - BỤI 94`).
-4. **Số Container `*`:** Nhập chính xác 11 ký tự số container theo chuẩn ISO (Ví dụ: `MSKU1234567`). Hệ thống sẽ tự động viết hoa toàn bộ.
-5. **Số Chì (Seal):** Nhập mã niêm phong kẹp chì (Ví dụ: `ML-VN987654`).
-6. **Lịch Hẹn Tại Kho Khách `*`:** Chọn ngày và giờ tài xế phải có mặt tại cổng kho khách hàng.
-7. **Hạn Lưu Vỏ (Free-time DET) `*`:** Chọn ngày hết hạn lưu vỏ cont do hãng tàu quy định (Ví dụ: Sau 7 ngày lấy rỗng).
-
-### Bước 4: Lưu và phát lệnh tới tài xế
-- Bấm nút **`Lưu`** ở góc dưới. Chuyến xe được tạo với mã dạng `TVL-MMDD-XXX`.
-- Bấm nút **`Phát Lệnh Xe`**: Hệ thống sẽ sinh đường link an toàn (Capability URL) gửi đến Zalo hoặc SMS của tài xế để tài xế mở trên điện thoại tiếp nhận chuyến.
+Màn hình trung tâm tổng hợp các chỉ số vận hành và tài chính thời gian thực:
+- **Bộ lọc kỳ toàn cục:** Hôm nay, 10 Ngày qua, Tháng này, Quý này, Năm nay, hoặc Tùy chọn ngày.
+- **4 Thẻ KPI Trụ Cột:** Doanh Thu, Chi Phí Vận Hành, Lợi Nhuận Gộp (Margin %), và Tỷ Lệ Giao Đúng Hẹn (OTD %).
+- **Dòng Tiền & Quỹ Khả Dụng:** Quản lý số dư Tiền mặt tại két và Tài khoản Ngân hàng.
+- **Bảng P&L 8 Chuyến Gần Nhất:** Xem nhanh lãi/lỗ từng chuyến vừa hoàn thành.
 
 ---
 
-## 5. CÁCH XỬ LÝ CHUYẾN CẮT KÉO (2 CHẶNG) & GHÉP 2 CONT 20FT
+## 3. Phân Hệ Sale & Booking (CRM, Báo Giá & Đơn Hàng)
 
-*Dành cho: Điều phối viên.*
-
-### A. Nghiệp vụ Cắt Kéo (Drop & Hook — 2 Chặng Xe)
-*Áp dụng khi: Xe 1 lấy cont kéo đến kho khách cắm moóc nằm chờ đóng hàng, sau đó Xe 2 đến kéo cont hàng ra cảng hạ bãi.*
-
-1. Trong hộp thoại tạo/sửa chuyến xe, tìm đến mục **"Tác Nghiệp Cắt Kéo (2 Chặng)"**.
-2. **Gạt bật công tắc:** Bấm chọn ô **`Tách 2 chặng cắt kéo (is_split_trip)`**.
-3. Khi bật, hệ thống sẽ mở thêm 3 trường phân công cho Chặng 2:
-   - **Tài Xế Chặng 2 (Hạ bãi) `*`:** Chọn bác tài sẽ đến kho kéo cont hàng ra cảng.
-   - **Xe Đầu Kéo Chặng 2 `*`:** Chọn đầu kéo của chặng 2.
-   - **Tỷ Lệ Chia Lương Chuyến:** Chọn tỷ lệ chia lương giữa 2 tài xế (Ví dụ: `50% - 50%` hoặc `60% - 40%`).
-4. Bấm **`Lưu`**. Trên danh sách điều vận, chuyến sẽ có badge màu tím ghi rõ: **`Cắt Kéo (2 Chặng)`**.
-
-### B. Nghiệp vụ Chở Ghép 2 Cont 20ft (Twin 20ft Drayage)
-*Áp dụng khi: Một đầu kéo chở đồng thời 2 vỏ cont 20ft trên cùng 1 rơ-moóc 40ft/45ft.*
-
-1. Trong hộp thoại điều xe, chọn loại cont là **`20DC`**.
-2. **Gạt bật công tắc:** Bấm chọn ô **`Chở Ghép 2 Cont 20ft (is_twin_container)`**.
-3. Hệ thống sẽ mở thêm cụm nhập liệu cho vỏ cont thứ 2:
-   - **Số Container 2 `*`:** Nhập số vỏ cont thứ hai (Ví dụ: `TGHU9876543`).
-   - **Số Chì (Seal) 2:** Nhập số seal của cont thứ hai.
-   - **Số B/L hoặc Booking 2:** Nhập booking đi kèm của cont thứ hai.
-4. Bấm **`Lưu`**. Doanh thu và chi phí nâng hạ cảng của cả 2 vỏ cont sẽ được hệ thống quản lý chuẩn xác.
+Kết nối giữa Phòng Kinh doanh và Khách hàng:
+- **Quản lý Khách Hàng (CRM):** Thông tin pháp lý, mã số thuế, hạn mức công nợ.
+- **Lập & Duyệt Báo Giá:** Báo giá theo ma trận tuyến đường, bù trừ giá dầu DO, hoặc bao chuyến; duyệt và in báo giá chuẩn A4.
+- **Tiếp Nhận Booking Order:** Ghi nhận số booking, hãng tàu, quy cách vỏ, hạn cắt máng CY closing, địa điểm cấp rỗng/hạ bãi.
+- **Chuyển Tiếp Phát Lệnh Xe:** 1 chạm để chuyển toàn bộ dữ liệu đơn hàng sang Lệnh điều xe Điều vận.
 
 ---
 
-## 6. CÁCH KÊ KHAI CHI PHÍ VẬN HÀNH & KHOẢN CHI HỘ KHÁCH HÀNG
+## 4. Phân Hệ Điều Vận & Chuyến Xe (TMS Core Engine)
 
-*Dành cho: Điều phối viên, Tài xế, Kế toán.*
-
-### Bước 1: Mở chi tiết chuyến xe cần kê khai chi phí
-- Vào menu **`Điều vận`** ➔ Bấm vào mã chuyến xe (Ví dụ: `TVL-1011-001`) để mở trang chi tiết.
-- Cuộn xuống khu vực **"Bảng Kê Chi Phí Phát Sinh & P&L Chuyến Xe"**.
-- Bấm nút **`+ Thêm Chi Phí`** (nút màu teal).
-
-### Bước 2: Nhập thông tin khoản chi
-1. **Khoản Mục Chi Phí `*`:** Chọn đúng mục chi phí phát sinh:
-   - `LIFT_ON`: Phí nâng cont rỗng tại bãi/cảng.
-   - `LIFT_OFF`: Phí hạ cont tại cảng đích.
-   - `TOLL_FEE`: Tiền vé cầu đường, BOT, trạm thu phí.
-   - `CONTAINER_DEPOSIT`: Tiền đặt cược vỏ container hãng tàu.
-   - `WEIGHING`: Tiền cân xe tại trạm cân VGM.
-   - `LABOR_STEVEDORING`: Chi phí bốc dỡ hàng tại kho.
-   - `OTHER`: Phí neo xe quá giờ, vá vỏ dọc đường...
-2. **Thành Tiền (VNĐ) `*`:** Nhập số tiền thực chi (Ví dụ: `450.000` đ).
-3. **Thuế Suất VAT:** Chọn `0%`, `8%` hoặc `10%` theo hóa đơn.
-4. **Mã Tra Cứu HĐĐT / Số Hóa Đơn:** Nhập mã tra cứu hóa đơn điện tử cảng để kế toán đối soát thuế.
-5. **Ảnh Chứng Từ / Biên Lai:** Bấm chọn tải lên ảnh chụp phiếu thu hoặc biên lai hóa đơn.
-
-### Bước 3: ĐẶC BIỆT — Xử lý khoản Chi Hộ Khách Hàng (Debit Note)
-- **Nếu đây là khoản chi hộ mà công ty chỉ ứng tiền trước và sẽ thu lại 100% từ khách hàng** (Ví dụ: phí kiểm dịch, phí lưu bãi cảng do lỗi khách hàng, nâng hạ chỉ định):
-  * **Gạt bật công tắc:** Bấm vào ô **`Chi hộ Khách hàng (is_on_behalf_of_customer)`**.
-  * **Quy tắc hệ thống:** Khoản tiền này **TUYỆT ĐỐI KHÔNG TÍNH VÀO CHI PHÍ VẬN HÀNH CỦA XE**. Lợi nhuận P&L của xe không bị giảm đi. Khoản này sẽ tự động chuyển sang Báo cáo 4 và phân hệ Công nợ để xuất giấy đòi tiền (*Debit Note*) thu lại từ khách hàng.
-
-### Bước 4: Lưu khoản chi
-- Bấm nút **`Lưu`**. Khoản chi lập tức xuất hiện trong bảng và hệ thống tự động tính lại Lợi nhuận gộp tức thì.
+Phân hệ trọng yếu nhất của hệ thống:
+- **Phân công phương tiện:** Gán Đầu kéo, Rơ-moóc, Tài xế theo thời gian thực.
+- **Tuân thủ State Machine 11 bước:** `Draft ➔ Dispatched ➔ Accepted ➔ Container Picked ➔ In Transit ➔ At Warehouse ➔ Unloading ➔ Delivered ➔ Returning Empty ➔ Completed ➔ Settled`.
+- **Nghiệp vụ Cắt Kéo 2 Chặng (`is_split_trip`):** Xe 1 cắm moóc tại kho, Xe 2 kéo ra cảng; tự động chia lương chuyến cho 2 bác tài.
+- **Nghiệp vụ Chở Ghép 2 Cont 20ft (`is_twin_container`):** Quản lý đồng thời 2 cont 20ft trên 1 rơ-moóc 40ft/45ft.
+- **Kê khai Chi Phí & Tách Biệt Khoản Chi Hộ (`is_on_behalf_of_customer`):** Chi hộ khách không trừ vào chi phí của xe, tự động kết chuyển sang Debit Note.
+- **Cổng Mobile Tài Xế (Driver Portal):** Báo 6 mốc di chuyển và chụp ảnh chứng từ POD/EIR gửi về văn phòng.
 
 ---
 
-## 7. CÁCH TÀI XẾ BÁO 6 MỐC KHO & CHỤP ẢNH POD/EIR TRÊN ĐIỆN THOẠI
+## 5. Phân Hệ Quản Lý Đội Xe, Bãi & Nhân Sự (Fleet & HR)
 
-*Dành cho: Các Bác Tài điều khiển xe đầu kéo.*
-
-### Bước 1: Mở liên kết nhận lệnh trên điện thoại
-- Tài xế mở Zalo hoặc SMS ➔ Bấm vào đường link nhận từ điều độ (Ví dụ: `https://logistics.bim.info.vn/driver/AbCd1234XyZ`).
-- Màn hình Driver Portal mở ra với đầy đủ thông tin: Biển số xe, số cont, địa chỉ bãi lấy cont, địa chỉ kho đóng hàng và cảng hạ.
-
-### Bước 2: Báo mốc vận hành bằng nút bấm 1 chạm
-Tài xế thực hiện thao tác theo đúng trình tự di chuyển:
-1. **Khi nhận chuyến:** Bấm nút màu xanh **`[Xác Nhận Nhận Lệnh]`**.
-2. **Khi lấy xong cont rỗng tại bãi:** Bấm nút **`[Đã Lấy Cont Rỗng (EIR)]`**.
-3. **Khi xe đến cổng kho khách hàng:** Bấm nút **`[Đã Đến Cổng Kho]`**.
-4. **Khi kho bắt đầu đóng/dỡ hàng:** Bấm nút **`[Bắt Đầu Đóng Hàng]`**.
-5. **Khi đóng hàng xong, rời kho:** Bấm nút **`[Hoàn Tất, Rời Kho]`**.
-6. **Khi hạ cont tại cảng đích:** Bấm nút **`[Đã Hạ Bãi Xong]`**.
-
-### Bước 3: Chụp ảnh chứng từ tải lên máy chủ
-- Dưới mỗi mốc, có nút **`[Chụp Ảnh POD / EIR]`**.
-- Bác tài bấm nút ➔ Camera điện thoại mở ra ➔ Chụp ảnh biên bản giao nhận có chữ ký thủ kho hoặc phiếu EIR hạ bãi ➔ Bấm **`Tải Lên`**.
-- Chứng từ sẽ hiển thị ngay lập tức trên máy tính của Điều phối viên và Kế toán tại văn phòng.
+- **Quản lý Phương Tiện:** Đầu kéo container, rơ-moóc xương/cổ cò; quản lý hình thức Xe Nhà (`OWNED`) hoặc Xe Thuê Ngoài (`SUBCONTRACTOR`).
+- **Cảnh báo hạn đăng kiểm xe:** Cảnh báo đỏ tự động khi hạn đăng kiểm còn $\le 15$ ngày.
+- **Quản lý Nhân Viên & Hồ Sơ Tài Xế:** Số GPLX hạng FC, hạn bằng lái (cảnh báo trước 30 ngày), số điện thoại và biệt danh gọi bộ đàm.
+- **Bảng Tính Lương Chuyến Khoán:** Tự động tổng hợp lương chuyến theo sản lượng thực tế hoàn thành.
 
 ---
 
-## 8. CÁCH THÊM MỚI ĐẦU KÉO & RƠ-MOÓC VÀO ĐỘI XE
+## 6. Phân Hệ Tài Chính, Tạm Ứng & Sổ Quỹ (Accounting & Cash Flow)
 
-*Dành cho: Quản lý Đội xe, Kỹ thuật viên, Ban Giám Đốc.*
-
-### Bước 1: Vào phân hệ Xe & Bãi
-- Trên thanh điều hướng bên trái, bấm vào menu **`Xe & Bãi`**.
-- Chọn tab **`Đầu Kéo`** hoặc tab **`Rơ-Moóc`**.
-- Bấm nút **`+ Thêm Phương Tiện Mới`** (nút màu teal góc phải).
-
-### Bước 2: Nhập thông tin kỹ thuật của xe
-1. **Biển Số Xe `*`:** Nhập biển số đúng chuẩn giao thông (Ví dụ: `51C-678.90` đối với đầu kéo, `51R-123.45` đối với moóc).
-2. **Loại Phương Tiện `*`:** Chọn `Đầu kéo Container`, `Xe tải 10T`, `Xe tải 2T`...
-3. **Hình Thức Sở Hữu `*`:** Chọn `Xe Nhà (OWNED)` nếu thuộc công ty, hoặc `Xe Bạn (SUBCONTRACTOR)` nếu thuê ngoài.
-4. **Tải Trọng Kéo Cho Phép (Tấn) `*`:** Nhập tải trọng thiết kế (Ví dụ: `38.5` tấn).
-5. **Hạn Đăng Kiểm `*`:** Chọn ngày hết hạn sổ đăng kiểm xe. *(Hệ thống tự động báo đỏ khi còn dưới 15 ngày).*
-6. **Hạn Bảo Dưỡng Kế Tiếp:** Nhập ngày dự kiến đưa xe vào xưởng bảo dưỡng thay nhớt.
-7. **Bác Tài Mặc Định:** Chọn bác tài chính được giao quản lý đầu kéo này.
-
-### Bước 3: Lưu hoàn tất
-- Bấm nút **`Lưu`**. Phương tiện mới sẽ xuất hiện trên sơ đồ bãi xe.
+- **Cơ chế tạm ứng 2 cấp an toàn dòng tiền:**
+  * **Cấp 1:** Kế toán cấp Quỹ Điều Vận (`TUDV`) cho Điều phối viên.
+  * **Cấp 2:** Điều phối viên trích quỹ cấp Tạm Ứng Chuyến (`TUTX`) cho Bác tài.
+- **Hoàn ứng & Cân đối tự động:** Thừa tiền tự sinh **Phiếu Thu (PT-...)**, thiếu tiền tự sinh **Phiếu Chi (PC-...)**.
+- **Sổ Quỹ Thu - Chi Mẫu S03a-DN:** Chuẩn Bộ Tài Chính, hỗ trợ in A4/A5 ký 4 bên.
+- **Quyết Toán Xe Bạn 3PL:** Thỏa thuận cước và tự động sinh phiếu chi thanh toán sau khi thu đủ POD.
+- **Khóa Sổ Gom Chuyến Hàng Loạt (Batch Settlement):** Gom nhiều chuyến xe xuất hóa đơn VAT.
 
 ---
 
-## 9. CÁCH THÊM HỒ SƠ NHÂN VIÊN / BÁC TÀI MỚI
+## 7. Phân Hệ Thủ Tục Hải Quan Điện Tử (Customs Declaration)
 
-*Dành cho: Phòng Hành chính Nhân sự, Ban Giám Đốc.*
-
-### Bước 1: Vào phân hệ Nhân sự
-- Trên thanh điều hướng bên trái, bấm vào menu **`Hành chính & Nhân sự`**.
-- Bấm nút **`+ Thêm Nhân Sự Mới`** (nút màu teal góc phải).
-
-### Bước 2: Nhập thông tin hồ sơ nhân viên
-1. **Mã Nhân Viên `*`:** Nhập mã số nhân viên (Ví dụ: `TX-015` cho tài xế, `DP-002` cho điều phối).
-2. **Họ Và Tên `*`:** Nhập họ tên đầy đủ theo CCCD (Ví dụ: `Trần Văn Hùng`).
-3. **Phòng Ban `*`:** Chọn `Đội Xe & Bãi` (cho tài xế), `Điều Vận`, `Kế Toán`, `Kinh Doanh`...
-4. **Vai Trò Hệ Thống `*`:** Chọn vai trò để phân quyền đăng nhập:
-   - `DRIVER`: Tài xế xe đầu kéo.
-   - `DISPATCHER`: Điều phối viên.
-   - `ACCOUNTANT`: Kế toán.
-   - `SALESMAN`: Nhân viên kinh doanh.
-5. **Số Điện Thoại Liên Hệ `*`:** Nhập số điện thoại để gọi điều độ và liên kết Zalo.
-6. **Biệt Danh Hiện Trường:** Nhập biệt danh gọi bộ đàm của tài xế (Ví dụ: `HÙNG ĐỒNG NAI`).
-7. **Thông tin Bằng Lái (Đối với Tài Xế):**
-   - **Số GPLX `*`:** Nhập số giấy phép lái xe 12 số.
-   - **Hạng GPLX `*`:** Chọn `Hạng FC` (Bắt buộc để điều khiển xe đầu kéo sơ-mi rơ-moóc).
-   - **Hạn GPLX `*`:** Nhập ngày hết hạn bằng lái. *(Hệ thống cảnh báo đổi bằng trước 30 ngày).*
-8. **Mức Lương Cơ Bản (VNĐ):** Nhập mức lương cứng ký hợp đồng lao động.
-
-### Bước 3: Lưu hồ sơ
-- Bấm nút **`Lưu`**.
-- Bạn có thể bấm nút **`In Sơ Yếu Hồ Sơ A4`** để in hồ sơ lưu trữ nội bộ theo chuẩn doanh nghiệp.
+- Quản lý tờ khai hải quan 12 số hệ thống VNACCS/VCIS.
+- Theo dõi phân luồng hải quan: Luồng Xanh, Luồng Vàng, Luồng Đỏ.
+- Liên kết số container và chì seal phục vụ đối chiếu thông quan tại cổng cảng.
 
 ---
 
-## 10. CÁCH KẾ TOÁN CẤP QUỸ TẠM ỨNG ĐIỀU VẬN CẤP 1
+## 8. Hệ Thống 14 Báo Cáo Thông Minh BI Vận Tải
 
-*Dành cho: Kế toán trưởng, Ban Giám Đốc.*
-
-### Mục đích:
-Cấp một gói hạn mức tiền mặt (Ví dụ: 20 triệu hoặc 50 triệu) cho Điều phối viên để điều phối chủ động chi tiền dọc đường cho các tài xế trong ca làm việc.
-
-### Các bước thực hiện:
-1. Vào menu **`Tài chính & Kế toán`** ➔ Chọn tab **`Tạm Ứng & Hoàn Ứng`** (hoặc mở phân hệ Quyết toán).
-2. Tại khu vực **"Quỹ Tạm Ứng Điều Vận (Cấp 1)"**, bấm nút **`+ Cấp Quỹ Điều Vận`**.
-3. Điền thông tin gói quỹ:
-   - **Điều Phối Viên Nhận Quỹ `*`:** Chọn nhân viên điều vận nhận tiền.
-   - **Số Tiền Hạn Mức (VNĐ) `*`:** Nhập số tiền cấp (Ví dụ: `30.000.000` đ).
-   - **Nguồn Tiền Xuất Quỹ `*`:** Chọn `Tiền Mặt Tại Két` hoặc `Chuyển Khoản Ngân Hàng`.
-   - **Ghi Chú:** Nhập mục đích (Ví dụ: Cấp quỹ ứng phí nâng hạ và BOT ca tuần 41).
-4. Bấm nút **`Lưu`**.
-5. Gói quỹ được tạo ở trạng thái **`Đang lưu hành`**. Hệ thống sẽ tự động trừ quỹ tiền mặt/ngân hàng của công ty và theo dõi tỷ lệ giải ngân của điều phối viên.
+Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
+- Cột **STT** chuẩn đếm số lượng record hiển thị.
+- Tính năng **Universal Column Manager** tùy biến ẩn/hiện và đổi vị trí cột.
+- Sắp xếp đa cột tăng/giảm dần trực tiếp trên bảng.
+- In ấn tự động nhận diện khổ **A4 Dọc** hoặc **A4 Ngang** theo số lượng cột.
 
 ---
 
-## 11. CÁCH ĐIỀU VẬN CẤP TẠM ỨNG DỌC ĐƯỜNG CHO TÀI XẾ CẤP 2
+# PHẦN II: HƯỚNG DẪN CÀI ĐẶT DANH MỤC GỐC (MASTER DATA)
 
-*Dành cho: Điều phối viên.*
+## 1. Tạo Mới Khách Hàng (Customer)
 
-### Mục đích:
-Trích tiền từ gói Quỹ Điều Vận được giao để phát tạm ứng cho tài xế trước khi xuất bãi chạy chuyến hàng.
-
-### Các bước thực hiện:
-1. Trong màn hình **`Điều vận`** hoặc **`Tài chính & Kế toán`**, bấm nút **`+ Cấp Tạm Ứng Tài Xế`**.
-2. Nhập thông tin phiếu tạm ứng chuyến:
-   - **Mã Chuyến Xe `*`:** Chọn mã chuyến xe tài xế chuẩn bị chạy (Ví dụ: `TVL-1011-001`).
-   - **Tài Xế Nhận Tiền `*`:** Hệ thống tự động chọn tài xế đang gán cho chuyến xe đó.
-   - **Số Tiền Tạm Ứng (VNĐ) `*`:** Nhập số tiền phát cho tài xế (Ví dụ: `2.500.000` đ).
-   - **Nguồn Tiền Trích Ứng `*`:** Chọn `Trích từ Quỹ Điều Vận của tôi` (hoặc `Công ty chi trực tiếp`).
-   - **Chi Tiết Dự Kiến:** Ghi rõ cơ cấu tiền ứng (Ví dụ: Nâng hạ 900k + BOT 600k + Dầu 1.000k).
-3. Bấm nút **`Lưu`**. Hệ thống sinh mã phiếu `TUTX-YYYY-XXX` và trừ tương ứng vào số dư quỹ của điều phối viên.
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`** (hoặc vào menu **`Sale & Booking`** ➔ tab **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`**).
+- **Các trường bắt buộc cần điền:**
+  * **Mã Khách Hàng (`*`):** Nhập mã viết tắt viết hoa không dấu (Ví dụ: `SAMSUNG`, `VINFAST`, `KH-001`). Mã không được trùng lặp.
+  * **Tên Doanh Nghiệp (`*`):** Nhập tên đầy đủ theo Giấy phép ĐKKD (Ví dụ: `CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM`).
+  * **Mã Số Thuế (`*`):** Nhập chính xác MST 10 hoặc 13 số để xuất hóa đơn điện tử hợp lệ.
+  * **Địa Chỉ Trụ Sở (`*`):** Nhập địa chỉ đăng ký kinh doanh in trên hóa đơn VAT.
+  * **Số Điện Thoại (`*`):** Số điện thoại liên lạc khi giao nhận hàng.
+  * **Người Liên Hệ:** Tên người phụ trách kho/kế toán khách hàng.
+  * **Kỳ Hạn Công Nợ:** Số ngày cho phép nợ (Ví dụ: 30 ngày).
+- **Hoàn tất:** Bấm nút **`Lưu`**.
 
 ---
 
-## 12. CÁCH QUYẾT TOÁN HOÀN ỨNG CHUYẾN XE & CÂN ĐỐI SỔ QUỸ
+## 2. Cài Đặt Địa Điểm Cảng, Depot & Kho Hàng (Locations)
 
-*Dành cho: Kế toán vận tải, Điều phối viên.*
-
-### Mục đích:
-Khi tài xế hoàn thành chuyến hàng trở về bãi, tiến hành đối chiếu giữa **Số tiền đã ứng** và **Số tiền thực tế tài xế đã chi** để thu hồi tiền thừa hoặc chi bù tiền thiếu.
-
-### Các bước thực hiện:
-1. Vào menu **`Tài chính & Kế toán`** ➔ Chọn tab **`Tạm Ứng & Hoàn Ứng`**.
-2. Tìm dòng phiếu tạm ứng của tài xế (Mã `TUTX-...`) ➔ Bấm nút **`Quyết Toán Hoàn Ứng`** (nút màu vàng hổ phách).
-3. Hộp thoại đối soát hiện ra với bảng so sánh tự động:
-   - **Tổng tiền đã tạm ứng trước:** Ví dụ: `2.500.000` đ.
-   - **Tổng chi phí thực tế có chứng từ:** Ví dụ: `2.100.000` đ.
-   - **Chênh lệch đối soát:** `+400.000` đ (Tài xế còn dư tiền).
-4. **Xử lý kết quả cân đối:**
-   - **Trường hợp 1 (Dư tiền):** Hệ thống chọn phương án **`Tài xế hoàn nộp lại tiền thừa`**. Bấm xác nhận ➔ Hệ thống **tự động sinh Phiếu Thu (`PT-...`)** nhập lại 400.000 đ vào quỹ.
-   - **Trường hợp 2 (Thiếu tiền - Chi vượt):** Tài xế chi 2.800.000 đ ➔ Hệ thống chọn **`Công ty chi bù cho tài xế`** 300.000 đ. Bấm xác nhận ➔ Hệ thống **tự động sinh Phiếu Chi (`PC-...`)** để kế toán xuất quỹ trả lại tài xế.
-   - **Trường hợp 3 (Khớp đúng 100%):** Khoản ứng chuyển thẳng sang trạng thái **`Đã Hoàn Ứng Xong`**.
-5. Bấm nút **`Lưu`** để hoàn tất chốt sổ tạm ứng.
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Địa Điểm`** ➔ Bấm nút **`+ Thêm Địa Điểm Mới`**.
+- **Các trường bắt buộc cần điền:**
+  * **Mã Địa Điểm (`*`):** Mã viết hoa không dấu (Ví dụ: `CAT_LAI`, `ICD_TRANSIMEX`, `KCN_VSIP1`).
+  * **Tên Địa Điểm (`*`):** Tên đầy đủ (Ví dụ: `Cảng Cát Lái - Cổng C`, `Depot Tanamexco`).
+  * **Loại Địa Điểm (`*`):** Chọn `Cảng Biển (SEAPORT)`, `Depot Vỏ Rỗng (DEPOT)`, `Kho Khách Hàng (WAREHOUSE)` hoặc `Bãi Đỗ Xe (YARD)`.
+  * **Mã ICD / Cảng Vụ (`*`):** Nhập mã hải quan cảng (Ví dụ: `VNSGN`).
+  * **Địa Chỉ Chi Tiết (`*`):** Địa chỉ số nhà, đường, quận/huyện để tài xế định vị.
+- **Hoàn tất:** Bấm nút **`Lưu`**.
 
 ---
 
-## 13. CÁCH TẠO PHIẾU THU / PHIẾU CHI SỔ QUỸ MẪU S03a-DN
+## 3. Cài Đặt Danh Mục Hãng Tàu (Shipping Lines)
 
-*Dành cho: Kế toán thanh toán, Thủ quỹ.*
-
-### Bước 1: Vào phân hệ Sổ Quỹ
-- Trên thanh điều hướng bên trái, bấm vào menu **`Tài chính & Kế toán`**.
-- Tại tab **`Sổ Quỹ Thu - Chi`**, bấm nút:
-  * **`+ Lập Phiếu Thu`** (để ghi nhận dòng tiền vào - Inflow).
-  * **`+ Lập Phiếu Chi`** (để ghi nhận dòng tiền ra - Outflow).
-
-### Bước 2: Nhập thông tin chứng từ thu/chi
-1. **Loại Nghiệp Vụ `*`:**
-   - *Nếu là Phiếu Thu:* Chọn `Thu cước vận tải từ khách hàng`, `Thu hồi tiền chi hộ`, `Hoàn ứng tiền thừa từ tài xế`...
-   - *Nếu là Phiếu Chi:* Chọn `Tạm ứng quỹ điều vận`, `Thanh toán cước xe bạn 3PL`, `Chi mua nhiên liệu dầu DO`, `Nạp thẻ thu phí tự động VETC/ePass`, `Sửa chữa xe`...
-2. **Đối Tượng Giao Dịch `*`:** Chọn Khách hàng, Nhà xe thầu phụ, hoặc Nhân viên nhận/nộp tiền.
-3. **Số Tiền (VNĐ) `*`:** Nhập số tiền phát sinh.
-4. **Phương Thức Thanh Toán `*`:** Chọn `Tiền Mặt Tại Két` hoặc `Chuyển Khoản Ngân Hàng`.
-5. **Tài Khoản Ngân Hàng:** Nếu chọn chuyển khoản, chọn đúng số tài khoản ngân hàng của công ty xuất/nhận tiền.
-6. **Diễn Giải / Nội Dung Thu Chi `*`:** Ghi rõ lý do (Ví dụ: Thu tiền cước chuyến TVL-1011-001 theo HĐ 00123).
-7. **Chứng Từ Gốc Kèm Theo:** Nhập số lượng chứng từ gốc đính kèm (Ví dụ: `02` liên hóa đơn).
-
-### Bước 3: Lưu và in phiếu thu/chi
-- Bấm nút **`Lưu`**. Phiếu thu mang mã `PT-YYYY-XXX`, phiếu chi mang mã `PC-YYYY-XXX`.
-- Bấm nút **`In Phiếu A4/A5`** để in mẫu Phiếu Thu/Phiếu Chi chuẩn mẫu S03a-DN theo Thông tư Bộ Tài Chính có đầy đủ chữ ký 4 bên: Giám đốc, Kế toán trưởng, Người nộp/nhận tiền, Thủ quỹ.
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Hãng Tàu`** ➔ Bấm nút **`+ Thêm Hãng Tàu Mới`**.
+- **Các trường bắt buộc cần điền:**
+  * **Mã Hãng Tàu (`*`):** Nhập mã chuẩn quốc tế (Ví dụ: `MAEU`, `ONE`, `COSCO`, `EVERGREEN`, `CMA`, `SITC`...).
+  * **Tên Hãng Tàu (`*`):** Tên đầy đủ (Ví dụ: `Hãng Tàu ONE Lines Việt Nam`).
+  * **Cổng Tra Cứu eDO:** Đường dẫn website tra cứu lệnh giao nhận cont điện tử.
+  * **Số Ngày Free-Time Mặc Định:** Số ngày miễn phí lưu bãi/cont (mặc định 7 hoặc 14 ngày).
+- **Hoàn tất:** Bấm nút **`Lưu`**.
 
 ---
 
-## 14. CÁCH THỎA THUẬN CƯỚC & QUYẾT TOÁN XE BẠN / THẦU PHỤ 3PL
+## 4. Cài Đặt Khoản Mục Chi Phí Vận Tải (Expense Catalog)
 
-*Dành cho: Điều phối viên, Kế toán công nợ.*
-
-### Bước 1: Ghi nhận thỏa thuận cước thuê xe bạn
-- Khi điều động một chuyến xe thuộc sở hữu của nhà xe ngoài (Xe bạn/3PL):
-- Trong chi tiết chuyến xe, tại mục đối tác xe bạn ➔ Bấm nút **`Thỏa Thuận Cước Xe Bạn`**.
-- Điền:
-  * **Nhà Xe Thầu Phụ `*`:** Chọn đơn vị vận tải từ danh mục đối tác (Ví dụ: `CÔNG TY VẬN TẢI THÀNH CÔNG`).
-  * **Cước Thỏa Thuận (Gross Pay) `*`:** Số tiền cước cam kết trả cho nhà xe bạn (Ví dụ: `4.200.000` đ).
-  * **Tạm Ứng Trước Dọc Đường:** Số tiền đã tạm ứng trước cho tài xế xe bạn (Ví dụ: `1.500.000` đ).
-- Bấm nút **`Lưu`**. Chuyến xe được ghi nhận vào sổ công nợ nhà xe ngoài.
-
-### Bước 2: Quyết toán và thanh toán cước còn lại
-- Khi chuyến xe hoàn thành và nhận đủ biên bản POD:
-- Vào menu **`Tài chính & Kế toán`** ➔ Chọn tab **`Xe Thầu Phụ 3PL`**.
-- Tìm chuyến xe của đối tác ➔ Bấm nút **`Quyết Toán Cước`**.
-- Hệ thống hiển thị số tiền còn phải trả: `4.200.000 - 1.500.000 = 2.700.000 đ`.
-- Chọn phương thức thanh toán `Ủy nhiệm chi Ngân hàng` ➔ Bấm **`Lưu`**.
-- Hệ thống tự động sinh Phiếu Chi Sổ Quỹ và cập nhật công nợ nhà xe về 0 đ.
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khoản Mục Chi Phí`** ➔ Bấm nút **`+ Thêm Khoản Mục Chi Phí`**.
+- **Các trường bắt buộc cần điền:**
+  * **Mã Khoản Chi (`*`):** Mã kỹ thuật (Ví dụ: `LIFT_ON`, `LIFT_OFF`, `TOLL_FEE`, `CONTAINER_DEPOSIT`, `WEIGHING`).
+  * **Tên Khoản Mục (`*`):** Tên hiển thị (Ví dụ: `Phí nâng vỏ cont rỗng`, `Vé cầu đường BOT`).
+  * **Nhóm Chi Phí (`*`):** Chọn Nâng hạ cảng, Cầu đường, Chi hộ, Nhiên liệu...
+  * **Định Mức Mặc Định (VNĐ):** Mức tiền tiêu chuẩn tự động điền khi tạo lệnh.
+  * **Yêu Cầu HĐĐT (VAT):** Đánh dấu Có/Không để kiểm soát hóa đơn khi duyệt chi.
+- **Hoàn tất:** Bấm nút **`Lưu`**.
 
 ---
 
-## 15. CÁCH KHAI BÁO & QUẢN LÝ TỜ KHAI HẢI QUAN ĐIỆN TỬ
+## 5. Cài Đặt Biểu Cước Lương Chuyến Theo Tuyến Đường (Route Payroll Rates)
 
-*Dành cho: Nhân viên Khai báo Hải quan, Điều phối viên.*
-
-### Bước 1: Vào phân hệ Hải quan
-- Trên thanh điều hướng bên trái, bấm vào menu **`Dịch vụ Hải quan`**.
-- Bấm nút **`+ Khai Báo Tờ Khai Mới`** (nút màu teal góc phải).
-
-### Bước 2: Nhập thông tin tờ khai VNACCS
-1. **Số Tờ Khai Hải Quan `*`:** Nhập dãy 12 số tờ khai hải quan điện tử do hệ thống VNACCS cấp (Ví dụ: `105123456780`).
-2. **Doanh Nghiệp Xuất Nhập Khẩu `*`:** Chọn khách hàng chủ hàng đứng tên trên tờ khai.
-3. **Loại Hình Tờ Khai `*`:** Chọn loại hình: `E62` (Xuất sản xuất xuất khẩu), `A11` (Nhập kinh doanh tiêu dùng), `A12` (Nhập kinh doanh sản xuất)...
-4. **Chi Cục Hải Quan Đăng Ký `*`:** Chọn chi cục thụ lý (Ví dụ: `02CI - Chi cục HQ CK Cảng Sài Gòn KV 1`).
-5. **Phân Luồng Hải Quan `*`:**
-   - 🟢 **Luồng Xanh (Green):** Miễn kiểm tra chứng từ và hàng hóa, thông quan tự động.
-   - 🟡 **Luồng Vàng (Yellow):** Kiểm tra hồ sơ chứng từ điện tử/giấy.
-   - 🔴 **Luồng Đỏ (Red):** Kiểm tra thực tế hàng hóa tại bãi kiểm hóa cảng.
-6. **Số Container & Seal:** Nhập số vỏ cont và chì niêm phong để liên kết với lệnh điều xe.
-7. **Trạng Thái Thông Quan `*`:** `Chờ thông quan`, `Đã thông quan`, `Giải phóng hàng`...
-
-### Bước 3: Lưu và liên kết điều vận
-- Bấm nút **`Lưu`**. Tờ khai được lưu trữ an toàn và sẵn sàng xuất trình đối chiếu với cán bộ hải quan cổng cảng.
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Biểu Phí Lương Tuyến`** ➔ Bấm nút **`+ Thêm Tuyến Lương Mới`**.
+- **Các trường bắt buộc cần điền:**
+  * **Tên Tuyến Đường (`*`):** Lộ trình (Ví dụ: `Cảng Cát Lái ➔ KCN VSIP 1`).
+  * **Quy Cách Cont (`*`):** Chọn `20DC` hoặc `40HC`.
+  * **Mức Lương Khoán Cho Bác Tài (`*`) (VNĐ):** Tiền lương chuyến trả cho tài xế (Ví dụ: `450.000 đ`).
+  * **Định Mức Vé BOT (VNĐ):** Tiền vé cầu đường BOT định mức (Ví dụ: `200.000 đ`).
+  * **Định Mức Dầu DO (Lít):** Định mức tiêu hao dầu (Ví dụ: `40 lít`).
+- **Hoàn tất:** Bấm nút **`Lưu`**.
 
 ---
 
-## 16. CÁCH QUYẾT TOÁN GOM CHUYẾN XE HÀNG LOẠT (BATCH SETTLEMENT)
+## 6. Hồ Sơ Doanh Nghiệp & Tài Khoản Ngân Hàng Thụ Hưởng (Company Profile)
 
-*Dành cho: Kế toán trưởng, Kế toán công nợ.*
-
-### Mục đích:
-Khóa sổ đồng loạt nhiều chuyến xe đã hoàn thành và thu đủ chứng từ POD để chuẩn bị xuất hóa đơn cước vận tải cho khách hàng.
-
-### Các bước thực hiện:
-1. Trên thanh điều hướng bên trái, bấm vào menu **`Quyết toán`** (hoặc truy cập `/settlements`).
-2. Sử dụng bộ lọc trên đầu trang:
-   - Chọn **Khách Hàng** cần quyết toán đợt này.
-   - Chọn **Khoảng Ngày Vận Chuyển** (Ví dụ: Từ 01/10/2026 đến 10/10/2026).
-   - Chọn bộ lọc trạng thái: **`Chỉ chuyến đã thu đủ POD`**.
-3. Danh sách các chuyến thỏa mãn điều kiện sẽ hiện ra kèm hộp kiểm (*checkbox*).
-4. **Tích chọn các chuyến xe cần gom đợt** (hoặc tích chọn ô trên cùng để chọn tất cả).
-5. Hệ thống sẽ tính tổng tự động: Số chuyến chọn, Tổng doanh thu cước, Tổng chi phí, Tổng tiền chi hộ.
-6. Bấm nút màu xanh ngọc **`[Khóa Sổ Gom Đợt Quyết Toán]`** ở góc trên.
-7. Nhập Mã đợt quyết toán (Ví dụ: `DOT-2026-10A`) ➔ Bấm **`Lưu`**.
-8. Tất cả các chuyến được chọn sẽ chuyển sang trạng thái **`Đã Quyết Toán`**, khóa tính năng sửa/xóa chi phí để đảm bảo số liệu kế toán không bị sai lệch.
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Hồ Sơ Doanh Nghiệp`**.
+- **Các trường bắt buộc cần điền:**
+  * **Tên Doanh Nghiệp (`*`):** `CÔNG TY TNHH VẬN TẢI TRIỀN VÕ`.
+  * **Mã Số Thuế (`*`):** Nhập MST doanh nghiệp in trên báo giá và phiếu thu/chi.
+  * **Địa Chỉ Trụ Sở (`*`):** Địa chỉ văn phòng công ty.
+  * **Số Điện Thoại (*) & Email (*):** Thông tin CSKH in trên bản in hợp đồng.
+  * **Số Tài Khoản Ngân Hàng Thụ Hưởng (`*`):** STK nhận thanh toán cước từ khách hàng.
+  * **Tên Ngân Hàng & Chi Nhánh (`*`):** Ví dụ: `Vietcombank - CN Nam Sài Gòn`.
+- **Hoàn tất:** Bấm nút **`Lưu`**.
 
 ---
 
-## 17. CÁCH XEM, LỌC, TÙY CHỈNH CỘT & IN 14 BÁO CÁO BI KHỔ A4
+# PHẦN III: HƯỚNG DẪN THAO TÁC NHẬP LIỆU CHI TIẾT
 
-*Dành cho: Ban Giám Đốc, Kế toán, Điều phối viên.*
+## 1. Dashboard Ban Giám Đốc
 
-### Bước 1: Mở phân hệ Báo cáo
-- Trên thanh điều hướng bên trái, bấm vào menu **`Báo cáo & Thống kê`**.
-- Hệ thống chia thành 4 nhóm báo cáo lớn:
-  * **Nhóm 1:** Hiệu suất xe P&L, Doanh thu khách hàng, Chi phí tuyến & Chi hộ.
-  * **Nhóm 2:** Quản lý vỏ cont DEM/DET, Đúng giờ OTP, Cắt kéo lưu xe sau 0h, Sự cố OS&D.
-  * **Nhóm 3:** Sổ quỹ tạm ứng điều vận, Tạm ứng tài xế, Lương chuyến, Xe bạn 3PL.
-  * **Nhóm 4:** Công nợ phải thu (AR Aging), Quyết toán chuyến, Tuổi đơn tồn đọng.
-- Bấm vào tab báo cáo bạn muốn xem (Ví dụ: Báo Cáo 1, Báo Cáo 12...).
+### 1.1. Cách Sử Dụng Bộ Lọc Kỳ Báo Cáo Toàn Cục
+1. Tại góc trên cùng bên phải màn hình Dashboard, nhấp vào thanh chọn thời gian.
+2. Chọn mốc: **Hôm nay**, **10 Ngày qua**, **Tháng này**, **Quý này**, **Năm nay** hoặc **Tùy chọn ngày**.
+3. Hệ thống tự động cập nhật lại toàn bộ 4 thẻ KPI, biểu đồ doanh thu và bảng chuyến xe mà không cần tải lại trang.
 
-### Bước 2: Tìm kiếm & Sắp xếp dữ liệu
-- **Tìm kiếm tức thì:** Nhập từ khóa vào ô tìm kiếm (biển số, tên khách, tài xế, mã chuyến...) ➔ Bảng dữ liệu tự động lọc ngay lập tức.
-- **Sắp xếp cột:** Bấm vào tiêu đề cột bất kỳ (có icon mũi tên lên xuống) để sắp xếp tăng dần hoặc giảm dần.
-- **Cột STT chuẩn:** Cột đầu tiên luôn là cột **`STT`** đánh số thứ tự từ 1 đến hết để bạn nắm được chính xác số lượng bản ghi hiển thị.
+### 1.2. Cách Tra Cứu Dòng Tiền & Quỹ Khả Dụng
+- Thẻ **Tiền mặt tại két**: Hiển thị số tiền mặt tồn quỹ thực tế để phục vụ tiếp quỹ điều vận.
+- Thẻ **Tài khoản ngân hàng**: Hiển thị số dư các tài khoản thanh toán nhận tiền cước chuyển khoản từ khách hàng.
 
-### Bước 3: Tùy biến ẩn / hiện và thứ tự cột (Universal Column Manager)
-- Tại góc trên bên phải của bảng, bấm nút **`Cột`** (icon các cột dọc).
-- Hộp thoại tùy biến hiện ra:
-  * Tích chọn hoặc bỏ chọn ô checkbox để **Ẩn / Hiện** cột theo nhu cầu xem.
-  * Bấm nút mũi tên lên/xuống để **Thay đổi thứ tự hiển thị** của cột.
-  * Bấm nút **`Khôi phục mặc định`** nếu muốn quay về cấu hình ban đầu.
-- Cấu hình cột được trình duyệt **tự động ghi nhớ riêng cho tài khoản của bạn**, lần sau mở lại vẫn giữ nguyên giao diện bạn đã thiết lập.
-
-### Bước 4: In báo cáo khổ A4 chuẩn mực
-- Bấm nút **`In Báo Cáo A4`** ở góc trên.
-- Hệ thống tự động phân tích số lượng cột:
-  * Bảng dưới 8 cột: Tự động định dạng khổ **A4 Dọc (Portrait)**.
-  * Bảng từ 8 cột trở lên: Tự động định dạng khổ **A4 Ngang (Landscape)**.
-- Trình duyệt hiển thị bản in căn lề chuẩn 15mm-20mm theo Nghị định 30/2020/NĐ-CP, sẵn sàng in ra máy in hoặc xuất file PDF lưu trữ.
+### 1.3. Cách Mở Nhanh Hồ Sơ Chuyến Từ Bảng P&L 8 Chuyến Gần Nhất
+- Nhấp chuột trực tiếp vào bất kỳ dòng chuyến xe nào hoặc bấm vào Mã Chuyến (Ví dụ: `TVL-1011-001`). Hệ thống lập tức chuyển sang trang **Chi Tiết Chuyến Xe** để kiểm tra chứng từ POD và danh sách các khoản chi phí.
 
 ---
 
-## 18. CÁCH QUẢN LÝ DANH MỤC GỐC (ĐỊA ĐIỂM, HÃNG TÀU, KHOẢN MỤC CHI PHÍ)
+## 2. Phân Hệ Sale & Booking
 
-*Dành cho: Quản trị viên hệ thống, Kế toán trưởng.*
+### 2.1. Hướng Dẫn Tạo Mới Bảng Báo Giá (Quotation) & Duyệt Báo Giá
+- **Nơi thực hiện:** Vào menu **`Sale & Booking`** ➔ Tab **`Báo Giá`** ➔ Bấm nút **`+ Tạo Báo Giá Mới`**.
+- **Các bước nhập liệu:**
+  1. **Khách Hàng (`*`):** Chọn tên khách hàng từ danh sách.
+  2. **Ngày Hiệu Lực (`*`) & Hết Hạn (`*`):** Chọn khoảng thời gian áp dụng báo giá.
+  3. **Phương Thức Định Giá (`*`):** Chọn `Theo ma trận tuyến đường`, `Điều chỉnh theo giá dầu DO` hoặc `Bao chuyến`.
+  4. **Thêm tuyến cước:** Bấm **`+ Thêm Tuyến Đường`** ➔ Nhập **Tên Tuyến Đường (`*`)**, **Loại Cont (`*`)**, **Đơn Giá Cước (`*`)**, Lương tài xế và Vé BOT định mức.
+  5. Bấm nút **`Lưu`**.
+  6. **Duyệt & In:** Mở chi tiết báo giá ➔ Bấm **`Duyệt Báo Giá`** ➔ Bấm **`In Báo Giá A4`** để xuất bản in ký hợp đồng.
 
-### Bước 1: Vào phân hệ Cài đặt Danh mục
-- Trên thanh điều hướng bên trái, bấm vào menu **`Cài đặt`** (icon bánh răng).
-- Màn hình hiển thị danh sách các tab danh mục dùng chung của công ty.
-
-### Bước 2: Thêm mới bản ghi vào danh mục
-1. Bấm chọn tab danh mục cần cấu hình:
-   - **Địa Điểm (Locations):** Quản lý cảng biển, cảng cạn ICD, bãi rỗng depot, kho hàng.
-   - **Hãng Tàu (Shipping Lines):** Mã hãng tàu (MAEU, ONE...), số hotline, cổng tra cứu lệnh eDO, số ngày free-time mặc định.
-   - **Khoản Mục Chi Phí (Expense Catalog):** Danh mục chi phí nâng, hạ, BOT, cân xe, cược cont và định mức tiền mặc định.
-   - **Biểu Phí Lương Tuyến:** Định mức tiền lương chuyến cho tài xế theo từng cung đường.
-   - **Hồ Sơ Doanh Nghiệp (Company Profile):** Cập nhật tên công ty, MST, số tài khoản ngân hàng thụ hưởng, hotline.
-2. Bấm nút **`+ Thêm Mới`** ở góc phải.
-3. Điền thông tin vào các trường có dấu **`*`**.
-4. Bấm nút **`Lưu`**. Bản ghi mới lập tức có hiệu lực và tự động cập nhật vào các danh sách chọn trên toàn bộ hệ thống.
+### 2.2. Hướng Dẫn Tiếp Nhận Booking / Đơn Hàng Vận Tải Mới
+- **Nơi thực hiện:** Vào menu **`Sale & Booking`** ➔ Tab **`Booking & Đơn Hàng`** ➔ Bấm nút **`+ Tiếp Nhận Booking`**.
+- **Các trường bắt buộc cần điền:**
+  * **Khách Hàng (`*`):** Chọn khách hàng gửi đơn vận chuyển.
+  * **Số Booking / Số B/L (`*`):** Nhập mã booking hãng tàu cấp (Ví dụ: `ONEBKK123456`).
+  * **Hãng Tàu (`*`):** Chọn hãng tàu phát hành vỏ cont.
+  * **Loại Dịch Vụ (`*`):** Chọn `Hàng Xuất (EXPORT)`, `Hàng Nhập (IMPORT)` hoặc `Nội Địa (DOMESTIC)`.
+  * **Quy cách & Số lượng cont (`*`):** Chọn loại cont (`40HC`) và số lượng vỏ cont.
+  * **Hạn Cắt Máng (CY Closing Time) (`*`):** Chọn ngày giờ tàu đóng bãi xếp cont.
+  * **Địa điểm lộ trình (`*`):** Nơi cấp rỗng, Kho đóng hàng và Nơi hạ bãi. Đính kèm file ảnh lệnh.
+- **Hoàn tất:** Bấm nút **`Lưu`**.
+- **Phát Lệnh Xe:** Bấm nút **`Phát Lệnh Xe`** tại dòng đơn hàng để chuyển sang phân hệ Điều vận.
 
 ---
 
-> [!NOTE]
-> **Kênh Hỗ Trợ Trực Tuyến & Cập Nhật Hệ Thống:**  
-> - Bất kỳ lúc nào cần tra cứu hướng dẫn sử dụng, bạn có thể bấm vào mục **`Trợ giúp & HDSD`** ở thanh menu bên trái hoặc truy cập trực tiếp đường dẫn **`/helps`**.
-> - Đội ngũ Kỹ thuật BIM Logistics luôn sẵn sàng đồng hành cùng quý doanh nghiệp tại hotline **`0965.559.561`**.
+## 3. Phân Hệ Điều Vận & Chuyến Xe
+
+### 3.1. Hướng Dẫn Lập Lệnh Điều Xe Mới (Phát Lệnh Cho Phương Tiện)
+- **Nơi thực hiện:** Vào menu **`Điều vận`** ➔ Bấm nút **`+ Lệnh Điều Xe Mới`** (hoặc bấm từ danh sách Booking).
+- **Các trường bắt buộc cần điền:**
+  * **Kế thừa Booking:** Chọn mã Booking gốc để tự điền thông tin khách hàng, loại cont và hạn closing.
+  * **Xe Đầu Kéo (`*`):** Chọn biển số đầu kéo đang rảnh tại bãi (Ví dụ: `51C-123.45`).
+  * **Rơ-Moóc (`*`):** Chọn biển số moóc phù hợp (Ví dụ: `51R-098.76`).
+  * **Bác Tài Chính (`*`):** Chọn tài xế phụ trách điều khiển xe.
+  * **Số Container (`*`) & Số Seal:** Nhập 11 ký tự số cont (Ví dụ: `MSKU1234567`) và số seal chì niêm phong.
+  * **Lịch Hẹn Kho (`*`) & Hạn Lưu Vỏ DET (`*`):** Giờ có mặt tại kho khách và hạn cuối trả vỏ rỗng.
+- **Hoàn tất:** Bấm nút **`Lưu`** ➔ Bấm nút **`Phát Lệnh Xe`** để gửi liên kết cho tài xế.
+
+### 3.2. Hướng Dẫn Xử Lý Chuyến Cắt Kéo (2 Chặng) & Chở Ghép 2 Cont 20ft
+- **A. Nghiệp vụ Cắt Kéo (2 Chặng):**
+  1. Trong hộp thoại Điều Xe, gạt bật: **Tách 2 chặng cắt kéo (`is_split_trip`)**.
+  2. Chọn **Xe đầu kéo chặng 2 (`*`)** và **Tài xế chặng 2 (`*`)**.
+  3. Chọn Tỷ lệ phân chia lương chuyến (`50% - 50%` hoặc `60% - 40%`).
+  4. Bấm nút **`Lưu`**.
+- **B. Nghiệp vụ Chở Ghép 2 Cont 20ft:**
+  1. Chọn quy cách cont là `20DC`.
+  2. Gạt bật: **Chở Ghép 2 Cont 20ft (`is_twin_container`)**.
+  3. Nhập bổ sung: **Số Container 2 (`*`)**, Số Chì 2 và Số B/L 2.
+  4. Bấm nút **`Lưu`**.
+
+### 3.3. Hướng Dẫn Kê Khai Chi Phí Vận Hành & Khoản Chi Hộ Khách Hàng (Debit Note)
+- **Nơi thực hiện:** Chi tiết chuyến xe ➔ Bảng P&L ➔ Bấm nút **`+ Thêm Chi Phí`**.
+- **Nhập liệu:**
+  * **Khoản Mục Chi Phí (`*`):** Chọn khoản mục (`LIFT_ON`, `LIFT_OFF`, `TOLL_FEE`, `CONTAINER_DEPOSIT`...).
+  * **Thành Tiền (`*`) (VNĐ):** Nhập số tiền thực chi.
+  * **Thuế VAT & Mã HĐĐT:** Thuế suất, mã tra cứu HĐĐT cảng và ảnh biên lai đính kèm.
+- **LƯU Ý ĐẶC BIỆT KHOẢN CHI HỘ:** Nếu là khoản công ty chi trước thu lại từ khách, bắt buộc gạt bật công tắc: **`Chi hộ Khách hàng (is_on_behalf_of_customer)`**. Khoản này **KHÔNG TRỪ VÀO CHI PHÍ CỦA XE**, P&L xe không bị giảm đi và tự động kết chuyển sang danh sách thu hồi nợ (Debit Note).
+- **Hoàn tất:** Bấm nút **`Lưu`**.
+
+### 3.4. Hướng Dẫn Bác Tài Báo 6 Mốc Kho & Chụp Ảnh POD/EIR Trên Điện Thoại
+- **Nơi thực hiện:** Mở đường liên kết do điều độ gửi qua Zalo/SMS (truy cập trực tiếp không cần mật khẩu).
+- **6 Nút mốc di chuyển thực tế:**
+  1. Bấm **`[Xác Nhận Nhận Lệnh]`** khi bắt đầu xuất phát.
+  2. Bấm **`[Đã Lấy Cont Rỗng (EIR)]`** khi lấy cont tại bãi depot.
+  3. Bấm **`[Đã Đến Cổng Kho]`** khi xe đến kho khách.
+  4. Bấm **`[Bắt Đầu Đóng Hàng]`** khi kho mở cửa dỡ/đóng hàng.
+  5. Bấm **`[Hoàn Tất, Rời Kho]`** khi kho đóng hàng xong và kẹp seal.
+  6. Bấm **`[Đã Hạ Bãi Xong]`** khi hạ cont tại cảng đích.
+- **Chụp ảnh POD/EIR:** Bấm **`[Chụp Ảnh POD / EIR]`** ➔ Chụp biên bản giao nhận có chữ ký ➔ Bấm nút **`Tải Lên`**.
+
+---
+
+## 4. Phân Hệ Kế Toán, Tạm Ứng & Sổ Quỹ
+
+### 4.1. Hướng Dẫn Kế Toán Cấp Quỹ Điều Vận Cấp 1
+- **Nơi thực hiện:** Menu **`Tài chính & Kế toán`** ➔ Tab **`Tạm Ứng & Hoàn Ứng`** ➔ Khu vực Quỹ Điều Vận ➔ Bấm nút **`+ Cấp Quỹ Điều Vận`**.
+- **Nhập liệu:** Điều Phối Viên Nhận Quỹ (`*`), Số Tiền Hạn Mức (`*`) (VNĐ), Nguồn Xuất Quỹ (`*`) (Tiền mặt/Chuyển khoản).
+- **Hoàn tất:** Bấm nút **`Lưu`**.
+
+### 4.2. Hướng Dẫn Điều Vận Cấp Tạm Ứng Dọc Đường Cho Tài Xế Cấp 2
+- **Nơi thực hiện:** Menu **`Điều vận`** (hoặc **`Tài chính & Kế toán`**) ➔ Bấm nút **`+ Cấp Tạm Ứng Tài Xế`**.
+- **Nhập liệu:** Mã Chuyến Xe (`*`), Bác Tài Nhận Tiền (`*`), Số Tiền Tạm Ứng (`*`) (VNĐ), Nguồn Trích Ứng (`Trích từ Quỹ Điều Vận của tôi`).
+- **Hoàn tất:** Bấm nút **`Lưu`** (tự động sinh mã `TUTX-...` và trừ hạn mức cá nhân điều phối viên).
+
+### 4.3. Hướng Dẫn Quyết Toán Hoàn Ứng Chuyến Xe & Cân Đối Sổ Quỹ
+- **Nơi thực hiện:** Tab **`Tạm Ứng & Hoàn Ứng`** ➔ Dòng phiếu `TUTX-...` ➔ Bấm nút **`Quyết Toán Hoàn Ứng`**.
+- **Cân đối chênh lệch tự động:**
+  * Dư tiền: Chọn *Tài xế hoàn nộp lại tiền thừa* ➔ Tự sinh **Phiếu Thu (PT-...)**.
+  * Thiếu tiền: Chọn *Công ty chi bù cho tài xế* ➔ Tự sinh **Phiếu Chi (PC-...)**.
+  * Khớp tiền: Chuyển thẳng sang trạng thái *Đã Hoàn Ứng Xong*.
+- **Hoàn tất:** Bấm nút **`Lưu`**.
+
+### 4.4. Hướng Dẫn Tạo Phiếu Thu / Phiếu Chi Sổ Quỹ Mẫu S03a-DN
+- **Nơi thực hiện:** Menu **`Tài chính & Kế toán`** ➔ Tab **`Sổ Quỹ Thu - Chi`** ➔ Bấm nút **`+ Lập Phiếu Thu`** hoặc **`+ Lập Phiếu Chi`**.
+- **Nhập liệu:** Loại Nghiệp Vụ (`*`), Đối Tượng Giao Dịch (`*`), Số Tiền (`*`) (VNĐ), Phương Thức (`*`), Diễn Giải (`*`).
+- **Hoàn tất:** Bấm nút **`Lưu`**. Bấm nút **`In Phiếu A4/A5`** để in mẫu Bộ Tài Chính ký 4 bên.
+
+### 4.5. Hướng Dẫn Thỏa Thuận Cước & Quyết Toán Xe Bạn / Thầu Phụ 3PL
+1. **Ghi nhận thỏa thuận:** Trong chi tiết chuyến xe ngoài ➔ Bấm **`Thỏa Thuận Cước Xe Bạn`** ➔ Chọn Nhà Xe (`*`), Cước Thỏa Thuận (`*`), Số tiền ứng trước ➔ Bấm nút **`Lưu`**.
+2. **Quyết toán cước:** Khi xe thu đủ POD ➔ Tab **`Xe Thầu Phụ 3PL`** ➔ Bấm nút **`Quyết Toán Cước`** ➔ Bấm nút **`Lưu`** (tự sinh Phiếu Chi chuyển khoản cho nhà xe).
+
+### 4.6. Hướng Dẫn Quyết Toán Gom Chuyến Xe Hàng Loạt (Batch Settlement)
+1. Truy cập menu **`Quyết toán`** (`/settlements`).
+2. Lọc theo Khách Hàng, khoảng ngày, và chỉ chuyến đã thu đủ POD.
+3. Tích chọn các ô vuông của các chuyến xe cần gom đợt.
+4. Bấm nút **`[Khóa Sổ Gom Đợt Quyết Toán]`** ➔ Nhập Mã đợt (Ví dụ: `DOT-2026-10A`) ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 5. Phân Hệ Dịch Vụ Hải Quan Điện Tử
+
+- **Nơi thực hiện:** Menu **`Dịch vụ Hải quan`** ➔ Bấm nút **`+ Khai Báo Tờ Khai Mới`**.
+- **Các trường bắt buộc:**
+  * **Số Tờ Khai (`*`):** Nhập 12 số tờ khai VNACCS.
+  * **Chủ Hàng XNK (`*`) & Loại Hình (`*`):** Khách hàng và mã loại hình (E62, A11...).
+  * **Phân Luồng (`*`):** Chọn Luồng Xanh, Vàng hoặc Đỏ.
+  * **Số Container & Seal:** Nhập cont và seal chì để đối chiếu cổng cảng.
+- **Hoàn tất:** Bấm nút **`Lưu`**.
+
+---
+
+## 6. Hướng Dẫn Tra Cứu, Lọc, Tùy Biến Cột & In 14 Báo Cáo BI Khổ A4
+
+- **Cột STT chuẩn đếm số record:** Cột đầu tiên luôn là cột **STT** tự động đếm thứ tự chính xác từng dòng dữ liệu hiển thị sau khi lọc.
+- **Tìm kiếm tức thì & Sắp xếp:** Nhập từ khóa vào ô tìm kiếm trên đầu bảng để lọc nhanh. Bấm tiêu đề cột để đảo chiều sắp xếp tăng/giảm dần.
+- **Universal Column Manager:** Bấm nút **`Cột`** ở góc phải bảng để ẩn/hiện hoặc đổi vị trí cột theo nhu cầu cá nhân.
+- **In ấn A4 chuẩn mực:** Bấm nút **`In Báo Cáo A4`**. Hệ thống tự động chọn khổ **A4 Dọc** (dưới 8 cột) hoặc **A4 Ngang** (từ 8 cột trở lên), căn lề chuẩn 15mm-20mm theo Nghị định 30/2020/NĐ-CP.

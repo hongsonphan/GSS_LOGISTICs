@@ -2,6 +2,38 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.48] - 2026-10-11 (Tái Cấu Trúc Toàn Diện Trang /helps & Sổ Tay Hướng Dẫn Sang Chuẩn Văn Bản A4 Khép Kín 3 Phần Lớn)
+
+### 1. Chuẩn Hóa Bố Cục Trang Tài Liệu A4 Liền Mạch (Continuous Document Standard):
+- **Tái cấu trúc toàn bộ nội dung `/helps` và `docs/USER_GUIDE.md` thành 3 Chương lớn:**
+  * **PHẦN I: MÔ TẢ PHÂN HỆ & TÍNH NĂNG CỐT LÕI:**
+    1. Tổng quan Kiến trúc Vận hành & Phân quyền vai trò RBAC (Director, Dispatcher, Accountant, Salesman, Mechanic, Driver)
+    2. Phân hệ Dashboard Ban Giám Đốc (Executive BI, 4 thẻ KPI, quỹ két/ngân hàng, P&L 8 chuyến)
+    3. Phân hệ Sale & Booking (CRM khách hàng, lập & duyệt báo giá cước, tiếp nhận đơn booking, CY closing)
+    4. Phân hệ Điều Vận & Chuyến Xe (TMS Core Engine, State Machine 11 bước, cắt kéo 2 chặng, chở ghép 2 cont 20ft, kê khai chi phí & chi hộ Debit Note, Mobile tài xế)
+    5. Phân hệ Quản Lý Đội Xe, Bãi & Nhân Sự (Đầu kéo, rơ-moóc, cảnh báo đăng kiểm $\le 15$ ngày, GPLX FC cảnh báo $\le 30$ ngày, lương chuyến khoán)
+    6. Phân hệ Tài Chính, Tạm Ứng & Sổ Quỹ (Cơ chế 2 cấp quỹ TUDV/TUTX, hoàn ứng tự động cân đối PT/PC, Sổ Quỹ Mẫu S03a-DN, quyết toán xe bạn 3PL, gom chuyến hàng loạt)
+    7. Phân hệ Dịch Vụ Hải Quan Điện Tử (Tờ khai VNACCS 12 số, phân luồng Xanh/Vàng/Đỏ, liên kết cont/seal)
+    8. Hệ thống 14 Báo Cáo Thông Minh BI Vận Tải (Cột STT chuẩn, Column Manager, in A4 Ngang/Dọc)
+  * **PHẦN II: HƯỚNG DẪN CÀI ĐẶT DANH MỤC GỐC (MASTER DATA):**
+    1. Tạo mới Khách hàng (Customer)
+    2. Cài đặt Địa điểm cảng, depot & kho hàng (Locations)
+    3. Cài đặt Danh mục Hãng tàu (Shipping Lines)
+    4. Cài đặt Khoản mục chi phí vận tải (Expense Catalog)
+    5. Cài đặt Biểu cước lương chuyến theo tuyến đường (Route Payroll Rates)
+    6. Hồ sơ doanh nghiệp & Tài khoản ngân hàng thụ hưởng (Company Profile)
+  * **PHẦN III: HƯỚNG DẪN THAO TÁC NHẬP LIỆU CHI TIẾT:**
+    1. Thao tác trên Dashboard Ban Giám Đốc (Bộ lọc kỳ toàn cục, quỹ khả dụng, mở chi tiết chuyến xe)
+    2. Thao tác Phân hệ Sale & Booking: 2.1 Tạo báo giá mới & duyệt báo giá; 2.2 Tiếp nhận đơn Booking mới & phát lệnh xe
+    3. Thao tác Phân hệ Điều Vận: 3.1 Lập lệnh điều xe mới; 3.2 Cắt kéo 2 chặng & chở ghép 2 cont 20ft; 3.3 Kê khai chi phí vận hành & khoản chi hộ khách hàng; 3.4 Bác tài báo 6 mốc kho & chụp ảnh POD/EIR
+    4. Thao tác Phân hệ Kế Toán: 4.1 Kế toán cấp quỹ điều vận Cấp 1; 4.2 Điều vận cấp tạm ứng tài xế Cấp 2; 4.3 Quyết toán hoàn ứng chuyến; 4.4 Lập phiếu thu/chi S03a-DN; 4.5 Thỏa thuận cước & quyết toán xe bạn 3PL; 4.6 Quyết toán gom chuyến hàng loạt
+    5. Thao tác Phân hệ Dịch Vụ Hải Quan: Khai báo tờ khai VNACCS 12 số
+    6. Tra cứu, lọc, tùy biến cột & In 14 Báo Cáo BI khổ A4 (Cột STT đếm record chuẩn)
+- **Tối Ưu Hóa Trải Nghiệm Đọc & In Ấn Doanh Nghiệp (Business Standard A4):**
+  * Loại bỏ phong cách card vụn vặt kiểu AI; thay thế bằng định dạng trang giấy A4 văn bản hành chính liền mạch (`doc-page-container`).
+  * Khổ in ấn CSS `@media print` được thiết lập chuẩn A4 Portrait lề 15mm-20mm theo Nghị định 30/2020/NĐ-CP.
+  * Giữ vững 3 nguyên tắc bất biến: Dấu hoa thị đỏ `*` bắt buộc, nút thống nhất duy nhất chữ `Lưu`, cơ chế an toàn Soft-Delete.
+
 ## [2.9.47] - 2026-10-11 (Biên Soạn Sổ Tay Vận Hành "Cầm Tay Chỉ Việc" Từng Bước Cho 18 Quy Trình Nghiệp Vụ Chuẩn Hóa Trên /helps)
 
 ### 1. Cẩm Nang Thao Tác Cầm Tay Chỉ Việc (Step-by-Step Interactive Guides):
