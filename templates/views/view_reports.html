@@ -1212,19 +1212,19 @@
         <!-- 4 Metric Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-700">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Công NỢ Phải Thu (AR)</span>
+                <span class="text-xs font-bold text-teal-800 uppercase tracking-wider">Công Nợ Phải Thu (Đã Chốt AR)</span>
                 <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep13-stat-total-ar">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1" id="rep13-stat-rev-reim">Cước: 0 đ · Chi hộ: 0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep13-stat-rev-reim">Đã chốt: 0 đ · Chờ chốt: 0 đ</p>
             </div>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Thu Hồi Từ Khách</span>
                 <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep13-stat-collected">0 đ</p>
-                <p class="text-xs text-emerald-700 font-bold mt-1">Ghi nhận qua Sổ Quỹ / Chốt đối soát</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1">Ghi nhận qua Sổ Quỹ / Thu tiền</p>
             </div>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Còn Phải Thu Khách Hàng</span>
+                <span class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Dư Nợ Còn Phải Thu</span>
                 <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep13-stat-balance">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Dư nợ thực tế cần đối soát</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Đã chốt AR - Đã thu hồi</p>
             </div>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-600">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nợ Quá Hạn (>30 Ngày)</span>
@@ -1260,10 +1260,10 @@
                             <th class="text-center w-12 font-bold">STT</th>
                             <th onclick="toggleReport13Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport13Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th class="text-center">Đã / Chưa Chốt</th>
+                            <th class="text-center">Đã Chốt / Chờ Chốt</th>
                             <th onclick="toggleReport13Sort('freight_revenue')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Cước Vận Tải</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport13Sort('reimbursable_amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Tiền Chi Hộ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport13Sort('total_receivable')" class="cursor-pointer hover:bg-slate-100 text-right font-black text-slate-900"><div class="flex items-center justify-end gap-1"><span>Tổng Phải Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport13Sort('total_receivable')" class="cursor-pointer hover:bg-slate-100 text-right font-black text-teal-900"><div class="flex items-center justify-end gap-1"><span>Công Nợ Đã Chốt (AR)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport13Sort('collected_amount')" class="cursor-pointer hover:bg-slate-100 text-right text-emerald-700 font-bold"><div class="flex items-center justify-end gap-1"><span>Đã Thu Hồi</span><i class="ph-bold ph-arrows-down-up text-[11px] text-emerald-600"></i></div></th>
                             <th onclick="toggleReport13Sort('remaining_balance')" class="cursor-pointer hover:bg-slate-100 text-right text-indigo-700 font-black"><div class="flex items-center justify-end gap-1"><span>Còn Phải Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-indigo-600"></i></div></th>
                             <th onclick="toggleReport13Sort('aging_current')" class="cursor-pointer hover:bg-slate-100 text-right text-emerald-700 font-medium"><div class="flex items-center justify-end gap-1"><span>Trong Hạn (<=30N)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>

@@ -276,11 +276,29 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
         help_text="Trạng thái hoàn ứng chuyến"
     )
 
-    # Đối Soát Công Nợ & Bảng Kê Khách Hàng (Customer AR Statement & Reconciliation)
-    customer_reconciled = models.BooleanField(default=False, db_index=True, help_text="Khách hàng & Công ty đã chốt đối soát công nợ (Bảng kê SOA)")
+    # Quyết Toán & Đối Soát Công Nợ Khách Hàng (Customer Settlement & AR Billing)
+    is_customer_settled = models.BooleanField(default=False, db_index=True, help_text="Đã đối soát & quyết toán chốt số với khách hàng (Mới tính vào công nợ AR)")
+    customer_settlement_status = models.CharField(
+        max_length=20, 
+        default='PENDING', 
+        choices=[
+            ('PENDING', 'Chưa quyết toán (Chưa tính công nợ)'),
+            ('SETTLED', 'Đã quyết toán chốt nợ'),
+            ('INVOICED', 'Đã xuất hóa đơn VAT'),
+            ('PAID', 'Đã thu đủ tiền')
+        ], 
+        db_index=True, 
+        help_text="Trạng thái quyết toán công nợ khách hàng"
+    )
+    customer_settled_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm chốt quyết toán với khách hàng")
+    customer_settled_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='customer_settled_trips', help_text="Kế toán chốt quyết toán công nợ khách hàng")
+    customer_soa_code = models.CharField(max_length=50, blank=True, default='', db_index=True, help_text="Mã đợt/bảng kê đối soát công nợ gửi khách (SOA-YYYYMM-XXXX)")
+    vat_invoice_number = models.CharField(max_length=50, blank=True, default='', help_text="Số hóa đơn GTGT / VAT xuất cho khách")
+    vat_invoice_date = models.DateField(null=True, blank=True, help_text="Ngày phát hành hóa đơn VAT")
+    customer_reconciled = models.BooleanField(default=False, db_index=True, help_text="Alias tương thích ngược cho is_customer_settled")
     customer_reconciled_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm chốt đối soát với khách hàng")
     customer_reconciled_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='reconciled_trips_customer', help_text="Kế toán chốt đối soát công nợ")
-    customer_soa_code = models.CharField(max_length=50, blank=True, default='', db_index=True, help_text="Mã đợt/bảng kê đối soát công nợ gửi khách (SOA-YYYYMM-XXXX)")
+
 
 
     # Quyết toán & Đối soát Nhà Xe Bạn / Thầu Phụ 3PL (Giai đoạn 2)

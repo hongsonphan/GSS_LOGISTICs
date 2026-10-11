@@ -914,9 +914,19 @@ class CustomerARReconciliationAPIView(APIView):
 
     def post(self, request):
         import uuid
-        action = request.data.get('action', 'RECONCILE').upper()
+        raw_action = request.data.get('action', 'SETTLE').upper()
+        # Chuẩn hóa action: SETTLE / RECONCILE là chốt quyết toán; UNSETTLE / UNRECONCILE là mở lại
+        is_settle = raw_action in ['SETTLE', 'RECONCILE']
         trip_ids = request.data.get('trip_ids', [])
         customer_id = request.data.get('customer_id')
+        vat_invoice = request.data.get('vat_invoice_number', '').strip()
+        vat_date_raw = request.data.get('vat_invoice_date')
+        vat_date = None
+        if vat_date_raw:
+            try:
+                vat_date = datetime.datetime.strptime(vat_date_raw, '%Y-%m-%d').date()
+            except ValueError:
+                pass
 
         if not trip_ids and customer_id:
             trips_qs = DispatchTrip.objects.filter(
@@ -924,8 +934,8 @@ class CustomerARReconciliationAPIView(APIView):
                 is_deleted=False,
                 status=TripStatus.COMPLETED
             )
-            if action == 'RECONCILE':
-                trips_qs = trips_qs.filter(customer_reconciled=False)
+            if is_settle:
+                trips_qs = trips_qs.filter(is_customer_settled=False)
             trip_ids = list(trips_qs.values_list('id', flat=True))
 
         if not trip_ids:
@@ -933,42 +943,62 @@ class CustomerARReconciliationAPIView(APIView):
 
         trips = DispatchTrip.objects.filter(id__in=trip_ids, is_deleted=False)
 
-        # Kiểm tra chỉ chuyến COMPLETED mới được phép chốt đối soát
+        # Kiểm tra chỉ chuyến COMPLETED mới được phép chốt quyết toán với khách hàng
         invalid_trips = trips.exclude(status=TripStatus.COMPLETED)
-        if invalid_trips.exists() and action == 'RECONCILE':
+        if invalid_trips.exists() and is_settle:
             bad_codes = list(invalid_trips.values_list('trip_code', flat=True))
             return Response({
-                'error': f'Các chuyến sau chưa hoàn thành (COMPLETED), không thể chốt đối soát công nợ: {", ".join(bad_codes[:5])}'
+                'error': f'Các chuyến sau chưa hoàn thành (COMPLETED), không thể quyết toán công nợ: {", ".join(bad_codes[:5])}'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
         emp = getattr(request.user, 'employee', None)
 
-        if action == 'RECONCILE':
-            soa_code = f"SOA-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:4].upper()}"
-            updated_count = trips.filter(status=TripStatus.COMPLETED).update(
-                customer_reconciled=True,
-                customer_reconciled_at=now,
-                customer_reconciled_by=emp,
-                customer_soa_code=soa_code
-            )
+        if is_settle:
+            soa_code = request.data.get('soa_code') or f"SOA-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:4].upper()}"
+            status_val = 'INVOICED' if vat_invoice else 'SETTLED'
+            update_kwargs = {
+                'is_customer_settled': True,
+                'customer_settlement_status': status_val,
+                'customer_settled_at': now,
+                'customer_settled_by': emp,
+                'customer_reconciled': True,
+                'customer_reconciled_at': now,
+                'customer_reconciled_by': emp,
+                'customer_soa_code': soa_code
+            }
+            if vat_invoice:
+                update_kwargs['vat_invoice_number'] = vat_invoice
+                if vat_date:
+                    update_kwargs['vat_invoice_date'] = vat_date
+
+            updated_count = trips.filter(status=TripStatus.COMPLETED).update(**update_kwargs)
             return Response({
                 'success': True,
-                'message': f'Đã chốt đối soát công nợ thành công cho {updated_count} chuyến xe.',
+                'message': f'Đã chốt quyết toán công nợ thành công cho {updated_count} chuyến xe (chính thức lên công nợ AR).',
                 'soa_code': soa_code,
-                'reconciled_count': updated_count
+                'vat_invoice_number': vat_invoice,
+                'reconciled_count': updated_count,
+                'settled_count': updated_count
             })
         else:
             updated_count = trips.update(
+                is_customer_settled=False,
+                customer_settlement_status='PENDING',
+                customer_settled_at=None,
+                customer_settled_by=None,
                 customer_reconciled=False,
                 customer_reconciled_at=None,
                 customer_reconciled_by=None,
-                customer_soa_code=''
+                customer_soa_code='',
+                vat_invoice_number='',
+                vat_invoice_date=None
             )
             return Response({
                 'success': True,
-                'message': f'Đã mở lại đối soát thành công cho {updated_count} chuyến xe.',
-                'unreconciled_count': updated_count
+                'message': f'Đã mở lại trạng thái chờ quyết toán cho {updated_count} chuyến xe (rút khỏi công nợ AR).',
+                'unreconciled_count': updated_count,
+                'unsettled_count': updated_count
             })
 
 

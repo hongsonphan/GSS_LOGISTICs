@@ -2196,7 +2196,7 @@ class BimLogisticsCoreTestCase(TestCase):
             is_expenses_settled=False
         )
 
-        # 2. Tạo chuyến trong kỳ đã quyết toán
+        # 2. Tạo chuyến trong kỳ đã quyết toán nội bộ và chốt đối soát khách hàng
         trip_settled = DispatchTrip.objects.create(
             trip_code="TRIP-SETTLED-002",
             customer=self.customer,
@@ -2210,7 +2210,12 @@ class BimLogisticsCoreTestCase(TestCase):
             cached_profit=3000000,
             is_expenses_settled=True,
             settled_at=timezone.now(),
-            settled_by=self.accountant
+            settled_by=self.accountant,
+            is_customer_settled=True,
+            customer_settlement_status='SETTLED',
+            customer_settled_at=timezone.now(),
+            customer_settled_by=self.accountant,
+            vat_invoice_number="VAT-TEST-001"
         )
 
         # 3. Gọi API Báo Cáo
@@ -2229,9 +2234,10 @@ class BimLogisticsCoreTestCase(TestCase):
         self.assertGreaterEqual(r12['settled_trips_count'], 1)
         self.assertGreaterEqual(r12['unsettled_trips_count'], 1)
 
-        # Kiểm tra Report 13 (AR Aging)
+        # Kiểm tra Report 13 (AR Aging): Chỉ chuyến đã quyết toán khách mới lên nợ AR chính thức
         r13 = data['report13_ar_aging']
         self.assertGreaterEqual(r13['total_receivable'], 5000000)
+        self.assertGreaterEqual(r13['total_pending_reconcile'], 4500000)
         self.assertGreaterEqual(len(r13['customers']), 1)
 
         # Kiểm tra Report 14 (Unsettled Aging)

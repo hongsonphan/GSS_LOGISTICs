@@ -109,9 +109,16 @@ class ReportsAPIView(APIView):
                 if t.booking_order and t.booking_order.selling_freight_price > 0:
                     rev = int(t.booking_order.selling_freight_price)
                 elif t.customer:
-                    tariff = t.customer.tariffs.filter(
-                        pickup_loc=t.pickup_loc, delivery_loc=t.warehouse_loc
-                    ).first()
+                    tariff = None
+                    if t.pickup_loc and t.warehouse_loc:
+                        tariff = t.customer.tariffs.filter(
+                            pickup_loc=t.pickup_loc, delivery_loc=t.warehouse_loc
+                        ).first()
+                    if not tariff and t.pickup_location and t.warehouse_location:
+                        tariff = t.customer.tariffs.filter(
+                            pickup_location__iexact=t.pickup_location.strip(),
+                            delivery_location__iexact=t.warehouse_location.strip()
+                        ).first()
                     if tariff:
                         rev = int(tariff.freight_price)
 
@@ -1097,14 +1104,19 @@ class ReportsAPIView(APIView):
                 'tax_code': cust.tax_code or '-',
                 'contact_phone': cust.phone or '-',
                 'trips_count': 0,
+                'settled_trips_count': 0,           # Đã quyết toán với khách (Tính nợ)
+                'pending_settlement_trips_count': 0,# Chờ quyết toán với khách (Chưa tính nợ)
                 'reconciled_trips_count': 0,        # Đã đối soát với khách
                 'pending_reconcile_trips_count': 0, # Chờ đối soát với khách
                 'driver_settled_trips_count': 0,    # Đã quyết toán tài xế (Nội bộ)
                 'driver_unsettled_trips_count': 0,  # Chưa quyết toán tài xế (Nội bộ)
+                'subcontractor_settled_count': 0,   # Đã quyết toán thầu phụ 3PL
+                'subcontractor_pending_count': 0,   # Chờ quyết toán thầu phụ 3PL
                 'freight_revenue': 0,
                 'reimbursable_amount': 0,
                 'total_receivable': 0,              # Tổng nợ phát sinh trong kỳ
                 'reconciled_amount': 0,             # Công nợ chuẩn ĐÃ ĐỐI SOÁT (Confirmed AR)
+                'pending_settlement_amount': 0,     # Chờ quyết toán khách (Chưa tính nợ)
                 'pending_reconcile_amount': 0,      # Công nợ CHỜ ĐỐI SOÁT (Pending AR)
                 'collected_amount': 0,              # Đã thu tiền
                 'remaining_balance': 0,             # Còn phải thu
@@ -1154,17 +1166,22 @@ class ReportsAPIView(APIView):
                         'tax_code': '-',
                         'contact_phone': '-',
                         'trips_count': 0,
-                        'reconciled_trips_count': 0,
-                        'pending_reconcile_trips_count': 0,
-                        'driver_settled_trips_count': 0,
-                        'driver_unsettled_trips_count': 0,
+                        'settled_trips_count': 0,           # Đã quyết toán với khách (Tính nợ)
+                        'pending_settlement_trips_count': 0,# Chờ quyết toán với khách (Chưa tính nợ)
+                        'reconciled_trips_count': 0,        # Alias
+                        'pending_reconcile_trips_count': 0, # Alias
+                        'driver_settled_trips_count': 0,    # Đã quyết toán tài xế (Nội bộ)
+                        'driver_unsettled_trips_count': 0,  # Chưa quyết toán tài xế (Nội bộ)
+                        'subcontractor_settled_count': 0,   # Đã quyết toán thầu phụ 3PL
+                        'subcontractor_pending_count': 0,   # Chờ quyết toán thầu phụ 3PL
                         'freight_revenue': 0,
                         'reimbursable_amount': 0,
-                        'total_receivable': 0,
-                        'reconciled_amount': 0,
-                        'pending_reconcile_amount': 0,
-                        'collected_amount': 0,
-                        'remaining_balance': 0,
+                        'total_receivable': 0,              # Công nợ chính thức ĐÃ QUYẾT TOÁN (Official AR)
+                        'reconciled_amount': 0,             # Đã chốt số / Quyết toán khách
+                        'pending_settlement_amount': 0,     # Chờ quyết toán khách (Chưa tính nợ)
+                        'pending_reconcile_amount': 0,      # Alias
+                        'collected_amount': 0,              # Đã thu tiền (Sổ quỹ)
+                        'remaining_balance': 0,             # Còn phải thu
                         'aging_current': 0,
                         'aging_31_60': 0,
                         'aging_61_90': 0,
@@ -1175,48 +1192,72 @@ class ReportsAPIView(APIView):
             c_entry = customer_ar_map[cid]
             c_entry['trips_count'] += 1
 
-            # Phân định rõ Quyết toán Tài xế vs Đối soát Khách hàng
-            is_cust_reconciled = bool(getattr(t, 'customer_reconciled', False))
+            # Phân định rõ 4 tiến trình:
+            # 1. Hoàn thành chuyến: Đã hoàn thành (do lọc status=COMPLETED)
+            # 2. Quyết toán tài xế:
             is_drv_settled = bool(t.is_expenses_settled)
-
-            if is_cust_reconciled:
-                c_entry['reconciled_trips_count'] += 1
-            else:
-                c_entry['pending_reconcile_trips_count'] += 1
-
             if is_drv_settled:
                 c_entry['driver_settled_trips_count'] += 1
             else:
                 c_entry['driver_unsettled_trips_count'] += 1
 
+            # 3. Quyết toán thầu phụ:
+            is_sub = (t.vehicle and getattr(t.vehicle, 'ownership_type', 'OWNED') in ['SUBCONTRACTOR', 'PARTNER']) or (t.subcontractor_cost > 0)
+            is_sub_settled = (t.subcontractor_settlement_status == 'SETTLED')
+            if is_sub:
+                if is_sub_settled:
+                    c_entry['subcontractor_settled_count'] += 1
+                else:
+                    c_entry['subcontractor_pending_count'] += 1
+
+            # 4. Quyết toán / Đối soát với khách hàng:
+            is_cust_settled = bool(
+                getattr(t, 'is_customer_settled', False) or 
+                getattr(t, 'customer_reconciled', False) or 
+                t.is_expenses_settled
+            )
+            if is_cust_settled:
+                c_entry['settled_trips_count'] += 1
+                c_entry['reconciled_trips_count'] += 1
+            else:
+                c_entry['pending_settlement_trips_count'] += 1
+                c_entry['pending_reconcile_trips_count'] += 1
+
             rev, exp, prof = get_trip_financials(t)
             reim = sum(e.amount for e in t.expenses.filter(is_deleted=False, is_on_behalf_of_customer=True))
-            total_rec = rev + reim
+            trip_total = rev + reim
 
             c_entry['freight_revenue'] += rev
             c_entry['reimbursable_amount'] += reim
-            c_entry['total_receivable'] += total_rec
-
-            if is_cust_reconciled:
-                c_entry['reconciled_amount'] += total_rec
-            else:
-                c_entry['pending_reconcile_amount'] += total_rec
 
             t_date = t.loading_date
             days_diff = (today - t_date).days if t_date else 0
 
-            if days_diff <= 30:
-                c_entry['aging_current'] += total_rec
-            elif days_diff <= 60:
-                c_entry['aging_31_60'] += total_rec
-            elif days_diff <= 90:
-                c_entry['aging_61_90'] += total_rec
+            # QUY TẮC CỐT LÕI: CHỈ KHI ĐÃ QUYẾT TOÁN VỚI KHÁCH HÀNG THÌ MỚI TÍNH CÔNG NỢ (AR)
+            if is_cust_settled:
+                c_entry['total_receivable'] += trip_total
+                c_entry['reconciled_amount'] += trip_total
+                # Tuổi nợ chỉ tính trên công nợ chính thức đã quyết toán
+                if days_diff <= 30:
+                    c_entry['aging_current'] += trip_total
+                elif days_diff <= 60:
+                    c_entry['aging_31_60'] += trip_total
+                elif days_diff <= 90:
+                    c_entry['aging_61_90'] += trip_total
+                else:
+                    c_entry['aging_over_90'] += trip_total
             else:
-                c_entry['aging_over_90'] += total_rec
+                # Doanh thu chờ quyết toán / chưa chốt số -> Chưa tính công nợ
+                c_entry['pending_settlement_amount'] += trip_total
+                c_entry['pending_reconcile_amount'] += trip_total
 
             has_pod = t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE']).exists() or bool(t.actual_gate_out_time)
             plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán'
             drv_name = t.driver.nickname or t.driver.full_name if t.driver else 'Chưa gán'
+            ownership = getattr(t.vehicle, 'ownership_type', 'OWNED') if t.vehicle else 'OWNED'
+
+            vat_inv = getattr(t, 'vat_invoice_number', '') or ''
+            vat_date_str = t.vat_invoice_date.strftime('%d/%m/%Y') if getattr(t, 'vat_invoice_date', None) else ''
 
             c_entry['trips'].append({
                 'trip_id': t.id,
@@ -1224,16 +1265,25 @@ class ReportsAPIView(APIView):
                 'loading_date': t_date.strftime('%d/%m/%Y') if t_date else '-',
                 'loading_date_iso': t_date.isoformat() if t_date else '',
                 'vehicle_plate': plate,
+                'vehicle_ownership': ownership,
                 'container_number': t.container_number or '-',
                 'seal_number': t.seal_number or '-',
                 'route': f"{t.pickup_location or 'Cảng/Bãi'} ➔ {t.warehouse_location or 'Kho KH'}",
                 'driver_name': drv_name,
                 'revenue': rev,
                 'reimbursable': reim,
-                'total_receivable': total_rec,
-                'is_settled': is_drv_settled,           # Quyết toán tài xế nội bộ
-                'customer_reconciled': is_cust_reconciled, # Đối soát khách hàng thương mại
+                'total_receivable': trip_total,
+                # 4 Trạng thái chuẩn xác:
+                'is_trip_completed': True,                     # 1. Đã hoàn thành chuyến
+                'is_driver_settled': is_drv_settled,           # 2. Đã quyết toán với tài xế (xe nhà)
+                'is_subcontractor': is_sub,                    # Xe thầu phụ?
+                'is_subcontractor_settled': is_sub_settled,    # 3. Đã quyết toán với thầu phụ
+                'is_customer_settled': is_cust_settled,        # 4. Đã quyết toán với khách hàng
+                'customer_reconciled': is_cust_settled,        # Alias tương thích
+                'customer_settlement_status': getattr(t, 'customer_settlement_status', 'PENDING'),
                 'customer_soa_code': getattr(t, 'customer_soa_code', '') or '-',
+                'vat_invoice_number': vat_inv,
+                'vat_invoice_date': vat_date_str,
                 'has_pod': has_pod,
                 'days_diff': days_diff,
                 'status': t.status
