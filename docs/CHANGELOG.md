@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v1.6] - 2026-10-11 (Chuẩn Hóa Tiêu Đề Tab Trình Duyệt, Tái Cấu Trúc Menu Profile Avatar & Bản Quyền HDSD)
+
+### 1. Chuẩn Hóa Tiêu Đề Tab Trình Duyệt (Browser Tab Titles):
+- **Trang Chính Ứng Dụng (`templates/base.html`):** Rút gọn từ `Bim Logistics - Hệ thống Quản lý Vận tải` thành `Hệ thống Quản lý Vận tải` (kèm favicon hệ thống), giúp tab trình duyệt không bị cắt cụt chữ trên thanh tab.
+- **Trang Hướng Dẫn Sử Dụng (`templates/help.html`):** Rút gọn từ `Sổ Tay Hướng Dẫn Sử Dụng - BIM Logistics` thành `Hướng dẫn sử dụng`.
+
+### 2. Chuẩn Hóa Chân Trang & Bản Quyền (`templates/help.html`):
+- Cập nhật dòng bản quyền chuẩn hóa toàn diện cả trên bản xem trực tiếp và bản in A4: `© 2026 Bản quyền thuộc BIM LOGISTICS`.
+
+### 3. Tái Cấu Trúc Menu Profile & Modal Cài Đặt Cá Nhân:
+- **Tích Hợp Đăng Xuất Vào Avatar Dropdown:** Gom liên kết Đăng xuất vào bên trong menu thả xuống của Avatar góc phải Topbar.
+- **Quy Trình 2 Nút "Sửa | Lưu":**
+  * Trạng thái mặc định: Các ô nhập dữ liệu cá nhân bị khóa (`readonly`, `bg-slate-50`), nút **Sửa** sáng rõ, nút **Lưu** bị vô hiệu hóa (`disabled`).
+  * Khi bấm **Sửa**: Nút biến thành **Hủy**, các trường dữ liệu mở khóa cho phép sửa thông tin cá nhân (Tên, Email, Username).
+  * Khi bấm **Hủy**: Hủy bỏ các thao tác sửa đổi, hoàn nguyên dữ liệu gốc và khóa lại ô nhập.
+  * Khi bấm **Lưu**: Gửi request cập nhật profile qua AJAX và thông báo cập nhật thành công.
+
+### 4. Kiểm Thử Hệ Thống (Zero-Regression):
+- Vượt qua toàn bộ bộ kiểm thử tự động của dự án (`python manage.py test --keepdb`).
+- Cú pháp JavaScript hợp lệ 100% (`node -c static/js/app.js`).
+
 ## [v1.5] - 2026-10-11 (Tái Cấu Trúc Toàn Diện Sổ Tay /helps Dạng Document Phẳng A4, Loại Bỏ Thẻ Đóng & Chuẩn Hóa Mục Lục)
 
 ### 1. Triệt Tiêu Hoàn Toàn Các Câu Ghi Phần & Thẻ Đóng Hộp:
