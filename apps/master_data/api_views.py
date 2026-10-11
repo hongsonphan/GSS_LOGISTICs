@@ -1402,12 +1402,21 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
             for k, label in OpeningBalanceCategory.choices
         ]
 
-        # Gợi ý đối tượng từ dữ liệu hiện có
-        customers = list(Customer.objects.all().values('code', 'name'))
-        subcontractors = list(Subcontractor.objects.filter(is_active=True).values('code', 'name'))
-        drivers = list(Employee.objects.filter(is_active=True, role='DRIVER').values('code', 'full_name', 'nickname'))
+        # Gợi ý đối tượng từ dữ liệu hệ thống
+        company = CompanyProfile.get_default_company()
+        company_data = {
+            'code': 'TVL',
+            'name': company.short_name or company.company_name or 'TRIỀN VÕ LOGISTICS',
+            'full_name': company.company_name or 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ',
+            'bank_account_number': company.bank_account_number or '',
+            'bank_name': company.bank_name or '',
+        }
+        customers = list(Customer.objects.all().order_by('name').values('code', 'name'))
+        subcontractors = list(Subcontractor.objects.filter(is_active=True).order_by('name').values('code', 'name', 'bank_account_number', 'bank_name'))
+        drivers = list(Employee.objects.filter(is_active=True, role='DRIVER').order_by('full_name').values('code', 'full_name', 'nickname'))
         if not drivers:
-            drivers = list(Employee.objects.filter(is_active=True).values('code', 'full_name', 'nickname'))
+            drivers = list(Employee.objects.filter(is_active=True).order_by('full_name').values('code', 'full_name', 'nickname'))
+        employees = list(Employee.objects.filter(is_active=True).order_by('role', 'full_name').values('code', 'full_name', 'nickname', 'role'))
 
         return Response({
             'success': True,
@@ -1425,9 +1434,11 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
             'account_charts': account_charts,
             'categories': categories,
             'suggestions': {
+                'company': company_data,
                 'customers': customers,
                 'subcontractors': subcontractors,
                 'drivers': drivers,
+                'employees': employees,
             }
         })
 

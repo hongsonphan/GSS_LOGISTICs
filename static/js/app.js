@@ -6508,6 +6508,7 @@ function addQuotationRouteRow(data = {}) {
 }
 
 function removeQuotationRouteRow(button) {
+    if (!confirm('Bạn có chắc chắn muốn xóa dòng tuyến báo giá này?')) return;
     const tbody = document.getElementById('quote-routes-tbody');
     if (!tbody) return;
     const tr = button.closest('tr');
@@ -6983,6 +6984,7 @@ function addFullpageQuotationRouteRow(data = {}) {
 }
 
 function removeFullpageQuotationRouteRow(button) {
+    if (!confirm('Bạn có chắc chắn muốn xóa dòng tuyến báo giá này?')) return;
     const tbody = document.getElementById('fullpage-quote-routes-tbody');
     if (!tbody) return;
     const tr = button.closest('tr');
@@ -15924,10 +15926,14 @@ function onOpeningBalanceAccountChange() {
     const typeSelect = document.getElementById('ob-input-type');
     const bankBox = document.getElementById('ob-bank-account-box');
     const bankReq = document.getElementById('ob-bank-required');
+    const codeInput = document.getElementById('ob-input-code');
+    const nameInput = document.getElementById('ob-input-name');
+    const bankAccInput = document.getElementById('ob-input-bank-acc');
     if (!accSelect || !quickSelect || !openingBalanceState.data) return;
 
     const acc = accSelect.value;
     const suggestions = openingBalanceState.data.suggestions || {};
+    const company = suggestions.company || { code: 'TVL', name: 'TRIỀN VÕ LOGISTICS', full_name: 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ' };
 
     // Hiển thị/ẩn ô số tài khoản ngân hàng nếu chọn TK 112
     if (acc.startsWith('112')) {
@@ -15938,34 +15944,114 @@ function onOpeningBalanceAccountChange() {
     }
 
     let list = [];
-    if (acc === '131') {
-        list = (suggestions.customers || []).map(c => ({ code: c.code, name: c.name }));
+    let groupTitle = 'đối tượng';
+
+    if (acc.startsWith('111')) {
+        // Tiền mặt tại quỹ: chọn công ty mình
+        groupTitle = 'Đơn vị / Công ty';
+        list = [
+            { code: company.code || 'TVL', name: company.name || 'TRIỀN VÕ LOGISTICS', bank: '' },
+            { code: 'QTM_VP', name: 'Quỹ Tiền Mặt Văn Phòng (Cát Lái)', bank: '' },
+            { code: 'QTM_TN', name: 'Quỹ Tiền Mặt Chi Nhánh Tây Ninh', bank: '' }
+        ];
+        if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
+
+        // Tự động gán sẵn nếu form đang trống và không ở chế độ sửa
+        if (!openingBalanceState.editingId && codeInput && (!codeInput.value || codeInput.value === 'TVL')) {
+            codeInput.value = company.code || 'TVL';
+            if (nameInput) nameInput.value = company.name || 'TRIỀN VÕ LOGISTICS';
+        }
+    } else if (acc.startsWith('112')) {
+        // Tiền gửi Ngân hàng: tài khoản ngân hàng công ty mình
+        groupTitle = 'Ngân hàng Công ty';
+        list = [
+            { 
+                code: company.code || 'TVL', 
+                name: (company.name || 'TRIỀN VÕ LOGISTICS') + (company.bank_name ? ` - ${company.bank_name}` : ''), 
+                bank: company.bank_account_number || '' 
+            }
+        ];
+        if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
+
+        if (!openingBalanceState.editingId && bankAccInput && !bankAccInput.value && company.bank_account_number) {
+            bankAccInput.value = company.bank_account_number;
+            if (codeInput) codeInput.value = company.code || 'TVL';
+            if (nameInput) nameInput.value = company.name || 'TRIỀN VÕ LOGISTICS';
+        }
+    } else if (acc === '131' || acc === '1388') {
+        // 131 - Phải thu Khách hàng
+        groupTitle = 'Khách hàng';
+        list = (suggestions.customers || []).map(c => ({ code: c.code, name: c.name, bank: '' }));
+        if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
+    } else if (acc === '141') {
+        // 141 - Tạm ứng nội bộ: Nhân viên nội bộ (Điều phối, Ban Giám đốc, Kế toán, Tài xế)
+        groupTitle = 'Nhân sự nội bộ';
+        const roleLabels = {
+            'DRIVER': 'Tài xế',
+            'DISPATCHER': 'Điều phối',
+            'DIRECTOR': 'Ban Giám Đốc',
+            'ACCOUNTANT': 'Kế toán',
+            'SALESMAN': 'Kinh doanh',
+            'HR': 'Nhân sự'
+        };
+        const allEmps = suggestions.employees && suggestions.employees.length > 0 ? suggestions.employees : (suggestions.drivers || []);
+        list = allEmps.map(e => ({
+            code: e.code,
+            name: `${e.full_name}${e.nickname ? ' (' + e.nickname + ')' : ''} [${roleLabels[e.role] || e.role || 'Nội bộ'}]`,
+            bank: ''
+        }));
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
     } else if (acc === '331') {
-        list = (suggestions.subcontractors || []).map(s => ({ code: s.code, name: s.name }));
+        // 331 - Phải trả Nhà cung cấp / Nhà xe Thầu phụ 3PL (Mua dịch vụ)
+        groupTitle = 'Nhà xe Thầu phụ / Nhà cung cấp';
+        list = (suggestions.subcontractors || []).map(s => ({
+            code: s.code,
+            name: s.name,
+            bank: s.bank_account_number ? `${s.bank_account_number} (${s.bank_name || ''})` : ''
+        }));
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'credit';
-    } else if (acc === '141') {
-        list = (suggestions.drivers || []).map(d => ({ code: d.code, name: d.full_name + (d.nickname ? ' (' + d.nickname + ')' : '') }));
-        if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
     } else if (acc === '334') {
-        list = (suggestions.drivers || []).map(d => ({ code: d.code, name: d.full_name }));
+        // 334 - Phải trả người lao động (Lương tài xế / nhân viên)
+        groupTitle = 'Người lao động / Lương';
+        const allStaff = suggestions.employees || suggestions.drivers || [];
+        list = allStaff.map(d => ({
+            code: d.code,
+            name: `${d.full_name}${d.nickname ? ' (' + d.nickname + ')' : ''}`,
+            bank: ''
+        }));
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'credit';
-    } else if (acc.startsWith('111')) {
-        if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
+    } else {
+        // Tài khoản khác
+        groupTitle = 'Đối tượng liên quan';
+        const combined = [
+            ...(suggestions.customers || []).map(c => ({ code: c.code, name: `[KH] ${c.name}`, bank: '' })),
+            ...(suggestions.subcontractors || []).map(s => ({ code: s.code, name: `[Thầu phụ] ${s.name}`, bank: '' }))
+        ];
+        list = combined;
     }
 
-    quickSelect.innerHTML = `<option value="">-- Chọn từ danh mục (${list.length} đối tượng) --</option>` +
-        list.map(item => `<option value="${item.code}|${item.name}">[${item.code}] ${item.name}</option>`).join('');
+    quickSelect.innerHTML = `<option value="">-- Chọn ${groupTitle} (${list.length}) --</option>` +
+        list.map(item => {
+            const val = `${item.code}|${item.name.replace(/\|/g, '-')}|${item.bank || ''}`;
+            return `<option value="${val}">[${item.code}] ${item.name}</option>`;
+        }).join('');
 }
 window.onOpeningBalanceAccountChange = onOpeningBalanceAccountChange;
 
 function onQuickSelectObEntity(val) {
     if (!val) return;
-    const [code, name] = val.split('|');
+    const parts = val.split('|');
+    const code = parts[0] || '';
+    const name = parts[1] || '';
+    const bank = parts[2] || '';
     const codeInput = document.getElementById('ob-input-code');
     const nameInput = document.getElementById('ob-input-name');
-    if (codeInput) codeInput.value = code || '';
-    if (nameInput) nameInput.value = name || '';
+    const bankAccInput = document.getElementById('ob-input-bank-acc');
+    if (codeInput) codeInput.value = code;
+    if (nameInput) nameInput.value = name;
+    if (bank && bankAccInput && !bankAccInput.value) {
+        bankAccInput.value = bank;
+    }
 }
 window.onQuickSelectObEntity = onQuickSelectObEntity;
 
