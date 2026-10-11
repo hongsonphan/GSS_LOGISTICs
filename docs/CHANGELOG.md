@@ -19,7 +19,14 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 ### 3. Giao Diện Người Dùng (UI/UX Chuẩn Kế Toán — 8 Cột & Flat Form):
 - **Bảng Số Dư Đầu Kỳ:** Trình bày đúng 8 cột kế toán chuẩn mực:
   * `STT` | `Khoản Mục / Diễn Giải` | `TK Kế Toán` | `Số Tài Khoản NH` | `Dư Nợ (+)` | `Dư Có (-)` | `Mã Đối Tượng` | `Tên Đối Tượng / Quỹ` | `Ghi Chú / Chứng Từ` | `Thao Tác`
-- **Form Nhập Trực Tiếp (Flat Form, No Popup):** Dropdown chọn Tài khoản Kế toán; tự động hiển thị/bắt buộc ô Số tài khoản ngân hàng khi chọn TK 1121; gợi ý chọn nhanh đối tượng từ danh mục thực tế; preview số tiền tức thì; nút chuyển đổi Dư Nợ/Dư Có.
+- **Form Nhập Trực Tiếp (Flat Form, No Popup):** Dropdown chọn Tài khoản Kế toán; tự động hiển thị/bắt buộc ô Số tài khoản ngân hàng khi chọn TK 1121; preview số tiền tức thì; nút chuyển đổi Dư Nợ/Dư Có.
+- **Tự động liên kết đối tượng thông minh theo Tài khoản Kế toán (Smart Entity Binding):**
+  * `111` (Tiền mặt): Load danh sách đơn vị nội bộ / công ty (`TVL - TRIỀN VÕ LOGISTICS`, quỹ VP Cát Lái, quỹ CN Tây Ninh), tự động điền mã và tên đối tượng.
+  * `112` (Tiền gửi Ngân hàng): Load ngân hàng công ty mình (`Techcombank CN Nam Sài Gòn`), tự động điền sẵn số tài khoản ngân hàng.
+  * `131` / `1388` (Phải thu Khách hàng): Load toàn bộ danh sách 30+ Khách hàng đang có trong hệ thống.
+  * `141` (Tạm ứng nội bộ): Load toàn bộ nhân viên nội bộ (Điều phối, Kế toán, Ban Giám đốc, Kinh doanh, Tài xế).
+  * `331` (Phải trả Nhà xe Thầu phụ 3PL / Nhà cung cấp): Load danh sách đối tác xe bạn/thầu phụ kèm số tài khoản ngân hàng của đối tác.
+  * `334` (Phải trả người lao động): Load danh sách tài xế & nhân viên để ghi nhận công nợ lương đầu kỳ.
 
 ### 4. Kiểm Thử Hệ Thống & Triển Khai (Zero-Regression):
 - 92/92 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`).
