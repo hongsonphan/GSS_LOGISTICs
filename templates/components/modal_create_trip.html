@@ -581,89 +581,91 @@
 
           <!-- Mode 2: Chế độ Cắt Kéo / 2 Chặng (Ẩn mặc định, hiện khi bật toggle) -->
           <div id="section-drop-hook-dispatch" class="hidden-view space-y-2.5 pt-0.5">
-            <div class="p-2.5 bg-amber-50/80 border border-amber-200 rounded-lg text-xs text-amber-900 flex items-start gap-2">
-              <i class="ph-bold ph-info text-amber-600 text-sm shrink-0 mt-0.5"></i>
-              <div class="text-[11px] leading-relaxed">
-                <strong>Nghiệp vụ Cắt Kéo (Drop & Hook):</strong> Tài xế Chặng 1 lấy cont kéo về kho cắt mooc để kho đóng/dỡ hàng. Tài xế Chặng 2 móc mooc tại kho kéo đi hạ bãi/cảng. Hệ thống tự động phân định trách nhiệm vỏ cont và chia lương theo tỷ lệ.
-              </div>
-            </div>
-
+            <!-- 2 Chặng Vận Chuyển: Cắt Mooc & Móc Mooc -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               <!-- CHẶNG 1: LẤY CONT -> KHO -->
-              <div class="p-3 bg-teal-50/50 border border-teal-200 rounded-xl space-y-2">
+              <div class="p-2.5 bg-teal-50/60 border border-teal-200 rounded-xl space-y-1.5">
                 <div class="flex items-center justify-between text-teal-900 font-bold text-xs uppercase tracking-wider border-b border-teal-200 pb-1">
                   <span class="flex items-center gap-1.5">
-                    <span class="w-4.5 h-4.5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[9.5px]">1</span>
+                    <span class="w-4.5 h-4.5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[9.5px] font-bold">1</span>
                     Chặng 1: Lấy Cont ➔ Giao Kho
                   </span>
                   <span class="text-[10.5px] text-teal-700 font-bold" id="badge-ratio-leg1">Tỷ lệ: 50%</span>
                 </div>
-                <div>
-                  <div class="flex items-center justify-between mb-0.5">
-                    <label class="form-label text-teal-950 text-[11px] font-bold" for="inp-driver-leg1">Tài xế Lấy Cont <span class="text-rose-500">*</span></label>
-                    <span class="text-[9.5px] text-teal-700 bg-teal-100/60 px-1.5 py-0.2 rounded font-medium">Nhân sự</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <div class="flex items-center justify-between mb-0.5 h-4">
+                      <label class="form-label text-teal-950 text-[11px] font-bold truncate" for="inp-driver-leg1">Tài xế Lấy Cont <span class="text-rose-500">*</span></label>
+                      <span class="text-[9px] text-teal-700 bg-teal-100/70 px-1 py-0.2 rounded font-medium">Nhân sự</span>
+                    </div>
+                    <select id="inp-driver-leg1" onchange="onDriverLeg1Change(this.value)" class="form-select h-8 px-2 py-0.5 font-bold text-slate-800 text-xs w-full rounded-md">
+                      <option value="">-- Chọn tài xế lấy cont --</option>
+                    </select>
+                    <div id="err-driver-leg1" class="field-error-msg hidden"></div>
                   </div>
-                  <select id="inp-driver-leg1" onchange="onDriverLeg1Change(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
-                    <option value="">-- Chọn tài xế lấy cont --</option>
-                  </select>
-                  <div id="err-driver-leg1" class="field-error-msg hidden"></div>
-                </div>
-                <div>
-                  <label class="form-label text-teal-950 mb-0.5 text-[11px] font-bold" for="inp-vehicle-leg1">Đầu Kéo Lấy Cont</label>
-                  <select id="inp-vehicle-leg1" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 text-xs">
-                    <option value="">-- Tự động theo tài xế --</option>
-                  </select>
+                  <div>
+                    <div class="flex items-center justify-between mb-0.5 h-4">
+                      <label class="form-label text-teal-950 text-[11px] font-bold truncate" for="inp-vehicle-leg1">Đầu Kéo Lấy Cont</label>
+                    </div>
+                    <select id="inp-vehicle-leg1" class="form-select h-8 px-2 py-0.5 font-semibold text-slate-800 text-xs w-full rounded-md">
+                      <option value="">-- Tự động theo tài xế --</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
               <!-- CHẶNG 2: KHO -> CẢNG HẠ -->
-              <div class="p-3 bg-indigo-50/50 border border-indigo-200 rounded-xl space-y-2">
+              <div class="p-2.5 bg-indigo-50/60 border border-indigo-200 rounded-xl space-y-1.5">
                 <div class="flex items-center justify-between text-indigo-900 font-bold text-xs uppercase tracking-wider border-b border-indigo-200 pb-1">
                   <span class="flex items-center gap-1.5">
-                    <span class="w-4.5 h-4.5 rounded-full bg-indigo-700 text-white flex items-center justify-center text-[9.5px]">2</span>
+                    <span class="w-4.5 h-4.5 rounded-full bg-indigo-700 text-white flex items-center justify-center text-[9.5px] font-bold">2</span>
                     Chặng 2: Móc Mooc ➔ Hạ Cảng/Depot
                   </span>
                   <span class="text-[10.5px] text-indigo-700 font-bold" id="badge-ratio-leg2">Tỷ lệ: 50%</span>
                 </div>
-                <div>
-                  <div class="flex items-center justify-between mb-0.5">
-                    <label class="form-label text-indigo-950 text-[11px] font-bold" for="inp-dropoff-driver">Tài xế Hạ Cont <span class="text-rose-500">*</span></label>
-                    <span class="text-[9.5px] text-indigo-700 bg-indigo-100/60 px-1.5 py-0.2 rounded font-medium">Nhân sự</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <div class="flex items-center justify-between mb-0.5 h-4">
+                      <label class="form-label text-indigo-950 text-[11px] font-bold truncate" for="inp-dropoff-driver">Tài xế Hạ Cont <span class="text-rose-500">*</span></label>
+                      <span class="text-[9px] text-indigo-700 bg-indigo-100/70 px-1 py-0.2 rounded font-medium">Nhân sự</span>
+                    </div>
+                    <select id="inp-dropoff-driver" onchange="onDriverLeg2Change(this.value)" class="form-select h-8 px-2 py-0.5 font-bold text-slate-800 text-xs w-full rounded-md">
+                      <option value="">-- Chọn tài xế hạ cont --</option>
+                    </select>
+                    <div id="err-dropoff-driver" class="field-error-msg hidden"></div>
                   </div>
-                  <select id="inp-dropoff-driver" onchange="onDriverLeg2Change(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
-                    <option value="">-- Chọn tài xế hạ cont --</option>
-                  </select>
-                  <div id="err-dropoff-driver" class="field-error-msg hidden"></div>
-                </div>
-                <div>
-                  <label class="form-label text-indigo-950 mb-0.5 text-[11px] font-bold" for="inp-dropoff-vehicle">Đầu Kéo Hạ Cont</label>
-                  <select id="inp-dropoff-vehicle" class="form-select h-8.5 px-2 py-1 font-semibold text-slate-800 text-xs">
-                    <option value="">-- Tự động theo tài xế --</option>
-                  </select>
+                  <div>
+                    <div class="flex items-center justify-between mb-0.5 h-4">
+                      <label class="form-label text-indigo-950 text-[11px] font-bold truncate" for="inp-dropoff-vehicle">Đầu Kéo Hạ Cont</label>
+                    </div>
+                    <select id="inp-dropoff-vehicle" class="form-select h-8 px-2 py-0.5 font-semibold text-slate-800 text-xs w-full rounded-md">
+                      <option value="">-- Tự động theo tài xế --</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Tỷ lệ phân chia lương tài xế & Ghi chú bàn giao mooc tại kho -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-0.5">
-              <div class="space-y-2">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 pt-0.5">
+              <div class="md:col-span-5">
                 <label class="form-label mb-0.5 text-xs font-bold" for="inp-driver-split-ratio">Tỷ lệ phân chia thù lao (Chặng 1 / Chặng 2)</label>
-                <select id="inp-driver-split-ratio" onchange="onSplitRatioChange(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs">
-                  <option value="50">Chia đều 50% - 50% (Định mức tiêu chuẩn)</option>
+                <select id="inp-driver-split-ratio" onchange="onSplitRatioChange(this.value)" class="form-select h-8 px-2 py-0.5 font-bold text-slate-800 text-xs w-full rounded-md">
+                  <option value="50">Chia đều 50% - 50% (Tiêu chuẩn)</option>
                   <option value="60">Chặng 1: 60% (Lấy xa) - Chặng 2: 40%</option>
-                  <option value="40">Chặng 1: 40% - Chặng 2: 60% (Hạ xa/chờ cảng)</option>
+                  <option value="40">Chặng 1: 40% - Chặng 2: 60% (Hạ xa)</option>
                   <option value="70">Chặng 1: 70% - Chặng 2: 30%</option>
                   <option value="custom">-- Tùy biến tỷ lệ riêng (%) --</option>
                 </select>
 
                 <!-- Khung nhập tùy biến tỷ lệ thù lao Chặng 1 & Chặng 2 -->
-                <div id="div-custom-split-ratio" class="hidden p-2 bg-amber-50/80 border border-amber-200 rounded-lg">
-                  <div class="text-[10.5px] font-bold text-amber-950 mb-1 flex items-center gap-1">
+                <div id="div-custom-split-ratio" class="hidden mt-1.5 p-2 bg-amber-50/80 border border-amber-200 rounded-lg">
+                  <div class="text-[10px] font-bold text-amber-950 mb-1 flex items-center gap-1">
                     <i class="ph-bold ph-sliders-horizontal text-amber-700"></i> Nhập tỷ lệ thù lao (%) cho 2 chặng:
                   </div>
                   <div class="grid grid-cols-2 gap-2">
                     <div>
-                      <label class="block text-[10px] font-bold text-teal-900 mb-0.5">Chặng 1 (%)</label>
+                      <label class="block text-[9.5px] font-bold text-teal-900 mb-0.5">Chặng 1 (%)</label>
                       <input
                         id="inp-custom-split-ratio-leg1"
                         type="number"
@@ -672,41 +674,37 @@
                         step="1"
                         value="50"
                         oninput="onCustomSplitRatioInput(this.value)"
-                        class="form-input h-7.5 px-2 py-0.5 font-bold text-teal-900 text-xs w-full rounded border-teal-300 focus:ring-teal-500"
+                        class="form-input h-7 px-2 py-0.5 font-bold text-teal-900 text-xs w-full rounded border-teal-300 focus:ring-teal-500"
                         placeholder="50"
                       />
                     </div>
                     <div>
-                      <label class="block text-[10px] font-bold text-indigo-900 mb-0.5">Chặng 2 (%)</label>
+                      <label class="block text-[9.5px] font-bold text-indigo-900 mb-0.5">Chặng 2 (%)</label>
                       <input
                         id="inp-custom-split-ratio-leg2"
                         type="number"
                         readonly
                         value="50"
-                        class="form-input h-7.5 px-2 py-0.5 font-bold text-indigo-900 bg-slate-100 text-xs w-full rounded border-indigo-200 cursor-not-allowed"
+                        class="form-input h-7 px-2 py-0.5 font-bold text-indigo-900 bg-slate-100 text-xs w-full rounded border-indigo-200 cursor-not-allowed"
                         placeholder="50"
                       />
                     </div>
                   </div>
                 </div>
-
-                <div class="p-2 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] text-slate-600 space-y-0.5">
-                  <div class="font-bold text-slate-700 flex items-center gap-1">
-                    <i class="ph-bold ph-user-check text-teal-600"></i> Quản lý Tài xế & Phân quyền:
-                  </div>
-                  <div>Danh sách tài xế do <strong>phòng Hành chính - Nhân sự</strong> quản lý. Bộ phận Điều vận không tự tạo mới tài xế. Nếu chưa có tên tài xế trên danh sách, vui lòng liên hệ phòng Nhân sự để bổ sung.</div>
-                </div>
               </div>
-              <div>
-                <label class="form-label mb-0.5 text-xs font-bold" for="inp-notes-drop-hook">Ghi chú & Biên bản bàn giao mooc tại kho</label>
-                <textarea
+              <div class="md:col-span-7">
+                <div class="flex items-center justify-between mb-0.5">
+                  <label class="form-label mb-0 text-xs font-bold" for="inp-notes-drop-hook">Ghi chú & Biên bản bàn giao mooc tại kho</label>
+                  <span class="text-[9.5px] text-slate-500 italic">Đính kèm lệnh Zalo</span>
+                </div>
+                <input
                   id="inp-notes-drop-hook"
-                  rows="3"
-                  placeholder="VD: Cắt mooc lúc 18H tại Kho Tân Vạn D2. Yêu cầu tài xế Chặng 1 chụp ảnh số seal và tình trạng vỏ cont trước khi cắt mooc. Tài xế Chặng 2 kiểm tra seal trước khi móc mooc..."
-                  class="form-input p-2 bg-amber-50/40 border-amber-200 text-amber-950 font-medium text-xs w-full rounded-lg resize-none leading-relaxed"
-                ></textarea>
-                <p class="mt-1 text-[10px] text-slate-500 italic">
-                  * Thông tin này sẽ được đính kèm vào Lệnh Điều Động Zalo gửi trực tiếp cho cả 2 tài xế.
+                  type="text"
+                  placeholder="VD: Cắt mooc lúc 18H Kho Tân Vạn D2. Chụp ảnh seal trước khi cắt mooc..."
+                  class="form-input h-8 px-2 py-0.5 bg-amber-50/40 border-amber-200 text-amber-950 font-medium text-xs w-full rounded-md"
+                />
+                <p class="mt-1 text-[9.5px] text-slate-500 italic flex items-center gap-1">
+                  <i class="ph ph-info text-amber-600"></i> Danh sách tài xế nạp từ Nhân sự. Nếu chưa có tên tài xế, vui lòng liên hệ phòng Nhân sự.
                 </p>
               </div>
             </div>

@@ -249,19 +249,27 @@ class OpeningBalanceAPITestCase(TestCase):
         self.client.force_authenticate(user=self.admin_user)
 
         self.b1 = OpeningBalance.objects.create(
+            account_code='1111',
+            account_name='Tiền mặt tại quỹ',
             category=OpeningBalanceCategory.CASH_FUND,
             entity_code='QTM_VP',
             entity_name='Quỹ Tiền Mặt Văn Phòng',
             opening_date='2026-01-01',
+            debit_amount=50000000,
+            credit_amount=0,
             amount=50000000,
             is_debit=True,
             notes='Tồn quỹ đầu kỳ'
         )
         self.b2 = OpeningBalance.objects.create(
+            account_code='131',
+            account_name='Phải thu của khách hàng',
             category=OpeningBalanceCategory.CUSTOMER_AR,
             entity_code='KH_SAMSUNG',
             entity_name='Công ty TNHH Samsung',
             opening_date='2026-01-01',
+            debit_amount=120000000,
+            credit_amount=0,
             amount=120000000,
             is_debit=True,
             notes='Nợ cước tháng trước'
@@ -275,30 +283,38 @@ class OpeningBalanceAPITestCase(TestCase):
         self.assertEqual(len(res.data['items']), 2)
         self.assertEqual(res.data['kpis']['total_cash_bank'], 50000000.0)
         self.assertEqual(res.data['kpis']['total_customer_ar'], 120000000.0)
+        self.assertIn('account_charts', res.data)
 
-        # 2. POST create
+        # 2. POST create với TK 1121 Ngân hàng
         create_res = self.client.post('/api/master-data/opening-balances/', {
-            'category': 'DRIVER_ADVANCE',
-            'entity_code': 'TX001',
-            'entity_name': 'Nguyễn Văn Tuấn',
+            'account_code': '1121',
+            'bank_account_number': '19030000000001',
+            'bank_name': 'Techcombank Nam SG',
+            'entity_code': 'TCB',
+            'entity_name': 'Tài khoản Ngân hàng Techcombank',
             'opening_date': '2026-01-01',
-            'amount': 5000000,
+            'debit_amount': 25000000,
+            'credit_amount': 0,
+            'amount': 25000000,
             'is_debit': True,
-            'notes': 'Tạm ứng đường trường'
+            'notes': 'Sao kê đầu kỳ'
         }, format='json')
         self.assertEqual(create_res.status_code, status.HTTP_201_CREATED)
         self.assertTrue(create_res.data.get('success'))
         new_id = create_res.data['data']['id']
+        self.assertEqual(create_res.data['data']['account_code'], '1121')
+        self.assertEqual(create_res.data['data']['bank_account_number'], '19030000000001')
 
         # 3. PUT update
         update_res = self.client.put(f'/api/master-data/opening-balances/{new_id}/', {
-            'amount': 7000000,
-            'notes': 'Tạm ứng đường trường bổ sung'
+            'debit_amount': 30000000,
+            'notes': 'Sao kê điều chỉnh đầu kỳ'
         }, format='json')
         self.assertEqual(update_res.status_code, status.HTTP_200_OK)
-        self.assertEqual(update_res.data['data']['amount'], 7000000.0)
+        self.assertEqual(update_res.data['data']['debit_amount'], 30000000.0)
 
         # 4. DELETE
         del_res = self.client.delete(f'/api/master-data/opening-balances/{new_id}/')
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertTrue(del_res.data.get('success'))
+

@@ -268,28 +268,85 @@ class CompanyProfile(TimeStampedModel, SoftDeleteModel):
         return obj
 
 
+ACCOUNT_CHART_CHOICES = [
+    ('1111', '1111 - Tiền mặt tại quỹ (Tiền Việt Nam)'),
+    ('1121', '1121 - Tiền gửi Ngân hàng (Việt Nam Đồng)'),
+    ('131', '131 - Phải thu của khách hàng (Công nợ cước vận tải)'),
+    ('1388', '1388 - Phải thu khác (Chi hộ nâng hạ, cược cont)'),
+    ('141', '141 - Tạm ứng nội bộ (Quỹ Điều vận & Tài xế)'),
+    ('331', '331 - Phải trả người bán (Cước Xe bạn / Thầu phụ 3PL)'),
+    ('334', '334 - Phải trả người lao động (Lương/thù lao tài xế)'),
+    ('3388', '3388 - Phải trả khác'),
+    ('341', '341 - Vay và nợ thuê tài chính (Vay mua xe đầu kéo/mooc)'),
+]
+
+ACCOUNT_NAME_MAP = {
+    '111': 'Tiền mặt tại quỹ',
+    '1111': 'Tiền mặt tại quỹ',
+    '112': 'Tiền gửi Ngân hàng',
+    '1121': 'Tiền gửi Ngân hàng',
+    '131': 'Phải thu của khách hàng',
+    '1388': 'Phải thu khác (Chi hộ)',
+    '141': 'Tạm ứng nội bộ',
+    '331': 'Phải trả người bán (Thầu phụ)',
+    '334': 'Phải trả người lao động (Lương)',
+    '3388': 'Phải trả khác',
+    '341': 'Vay và nợ thuê tài chính',
+}
+
+
 class OpeningBalanceCategory(models.TextChoices):
-    CASH_FUND = 'CASH_FUND', 'Tiền mặt & Quỹ nội bộ'
-    BANK_ACCOUNT = 'BANK_ACCOUNT', 'Tiền gửi Ngân hàng'
-    DISPATCHER_FUND = 'DISPATCHER_FUND', 'Quỹ Tạm ứng Điều vận'
-    DRIVER_ADVANCE = 'DRIVER_ADVANCE', 'Công nợ Tạm ứng Tài xế'
-    CUSTOMER_AR = 'CUSTOMER_AR', 'Công nợ Phải thu Khách hàng'
-    SUBCONTRACTOR_AP = 'SUBCONTRACTOR_AP', 'Công nợ Phải trả Thầu phụ / Xe bạn'
-    OTHER = 'OTHER', 'Số dư khác'
+    CASH_FUND = 'CASH_FUND', 'Tiền mặt & Quỹ nội bộ (TK 111)'
+    BANK_ACCOUNT = 'BANK_ACCOUNT', 'Tiền gửi Ngân hàng (TK 112)'
+    CUSTOMER_AR = 'CUSTOMER_AR', 'Công nợ Phải thu Khách hàng (TK 131)'
+    DISPATCHER_FUND = 'DISPATCHER_FUND', 'Quỹ Tạm ứng Điều vận (TK 141)'
+    DRIVER_ADVANCE = 'DRIVER_ADVANCE', 'Công nợ Tạm ứng Tài xế (TK 141)'
+    SUBCONTRACTOR_AP = 'SUBCONTRACTOR_AP', 'Công nợ Phải trả Thầu phụ / Xe bạn (TK 331)'
+    SALARY_PAYABLE = 'SALARY_PAYABLE', 'Phải trả người lao động / Lương (TK 334)'
+    OTHER = 'OTHER', 'Số dư tài khoản khác'
 
 
 class OpeningBalance(TimeStampedModel, SoftDeleteModel):
     """
-    Số dư đầu kỳ tài chính (Tiền mặt, Ngân hàng, Quỹ điều vận, Công nợ tài xế, Công nợ khách hàng, Thầu phụ).
-    Dành cho quản trị Admin cấu hình số dư ban đầu khi đưa hệ thống vào vận hành.
+    Số dư đầu kỳ tài chính theo Chuẩn Mực Kế Toán Doanh Nghiệp (TT 200/2014 & TT 133/2016).
+    Cung cấp số dư ban đầu cho Sổ Quỹ (111, 112), Sổ Công nợ (131, 331), Tạm ứng (141) và Bảng Cân Đối Phát Sinh.
     """
+    # 1. Hệ thống Tài khoản Kế toán (COA)
+    account_code = models.CharField(max_length=20, default='1111', db_index=True, help_text="Tài khoản kế toán (1111, 1121, 131, 141, 331, 334, 341)")
+    account_name = models.CharField(max_length=200, default='Tiền mặt tại quỹ', help_text="Tên tài khoản kế toán")
+    
+    # Dành riêng cho Tiền gửi Ngân hàng (TK 112)
+    bank_account_number = models.CharField(max_length=50, blank=True, help_text="Số tài khoản ngân hàng (dành cho TK 112)")
+    bank_name = models.CharField(max_length=150, blank=True, help_text="Tên ngân hàng chi nhánh (dành cho TK 112)")
+
+    # 2. Phân loại danh mục vận tải (tương thích nghiệp vụ)
     category = models.CharField(max_length=30, choices=OpeningBalanceCategory.choices, default=OpeningBalanceCategory.CASH_FUND, db_index=True)
-    entity_code = models.CharField(max_length=50, blank=True, help_text="Mã đối tượng (Mã KH, Mã Tài xế, Số TK...)")
+    
+    # 3. Đối tượng theo dõi chi tiết (Sub-ledger partner)
+    partner_type = models.CharField(max_length=30, blank=True, default='INTERNAL', choices=[
+        ('CUSTOMER', 'Khách hàng'),
+        ('SUBCONTRACTOR', 'Nhà xe bạn / Thầu phụ 3PL'),
+        ('DRIVER', 'Tài xế'),
+        ('DISPATCHER', 'Điều phối viên'),
+        ('BANK', 'Ngân hàng'),
+        ('INTERNAL', 'Nội bộ công ty'),
+        ('OTHER', 'Đối tượng khác'),
+    ])
+    entity_code = models.CharField(max_length=50, blank=True, help_text="Mã đối tượng (Mã KH, Mã Tài xế, Mã Nhà xe...)")
     entity_name = models.CharField(max_length=200, help_text="Tên đối tượng / Tên quỹ / Tên tài khoản")
+
+    # 4. Thời gian chốt & Số dư Kế toán
     opening_date = models.DateField(help_text="Ngày chốt số dư đầu kỳ")
-    amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số dư đầu kỳ (VNĐ)")
-    is_debit = models.BooleanField(default=True, help_text="True: Dư Nợ (Phải thu/Tồn quỹ); False: Dư Có (Phải trả/Nợ cty)")
-    notes = models.TextField(blank=True, help_text="Diễn giải chứng từ / hợp đồng / căn cứ số dư")
+    fiscal_year = models.IntegerField(default=2026, help_text="Năm tài chính")
+    
+    debit_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số dư Nợ đầu kỳ (VNĐ)")
+    credit_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số dư Có đầu kỳ (VNĐ)")
+    
+    # Trường tương thích ngược
+    amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số dư đầu kỳ tổng hợp (VNĐ)")
+    is_debit = models.BooleanField(default=True, help_text="True: Dư Nợ; False: Dư Có")
+
+    notes = models.TextField(blank=True, help_text="Diễn giải chứng từ / hợp đồng / biên bản đối soát căn cứ")
     created_by = models.ForeignKey(
         'personnel.Employee',
         on_delete=models.SET_NULL,
@@ -299,12 +356,64 @@ class OpeningBalance(TimeStampedModel, SoftDeleteModel):
     )
 
     class Meta:
-        ordering = ['category', 'entity_name']
-        verbose_name = 'Số dư đầu kỳ'
-        verbose_name_plural = 'Danh mục Số dư đầu kỳ'
+        ordering = ['account_code', 'entity_name']
+        verbose_name = 'Số dư đầu kỳ kế toán'
+        verbose_name_plural = 'Danh mục Số dư đầu kỳ kế toán'
 
     def __str__(self):
         sign = "+" if self.is_debit else "-"
-        return f"[{self.get_category_display()}] {self.entity_name}: {sign}{self.amount:,} đ ({self.opening_date})"
+        tk = self.account_code or "TK"
+        return f"[{tk} - {self.entity_name}]: {sign}{self.amount:,} đ ({self.opening_date})"
+
+    def save(self, *args, **kwargs):
+        # 1. Nếu account_code chưa được chỉ định hoặc giữ mặc định '1111' trong khi category khác CASH_FUND, suy luận account_code từ category
+        CATEGORY_TO_ACCOUNT = {
+            OpeningBalanceCategory.CASH_FUND: '1111',
+            OpeningBalanceCategory.BANK_ACCOUNT: '1121',
+            OpeningBalanceCategory.CUSTOMER_AR: '131',
+            OpeningBalanceCategory.DISPATCHER_FUND: '141',
+            OpeningBalanceCategory.DRIVER_ADVANCE: '141',
+            OpeningBalanceCategory.SUBCONTRACTOR_AP: '331',
+            OpeningBalanceCategory.SALARY_PAYABLE: '334',
+            OpeningBalanceCategory.OTHER: '3388',
+        }
+        if (not self.account_code or self.account_code == '1111') and self.category != OpeningBalanceCategory.CASH_FUND:
+            self.account_code = CATEGORY_TO_ACCOUNT.get(self.category, '1111')
+
+        # 2. Đồng bộ account_name nếu chưa có hoặc đang mang tên mặc định của quỹ tiền mặt
+        if not self.account_name or (self.account_name == 'Tiền mặt tại quỹ' and self.account_code != '1111'):
+            self.account_name = ACCOUNT_NAME_MAP.get(self.account_code, self.account_code)
+        
+        # 3. Đồng bộ debit_amount / credit_amount và amount / is_debit
+        if self.debit_amount > 0 and self.credit_amount == 0:
+            self.amount = self.debit_amount
+            self.is_debit = True
+        elif self.credit_amount > 0 and self.debit_amount == 0:
+            self.amount = self.credit_amount
+            self.is_debit = False
+        else:
+            if self.is_debit:
+                self.debit_amount = self.amount
+                self.credit_amount = 0
+            else:
+                self.credit_amount = self.amount
+                self.debit_amount = 0
+
+        # 4. Tự động gán category và partner_type phù hợp với account_code
+        if self.account_code.startswith('111'):
+            self.category = OpeningBalanceCategory.CASH_FUND
+        elif self.account_code.startswith('112'):
+            self.category = OpeningBalanceCategory.BANK_ACCOUNT
+        elif self.account_code == '131':
+            self.category = OpeningBalanceCategory.CUSTOMER_AR
+            self.partner_type = 'CUSTOMER'
+        elif self.account_code == '331':
+            self.category = OpeningBalanceCategory.SUBCONTRACTOR_AP
+            self.partner_type = 'SUBCONTRACTOR'
+        elif self.account_code == '334':
+            self.category = OpeningBalanceCategory.SALARY_PAYABLE
+            self.partner_type = 'DRIVER'
+
+        super().save(*args, **kwargs)
 
 

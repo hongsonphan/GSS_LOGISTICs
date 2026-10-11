@@ -14,7 +14,8 @@ from apps.master_data.models import (
     ExpenseItem, ExpenseCategoryGroup,
     DriverSalaryTariff, DriverAllowanceCatalog, AllowanceCategory,
     ShippingLine, Subcontractor, CompanyProfile,
-    OpeningBalance, OpeningBalanceCategory
+    OpeningBalance, OpeningBalanceCategory,
+    ACCOUNT_CHART_CHOICES, ACCOUNT_NAME_MAP
 )
 from apps.customers.models import Customer, RouteTariff
 from apps.fleet.models import Vehicle, Trailer, VehicleType, VehicleOwnership, VehicleStatus
@@ -1312,17 +1313,20 @@ def _format_date_val(val):
 
 class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
     """
-    API Quản lý Số dư đầu kỳ (Opening Balances):
-    - GET: Lấy danh sách số dư, KPIs tổng hợp và danh mục phân loại.
-    - POST: Thêm mới số dư đầu kỳ.
+    API Quản lý Số dư đầu kỳ Kế toán (Opening Balances - TT 200 & TT 133):
+    - GET: Lấy danh sách số dư, KPIs cân đối kế toán, danh mục tài khoản (COA), gợi ý đối tượng.
+    - POST: Thêm mới bản ghi số dư đầu kỳ.
     """
     def get(self, request):
         category = request.query_params.get('category', '').strip()
+        account_code = request.query_params.get('account_code', '').strip()
         search = request.query_params.get('search', '').strip()
 
         all_balances = OpeningBalance.objects.all()
 
-        # Tính toán KPIs tổng quan
+        # Tính toán KPIs tổng quan theo chuẩn kế toán
+        total_debit = 0
+        total_credit = 0
         total_cash_bank = 0
         total_customer_ar = 0
         total_subcontractor_ap = 0
@@ -1330,25 +1334,36 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
         total_dispatcher_fund = 0
 
         for b in all_balances:
-            amt = float(b.amount)
-            if b.category in [OpeningBalanceCategory.CASH_FUND, OpeningBalanceCategory.BANK_ACCOUNT]:
-                total_cash_bank += amt if b.is_debit else -amt
-            elif b.category == OpeningBalanceCategory.CUSTOMER_AR:
-                total_customer_ar += amt if b.is_debit else -amt
-            elif b.category == OpeningBalanceCategory.SUBCONTRACTOR_AP:
-                total_subcontractor_ap += amt if not b.is_debit else -amt
-            elif b.category == OpeningBalanceCategory.DRIVER_ADVANCE:
-                total_driver_advance += amt if b.is_debit else -amt
-            elif b.category == OpeningBalanceCategory.DISPATCHER_FUND:
-                total_dispatcher_fund += amt if b.is_debit else -amt
+            d_amt = float(b.debit_amount or (b.amount if b.is_debit else 0))
+            c_amt = float(b.credit_amount or (b.amount if not b.is_debit else 0))
+            total_debit += d_amt
+            total_credit += c_amt
+
+            ac = b.account_code or ''
+            if ac.startswith('111') or ac.startswith('112'):
+                total_cash_bank += (d_amt - c_amt)
+            elif ac == '131':
+                total_customer_ar += (d_amt - c_amt)
+            elif ac == '331':
+                total_subcontractor_ap += (c_amt - d_amt)
+            elif ac == '141':
+                if b.category == OpeningBalanceCategory.DISPATCHER_FUND:
+                    total_dispatcher_fund += (d_amt - c_amt)
+                else:
+                    total_driver_advance += (d_amt - c_amt)
 
         filtered_qs = all_balances
-        if category:
+        if category and category != 'ALL':
             filtered_qs = filtered_qs.filter(category=category)
+        if account_code and account_code != 'ALL':
+            filtered_qs = filtered_qs.filter(account_code=account_code)
         if search:
             filtered_qs = filtered_qs.filter(
                 Q(entity_name__icontains=search) |
                 Q(entity_code__icontains=search) |
+                Q(account_code__icontains=search) |
+                Q(account_name__icontains=search) |
+                Q(bank_account_number__icontains=search) |
                 Q(notes__icontains=search)
             )
 
@@ -1356,16 +1371,30 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
         for b in filtered_qs:
             items.append({
                 'id': b.id,
+                'account_code': b.account_code,
+                'account_name': b.account_name,
+                'bank_account_number': b.bank_account_number or '',
+                'bank_name': b.bank_name or '',
                 'category': b.category,
                 'category_display': b.get_category_display(),
+                'partner_type': b.partner_type,
                 'entity_code': b.entity_code,
                 'entity_name': b.entity_name,
                 'opening_date': _format_date_val(b.opening_date),
+                'fiscal_year': b.fiscal_year,
+                'debit_amount': float(b.debit_amount or (b.amount if b.is_debit else 0)),
+                'credit_amount': float(b.credit_amount or (b.amount if not b.is_debit else 0)),
                 'amount': float(b.amount),
                 'is_debit': b.is_debit,
                 'notes': b.notes,
                 'created_at': b.created_at.strftime('%d/%m/%Y %H:%M') if b.created_at else '',
             })
+
+        # Danh mục Tài khoản Kế toán Chuẩn Thông tư
+        account_charts = [
+            {'code': c[0], 'label': c[1], 'name': ACCOUNT_NAME_MAP.get(c[0], c[1])}
+            for c in ACCOUNT_CHART_CHOICES
+        ]
 
         # Danh mục phân loại
         categories = [
@@ -1383,6 +1412,8 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
         return Response({
             'success': True,
             'kpis': {
+                'total_debit': total_debit,
+                'total_credit': total_credit,
                 'total_cash_bank': total_cash_bank,
                 'total_customer_ar': total_customer_ar,
                 'total_subcontractor_ap': total_subcontractor_ap,
@@ -1391,6 +1422,7 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
                 'total_records': all_balances.count(),
             },
             'items': items,
+            'account_charts': account_charts,
             'categories': categories,
             'suggestions': {
                 'customers': customers,
@@ -1401,13 +1433,21 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
 
     def post(self, request):
         data = request.data
+        account_code = data.get('account_code', '1111').strip()
+        account_name = data.get('account_name', '').strip()
+        bank_account_number = data.get('bank_account_number', '').strip()
+        bank_name = data.get('bank_name', '').strip()
         category = data.get('category', '').strip()
+        partner_type = data.get('partner_type', 'INTERNAL').strip()
         entity_code = data.get('entity_code', '').strip()
         entity_name = data.get('entity_name', '').strip()
         opening_date = data.get('opening_date', '').strip()
+        notes = data.get('notes', '').strip()
+
+        debit_amount_raw = data.get('debit_amount', 0)
+        credit_amount_raw = data.get('credit_amount', 0)
         amount_raw = data.get('amount', 0)
         is_debit = bool(data.get('is_debit', True))
-        notes = data.get('notes', '').strip()
 
         if not entity_name:
             return Response({'error': 'Tên đối tượng hoặc khoản mục là bắt buộc.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1415,35 +1455,63 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Ngày chốt số dư đầu kỳ là bắt buộc.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            amount = float(amount_raw)
-            if amount < 0:
+            debit_amt = float(debit_amount_raw)
+            credit_amt = float(credit_amount_raw)
+            amt = float(amount_raw)
+            if debit_amt < 0 or credit_amt < 0 or amt < 0:
                 return Response({'error': 'Số tiền phải lớn hơn hoặc bằng 0.'}, status=status.HTTP_400_BAD_REQUEST)
         except (ValueError, TypeError):
             return Response({'error': 'Số tiền không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if category not in [c[0] for c in OpeningBalanceCategory.choices]:
-            category = OpeningBalanceCategory.CASH_FUND
+        # Quyết định Nợ/Có
+        if debit_amt > 0 and credit_amt == 0:
+            final_amount = debit_amt
+            final_is_debit = True
+        elif credit_amt > 0 and debit_amt == 0:
+            final_amount = credit_amt
+            final_is_debit = False
+        else:
+            final_amount = amt
+            final_is_debit = is_debit
+            debit_amt = final_amount if final_is_debit else 0
+            credit_amt = final_amount if not final_is_debit else 0
+
+        if not account_name:
+            account_name = ACCOUNT_NAME_MAP.get(account_code, account_code)
 
         record = OpeningBalance.objects.create(
-            category=category,
+            account_code=account_code,
+            account_name=account_name,
+            bank_account_number=bank_account_number,
+            bank_name=bank_name,
+            category=category or OpeningBalanceCategory.CASH_FUND,
+            partner_type=partner_type,
             entity_code=entity_code,
             entity_name=entity_name,
             opening_date=opening_date,
-            amount=amount,
-            is_debit=is_debit,
+            debit_amount=debit_amt,
+            credit_amount=credit_amt,
+            amount=final_amount,
+            is_debit=final_is_debit,
             notes=notes,
         )
 
         return Response({
             'success': True,
-            'message': f'Đã ghi nhận số dư đầu kỳ cho "{record.entity_name}" thành công!',
+            'message': f'Đã ghi nhận số dư đầu kỳ cho "{record.entity_name}" ({record.account_code}) thành công!',
             'data': {
                 'id': record.id,
+                'account_code': record.account_code,
+                'account_name': record.account_name,
+                'bank_account_number': record.bank_account_number,
+                'bank_name': record.bank_name,
                 'category': record.category,
                 'category_display': record.get_category_display(),
                 'entity_code': record.entity_code,
                 'entity_name': record.entity_name,
                 'opening_date': _format_date_val(record.opening_date),
+                'debit_amount': float(record.debit_amount),
+                'credit_amount': float(record.credit_amount),
                 'amount': float(record.amount),
                 'is_debit': record.is_debit,
                 'notes': record.notes,
@@ -1452,7 +1520,7 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
 
 
 class OpeningBalanceDetailAPIView(MasterDataBaseAPIView):
-    """API Cập nhật & Xóa Số dư đầu kỳ."""
+    """API Cập nhật & Xóa Số dư đầu kỳ Kế toán."""
     def get(self, request, pk):
         try:
             b = OpeningBalance.objects.get(pk=pk)
@@ -1463,11 +1531,18 @@ class OpeningBalanceDetailAPIView(MasterDataBaseAPIView):
             'success': True,
             'data': {
                 'id': b.id,
+                'account_code': b.account_code,
+                'account_name': b.account_name,
+                'bank_account_number': b.bank_account_number,
+                'bank_name': b.bank_name,
                 'category': b.category,
                 'category_display': b.get_category_display(),
+                'partner_type': b.partner_type,
                 'entity_code': b.entity_code,
                 'entity_name': b.entity_name,
                 'opening_date': _format_date_val(b.opening_date),
+                'debit_amount': float(b.debit_amount),
+                'credit_amount': float(b.credit_amount),
                 'amount': float(b.amount),
                 'is_debit': b.is_debit,
                 'notes': b.notes,
@@ -1481,37 +1556,76 @@ class OpeningBalanceDetailAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy bản ghi số dư.'}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data
+        if 'account_code' in data:
+            record.account_code = data['account_code'].strip()
+            record.account_name = ACCOUNT_NAME_MAP.get(record.account_code, record.account_code)
+        if 'account_name' in data and data['account_name'].strip():
+            record.account_name = data['account_name'].strip()
+        if 'bank_account_number' in data:
+            record.bank_account_number = data['bank_account_number'].strip()
+        if 'bank_name' in data:
+            record.bank_name = data['bank_name'].strip()
         if 'category' in data and data['category'] in [c[0] for c in OpeningBalanceCategory.choices]:
             record.category = data['category']
+        if 'partner_type' in data:
+            record.partner_type = data['partner_type'].strip()
         if 'entity_code' in data:
             record.entity_code = data['entity_code'].strip()
         if 'entity_name' in data and data['entity_name'].strip():
             record.entity_name = data['entity_name'].strip()
         if 'opening_date' in data and data['opening_date'].strip():
             record.opening_date = data['opening_date'].strip()
-        if 'amount' in data:
+        if 'notes' in data:
+            record.notes = data['notes'].strip()
+
+        # Cập nhật số tiền Nợ / Có
+        if 'debit_amount' in data or 'credit_amount' in data:
+            try:
+                d_amt = float(data.get('debit_amount', 0))
+                c_amt = float(data.get('credit_amount', 0))
+                record.debit_amount = d_amt
+                record.credit_amount = c_amt
+                if d_amt > 0:
+                    record.amount = d_amt
+                    record.is_debit = True
+                else:
+                    record.amount = c_amt
+                    record.is_debit = False
+            except (ValueError, TypeError):
+                pass
+        elif 'amount' in data:
             try:
                 amt = float(data['amount'])
                 if amt >= 0:
                     record.amount = amt
+                    if 'is_debit' in data:
+                        record.is_debit = bool(data['is_debit'])
+                    if record.is_debit:
+                        record.debit_amount = amt
+                        record.credit_amount = 0
+                    else:
+                        record.credit_amount = amt
+                        record.debit_amount = 0
             except (ValueError, TypeError):
                 pass
-        if 'is_debit' in data:
-            record.is_debit = bool(data['is_debit'])
-        if 'notes' in data:
-            record.notes = data['notes'].strip()
 
         record.save()
         return Response({
             'success': True,
-            'message': 'Đã cập nhật số dư đầu kỳ thành công!',
+            'message': 'Đã cập nhật số dư đầu kỳ kế toán thành công!',
             'data': {
                 'id': record.id,
+                'account_code': record.account_code,
+                'account_name': record.account_name,
+                'bank_account_number': record.bank_account_number,
+                'bank_name': record.bank_name,
                 'category': record.category,
                 'category_display': record.get_category_display(),
                 'entity_code': record.entity_code,
                 'entity_name': record.entity_name,
                 'opening_date': _format_date_val(record.opening_date),
+                'debit_amount': float(record.debit_amount),
+                'credit_amount': float(record.credit_amount),
                 'amount': float(record.amount),
                 'is_debit': record.is_debit,
                 'notes': record.notes,
@@ -1529,3 +1643,4 @@ class OpeningBalanceDetailAPIView(MasterDataBaseAPIView):
             'success': True,
             'message': f'Đã xóa số dư đầu kỳ "{record.entity_name}".'
         })
+

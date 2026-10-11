@@ -10587,46 +10587,49 @@ function onFreeDaysChange() {
 
 // --- NGHIỆP VỤ CẮT KÉO / CẮT MOOC (DROP & HOOK TMS STANDARD) ---
 function toggleDropHookMode(isDropHook) {
-    const directSection = document.getElementById('section-direct-dispatch');
-    const dropHookSection = document.getElementById('section-drop-hook-dispatch');
-    const mainDriver = document.getElementById('inp-driver');
-    const leg1Driver = document.getElementById('inp-driver-leg1');
-    const leg2Driver = document.getElementById('inp-dropoff-driver');
+    document.querySelectorAll('#section-direct-dispatch').forEach(el => {
+        if (isDropHook) el.classList.add('hidden-view');
+        else el.classList.remove('hidden-view');
+    });
+    document.querySelectorAll('#section-drop-hook-dispatch').forEach(el => {
+        if (isDropHook) el.classList.remove('hidden-view');
+        else el.classList.add('hidden-view');
+    });
 
     // Xóa trạng thái báo lỗi cũ của các trường tài xế
     ['inp-driver', 'inp-driver-leg1', 'inp-dropoff-driver'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('input-error');
+        document.querySelectorAll(`#${id}`).forEach(el => el.classList.remove('input-error'));
     });
     ['err-driver', 'err-driver-leg1', 'err-dropoff-driver'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add('hidden');
+        document.querySelectorAll(`#${id}`).forEach(el => el.classList.add('hidden'));
     });
 
-    if (isDropHook) {
-        if (directSection) directSection.classList.add('hidden-view');
-        if (dropHookSection) dropHookSection.classList.remove('hidden-view');
-        if (mainDriver) mainDriver.removeAttribute('required');
-        if (leg1Driver) leg1Driver.setAttribute('required', 'required');
-        if (leg2Driver) leg2Driver.setAttribute('required', 'required');
-        
-        // Kế thừa giá trị tài xế nếu đã chọn ở direct
-        if (mainDriver && mainDriver.value && leg1Driver && !leg1Driver.value) {
-            setSelectValueCaseInsensitive(leg1Driver, mainDriver.value);
-            onDriverLeg1Change(mainDriver.value);
-        }
-    } else {
-        if (directSection) directSection.classList.remove('hidden-view');
-        if (dropHookSection) dropHookSection.classList.add('hidden-view');
-        if (mainDriver) mainDriver.setAttribute('required', 'required');
-        if (leg1Driver) leg1Driver.removeAttribute('required');
-        if (leg2Driver) leg2Driver.removeAttribute('required');
+    document.querySelectorAll('#inp-driver').forEach(mainDriver => {
+        const form = mainDriver.closest('form') || document;
+        const leg1Driver = form.querySelector('#inp-driver-leg1');
+        const leg2Driver = form.querySelector('#inp-dropoff-driver');
 
-        // Kế thừa ngược lại nếu đã chọn ở leg1
-        if (leg1Driver && leg1Driver.value && mainDriver) {
-            setSelectValueCaseInsensitive(mainDriver, leg1Driver.value);
+        if (isDropHook) {
+            mainDriver.removeAttribute('required');
+            if (leg1Driver) leg1Driver.setAttribute('required', 'required');
+            if (leg2Driver) leg2Driver.setAttribute('required', 'required');
+            
+            // Kế thừa giá trị tài xế nếu đã chọn ở direct
+            if (mainDriver && mainDriver.value && leg1Driver && !leg1Driver.value) {
+                setSelectValueCaseInsensitive(leg1Driver, mainDriver.value);
+                onDriverLeg1Change(mainDriver.value);
+            }
+        } else {
+            mainDriver.setAttribute('required', 'required');
+            if (leg1Driver) leg1Driver.removeAttribute('required');
+            if (leg2Driver) leg2Driver.removeAttribute('required');
+
+            // Kế thừa ngược lại nếu đã chọn ở leg1
+            if (leg1Driver && leg1Driver.value && mainDriver) {
+                setSelectValueCaseInsensitive(mainDriver, leg1Driver.value);
+            }
         }
-    }
+    });
 }
 
 function onDriverLeg1Change(driverNickname) {
@@ -15521,11 +15524,11 @@ async function updateUserRoleGroup(userId, groupId) {
 window.updateUserRoleGroup = updateUserRoleGroup;
 
 // ==============================================================================
-// KHAI BÁO & QUẢN LÝ SỐ DƯ ĐẦU KỲ (OPENING BALANCES) - TRÌNH BÀY DẠNG TRANG (NO POPUP)
+// KHAI BÁO & QUẢN LÝ SỐ DƯ ĐẦU KỲ KẾ TOÁN (OPENING BALANCES) - CHUẨN VAS & THÔNG TƯ
 // ==============================================================================
 let openingBalanceState = {
     data: null,
-    activeFilterCategory: 'ALL',
+    activeAccountCode: 'ALL',
     searchKeyword: '',
     editingId: null,
 };
@@ -15538,7 +15541,7 @@ async function loadOpeningBalanceData() {
         container.innerHTML = `
             <div class="p-16 text-center text-slate-400">
                 <i class="ph ph-spinner animate-spin text-3xl mb-3 text-teal-600 block"></i>
-                <p class="text-sm font-semibold text-slate-600">Đang tải số dư đầu kỳ hệ thống...</p>
+                <p class="text-sm font-semibold text-slate-600">Đang tải số dư đầu kỳ kế toán...</p>
             </div>
         `;
     }
@@ -15575,37 +15578,25 @@ function renderOpeningBalanceView() {
 
     const data = openingBalanceState.data;
     const kpis = data.kpis || {};
-    const categories = data.categories || [];
+    const accountCharts = data.account_charts || [];
     const suggestions = data.suggestions || {};
     let items = data.items || [];
 
     // Filter items
-    if (openingBalanceState.activeFilterCategory !== 'ALL') {
-        items = items.filter(i => i.category === openingBalanceState.activeFilterCategory);
+    if (openingBalanceState.activeAccountCode !== 'ALL') {
+        items = items.filter(i => (i.account_code || '').startsWith(openingBalanceState.activeAccountCode));
     }
     if (openingBalanceState.searchKeyword) {
         const kw = openingBalanceState.searchKeyword.toLowerCase().trim();
         items = items.filter(i => 
             (i.entity_name && i.entity_name.toLowerCase().includes(kw)) ||
             (i.entity_code && i.entity_code.toLowerCase().includes(kw)) ||
+            (i.account_code && i.account_code.toLowerCase().includes(kw)) ||
+            (i.account_name && i.account_name.toLowerCase().includes(kw)) ||
+            (i.bank_account_number && i.bank_account_number.toLowerCase().includes(kw)) ||
             (i.notes && i.notes.toLowerCase().includes(kw))
         );
     }
-
-    // Category styling helper
-    const getCategoryBadge = (catKey, catLabel) => {
-        const badgeMap = {
-            'CASH_FUND': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-            'BANK_ACCOUNT': 'bg-cyan-100 text-cyan-800 border-cyan-300',
-            'DISPATCHER_FUND': 'bg-indigo-100 text-indigo-800 border-indigo-300',
-            'DRIVER_ADVANCE': 'bg-amber-100 text-amber-800 border-amber-300',
-            'CUSTOMER_AR': 'bg-blue-100 text-blue-800 border-blue-300',
-            'SUBCONTRACTOR_AP': 'bg-orange-100 text-orange-800 border-orange-300',
-            'OTHER': 'bg-slate-100 text-slate-800 border-slate-300'
-        };
-        const cls = badgeMap[catKey] || 'bg-slate-100 text-slate-700 border-slate-300';
-        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}">${catLabel || catKey}</span>`;
-    };
 
     container.innerHTML = `
         <!-- 1. Header Banner -->
@@ -15613,69 +15604,69 @@ function renderOpeningBalanceView() {
             <div>
                 <div class="flex items-center space-x-2.5 mb-1.5">
                     <div class="p-2 bg-teal-700/60 rounded-xl border border-teal-500/40">
-                        <i class="ph-bold ph-wallet text-2xl text-teal-200"></i>
+                        <i class="ph-bold ph-book-open-text text-2xl text-teal-200"></i>
                     </div>
                     <div>
-                        <h2 class="text-lg md:text-xl font-black font-heading tracking-tight">Khai Báo Số Dư Đầu Kỳ Hệ Thống</h2>
-                        <p class="text-xs text-teal-200/90 font-medium">Thiết lập số dư tài chính ban đầu cho Quỹ tiền mặt, Ngân hàng, Quỹ điều vận, Công nợ Tài xế, Khách hàng & Thầu phụ.</p>
+                        <h2 class="text-lg md:text-xl font-black font-heading tracking-tight">Khai Báo Số Dư Đầu Kỳ Kế Toán</h2>
+                        <p class="text-xs text-teal-200/90 font-medium">Chuẩn hóa theo Hệ thống Tài khoản Kế toán Doanh nghiệp (TT 200/2014 & TT 133/2016) — Tiền mặt (111), Ngân hàng (112), Phải thu KH (131), Tạm ứng (141), Phải trả Thầu phụ (331), Lương (334).</p>
                     </div>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <button onclick="loadOpeningBalanceData()" title="Tải lại số dư" class="px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold text-white transition-all flex items-center space-x-1.5 cursor-pointer">
+                <button onclick="loadOpeningBalanceData()" title="Tải lại số dư" class="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold text-white transition-all flex items-center space-x-1.5 cursor-pointer">
                     <i class="ph-bold ph-arrows-clockwise text-base"></i>
                     <span>Làm Mới</span>
                 </button>
             </div>
         </div>
 
-        <!-- 2. KPI Summary Cards (4 Cards) -->
+        <!-- 2. KPI Summary Cards Chuẩn Kế Toán (4 Thẻ Cân Đối) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <!-- Card 1: Tiền mặt & Ngân hàng -->
+            <!-- Card 1: Tổng Dư Nợ Đầu Kỳ -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center space-x-3.5">
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+                    <i class="ph-bold ph-arrow-circle-down-right text-2xl"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Tổng Dư Nợ Đầu Kỳ</p>
+                    <p class="text-base font-black text-emerald-800 truncate">${formatCurrencyOB(kpis.total_debit)}</p>
+                    <p class="text-[10px] text-emerald-600 font-semibold">Tài sản, Tồn quỹ & Phải thu</p>
+                </div>
+            </div>
+
+            <!-- Card 2: Tổng Dư Có Đầu Kỳ -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center space-x-3.5">
+                <div class="w-11 h-11 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-700 shrink-0">
+                    <i class="ph-bold ph-arrow-circle-up-right text-2xl"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Tổng Dư Có Đầu Kỳ</p>
+                    <p class="text-base font-black text-rose-800 truncate">${formatCurrencyOB(kpis.total_credit)}</p>
+                    <p class="text-[10px] text-rose-600 font-semibold">Nợ phải trả & Nguồn vốn</p>
+                </div>
+            </div>
+
+            <!-- Card 3: Tiền Mặt & Ngân Hàng (TK 111 & 112) -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center space-x-3.5">
                 <div class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shrink-0">
                     <i class="ph-bold ph-bank text-2xl"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Tiền Mặt & Ngân Hàng</p>
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Tiền Mặt & Ngân Hàng (111/112)</p>
                     <p class="text-base font-black text-teal-900 truncate">${formatCurrencyOB(kpis.total_cash_bank)}</p>
                     <p class="text-[10px] text-teal-600 font-semibold">Tồn quỹ khả dụng ban đầu</p>
                 </div>
             </div>
 
-            <!-- Card 2: Công nợ Phải thu Khách hàng -->
+            <!-- Card 4: Công nợ Vận tải (131 vs 331) -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center space-x-3.5">
                 <div class="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
-                    <i class="ph-bold ph-buildings text-2xl"></i>
+                    <i class="ph-bold ph-scales text-2xl"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Phải Thu Khách Hàng (AR)</p>
-                    <p class="text-base font-black text-blue-900 truncate">${formatCurrencyOB(kpis.total_customer_ar)}</p>
-                    <p class="text-[10px] text-blue-600 font-semibold">Nợ cước khách hàng đầu kỳ</p>
-                </div>
-            </div>
-
-            <!-- Card 3: Công nợ Phải trả Thầu phụ -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center space-x-3.5">
-                <div class="w-11 h-11 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-700 shrink-0">
-                    <i class="ph-bold ph-handshake text-2xl"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Phải Trả Thầu Phụ (AP)</p>
-                    <p class="text-base font-black text-orange-900 truncate">${formatCurrencyOB(kpis.total_subcontractor_ap)}</p>
-                    <p class="text-[10px] text-orange-600 font-semibold">Công nợ xe bạn / đối tác 3PL</p>
-                </div>
-            </div>
-
-            <!-- Card 4: Quỹ Tạm Ứng Điều Vận & Tài Xế -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center space-x-3.5">
-                <div class="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
-                    <i class="ph-bold ph-user-circle-gear text-2xl"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Quỹ Tạm Ứng ĐV & Tài Xế</p>
-                    <p class="text-base font-black text-indigo-900 truncate">${formatCurrencyOB(kpis.total_dispatcher_fund + kpis.total_driver_advance)}</p>
-                    <p class="text-[10px] text-indigo-600 font-semibold">Tạm ứng hiện trường đang giữ</p>
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Thu KH (131) / Trả Thầu (331)</p>
+                    <p class="text-xs font-black text-blue-900 truncate">Thu KH: ${formatCurrencyOB(kpis.total_customer_ar)}</p>
+                    <p class="text-xs font-black text-orange-900 truncate">Trả Thầu: ${formatCurrencyOB(kpis.total_subcontractor_ap)}</p>
                 </div>
             </div>
         </div>
@@ -15686,21 +15677,21 @@ function renderOpeningBalanceView() {
                 <div class="flex items-center space-x-2">
                     <i class="ph-bold ph-pencil-simple-line text-teal-700 text-lg"></i>
                     <h3 id="ob-form-title" class="text-sm font-black text-slate-800 uppercase tracking-wide">
-                        ${openingBalanceState.editingId ? 'Chỉnh Sửa Bản Ghi Số Dư Đầu Kỳ' : 'Nhập Số Dư Đầu Kỳ Mới'}
+                        ${openingBalanceState.editingId ? 'Chỉnh Sửa Bản Ghi Số Dư Đầu Kỳ Kế Toán' : 'Khai Báo Số Dư Đầu Kỳ Kế Toán Mới'}
                     </h3>
                 </div>
-                <span class="text-[11px] font-semibold text-slate-500 italic">Nhập trực tiếp tại form bên dưới và bấm Lưu</span>
+                <span class="text-[11px] font-semibold text-slate-500 italic">Nhập trực tiếp tại form bên dưới và bấm Lưu để ghi sổ</span>
             </div>
 
             <form id="ob-entry-form" onsubmit="event.preventDefault(); saveOpeningBalanceItem();" class="p-4 md:p-6 space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <!-- 1. Danh mục phân loại -->
+                    <!-- 1. Tài khoản Kế toán (COA) -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                            Danh Mục Số Dư <span class="text-rose-500">*</span>
+                            Tài Khoản Kế Toán <span class="text-rose-500">*</span>
                         </label>
-                        <select id="ob-input-category" onchange="onOpeningBalanceCategoryChange()" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
-                            ${categories.map(c => `<option value="${c.value}">${c.label}</option>`).join('')}
+                        <select id="ob-input-account" onchange="onOpeningBalanceAccountChange()" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-black text-teal-900 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                            ${accountCharts.map(a => `<option value="${a.code}">${a.label}</option>`).join('')}
                         </select>
                     </div>
 
@@ -15711,29 +15702,38 @@ function renderOpeningBalanceView() {
                             <span class="text-[10px] text-teal-700 font-semibold cursor-pointer" onclick="clearObEntityInput()">Tự nhập</span>
                         </label>
                         <select id="ob-quick-select" onchange="onQuickSelectObEntity(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium text-slate-700 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
-                            <option value="">-- Chọn từ danh mục hệ thống --</option>
+                            <option value="">-- Chọn từ danh mục đối tượng --</option>
                         </select>
                     </div>
 
-                    <!-- 3. Mã đối tượng / Số tài khoản -->
+                    <!-- 3. Mã đối tượng -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                            Mã Đối Tượng / Số TK
+                            Mã Đối Tượng
                         </label>
-                        <input type="text" id="ob-input-code" placeholder="VD: KH_SAMSUNG, TX_TUAN, 1903..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                        <input type="text" id="ob-input-code" placeholder="VD: TVL, KH_SAMSUNG, TX001..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-mono font-bold focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
                     </div>
 
                     <!-- 4. Tên đối tượng / Tên khoản mục -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                            Tên Đối Tượng / Tên Quỹ <span class="text-rose-500">*</span>
+                            Tên Đối Tượng / Quỹ <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" id="ob-input-name" required placeholder="VD: Cty TNHH Samsung, Quỹ tiền mặt VP..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                        <input type="text" id="ob-input-name" required placeholder="VD: Quỹ tiền mặt VP, Cty Samsung..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
                     </div>
                 </div>
 
+                <!-- Dòng 2: Ngân hàng (nếu là TK 112) + Ngày chốt + Số tiền + Tính chất Nợ/Có -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-                    <!-- 5. Ngày chốt số dư -->
+                    <!-- 5. Số tài khoản ngân hàng (hiện nổi bật nếu là TK 112) -->
+                    <div id="ob-bank-account-box">
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                            Số Tài Khoản Ngân Hàng <span id="ob-bank-required" class="text-rose-500 hidden">*</span>
+                        </label>
+                        <input type="text" id="ob-input-bank-acc" placeholder="VD: 19030000000001 (Techcombank)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-mono font-bold text-blue-900 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                    </div>
+
+                    <!-- 6. Ngày chốt số dư -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             Ngày Chốt Số Dư <span class="text-rose-500">*</span>
@@ -15741,24 +15741,19 @@ function renderOpeningBalanceView() {
                         <input type="date" id="ob-input-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
                     </div>
 
-                    <!-- 6. Số dư (VNĐ) -->
+                    <!-- 7. Số tiền & Tính chất Dư Nợ / Dư Có -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                            Số Tiền (VNĐ) <span class="text-rose-500">*</span>
+                            Số Dư Đầu Kỳ (VNĐ) <span class="text-rose-500">*</span>
                         </label>
-                        <input type="number" id="ob-input-amount" min="0" step="1000" required placeholder="0" oninput="updateObAmountPreview(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-black text-slate-900 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                        <div class="flex items-center space-x-1.5">
+                            <input type="number" id="ob-input-amount" min="0" step="1000" required placeholder="0" oninput="updateObAmountPreview(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-black text-slate-900 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                            <select id="ob-input-type" class="w-32 px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all shrink-0">
+                                <option value="debit" class="text-emerald-700 font-bold">Dư Nợ (+)</option>
+                                <option value="credit" class="text-rose-700 font-bold">Dư Có (-)</option>
+                            </select>
+                        </div>
                         <p id="ob-amount-preview" class="text-[11px] font-bold text-teal-700 mt-1">0 đ</p>
-                    </div>
-
-                    <!-- 7. Tính chất số dư (Dư Nợ vs Dư Có) -->
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                            Tính Chất Số Dư <span class="text-rose-500">*</span>
-                        </label>
-                        <select id="ob-input-type" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
-                            <option value="debit">Dư Nợ (+) : Tồn quỹ / Phải thu / Đang nợ cty</option>
-                            <option value="credit">Dư Có (-) : Phải trả / Khách ứng trước / Cty nợ</option>
-                        </select>
                     </div>
 
                     <!-- 8. Ghi chú / Căn cứ chứng từ -->
@@ -15766,7 +15761,7 @@ function renderOpeningBalanceView() {
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             Ghi Chú / Căn Cứ Chứng Từ
                         </label>
-                        <input type="text" id="ob-input-notes" placeholder="VD: Biên bản chốt công nợ 2025, HĐ số 12..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
+                        <input type="text" id="ob-input-notes" placeholder="VD: Biên bản đối soát, sao kê NH..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:bg-white focus:outline-hidden transition-all">
                     </div>
                 </div>
 
@@ -15777,86 +15772,96 @@ function renderOpeningBalanceView() {
                     </button>
                     <button type="submit" id="ob-save-btn" class="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs md:text-sm font-bold shadow-sm transition-all flex items-center space-x-1.5 cursor-pointer">
                         <i class="ph-bold ph-floppy-disk text-base"></i>
-                        <span id="ob-save-btn-text">Lưu Số Dư Đầu Kỳ</span>
+                        <span id="ob-save-btn-text">Lưu Số Dư Đầu Kỳ Kế Toán</span>
                     </button>
                 </div>
             </form>
         </div>
 
-        <!-- 4. Data Table Card: Danh Sách Các Bản Ghi Số Dư Đầu Kỳ -->
+        <!-- 4. Data Table Card: Bảng Số Dư Đầu Kỳ Chuẩn 8 Cột Kế Toán -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col">
-            <!-- Table Toolbar -->
+            <!-- Table Toolbar: Lọc Tài Khoản & Tìm Kiếm -->
             <div class="p-3 md:p-4 border-b border-slate-200 bg-slate-50/70 flex flex-col lg:flex-row items-center justify-between gap-3">
-                <!-- Category Filter Pills -->
+                <!-- Account Code Filter Pills -->
                 <div class="flex items-center space-x-1.5 overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
-                    <button onclick="filterObCategory('ALL')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeFilterCategory === 'ALL' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                    <button onclick="filterObAccount('ALL')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeAccountCode === 'ALL' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
                         Tất Cả (${data.items ? data.items.length : 0})
                     </button>
-                    <button onclick="filterObCategory('CASH_FUND')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeFilterCategory === 'CASH_FUND' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
-                        Tiền Mặt
+                    <button onclick="filterObAccount('111')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeAccountCode === '111' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                        111 - Tiền Mặt
                     </button>
-                    <button onclick="filterObCategory('BANK_ACCOUNT')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeFilterCategory === 'BANK_ACCOUNT' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
-                        Ngân Hàng
+                    <button onclick="filterObAccount('112')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeAccountCode === '112' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                        112 - Ngân Hàng
                     </button>
-                    <button onclick="filterObCategory('CUSTOMER_AR')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeFilterCategory === 'CUSTOMER_AR' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
-                        Khách Hàng (AR)
+                    <button onclick="filterObAccount('131')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeAccountCode === '131' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                        131 - Phải Thu KH
                     </button>
-                    <button onclick="filterObCategory('SUBCONTRACTOR_AP')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeFilterCategory === 'SUBCONTRACTOR_AP' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
-                        Thầu Phụ (AP)
+                    <button onclick="filterObAccount('141')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeAccountCode === '141' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                        141 - Tạm Ứng
                     </button>
-                    <button onclick="filterObCategory('DRIVER_ADVANCE')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeFilterCategory === 'DRIVER_ADVANCE' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
-                        Tạm Ứng Tài Xế
+                    <button onclick="filterObAccount('331')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeAccountCode === '331' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                        331 - Phải Trả Thầu Phụ
                     </button>
-                    <button onclick="filterObCategory('DISPATCHER_FUND')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeFilterCategory === 'DISPATCHER_FUND' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
-                        Quỹ Điều Vận
+                    <button onclick="filterObAccount('334')" class="ob-filter-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${openingBalanceState.activeAccountCode === '334' ? 'bg-teal-700 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                        334 - Lương Tài Xế
                     </button>
                 </div>
 
                 <!-- Search Input -->
                 <div class="relative w-full lg:w-72 shrink-0">
                     <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
-                    <input type="text" id="ob-table-search" onkeyup="searchObTable(this.value)" value="${openingBalanceState.searchKeyword}" placeholder="Tìm theo tên, mã, ghi chú..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs md:text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:outline-hidden transition-all">
+                    <input type="text" id="ob-table-search" onkeyup="searchObTable(this.value)" value="${openingBalanceState.searchKeyword}" placeholder="Tìm theo tên, mã, số TK, ghi chú..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs md:text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:outline-hidden transition-all">
                 </div>
             </div>
 
-            <!-- Table Container -->
-            <div class="overflow-x-auto min-h-[280px]">
+            <!-- Table Container: Chuẩn 8 Cột Kế Toán -->
+            <div class="overflow-x-auto min-h-[300px]">
                 <table class="w-full text-left border-collapse whitespace-nowrap text-xs md:text-sm">
                     <thead>
                         <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                             <th class="p-3 pl-4 text-center w-12">STT</th>
-                            <th class="p-3">Phân Loại Danh Mục</th>
+                            <th class="p-3">Khoản Mục / Diễn Giải</th>
+                            <th class="p-3 text-center">TK Kế Toán</th>
+                            <th class="p-3">Số Tài Khoản NH</th>
+                            <th class="p-3 text-right text-emerald-800">Dư Nợ (+)</th>
+                            <th class="p-3 text-right text-rose-800">Dư Có (-)</th>
                             <th class="p-3">Mã Đối Tượng</th>
                             <th class="p-3">Tên Đối Tượng / Quỹ</th>
-                            <th class="p-3 text-center">Ngày Chốt</th>
-                            <th class="p-3 text-right">Dư Nợ (+)</th>
-                            <th class="p-3 text-right">Dư Có (-)</th>
-                            <th class="p-3">Ghi Chú / Căn Cứ</th>
-                            <th class="p-3 pr-4 text-center w-28">Thao Tác</th>
+                            <th class="p-3">Ghi Chú / Chứng Từ</th>
+                            <th class="p-3 pr-4 text-center w-24">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
                         ${items.length === 0 ? `
                             <tr>
-                                <td colspan="9" class="p-12 text-center text-slate-400">
+                                <td colspan="10" class="p-12 text-center text-slate-400">
                                     <i class="ph-bold ph-tray text-3xl mb-2 text-slate-300 block"></i>
-                                    Chưa có bản ghi số dư đầu kỳ nào phù hợp.
+                                    Chưa có bản ghi số dư đầu kỳ nào phù hợp với bộ lọc.
                                 </td>
                             </tr>
                         ` : items.map((item, idx) => `
-                            <tr class="hover:bg-slate-50/80 transition-colors ${openingBalanceState.editingId === item.id ? 'bg-amber-50/60' : ''}">
+                            <tr class="hover:bg-slate-50/80 transition-colors ${openingBalanceState.editingId === item.id ? 'bg-amber-50/70 ring-1 ring-amber-300' : ''}">
                                 <td class="p-3 pl-4 text-center font-bold text-slate-400">${idx + 1}</td>
-                                <td class="p-3">${getCategoryBadge(item.category, item.category_display)}</td>
-                                <td class="p-3 font-mono font-bold text-slate-900">${item.entity_code || '-'}</td>
+                                <td class="p-3 font-semibold text-slate-800">
+                                    ${item.account_name || item.category_display || '-'}
+                                </td>
+                                <td class="p-3 text-center">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-black border bg-slate-100 text-slate-800 border-slate-300">
+                                        ${item.account_code || '1111'}
+                                    </span>
+                                </td>
+                                <td class="p-3 font-mono font-bold text-blue-900">
+                                    ${item.bank_account_number ? (item.bank_account_number + (item.bank_name ? ' (' + item.bank_name + ')' : '')) : '<span class="text-slate-300">—</span>'}
+                                </td>
+                                <td class="p-3 text-right font-black ${item.debit_amount > 0 ? 'text-emerald-700' : 'text-slate-300'}">
+                                    ${item.debit_amount > 0 ? formatCurrencyOB(item.debit_amount) : '—'}
+                                </td>
+                                <td class="p-3 text-right font-black ${item.credit_amount > 0 ? 'text-rose-700' : 'text-slate-300'}">
+                                    ${item.credit_amount > 0 ? formatCurrencyOB(item.credit_amount) : '—'}
+                                </td>
+                                <td class="p-3 font-mono font-bold text-slate-900">${item.entity_code || '<span class="text-slate-300">—</span>'}</td>
                                 <td class="p-3 font-bold text-slate-900">${item.entity_name}</td>
-                                <td class="p-3 text-center text-slate-600">${item.opening_date || '-'}</td>
-                                <td class="p-3 text-right font-black ${item.is_debit ? 'text-emerald-700' : 'text-slate-300'}">
-                                    ${item.is_debit ? formatCurrencyOB(item.amount) : '-'}
-                                </td>
-                                <td class="p-3 text-right font-black ${!item.is_debit ? 'text-rose-700' : 'text-slate-300'}">
-                                    ${!item.is_debit ? formatCurrencyOB(item.amount) : '-'}
-                                </td>
-                                <td class="p-3 text-slate-500 max-w-xs truncate" title="${item.notes || ''}">${item.notes || '-'}</td>
+                                <td class="p-3 text-slate-500 max-w-xs truncate" title="${item.notes || ''}">${item.notes || '—'}</td>
                                 <td class="p-3 pr-4 text-center">
                                     <div class="flex items-center justify-center space-x-1.5">
                                         <button onclick="editOpeningBalanceItem(${item.id})" title="Chỉnh sửa bản ghi" class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer">
@@ -15873,21 +15878,25 @@ function renderOpeningBalanceView() {
                 </table>
             </div>
 
-            <!-- Table Footer Record Counter -->
-            <div class="p-3 px-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-500">
-                <span>Hiển thị <b class="text-slate-800">${items.length}</b> bản ghi</span>
-                <span>Cập nhật ngày ${new Date().toLocaleDateString('vi-VN')}</span>
+            <!-- Table Footer: Thống Kê Tổng Phát Sinh & Bảng Cân Đối -->
+            <div class="p-3 px-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-600">
+                <div class="flex items-center space-x-4">
+                    <span>Tổng số bản ghi: <b class="text-slate-900">${items.length}</b></span>
+                    <span>Tổng Nợ: <b class="text-emerald-700">${formatCurrencyOB(items.reduce((acc, i) => acc + (i.debit_amount || 0), 0))}</b></span>
+                    <span>Tổng Có: <b class="text-rose-700">${formatCurrencyOB(items.reduce((acc, i) => acc + (i.credit_amount || 0), 0))}</b></span>
+                </div>
+                <span class="text-slate-400">Niên độ kế toán: Năm 2026</span>
             </div>
         </div>
     `;
 
-    // Cập nhật default date cho form nếu đang thêm mới
+    // Thiết lập ngày mặc định nếu thêm mới
     if (!openingBalanceState.editingId) {
         const dateInput = document.getElementById('ob-input-date');
         if (dateInput && !dateInput.value) {
-            dateInput.value = new Date().toISOString().split('T')[0];
+            dateInput.value = '2026-01-01';
         }
-        onOpeningBalanceCategoryChange();
+        onOpeningBalanceAccountChange();
     }
 }
 window.renderOpeningBalanceView = renderOpeningBalanceView;
@@ -15900,33 +15909,46 @@ function updateObAmountPreview(val) {
 }
 window.updateObAmountPreview = updateObAmountPreview;
 
-function onOpeningBalanceCategoryChange() {
-    const catSelect = document.getElementById('ob-input-category');
+function onOpeningBalanceAccountChange() {
+    const accSelect = document.getElementById('ob-input-account');
     const quickSelect = document.getElementById('ob-quick-select');
     const typeSelect = document.getElementById('ob-input-type');
-    if (!catSelect || !quickSelect || !openingBalanceState.data) return;
+    const bankBox = document.getElementById('ob-bank-account-box');
+    const bankReq = document.getElementById('ob-bank-required');
+    if (!accSelect || !quickSelect || !openingBalanceState.data) return;
 
-    const cat = catSelect.value;
+    const acc = accSelect.value;
     const suggestions = openingBalanceState.data.suggestions || {};
 
+    // Hiển thị/ẩn ô số tài khoản ngân hàng nếu chọn TK 112
+    if (acc.startsWith('112')) {
+        if (bankReq) bankReq.classList.remove('hidden');
+        if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
+    } else {
+        if (bankReq) bankReq.classList.add('hidden');
+    }
+
     let list = [];
-    if (cat === 'CUSTOMER_AR') {
+    if (acc === '131') {
         list = (suggestions.customers || []).map(c => ({ code: c.code, name: c.name }));
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
-    } else if (cat === 'SUBCONTRACTOR_AP') {
+    } else if (acc === '331') {
         list = (suggestions.subcontractors || []).map(s => ({ code: s.code, name: s.name }));
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'credit';
-    } else if (cat === 'DRIVER_ADVANCE') {
+    } else if (acc === '141') {
         list = (suggestions.drivers || []).map(d => ({ code: d.code, name: d.full_name + (d.nickname ? ' (' + d.nickname + ')' : '') }));
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
-    } else if (cat === 'CASH_FUND' || cat === 'BANK_ACCOUNT' || cat === 'DISPATCHER_FUND') {
+    } else if (acc === '334') {
+        list = (suggestions.drivers || []).map(d => ({ code: d.code, name: d.full_name }));
+        if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'credit';
+    } else if (acc.startsWith('111')) {
         if (typeSelect && !openingBalanceState.editingId) typeSelect.value = 'debit';
     }
 
     quickSelect.innerHTML = `<option value="">-- Chọn từ danh mục (${list.length} đối tượng) --</option>` +
         list.map(item => `<option value="${item.code}|${item.name}">[${item.code}] ${item.name}</option>`).join('');
 }
-window.onOpeningBalanceCategoryChange = onOpeningBalanceCategoryChange;
+window.onOpeningBalanceAccountChange = onOpeningBalanceAccountChange;
 
 function onQuickSelectObEntity(val) {
     if (!val) return;
@@ -15948,11 +15970,11 @@ function clearObEntityInput() {
 }
 window.clearObEntityInput = clearObEntityInput;
 
-function filterObCategory(cat) {
-    openingBalanceState.activeFilterCategory = cat;
+function filterObAccount(accPrefix) {
+    openingBalanceState.activeAccountCode = accPrefix;
     renderOpeningBalanceView();
 }
-window.filterObCategory = filterObCategory;
+window.filterObAccount = filterObAccount;
 
 function searchObTable(kw) {
     openingBalanceState.searchKeyword = kw;
@@ -15964,16 +15986,16 @@ function resetObForm() {
     openingBalanceState.editingId = null;
     const formTitle = document.getElementById('ob-form-title');
     const saveBtnText = document.getElementById('ob-save-btn-text');
-    if (formTitle) formTitle.innerText = 'Nhập Số Dư Đầu Kỳ Mới';
-    if (saveBtnText) saveBtnText.innerText = 'Lưu Số Dư Đầu Kỳ';
+    if (formTitle) formTitle.innerText = 'Khai Báo Số Dư Đầu Kỳ Kế Toán Mới';
+    if (saveBtnText) saveBtnText.innerText = 'Lưu Số Dư Đầu Kỳ Kế Toán';
 
     const form = document.getElementById('ob-entry-form');
     if (form) form.reset();
 
     const dateInput = document.getElementById('ob-input-date');
-    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    if (dateInput) dateInput.value = '2026-01-01';
     updateObAmountPreview(0);
-    onOpeningBalanceCategoryChange();
+    onOpeningBalanceAccountChange();
     renderOpeningBalanceView();
 }
 window.resetObForm = resetObForm;
@@ -15995,10 +16017,11 @@ function editOpeningBalanceItem(id) {
 
     const formTitle = document.getElementById('ob-form-title');
     const saveBtnText = document.getElementById('ob-save-btn-text');
-    if (formTitle) formTitle.innerText = `Chỉnh Sửa Số Dư: ${item.entity_name}`;
+    if (formTitle) formTitle.innerText = `Chỉnh Sửa Số Dư: ${item.entity_name} (${item.account_code})`;
     if (saveBtnText) saveBtnText.innerText = 'Cập Nhật Số Dư';
 
-    const catSelect = document.getElementById('ob-input-category');
+    const accSelect = document.getElementById('ob-input-account');
+    const bankAccInput = document.getElementById('ob-input-bank-acc');
     const codeInput = document.getElementById('ob-input-code');
     const nameInput = document.getElementById('ob-input-name');
     const dateInput = document.getElementById('ob-input-date');
@@ -16006,22 +16029,26 @@ function editOpeningBalanceItem(id) {
     const typeSelect = document.getElementById('ob-input-type');
     const notesInput = document.getElementById('ob-input-notes');
 
-    if (catSelect) catSelect.value = item.category;
+    if (accSelect) accSelect.value = item.account_code || '1111';
+    if (bankAccInput) bankAccInput.value = item.bank_account_number || '';
     if (codeInput) codeInput.value = item.entity_code || '';
     if (nameInput) nameInput.value = item.entity_name || '';
-    if (dateInput) dateInput.value = item.opening_date || '';
-    if (amountInput) amountInput.value = item.amount || 0;
-    if (typeSelect) typeSelect.value = item.is_debit ? 'debit' : 'credit';
+    if (dateInput) dateInput.value = item.opening_date || '2026-01-01';
+    
+    const amt = item.debit_amount > 0 ? item.debit_amount : (item.credit_amount > 0 ? item.credit_amount : item.amount);
+    if (amountInput) amountInput.value = amt || 0;
+    if (typeSelect) typeSelect.value = (item.debit_amount > 0 || item.is_debit) ? 'debit' : 'credit';
     if (notesInput) notesInput.value = item.notes || '';
 
-    updateObAmountPreview(item.amount || 0);
-    onOpeningBalanceCategoryChange();
+    updateObAmountPreview(amt || 0);
+    onOpeningBalanceAccountChange();
     renderOpeningBalanceView();
 }
 window.editOpeningBalanceItem = editOpeningBalanceItem;
 
 async function saveOpeningBalanceItem() {
-    const catSelect = document.getElementById('ob-input-category');
+    const accSelect = document.getElementById('ob-input-account');
+    const bankAccInput = document.getElementById('ob-input-bank-acc');
     const codeInput = document.getElementById('ob-input-code');
     const nameInput = document.getElementById('ob-input-name');
     const dateInput = document.getElementById('ob-input-date');
@@ -16039,13 +16066,20 @@ async function saveOpeningBalanceItem() {
         return;
     }
 
+    const accCode = accSelect ? accSelect.value : '1111';
+    const isDebit = typeSelect ? typeSelect.value === 'debit' : true;
+    const amount = amountInput ? Number(amountInput.value) || 0 : 0;
+
     const payload = {
-        category: catSelect ? catSelect.value : 'CASH_FUND',
+        account_code: accCode,
+        bank_account_number: bankAccInput ? bankAccInput.value.trim() : '',
         entity_code: codeInput ? codeInput.value.trim() : '',
         entity_name: nameInput.value.trim(),
         opening_date: dateInput.value.trim(),
-        amount: amountInput ? Number(amountInput.value) || 0 : 0,
-        is_debit: typeSelect ? typeSelect.value === 'debit' : true,
+        debit_amount: isDebit ? amount : 0,
+        credit_amount: !isDebit ? amount : 0,
+        amount: amount,
+        is_debit: isDebit,
         notes: notesInput ? notesInput.value.trim() : ''
     };
 
@@ -16073,7 +16107,7 @@ async function saveOpeningBalanceItem() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Lưu số dư đầu kỳ thất bại');
 
-        showToast('success', data.message || 'Đã lưu số dư đầu kỳ thành công!');
+        showToast('success', data.message || 'Đã ghi nhận số dư đầu kỳ thành công!');
         resetObForm();
         await loadOpeningBalanceData();
     } catch (err) {
@@ -16082,14 +16116,14 @@ async function saveOpeningBalanceItem() {
     } finally {
         if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = `<i class="ph-bold ph-floppy-disk text-base"></i> <span id="ob-save-btn-text">${openingBalanceState.editingId ? 'Cập Nhật Số Dư' : 'Lưu Số Dư Đầu Kỳ'}</span>`;
+            saveBtn.innerHTML = `<i class="ph-bold ph-floppy-disk text-base"></i> <span id="ob-save-btn-text">${openingBalanceState.editingId ? 'Cập Nhật Số Dư' : 'Lưu Số Dư Đầu Kỳ Kế Toán'}</span>`;
         }
     }
 }
 window.saveOpeningBalanceItem = saveOpeningBalanceItem;
 
 async function deleteOpeningBalanceItem(id, name) {
-    if (!confirm(`Bạn có chắc chắn muốn xóa số dư đầu kỳ của "${name}"?\nHành động này không thể hoàn tác.`)) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa số dư đầu kỳ kế toán của "${name}"?\nHành động này không thể hoàn tác.`)) {
         return;
     }
 

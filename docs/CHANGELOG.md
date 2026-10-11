@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.5] - 2026-10-11 (Tối Ưu Bố Cục Điều Vận Cắt Kéo / Cắt Mooc 2 Tài - Chuẩn UI/UX Full Màn Hình & Đồng Bộ Số Dư Đầu Kỳ COA)
+
+### 1. Tối Ưu Bố Cục Chế Độ Cắt Kéo / Cắt Mooc (Drop & Hook):
+- **Khắc phục triệt để khoảng trống trắng đáy trang:**
+  * Tái cấu trúc khối điều xe Chặng 1 & Chặng 2 (`#section-drop-hook-dispatch`) từ bố cục dọc cồng kềnh sang lưới 2 cột ngang tinh gọn (`Tài xế` và `Đầu kéo` cùng hàng).
+  * Hàng dưới chia tỉ lệ 5:7 (`col-span-5` cho `Tỷ lệ phân chia thù lao`, `col-span-7` cho `Ghi chú & Biên bản bàn giao mooc tại kho`).
+  * Loại bỏ các khối chú thích cồng kềnh, chuyển thành tooltip/note nhỏ tinh tế, giảm chiều cao khối Cắt Kéo từ ~500px xuống ~140px.
+  * Container cha `view-create-trip` và `modal_create_trip.html` được bổ sung `min-h-0` và đồng bộ nền `bg-slate-100/60`, giữ trọn vẹn 2 nút tác vụ (`<- Quay Lại Điều Vận` và `Xác Nhận & Phát Lệnh Zalo`) luôn nằm trong tầm nhìn, không cần cuộn trang.
+  * Đồng bộ hàm JS `toggleDropHookMode(isDropHook)` xử lý an toàn đa container DOM (`querySelectorAll`).
+
+### 2. Chuẩn Hóa Số Dư Đầu Kỳ Kế Toán (COA TT 200 / TT 133):
+- Bổ sung cơ chế tự động đồng bộ hai chiều giữa `account_code` (1111, 1121, 131, 141, 331, 334, 341) và `category` trong `OpeningBalance.save()`.
+
+### 3. Kiểm Thử Hệ Thống (Zero-Regression):
+- 92/92 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`).
+- Cú pháp JavaScript kiểm tra hợp lệ 100% (`node -c static/js/app.js` & `node -c static/js/column_manager.js`).
+
 ## [v2.4] - 2026-10-11 (Rà Soát & Chuẩn Hóa 100% Tên Nút Bấm Thực Tế Trong Sổ Tay Hướng Dẫn Sử Dụng)
 
 ### 1. Rà Soát & Chuẩn Hóa Danh Sách Nút Bấm Giao Diện (/helps):
