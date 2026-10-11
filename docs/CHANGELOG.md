@@ -2,6 +2,53 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.41] - 2026-10-11 (Chuẩn Hóa Bộ 4 Nút [Sửa | Lưu | In | Xóa], Lề Trang In Khổ A4, Font Số Thống Nhất & Bổ Sung Cột STT Toàn Bộ 14 Báo Cáo)
+
+### 1. Bố Trí Đúng Chuẩn Bộ 4 Nút Chân Trang: `Sửa | Lưu | In | Xóa`:
+- **Đồng bộ hóa 100% thứ tự thao tác tại các form chi tiết toàn màn hình:**
+  * Báo Giá (`view_quotation_detail.html`): `Sửa` (`#btn-fullpage-edit-quote-bottom`) $\rightarrow$ `Lưu` (`#btn-fullpage-save-quote-bottom`) $\rightarrow$ `In` (`#btn-fullpage-print-quote-bottom`) $\rightarrow$ `Xóa` (`#btn-fullpage-delete-quote-bottom`).
+  * Đơn Hàng / Booking (`view_booking_detail.html`): `Sửa` (`#btn-fullpage-edit-booking-bottom`) $\rightarrow$ `Lưu` (`#btn-fullpage-save-booking-bottom`) $\rightarrow$ `In` (`#btn-fullpage-print-booking-bottom`) $\rightarrow$ `Xóa` (`#btn-fullpage-delete-booking-bottom`).
+  * Phiếu Thu / Chi - Sổ Quỹ (`view_cash_voucher_detail.html`): `Sửa` (`#btn-form-edit-voucher`) $\rightarrow$ `Lưu` (`#btn-form-submit-voucher`) $\rightarrow$ `In` (`#btn-form-print-voucher`) $\rightarrow$ `Xóa` (`#btn-form-delete-voucher`).
+  * Tờ Khai Hải Quan (`view_customs_form.html`): `Sửa` (`#btn-customs-edit-bottom`) $\rightarrow$ `Lưu` (`#cust-submit-btn`) $\rightarrow$ `In` (`#btn-customs-print-bottom`) $\rightarrow$ `Xóa` (`#btn-customs-delete-bottom`).
+  * Hồ Sơ Nhân Sự (`view_employee_form.html`): `Sửa` (`#btn-employee-edit-bottom`) $\rightarrow$ `Lưu` (`#emp-submit-btn`) $\rightarrow$ `In` (`#btn-employee-print-bottom`) $\rightarrow$ `Xóa` (`#btn-employee-delete-bottom`).
+
+### 2. Chuẩn Hóa Bản In Luôn Là Trang A4 Với Canh Lề Chuẩn Đẹp:
+- **Cấu hình lề trang in A4 chuẩn hành chính doanh nghiệp:**
+  * Toàn bộ các bản in (Phiếu Tiếp Nhận Booking, Phiếu Thủ Tục Hải Quan, Sơ Yếu Hồ Sơ Nhân Sự, Báo Giá Cước, Phiếu Thu/Chi) được cấu hình chuẩn `@page { size: A4 portrait; margin: 12mm 15mm 12mm 15mm; }` với font chữ chung và `box-sizing: border-box`.
+  * Modal In Báo Cáo Quản Trị Doanh Nghiệp: Tự động áp dụng linh hoạt theo chế độ:
+    - Khổ Dọc (Portrait): `@page { size: A4 portrait; margin: 10mm 12mm; }`
+    - Khổ Ngang (Landscape): `@page { size: A4 landscape; margin: 8mm 10mm; }`
+  * Đảm bảo bản in vừa vặn trọn vẹn 1 trang A4, không bị tràn lề, sát mép hoặc rớt dòng.
+
+### 3. Khắc Phục Nút "Thêm Mới Nhân Sự" Trong Hành Chính & Nhân Sự:
+- Sửa hàm `openCreateEmployeePage()` trong `static/js/app.js`: Bổ sung điều hướng ẩn các view hiện tại và hiển thị tường minh view `#view-employee-form`. Nút "+ Thêm Mới Nhân Sự" đã hoạt động mượt mà và chính xác.
+
+### 4. Chuẩn Hóa Font Chữ Các Trường Số Toàn Bộ Hệ Thống:
+- Thống nhất font chữ số với font chữ text: Chuyển đổi toàn bộ các trường số, class `.font-mono`, `table td.font-mono`, `input[type="number"]` sang sử dụng cùng font chữ hệ thống `var(--font-family-primary)` (Plus Jakarta Sans / Be Vietnam Pro).
+- Kết hợp kích hoạt thuộc tính `font-variant-numeric: tabular-nums` để các chữ số tự động gióng hàng dọc thẳng tắp, chuẩn mực giao diện ERP doanh nghiệp mà không bị đổi sang font monospace dị biệt.
+
+### 5. Bổ Sung Cột "STT" Cho Toàn Bộ Hệ Thống 14 Báo Cáo Quản Trị:
+- Bổ sung cột header `<th class="text-center w-12 font-bold">STT</th>` và render `${index + 1}` ở cột đầu tiên cho toàn bộ 16 bảng báo cáo:
+  1. `rep1-pnl-table`: Hiệu Suất Đội Xe & P&L
+  2. `rep2-shipping-lines-table`: Bảng Ma Trận Hãng Tàu
+  3. `rep2-containers-table`: Bảng Chi Tiết Vỏ Container & DEM/DET
+  4. `rep3-otp-table`: Đúng Giờ & Chất Lượng Vận Tải (OTP)
+  5. `rep4-expenses-table`: Chi Phí Tuyến & Hoàn Chi Hộ
+  6. `rep5-layover-table`: Cắt Kéo Bàn Giao & Lưu Xe Sau 0H
+  7. `rep6-osd-table`: Sự Cố & Ngoại Lệ (OS&D)
+  8. `rep7-customer-table`: Doanh Thu Khách Hàng & Sản Lượng TEU
+  9. `rep8-subcontractor-summary-table`: Bảng Tổng Hợp Nhà Xe Thầu Phụ
+  10. `rep8-subcontractor-trips-table`: Chi Tiết Chuyến Xe Ngoài 3PL
+  11. `rep9-driver-payroll-table`: Lương Chuyến & Năng Suất Tài Xế
+  12. `rep10-dispatcher-funds-table`: Quỹ Tạm Ứng Điều Vận (Kế Toán QL)
+  13. `rep11-driver-advances-table`: Tạm Ứng & Chi Phí Tài Xế (TUTX)
+  14. `rep12-settlement-table`: Quyết Toán Chuyến & Backlog Tồn Đọng
+  15. `rep13-ar-aging-table`: Công Nợ Phải Thu Khách Hàng (AR Aging)
+  16. `rep14-unsettled-aging-table`: Tuổi Đơn Hàng Tồn Đọng Chưa Chốt
+- Điều chỉnh đồng bộ `colspan` của các dòng thông báo rỗng và các dòng tổng cộng `tfoot` tăng thêm 1 cột, đảm bảo lưới bảng cân đối tuyệt đối.
+
+---
+
 ## [2.9.40] - 2026-10-10 (Cài Đặt Quản Trị: Phân Quyền & Vai Trò Khai Thác Nguyên Bản Django Auth RBAC & Admin Site)
 
 ### 1. Khai Thác Nguyên Bản Phân Quyền Django (Django Native Auth RBAC):

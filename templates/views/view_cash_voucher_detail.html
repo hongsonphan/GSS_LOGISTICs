@@ -115,24 +115,8 @@
                         <span>Quay Lại Tài chính & Kế toán</span>
                     </button>
 
-                    <!-- Bên phải: Toàn bộ nút hành động nghiệp vụ (Xóa, In, Lưu) -->
+                    <!-- Bên phải: Toàn bộ nút hành động nghiệp vụ theo chuẩn (Sửa, Lưu, In, Xóa) -->
                     <div class="flex items-center gap-2.5 flex-wrap">
-                        <!-- Nút XÓA (Chỉ hiện khi xem phiếu đã lưu) -->
-                        <button type="button" id="btn-form-delete-voucher" onclick="confirmDeleteCashVoucher()" 
-                            class="hidden px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-rose-300 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                            title="Xóa phiếu khỏi sổ quỹ">
-                            <i class="ph-bold ph-trash text-sm"></i>
-                            <span>Xóa</span>
-                        </button>
-
-                        <!-- Nút IN (Chỉ hiện khi xem phiếu đã lưu) -->
-                        <button type="button" id="btn-form-print-voucher" onclick="printCurrentFormVoucher()" 
-                            class="hidden px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                            title="In phiếu khổ A4">
-                            <i class="ph-bold ph-printer text-base text-emerald-400"></i>
-                            <span>In Phiếu</span>
-                        </button>
-
                         <!-- Nút SỬA (Chỉ hiện khi xem phiếu đã lưu) -->
                         <button type="button" id="btn-form-edit-voucher" onclick="enableFullpageVoucherEdit()" 
                             class="hidden px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
@@ -141,11 +125,27 @@
                             <span>Sửa</span>
                         </button>
 
-                        <!-- Nút LƯU (Tạo mới: "Lưu Phiếu" | Xem/Sửa: "Lưu Thay Đổi") -->
+                        <!-- Nút LƯU (Tạo mới: "Lưu Phiếu" | Xem/Sửa: "Lưu") -->
                         <button type="submit" id="btn-form-submit-voucher" 
                             class="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-sm flex items-center gap-2 transition-all cursor-pointer">
                             <i class="ph-bold ph-check-circle text-base"></i>
                             <span id="btn-form-submit-voucher-text">Lưu Phiếu</span>
+                        </button>
+
+                        <!-- Nút IN (Chỉ hiện khi xem phiếu đã lưu) -->
+                        <button type="button" id="btn-form-print-voucher" onclick="printCurrentFormVoucher()" 
+                            class="hidden px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="In phiếu khổ A4">
+                            <i class="ph-bold ph-printer text-base text-emerald-400"></i>
+                            <span>In</span>
+                        </button>
+
+                        <!-- Nút XÓA (Chỉ hiện khi xem phiếu đã lưu) -->
+                        <button type="button" id="btn-form-delete-voucher" onclick="confirmDeleteCashVoucher()" 
+                            class="hidden px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-rose-300 rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Xóa phiếu khỏi sổ quỹ">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                            <span>Xóa</span>
                         </button>
                     </div>
                 </div>
