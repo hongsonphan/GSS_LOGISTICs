@@ -2,6 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.45] - 2026-10-11 (Khắc Phục Triệt Để Lệch Cột STT Báo Cáo 12 & 13, Khôi Phục Đúng Tên Trường & Ghim Cố Định Cột STT Đếm Bản Ghi)
+
+### 1. Khắc Phục Lệch Cột STT Trong Báo Cáo BI (Fix Report Columns Alignment & Add Record Count STT):
+- **Nguyên nhân cốt lõi:**
+  * Tại Báo Cáo 12 (Quyết Toán Chuyến Xe & Backlog - `rep12-settlement-table`) và Báo Cáo 13 (Công Nợ Phải Thu & Tuổi Nợ - `rep13-ar-aging-table`), tiêu đề bảng `<thead>` đã có cột `STT`, nhưng trong logic render dòng dữ liệu `<tbody>` của `app.js` bị sót ô `${index + 1}`.
+  * Dẫn đến hiện tượng dữ liệu bị dịch sang trái 1 cột: Cột `STT` hiển thị giá trị của trường dữ liệu đầu tiên (`Mã Chuyến` trong Báo cáo 12, `Tên Khách Hàng` trong Báo cáo 13), các cột kế tiếp hiển thị sai tên trường và cột cuối cùng bị thiếu.
+- **Biện pháp xử lý toàn diện:**
+  * **Bổ sung cột STT đếm bản ghi (`${index + 1}`):** Đã thêm ô `<td class="text-center font-bold text-slate-500 text-xs">${index + 1}</td>` vào đúng vị trí đầu tiên của từng dòng trong `applyReport12Filters` và `applyReport13Filters`.
+  * **Khôi phục đúng 100% tên trường:** Trả lại chính xác từng cột dữ liệu thẳng hàng với tiêu đề tương ứng (`Mã Chuyến`, `Ngày Chạy`, `Khách Hàng`, `Tài Xế`, `Doanh Thu`, `Chi Phí`, `Công Nợ`...).
+  * **Điều chỉnh ô tổng kết chân bảng (`tfoot`):** Cập nhật `colspan` ở hàng tổng cộng (Báo cáo 12 từ `colspan="7"` lên `colspan="8"`) để các cột tiền tệ và chỉ số thống kê gióng hàng hoàn hảo.
+  * **Ghim bảo vệ cột STT trong `column_manager.js`:** Cập nhật cơ chế merge của Universal Table Column Manager để đảm bảo cột `stt` (hoặc cột khóa `origIdx === 0`) luôn luôn được ưu tiên ghim ở vị trí đầu tiên (`index 0`), không bao giờ bị đẩy xuống cuối bảng dù người dùng có cache cấu hình cột cũ trong `localStorage`.
+  * **Xác thực toàn bộ 14/14 báo cáo BI:** 100% khớp tuyệt đối giữa số lượng thẻ `<th>` tiêu đề và các ô `<td>` dữ liệu thực tế.
+
 ## [2.9.44] - 2026-10-11 (Thống Nhất Chuẩn Hóa 100% Nhãn Nút Lưu Thành "Lưu" Toàn Hệ Thống)
 
 ### 1. Chuẩn Hóa Nhãn Nút "Lưu" (Universal Save Button Label):

@@ -215,10 +215,21 @@
                         }
                     });
 
-                    // Thêm bất kỳ cột mới nào chưa có trong cache
+                    // Thêm bất kỳ cột mới nào chưa có trong cache (cột STT luôn ưu tiên chèn đầu bảng)
                     Object.values(defaultMap).forEach(function(c) {
-                        merged.push(Object.assign({}, c));
+                        if (c.key === 'stt' || c.origIdx === 0) {
+                            merged.unshift(Object.assign({}, c));
+                        } else {
+                            merged.push(Object.assign({}, c));
+                        }
                     });
+
+                    // Đảm bảo cột STT luôn luôn ghim ở vị trí đầu tiên (index 0)
+                    const sttIdx = merged.findIndex(function(c) { return c.key === 'stt' || (c.locked && c.origIdx === 0); });
+                    if (sttIdx > 0) {
+                        const sttCol = merged.splice(sttIdx, 1)[0];
+                        merged.unshift(sttCol);
+                    }
 
                     // Đảm bảo không bao giờ toàn bộ các cột bị ẩn do cache cũ
                     const visibleCols = merged.filter(function(c) { return c.visible; });

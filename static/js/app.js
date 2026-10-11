@@ -18748,7 +18748,7 @@ function applyReport12Filters() {
     if (tfoot) {
         tfoot.innerHTML = `
             <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
-                <td colspan="7" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
+                <td colspan="8" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
                 <td class="text-right text-slate-900 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
                 <td class="text-right text-rose-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
                 <td class="text-right text-indigo-700 font-mono font-black p-2">${canViewFinance ? formatMoneyVND(totalReim) : '***'}</td>
@@ -18790,6 +18790,7 @@ function applyReport12Filters() {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors ${item.is_carry_over ? 'bg-amber-50/20' : ''}">
+                <td class="text-center font-bold text-slate-500 text-xs">${index + 1}</td>
                 <td class="font-bold text-xs">
                     <a href="javascript:void(0)" onclick="viewTripDetail('${escapeHtml(item.trip_code)}')" class="font-mono text-teal-800 hover:text-teal-900 underline flex items-center gap-1">
                         <i class="ph-bold ph-truck"></i>
@@ -18958,6 +18959,7 @@ function applyReport13Filters() {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
+                <td class="text-center font-bold text-slate-500 text-xs">${index + 1}</td>
                 <td class="font-bold text-xs text-slate-900">
                     <div class="flex items-center gap-1.5 cursor-pointer text-teal-800 hover:text-teal-900" onclick="viewCustomerARStatement('${custIdSafe}')">
                         <i class="ph-bold ph-buildings text-teal-700"></i>
