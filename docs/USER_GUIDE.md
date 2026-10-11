@@ -1,17 +1,8 @@
-# SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG BIM LOGISTICS
-## Quy Trình Vận Hành Tiêu Chuẩn & Cẩm Nang Thao Tác Cầm Tay Chỉ Việc
+# SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG BIM LOGISTICS™
+## Quy Trình Vận Hành Tiêu Chuẩn & Cẩm Nang Thao Tác Hệ Thống (Phiên Bản v1.0)
 
-> **Đơn vị ban hành:** Công ty TNHH Vận Tải Triền Võ (BIM Logistics Platform)  
-> **Phiên bản tài liệu:** v1.0 | **Tra cứu trực tuyến:** `https://logistics.bim.info.vn/helps`  
-> **BIM LOGISTICS - BIZ SOLUTIONS | Hotline:** 0903.012.099 | **Email:** bimconsultingvn@gmail.com  
-
----
-
-## 3 NGUYÊN TẮC BẤT BIẾN KHI THAO TÁC TRÊN TOÀN BỘ HỆ THỐNG
-
-1. **Trường thông tin bắt buộc (`*`):** Tất cả các ô nhập liệu có dấu hoa thị màu đỏ `*` bắt buộc phải điền đầy đủ dữ liệu. Hệ thống sẽ chặn và cảnh báo nếu để trống.
-2. **Nút "Lưu" thống nhất:** Nút bấm hoàn tất hoặc xác nhận dữ liệu trên mọi màn hình và hộp thoại luôn mang tên duy nhất là chữ **`Lưu`**.
-3. **Bảo toàn dữ liệu pháp lý (Soft-Delete):** Thao tác Xóa không bao giờ xóa vĩnh viễn dữ liệu pháp lý (vận đơn, POD, chi phí, GPS). Bản ghi chỉ bị ẩn (`is_deleted=True`) để bảo vệ chứng cứ pháp lý và lịch sử truy vết vận tải.
+> **BIM LOGISTICS - BIZ SOLUTIONS** | **Hotline:** 0903.012.099 | **Email:** bimconsultingvn@gmail.com  
+> **Tra cứu trực tuyến:** `https://logistics.bim.info.vn/helps`  
 
 ---
 
