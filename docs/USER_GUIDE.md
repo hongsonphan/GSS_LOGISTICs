@@ -1,9 +1,9 @@
-# SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG BIM LOGISTICS (TMS)
+# SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG BIM LOGISTICS
 ## Quy Trình Vận Hành Tiêu Chuẩn & Cẩm Nang Thao Tác Cầm Tay Chỉ Việc
 
 > **Đơn vị ban hành:** Công ty TNHH Vận Tải Triền Võ (BIM Logistics Platform)  
-> **Phiên bản tài liệu:** v2.9.49 | **Tra cứu trực tuyến:** `https://logistics.bim.info.vn/helps`  
-> **Tổng đài hỗ trợ 24/7:** 0965.559.561 | **Email:** support@trienvo.com  
+> **Phiên bản tài liệu:** v1.0 | **Tra cứu trực tuyến:** `https://logistics.bim.info.vn/helps`  
+> **BIM LOGISTICS - BIZ SOLUTIONS | Hotline:** 0903.012.099 | **Email:** bimconsultingvn@gmail.com  
 
 ---
 
@@ -21,7 +21,7 @@
   - [1. Nền Tảng Vận Hành & Phân Quyền Vai Trò (RBAC)](#1-nền-tảng-vận-hành--phân-quyền-vai-trò-rbac)
   - [2. Dashboard Ban Giám Đốc (Executive BI)](#2-dashboard-ban-giám-đốc-executive-bi)
   - [3. Phân Hệ Sale & Booking (CRM, Báo Giá & Đơn Hàng)](#3-phân-hệ-sale--booking-crm-báo-giá--đơn-hàng)
-  - [4. Phân Hệ Điều Vận & Chuyến Xe (TMS Core Engine)](#4-phân-hệ-điều-vận--chuyến-xe-tms-core-engine)
+  - [4. Phân Hệ Điều Vận & Chuyến Xe ](#4-phân-hệ-điều-vận--chuyến-xe-tms-core-engine)
   - [5. Phân Hệ Quản Lý Đội Xe, Bãi & Nhân Sự (Fleet & HR)](#5-phân-hệ-quản-lý-đội-xe-bãi--nhân-sự-fleet--hr)
   - [6. Phân Hệ Tài Chính, Tạm Ứng & Sổ Quỹ (Accounting & Cash Flow)](#6-phân-hệ-tài-chính-tạm-ứng--sổ-quỹ-accounting--cash-flow)
   - [7. Phân Hệ Thủ Tục Hải Quan Điện Tử (Customs Declaration)](#7-phân-hệ-thủ-tục-hải-quan-điện-tử-customs-declaration)
@@ -66,7 +66,7 @@
 
 ## 1. Nền Tảng Vận Hành & Phân Quyền Vai Trò (RBAC)
 
-Nền tảng **BIM Logistics Platform** được thiết kế theo mô hình điều hành khép kín (Full-cycle Logistics TMS) chuyên biệt cho vận tải đường bộ Container FCL, hàng rời FTL và dịch vụ cảng biển tại Việt Nam.
+Nền tảng **BIM Logistics Platform** được thiết kế theo mô hình điều hành khép kín (Full-cycle Logistics) chuyên biệt cho vận tải đường bộ Container FCL, hàng rời FTL và dịch vụ cảng biển tại Việt Nam.
 
 ### Chu Trình Luồng Dữ Liệu 7 Bước Khép Kín:
 ```
@@ -105,7 +105,7 @@ Kết nối giữa Phòng Kinh doanh và Khách hàng:
 
 ---
 
-## 4. Phân Hệ Điều Vận & Chuyến Xe (TMS Core Engine)
+## 4. Phân Hệ Điều Vận & Chuyến Xe 
 
 Phân hệ trọng yếu nhất của hệ thống:
 - **Phân công phương tiện:** Gán Đầu kéo, Rơ-moóc, Tài xế theo thời gian thực.

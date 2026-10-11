@@ -136,14 +136,14 @@
             <!-- Brand & Logo -->
             <div class="flex items-center gap-3">
                 <a href="/" class="flex items-center gap-2.5 group cursor-pointer" title="Về màn hình làm việc">
-                    <img src="/static/images/logo_clean.png" alt="BIM Logo" class="h-9 w-auto object-contain group-hover:scale-105 transition-transform">
-                    <div>
-                        <div class="text-[10px] font-black uppercase text-teal-600 tracking-wider">Hệ Sinh Thái BIM Logistics</div>
-                        <h1 class="text-base font-black text-slate-900 tracking-tight leading-none group-hover:text-teal-700 transition-colors">TRUNG TÂM TRỢ GIÚP & HDSD</h1>
+                    <img src="/static/images/logo_clean.png" alt="BIM Logo" class="h-10 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-sm">
+                    <div class="overflow-hidden flex flex-col justify-center">
+                        <span class="text-[11px] font-extrabold text-teal-600 uppercase tracking-wider font-heading leading-tight">BIZ SOLUTIONS</span>
+                        <h1 class="text-[16px] sm:text-[18px] font-black text-slate-900 uppercase tracking-tight font-heading leading-tight mt-0.5 truncate group-hover:text-teal-700 transition-colors">BIM LOGISTICS</h1>
                     </div>
                 </a>
                 <span class="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                    v2.9.49
+                    v1.0
                 </span>
             </div>
 
@@ -171,20 +171,65 @@
         </div>
     </header>
 
-    <!-- HERO BANNER -->
-    <section class="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white py-8 px-4 sm:px-6 lg:px-8 border-b border-teal-950 no-print">
-        <div class="max-w-7xl mx-auto">
-            <div class="max-w-3xl">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 text-teal-200 text-xs font-bold mb-2.5">
-                    <i class="ph-bold ph-book-open"></i>
-                    <span>Sổ Tay Hướng Dẫn Vận Hành & Khai Báo 13 Danh Mục Tiêu Chuẩn</span>
+    <!-- HERO BANNER (CHUẨN HƯỚNG DẪN SỬ DỤNG PHẦN MỀM) -->
+    <section class="bg-gradient-to-r from-teal-950 via-teal-900 to-slate-900 text-white py-8 px-4 sm:px-6 lg:px-8 border-b border-teal-950 no-print">
+        <div class="max-w-7xl mx-auto space-y-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-teal-800/60">
+                <div class="space-y-1.5">
+                    <div class="text-[11px] font-bold uppercase tracking-widest text-teal-300 font-heading">
+                        CÔNG TY TNHH VẬN TẢI TRIỀN VÕ • QUY TRÌNH & SỔ TAY VẬN HÀNH TIÊU CHUẨN
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white font-heading">
+                        SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG BIM LOGISTICS
+                    </h2>
+                    <p class="text-xs sm:text-sm text-teal-100/90 leading-relaxed max-w-4xl font-normal">
+                        Tài liệu chính thức ban hành áp dụng cho Ban Giám Đốc, Điều Phối Viên, Kế Toán Vận Tải, Nhân Viên Kinh Doanh và Đội Ngũ Lái Xe.
+                    </p>
                 </div>
-                <h2 class="text-2xl sm:text-3xl font-black tracking-tight font-heading">
-                    Hướng Dẫn Sử Dụng Toàn Diện Nền Tảng BIM Logistics (TMS)
-                </h2>
-                <p class="mt-1.5 text-xs sm:text-sm text-teal-100/90 leading-relaxed font-medium">
-                    Tài liệu chuẩn hóa quy trình điều vận, thiết lập 13 danh mục nền tảng, quản lý tạm ứng, quyết toán chuyến xe và khai thác 14 báo cáo BI.
-                </p>
+                <div class="shrink-0 flex items-center gap-3">
+                    <div class="text-right hidden sm:block font-mono text-[11px] text-teal-200/80">
+                        <div>Phiên bản: <strong class="text-white">v1.0</strong></div>
+                        <div>Hệ thống: <strong class="text-teal-300">BIM LOGISTICS</strong></div>
+                    </div>
+                    <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer border border-teal-400/30">
+                        <i class="ph-bold ph-printer text-base"></i>
+                        <span>In Sổ Tay Khổ A4</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3 NGUYÊN TẮC BẤT BIẾN KHI THAO TÁC TRÊN TOÀN BỘ HỆ THỐNG -->
+            <div>
+                <div class="text-[11px] font-bold text-teal-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <i class="ph-bold ph-shield-check text-teal-400 text-sm"></i>
+                    <span>3 Nguyên Tắc Bất Biến Khi Thao Tác Trên Toàn Bộ Hệ Thống</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div class="bg-teal-900/40 backdrop-blur-sm p-3.5 rounded-xl border border-teal-700/50 text-teal-100">
+                        <div class="font-bold text-white mb-1 flex items-center gap-1.5">
+                            <span class="text-rose-400 text-sm font-black">*</span> Trường bắt buộc (*)
+                        </div>
+                        <p class="text-[11.5px] text-teal-200/90 leading-relaxed">
+                            Tất cả ô nhập liệu có dấu hoa thị màu đỏ bắt buộc phải điền đầy đủ dữ liệu. Hệ thống sẽ chặn và cảnh báo nếu để trống.
+                        </p>
+                    </div>
+                    <div class="bg-teal-900/40 backdrop-blur-sm p-3.5 rounded-xl border border-teal-700/50 text-teal-100">
+                        <div class="font-bold text-white mb-1 flex items-center gap-1.5">
+                            <i class="ph-bold ph-floppy-disk text-teal-300"></i> Nút "Lưu" thống nhất
+                        </div>
+                        <p class="text-[11.5px] text-teal-200/90 leading-relaxed">
+                            Nút bấm hoàn tất hoặc xác nhận dữ liệu trên mọi màn hình và hộp thoại luôn mang tên duy nhất là chữ <strong>"Lưu"</strong>.
+                        </p>
+                    </div>
+                    <div class="bg-teal-900/40 backdrop-blur-sm p-3.5 rounded-xl border border-teal-700/50 text-teal-100">
+                        <div class="font-bold text-white mb-1 flex items-center gap-1.5">
+                            <i class="ph-bold ph-lock-key text-teal-300"></i> An toàn Soft-Delete
+                        </div>
+                        <p class="text-[11.5px] text-teal-200/90 leading-relaxed">
+                            Thao tác Xóa không bao giờ xóa cứng dữ liệu pháp lý (vận đơn, POD, chi phí, GPS). Bản ghi chỉ bị ẩn (is_deleted=True) để bảo toàn lịch sử.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -444,14 +489,11 @@
                 <div class="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 text-xs">
                     <div class="font-black text-teal-900 flex items-center gap-1.5 mb-1 font-heading">
                         <i class="ph-bold ph-headphones text-teal-700 text-sm"></i>
-                        <span>Tổng Đài Hỗ Trợ 24/7</span>
+                        <span>BIM LOGISTICS - BIZ SOLUTIONS</span>
                     </div>
-                    <p class="text-teal-800 text-[11px] leading-relaxed mb-2 font-medium">
-                        Cấp tài khoản & hỗ trợ kỹ thuật:
-                    </p>
-                    <div class="space-y-0.5 font-mono text-[11px]">
-                        <div class="text-slate-800">Hotline: <strong class="text-teal-900">0965.559.561</strong></div>
-                        <div class="text-slate-800">Email: <span class="text-teal-800">support@trienvo.com</span></div>
+                    <div class="space-y-1 text-[11.5px] mt-2">
+                        <div class="text-slate-700">Hotline: <strong class="text-teal-900 font-mono font-bold">0903.012.099</strong></div>
+                        <div class="text-slate-700">Email: <a href="mailto:bimconsultingvn@gmail.com" class="text-teal-800 font-medium hover:underline">bimconsultingvn@gmail.com</a></div>
                     </div>
                 </div>
             </div>
@@ -461,60 +503,35 @@
         <main class="flex-1 min-w-0 space-y-10 print-full" id="help-content-container">
 
             <!-- HEADER TIÊU ĐỀ TRANG TÀI LIỆU CHUẨN A4 -->
-            <div class="doc-page-container rounded-2xl p-6 sm:p-8 border border-slate-200">
-                <div class="border-b-2 border-teal-800 pb-5 mb-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="doc-page-container rounded-2xl p-8 sm:p-12 border border-slate-200 space-y-8">
+                <div class="border-b-2 border-slate-900 pb-5 mb-4">
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>
                             <div class="text-xs uppercase font-extrabold tracking-widest text-teal-800 font-heading">
-                                CÔNG TY TNHH VẬN TẢI TRIỀN VÕ • QUY TRÌNH & SỔ TAY VẬN HÀNH TIÊU CHUẨN
+                                CÔNG TY TNHH VẬN TẢI TRIỀN VÕ • HỆ THỐNG BIM LOGISTICS
                             </div>
-                            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 font-heading">
-                                SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG BIM LOGISTICS (TMS)
+                            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1 uppercase font-heading tracking-tight">
+                                SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG
                             </h2>
-                            <p class="text-xs sm:text-sm text-slate-600 mt-1">
-                                Tài liệu chính thức ban hành áp dụng cho Ban Giám Đốc, Điều Phối Viên, Kế Toán Vận Tải, Nhân Viên Kinh Doanh và Đội Ngũ Lái Xe.
+                            <p class="text-xs sm:text-sm text-slate-600 mt-1 italic">
+                                Quy trình vận hành tiêu chuẩn & cẩm nang thao tác hệ thống (Ban hành năm 2026)
                             </p>
                         </div>
-                        <div class="text-right shrink-0 no-print">
-                            <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs cursor-pointer">
-                                <i class="ph-bold ph-printer text-teal-700 text-sm"></i>
-                                <span>In Bản A4 Sổ Tay</span>
-                            </button>
+                        <div class="text-right shrink-0 text-xs font-mono text-slate-500 space-y-0.5">
+                            <div>Mã văn bản: <strong class="text-slate-800">HDSD-BIM-v1.0</strong></div>
+                            <div>Hiệu lực: <strong class="text-slate-800">Toàn hệ thống</strong></div>
+                            <div class="no-print pt-2">
+                                <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs cursor-pointer">
+                                    <i class="ph-bold ph-printer text-teal-700"></i>
+                                    <span>In Trang A4 Này</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- 3 QUY TẮC BẤT BIẾN KHI THAO TÁC TRÊN HỆ THỐNG -->
-                <div class="bg-teal-50/60 border border-teal-200 rounded-xl p-4 sm:p-5">
-                    <h3 class="text-xs font-black text-teal-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 font-heading">
-                        <i class="ph-bold ph-shield-check text-teal-700 text-sm"></i>
-                        3 NGUYÊN TẮC BẤT BIẾN KHI THAO TÁC TRÊN TOÀN BỘ HỆ THỐNG
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-700">
-                        <div class="bg-white p-3 rounded-lg border border-teal-100 shadow-2xs">
-                            <div class="font-bold text-teal-900 mb-1 flex items-center gap-1">
-                                <span class="text-rose-600 font-bold">*</span> Trường bắt buộc (*)
-                            </div>
-                            Tất cả ô nhập liệu có dấu hoa thị màu đỏ bắt buộc phải điền đầy đủ dữ liệu. Hệ thống sẽ chặn và cảnh báo nếu để trống.
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border border-teal-100 shadow-2xs">
-                            <div class="font-bold text-teal-900 mb-1 flex items-center gap-1">
-                                <i class="ph-bold ph-floppy-disk text-teal-700"></i> Nút "Lưu" thống nhất
-                            </div>
-                            Nút bấm hoàn tất hoặc xác nhận dữ liệu trên mọi màn hình và hộp thoại luôn mang tên duy nhất là chữ <strong>"Lưu"</strong>.
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border border-teal-100 shadow-2xs">
-                            <div class="font-bold text-teal-900 mb-1 flex items-center gap-1">
-                                <i class="ph-bold ph-lock-key text-teal-700"></i> An toàn Soft-Delete
-                            </div>
-                            Thao tác Xóa không bao giờ xóa cứng dữ liệu pháp lý (vận đơn, POD, chi phí, GPS). Bản ghi chỉ bị ẩn (is_deleted=True) để bảo toàn lịch sử.
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- ========================================================================= -->
-            <!-- PHẦN I: MÔ TẢ PHÂN HỆ & TÍNH NĂNG                                         -->
+            <!-- PHẦN I:<!-- PHẦN I: MÔ TẢ PHÂN HỆ & TÍNH NĂNG                                         -->
             <!-- ========================================================================= -->
 
             <div class="pt-2">
@@ -536,7 +553,7 @@
 
                 <div class="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
                     <p>
-                        Nền tảng <strong>BIM Logistics Platform</strong> được thiết kế theo mô hình điều hành khép kín (Full-cycle Logistics TMS) chuyên biệt cho vận tải đường bộ Container FCL, hàng rời FTL và dịch vụ cảng biển tại Việt Nam. Toàn bộ dòng công việc được kết nối liền mạch từ khâu tiếp nhận nhu cầu vận chuyển của khách hàng đến khi thu hồi chứng từ POD và quyết toán sổ quỹ.
+                        Nền tảng <strong>BIM Logistics Platform</strong> được thiết kế theo mô hình điều hành khép kín (Full-cycle Logistics) chuyên biệt cho vận tải đường bộ Container FCL, hàng rời FTL và dịch vụ cảng biển tại Việt Nam. Toàn bộ dòng công việc được kết nối liền mạch từ khâu tiếp nhận nhu cầu vận chuyển của khách hàng đến khi thu hồi chứng từ POD và quyết toán sổ quỹ.
                     </p>
 
                     <!-- Sơ đồ chu trình 7 bước -->
@@ -703,19 +720,19 @@
                 </div>
             </section>
 
-            <!-- MỤC 4: ĐIỀU VẬN & CHUYẾN XE (TMS CORE) -->
+            <!-- MỤC 4: ĐIỀU VẬN & CHUYẾN XE  -->
             <section id="sec-dispatch" class="help-section doc-page-container rounded-2xl p-6 sm:p-8 scroll-mt-24">
                 <div class="doc-section-title flex items-center justify-between">
                     <div>
                         <span class="text-[11px] font-black uppercase text-teal-700 tracking-wider">Mục 4 • Trọng Tâm Vận Hành</span>
-                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 3: Điều Vận & Quản Lý Chuyến Xe (TMS Core Engine)</h3>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 3: Điều Vận & Quản Lý Chuyến Xe </h3>
                     </div>
                     <span class="text-xs font-mono font-bold text-slate-400">PHẦN I.4</span>
                 </div>
 
                 <div class="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
                     <p>
-                        Phân hệ lõi của hệ thống TMS: Thực hiện điều động và phân công phương tiện (Đầu kéo, Rơ-moóc, Bác tài), xử lý triệt để các nghiệp vụ vận tải phức tạp như Cắt Kéo 2 chặng (Drop & Hook) và Chở Ghép 2 Cont 20ft (Twin-container), kiểm soát chặt chẽ máy trạng thái chuyến xe (State Machine 11 bước), kê khai chi phí vận hành kèm tách biệt khoản Chi Hộ khách hàng (Debit Note), và đồng bộ mốc thời gian từ Mobile tài xế.
+                        Phân hệ lõi của hệ thống: Thực hiện điều động và phân công phương tiện (Đầu kéo, Rơ-moóc, Bác tài), xử lý triệt để các nghiệp vụ vận tải phức tạp như Cắt Kéo 2 chặng (Drop & Hook) và Chở Ghép 2 Cont 20ft (Twin-container), kiểm soát chặt chẽ máy trạng thái chuyến xe (State Machine 11 bước), kê khai chi phí vận hành kèm tách biệt khoản Chi Hộ khách hàng (Debit Note), và đồng bộ mốc thời gian từ Mobile tài xế.
                     </p>
 
                     <!-- Alert Note State machine -->

@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v1.0] - 2026-10-11 (Chuẩn Hóa Nhận Diện Thương Hiệu Toàn Hệ Thống v1.0 & Tái Cấu Trúc Toàn Diện Trang /helps)
+
+### 1. Chuẩn Hóa Nhận Diện Thương Hiệu & Phiên Bản Hệ Thống (Brand Identity & Version v1.0):
+- **Header chuẩn hóa theo thiết kế BIZ SOLUTIONS - BIM LOGISTICS:**
+  * Khối Logo & Brand Text chuẩn nhận diện: Dòng trên `BIZ SOLUTIONS` (font chữ hoa màu xanh ngọc), dòng dưới `BIM LOGISTICS` (chữ in hoa đậm nét).
+  * Phiên bản chính thức thống nhất: **`v1.0`** cho toàn bộ hệ thống nền tảng.
+- **Loại bỏ triệt để từ khóa "TMS" trên toàn bộ ứng dụng:**
+  * Rà soát và loại bỏ 100% từ khóa `(TMS)` / `TMS` không liên quan khỏi giao diện người dùng, tiêu đề trang, modal in ấn báo cáo, form tờ khai và tài liệu hướng dẫn.
+  * Tên gọi chính thức nhất quán: **Hệ Thống BIM Logistics**.
+
+### 2. Tái Cấu Trúc Hero Banner & Trang Tài Liệu A4 /helps:
+- **Hero Banner màu xanh chuẩn Sổ tay Phần mềm:**
+  * Tích hợp toàn bộ thông tin ban hành: Đơn vị ban hành (Công ty TNHH Vận Tải Triền Võ), tiêu đề văn bản, phạm vi áp dụng (Ban Giám Đốc, Điều Phối Viên, Kế Toán, Kinh Doanh, Lái Xe).
+  * Trình bày 3 Nguyên tắc bất biến (Trường bắt buộc `*`, Nút "Lưu" thống nhất, An toàn Soft-delete) trực tiếp trên nền Banner xanh trang trọng, thanh lịch.
+  * Nút thao tác nhanh: `In Sổ Tay Khổ A4`.
+- **Trang A4 Hành chính liền mạch (Loại bỏ hoàn toàn thẻ card AI):**
+  * Phần nội dung A4 bắt đầu bằng tiêu đề văn bản hành chính quy chuẩn (`HDSD-BIM-v1.0`).
+  * Nội dung 3 Phần lớn (I. Mô tả phân hệ; II. 13 danh mục Master Data; III. Thao tác nhập liệu chi tiết) trình bày liền mạch, mạch lạc, dễ theo dõi, in ấn và lưu trữ chuẩn PDF.
+- **Thông tin Hỗ trợ & Tổng đài chuẩn xác:**
+  * Hiển thị: **BIM LOGISTICS - BIZ SOLUTIONS** | Hotline: **0903.012.099** | Email: **bimconsultingvn@gmail.com**.
+
 ## [2.9.50] - 2026-10-11 (Đồng Bộ Nhận Diện Thương Hiệu: Favicon Logo BIM & Cập Nhật Tiêu Đề Tab Hệ Thống)
 
 ### 1. Đồng Bộ Nhận Diện Favicon Logo BIM (Ecosystem Brand Consistency):
