@@ -64,6 +64,15 @@ function getAuthHeaders(extraHeaders = {}) {
     return headers;
 }
 
+function getCsrfToken() {
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta && csrfMeta.content) return csrfMeta.content;
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+}
+window.getCsrfToken = getCsrfToken;
+window.getAuthHeaders = getAuthHeaders;
+
 /**
  * Wrapper gọi fetch có xác thực kép thông minh:
  * - Gửi JWT Bearer Token + Django Session Cookie + CSRF
@@ -14530,23 +14539,23 @@ function switchMasterDataTab(tabKey) {
     }
 
     const labels = {
-        'company': '✏️ Hiệu Chỉnh Thông Tin Công Ty',
+        'company': '✏️ Sửa Thông Tin Công Ty',
         'roles_permissions': '🛡️ Quản Lý Vai Trò',
         'opening_balance': '💰 Khai Báo Số Dư Đầu Kỳ',
-        'driver_tariffs': '+ Thêm Mới Tuyến Lương',
-        'allowances': '+ Thêm Mới Phụ Cấp',
-        'locations': '+ Thêm Mới Cảng / Kho',
-        'tariffs': '+ Thêm Mới Biểu Cước Khách',
-        'customers': '+ Thêm Mới Khách Hàng',
-        'expenses': '+ Thêm Mới Khoản Chi',
-        'containers': '+ Thêm Mới Quy Cách',
-        'vehicles': '+ Thêm Mới Đầu Kéo / Xe',
-        'trailers': '+ Thêm Mới Rơ-Moóc',
-        'shipping_lines': '+ Thêm Mới Hãng Tàu',
-        'subcontractors': '+ Thêm Mới Xe Thầu Phụ'
+        'driver_tariffs': 'Tạo mới',
+        'allowances': 'Tạo mới',
+        'locations': 'Tạo mới',
+        'tariffs': 'Tạo mới',
+        'customers': 'Tạo mới',
+        'expenses': 'Tạo mới',
+        'containers': 'Tạo mới',
+        'vehicles': 'Tạo mới',
+        'trailers': 'Tạo mới',
+        'shipping_lines': 'Tạo mới',
+        'subcontractors': 'Tạo mới'
     };
     const createBtnLabel = document.getElementById('md-create-btn-label');
-    if (createBtnLabel) createBtnLabel.innerText = labels[tabKey] || '+ Thêm Mới';
+    if (createBtnLabel) createBtnLabel.innerText = labels[tabKey] || 'Tạo mới';
 
     const searchInput = document.getElementById('md-search-input');
     if (searchInput) searchInput.value = '';
@@ -15547,7 +15556,7 @@ async function loadOpeningBalanceData() {
     }
 
     try {
-        const res = await fetch('/api/master-data/opening-balances/');
+        const res = await fetchWithAuth('/api/master-data/opening-balances/');
         if (!res.ok) throw new Error('Không thể tải dữ liệu số dư đầu kỳ');
         const data = await res.json();
         openingBalanceState.data = data;
@@ -16095,12 +16104,8 @@ async function saveOpeningBalanceItem() {
             : '/api/master-data/opening-balances/';
         const method = isEditing ? 'PUT' : 'POST';
 
-        const res = await fetch(url, {
+        const res = await fetchWithAuth(url, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
             body: JSON.stringify(payload)
         });
 
@@ -16128,11 +16133,8 @@ async function deleteOpeningBalanceItem(id, name) {
     }
 
     try {
-        const res = await fetch(`/api/master-data/opening-balances/${id}/`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': getCsrfToken()
-            }
+        const res = await fetchWithAuth(`/api/master-data/opening-balances/${id}/`, {
+            method: 'DELETE'
         });
 
         const data = await res.json();
