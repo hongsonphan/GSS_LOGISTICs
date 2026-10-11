@@ -2,6 +2,34 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.4] - 2026-10-11 (Rà Soát & Chuẩn Hóa 100% Tên Nút Bấm Thực Tế Trong Sổ Tay Hướng Dẫn Sử Dụng)
+
+### 1. Rà Soát & Chuẩn Hóa Danh Sách Nút Bấm Giao Diện (/helps):
+- **Đối chiếu thực tế 100%:** Quét toàn bộ mã nguồn template giao diện (`templates/views/*.html`, `templates/modals/*.html`) và chuẩn hóa mọi mô tả nút bấm trong sổ tay `/helps` đúng khớp với nhãn hiển thị thực tế:
+  * **Phân hệ Sale & Booking:**
+    - Sub-tab 1 (Báo Giá): Chuẩn hóa tên nút mở form từ `+ Tạo Báo Giá Mới` thành **+ Tạo mới** (nút màu tím/xanh góc trên bên phải tab).
+    - Sub-tab 2 (Booking): Chuẩn hóa tên nút từ `+ Tạo Booking Mới` thành **+ Tạo mới** (tại tab 2. Đơn Đặt Hàng / Booking).
+    - Thanh tác vụ chi tiết: Chuẩn hóa nút lưu và in ấn thành **Lưu**, **In**, **Quay Lại Sale & Booking**.
+    - Nút tạo nhanh đối tác: Chuẩn hóa thành **[+ Thêm KH Mới]** và **[+ Tạo mới]** dòng tuyến.
+  * **Phân hệ Điều vận:**
+    - Chuẩn hóa nút phát lệnh từ `+ Phát Lệnh Điều Xe` thành **Tạo Lệnh Điều Động** (kèm link `/dispatch/create/`).
+    - Nút tạo nhanh trong form phát lệnh: Chuẩn hóa thành **[Tạo Booking Mới]**, **[Thêm KH Mới]**, **[Thêm]** địa điểm.
+    - Nút kê chi phí: Chuẩn hóa thành **Thêm Khoản Chi** trên thanh tác vụ hoặc **+ Thêm Dòng Chi Phí** dưới bảng chi phí.
+    - Nút quyết toán: Chuẩn hóa thành **Quyết Toán Đợt Tài Xế** và **⚡ Quyết Toán Gom Chuyến**.
+  * **Phân hệ Cài đặt - Master Data (13 danh mục):**
+    - Chuẩn hóa toàn bộ tên nút tạo mới động của 13 danh mục: `+ Thêm Mới Tuyến Lương`, `+ Thêm Mới Phụ Cấp`, `+ Thêm Mới Cảng / Kho`, `+ Thêm Mới Biểu Cước Khách`, `+ Thêm Mới Khách Hàng`, `+ Thêm Mới Hãng Tàu`, `+ Thêm Mới Đầu Kéo / Xe`, `+ Thêm Mới Rơ-Moóc`, `+ Thêm Mới Xe Thầu Phụ`, `+ Thêm Mới Khoản Chi`, `+ Thêm Mới Quy Cách`.
+  * **Phân hệ Hành chính - Nhân sự & Tài chính - Kế toán & Hải quan:**
+    - Nhân sự: Chuẩn hóa thành nút **+ Thêm Mới Nhân Sự**.
+    - Quỹ điều vận: Chuẩn hóa thành nút **+ Yêu Cầu Tạm Ứng Quỹ Từ Cty**.
+    - Sổ quỹ: Chuẩn hóa thành nút **Lập Phiếu Thu** và **Lập Phiếu Chi**.
+    - Xe thầu phụ (3PL): Chuẩn hóa thành nút **+ Gom Nhóm Lập Debit Note** và **Xuất Bảng Kê Xe Bạn Excel**.
+    - Hải quan: Chuẩn hóa thành nút **Đăng Ký Tờ Khai Mới** và **Xuất Bảng Kê Excel**.
+    - Báo cáo BI: Chuẩn hóa các nút tác vụ **[Cột]**, **[Xuất Excel]**, **[In Báo Cáo]**.
+
+### 2. Kiểm Thử Hệ Thống (Zero-Regression):
+- 92/92 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`).
+- Cú pháp JavaScript kiểm tra hợp lệ 100% (`node -c static/js/app.js` & `node -c static/js/column_manager.js`).
+
 ## [v2.3] - 2026-10-11 (Khai Báo & Quản Lý Số Dư Đầu Kỳ Tài Chính - Giao Diện Trang Độc Lập Trong Cài Đặt Admin)
 
 ### 1. Kiến Trúc & Cơ Sở Dữ Liệu:
