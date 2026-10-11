@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v1.5] - 2026-10-11 (Tái Cấu Trúc Toàn Diện Sổ Tay /helps Dạng Document Phẳng A4, Loại Bỏ Thẻ Đóng & Chuẩn Hóa Mục Lục)
+
+### 1. Triệt Tiêu Hoàn Toàn Các Câu Ghi Phần & Thẻ Đóng Hộp:
+- **Loại Bỏ 100% Cụm Từ "PHẦN I", "PHẦN II", "PHẦN III":** Xóa sạch toàn bộ các badge nền màu (nâu, xanh) và các đề mục ghi "PHẦN...".
+- **Chuyển Đổi Sang Tiêu Đề Văn Bản Hành Chính Chuẩn:**
+  * `I. MÔ TẢ PHÂN HỆ CHỨC NĂNG`
+  * `II. KHAI BÁO DANH MỤC`
+  * `III. HƯỚNG DẪN NHẬP LIỆU`
+- **Loại Bỏ Các "Thẻ Đóng" Bo Viền Hộp (Card Boxes):** Bỏ các khối bọc `bg-slate-50 border border-slate-200 rounded-xl` gây cảm giác rời rạc kiểu AI; chuyển toàn bộ nội dung sang dạng Document in ấn A4 phẳng, các mục phân cấp mạch lạc bằng thẻ `<h3>`, `<h4>`, bảng biểu phẳng và danh sách bullet liền mạch.
+
+### 2. Chuẩn Hóa & Nâng Cấp Kích Thước Mục Lục (TOC):
+- **Tăng Cỡ Chữ Mục Lục Lên 1-2 Size Hài Hòa:** Mở rộng chiều rộng sidebar từ `w-72` lên `w-80`, tăng kích thước font đề mục chính lên `text-[13.5px] - text-sm` in hoa đậm, các mục con lên `text-[13px]`, mục cháu lên `text-[12.5px]`, tạo khoảng đệm thoáng đãng, dễ đọc.
+- **Khớp Đúng 100% Thuật Ngữ Với Hệ Thống:**
+  * **Nhóm I (9 mục con):** Lấy đúng 100% tên từ Sidebar hệ thống: *1. Dashboard Tổng quan, 2. Sale & Booking, 3. Điều vận, 4. Xe & Bãi, 5. Hành chính & Nhân sự, 6. Tài chính & Kế toán, 7. Dịch vụ Hải quan, 8. Báo cáo & Thống kê, 9. Cài đặt*.
+  * **Nhóm II (13 mục con):** Lấy đúng 100% từ 13 tab Master Data trong Cài đặt: *1. Khai Báo Thông Tin Công Ty, 2. Vai Trò & Phân Quyền, 3. Biểu Phí Lương Chuyến, 4. Phụ Cấp & Kiểm Hóa, 5. Cảng & Kho Bãi, 6. Biểu Cước Khách, 7. Khách Hàng, 8. Hãng Tàu, 9. Đầu Kéo & Xe, 10. Rơ-Moóc, 11. Nhà Xe Thầu Phụ, 12. Khoản Chi, 13. Quy Cách*.
+  * **Nhóm III (8 mục con):** Lấy đúng các phân hệ và thao tác tính năng thực tế.
+
+### 3. Kiểm Thử Hệ Thống & Triển Khai:
+- Vượt qua 89/89 unit tests (`python manage.py test --keepdb`). Cú pháp JavaScript và kiểm tra Django hoàn toàn hợp lệ (0 issues).
+
 ## [v1.4] - 2026-10-11 (Tinh Gọn Toàn Diện Giao Diện Sổ Tay /helps & Chuẩn Hóa Điều Hướng Hệ Thống)
 
 ### 1. Tinh Gọn & Chuẩn Hóa Giao Diện Sổ Tay Hướng Dẫn Sử Dụng (`/helps`):
