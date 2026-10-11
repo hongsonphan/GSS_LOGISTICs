@@ -230,3 +230,38 @@ class DriverBatchSettlementTests(TestCase):
         self.assertIn('cash_transaction_id', res.data)
         self.assertEqual(res.data['cash_transaction']['amount'], 600000) # 1,000,000 - 400,000 = 600,000 thừa
         self.assertEqual(res.data['cash_transaction']['transaction_type'], 'INFLOW')
+
+    def test_customer_ar_reconciliation_workflow(self):
+        """Kiểm tra quy trình chốt đối soát công nợ khách hàng (Customer SOA Reconciliation)."""
+        self.client.force_authenticate(user=self.accountant_user)
+        url = '/api/accounting/customer-reconciliation/'
+
+        # 1. Chốt đối soát cho trip1 (COMPLETED)
+        payload = {
+            'action': 'RECONCILE',
+            'trip_ids': [self.trip1.id]
+        }
+        res = self.client.post(url, data=payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data['success'])
+        self.assertEqual(res.data['reconciled_count'], 1)
+        self.assertIn('SOA-', res.data['soa_code'])
+
+        self.trip1.refresh_from_db()
+        self.assertTrue(self.trip1.customer_reconciled)
+        self.assertEqual(self.trip1.customer_reconciled_by, self.accountant_emp)
+        self.assertTrue(self.trip1.customer_soa_code.startswith('SOA-'))
+
+        # 2. Mở lại đối soát
+        payload_un = {
+            'action': 'UNRECONCILE',
+            'trip_ids': [self.trip1.id]
+        }
+        res_un = self.client.post(url, data=payload_un, format='json')
+        self.assertEqual(res_un.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_un.data['success'])
+
+        self.trip1.refresh_from_db()
+        self.assertFalse(self.trip1.customer_reconciled)
+        self.assertEqual(self.trip1.customer_soa_code, '')
+

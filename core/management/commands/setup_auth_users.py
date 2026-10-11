@@ -49,17 +49,18 @@ class Command(BaseCommand):
                 'phone': '0908111222',
             },
             {
-                'username': 'taixe',
-                'password': 'TaiXe@2026',
-                'email': 'taixe@bim.info.vn',
+                'username': 'nhansu',
+                'password': 'NhanSu@2026',
+                'email': 'nhansu@bim.info.vn',
                 'is_staff': False,
                 'is_superuser': False,
-                'emp_code': 'TX001',
-                'full_name': 'Nguyễn Văn Bụi',
-                'nickname': 'BỤI 94',
-                'role': EmployeeRole.DRIVER,
-                'department': Department.FLEET,
-                'phone': '0903333444',
+                'emp_code': 'NS001',
+                'full_name': 'Lê Thị Thu Thảo',
+                'nickname': 'QUẢN LÝ NHÂN SỰ',
+                'role': EmployeeRole.ACCOUNTANT,
+                'department': Department.HR,
+                'phone': '0903334455',
+                'group_name': 'Quản Lý Nhân Sự'
             },
         ]
 
@@ -90,9 +91,35 @@ class Command(BaseCommand):
                 emp.department = acc['department']
                 emp.save(update_fields=['user', 'full_name', 'role', 'department'])
 
+            # Gán Nhóm vai trò (Group) tương ứng
+            group_name = acc.get('group_name')
+            if not group_name:
+                if acc['username'] == 'admin':
+                    group_name = 'Ban Giám Đốc'
+                elif acc['username'] == 'dieudo':
+                    group_name = 'Điều Phối Viên'
+                elif acc['username'] == 'ketoan':
+                    group_name = 'Kế Toán Cước'
+            
+            if group_name:
+                from django.contrib.auth.models import Group
+                grp = Group.objects.filter(name=group_name).first()
+                if grp:
+                    user.groups.set([grp])
+
             status_str = "Created" if created else "Updated"
             self.stdout.write(self.style.SUCCESS(
                 f"[{status_str}] User: {acc['username']} | Role: {acc['role']} ({acc['emp_code']})"
             ))
+
+        # Loại trừ tài khoản taixe khỏi quyền truy cập hệ thống
+        taixe_user = User.objects.filter(username='taixe').first()
+        if taixe_user:
+            taixe_user.is_active = False
+            taixe_user.groups.clear()
+            taixe_user.save()
+            # Hủy liên kết user khỏi Employee tài xế (TX001)
+            Employee.objects.filter(user=taixe_user).update(user=None)
+            self.stdout.write(self.style.WARNING("[Deactivated] Tai khoan taixe da duoc vo hieu hoa va tach khoi he thong."))
 
         self.stdout.write(self.style.SUCCESS("=== HOAN TAT THIET LAP USERS THANH CONG ==="))
