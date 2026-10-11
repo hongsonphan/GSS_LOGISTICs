@@ -1302,6 +1302,14 @@ class CompanyProfileAPIView(MasterDataBaseAPIView):
         })
 
 
+def _format_date_val(val):
+    if not val:
+        return ''
+    if hasattr(val, 'strftime'):
+        return val.strftime('%Y-%m-%d')
+    return str(val)
+
+
 class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
     """
     API Quản lý Số dư đầu kỳ (Opening Balances):
@@ -1352,7 +1360,7 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
                 'category_display': b.get_category_display(),
                 'entity_code': b.entity_code,
                 'entity_name': b.entity_name,
-                'opening_date': b.opening_date.strftime('%Y-%m-%d') if b.opening_date else '',
+                'opening_date': _format_date_val(b.opening_date),
                 'amount': float(b.amount),
                 'is_debit': b.is_debit,
                 'notes': b.notes,
@@ -1435,7 +1443,7 @@ class OpeningBalanceListCreateAPIView(MasterDataBaseAPIView):
                 'category_display': record.get_category_display(),
                 'entity_code': record.entity_code,
                 'entity_name': record.entity_name,
-                'opening_date': record.opening_date.strftime('%Y-%m-%d') if record.opening_date else '',
+                'opening_date': _format_date_val(record.opening_date),
                 'amount': float(record.amount),
                 'is_debit': record.is_debit,
                 'notes': record.notes,
@@ -1459,7 +1467,7 @@ class OpeningBalanceDetailAPIView(MasterDataBaseAPIView):
                 'category_display': b.get_category_display(),
                 'entity_code': b.entity_code,
                 'entity_name': b.entity_name,
-                'opening_date': b.opening_date.strftime('%Y-%m-%d') if b.opening_date else '',
+                'opening_date': _format_date_val(b.opening_date),
                 'amount': float(b.amount),
                 'is_debit': b.is_debit,
                 'notes': b.notes,
@@ -1503,7 +1511,7 @@ class OpeningBalanceDetailAPIView(MasterDataBaseAPIView):
                 'category_display': record.get_category_display(),
                 'entity_code': record.entity_code,
                 'entity_name': record.entity_name,
-                'opening_date': record.opening_date.strftime('%Y-%m-%d') if record.opening_date else '',
+                'opening_date': _format_date_val(record.opening_date),
                 'amount': float(record.amount),
                 'is_debit': record.is_debit,
                 'notes': record.notes,

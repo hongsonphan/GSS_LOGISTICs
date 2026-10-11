@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.3] - 2026-10-11 (Khai Báo & Quản Lý Số Dư Đầu Kỳ Tài Chính - Giao Diện Trang Độc Lập Trong Cài Đặt Admin)
+
+### 1. Kiến Trúc & Cơ Sở Dữ Liệu:
+- **Model `OpeningBalance` & Enum `OpeningBalanceCategory`:**
+  * Phân loại số dư đầu kỳ thành 7 nhóm cốt lõi: `CASH_FUND` (Tiền mặt & Quỹ nội bộ), `BANK_ACCOUNT` (Tiền gửi Ngân hàng), `DISPATCHER_FUND` (Quỹ Tạm ứng Điều vận), `DRIVER_ADVANCE` (Công nợ Tạm ứng Tài xế), `CUSTOMER_AR` (Công nợ Phải thu Khách hàng), `SUBCONTRACTOR_AP` (Công nợ Phải trả Thầu phụ / Xe bạn), `OTHER` (Số dư khác).
+  * Kế thừa `TimeStampedModel` và `SoftDeleteModel` (không bao giờ xóa cứng dữ liệu tài chính).
+  * Lưu trữ chính xác mã đối tượng, tên đối tượng, ngày chốt số dư, số tiền (VNĐ), tính chất Dư Nợ (+) / Dư Có (-) và ghi chú chứng từ căn cứ.
+
+### 2. Backend REST API (`/api/master-data/opening-balances/`):
+- **`OpeningBalanceListCreateAPIView` (GET, POST):**
+  * GET: Trả về danh sách số dư, hỗ trợ bộ lọc theo danh mục, tìm kiếm và tổng hợp 4 chỉ số KPI tài chính tổng quan (`total_cash_bank`, `total_customer_ar`, `total_subcontractor_ap`, `total_dispatcher_fund + total_driver_advance`). Cung cấp sẵn danh sách gợi ý chọn nhanh khách hàng, nhà xe và tài xế từ cơ sở dữ liệu.
+  * POST: Xác thực và ghi nhận bản ghi số dư đầu kỳ mới.
+- **`OpeningBalanceDetailAPIView` (GET, PUT, DELETE):**
+  * Hỗ trợ chỉnh sửa và soft-delete bản ghi số dư đầu kỳ.
+
+### 3. Giao Diện Người Dùng (UI/UX Chuẩn Trang - Tuyệt Đối Không Dùng Modal Popup):
+- **Sub-tab "Số Dư Đầu Kỳ" trong Cài Đặt Hệ Thống:** Nằm ngay sau tab "Vai Trò & Phân Quyền".
+- **Bố cục trình bày dạng trang (Flat Full-Page View):**
+  * **Header Banner:** Giới thiệu mục đích quản lý số dư đầu kỳ hệ thống kèm nút làm mới dữ liệu.
+  * **4 Thẻ KPI Tổng Hợp:** Tiền Mặt & Ngân Hàng, Phải Thu Khách Hàng (AR), Phải Trả Thầu Phụ (AP), Quỹ Tạm Ứng Điều Vận & Tài Xế.
+  * **Card Form Nhập Trực Tiếp Trên Trang (Flat Card):** Cho phép nhập mới/sửa trực tiếp với tính năng tự động gợi ý đối tượng, định dạng tiền tệ tức thì (`oninput`), chọn tính chất Dư Nợ/Dư Có.
+  * **Bảng Dữ Liệu Số Dư Đầu Kỳ:** Tích hợp bộ lọc phân loại dạng pills, ô tìm kiếm thời gian thực, bảng phân biệt trực quan Dư Nợ (xanh lá) vs Dư Có (đỏ/cam), hỗ trợ thao tác Sửa cuộn lên form và Xóa bản ghi.
+
+### 4. Kiểm Thử Hệ Thống (Zero-Regression):
+- 92/92 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`), bao gồm `OpeningBalanceAPITestCase`.
+- Cú pháp JavaScript hợp lệ 100% (`node -c static/js/app.js` & `node -c static/js/column_manager.js`).
+
 ## [v2.2] - 2026-10-11 (Chuẩn Hóa Phân Quyền Quản Lý Tài Xế, Cắt Kéo & Tối Ưu Bố Cục Giao Diện Điều Vận)
 
 ### 1. Phân Quyền Quản Lý Tài Xế & Chuẩn Hóa Giao Diện Tạo Chuyến:

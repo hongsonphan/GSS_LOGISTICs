@@ -239,3 +239,66 @@ class MasterDataAPITestCase(TestCase):
         self.assertEqual(company.notes, 'Chính sách kiểm đếm hàng hóa & seal nghiêm ngặt')
         self.assertEqual(float(company.default_vat_rate), 10.0)
 
+
+class OpeningBalanceAPITestCase(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from apps.master_data.models import OpeningBalance, OpeningBalanceCategory
+        self.client = APIClient()
+        self.admin_user = User.objects.create_superuser(username='ob_admin', email='ob@test.com', password='password123')
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.b1 = OpeningBalance.objects.create(
+            category=OpeningBalanceCategory.CASH_FUND,
+            entity_code='QTM_VP',
+            entity_name='Quỹ Tiền Mặt Văn Phòng',
+            opening_date='2026-01-01',
+            amount=50000000,
+            is_debit=True,
+            notes='Tồn quỹ đầu kỳ'
+        )
+        self.b2 = OpeningBalance.objects.create(
+            category=OpeningBalanceCategory.CUSTOMER_AR,
+            entity_code='KH_SAMSUNG',
+            entity_name='Công ty TNHH Samsung',
+            opening_date='2026-01-01',
+            amount=120000000,
+            is_debit=True,
+            notes='Nợ cước tháng trước'
+        )
+
+    def test_opening_balance_crud(self):
+        # 1. GET list & KPIs
+        res = self.client.get('/api/master-data/opening-balances/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data.get('success'))
+        self.assertEqual(len(res.data['items']), 2)
+        self.assertEqual(res.data['kpis']['total_cash_bank'], 50000000.0)
+        self.assertEqual(res.data['kpis']['total_customer_ar'], 120000000.0)
+
+        # 2. POST create
+        create_res = self.client.post('/api/master-data/opening-balances/', {
+            'category': 'DRIVER_ADVANCE',
+            'entity_code': 'TX001',
+            'entity_name': 'Nguyễn Văn Tuấn',
+            'opening_date': '2026-01-01',
+            'amount': 5000000,
+            'is_debit': True,
+            'notes': 'Tạm ứng đường trường'
+        }, format='json')
+        self.assertEqual(create_res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(create_res.data.get('success'))
+        new_id = create_res.data['data']['id']
+
+        # 3. PUT update
+        update_res = self.client.put(f'/api/master-data/opening-balances/{new_id}/', {
+            'amount': 7000000,
+            'notes': 'Tạm ứng đường trường bổ sung'
+        }, format='json')
+        self.assertEqual(update_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(update_res.data['data']['amount'], 7000000.0)
+
+        # 4. DELETE
+        del_res = self.client.delete(f'/api/master-data/opening-balances/{new_id}/')
+        self.assertEqual(del_res.status_code, status.HTTP_200_OK)
+        self.assertTrue(del_res.data.get('success'))
