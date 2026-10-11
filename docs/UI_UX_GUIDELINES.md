@@ -157,21 +157,27 @@ Cell number: font-mono tabular-nums
 - Cell tên: Căn trái, `font-bold`
 - Không dùng border giữa các cột (chỉ dùng `divide-y`)
 
-### 4.4 Action Button (Nút Hành Động)
+### 4.4 Action Button (Hệ Thống Nút Bấm Chuẩn — Button Design System)
 
-| Loại | Classes | Dùng khi |
-|---|---|---|
-| **Primary** | `bg-teal-700 hover:bg-teal-800 text-white` | Hành động chính: Tạo mới, Lưu |
-| **Success** | `bg-emerald-600 hover:bg-emerald-700 text-white` | Thêm chi phí, Xác nhận |
-| **Warning** | `bg-amber-500 hover:bg-amber-600 text-white` | Sửa, Cập nhật |
-| **Danger** | `bg-rose-600 hover:bg-rose-700 text-white` | Xóa (có xác nhận) |
-| **Secondary** | `bg-slate-100 hover:bg-slate-200 text-slate-700` | Hủy, Đóng |
-| **Lock** | `bg-indigo-700 hover:bg-indigo-800 text-white` | Chốt sổ kế toán |
+> **Nguyên tắc cốt lõi (Outline-to-Solid on Hover):**  
+> - **Trạng thái Mặc định (Default/Idle):** Không màu (nền trong suốt `bg-transparent`), viền có màu chuẩn (`border: 1.5px solid <màu chuẩn>`), chữ và icon mang màu chuẩn tương ứng với độ sắc nét và tương phản cao.  
+> - **Trạng thái Rê Chuột (Hover):** Con chuột rà vào ô thì mới hiển thị **FULL MÀU SOLID** (`bg-<color>`), chữ và icon tự động đổi sang màu trắng sáng `#ffffff` rõ nét.  
+> - **Bộ 4 Nút Chân Form Chi Tiết:** Luôn sắp xếp theo thứ tự chuẩn: **Sửa** (Amber) | **Lưu** (Teal) | **In** (Slate) | **Xóa** (Rose).
+
+| Loại Thao Tác | Màu Chuẩn | Trạng Thái Mặc Định | Trạng Thái Hover (Rà Chuột) | Dùng khi |
+|---|---|---|---|---|
+| **Primary (Chính)** | **Teal** (`#0d9488`) | `bg-transparent border-teal-600 text-teal-700` | `hover:bg-teal-600 hover:text-white` | Tạo mới, Lưu dữ liệu, Xem chi tiết |
+| **Warning (Hiệu chỉnh)** | **Amber** (`#d97706`) | `bg-transparent border-amber-600 text-amber-700` | `hover:bg-amber-600 hover:text-white` | Sửa, Cập nhật thông tin |
+| **Secondary / Print** | **Slate** (`#475569`) | `bg-transparent border-slate-600 text-slate-700` | `hover:bg-slate-700 hover:text-white` | In ấn (khổ A4), Đóng, Quay lại |
+| **Danger (Xóa/Hủy)** | **Rose** (`#e11d48`) | `bg-transparent border-rose-600 text-rose-700` | `hover:bg-rose-600 hover:text-white` | Xóa bản ghi (có xác nhận), Hủy bỏ |
+| **Finance / Inflow** | **Emerald** (`#059669`) | `bg-transparent border-emerald-600 text-emerald-700` | `hover:bg-emerald-600 hover:text-white` | Thu tiền (Lập Phiếu Thu), Xuất Excel |
+| **Sales / CRM** | **Indigo** (`#4f46e5`) | `bg-transparent border-indigo-600 text-indigo-700` | `hover:bg-indigo-600 hover:text-white` | Tạo Báo Giá, Quản lý Khách hàng |
 
 **Quy tắc:**
-- Tất cả nút: `rounded-xl px-3.5 py-2 text-xs font-bold font-heading transition-all`
-- Icon trong nút: Phosphor Icons, `mr-1.5 text-base`
-- Nút ≥44px chiều cao trên mobile (đáp ứng WCAG touch target)
+- Tất cả nút: `rounded-xl px-3.5 py-2 text-xs font-bold font-heading transition-all duration-200 cursor-pointer`
+- Hiệu ứng chuyển động mượt: `transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)`
+- Icon trong nút: Phosphor Icons, `mr-1.5 text-base` (khi hover tự động chuyển thành màu trắng cùng text)
+- Chiều cao trên mobile: Tối thiểu 44px (đáp ứng chuẩn WCAG 2.1 AA touch target)
 
 ### 4.5 Form Input (Ô Nhập Liệu)
 

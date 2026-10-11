@@ -5436,16 +5436,16 @@ function renderEmployeesTable(items) {
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <!-- 1. Xem Hồ Sơ (Toàn màn hình) -->
                     <button type="button" onclick="openEditEmployeePage(${emp.id})" 
-                        class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xem chi tiết, Sửa, Lưu & Tạm ngưng hồ sơ">
-                        <i class="ph-bold ph-eye text-emerald-700"></i>
+                        <i class="ph-bold ph-eye"></i>
                         <span>Xem</span>
                     </button>
                     <!-- 2. In nhanh Hồ Sơ khổ A4 -->
                     <button type="button" onclick="openDirectPrintEmployee(${emp.id})" 
-                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="In nhanh hồ sơ nhân sự khổ A4">
-                        <i class="ph-bold ph-printer text-slate-700"></i>
+                        <i class="ph-bold ph-printer"></i>
                         <span>In</span>
                     </button>
                 </div>
@@ -9275,16 +9275,16 @@ function renderBookingsTable(bookings) {
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <!-- 1. Xem Booking (Toàn màn hình) -->
                     <button type="button" onclick="openModalBooking(${b.id}, true)" 
-                        class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xem chi tiết, Sửa, Lưu & Xóa đơn hàng">
-                        <i class="ph-bold ph-eye text-emerald-700"></i>
+                        <i class="ph-bold ph-eye"></i>
                         <span>Xem</span>
                     </button>
                     <!-- 2. In nhanh Booking khổ A4 -->
                     <button type="button" onclick="openDirectPrintBooking(${b.id})" 
-                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="In nhanh phiếu Booking khổ A4">
-                        <i class="ph-bold ph-printer text-slate-700"></i>
+                        <i class="ph-bold ph-printer"></i>
                         <span>In</span>
                     </button>
                 </div>
@@ -9609,16 +9609,16 @@ function renderQuotationsTable(quotations) {
                 <div class="inline-flex items-center gap-1.5 justify-center">
                     <!-- 1. Xem Báo Giá (Toàn màn hình) -->
                     <button type="button" onclick="viewQuotationDetail('${quoteHash}')" 
-                        class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="Xem chi tiết, Sửa, Lưu & Xóa báo giá">
-                        <i class="ph-bold ph-eye text-emerald-700"></i>
+                        <i class="ph-bold ph-eye"></i>
                         <span>Xem</span>
                     </button>
                     <!-- 2. In nhanh Báo Giá khổ A4 -->
                     <button type="button" onclick="openDirectPrintQuotation('${quoteHash}')" 
-                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         title="In nhanh Báo giá khổ A4">
-                        <i class="ph-bold ph-printer text-slate-700"></i>
+                        <i class="ph-bold ph-printer"></i>
                         <span>In</span>
                     </button>
                 </div>
@@ -12663,15 +12663,15 @@ function renderCashBookTable(list) {
                 <td class="text-center">
                     <div class="inline-flex items-center gap-1.5 justify-center">
                         <button type="button" onclick="viewCashVoucherDetail('${escapeHtml(item.id || item.code)}')" 
-                            class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                             title="Xem chi tiết, Sửa, Lưu & Xóa phiếu Thu/Chi">
-                            <i class="ph-bold ph-eye text-emerald-700"></i>
+                            <i class="ph-bold ph-eye"></i>
                             <span>Xem</span>
                         </button>
                         <button type="button" onclick="openDirectPrintCashVoucher('${escapeHtml(item.id || item.code)}')" 
-                            class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                             title="In nhanh phiếu Thu/Chi khổ A4 (Mẫu BTC)">
-                            <i class="ph-bold ph-printer text-slate-700"></i>
+                            <i class="ph-bold ph-printer"></i>
                             <span>In</span>
                         </button>
                     </div>
@@ -20153,16 +20153,16 @@ function renderCustomsTable(list) {
                     <div class="inline-flex items-center gap-1.5 justify-center">
                         <!-- 1. Xem Tờ Khai (Toàn màn hình) -->
                         <button type="button" onclick="openCustomsPage(${d.id})" 
-                            class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                             title="Xem chi tiết, Sửa, Lưu & Xóa tờ khai">
-                            <i class="ph-bold ph-eye text-emerald-700"></i>
+                            <i class="ph-bold ph-eye"></i>
                             <span>Xem</span>
                         </button>
                         <!-- 2. In nhanh Tờ Khai khổ A4 -->
                         <button type="button" onclick="openDirectPrintCustoms(${d.id})" 
-                            class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                             title="In nhanh tờ khai hải quan khổ A4">
-                            <i class="ph-bold ph-printer text-slate-700"></i>
+                            <i class="ph-bold ph-printer"></i>
                             <span>In</span>
                         </button>
                     </div>

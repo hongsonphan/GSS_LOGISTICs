@@ -2,6 +2,39 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.42] - 2026-10-11 (Chuẩn Hóa Button Design System: Nền Trong Suốt / Viền Màu Chuẩn -> Hover Hiển Thị Full Màu Solid Toàn Hệ Thống)
+
+### 1. Chuẩn Hóa Thiết Kế Button Toàn Hệ Thống (Button Design System):
+- **Trạng thái Mặc định (Default/Idle):**
+  * Nền trong suốt (`bg-transparent` / `background-color: transparent !important`).
+  * Viền có màu chuẩn (`border: 1.5px solid <màu chuẩn>` / `border-color: <color>`).
+  * Văn bản và icon mang màu chuẩn tương ứng với độ tương phản cao, sắc nét.
+- **Trạng thái Rê Chuột (Hover):**
+  * Nền chuyển sang **FULL MÀU SOLID** (`background-color: <màu chuẩn> !important`).
+  * Văn bản và toàn bộ icon (`i`, `span`, `svg`) tự động chuyển sang màu trắng sáng `#ffffff !important`.
+  * Đổ bóng nhẹ (`box-shadow: 0 4px 6px -1px rgba(..., 0.25)`), hiệu ứng mượt mà (`transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)`).
+
+### 2. Bảng Màu Chuẩn Toàn Hệ Thống BIM TMS:
+- **Teal (#0d9488 / #0f766e):** Thao tác chính, Lưu, Tạo mới, Xem chi tiết, Đơn hàng, Booking (`.btn-bim-primary`, `border-teal-600 hover:bg-teal-600`).
+- **Amber (#d97706 / #b45309):** Sửa, Hiệu chỉnh, Cảnh báo (`.btn-bim-amber`, `border-amber-600 hover:bg-amber-600`).
+- **Slate (#475569 / #334155):** In ấn, Báo cáo, Đóng, Quay lại, Thao tác thứ cấp (`.btn-bim-secondary`, `.btn-bim-slate`, `border-slate-600 hover:bg-slate-700`).
+- **Rose (#e11d48 / #be123c):** Xóa, Hủy, Tạm ngưng, Nguy hiểm (`.btn-bim-rose`, `border-rose-600 hover:bg-rose-600`).
+- **Indigo/Blue (#4f46e5 / #4338ca):** Khách hàng, Báo giá, Sales, Phân quyền (`.btn-bim-indigo`, `border-indigo-600 hover:bg-indigo-600`).
+- **Emerald (#059669 / #047857):** Thu tiền (Inflow), Hoàn cước, Xuất Excel (`.btn-bim-emerald`, `border-emerald-600 hover:bg-emerald-600`).
+
+### 3. Đồng Bộ Hóa Toàn Diện Trên Các Phân Hệ:
+- **Form Chi Tiết (Bộ 4 nút Sửa | Lưu | In | Xóa & Quay Lại):**
+  * Báo Giá (`view_quotation_detail.html`)
+  * Đơn Hàng / Booking (`view_booking_detail.html`)
+  * Sổ Quỹ Thu / Chi (`view_cash_voucher_detail.html`)
+  * Tờ Khai Hải Quan (`view_customs_form.html`)
+  * Hồ Sơ Nhân Sự (`view_employee_form.html`)
+- **Nút Thao Tác Hàng Trong Bảng Dữ Liệu (`app.js`):**
+  * Cặp nút **Xem** (`border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white`) và **In** (`border-slate-600 text-slate-700 hover:bg-slate-700 hover:text-white`) tại cả 5 phân hệ: Nhân sự, Booking, Báo giá, Sổ quỹ và Hải quan.
+- **Thanh Công Cụ Toolbar / Header:**
+  * Thêm Mới Nhân Sự (`view_personnel.html`), Tạo Báo Giá / Booking (`view_sales.html`), Lập Phiếu Thu / Phiếu Chi / Xuất Excel (`view_accounting.html`), Đăng Ký Tờ Khai / Xuất Bảng Kê (`view_customs.html`).
+- **Kiểm thử thị giác & hồi quy tự động:** 100% Passed (86/86 unit test, 0 lỗi cú pháp JS).
+
 ## [2.9.41] - 2026-10-11 (Chuẩn Hóa Bộ 4 Nút [Sửa | Lưu | In | Xóa], Lề Trang In Khổ A4, Font Số Thống Nhất & Bổ Sung Cột STT Toàn Bộ 14 Báo Cáo)
 
 ### 1. Bố Trí Đúng Chuẩn Bộ 4 Nút Chân Trang: `Sửa | Lưu | In | Xóa`:

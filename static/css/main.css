@@ -268,11 +268,28 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     font-weight: 700;
 }
 
-/* ── 3. BUTTON DESIGN SYSTEM (Bim Enterprise Standard) ── */
-.btn-bim-primary {
-    background-color: var(--color-primary);
-    color: #ffffff !important;
-    font-weight: 600;
+/* ── 3. BUTTON DESIGN SYSTEM (Bim Enterprise Standard: Outline Default -> Hover Full Solid Fill) ── */
+/* Mọi nút trong hệ thống: Mặc định không màu (nền trong suốt), viền có màu chuẩn. Khi rê chuột vào mới hiển thị FULL MÀU */
+
+button,
+.btn-bim-primary,
+.btn-bim-secondary,
+.btn-bim-amber,
+.btn-bim-rose,
+.btn-bim-slate,
+.btn-bim-indigo,
+.btn-bim-emerald {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 1. NÚT CHÍNH / LƯU / TẠO MỚI (TEAL) */
+.btn-bim-primary,
+.btn-outline-teal,
+button.btn-teal {
+    background-color: transparent !important;
+    border: 1.5px solid #0d9488 !important; /* teal-600 */
+    color: #0f766e !important; /* teal-700 */
+    font-weight: 700;
     font-size: var(--font-size-main) !important;
     padding: 6px 14px;
     border-radius: 8px;
@@ -280,45 +297,293 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: all 0.15s ease;
-    border: none;
     cursor: pointer;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    box-shadow: none !important;
 }
-
-.btn-bim-primary:hover {
-    background-color: var(--color-primary-hover);
-    box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.2);
+.btn-bim-primary:hover,
+.btn-outline-teal:hover,
+button.btn-teal:hover {
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(13, 148, 136, 0.35) !important;
 }
-
-.btn-bim-primary:active {
+.btn-bim-primary:hover *,
+.btn-outline-teal:hover *,
+button.btn-teal:hover * {
+    color: #ffffff !important;
+}
+.btn-bim-primary:active,
+.btn-outline-teal:active {
     transform: scale(0.97);
 }
 
-.btn-bim-secondary {
-    background-color: #ffffff;
-    color: #334155 !important;
-    font-weight: 600;
+/* 2. NÚT SỬA / CẢNH BÁO (AMBER) */
+.btn-bim-amber,
+.btn-outline-amber,
+button.btn-amber {
+    background-color: transparent !important;
+    border: 1.5px solid #d97706 !important; /* amber-600 */
+    color: #b45309 !important; /* amber-700 */
+    font-weight: 700;
     font-size: var(--font-size-main) !important;
-    padding: 6px 13px;
+    padding: 6px 14px;
     border-radius: 8px;
-    border: 1px solid #cbd5e1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: all 0.15s ease;
     cursor: pointer;
+    box-shadow: none !important;
 }
-
-.btn-bim-secondary:hover {
-    background-color: #f8fafc;
-    border-color: #94a3b8;
-    color: #0f172a !important;
+.btn-bim-amber:hover,
+.btn-outline-amber:hover,
+button.btn-amber:hover {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(217, 119, 6, 0.35) !important;
 }
-
-.btn-bim-secondary:active {
+.btn-bim-amber:hover *,
+.btn-outline-amber:hover *,
+button.btn-amber:hover * {
+    color: #ffffff !important;
+}
+.btn-bim-amber:active,
+.btn-outline-amber:active {
     transform: scale(0.97);
+}
+
+/* 3. NÚT IN / XEM / THỨ CẤP / QUAY LẠI (SLATE) */
+.btn-bim-secondary,
+.btn-bim-slate,
+.btn-outline-slate,
+button.btn-slate {
+    background-color: transparent !important;
+    border: 1.5px solid #475569 !important; /* slate-600 */
+    color: #334155 !important; /* slate-700 */
+    font-weight: 700;
+    font-size: var(--font-size-main) !important;
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+.btn-bim-secondary:hover,
+.btn-bim-slate:hover,
+.btn-outline-slate:hover,
+button.btn-slate:hover {
+    background-color: #334155 !important;
+    border-color: #334155 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(51, 65, 85, 0.35) !important;
+}
+.btn-bim-secondary:hover *,
+.btn-bim-slate:hover *,
+.btn-outline-slate:hover *,
+button.btn-slate:hover * {
+    color: #ffffff !important;
+}
+.btn-bim-secondary:active,
+.btn-outline-slate:active {
+    transform: scale(0.97);
+}
+
+/* 4. NÚT XÓA / NGUY HIỂM / HỦY (ROSE) */
+.btn-bim-danger,
+.btn-bim-rose,
+.btn-outline-rose,
+button.btn-rose,
+button.btn-danger {
+    background-color: transparent !important;
+    border: 1.5px solid #e11d48 !important; /* rose-600 */
+    color: #be123c !important; /* rose-700 */
+    font-weight: 700;
+    font-size: var(--font-size-main) !important;
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+.btn-bim-danger:hover,
+.btn-bim-rose:hover,
+.btn-outline-rose:hover,
+button.btn-rose:hover,
+button.btn-danger:hover {
+    background-color: #e11d48 !important;
+    border-color: #e11d48 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(225, 29, 72, 0.35) !important;
+}
+.btn-bim-danger:hover *,
+.btn-bim-rose:hover *,
+.btn-outline-rose:hover *,
+button.btn-rose:hover *,
+button.btn-danger:hover * {
+    color: #ffffff !important;
+}
+.btn-bim-danger:active,
+.btn-outline-rose:active {
+    transform: scale(0.97);
+}
+
+/* 5. NÚT INDIGO / BLUE (CHỨC NĂNG PHỤ / SALES / ADMIN) */
+.btn-bim-indigo,
+.btn-outline-indigo,
+button.btn-indigo {
+    background-color: transparent !important;
+    border: 1.5px solid #4f46e5 !important; /* indigo-600 */
+    color: #4338ca !important; /* indigo-700 */
+    font-weight: 700;
+    font-size: var(--font-size-main) !important;
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+.btn-bim-indigo:hover,
+.btn-outline-indigo:hover,
+button.btn-indigo:hover {
+    background-color: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(79, 70, 229, 0.35) !important;
+}
+.btn-bim-indigo:hover *,
+.btn-outline-indigo:hover *,
+button.btn-indigo:hover * {
+    color: #ffffff !important;
+}
+.btn-bim-indigo:active,
+.btn-outline-indigo:active {
+    transform: scale(0.97);
+}
+
+/* 6. NÚT EMERALD (THU TIỀN / XUẤT EXCEL / THÀNH CÔNG) */
+.btn-bim-emerald,
+.btn-outline-emerald,
+button.btn-emerald {
+    background-color: transparent !important;
+    border: 1.5px solid #059669 !important; /* emerald-600 */
+    color: #047857 !important; /* emerald-700 */
+    font-weight: 700;
+    font-size: var(--font-size-main) !important;
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+.btn-bim-emerald:hover,
+.btn-outline-emerald:hover,
+button.btn-emerald:hover {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(5, 150, 105, 0.35) !important;
+}
+.btn-bim-emerald:hover *,
+.btn-outline-emerald:hover *,
+button.btn-emerald:hover * {
+    color: #ffffff !important;
+}
+
+/* ── QUY TẮC TỰ ĐỘNG CHO CÁC NÚT TAILWIND SOLID THÀNH CHUẨN OUTLINE -> HOVER FULL SOLID ── */
+button[class*="bg-teal-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]),
+button[class*="bg-teal-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]) {
+    background-color: transparent !important;
+    border: 1.5px solid #0d9488 !important;
+    color: #0f766e !important;
+    box-shadow: none !important;
+}
+button[class*="bg-teal-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover,
+button[class*="bg-teal-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover {
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(13, 148, 136, 0.35) !important;
+}
+button[class*="bg-teal-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover *,
+button[class*="bg-teal-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover * {
+    color: #ffffff !important;
+}
+
+button[class*="bg-amber-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]),
+button[class*="bg-amber-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]) {
+    background-color: transparent !important;
+    border: 1.5px solid #d97706 !important;
+    color: #b45309 !important;
+    box-shadow: none !important;
+}
+button[class*="bg-amber-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover,
+button[class*="bg-amber-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(217, 119, 6, 0.35) !important;
+}
+button[class*="bg-amber-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover *,
+button[class*="bg-amber-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover * {
+    color: #ffffff !important;
+}
+
+button[class*="bg-slate-900"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]),
+button[class*="bg-slate-800"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]) {
+    background-color: transparent !important;
+    border: 1.5px solid #475569 !important;
+    color: #334155 !important;
+    box-shadow: none !important;
+}
+button[class*="bg-slate-900"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover,
+button[class*="bg-slate-800"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover {
+    background-color: #334155 !important;
+    border-color: #334155 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(51, 65, 85, 0.35) !important;
+}
+button[class*="bg-slate-900"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover *,
+button[class*="bg-slate-800"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover * {
+    color: #ffffff !important;
+}
+
+button[class*="bg-rose-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]),
+button[class*="bg-rose-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]),
+button[class*="bg-red-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]),
+button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]) {
+    background-color: transparent !important;
+    border: 1.5px solid #e11d48 !important;
+    color: #be123c !important;
+    box-shadow: none !important;
+}
+button[class*="bg-rose-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover,
+button[class*="bg-rose-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover,
+button[class*="bg-red-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover,
+button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover {
+    background-color: #e11d48 !important;
+    border-color: #e11d48 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(225, 29, 72, 0.35) !important;
+}
+button[class*="bg-rose-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover *,
+button[class*="bg-rose-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover *,
+button[class*="bg-red-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover *,
+button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover * {
+    color: #ffffff !important;
 }
 
 /* ── 4. UNIFIED FORM CONTROLS & DEFENSIVE VALIDATION ── */
