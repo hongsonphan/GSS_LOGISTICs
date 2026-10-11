@@ -2,6 +2,39 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.47] - 2026-10-11 (Biên Soạn Sổ Tay Vận Hành "Cầm Tay Chỉ Việc" Từng Bước Cho 18 Quy Trình Nghiệp Vụ Chuẩn Hóa Trên /helps)
+
+### 1. Cẩm Nang Thao Tác Cầm Tay Chỉ Việc (Step-by-Step Interactive Guides):
+- **Bổ sung mục nổi bật "Cẩm Nang Thao Tác Chuẩn" trên trang `/helps` và `docs/USER_GUIDE.md`:**
+  * Soạn thảo chi tiết 18 quy trình vận hành thực tế theo đúng phong cách cầm tay chỉ việc: *Chỉ rõ menu cần vào ➔ Thẻ/tab cần chọn ➔ Nút bấm thao tác ➔ Danh sách trường có dấu sao đỏ `*` bắt buộc ➔ Bấm nút "Lưu"*.
+  * 18 quy trình bao phủ 100% nghiệp vụ:
+    1. Cách tạo Khách hàng mới
+    2. Cách lập Bảng báo giá vận tải mới & Duyệt báo giá
+    3. Cách tiếp nhận Booking / Đơn hàng mới từ hãng tàu & khách hàng
+    4. Cách tạo Lệnh điều động chuyến xe mới (Phát lệnh cho xe)
+    5. Cách xử lý chuyến Cắt kéo (2 chặng) & Ghép 2 Cont 20ft
+    6. Cách kê khai Chi phí vận hành & Khoản Chi hộ khách hàng (Debit Note)
+    7. Cách tài xế báo 6 Mốc kho & Chụp ảnh POD/EIR trên điện thoại
+    8. Cách thêm mới Đầu kéo & Rơ-moóc vào đội xe
+    9. Cách thêm Hồ sơ nhân viên / Bác tài mới
+    10. Cách kế toán cấp Quỹ tạm ứng điều vận Cấp 1
+    11. Cách điều vận cấp Tạm ứng dọc đường cho tài xế Cấp 2
+    12. Cách quyết toán Hoàn ứng chuyến xe & Cân đối sổ quỹ
+    13. Cách tạo Phiếu thu / Phiếu chi sổ quỹ mẫu S03a-DN
+    14. Cách thỏa thuận cước & Quyết toán xe bạn / Thầu phụ 3PL
+    15. Cách khai báo & Quản lý tờ khai hải quan điện tử (VNACCS)
+    16. Cách quyết toán Gom chuyến xe hàng loạt (Batch Settlement)
+    17. Cách xem, lọc, tùy chỉnh cột & In 14 báo cáo BI khổ A4
+    18. Cách quản lý Danh mục gốc (Địa điểm, Hãng tàu, Khoản mục chi phí)
+- **Chuẩn hóa nguyên tắc thao tác cốt lõi:**
+  * Nhận biết trường bắt buộc có dấu sao đỏ `*`.
+  * Thống nhất 100% nhãn nút `Lưu` viền xanh Teal trên toàn hệ thống.
+  * Tuân thủ cơ chế bảo toàn dữ liệu Soft-Delete (`is_deleted=True`), không dùng hard-delete để bảo vệ tính pháp lý chứng từ.
+- **Tích hợp giao diện trực quan:**
+  * Thêm liên kết nhanh `⭐ Hướng Dẫn Thao Tác (18 Mục)` lên đầu Sidebar điều hướng `/helps`.
+  * Hỗ trợ tìm kiếm tức thì trên thanh search toàn cục với từ khóa nghiệp vụ.
+  * Nâng cấp phiên bản hiển thị hệ thống lên `v2.9.47`.
+
 ## [2.9.46] - 2026-10-11 (Bổ Sung Trang Trợ Giúp /helps & Sổ Tay Hướng Dẫn Sử Dụng Toàn Diện Từng Phân Hệ, Tính Năng & Trường Dữ Liệu)
 
 ### 1. Xây Dựng Trang Trợ Giúp Trực Tuyến & Cổng Tra Cứu (/helps):

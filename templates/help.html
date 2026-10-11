@@ -93,7 +93,7 @@
                     </div>
                 </a>
                 <span class="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                    v2.9.45
+                    v2.9.47
                 </span>
             </div>
 
@@ -165,6 +165,10 @@
                         <i class="ph-bold ph-list"></i>
                     </div>
                     <nav class="space-y-1 text-xs" id="help-nav-list">
+                        <a href="#sec-how-to" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-emerald-800 bg-emerald-50/80 border border-emerald-200 hover:bg-emerald-100 transition-all font-bold">
+                            <i class="ph-bold ph-compass text-sm text-emerald-700 shrink-0"></i>
+                            <span class="truncate">⭐ Hướng Dẫn Thao Tác (18 Mục)</span>
+                        </a>
                         <a href="#sec-overview" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
                             <i class="ph-bold ph-squares-four text-sm text-teal-700 shrink-0"></i>
                             <span class="truncate">1. Kiến Trúc & Phân Quyền</span>
@@ -239,6 +243,637 @@
 
         <!-- MAIN DOCUMENTATION CONTENT -->
         <main class="flex-1 min-w-0 space-y-12 print-full" id="help-content-container">
+
+            <!-- ⭐ CẨM NANG THAO TÁC CẦM TAY CHỈ VIỆC (HOW-TO & STEP-BY-STEP) -->
+            <section id="sec-how-to" class="help-section bg-white rounded-3xl border-2 border-emerald-500/30 p-6 sm:p-8 shadow-sm scroll-mt-24 ring-4 ring-emerald-500/5">
+                <div class="flex items-center justify-between border-b border-emerald-100 pb-5 mb-6">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center text-2xl font-bold shadow-xs">
+                            <i class="ph-bold ph-compass"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    Cẩm Nang Thao Tác Chuẩn
+                                </span>
+                                <span class="text-xs text-slate-400 font-bold">• Dành Cho Người Dùng Mới</span>
+                            </div>
+                            <h3 class="text-xl sm:text-2xl font-black text-slate-900 font-heading mt-0.5">
+                                Hướng Dẫn Thao Tác "Cầm Tay Chỉ Việc" Từng Bước (18 Nghiệp Vụ)
+                            </h3>
+                        </div>
+                    </div>
+                    <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+                        <i class="ph-bold ph-cursor-click text-emerald-600"></i> Bấm để xem chi tiết
+                    </span>
+                </div>
+
+                <!-- 3 Nguyên tắc bất biến -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+                    <div class="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-200 text-xs">
+                        <div class="font-black text-rose-800 flex items-center gap-1.5 mb-1">
+                            <i class="ph-bold ph-asterisk text-rose-600"></i>
+                            <span>Trường Dấu Sao Đỏ (*)</span>
+                        </div>
+                        <p class="text-rose-900/90 leading-relaxed font-medium">
+                            Tất cả ô có dấu <strong>*</strong> bắt buộc phải nhập. Nếu để trống hệ thống sẽ báo lỗi và không cho lưu.
+                        </p>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-xs">
+                        <div class="font-black text-teal-800 flex items-center gap-1.5 mb-1">
+                            <i class="ph-bold ph-floppy-disk text-teal-600"></i>
+                            <span>Nút Lưu Thống Nhất</span>
+                        </div>
+                        <p class="text-teal-900/90 leading-relaxed font-medium">
+                            Mọi hộp thoại và màn hình đều dùng duy nhất chữ <strong>"Lưu"</strong> viền xanh Teal để hoàn tất tác vụ.
+                        </p>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs">
+                        <div class="font-black text-amber-800 flex items-center gap-1.5 mb-1">
+                            <i class="ph-bold ph-shield-check text-amber-600"></i>
+                            <span>An Toàn Dữ Liệu Soft-Delete</span>
+                        </div>
+                        <p class="text-amber-900/90 leading-relaxed font-medium">
+                            Nút <strong>Xóa</strong> chỉ ẩn dữ liệu chứ không xóa vĩnh viễn, bảo toàn 100% chứng từ và bằng chứng pháp lý.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Danh sách 18 nghiệp vụ Accordion / Cards -->
+                <div class="space-y-4">
+
+                    <!-- MỤC 1: TẠO KHÁCH HÀNG MỚI -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                    <i class="ph-bold ph-number-circle-one text-sm"></i>
+                                    <span>Nghiệp vụ Kinh Doanh & Kế Toán</span>
+                                </div>
+                                <h4 class="text-base font-bold text-slate-900 font-heading">
+                                    1. Cách Tạo Khách Hàng Mới
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Cài đặt & Danh mục ➔ Khách Hàng ➔ <strong>+ Thêm Khách Hàng</strong></span>
+                                <span class="text-slate-400">hoặc</span>
+                                <span>Sale & Booking ➔ Khách Hàng ➔ <strong>+ Thêm Khách Hàng</strong></span>
+                            </div>
+                            <div class="space-y-1 pl-1">
+                                <p class="font-semibold text-slate-800">Các trường dữ liệu cần nhập trên hộp thoại:</p>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong class="text-rose-700">Mã Khách Hàng (*):</strong> Nhập mã viết tắt viết hoa không dấu (Ví dụ: <code>SAMSUNG</code>, <code>VINFAST</code>, <code>KH-001</code>). Không được trùng lặp.</li>
+                                    <li><strong class="text-rose-700">Tên Doanh Nghiệp (*):</strong> Nhập tên đầy đủ theo giấy phép ĐKKD (Ví dụ: <code>CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM</code>).</li>
+                                    <li><strong class="text-rose-700">Mã Số Thuế (*):</strong> Nhập đúng MST 10 hoặc 13 số để xuất hóa đơn và đối soát công nợ.</li>
+                                    <li><strong class="text-rose-700">Địa Chỉ Trụ Sở (*):</strong> Nhập địa chỉ đăng ký kinh doanh.</li>
+                                    <li><strong>Người Liên Hệ / Đại Diện:</strong> Nhập họ tên người phụ trách điều vận bên khách hàng (Ví dụ: <code>Anh Tuấn - Điều phối kho</code>).</li>
+                                    <li><strong class="text-rose-700">Số Điện Thoại (*):</strong> Nhập số di động để liên lạc khẩn cấp khi giao nhận hàng.</li>
+                                    <li><strong>Email & Kỳ Hạn Nợ:</strong> Nhập email nhận hóa đơn và số ngày cho nợ (Ví dụ: <code>30</code> ngày sau khi nhận đủ POD).</li>
+                                </ul>
+                            </div>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Khách hàng mới lập tức xuất hiện trong danh mục toàn hệ thống.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 2: LẬP BÁO GIÁ VẬN TẢI & DUYỆT -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-two text-sm"></i>
+                                <span>Nghiệp vụ Báo Giá & Hợp Đồng</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                2. Cách Lập Bảng Báo Giá Vận Tải Mới & Duyệt Báo Giá
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Sale & Booking ➔ Tab <strong>Báo Giá</strong> ➔ Bấm nút <strong>+ Tạo Báo Giá Mới</strong></span>
+                            </div>
+                            <div class="space-y-1 pl-1">
+                                <p class="font-semibold text-slate-800">Các bước thực hiện chi tiết:</p>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>Bước 1 - Thông tin chung:</strong> Chọn <span class="text-rose-700 font-bold">Khách Hàng (*)</span>, chọn <span class="text-rose-700 font-bold">Ngày Hiệu Lực (*)</span>, <span class="text-rose-700 font-bold">Ngày Hết Hạn (*)</span>, chọn Phương thức định giá (<code>Theo ma trận tuyến đường</code>, <code>Điều chỉnh theo giá dầu DO</code> hoặc <code>Bao chuyến</code>).</li>
+                                    <li><strong>Bước 2 - Thêm tuyến cước:</strong> Bấm nút <strong>+ Thêm Tuyến Đường</strong> ➔ Nhập <span class="text-rose-700 font-bold">Tên Tuyến (*)</span> (Ví dụ: <code>Cảng Cát Lái ➔ KCN VSIP 1</code>), chọn <span class="text-rose-700 font-bold">Loại Container (*)</span> (<code>20DC</code>, <code>40HC</code>), nhập <span class="text-rose-700 font-bold">Đơn Giá Cước (*)</span> (Ví dụ: <code>3.500.000 đ</code>), nhập Lương tài xế khoán và Vé BOT định mức.</li>
+                                    <li><strong>Bước 3 - Lưu bản ghi:</strong> Bấm nút <strong class="text-teal-700">Lưu</strong> ➔ Báo giá được tạo ở trạng thái <strong>Đang thương lượng</strong>.</li>
+                                    <li><strong>Bước 4 - Duyệt & In:</strong> Ban Giám Đốc mở chi tiết bấm <strong>Duyệt Báo Giá</strong> ➔ Bấm <strong>In Báo Giá A4</strong> để xuất bản in ký hợp đồng nguyên tắc.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 3: TIẾP NHẬN BOOKING MỚI -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-three text-sm"></i>
+                                <span>Nghiệp vụ Đơn Hàng & Vận Đơn</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                3. Cách Tiếp Nhận Booking / Đơn Hàng Mới Từ Hãng Tàu & Khách Hàng
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Sale & Booking ➔ Tab <strong>Booking & Đơn Hàng</strong> ➔ Bấm nút <strong>+ Tiếp Nhận Booking</strong></span>
+                            </div>
+                            <div class="space-y-1 pl-1">
+                                <p class="font-semibold text-slate-800">Các trường dữ liệu cần nhập:</p>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong class="text-rose-700">Khách Hàng (*):</strong> Chọn khách hàng gửi đơn vận chuyển.</li>
+                                    <li><strong class="text-rose-700">Số Booking / Số B/L (*):</strong> Nhập mã booking hãng tàu cấp (Ví dụ: <code>ONEBKK123456</code>).</li>
+                                    <li><strong class="text-rose-700">Hãng Tàu (*):</strong> Chọn hãng tàu phát hành (MAEU, ONE, COSCO, EVERGREEN, CMA-CGM, SITC...).</li>
+                                    <li><strong class="text-rose-700">Loại Dịch Vụ (*):</strong> Chọn <code>Hàng Xuất (EXPORT)</code>, <code>Hàng Nhập (IMPORT)</code> hoặc <code>Nội Địa (DOMESTIC)</code>.</li>
+                                    <li><strong class="text-rose-700">Quy Cách & Số Lượng Cont (*):</strong> Chọn loại cont (<code>40HC</code>) và nhập số lượng (Ví dụ: <code>5</code> cont).</li>
+                                    <li><strong class="text-rose-700">Hạn Cắt Máng (CY Closing Time) (*):</strong> Chọn ngày giờ đóng bãi của tàu để cảnh báo trễ hạn.</li>
+                                    <li><strong>Địa điểm lộ trình (*):</strong> Chọn Nơi cấp rỗng, Kho đóng hàng và Nơi hạ bãi. Đính kèm file Booking Confirmation nếu có.</li>
+                                </ul>
+                            </div>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Trạng thái chuyển sang <strong>Chờ điều xe</strong>. Bấm nút <strong>Phát Lệnh Xe</strong> để chuyển sang phân hệ Điều vận.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 4: TẠO LỆNH ĐIỀU ĐỘNG CHUYẾN XE MỚI -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-four text-sm"></i>
+                                <span>Trọng Tâm Điều Vận & Phát Lệnh</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                4. Cách Tạo Lệnh Điều Động Chuyến Xe Mới (Phát Lệnh Cho Xe)
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Menu <strong>Điều vận</strong> ➔ Bấm nút <strong>+ Lệnh Điều Xe Mới</strong> (hoặc bấm Phát Lệnh Xe từ màn hình Booking)</span>
+                            </div>
+                            <div class="space-y-1 pl-1">
+                                <p class="font-semibold text-slate-800">Các bước gán xe và tài xế:</p>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>Kế thừa Booking gốc:</strong> Chọn mã Booking để hệ thống tự động điền sẵn 100% khách hàng, loại cont, địa điểm lộ trình và hạn cắt máng.</li>
+                                    <li><strong class="text-rose-700">Xe Đầu Kéo (*):</strong> Chọn biển số xe đầu kéo rảnh (Ví dụ: <code>51C-123.45</code>).</li>
+                                    <li><strong class="text-rose-700">Rơ-Moóc (*):</strong> Chọn biển số rơ-moóc phù hợp kích thước cont (Ví dụ: <code>51R-098.76</code>).</li>
+                                    <li><strong class="text-rose-700">Bác Tài Chính (*):</strong> Chọn bác tài phụ trách điều khiển xe (Ví dụ: <code>Nguyễn Văn Bình - BỤI 94</code>).</li>
+                                    <li><strong class="text-rose-700">Số Container (*) & Số Chì:</strong> Nhập 11 ký tự số vỏ cont (Ví dụ: <code>MSKU1234567</code>, tự động viết hoa) và số kẹp chì niêm phong.</li>
+                                    <li><strong class="text-rose-700">Lịch Hẹn Kho (*) & Hạn Lưu Vỏ (*):</strong> Chọn giờ tài xế phải có mặt tại kho và ngày hết hạn lưu vỏ (Free-time DET).</li>
+                                </ul>
+                            </div>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Sinh mã <code>TVL-MMDD-XXX</code>. Bấm <strong>Phát Lệnh Xe</strong> để gửi link nhận chuyến đến điện thoại bác tài.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 5: XỬ LÝ CẮT KÉO & GHÉP 2 CONT 20FT -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-five text-sm"></i>
+                                <span>Nghiệp vụ Nâng Cao: Cắt Kéo & Chở Ghép</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                5. Cách Xử Lý Chuyến Cắt Kéo (2 Chặng) & Ghép 2 Cont 20ft
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="p-3 bg-white border border-slate-200 rounded-xl">
+                                    <div class="font-bold text-slate-900 mb-1 flex items-center gap-1">
+                                        <i class="ph-bold ph-arrows-split text-purple-600"></i> Cắt Kéo (2 Chặng Xe)
+                                    </div>
+                                    <p class="text-slate-600 mb-1.5">Xe 1 cắm moóc tại kho khách đóng hàng, Xe 2 đến kéo ra cảng hạ bãi.</p>
+                                    <ol class="list-decimal pl-4 space-y-0.5 text-slate-700">
+                                        <li>Bật công tắc <strong>Tách 2 chặng cắt kéo (is_split_trip)</strong>.</li>
+                                        <li>Chọn <strong class="text-rose-700">Tài xế chặng 2 (*)</strong> và <strong class="text-rose-700">Xe đầu kéo chặng 2 (*)</strong>.</li>
+                                        <li>Chọn Tỷ lệ chia lương chuyến (<code>50% - 50%</code>).</li>
+                                        <li>Bấm <strong>Lưu</strong> ➔ Chuyến có huy hiệu tím <code>Cắt Kéo (2 Chặng)</code>.</li>
+                                    </ol>
+                                </div>
+                                <div class="p-3 bg-white border border-slate-200 rounded-xl">
+                                    <div class="font-bold text-slate-900 mb-1 flex items-center gap-1">
+                                        <i class="ph-bold ph-package text-teal-600"></i> Ghép 2 Cont 20ft (Twin Drayage)
+                                    </div>
+                                    <p class="text-slate-600 mb-1.5">1 đầu kéo chở cùng lúc 2 vỏ cont 20ft trên cùng 1 rơ-moóc 40ft/45ft.</p>
+                                    <ol class="list-decimal pl-4 space-y-0.5 text-slate-700">
+                                        <li>Chọn quy cách cont là <code>20DC</code>.</li>
+                                        <li>Bật công tắc <strong>Chở Ghép 2 Cont 20ft</strong>.</li>
+                                        <li>Nhập <strong class="text-rose-700">Số Cont 2 (*)</strong>, Số Chì 2 và Số B/L 2.</li>
+                                        <li>Bấm <strong>Lưu</strong> ➔ Quản lý doanh thu & chi phí cả 2 cont chuẩn xác.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 6: KÊ KHAI CHI PHÍ & CHI HỘ KHÁCH HÀNG -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-six text-sm"></i>
+                                <span>Chi Phí Vận Hành & Thu Hồi Chi Hộ</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                6. Cách Kê Khai Chi Phí Vận Hành & Khoản Chi Hộ Khách Hàng (Debit Note)
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Điều vận ➔ Bấm vào Mã Chuyến (<code>TVL-...</code>) ➔ Cuộn xuống bảng P&L ➔ Bấm <strong>+ Thêm Chi Phí</strong></span>
+                            </div>
+                            <div class="space-y-1 pl-1">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong class="text-rose-700">Khoản Mục Chi Phí (*):</strong> Chọn mục chi (<code>LIFT_ON</code> Nâng rỗng, <code>LIFT_OFF</code> Hạ cont, <code>TOLL_FEE</code> BOT, <code>CONTAINER_DEPOSIT</code> Cược vỏ, <code>WEIGHING</code> Cân xe, <code>LABOR_STEVEDORING</code> Bốc xếp...).</li>
+                                    <li><strong class="text-rose-700">Thành Tiền (*) & Hóa Đơn:</strong> Nhập số tiền thực tế (Ví dụ: <code>450.000 đ</code>), thuế VAT, mã tra cứu HĐĐT cảng và ảnh biên lai.</li>
+                                    <li class="bg-amber-50 p-2 rounded-lg border border-amber-200">
+                                        <strong class="text-amber-900">QUY TẮC CHI HỘ:</strong> Nếu công ty chỉ ứng tiền trước và sẽ đòi lại từ khách hàng, hãy <strong>BẬT CÔNG TẮC: Chi hộ Khách hàng (is_on_behalf_of_customer)</strong>.
+                                        Khoản này sẽ <em>KHÔNG TÍNH VÀO CHI PHÍ CỦA XE</em>, lợi nhuận xe không bị giảm và tự động kết chuyển sang phân hệ Thu hồi chi hộ.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Hệ thống tính lại Lợi nhuận gộp P&L tức thì.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 7: TÀI XẾ BÁO 6 MỐC KHO & CHỤP ẢNH POD -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-seven text-sm"></i>
+                                <span>Cổng Điện Thoại Dành Cho Tài Xế</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                7. Cách Tài Xế Báo 6 Mốc Kho & Chụp Ảnh POD/EIR Trên Điện Thoại
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900">
+                                <span>Mở link Zalo/SMS do điều độ gửi: <code>https://logistics.bim.info.vn/driver/AbCd1234XyZ</code> (Không cần mật khẩu).</span>
+                            </div>
+                            <div class="space-y-1 pl-1">
+                                <p class="font-semibold text-slate-800">Thứ tự bấm 6 nút mốc hành trình theo thực tế:</p>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 font-bold text-[11px]">
+                                    <div class="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800">1. [Xác Nhận Nhận Lệnh]</div>
+                                    <div class="p-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-800">2. [Đã Lấy Cont Rỗng]</div>
+                                    <div class="p-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-800">3. [Đã Đến Cổng Kho]</div>
+                                    <div class="p-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-800">4. [Bắt Đầu Đóng Hàng]</div>
+                                    <div class="p-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-800">5. [Hoàn Tất Rời Kho]</div>
+                                    <div class="p-2 bg-teal-50 border border-teal-200 rounded-lg text-teal-800">6. [Đã Hạ Bãi Xong]</div>
+                                </div>
+                                <p class="text-slate-600 mt-2">
+                                    <strong>Chụp ảnh chứng từ:</strong> Dưới mốc có nút <strong>[Chụp Ảnh POD / EIR]</strong>. Tài xế bấm chụp ảnh biên bản ký nhận hoặc phiếu hạ bãi ➔ Bấm <strong>Tải Lên</strong> ➔ Văn phòng nhận được ảnh ngay lập tức.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 8: THÊM ĐẦU KÉO & RƠ-MOÓC -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-eight text-sm"></i>
+                                <span>Quản Trị Đội Xe & Phương Tiện</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                8. Cách Thêm Mới Đầu Kéo & Rơ-Moóc Vào Đội Xe
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Menu <strong>Xe & Bãi</strong> ➔ Tab <strong>Đầu Kéo</strong> hoặc <strong>Rơ-Moóc</strong> ➔ Bấm nút <strong>+ Thêm Phương Tiện Mới</strong></span>
+                            </div>
+                            <div class="space-y-1 pl-1">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong class="text-rose-700">Biển Số Xe (*):</strong> Nhập biển số đúng chuẩn (Ví dụ: <code>51C-678.90</code> cho đầu kéo, <code>51R-123.45</code> cho moóc).</li>
+                                    <li><strong class="text-rose-700">Loại Phương Tiện & Hình Thức Sở Hữu (*):</strong> Chọn <code>Đầu kéo Container</code>, chọn <code>Xe Nhà (OWNED)</code> hoặc <code>Xe Bạn (SUBCONTRACTOR)</code>.</li>
+                                    <li><strong class="text-rose-700">Tải Trọng Kéo (Tấn) (*) & Hạn Đăng Kiểm (*):</strong> Nhập tải trọng thiết kế và ngày hết hạn đăng kiểm (hệ thống tự động cảnh báo đỏ khi còn dưới 15 ngày).</li>
+                                    <li><strong>Bác Tài Mặc Định:</strong> Chọn bác tài chính được giao xe quản lý thường xuyên.</li>
+                                </ul>
+                            </div>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Phương tiện sẵn sàng điều vận.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 9: THÊM HỒ SƠ NHÂN VIÊN / TÀI XẾ -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-nine text-sm"></i>
+                                <span>Hành Chính & Nhân Sự</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                9. Cách Thêm Hồ Sơ Nhân Viên / Bác Tài Mới
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Menu <strong>Hành chính & Nhân sự</strong> ➔ Bấm nút <strong>+ Thêm Nhân Sự Mới</strong></span>
+                            </div>
+                            <div class="space-y-1 pl-1">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong class="text-rose-700">Mã Nhân Viên (*) & Họ Tên (*):</strong> Nhập mã (Ví dụ: <code>TX-015</code>) và tên đầy đủ theo CCCD.</li>
+                                    <li><strong class="text-rose-700">Phòng Ban & Vai Trò Hệ Thống (*):</strong> Chọn <code>Đội Xe & Bãi</code>, phân vai trò <code>DRIVER</code> (Tài xế), <code>DISPATCHER</code> (Điều phối), <code>ACCOUNTANT</code> (Kế toán)...</li>
+                                    <li><strong class="text-rose-700">Số Điện Thoại (*) & Biệt Danh:</strong> Nhập số di động và biệt danh gọi bộ đàm (Ví dụ: <code>HÙNG ĐỒNG NAI</code>).</li>
+                                    <li><strong class="text-rose-700">Thông tin Bằng Lái (Đối với Tài xế):</strong> Nhập Số GPLX (*), chọn <strong>Hạng FC (*)</strong> và Hạn GPLX (*) (cảnh báo đổi bằng trước 30 ngày).</li>
+                                </ul>
+                            </div>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Bấm nút <strong>In Sơ Yếu Hồ Sơ A4</strong> để in hồ sơ lưu trữ nội bộ.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 10: CẤP QUỸ TẠM ỨNG ĐIỀU VẬN CẤP 1 -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-zero text-sm"></i>
+                                <span>Tài Chính Vận Tải: Tạm Ứng Cấp 1</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                10. Cách Kế Toán Cấp Quỹ Tạm Ứng Điều Vận Cấp 1
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Tài chính & Kế toán ➔ Tab <strong>Tạm Ứng & Hoàn Ứng</strong> ➔ Khu vực Quỹ Điều Vận ➔ Bấm <strong>+ Cấp Quỹ Điều Vận</strong></span>
+                            </div>
+                            <p class="text-slate-600">
+                                <strong>Mục đích:</strong> Giao hạn mức tiền (Ví dụ: 30 triệu) cho Điều phối viên để chủ động phát tạm ứng dọc đường cho các tài xế trong ca.
+                            </p>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li>Chọn <strong class="text-rose-700">Điều Phối Viên Nhận Quỹ (*)</strong>.</li>
+                                <li>Nhập <strong class="text-rose-700">Số Tiền Hạn Mức (VNĐ) (*)</strong> (Ví dụ: <code>30.000.000 đ</code>).</li>
+                                <li>Chọn <strong class="text-rose-700">Nguồn Tiền Xuất Quỹ (*)</strong>: <code>Tiền Mặt Tại Két</code> hoặc <code>Chuyển Khoản Ngân Hàng</code>.</li>
+                            </ul>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Trạng thái gói quỹ chuyển sang <strong>Đang lưu hành</strong>, trừ tiền quỹ công ty và ghi nhận hạn mức cho điều phối.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 11: CẤP TẠM ỨNG CHO TÀI XẾ CẤP 2 -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-one text-sm"></i>
+                                <span>Điều Vận: Tạm Ứng Cấp 2</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                11. Cách Điều Vận Cấp Tạm Ứng Dọc Đường Cho Tài Xế Cấp 2
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Menu <strong>Điều vận</strong> hoặc <strong>Tài chính & Kế toán</strong> ➔ Bấm nút <strong>+ Cấp Tạm Ứng Tài Xế</strong></span>
+                            </div>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong class="text-rose-700">Mã Chuyến Xe (*):</strong> Chọn chuyến xe tài xế chuẩn bị chạy (Ví dụ: <code>TVL-1011-001</code>).</li>
+                                <li><strong class="text-rose-700">Tài Xế Nhận Tiền (*):</strong> Hệ thống tự động chọn đúng bác tài đang gán cho chuyến.</li>
+                                <li><strong class="text-rose-700">Số Tiền Tạm Ứng (VNĐ) (*):</strong> Nhập tiền cấp (Ví dụ: <code>2.500.000 đ</code>).</li>
+                                <li><strong class="text-rose-700">Nguồn Tiền Trích Ứng (*):</strong> Chọn <code>Trích từ Quỹ Điều Vận của tôi</code>.</li>
+                            </ul>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Sinh mã phiếu <code>TUTX-YYYY-XXX</code> và tự động trừ số dư trong quỹ của điều phối viên.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 12: QUYẾT TOÁN HOÀN ỨNG CHUYẾN XE -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-two text-sm"></i>
+                                <span>Quyết Toán Tạm Ứng & Sổ Quỹ</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                12. Cách Quyết Toán Hoàn Ứng Chuyến Xe & Cân Đối Sổ Quỹ
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Tài chính & Kế toán ➔ Tab <strong>Tạm Ứng & Hoàn Ứng</strong> ➔ Tìm dòng phiếu <code>TUTX-...</code> ➔ Bấm <strong>Quyết Toán Hoàn Ứng</strong></span>
+                            </div>
+                            <p class="text-slate-600">
+                                Hộp thoại tự động so sánh giữa <strong>Tổng tiền đã ứng</strong> và <strong>Tổng chi phí thực tế có chứng từ</strong>:
+                            </p>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong>Nếu dư tiền (Ứng 2.500k, chi 2.100k):</strong> Chọn <em>Tài xế hoàn nộp lại tiền thừa</em> ➔ Hệ thống tự động sinh <strong>Phiếu Thu (PT-...)</strong> 400.000 đ vào quỹ.</li>
+                                <li><strong>Nếu chi vượt (Ứng 2.500k, chi 2.800k):</strong> Chọn <em>Công ty chi bù cho tài xế</em> ➔ Hệ thống tự động sinh <strong>Phiếu Chi (PC-...)</strong> 300.000 đ xuất quỹ bù lại.</li>
+                                <li><strong>Nếu khớp 100%:</strong> Trạng thái chuyển thẳng sang <strong>Đã Hoàn Ứng Xong</strong>.</li>
+                            </ul>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Chốt sổ công nợ tạm ứng chuyến xe hoàn tất.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 13: LẬP PHIẾU THU / PHIẾU CHI MẪU S03a-DN -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-three text-sm"></i>
+                                <span>Kế Toán Sổ Quỹ Thu - Chi</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                13. Cách Tạo Phiếu Thu / Phiếu Chi Sổ Quỹ Mẫu S03a-DN
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Tài chính & Kế toán ➔ Tab <strong>Sổ Quỹ Thu - Chi</strong> ➔ Bấm <strong>+ Lập Phiếu Thu</strong> hoặc <strong>+ Lập Phiếu Chi</strong></span>
+                            </div>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong class="text-rose-700">Loại Nghiệp Vụ (*):</strong> Chọn đúng nghiệp vụ (Thu cước khách, thu hồi chi hộ, hoàn ứng... hoặc Chi mua dầu DO, phí BOT VETC, cước xe bạn 3PL, tiếp quỹ...).</li>
+                                <li><strong class="text-rose-700">Đối Tượng (*):</strong> Chọn Khách hàng, Nhà xe thầu phụ hoặc Nhân viên.</li>
+                                <li><strong class="text-rose-700">Số Tiền (*) & Phương Thức (*):</strong> Nhập số tiền phát sinh, chọn <code>Tiền Mặt</code> hoặc <code>Chuyển Khoản Ngân Hàng</code>.</li>
+                                <li><strong class="text-rose-700">Diễn Giải (*):</strong> Ghi rõ lý do thu/chi kèm số hóa đơn tham chiếu.</li>
+                            </ul>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Sinh mã <code>PT-...</code> hoặc <code>PC-...</code>. Bấm <strong>In Phiếu A4/A5</strong> để in mẫu chuẩn Thông tư BTC ký 4 bên.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 14: THỎA THUẬN CƯỚC & QUYẾT TOÁN XE BẠN 3PL -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-four text-sm"></i>
+                                <span>Quản Trị Thầu Phụ Xe Bạn 3PL</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                14. Cách Thỏa Thuận Cước & Quyết Toán Xe Bạn / Thầu Phụ 3PL
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="space-y-1 pl-1">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>Bước 1 - Ghi nhận thỏa thuận:</strong> Trong chi tiết chuyến xe nhà xe ngoài ➔ Bấm <strong>Thỏa Thuận Cước Xe Bạn</strong> ➔ Chọn <span class="text-rose-700 font-bold">Nhà Xe Thầu Phụ (*)</span>, nhập <span class="text-rose-700 font-bold">Cước Thỏa Thuận (*)</span> (Ví dụ: <code>4.200.000 đ</code>), tiền ứng trước (<code>1.500.000 đ</code>) ➔ Bấm <strong>Lưu</strong>.</li>
+                                    <li><strong>Bước 2 - Quyết toán thanh toán cước:</strong> Khi xe hoàn thành đủ POD ➔ Vào Tài chính ➔ Tab <strong>Xe Thầu Phụ 3PL</strong> ➔ Bấm <strong>Quyết Toán Cước</strong> ➔ Hệ thống tự trừ ứng còn <code>2.700.000 đ</code> ➔ Bấm <strong>Lưu</strong> để tự sinh Phiếu Chi chuyển khoản cho nhà xe.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 15: KHAI BÁO TỜ KHAI HẢI QUAN ĐIỆN TỬ -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-five text-sm"></i>
+                                <span>Dịch Vụ Hải Quan Điện Tử</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                15. Cách Khai Báo & Quản Lý Tờ Khai Hải Quan Điện Tử (VNACCS)
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Menu <strong>Dịch vụ Hải quan</strong> ➔ Bấm nút <strong>+ Khai Báo Tờ Khai Mới</strong></span>
+                            </div>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong class="text-rose-700">Số Tờ Khai (*):</strong> Nhập 12 số tờ khai hải quan điện tử do VNACCS cấp (Ví dụ: <code>105123456780</code>).</li>
+                                <li><strong class="text-rose-700">Chủ Hàng XNK (*) & Loại Hình (*):</strong> Chọn khách hàng, chọn loại hình (<code>E62</code> Sản xuất xuất khẩu, <code>A11</code> Nhập tiêu dùng...).</li>
+                                <li><strong class="text-rose-700">Phân Luồng (*):</strong> Chọn 🟢 <code>Luồng Xanh</code>, 🟡 <code>Luồng Vàng</code> hoặc 🔴 <code>Luồng Đỏ</code>.</li>
+                                <li><strong>Số Container & Seal:</strong> Nhập số cont và niêm phong để liên kết với chuyến điều xe.</li>
+                            </ul>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Bấm nút:</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                                <span class="text-slate-500 font-normal">➔ Tờ khai được lưu trữ an toàn, sẵn sàng đối chiếu tại cổng cảng.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 16: QUYẾT TOÁN GOM CHUYẾN XE HÀNG LOẠT -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-six text-sm"></i>
+                                <span>Khóa Sổ Gom Chuyến (Batch Settlement)</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                16. Cách Quyết Toán Gom Chuyến Xe Hàng Loạt (Batch Settlement)
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Menu <strong>Quyết toán</strong> (truy cập <code>/settlements</code>)</span>
+                            </div>
+                            <ol class="list-decimal pl-5 space-y-1">
+                                <li>Sử dụng bộ lọc: Chọn <strong>Khách Hàng</strong>, chọn <strong>Khoảng Ngày Vận Chuyển</strong>, chọn <strong>Chỉ chuyến đã thu đủ POD</strong>.</li>
+                                <li><strong>Tích chọn các ô vuông (checkbox)</strong> của các chuyến xe cần gom đợt xuất hóa đơn.</li>
+                                <li>Hệ thống tự động cộng dồn Doanh thu, Chi phí và Chi hộ của toàn bộ chuyến được chọn.</li>
+                                <li>Bấm nút xanh ngọc <strong>[Khóa Sổ Gom Đợt Quyết Toán]</strong> ➔ Nhập Mã đợt (Ví dụ: <code>DOT-2026-10A</code>) ➔ Bấm <strong>Lưu</strong>.</li>
+                                <li>Tất cả các chuyến chuyển sang trạng thái <strong>Đã Quyết Toán</strong>, khóa chỉnh sửa để phục vụ kế toán xuất hóa đơn.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 17: XEM, LỌC, CỘT & IN 14 BÁO CÁO BI KHỔ A4 -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-seven text-sm"></i>
+                                <span>Hệ Thống 14 Báo Cáo BI & Bản In Chuẩn A4</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                17. Cách Xem, Lọc, Tùy Chỉnh Cột & In 14 Báo Cáo BI Khổ A4
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Menu <strong>Báo cáo & Thống kê</strong> ➔ Chọn tab Báo Cáo 1 đến 14</span>
+                            </div>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong>Cột STT chuẩn:</strong> Cột đầu tiên luôn là cột <strong>STT</strong> đếm chính xác số lượng bản ghi hiển thị trên bảng.</li>
+                                <li><strong>Tìm kiếm & Sắp xếp:</strong> Nhập từ khóa để lọc dữ liệu tức thì. Bấm tiêu đề cột bất kỳ để sắp xếp tăng/giảm dần.</li>
+                                <li><strong>Tùy biến cột (Column Manager):</strong> Bấm nút <strong>Cột</strong> góc phải để tích chọn ẩn/hiện cột hoặc di chuyển vị trí. Trình duyệt tự động lưu cấu hình riêng cho từng người dùng.</li>
+                                <li><strong>In A4 thông minh:</strong> Bấm nút <strong>In Báo Cáo A4</strong>. Hệ thống tự động chọn khổ <strong>A4 Dọc</strong> (nếu dưới 8 cột) hoặc <strong>A4 Ngang</strong> (từ 8 cột trở lên), căn lề chuẩn 15mm-20mm theo Nghị định 30/2020/NĐ-CP.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- MỤC 18: QUẢN LÝ DANH MỤC GỐC -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50/80 transition-all p-5 shadow-2xs">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 mb-1.5">
+                                <i class="ph-bold ph-number-circle-eight text-sm"></i>
+                                <span>Cấu Hình Danh Mục Gốc Hệ Thống</span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-900 font-heading">
+                                18. Cách Quản Lý Danh Mục Gốc (Địa Điểm, Hãng Tàu, Khoản Mục Chi Phí)
+                            </h4>
+                        </div>
+                        <div class="mt-3 text-xs text-slate-700 space-y-2.5">
+                            <div class="p-2.5 rounded-xl bg-white border border-slate-200 font-mono text-[11px] text-teal-900 flex items-center gap-2">
+                                <span class="font-bold text-slate-500 uppercase font-sans">Đường dẫn:</span>
+                                <span>Menu <strong>Cài đặt</strong> (icon bánh răng)</span>
+                            </div>
+                            <p class="text-slate-600">
+                                Quản lý dữ liệu nền tảng phục vụ các danh sách thả xuống trên toàn phần mềm:
+                            </p>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong>Địa Điểm (Locations):</strong> Quản lý Cảng biển, Depot bãi rỗng, Kho hàng và mã ICD.</li>
+                                <li><strong>Hãng Tàu (Shipping Lines):</strong> Mã hãng tàu (MAEU, ONE...), hotline, cổng tra cứu eDO, số ngày free-time mặc định.</li>
+                                <li><strong>Khoản Mục Chi Phí (Expense Catalog):</strong> Danh mục phí nâng, hạ, BOT, cân xe, cược cont và định mức tiền mặc định.</li>
+                                <li><strong>Biểu Phí Lương Tuyến:</strong> Mức lương khoán theo từng lộ trình chạy xe.</li>
+                                <li><strong>Hồ Sơ Doanh Nghiệp (Company Profile):</strong> Tên công ty, MST, số tài khoản ngân hàng thụ hưởng in trên báo giá và phiếu thu/chi.</li>
+                            </ul>
+                            <div class="pt-1 flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                                <span>Thao tác:</span>
+                                <span class="text-slate-600 font-medium">Bấm <strong>+ Thêm Mới</strong> ➔ Nhập các trường có dấu <strong>*</strong> ➔ Bấm</span>
+                                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-2xs">Lưu</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
 
             <!-- 1. KIẾN TRÚC & PHÂN QUYỀN -->
             <section id="sec-overview" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
