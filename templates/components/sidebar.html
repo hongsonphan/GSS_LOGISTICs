@@ -93,12 +93,12 @@
             </li>
             {% endif %}
 
-            <!-- 9. Cài đặt Danh Mục (Ban Giám Đốc, Kế Toán, Điều Phối) -->
+            <!-- 9. Cài đặt hệ thống (Ban Giám Đốc, Kế Toán, Điều Phối) -->
             {% if is_admin or not role or role in 'DIRECTOR,ACCOUNTANT,DISPATCHER' %}
             <li>
                 <a href="/settings" onclick="event.preventDefault(); switchTab('cai-dat');" class="sidebar-item-main flex items-center" data-target="cai-dat">
                     <i class="ph ph-gear text-xl mr-3 text-slate-400"></i>
-                    <span class="flex-1 text-left tracking-wide">Cài đặt</span>
+                    <span class="flex-1 text-left tracking-wide">Cài đặt hệ thống</span>
                 </a>
             </li>
             {% endif %}

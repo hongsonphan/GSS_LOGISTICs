@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v1.1] - 2026-10-11 (Chuẩn Hóa Phân Quyền Django RBAC, Tách Biệt Quyền Admin & Tinh Gọn Flat Tab Cài Đặt Hệ Thống)
+
+### 1. Chuẩn Hóa Phân Quyền Đúng Chuẩn Django (Standard Django RBAC):
+- **Tách biệt tuyệt đối Quyền Quản Trị Tối Cao (Admin):**
+  * Chỉ tài khoản Quản trị viên (`admin` / `audit_admin`) sở hữu cờ `is_superuser = True` và `is_staff = True`, có quyền truy cập vào Django Admin (`/admin/`) và quyền chỉnh sửa phân quyền người dùng.
+  * Các tài khoản nghiệp vụ (`dieudo`, `ketoan`, `sales`, `taixe`) được đặt `is_staff = False`. Quyền hạn được kiểm soát hoàn toàn theo Nhóm vai trò (`auth.Group`) và Quyền đối tượng (`auth.Permission`).
+- **Phân quyền linh hoạt theo Nhóm & Quyền Báo cáo / Thao tác:**
+  * Bổ sung cặp quyền tùy biến chuẩn Django: `reports.view_financial_report` (xem Báo cáo Tài chính, P&L, Thu hồi chi hộ) và `reports.view_operational_report` (xem Báo cáo Vận hành, KPI chuyến xe).
+  * Cho phép thêm/bớt quyền xem báo cáo hoặc quyền thao tác trực tiếp trên từng nhóm qua Django Permissions mà không bị hard-code role.
+  * Bổ sung đầy đủ nhóm `Quản Lý Nhân Sự` và cấp quyền đa nhóm cho `ketoan` để vừa quản lý cước vừa quản trị hồ sơ nhân sự.
+
+### 2. Tinh Gọn Giao Diện Flat Tab "Cài Đặt Hệ Thống":
+- **Đổi tên mục Menu Sidebar:** `Cài đặt` ➔ **`Cài đặt hệ thống`**.
+- **Chuẩn hóa 2 Tab Flat đầu tiên trong phân hệ:**
+  * Thẻ `company`: **"Khai Báo Thông Tin Công Ty"** (Quản lý hồ sơ doanh nghiệp Triền Võ, tài khoản ngân hàng, thông tin xuất hóa đơn).
+  * Thẻ `roles_permissions`: **"Vai Trò & Phân Quyền"** (Quản trị nhóm quyền và gán quyền nhân viên).
+  * Trình bày dạng Flat tab đồng bộ với các tab danh mục khác (`Biểu Phí Lương Chuyến`, `Cảng & Kho Bãi`...), không chia khối thẻ lồng phức tạp.
+
 ## [v1.0] - 2026-10-11 (Chuẩn Hóa Nhận Diện Thương Hiệu Toàn Hệ Thống v1.0 & Tái Cấu Trúc Toàn Diện Trang /helps)
 
 ### 1. Chuẩn Hóa Nhận Diện Thương Hiệu & Phiên Bản Hệ Thống (Brand Identity & Version v1.0):

@@ -48,28 +48,31 @@ class RolesPermissionsAPIView(APIView):
             })
 
         # 3. Thống kê tổng quan
+        is_current_admin = bool(request.user.is_superuser or (request.user.is_staff and request.user.has_perm('auth.change_user')))
         summary = {
             'total_users': users.count(),
             'active_users': users.filter(is_active=True).count(),
             'total_groups': groups.count(),
             'staff_count': users.filter(is_staff=True).count(),
+            'is_current_admin': is_current_admin,
         }
 
         return Response({
             'success': True,
             'summary': summary,
+            'is_current_admin': is_current_admin,
             'roles': roles_data,
             'users': users_data,
         })
 
     def post(self, request):
         """
-        Cập nhật Nhóm vai trò (Group) hoặc Trạng thái (is_active, is_staff) của người dùng.
-        Chỉ cho phép Ban Giám Đốc (is_staff / is_superuser) thao tác.
+        Cập nhật Nhóm vai trò (Group) hoặc Trạng thái (is_active) của người dùng.
+        Chỉ cho phép Quản trị viên tối cao (is_superuser) hoặc Ban Giám Đốc quản trị thao tác.
         """
-        if not (request.user.is_staff or request.user.is_superuser):
+        if not (request.user.is_superuser or (request.user.is_staff and request.user.has_perm('auth.change_user'))):
             return Response(
-                {'error': 'Chỉ Ban Giám Đốc hoặc Quản trị viên mới có quyền cập nhật phân quyền!'},
+                {'error': 'Chỉ Quản trị viên hệ thống (Admin) mới có quyền cập nhật phân quyền!'},
                 status=status.HTTP_403_FORBIDDEN
             )
 

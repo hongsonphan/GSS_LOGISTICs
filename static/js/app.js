@@ -14171,7 +14171,7 @@ function switchMasterDataTab(tabKey) {
     }
 
     const labels = {
-        'company': '✏️ Hiệu Chỉnh Khai Báo HT',
+        'company': '✏️ Hiệu Chỉnh Thông Tin Công Ty',
         'driver_tariffs': '+ Thêm Mới Tuyến Lương',
         'allowances': '+ Thêm Mới Phụ Cấp',
         'locations': '+ Thêm Mới Cảng / Kho',
@@ -14596,6 +14596,8 @@ function renderRolesPermissionsView(data) {
 
     const groupOptionsHtml = roles.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
 
+    const isCurrentAdmin = Boolean(data.is_current_admin);
+
     container.innerHTML = `
         <div class="max-w-7xl mx-auto space-y-6">
             <!-- Header Banner -->
@@ -14607,26 +14609,27 @@ function renderRolesPermissionsView(data) {
                     <div>
                         <div class="flex items-center gap-2 flex-wrap mb-1">
                             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/30 text-teal-200 border border-teal-400/30">
-                                Django Role-Based Access Control (RBAC)
+                                Django Standard RBAC
                             </span>
                             <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                                Native Django Admin Auth
+                                Phân Quyền Theo Nhóm
                             </span>
                         </div>
                         <h2 class="text-lg md:text-xl font-black font-heading tracking-tight text-white">
-                            Quản Trị Phân Quyền & Vai Trò Hệ Thống
+                            Quản Trị Vai Trò & Phân Quyền Hệ Thống
                         </h2>
                         <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                            Quản lý nhóm quyền chuẩn Django Auth (Ban Giám Đốc, Điều Phối Viên, Kế Toán Cước, Kinh Doanh, Tài Xế) và gán phân quyền tài khoản người dùng nội bộ.
+                            Quản lý nhóm vai trò nghiệp vụ (Ban Giám Đốc, Điều Phối Viên, Kế Toán Cước, Kinh Doanh, Tài Xế) và kiểm soát quyền truy cập của người dùng nội bộ.
                         </p>
                     </div>
                 </div>
 
-                <!-- Action Button: Open Django Admin -->
+                ${isCurrentAdmin ? `
+                <!-- Action Button: Open Django Admin (Chỉ hiển thị cho Quản trị viên tối cao) -->
                 <div class="flex items-center gap-2 shrink-0">
                     <a href="/admin/auth/group/" target="_blank" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-teal-300 hover:text-white rounded-xl text-xs font-bold border border-teal-500/40 shadow-xs flex items-center space-x-1.5 transition-all">
                         <i class="ph-bold ph-gear text-sm"></i>
-                        <span>Cấu Hình Chi Tiết Nhóm (Admin)</span>
+                        <span>Cấu Hình Nhóm (Admin)</span>
                         <i class="ph ph-arrow-square-out text-xs"></i>
                     </a>
                     <a href="/admin/auth/user/" target="_blank" class="px-3.5 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-md flex items-center space-x-1.5 transition-all">
@@ -14635,6 +14638,12 @@ function renderRolesPermissionsView(data) {
                         <i class="ph ph-arrow-square-out text-xs"></i>
                     </a>
                 </div>
+                ` : `
+                <div class="px-3 py-1.5 bg-slate-800/60 rounded-xl border border-slate-700/60 text-xs text-slate-300 flex items-center gap-2 shrink-0">
+                    <i class="ph-fill ph-lock-key text-teal-400 text-base"></i>
+                    <span>Chế độ: <strong>Xem ma trận quyền</strong></span>
+                </div>
+                `}
             </div>
 
             <!-- KPI Summary Cards -->
@@ -14671,7 +14680,7 @@ function renderRolesPermissionsView(data) {
                         <i class="ph-bold ph-identification-card"></i>
                     </div>
                     <div>
-                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nhân Sự Quản Trị</div>
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quản Trị Viên (Admin)</div>
                         <div class="text-xl font-black text-purple-800">${summary.staff_count || 0}</div>
                     </div>
                 </div>
@@ -14682,7 +14691,7 @@ function renderRolesPermissionsView(data) {
                 <div class="flex items-center justify-between">
                     <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                         <i class="ph-bold ph-shield-check text-teal-700"></i>
-                        <span>1. Danh Sách Nhóm Quyền & Quyền Hạn Tiêu Biểu (Django Groups)</span>
+                        <span>1. Danh Sách Nhóm Quyền & Quyền Hạn Nghiệp Vụ (Django Groups)</span>
                     </h3>
                     <span class="text-xs text-slate-500 font-medium">${roles.length} nhóm vai trò</span>
                 </div>
@@ -14702,6 +14711,9 @@ function renderRolesPermissionsView(data) {
                         } else if (r.name.includes('Kinh Doanh')) {
                             badgeColor = 'bg-purple-50 text-purple-800 border-purple-200';
                             iconName = 'ph-chart-line-up';
+                        } else if (r.name.includes('Nhân Sự')) {
+                            badgeColor = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                            iconName = 'ph-identification-badge';
                         } else if (r.name.includes('Tài Xế')) {
                             badgeColor = 'bg-amber-50 text-amber-800 border-amber-200';
                             iconName = 'ph-steering-wheel';
@@ -14735,12 +14747,14 @@ function renderRolesPermissionsView(data) {
                                         </div>
                                     </div>
                                 </div>
+                                ${isCurrentAdmin ? `
                                 <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
                                     <a href="/admin/auth/group/${r.id}/change/" target="_blank" class="text-xs font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1">
                                         <span>Chỉnh sửa quyền</span>
                                         <i class="ph ph-arrow-square-out text-xs"></i>
                                     </a>
                                 </div>
+                                ` : ''}
                             </div>
                         `;
                     }).join('')}
@@ -14755,7 +14769,7 @@ function renderRolesPermissionsView(data) {
                             <i class="ph-bold ph-user-list text-teal-700"></i>
                             <span>2. Danh Sách Người Dùng & Phân Bổ Nhóm Vai Trò</span>
                         </h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Thay đổi nhóm vai trò trực tiếp từ bảng dưới hoặc quản lý nâng cao tại Django Admin.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Thay đổi nhóm vai trò của người dùng theo nguyên tắc phân quyền chuẩn của Django.</p>
                     </div>
                     <div class="text-xs font-bold text-slate-500">
                         Hiển thị <span class="text-teal-800 font-black">${users.length}</span> tài khoản
@@ -14771,9 +14785,9 @@ function renderRolesPermissionsView(data) {
                                 <th class="p-3">Số Điện Thoại</th>
                                 <th class="p-3">Nhóm Vai Trò (Django Group)</th>
                                 <th class="p-3 text-center">Trạng Thái</th>
-                                <th class="p-3 text-center">Truy Cập Admin</th>
+                                <th class="p-3 text-center">Quyền Admin</th>
                                 <th class="p-3">Đăng Nhập Cuối</th>
-                                <th class="p-3 text-center">Thao Tác</th>
+                                ${isCurrentAdmin ? '<th class="p-3 text-center">Thao Tác</th>' : ''}
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
@@ -14783,8 +14797,8 @@ function renderRolesPermissionsView(data) {
                                     : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Đã khóa</span>';
                                 
                                 const staffBadge = u.is_staff 
-                                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Có (Staff)</span>'
-                                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-400">Không</span>';
+                                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Admin</span>'
+                                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-400">Người dùng</span>';
 
                                 return `
                                     <tr class="hover:bg-slate-50/80 transition-colors">
@@ -14801,16 +14815,23 @@ function renderRolesPermissionsView(data) {
                                         </td>
                                         <td class="p-3 font-mono text-slate-600">${escapeHtml(u.phone || '-')}</td>
                                         <td class="p-3">
+                                            ${isCurrentAdmin ? `
                                             <select onchange="updateUserRoleGroup(${u.id}, this.value)" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-teal-500 focus:outline-hidden shadow-2xs">
                                                 <option value="0" ${!u.primary_group_id ? 'selected' : ''}>-- Chưa gán nhóm --</option>
                                                 ${roles.map(r => `
                                                     <option value="${r.id}" ${u.primary_group_id === r.id ? 'selected' : ''}>${escapeHtml(r.name)}</option>
                                                 `).join('')}
                                             </select>
+                                            ` : `
+                                            <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                                ${escapeHtml(u.primary_group || 'Chưa gán nhóm')}
+                                            </span>
+                                            `}
                                         </td>
                                         <td class="p-3 text-center">${activeBadge}</td>
                                         <td class="p-3 text-center">${staffBadge}</td>
                                         <td class="p-3 text-slate-500 font-mono text-[11px]">${escapeHtml(u.last_login)}</td>
+                                        ${isCurrentAdmin ? `
                                         <td class="p-3 text-center">
                                             <a href="/admin/auth/user/${u.id}/change/" target="_blank" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-[11px] inline-flex items-center gap-1 transition-colors" title="Mở trang chỉnh sửa chi tiết Django Admin">
                                                 <i class="ph ph-sliders"></i>
@@ -14818,6 +14839,7 @@ function renderRolesPermissionsView(data) {
                                                 <i class="ph ph-arrow-square-out text-[10px]"></i>
                                             </a>
                                         </td>
+                                        ` : ''}
                                     </tr>
                                 `;
                             }).join('')}

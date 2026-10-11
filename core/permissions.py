@@ -6,41 +6,56 @@ from apps.personnel.models import EmployeeRole, Department
 class IsAdminOrDirector(permissions.BasePermission):
     """
     Quyền truy cập dành cho Ban Giám Đốc hoặc Quản trị viên hệ thống (Xem P&L, Báo cáo chiến lược).
-    Tuân thủ Tiêu chuẩn 11 (SECURITY_AUDIT.md).
+    Chỉ Quản trị viên (superuser/staff) hoặc Giám đốc mới có toàn quyền.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser or (request.user.is_staff and request.user.has_perm('auth.change_user')):
             return True
         employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role == EmployeeRole.DIRECTOR)
+        return bool(
+            (employee and employee.role == EmployeeRole.DIRECTOR) or
+            request.user.groups.filter(name='Ban Giám Đốc').exists()
+        )
 
 
 class IsDispatcher(permissions.BasePermission):
     """
     Quyền truy cập dành cho Điều phối viên & Ban Giám Đốc (Tạo lệnh điều động, gán xe, duyệt chi phí).
+    Kiểm tra quyền dispatch.view_dispatchtrip hoặc role DISPATCHER / DIRECTOR.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('dispatch.view_dispatchtrip') or request.user.has_perm('dispatch.change_dispatchtrip'):
             return True
         employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.DIRECTOR])
+        return bool(
+            (employee and employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.DIRECTOR]) or
+            request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc']).exists()
+        )
 
 
 class IsAccountant(permissions.BasePermission):
     """
     Quyền truy cập dành cho Kế toán & Ban Giám Đốc (Chốt sổ chi phí, mở sổ, kiểm toán cước, quản lý quỹ).
+    Kiểm tra quyền billing.view_tripexpense hoặc billing.view_cashtransaction.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('billing.view_tripexpense') or request.user.has_perm('billing.view_cashtransaction'):
             return True
         employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR])
+        return bool(
+            (employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR]) or
+            request.user.groups.filter(name__in=['Kế Toán Cước', 'Ban Giám Đốc']).exists()
+        )
 
 
 class IsSalesOrDirector(permissions.BasePermission):
@@ -52,11 +67,18 @@ class IsSalesOrDirector(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
             return True
+        if request.method in permissions.SAFE_METHODS:
+            if request.user.has_perm('customers.view_bookingorder') or request.user.has_perm('customers.view_quotation'):
+                return True
+        else:
+            if request.user.has_perm('customers.change_quotation') or request.user.has_perm('customers.add_quotation'):
+                return True
+
         employee = getattr(request.user, 'employee', None)
         if not employee:
-            return False
+            return bool(request.user.groups.filter(name__in=['Kinh Doanh (Sales)', 'Ban Giám Đốc']).exists())
         if request.method in permissions.SAFE_METHODS:
             return bool(employee.role in [
                 EmployeeRole.SALESMAN,
@@ -74,14 +96,15 @@ class IsDispatcherOrAccountant(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('billing.view_drivertripadvance') or request.user.has_perm('billing.view_dispatcheradvancefund'):
             return True
         employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role in [
-            EmployeeRole.DISPATCHER,
-            EmployeeRole.ACCOUNTANT,
-            EmployeeRole.DIRECTOR
-        ])
+        return bool(
+            (employee and employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR]) or
+            request.user.groups.filter(name__in=['Điều Phối Viên', 'Kế Toán Cước', 'Ban Giám Đốc']).exists()
+        )
 
 
 class IsCustomsOrDirector(permissions.BasePermission):
@@ -92,13 +115,18 @@ class IsCustomsOrDirector(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('customs.view_customsdeclaration'):
             return True
         employee = getattr(request.user, 'employee', None)
-        return bool(employee and (
-            employee.role in [EmployeeRole.DIRECTOR, EmployeeRole.DISPATCHER] or
-            employee.department == Department.CUSTOMS
-        ))
+        return bool(
+            (employee and (
+                employee.role in [EmployeeRole.DIRECTOR, EmployeeRole.DISPATCHER] or
+                employee.department == Department.CUSTOMS
+            )) or
+            request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc']).exists()
+        )
 
 
 class CanManageFleet(permissions.BasePermission):
@@ -109,26 +137,31 @@ class CanManageFleet(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('fleet.view_vehicle') or request.user.has_perm('fleet.change_vehicle'):
             return True
         employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role in [
-            EmployeeRole.MECHANIC,
-            EmployeeRole.DISPATCHER,
-            EmployeeRole.DIRECTOR
-        ])
+        return bool(
+            (employee and employee.role in [EmployeeRole.MECHANIC, EmployeeRole.DISPATCHER, EmployeeRole.DIRECTOR]) or
+            request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc']).exists()
+        )
 
 
 class CanViewPayroll(permissions.BasePermission):
     """
     Quyền xem Bảng lương & Tạm ứng nhân sự (Bảo mật tiền lương):
-    Chỉ Kế toán viên (ACCOUNTANT) và Ban Giám Đốc (DIRECTOR) được phép truy cập.
+    Chỉ Kế toán viên (ACCOUNTANT), Quản Lý Nhân Sự và Ban Giám Đốc (DIRECTOR) được phép truy cập.
     Chặn hoàn toàn Tài xế, Điều độ, Thợ máy xem bảng lương người khác.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('personnel.view_employee') and (
+            request.user.groups.filter(name__in=['Kế Toán Cước', 'Quản Lý Nhân Sự', 'Ban Giám Đốc']).exists()
+        ):
             return True
         employee = getattr(request.user, 'employee', None)
         return bool(employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR])
@@ -137,12 +170,14 @@ class CanViewPayroll(permissions.BasePermission):
 class CanViewFinancialReports(permissions.BasePermission):
     """
     Quyền xem Báo cáo Tài chính, Sổ quỹ, P&L, Thu hồi chi hộ, Quyết toán thầu phụ:
-    Chỉ Ban Giám Đốc (DIRECTOR) và Kế toán (ACCOUNTANT).
+    Chỉ Ban Giám Đốc (DIRECTOR) và Kế toán (ACCOUNTANT) hoặc người có quyền view_financial_report.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('reports.view_financial_report'):
             return True
         employee = getattr(request.user, 'employee', None)
         return bool(employee and employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR])
@@ -151,21 +186,21 @@ class CanViewFinancialReports(permissions.BasePermission):
 class CanViewOperationalReports(permissions.BasePermission):
     """
     Quyền xem Báo cáo Quản trị Vận hành & Thống kê TMS:
-    Cho phép Điều phối (DISPATCHER), Kế toán (ACCOUNTANT), Ban Giám Đốc (DIRECTOR).
+    Cho phép Điều phối (DISPATCHER), Kế toán (ACCOUNTANT), Ban Giám Đốc (DIRECTOR) hoặc có quyền view_operational_report.
     Từ chối Tài xế (DRIVER) và Thợ máy (MECHANIC).
-    Lưu ý: Nếu role là DISPATCHER, hệ thống tự động ẩn (mask) các số liệu P&L nhạy cảm.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('reports.view_operational_report') or request.user.has_perm('reports.view_financial_report'):
             return True
         employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role in [
-            EmployeeRole.DISPATCHER,
-            EmployeeRole.ACCOUNTANT,
-            EmployeeRole.DIRECTOR
-        ])
+        return bool(
+            (employee and employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR]) or
+            request.user.groups.filter(name__in=['Điều Phối Viên', 'Kế Toán Cước', 'Ban Giám Đốc']).exists()
+        )
 
 
 class CanManageMasterData(permissions.BasePermission):
@@ -179,14 +214,15 @@ class CanManageMasterData(permissions.BasePermission):
             return False
         if request.method in permissions.SAFE_METHODS:
             return True
-        if request.user.is_superuser or request.user.is_staff:
+        if request.user.is_superuser:
+            return True
+        if request.user.has_perm('master_data.change_driversalarytariff') or request.user.has_perm('master_data.change_location'):
             return True
         employee = getattr(request.user, 'employee', None)
-        return bool(employee and employee.role in [
-            EmployeeRole.DIRECTOR,
-            EmployeeRole.ACCOUNTANT,
-            EmployeeRole.DISPATCHER
-        ])
+        return bool(
+            (employee and employee.role in [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT, EmployeeRole.DISPATCHER]) or
+            request.user.groups.filter(name__in=['Ban Giám Đốc', 'Kế Toán Cước', 'Điều Phối Viên']).exists()
+        )
 
 
 class IsDriver(permissions.BasePermission):
