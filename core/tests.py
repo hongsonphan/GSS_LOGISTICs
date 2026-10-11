@@ -2327,6 +2327,75 @@ class FrontendSyntaxIntegrityTestCase(TestCase):
         )
 
 
+class CurrentUserProfileAPITestCase(TestCase):
+
+    """Bộ kiểm thử cho API định danh và cài đặt hồ sơ cá nhân /api/auth/me/"""
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="test_profile_user",
+            password="InitialPassword@2026",
+            email="test_initial@bim.info.vn"
+        )
+        self.employee = Employee.objects.create(
+            user=self.user,
+            code="TX_PROF",
+            full_name="Nguyễn Văn Ban Đầu",
+            phone_number="0911222333",
+            role=EmployeeRole.DRIVER,
+            department=Department.FLEET
+        )
+
+    def test_get_current_user_profile(self):
+        self.client.force_login(self.user)
+        res = self.client.get('/api/auth/me/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['username'], 'test_profile_user')
+        self.assertEqual(data['email'], 'test_initial@bim.info.vn')
+        self.assertIsNotNone(data['employee'])
+        self.assertEqual(data['employee']['full_name'], 'Nguyễn Văn Ban Đầu')
+
+    def test_patch_profile_name_and_email(self):
+        self.client.force_login(self.user)
+        payload = {
+            'full_name': 'Nguyễn Văn Cập Nhật',
+            'email': 'updated_email@bim.info.vn',
+            'phone_number': '0988777666'
+        }
+        res = self.client.patch('/api/auth/me/', data=json.dumps(payload), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['user']['full_name'], 'Nguyễn Văn Cập Nhật')
+        self.assertEqual(data['user']['email'], 'updated_email@bim.info.vn')
+        self.assertEqual(data['user']['phone_number'], '0988777666')
+
+        # Kiểm tra database cập nhật
+        self.employee.refresh_from_db()
+        self.user.refresh_from_db()
+        self.assertEqual(self.employee.full_name, 'Nguyễn Văn Cập Nhật')
+        self.assertEqual(self.user.email, 'updated_email@bim.info.vn')
+        self.assertEqual(self.employee.phone_number, '0988777666')
+
+    def test_patch_profile_password_change(self):
+        self.client.force_login(self.user)
+        # Mật khẩu cũ sai
+        res_fail = self.client.patch('/api/auth/me/', data=json.dumps({
+            'old_password': 'WrongPassword',
+            'new_password': 'NewPassword@2026'
+        }), content_type='application/json')
+        self.assertEqual(res_fail.status_code, 400)
+
+        # Mật khẩu đúng
+        res_ok = self.client.patch('/api/auth/me/', data=json.dumps({
+            'old_password': 'InitialPassword@2026',
+            'new_password': 'NewPassword@2026'
+        }), content_type='application/json')
+        self.assertEqual(res_ok.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NewPassword@2026'))
+
+
+
 
 
 

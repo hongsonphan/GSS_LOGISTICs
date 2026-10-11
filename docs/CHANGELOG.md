@@ -2,21 +2,37 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [v1.2] - 2026-10-11 (Tái Cấu Trúc Giao Diện Topbar: Tích Hợp Đăng Xuất & Menu Hồ Sơ, Cài Đặt Vào Avatar)
+## [v1.3] - 2026-10-11 (Đặc Tả Kế Hoạch Triển Khai On-Premise Doanh Nghiệp — Chuẩn Mô Hình MISA)
 
-### Tái Cấu Trúc Khối Người Dùng & Avatar Dropdown:
-- **Gom nút Đăng xuất vào trong Avatar:**
-  * Loại bỏ nút bấm Đăng xuất rời rạc dạng pill badge màu hồng trên thanh điều hướng Topbar nhằm tối ưu không gian hiển thị và tuân thủ chuẩn UI/UX quốc tế.
-  * Tích hợp toàn bộ hành động Đăng xuất an toàn vào bên trong menu popover của Avatar người dùng.
-- **Menu Cài đặt riêng & Hồ sơ người dùng (User Profile Popover):**
-  * Khi bấm vào Avatar hoặc cụm danh tính người dùng: Mở menu popup thanh lịch, hiện đại với hiệu ứng mở mượt mà và mũi tên caret đảo chiều.
-  * Hiển thị đầy đủ thông tin định danh:
-    - **Họ và tên (Tên):** Hiển thị tên đầy đủ từ nhân sự hoặc user (`full_name`).
-    - **Tên đăng nhập (User):** Hiển thị `username` kèm badge nền xám sắc nét.
-    - **Email:** Hiển thị địa chỉ email tài khoản người dùng (`email`).
-    - **Chức vụ & Đơn vị:** Hiển thị vai trò và phòng ban của nhân sự.
-  * Tích hợp phím tắt nhanh:
-    - **Cài đặt:** Chuyển nhanh tới phân hệ Cài đặt & Hệ thống danh mục (`/settings` hoặc `switchTab('cai-dat')`).
+### Nghiên Cứu & Thiết Kế Kiến Trúc Triển Khai Cho Khách Hàng (MISA On-Premise Model):
+- **Quy chuẩn Cơ sở dữ liệu:** Chốt sử dụng 100% **PostgreSQL 16 Enterprise** (loại trừ SQLite để triệt tiêu lỗi khóa bảng `Database is locked` khi nhiều phòng ban & tài xế ghi dữ liệu đồng thời).
+- **Mô hình Hỗ trợ Triển khai Kỹ thuật (IT-Assisted Setup):** Đóng gói quy trình triển khai do chuyên viên kỹ thuật công ty thực hiện (qua UltraViewer/TeamViewer hoặc tại văn phòng khách hàng) thông qua Deployment Wizard.
+- **Bảo toàn Dữ liệu Khách hàng & Chọn Thư mục Vật lý:**
+  * Cho phép chọn vị trí lưu dữ liệu vật lý tại ổ đĩa an toàn (`D:\` hoặc `E:\`) để chống mất mát khi cài đặt lại hệ điều hành Windows.
+  * Tự động cấu hình ánh xạ Volume PostgreSQL và mở cổng tường lửa Windows Firewall cho mạng LAN (`8085`).
+- **Phân loại Dữ liệu Khởi tạo:** Thiết kế 2 chế độ nạp (`DEMO_DATA` để đào tạo dùng thử, `CLEAN_PRODUCTION` cho vận hành chính thức) kèm cơ chế dọn rác giao dịch (`purge_transactions`).
+- **Cập nhật tài liệu:** Bổ sung chi tiết vào [`docs/DEVELOPMENT_PLAN.md`](file:///e:/Bim_Logistics/docs/DEVELOPMENT_PLAN.md#L227-L255) mục 6: Kế hoạch triển khai On-Premise cho khách hàng.
+
+## [v1.2] - 2026-10-11 (Tái Cấu Trúc Giao Diện Topbar: Tích Hợp Đăng Xuất & Cài Đặt Hồ Sơ Cá Nhân Vào Avatar)
+
+### 1. Khắc Phục Triệt Để Lỗi Chồng Chéo Giao Diện (Z-Index Stacking Context):
+- **Tách lớp giao diện & Nâng z-index Topbar lên `z-40`:**
+  * Điều chỉnh thẻ `<header>` của Topbar từ `z-10` lên `z-40` nhằm đảm bảo toàn bộ menu popup, dropdown của Avatar luôn nổi hoàn toàn trên các bảng dữ liệu có thanh tiêu đề cố định (`sticky top-0 z-10`), loại bỏ 100% hiện tượng bảng danh mục/tiêu đề đè lên menu.
+  * Tăng cường độ mờ đục và bóng nổi (`bg-white shadow-2xl border-slate-200/95`) cho menu `#topbar-user-menu`.
+
+### 2. Cài Đặt Riêng Cho Hồ Sơ Cá Nhân (User Profile Settings Modal):
+- **Tách biệt Cài đặt Profile cá nhân và Cài đặt hệ thống ứng dụng:**
+  * Mục **Cài đặt** trong avatar dropdown mở thẳng **Modal Cài Đặt Hồ Sơ Cá Nhân** (`#modal-profile-settings`) thay vì chuyển sang phân hệ Master Data của ứng dụng.
+  * Cho phép người dùng trực tiếp xem và tinh chỉnh:
+    - **Tên đăng nhập (User):** Hiển thị cố định (`readonly`).
+    - **Họ và tên (Tên):** Cho phép chỉnh sửa và đồng bộ tức thì trên giao diện và backend.
+    - **Địa chỉ Email:** Cho phép cập nhật email cá nhân với cơ chế chống trùng lặp.
+    - **Số điện thoại:** Cho phép cập nhật số liên lạc của nhân sự.
+    - **Đổi mật khẩu:** Hỗ trợ nhập mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu (tối thiểu 6 ký tự).
+- **Backend API & Real-time UI Update:**
+  * Mở rộng endpoint `CurrentUserAPIView` (`/api/auth/me/`) hỗ trợ phương thức `PATCH` để lưu thông tin hồ sơ và đổi mật khẩu an toàn (`update_session_auth_hash`).
+  * Giao diện cập nhật tức thì tên hiển thị, email trên Topbar và dropdown ngay sau khi lưu thành công mà không cần tải lại trang.
+  * Bổ sung đầy đủ 3 test cases trong `CurrentUserProfileAPITestCase` (89/89 tests passed).
     - **Hướng dẫn sử dụng:** Mở sổ tay HDSD hệ thống (`/helps`).
     - **Đăng xuất:** Thoát khỏi hệ thống an toàn và dọn dẹp phiên làm việc.
   * Hỗ trợ tự động đóng menu khi nhấp chuột ra ngoài (click-outside) hoặc nhấn phím ESC.

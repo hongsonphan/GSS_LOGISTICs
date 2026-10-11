@@ -785,12 +785,178 @@ window.closeUserDropdown = closeUserDropdown;
 
 function handleUserSettingsClick(e) {
     closeUserDropdown();
-    if (typeof switchTab === 'function') {
-        if (e) e.preventDefault();
-        switchTab('cai-dat');
-    }
+    openProfileSettingsModal();
 }
 window.handleUserSettingsClick = handleUserSettingsClick;
+
+// --- MODAL CÀI ĐẶT HỒ SƠ & TÀI KHOẢN CÁ NHÂN (USER PROFILE SETTINGS) ---
+async function openProfileSettingsModal() {
+    closeUserDropdown();
+    const modal = document.getElementById('modal-profile-settings');
+    if (!modal) return;
+
+    // Reset alert & password fields
+    const alertBox = document.getElementById('profile-settings-alert');
+    if (alertBox) {
+        alertBox.className = 'hidden p-3 rounded-xl text-xs font-semibold';
+        alertBox.innerHTML = '';
+    }
+    const oldPass = document.getElementById('profile-old-password');
+    if (oldPass) oldPass.value = '';
+    const newPass = document.getElementById('profile-new-password');
+    if (newPass) newPass.value = '';
+    const confirmPass = document.getElementById('profile-confirm-password');
+    if (confirmPass) confirmPass.value = '';
+
+    // Lấy thông tin mới nhất từ API /api/auth/me/
+    try {
+        const res = await fetchWithAuth('/api/auth/me/');
+        if (res && res.ok) {
+            const data = await res.json();
+            const usernameInput = document.getElementById('profile-username');
+            if (usernameInput && data.username) usernameInput.value = data.username;
+            const fullnameInput = document.getElementById('profile-fullname');
+            if (fullnameInput && data.employee && data.employee.full_name) {
+                fullnameInput.value = data.employee.full_name;
+            }
+            const emailInput = document.getElementById('profile-email');
+            if (emailInput) emailInput.value = data.email || '';
+            const phoneInput = document.getElementById('profile-phone');
+            if (phoneInput && data.employee && data.employee.phone_number) {
+                phoneInput.value = data.employee.phone_number;
+            }
+        }
+    } catch (err) {
+        console.warn('Lỗi tải dữ liệu profile me:', err);
+    }
+
+    modal.classList.remove('hidden');
+}
+window.openProfileSettingsModal = openProfileSettingsModal;
+
+function closeProfileSettingsModal() {
+    const modal = document.getElementById('modal-profile-settings');
+    if (modal) modal.classList.add('hidden');
+}
+window.closeProfileSettingsModal = closeProfileSettingsModal;
+
+async function submitProfileSettingsForm(e) {
+    if (e) e.preventDefault();
+
+    const alertBox = document.getElementById('profile-settings-alert');
+    const saveBtn = document.getElementById('btn-save-profile');
+    const fullname = document.getElementById('profile-fullname')?.value.trim();
+    const email = document.getElementById('profile-email')?.value.trim();
+    const phone = document.getElementById('profile-phone')?.value.trim();
+    const oldPassword = document.getElementById('profile-old-password')?.value;
+    const newPassword = document.getElementById('profile-new-password')?.value;
+    const confirmPassword = document.getElementById('profile-confirm-password')?.value;
+
+    if (!fullname) {
+        if (alertBox) {
+            alertBox.className = 'p-3 rounded-xl text-xs font-semibold bg-rose-50 border border-rose-200 text-rose-700';
+            alertBox.innerText = 'Vui lòng nhập họ và tên.';
+            alertBox.classList.remove('hidden');
+        }
+        return;
+    }
+
+    if (newPassword || oldPassword) {
+        if (!oldPassword) {
+            if (alertBox) {
+                alertBox.className = 'p-3 rounded-xl text-xs font-semibold bg-rose-50 border border-rose-200 text-rose-700';
+                alertBox.innerText = 'Vui lòng nhập mật khẩu hiện tại để đổi mật khẩu mới.';
+                alertBox.classList.remove('hidden');
+            }
+            return;
+        }
+        if (newPassword.length < 6) {
+            if (alertBox) {
+                alertBox.className = 'p-3 rounded-xl text-xs font-semibold bg-rose-50 border border-rose-200 text-rose-700';
+                alertBox.innerText = 'Mật khẩu mới phải có tối thiểu 6 ký tự.';
+                alertBox.classList.remove('hidden');
+            }
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            if (alertBox) {
+                alertBox.className = 'p-3 rounded-xl text-xs font-semibold bg-rose-50 border border-rose-200 text-rose-700';
+                alertBox.innerText = 'Mật khẩu xác nhận không khớp với mật khẩu mới.';
+                alertBox.classList.remove('hidden');
+            }
+            return;
+        }
+    }
+
+    const payload = {
+        full_name: fullname,
+        email: email,
+        phone_number: phone
+    };
+    if (newPassword && oldPassword) {
+        payload.old_password = oldPassword;
+        payload.new_password = newPassword;
+    }
+
+    try {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-sm"></i> Đang lưu...';
+        }
+
+        const res = await fetchWithAuth('/api/auth/me/', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || 'Không thể lưu cài đặt hồ sơ.');
+        }
+
+        // Cập nhật giao diện động tức thì
+        const updatedUser = data.user || {};
+        if (updatedUser.full_name) {
+            // Cập nhật dropdown header
+            const ddName = document.getElementById('topbar-dropdown-fullname');
+            if (ddName) ddName.innerText = updatedUser.full_name;
+            // Cập nhật dòng Tên trong dropdown
+            const valName = document.getElementById('topbar-profile-val-name');
+            if (valName) valName.innerText = updatedUser.full_name;
+            // Cập nhật Topbar button user text
+            const topbarBtn = document.querySelector('#topbar-user-menu-btn .lg\\:flex span.font-bold');
+            if (topbarBtn) topbarBtn.innerText = updatedUser.full_name;
+        }
+        if (updatedUser.email !== undefined) {
+            const ddEmail = document.getElementById('topbar-profile-val-email');
+            if (ddEmail) {
+                ddEmail.innerText = updatedUser.email || 'Chưa cập nhật';
+                ddEmail.title = updatedUser.email || 'Chưa cập nhật';
+            }
+        }
+
+        if (typeof showToast === 'function') {
+            showToast('success', data.message || 'Đã cập nhật cài đặt hồ sơ cá nhân thành công!', 'Hồ Sơ Cá Nhân');
+        }
+
+        closeProfileSettingsModal();
+
+    } catch (err) {
+        if (alertBox) {
+            alertBox.className = 'p-3 rounded-xl text-xs font-semibold bg-rose-50 border border-rose-200 text-rose-700';
+            alertBox.innerText = err.message || 'Đã xảy ra lỗi khi lưu thông tin.';
+            alertBox.classList.remove('hidden');
+        }
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i> <span>Lưu Cài Đặt Hồ Sơ</span>';
+        }
+    }
+}
+window.submitProfileSettingsForm = submitProfileSettingsForm;
 
 // Close dropdown and popover on click outside
 document.addEventListener('click', (e) => {
@@ -812,6 +978,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeUserDropdown();
+        closeProfileSettingsModal();
     }
 });
 

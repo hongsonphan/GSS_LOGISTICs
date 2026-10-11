@@ -224,6 +224,33 @@ gantt
 
 ---
 
-## 5. KẾT LUẬN & SẴN SÀNG TRIỂN KHAI
+## 6. KẾ HOẠCH TRIỂN KHAI CHO KHÁCH HÀNG (ON-PREMISE DEPLOYMENT ROADMAP — MÔ HÌNH MISA)
 
-Tài liệu này đã đúc kết đầy đủ toàn bộ yêu cầu, phân tích nghiệp vụ thực tế và thiết kế kiến trúc chuẩn TMS cho Triền Võ Logistics. Khi bắt đầu triển khai, đội ngũ kỹ thuật có thể mở file này và kích hoạt thực hiện tuần tự từ **Sprint 1** đến **Sprint 5**.
+> **Mục tiêu:** Đóng gói giải pháp triển khai phần mềm cho khách hàng doanh nghiệp vận tải theo mô hình On-Premise của MISA (chuẩn PostgreSQL, kỹ thuật viên bên ta trực tiếp triển khai, chọn vị trí lưu dữ liệu trên ổ đĩa vật lý, tùy chọn nạp dữ liệu Demo hoặc dữ liệu Thật).
+
+### 6.1. Triết lý Triển khai Cốt lõi
+1. **Chuẩn Cơ sở dữ liệu Doanh nghiệp:** Sử dụng 100% **PostgreSQL 16** (Không dùng SQLite để tránh lỗi khóa bảng `Database is locked` khi nhiều phòng ban và tài xế đồng thời truy cập/ghi nhận chi phí, POD).
+2. **Kỹ thuật viên Phụ trách Triển khai (IT-Assisted Setup):** Không bắt khách hàng tự cài đặt. Kỹ thuật viên của công ty chúng ta sẽ trực tiếp thực hiện qua UltraViewer/TeamViewer hoặc tại văn phòng khách hàng bằng bộ công cụ **Deployment Wizard** đóng gói sẵn.
+3. **Bảo toàn Dữ liệu Khách hàng (Data Isolation & Safe Storage):**
+   - Khách hàng được quyền chọn ổ đĩa lưu trữ an toàn (ví dụ: `D:\BIM_LOGISTICS_DATA` hoặc `E:\BIM_LOGISTICS_DATA`).
+   - Tách biệt hoàn toàn khỏi ổ `C:\` để tránh mất dữ liệu khi cài lại hệ điều hành Windows.
+
+### 6.2. Bộ Công Cụ & Tính Năng Cần Xây Dựng Khi Bắt Đầu Triển Khai
+* **Sprint DEP-1: Setup Wizard Console / Script Triển Khai Tự Động**
+  - Script tương tác hỏi kỹ thuật viên: Tên công ty khách hàng, đường dẫn thư mục lưu DB trên ổ đĩa, port mạng LAN, loại dữ liệu khởi tạo.
+  - Tự động map volume PostgreSQL vào thư mục vật lý được chỉ định.
+  - Tự động cấu hình file `.env` bảo mật và mở cổng Windows Firewall cho mạng LAN (`8085`).
+* **Sprint DEP-2: Cơ Chế Phân Loại Dữ Liệu Khởi Tạo (Seed Modes)**
+  - Tùy chọn 1: `DEMO_DATA` — Tự động nạp đầu xe, rơ-moóc, biểu cước, tài xế và các chuyến xe mẫu để đào tạo nhân sự khách hàng dùng thử.
+  - Tùy chọn 2: `CLEAN_PRODUCTION` — Chỉ nạp Master Data chuẩn (Cảng biển, ICD, Depot, quy chuẩn Cont 20/40/45, danh mục chi phí nâng hạ/cầu đường).
+  - Lệnh dọn rác giao dịch dùng thử: `python manage.py purge_transactions --keep-master-data` để chuyển từ giai đoạn Demo sang Chạy thật mà không mất danh mục đã nhập.
+* **Sprint DEP-3: Bộ Tiện Ích Sao Lưu & Phục Hồi (Auto-Backup & Maintenance)**
+  - Tự động thiết lập lịch backup định kỳ hàng ngày (Windows Task Scheduler $\rightarrow$ `pg_dump` $\rightarrow$ nén file `.dump` lưu tại `D:\BIM_LOGISTICS_DATA\Backups\`).
+  - Nút sao lưu nhanh và tải bản backup trực tiếp trên giao diện Quản trị Hệ thống.
+
+---
+
+## 7. KẾT LUẬN & SẴN SÀNG TRIỂN KHAI
+
+Tài liệu này đã đúc kết đầy đủ toàn bộ yêu cầu, phân tích nghiệp vụ thực tế, lộ trình báo cáo chuyên sâu và kế hoạch đóng gói triển khai On-Premise chuẩn MISA cho BIM Logistics. Khi bắt đầu triển khai, đội ngũ kỹ thuật có thể mở file này và kích hoạt thực hiện theo từng Sprint cụ thể.
+
