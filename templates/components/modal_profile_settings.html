@@ -24,12 +24,17 @@
 
             <!-- Khối 1: Thông tin định danh -->
             <div class="space-y-3">
-                <div class="text-[11px] font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-slate-100">
-                    <i class="ph-bold ph-identification-card text-teal-600"></i>
-                    <span>Thông Tin Tài Khoản & Định Danh</span>
+                <div class="text-[11px] font-bold text-teal-800 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-slate-100">
+                    <span class="flex items-center gap-1.5">
+                        <i class="ph-bold ph-identification-card text-teal-600"></i>
+                        <span>Thông Tin Tài Khoản & Định Danh</span>
+                    </span>
+                    <span id="profile-mode-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                        Chế độ chỉ xem
+                    </span>
                 </div>
 
-                <!-- Tên đăng nhập (User) - readonly -->
+                <!-- Tên đăng nhập (User) - luôn cố định -->
                 <div>
                     <label class="block font-bold text-slate-700 text-xs mb-1">Tên Đăng Nhập (User)</label>
                     <div class="relative">
@@ -45,9 +50,9 @@
                     <label class="block font-bold text-slate-700 text-xs mb-1">Họ Và Tên (Tên) <span class="text-rose-500">*</span></label>
                     <div class="relative">
                         <i class="ph-bold ph-text-t absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="text" id="profile-fullname" required placeholder="Nhập họ và tên đầy đủ"
+                        <input type="text" id="profile-fullname" required disabled placeholder="Nhập họ và tên đầy đủ"
                             value="{{ current_employee.full_name|default:request.user.get_full_name|default:request.user.username }}"
-                            class="w-full h-9 pl-9 pr-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-hidden transition-all">
+                            class="profile-input w-full h-9 pl-9 pr-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-100/70 text-slate-700 cursor-not-allowed transition-all">
                     </div>
                 </div>
 
@@ -56,9 +61,9 @@
                     <label class="block font-bold text-slate-700 text-xs mb-1">Địa Chỉ Email</label>
                     <div class="relative">
                         <i class="ph-bold ph-envelope-simple absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="email" id="profile-email" placeholder="email@bim.info.vn"
+                        <input type="email" id="profile-email" disabled placeholder="email@bim.info.vn"
                             value="{{ request.user.email }}"
-                            class="w-full h-9 pl-9 pr-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-hidden transition-all">
+                            class="profile-input w-full h-9 pl-9 pr-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-100/70 text-slate-700 cursor-not-allowed transition-all">
                     </div>
                 </div>
 
@@ -67,50 +72,56 @@
                     <label class="block font-bold text-slate-700 text-xs mb-1">Số Điện Thoại</label>
                     <div class="relative">
                         <i class="ph-bold ph-phone absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="tel" id="profile-phone" placeholder="0901234567"
+                        <input type="tel" id="profile-phone" disabled placeholder="0901234567"
                             value="{{ current_employee.phone_number }}"
-                            class="w-full h-9 pl-9 pr-3 text-xs font-mono font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-hidden transition-all">
+                            class="profile-input w-full h-9 pl-9 pr-3 text-xs font-mono font-medium border border-slate-200 rounded-xl bg-slate-100/70 text-slate-700 cursor-not-allowed transition-all">
                     </div>
                 </div>
             </div>
 
-            <!-- Khối 2: Bảo mật & Mật khẩu (Tùy chọn) -->
-            <div class="space-y-3 pt-2">
+            <!-- Khối 2: Bảo mật & Mật khẩu -->
+            <div class="space-y-3 pt-2" id="profile-password-section">
                 <div class="text-[11px] font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-slate-100">
                     <i class="ph-bold ph-lock-key text-teal-600"></i>
-                    <span>Thay Đổi Mật Khẩu (Tùy Chọn)</span>
+                    <span>Thay Đổi Mật Khẩu (Để trống nếu không đổi)</span>
                 </div>
 
                 <div>
                     <label class="block font-bold text-slate-700 text-xs mb-1">Mật Khẩu Hiện Tại</label>
-                    <input type="password" id="profile-old-password" placeholder="Chỉ nhập khi bạn muốn đổi mật khẩu mới"
-                        class="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-hidden transition-all">
+                    <input type="password" id="profile-old-password" disabled placeholder="Chỉ nhập khi bạn muốn đổi mật khẩu mới"
+                        class="profile-input w-full h-9 px-3 text-xs border border-slate-200 rounded-xl bg-slate-100/70 text-slate-700 cursor-not-allowed transition-all">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold text-slate-700 text-xs mb-1">Mật Khẩu Mới</label>
-                        <input type="password" id="profile-new-password" placeholder="Tối thiểu 6 ký tự"
-                            class="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-hidden transition-all">
+                        <input type="password" id="profile-new-password" disabled placeholder="Tối thiểu 6 ký tự"
+                            class="profile-input w-full h-9 px-3 text-xs border border-slate-200 rounded-xl bg-slate-100/70 text-slate-700 cursor-not-allowed transition-all">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-700 text-xs mb-1">Xác Nhận Mật Khẩu Mới</label>
-                        <input type="password" id="profile-confirm-password" placeholder="Nhập lại mật khẩu mới"
-                            class="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-hidden transition-all">
+                        <input type="password" id="profile-confirm-password" disabled placeholder="Nhập lại mật khẩu mới"
+                            class="profile-input w-full h-9 px-3 text-xs border border-slate-200 rounded-xl bg-slate-100/70 text-slate-700 cursor-not-allowed transition-all">
                     </div>
                 </div>
             </div>
 
-            <!-- Modal Footer -->
+            <!-- Modal Footer: 2 nút Sửa | Lưu -->
             <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeProfileSettingsModal()"
-                    class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
-                    Hủy Bỏ
+                <!-- Nút 1: Sửa (sáng lên) hoặc Hủy (khi đang sửa) -->
+                <button type="button" id="btn-toggle-edit-profile" onclick="handleProfileEditCancelClick()"
+                    class="px-4 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100/80 border border-teal-300 rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1.5"
+                    title="Bấm để cho phép chỉnh sửa thông tin">
+                    <i class="ph-bold ph-pencil-simple text-sm" id="icon-toggle-edit-profile"></i>
+                    <span id="text-toggle-edit-profile">Sửa</span>
                 </button>
-                <button type="submit" id="btn-save-profile"
-                    class="px-5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 active:scale-95 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+
+                <!-- Nút 2: Lưu (Mặc định bị disable, chỉ kích hoạt khi bấm Sửa) -->
+                <button type="submit" id="btn-save-profile" disabled
+                    class="px-5 py-2 text-xs font-bold text-slate-400 bg-slate-100 border border-slate-200 rounded-xl cursor-not-allowed opacity-60 flex items-center gap-1.5 transition-all"
+                    title="Chỉ có thể lưu khi đang ở chế độ chỉnh sửa">
                     <i class="ph-bold ph-floppy-disk text-sm"></i>
-                    <span>Lưu Cài Đặt Hồ Sơ</span>
+                    <span>Lưu</span>
                 </button>
             </div>
         </form>

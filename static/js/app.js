@@ -790,6 +790,121 @@ function handleUserSettingsClick(e) {
 window.handleUserSettingsClick = handleUserSettingsClick;
 
 // --- MODAL CÀI ĐẶT HỒ SƠ & TÀI KHOẢN CÁ NHÂN (USER PROFILE SETTINGS) ---
+let isProfileEditMode = false;
+let originalProfileData = {};
+
+function setProfileEditMode(isEdit) {
+    isProfileEditMode = isEdit;
+
+    const modal = document.getElementById('modal-profile-settings');
+    if (!modal) return;
+
+    const badge = document.getElementById('profile-mode-badge');
+    const toggleBtn = document.getElementById('btn-toggle-edit-profile');
+    const toggleIcon = document.getElementById('icon-toggle-edit-profile');
+    const toggleText = document.getElementById('text-toggle-edit-profile');
+    const saveBtn = document.getElementById('btn-save-profile');
+    const inputs = modal.querySelectorAll('.profile-input');
+
+    if (isEdit) {
+        // --- CHẾ ĐỘ CHỈNH SỬA: Ô NHẬP MỞ KHÓA, NÚT SỬA ĐỔI THÀNH HỦY, NÚT LƯU KÍCH HOẠT ---
+        if (badge) {
+            badge.innerText = 'Đang chỉnh sửa';
+            badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200';
+        }
+
+        inputs.forEach(input => {
+            input.disabled = false;
+            input.classList.remove('bg-slate-100/70', 'cursor-not-allowed', 'text-slate-700');
+            input.classList.add('bg-slate-50', 'text-slate-900', 'cursor-text');
+        });
+
+        if (toggleBtn) {
+            toggleBtn.className = 'px-4 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1.5';
+            toggleBtn.title = 'Hủy bỏ các thay đổi và không lưu';
+        }
+        if (toggleIcon) toggleIcon.className = 'ph-bold ph-x text-sm';
+        if (toggleText) toggleText.innerText = 'Hủy';
+
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.className = 'px-5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 active:scale-95 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer';
+            saveBtn.title = 'Lưu các thông tin đã thay đổi';
+        }
+
+        const fullnameInput = document.getElementById('profile-fullname');
+        if (fullnameInput) fullnameInput.focus();
+
+    } else {
+        // --- CHẾ ĐỘ CHỈ XEM: Ô NHẬP KHÓA, NÚT SỬA SÁNG LÊN, NÚT LƯU DISABLE ---
+        if (badge) {
+            badge.innerText = 'Chế độ chỉ xem';
+            badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 border border-slate-200';
+        }
+
+        inputs.forEach(input => {
+            input.disabled = true;
+            input.classList.remove('bg-slate-50', 'text-slate-900', 'cursor-text');
+            input.classList.add('bg-slate-100/70', 'cursor-not-allowed', 'text-slate-700');
+        });
+
+        if (toggleBtn) {
+            toggleBtn.className = 'px-4 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100/80 border border-teal-300 rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1.5';
+            toggleBtn.title = 'Bấm để cho phép chỉnh sửa thông tin';
+        }
+        if (toggleIcon) toggleIcon.className = 'ph-bold ph-pencil-simple text-sm';
+        if (toggleText) toggleText.innerText = 'Sửa';
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.className = 'px-5 py-2 text-xs font-bold text-slate-400 bg-slate-100 border border-slate-200 rounded-xl cursor-not-allowed opacity-60 flex items-center gap-1.5 transition-all';
+            saveBtn.title = 'Chỉ có thể lưu khi đang ở chế độ chỉnh sửa';
+        }
+    }
+}
+window.setProfileEditMode = setProfileEditMode;
+
+function handleProfileEditCancelClick() {
+    if (!isProfileEditMode) {
+        setProfileEditMode(true);
+    } else {
+        cancelProfileEdit();
+    }
+}
+window.handleProfileEditCancelClick = handleProfileEditCancelClick;
+
+function cancelProfileEdit() {
+    // Khôi phục giá trị ban đầu và không lưu
+    const fullnameInput = document.getElementById('profile-fullname');
+    if (fullnameInput && originalProfileData.fullname !== undefined) {
+        fullnameInput.value = originalProfileData.fullname;
+    }
+    const emailInput = document.getElementById('profile-email');
+    if (emailInput && originalProfileData.email !== undefined) {
+        emailInput.value = originalProfileData.email;
+    }
+    const phoneInput = document.getElementById('profile-phone');
+    if (phoneInput && originalProfileData.phone !== undefined) {
+        phoneInput.value = originalProfileData.phone;
+    }
+
+    const oldPass = document.getElementById('profile-old-password');
+    if (oldPass) oldPass.value = '';
+    const newPass = document.getElementById('profile-new-password');
+    if (newPass) newPass.value = '';
+    const confirmPass = document.getElementById('profile-confirm-password');
+    if (confirmPass) confirmPass.value = '';
+
+    const alertBox = document.getElementById('profile-settings-alert');
+    if (alertBox) {
+        alertBox.className = 'hidden p-3 rounded-xl text-xs font-semibold';
+        alertBox.innerHTML = '';
+    }
+
+    setProfileEditMode(false);
+}
+window.cancelProfileEdit = cancelProfileEdit;
+
 async function openProfileSettingsModal() {
     closeUserDropdown();
     const modal = document.getElementById('modal-profile-settings');
@@ -808,6 +923,9 @@ async function openProfileSettingsModal() {
     const confirmPass = document.getElementById('profile-confirm-password');
     if (confirmPass) confirmPass.value = '';
 
+    // Khởi tạo ở Chế độ chỉ xem mặc định
+    setProfileEditMode(false);
+
     // Lấy thông tin mới nhất từ API /api/auth/me/
     try {
         const res = await fetchWithAuth('/api/auth/me/');
@@ -816,15 +934,20 @@ async function openProfileSettingsModal() {
             const usernameInput = document.getElementById('profile-username');
             if (usernameInput && data.username) usernameInput.value = data.username;
             const fullnameInput = document.getElementById('profile-fullname');
-            if (fullnameInput && data.employee && data.employee.full_name) {
-                fullnameInput.value = data.employee.full_name;
-            }
+            const fetchedName = (data.employee && data.employee.full_name) ? data.employee.full_name : (data.first_name || data.username);
+            if (fullnameInput) fullnameInput.value = fetchedName;
             const emailInput = document.getElementById('profile-email');
-            if (emailInput) emailInput.value = data.email || '';
+            const fetchedEmail = data.email || '';
+            if (emailInput) emailInput.value = fetchedEmail;
             const phoneInput = document.getElementById('profile-phone');
-            if (phoneInput && data.employee && data.employee.phone_number) {
-                phoneInput.value = data.employee.phone_number;
-            }
+            const fetchedPhone = (data.employee && data.employee.phone_number) ? data.employee.phone_number : '';
+            if (phoneInput) phoneInput.value = fetchedPhone;
+
+            originalProfileData = {
+                fullname: fetchedName,
+                email: fetchedEmail,
+                phone: fetchedPhone
+            };
         }
     } catch (err) {
         console.warn('Lỗi tải dữ liệu profile me:', err);
@@ -835,6 +958,7 @@ async function openProfileSettingsModal() {
 window.openProfileSettingsModal = openProfileSettingsModal;
 
 function closeProfileSettingsModal() {
+    cancelProfileEdit();
     const modal = document.getElementById('modal-profile-settings');
     if (modal) modal.classList.add('hidden');
 }
@@ -842,6 +966,7 @@ window.closeProfileSettingsModal = closeProfileSettingsModal;
 
 async function submitProfileSettingsForm(e) {
     if (e) e.preventDefault();
+    if (!isProfileEditMode) return;
 
     const alertBox = document.getElementById('profile-settings-alert');
     const saveBtn = document.getElementById('btn-save-profile');
@@ -919,28 +1044,31 @@ async function submitProfileSettingsForm(e) {
         // Cập nhật giao diện động tức thì
         const updatedUser = data.user || {};
         if (updatedUser.full_name) {
-            // Cập nhật dropdown header
+            originalProfileData.fullname = updatedUser.full_name;
             const ddName = document.getElementById('topbar-dropdown-fullname');
             if (ddName) ddName.innerText = updatedUser.full_name;
-            // Cập nhật dòng Tên trong dropdown
             const valName = document.getElementById('topbar-profile-val-name');
             if (valName) valName.innerText = updatedUser.full_name;
-            // Cập nhật Topbar button user text
             const topbarBtn = document.querySelector('#topbar-user-menu-btn .lg\\:flex span.font-bold');
             if (topbarBtn) topbarBtn.innerText = updatedUser.full_name;
         }
         if (updatedUser.email !== undefined) {
+            originalProfileData.email = updatedUser.email || '';
             const ddEmail = document.getElementById('topbar-profile-val-email');
             if (ddEmail) {
                 ddEmail.innerText = updatedUser.email || 'Chưa cập nhật';
                 ddEmail.title = updatedUser.email || 'Chưa cập nhật';
             }
         }
+        if (updatedUser.phone_number !== undefined) {
+            originalProfileData.phone = updatedUser.phone_number || '';
+        }
 
         if (typeof showToast === 'function') {
             showToast('success', data.message || 'Đã cập nhật cài đặt hồ sơ cá nhân thành công!', 'Hồ Sơ Cá Nhân');
         }
 
+        setProfileEditMode(false);
         closeProfileSettingsModal();
 
     } catch (err) {
@@ -951,8 +1079,8 @@ async function submitProfileSettingsForm(e) {
         }
     } finally {
         if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i> <span>Lưu Cài Đặt Hồ Sơ</span>';
+            saveBtn.disabled = !isProfileEditMode;
+            saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk text-sm"></i> <span>Lưu</span>';
         }
     }
 }

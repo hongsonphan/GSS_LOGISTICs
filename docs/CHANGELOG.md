@@ -37,6 +37,10 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 ### 2. Cài Đặt Riêng Cho Hồ Sơ Cá Nhân (User Profile Settings Modal):
 - **Tách biệt Cài đặt Profile cá nhân và Cài đặt hệ thống ứng dụng:**
   * Mục **Cài đặt** trong avatar dropdown mở thẳng **Modal Cài Đặt Hồ Sơ Cá Nhân** (`#modal-profile-settings`) thay vì chuyển sang phân hệ Master Data của ứng dụng.
+- **Quy trình 2 nút Sửa | Lưu & Khóa nhập liệu an toàn:**
+  * Khi mới mở modal: Mặc định ở chế độ chỉ xem, các ô nhập liệu bị khóa (`disabled`). Nút **Sửa** sáng lên nổi bật, nút **Lưu** bị vô hiệu hóa (`disabled`, mờ nhẹ).
+  * Chỉ khi người dùng chủ động bấm nút **Sửa**: Các trường dữ liệu mới được mở khóa cho phép gõ/chỉnh sửa, con trỏ tự động focus vào ô Họ và tên, nút **Lưu** sáng lên được kích hoạt, đồng thời nút **Sửa** chuyển trạng thái thành nút **Hủy** (màu đỏ).
+  * Nếu bấm nút **Hủy**: Hệ thống tự động thoát chế độ chỉnh sửa, khôi phục lại 100% dữ liệu ban đầu, không lưu bất kỳ thay đổi nào và khóa lại các trường nhập liệu.
   * Cho phép người dùng trực tiếp xem và tinh chỉnh:
     - **Tên đăng nhập (User):** Hiển thị cố định (`readonly`).
     - **Họ và tên (Tên):** Cho phép chỉnh sửa và đồng bộ tức thì trên giao diện và backend.
