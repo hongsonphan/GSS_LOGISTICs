@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.6] - 2026-10-11 (Nâng Cấp Số Dư Đầu Kỳ Chuẩn Hệ Thống Tài Khoản Kế Toán COA & Bảng 8 Cột VAS/TT 200/TT 133)
+
+### 1. Kiến Trúc Dữ Liệu Kế Toán Doanh Nghiệp (ERP Foundation):
+- **Bổ sung Hệ thống Tài khoản Kế toán (Chart of Accounts - COA):**
+  * `account_code`: Mã tài khoản kế toán chuẩn Bộ Tài chính (`1111` Tiền mặt, `1121` Tiền gửi NH, `131` Phải thu KH, `1388` Phải thu khác/chi hộ, `141` Tạm ứng nội bộ, `331` Phải trả người bán/thầu phụ, `334` Phải trả người lao động, `341` Vay và nợ thuê tài chính).
+  * `account_name`: Tên tài khoản tiếng Việt chuẩn mực.
+  * `bank_account_number` & `bank_name`: Quản lý tài khoản ngân hàng chi tiết đối với TK 1121.
+  * `partner_type`: Phân loại đối tượng kế toán (`CUSTOMER`, `SUBCONTRACTOR`, `DRIVER`, `DISPATCHER`, `BANK`, `INTERNAL`).
+  * `debit_amount` & `credit_amount`: Phân định rạch ròi Số dư Nợ (+) và Số dư Có (-), hỗ trợ lập Bảng Cân Đối Phát Sinh.
+  * Tự động đồng bộ hai chiều giữa Nợ/Có và Số dư tổng hợp `amount`, `is_debit` trong `save()`.
+
+### 2. Backend REST API (`/api/master-data/opening-balances/`):
+- Trả về danh mục `account_charts` (COA), hỗ trợ lọc theo tài khoản kế toán (`account_code`), tìm kiếm đa trường và tính toán các chỉ số cân đối kế toán (`total_debit`, `total_credit`, `total_cash_bank`, `total_customer_ar`, `total_subcontractor_ap`, `total_driver_advance`).
+
+### 3. Giao Diện Người Dùng (UI/UX Chuẩn Kế Toán — 8 Cột & Flat Form):
+- **Bảng Số Dư Đầu Kỳ:** Trình bày đúng 8 cột kế toán chuẩn mực:
+  * `STT` | `Khoản Mục / Diễn Giải` | `TK Kế Toán` | `Số Tài Khoản NH` | `Dư Nợ (+)` | `Dư Có (-)` | `Mã Đối Tượng` | `Tên Đối Tượng / Quỹ` | `Ghi Chú / Chứng Từ` | `Thao Tác`
+- **Form Nhập Trực Tiếp (Flat Form, No Popup):** Dropdown chọn Tài khoản Kế toán; tự động hiển thị/bắt buộc ô Số tài khoản ngân hàng khi chọn TK 1121; gợi ý chọn nhanh đối tượng từ danh mục thực tế; preview số tiền tức thì; nút chuyển đổi Dư Nợ/Dư Có.
+
+### 4. Kiểm Thử Hệ Thống & Triển Khai (Zero-Regression):
+- 92/92 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`).
+- Cú pháp JavaScript kiểm tra hợp lệ 100% (`node -c static/js/app.js` & `node -c static/js/column_manager.js`).
+
 ## [v2.5] - 2026-10-11 (Tối Ưu Bố Cục Điều Vận Cắt Kéo / Cắt Mooc 2 Tài - Chuẩn UI/UX Full Màn Hình & Đồng Bộ Số Dư Đầu Kỳ COA)
 
 ### 1. Tối Ưu Bố Cục Chế Độ Cắt Kéo / Cắt Mooc (Drop & Hook):
