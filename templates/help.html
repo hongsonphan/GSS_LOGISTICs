@@ -1,0 +1,1196 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <title>Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng — BIM Logistics Platform</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Phosphor Icons -->
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"/>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #1e293b;
+            background-color: #f8fafc;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .nav-link.active {
+            background-color: #0d9488 !important;
+            color: #ffffff !important;
+            font-weight: 700;
+        }
+        .nav-link.active i {
+            color: #ffffff !important;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-full { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            body { background: white !important; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- HEADER / TOPBAR -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <!-- Brand & Logo -->
+            <div class="flex items-center gap-3">
+                <a href="/" class="flex items-center gap-2.5 group cursor-pointer" title="Về màn hình làm việc">
+                    <img src="/static/images/logo_clean.png" alt="BIM Logo" class="h-9 w-auto object-contain group-hover:scale-105 transition-transform">
+                    <div>
+                        <div class="text-[10px] font-black uppercase text-teal-600 tracking-wider">Hệ Sinh Thái BIM Logistics</div>
+                        <h1 class="text-base font-black text-slate-900 tracking-tight leading-none group-hover:text-teal-700 transition-colors">TRUNG TÂM TRỢ GIÚP & HDSD</h1>
+                    </div>
+                </a>
+                <span class="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                    v2.9.45
+                </span>
+            </div>
+
+            <!-- Global Live Search -->
+            <div class="flex-1 max-w-md mx-2 relative">
+                <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="help-search-input" oninput="filterHelpTopics()" placeholder="Tìm kiếm phân hệ, tính năng, tên trường dữ liệu..." 
+                    class="w-full pl-9 pr-9 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-2xs">
+                <button type="button" id="help-clear-btn" onclick="clearHelpSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <i class="ph-bold ph-x-circle text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Top Actions -->
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="window.print()" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer">
+                    <i class="ph-bold ph-printer text-teal-600"></i>
+                    <span>In Sổ Tay</span>
+                </button>
+                <a href="/" class="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer">
+                    <i class="ph-bold ph-arrow-left text-sm"></i>
+                    <span>Về Ứng Dụng</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO BANNER -->
+    <section class="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white py-10 px-4 sm:px-6 lg:px-8 border-b border-teal-950 no-print">
+        <div class="max-w-7xl mx-auto">
+            <div class="max-w-3xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 text-teal-200 text-xs font-bold mb-3">
+                    <i class="ph-bold ph-book-open"></i>
+                    <span>Sổ Tay Hướng Dẫn Vận Hành Hệ Thống Tiêu Chuẩn Doanh Nghiệp</span>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-black tracking-tight font-heading">
+                    Hướng Dẫn Sử Dụng Toàn Diện Nền Tảng BIM Logistics (TMS)
+                </h2>
+                <p class="mt-2 text-sm text-teal-100/90 leading-relaxed font-medium">
+                    Tài liệu chuẩn hóa quy trình điều vận, quản lý chi phí, tạm ứng, quyết toán chuyến xe, quản trị đội xe và báo cáo BI thông minh. Tra cứu chi tiết từng trường dữ liệu và quy tắc vận hành tại chỗ.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2 text-xs">
+                    <span class="px-2.5 py-1 rounded-lg bg-white/10 text-teal-100 border border-white/10 flex items-center gap-1">
+                        <i class="ph-bold ph-shield-check text-emerald-400"></i> 13 Phân hệ Nghiệp vụ
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-white/10 text-teal-100 border border-white/10 flex items-center gap-1">
+                        <i class="ph-bold ph-database text-teal-300"></i> Tra cứu 100+ Trường Dữ Liệu
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-white/10 text-teal-100 border border-white/10 flex items-center gap-1">
+                        <i class="ph-bold ph-chart-bar text-amber-300"></i> 14 Báo cáo BI Vận Tải
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-white/10 text-teal-100 border border-white/10 flex items-center gap-1">
+                        <i class="ph-bold ph-lock-key text-rose-300"></i> An toàn Dữ liệu Soft-Delete
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN WRAPPER -->
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-8">
+        
+        <!-- SIDEBAR NAVIGATION (STICKY TOC) -->
+        <aside class="w-64 shrink-0 hidden lg:block no-print">
+            <div class="sticky top-24 space-y-4">
+                <div class="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-2xs">
+                    <div class="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2.5 px-2.5 flex items-center justify-between">
+                        <span>Danh Mục Phân Hệ</span>
+                        <i class="ph-bold ph-list"></i>
+                    </div>
+                    <nav class="space-y-1 text-xs" id="help-nav-list">
+                        <a href="#sec-overview" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-squares-four text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">1. Kiến Trúc & Phân Quyền</span>
+                        </a>
+                        <a href="#sec-dashboard" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-chart-line-up text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">2. Dashboard Ban Giám Đốc</span>
+                        </a>
+                        <a href="#sec-sales" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-handshake text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">3. Kinh Doanh & Báo Giá</span>
+                        </a>
+                        <a href="#sec-booking" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-receipt text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">4. Tiếp Nhận Booking</span>
+                        </a>
+                        <a href="#sec-dispatch" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-truck text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">5. Điều Vận & Phát Lệnh</span>
+                        </a>
+                        <a href="#sec-trip-detail" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-timer text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">6. Chi Tiết Chuyến & Chi Phí</span>
+                        </a>
+                        <a href="#sec-driver-portal" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-device-mobile text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">7. Cổng Mobile Tài Xế</span>
+                        </a>
+                        <a href="#sec-fleet" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-garage text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">8. Xe, Rơ-Moóc & Bãi Đỗ</span>
+                        </a>
+                        <a href="#sec-personnel" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-users text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">9. Nhân Sự & Lương Chuyến</span>
+                        </a>
+                        <a href="#sec-accounting" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-calculator text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">10. Kế Toán, Tạm Ứng & Sổ Quỹ</span>
+                        </a>
+                        <a href="#sec-settlement" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-check-square-offset text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">11. Quyết Toán & Xe Bạn 3PL</span>
+                        </a>
+                        <a href="#sec-customs" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-file-text text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">12. Thủ Tục Hải Quan</span>
+                        </a>
+                        <a href="#sec-reports" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
+                            <i class="ph-bold ph-chart-bar text-sm text-teal-700 shrink-0"></i>
+                            <span class="truncate">13. Hệ Thống 14 Báo Cáo BI</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Contact & Support Widget -->
+                <div class="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4 text-xs">
+                    <div class="font-black text-teal-900 flex items-center gap-1.5 mb-1 font-heading">
+                        <i class="ph-bold ph-headphones text-teal-700 text-sm"></i>
+                        <span>Tổng Đài Hỗ Trợ 24/7</span>
+                    </div>
+                    <p class="text-teal-800 text-[11px] leading-relaxed mb-2 font-medium">
+                        Khi cần cấp tài khoản hoặc gặp sự cố kỹ thuật hiện trường:
+                    </p>
+                    <div class="space-y-1 font-mono text-[11px]">
+                        <div class="text-slate-800">Hotline: <strong class="text-teal-900">0965.559.561</strong></div>
+                        <div class="text-slate-800">Email: <span class="text-teal-800">support@trienvo.com</span></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN DOCUMENTATION CONTENT -->
+        <main class="flex-1 min-w-0 space-y-12 print-full" id="help-content-container">
+
+            <!-- 1. KIẾN TRÚC & PHÂN QUYỀN -->
+            <section id="sec-overview" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-squares-four"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-teal-600 tracking-wider">Phần 1 • Nền Tảng</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Tổng Quan Kiến Trúc Vận Hành & Phân Quyền (RBAC)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Nền tảng <strong>BIM Logistics Platform</strong> được thiết kế theo mô hình điều hành khép kín (Full-cycle Logistics TMS) chuyên biệt cho vận tải đường bộ Container FCL, hàng rời FTL và dịch vụ cảng biển tại Việt Nam.
+                    </p>
+                    
+                    <!-- Sơ đồ luồng -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                        <div class="text-xs font-bold text-slate-800 mb-2 uppercase font-heading flex items-center gap-1.5">
+                            <i class="ph-bold ph-arrows-merge text-teal-700"></i>
+                            Chu Trình Luồng Dữ Liệu Vận Tải 7 Bước
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+                            <span class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-800 shadow-2xs">1. Báo Giá Tuyến</span>
+                            <i class="ph-bold ph-arrow-right text-slate-400"></i>
+                            <span class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-800 shadow-2xs">2. Booking Hãng Tàu</span>
+                            <i class="ph-bold ph-arrow-right text-slate-400"></i>
+                            <span class="px-2.5 py-1 bg-teal-100 border border-teal-300 rounded-lg text-teal-900 shadow-2xs">3. Phát Lệnh Điều Xe</span>
+                            <i class="ph-bold ph-arrow-right text-slate-400"></i>
+                            <span class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-800 shadow-2xs">4. Tài Xế Báo Mốc & Chi Phí</span>
+                            <i class="ph-bold ph-arrow-right text-slate-400"></i>
+                            <span class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-800 shadow-2xs">5. Thu POD / EIR</span>
+                            <i class="ph-bold ph-arrow-right text-slate-400"></i>
+                            <span class="px-2.5 py-1 bg-emerald-100 border border-emerald-300 rounded-lg text-emerald-900 shadow-2xs">6. Quyết Toán Chuyến</span>
+                            <i class="ph-bold ph-arrow-right text-slate-400"></i>
+                            <span class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-800 shadow-2xs">7. Xuất Hóa Đơn & Sổ Quỹ</span>
+                        </div>
+                    </div>
+
+                    <!-- Bảng vai trò -->
+                    <h4 class="font-bold text-slate-900 text-sm mt-4 font-heading flex items-center gap-1.5">
+                        <i class="ph-bold ph-shield-check text-teal-700"></i> Bảng Phân Quyền Vai Trò Người Dùng
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
+                                <tr>
+                                    <th class="p-2.5 border-b border-slate-200">Vai Trò</th>
+                                    <th class="p-2.5 border-b border-slate-200">Mã Quyền</th>
+                                    <th class="p-2.5 border-b border-slate-200">Phạm Vi Quản Trị & Thao Tác Được Phép</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Ban Giám Đốc</td>
+                                    <td class="p-2.5 font-mono text-teal-800">DIRECTOR</td>
+                                    <td class="p-2.5">Toàn quyền hệ thống, phê duyệt báo giá, giám sát P&L chi phí, duyệt cấp quỹ và xem toàn bộ 14 báo cáo BI.</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Điều Phối Viên</td>
+                                    <td class="p-2.5 font-mono text-teal-800">DISPATCHER</td>
+                                    <td class="p-2.5">Tạo và phân công chuyến xe, cắt kéo, chở ghép 20ft, cấp tạm ứng cho tài xế, quản lý mốc kho và biên bản sự cố OS&D.</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Kế Toán Vận Tải</td>
+                                    <td class="p-2.5 font-mono text-teal-800">ACCOUNTANT</td>
+                                    <td class="p-2.5">Quản lý sổ quỹ thu-chi, duyệt chi phí chuyến, quản lý quỹ điều vận, quyết toán xe bạn 3PL, thu hồi chi hộ và đối soát nợ.</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Kinh Doanh (Sales)</td>
+                                    <td class="p-2.5 font-mono text-teal-800">SALESMAN</td>
+                                    <td class="p-2.5">Tạo báo giá, tiếp nhận booking order từ chủ hàng, quản lý danh bạ khách hàng và in mẫu báo giá A4 gửi đối tác.</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Quản Lý Xe & Bãi</td>
+                                    <td class="p-2.5 font-mono text-teal-800">MECHANIC</td>
+                                    <td class="p-2.5">Quản trị danh mục đầu kéo, rơ-moóc, theo dõi hạn đăng kiểm, lịch bảo dưỡng kỹ thuật và định vị xe nằm bãi.</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Tài Xế Xe Đầu Kéo</td>
+                                    <td class="p-2.5 font-mono text-teal-800">DRIVER</td>
+                                    <td class="p-2.5">Truy cập Driver Portal qua Capability URL riêng, báo 6 mốc kho, chụp ảnh biên bản POD/EIR và kê khai chi phí dọc đường.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. DASHBOARD BAN GIÁM ĐỐC -->
+            <section id="sec-dashboard" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-chart-line-up"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-indigo-600 tracking-wider">Phần 2 • Giám Sát</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 1: Dashboard Ban Giám Đốc (Executive BI)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Màn hình trung tâm tổng hợp toàn bộ các chỉ số vận hành và tài chính tức thời. Ban Giám Đốc không cần tải lại trang mà vẫn nắm bắt ngay dòng tiền và tiến độ từng chuyến xe.
+                    </p>
+
+                    <h4 class="font-bold text-slate-900 text-sm mt-4 font-heading">Các Tính Năng Cốt Lõi:</h4>
+                    <ul class="list-disc pl-5 space-y-1.5 text-xs">
+                        <li><strong>Bộ lọc kỳ toàn cục:</strong> Chuyển đổi nhanh giữa Hôm nay, 10 Ngày qua, Tháng này, Quý này, Năm nay hoặc Tùy chọn ngày.</li>
+                        <li><strong>4 Thẻ KPI Trụ Cột:</strong> Doanh thu, Chi phí vận hành, Lợi nhuận gộp, và Tỷ lệ giao đúng hẹn (OTD %).</li>
+                        <li><strong>Dòng Tiền & Quỹ Khả Dụng:</strong> Tách biệt rõ ràng giữa Tiền mặt tại két và Số dư Tài khoản Ngân hàng.</li>
+                        <li><strong>Bảng P&L 8 Chuyến Gần Nhất:</strong> Bấm vào bất kỳ dòng nào để chuyển trực tiếp sang trang Chi Tiết Chuyến Xe.</li>
+                    </ul>
+
+                    <!-- Data Dictionary Table -->
+                    <h4 class="font-bold text-slate-900 text-sm mt-6 font-heading flex items-center gap-1.5">
+                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Dashboard KPI
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
+                                <tr>
+                                    <th class="p-2.5 border-b border-slate-200">Tên Trường Hiển Thị</th>
+                                    <th class="p-2.5 border-b border-slate-200">Kiểu Dữ Liệu</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa & Công Thức Tính</th>
+                                    <th class="p-2.5 border-b border-slate-200">Định Dạng Mẫu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Tổng Doanh Thu</td>
+                                    <td class="p-2.5 font-mono text-slate-600">Currency (VNĐ)</td>
+                                    <td class="p-2.5">Tổng cước phí hợp đồng vận chuyển của tất cả chuyến xe trong kỳ.</td>
+                                    <td class="p-2.5 font-mono text-emerald-700">1.250.000.000 đ</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Chi Phí Vận Hành</td>
+                                    <td class="p-2.5 font-mono text-slate-600">Currency (VNĐ)</td>
+                                    <td class="p-2.5">Tổng chi phí nâng/hạ, BOT, dầu, lương chuyến tài xế (không tính chi hộ).</td>
+                                    <td class="p-2.5 font-mono text-rose-700">890.000.000 đ</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Lợi Nhuận Gộp & Margin</td>
+                                    <td class="p-2.5 font-mono text-slate-600">Currency & %</td>
+                                    <td class="p-2.5"><code>Lợi Nhuận = Doanh Thu - Chi Phí</code>. <code>Margin = (Lợi Nhuận / Doanh Thu) * 100</code>.</td>
+                                    <td class="p-2.5 font-mono text-emerald-800">360.000.000 đ (28.8%)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Năng Suất Đúng Hẹn (OTD)</td>
+                                    <td class="p-2.5 font-mono text-slate-600">Phần trăm (%)</td>
+                                    <td class="p-2.5">Tỷ lệ chuyến hoàn thành đúng lịch hẹn kho: <code>(Số chuyến đúng giờ / Tổng chuyến) * 100</code>.</td>
+                                    <td class="p-2.5 font-mono text-teal-800">96.5%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. KINH DOANH & BÁO GIÁ -->
+            <section id="sec-sales" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-handshake"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-teal-600 tracking-wider">Phần 3 • Khách Hàng & Doanh Thu</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 2: Kinh Doanh, Khách Hàng & Báo Giá (CRM & Quotation)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Quản lý toàn diện hồ sơ khách hàng, biểu cước vận chuyển theo ma trận tuyến đường và thiết lập báo giá đa phương thức (Bao chuyến, theo tuyến, phụ phí giá dầu DO).
+                    </p>
+
+                    <!-- Quy trình 4 bước -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span class="font-bold text-teal-800 block mb-1">Bước 1: Tạo Khách Hàng</span>
+                            Nhập Mã KH, Tên doanh nghiệp, MST, Địa chỉ trụ sở và Người liên hệ.
+                        </div>
+                        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span class="font-bold text-teal-800 block mb-1">Bước 2: Lập Báo Giá</span>
+                            Chọn khách hàng, thời hạn hiệu lực, phương thức định giá và thêm các tuyến đường.
+                        </div>
+                        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span class="font-bold text-teal-800 block mb-1">Bước 3: Ban Giám Đốc Duyệt</span>
+                            Bấm "Duyệt Báo Giá" để khóa đơn giá cước và kích hoạt biểu cước vận hành.
+                        </div>
+                        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span class="font-bold text-teal-800 block mb-1">Bước 4: Xuất Bản In A4</span>
+                            In mẫu báo giá tiêu chuẩn doanh nghiệp gửi khách hàng ký hợp đồng nguyên tắc.
+                        </div>
+                    </div>
+
+                    <!-- Data Dictionary Table -->
+                    <h4 class="font-bold text-slate-900 text-sm mt-6 font-heading flex items-center gap-1.5">
+                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Báo Giá (Quotation)
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
+                                <tr>
+                                    <th class="p-2.5 border-b border-slate-200">Tên Trường</th>
+                                    <th class="p-2.5 border-b border-slate-200">Trường Kỹ Thuật</th>
+                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa Nghiệp Vụ & Ràng Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Mã Báo Giá</td>
+                                    <td class="p-2.5 font-mono text-slate-600">quotation_code</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Auto</td>
+                                    <td class="p-2.5">Hệ thống tự động sinh theo mẫu <code>BG-MMDD-XX</code>, duy nhất trên toàn hệ thống.</td>
+                                    <td class="p-2.5 font-mono text-teal-800">BG-1011-01</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Khách Hàng</td>
+                                    <td class="p-2.5 font-mono text-slate-600">customer_id</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Chọn đối tượng khách hàng từ danh mục. Khách hàng phải chưa bị vô hiệu hóa.</td>
+                                    <td class="p-2.5">CÔNG TY TNHH SAMSUNG ELECTRONICS</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Ngày Hiệu Lực</td>
+                                    <td class="p-2.5 font-mono text-slate-600">effective_date</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Ngày bắt đầu áp dụng đơn giá cước vận chuyển theo báo giá.</td>
+                                    <td class="p-2.5 font-mono">11/10/2026</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Ngày Hết Hạn</td>
+                                    <td class="p-2.5 font-mono text-slate-600">valid_until</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Thời hạn cuối cùng chấp nhận hiệu lực báo giá (thường là 30 hoặc 60 ngày).</td>
+                                    <td class="p-2.5 font-mono">11/11/2026</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Phương Thức Định Giá</td>
+                                    <td class="p-2.5 font-mono text-slate-600">pricing_method</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5"><code>MULTI_ROUTE</code> (Đa tuyến), <code>FUEL_ADJUSTED</code> (Bù trừ giá dầu DO), <code>FLAT_CHARTER</code> (Bao chuyến/tháng).</td>
+                                    <td class="p-2.5">MULTI_ROUTE</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Giá Dầu Cơ Sở</td>
+                                    <td class="p-2.5 font-mono text-slate-600">base_fuel_price</td>
+                                    <td class="p-2.5 text-center text-slate-400">Tùy chọn</td>
+                                    <td class="p-2.5">Mức giá dầu DO 0.05S tại thời điểm báo giá để tính trượt giá định kỳ.</td>
+                                    <td class="p-2.5 font-mono">18.500 đ/lít</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. TIẾP NHẬN BOOKING -->
+            <section id="sec-booking" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-receipt"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-amber-600 tracking-wider">Phần 4 • Đơn Hàng</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 3: Tiếp Nhận Booking & Đơn Hàng Vận Tải (Booking Order)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Tiếp nhận thông tin vận đơn hãng tàu hoặc lệnh điều xe từ khách hàng. Quản lý hạn cut-off hạ bãi (CY Closing), quy cách vỏ cont và theo dõi tiến độ phát lệnh điều xe thực tế.
+                    </p>
+
+                    <!-- Data Dictionary Table -->
+                    <h4 class="font-bold text-slate-900 text-sm mt-6 font-heading flex items-center gap-1.5">
+                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Booking Order
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
+                                <tr>
+                                    <th class="p-2.5 border-b border-slate-200">Tên Trường</th>
+                                    <th class="p-2.5 border-b border-slate-200">Trường Kỹ Thuật</th>
+                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa Nghiệp Vụ & Ràng Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Mã Đơn Hàng</td>
+                                    <td class="p-2.5 font-mono text-slate-600">booking_code</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Auto</td>
+                                    <td class="p-2.5">Mã đơn tự sinh theo cấu trúc chuẩn: <code>BK-YYYY-MMDD-XX</code>.</td>
+                                    <td class="p-2.5 font-mono text-teal-800">BK-2026-1011-01</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Số Booking / Vận Đơn</td>
+                                    <td class="p-2.5 font-mono text-slate-600">booking_number</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Số booking của hãng tàu cấp hoặc số B/L vận đơn đường biển.</td>
+                                    <td class="p-2.5 font-mono">ONE12345678</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Hãng Tàu</td>
+                                    <td class="p-2.5 font-mono text-slate-600">shipping_line</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Hãng tàu phát hành vỏ container (MAEU, ONE, COSCO, EVERGREEN, CMA, SITC...).</td>
+                                    <td class="p-2.5">ONE (Ocean Network Express)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Loại Dịch Vụ</td>
+                                    <td class="p-2.5 font-mono text-slate-600">service_type</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5"><code>EXPORT</code> (Kéo rỗng đóng xuất), <code>IMPORT</code> (Kéo cont nhập giao kho), <code>DOMESTIC</code> (Nội địa).</td>
+                                    <td class="p-2.5">EXPORT</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Quy Cách Container</td>
+                                    <td class="p-2.5 font-mono text-slate-600">container_type</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Loại kích thước vỏ cont: 20DC (20 feet thường), 40HC (40 feet cao), 45G1, 20RF (cont lạnh)...</td>
+                                    <td class="p-2.5 font-mono">40HC</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Số Lượng Cont</td>
+                                    <td class="p-2.5 font-mono text-slate-600">total_containers</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Tổng số vỏ cont cần cấp xe vận chuyển. Tự động so sánh với số cont đã phát lệnh.</td>
+                                    <td class="p-2.5 font-mono">5 Cont</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Hạn Cắt Máng (Closing)</td>
+                                    <td class="p-2.5 font-mono text-slate-600">closing_time</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Thời hạn cuối cùng xe phải hạ cont hàng vào cảng trước khi đóng bãi xếp tàu.</td>
+                                    <td class="p-2.5 font-mono text-rose-700">12/10/2026 18:00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. ĐIỀU VẬN & PHÁT LỆNH -->
+            <section id="sec-dispatch" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-truck"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-teal-600 tracking-wider">Phần 5 • Trọng Tâm Vận Hành</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 4: Điều Vận & Phát Lệnh Vận Tải (Dispatch & Trip Order)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Phân hệ trọng yếu nhất của hệ thống TMS: Gán đầu kéo, rơ-moóc, tài xế cho từng chuyến hàng; xử lý nghiệp vụ cắt kéo 2 chặng, chở ghép 2 cont 20ft và phát lệnh tức thì tới điện thoại của tài xế.
+                    </p>
+
+                    <!-- Alert Note -->
+                    <div class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl text-xs text-amber-900">
+                        <strong class="font-bold flex items-center gap-1.5 mb-1 font-heading">
+                            <i class="ph-bold ph-warning-circle text-amber-700 text-sm"></i> Quy Tắc Máy Trạng Thái Bắt Buộc (State Machine Rules):
+                        </strong>
+                        Hệ thống nghiêm cấm nhảy cóc trạng thái trái quy trình vận tải thực tế. Vòng đời chuyến xe bắt buộc tuân thủ: 
+                        <code class="font-mono text-amber-950 font-bold">Draft ➔ Dispatched ➔ Accepted ➔ Container Picked ➔ In Transit ➔ At Warehouse ➔ Unloading ➔ Delivered ➔ Returning Empty ➔ Completed</code>.
+                    </div>
+
+                    <!-- Data Dictionary Table -->
+                    <h4 class="font-bold text-slate-900 text-sm mt-6 font-heading flex items-center gap-1.5">
+                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Lệnh Điều Động (DispatchTrip)
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
+                                <tr>
+                                    <th class="p-2.5 border-b border-slate-200">Tên Trường</th>
+                                    <th class="p-2.5 border-b border-slate-200">Trường Kỹ Thuật</th>
+                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa Nghiệp Vụ & Ràng Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Mã Chuyến Xe</td>
+                                    <td class="p-2.5 font-mono text-slate-600">trip_code</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Auto</td>
+                                    <td class="p-2.5">Mã số duy nhất sinh tự động dạng <code>TVL-MMDD-XXX</code> (Ví dụ: TVL-1011-001).</td>
+                                    <td class="p-2.5 font-mono text-teal-800">TVL-1011-001</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Số Container</td>
+                                    <td class="p-2.5 font-mono text-slate-600">container_number</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Chuẩn ISO 6346 (4 chữ cái + 7 chữ số). Tự động viết hoa và loại bỏ ký tự lạ.</td>
+                                    <td class="p-2.5 font-mono">MSKU1234567</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Số Chì (Seal)</td>
+                                    <td class="p-2.5 font-mono text-slate-600">seal_number</td>
+                                    <td class="p-2.5 text-center text-slate-400">Tùy chọn</td>
+                                    <td class="p-2.5">Mã kẹp chì niêm phong của hãng tàu hoặc Hải quan. Đối chiếu với biên bản giao nhận.</td>
+                                    <td class="p-2.5 font-mono">ML-VN123456</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Xe Đầu Kéo</td>
+                                    <td class="p-2.5 font-mono text-slate-600">vehicle_id</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Biển số đầu kéo kéo cont. Hệ thống cảnh báo nếu xe đang chạy chuyến khác.</td>
+                                    <td class="p-2.5 font-mono">51C-123.45</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Rơ-Moóc</td>
+                                    <td class="p-2.5 font-mono text-slate-600">trailer_id</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Biển số rơ-moóc xương/cổ cò gắn kèm đầu kéo phù hợp với kích thước cont.</td>
+                                    <td class="p-2.5 font-mono">51R-098.76</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Bác Tài Chính</td>
+                                    <td class="p-2.5 font-mono text-slate-600">driver_id</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Tài xế phụ trách điều khiển xe chặng lấy cont và kéo tới kho khách hàng.</td>
+                                    <td class="p-2.5">Nguyễn Văn Bình (BỤI 94)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Nghiệp Vụ Cắt Kéo</td>
+                                    <td class="p-2.5 font-mono text-slate-600">is_split_trip</td>
+                                    <td class="p-2.5 text-center text-slate-600">Checkbox</td>
+                                    <td class="p-2.5">Bật khi tách 2 chặng: Xe 1 cắm moóc tại kho, Xe 2 tới kéo hạ bãi. Tự động hiển thị trường xe/tài xế chặng 2.</td>
+                                    <td class="p-2.5">Đã Bật (2 Chặng)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Chở Ghép 2 Cont 20ft</td>
+                                    <td class="p-2.5 font-mono text-slate-600">is_twin_container</td>
+                                    <td class="p-2.5 text-center text-slate-600">Checkbox</td>
+                                    <td class="p-2.5">Bật khi ghép 2 vỏ cont 20ft trên cùng 1 xe để tối ưu năng suất nhiên liệu.</td>
+                                    <td class="p-2.5">Đã Bật (Twin 20ft)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Hạn Lưu Vỏ (DET)</td>
+                                    <td class="p-2.5 font-mono text-slate-600">det_expiry_date</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Hạn chót phải trả vỏ cont về bãi hãng tàu để không phát sinh phí phạt DET.</td>
+                                    <td class="p-2.5 font-mono text-amber-700">15/10/2026</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. CHI TIẾT CHUYẾN XE & CHI PHÍ -->
+            <section id="sec-trip-detail" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-timer"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-teal-600 tracking-wider">Phần 6 • Kiểm Soát Chi Phí</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 5: Chi Tiết Chuyến Xe, Mốc Kho & Chi Phí P&L</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Trang hồ sơ chi tiết chuyến xe ghi nhận 5 mốc thời gian tại kho khách hàng (đo lường OTP), kê khai các khoản chi phí phát sinh dọc đường và tự động tính toán lãi/lỗ tức thời (Real-time P&L).
+                    </p>
+
+                    <!-- Data Dictionary Table -->
+                    <h4 class="font-bold text-slate-900 text-sm mt-6 font-heading flex items-center gap-1.5">
+                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Chi Phí Phát Sinh (TripExpense)
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
+                                <tr>
+                                    <th class="p-2.5 border-b border-slate-200">Khoản Mục Chi Phí</th>
+                                    <th class="p-2.5 border-b border-slate-200">Mã Kỹ Thuật</th>
+                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc HĐĐT</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa & Ghi Chú Hiện Trường</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Phí Nâng Cont</td>
+                                    <td class="p-2.5 font-mono text-slate-600">LIFT_ON</td>
+                                    <td class="p-2.5 text-center text-emerald-700 font-bold">Có HĐĐT</td>
+                                    <td class="p-2.5">Tiền nâng vỏ rỗng hoặc cont hàng tại Cảng/Depot. Cần nhập mã tra cứu HĐĐT cảng.</td>
+                                    <td class="p-2.5 font-mono">450.000 đ</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Phí Hạ Cont</td>
+                                    <td class="p-2.5 font-mono text-slate-600">LIFT_OFF</td>
+                                    <td class="p-2.5 text-center text-emerald-700 font-bold">Có HĐĐT</td>
+                                    <td class="p-2.5">Tiền hạ vỏ cont rỗng hoặc cont hàng tại Cảng đích. Cần số hóa đơn điện tử.</td>
+                                    <td class="p-2.5 font-mono">480.000 đ</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Vé Cầu Đường (BOT)</td>
+                                    <td class="p-2.5 font-mono text-slate-600">TOLL_FEE</td>
+                                    <td class="p-2.5 text-center text-slate-600">ePass / VETC</td>
+                                    <td class="p-2.5">Tiền qua các trạm thu phí đường bộ cao tốc, cầu đường BOT.</td>
+                                    <td class="p-2.5 font-mono">320.000 đ</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Cược Cont</td>
+                                    <td class="p-2.5 font-mono text-slate-600">CONTAINER_DEPOSIT</td>
+                                    <td class="p-2.5 text-center text-amber-700 font-bold">Tạm Ứng</td>
+                                    <td class="p-2.5">Tiền đặt cược vỏ container hãng tàu thu trước. Khoản này sẽ được hãng tàu hoàn lại sau.</td>
+                                    <td class="p-2.5 font-mono">2.000.000 đ</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Chi Hộ Khách Hàng</td>
+                                    <td class="p-2.5 font-mono text-slate-600">is_on_behalf_of_customer</td>
+                                    <td class="p-2.5 text-center text-indigo-700 font-bold">Toggle On</td>
+                                    <td class="p-2.5">Khoản công ty chi trước hộ khách hàng (Ví dụ: phí kiểm dịch, nâng hạ chỉ định). <strong>Không trừ vào P&L của xe</strong>. Xuất Debit Note thu lại.</td>
+                                    <td class="p-2.5 font-mono text-indigo-800">1.500.000 đ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. CỔNG MOBILE TÀI XẾ -->
+            <section id="sec-driver-portal" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-device-mobile"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-rose-600 tracking-wider">Phần 7 • Hiện Trường</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 6: Cổng Mobile Dành Cho Tài Xế (Driver Portal)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Cổng ứng dụng Web Mobile tối giản dành riêng cho các bác tài xe đầu kéo. Không yêu cầu đăng nhập tài khoản phức tạp, truy cập tức thời qua đường dẫn bảo mật (Capability URL Token) nhận từ Điều phối viên.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                            <div class="font-bold text-slate-900 text-sm mb-1 flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-check-circle text-teal-600"></i> Báo 6 Mốc Hiện Trường
+                            </div>
+                            Tài xế bấm nút xác nhận khi: Lấy cont tại bãi rỗng ➔ Rời cảng ➔ Đến cổng kho ➔ Bắt đầu đóng hàng ➔ Rời kho giao hàng ➔ Đã hạ cont bãi xong.
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                            <div class="font-bold text-slate-900 text-sm mb-1 flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-camera text-indigo-600"></i> Chụp Ảnh POD & EIR
+                            </div>
+                            Chụp ảnh rõ nét phiếu giao nhận cont (EIR) và biên bản giao nhận hàng hóa (POD) có chữ ký xác nhận của thủ kho khách hàng tải thẳng lên hệ thống.
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                            <div class="font-bold text-slate-900 text-sm mb-1 flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-money text-emerald-600"></i> Kê Khai Chi Phí Dọc Đường
+                            </div>
+                            Nhập số tiền thực tế các khoản nâng hạ, cân xe, vé cầu đường BOT và chụp ảnh hóa đơn chứng từ làm căn cứ hoàn ứng khi xe về bãi.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. XE & BÃI -->
+            <section id="sec-fleet" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-garage"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-teal-600 tracking-wider">Phần 8 • Quản Trị Phương Tiện</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 7: Quản Lý Đội Xe, Rơ-Moóc & Bãi Đỗ (Fleet Management)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Theo dõi toàn diện danh mục đầu kéo container, xe tải và rơ-moóc; quản lý hồ sơ đăng kiểm, lịch bảo trì bảo dưỡng định kỳ và trạng thái hoạt động của phương tiện.
+                    </p>
+
+                    <!-- Data Dictionary Table -->
+                    <h4 class="font-bold text-slate-900 text-sm mt-6 font-heading flex items-center gap-1.5">
+                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Đội Xe (Vehicle & Trailer)
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
+                                <tr>
+                                    <th class="p-2.5 border-b border-slate-200">Tên Trường</th>
+                                    <th class="p-2.5 border-b border-slate-200">Trường Kỹ Thuật</th>
+                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa Nghiệp Vụ & Ràng Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Biển Số Xe</td>
+                                    <td class="p-2.5 font-mono text-slate-600">plate_number</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Biển số đăng ký giao thông của đầu kéo hoặc rơ-moóc. Viết hoa chuẩn Việt Nam.</td>
+                                    <td class="p-2.5 font-mono font-bold">51C-123.45</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Loại Phương Tiện</td>
+                                    <td class="p-2.5 font-mono text-slate-600">vehicle_type</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5"><code>TRACTOR</code> (Đầu kéo), <code>TRUCK_10T</code> (Tải 10T), <code>TRUCK_2T</code> (Tải nhỏ).</td>
+                                    <td class="p-2.5">Đầu kéo Container</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Hình Thức Sở Hữu</td>
+                                    <td class="p-2.5 font-mono text-slate-600">ownership</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5"><code>OWNED</code> (Xe thuộc đội xe công ty Triền Võ), <code>SUBCONTRACTOR</code> (Xe thuê ngoài / xe bạn 3PL).</td>
+                                    <td class="p-2.5">Xe Nhà (OWNED)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Hạn Đăng Kiểm</td>
+                                    <td class="p-2.5 font-mono text-slate-600">inspection_expiry</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Hạn cuối giấy chứng nhận kiểm định an toàn kỹ thuật. Hệ thống cảnh báo đỏ khi còn &le; 15 ngày.</td>
+                                    <td class="p-2.5 font-mono text-rose-700">25/10/2026</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Trạng Thái Xe</td>
+                                    <td class="p-2.5 font-mono text-slate-600">status</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5"><code>AVAILABLE</code> (Nằm bãi sẵn sàng), <code>IN_USE</code> (Đang chạy chuyến), <code>MAINTENANCE</code> (Đang sửa chữa).</td>
+                                    <td class="p-2.5">Đang chạy chuyến</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. NHÂN SỰ & LƯƠNG CHUYẾN -->
+            <section id="sec-personnel" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-users"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-indigo-600 tracking-wider">Phần 9 • Quản Trị Nhân Sự</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 8: Hành Chính, Nhân Sự & Lương Chuyến (HR & Payroll)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Quản lý hồ sơ cán bộ công nhân viên, bằng lái GPLX tài xế hạng FC, hạn chứng chỉ an toàn lao động và tự động tính bảng lương tài xế theo sản lượng chuyến thực tế hoàn thành trong tháng.
+                    </p>
+
+                    <!-- Data Dictionary Table -->
+                    <h4 class="font-bold text-slate-900 text-sm mt-6 font-heading flex items-center gap-1.5">
+                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Nhân Sự (Employee)
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
+                                <tr>
+                                    <th class="p-2.5 border-b border-slate-200">Tên Trường</th>
+                                    <th class="p-2.5 border-b border-slate-200">Trường Kỹ Thuật</th>
+                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa Nghiệp Vụ & Ràng Buộc</th>
+                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Mã Nhân Viên</td>
+                                    <td class="p-2.5 font-mono text-slate-600">code</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Mã số thẻ nhân viên duy nhất (TX-01, NV-02, KT-03...).</td>
+                                    <td class="p-2.5 font-mono font-bold">TX-001</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Họ Và Tên</td>
+                                    <td class="p-2.5 font-mono text-slate-600">full_name</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc</td>
+                                    <td class="p-2.5">Họ và tên đầy đủ theo giấy CMND/CCCD.</td>
+                                    <td class="p-2.5">Nguyễn Văn Bình</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Biệt Danh Hiện Trường</td>
+                                    <td class="p-2.5 font-mono text-slate-600">nickname</td>
+                                    <td class="p-2.5 text-center text-slate-400">Tùy chọn</td>
+                                    <td class="p-2.5">Tên gọi thân mật của tài xế khi giao tiếp bộ đàm hoặc điều độ gọi lệnh.</td>
+                                    <td class="p-2.5 font-bold text-teal-800">BỤI 94</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Số GPLX & Hạng Bằng</td>
+                                    <td class="p-2.5 font-mono text-slate-600">license_number</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc với TX</td>
+                                    <td class="p-2.5">Số bằng lái xe và hạng (Hạng FC đối với tài xế xe đầu kéo sơ-mi rơ-moóc).</td>
+                                    <td class="p-2.5 font-mono">790123456789 (Hạng FC)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-900">Hạn Giấy Phép Lái Xe</td>
+                                    <td class="p-2.5 font-mono text-slate-600">license_expiry</td>
+                                    <td class="p-2.5 text-center text-rose-600 font-bold">Bắt buộc với TX</td>
+                                    <td class="p-2.5">Hạn cuối của GPLX. Hệ thống tự động cảnh báo đổi bằng trước 30 ngày.</td>
+                                    <td class="p-2.5 font-mono text-rose-700">18/08/2028</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 10. KẾ TOÁN & SỔ QUỸ -->
+            <section id="sec-accounting" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-calculator"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-teal-600 tracking-wider">Phần 10 • Tài Chính Doanh Nghiệp</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 9: Kế Toán Vận Tải, Tạm Ứng & Sổ Quỹ Thu-Chi (Cash Flow & Advance Funds)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Quản lý cơ chế 2 cấp quỹ tạm ứng: Quỹ Điều Vận cấp 1 (Công ty cấp Điều vận) và Tạm ứng Chuyến xe cấp 2 (Điều vận cấp Tài xế). Tự động sinh phiếu thu/chi Sổ Quỹ Mẫu S03a-DN chuẩn Bộ Tài Chính khi quyết toán hoàn ứng.
+                    </p>
+
+                    <!-- Quy trình 2 cấp quỹ -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                        <div class="text-xs font-bold text-slate-800 mb-2 uppercase font-heading">Cơ Chế 2 Cấp Quỹ Tạm Ứng & Hoàn Ứng Vận Tải:</div>
+                        <div class="space-y-2 text-xs">
+                            <div class="p-2.5 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
+                                <span><strong>Cấp 1: Kế Toán ➔ Quỹ Điều Vận:</strong> Kế toán cấp hạn mức (Ví dụ: 20 triệu) cho Điều phối viên để chủ động chi tiền dọc đường.</span>
+                                <span class="font-mono text-teal-800 font-bold">Mã TUDV</span>
+                            </div>
+                            <div class="p-2.5 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
+                                <span><strong>Cấp 2: Điều Vận ➔ Tài Xế Từng Chuyến:</strong> Điều vận trích quỹ cấp cho tài xế trước khi lăn bánh (nâng hạ, vé cầu đường, cược cont).</span>
+                                <span class="font-mono text-amber-800 font-bold">Mã TUTX</span>
+                            </div>
+                            <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-emerald-900">
+                                <span><strong>Hoàn Ứng & Cân Đối Sổ Quỹ:</strong> Khi xe về bãi: <code>Tiền ứng - Thực chi = Thừa nộp lại (Phiếu Thu) / Thiếu chi bù (Phiếu Chi)</code>.</span>
+                                <span class="font-bold text-emerald-700">Tự động sinh PT/PC</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 11. QUYẾT TOÁN GOM CHUYẾN & XE BẠN 3PL -->
+            <section id="sec-settlement" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-check-square-offset"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-emerald-600 tracking-wider">Phần 11 • Chốt Sổ & Thầu Phụ</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 10: Quyết Toán Gom Chuyến & Đối Soát Xe Bạn 3PL (Trip Settlements)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Cho phép Kế toán lọc hàng loạt chuyến xe đã thu đủ chứng từ POD để khóa sổ gom đợt (Batch Settlement) xuất hóa đơn cước vận tải cho khách hàng; đồng thời quản lý cước thỏa thuận và thanh toán đối tác xe bạn 3PL.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 12. THỦ TỤC HẢI QUAN -->
+            <section id="sec-customs" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-file-text"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-rose-600 tracking-wider">Phần 12 • Thủ Tục Cảng Biển</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 11: Dịch Vụ Hải Quan Điện Tử (Customs Declaration)</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Quản lý số tờ khai hải quan 12 số theo hệ thống VNACCS/VCIS, theo dõi phân luồng (Xanh, Vàng, Đỏ) và liên kết với chuyến xe để tài xế xuất trình cho cán bộ giám sát cổng cảng.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 13. HỆ THỐNG 14 BÁO CÁO BI -->
+            <section id="sec-reports" class="help-section bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs scroll-mt-24">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold">
+                        <i class="ph-bold ph-chart-bar"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-teal-600 tracking-wider">Phần 13 • Báo Cáo Thông Minh BI</span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Phân Hệ 12: Hệ Thống 14 Báo Cáo Thông Minh BI & Giám Sát Chi Phí</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed font-normal">
+                    <p>
+                        Hệ thống 14 báo cáo phân tích kinh doanh đa chiều được chia làm 4 nhóm chủ đề lớn. Tất cả các bảng báo cáo đều được trang bị:
+                    </p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs">
+                        <li><strong>Cột STT chuẩn đếm số record:</strong> Cố định ở vị trí đầu tiên để đếm thứ tự chính xác.</li>
+                        <li><strong>Universal Column Manager:</strong> Bấm nút <code>Cột</code> để tùy ý ẩn/hiện hoặc kéo thả sắp xếp lại thứ tự cột.</li>
+                        <li><strong>Sắp xếp đa cột (Multi-column Sorting):</strong> Bấm vào tiêu đề cột để đảo chiều tăng/giảm dần.</li>
+                        <li><strong>In ấn A4 chuẩn mực:</strong> Tự động định dạng khổ giấy Ngang (Landscape) hoặc Dọc (Portrait) theo số lượng cột của bảng.</li>
+                    </ul>
+
+                    <!-- Danh sách 14 báo cáo -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mt-4">
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 1:</strong> Hiệu Suất Đội Xe & P&L Từng Đầu Xe
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 2:</strong> Vỏ Cont & Cảnh Báo Phạt DEM/DET Hãng Tàu
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 3:</strong> Đúng Giờ & Chất Lượng Dịch Vụ OTP
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 4:</strong> Chi Phí Tuyến & Bảng Kê Hoàn Chi Hộ
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 5:</strong> Cắt Kéo & Bàn Giao Lưu Xe Sau 0H (Layover)
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 6:</strong> Ngoại Lệ & Xử Lý Sự Cố Hàng Hóa (OS&D)
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 7:</strong> Doanh Thu Khách Hàng & Sản Lượng TEU
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 8:</strong> Quyết Toán & Đối Soát Xe Thầu Phụ 3PL
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 9:</strong> Lương Chuyến & Năng Suất Đội Tài Xế
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 10:</strong> Sổ Quỹ Tạm Ứng Điều Vận (Kế Toán QL)
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 11:</strong> Tạm Ứng & Chi Phí Tài Xế (Điều Vận QL)
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 12:</strong> Bảng Kê Quyết Toán Chuyến Xe & Backlog
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 13:</strong> Báo Cáo Tuổi Nợ Công Nợ Phải Thu (AR)
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong>Báo Cáo 14:</strong> Tuổi Đơn Tồn Đọng Chưa Quyết Toán
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 no-print">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div>
+                © 2026 <strong>BIM Logistics Platform</strong> • Công ty TNHH Vận Tải Triền Võ. Tất cả các quyền được bảo lưu.
+            </div>
+            <div class="flex items-center gap-4 text-slate-600 font-medium">
+                <a href="/" class="hover:text-teal-700">Trang chủ</a>
+                <span>•</span>
+                <a href="#sec-overview" class="hover:text-teal-700">Đầu trang</a>
+                <span>•</span>
+                <a href="/login/" class="hover:text-teal-700">Đăng nhập</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE JAVASCRIPT FOR SEARCH & SCROLLSPY -->
+    <script>
+        // Live search filter across all help sections and table rows
+        function filterHelpTopics() {
+            const query = document.getElementById('help-search-input').value.trim().toLowerCase();
+            const clearBtn = document.getElementById('help-clear-btn');
+            const sections = document.querySelectorAll('.help-section');
+
+            if (clearBtn) {
+                clearBtn.classList.toggle('hidden', query.length === 0);
+            }
+
+            if (!query) {
+                sections.forEach(sec => sec.style.display = '');
+                document.querySelectorAll('tr').forEach(tr => tr.style.display = '');
+                return;
+            }
+
+            sections.forEach(sec => {
+                const text = sec.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    sec.style.display = '';
+                    // Highlight matching rows in tables
+                    const rows = sec.querySelectorAll('tbody tr');
+                    rows.forEach(tr => {
+                        const rowText = tr.innerText.toLowerCase();
+                        tr.style.display = rowText.includes(query) ? '' : 'none';
+                    });
+                } else {
+                    sec.style.display = 'none';
+                }
+            });
+        }
+
+        function clearHelpSearch() {
+            const input = document.getElementById('help-search-input');
+            if (input) {
+                input.value = '';
+                filterHelpTopics();
+                input.focus();
+            }
+        }
+
+        // Active state ScrollSpy for sidebar TOC links
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('.help-section');
+            const navLinks = document.querySelectorAll('#help-nav-list a');
+            let current = '';
+
+            sections.forEach(sec => {
+                const sectionTop = sec.offsetTop - 120;
+                if (window.scrollY >= sectionTop) {
+                    current = sec.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

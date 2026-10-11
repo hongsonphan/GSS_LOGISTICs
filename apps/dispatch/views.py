@@ -123,6 +123,19 @@ def index_view(request, *args, **kwargs):
     return render(request, 'index.html', {'current_employee': employee})
 
 
+@never_cache
+def help_view(request):
+    """
+    Trang Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng Toàn Diện BIM Logistics (/helps).
+    Cung cấp tài liệu hướng dẫn tương tác, tra cứu trường dữ liệu và quy trình SOP từng phân hệ.
+    """
+    employee = getattr(request.user, 'employee', None) if request.user.is_authenticated else None
+    return render(request, 'help.html', {
+        'current_employee': employee,
+        'user': request.user,
+    })
+
+
 def driver_portal_view(request, trip_hash):
     """
     Trang Mobile Portal dành riêng cho Tài xế xe đầu kéo / xe tải.

@@ -124,6 +124,12 @@
         <div class="hidden md:flex items-center text-xs font-bold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200 shadow-2xs">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span> Database Connected
         </div>
+
+        <!-- Nút Trợ Giúp & HDSD (/helps) -->
+        <a href="/helps" target="_blank" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-teal-800 hover:text-teal-900 bg-teal-50 hover:bg-teal-100/80 rounded-full border border-teal-200 transition-all cursor-pointer shadow-2xs active:scale-95" title="Mở sổ tay hướng dẫn sử dụng hệ thống (/helps)">
+            <i class="ph-bold ph-book-open text-teal-600"></i>
+            <span>Trợ giúp</span>
+        </a>
         
         <!-- User Profile & Authentication Status -->
         {% if request.user.is_authenticated %}

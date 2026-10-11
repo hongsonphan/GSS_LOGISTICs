@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 
-from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view
+from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view, help_view
 from apps.dispatch.api_views import (
     DashboardBGDAPIView,
     TripListCreateAPIView,
@@ -90,6 +90,12 @@ urlpatterns = [
     path('customs/', index_view, name='spa-customs'),
     path('reports/', index_view, name='spa-reports'),
     path('settings/', index_view, name='spa-settings'),
+
+    # Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng Hệ Thống (/helps)
+    path('helps/', help_view, name='help-center'),
+    path('helps', help_view, name='help-center-noslash'),
+    path('help/', help_view, name='help-alias'),
+    path('help', help_view, name='help-alias-noslash'),
 
     # Mobile Portal dành riêng cho Tài xế xe đầu kéo (Capability Token HashID)
     path('driver/<str:trip_hash>/', driver_portal_view, name='driver-portal'),

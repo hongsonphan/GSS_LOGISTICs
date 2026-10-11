@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.46] - 2026-10-11 (Bổ Sung Trang Trợ Giúp /helps & Sổ Tay Hướng Dẫn Sử Dụng Toàn Diện Từng Phân Hệ, Tính Năng & Trường Dữ Liệu)
+
+### 1. Xây Dựng Trang Trợ Giúp Trực Tuyến & Cổng Tra Cứu (/helps):
+- **Ra mắt trang chuyên biệt `/helps` (Help Center & Documentation Hub):**
+  * Thiết kế theo phong cách trung tâm tài liệu SaaS cao cấp (Notion / Stripe Docs / GitHub Docs style).
+  * Thanh tìm kiếm tương tác tức thời (Live Search Filter) lọc nhanh theo tên trường, tên phân hệ hoặc từ khóa nghiệp vụ.
+  * Sidebar mục lục (Sticky Table of Contents) ghim cố định điều hướng mượt mà tới 13 phân hệ chức năng.
+  * Hỗ trợ chế độ in ấn tài liệu A4 (Print-friendly format).
+- **Từ Điển Trường Dữ Liệu Chi Tiết (Data Dictionary):**
+  * Mô tả cụ thể từng trường dữ liệu của từng phân hệ: Tên trường, Tên kỹ thuật ORM, Kiểu dữ liệu, Tính bắt buộc, Ý nghĩa nghiệp vụ, Quy tắc ràng buộc và Giá trị mẫu.
+  * Bao phủ toàn bộ các phân hệ: Báo giá, Booking order, Lệnh điều xe, Chi phí vận hành P&L, Xe & Rơ-moóc, Nhân sự & Tài xế, Quỹ tạm ứng & Sổ quỹ, Quyết toán xe bạn, Tờ khai hải quan và 14 Báo cáo BI.
+- **Tích Hợp Điều Hướng Nhanh Trên Toàn Hệ Thống:**
+  * Bổ sung mục menu `Trợ giúp & HDSD` trên Sidebar chính (`templates/components/sidebar.html`).
+  * Bổ sung nút `Trợ giúp` trên Topbar ứng dụng (`templates/components/topbar.html`).
+  * Cấu hình URL routing chuẩn: `/helps`, `/helps/`, `/help`, `/help/` trỏ vào `help_view` trong `apps/dispatch/views.py`.
+- **Tài Liệu Hướng Dẫn Vận Hành Hệ Thống (Documentation-as-Code):**
+  * Xuất bản file tài liệu đặc tả toàn diện `docs/USER_GUIDE.md` lưu trữ vĩnh viễn trong kho mã nguồn.
+
 ## [2.9.45] - 2026-10-11 (Khắc Phục Triệt Để Lệch Cột STT Báo Cáo 12 & 13, Khôi Phục Đúng Tên Trường & Ghim Cố Định Cột STT Đếm Bản Ghi)
 
 ### 1. Khắc Phục Lệch Cột STT Trong Báo Cáo BI (Fix Report Columns Alignment & Add Record Count STT):
