@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.7] - 2026-10-11 (Chuẩn Hóa Bộ 7 Từ Khóa Thao Tác & Nút Bấm Toàn Hệ Thống — Zero Regression)
+
+### 1. Chuẩn Hóa Nhãn Nút Bấm Toàn Hệ Thống (Standardized Action Button Labels):
+- Thống nhất đồng bộ 100% tên các nút bấm trên toàn bộ hệ thống (Views, Modals, Help, Topbar) theo đúng 7 từ khóa chuẩn mực:
+  * **"Tạo mới"**: Áp dụng cho nút ngoài trang chính và nút tạo nhanh khi tìm kiếm không thấy (thay thế: `+ Thêm`, `+ Thêm Mới`, `Thêm KH Mới`, `Thêm KH`, `Đăng Ký Tờ Khai Mới`, `Tạo Lệnh Điều Động`...).
+  * **"Sửa"**: Áp dụng cho tất cả các nút edit/chỉnh sửa (thay thế: `Hiệu Chỉnh`, `Sửa Lệnh`, `Chỉnh sửa`...).
+  * **"Xóa"**: Áp dụng cho nút delete — **bắt buộc luôn hiện Popup Thông báo xác nhận** trước khi thực thi xóa (tích hợp `confirm()` / `Swal` cho toàn bộ danh mục, dòng tuyến báo giá, booking, điều vận, chứng từ).
+  * **"Lưu"**: Áp dụng cho nút lưu dữ liệu (thay thế: `Lưu Phiếu Sổ Quỹ`, `Lưu Báo Giá`, `Lưu Booking`, `Lưu Tờ Khai`...).
+  * **"Back"**: Áp dụng cho nút quay lại trang mẹ / trang trước (thay thế: `Quay Lại Sale & Booking`, `Quay Lại Điều Vận`, `Quay Lại Báo Cáo Công Nợ`, `Quay Lại Dịch vụ Hải quan`, `Quay Lại Hành chính & Nhân sự`, `Về Ứng Dụng`...).
+  * **"Xem"**: Áp dụng cho nút xem chi tiết.
+  * **"In"**: Áp dụng cho Preview windows chuẩn bị in ấn (thay thế: `In Báo Cáo`, `In Sổ Tay`, `In Báo Giá`, `In Bảng Kê Đối Soát A4`, `In Ngay (A4)`...).
+
+### 2. Các File Được Cập Nhật Đồng Bộ:
+- **Views:** `view_dispatch.html`, `view_quotation_detail.html`, `view_booking_detail.html`, `view_create_trip.html`, `view_trip_detail.html`, `view_personnel.html`, `view_customs.html`, `view_master_data.html`, `view_cash_voucher_detail.html`, `view_customer_ar_statement.html`, `view_customs_form.html`, `view_employee_form.html`, `view_quotation_print.html`, `view_reports.html`, `view_settlement.html`.
+- **Modals:** `modal_booking.html`, `modal_cash_transaction.html`, `modal_edit_trip.html`, `modal_quotation.html`, `modal_quotation_print.html`, `modal_report_print.html`.
+- **Tài liệu Hướng dẫn:** `templates/help.html` (đồng bộ tiêu đề nút bấm và các bước thao tác thực tế).
+- **Frontend Logic (`static/js/app.js`):** Chuẩn hóa nhãn nhấp tab Master Data và bổ sung confirm dialog cho thao tác xóa dòng chi tiết báo giá.
+
+### 3. Kiểm Thử Hệ Thống (Verification):
+- `node -c static/js/app.js` & `node -c static/js/column_manager.js`: 100% Passed.
+- `python manage.py check`: 0 issues.
+- `python manage.py test --keepdb`: 92/92 test cases PASS 100%.
+
 ## [v2.6] - 2026-10-11 (Nâng Cấp Số Dư Đầu Kỳ Chuẩn Hệ Thống Tài Khoản Kế Toán COA & Bảng 8 Cột VAS/TT 200/TT 133)
 
 ### 1. Kiến Trúc Dữ Liệu Kế Toán Doanh Nghiệp (ERP Foundation):

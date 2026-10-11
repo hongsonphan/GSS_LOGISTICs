@@ -53,7 +53,7 @@
                                 <label class="block font-bold text-slate-700 text-xs truncate">Khách Hàng <span class="text-rose-500">*</span></label>
                                 <button type="button" onclick="openMasterDataModalQuick('customers', 'fullpage-booking-customer')" 
                                     class="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 flex items-center gap-1 transition-colors cursor-pointer">
-                                    <i class="ph-bold ph-plus text-xs"></i> Thêm KH
+                                    <i class="ph-bold ph-plus text-xs"></i> Tạo mới
                                 </button>
                             </div>
                             <select id="fullpage-booking-customer" required onchange="onFullpageBookingCustomerChange()"
@@ -80,7 +80,7 @@
                                 <label class="block font-bold text-slate-700 text-xs truncate">Hãng Tàu</label>
                                 <button type="button" onclick="openMasterDataModalQuick('shipping_lines', 'fullpage-booking-shipping-line')" 
                                     class="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 transition-colors cursor-pointer">
-                                    + Thêm
+                                    Tạo mới
                                 </button>
                             </div>
                             <input type="text" id="fullpage-booking-shipping-line" list="fullpage-shipping-lines-datalist" placeholder="MAERSK, ONE, CMA..." 
@@ -163,7 +163,7 @@
                                 <label class="block font-bold text-teal-900 text-xs truncate">1. Điểm Lấy Cont <span class="text-rose-500">*</span></label>
                                 <button type="button" onclick="openMasterDataModalQuick('locations', 'fullpage-booking-pickup')" 
                                     class="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 transition-colors cursor-pointer">
-                                    + Thêm
+                                    Tạo mới
                                 </button>
                             </div>
                             <select id="fullpage-booking-pickup" required 
@@ -177,7 +177,7 @@
                                 <label class="block font-bold text-amber-900 text-xs truncate">2. Kho Đóng / Dỡ <span class="text-rose-500">*</span></label>
                                 <button type="button" onclick="openMasterDataModalQuick('locations', 'fullpage-booking-delivery')" 
                                     class="text-[11px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 transition-colors cursor-pointer">
-                                    + Thêm
+                                    Tạo mới
                                 </button>
                             </div>
                             <select id="fullpage-booking-delivery" required 
@@ -191,7 +191,7 @@
                                 <label class="block font-bold text-emerald-900 text-xs truncate">3. Điểm Hạ / Trả Cont <span class="text-rose-500">*</span></label>
                                 <button type="button" onclick="openMasterDataModalQuick('locations', 'fullpage-booking-dropoff')" 
                                     class="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 transition-colors cursor-pointer">
-                                    + Thêm
+                                    Tạo mới
                                 </button>
                             </div>
                             <select id="fullpage-booking-dropoff" required 
@@ -422,7 +422,7 @@
                 <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between flex-wrap gap-3">
                     <button type="button" onclick="backToBookings()" 
                         class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-700 hover:text-white font-bold text-xs transition-all cursor-pointer font-heading flex items-center gap-1.5">
-                        <i class="ph-bold ph-arrow-left"></i> <span>Quay Lại Sale & Booking</span>
+                        <i class="ph-bold ph-arrow-left"></i> <span>Back</span>
                     </button>
                     <div class="flex items-center space-x-2.5 flex-wrap">
                         <button type="button" id="btn-fullpage-edit-booking-bottom" onclick="enableFullpageBookingEdit()"

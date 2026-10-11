@@ -66,7 +66,7 @@
                             <label class="block font-bold text-slate-700 text-xs truncate">Khách Hàng <span class="text-rose-500">*</span></label>
                             <button type="button" onclick="openMasterDataModalQuick('customers', 'booking-customer')" 
                                 class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 flex items-center gap-0.5">
-                                <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm KH
+                                <i class="ph-bold ph-plus text-[9.5px]"></i> Tạo mới
                             </button>
                         </div>
                         <select id="booking-customer" required 
@@ -93,7 +93,7 @@
                             <label class="block font-bold text-slate-700 text-xs truncate">Hãng Tàu</label>
                             <button type="button" onclick="openMasterDataModalQuick('shipping_lines', 'booking-shipping-line')" 
                                 class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
-                                + Thêm
+                                Tạo mới
                             </button>
                         </div>
                         <input type="text" id="booking-shipping-line" list="shipping-lines-datalist" placeholder="MAERSK, ONE, CMA..." 
@@ -176,7 +176,7 @@
                             <label class="block font-bold text-teal-900 text-xs truncate">1. Điểm Lấy Cont <span class="text-rose-500">*</span></label>
                             <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-pickup')" 
                                 class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
-                                + Thêm
+                                Tạo mới
                             </button>
                         </div>
                         <select id="booking-pickup" required 
@@ -190,7 +190,7 @@
                             <label class="block font-bold text-amber-900 text-xs truncate">2. Kho Đóng / Dỡ <span class="text-rose-500">*</span></label>
                             <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-delivery')" 
                                 class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
-                                + Thêm
+                                Tạo mới
                             </button>
                         </div>
                         <select id="booking-delivery" required 
@@ -204,7 +204,7 @@
                             <label class="block font-bold text-emerald-900 text-xs truncate">3. Điểm Hạ / Trả Cont <span class="text-rose-500">*</span></label>
                             <button type="button" onclick="openMasterDataModalQuick('locations', 'booking-dropoff')" 
                                 class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                                + Thêm
+                                Tạo mới
                             </button>
                         </div>
                         <select id="booking-dropoff" required 
@@ -435,7 +435,7 @@
                 <button type="button" id="btn-edit-booking-modal" onclick="enableEditBookingModal()" 
                     class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer hidden">
                     <i class="ph-bold ph-pencil-simple text-sm"></i>
-                    <span>Hiệu Chỉnh</span>
+                    <span>Sửa</span>
                 </button>
                 <button type="button" onclick="closeModal('modal-booking')" class="px-4 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer">
                     Đóng
