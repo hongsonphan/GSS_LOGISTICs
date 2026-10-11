@@ -14975,7 +14975,7 @@ function renderRolesPermissionsView(data) {
                             Quản Trị Vai Trò & Phân Quyền Hệ Thống
                         </h2>
                         <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                            Quản lý nhóm vai trò nghiệp vụ (Ban Giám Đốc, Điều Phối Viên, Kế Toán Cước, Kinh Doanh, Tài Xế) và kiểm soát quyền truy cập của người dùng nội bộ.
+                            Quản lý nhóm vai trò nghiệp vụ (Ban Giám Đốc, Điều Phối Viên, Kế Toán Cước, Kinh Doanh, Nhân Sự) và kiểm soát quyền truy cập của người dùng nội bộ (Tài xế thực hiện nhận lệnh qua link xác nhận chuyến độc lập, không cấp tài khoản hệ thống).
                         </p>
                     </div>
                 </div>

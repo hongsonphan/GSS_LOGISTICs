@@ -118,7 +118,8 @@ class RolesPermissionsAPIView(APIView):
 
     def get(self, request):
         # 1. Danh sách các nhóm vai trò (Roles / Groups)
-        groups = Group.objects.all().prefetch_related('permissions__content_type', 'user_set').order_by('name')
+        # Lưu ý: Tài xế không cấp tài khoản vào hệ thống (chỉ nhận link xác nhận chuyến), nên không đưa vào ma trận phân quyền
+        groups = Group.objects.exclude(name__icontains='Tài Xế').prefetch_related('permissions__content_type', 'user_set').order_by('name')
         roles_data = []
         for g in groups:
             grp_perms = [
@@ -128,13 +129,13 @@ class RolesPermissionsAPIView(APIView):
             roles_data.append({
                 'id': g.id,
                 'name': g.name,
-                'user_count': g.user_set.filter(is_active=True).count(),
+                'user_count': g.user_set.filter(is_active=True).exclude(employee__role='DRIVER').count(),
                 'permission_count': g.permissions.count(),
                 'permission_codes': grp_perms,
             })
 
-        # 2. Danh sách người dùng nội bộ (Users)
-        users = User.objects.all().select_related('employee').prefetch_related(
+        # 2. Danh sách người dùng nội bộ (Users) - Loại trừ Tài xế vì tài xế không dùng tài khoản hệ thống
+        users = User.objects.exclude(employee__role='DRIVER').select_related('employee').prefetch_related(
             'groups', 'user_permissions__content_type', 'employee__excluded_permissions__content_type'
         ).order_by('-is_active', 'username')
         users_data = []
