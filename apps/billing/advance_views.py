@@ -932,7 +932,7 @@ class CustomerARReconciliationAPIView(APIView):
             trips_qs = DispatchTrip.objects.filter(
                 customer_id=customer_id,
                 is_deleted=False,
-                status=TripStatus.COMPLETED
+                status__in=[TripStatus.COMPLETED, TripStatus.DELIVERED]
             )
             if is_settle:
                 trips_qs = trips_qs.filter(is_customer_settled=False)
@@ -943,12 +943,13 @@ class CustomerARReconciliationAPIView(APIView):
 
         trips = DispatchTrip.objects.filter(id__in=trip_ids, is_deleted=False)
 
-        # Kiểm tra chỉ chuyến COMPLETED mới được phép chốt quyết toán với khách hàng
-        invalid_trips = trips.exclude(status=TripStatus.COMPLETED)
+        # Kiểm tra chỉ chuyến đã giao hàng xong (COMPLETED hoặc DELIVERED) mới được phép chốt quyết toán với khách hàng
+        allowed_statuses = [TripStatus.COMPLETED, TripStatus.DELIVERED]
+        invalid_trips = trips.exclude(status__in=allowed_statuses)
         if invalid_trips.exists() and is_settle:
             bad_codes = list(invalid_trips.values_list('trip_code', flat=True))
             return Response({
-                'error': f'Các chuyến sau chưa hoàn thành (COMPLETED), không thể quyết toán công nợ: {", ".join(bad_codes[:5])}'
+                'error': f'Các chuyến sau chưa hoàn thành giao hàng, không thể quyết toán công nợ: {", ".join(bad_codes[:5])}'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
@@ -972,7 +973,7 @@ class CustomerARReconciliationAPIView(APIView):
                 if vat_date:
                     update_kwargs['vat_invoice_date'] = vat_date
 
-            updated_count = trips.filter(status=TripStatus.COMPLETED).update(**update_kwargs)
+            updated_count = trips.filter(status__in=allowed_statuses).update(**update_kwargs)
             return Response({
                 'success': True,
                 'message': f'Đã chốt quyết toán công nợ thành công cho {updated_count} chuyến xe (chính thức lên công nợ AR).',

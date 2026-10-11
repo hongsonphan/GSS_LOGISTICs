@@ -1210,11 +1210,10 @@ class ReportsAPIView(APIView):
                 else:
                     c_entry['subcontractor_pending_count'] += 1
 
-            # 4. Quyết toán / Đối soát với khách hàng:
+            # 4. Quyết toán / Đối soát với khách hàng (Độc lập 100% với tài xế/thầu phụ):
             is_cust_settled = bool(
                 getattr(t, 'is_customer_settled', False) or 
-                getattr(t, 'customer_reconciled', False) or 
-                t.is_expenses_settled
+                getattr(t, 'customer_reconciled', False)
             )
             if is_cust_settled:
                 c_entry['settled_trips_count'] += 1

@@ -2,6 +2,34 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.1] - 2026-10-11 (Chuẩn Hóa 4 Tiến Trình Quyết Toán Nghiệp Vụ & Quy Tắc Ghi Nhận Công Nợ AR Khách Hàng)
+
+### 1. Phân Định Rạch Ròi 4 Tiến Trình Nghiệp Vụ Vận Tải:
+- **Tiến trình 1 - Hoàn Thành Chuyến Vận Hành (Trip Operations):** Trạng thái `COMPLETED` / `DELIVERED` kèm xác nhận POD / Biên bản giao nhận hạ rỗng. Đây là mốc "nghiệm thu nội bộ", làm điều kiện tiên quyết để chuyển sang quyết toán tài xế/thầu phụ.
+- **Tiến trình 2 - Quyết Toán Tài Xế Xe Nhà (Driver Settlement - Nội Bộ):** Quyết toán hoàn ứng tạm ứng vs chi phí thực tế (`is_expenses_settled = True`), độc lập 100% với việc khách hàng đã chốt số hay chưa.
+- **Tiến trình 3 - Quyết Toán Thầu Phụ / Xe Bạn (Subcontractor Settlement - Đối tác 3PL):** Đối soát cước và công nợ phải trả với thầu phụ (`subcontractor_settlement_status == 'SETTLED'`). Cột trạng thái hiển thị rạch ròi `— Xe nhà` đối với xe sở hữu.
+- **Tiến trình 4 - Quyết Toán Với Khách Hàng (Customer AR Billing - Thương Mại):** **Chỉ khi hai bên đã đối soát chốt số với nhau (`is_customer_settled = True`) thì mới được tính vào Công nợ Phải Thu chính thức (AR)**, thậm chí xuất hóa đơn VAT (`vat_invoice_number`). Các chuyến chỉ mới hoàn thành mà chưa quyết toán khách được ghi nhận vào `Chờ chốt (Chưa tính nợ / Unbilled Revenue)`, không làm sai lệch số dư nợ AR.
+
+### 2. Cập Nhật Database & API:
+- **Model `DispatchTrip`:** Thêm các trường `is_customer_settled`, `customer_settlement_status` ('PENDING', 'SETTLED', 'INVOICED', 'PAID'), `customer_settled_at`, `customer_settled_by`, `vat_invoice_number`, `vat_invoice_date`.
+- **API `/api/accounting/customer-reconciliation/`:** Hỗ trợ action `SETTLE` / `UNSETTLE`, cho phép nhập số Hóa đơn GTGT / VAT xuất cho khách hàng, tự sinh mã bảng kê SOA. Hỗ trợ cả chuyến `COMPLETED` và `DELIVERED`.
+- **Báo Cáo 13 (AR Aging):** Sửa công thức: `total_receivable` chỉ tính tổng tiền của các chuyến xe `is_customer_settled = True`. Phân định rõ 2 luồng tiền: `Đã chốt nợ (Công nợ AR)` vs `Chờ chốt (Chưa tính nợ)`. Dư nợ còn phải thu `remaining_balance = max(0, total_receivable - collected_amount)`.
+
+### 3. Nâng Cấp Giao Diện Bảng Kê Đối Soát Khách Hàng (SOA Full-Page):
+- Bảng kê 15 cột hiển thị rõ 4 tiến trình:
+  1. Hoàn thành chuyến (`✓ Xong Nội Bộ`, hiển thị trạng thái POD).
+  2. Quyết toán tài xế xe nhà (`✓ Đã Quyết Toán` / `⏳ Chờ Quyết Toán` / `— Xe thầu phụ`).
+  3. Quyết toán thầu phụ (`✓ Đã Quyết Toán` / `⏳ Chờ Quyết Toán` / `— Xe nhà`).
+  4. Quyết toán với khách hàng (`✓ ĐÃ TÍNH NỢ (AR)` / `⏳ CHƯA TÍNH NỢ`).
+- Cột Hóa đơn VAT / Mã SOA hiển thị rõ số HĐGTGT và ngày phát hành.
+- 6 thẻ KPI tài chính trên đỉnh trang SOA: Cước Vận Tải, Tiền Chi Hộ, Đã Chốt Nợ (Công Nợ AR), Chờ Chốt (Chưa Tính Nợ), Đã Thu Hồi (Sổ Quỹ), Dư Nợ Còn Phải Thu.
+
+### 4. Kiểm Thử Hệ Thống (Zero-Regression):
+- 91/91 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`), bổ sung unit test `test_customer_settlement_ar_lifecycle`.
+- Cú pháp JavaScript hợp lệ 100% (`node -c static/js/app.js` & `node -c static/js/column_manager.js`).
+
+
+
 ## [v2.0] - 2026-10-11 (Đại Tu Toàn Diện Mục III Sổ Tay /helps: Chi Tiết Từng Ô 100% & Hướng Dẫn Thao Tác Tạo Mới Nhanh)
 
 ### 1. Chi Tiết Hóa 100% Từng Ô Nhập Liệu Trong Mục III (Hướng Dẫn Nhập Liệu):

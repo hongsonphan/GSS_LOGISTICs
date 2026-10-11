@@ -2246,6 +2246,85 @@ class BimLogisticsCoreTestCase(TestCase):
         found_backlog = any(r['trip_code'] == 'TRIP-BACKLOG-001' and r['aging_level'] == 'CRITICAL' for r in r14['records'])
         self.assertTrue(found_backlog)
 
+    def test_customer_settlement_ar_lifecycle(self):
+        """
+        Kiểm tra vòng đời 4 bước quyết toán nghiệp vụ và quy tắc ghi nhận công nợ AR:
+        1. Chuyến hoàn thành nội bộ: Có thể quyết toán cho tài xế/thầu phụ độc lập.
+        2. Chuyến CHƯA quyết toán với khách hàng -> CHƯA ĐƯỢC TÍNH CÔNG NỢ AR (pending_settlement).
+        3. Chốt đối soát/quyết toán khách hàng kèm số Hóa đơn VAT -> LÊN CÔNG NỢ AR CHÍNH THỨC.
+        4. Mở lại (UNSETTLE) -> Rút khỏi công nợ AR.
+        """
+        from apps.dispatch.models import TripStatus
+        from django.utils import timezone
+        today = timezone.now().date()
+
+        trip = DispatchTrip.objects.create(
+            trip_code="TRIP-AR-LIFECYCLE-001",
+            customer=self.customer,
+            pickup_location="Cảng Cát Lái",
+            warehouse_location="KCN Sóng Thần",
+            vehicle=self.vehicle,
+            driver=self.driver,
+            loading_date=today,
+            status=TripStatus.DELIVERED,
+            cached_revenue=6000000,
+            cached_expense=2000000,
+            cached_profit=4000000,
+            is_expenses_settled=True,  # Đã quyết toán tài xế
+            settled_at=timezone.now(),
+            settled_by=self.accountant,
+            is_customer_settled=False  # CHƯA quyết toán với khách
+        )
+
+        # 1. Gọi API Báo Cáo 13: Công nợ AR phải = 0, tiền nằm ở pending_settlement
+        self.client.force_login(self.accountant_user)
+        res = self.client.get(f'/api/reports/?period=all&customer_id={self.customer.id}')
+        self.assertEqual(res.status_code, 200)
+        cust_report = next((c for c in res.json().get('report13_ar_aging', {}).get('customers', []) if c['customer_id'] == self.customer.id), None)
+        self.assertIsNotNone(cust_report)
+        # Chuyến chưa quyết toán khách nên pending_settlement_amount phải có 6tr
+        self.assertGreaterEqual(cust_report['pending_settlement_amount'], 6000000)
+
+        # 2. Gọi API Chốt Quyết Toán Khách Hàng (SETTLE) kèm số HĐ VAT
+        settle_res = self.client.post(
+            '/api/accounting/customer-reconciliation/',
+            data=json.dumps({
+                'action': 'SETTLE',
+                'trip_ids': [trip.id],
+                'vat_invoice_number': 'VAT-TEST-9999'
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(settle_res.status_code, 200)
+        self.assertTrue(settle_res.json().get('success'))
+
+        trip.refresh_from_db()
+        self.assertTrue(trip.is_customer_settled)
+        self.assertEqual(trip.customer_settlement_status, 'INVOICED')
+        self.assertEqual(trip.vat_invoice_number, 'VAT-TEST-9999')
+        self.assertTrue(trip.customer_soa_code.startswith('SOA-'))
+
+        # 3. Kiểm tra lại Báo Cáo 13: Giờ đây chuyến đã LÊN CÔNG NỢ AR CHÍNH THỨC
+        res2 = self.client.get(f'/api/reports/?period=all&customer_id={self.customer.id}')
+        cust_report2 = next((c for c in res2.json().get('report13_ar_aging', {}).get('customers', []) if c['customer_id'] == self.customer.id), None)
+        self.assertIsNotNone(cust_report2)
+        self.assertGreaterEqual(cust_report2['total_receivable'], 6000000)
+
+        # 4. Mở lại (UNSETTLE) -> Chuyến rút khỏi công nợ AR
+        unsettle_res = self.client.post(
+            '/api/accounting/customer-reconciliation/',
+            data=json.dumps({
+                'action': 'UNSETTLE',
+                'trip_ids': [trip.id]
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(unsettle_res.status_code, 200)
+        trip.refresh_from_db()
+        self.assertFalse(trip.is_customer_settled)
+        self.assertEqual(trip.customer_settlement_status, 'PENDING')
+
+
 
 import os
 import re
