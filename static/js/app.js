@@ -19611,7 +19611,11 @@ function renderReport13(data) {
     if (elTotalAr) elTotalAr.innerText = formatMoneyVND(r13.total_receivable || 0);
 
     const elRevReim = document.getElementById('rep13-stat-rev-reim');
-    if (elRevReim) elRevReim.innerText = `Cước: ${formatMoneyVND(r13.total_freight_revenue || 0)} · Chi hộ: ${formatMoneyVND(r13.total_reimbursable || 0)}`;
+    if (elRevReim) {
+        const recTxt = formatMoneyVND(r13.total_reconciled || 0);
+        const pendTxt = formatMoneyVND(r13.total_pending_reconcile || 0);
+        elRevReim.innerHTML = `<span class="text-emerald-700 font-bold">Đã chốt SOA: ${recTxt}</span> · <span class="text-amber-700 font-bold">Chờ đối soát: ${pendTxt}</span>`;
+    }
 
     const elCollected = document.getElementById('rep13-stat-collected');
     if (elCollected) elCollected.innerText = formatMoneyVND(r13.total_collected || 0);
@@ -19658,8 +19662,8 @@ function applyReport13Filters() {
     }
 
     const totalTrips = list.reduce((sum, item) => sum + (parseInt(item.trips_count) || 0), 0);
-    const totalSettledTrips = list.reduce((sum, item) => sum + (parseInt(item.settled_trips_count) || 0), 0);
-    const totalUnsettledTrips = list.reduce((sum, item) => sum + (parseInt(item.unsettled_trips_count) || 0), 0);
+    const totalReconciledTrips = list.reduce((sum, item) => sum + (parseInt(item.reconciled_trips_count) || 0), 0);
+    const totalPendingTrips = list.reduce((sum, item) => sum + (parseInt(item.pending_reconcile_trips_count) || 0), 0);
     const totalFreight = list.reduce((sum, item) => sum + (parseFloat(item.freight_revenue) || 0), 0);
     const totalReim = list.reduce((sum, item) => sum + (parseFloat(item.reimbursable_amount) || 0), 0);
     const totalReceivable = list.reduce((sum, item) => sum + (parseFloat(item.total_receivable) || 0), 0);
@@ -19676,7 +19680,7 @@ function applyReport13Filters() {
             <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
                 <td colspan="2" class="p-2 uppercase text-slate-900 font-heading">TỔNG CỘNG: ${list.length} Khách Hàng</td>
                 <td class="text-center font-bold font-mono text-slate-900 p-2">${totalTrips}</td>
-                <td class="text-center font-bold text-xs p-2"><span class="text-emerald-700">${totalSettledTrips}</span> / <span class="text-amber-700">${totalUnsettledTrips}</span></td>
+                <td class="text-center font-bold text-xs p-2"><span class="text-emerald-700" title="Đã đối soát">${totalReconciledTrips} Chốt</span> / <span class="text-amber-700" title="Chờ đối soát">${totalPendingTrips} Chờ</span></td>
                 <td class="text-right text-slate-900 font-mono font-bold p-2">${formatMoneyVND(totalFreight)}</td>
                 <td class="text-right text-slate-700 font-mono font-bold p-2">${formatMoneyVND(totalReim)}</td>
                 <td class="text-right text-slate-950 font-mono font-black p-2">${formatMoneyVND(totalReceivable)}</td>
@@ -19703,6 +19707,8 @@ function applyReport13Filters() {
         const agingOver90Disp = formatMoneyVND(item.aging_over_90);
 
         const custIdSafe = escapeHtml(String(item.customer_id || item.customer_code || ''));
+        const recCount = item.reconciled_trips_count || 0;
+        const pendCount = item.pending_reconcile_trips_count || 0;
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -19716,8 +19722,9 @@ function applyReport13Filters() {
                 </td>
                 <td class="text-center font-bold text-xs tabular-nums text-slate-800">${item.trips_count}</td>
                 <td class="text-center text-xs tabular-nums">
-                    <span class="text-emerald-700 font-bold">${item.settled_trips_count}</span> / 
-                    <span class="text-amber-700 font-bold">${item.unsettled_trips_count}</span>
+                    <span class="px-2 py-0.5 rounded font-bold text-[11px] ${recCount > 0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-slate-400'}" title="Đã chốt đối soát SOA">${recCount} Chốt</span>
+                    <span class="text-slate-400">/</span>
+                    <span class="px-2 py-0.5 rounded font-bold text-[11px] ${pendCount > 0 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'text-slate-400'}" title="Chờ đối soát">${pendCount} Chờ</span>
                 </td>
                 <td class="text-right text-xs text-slate-800 tabular-nums">${freightDisp}</td>
                 <td class="text-right text-xs text-slate-600 tabular-nums">${reimDisp}</td>
@@ -19787,55 +19794,7 @@ function viewCustomerARStatement(customerId) {
         if (elCount) elCount.innerText = `${cust.trips ? cust.trips.length : 0} Chuyến Vận Đơn`;
 
         // Render Bảng Chuyến trên Full-Page View
-        const fullTbody = document.getElementById('soa-fullpage-tbody');
-        const fullTfoot = document.getElementById('soa-fullpage-tfoot');
-        if (fullTbody) {
-            const trips = cust.trips || [];
-            if (trips.length === 0) {
-                fullTbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400 font-medium">Không có chi tiết chuyến phát sinh trong kỳ</td></tr>`;
-                if (fullTfoot) fullTfoot.innerHTML = '';
-            } else {
-                const sumRev = trips.reduce((sum, t) => sum + (parseFloat(t.revenue) || 0), 0);
-                const sumReim = trips.reduce((sum, t) => sum + (parseFloat(t.reimbursable) || 0), 0);
-                const sumTotal = trips.reduce((sum, t) => sum + (parseFloat(t.total_receivable) || 0), 0);
-
-                fullTbody.innerHTML = trips.map((t, idx) => `
-                    <tr class="hover:bg-teal-50/40 transition-colors">
-                        <td class="text-center font-bold text-slate-500 py-3">${idx + 1}</td>
-                        <td class="font-bold text-teal-800 font-mono py-3">${escapeHtml(t.trip_code)}</td>
-                        <td class="text-center text-slate-700 py-3 font-mono">${escapeHtml(t.loading_date)}</td>
-                        <td class="text-slate-800 font-medium py-3"><strong class="font-mono text-slate-900">${escapeHtml(t.vehicle_plate)}</strong> · <span class="text-slate-600">${escapeHtml(t.driver_name || '-')}</span></td>
-                        <td class="font-mono text-slate-800 py-3">${escapeHtml(t.container_number || '-')}</td>
-                        <td class="text-slate-700 py-3 max-w-sm truncate" title="${escapeHtml(t.route)}">${escapeHtml(t.route)}</td>
-                        <td class="text-right text-slate-900 font-medium tabular-nums py-3">${formatMoneyVND(t.revenue || 0)}</td>
-                        <td class="text-right text-amber-700 font-medium tabular-nums py-3">${formatMoneyVND(t.reimbursable || 0)}</td>
-                        <td class="text-right font-black text-slate-950 tabular-nums bg-slate-100/70 py-3">${formatMoneyVND(t.total_receivable || 0)}</td>
-                        <td class="text-center py-3">
-                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold ${t.has_pod ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
-                                ${t.has_pod ? 'Đã Nộp POD' : 'Thiếu POD'}
-                            </span>
-                        </td>
-                        <td class="text-center py-3">
-                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold ${t.is_settled ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'}">
-                                ${t.is_settled ? 'Đã Chốt' : 'Chưa Chốt'}
-                            </span>
-                        </td>
-                    </tr>
-                `).join('');
-
-                if (fullTfoot) {
-                    fullTfoot.innerHTML = `
-                        <tr class="bg-slate-100/95 font-bold border-t-2 border-slate-300">
-                            <td colspan="6" class="text-right uppercase p-3 text-slate-900 font-heading">TỔNG CỘNG: ${trips.length} Chuyến Vận Đơn:</td>
-                            <td class="text-right font-mono font-bold text-slate-900 p-3">${formatMoneyVND(sumRev)}</td>
-                            <td class="text-right font-mono font-bold text-amber-700 p-3">${formatMoneyVND(sumReim)}</td>
-                            <td class="text-right font-mono font-black text-slate-950 bg-slate-200/70 p-3 text-sm">${formatMoneyVND(sumTotal)}</td>
-                            <td colspan="2" class="p-3"></td>
-                        </tr>
-                    `;
-                }
-            }
-        }
+        renderSoaTripRows();
 
         // Cấu hình Topbar Fullpage Mode
         setTopbarFullpageMode({
@@ -19856,6 +19815,168 @@ function viewCustomerARStatement(customerId) {
     if (modal) modal.classList.remove('hidden');
 }
 
+function renderSoaTripRows() {
+    const cust = currentStatementCustomer;
+    if (!cust) return;
+
+    const fullTbody = document.getElementById('soa-fullpage-tbody');
+    const fullTfoot = document.getElementById('soa-fullpage-tfoot');
+    if (!fullTbody) return;
+
+    const searchVal = (document.getElementById('soa-table-search')?.value || '').toLowerCase().trim();
+    const statusFilter = document.getElementById('soa-status-filter')?.value || 'ALL';
+
+    let trips = (cust.trips || []).filter(t => {
+        if (statusFilter === 'RECONCILED' && !t.customer_reconciled) return false;
+        if (statusFilter === 'PENDING' && t.customer_reconciled) return false;
+        if (searchVal) {
+            const rowText = `${t.trip_code} ${t.container_number} ${t.seal_number} ${t.route} ${t.driver_name} ${t.vehicle_plate}`.toLowerCase();
+            if (!rowText.includes(searchVal)) return false;
+        }
+        return true;
+    });
+
+    if (trips.length === 0) {
+        fullTbody.innerHTML = `<tr><td colspan="13" class="text-center py-8 text-slate-400 font-medium"><i class="ph-bold ph-info text-2xl mb-1 block"></i> Không có chuyến xe nào phù hợp với bộ lọc</td></tr>`;
+        if (fullTfoot) fullTfoot.innerHTML = '';
+        return;
+    }
+
+    const sumRev = trips.reduce((sum, t) => sum + (parseFloat(t.revenue) || 0), 0);
+    const sumReim = trips.reduce((sum, t) => sum + (parseFloat(t.reimbursable) || 0), 0);
+    const sumTotal = trips.reduce((sum, t) => sum + (parseFloat(t.total_receivable) || 0), 0);
+
+    fullTbody.innerHTML = trips.map((t, idx) => {
+        const isRec = !!t.customer_reconciled;
+        const isSettled = !!t.is_settled;
+        return `
+            <tr class="hover:bg-teal-50/40 transition-colors">
+                <td class="text-center font-bold text-slate-500 py-3">${idx + 1}</td>
+                <td class="font-bold text-teal-800 font-mono py-3">${escapeHtml(t.trip_code)}</td>
+                <td class="text-center text-slate-700 py-3 font-mono">${escapeHtml(t.loading_date)}</td>
+                <td class="text-slate-800 font-medium py-3"><strong class="font-mono text-slate-900">${escapeHtml(t.vehicle_plate)}</strong> · <span class="text-slate-600">${escapeHtml(t.driver_name || '-')}</span></td>
+                <td class="font-mono text-slate-800 py-3">${escapeHtml(t.container_number || '-')}</td>
+                <td class="text-slate-700 py-3 max-w-sm truncate" title="${escapeHtml(t.route)}">${escapeHtml(t.route)}</td>
+                <td class="text-right text-slate-900 font-medium tabular-nums py-3">${formatMoneyVND(t.revenue || 0)}</td>
+                <td class="text-right text-amber-700 font-medium tabular-nums py-3">${formatMoneyVND(t.reimbursable || 0)}</td>
+                <td class="text-right font-black text-slate-950 tabular-nums bg-slate-100/70 py-3">${formatMoneyVND(t.total_receivable || 0)}</td>
+                <td class="text-center py-3">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${t.has_pod ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                        ${t.has_pod ? '✓ Đã Nộp' : '✕ Thiếu'}
+                    </span>
+                </td>
+                <td class="text-center py-3">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${isSettled ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'}" title="${isSettled ? 'Kế toán đã chốt hoàn ứng tài xế' : 'Tài xế chưa quyết toán'}">
+                        ${isSettled ? 'Đã Chốt Sổ' : 'Chờ Quyết Toán'}
+                    </span>
+                </td>
+                <td class="text-center py-3">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${isRec ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'}" title="${isRec ? ('Mã SOA: ' + (t.customer_soa_code || '-')) : 'Chưa đối soát với khách'}">
+                        ${isRec ? '✓ Đã Đối Soát' : '⏳ Chờ Đối Soát'}
+                    </span>
+                </td>
+                <td class="text-center py-3">
+                    <button type="button" onclick="toggleReconcileTrip(${t.trip_id}, ${isRec})" 
+                        class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shadow-2xs ${isRec ? 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}">
+                        ${isRec ? 'Mở lại' : 'Chốt SOA'}
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    if (fullTfoot) {
+        fullTfoot.innerHTML = `
+            <tr class="bg-slate-100/95 font-bold border-t-2 border-slate-300">
+                <td colspan="6" class="text-right uppercase p-3 text-slate-900 font-heading">TỔNG CỘNG: ${trips.length} Chuyến Vận Đơn:</td>
+                <td class="text-right font-mono font-bold text-slate-900 p-3">${formatMoneyVND(sumRev)}</td>
+                <td class="text-right font-mono font-bold text-amber-700 p-3">${formatMoneyVND(sumReim)}</td>
+                <td class="text-right font-mono font-black text-slate-950 bg-slate-200/70 p-3 text-sm">${formatMoneyVND(sumTotal)}</td>
+                <td colspan="4" class="p-3"></td>
+            </tr>
+        `;
+    }
+}
+
+async function toggleReconcileTrip(tripId, currentReconciled) {
+    const action = currentReconciled ? 'UNRECONCILE' : 'RECONCILE';
+    const confirmMsg = currentReconciled 
+        ? 'Bạn có chắc chắn muốn mở lại trạng thái Chờ Đối Soát cho chuyến xe này?' 
+        : 'Xác nhận chốt đối soát công nợ (SOA) cho chuyến xe này?';
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/customer-reconciliation/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: action, trip_ids: [tripId] })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || 'Cập nhật trạng thái đối soát thành công', 'Thành Công');
+            // Cập nhật local state
+            if (currentStatementCustomer && currentStatementCustomer.trips) {
+                const target = currentStatementCustomer.trips.find(t => t.trip_id === tripId);
+                if (target) {
+                    target.customer_reconciled = !currentReconciled;
+                    target.customer_soa_code = data.soa_code || '';
+                }
+            }
+            renderSoaTripRows();
+            // Tải lại báo cáo nền để cập nhật card tổng
+            if (typeof loadReportsData === 'function') loadReportsData(false);
+        } else {
+            showToast('error', data.error || 'Không thể thực hiện', 'Lỗi');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('error', 'Lỗi kết nối máy chủ', 'Lỗi');
+    }
+}
+window.toggleReconcileTrip = toggleReconcileTrip;
+
+async function batchReconcileCustomerAR(isReconcile) {
+    if (!currentStatementCustomer) return;
+    const action = isReconcile ? 'RECONCILE' : 'UNRECONCILE';
+    const custName = currentStatementCustomer.customer_name;
+    const confirmMsg = isReconcile 
+        ? `Xác nhận CHỐT ĐỐI SOÁT (SOA) cho toàn bộ các chuyến xe đã hoàn thành của khách hàng ${custName}?` 
+        : `Xác nhận MỞ LẠI trạng thái Chờ Đối Soát cho khách hàng ${custName}?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/customer-reconciliation/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                action: action, 
+                customer_id: currentStatementCustomer.customer_id 
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || 'Cập nhật đối soát thành công', 'Thành Công');
+            // Cập nhật local state
+            if (currentStatementCustomer && currentStatementCustomer.trips) {
+                currentStatementCustomer.trips.forEach(t => {
+                    t.customer_reconciled = isReconcile;
+                    if (isReconcile && data.soa_code) t.customer_soa_code = data.soa_code;
+                });
+            }
+            renderSoaTripRows();
+            if (typeof loadReportsData === 'function') loadReportsData(false);
+        } else {
+            showToast('error', data.error || 'Không thể thực hiện', 'Lỗi');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('error', 'Lỗi kết nối máy chủ', 'Lỗi');
+    }
+}
+window.batchReconcileCustomerAR = batchReconcileCustomerAR;
+
 function returnFromCustomerStatementView() {
     resetTopbarStandardMode('bao-cao');
     switchTab('bao-cao');
@@ -19866,16 +19987,7 @@ function returnFromCustomerStatementView() {
 window.returnFromCustomerStatementView = returnFromCustomerStatementView;
 
 function filterSoaTable() {
-    const q = (document.getElementById('soa-table-search')?.value || '').toLowerCase().trim();
-    const rows = document.querySelectorAll('#soa-fullpage-tbody tr');
-    rows.forEach(r => {
-        if (!q) {
-            r.style.display = '';
-        } else {
-            const text = r.innerText.toLowerCase();
-            r.style.display = text.includes(q) ? '' : 'none';
-        }
-    });
+    renderSoaTripRows();
 }
 window.filterSoaTable = filterSoaTable;
 
@@ -22363,6 +22475,8 @@ window.closeCashVoucherModal = typeof closeCashVoucherModal !== 'undefined' ? cl
 window.setVoucherPrintMode = typeof setVoucherPrintMode !== 'undefined' ? setVoucherPrintMode : undefined;
 window.printCurrentCustomerStatement = typeof printCurrentCustomerStatement !== 'undefined' ? printCurrentCustomerStatement : undefined;
 window.closeCustomerARStatementModal = typeof closeCustomerARStatementModal !== 'undefined' ? closeCustomerARStatementModal : undefined;
+window.toggleReconcileTrip = typeof toggleReconcileTrip !== 'undefined' ? toggleReconcileTrip : undefined;
+window.batchReconcileCustomerAR = typeof batchReconcileCustomerAR !== 'undefined' ? batchReconcileCustomerAR : undefined;
 window.filterCustomerSelectOptions = typeof filterCustomerSelectOptions !== 'undefined' ? filterCustomerSelectOptions : undefined;
 
 // 7. Phân Hệ Quyết Toán Gom Chuyến (Driver Settlements)

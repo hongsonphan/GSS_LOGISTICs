@@ -276,6 +276,13 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
         help_text="Trạng thái hoàn ứng chuyến"
     )
 
+    # Đối Soát Công Nợ & Bảng Kê Khách Hàng (Customer AR Statement & Reconciliation)
+    customer_reconciled = models.BooleanField(default=False, db_index=True, help_text="Khách hàng & Công ty đã chốt đối soát công nợ (Bảng kê SOA)")
+    customer_reconciled_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm chốt đối soát với khách hàng")
+    customer_reconciled_by = models.ForeignKey('personnel.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='reconciled_trips_customer', help_text="Kế toán chốt đối soát công nợ")
+    customer_soa_code = models.CharField(max_length=50, blank=True, default='', db_index=True, help_text="Mã đợt/bảng kê đối soát công nợ gửi khách (SOA-YYYYMM-XXXX)")
+
+
     # Quyết toán & Đối soát Nhà Xe Bạn / Thầu Phụ 3PL (Giai đoạn 2)
     subcontractor_cost = models.DecimalField(
         max_digits=12,

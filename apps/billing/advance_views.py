@@ -572,9 +572,12 @@ class DriverBatchSettlementQueryAPIView(APIView):
         valid_settlement_statuses = [
             TripStatus.COMPLETED,
             TripStatus.DELIVERED,
-            TripStatus.RETURNING_EMPTY,
-            TripStatus.AT_WAREHOUSE,
         ]
+
+        # Cho phép xem các chuyến đang chạy dở dang nếu tham số yêu cầu
+        include_wip = request.query_params.get('include_wip', 'false').lower() == 'true'
+        if include_wip:
+            valid_settlement_statuses += [TripStatus.RETURNING_EMPTY, TripStatus.AT_WAREHOUSE, TripStatus.IN_TRANSIT, TripStatus.DISPATCHED]
 
         trips_qs = DispatchTrip.objects.filter(
             is_deleted=False,
@@ -583,25 +586,20 @@ class DriverBatchSettlementQueryAPIView(APIView):
             'driver', 'vehicle', 'customer', 'booking_order'
         ).prefetch_related(
             'expenses', 'driver_advances', 'documents'
-        ).order_by('-loading_date', '-created_at', '-id')
+        ).order_by('-loading_date', '-id')
 
+        # TUYỆT ĐỐI KHÔNG FALLBACK created_at: Chỉ lọc đúng ngày vận hành loading_date
         if from_date_str:
             try:
                 from_date = datetime.datetime.strptime(from_date_str, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(
-                    Q(loading_date__gte=from_date) |
-                    Q(loading_date__isnull=True, created_at__date__gte=from_date)
-                )
+                trips_qs = trips_qs.filter(loading_date__gte=from_date)
             except ValueError:
                 pass
 
         if to_date_str:
             try:
                 to_date = datetime.datetime.strptime(to_date_str, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(
-                    Q(loading_date__lte=to_date) |
-                    Q(loading_date__isnull=True, created_at__date__lte=to_date)
-                )
+                trips_qs = trips_qs.filter(loading_date__lte=to_date)
             except ValueError:
                 pass
 
@@ -639,12 +637,15 @@ class DriverBatchSettlementQueryAPIView(APIView):
             grand_total_advance += trip_advance
             grand_total_spent += trip_spent
 
-            t_date = trip.loading_date or trip.created_at.date()
+            t_date = trip.loading_date
+            has_pod = trip.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE']).exists() or bool(trip.actual_gate_out_time)
             trip_item = {
                 'id': trip.id,
                 'trip_code': trip.trip_code,
-                'loading_date': t_date.strftime('%d/%m/%Y'),
-                'loading_date_raw': t_date.strftime('%Y-%m-%d'),
+                'loading_date': t_date.strftime('%d/%m/%Y') if t_date else 'Chưa có ngày',
+                'loading_date_raw': t_date.strftime('%Y-%m-%d') if t_date else '',
+                'customer_id': trip.customer_id,
+                'customer_code': trip.customer.code if trip.customer else '-',
                 'customer_name': trip.customer.name if trip.customer else '-',
                 'route': f"{trip.pickup_location or 'Cảng'} ➔ {trip.warehouse_location or 'Kho'}",
                 'container_number': trip.container_number or '-',
@@ -657,12 +658,14 @@ class DriverBatchSettlementQueryAPIView(APIView):
                 'status': trip.status,
                 'status_label': trip.get_status_display(),
                 'is_settled': trip.is_expenses_settled,
+                'customer_reconciled': trip.customer_reconciled,
+                'customer_soa_code': trip.customer_soa_code or '-',
                 'advance_amount': trip_advance,
                 'actual_spent': trip_spent,
                 'diff': trip_diff,
                 'expenses_count': len(expenses_list),
                 'advances_count': len(advances_list),
-                'has_pod': trip.documents.filter(document_type__in=['POD', 'E_POD', 'DELIVERY_NOTE'], is_verified=True).exists(),
+                'has_pod': has_pod,
             }
 
             # Xác định khóa gom nhóm
@@ -897,4 +900,75 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                 'notes': cash_tx.notes
             } if ('cash_tx' in locals() and cash_tx) else None
         })
+
+
+class CustomerARReconciliationAPIView(APIView):
+    """
+    API Chốt / Mở Lại Đối Soát Công Nợ Khách Hàng (Customer AR Statement Reconciliation):
+    - Nhận danh sách trip_ids hoặc customer_id
+    - Action: 'RECONCILE' (Chốt đối soát) hoặc 'UNRECONCILE' (Mở lại đối soát)
+    - Chỉ cho phép chốt đối soát các chuyến xe ĐÃ HOÀN THÀNH (status=COMPLETED)
+    """
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsDispatcherOrAccountant]
+
+    def post(self, request):
+        import uuid
+        action = request.data.get('action', 'RECONCILE').upper()
+        trip_ids = request.data.get('trip_ids', [])
+        customer_id = request.data.get('customer_id')
+
+        if not trip_ids and customer_id:
+            trips_qs = DispatchTrip.objects.filter(
+                customer_id=customer_id,
+                is_deleted=False,
+                status=TripStatus.COMPLETED
+            )
+            if action == 'RECONCILE':
+                trips_qs = trips_qs.filter(customer_reconciled=False)
+            trip_ids = list(trips_qs.values_list('id', flat=True))
+
+        if not trip_ids:
+            return Response({'error': 'Vui lòng chọn ít nhất 1 chuyến xe hợp lệ để thao tác.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        trips = DispatchTrip.objects.filter(id__in=trip_ids, is_deleted=False)
+
+        # Kiểm tra chỉ chuyến COMPLETED mới được phép chốt đối soát
+        invalid_trips = trips.exclude(status=TripStatus.COMPLETED)
+        if invalid_trips.exists() and action == 'RECONCILE':
+            bad_codes = list(invalid_trips.values_list('trip_code', flat=True))
+            return Response({
+                'error': f'Các chuyến sau chưa hoàn thành (COMPLETED), không thể chốt đối soát công nợ: {", ".join(bad_codes[:5])}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        now = timezone.now()
+        emp = getattr(request.user, 'employee', None)
+
+        if action == 'RECONCILE':
+            soa_code = f"SOA-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:4].upper()}"
+            updated_count = trips.filter(status=TripStatus.COMPLETED).update(
+                customer_reconciled=True,
+                customer_reconciled_at=now,
+                customer_reconciled_by=emp,
+                customer_soa_code=soa_code
+            )
+            return Response({
+                'success': True,
+                'message': f'Đã chốt đối soát công nợ thành công cho {updated_count} chuyến xe.',
+                'soa_code': soa_code,
+                'reconciled_count': updated_count
+            })
+        else:
+            updated_count = trips.update(
+                customer_reconciled=False,
+                customer_reconciled_at=None,
+                customer_reconciled_by=None,
+                customer_soa_code=''
+            )
+            return Response({
+                'success': True,
+                'message': f'Đã mở lại đối soát thành công cho {updated_count} chuyến xe.',
+                'unreconciled_count': updated_count
+            })
+
 

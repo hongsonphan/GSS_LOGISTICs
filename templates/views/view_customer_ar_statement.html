@@ -107,19 +107,39 @@
                 <div class="flex items-center gap-2">
                     <i class="ph-bold ph-list-numbers text-teal-700 text-lg"></i>
                     <h4 class="text-sm font-bold text-slate-900 font-heading">
-                        Danh Sách Vận Đơn / Chuyến Xe Trong Kỳ Đối Soát
+                        Danh Sách Vận Đơn / Chuyến Xe Đã Hoàn Thành
                     </h4>
                     <span id="soa-trips-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-100 text-teal-800 border border-teal-200">
                         0 Chuyến
                     </span>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <div class="relative w-64 sm:w-80">
-                        <input type="text" id="soa-table-search" oninput="filterSoaTable()" placeholder="Tìm mã chuyến, cont, tuyến, tài xế..." 
+                <div class="flex items-center flex-wrap gap-2">
+                    <!-- Bộ lọc trạng thái đối soát -->
+                    <select id="soa-status-filter" onchange="filterSoaTable()" 
+                        class="h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        <option value="ALL">📋 Tất cả trạng thái đối soát</option>
+                        <option value="PENDING">⏳ Chờ đối soát (Chưa chốt)</option>
+                        <option value="RECONCILED">✅ Đã chốt đối soát (SOA)</option>
+                    </select>
+
+                    <div class="relative w-56 sm:w-64">
+                        <input type="text" id="soa-table-search" oninput="filterSoaTable()" placeholder="Tìm mã chuyến, cont, tuyến..." 
                             class="w-full h-9 pl-8 pr-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
                     </div>
+
+                    <!-- Nút Chốt Đối Soát Hàng Loạt -->
+                    <button type="button" onclick="batchReconcileCustomerAR(true)" 
+                        class="h-9 px-3.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-check-circle text-sm"></i>
+                        <span>Chốt Đối Soát (SOA)</span>
+                    </button>
+                    <button type="button" onclick="batchReconcileCustomerAR(false)" title="Mở lại trạng thái chờ đối soát"
+                        class="h-9 px-2.5 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-2xs transition-colors flex items-center gap-1">
+                        <i class="ph-bold ph-arrow-counter-clockwise text-sm"></i>
+                        <span class="hidden sm:inline">Mở Lại</span>
+                    </button>
                 </div>
             </div>
 
@@ -138,7 +158,9 @@
                             <th class="text-right py-3">Tiền Chi Hộ</th>
                             <th class="text-right py-3 font-black text-slate-900 bg-slate-200/50">Tổng Phải Thu</th>
                             <th class="text-center py-3">Chứng Từ POD</th>
-                            <th class="text-center py-3">Quyết Toán Nội Bộ</th>
+                            <th class="text-center py-3">Quyết Toán Tài Xế (Nội Bộ)</th>
+                            <th class="text-center py-3">Đối Soát Khách Hàng (SOA)</th>
+                            <th class="text-center py-3">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="soa-fullpage-tbody">

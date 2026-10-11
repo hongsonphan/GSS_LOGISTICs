@@ -38,6 +38,7 @@ from apps.billing.advance_views import (
     DriverAdvanceSettleAPIView,
     DriverBatchSettlementQueryAPIView,
     DriverBatchSettlementExecuteAPIView,
+    CustomerARReconciliationAPIView,
 )
 from apps.billing.finance_reports_api import (
     CustomerReimbursablesAPIView,
@@ -146,6 +147,7 @@ urlpatterns = [
     path('api/accounting/driver-advances/<int:pk>/settle/', DriverAdvanceSettleAPIView.as_view(), name='api-driver-advance-settle'),
     path('api/accounting/driver-settlements/batch-preview/', DriverBatchSettlementQueryAPIView.as_view(), name='api-driver-batch-settlement-query'),
     path('api/accounting/driver-settlements/batch-settle/', DriverBatchSettlementExecuteAPIView.as_view(), name='api-driver-batch-settlement-execute'),
+    path('api/accounting/customer-reconciliation/', CustomerARReconciliationAPIView.as_view(), name='api-customer-ar-reconciliation'),
     path('api/accounting/reimbursables/', CustomerReimbursablesAPIView.as_view(), name='api-accounting-reimbursables'),
     path('api/accounting/cashbook/', CashBookAPIView.as_view(), name='api-accounting-cashbook'),
     path('api/accounting/cashbook/<str:pk>/', CashBookDetailAPIView.as_view(), name='api-accounting-cashbook-detail'),

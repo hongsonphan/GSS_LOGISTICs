@@ -118,8 +118,10 @@ class RolesPermissionsAPIView(APIView):
 
     def get(self, request):
         # 1. Danh sách các nhóm vai trò (Roles / Groups)
-        # Lưu ý: Tài xế không cấp tài khoản vào hệ thống (chỉ nhận link xác nhận chuyến), nên không đưa vào ma trận phân quyền
-        groups = Group.objects.exclude(name__icontains='Tài Xế').prefetch_related('permissions__content_type', 'user_set').order_by('name')
+        # Chuẩn hóa 4 nhóm vai trò chính: Ban Giám Đốc (Admin), Điều Phối Viên, Kế Toán Cước, Quản Lý Nhân Sự
+        # Loại trừ hoàn toàn nhóm Tài xế khỏi hệ thống tài khoản
+        target_group_names = ['Ban Giám Đốc', 'Điều Phối Viên', 'Kế Toán Cước', 'Quản Lý Nhân Sự']
+        groups = Group.objects.filter(name__in=target_group_names).prefetch_related('permissions__content_type', 'user_set').order_by('id')
         roles_data = []
         for g in groups:
             grp_perms = [

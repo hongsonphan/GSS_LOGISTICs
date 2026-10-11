@@ -49,15 +49,9 @@ class ReportsAPIView(APIView):
 
         def make_date_range_q(start_d, end_d=None):
             if end_d:
-                return (
-                    Q(loading_date__gte=start_d, loading_date__lte=end_d) |
-                    Q(loading_date__isnull=True, created_at__date__gte=start_d, created_at__date__lte=end_d)
-                )
+                return Q(loading_date__gte=start_d, loading_date__lte=end_d)
             else:
-                return (
-                    Q(loading_date=start_d) |
-                    Q(loading_date__isnull=True, created_at__date=start_d)
-                )
+                return Q(loading_date=start_d)
 
         start_d = None
         end_d = None
@@ -1089,6 +1083,9 @@ class ReportsAPIView(APIView):
 
         # =========================================================================
         # BÁO CÁO 13: BÁO CÁO THEO DÕI CÔNG NỢ PHẢI THU (AR AGING) & THU TIỀN
+        # Quy chuẩn: Chỉ ghi nhận các chuyến xe ĐÃ HOÀN THÀNH (COMPLETED) có loading_date trong kỳ.
+        # Các chuyến đang vận hành dở dang (WIP) tuyệt đối KHÔNG đưa vào công nợ AR.
+        # Phân định rõ ràng: Đối soát Khách hàng (Thương mại) vs Quyết toán Tài xế (Nội bộ).
         # =========================================================================
         customer_ar_map = {}
         all_customers = Customer.objects.filter(is_deleted=False)
@@ -1100,13 +1097,17 @@ class ReportsAPIView(APIView):
                 'tax_code': cust.tax_code or '-',
                 'contact_phone': cust.phone or '-',
                 'trips_count': 0,
-                'settled_trips_count': 0,
-                'unsettled_trips_count': 0,
+                'reconciled_trips_count': 0,        # Đã đối soát với khách
+                'pending_reconcile_trips_count': 0, # Chờ đối soát với khách
+                'driver_settled_trips_count': 0,    # Đã quyết toán tài xế (Nội bộ)
+                'driver_unsettled_trips_count': 0,  # Chưa quyết toán tài xế (Nội bộ)
                 'freight_revenue': 0,
                 'reimbursable_amount': 0,
-                'total_receivable': 0,
-                'collected_amount': 0,
-                'remaining_balance': 0,
+                'total_receivable': 0,              # Tổng nợ phát sinh trong kỳ
+                'reconciled_amount': 0,             # Công nợ chuẩn ĐÃ ĐỐI SOÁT (Confirmed AR)
+                'pending_reconcile_amount': 0,      # Công nợ CHỜ ĐỐI SOÁT (Pending AR)
+                'collected_amount': 0,              # Đã thu tiền
+                'remaining_balance': 0,             # Còn phải thu
                 'aging_current': 0,
                 'aging_31_60': 0,
                 'aging_61_90': 0,
@@ -1130,25 +1131,38 @@ class ReportsAPIView(APIView):
             if p_name:
                 customer_collected_map[p_name] = customer_collected_map.get(p_name, 0) + int(tx.amount)
 
-        for item in settlement_trips_data:
-            cust_obj = next((c for c in all_customers if c.name == item['customer_name'] or c.code == item['customer_code']), None)
+        # Lấy các chuyến đã hoàn thành giao hàng (COMPLETED / DELIVERED) hoặc đã phát sinh doanh thu trong kỳ
+        completed_trips_in_period = trips_qs.filter(
+            status__in=[TripStatus.COMPLETED, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.DRAFT],
+            loading_date__isnull=False
+        ).select_related(
+            'customer', 'vehicle', 'driver', 'booking_order'
+        ).prefetch_related('expenses', 'documents')
+
+        for t in completed_trips_in_period:
+            cust_obj = t.customer
             cid = cust_obj.id if cust_obj else None
             
             if not cid:
-                cid = f"adhoc_{item['customer_name']}"
+                c_name = cust_obj.name if cust_obj else 'Khách Vãng Lai'
+                cid = f"adhoc_{c_name}"
                 if cid not in customer_ar_map:
                     customer_ar_map[cid] = {
                         'customer_id': cid,
-                        'customer_code': item['customer_code'],
-                        'customer_name': item['customer_name'],
+                        'customer_code': cust_obj.code if cust_obj else '-',
+                        'customer_name': c_name,
                         'tax_code': '-',
                         'contact_phone': '-',
                         'trips_count': 0,
-                        'settled_trips_count': 0,
-                        'unsettled_trips_count': 0,
+                        'reconciled_trips_count': 0,
+                        'pending_reconcile_trips_count': 0,
+                        'driver_settled_trips_count': 0,
+                        'driver_unsettled_trips_count': 0,
                         'freight_revenue': 0,
                         'reimbursable_amount': 0,
                         'total_receivable': 0,
+                        'reconciled_amount': 0,
+                        'pending_reconcile_amount': 0,
                         'collected_amount': 0,
                         'remaining_balance': 0,
                         'aging_current': 0,
@@ -1160,23 +1174,36 @@ class ReportsAPIView(APIView):
 
             c_entry = customer_ar_map[cid]
             c_entry['trips_count'] += 1
-            if item['is_settled']:
-                c_entry['settled_trips_count'] += 1
-            else:
-                c_entry['unsettled_trips_count'] += 1
 
-            rev = item['revenue']
-            reim = item['reimbursable']
+            # Phân định rõ Quyết toán Tài xế vs Đối soát Khách hàng
+            is_cust_reconciled = bool(getattr(t, 'customer_reconciled', False))
+            is_drv_settled = bool(t.is_expenses_settled)
+
+            if is_cust_reconciled:
+                c_entry['reconciled_trips_count'] += 1
+            else:
+                c_entry['pending_reconcile_trips_count'] += 1
+
+            if is_drv_settled:
+                c_entry['driver_settled_trips_count'] += 1
+            else:
+                c_entry['driver_unsettled_trips_count'] += 1
+
+            rev, exp, prof = get_trip_financials(t)
+            reim = sum(e.amount for e in t.expenses.filter(is_deleted=False, is_on_behalf_of_customer=True))
             total_rec = rev + reim
+
             c_entry['freight_revenue'] += rev
             c_entry['reimbursable_amount'] += reim
             c_entry['total_receivable'] += total_rec
 
-            try:
-                t_date = datetime.datetime.strptime(item['loading_date'], '%d/%m/%Y').date()
-                days_diff = (today - t_date).days
-            except Exception:
-                days_diff = 0
+            if is_cust_reconciled:
+                c_entry['reconciled_amount'] += total_rec
+            else:
+                c_entry['pending_reconcile_amount'] += total_rec
+
+            t_date = t.loading_date
+            days_diff = (today - t_date).days if t_date else 0
 
             if days_diff <= 30:
                 c_entry['aging_current'] += total_rec
@@ -1187,26 +1214,35 @@ class ReportsAPIView(APIView):
             else:
                 c_entry['aging_over_90'] += total_rec
 
-            if 'trips' not in c_entry:
-                c_entry['trips'] = []
+            has_pod = t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE']).exists() or bool(t.actual_gate_out_time)
+            plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán'
+            drv_name = t.driver.nickname or t.driver.full_name if t.driver else 'Chưa gán'
+
             c_entry['trips'].append({
-                'trip_id': item['trip_id'],
-                'trip_code': item['trip_code'],
-                'loading_date': item['loading_date'],
-                'vehicle_plate': item['vehicle_plate'],
-                'container_number': item['container_number'],
-                'route': item['route'],
-                'driver_name': item['driver_name'],
+                'trip_id': t.id,
+                'trip_code': t.trip_code,
+                'loading_date': t_date.strftime('%d/%m/%Y') if t_date else '-',
+                'loading_date_iso': t_date.isoformat() if t_date else '',
+                'vehicle_plate': plate,
+                'container_number': t.container_number or '-',
+                'seal_number': t.seal_number or '-',
+                'route': f"{t.pickup_location or 'Cảng/Bãi'} ➔ {t.warehouse_location or 'Kho KH'}",
+                'driver_name': drv_name,
                 'revenue': rev,
                 'reimbursable': reim,
                 'total_receivable': total_rec,
-                'is_settled': item['is_settled'],
-                'has_pod': item['has_pod'],
-                'days_diff': days_diff
+                'is_settled': is_drv_settled,           # Quyết toán tài xế nội bộ
+                'customer_reconciled': is_cust_reconciled, # Đối soát khách hàng thương mại
+                'customer_soa_code': getattr(t, 'customer_soa_code', '') or '-',
+                'has_pod': has_pod,
+                'days_diff': days_diff,
+                'status': t.status
             })
 
         ar_summary_list = []
         total_ar_receivable = 0
+        total_ar_reconciled = 0
+        total_ar_pending = 0
         total_ar_freight = 0
         total_ar_reimbursable = 0
         total_ar_collected = 0
@@ -1228,6 +1264,8 @@ class ReportsAPIView(APIView):
             entry['remaining_balance'] = remaining
 
             total_ar_receivable += entry['total_receivable']
+            total_ar_reconciled += entry['reconciled_amount']
+            total_ar_pending += entry['pending_reconcile_amount']
             total_ar_freight += entry['freight_revenue']
             total_ar_reimbursable += entry['reimbursable_amount']
             total_ar_collected += allocated_collected
@@ -1237,6 +1275,7 @@ class ReportsAPIView(APIView):
             ar_summary_list.append(entry)
 
         ar_summary_list.sort(key=lambda x: x['total_receivable'], reverse=True)
+
 
         # =========================================================================
         # BÁO CÁO 14: BÁO CÁO TUỔI ĐƠN TỒN ĐỌNG CHƯA QUYẾT TOÁN (UNSETTLED AGING)
@@ -1405,6 +1444,8 @@ class ReportsAPIView(APIView):
                 'settlement_unsettled_count': settlement_unsettled_count,
                 'settlement_carryover_count': settlement_carryover_count,
                 'total_ar_receivable': total_ar_receivable,
+                'total_ar_reconciled': total_ar_reconciled,
+                'total_ar_pending': total_ar_pending,
                 'total_ar_balance': total_ar_balance,
                 'unsettled_over_30_count': unsettled_over_30_count,
                 'unsettled_missing_pod_count': unsettled_missing_pod_count
@@ -1508,6 +1549,8 @@ class ReportsAPIView(APIView):
             } if can_settle else None,
             'report13_ar_aging': {
                 'total_receivable': total_ar_receivable,
+                'total_reconciled': total_ar_reconciled,
+                'total_pending_reconcile': total_ar_pending,
                 'total_freight_revenue': total_ar_freight,
                 'total_reimbursable': total_ar_reimbursable,
                 'total_collected': total_ar_collected,
