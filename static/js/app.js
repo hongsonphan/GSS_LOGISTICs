@@ -21918,91 +21918,194 @@ async function openDirectPrintBooking(bookingId) {
                 <meta charset="utf-8">
                 <title>Phiếu Tiếp Nhận Booking - ${b.booking_code || ('BK-' + b.id)}</title>
                 <style>
-                    @page { size: A4 portrait; margin: 15mm 15mm 15mm 15mm; }
-                    html, body { margin: 0; padding: 0; background: #ffffff; color: #1e293b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.5; }
-                    body { box-sizing: border-box; }
-                    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
-                    .title { text-align: center; font-size: 18px; font-weight: 800; color: #0f766e; text-transform: uppercase; margin: 12px 0 20px 0; }
-                    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; table-layout: fixed; }
-                    .meta-table td { padding: 6px 10px; border: 1px solid #cbd5e1; word-wrap: break-word; }
-                    .meta-table td.label { font-weight: bold; background: #f8fafc; width: 22%; color: #334155; }
-                    .signatures { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; page-break-inside: avoid; }
-                    .sig-box { width: 30%; }
-                    .sig-title { font-weight: bold; margin-bottom: 60px; }
-                    @media print { body { margin: 0; padding: 0; } }
+                    @page { 
+                        size: A4 portrait; 
+                        margin: 15mm 18mm 15mm 18mm; 
+                    }
+                    *, *::before, *::after { 
+                        box-sizing: border-box; 
+                    }
+                    html, body { 
+                        margin: 0; 
+                        padding: 0; 
+                        background: #ffffff; 
+                        color: #0f172a; 
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+                        font-size: 13px; 
+                        line-height: 1.5; 
+                        -webkit-print-color-adjust: exact !important; 
+                        print-color-adjust: exact !important; 
+                    }
+                    .print-sheet {
+                        width: 100%;
+                        max-width: 175mm;
+                        margin: 0 auto;
+                        padding: 10mm 4mm 12mm 4mm;
+                        box-sizing: border-box;
+                        background: #ffffff;
+                    }
+                    @media print {
+                        @page { 
+                            size: A4 portrait; 
+                            margin: 15mm 18mm 15mm 18mm; 
+                        }
+                        html, body { 
+                            margin: 0 !important; 
+                            padding: 0 !important; 
+                            width: 100% !important; 
+                            background: #ffffff !important; 
+                        }
+                        .print-sheet { 
+                            width: 100% !important; 
+                            max-width: 100% !important; 
+                            margin: 0 !important; 
+                            padding: 8mm 2mm 10mm 2mm !important; 
+                            box-sizing: border-box !important; 
+                            page-break-inside: avoid !important; 
+                            page-break-after: avoid !important; 
+                        }
+                    }
+                    .header { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        align-items: flex-start; 
+                        border-bottom: 2.5px solid #0f766e; 
+                        padding-bottom: 12px; 
+                        margin-bottom: 20px; 
+                    }
+                    .title { 
+                        text-align: center; 
+                        font-size: 18px; 
+                        font-weight: 800; 
+                        color: #0f766e; 
+                        text-transform: uppercase; 
+                        letter-spacing: 0.5px;
+                        margin: 16px 0 24px 0; 
+                    }
+                    .meta-table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin-bottom: 24px; 
+                        table-layout: fixed; 
+                    }
+                    .meta-table td { 
+                        padding: 8px 12px; 
+                        border: 1px solid #cbd5e1; 
+                        word-wrap: break-word; 
+                        vertical-align: middle;
+                        font-size: 13px;
+                    }
+                    .meta-table td.label { 
+                        font-weight: 700; 
+                        background: #f8fafc; 
+                        width: 22%; 
+                        color: #334155; 
+                    }
+                    .signatures { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        margin-top: 50px; 
+                        text-align: center; 
+                        page-break-inside: avoid; 
+                    }
+                    .sig-box { 
+                        width: 30%; 
+                    }
+                    .sig-title { 
+                        font-weight: 700; 
+                        color: #1e293b;
+                        margin-bottom: 75px; 
+                    }
+                    .footer-note {
+                        margin-top: 35px;
+                        border-top: 1px dashed #cbd5e1;
+                        padding-top: 8px;
+                        font-size: 11px;
+                        color: #64748b;
+                        font-style: italic;
+                        display: flex;
+                        justify-content: space-between;
+                    }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <div>
-                        <div style="font-size: 15px; font-weight: 800; text-transform: uppercase; color: #0f766e;">TRIỀN VÕ LOGISTICS</div>
-                        <div style="font-size: 11px; color: #64748b;">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP.HCM • Hotline: 0965.559.561</div>
+                <div class="print-sheet">
+                    <div class="header">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">TRIỀN VÕ LOGISTICS</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP.HCM • Hotline: 0965.559.561</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">${b.booking_code || ('BK-' + b.id)}</div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 3px;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
+                        </div>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-weight: bold; font-family: monospace; font-size: 14px; color: #0f766e;">${b.booking_code || ('BK-' + b.id)}</div>
-                        <div style="font-size: 11px; color: #64748b;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
-                    </div>
-                </div>
 
-                <div class="title">PHIẾU TIẾP NHẬN ĐƠN HÀNG VẬN TẢI / BOOKING</div>
+                    <div class="title">PHIẾU TIẾP NHẬN ĐƠN HÀNG VẬN TẢI / BOOKING</div>
 
-                <table class="meta-table">
-                    <tr>
-                        <td class="label">Khách Hàng:</td>
-                        <td style="font-weight: bold; font-size: 14px;">${b.customer_name || b.customer || '-'}</td>
-                        <td class="label">Số Booking / PO:</td>
-                        <td style="font-family: monospace; font-weight: bold;">${b.booking_number || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Phân Loại Dịch Vụ:</td>
-                        <td>${b.booking_type_display || (b.booking_type === 'DOMESTIC' ? 'Vận Chuyển Nội Địa' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Kéo Cont Xuất Khẩu'))}</td>
-                        <td class="label">Hãng Tàu / Tàu:</td>
-                        <td>${b.shipping_line || '-'} ${b.vessel_voyage ? ('/ ' + b.vessel_voyage) : ''}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Loại Cont & Số lượng:</td>
-                        <td>${b.container_size || '40HC'} — Số lượng: <strong>${b.total_containers || 1} cont</strong></td>
-                        <td class="label">Hàng Hóa / Trọng Lượng:</td>
-                        <td>${b.commodity || 'Hàng tổng hợp'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Nơi Lấy Rỗng / Hàng:</td>
-                        <td colspan="3">${b.pickup_location || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Nơi Đóng / Giao Hàng:</td>
-                        <td colspan="3" style="font-weight: bold;">${b.delivery_location || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Nơi Hạ Bãi / Trả Vỏ:</td>
-                        <td colspan="3">${b.dropoff_location || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Hẹn Đóng Hàng:</td>
-                        <td style="font-weight: bold; color: #0f766e;">${b.loading_date ? (b.loading_date + ' ' + (b.loading_time || '')) : '-'}</td>
-                        <td class="label">Hạn Cắt Máng (CY):</td>
-                        <td style="font-weight: bold; color: #e11d48;">${b.closing_time || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Cước Thỏa Thuận:</td>
-                        <td style="font-weight: bold; font-size: 14px; color: #047857;">${new Intl.NumberFormat('vi-VN').format(b.price || 0)} đ</td>
-                        <td class="label">Trạng Thái Đơn:</td>
-                        <td>${b.status_display || b.status || 'ĐÃ TIẾP NHẬN'}</td>
-                    </tr>
-                </table>
+                    <table class="meta-table">
+                        <tr>
+                            <td class="label">Khách Hàng:</td>
+                            <td style="font-weight: bold; font-size: 14px;">${b.customer_name || b.customer || '-'}</td>
+                            <td class="label">Số Booking / PO:</td>
+                            <td style="font-family: monospace; font-weight: bold;">${b.booking_number || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Phân Loại Dịch Vụ:</td>
+                            <td>${b.booking_type_display || (b.booking_type === 'DOMESTIC' ? 'Vận Chuyển Nội Địa' : (b.booking_type === 'IMPORT_FCL' ? 'Kéo Cont Nhập Khẩu' : 'Kéo Cont Xuất Khẩu'))}</td>
+                            <td class="label">Hãng Tàu / Tàu:</td>
+                            <td>${b.shipping_line || '-'} ${b.vessel_voyage ? ('/ ' + b.vessel_voyage) : ''}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Loại Cont & Số lượng:</td>
+                            <td>${b.container_size || '40HC'} — Số lượng: <strong>${b.total_containers || 1} cont</strong></td>
+                            <td class="label">Hàng Hóa / Trọng Lượng:</td>
+                            <td>${b.commodity || 'Hàng tổng hợp'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Nơi Lấy Rỗng / Hàng:</td>
+                            <td colspan="3">${b.pickup_location || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Nơi Đóng / Giao Hàng:</td>
+                            <td colspan="3" style="font-weight: bold;">${b.delivery_location || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Nơi Hạ Bãi / Trả Vỏ:</td>
+                            <td colspan="3">${b.dropoff_location || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Hẹn Đóng Hàng:</td>
+                            <td style="font-weight: bold; color: #0f766e;">${b.loading_date ? (b.loading_date + ' ' + (b.loading_time || '')) : '-'}</td>
+                            <td class="label">Hạn Cắt Máng (CY):</td>
+                            <td style="font-weight: bold; color: #e11d48;">${b.closing_time || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Cước Thỏa Thuận:</td>
+                            <td style="font-weight: bold; font-size: 14px; color: #047857;">${new Intl.NumberFormat('vi-VN').format(b.price || 0)} đ</td>
+                            <td class="label">Trạng Thái Đơn:</td>
+                            <td>${b.status_display || b.status || 'ĐÃ TIẾP NHẬN'}</td>
+                        </tr>
+                    </table>
 
-                <div class="signatures">
-                    <div class="sig-box">
-                        <div class="sig-title">Khách Hàng</div>
-                        <div>(Ký & ghi rõ họ tên)</div>
+                    <div class="signatures">
+                        <div class="sig-box">
+                            <div class="sig-title">Khách Hàng</div>
+                            <div>(Ký & ghi rõ họ tên)</div>
+                        </div>
+                        <div class="sig-box">
+                            <div class="sig-title">Điều Phối Vận Tải</div>
+                            <div>(Ký & ghi rõ họ tên)</div>
+                        </div>
+                        <div class="sig-box">
+                            <div class="sig-title">Người Lập Phiếu</div>
+                            <div>(Ký & ghi rõ họ tên)</div>
+                        </div>
                     </div>
-                    <div class="sig-box">
-                        <div class="sig-title">Điều Phối Vận Tải</div>
-                        <div>(Ký & ghi rõ họ tên)</div>
-                    </div>
-                    <div class="sig-box">
-                        <div class="sig-title">Người Lập Phiếu</div>
-                        <div>(Ký & ghi rõ họ tên)</div>
+
+                    <div class="footer-note">
+                        <span>* Phiếu tiếp nhận vận tải là căn cứ điều phối và đối chiếu giao nhận hàng hóa.</span>
+                        <span>BIM Logistics Platform • Hotline: 0965.559.561</span>
                     </div>
                 </div>
             </body>
@@ -22123,95 +22226,198 @@ async function openDirectPrintCustoms(customsId) {
                 <meta charset="utf-8">
                 <title>Tờ Khai Hải Quan - ${item.declaration_number}</title>
                 <style>
-                    @page { size: A4 portrait; margin: 15mm 15mm 15mm 15mm; }
-                    html, body { margin: 0; padding: 0; background: #ffffff; color: #1e293b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.5; }
-                    body { box-sizing: border-box; }
-                    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
-                    .title { text-align: center; font-size: 18px; font-weight: 800; color: #0f766e; text-transform: uppercase; margin: 12px 0 20px 0; }
-                    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; table-layout: fixed; }
-                    .meta-table td { padding: 6px 10px; border: 1px solid #cbd5e1; word-wrap: break-word; }
-                    .meta-table td.label { font-weight: bold; background: #f8fafc; width: 22%; color: #334155; }
-                    .signatures { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; page-break-inside: avoid; }
-                    .sig-box { width: 30%; }
-                    .sig-title { font-weight: bold; margin-bottom: 60px; }
-                    @media print { body { margin: 0; padding: 0; } }
+                    @page { 
+                        size: A4 portrait; 
+                        margin: 15mm 18mm 15mm 18mm; 
+                    }
+                    *, *::before, *::after { 
+                        box-sizing: border-box; 
+                    }
+                    html, body { 
+                        margin: 0; 
+                        padding: 0; 
+                        background: #ffffff; 
+                        color: #0f172a; 
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+                        font-size: 13px; 
+                        line-height: 1.5; 
+                        -webkit-print-color-adjust: exact !important; 
+                        print-color-adjust: exact !important; 
+                    }
+                    .print-sheet {
+                        width: 100%;
+                        max-width: 175mm;
+                        margin: 0 auto;
+                        padding: 10mm 4mm 12mm 4mm;
+                        box-sizing: border-box;
+                        background: #ffffff;
+                    }
+                    @media print {
+                        @page { 
+                            size: A4 portrait; 
+                            margin: 15mm 18mm 15mm 18mm; 
+                        }
+                        html, body { 
+                            margin: 0 !important; 
+                            padding: 0 !important; 
+                            width: 100% !important; 
+                            background: #ffffff !important; 
+                        }
+                        .print-sheet { 
+                            width: 100% !important; 
+                            max-width: 100% !important; 
+                            margin: 0 !important; 
+                            padding: 8mm 2mm 10mm 2mm !important; 
+                            box-sizing: border-box !important; 
+                            page-break-inside: avoid !important; 
+                            page-break-after: avoid !important; 
+                        }
+                    }
+                    .header { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        align-items: flex-start; 
+                        border-bottom: 2.5px solid #0f766e; 
+                        padding-bottom: 12px; 
+                        margin-bottom: 20px; 
+                    }
+                    .title { 
+                        text-align: center; 
+                        font-size: 18px; 
+                        font-weight: 800; 
+                        color: #0f766e; 
+                        text-transform: uppercase; 
+                        letter-spacing: 0.5px;
+                        margin: 16px 0 24px 0; 
+                    }
+                    .meta-table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin-bottom: 24px; 
+                        table-layout: fixed; 
+                    }
+                    .meta-table td { 
+                        padding: 8px 12px; 
+                        border: 1px solid #cbd5e1; 
+                        word-wrap: break-word; 
+                        vertical-align: middle;
+                        font-size: 13px;
+                    }
+                    .meta-table td.label { 
+                        font-weight: 700; 
+                        background: #f8fafc; 
+                        width: 22%; 
+                        color: #334155; 
+                    }
+                    .signatures { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        margin-top: 50px; 
+                        text-align: center; 
+                        page-break-inside: avoid; 
+                    }
+                    .sig-box { 
+                        width: 30%; 
+                    }
+                    .sig-title { 
+                        font-weight: 700; 
+                        color: #1e293b;
+                        margin-bottom: 75px; 
+                    }
+                    .footer-note {
+                        margin-top: 35px;
+                        border-top: 1px dashed #cbd5e1;
+                        padding-top: 8px;
+                        font-size: 11px;
+                        color: #64748b;
+                        font-style: italic;
+                        display: flex;
+                        justify-content: space-between;
+                    }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <div>
-                        <div style="font-size: 15px; font-weight: 800; text-transform: uppercase; color: #0f766e;">TRIỀN VÕ LOGISTICS — PHÒNG THỦ TỤC HẢI QUAN</div>
-                        <div style="font-size: 11px; color: #64748b;">Hotline thông quan: 0965.559.561 • VNACCS/VCIS EDI Gateway</div>
+                <div class="print-sheet">
+                    <div class="header">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">TRIỀN VÕ LOGISTICS — PHÒNG THỦ TỤC HẢI QUAN</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline thông quan: 0965.559.561 • Cổng kết nối VNACCS/VCIS EDI Gateway</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">TK: ${item.declaration_number}</div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 3px;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
+                        </div>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-weight: bold; font-family: monospace; font-size: 14px; color: #0f766e;">TK: ${item.declaration_number}</div>
-                        <div style="font-size: 11px; color: #64748b;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
-                    </div>
-                </div>
 
-                <div class="title">PHIẾU THEO DÕI & XÁC NHẬN THỦ TỤC HẢI QUAN</div>
+                    <div class="title">PHIẾU THEO DÕI & XÁC NHẬN THỦ TỤC HẢI QUAN</div>
 
-                <table class="meta-table">
-                    <tr>
-                        <td class="label">Số Tờ Khai:</td>
-                        <td style="font-family: monospace; font-weight: bold; font-size: 14px;">${item.declaration_number}</td>
-                        <td class="label">Ngày Đăng Ký:</td>
-                        <td>${item.declaration_date || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Doanh Nghiệp / Chủ Hàng:</td>
-                        <td style="font-weight: bold;">${item.customer_name || '-'}</td>
-                        <td class="label">Chiều / Loại Hình:</td>
-                        <td><strong>${item.direction === 'IMPORT' ? 'NHẬP KHẨU' : 'XUẤT KHẨU'}</strong> (${item.declaration_type || 'A11'})</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Chi Cục Hải Quan:</td>
-                        <td colspan="3">${item.customs_office_code || ''} - ${item.customs_office_name || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Phân Luồng Hải Quan:</td>
-                        <td style="font-weight: bold; color: ${item.customs_lane === 'GREEN' ? '#047857' : (item.customs_lane === 'YELLOW' ? '#d97706' : '#e11d48')};">
-                            ${item.customs_lane === 'GREEN' ? 'LUỒNG XANH (Thông quan)' : (item.customs_lane === 'YELLOW' ? 'LUỒNG VÀNG (Kiểm tra hồ sơ)' : 'LUỒNG ĐỎ (Kiểm tra thực tế hàng)')}
-                        </td>
-                        <td class="label">Trạng Thái:</td>
-                        <td style="font-weight: bold;">${item.status || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Số Vận Đơn (B/L):</td>
-                        <td style="font-family: monospace;">${item.bill_of_lading || '-'}</td>
-                        <td class="label">Số Container:</td>
-                        <td style="font-family: monospace;">${item.container_numbers || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Chuyến Xe Gán:</td>
-                        <td>${item.trip_code || 'Chưa gán xe'}</td>
-                        <td class="label">Tình Trạng Thuế:</td>
-                        <td><strong>${item.is_tax_paid ? 'ĐÃ NỘP THUẾ' : 'CHƯA NỘP THUẾ'}</strong> (${new Intl.NumberFormat('vi-VN').format(item.tax_amount_vnd || 0)} đ)</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Phí Dịch Vụ Khai HQ:</td>
-                        <td style="font-weight: bold; color: #0f766e;">${new Intl.NumberFormat('vi-VN').format(item.customs_service_fee || 0)} đ</td>
-                        <td class="label">Chi Hộ Kiểm Hóa:</td>
-                        <td style="font-weight: bold; color: #d97706;">${new Intl.NumberFormat('vi-VN').format(item.reimbursable_fee || 0)} đ</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Ghi Chú Tiến Độ:</td>
-                        <td colspan="3">${item.inspection_notes || 'Không có ghi chú thêm.'}</td>
-                    </tr>
-                </table>
+                    <table class="meta-table">
+                        <tr>
+                            <td class="label">Số Tờ Khai:</td>
+                            <td style="font-family: monospace; font-weight: bold; font-size: 14px;">${item.declaration_number}</td>
+                            <td class="label">Ngày Đăng Ký:</td>
+                            <td>${item.declaration_date || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Doanh Nghiệp / Chủ Hàng:</td>
+                            <td style="font-weight: bold;">${item.customer_name || '-'}</td>
+                            <td class="label">Chiều / Loại Hình:</td>
+                            <td><strong>${item.direction === 'IMPORT' ? 'NHẬP KHẨU' : 'XUẤT KHẨU'}</strong> (${item.declaration_type || 'A11'})</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Chi Cục Hải Quan:</td>
+                            <td colspan="3">${item.customs_office_code || ''} - ${item.customs_office_name || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Phân Luồng Hải Quan:</td>
+                            <td style="font-weight: bold; color: ${item.customs_lane === 'GREEN' ? '#047857' : (item.customs_lane === 'YELLOW' ? '#d97706' : '#e11d48')};">
+                                ${item.customs_lane === 'GREEN' ? 'LUỒNG XANH (Thông quan)' : (item.customs_lane === 'YELLOW' ? 'LUỒNG VÀNG (Kiểm tra hồ sơ)' : 'LUỒNG ĐỎ (Kiểm tra thực tế hàng)')}
+                            </td>
+                            <td class="label">Trạng Thái:</td>
+                            <td style="font-weight: bold;">${item.status || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Số Vận Đơn (B/L):</td>
+                            <td style="font-family: monospace;">${item.bill_of_lading || '-'}</td>
+                            <td class="label">Số Container:</td>
+                            <td style="font-family: monospace;">${item.container_numbers || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Chuyến Xe Gán:</td>
+                            <td>${item.trip_code || 'Chưa gán xe'}</td>
+                            <td class="label">Tình Trạng Thuế:</td>
+                            <td><strong>${item.is_tax_paid ? 'ĐÃ NỘP THUẾ' : 'CHƯA NỘP THUẾ'}</strong> (${new Intl.NumberFormat('vi-VN').format(item.tax_amount_vnd || 0)} đ)</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Phí Dịch Vụ Khai HQ:</td>
+                            <td style="font-weight: bold; color: #0f766e;">${new Intl.NumberFormat('vi-VN').format(item.customs_service_fee || 0)} đ</td>
+                            <td class="label">Chi Hộ Kiểm Hóa:</td>
+                            <td style="font-weight: bold; color: #d97706;">${new Intl.NumberFormat('vi-VN').format(item.reimbursable_fee || 0)} đ</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Ghi Chú Tiến Độ:</td>
+                            <td colspan="3">${item.inspection_notes || 'Không có ghi chú thêm.'}</td>
+                        </tr>
+                    </table>
 
-                <div class="signatures">
-                    <div class="sig-box">
-                        <div class="sig-title">Đại Diện Doanh Nghiệp</div>
-                        <div>(Ký & ghi rõ họ tên)</div>
+                    <div class="signatures">
+                        <div class="sig-box">
+                            <div class="sig-title">Đại Diện Doanh Nghiệp</div>
+                            <div>(Ký & ghi rõ họ tên)</div>
+                        </div>
+                        <div class="sig-box">
+                            <div class="sig-title">Cán Bộ Hải Quan Tiếp Nhận</div>
+                            <div>(Ký & đóng dấu)</div>
+                        </div>
+                        <div class="sig-box">
+                            <div class="sig-title">Nhân Viên Hiện Trường (Ops)</div>
+                            <div>(Ký & ghi rõ họ tên)</div>
+                        </div>
                     </div>
-                    <div class="sig-box">
-                        <div class="sig-title">Cán Bộ Hải Quan Tiếp Nhận</div>
-                        <div>(Ký & đóng dấu)</div>
-                    </div>
-                    <div class="sig-box">
-                        <div class="sig-title">Nhân Viên Hiện Trường (Ops)</div>
-                        <div>(Ký & ghi rõ họ tên)</div>
+
+                    <div class="footer-note">
+                        <span>* Phiếu theo dõi thủ tục hải quan lưu kèm hồ sơ chứng từ điện tử gốc.</span>
+                        <span>BIM Logistics Platform • Hotline: 0965.559.561</span>
                     </div>
                 </div>
             </body>
@@ -22322,79 +22528,182 @@ async function openDirectPrintEmployee(empId) {
                 <meta charset="utf-8">
                 <title>Hồ Sơ Nhân Sự - ${emp.full_name}</title>
                 <style>
-                    @page { size: A4 portrait; margin: 15mm 15mm 15mm 15mm; }
-                    html, body { margin: 0; padding: 0; background: #ffffff; color: #1e293b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.5; }
-                    body { box-sizing: border-box; }
-                    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
-                    .title { text-align: center; font-size: 18px; font-weight: 800; color: #0f766e; text-transform: uppercase; margin: 12px 0 20px 0; }
-                    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; table-layout: fixed; }
-                    .meta-table td { padding: 6px 10px; border: 1px solid #cbd5e1; word-wrap: break-word; }
-                    .meta-table td.label { font-weight: bold; background: #f8fafc; width: 22%; color: #334155; }
-                    .signatures { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; page-break-inside: avoid; }
-                    .sig-box { width: 30%; }
-                    .sig-title { font-weight: bold; margin-bottom: 60px; }
-                    @media print { body { margin: 0; padding: 0; } }
+                    @page { 
+                        size: A4 portrait; 
+                        margin: 15mm 18mm 15mm 18mm; 
+                    }
+                    *, *::before, *::after { 
+                        box-sizing: border-box; 
+                    }
+                    html, body { 
+                        margin: 0; 
+                        padding: 0; 
+                        background: #ffffff; 
+                        color: #0f172a; 
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+                        font-size: 13px; 
+                        line-height: 1.5; 
+                        -webkit-print-color-adjust: exact !important; 
+                        print-color-adjust: exact !important; 
+                    }
+                    .print-sheet {
+                        width: 100%;
+                        max-width: 175mm;
+                        margin: 0 auto;
+                        padding: 10mm 4mm 12mm 4mm;
+                        box-sizing: border-box;
+                        background: #ffffff;
+                    }
+                    @media print {
+                        @page { 
+                            size: A4 portrait; 
+                            margin: 15mm 18mm 15mm 18mm; 
+                        }
+                        html, body { 
+                            margin: 0 !important; 
+                            padding: 0 !important; 
+                            width: 100% !important; 
+                            background: #ffffff !important; 
+                        }
+                        .print-sheet { 
+                            width: 100% !important; 
+                            max-width: 100% !important; 
+                            margin: 0 !important; 
+                            padding: 8mm 2mm 10mm 2mm !important; 
+                            box-sizing: border-box !important; 
+                            page-break-inside: avoid !important; 
+                            page-break-after: avoid !important; 
+                        }
+                    }
+                    .header { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        align-items: flex-start; 
+                        border-bottom: 2.5px solid #0f766e; 
+                        padding-bottom: 12px; 
+                        margin-bottom: 20px; 
+                    }
+                    .title { 
+                        text-align: center; 
+                        font-size: 18px; 
+                        font-weight: 800; 
+                        color: #0f766e; 
+                        text-transform: uppercase; 
+                        letter-spacing: 0.5px;
+                        margin: 16px 0 24px 0; 
+                    }
+                    .meta-table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin-bottom: 24px; 
+                        table-layout: fixed; 
+                    }
+                    .meta-table td { 
+                        padding: 8px 12px; 
+                        border: 1px solid #cbd5e1; 
+                        word-wrap: break-word; 
+                        vertical-align: middle;
+                        font-size: 13px;
+                    }
+                    .meta-table td.label { 
+                        font-weight: 700; 
+                        background: #f8fafc; 
+                        width: 22%; 
+                        color: #334155; 
+                    }
+                    .signatures { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        margin-top: 50px; 
+                        text-align: center; 
+                        page-break-inside: avoid; 
+                    }
+                    .sig-box { 
+                        width: 30%; 
+                    }
+                    .sig-title { 
+                        font-weight: 700; 
+                        color: #1e293b;
+                        margin-bottom: 75px; 
+                    }
+                    .footer-note {
+                        margin-top: 35px;
+                        border-top: 1px dashed #cbd5e1;
+                        padding-top: 8px;
+                        font-size: 11px;
+                        color: #64748b;
+                        font-style: italic;
+                        display: flex;
+                        justify-content: space-between;
+                    }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <div>
-                        <div style="font-size: 15px; font-weight: 800; text-transform: uppercase; color: #0f766e;">TRIỀN VÕ LOGISTICS — PHÒNG HÀNH CHÍNH NHÂN SỰ</div>
-                        <div style="font-size: 11px; color: #64748b;">Hotline: 0965.559.561 • Hệ thống Quản trị Nhân sự & Đội xe</div>
+                <div class="print-sheet">
+                    <div class="header">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">TRIỀN VÕ LOGISTICS — PHÒNG HÀNH CHÍNH NHÂN SỰ</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline: 0965.559.561 • Hệ thống Quản trị Nhân sự & Đội xe Triền Võ</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">MÃ NV: ${emp.code || emp.id}</div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 3px;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
+                        </div>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-weight: bold; font-family: monospace; font-size: 14px; color: #0f766e;">MÃ NV: ${emp.code || emp.id}</div>
-                        <div style="font-size: 11px; color: #64748b;">Ngày in: ${new Date().toLocaleDateString('vi-VN')}</div>
-                    </div>
-                </div>
 
-                <div class="title">SƠ YẾU HỒ SƠ CÁN BỘ / TÀI XẾ DOANH NGHIỆP</div>
+                    <div class="title">SƠ YẾU HỒ SƠ CÁN BỘ / TÀI XẾ DOANH NGHIỆP</div>
 
-                <table class="meta-table">
-                    <tr>
-                        <td class="label">Họ Và Tên:</td>
-                        <td style="font-weight: bold; font-size: 15px;">${emp.full_name}</td>
-                        <td class="label">Biệt Danh / Tên Thường Gọi:</td>
-                        <td>${emp.nickname || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Phòng Ban:</td>
-                        <td><strong>${emp.department || 'Đội Xe (FLEET)'}</strong></td>
-                        <td class="label">Chức Vụ / Vị Trí:</td>
-                        <td><strong>${emp.role_label || emp.role}</strong></td>
-                    </tr>
-                    <tr>
-                        <td class="label">Số Điện Thoại:</td>
-                        <td style="font-weight: bold;">${emp.phone_number || '-'}</td>
-                        <td class="label">Zalo / Liên Lạc:</td>
-                        <td>${emp.zalo_id || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Số GPLX (Bằng lái):</td>
-                        <td style="font-family: monospace; font-weight: bold;">${emp.license_number || '-'}</td>
-                        <td class="label">Hạn Dùng GPLX:</td>
-                        <td>${emp.license_expiry || '-'}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Mức Lương Cơ Bản:</td>
-                        <td style="font-weight: bold; font-size: 14px; color: #0f766e;">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</td>
-                        <td class="label">Tình Trạng Công Tác:</td>
-                        <td><strong>${emp.is_active ? 'ĐANG LÀM VIỆC' : 'TẠM NGƯNG CÔNG TÁC'}</strong></td>
-                    </tr>
-                </table>
+                    <table class="meta-table">
+                        <tr>
+                            <td class="label">Họ Và Tên:</td>
+                            <td style="font-weight: bold; font-size: 15px;">${emp.full_name}</td>
+                            <td class="label">Biệt Danh / Tên Thường Gọi:</td>
+                            <td>${emp.nickname || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Phòng Ban:</td>
+                            <td><strong>${emp.department || 'Đội Xe (FLEET)'}</strong></td>
+                            <td class="label">Chức Vụ / Vị Trí:</td>
+                            <td><strong>${emp.role_label || emp.role}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="label">Số Điện Thoại:</td>
+                            <td style="font-weight: bold;">${emp.phone_number || '-'}</td>
+                            <td class="label">Zalo / Liên Lạc:</td>
+                            <td>${emp.zalo_id || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Số GPLX (Bằng lái):</td>
+                            <td style="font-family: monospace; font-weight: bold;">${emp.license_number || '-'}</td>
+                            <td class="label">Hạn Dùng GPLX:</td>
+                            <td>${emp.license_expiry || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Mức Lương Cơ Bản:</td>
+                            <td style="font-weight: bold; font-size: 14px; color: #0f766e;">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</td>
+                            <td class="label">Tình Trạng Công Tác:</td>
+                            <td><strong>${emp.is_active ? 'ĐANG LÀM VIỆC' : 'TẠM NGƯNG CÔNG TÁC'}</strong></td>
+                        </tr>
+                    </table>
 
-                <div class="signatures">
-                    <div class="sig-box">
-                        <div class="sig-title">Nhân Sự Được Khai Báo</div>
-                        <div>(Ký & ghi rõ họ tên)</div>
+                    <div class="signatures">
+                        <div class="sig-box">
+                            <div class="sig-title">Nhân Sự Được Khai Báo</div>
+                            <div>(Ký & ghi rõ họ tên)</div>
+                        </div>
+                        <div class="sig-box">
+                            <div class="sig-title">Trưởng Bộ Phận / Điều Hành</div>
+                            <div>(Ký & ghi rõ họ tên)</div>
+                        </div>
+                        <div class="sig-box">
+                            <div class="sig-title">Ban Giám Đốc Phê Duyệt</div>
+                            <div>(Ký & đóng dấu)</div>
+                        </div>
                     </div>
-                    <div class="sig-box">
-                        <div class="sig-title">Trưởng Bộ Phận / Điều Hành</div>
-                        <div>(Ký & ghi rõ họ tên)</div>
-                    </div>
-                    <div class="sig-box">
-                        <div class="sig-title">Ban Giám Đốc Phê Duyệt</div>
-                        <div>(Ký & đóng dấu)</div>
+
+                    <div class="footer-note">
+                        <span>* Hồ sơ nhân sự lưu hành nội bộ, bảo mật thông tin theo quy định doanh nghiệp.</span>
+                        <span>BIM Logistics Platform • Hotline: 0965.559.561</span>
                     </div>
                 </div>
             </body>

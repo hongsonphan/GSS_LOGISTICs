@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.43] - 2026-10-11 (Chuẩn Hóa Hoàn Toàn Lề Bản In Khổ A4 [Top, Bottom, Left, Right] & Bổ Sung Khung .print-sheet Chuẩn Nghị Định 30/2020/NĐ-CP)
+
+### 1. Chuẩn Hóa Lề Trang In (Print Margins Standard):
+- **Khắc phục triệt để hiện tượng Header/Bản in dính sát mép trên cùng (Top = 0mm) và đâm sát hai bên:**
+  * Bổ sung container `.print-sheet` bao bọc toàn bộ nội dung bản in với kích thước tối đa chuẩn A4 (`max-width: 175mm`) và khoảng đệm bảo vệ an toàn (`padding: 10mm 4mm 12mm 4mm` ở chế độ thường, `padding: 8mm 2mm 10mm 2mm` trong `@media print`).
+  * Cấu hình `@page { size: A4 portrait; margin: 15mm 18mm 15mm 18mm; }` kết hợp padding giúp bản in luôn duy trì khoảng cách lề trên ~18mm, lề trái 20mm, lề phải 20mm, lề dưới 18mm bất kể người dùng chọn chế độ lề **Default** hay **None/Tối thiểu** trong hộp thoại Print Preview của trình duyệt.
+- **Tối ưu hóa bố cục thị giác (Visual Vertical Distribution):**
+  * Tăng padding các ô bảng thông tin (`padding: 8px 12px`) giúp các dòng dữ liệu thông thoáng, dễ đọc, không bị co cụm chật chội.
+  * Tăng khoảng cách tiêu đề và header (`margin: 16px 0 24px 0`).
+  * Khung chữ ký 3 bên giãn cách chuẩn mực (`margin-top: 50px`, khoảng trống ký `margin-bottom: 75px`), lấp đầy trang giấy hài hòa và cân đối.
+  * Bổ sung dòng ghi chú pháp lý chân trang (`.footer-note`): `* Phiếu tiếp nhận vận tải là căn cứ điều phối và đối chiếu giao nhận hàng hóa. • BIM Logistics Platform • Hotline: 0965.559.561`.
+- **Áp dụng đồng bộ:**
+  * Phiếu Tiếp Nhận Đơn Hàng Vận Tải / Booking (`openDirectPrintBooking`).
+  * Phiếu Theo Dõi & Xác Nhận Thủ Tục Hải Quan (`openDirectPrintCustoms`).
+  * Sơ Yếu Hồ Sơ Cán Bộ / Tài Xế Doanh Nghiệp (`openDirectPrintEmployee`).
+  * Đồng bộ với Báo Giá (`#quotation-printable-area`) và Sổ Quỹ (`#cash-voucher-printable-area`).
+
 ## [2.9.42] - 2026-10-11 (Chuẩn Hóa Button Design System: Nền Trong Suốt / Viền Màu Chuẩn -> Hover Hiển Thị Full Màu Solid Toàn Hệ Thống)
 
 ### 1. Chuẩn Hóa Thiết Kế Button Toàn Hệ Thống (Button Design System):
