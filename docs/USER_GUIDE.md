@@ -2,7 +2,7 @@
 ## Quy Trình Vận Hành Tiêu Chuẩn & Cẩm Nang Thao Tác Cầm Tay Chỉ Việc
 
 > **Đơn vị ban hành:** Công ty TNHH Vận Tải Triền Võ (BIM Logistics Platform)  
-> **Phiên bản tài liệu:** v2.9.48 | **Tra cứu trực tuyến:** `https://logistics.bim.info.vn/helps`  
+> **Phiên bản tài liệu:** v2.9.49 | **Tra cứu trực tuyến:** `https://logistics.bim.info.vn/helps`  
 > **Tổng đài hỗ trợ 24/7:** 0965.559.561 | **Email:** support@trienvo.com  
 
 ---
@@ -26,13 +26,20 @@
   - [6. Phân Hệ Tài Chính, Tạm Ứng & Sổ Quỹ (Accounting & Cash Flow)](#6-phân-hệ-tài-chính-tạm-ứng--sổ-quỹ-accounting--cash-flow)
   - [7. Phân Hệ Thủ Tục Hải Quan Điện Tử (Customs Declaration)](#7-phân-hệ-thủ-tục-hải-quan-điện-tử-customs-declaration)
   - [8. Hệ Thống 14 Báo Cáo Thông Minh BI Vận Tải](#8-hệ-thống-14-báo-cáo-thông-minh-bi-vận-tải)
-- [PHẦN II: HƯỚNG DẪN CÀI ĐẶT DANH MỤC GỐC (MASTER DATA)](#phần-ii-hướng-dẫn-cài-đặt-danh-mục-gốc-master-data)
-  - [1. Tạo Mới Khách Hàng (Customer)](#1-tạo-mới-khách-hàng-customer)
-  - [2. Cài Đặt Địa Điểm Cảng, Depot & Kho Hàng (Locations)](#2-cài-đặt-địa-điểm-cảng-depot--kho-hàng-locations)
-  - [3. Cài Đặt Danh Mục Hãng Tàu (Shipping Lines)](#3-cài-đặt-danh-mục-hãng-tàu-shipping-lines)
-  - [4. Cài Đặt Khoản Mục Chi Phí Vận Tải (Expense Catalog)](#4-cài-đặt-khoản-mục-chi-phí-vận-tải-expense-catalog)
-  - [5. Cài Đặt Biểu Cước Lương Chuyến Theo Tuyến Đường (Route Payroll Rates)](#5-cài-đặt-biểu-cước-lương-chuyến-theo-tuyến-đường-route-payroll-rates)
-  - [6. Hồ Sơ Doanh Nghiệp & Tài Khoản Ngân Hàng Thụ Hưởng (Company Profile)](#6-hồ-sơ-doanh-nghiệp--tài-khoản-ngân-hàng-thụ-hưởng-company-profile)
+- [PHẦN II: HƯỚNG DẪN CÀI ĐẶT 13 DANH MỤC GỐC (MASTER DATA)](#phần-ii-hướng-dẫn-cài-đặt-13-danh-mục-gốc-master-data)
+  - [1. Khai Báo Hệ Thống / Hồ Sơ Doanh Nghiệp (Company Profile)](#1-khai-báo-hệ-thống--hồ-sơ-doanh-nghiệp-company-profile)
+  - [2. Phân Quyền & Vai Trò Hệ Thống (Roles & Permissions)](#2-phân-quyền--vai-trò-hệ-thống-roles--permissions)
+  - [3. Biểu Phí Lương Chuyến Tài Xế (Driver Trip Tariffs)](#3-biểu-phí-lương-chuyến-tài-xế-driver-trip-tariffs)
+  - [4. Phụ Cấp Tuyến & Kiểm Hóa (Allowances & Inspection Tariffs)](#4-phụ-cấp-tuyến--kiểm-hóa-allowances--inspection-tariffs)
+  - [5. Cảng & Kho Bãi Địa Điểm (Locations / Seaports & Warehouses)](#5-cảng--kho-bãi-địa-điểm-locations--seaports--warehouses)
+  - [6. Biểu Cước Vận Chuyển Khách Hàng (Customer Freight Tariffs)](#6-biểu-cước-vận-chuyển-khách-hàng-customer-freight-tariffs)
+  - [7. Khách Hàng Doanh Nghiệp (Customers CRM)](#7-khách-hàng-doanh-nghiệp-customers-crm)
+  - [8. Hãng Tàu Biển (Shipping Lines)](#8-hãng-tàu-biển-shipping-lines)
+  - [9. Đầu Kéo & Xe Tải (Tractors & Trucks)](#9-đầu-kéo--xe-tải-tractors--trucks)
+  - [10. Rơ-Moóc Vận Tải (Semi-Trailers)](#10-rơ-moóc-vận-tải-semi-trailers)
+  - [11. Nhà Xe Thầu Phụ 3PL (Subcontractors / Partner Fleets)](#11-nhà-xe-thầu-phụ-3pl-subcontractors--partner-fleets)
+  - [12. Khoản Mục Chi Phí Vận Tải (Expense Catalog)](#12-khoản-mục-chi-phí-vận-tải-expense-catalog)
+  - [13. Quy Cách Vỏ Container & Thùng Xe (Container Specifications)](#13-quy-cách-vỏ-container--thùng-xe-container-specifications)
 - [PHẦN III: HƯỚNG DẪN THAO TÁC NHẬP LIỆU CHI TIẾT](#phần-iii-hướng-dẫn-thao-tác-nhập-liệu-chi-tiết)
   - [1. Dashboard Ban Giám Đốc](#1-dashboard-ban-giám-đốc)
   - [2. Phân Hệ Sale & Booking](#2-phân-hệ-sale--booking)
@@ -149,85 +156,195 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 
 ---
 
-# PHẦN II: HƯỚNG DẪN CÀI ĐẶT DANH MỤC GỐC (MASTER DATA)
-
-## 1. Tạo Mới Khách Hàng (Customer)
-
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`** (hoặc vào menu **`Sale & Booking`** ➔ tab **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`**).
-- **Các trường bắt buộc cần điền:**
-  * **Mã Khách Hàng (`*`):** Nhập mã viết tắt viết hoa không dấu (Ví dụ: `SAMSUNG`, `VINFAST`, `KH-001`). Mã không được trùng lặp.
-  * **Tên Doanh Nghiệp (`*`):** Nhập tên đầy đủ theo Giấy phép ĐKKD (Ví dụ: `CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM`).
-  * **Mã Số Thuế (`*`):** Nhập chính xác MST 10 hoặc 13 số để xuất hóa đơn điện tử hợp lệ.
-  * **Địa Chỉ Trụ Sở (`*`):** Nhập địa chỉ đăng ký kinh doanh in trên hóa đơn VAT.
-  * **Số Điện Thoại (`*`):** Số điện thoại liên lạc khi giao nhận hàng.
-  * **Người Liên Hệ:** Tên người phụ trách kho/kế toán khách hàng.
-  * **Kỳ Hạn Công Nợ:** Số ngày cho phép nợ (Ví dụ: 30 ngày).
-- **Hoàn tất:** Bấm nút **`Lưu`**.
+# PHẦN II: HƯỚNG DẪN CÀI ĐẶT 13 DANH MỤC GỐC (MASTER DATA)
 
 ---
 
-## 2. Cài Đặt Địa Điểm Cảng, Depot & Kho Hàng (Locations)
-
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Địa Điểm`** ➔ Bấm nút **`+ Thêm Địa Điểm Mới`**.
-- **Các trường bắt buộc cần điền:**
-  * **Mã Địa Điểm (`*`):** Mã viết hoa không dấu (Ví dụ: `CAT_LAI`, `ICD_TRANSIMEX`, `KCN_VSIP1`).
-  * **Tên Địa Điểm (`*`):** Tên đầy đủ (Ví dụ: `Cảng Cát Lái - Cổng C`, `Depot Tanamexco`).
-  * **Loại Địa Điểm (`*`):** Chọn `Cảng Biển (SEAPORT)`, `Depot Vỏ Rỗng (DEPOT)`, `Kho Khách Hàng (WAREHOUSE)` hoặc `Bãi Đỗ Xe (YARD)`.
-  * **Mã ICD / Cảng Vụ (`*`):** Nhập mã hải quan cảng (Ví dụ: `VNSGN`).
-  * **Địa Chỉ Chi Tiết (`*`):** Địa chỉ số nhà, đường, quận/huyện để tài xế định vị.
-- **Hoàn tất:** Bấm nút **`Lưu`**.
-
----
-
-## 3. Cài Đặt Danh Mục Hãng Tàu (Shipping Lines)
-
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Hãng Tàu`** ➔ Bấm nút **`+ Thêm Hãng Tàu Mới`**.
-- **Các trường bắt buộc cần điền:**
-  * **Mã Hãng Tàu (`*`):** Nhập mã chuẩn quốc tế (Ví dụ: `MAEU`, `ONE`, `COSCO`, `EVERGREEN`, `CMA`, `SITC`...).
-  * **Tên Hãng Tàu (`*`):** Tên đầy đủ (Ví dụ: `Hãng Tàu ONE Lines Việt Nam`).
-  * **Cổng Tra Cứu eDO:** Đường dẫn website tra cứu lệnh giao nhận cont điện tử.
-  * **Số Ngày Free-Time Mặc Định:** Số ngày miễn phí lưu bãi/cont (mặc định 7 hoặc 14 ngày).
-- **Hoàn tất:** Bấm nút **`Lưu`**.
+## 1. Khai Báo Hệ Thống / Hồ Sơ Doanh Nghiệp (Company Profile)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Hồ Sơ Doanh Nghiệp`** (hoặc mở modal qua Cài đặt Hệ thống).
+- **Mục đích:** Thiết lập thông tin pháp nhân đơn vị vận tải xuất hiện trên báo giá, lệnh vận chuyển và phiếu thu chi.
+- **Các trường thông tin chi tiết:**
+  * **Tên Công Ty (`*`):** Tên đầy đủ theo ĐKKD (Ví dụ: `CÔNG TY TNHH VẬN TẢI TRIỀN VÕ`).
+  * **Mã Số Thuế (`*`):** MST 10 hoặc 13 số phục vụ kê khai và xuất hóa đơn VAT.
+  * **Địa Chỉ Trụ Sở (`*`):** Địa chỉ pháp lý ghi nhận trên hóa đơn và chứng từ hợp đồng.
+  * **Số Điện Thoại Trụ Sở (`*`):** Hotline liên hệ tổng đài điều hành (Ví dụ: `0965.559.561`).
+  * **Email Doanh Nghiệp (`*`):** Hòm thư tiếp nhận booking và đối soát nợ cước.
+  * **Số Tài Khoản Ngân Hàng Thụ Hưởng (`*`):** Số tài khoản ngân hàng chính thức nhận tiền cước.
+  * **Tên Ngân Hàng & Chi Nhánh (`*`):** Ngân hàng mở tài khoản thụ hưởng.
+  * **Họ Tên Người Đại Diện Pháp Luật (`*`):** Họ tên Giám đốc/Tổng Giám đốc ký duyệt văn bản.
+- **Thao tác lưu:** Nhập đầy đủ thông tin các trường có dấu `*` ➔ Bấm nút **`Lưu`**.
 
 ---
 
-## 4. Cài Đặt Khoản Mục Chi Phí Vận Tải (Expense Catalog)
-
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khoản Mục Chi Phí`** ➔ Bấm nút **`+ Thêm Khoản Mục Chi Phí`**.
-- **Các trường bắt buộc cần điền:**
-  * **Mã Khoản Chi (`*`):** Mã kỹ thuật (Ví dụ: `LIFT_ON`, `LIFT_OFF`, `TOLL_FEE`, `CONTAINER_DEPOSIT`, `WEIGHING`).
-  * **Tên Khoản Mục (`*`):** Tên hiển thị (Ví dụ: `Phí nâng vỏ cont rỗng`, `Vé cầu đường BOT`).
-  * **Nhóm Chi Phí (`*`):** Chọn Nâng hạ cảng, Cầu đường, Chi hộ, Nhiên liệu...
-  * **Định Mức Mặc Định (VNĐ):** Mức tiền tiêu chuẩn tự động điền khi tạo lệnh.
-  * **Yêu Cầu HĐĐT (VAT):** Đánh dấu Có/Không để kiểm soát hóa đơn khi duyệt chi.
-- **Hoàn tất:** Bấm nút **`Lưu`**.
+## 2. Phân Quyền & Vai Trò Hệ Thống (Roles & Permissions)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Phân Quyền & Vai Trò`** ➔ Bấm nút **`+ Thêm Nhóm Quyền`**.
+- **Mục đích:** Khởi tạo nhóm quyền chức vụ hoặc cấp tài khoản người dùng tương ứng với vị trí làm việc.
+- **Các trường thông tin chi tiết:**
+  * **Mã Vai Trò (`*`):** Mã viết hoa không dấu (Ví dụ: `DIRECTOR`, `DISPATCHER`, `ACCOUNTANT`, `SALESMAN`, `MECHANIC`, `DRIVER`).
+  * **Tên Vai Trò / Chức Danh (`*`):** Tên chức danh tiếng Việt (Ví dụ: `Điều Phối Viên Chuyến Xe`).
+  * **Phạm Vi Truy Cập Phân Hệ (`*`):** Đánh dấu các phân hệ cho phép: Dashboard, Sale, Điều Vận, Kế Toán, Đội Xe, Báo Cáo.
+  * **Quyền Hạn Thao Tác Chi Tiết (`*`):** Xem, Thêm mới, Sửa, Xóa (Soft-delete), Duyệt báo giá, Quyết toán sổ quỹ.
+  * **Ghi Chú Trách Nhiệm:** Mô tả nhiệm vụ và phạm vi ràng buộc trách nhiệm pháp lý.
+- **Thao tác lưu:** Tích chọn các quyền hợp lệ ➔ Bấm nút **`Lưu`**.
 
 ---
 
-## 5. Cài Đặt Biểu Cước Lương Chuyến Theo Tuyến Đường (Route Payroll Rates)
-
+## 3. Biểu Phí Lương Chuyến Tài Xế (Driver Trip Tariffs)
 - **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Biểu Phí Lương Tuyến`** ➔ Bấm nút **`+ Thêm Tuyến Lương Mới`**.
-- **Các trường bắt buộc cần điền:**
-  * **Tên Tuyến Đường (`*`):** Lộ trình (Ví dụ: `Cảng Cát Lái ➔ KCN VSIP 1`).
-  * **Quy Cách Cont (`*`):** Chọn `20DC` hoặc `40HC`.
-  * **Mức Lương Khoán Cho Bác Tài (`*`) (VNĐ):** Tiền lương chuyến trả cho tài xế (Ví dụ: `450.000 đ`).
-  * **Định Mức Vé BOT (VNĐ):** Tiền vé cầu đường BOT định mức (Ví dụ: `200.000 đ`).
-  * **Định Mức Dầu DO (Lít):** Định mức tiêu hao dầu (Ví dụ: `40 lít`).
-- **Hoàn tất:** Bấm nút **`Lưu`**.
+- **Mục đích:** Cấu hình mức lương khoán trả cho bác tài theo từng cung đường và loại vỏ cont 20ft/40ft.
+- **Các trường thông tin chi tiết:**
+  * **Tên Tuyến Đường Vận Tải (`*`):** Lộ trình chi tiết (Ví dụ: `Cảng Cát Lái ➔ KCN VSIP 1 (Bình Dương)`).
+  * **Quy Cách Container (`*`):** Chọn loại vỏ `20DC`, `40HC`, `45HC` hoặc `Hàng Rời FTL`.
+  * **Mức Lương Khoán Chuyến (`*`) (VNĐ):** Tiền lương chuyến tài xế hưởng khi hoàn thành (Ví dụ: `450.000 đ`).
+  * **Định Mức Chi Phí Cầu Đường BOT (VNĐ):** Tiền vé trạm thu phí định mức cho phép tài xế chi trả.
+  * **Định Mức Dầu Diesel Tiêu Hao (Lít):** Số lít dầu quy định cho toàn bộ vòng quay chuyến xe.
+  * **Mức Phụ Cấp Qua Đêm (VNĐ):** Khoản phụ cấp lưu bãi/chờ dỡ hàng qua đêm nếu có phát sinh.
+- **Thao tác lưu:** Điền đầy đủ định mức ➔ Bấm nút **`Lưu`**.
 
 ---
 
-## 6. Hồ Sơ Doanh Nghiệp & Tài Khoản Ngân Hàng Thụ Hưởng (Company Profile)
+## 4. Phụ Cấp Tuyến & Kiểm Hóa (Allowances & Inspection Tariffs)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Phụ Cấp & Kiểm Hóa`** ➔ Bấm nút **`+ Thêm Mức Phụ Cấp`**.
+- **Mục đích:** Thiết lập các khoản bồi dưỡng ngoài giờ, phụ cấp lưu ca, nâng hạ khó và phí kiểm hóa hải quan.
+- **Các trường thông tin chi tiết:**
+  * **Mã Phụ Cấp (`*`):** Mã viết tắt (Ví dụ: `KIEM_HOA_DO`, `LUU_CA_KHO`, `VE_SINH_CONT`, `CAI_CONG_DAP`).
+  * **Tên Khoản Phụ Cấp (`*`):** Tên đầy đủ (Ví dụ: `Bồi dưỡng kiểm hóa cont luồng đỏ tại bãi kiểm`).
+  * **Loại Phụ Cấp (`*`):** Chọn `Kiểm hóa hải quan`, `Chờ dỡ hàng ngoài giờ`, `Cược bãi cont` hoặc `Phụ phí cung đường xấu`.
+  * **Số Tiền Phụ Cấp Định Mức (`*`) (VNĐ):** Mức chi tiêu chuẩn theo quy chế công ty (Ví dụ: `300.000 đ`).
+  * **Yêu Cầu Chứng Từ / Biên Bản Đính Kèm:** Đánh dấu Bắt buộc/Không bắt buộc phải có ảnh biên lai chụp kèm.
+- **Thao tác lưu:** Điền thông tin chuẩn ➔ Bấm nút **`Lưu`**.
 
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Hồ Sơ Doanh Nghiệp`**.
-- **Các trường bắt buộc cần điền:**
-  * **Tên Doanh Nghiệp (`*`):** `CÔNG TY TNHH VẬN TẢI TRIỀN VÕ`.
-  * **Mã Số Thuế (`*`):** Nhập MST doanh nghiệp in trên báo giá và phiếu thu/chi.
-  * **Địa Chỉ Trụ Sở (`*`):** Địa chỉ văn phòng công ty.
-  * **Số Điện Thoại (*) & Email (*):** Thông tin CSKH in trên bản in hợp đồng.
-  * **Số Tài Khoản Ngân Hàng Thụ Hưởng (`*`):** STK nhận thanh toán cước từ khách hàng.
-  * **Tên Ngân Hàng & Chi Nhánh (`*`):** Ví dụ: `Vietcombank - CN Nam Sài Gòn`.
-- **Hoàn tất:** Bấm nút **`Lưu`**.
+---
+
+## 5. Cảng & Kho Bãi Địa Điểm (Locations / Seaports & Warehouses)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Địa Điểm`** ➔ Bấm nút **`+ Thêm Địa Điểm Mới`**.
+- **Mục đích:** Lưu danh bạ cảng biển, ICD, depot cấp/trả vỏ rỗng, kho đóng hàng và bãi đỗ xe công ty.
+- **Các trường thông tin chi tiết:**
+  * **Mã Địa Điểm (`*`):** Mã viết hoa không dấu (Ví dụ: `CAT_LAI`, `VICT`, `ICD_TRANSIMEX`, `DEPOT_TANAMEXCO`, `KCN_VSIP1`).
+  * **Tên Địa Điểm / Cảng / Kho (`*`):** Tên gọi nhận diện (Ví dụ: `Cảng Cát Lái - Cổng C`).
+  * **Phân Loại Địa Điểm (`*`):** Chọn `Cảng Biển (SEAPORT)`, `Depot Vỏ Rỗng (DEPOT)`, `Kho Khách Hàng (WAREHOUSE)`, hoặc `Bãi Đỗ Xe (YARD)`.
+  * **Mã ICD / Cảng Vụ Hải Quan (`*`):** Mã VNACCS của cảng (Ví dụ: `VNSGN`).
+  * **Địa Chỉ Chi Tiết (`*`):** Số nhà, đường, xã/phường, quận/huyện để định vị trên Google Maps.
+  * **Tọa Độ GPS (Vĩ độ, Kinh độ):** Tọa độ địa lý dùng cho hệ thống tự động nhận diện mốc geofence xe ra/vào.
+  * **Số Điện Thoại Điều Phối Bãi:** Hotline liên hệ bộ phận giao nhận tại cảng hoặc thủ kho.
+- **Thao tác lưu:** Nhập chính xác các thông tin ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 6. Biểu Cước Vận Chuyển Khách Hàng (Customer Freight Tariffs)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Biểu Cước Khách Hàng`** ➔ Bấm nút **`+ Thêm Tuyến Cước`**.
+- **Mục đích:** Thiết lập bảng giá cước chuẩn áp dụng cho từng đối tác khách hàng theo hợp đồng nguyên tắc.
+- **Các trường thông tin chi tiết:**
+  * **Khách Hàng Áp Dụng (`*`):** Chọn tên doanh nghiệp khách hàng từ danh bạ.
+  * **Cặp Lộ Trình Tuyến Đường (`*`):** Điểm đi ➔ Điểm đến (Ví dụ: `Cảng Cát Lái ➔ KCN Amata Đồng Nai`).
+  * **Loại Vỏ Container (`*`):** `20DC`, `40HC`, `45HC` hoặc `Xe Tải Thùng`.
+  * **Đơn Giá Cước Vận Chuyển Chưa VAT (`*`) (VNĐ):** Mức cước bán cho khách hàng (Ví dụ: `3.200.000 đ`).
+  * **Thuế Suất VAT (`*`):** Thuế suất áp dụng (0%, 8%, 10%).
+  * **Ngày Bắt Đầu Áp Dụng (`*`) & Ngày Hết Hạn (`*`):** Thời hạn hiệu lực của bảng cước theo hợp đồng.
+  * **Cơ Chế Bù Trừ Nhiên Liệu:** Quy định tăng/giảm cước khi giá dầu DO 0.05S thị trường biến động quá 10%.
+- **Thao tác lưu:** Điền đầy đủ thỏa thuận thương mại ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 7. Khách Hàng Doanh Nghiệp (Customers CRM)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`**.
+- **Mục đích:** Quản lý hồ sơ đối tác chủ hàng, nhà máy xuất nhập khẩu và các công ty logistics giao dịch.
+- **Các trường thông tin chi tiết:**
+  * **Mã Khách Hàng (`*`):** Mã viết tắt viết hoa không dấu (Ví dụ: `SAMSUNG`, `VINFAST`, `THP_GROUP`).
+  * **Tên Doanh Nghiệp Đầy Đủ (`*`):** Tên công ty pháp lý (Ví dụ: `CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM`).
+  * **Mã Số Thuế (`*`):** MST 10 hoặc 13 số bắt buộc để phục vụ xuất hóa đơn điện tử hợp lệ.
+  * **Địa Chỉ Trụ Sở Doanh Nghiệp (`*`):** Địa chỉ ghi trên giấy phép ĐKKD.
+  * **Số Điện Thoại Liên Lạc (`*`):** Số điện thoại người đại diện hoặc phòng XNK.
+  * **Email Nhận Hóa Đơn VAT (`*`):** Email hòm thư kế toán nhận hóa đơn cước vận tải.
+  * **Người Phụ Trách Giao Nhận:** Tên và số điện thoại quản lý kho hàng bên khách.
+  * **Hạn Mức Công Nợ (VNĐ):** Số tiền tối đa khách được phép nợ gối đầu.
+  * **Thời Hạn Cho Phép Nợ (Ngày):** Số ngày được thanh toán chậm (Ví dụ: 30 ngày, 45 ngày).
+- **Thao tác lưu:** Kiểm tra kỹ mã số thuế ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 8. Hãng Tàu Biển (Shipping Lines)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Hãng Tàu`** ➔ Bấm nút **`+ Thêm Hãng Tàu Mới`**.
+- **Mục đích:** Danh mục các hãng vận tải container đường biển phát hành booking và vỏ cont.
+- **Các trường thông tin chi tiết:**
+  * **Mã Hãng Tàu Chuẩn Quốc Tế (`*`):** Mã định danh SCAC 4 chữ cái (Ví dụ: `MAEU`, `ONE`, `COSCO`, `EVER`, `CMA`, `MSKU`, `SITC`).
+  * **Tên Hãng Tàu Đầy Đủ (`*`):** Tên thương mại (Ví dụ: `Ocean Network Express (ONE Lines)`).
+  * **Cổng Tra Cứu Lệnh Giao Vỏ (eDO URL):** Địa chỉ website tra cứu lệnh giao nhận điện tử.
+  * **Số Ngày Free-Time Mặc Định (Ngày):** Số ngày miễn phí lưu bãi/lưu vỏ DET/DEM tiêu chuẩn (Ví dụ: 7 hoặc 14 ngày).
+  * **Quy Trình Cược Cont & Hạ Bãi:** Ghi chú các điều kiện cược tiền vỏ, vệ sinh cont trước khi trả về depot.
+- **Thao tác lưu:** Điền chính xác mã hãng tàu ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 9. Đầu Kéo & Xe Tải (Tractors & Trucks)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Đầu Kéo & Xe Tải`** ➔ Bấm nút **`+ Thêm Xe Mới`**.
+- **Mục đích:** Quản lý đội phương tiện đầu kéo container, xe tải thùng chở hàng thuộc đội xe nhà hoặc thuê ngoài.
+- **Các trường thông tin chi tiết:**
+  * **Biển Số Xe (`*`):** Nhập biển số đúng định dạng (Ví dụ: `51C-123.45`, `50H-987.65`).
+  * **Loại Phương Tiện (`*`):** Chọn `Đầu Kéo Container (TRACTOR)` hoặc `Xe Tải Thùng (TRUCK)`.
+  * **Hình Thức Sở Hữu (`*`):** Chọn `Xe Công Ty (OWNED)` hoặc `Xe Thuê Ngoài / Thầu Phụ (SUBCONTRACTOR)`.
+  * **Nhãn Hiệu & Năm Sản Xuất (`*`):** Hãng sản xuất (Ví dụ: `Freightliner Cascadia 2021`, `Hyundai HD1000`).
+  * **Hạn Đăng Kiểm Phương Tiện (`*`):** Ngày hết hạn sổ kiểm định an toàn kỹ thuật (Hệ thống tự báo đỏ khi <= 15 ngày).
+  * **Hạn Bảo Hiểm Bắt Buộc TNDS (`*`):** Ngày hết hạn bảo hiểm trách nhiệm dân sự xe cơ giới.
+  * **Tài Xế Mặc Định Gắn Xe:** Chỉ định tài xế thường trực điều khiển phương tiện này.
+  * **Số Thẻ Thu Phí VETC/ePass:** Mã tài khoản dán kính để nạp tiền qua trạm BOT tự động.
+- **Thao tác lưu:** Điền đầy đủ hạn đăng kiểm ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 10. Rơ-Moóc Vận Tải (Semi-Trailers)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Rơ-Moóc`** ➔ Bấm nút **`+ Thêm Rơ-Moóc Mới`**.
+- **Mục đích:** Quản lý danh mục rơ-moóc xương, moóc sàn, moóc cổ cò phục vụ chở container 20ft, 40ft, 45ft.
+- **Các trường thông tin chi tiết:**
+  * **Biển Số Rơ-Moóc (`*`):** Biển số moóc (Ví dụ: `51R-098.76`, `50R-123.45`).
+  * **Loại Rơ-Moóc (`*`):** Chọn `Moóc Xương 40ft (SKELETON_40)`, `Moóc Cổ Cò 40ft (GOOSENECK)`, `Moóc Xương 20ft 3 Trục (SKELETON_20)`, `Moóc Sàn 45ft (FLATBED)`.
+  * **Tải Trọng Cho Phép Chở Khối Lượng Hàng (`*`) (Tấn):** Trọng lượng tối đa được phép kéo theo đăng kiểm (Ví dụ: `31.5 tấn`).
+  * **Hạn Đăng Kiểm Rơ-Moóc (`*`):** Ngày hết hạn kiểm định moóc (Cảnh báo trước 15 ngày).
+  * **Số Lượng Trục & Tình Trạng Lốp:** Ghi chú 2 trục / 3 trục và thông số vỏ lốp an toàn.
+  * **Bãi Đậu Xe Thường Trực:** Bãi đỗ xe hoặc kho depot tập kết rơ-moóc khi không ghép chuyến.
+- **Thao tác lưu:** Điền tải trọng và hạn kiểm định ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 11. Nhà Xe Thầu Phụ 3PL (Subcontractors / Partner Fleets)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Nhà Xe Thầu Phụ`** ➔ Bấm nút **`+ Thêm Thầu Phụ Mới`**.
+- **Mục đích:** Quản lý danh bạ các công ty xe bạn, đối tác vận tải vệ tinh thuê ngoài khi đội xe nội bộ quá tải.
+- **Các trường thông tin chi tiết:**
+  * **Mã Nhà Xe (`*`):** Mã viết tắt (Ví dụ: `XE_HOANG_LONG`, `3PL_MINH_TRI`, `THAU_TRUONG_HAI`).
+  * **Tên Công Ty / Hộ Kinh Doanh (`*`):** Tên đầy đủ đơn vị thầu phụ.
+  * **Mã Số Thuế (`*`):** Bắt buộc để đối soát hóa đơn VAT cước xe bạn chuyển vào.
+  * **Người Đại Diện & Hotline Điều Độ (`*`):** Số điện thoại liên hệ trực tiếp khi gán xe gấp.
+  * **Số Tài Khoản Ngân Hàng Thanh Toán (`*`):** STK nhận tiền cước chuyển khoản sau khi hoàn thành chuyến.
+  * **Tên Ngân Hàng Thụ Hưởng (`*`):** Ngân hàng của đơn vị thầu phụ.
+  * **Điều Khoản Thanh Toán Cước:** Thỏa thuận trả ngay sau khi giao POD gốc hoặc gối đầu theo tháng.
+- **Thao tác lưu:** Điền đầy đủ thông tin tài khoản ngân hàng ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 12. Khoản Mục Chi Phí Vận Tải (Expense Catalog)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khoản Mục Chi Phí`** ➔ Bấm nút **`+ Thêm Khoản Mục Chi Phí`**.
+- **Mục đích:** Danh mục các loại chi phí phát sinh trong hành trình chuyến xe phục vụ tính P&L và lập Debit Note chi hộ.
+- **Các trường thông tin chi tiết:**
+  * **Mã Khoản Mục (`*`):** Mã viết hoa chuẩn hóa (Ví dụ: `LIFT_ON`, `LIFT_OFF`, `TOLL_FEE`, `CONTAINER_DEPOSIT`, `WEIGHING`, `POLICE_FEE`, `REPAIR_EXPENSE`).
+  * **Tên Khoản Chi Phí (`*`):** Tên hiển thị (Ví dụ: `Phí nâng vỏ cont rỗng tại cảng`, `Vé cầu đường BOT`).
+  * **Phân Nhóm Chi Phí (`*`):** Chọn `Nâng Hạ Cảng / Depot`, `Cầu Đường BOT`, `Chi Hộ Khách Hàng`, `Nhiên Liệu Dầu Mỡ`, `Sửa Chữa Dọc Đường` hoặc `Chi Phí Khác`.
+  * **Định Mức Đơn Giá Tiêu Chuẩn (VNĐ):** Mức chi phí ước tính mặc định để tự động điền khi tạo lệnh.
+  * **Kiểm Soát Hóa Đơn VAT:** Đánh dấu Có/Không yêu cầu bắt buộc tài xế phải lấy hóa đơn điện tử hợp pháp.
+- **Thao tác lưu:** Phân loại nhóm chi phí chính xác ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 13. Quy Cách Vỏ Container & Thùng Xe (Container Specifications)
+- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Quy Cách Container`** ➔ Bấm nút **`+ Thêm Quy Cách Vỏ`**.
+- **Mục đích:** Định nghĩa kích thước, thể tích CBM, trọng lượng vỏ và tải trọng chở tối đa của các loại container.
+- **Các trường thông tin chi tiết:**
+  * **Mã Quy Cách ISO (`*`):** Mã chuẩn (Ví dụ: `20DC`, `40DC`, `40HC`, `45HC`, `20RF`, `40RF`, `FLAT_RACK`, `OPEN_TOP`).
+  * **Tên Diễn Giải Quy Cách (`*`):** Tên thường gọi (Ví dụ: `Container 40 Feet Cao (High Cube)`).
+  * **Chiều Dài x Rộng x Cao (Mét):** Kích thước lọt lòng thùng hàng.
+  * **Thể Tích Chứa Hàng Tiêu Chuẩn (CBM):** Thể tích tính bằng mét khối (Ví dụ: `20DC: 33 CBM`, `40HC: 76 CBM`).
+  * **Trọng Lượng Vỏ Không Tải Tare Weight (Tấn):** Cân nặng xác vỏ cont (Ví dụ: `40HC ~ 3.9 tấn`).
+  * **Khối Lượng Hàng Chở Tối Đa Payload (Tấn):** Tải trọng an toàn không vượt quá mức cho phép trên đường bộ.
+- **Thao tác lưu:** Điền các thông số kỹ thuật ➔ Bấm nút **`Lưu`**.
 
 ---
 

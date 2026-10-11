@@ -2,6 +2,38 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [2.9.49] - 2026-10-11 (Mục Lục Cây Phân Cấp Cha-Con-Cháu Có Ô Tìm Kiếm Nhanh & Đặc Tả Toàn Diện 13 Danh Mục Cài Đặt Master Data)
+
+### 1. Nâng Cấp Hệ Thống Mục Lục Sidebar Thành Cây Phân Cấp 3 Tầng (Hierarchical Accordion Tree):
+- **Cấu trúc Cây Cha - Con - Cháu tinh gọn và trực quan:**
+  * Cấp Cha (Root): 3 Phần lớn (I. Mô tả phân hệ & tính năng; II. Hướng dẫn cài đặt 13 danh mục gốc; III. Hướng dẫn thao tác nhập liệu chi tiết).
+  * Cấp Con (Branches): Các phân hệ nghiệp vụ và nhóm danh mục chức năng.
+  * Cấp Cháu (Leaves): Từng danh mục cụ thể hoặc từng quy trình tác nghiệp chi tiết (Báo giá, Booking, Lệnh điều xe, Cắt kéo, Cấp quỹ 2 cấp, Quyết toán xe bạn, Báo cáo A4...).
+  * Nút gập/mở (Chevron / Accordion Toggle) cho phép thu gọn/mở rộng từng nhánh linh hoạt, giữ menu luôn gọn gàng, tránh cuộn dài vô tận.
+- **Tích hợp Ô Tìm Kiếm Nhanh Mục Lục (Live Sidebar Search):**
+  * Ô nhập tìm kiếm `#sidebar-tree-search` cố định trên đầu menu bên trái.
+  * Cơ chế tìm kiếm tức thì theo thời gian thực (Real-time live filter): Khi gõ từ khóa (ví dụ: *báo giá*, *khách hàng*, *cắt kéo*, *tạm ứng*...), hệ thống tự động lọc danh sách và tự động mở bung (expand) tất cả các nhánh Cha - Con chứa kết quả khớp.
+
+### 2. Đặc Tả Chi Tiết Đầy Đủ 13 Danh Mục Cài Đặt Gốc (Master Data Specification):
+- **Bổ sung và mô tả toàn diện 13 danh mục chuẩn theo thiết kế hệ thống:**
+  1. `company`: Khai Báo Hệ Thống / Hồ Sơ Doanh Nghiệp (Company Profile)
+  2. `roles_permissions`: Phân Quyền & Vai Trò Hệ Thống (Roles & Permissions)
+  3. `driver_tariffs`: Biểu Phí Lương Chuyến Tài Xế (Driver Trip Tariffs)
+  4. `allowances`: Phụ Cấp Tuyến & Kiểm Hóa (Allowances & Inspection Tariffs)
+  5. `locations`: Cảng & Kho Bãi Địa Điểm (Locations / Seaports & Warehouses)
+  6. `tariffs`: Biểu Cước Vận Chuyển Khách Hàng (Customer Freight Tariffs)
+  7. `customers`: Khách Hàng Doanh Nghiệp (Customers CRM)
+  8. `shipping_lines`: Hãng Tàu Biển (Shipping Lines)
+  9. `vehicles`: Đầu Kéo & Xe Tải (Tractors & Trucks)
+  10. `trailers`: Rơ-Moóc Vận Tải (Semi-Trailers)
+  11. `subcontractors`: Nhà Xe Thầu Phụ 3PL (Subcontractors / Partner Fleets)
+  12. `expenses`: Khoản Mục Chi Phí Vận Tải (Expense Catalog)
+  13. `containers`: Quy Cách Vỏ Container & Thùng Xe (Container Specifications)
+- **Chuẩn hóa trường bắt buộc & nút xác nhận:**
+  * Mỗi danh mục được mô tả chính xác: Nơi thực hiện ➔ Nút thao tác ➔ Mục đích ➔ Bảng trường dữ liệu chi tiết đánh dấu hoa thị đỏ `*` bắt buộc.
+  * Thống nhất 100% nút hoàn tất thao tác ghi nhận dữ liệu là chữ **`Lưu`**.
+  * Định dạng trình bày văn bản hành chính liền mạch A4 trang trọng, phục vụ in ấn PDF phát hành sổ tay nội bộ.
+
 ## [2.9.48] - 2026-10-11 (Tái Cấu Trúc Toàn Diện Trang /helps & Sổ Tay Hướng Dẫn Sang Chuẩn Văn Bản A4 Khép Kín 3 Phần Lớn)
 
 ### 1. Chuẩn Hóa Bố Cục Trang Tài Liệu A4 Liền Mạch (Continuous Document Standard):

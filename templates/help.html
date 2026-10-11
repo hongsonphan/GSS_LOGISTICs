@@ -4,53 +4,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
-    <title>Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng — BIM Logistics Platform</title>
-
-    <!-- Tailwind CSS CDN -->
+    <title>Sổ Tay Hướng Dẫn Vận Hành & Danh Mục | BIM Logistics Platform</title>
+    
+    <!-- Design Tokens & CSS Frameworks -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/static/images/logo_clean.png">
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        brand: {
-                            50: '#f0fdfa',
-                            100: '#ccfbf1',
-                            500: '#14b8a6',
-                            600: '#0d9488',
-                            700: '#0f766e',
-                            800: '#115e59',
-                            900: '#134e4a',
+                        teal: {
+                            50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4',
+                            400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e',
+                            800: '#115e59', 900: '#134e4a', 950: '#042f2e',
                         }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+                        heading: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        'xs': '0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08)',
                     }
                 }
             }
         }
     </script>
 
-    <!-- Phosphor Icons -->
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"/>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <style>
         body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #1e293b;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             background-color: #f8fafc;
-        }
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
+            color: #0f172a;
         }
         .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f5f9;
@@ -67,8 +61,12 @@
             color: #ffffff !important;
             font-weight: 700;
         }
-        .nav-link.active i {
+        .nav-link.active span.truncate {
             color: #ffffff !important;
+        }
+        .nav-link.active i, .nav-link.active span.rounded-full {
+            background-color: #ffffff !important;
+            color: #0d9488 !important;
         }
 
         /* Chế độ hiển thị dạng trang tài liệu / Sổ tay A4 chuẩn mực */
@@ -96,6 +94,17 @@
             border-bottom: none;
             padding-bottom: 0;
             margin-bottom: 0;
+        }
+
+        /* Tree navigation styling */
+        .tree-header:hover {
+            background-color: #f1f5f9;
+        }
+        .tree-arrow {
+            transition: transform 0.2s ease;
+        }
+        .tree-arrow.rotated {
+            transform: rotate(-90deg);
         }
 
         @media print {
@@ -140,7 +149,7 @@
             <!-- Global Live Search -->
             <div class="flex-1 max-w-md mx-2 relative">
                 <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                <input type="text" id="help-search-input" oninput="filterHelpTopics()" placeholder="Tìm kiếm phân hệ, tính năng, tên trường dữ liệu..." 
+                <input type="text" id="help-search-input" oninput="filterHelpTopics()" placeholder="Tìm kiếm nội dung tài liệu..." 
                     class="w-full pl-9 pr-9 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-2xs">
                 <button type="button" id="help-clear-btn" onclick="clearHelpSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     <i class="ph-bold ph-x-circle text-sm"></i>
@@ -162,33 +171,19 @@
     </header>
 
     <!-- HERO BANNER -->
-    <section class="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white py-10 px-4 sm:px-6 lg:px-8 border-b border-teal-950 no-print">
+    <section class="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white py-8 px-4 sm:px-6 lg:px-8 border-b border-teal-950 no-print">
         <div class="max-w-7xl mx-auto">
             <div class="max-w-3xl">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 text-teal-200 text-xs font-bold mb-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 text-teal-200 text-xs font-bold mb-2.5">
                     <i class="ph-bold ph-book-open"></i>
-                    <span>Sổ Tay Hướng Dẫn Vận Hành Hệ Thống Tiêu Chuẩn Doanh Nghiệp</span>
+                    <span>Sổ Tay Hướng Dẫn Vận Hành & Khai Báo 13 Danh Mục Tiêu Chuẩn</span>
                 </div>
                 <h2 class="text-2xl sm:text-3xl font-black tracking-tight font-heading">
                     Hướng Dẫn Sử Dụng Toàn Diện Nền Tảng BIM Logistics (TMS)
                 </h2>
-                <p class="mt-2 text-sm text-teal-100/90 leading-relaxed font-medium">
-                    Tài liệu chuẩn hóa quy trình điều vận, quản lý chi phí, tạm ứng, quyết toán chuyến xe, quản trị đội xe và báo cáo BI thông minh. Tra cứu chi tiết từng trường dữ liệu và quy tắc vận hành tại chỗ.
+                <p class="mt-1.5 text-xs sm:text-sm text-teal-100/90 leading-relaxed font-medium">
+                    Tài liệu chuẩn hóa quy trình điều vận, thiết lập 13 danh mục nền tảng, quản lý tạm ứng, quyết toán chuyến xe và khai thác 14 báo cáo BI.
                 </p>
-                <div class="mt-4 flex flex-wrap gap-2 text-xs">
-                    <span class="px-2.5 py-1 rounded-lg bg-white/10 text-teal-100 border border-white/10 flex items-center gap-1">
-                        <i class="ph-bold ph-shield-check text-emerald-400"></i> 13 Phân hệ Nghiệp vụ
-                    </span>
-                    <span class="px-2.5 py-1 rounded-lg bg-white/10 text-teal-100 border border-white/10 flex items-center gap-1">
-                        <i class="ph-bold ph-database text-teal-300"></i> Tra cứu 100+ Trường Dữ Liệu
-                    </span>
-                    <span class="px-2.5 py-1 rounded-lg bg-white/10 text-teal-100 border border-white/10 flex items-center gap-1">
-                        <i class="ph-bold ph-chart-bar text-amber-300"></i> 14 Báo cáo BI Vận Tải
-                    </span>
-                    <span class="px-2.5 py-1 rounded-lg bg-white/10 text-teal-100 border border-white/10 flex items-center gap-1">
-                        <i class="ph-bold ph-lock-key text-rose-300"></i> An toàn Dữ liệu Soft-Delete
-                    </span>
-                </div>
             </div>
         </div>
     </section>
@@ -196,102 +191,264 @@
     <!-- MAIN WRAPPER -->
     <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-8">
         
-        <!-- SIDEBAR NAVIGATION (STICKY TOC) -->
-        <aside class="w-64 shrink-0 hidden lg:block no-print">
-            <div class="sticky top-24 space-y-4">
-                <div class="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-2xs">
-                    <div class="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2.5 px-2.5 flex items-center justify-between">
-                        <span>Danh Mục Phân Hệ</span>
-                        <i class="ph-bold ph-list"></i>
+        <!-- SIDEBAR NAVIGATION (STICKY TOC - HIERARCHICAL TREE CHA - CON - CHÁU) -->
+        <aside class="w-72 shrink-0 hidden lg:block no-print select-none">
+            <div class="sticky top-20 space-y-3">
+                <div class="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs">
+                    
+                    <!-- Header Sidebar & Ô Tìm Kiếm Nhanh Mục Lục -->
+                    <div class="mb-2.5 px-1">
+                        <div class="flex items-center justify-between text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                            <span class="flex items-center gap-1.5">
+                                <i class="ph-bold ph-tree-structure text-teal-700 text-xs"></i>
+                                <span>Cây Mục Lục Phân Cấp</span>
+                            </span>
+                            <span class="text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded font-mono font-bold" id="tree-count-badge">3 Cấp</span>
+                        </div>
+                        
+                        <!-- Ô Nhập Nội Dung Tìm Kiếm Mục Lục -->
+                        <div class="relative">
+                            <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="sidebar-tree-search" oninput="filterSidebarTree()" placeholder="Tìm nhanh danh mục, phân hệ..."
+                                   class="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-teal-600 transition-all shadow-2xs">
+                            <button type="button" id="sidebar-tree-clear" onclick="clearSidebarTreeSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="ph-bold ph-x text-xs"></i>
+                            </button>
+                        </div>
                     </div>
-                    <nav class="space-y-1 text-xs" id="help-nav-list">
-                        <!-- PHẦN I -->
-                        <div class="pt-1 pb-1 px-2 text-[10px] font-black uppercase text-teal-800 tracking-wider">
-                            I. Mô Tả Phân Hệ & Tính Năng
-                        </div>
-                        <a href="#sec-overview" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
-                            <i class="ph-bold ph-squares-four text-xs text-teal-700 shrink-0"></i>
-                            <span class="truncate">1. Nền Tảng & Phân Quyền</span>
-                        </a>
-                        <a href="#sec-dashboard" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
-                            <i class="ph-bold ph-chart-line-up text-xs text-teal-700 shrink-0"></i>
-                            <span class="truncate">2. Dashboard Ban Giám Đốc</span>
-                        </a>
-                        <a href="#sec-sales" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
-                            <i class="ph-bold ph-handshake text-xs text-teal-700 shrink-0"></i>
-                            <span class="truncate">3. Sale & Booking</span>
-                        </a>
-                        <a href="#sec-dispatch" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
-                            <i class="ph-bold ph-truck text-xs text-teal-700 shrink-0"></i>
-                            <span class="truncate">4. Điều Vận & Chuyến Xe</span>
-                        </a>
-                        <a href="#sec-fleet" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
-                            <i class="ph-bold ph-garage text-xs text-teal-700 shrink-0"></i>
-                            <span class="truncate">5. Đội Xe, Bãi & Nhân Sự</span>
-                        </a>
-                        <a href="#sec-accounting" class="nav-link flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
-                            <i class="ph-bold ph-calculator text-xs text-teal-700 shrink-0"></i>
-                            <span class="truncate">6. Tài Chính, Tạm Ứng & Sổ Quỹ</span>
-                        </a>
-                        <a href="#sec-customs" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
-                            <i class="ph-bold ph-file-text text-xs text-teal-700 shrink-0"></i>
-                            <span class="truncate">7. Dịch Vụ Hải Quan</span>
-                        </a>
-                        <a href="#sec-reports" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold">
-                            <i class="ph-bold ph-chart-bar text-xs text-teal-700 shrink-0"></i>
-                            <span class="truncate">8. Hệ Thống 14 Báo Cáo BI</span>
-                        </a>
 
-                        <!-- PHẦN II -->
-                        <div class="pt-3 pb-1 px-2 text-[10px] font-black uppercase text-amber-800 tracking-wider">
-                            II. Hướng Dẫn Cài Đặt Danh Mục
+                    <!-- Danh Sách Cây Phân Cấp (Cha - Con - Cháu) -->
+                    <nav class="space-y-1 text-xs max-h-[calc(100vh-270px)] overflow-y-auto custom-scrollbar pr-1" id="help-tree-nav">
+                        
+                        <!-- ==================== CẤP CHA 1: PHẦN I ==================== -->
+                        <div class="tree-parent-group border-b border-slate-100 pb-2">
+                            <div class="tree-header flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-teal-900 group" onclick="toggleTreeGroup(this)">
+                                <div class="flex items-center gap-1.5 truncate">
+                                    <i class="ph-bold ph-squares-four text-xs text-teal-700 shrink-0"></i>
+                                    <span class="text-[11px] font-black uppercase tracking-tight">I. Mô Tả Phân Hệ (8 Mục)</span>
+                                </div>
+                                <i class="ph-bold ph-caret-down text-xs text-slate-400 transition-transform duration-200 tree-arrow"></i>
+                            </div>
+                            <div class="tree-children space-y-0.5 pl-3 mt-1">
+                                <a href="#sec-overview" class="nav-link flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                    <span class="truncate">1. Nền Tảng & Phân Quyền</span>
+                                </a>
+                                <a href="#sec-dashboard" class="nav-link flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                    <span class="truncate">2. Dashboard Ban Giám Đốc</span>
+                                </a>
+                                <a href="#sec-sales" class="nav-link flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                    <span class="truncate">3. Sale & Booking</span>
+                                </a>
+                                <a href="#sec-dispatch" class="nav-link flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                    <span class="truncate">4. Điều Vận & Chuyến Xe</span>
+                                </a>
+                                <a href="#sec-fleet" class="nav-link flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                    <span class="truncate">5. Đội Xe, Bãi & Nhân Sự</span>
+                                </a>
+                                <a href="#sec-accounting" class="nav-link flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                    <span class="truncate">6. Tài Chính & Sổ Quỹ</span>
+                                </a>
+                                <a href="#sec-customs" class="nav-link flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                    <span class="truncate">7. Dịch Vụ Hải Quan</span>
+                                </a>
+                                <a href="#sec-reports" class="nav-link flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                    <span class="truncate">8. Hệ Thống 14 Báo Cáo BI</span>
+                                </a>
+                            </div>
                         </div>
-                        <a href="#sec-master-data" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-semibold">
-                            <i class="ph-bold ph-folder-gear text-xs text-amber-700 shrink-0"></i>
-                            <span class="truncate">Cài Đặt 6 Danh Mục Gốc</span>
-                        </a>
 
-                        <!-- PHẦN III -->
-                        <div class="pt-3 pb-1 px-2 text-[10px] font-black uppercase text-emerald-800 tracking-wider">
-                            III. Thao Tác Nhập Liệu Chi Tiết
+                        <!-- ==================== CẤP CHA 2: PHẦN II (13 DANH MỤC GỐC) ==================== -->
+                        <div class="tree-parent-group border-b border-slate-100 py-2">
+                            <div class="tree-header flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-amber-900 group" onclick="toggleTreeGroup(this)">
+                                <div class="flex items-center gap-1.5 truncate">
+                                    <i class="ph-bold ph-folder-gear text-xs text-amber-700 shrink-0"></i>
+                                    <span class="text-[11px] font-black uppercase tracking-tight">II. Cài Đặt 13 Danh Mục</span>
+                                </div>
+                                <i class="ph-bold ph-caret-down text-xs text-slate-400 transition-transform duration-200 tree-arrow"></i>
+                            </div>
+                            <div class="tree-children space-y-0.5 pl-3 mt-1">
+                                <a href="#sec-md-company" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">1. Khai Báo Hệ Thống</span>
+                                </a>
+                                <a href="#sec-md-roles" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">2. Phân Quyền & Vai Trò</span>
+                                </a>
+                                <a href="#sec-md-driver-tariffs" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">3. Biểu Phí Lương Chuyến</span>
+                                </a>
+                                <a href="#sec-md-allowances" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">4. Phụ Cấp & Kiểm Hóa</span>
+                                </a>
+                                <a href="#sec-md-locations" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">5. Cảng & Kho Bãi Địa Điểm</span>
+                                </a>
+                                <a href="#sec-md-tariffs" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">6. Biểu Cước Khách Hàng</span>
+                                </a>
+                                <a href="#sec-md-customers" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">7. Khách Hàng Doanh Nghiệp</span>
+                                </a>
+                                <a href="#sec-md-shipping-lines" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">8. Hãng Tàu Biển</span>
+                                </a>
+                                <a href="#sec-md-vehicles" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">9. Đầu Kéo & Xe Tải</span>
+                                </a>
+                                <a href="#sec-md-trailers" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">10. Rơ-Moóc Vận Tải</span>
+                                </a>
+                                <a href="#sec-md-subcontractors" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">11. Nhà Xe Thầu Phụ 3PL</span>
+                                </a>
+                                <a href="#sec-md-expenses" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">12. Khoản Mục Chi Phí</span>
+                                </a>
+                                <a href="#sec-md-containers" class="nav-link flex items-center gap-2 px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-amber-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <span class="truncate">13. Quy Cách Vỏ Cont & Xe</span>
+                                </a>
+                            </div>
                         </div>
-                        <a href="#sec-input-dashboard" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-semibold">
-                            <i class="ph-bold ph-chart-pie-slice text-xs text-emerald-700 shrink-0"></i>
-                            <span class="truncate">1. Dashboard Ban Giám Đốc</span>
-                        </a>
-                        <a href="#sec-input-sale-booking" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-semibold">
-                            <i class="ph-bold ph-tag text-xs text-emerald-700 shrink-0"></i>
-                            <span class="truncate">2. Sale & Booking</span>
-                        </a>
-                        <a href="#sec-input-dispatch" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-semibold">
-                            <i class="ph-bold ph-navigation-arrow text-xs text-emerald-700 shrink-0"></i>
-                            <span class="truncate">3. Điều Vận & Chi Phí Chuyến</span>
-                        </a>
-                        <a href="#sec-input-accounting" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-semibold">
-                            <i class="ph-bold ph-bank text-xs text-emerald-700 shrink-0"></i>
-                            <span class="truncate">4. Tạm Ứng, Sổ Quỹ & Quyết Toán</span>
-                        </a>
-                        <a href="#sec-input-customs" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-semibold">
-                            <i class="ph-bold ph-identification-card text-xs text-emerald-700 shrink-0"></i>
-                            <span class="truncate">5. Tờ Khai Hải Quan</span>
-                        </a>
-                        <a href="#sec-input-reports" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-semibold">
-                            <i class="ph-bold ph-table text-xs text-emerald-700 shrink-0"></i>
-                            <span class="truncate">6. Tra Cứu, Lọc & In 14 Báo Cáo</span>
-                        </a>
+
+                        <!-- ==================== CẤP CHA 3: PHẦN III (CHA - CON - CHÁU) ==================== -->
+                        <div class="tree-parent-group pt-2">
+                            <div class="tree-header flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-emerald-900 group" onclick="toggleTreeGroup(this)">
+                                <div class="flex items-center gap-1.5 truncate">
+                                    <i class="ph-bold ph-pencil-simple-line text-xs text-emerald-700 shrink-0"></i>
+                                    <span class="text-[11px] font-black uppercase tracking-tight">III. Thao Tác Nhập Liệu</span>
+                                </div>
+                                <i class="ph-bold ph-caret-down text-xs text-slate-400 transition-transform duration-200 tree-arrow"></i>
+                            </div>
+                            <div class="tree-children space-y-1 pl-2.5 mt-1">
+                                
+                                <!-- Con 3.1: Dashboard -->
+                                <a href="#sec-input-dashboard" class="nav-link flex items-center gap-2 px-2 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <span class="truncate">1. Dashboard Ban Giám Đốc</span>
+                                </a>
+
+                                <!-- Con 3.2: Sale & Booking (Có Cấp Cháu) -->
+                                <div class="tree-subparent-group">
+                                    <div class="tree-sub-header flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-slate-800" onclick="toggleTreeGroup(this)">
+                                        <div class="flex items-center gap-1.5 truncate">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0"></span>
+                                            <span class="truncate text-[11.5px]">2. Sale & Booking</span>
+                                        </div>
+                                        <i class="ph-bold ph-caret-down text-[10px] text-slate-400 tree-arrow"></i>
+                                    </div>
+                                    <div class="tree-grandchildren pl-4 space-y-0.5 mt-0.5 border-l border-slate-200 ml-2">
+                                        <a href="#sec-input-quotation" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            2.1. Lập Báo Giá Mới
+                                        </a>
+                                        <a href="#sec-input-booking" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            2.2. Tiếp Nhận Booking Order
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Con 3.3: Điều Vận & Chuyến Xe (Có Cấp Cháu) -->
+                                <div class="tree-subparent-group">
+                                    <div class="tree-sub-header flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-slate-800" onclick="toggleTreeGroup(this)">
+                                        <div class="flex items-center gap-1.5 truncate">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0"></span>
+                                            <span class="truncate text-[11.5px]">3. Điều Vận & Chuyến Xe</span>
+                                        </div>
+                                        <i class="ph-bold ph-caret-down text-[10px] text-slate-400 tree-arrow"></i>
+                                    </div>
+                                    <div class="tree-grandchildren pl-4 space-y-0.5 mt-0.5 border-l border-slate-200 ml-2">
+                                        <a href="#sec-input-trip-create" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            3.1. Lập Lệnh Điều Xe Mới
+                                        </a>
+                                        <a href="#sec-input-split-twin" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            3.2. Cắt Kéo & Ghép 2 Cont
+                                        </a>
+                                        <a href="#sec-input-expense-behalf" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            3.3. Kê Khai Chi Phí & Chi Hộ
+                                        </a>
+                                        <a href="#sec-input-driver-mobile" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            3.4. Bác Tài Báo Mốc Mobile
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Con 3.4: Kế Toán & Sổ Quỹ (Có Cấp Cháu) -->
+                                <div class="tree-subparent-group">
+                                    <div class="tree-sub-header flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-slate-800" onclick="toggleTreeGroup(this)">
+                                        <div class="flex items-center gap-1.5 truncate">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0"></span>
+                                            <span class="truncate text-[11.5px]">4. Kế Toán, Tạm Ứng & Sổ Quỹ</span>
+                                        </div>
+                                        <i class="ph-bold ph-caret-down text-[10px] text-slate-400 tree-arrow"></i>
+                                    </div>
+                                    <div class="tree-grandchildren pl-4 space-y-0.5 mt-0.5 border-l border-slate-200 ml-2">
+                                        <a href="#sec-input-fund-level1" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            4.1. Cấp Quỹ Điều Vận Cấp 1
+                                        </a>
+                                        <a href="#sec-input-advance-level2" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            4.2. Cấp Tạm Ứng TX Cấp 2
+                                        </a>
+                                        <a href="#sec-input-settle-advance" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            4.3. Quyết Toán Hoàn Ứng
+                                        </a>
+                                        <a href="#sec-input-cash-voucher" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            4.4. Lập Phiếu Thu/Chi S03a
+                                        </a>
+                                        <a href="#sec-input-subcontractor-settle" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            4.5. Quyết Toán Xe Bạn 3PL
+                                        </a>
+                                        <a href="#sec-input-batch-settle" class="nav-link block px-2 py-1 rounded text-slate-600 hover:text-emerald-800 text-[11px] truncate">
+                                            4.6. Gom Chuyến Hàng Loạt
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Con 3.5: Hải Quan -->
+                                <a href="#sec-input-customs" class="nav-link flex items-center gap-2 px-2 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <span class="truncate">5. Tờ Khai Hải Quan</span>
+                                </a>
+
+                                <!-- Con 3.6: 14 Báo Cáo BI -->
+                                <a href="#sec-input-reports" class="nav-link flex items-center gap-2 px-2 py-1 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-emerald-800 transition-all font-medium text-[11.5px]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <span class="truncate">6. Tra Cứu, Lọc & In 14 Báo Cáo</span>
+                                </a>
+                            </div>
+                        </div>
+
                     </nav>
                 </div>
 
                 <!-- Contact & Support Widget -->
-                <div class="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4 text-xs">
+                <div class="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 text-xs">
                     <div class="font-black text-teal-900 flex items-center gap-1.5 mb-1 font-heading">
                         <i class="ph-bold ph-headphones text-teal-700 text-sm"></i>
                         <span>Tổng Đài Hỗ Trợ 24/7</span>
                     </div>
                     <p class="text-teal-800 text-[11px] leading-relaxed mb-2 font-medium">
-                        Khi cần cấp tài khoản hoặc gặp sự cố kỹ thuật hiện trường:
+                        Cấp tài khoản & hỗ trợ kỹ thuật:
                     </p>
-                    <div class="space-y-1 font-mono text-[11px]">
+                    <div class="space-y-0.5 font-mono text-[11px]">
                         <div class="text-slate-800">Hotline: <strong class="text-teal-900">0965.559.561</strong></div>
                         <div class="text-slate-800">Email: <span class="text-teal-800">support@trienvo.com</span></div>
                     </div>
@@ -300,7 +457,6 @@
         </aside>
 
         <!-- MAIN DOCUMENTATION CONTENT -->
-                <!-- MAIN DOCUMENTATION CONTENT -->
         <main class="flex-1 min-w-0 space-y-10 print-full" id="help-content-container">
 
             <!-- HEADER TIÊU ĐỀ TRANG TÀI LIỆU CHUẨN A4 -->
@@ -543,60 +699,6 @@
                         <li><strong>Tiếp Nhận Booking Order:</strong> Ghi nhận số booking/BL, hãng tàu, quy cách vỏ, hạn cắt máng CY closing, địa điểm lấy rỗng/hạ bãi.</li>
                         <li><strong>Chuyển Tiếp Phát Lệnh:</strong> Bấm nút "Phát Lệnh Xe" từ đơn booking để kế thừa toàn bộ thông tin sang Lệnh điều xe Điều vận.</li>
                     </ul>
-
-                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm mt-4 font-heading flex items-center gap-1.5">
-                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Báo Giá & Booking
-                    </h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
-                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
-                                <tr>
-                                    <th class="p-2.5 border-b border-slate-200">Tên Trường</th>
-                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc</th>
-                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa Nghiệp Vụ & Ràng Buộc</th>
-                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 font-medium">
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Mã Báo Giá / Mã Booking</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Auto</td>
-                                    <td class="p-2.5">Mã tự sinh theo định dạng: <code>BG-MMDD-XX</code> (Báo giá) hoặc <code>BK-YYYY-MMDD-XX</code> (Booking).</td>
-                                    <td class="p-2.5 font-mono text-teal-800">BG-1011-01 / BK-2026-1011-01</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Khách Hàng</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Chọn đối tượng khách hàng từ danh mục doanh nghiệp. Khách hàng phải đang ở trạng thái hoạt động.</td>
-                                    <td class="p-2.5">CÔNG TY TNHH SAMSUNG ELECTRONICS</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Số Booking / Số B/L</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Số booking của hãng tàu cấp hoặc số vận đơn đường biển để làm thủ tục nhận vỏ cont.</td>
-                                    <td class="p-2.5 font-mono">ONE12345678</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Hãng Tàu</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Hãng tàu phát hành vỏ cont (MAEU, ONE, COSCO, EVERGREEN, CMA, SITC...).</td>
-                                    <td class="p-2.5">ONE (Ocean Network Express)</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Loại Dịch Vụ</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5"><code>EXPORT</code> (Hàng xuất khẩu), <code>IMPORT</code> (Hàng nhập khẩu), <code>DOMESTIC</code> (Nội địa).</td>
-                                    <td class="p-2.5">EXPORT</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Hạn Cắt Máng (CY Closing)</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Thời hạn cuối cùng xe phải hạ cont hàng vào cảng trước khi đóng bãi xếp tàu. Cảnh báo đỏ nếu sắp hết giờ.</td>
-                                    <td class="p-2.5 font-mono text-rose-700">12/10/2026 18:00</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </section>
 
@@ -623,66 +725,6 @@
                         Hệ thống nghiêm cấm nhảy cóc trạng thái trái quy trình vận tải thực tế. Vòng đời chuyến xe bắt buộc tuân thủ: 
                         <code class="font-mono text-amber-950 font-bold">Draft ➔ Dispatched ➔ Accepted ➔ Container Picked ➔ In Transit ➔ At Warehouse ➔ Unloading ➔ Delivered ➔ Returning Empty ➔ Completed ➔ Settled</code>.
                     </div>
-
-                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm font-heading">Nghiệp Vụ Nâng Cao Tại Hiện Trường:</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                            <strong class="text-teal-900 block mb-1">A. Cắt Kéo 2 Chặng (is_split_trip):</strong>
-                            Xe 1 cắm rơ-moóc tại kho khách hàng để bốc/dỡ hàng, Xe 2 tới kéo rơ-moóc chở cont hàng ra cảng hạ bãi. Hệ thống tự động chia doanh thu và tiền lương chuyến khoán cho 2 bác tài theo tỷ lệ định trước (50-50 hoặc 60-40).
-                        </div>
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                            <strong class="text-teal-900 block mb-1">B. Ghép 2 Cont 20ft (is_twin_container):</strong>
-                            1 xe đầu kéo chở đồng thời 2 vỏ cont 20ft trên cùng 1 rơ-moóc 40ft/45ft. Quản lý song song 2 số cont, 2 số seal chì, 2 số B/L và hạch toán đúng phí nâng hạ của cả 2 vỏ cont.
-                        </div>
-                    </div>
-
-                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm mt-4 font-heading flex items-center gap-1.5">
-                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Chuyến Xe (DispatchTrip & Expense)
-                    </h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
-                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
-                                <tr>
-                                    <th class="p-2.5 border-b border-slate-200">Tên Trường</th>
-                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc</th>
-                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa Nghiệp Vụ & Ghi Chú Hiện Trường</th>
-                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 font-medium">
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Mã Chuyến Xe</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Auto</td>
-                                    <td class="p-2.5">Mã định danh duy nhất của chuyến: <code>TVL-MMDD-XXX</code> (Ví dụ: TVL-1011-001).</td>
-                                    <td class="p-2.5 font-mono text-teal-800">TVL-1011-001</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Số Container</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Chuẩn ISO 6346 (4 chữ cái + 7 chữ số). Tự động viết hoa (Ví dụ: MSKU1234567).</td>
-                                    <td class="p-2.5 font-mono">MSKU1234567</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Xe Đầu Kéo & Rơ-Moóc</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Biển số đầu kéo và rơ-moóc đang nằm bãi sẵn sàng. Hệ thống cảnh báo nếu xe đang chạy chuyến khác.</td>
-                                    <td class="p-2.5 font-mono">51C-123.45 / 51R-098.76</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Bác Tài Chính</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Tài xế nhận lệnh lái xe. Tự động nhận thông báo nhận chuyến qua liên kết Mobile.</td>
-                                    <td class="p-2.5">Nguyễn Văn Bình (BỤI 94)</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Chi Hộ Khách Hàng</td>
-                                    <td class="p-2.5 text-slate-600">Công tắc (Toggle)</td>
-                                    <td class="p-2.5">Khoản công ty ứng trước thu lại từ khách. <strong>KHÔNG TRỪ VÀO CHI PHÍ CỦA XE</strong>, chuyển sang Debit Note.</td>
-                                    <td class="p-2.5 font-bold text-indigo-700">Chi hộ (Debit Note)</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </section>
 
@@ -700,56 +742,6 @@
                     <p>
                         Quản lý toàn diện tài sản phương tiện vận tải và hồ sơ người lao động: Giám sát đầu kéo container, rơ-moóc xương/cổ cò, theo dõi thời hạn đăng kiểm xe (cảnh báo đỏ trước 15 ngày); quản lý hồ sơ nhân viên, bằng lái GPLX hạng FC của tài xế (cảnh báo đổi bằng trước 30 ngày) và tự động tính bảng lương chuyến theo sản lượng thực tế.
                     </p>
-
-                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm font-heading">Các Tính Năng Trọng Tâm:</h4>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li><strong>Danh Mục Đầu Kéo & Moóc:</strong> Quản lý biển số, tải trọng kéo thiết kế, năm sản xuất, trạng thái nằm bãi / đang chạy.</li>
-                        <li><strong>Cảnh Báo Đăng Kiểm Tự Động:</strong> Tự động tính số ngày còn lại của sổ đăng kiểm, hiển thị huy hiệu đỏ khi sắp hết hạn để đưa xe đi kiểm định.</li>
-                        <li><strong>Hồ Sơ Tài Xế & Bằng FC:</strong> Lưu trữ số GPLX, ngày hết hạn, số điện thoại liên lạc, biệt danh hiện trường gọi bộ đàm.</li>
-                        <li><strong>Tính Lương Chuyến Khoán:</strong> Tự động cộng dồn mức lương khoán của từng chuyến xe hoàn thành trong tháng để lập bảng lương.</li>
-                    </ul>
-
-                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm mt-4 font-heading flex items-center gap-1.5">
-                        <i class="ph-bold ph-table text-teal-700"></i> Từ Điển Trường Dữ Liệu Phương Tiện & Nhân Sự
-                    </h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
-                            <thead class="bg-slate-100 text-slate-800 font-bold font-heading">
-                                <tr>
-                                    <th class="p-2.5 border-b border-slate-200">Tên Trường</th>
-                                    <th class="p-2.5 border-b border-slate-200">Bắt Buộc</th>
-                                    <th class="p-2.5 border-b border-slate-200">Ý Nghĩa Nghiệp Vụ & Ràng Buộc</th>
-                                    <th class="p-2.5 border-b border-slate-200">Ví Dụ Mẫu</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 font-medium">
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Biển Số Xe</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Biển số đăng ký giao thông của đầu kéo hoặc rơ-moóc. Chuẩn viết hoa không dấu.</td>
-                                    <td class="p-2.5 font-mono font-bold">51C-123.45 / 51R-098.76</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Hình Thức Sở Hữu</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5"><code>OWNED</code> (Xe nhà thuộc công ty Triền Võ), <code>SUBCONTRACTOR</code> (Xe thuê ngoài / xe bạn 3PL).</td>
-                                    <td class="p-2.5">Xe Nhà (OWNED)</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Hạn Đăng Kiểm Xe</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Ngày hết hạn kiểm định an toàn kỹ thuật. Hệ thống cảnh báo đỏ khi còn &le; 15 ngày.</td>
-                                    <td class="p-2.5 font-mono text-rose-700">25/10/2026</td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-2.5 font-bold text-slate-900">Số GPLX & Hạng Bằng</td>
-                                    <td class="p-2.5 text-rose-600 font-bold">Bắt buộc (*)</td>
-                                    <td class="p-2.5">Bắt buộc hạng FC đối với tài xế xe đầu kéo container. Cảnh báo đổi bằng trước 30 ngày.</td>
-                                    <td class="p-2.5 font-mono">790123456789 (Hạng FC)</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </section>
 
@@ -767,23 +759,6 @@
                     <p>
                         Quản lý cơ chế tạm ứng 2 cấp an toàn dòng tiền: Quỹ Điều Vận cấp 1 (Kế toán cấp cho Điều phối viên) và Tạm Ứng Chuyến cấp 2 (Điều phối viên cấp cho Bác tài). Quyết toán hoàn ứng tự động cân đối và sinh Phiếu Thu / Phiếu Chi Sổ Quỹ Mẫu S03a-DN chuẩn Bộ Tài Chính; quản lý thanh toán cước xe thầu phụ 3PL và khóa sổ gom chuyến hàng loạt (Batch Settlement) xuất hóa đơn.
                     </p>
-
-                    <!-- Cơ chế 2 cấp quỹ -->
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
-                        <div class="font-bold text-slate-900 uppercase font-heading mb-1">Cơ Chế 2 Cấp Quỹ Vận Tải:</div>
-                        <div class="p-2.5 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
-                            <span><strong>Cấp 1: Kế Toán ➔ Quỹ Điều Vận:</strong> Giao hạn mức tiền mặt (ví dụ 30-50 triệu) cho Điều phối viên ca trực để chủ động giải quyết chi phí dọc đường.</span>
-                            <span class="font-mono text-teal-800 font-bold">Mã TUDV</span>
-                        </div>
-                        <div class="p-2.5 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
-                            <span><strong>Cấp 2: Điều Vận ➔ Tài Xế Từng Chuyến:</strong> Trích quỹ cấp cho tài xế trước khi lăn bánh (nâng hạ cont, BOT, cược vỏ...).</span>
-                            <span class="font-mono text-amber-800 font-bold">Mã TUTX</span>
-                        </div>
-                        <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between text-emerald-900 font-medium">
-                            <span><strong>Hoàn Ứng & Sinh Phiếu Thu/Chi Tự Động:</strong> So sánh Tiền ứng vs Thực chi ➔ Dư nộp lại tự sinh Phiếu Thu (PT-...) / Thiếu chi bù tự sinh Phiếu Chi (PC-...).</span>
-                            <span class="font-bold text-emerald-700">Tự động cân đối</span>
-                        </div>
-                    </div>
                 </div>
             </section>
 
@@ -824,42 +799,25 @@
                         <li><strong>Sắp xếp đa cột:</strong> Bấm trực tiếp vào tiêu đề cột để đảo chiều tăng/giảm dần.</li>
                         <li><strong>In ấn A4 chuẩn mực:</strong> Hệ thống tự động chọn khổ <strong>A4 Dọc</strong> (dưới 8 cột) hoặc <strong>A4 Ngang</strong> (từ 8 cột trở lên) theo Nghị định 30/2020/NĐ-CP.</li>
                     </ul>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-2">
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 1:</strong> Hiệu Suất Đội Xe & P&L Từng Đầu Kéo</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 2:</strong> Vỏ Cont & Cảnh Báo Phạt DEM/DET Hãng Tàu</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 3:</strong> Đúng Giờ & Chất Lượng Dịch Vụ OTP Kho</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 4:</strong> Chi Phí Tuyến & Bảng Kê Hoàn Chi Hộ</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 5:</strong> Cắt Kéo & Bàn Giao Lưu Xe Sau 0H (Layover)</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 6:</strong> Ngoại Lệ & Xử Lý Sự Cố Hàng Hóa (OS&D)</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 7:</strong> Doanh Thu Khách Hàng & Sản Lượng TEU</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 8:</strong> Quyết Toán & Đối Soát Xe Thầu Phụ 3PL</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 9:</strong> Lương Chuyến & Năng Suất Đội Tài Xế</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 10:</strong> Sổ Quỹ Tạm Ứng Điều Vận (Kế Toán QL)</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 11:</strong> Tạm Ứng & Chi Phí Tài Xế (Điều Vận QL)</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 12:</strong> Bảng Kê Quyết Toán Chuyến Xe & Backlog</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 13:</strong> Báo Cáo Tuổi Nợ Công Nợ Phải Thu (AR)</div>
-                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg"><strong>BC 14:</strong> Tuổi Đơn Tồn Đọng Chưa Quyết Toán</div>
-                    </div>
                 </div>
             </section>
 
             <!-- ========================================================================= -->
-            <!-- PHẦN II: HƯỚNG DẪN CÀI ĐẶT DANH MỤC (MASTER DATA)                         -->
+            <!-- PHẦN II: HƯỚNG DẪN CÀI ĐẶT 13 DANH MỤC GỐC (MASTER DATA)                   -->
             <!-- ========================================================================= -->
 
             <div class="pt-6">
                 <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-800 text-white font-heading font-black text-xs uppercase tracking-widest w-fit mb-4">
                     <i class="ph-bold ph-folder-gear"></i>
-                    <span>PHẦN II: HƯỚNG DẪN CÀI ĐẶT DANH MỤC GỐC (MASTER DATA)</span>
+                    <span>PHẦN II: HƯỚNG DẪN CÀI ĐẶT 13 DANH MỤC GỐC (MASTER DATA)</span>
                 </div>
             </div>
 
-            <section id="sec-master-data" class="help-section doc-page-container rounded-2xl p-6 sm:p-8 scroll-mt-24 space-y-8">
+            <section class="help-section doc-page-container rounded-2xl p-6 sm:p-8 scroll-mt-24 space-y-8">
                 <div class="doc-section-title flex items-center justify-between">
                     <div>
                         <span class="text-[11px] font-black uppercase text-amber-800 tracking-wider">Cài Đặt Dữ Liệu Nền Tảng</span>
-                        <h3 class="text-xl font-black text-slate-900 font-heading">Hướng Dẫn Thiết Lập 6 Danh Mục Nền Tảng Trước Khi Vận Hành</h3>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Hướng Dẫn Thiết Lập Đầy Đủ 13 Danh Mục Nền Tảng Trước Khi Vận Hành</h3>
                     </div>
                     <span class="text-xs font-mono font-bold text-slate-400">PHẦN II</span>
                 </div>
@@ -868,126 +826,271 @@
                     Ghi chú quan trọng: Trước khi tiếp nhận đơn hàng hay phát lệnh điều xe, Quản trị viên và Kế toán trưởng cần hoàn tất cài đặt các danh mục nền tảng dưới đây để dữ liệu được liên kết chuẩn xác và tự động hóa tối đa.
                 </p>
 
-                <!-- 1. TẠO MỚI KHÁCH HÀNG -->
-                <div class="doc-item-block">
+                <!-- 1. KHAI BÁO HỆ THỐNG (COMPANY) -->
+                <div class="doc-item-block" id="sec-md-company">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">1</span>
-                        <span>Tạo Mới Khách Hàng (Customer)</span>
+                        <span>1. Khai Báo Hệ Thống & Hồ Sơ Doanh Nghiệp (Company Profile)</span>
                     </h4>
                     <div class="text-xs sm:text-sm text-slate-700 space-y-2">
-                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt & Danh mục</strong> ➔ Chọn tab <strong>Khách Hàng</strong> ➔ Bấm nút <strong>+ Thêm Khách Hàng</strong> (hoặc vào menu <strong>Sale & Booking</strong> ➔ tab <strong>Khách Hàng</strong> ➔ Bấm nút <strong>+ Thêm Khách Hàng</strong>).</p>
-                        <p><strong>• Hướng dẫn thao tác nhập liệu:</strong></p>
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Khai Báo Hệ Thống</strong> ➔ Bấm nút <strong>Hiệu Chỉnh Khai Báo Hệ Thống</strong>.</p>
+                        <p><strong>• Các trường thông tin bắt buộc và quan trọng:</strong></p>
                         <ul class="list-disc pl-6 space-y-1">
-                            <li><strong>Mã Khách Hàng (*):</strong> Nhập mã viết tắt viết hoa không dấu (Ví dụ: <code>SAMSUNG</code>, <code>VINFAST</code>, <code>KH-001</code>). Mã không được trùng lặp.</li>
-                            <li><strong>Tên Doanh Nghiệp (*):</strong> Nhập tên đầy đủ theo Giấy phép ĐKKD (Ví dụ: <code>CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM</code>).</li>
-                            <li><strong>Mã Số Thuế (*):</strong> Nhập chính xác MST 10 hoặc 13 số để xuất hóa đơn điện tử hợp lệ.</li>
-                            <li><strong>Địa Chỉ Trụ Sở (*):</strong> Nhập địa chỉ đăng ký kinh doanh in trên hóa đơn VAT.</li>
-                            <li><strong>Số Điện Thoại (*):</strong> Số điện thoại di động hoặc bàn để liên lạc điều vận.</li>
-                            <li><strong>Người liên hệ & Kỳ hạn công nợ:</strong> Họ tên người phụ trách kho/kế toán phía khách hàng và số ngày cho nợ (ví dụ: 30 ngày).</li>
+                            <li><strong>Tên Pháp Nhân Đầy Đủ (*):</strong> Nhập tên công ty theo ĐKKD (Ví dụ: <code>CÔNG TY TNHH VẬN TẢI TRIỀN VÕ</code>).</li>
+                            <li><strong>Mã Số Thuế (MST) (*):</strong> Nhập chính xác MST in trên hóa đơn điện tử và báo giá (Ví dụ: <code>0312345678</code>).</li>
+                            <li><strong>Địa Chỉ Trụ Sở Chính (*):</strong> Địa chỉ đăng ký kinh doanh in trên tiêu đề chứng từ.</li>
+                            <li><strong>Hotline / Điện Thoại (*):</strong> Số hotline CSKH và điều phối xe.</li>
+                            <li><strong>Tên Thương Hiệu / Viết Tắt:</strong> Tên giao dịch (Ví dụ: <code>TRIỀN VÕ LOGISTICS / TVL</code>).</li>
+                            <li><strong>Tài Khoản Ngân Hàng:</strong> Số tài khoản, tên ngân hàng và chi nhánh để in lên phiếu thu/chi và bản in báo giá.</li>
+                            <li><strong>Tham Số Vận Hành Chuẩn:</strong> Thuế VAT mặc định (8% hoặc 10%), Giá dầu DO tham chiếu (VNĐ/lít) và Mẫu số quy đổi CBM (5000).</li>
                         </ul>
                         <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong> ở góc dưới bên phải hộp thoại.</p>
                     </div>
                 </div>
 
-                <!-- 2. ĐỊA ĐIỂM -->
-                <div class="doc-item-block">
+                <!-- 2. PHÂN QUYỀN & VAI TRÒ -->
+                <div class="doc-item-block" id="sec-md-roles">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">2</span>
-                        <span>Cài Đặt Địa Điểm Cảng, Depot & Kho Hàng (Locations)</span>
+                        <span>2. Phân Quyền & Vai Trò Hệ Thống (Roles & Permissions)</span>
                     </h4>
                     <div class="text-xs sm:text-sm text-slate-700 space-y-2">
-                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt & Danh mục</strong> ➔ Chọn tab <strong>Địa Điểm</strong> ➔ Bấm nút <strong>+ Thêm Địa Điểm Mới</strong>.</p>
-                        <p><strong>• Hướng dẫn thao tác nhập liệu:</strong></p>
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Phân Quyền & Vai Trò</strong>.</p>
+                        <p><strong>• Hướng dẫn thao tác:</strong></p>
                         <ul class="list-disc pl-6 space-y-1">
-                            <li><strong>Mã Địa Điểm (*):</strong> Nhập mã viết hoa không dấu (Ví dụ: <code>CAT_LAI</code>, <code>ICD_TRANSIMEX</code>, <code>KCN_VSIP1</code>).</li>
-                            <li><strong>Tên Địa Điểm (*):</strong> Nhập tên gọi đầy đủ (Ví dụ: <code>Cảng Cát Lái - Cổng C</code>, <code>Kho Tân Bình</code>).</li>
-                            <li><strong>Loại Địa Điểm (*):</strong> Chọn <code>Cảng Biển (SEAPORT)</code>, <code>Depot Vỏ Rỗng (DEPOT)</code>, <code>Kho Khách Hàng (WAREHOUSE)</code> hoặc <code>Bãi Đỗ Xe (YARD)</code>.</li>
-                            <li><strong>Mã ICD / Cảng Vụ (*):</strong> Nhập mã hải quan cảng (Ví dụ: <code>VNSGN</code>).</li>
-                            <li><strong>Địa Chỉ Chi Tiết (*):</strong> Địa chỉ số nhà, đường, phường/xã, quận/huyện để tài xế định vị.</li>
+                            <li>Chọn tài khoản người dùng hoặc vai trò cần cấu hình: <code>DIRECTOR</code> (Ban Giám Đốc), <code>DISPATCHER</code> (Điều Phối Viên), <code>ACCOUNTANT</code> (Kế Toán), <code>SALESMAN</code> (Kinh Doanh), <code>MECHANIC</code> (Quản Lý Xe/Bãi), <code>DRIVER</code> (Tài Xế).</li>
+                            <li>Tích chọn ma trận quyền chi tiết: Quyền Xem (Read), Quyền Thêm mới (Create), Quyền Sửa (Update), Quyền Xóa mềm (Delete), Quyền Duyệt (Approve), Quyền In ấn chứng từ (Print).</li>
                         </ul>
                         <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
                     </div>
                 </div>
 
-                <!-- 3. HÃNG TÀU -->
-                <div class="doc-item-block">
+                <!-- 3. BIỂU PHÍ LƯƠNG CHUYẾN TÀI XẾ -->
+                <div class="doc-item-block" id="sec-md-driver-tariffs">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">3</span>
-                        <span>Cài Đặt Danh Mục Hãng Tàu (Shipping Lines)</span>
+                        <span>3. Biểu Phí Lương Chuyến Tài Xế (Driver Trip Tariffs)</span>
                     </h4>
                     <div class="text-xs sm:text-sm text-slate-700 space-y-2">
-                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt & Danh mục</strong> ➔ Chọn tab <strong>Hãng Tàu</strong> ➔ Bấm nút <strong>+ Thêm Hãng Tàu Mới</strong>.</p>
-                        <p><strong>• Hướng dẫn thao tác nhập liệu:</strong></p>
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Biểu Phí Lương Chuyến</strong> ➔ Bấm nút <strong>+ Thêm Tuyến Lương Mới</strong>.</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
                         <ul class="list-disc pl-6 space-y-1">
-                            <li><strong>Mã Hãng Tàu (*):</strong> Nhập mã quốc tế (Ví dụ: <code>MAEU</code>, <code>ONE</code>, <code>COSCO</code>, <code>EVERGREEN</code>, <code>CMA</code>, <code>SITC</code>...).</li>
-                            <li><strong>Tên Hãng Tàu (*):</strong> Tên đầy đủ (Ví dụ: <code>Hãng Tàu Ocean Network Express (ONE)</code>).</li>
-                            <li><strong>Cổng Tra Cứu eDO:</strong> Đường dẫn tra cứu lệnh giao nhận điện tử của hãng tàu.</li>
-                            <li><strong>Số Ngày Free-Time Mặc Định:</strong> Số ngày miễn phí lưu bãi/lưu cont hãng cho phép (mặc định 7 hoặc 14 ngày).</li>
+                            <li><strong>Khu Vực Kho (*):</strong> Chọn nhóm khu vực (Khu Vực Củ Chi, Long An, Tây Ninh, Bình Dương, Đồng Nai, TP.HCM, Vũng Tàu, hoặc Tuyến Đặc Thù).</li>
+                            <li><strong>Tên Tuyến / KCN / Nhà Máy (*):</strong> Tên lộ trình (Ví dụ: <code>KCN Phước Đông</code>, <code>KCN Bàu Bàng</code>, <code>VSIP 1</code>).</li>
+                            <li><strong>Trục Lấy / Hạ Cont Chuẩn:</strong> Cát Lái, SPITC, Thủ Đức, Tân Vạn, Sóng Thần, VICT, Q4, Q7...</li>
+                            <li><strong>Cự Ly Ước Tính (km):</strong> Nhập số km hoặc chọn nhanh nút bước 10km (20k, 30k, 50k, 70k, 100k).</li>
+                            <li><strong>Mức Lương Chuyến (VNĐ) (*):</strong> Tiền lương khoán cho tài xế khi chạy tuyến này (Ví dụ: <code>600.000 đ</code>).</li>
+                            <li><strong>Ghi Chú Điều Kiện:</strong> Phụ phí lấy cont giờ cao điểm hoặc yêu cầu đặc thù.</li>
                         </ul>
                         <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
                     </div>
                 </div>
 
-                <!-- 4. KHOẢN MỤC CHI PHÍ -->
-                <div class="doc-item-block">
+                <!-- 4. PHỤ CẤP & KIỂM HÓA -->
+                <div class="doc-item-block" id="sec-md-allowances">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">4</span>
-                        <span>Cài Đặt Khoản Mục Chi Phí Vận Tải (Expense Catalog)</span>
+                        <span>4. Phụ Cấp Tuyến & Kiểm Hóa (Allowances & Inspection Tariffs)</span>
                     </h4>
                     <div class="text-xs sm:text-sm text-slate-700 space-y-2">
-                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt & Danh mục</strong> ➔ Chọn tab <strong>Khoản Mục Chi Phí</strong> ➔ Bấm nút <strong>+ Thêm Khoản Mục Chi Phí</strong>.</p>
-                        <p><strong>• Hướng dẫn thao tác nhập liệu:</strong></p>
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Phụ Cấp & Kiểm Hóa</strong> ➔ Bấm nút <strong>+ Thêm Phụ Cấp Mới</strong>.</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
                         <ul class="list-disc pl-6 space-y-1">
-                            <li><strong>Mã Khoản Chi (*):</strong> Mã hệ thống (Ví dụ: <code>LIFT_ON</code>, <code>LIFT_OFF</code>, <code>TOLL_FEE</code>, <code>CONTAINER_DEPOSIT</code>, <code>WEIGHING</code>).</li>
-                            <li><strong>Tên Khoản Mục (*):</strong> Tên hiển thị (Ví dụ: <code>Phí nâng vỏ cont rỗng</code>, <code>Vé cầu đường BOT cao tốc</code>).</li>
-                            <li><strong>Nhóm Chi Phí (*):</strong> Chọn nhóm phù hợp (Nâng hạ cảng, Cầu đường, Chi hộ, Nhiên liệu...).</li>
-                            <li><strong>Định Mức Mặc Định (VNĐ):</strong> Số tiền thường phát sinh (Ví dụ: 450.000 đ) để tự điền nhanh khi điều xe kê khai.</li>
-                            <li><strong>Yêu Cầu HĐĐT (VAT):</strong> Chọn Có/Không để kiểm soát hóa đơn điện tử khi thanh toán.</li>
+                            <li><strong>Mã Phụ Cấp (*):</strong> Mã viết hoa không dấu (Ví dụ: <code>CANG_HIEP_PHUOC</code>, <code>KIEM_HOA_CAT_LAI</code>).</li>
+                            <li><strong>Phân Loại (*):</strong> Chọn <code>PORT</code> (Phụ Thêm Cảng Xa), <code>INSPECTION</code> (Phụ Thu Kiểm Hóa), <code>OPERATION</code> (Phụ Cấp Tác Nghiệp Đặc Thù).</li>
+                            <li><strong>Tên Phụ Cấp / Tác Nghiệp (*):</strong> Nhập tên mô tả rõ ràng (Ví dụ: <code>Phụ thêm kéo cont Cảng Cái Mép</code>).</li>
+                            <li><strong>Số Tiền Phụ Cấp (VNĐ) (*):</strong> Số tiền định mức phụ cấp (Ví dụ: <code>500.000 đ</code>).</li>
+                            <li><strong>Điều Kiện Áp Dụng:</strong> Diễn giải trường hợp phát sinh.</li>
                         </ul>
                         <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
                     </div>
                 </div>
 
-                <!-- 5. BIỂU CƯỚC LƯƠNG TUYẾN -->
-                <div class="doc-item-block">
+                <!-- 5. CẢNG & KHO BÃI ĐỊA ĐIỂM -->
+                <div class="doc-item-block" id="sec-md-locations">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">5</span>
-                        <span>Cài Đặt Biểu Cước Lương Chuyến Theo Tuyến Đường (Route Payroll Rates)</span>
+                        <span>5. Cảng & Kho Bãi Địa Điểm (Locations / Seaports & Warehouses)</span>
                     </h4>
                     <div class="text-xs sm:text-sm text-slate-700 space-y-2">
-                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt & Danh mục</strong> ➔ Chọn tab <strong>Biểu Phí Lương Tuyến</strong> ➔ Bấm nút <strong>+ Thêm Tuyến Lương Mới</strong>.</p>
-                        <p><strong>• Hướng dẫn thao tác nhập liệu:</strong></p>
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Cảng & Kho Bãi</strong> ➔ Bấm nút <strong>+ Thêm Cảng / Kho Bãi Mới</strong>.</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
                         <ul class="list-disc pl-6 space-y-1">
-                            <li><strong>Tên Tuyến Đường (*):</strong> Lộ trình chạy xe (Ví dụ: <code>Cảng Cát Lái ➔ KCN VSIP 1</code>).</li>
-                            <li><strong>Quy Cách Cont (*):</strong> Chọn <code>20DC</code> hoặc <code>40HC</code>.</li>
-                            <li><strong>Mức Lương Khoán Cho Bác Tài (*) (VNĐ):</strong> Tiền lương tài xế được nhận cho mỗi chuyến chạy tuyến này (Ví dụ: <code>450.000 đ</code>).</li>
-                            <li><strong>Định Mức Vé BOT (VNĐ):</strong> Tiền vé cầu đường BOT định mức (Ví dụ: <code>200.000 đ</code>).</li>
-                            <li><strong>Định Mức Dầu DO (Lít):</strong> Số lít dầu định mức cho lộ trình (Ví dụ: <code>40 lít</code>).</li>
+                            <li><strong>Mã Địa Điểm (*):</strong> Nhập mã viết hoa không dấu (Ví dụ: <code>CAT_LAI</code>, <code>ICD_TRANSIMEX</code>, <code>KHO_WCA</code>).</li>
+                            <li><strong>Phân Loại (*):</strong> Chọn <code>PORT</code> (Cảng Biển), <code>ICD</code> (Cảng Cạn ICD), <code>DEPOT</code> (Bãi Rỗng / Depot), <code>WAREHOUSE</code> (Kho Hàng / Nhà Máy), <code>YARD</code> (Bãi Đỗ Xe Công Ty).</li>
+                            <li><strong>Tên Địa Điểm (*):</strong> Tên gọi đầy đủ (Ví dụ: <code>Cảng Tân Cảng Cát Lái - Cổng C</code>).</li>
+                            <li><strong>Tỉnh / Thành Phố & Địa Chỉ Chi Tiết:</strong> Địa chỉ thực tế để bác tài tra cứu vị trí.</li>
+                            <li><strong>Số Điện Thoại Liên Hệ & Người Phụ Trách:</strong> Thông tin đầu mối trực kho cảng.</li>
                         </ul>
                         <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
                     </div>
                 </div>
 
-                <!-- 6. HỒ SƠ DOANH NGHIỆP -->
-                <div class="doc-item-block">
+                <!-- 6. BIỂU CƯỚC KHÁCH HÀNG -->
+                <div class="doc-item-block" id="sec-md-tariffs">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">6</span>
-                        <span>Hồ Sơ Doanh Nghiệp & Tài Khoản Ngân Hàng Thụ Hưởng (Company Profile)</span>
+                        <span>6. Biểu Cước Vận Chuyển Khách Hàng (Customer Freight Tariffs)</span>
                     </h4>
                     <div class="text-xs sm:text-sm text-slate-700 space-y-2">
-                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt & Danh mục</strong> ➔ Chọn tab <strong>Hồ Sơ Doanh Nghiệp</strong>.</p>
-                        <p><strong>• Hướng dẫn thao tác nhập liệu:</strong></p>
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Biểu Cước Khách</strong> ➔ Bấm nút <strong>+ Thêm Biểu Cước Khách Hàng</strong>.</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
                         <ul class="list-disc pl-6 space-y-1">
-                            <li><strong>Tên Doanh Nghiệp (*):</strong> Nhập <code>CÔNG TY TNHH VẬN TẢI TRIỀN VÕ</code>.</li>
-                            <li><strong>Mã Số Thuế (*):</strong> Nhập mã số thuế in trên tiêu đề báo giá và phiếu thu/chi.</li>
-                            <li><strong>Địa Chỉ Trụ Sở (*):</strong> Địa chỉ văn phòng điều hành công ty.</li>
-                            <li><strong>Số Điện Thoại (*) & Email (*):</strong> Hotline và hòm thư CSKH in trên bản in hợp đồng.</li>
-                            <li><strong>Số Tài Khoản Ngân Hàng Thụ Hưởng (*):</strong> Số tài khoản nhận tiền cước từ khách hàng.</li>
-                            <li><strong>Tên Ngân Hàng & Chi Nhánh (*):</strong> Tên ngân hàng thụ hưởng (Ví dụ: <code>Vietcombank - CN Nam Sài Gòn</code>).</li>
+                            <li><strong>Khách Hàng Áp Dụng (*):</strong> Chọn doanh nghiệp khách hàng từ danh sách.</li>
+                            <li><strong>Nơi Lấy (Cảng / ICD) (*):</strong> Chọn điểm lấy vỏ cont hoặc lấy hàng (Ví dụ: Cát Lái, Cái Mép).</li>
+                            <li><strong>Kho Nhận (Nhà Máy / Kho) (*):</strong> Chọn kho đích giao/nhận hàng.</li>
+                            <li><strong>Nơi Hạ Cont (Bãi / Cảng):</strong> Điểm hạ vỏ rỗng sau khi dỡ hàng.</li>
+                            <li><strong>Quy Cách Cont / Phương Tiện:</strong> Chọn <code>40HC</code>, <code>20DC</code>, <code>45G1</code>, <code>XE_TAI_10T</code>...</li>
+                            <li><strong>Đơn Giá Cước (HĐ) (*) (VNĐ):</strong> Cước thu khách chưa VAT (Ví dụ: <code>4.000.000 đ</code>).</li>
+                            <li><strong>Lương Chuyến Tài Xế (*) (VNĐ):</strong> Định mức lương khoán trả tài xế (Ví dụ: <code>600.000 đ</code>).</li>
+                            <li><strong>Vé BOT / Cầu Đường Chuẩn (VNĐ):</strong> Tiền vé BOT định mức (Ví dụ: <code>150.000 đ</code>).</li>
                         </ul>
                         <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
                     </div>
                 </div>
+
+                <!-- 7. KHÁCH HÀNG DOANH NGHIỆP -->
+                <div class="doc-item-block" id="sec-md-customers">
+                    <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
+                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">7</span>
+                        <span>7. Khách Hàng Doanh Nghiệp (Customers CRM)</span>
+                    </h4>
+                    <div class="text-xs sm:text-sm text-slate-700 space-y-2">
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Khách Hàng</strong> ➔ Bấm nút <strong>+ Thêm Khách Hàng Mới</strong> (hoặc từ menu <strong>Sale & Booking</strong>).</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Tên Khách Hàng / Doanh Nghiệp (*):</strong> Nhập tên đầy đủ theo ĐKKD (Ví dụ: <code>CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM</code>).</li>
+                            <li><strong>Mã Số Thuế (MST) (*):</strong> MST 10 hoặc 13 số để xuất hóa đơn VAT.</li>
+                            <li><strong>Mã Khách Hàng:</strong> Tự sinh nếu để trống hoặc nhập mã viết tắt (Ví dụ: <code>SAMSUNG</code>).</li>
+                            <li><strong>Địa Chỉ Xuất Hóa Đơn / Văn Phòng:</strong> Địa chỉ đăng ký kinh doanh.</li>
+                            <li><strong>Số Điện Thoại Liên Hệ (*):</strong> SĐT liên lạc điều vận giao nhận.</li>
+                            <li><strong>Người Liên Hệ / Đầu Mối:</strong> Họ tên người phụ trách kho hoặc kế toán khách hàng.</li>
+                        </ul>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- 8. HÃNG TÀU BIỂN -->
+                <div class="doc-item-block" id="sec-md-shipping-lines">
+                    <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
+                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">8</span>
+                        <span>8. Hãng Tàu Biển (Shipping Lines)</span>
+                    </h4>
+                    <div class="text-xs sm:text-sm text-slate-700 space-y-2">
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Hãng Tàu</strong> ➔ Bấm nút <strong>+ Thêm Hãng Tàu Biển Mới</strong>.</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Mã Hãng Tàu (*):</strong> Mã chuẩn quốc tế viết hoa (Ví dụ: <code>MAEU</code>, <code>ONE</code>, <code>COSCO</code>, <code>EVERGREEN</code>, <code>CMA</code>, <code>SITC</code>...).</li>
+                            <li><strong>Tên Hãng Tàu (*):</strong> Tên đầy đủ (Ví dụ: <code>Hãng Tàu Ocean Network Express (ONE)</code>).</li>
+                            <li><strong>Hotline CSKH / Cấp Vỏ & Email e-DO:</strong> Thông tin liên lạc hiện trường khi xin cấp vỏ rỗng.</li>
+                            <li><strong>Free DEM Chuẩn (Ngày):</strong> Số ngày miễn phí lưu bãi cảng (mặc định 7 ngày).</li>
+                            <li><strong>Free DET Chuẩn (Ngày):</strong> Số ngày miễn phí lưu vỏ cont (mặc định 5 hoặc 7 ngày).</li>
+                        </ul>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- 9. ĐẦU KÉO & XE TẢI -->
+                <div class="doc-item-block" id="sec-md-vehicles">
+                    <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
+                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">9</span>
+                        <span>9. Đầu Kéo & Xe Tải (Tractors & Trucks)</span>
+                    </h4>
+                    <div class="text-xs sm:text-sm text-slate-700 space-y-2">
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Đầu Kéo & Xe</strong> ➔ Bấm nút <strong>+ Thêm Đầu Kéo / Xe Tải Mới</strong> (hoặc từ menu <strong>Xe & Bãi</strong>).</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Biển Số Xe (*):</strong> Biển số đăng ký giao thông viết hoa (Ví dụ: <code>51H-123.45</code>).</li>
+                            <li><strong>Nguồn Sở Hữu (*):</strong> Chọn <code>OWNED</code> (Xe Nhà Công Ty) hoặc <code>SUBCONTRACTOR</code> (Xe Bạn / Thuê Ngoài 3PL).</li>
+                            <li><strong>Loại Phương Tiện (*):</strong> Chọn <code>TRACTOR</code> (Đầu kéo Container), <code>TRUCK_10T</code> (Xe tải 10 Tấn), <code>TRUCK_2T</code> (Xe tải 2 Tấn), <code>VAN</code>.</li>
+                            <li><strong>Tài Xế Mặc Định Gắn Xe:</strong> Chọn bác tài chính phụ trách xe.</li>
+                            <li><strong>Tải Trọng Cho Phép (kg) (*):</strong> Tải trọng thiết kế kéo (Ví dụ: <code>30.000</code> kg).</li>
+                            <li><strong>Hạn Đăng Kiểm Định Kỳ (*):</strong> Hạn cuối giấy kiểm định an toàn kỹ thuật (cảnh báo đỏ khi còn &le; 15 ngày).</li>
+                        </ul>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- 10. RƠ-MOÓC VẬN TẢI -->
+                <div class="doc-item-block" id="sec-md-trailers">
+                    <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
+                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">10</span>
+                        <span>10. Rơ-Moóc Vận Tải (Semi-Trailers)</span>
+                    </h4>
+                    <div class="text-xs sm:text-sm text-slate-700 space-y-2">
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Rơ-Moóc</strong> ➔ Bấm nút <strong>+ Thêm Rơ-Moóc Mới</strong> (hoặc từ menu <strong>Xe & Bãi</strong>).</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Biển Số Rơ-Moóc (*):</strong> Biển số đăng ký giao thông moóc (Ví dụ: <code>51R-123.45</code>).</li>
+                            <li><strong>Loại Rơ-Moóc (*):</strong> Chọn <code>MOOC_XUONG_40</code> (Moóc Xương 40ft 3 Trục), <code>MOOC_CO_CO_40</code> (Moóc Cổ Cò 40ft chở cont lạnh/HC), <code>MOOC_XUONG_20</code> (Moóc Xương 20ft), <code>MOOC_SAN_45</code> (Moóc Sàn 45ft), <code>MOOC_LUN</code> (Moóc Lùn).</li>
+                            <li><strong>Tải Trọng Thiết Kế (kg) (*):</strong> Tải trọng chở cho phép (Ví dụ: <code>32.000</code> kg).</li>
+                            <li><strong>Hạn Đăng Kiểm Định Kỳ:</strong> Ngày hết hạn đăng kiểm của moóc.</li>
+                            <li><strong>Trạng Thái Hoạt Động:</strong> Nằm bãi chờ kéo, Đang gắn xe kéo, hoặc Bảo trì sửa chữa.</li>
+                        </ul>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- 11. NHÀ XE THẦU PHỤ 3PL -->
+                <div class="doc-item-block" id="sec-md-subcontractors">
+                    <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
+                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">11</span>
+                        <span>11. Nhà Xe Thầu Phụ 3PL (Subcontractors / Partner Fleets)</span>
+                    </h4>
+                    <div class="text-xs sm:text-sm text-slate-700 space-y-2">
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Nhà Xe Thầu Phụ</strong> ➔ Bấm nút <strong>+ Thêm Đối Tác Xe Thầu Phụ Mới</strong>.</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Tên Nhà Xe / Đơn Vị Vận Tải 3PL (*):</strong> Tên đầy đủ công ty xe bạn (Ví dụ: <code>Công ty TNHH Vận tải Hoàng Nam</code>).</li>
+                            <li><strong>Số Điện Thoại Điều Xe (*):</strong> SĐT liên hệ khẩn cấp khi gọi xe hỗ trợ.</li>
+                            <li><strong>Mã Số Thuế (MST) & Mã Đối Tác:</strong> MST doanh nghiệp thầu phụ.</li>
+                            <li><strong>Người Điều Hành Xe:</strong> Họ tên điều độ hoặc chủ nhà xe đối tác.</li>
+                            <li><strong>Thông Tin Tài Khoản Ngân Hàng:</strong> Số TK, Tên ngân hàng, Tên chủ TK để chuyển khoản thanh toán cước thầu phụ.</li>
+                        </ul>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- 12. KHOẢN MỤC CHI PHÍ VẬN TẢI -->
+                <div class="doc-item-block" id="sec-md-expenses">
+                    <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
+                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">12</span>
+                        <span>12. Khoản Mục Chi Phí Vận Tải (Expense Catalog)</span>
+                    </h4>
+                    <div class="text-xs sm:text-sm text-slate-700 space-y-2">
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Khoản Chi</strong> ➔ Bấm nút <strong>+ Thêm Khoản Mục Chi Phí</strong>.</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Mã Khoản Chi (*):</strong> Mã hệ thống viết hoa (Ví dụ: <code>LIFT_ON</code>, <code>LIFT_OFF</code>, <code>TOLL_FEE</code>, <code>CONTAINER_DEPOSIT</code>, <code>WEIGHING</code>, <code>LABOR</code>).</li>
+                            <li><strong>Tên Khoản Mục Chi Phí (*):</strong> Tên hiển thị (Ví dụ: <code>Phí nâng vỏ cont rỗng</code>, <code>Vé cầu đường BOT</code>).</li>
+                            <li><strong>Nhóm Chi Phí (*):</strong> Chọn Vé Cầu Đường/BOT, Nâng Cont, Hạ Cont, Cược Container, Cân Xe, Bốc Xếp, Hóa Đơn Điện Tử Cảng, hoặc Khác.</li>
+                            <li><strong>Định Mức Tiền Ngầm Định (VNĐ):</strong> Số tiền thường phát sinh để tự điền nhanh khi kê khai.</li>
+                            <li><strong>Bắt Buộc Có HĐĐT / Mã Tra Cứu:</strong> Tích chọn nếu yêu cầu hóa đơn đỏ khi thanh toán.</li>
+                        </ul>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- 13. QUY CÁCH VỎ CONT & XE -->
+                <div class="doc-item-block" id="sec-md-containers">
+                    <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
+                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center justify-center shrink-0">13</span>
+                        <span>13. Quy Cách Vỏ Container & Thùng Xe (Container Specifications)</span>
+                    </h4>
+                    <div class="text-xs sm:text-sm text-slate-700 space-y-2">
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Quy Cách</strong> ➔ Bấm nút <strong>+ Thêm Quy Cách Cont & Xe</strong>.</p>
+                        <p><strong>• Các trường bắt buộc cần điền:</strong></p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Mã Quy Cách (*):</strong> Mã viết hoa không dấu (Ví dụ: <code>40HC</code>, <code>20DC</code>, <code>45G1</code>, <code>TAI_10T</code>, <code>TAI_2T</code>).</li>
+                            <li><strong>Phân Loại (*):</strong> Chọn <code>CONTAINER</code> (Container Đường Biển) hoặc <code>TRUCK</code> (Xe Tải Thùng / Đường Bộ).</li>
+                            <li><strong>Tên Quy Cách / Tên Loại Thùng (*):</strong> Tên gọi đầy đủ (Ví dụ: <code>Container 40ft Cao (40HC)</code>).</li>
+                            <li><strong>Hệ Số TEU:</strong> Quy đổi TEU (1.0 cho 20ft, 2.0 cho 40ft, 2.25 cho 45ft).</li>
+                            <li><strong>Tải Trọng Cho Phép (kg) & Thể Tích Chứa (CBM):</strong> Trọng lượng và thể tích thiết kế cont.</li>
+                        </ul>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
+                    </div>
+                </div>
+
             </section>
 
             <!-- ========================================================================= -->
@@ -1049,7 +1152,7 @@
                 </div>
 
                 <!-- 2.1 TẠO BÁO GIÁ -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-quotation">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">2.1</span>
                         <span>Hướng Dẫn Tạo Mới Bảng Báo Giá (Quotation) & Duyệt Báo Giá</span>
@@ -1062,7 +1165,7 @@
                             <li><strong>Thông tin chung:</strong>
                                 <ul class="list-disc pl-5 mt-1 space-y-0.5">
                                     <li><strong>Khách Hàng (*):</strong> Chọn tên doanh nghiệp khách hàng từ danh sách.</li>
-                                    <li><strong>Ngày Hiệu Lực (*) & Hết Hạn (*):</strong> Chọn khoảng thời gian áp dụng báo giá (Ví dụ: từ 11/10/2026 đến 11/11/2026).</li>
+                                    <li><strong>Ngày Hiệu Lực (*) & Hết Hạn (*):</strong> Chọn khoảng thời gian áp dụng báo giá.</li>
                                     <li><strong>Phương Thức Định Giá (*):</strong> Chọn <code>Theo ma trận tuyến đường</code>, <code>Điều chỉnh theo giá dầu DO</code> hoặc <code>Bao chuyến cố định</code>.</li>
                                 </ul>
                             </li>
@@ -1082,7 +1185,7 @@
                 </div>
 
                 <!-- 2.2 TIẾP NHẬN BOOKING -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-booking">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">2.2</span>
                         <span>Hướng Dẫn Tiếp Nhận Booking / Đơn Hàng Vận Tải Mới</span>
@@ -1117,7 +1220,7 @@
                 </div>
 
                 <!-- 3.1 TẠO LỆNH ĐIỀU XE -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-trip-create">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">3.1</span>
                         <span>Hướng Dẫn Lập Lệnh Điều Xe Mới (Phát Lệnh Cho Phương Tiện)</span>
@@ -1139,7 +1242,7 @@
                 </div>
 
                 <!-- 3.2 CẮT KÉO & GHÉP CONT -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-split-twin">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">3.2</span>
                         <span>Hướng Dẫn Xử Lý Chuyến Cắt Kéo (2 Chặng) & Chở Ghép 2 Cont 20ft</span>
@@ -1168,7 +1271,7 @@
                 </div>
 
                 <!-- 3.3 KÊ KHAI CHI PHÍ & CHI HỘ -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-expense-behalf">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">3.3</span>
                         <span>Hướng Dẫn Kê Khai Chi Phí Vận Hành & Khoản Chi Hộ Khách Hàng (Debit Note)</span>
@@ -1190,7 +1293,7 @@
                 </div>
 
                 <!-- 3.4 MOBILE TÀI XẾ -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-driver-mobile">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">3.4</span>
                         <span>Hướng Dẫn Bác Tài Báo 6 Mốc Kho & Chụp Ảnh POD/EIR Trên Điện Thoại</span>
@@ -1223,7 +1326,7 @@
                 </div>
 
                 <!-- 4.1 CẤP QUỸ ĐIỀU VẬN -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-fund-level1">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">4.1</span>
                         <span>Hướng Dẫn Kế Toán Cấp Quỹ Điều Vận Cấp 1</span>
@@ -1241,7 +1344,7 @@
                 </div>
 
                 <!-- 4.2 CẤP TẠM ỨNG TÀI XẾ -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-advance-level2">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">4.2</span>
                         <span>Hướng Dẫn Điều Vận Cấp Tạm Ứng Dọc Đường Cho Tài Xế Cấp 2</span>
@@ -1260,7 +1363,7 @@
                 </div>
 
                 <!-- 4.3 QUYẾT TOÁN HOÀN ỨNG -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-settle-advance">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">4.3</span>
                         <span>Hướng Dẫn Quyết Toán Hoàn Ứng Chuyến Xe & Cân Đối Sổ Quỹ</span>
@@ -1279,7 +1382,7 @@
                 </div>
 
                 <!-- 4.4 SỔ QUỸ S03a-DN -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-cash-voucher">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">4.4</span>
                         <span>Hướng Dẫn Tạo Phiếu Thu / Phiếu Chi Sổ Quỹ Mẫu S03a-DN</span>
@@ -1293,12 +1396,12 @@
                             <li><strong>Số Tiền (VNĐ) (*) & Phương Thức (*):</strong> Nhập số tiền phát sinh, chọn <code>Tiền Mặt Tại Két</code> hoặc <code>Chuyển Khoản Ngân Hàng</code>.</li>
                             <li><strong>Diễn Giải (*):</strong> Ghi rõ lý do thu chi kèm số chứng từ tham chiếu.</li>
                         </ul>
-                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>. Bấm nút <strong>In Phiếu A4/A5</strong> để in mẫu chuẩn Thông tư Bộ Tài Chính có đầy đủ chữ ký 4 bên (Giám đốc, Kế toán trưởng, Thủ quỹ, Người nộp/nhận tiền).</p>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>. Bấm nút <strong>In Phiếu A4/A5</strong> để in mẫu chuẩn Thông tư Bộ Tài Chính có đầy đủ chữ ký 4 bên.</p>
                     </div>
                 </div>
 
                 <!-- 4.5 XE BẠN 3PL -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-subcontractor-settle">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">4.5</span>
                         <span>Hướng Dẫn Thỏa Thuận Cước & Quyết Toán Xe Bạn / Thầu Phụ 3PL</span>
@@ -1311,7 +1414,7 @@
                 </div>
 
                 <!-- 4.6 GOM CHUYẾN -->
-                <div class="doc-item-block">
+                <div class="doc-item-block" id="sec-input-batch-settle">
                     <h4 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2 font-heading">
                         <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold inline-flex items-center justify-center shrink-0">4.6</span>
                         <span>Hướng Dẫn Quyết Toán Gom Chuyến Xe Hàng Loạt (Batch Settlement)</span>
@@ -1412,9 +1515,108 @@
         </div>
     </footer>
 
-    <!-- INTERACTIVE JAVASCRIPT FOR SEARCH & SCROLLSPY -->
+    <!-- INTERACTIVE JAVASCRIPT FOR SIDEBAR TREE ACCORDION, SEARCH & SCROLLSPY -->
     <script>
-        // Live search filter across all help sections and table rows
+        // Toggle mở / thu gọn các nhóm cây trong Sidebar (Cha - Con - Cháu)
+        function toggleTreeGroup(headerEl) {
+            const group = headerEl.parentElement;
+            const children = group.querySelector('.tree-children, .tree-grandchildren');
+            const arrow = headerEl.querySelector('.tree-arrow');
+            
+            if (children) {
+                const isHidden = children.classList.contains('hidden');
+                if (isHidden) {
+                    children.classList.remove('hidden');
+                    if (arrow) arrow.classList.remove('rotated');
+                } else {
+                    children.classList.add('hidden');
+                    if (arrow) arrow.classList.add('rotated');
+                }
+            }
+        }
+
+        // Tìm kiếm & lọc nhanh cây mục lục bên trái (Sidebar Tree Filter)
+        function filterSidebarTree() {
+            const query = document.getElementById('sidebar-tree-search').value.trim().toLowerCase();
+            const clearBtn = document.getElementById('sidebar-tree-clear');
+            const treeNav = document.getElementById('help-tree-nav');
+            const parentGroups = treeNav.querySelectorAll('.tree-parent-group');
+
+            if (clearBtn) {
+                clearBtn.classList.toggle('hidden', query.length === 0);
+            }
+
+            if (!query) {
+                // Khôi phục hiển thị ban đầu
+                parentGroups.forEach(pg => {
+                    pg.style.display = '';
+                    const children = pg.querySelector('.tree-children');
+                    if (children) children.classList.remove('hidden');
+                    const subGroups = pg.querySelectorAll('.tree-subparent-group');
+                    subGroups.forEach(sg => {
+                        sg.style.display = '';
+                        const gc = sg.querySelector('.tree-grandchildren');
+                        if (gc) gc.classList.remove('hidden');
+                    });
+                    const links = pg.querySelectorAll('a.nav-link');
+                    links.forEach(l => l.style.display = '');
+                });
+                return;
+            }
+
+            // Lọc và mở bung tất cả các nhánh có chứa từ khóa
+            parentGroups.forEach(pg => {
+                let parentHasMatch = false;
+                const links = pg.querySelectorAll('a.nav-link');
+                
+                links.forEach(link => {
+                    const text = link.innerText.toLowerCase();
+                    const isMatch = text.includes(query);
+                    link.style.display = isMatch ? '' : 'none';
+                    if (isMatch) {
+                        parentHasMatch = true;
+                        // Mở bung cấp subparent nếu có
+                        const subGroup = link.closest('.tree-subparent-group');
+                        if (subGroup) {
+                            subGroup.style.display = '';
+                            const gc = subGroup.querySelector('.tree-grandchildren');
+                            if (gc) gc.classList.remove('hidden');
+                            const subArrow = subGroup.querySelector('.tree-arrow');
+                            if (subArrow) subArrow.classList.remove('rotated');
+                        }
+                    }
+                });
+
+                // Kiểm tra xem tiêu đề cha/con có khớp từ khóa không
+                const parentHeader = pg.querySelector('.tree-header');
+                if (parentHeader && parentHeader.innerText.toLowerCase().includes(query)) {
+                    parentHasMatch = true;
+                    // Hiển thị tất cả con
+                    links.forEach(l => l.style.display = '');
+                }
+
+                if (parentHasMatch) {
+                    pg.style.display = '';
+                    const children = pg.querySelector('.tree-children');
+                    if (children) children.classList.remove('hidden');
+                    const arrow = pg.querySelector('.tree-arrow');
+                    if (arrow) arrow.classList.remove('rotated');
+                } else {
+                    pg.style.display = 'none';
+                }
+            });
+        }
+
+        function clearSidebarTreeSearch() {
+            const input = document.getElementById('sidebar-tree-search');
+            if (input) {
+                input.value = '';
+                filterSidebarTree();
+                input.focus();
+            }
+        }
+
+        // Live search filter across main help content
         function filterHelpTopics() {
             const query = document.getElementById('help-search-input').value.trim().toLowerCase();
             const clearBtn = document.getElementById('help-clear-btn');
@@ -1434,7 +1636,6 @@
                 const text = sec.innerText.toLowerCase();
                 if (text.includes(query)) {
                     sec.style.display = '';
-                    // Highlight matching rows in tables
                     const rows = sec.querySelectorAll('tbody tr');
                     rows.forEach(tr => {
                         const rowText = tr.innerText.toLowerCase();
@@ -1457,23 +1658,26 @@
 
         // Active state ScrollSpy for sidebar TOC links
         window.addEventListener('scroll', () => {
-            const sections = document.querySelectorAll('.help-section');
-            const navLinks = document.querySelectorAll('#help-nav-list a');
+            const sections = document.querySelectorAll('.help-section, .doc-item-block[id]');
+            const navLinks = document.querySelectorAll('#help-tree-nav a.nav-link');
             let current = '';
 
             sections.forEach(sec => {
                 const sectionTop = sec.offsetTop - 120;
                 if (window.scrollY >= sectionTop) {
-                    current = sec.getAttribute('id');
+                    const secId = sec.getAttribute('id');
+                    if (secId) current = secId;
                 }
             });
 
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === `#${current}`) {
-                    link.classList.add('active');
-                }
-            });
+            if (current) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
         });
     </script>
 </body>
