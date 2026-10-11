@@ -2,7 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [2.9.49] - 2026-10-11 (Mục Lục Cây Phân Cấp Cha-Con-Cháu Có Ô Tìm Kiếm Nhanh & Đặc Tả Toàn Diện 13 Danh Mục Cài Đặt Master Data)
+## [2.9.50] - 2026-10-11 (Đồng Bộ Nhận Diện Thương Hiệu: Favicon Logo BIM & Cập Nhật Tiêu Đề Tab Hệ Thống)
+
+### 1. Đồng Bộ Nhận Diện Favicon Logo BIM (Ecosystem Brand Consistency):
+- **Thay thế biểu tượng TVL cũ trên Favicon:**
+  * Chuyển đổi và tạo lại toàn bộ file chuẩn đa phân giải `static/favicon.ico` (16x16, 32x32, 48x48, 64x64) từ logo BIM chính thức (`static/images/logo_clean.png`).
+  * Cập nhật thẻ khai báo `<link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">` và `<link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">` trên [base.html](file:///e:/Bim_Logistics/templates/base.html) kèm tham số cache-busting `?v=3.0`.
+  * Đồng bộ favicon chuẩn nhận diện thương hiệu BIM sang toàn bộ các trang giao diện độc lập: [login.html](file:///e:/Bim_Logistics/templates/login.html), [driver_portal.html](file:///e:/Bim_Logistics/templates/driver_portal.html), [public_tracking.html](file:///e:/Bim_Logistics/templates/public_tracking.html) và [help.html](file:///e:/Bim_Logistics/templates/help.html).
+
+### 2. Cập Nhật Tiêu Đề Hiển Thị Trình Duyệt:
+- **Đổi tên hiển thị trên Tab Trình duyệt:**
+  * Chuyển tiêu đề mặc định của hệ thống quản lý điều vận thành: **"Bim Logistics - Hệ thống Quản lý Vận tải"**.
+
+
 
 ### 1. Nâng Cấp Hệ Thống Mục Lục Sidebar Thành Cây Phân Cấp 3 Tầng (Hierarchical Accordion Tree):
 - **Cấu trúc Cây Cha - Con - Cháu tinh gọn và trực quan:**
