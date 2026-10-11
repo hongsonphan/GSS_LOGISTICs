@@ -14609,7 +14609,7 @@ function renderRolesPermissionsView(data) {
                     <div>
                         <div class="flex items-center gap-2 flex-wrap mb-1">
                             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/30 text-teal-200 border border-teal-400/30">
-                                Django Standard RBAC
+                                Chuẩn Phân Quyền Vai Trò
                             </span>
                             <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                                 Phân Quyền Theo Nhóm
