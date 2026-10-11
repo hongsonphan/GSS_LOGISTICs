@@ -105,6 +105,28 @@
             color: #0f766e;
             font-weight: 700;
         }
+        /* Đảm bảo toàn bộ bookmark (cả mục cha lẫn các mục con cấp nhỏ 2.1, 3.1, 6.5...) luôn dừng cách Topbar 96px */
+        [id^="sec-"] {
+            scroll-margin-top: 96px !important;
+        }
+        .highlight-flash {
+            animation: flashTarget 2s ease-out forwards;
+        }
+        @keyframes flashTarget {
+            0% {
+                background-color: #ccfbf1;
+                box-shadow: 0 0 0 4px #5eead4;
+                border-radius: 8px;
+            }
+            40% {
+                background-color: #f0fdfa;
+                box-shadow: 0 0 0 2px #2dd4bf;
+            }
+            100% {
+                background-color: transparent;
+                box-shadow: none;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-100/70 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-teal-500 selection:text-white">
@@ -979,7 +1001,7 @@
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">2. Hướng Dẫn Thao Tác Phân Hệ Sale & Booking</h3>
 
                     <!-- 2.1 TẠO BÁO GIÁ -->
-                    <div id="sec-input-quotation" class="space-y-2">
+                    <div id="sec-input-quotation" class="scroll-mt-24 space-y-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">2.1. Hướng Dẫn Tạo Mới Bảng Báo Giá</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Sale & Booking</strong> ➔ Bấm nút <strong>+ Tạo Báo Giá Mới</strong> ở góc trên bên phải.</p>
@@ -996,7 +1018,7 @@
                     </div>
 
                     <!-- 2.2 TẠO BOOKING -->
-                    <div id="sec-input-booking" class="space-y-2 pt-2">
+                    <div id="sec-input-booking" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">2.2. Hướng Dẫn Tạo Mới Booking</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Sale & Booking</strong> ➔ Tab <strong>Danh Sách Booking</strong> ➔ Bấm nút <strong>+ Tạo Booking Mới</strong>.</p>
@@ -1018,7 +1040,7 @@
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">3. Hướng Dẫn Thao Tác Phân Hệ Điều Vận</h3>
 
                     <!-- 3.1 TẠO LỆNH ĐIỀU XE -->
-                    <div id="sec-input-trip-create" class="space-y-2">
+                    <div id="sec-input-trip-create" class="scroll-mt-24 space-y-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">3.1. Tạo Lệnh Điều Xe Mới</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Điều vận</strong> ➔ Bấm nút <strong>+ Phát Lệnh Điều Xe</strong>.</p>
@@ -1035,7 +1057,7 @@
                     </div>
 
                     <!-- 3.2 CẮT KÉO & GHÉP CONT -->
-                    <div id="sec-input-split-twin" class="space-y-2 pt-2">
+                    <div id="sec-input-split-twin" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">3.2. Cắt Kéo & Ghép 2 Cont 20ft</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p><strong>• Khi nào sử dụng:</strong> Khi có 2 đơn hàng cont 20ft cùng lộ trình hoặc khi cần đổi đầu kéo giữa chặng.</p>
@@ -1044,7 +1066,7 @@
                     </div>
 
                     <!-- 3.3 KÊ KHAI CHI PHÍ & CHI HỘ -->
-                    <div id="sec-input-expense-behalf" class="space-y-2 pt-2">
+                    <div id="sec-input-expense-behalf" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">3.3. Kê Khai Chi Phí & Chi Hộ</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p><strong>• Nơi thực hiện:</strong> Mở Chi tiết chuyến xe ➔ Tab <strong>Chi Phí Chuyến</strong> ➔ Bấm <strong>+ Thêm Khoản Chi</strong>.</p>
@@ -1053,7 +1075,7 @@
                     </div>
 
                     <!-- 3.4 BÁO 6 MỐC VẬN CHUYỂN -->
-                    <div id="sec-input-driver-mobile" class="space-y-2 pt-2">
+                    <div id="sec-input-driver-mobile" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">3.4. Báo 6 Mốc Vận Chuyển Trên Điện Thoại (Driver Portal)</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p>Tài xế mở liên kết chuyến xe trên điện thoại thông minh và thực hiện chạm xác nhận theo 6 mốc:</p>
@@ -1073,11 +1095,11 @@
                 <section id="sec-input-fleet" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">4. Hướng Dẫn Thao Tác Phân Hệ Xe & Bãi</h3>
                     <div class="text-sm text-slate-700 space-y-3">
-                        <div id="sec-input-vehicles">
+                        <div id="sec-input-vehicles" class="scroll-mt-24">
                             <p class="font-bold text-slate-900">4.1. Khai báo Xe & Hạn kiểm định:</p>
                             <p>Vào menu <strong>Xe & Bãi</strong> ➔ Tab <strong>Danh Sách Xe</strong> ➔ Bấm <strong>Thêm Xe Mới</strong>. Nhập đầy đủ biển số, hạn đăng kiểm và định mức dầu.</p>
                         </div>
-                        <div id="sec-input-trailers">
+                        <div id="sec-input-trailers" class="scroll-mt-24">
                             <p class="font-bold text-slate-900">4.2. Khai báo Rơ-moóc & Bảo dưỡng:</p>
                             <p>Vào menu <strong>Xe & Bãi</strong> ➔ Tab <strong>Rơ-Moóc</strong> ➔ Bấm <strong>Thêm Rơ-Moóc</strong>. Quản lý hạn đăng kiểm moóc và lịch đảo lốp xe định kỳ.</p>
                         </div>
@@ -1088,11 +1110,11 @@
                 <section id="sec-input-hr" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">5. Hướng Dẫn Thao Tác Phân Hệ Hành Chính & Nhân Sự</h3>
                     <div class="text-sm text-slate-700 space-y-3">
-                        <div id="sec-input-hr-staff">
+                        <div id="sec-input-hr-staff" class="scroll-mt-24">
                             <p class="font-bold text-slate-900">5.1. Quản lý Hồ sơ nhân sự:</p>
                             <p>Vào menu <strong>Hành chính & Nhân sự</strong> ➔ Bấm <strong>+ Thêm Nhân Viên Mới</strong>. Điền họ tên, số điện thoại, vai trò quyền hạn và phân công xe phụ trách.</p>
                         </div>
-                        <div id="sec-input-hr-payroll">
+                        <div id="sec-input-hr-payroll" class="scroll-mt-24">
                             <p class="font-bold text-slate-900">5.2. Chấm công & Tính lương chuyến:</p>
                             <p>Vào tab <strong>Bảng Lương Chuyến</strong> ➔ Chọn tháng cần tính ➔ Bấm <strong>Tổng Hợp Lương Chuyến</strong>. Hệ thống tự động quét toàn bộ chuyến xe hoàn thành của từng tài xế để tính ra tổng lương chính xác.</p>
                         </div>
@@ -1104,7 +1126,7 @@
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">6. Hướng Dẫn Thao Tác Phân Hệ Tài Chính & Kế Toán</h3>
 
                     <!-- 6.1 CẤP QUỸ ĐIỀU VẬN -->
-                    <div id="sec-input-fund-level1" class="space-y-2">
+                    <div id="sec-input-fund-level1" class="scroll-mt-24 space-y-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">6.1. Cấp Quỹ Điều Vận</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p><strong>• Ý nghĩa:</strong> Thủ quỹ xuất tiền mặt từ két công ty để bàn giao hạn mức tiền mặt cho Điều phối viên nắm giữ để chủ động tạm ứng cho các tài xế chạy đêm.</p>
@@ -1113,7 +1135,7 @@
                     </div>
 
                     <!-- 6.2 CẤP TẠM ỨNG TÀI XẾ -->
-                    <div id="sec-input-advance-level2" class="space-y-2 pt-2">
+                    <div id="sec-input-advance-level2" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">6.2. Cấp Tạm Ứng Tài Xế</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p>Điều phối viên xuất tiền từ Quỹ điều vận cho tài xế khi phát lệnh điều xe (hoặc tài xế nhận tạm ứng chuyển khoản qua ngân hàng). Hệ thống tự động ghi nhận dư nợ tạm ứng theo từng mã chuyến xe.</p>
@@ -1121,7 +1143,7 @@
                     </div>
 
                     <!-- 6.3 QUYẾT TOÁN HOÀN ỨNG -->
-                    <div id="sec-input-settle-advance" class="space-y-2 pt-2">
+                    <div id="sec-input-settle-advance" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">6.3. Quyết Toán Hoàn Ứng</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p>Sau khi chuyến xe hoàn tất, tài xế nộp lại chứng từ chi phí thực tế. Kế toán đối chiếu:</p>
@@ -1131,7 +1153,7 @@
                     </div>
 
                     <!-- 6.4 LẬP PHIẾU THU / PHIẾU CHI -->
-                    <div id="sec-input-cash-voucher" class="space-y-2 pt-2">
+                    <div id="sec-input-cash-voucher" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">6.4. Lập Phiếu Thu / Phiếu Chi Sổ Quỹ</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p>Vào tab <strong>Sổ Quỹ Thu Chi</strong> ➔ Bấm <strong>+ Lập Phiếu Thu</strong> hoặc <strong>+ Lập Phiếu Chi</strong>. Chọn đúng tài khoản tiền mặt hoặc tài khoản ngân hàng để ghi sổ quỹ chuẩn mực.</p>
@@ -1139,7 +1161,7 @@
                     </div>
 
                     <!-- 6.5 QUYẾT TOÁN XE THẦU PHỤ -->
-                    <div id="sec-input-subcontractor-settle" class="space-y-2 pt-2">
+                    <div id="sec-input-subcontractor-settle" class="scroll-mt-24 space-y-2 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">6.5. Quyết Toán Xe Thầu Phụ 3PL</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p>Vào tab <strong>Công Nợ Xe Bạn</strong> ➔ Chọn nhà xe thầu phụ ➔ Tích chọn các chuyến xe đã hoàn tất POD ➔ Bấm <strong>Tạo Bảng Quyết Toán Đợt</strong> để chuyển tiền cước thuê ngoài.</p>
@@ -1291,10 +1313,34 @@
             }
         }
 
-        // Highlight link mục lục đang xem khi scroll
-        window.addEventListener('DOMContentLoaded', () => {
-            const sections = document.querySelectorAll('section[id], div[id^="sec-"]');
+        // Xử lý click bookmark mượt mà và nhấp nháy highlight vào đúng vị trí
+        document.addEventListener('DOMContentLoaded', () => {
             const navLinks = document.querySelectorAll('#help-tree-nav .nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        const targetId = href.substring(1);
+                        const targetEl = document.getElementById(targetId);
+                        if (targetEl) {
+                            e.preventDefault();
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            history.pushState(null, null, href);
+                            
+                            // Hiệu ứng flash highlight để người dùng nhận diện ngay bookmark vừa đến
+                            targetEl.classList.remove('highlight-flash');
+                            void targetEl.offsetWidth; // force reflow
+                            targetEl.classList.add('highlight-flash');
+                            
+                            // Cập nhật active link
+                            navLinks.forEach(l => l.classList.remove('active'));
+                            this.classList.add('active');
+                        }
+                    }
+                });
+            });
+
+            const sections = document.querySelectorAll('section[id], div[id^="sec-"]');
 
             window.addEventListener('scroll', () => {
                 let current = '';

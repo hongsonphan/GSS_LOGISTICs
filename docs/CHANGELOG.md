@@ -2,6 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v1.7] - 2026-10-11 (Khắc Phục Triệt Để Điều Hướng Bookmark Cấp Nhỏ 2.1, 3.1... 6.5 Trên Sổ Tay /helps)
+
+### 1. Khắc Phục Triệt Để Lỗi Cuộn Che Khuất Tiêu Đề Mục Con:
+- **Nguyên nhân cốt lõi:** Thanh Topbar có `position: sticky top-0 h-16 (64px) z-40`. Khi người dùng bấm vào các bookmark cấp con (`2.1. Tạo Báo giá`, `3.1. Tạo Lệnh điều xe`... `6.5. Quyết toán xe thầu phụ`), trình duyệt cuộn theo hash mặc định đưa phần tử lên đỉnh `y = 0`, khiến toàn bộ tiêu đề mục con bị Topbar đè che khuất.
+- **Giải Pháp Kỹ Thuật Toàn Diện:**
+  * **Thiết lập CSS Toàn Cục:** Bổ sung `[id^="sec-"] { scroll-margin-top: 96px !important; }` để bảo đảm mọi bookmark (dù là thẻ `section`, `div`, `h3`, `h4`) luôn tự động dừng cách mép trên 96px (chừa đủ 64px của thanh Topbar và 32px khoảng đệm thông thoáng).
+  * **Bổ sung Class `scroll-mt-24`:** Gán trực tiếp class Tailwind `scroll-mt-24` cho toàn bộ 15 khối mục con cấp 2 và cấp 3 trong tài liệu.
+  * **Hiệu Ứng Flash Highlight Nhận Diện Bookmark:** Khi nhấp chuột vào bất kỳ mục nào trên cây Mục lục, JavaScript tự động kích hoạt hiệu ứng nhấp nháy phát sáng (`highlight-flash` viền/nền xanh ngọc teal dịu mắt trong 2 giây) tại đúng vị trí mục tiêu, giúp người dùng nhận diện ngay lập tức nội dung vừa tìm.
+  * **Cuộn Mượt Không Giật:** Sử dụng `scrollIntoView({ behavior: 'smooth', block: 'start' })` kết hợp `history.pushState` giữ trải nghiệm điều hướng êm ái.
+
+### 2. Kiểm Thử Hệ Thống (Zero-Regression):
+- Vượt qua 89/89 unit tests (`python manage.py test --keepdb`). Cú pháp JavaScript hợp lệ 100%.
+
 ## [v1.6] - 2026-10-11 (Chuẩn Hóa Tiêu Đề Tab Trình Duyệt, Tái Cấu Trúc Menu Profile Avatar & Bản Quyền HDSD)
 
 ### 1. Chuẩn Hóa Tiêu Đề Tab Trình Duyệt (Browser Tab Titles):
