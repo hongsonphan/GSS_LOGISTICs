@@ -569,26 +569,39 @@ class DriverBatchSettlementQueryAPIView(APIView):
         group_by = request.query_params.get('group_by', 'driver') # 'driver', 'customer', 'vehicle', 'date'
         settle_filter = request.query_params.get('settlement_status', 'ALL') # 'ALL', 'PENDING', 'SETTLED'
 
+        valid_settlement_statuses = [
+            TripStatus.COMPLETED,
+            TripStatus.DELIVERED,
+            TripStatus.RETURNING_EMPTY,
+            TripStatus.AT_WAREHOUSE,
+        ]
+
         trips_qs = DispatchTrip.objects.filter(
             is_deleted=False,
-            status=TripStatus.COMPLETED
+            status__in=valid_settlement_statuses
         ).select_related(
             'driver', 'vehicle', 'customer', 'booking_order'
         ).prefetch_related(
             'expenses', 'driver_advances', 'documents'
-        ).order_by('-loading_date', '-id')
+        ).order_by('-loading_date', '-created_at', '-id')
 
         if from_date_str:
             try:
                 from_date = datetime.datetime.strptime(from_date_str, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(loading_date__gte=from_date)
+                trips_qs = trips_qs.filter(
+                    Q(loading_date__gte=from_date) |
+                    Q(loading_date__isnull=True, created_at__date__gte=from_date)
+                )
             except ValueError:
                 pass
 
         if to_date_str:
             try:
                 to_date = datetime.datetime.strptime(to_date_str, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(loading_date__lte=to_date)
+                trips_qs = trips_qs.filter(
+                    Q(loading_date__lte=to_date) |
+                    Q(loading_date__isnull=True, created_at__date__lte=to_date)
+                )
             except ValueError:
                 pass
 
@@ -626,11 +639,12 @@ class DriverBatchSettlementQueryAPIView(APIView):
             grand_total_advance += trip_advance
             grand_total_spent += trip_spent
 
+            t_date = trip.loading_date or trip.created_at.date()
             trip_item = {
                 'id': trip.id,
                 'trip_code': trip.trip_code,
-                'loading_date': trip.loading_date.strftime('%d/%m/%Y') if trip.loading_date else '-',
-                'loading_date_raw': trip.loading_date.strftime('%Y-%m-%d') if trip.loading_date else '',
+                'loading_date': t_date.strftime('%d/%m/%Y'),
+                'loading_date_raw': t_date.strftime('%Y-%m-%d'),
                 'customer_name': trip.customer.name if trip.customer else '-',
                 'route': f"{trip.pickup_location or 'Cảng'} ➔ {trip.warehouse_location or 'Kho'}",
                 'container_number': trip.container_number or '-',
@@ -663,8 +677,8 @@ class DriverBatchSettlementQueryAPIView(APIView):
                 group_label = f"Đầu Xe: {trip.vehicle.license_plate if trip.vehicle else 'Chưa gán xe'}"
                 group_sub = f"Tài xế phụ trách: {(trip.driver.nickname or trip.driver.full_name) if trip.driver else '-'}"
             elif group_by == 'date':
-                d_str = trip.loading_date.strftime('%d/%m/%Y') if trip.loading_date else 'Không ngày'
-                group_key = f"date_{trip.loading_date.strftime('%Y%m%d') if trip.loading_date else 'none'}"
+                d_str = t_date.strftime('%d/%m/%Y')
+                group_key = f"date_{t_date.strftime('%Y%m%d')}"
                 group_label = f"Ngày Vận Hành: {d_str}"
                 group_sub = f"Các chuyến chạy trong ngày {d_str}"
             else: # default: driver
@@ -739,12 +753,12 @@ class DriverBatchSettlementExecuteAPIView(APIView):
         if not trips.exists():
             return Response({'error': 'Không tìm thấy các chuyến xe tương ứng'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Kiểm tra điều kiện chỉ quyết toán các chuyến đã COMPLETED
-        uncompleted_trips = trips.exclude(status=TripStatus.COMPLETED)
-        if uncompleted_trips.exists():
-            codes = ", ".join(uncompleted_trips.values_list('trip_code', flat=True)[:3])
+        # Kiểm tra điều kiện chỉ quyết toán các chuyến hợp lệ (loại trừ DRAFT, DISPATCHED, IN_TRANSIT, CANCELLED)
+        invalid_trips = trips.filter(status__in=[TripStatus.DRAFT, TripStatus.DISPATCHED, TripStatus.IN_TRANSIT, TripStatus.CANCELLED])
+        if invalid_trips.exists():
+            codes = ", ".join(invalid_trips.values_list('trip_code', flat=True)[:3])
             return Response({
-                'error': f'Không thể quyết toán vì có chuyến chưa hoàn thành ({codes}). Chỉ được quyết toán các chuyến đã ở trạng thái ĐÃ HOÀN THÀNH (COMPLETED)!'
+                'error': f'Không thể quyết toán vì có chuyến đang trên đường vận chuyển hoặc chưa hoàn tất giao hàng ({codes}). Chỉ được quyết toán các chuyến đã đến kho giao hàng hoặc đã hoàn thành!'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
@@ -761,7 +775,9 @@ class DriverBatchSettlementExecuteAPIView(APIView):
                 trip.settled_at = now
                 trip.settled_by = curr_emp
                 trip.advance_settlement_status = 'SETTLED'
-                trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by', 'advance_settlement_status'])
+                if trip.status in [TripStatus.AT_WAREHOUSE, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY]:
+                    trip.status = TripStatus.COMPLETED
+                trip.save(update_fields=['is_expenses_settled', 'settled_at', 'settled_by', 'advance_settlement_status', 'status'])
 
                 # 2. Chốt các khoản chi phí của chuyến
                 trip.expenses.filter(is_deleted=False).exclude(status=ApprovalStatus.REJECTED).update(

@@ -10135,11 +10135,13 @@ function switchTab(tabId, updateHistory = true) {
         previousActiveTab = tabId;
     }
 
-    // Ẩn view chi tiết chuyến xe và phiếu thu chi nếu đang mở
+    // Ẩn view chi tiết chuyến xe, phiếu thu chi, bảng kê đối soát nếu đang mở
     const detailView = document.getElementById('view-trip-detail');
     if (detailView) detailView.classList.add('hidden-view');
     const voucherDetailView = document.getElementById('view-cash-voucher-detail');
     if (voucherDetailView) voucherDetailView.classList.add('hidden-view');
+    const soaDetailView = document.getElementById('view-customer-ar-statement');
+    if (soaDetailView) soaDetailView.classList.add('hidden-view');
 
     // Chuyển đổi hiển thị view
     document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
@@ -19746,99 +19748,164 @@ function applyReport13Filters() {
 function viewCustomerARStatement(customerId) {
     const cust = rep13DataCache.find(c => String(c.customer_id) === String(customerId) || String(c.customer_code) === String(customerId));
     if (!cust) {
-        showToast('Không tìm thấy dữ liệu đối soát của khách hàng', 'error');
+        showToast('warning', 'Không tìm thấy dữ liệu đối soát của khách hàng', 'Thông Báo');
         return;
     }
     currentStatementCustomer = cust;
 
-    const modal = document.getElementById('modal-customer-ar-statement');
-    if (!modal) return;
+    // --- 1. ĐỔ DỮ LIỆU VÀO FULL-PAGE VIEW (view-customer-ar-statement) ---
+    const soaView = document.getElementById('view-customer-ar-statement');
+    if (soaView) {
+        const elCustName = document.getElementById('soa-cust-name');
+        if (elCustName) elCustName.innerText = cust.customer_name;
 
-    // Cập nhật Header & Info
-    const elHeader = document.getElementById('modal-ar-soa-customer-header');
-    if (elHeader) elHeader.innerText = `Khách hàng: ${cust.customer_name} (${cust.customer_code || '-'})`;
+        const elCustCode = document.getElementById('soa-cust-badge-code');
+        if (elCustCode) elCustCode.innerText = cust.customer_code || '-';
 
-    const elCustName = document.getElementById('modal-ar-cust-name');
-    if (elCustName) elCustName.innerText = cust.customer_name;
+        const elCustTax = document.getElementById('soa-cust-tax');
+        if (elCustTax) elCustTax.innerText = cust.tax_code || '-';
 
-    const elCustCode = document.getElementById('modal-ar-cust-code');
-    if (elCustCode) elCustCode.innerText = cust.customer_code || '-';
+        const elCustPhone = document.getElementById('soa-cust-phone');
+        if (elCustPhone) elCustPhone.innerText = cust.contact_phone || '-';
 
-    const elCustTax = document.getElementById('modal-ar-cust-tax');
-    if (elCustTax) elCustTax.innerText = cust.tax_code || '-';
+        const elFreight = document.getElementById('soa-stat-freight');
+        if (elFreight) elFreight.innerText = formatMoneyVND(cust.freight_revenue || 0);
 
-    const elCustPhone = document.getElementById('modal-ar-cust-phone');
-    if (elCustPhone) elCustPhone.innerText = cust.contact_phone || '-';
+        const elReim = document.getElementById('soa-stat-reim');
+        if (elReim) elReim.innerText = formatMoneyVND(cust.reimbursable_amount || 0);
 
-    // Cập nhật Thẻ Tiền
-    const elTotal = document.getElementById('modal-ar-cust-total');
-    if (elTotal) elTotal.innerText = formatMoneyVND(cust.total_receivable || 0);
+        const elTotal = document.getElementById('soa-stat-total');
+        if (elTotal) elTotal.innerText = formatMoneyVND(cust.total_receivable || 0);
 
-    const elSub = document.getElementById('modal-ar-cust-sub');
-    if (elSub) elSub.innerText = `Cước: ${formatMoneyVND(cust.freight_revenue || 0)} · Chi hộ: ${formatMoneyVND(cust.reimbursable_amount || 0)}`;
+        const elCollected = document.getElementById('soa-stat-collected');
+        if (elCollected) elCollected.innerText = formatMoneyVND(cust.collected_amount || 0);
 
-    const elBalance = document.getElementById('modal-ar-cust-balance');
-    if (elBalance) elBalance.innerText = formatMoneyVND(cust.remaining_balance || 0);
+        const elBalance = document.getElementById('soa-stat-balance');
+        if (elBalance) elBalance.innerText = formatMoneyVND(cust.remaining_balance || 0);
 
-    const elCollected = document.getElementById('modal-ar-cust-collected');
-    if (elCollected) elCollected.innerText = `Đã thu: ${formatMoneyVND(cust.collected_amount || 0)}`;
+        const elCount = document.getElementById('soa-trips-count-badge');
+        if (elCount) elCount.innerText = `${cust.trips ? cust.trips.length : 0} Chuyến Vận Đơn`;
 
-    const elCount = document.getElementById('modal-ar-trips-count');
-    if (elCount) elCount.innerText = `${cust.trips ? cust.trips.length : 0} Vận Đơn / Chuyến Xe`;
+        // Render Bảng Chuyến trên Full-Page View
+        const fullTbody = document.getElementById('soa-fullpage-tbody');
+        const fullTfoot = document.getElementById('soa-fullpage-tfoot');
+        if (fullTbody) {
+            const trips = cust.trips || [];
+            if (trips.length === 0) {
+                fullTbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400 font-medium">Không có chi tiết chuyến phát sinh trong kỳ</td></tr>`;
+                if (fullTfoot) fullTfoot.innerHTML = '';
+            } else {
+                const sumRev = trips.reduce((sum, t) => sum + (parseFloat(t.revenue) || 0), 0);
+                const sumReim = trips.reduce((sum, t) => sum + (parseFloat(t.reimbursable) || 0), 0);
+                const sumTotal = trips.reduce((sum, t) => sum + (parseFloat(t.total_receivable) || 0), 0);
 
-    // Render Bảng Chuyến
-    const tbody = document.getElementById('modal-ar-trips-tbody');
-    const modalTfoot = document.getElementById('modal-ar-trips-tfoot');
-    if (tbody) {
-        const trips = cust.trips || [];
-        if (trips.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 font-medium">Không có chi tiết chuyến phát sinh trong kỳ</td></tr>`;
-            if (modalTfoot) modalTfoot.innerHTML = '';
-        } else {
-            const sumRev = trips.reduce((sum, t) => sum + (parseFloat(t.revenue) || 0), 0);
-            const sumReim = trips.reduce((sum, t) => sum + (parseFloat(t.reimbursable) || 0), 0);
-            const sumTotal = trips.reduce((sum, t) => sum + (parseFloat(t.total_receivable) || 0), 0);
-
-            tbody.innerHTML = trips.map((t, idx) => `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="text-center font-bold text-slate-500">${idx + 1}</td>
-                    <td class="font-bold text-teal-800 font-mono">${escapeHtml(t.trip_code)}</td>
-                    <td class="text-center text-slate-700">${escapeHtml(t.loading_date)}</td>
-                    <td class="text-slate-800 font-medium">${escapeHtml(t.vehicle_plate)} · <span class="text-slate-500">${escapeHtml(t.driver_name || '-')}</span></td>
-                    <td class="font-mono text-slate-700">${escapeHtml(t.container_number || '-')}</td>
-                    <td class="text-slate-700 truncate max-w-xs" title="${escapeHtml(t.route)}">${escapeHtml(t.route)}</td>
-                    <td class="text-right text-slate-900 font-medium tabular-nums">${formatMoneyVND(t.revenue || 0)}</td>
-                    <td class="text-right text-slate-600 tabular-nums">${formatMoneyVND(t.reimbursable || 0)}</td>
-                    <td class="text-right font-black text-slate-900 tabular-nums bg-slate-50">${formatMoneyVND(t.total_receivable || 0)}</td>
-                    <td class="text-center">
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${t.has_pod ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
-                            ${t.has_pod ? 'Đã Nộp POD' : 'Thiếu POD'}
-                        </span>
-                    </td>
-                    <td class="text-center">
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${t.is_settled ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'}">
-                            ${t.is_settled ? 'Đã Chốt' : 'Chưa Chốt'}
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
-
-            if (modalTfoot) {
-                modalTfoot.innerHTML = `
-                    <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
-                        <td colspan="6" class="text-right uppercase p-2">TỔNG CỘNG: ${trips.length} Chuyến Vận Đơn:</td>
-                        <td class="text-right font-mono font-bold text-slate-900 p-2">${formatMoneyVND(sumRev)}</td>
-                        <td class="text-right font-mono font-bold text-slate-600 p-2">${formatMoneyVND(sumReim)}</td>
-                        <td class="text-right font-mono font-black text-slate-950 bg-slate-200/50 p-2">${formatMoneyVND(sumTotal)}</td>
-                        <td colspan="2" class="p-2"></td>
+                fullTbody.innerHTML = trips.map((t, idx) => `
+                    <tr class="hover:bg-teal-50/40 transition-colors">
+                        <td class="text-center font-bold text-slate-500 py-3">${idx + 1}</td>
+                        <td class="font-bold text-teal-800 font-mono py-3">${escapeHtml(t.trip_code)}</td>
+                        <td class="text-center text-slate-700 py-3 font-mono">${escapeHtml(t.loading_date)}</td>
+                        <td class="text-slate-800 font-medium py-3"><strong class="font-mono text-slate-900">${escapeHtml(t.vehicle_plate)}</strong> · <span class="text-slate-600">${escapeHtml(t.driver_name || '-')}</span></td>
+                        <td class="font-mono text-slate-800 py-3">${escapeHtml(t.container_number || '-')}</td>
+                        <td class="text-slate-700 py-3 max-w-sm truncate" title="${escapeHtml(t.route)}">${escapeHtml(t.route)}</td>
+                        <td class="text-right text-slate-900 font-medium tabular-nums py-3">${formatMoneyVND(t.revenue || 0)}</td>
+                        <td class="text-right text-amber-700 font-medium tabular-nums py-3">${formatMoneyVND(t.reimbursable || 0)}</td>
+                        <td class="text-right font-black text-slate-950 tabular-nums bg-slate-100/70 py-3">${formatMoneyVND(t.total_receivable || 0)}</td>
+                        <td class="text-center py-3">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold ${t.has_pod ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                ${t.has_pod ? 'Đã Nộp POD' : 'Thiếu POD'}
+                            </span>
+                        </td>
+                        <td class="text-center py-3">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold ${t.is_settled ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'}">
+                                ${t.is_settled ? 'Đã Chốt' : 'Chưa Chốt'}
+                            </span>
+                        </td>
                     </tr>
-                `;
+                `).join('');
+
+                if (fullTfoot) {
+                    fullTfoot.innerHTML = `
+                        <tr class="bg-slate-100/95 font-bold border-t-2 border-slate-300">
+                            <td colspan="6" class="text-right uppercase p-3 text-slate-900 font-heading">TỔNG CỘNG: ${trips.length} Chuyến Vận Đơn:</td>
+                            <td class="text-right font-mono font-bold text-slate-900 p-3">${formatMoneyVND(sumRev)}</td>
+                            <td class="text-right font-mono font-bold text-amber-700 p-3">${formatMoneyVND(sumReim)}</td>
+                            <td class="text-right font-mono font-black text-slate-950 bg-slate-200/70 p-3 text-sm">${formatMoneyVND(sumTotal)}</td>
+                            <td colspan="2" class="p-3"></td>
+                        </tr>
+                    `;
+                }
             }
         }
+
+        // Cấu hình Topbar Fullpage Mode
+        setTopbarFullpageMode({
+            backFn: returnFromCustomerStatementView,
+            prefix: 'Báo Cáo Công Nợ',
+            title: `Bảng Kê Đối Soát: ${cust.customer_name}`
+        });
+
+        // Ẩn tất cả view, mở fullpage view
+        document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
+        soaView.classList.remove('hidden-view');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
     }
 
-    modal.classList.remove('hidden');
+    // Fallback nếu không có fullpage view: mở modal
+    const modal = document.getElementById('modal-customer-ar-statement');
+    if (modal) modal.classList.remove('hidden');
 }
+
+function returnFromCustomerStatementView() {
+    resetTopbarStandardMode('bao-cao');
+    switchTab('bao-cao');
+    if (typeof switchReportTab === 'function') {
+        switchReportTab('report-13');
+    }
+}
+window.returnFromCustomerStatementView = returnFromCustomerStatementView;
+
+function filterSoaTable() {
+    const q = (document.getElementById('soa-table-search')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('#soa-fullpage-tbody tr');
+    rows.forEach(r => {
+        if (!q) {
+            r.style.display = '';
+        } else {
+            const text = r.innerText.toLowerCase();
+            r.style.display = text.includes(q) ? '' : 'none';
+        }
+    });
+}
+window.filterSoaTable = filterSoaTable;
+
+function exportCustomerStatementExcel() {
+    if (!currentStatementCustomer || !currentStatementCustomer.trips) {
+        showToast('warning', 'Không có dữ liệu đối soát để xuất file', 'Thông Báo');
+        return;
+    }
+    const cust = currentStatementCustomer;
+    const trips = cust.trips || [];
+    
+    let csv = '\uFEFF'; // UTF-8 BOM
+    csv += `BẢNG KÊ ĐỐI SOÁT CÔNG NỢ KHÁCH HÀNG (STATEMENT OF ACCOUNT)\n`;
+    csv += `Khách hàng:,"${cust.customer_name}",Mã KH:,"${cust.customer_code || '-'}",MST:,"${cust.tax_code || '-'}"\n`;
+    csv += `Tổng cước vận tải:,"${cust.freight_revenue}",Tiền chi hộ:,"${cust.reimbursable_amount}",Tổng phải thu:,"${cust.total_receivable}"\n`;
+    csv += `Đã thu hồi:,"${cust.collected_amount}",Còn phải thu:,"${cust.remaining_balance}"\n\n`;
+    
+    csv += `STT,Mã Chuyến,Ngày Chạy,Đầu Xe,Tài Xế,Số Container,Tuyến Đường,Cước Vận Tải,Tiền Chi Hộ,Tổng Phải Thu,POD,Quyết Toán\n`;
+    trips.forEach((t, i) => {
+        csv += `${i + 1},"${t.trip_code}","${t.loading_date}","${t.vehicle_plate}","${t.driver_name || ''}","${t.container_number || ''}","${t.route}",${t.revenue || 0},${t.reimbursable || 0},${t.total_receivable || 0},"${t.has_pod ? 'Đã Nộp' : 'Thiếu'}","${t.is_settled ? 'Đã Chốt' : 'Chưa Chốt'}"\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Bang_Ke_Doi_Soat_${cust.customer_code || 'KH'}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    showToast('success', 'Đã xuất file bảng kê đối soát thành công!', 'Xuất Excel');
+}
+window.exportCustomerStatementExcel = exportCustomerStatementExcel;
 
 function closeCustomerARStatementModal() {
     const modal = document.getElementById('modal-customer-ar-statement');

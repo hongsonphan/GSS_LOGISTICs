@@ -2,7 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [v1.7] - 2026-10-11 (Khắc Phục Triệt Để Điều Hướng Bookmark Cấp Nhỏ 2.1, 3.1... 6.5 Trên Sổ Tay /helps)
+## [v1.8] - 2026-10-11 (Chuẩn Hóa Số Liệu Công Nợ AR, Nâng Cấp SOA Full-Page View & Mở Rộng Quyết Toán Gom Chuyến Xe)
+
+### 1. Chuẩn Hóa Logic Tính Toán Công Nợ Phải Thu (AR Math Integrity):
+- **Khắc phục triệt để mâu thuẫn số liệu (Tổng nợ 133tr, Đã thu 173tr, Còn nợ 46tr):**
+  * Loại bỏ hoàn toàn công thức giả định `collected = int(freight * 0.8)` vốn tự động gán khống 80% cước cho các chuyến đã hoàn ứng tài xế nội bộ.
+  * Chỉ ghi nhận đã thu hồi khi có bút toán Sổ Quỹ thật (`CashTransaction` loại `INFLOW` từ khách hàng / thu cước vận tải).
+  * Áp dụng nguyên tắc kế toán chuẩn: Số tiền đã thu hồi được phân bổ bù trừ tối đa vào số nợ phát sinh trong kỳ của từng khách (`allocated_collected = min(total_receivable, collected)`).
+  * Bảo đảm tính toán toàn vẹn: $\text{Tổng nợ phải thu} = \text{Đã thu hồi} + \text{Còn phải thu thực tế}$.
+- **Chuẩn hóa công nợ khách hàng ABC:** Khách hàng ABC chưa có phiếu thu sổ quỹ -> Đã thu hồi = 0 đ, Còn phải thu = 24.000.000 đ (23.400.000 đ cước + 600.000 đ chi hộ chưa đối soát), đúng 100% nghiệp vụ thực tế.
+
+### 2. Nâng Cấp Bảng Kê Đối Soát Khách Hàng (SOA) Sang Full-Page View:
+- **Chuyển đổi từ Popup Modal sang Trang Toàn Màn Hình Chuyên Biệt (`view_customer_ar_statement.html`):**
+  * Không gian rộng rãi 100% full-width, không bị che khuất hoặc co rúm cột dữ liệu.
+  * Thanh điều hướng trên cùng kèm nút `Quay Lại Báo Cáo Công Nợ` và tích hợp mượt mà vào hệ thống Topbar Fullpage của BIM Logistics.
+  * Hiển thị đầy đủ thông tin khách hàng, MST, SĐT và 5 Card KPI tài chính trực quan (Cước, Chi hộ, Tổng phát sinh, Đã thu hồi, Còn phải thu).
+  * Bảng kê chi tiết từng vận đơn: STT, Mã chuyến, Ngày chạy, Đầu xe & Tài xế, Số Cont/Seal, Tuyến đường, Cước, Chi hộ, Tổng phải thu, Trạng thái POD gốc, Quyết toán nội bộ.
+  * Tích hợp ô tìm kiếm lọc nhanh tức thì theo mã chuyến/cont/tài xế và tính năng `Xuất Bảng Kê Excel (.csv UTF-8)` & `In Bảng Kê A4`.
+
+### 3. Xử Lý Khách Hàng ABC & Các Chuyến Xe Trong Quyết Toán Gom Chuyến:
+- **Khắc phục lỗi lọc ngày khi `loading_date` rỗng:** Bổ sung điều kiện fallback sang `created_at__date` trong `DriverBatchSettlementQueryAPIView`, ngăn chặn việc các chuyến chưa chọn ngày bốc hàng bị loại bỏ khỏi danh sách gom chuyến.
+- **Mở rộng trạng thái chuyến trong Quyết toán:** Cho phép hiển thị và quyết toán các chuyến xe đã đến kho dỡ hàng / giao hàng / trả vỏ (`AT_WAREHOUSE`, `DELIVERED`, `RETURNING_EMPTY`, `COMPLETED`), giúp Kế toán và Điều vận gom đối soát chi phí kịp thời ngay khi tài xế phát sinh chi phí hoặc tạm ứng.
+- **Tự động hoàn thành chuyến:** Khi thực hiện quyết toán gom thành công, chuyến xe tự động được chuyển sang trạng thái `COMPLETED` và khóa sổ chi phí.
+
+
 
 ### 1. Khắc Phục Triệt Để Lỗi Cuộn Che Khuất Tiêu Đề Mục Con:
 - **Nguyên nhân cốt lõi:** Thanh Topbar có `position: sticky top-0 h-16 (64px) z-40`. Khi người dùng bấm vào các bookmark cấp con (`2.1. Tạo Báo giá`, `3.1. Tạo Lệnh điều xe`... `6.5. Quyết toán xe thầu phụ`), trình duyệt cuộn theo hash mặc định đưa phần tử lên đỉnh `y = 0`, khiến toàn bộ tiêu đề mục con bị Topbar đè che khuất.

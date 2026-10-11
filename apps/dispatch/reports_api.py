@@ -1114,9 +1114,12 @@ class ReportsAPIView(APIView):
                 'trips': [],
             }
 
+        # Lấy các phiếu thu tiền cước / thu tiền từ khách hàng trong kỳ
         cash_inflows = CashTransaction.objects.filter(
             is_deleted=False,
             transaction_type=TransactionType.INFLOW
+        ).filter(
+            Q(partner_type='CUSTOMER') | Q(category=CashFlowCategory.FREIGHT_REVENUE)
         )
         if start_d and end_d:
             cash_inflows = cash_inflows.filter(transaction_date__gte=start_d, transaction_date__lte=end_d)
@@ -1217,17 +1220,18 @@ class ReportsAPIView(APIView):
             c_name_lower = entry['customer_name'].strip().lower()
             collected = customer_collected_map.get(c_name_lower, 0)
             
-            if collected == 0 and entry['settled_trips_count'] > 0:
-                collected = int(entry['freight_revenue'] * 0.8)
-            
-            entry['collected_amount'] = collected
-            entry['remaining_balance'] = max(0, entry['total_receivable'] - collected)
+            # Số tiền đã thu hồi thực tế cho các đơn nợ trong kỳ (không vượt quá tổng nợ phát sinh)
+            allocated_collected = min(entry['total_receivable'], collected)
+            remaining = max(0, entry['total_receivable'] - collected)
+
+            entry['collected_amount'] = allocated_collected
+            entry['remaining_balance'] = remaining
 
             total_ar_receivable += entry['total_receivable']
             total_ar_freight += entry['freight_revenue']
             total_ar_reimbursable += entry['reimbursable_amount']
-            total_ar_collected += entry['collected_amount']
-            total_ar_balance += entry['remaining_balance']
+            total_ar_collected += allocated_collected
+            total_ar_balance += remaining
             total_ar_overdue += (entry['aging_31_60'] + entry['aging_61_90'] + entry['aging_over_90'])
 
             ar_summary_list.append(entry)
