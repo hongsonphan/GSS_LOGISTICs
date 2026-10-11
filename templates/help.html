@@ -1666,11 +1666,13 @@
             const sidebar = document.getElementById('help-sidebar');
             const showBtn = document.getElementById('btn-show-sidebar');
             if (sidebar) {
-                const isHidden = sidebar.classList.contains('hidden');
-                if (isHidden) {
+                const isCurrentlyHidden = (sidebar.style.display === 'none') || (window.getComputedStyle(sidebar).display === 'none');
+                if (isCurrentlyHidden) {
+                    sidebar.style.display = 'block';
                     sidebar.classList.remove('hidden');
                     if (showBtn) showBtn.classList.add('hidden');
                 } else {
+                    sidebar.style.display = 'none';
                     sidebar.classList.add('hidden');
                     if (showBtn) showBtn.classList.remove('hidden');
                 }
