@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.8] - 2026-10-11 (Tái Cấu Trúc Phân Hệ Cài Đặt — Quy Hoạch 5 Nhóm Danh Mục Chuẩn UI/UX 2 Tầng)
+
+### 1. Tái Cấu Trúc Giao Diện Cài Đặt & Master Data (Enterprise 2-Tier Architecture):
+- **Khử bỏ hoàn toàn 14 tab chen chúc ngang:** Gom toàn bộ 14 danh mục cốt lõi vào **5 Nhóm Cài Đặt Chính** logic, mạch lạc, trực quan và không gây rối mắt:
+  * **1. Khai Báo Ban Đầu (`initial_setup`):** Thông Tin Công Ty (`company`), Vai Trò & Phân Quyền (`roles_permissions`).
+  * **2. Tài Chính & Quản Trị (`finance_admin`):** Số Dư Ban Đầu (`opening_balance`), Khoản Mục Chi (`expenses`), Biểu Phí Lương Chuyến (`driver_tariffs`), Phụ Cấp & Kiểm Hóa (`allowances`).
+  * **3. Khách Hàng & Đối Tác (`partners`):** Khách Hàng (`customers`), Biểu Cước Khách (`tariffs`), Thầu Phụ & Nhà Cung Cấp (`subcontractors`).
+  * **4. Mạng Lưới & Địa Điểm (`locations_network`):** Cảng & Kho Bãi (`locations`), Hãng Tàu (`shipping_lines`).
+  * **5. Phương Tiện & Thiết Bị (`fleet_equipment`):** Đầu Kéo & Xe (`vehicles`), Rơ-Moóc (`trailers`), Quy Cách Cont & Xe (`containers`).
+- **Giao diện 2 tầng mượt mà:**
+  * **Tầng 1 (Category Groups Bar):** 5 nút nhóm danh mục tinh tế, nổi bật, chọn nhóm nào tự động hiển thị các sub-tab tương ứng.
+  * **Tầng 2 (Sub-Items Bar):** Hiển thị danh mục con của nhóm đang chọn kèm nút thao tác hành động chuẩn mực (`Tạo mới` / `Sửa`).
+  * **Tầng 3 (Data Workspace):** Bảng dữ liệu chuẩn ERP (`.erp-table`), bộ lọc tìm kiếm, tùy biến cột, phân trang chuẩn quốc tế.
+- **Frontend Controller (`static/js/app.js` & `modules/master_data.js`):**
+  * Bổ sung bộ điều khiển `switchMasterDataGroup(groupKey, targetSubTab)` và tự động nhận diện nhóm cha trong `switchMasterDataTab(tabKey)`.
+  * Xuất biến toàn cục `window.switchMasterDataGroup`.
+
+### 2. Kiểm Thử Hệ Thống (Zero-Regression):
+- 92/92 unit tests đạt chuẩn 100% (`python manage.py test --keepdb`).
+- Cú pháp JavaScript kiểm tra hợp lệ 100% (`node -c static/js/app.js`, `node -c static/js/modules/master_data.js` & `node -c static/js/column_manager.js`).
+
 ## [v2.7] - 2026-10-11 (Chuẩn Hóa Bộ 7 Từ Khóa Thao Tác & Nút Bấm Toàn Hệ Thống — Zero Regression)
 
 ### 1. Chuẩn Hóa Nhãn Nút Bấm Toàn Hệ Thống (Standardized Action Button Labels):

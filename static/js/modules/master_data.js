@@ -5,7 +5,77 @@
 // ==============================================================================
 // 10. PHÂN HỆ CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA CONTROLLER)
 // ==============================================================================
-let currentMasterDataTab = 'driver_tariffs';
+let currentMasterDataTab = 'company';
+let currentMasterDataGroup = 'initial_setup';
+
+const MASTER_DATA_GROUPS = {
+    'initial_setup': {
+        name: 'Khai Báo Ban Đầu',
+        icon: 'ph-buildings',
+        tabs: ['company', 'roles_permissions']
+    },
+    'finance_admin': {
+        name: 'Tài Chính & Quản Trị',
+        icon: 'ph-wallet',
+        tabs: ['opening_balance', 'expenses', 'driver_tariffs', 'allowances']
+    },
+    'partners': {
+        name: 'Khách Hàng & Đối Tác',
+        icon: 'ph-handshake',
+        tabs: ['customers', 'tariffs', 'subcontractors']
+    },
+    'locations_network': {
+        name: 'Mạng Lưới & Địa Điểm',
+        icon: 'ph-map-pin',
+        tabs: ['locations', 'shipping_lines']
+    },
+    'fleet_equipment': {
+        name: 'Phương Tiện & Thiết Bị',
+        icon: 'ph-truck',
+        tabs: ['vehicles', 'trailers', 'containers']
+    }
+};
+
+function getMasterDataGroupForTab(tabKey) {
+    for (const [groupKey, grp] of Object.entries(MASTER_DATA_GROUPS)) {
+        if (grp.tabs.includes(tabKey)) return groupKey;
+    }
+    return 'initial_setup';
+}
+
+function switchMasterDataGroup(groupKey, targetSubTab = null) {
+    currentMasterDataGroup = groupKey;
+    const grp = MASTER_DATA_GROUPS[groupKey];
+    if (!grp) return;
+
+    // 1. Highlight Top Group Button
+    document.querySelectorAll('.md-group-tab').forEach(btn => {
+        btn.classList.remove('active', 'border-teal-700', 'text-teal-900', 'bg-white', 'shadow-2xs');
+        btn.classList.add('border-transparent', 'text-slate-600');
+    });
+    const activeGroupBtn = document.querySelector(`[data-md-group="${groupKey}"]`);
+    if (activeGroupBtn) {
+        activeGroupBtn.classList.add('active', 'border-teal-700', 'text-teal-900', 'bg-white', 'shadow-2xs');
+        activeGroupBtn.classList.remove('border-transparent', 'text-slate-600');
+    }
+
+    // 2. Show sub-tabs container for this group, hide others
+    document.querySelectorAll('.md-group-container').forEach(c => {
+        if (c.getAttribute('data-for-group') === groupKey) {
+            c.classList.remove('hidden');
+        } else {
+            c.classList.add('hidden');
+        }
+    });
+
+    // 3. Switch to target subtab or first subtab in group
+    let subTabToActivate = targetSubTab;
+    if (!subTabToActivate || !grp.tabs.includes(subTabToActivate)) {
+        subTabToActivate = grp.tabs[0];
+    }
+    switchMasterDataTab(subTabToActivate);
+}
+
 let masterDataCache = {
     driver_tariffs: [],
     allowances: [],
@@ -27,48 +97,51 @@ async function loadMasterData() {
     try {
         const res = await fetchWithAuth('/api/master-data/summary/');
         const data = await res.json();
-        if (data.stats) {
-            const s = data.stats;
-            const el = id => document.getElementById(id);
-            if (el('md-stat-company') && s.company_name) el('md-stat-company').innerText = s.company_name;
-            if (el('md-stat-driver-tariffs')) el('md-stat-driver-tariffs').innerText = s.driver_tariffs_count || 0;
-            if (el('md-stat-allowances')) el('md-stat-allowances').innerText = s.allowances_count || 0;
-            if (el('md-stat-locations')) el('md-stat-locations').innerText = s.locations_count || 0;
-            if (el('md-stat-tariffs')) el('md-stat-tariffs').innerText = s.tariffs_count || 0;
-            if (el('md-stat-customers')) el('md-stat-customers').innerText = s.customers_count || 0;
-            if (el('md-stat-expenses')) el('md-stat-expenses').innerText = s.expense_items_count || 0;
-            if (el('md-stat-containers')) el('md-stat-containers').innerText = s.container_types_count || 0;
-            if (el('md-stat-vehicles')) el('md-stat-vehicles').innerText = s.vehicles_count || 0;
-            if (el('md-stat-trailers')) el('md-stat-trailers').innerText = s.trailers_count || 0;
-            if (el('md-stat-shipping-lines')) el('md-stat-shipping-lines').innerText = s.shipping_lines_count || 0;
-            if (el('md-stat-subcontractors')) el('md-stat-subcontractors').innerText = s.subcontractors_count || 0;
-        }
     } catch (err) {
         console.error('Lỗi tải tóm tắt Cài đặt:', err);
     }
-    if (currentMasterDataTab === 'company') {
-        loadCompanyProfile();
-    } else {
-        loadActiveMasterDataTab();
-    }
+    if (!currentMasterDataTab) currentMasterDataTab = 'company';
+    switchMasterDataTab(currentMasterDataTab);
 }
 
 function switchMasterDataTab(tabKey) {
     currentMasterDataTab = tabKey;
     masterDataPagination.currentPage = 1;
 
-    // 1. Highlight Sub-tab button
+    // 1. Đồng bộ Nhóm cha (Master Data Group) nếu chưa trùng
+    const expectedGroup = getMasterDataGroupForTab(tabKey);
+    if (currentMasterDataGroup !== expectedGroup) {
+        currentMasterDataGroup = expectedGroup;
+        document.querySelectorAll('.md-group-tab').forEach(btn => {
+            btn.classList.remove('active', 'border-teal-700', 'text-teal-900', 'bg-white', 'shadow-2xs');
+            btn.classList.add('border-transparent', 'text-slate-600');
+        });
+        const activeGroupBtn = document.querySelector(`[data-md-group="${expectedGroup}"]`);
+        if (activeGroupBtn) {
+            activeGroupBtn.classList.add('active', 'border-teal-700', 'text-teal-900', 'bg-white', 'shadow-2xs');
+            activeGroupBtn.classList.remove('border-transparent', 'text-slate-600');
+        }
+        document.querySelectorAll('.md-group-container').forEach(c => {
+            if (c.getAttribute('data-for-group') === expectedGroup) {
+                c.classList.remove('hidden');
+            } else {
+                c.classList.add('hidden');
+            }
+        });
+    }
+
+    // 2. Highlight Sub-tab button
     document.querySelectorAll('.md-tab-btn').forEach(btn => {
-        btn.classList.remove('active', 'border-teal-600', 'text-teal-800');
-        btn.classList.add('border-transparent', 'text-slate-500');
+        btn.classList.remove('active', 'bg-teal-50', 'text-teal-800', 'border-teal-300');
+        btn.classList.add('text-slate-600', 'border-transparent');
     });
     const activeBtn = document.querySelector(`[data-md-tab="${tabKey}"]`);
     if (activeBtn) {
-        activeBtn.classList.add('active', 'border-teal-600', 'text-teal-800');
-        activeBtn.classList.remove('border-transparent', 'text-slate-500');
+        activeBtn.classList.add('active', 'bg-teal-50', 'text-teal-800', 'border-teal-300');
+        activeBtn.classList.remove('text-slate-600', 'border-transparent');
     }
 
-    // 2. Highlight Top KPI Pill
+    // 3. Highlight Top KPI Pill
     document.querySelectorAll('.md-kpi-pill').forEach(pill => {
         pill.classList.remove('ring-2', 'ring-teal-600', 'bg-teal-50/60', 'border-teal-400');
         pill.classList.add('bg-white', 'border-slate-200');
@@ -80,21 +153,23 @@ function switchMasterDataTab(tabKey) {
     }
 
     const labels = {
-        'company': '✏️ Hiệu Chỉnh Khai Báo HT',
-        'driver_tariffs': '+ Thêm Mới Tuyến Lương',
-        'allowances': '+ Thêm Mới Phụ Cấp',
-        'locations': '+ Thêm Mới Cảng / Kho',
-        'tariffs': '+ Thêm Mới Biểu Cước Khách',
-        'customers': '+ Thêm Mới Khách Hàng',
-        'expenses': '+ Thêm Mới Khoản Chi',
-        'containers': '+ Thêm Mới Quy Cách',
-        'vehicles': '+ Thêm Mới Đầu Kéo / Xe',
-        'trailers': '+ Thêm Mới Rơ-Moóc',
-        'shipping_lines': '+ Thêm Mới Hãng Tàu',
-        'subcontractors': '+ Thêm Mới Xe Thầu Phụ'
+        'company': '✏️ Sửa Thông Tin Công Ty',
+        'roles_permissions': '🛡️ Quản Lý Vai Trò',
+        'opening_balance': '💰 Khai Báo Số Dư Đầu Kỳ',
+        'driver_tariffs': 'Tạo mới',
+        'allowances': 'Tạo mới',
+        'locations': 'Tạo mới',
+        'tariffs': 'Tạo mới',
+        'customers': 'Tạo mới',
+        'expenses': 'Tạo mới',
+        'containers': 'Tạo mới',
+        'vehicles': 'Tạo mới',
+        'trailers': 'Tạo mới',
+        'shipping_lines': 'Tạo mới',
+        'subcontractors': 'Tạo mới'
     };
     const createBtnLabel = document.getElementById('md-create-btn-label');
-    if (createBtnLabel) createBtnLabel.innerText = labels[tabKey] || '+ Thêm Mới';
+    if (createBtnLabel) createBtnLabel.innerText = labels[tabKey] || 'Tạo mới';
 
     const searchInput = document.getElementById('md-search-input');
     if (searchInput) searchInput.value = '';
@@ -103,18 +178,45 @@ function switchMasterDataTab(tabKey) {
     const tableContainer = document.getElementById('md-table-container');
     const paginationContainer = document.getElementById('md-pagination-container');
     const companyView = document.getElementById('md-company-view');
+    const rolesView = document.getElementById('md-roles-permissions-view');
+    const openingBalanceView = document.getElementById('md-opening-balance-view');
+    const createBtnContainer = document.getElementById('md-create-btn') || document.getElementById('md-create-btn-label')?.parentElement;
 
     if (tabKey === 'company') {
+        if (createBtnContainer) createBtnContainer.style.display = '';
         if (filterToolbar) filterToolbar.classList.add('hidden');
         if (tableContainer) tableContainer.classList.add('hidden');
         if (paginationContainer) paginationContainer.classList.add('hidden');
+        if (rolesView) rolesView.classList.add('hidden');
+        if (openingBalanceView) openingBalanceView.classList.add('hidden');
         if (companyView) companyView.classList.remove('hidden');
         loadCompanyProfile();
+    } else if (tabKey === 'roles_permissions') {
+        if (createBtnContainer) createBtnContainer.style.display = 'none';
+        if (filterToolbar) filterToolbar.classList.add('hidden');
+        if (tableContainer) tableContainer.classList.add('hidden');
+        if (paginationContainer) paginationContainer.classList.add('hidden');
+        if (companyView) companyView.classList.add('hidden');
+        if (openingBalanceView) openingBalanceView.classList.add('hidden');
+        if (rolesView) rolesView.classList.remove('hidden');
+        loadRolesPermissionsData();
+    } else if (tabKey === 'opening_balance') {
+        if (createBtnContainer) createBtnContainer.style.display = 'none';
+        if (filterToolbar) filterToolbar.classList.add('hidden');
+        if (tableContainer) tableContainer.classList.add('hidden');
+        if (paginationContainer) paginationContainer.classList.add('hidden');
+        if (companyView) companyView.classList.add('hidden');
+        if (rolesView) rolesView.classList.add('hidden');
+        if (openingBalanceView) openingBalanceView.classList.remove('hidden');
+        loadOpeningBalanceData();
     } else {
+        if (createBtnContainer) createBtnContainer.style.display = '';
         if (filterToolbar) filterToolbar.classList.remove('hidden');
         if (tableContainer) tableContainer.classList.remove('hidden');
         if (paginationContainer) paginationContainer.classList.remove('hidden');
         if (companyView) companyView.classList.add('hidden');
+        if (rolesView) rolesView.classList.add('hidden');
+        if (openingBalanceView) openingBalanceView.classList.add('hidden');
         loadActiveMasterDataTab();
     }
 }
