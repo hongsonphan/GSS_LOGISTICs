@@ -9,7 +9,7 @@
 # MỤC LỤC CHÍNH
 
 - [PHẦN I: MÔ TẢ PHÂN HỆ & TÍNH NĂNG CỐT LÕI](#phần-i-mô-tả-phân-hệ--tính-năng-cốt-lõi)
-  - [1. Nền Tảng Vận Hành & Phân Quyền Vai Trò (RBAC)](#1-nền-tảng-vận-hành--phân-quyền-vai-trò-rbac)
+  - [1. Nền Tảng Vận Hành & Phân Quyền Vai Trò](#1-nền-tảng-vận-hành--phân-quyền-vai-trò-rbac)
   - [2. Dashboard Ban Giám Đốc (Executive BI)](#2-dashboard-ban-giám-đốc-executive-bi)
   - [3. Phân Hệ Sale & Booking (CRM, Báo Giá & Đơn Hàng)](#3-phân-hệ-sale--booking-crm-báo-giá--đơn-hàng)
   - [4. Phân Hệ Điều Vận & Chuyến Xe ](#4-phân-hệ-điều-vận--chuyến-xe-tms-core-engine)
@@ -55,7 +55,7 @@
 
 # PHẦN I: MÔ TẢ PHÂN HỆ & TÍNH NĂNG CỐT LÕI
 
-## 1. Nền Tảng Vận Hành & Phân Quyền Vai Trò (RBAC)
+## 1. Nền Tảng Vận Hành & Phân Quyền Vai Trò
 
 Nền tảng **BIM Logistics Platform** được thiết kế theo mô hình điều hành khép kín (Full-cycle Logistics) chuyên biệt cho vận tải đường bộ Container FCL, hàng rời FTL và dịch vụ cảng biển tại Việt Nam.
 

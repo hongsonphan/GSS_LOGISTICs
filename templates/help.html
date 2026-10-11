@@ -195,19 +195,21 @@
     <!-- MAIN WRAPPER -->
     <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-8">
         
-        <!-- SIDEBAR NAVIGATION (STICKY TOC - HIERARCHICAL TREE CHA - CON - CHÁU) -->
-        <aside class="w-72 shrink-0 hidden lg:block no-print select-none">
+        <!-- SIDEBAR NAVIGATION (MỤC LỤC HƯỚNG DẪN CÓ NÚT THU GỌN / ẨN) -->
+        <aside id="help-sidebar" class="w-72 shrink-0 hidden lg:block no-print select-none transition-all duration-300">
             <div class="sticky top-20 space-y-3">
                 <div class="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs">
                     
-                    <!-- Header Sidebar & Ô Tìm Kiếm Nhanh Mục Lục -->
+                    <!-- Header Sidebar: MỤC LỤC HƯỚNG DẪN & Nút Ẩn Thanh Mục Lục -->
                     <div class="mb-2.5 px-1">
-                        <div class="flex items-center justify-between text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
-                            <span class="flex items-center gap-1.5">
-                                <i class="ph-bold ph-tree-structure text-teal-700 text-xs"></i>
-                                <span>Cây Mục Lục Phân Cấp</span>
+                        <div class="flex items-center justify-between text-[11.5px] font-black text-slate-700 uppercase tracking-wider mb-2">
+                            <span class="flex items-center gap-1.5 text-teal-900 font-heading">
+                                <i class="ph-bold ph-list-bullets text-teal-700 text-sm"></i>
+                                <span>MỤC LỤC HƯỚNG DẪN</span>
                             </span>
-                            <span class="text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded font-mono font-bold" id="tree-count-badge">3 Cấp</span>
+                            <button type="button" onclick="toggleHelpSidebar()" class="p-1 rounded-lg text-slate-400 hover:text-teal-700 hover:bg-slate-100 transition-colors cursor-pointer" title="Ẩn thanh mục lục để mở rộng không gian đọc">
+                                <i class="ph-bold ph-caret-double-left text-sm"></i>
+                            </button>
                         </div>
                         
                         <!-- Ô Nhập Nội Dung Tìm Kiếm Mục Lục -->
@@ -463,6 +465,35 @@
             <!-- TOÀN BỘ NỘI DUNG NẰM TRONG 1 TRANG TÀI LIỆU A4 LIỀN MẠCH, KHÔNG CHIA THẺ CARD RỐI RẮM -->
             <div class="doc-page-container rounded-2xl p-8 sm:p-12 border border-slate-200 bg-white shadow-2xs space-y-10">
 
+                <!-- THANH CÔNG CỤ TÌM KIẾM CHI TIẾT NỘI DUNG & NÚT MỞ MỤC LỤC (NO-PRINT) -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-6 border-b border-slate-200 no-print">
+                    <div class="flex items-center gap-2 flex-1 max-w-2xl">
+                        <!-- Nút Hiện Mục Lục khi sidebar bị ẩn -->
+                        <button type="button" id="btn-show-sidebar" onclick="toggleHelpSidebar()" class="hidden shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-teal-300 bg-teal-50 hover:bg-teal-100 text-teal-900 text-xs font-bold shadow-2xs transition-all cursor-pointer">
+                            <i class="ph-bold ph-list-bullets text-teal-700 text-sm"></i>
+                            <span>Hiện Mục Lục</span>
+                        </button>
+                        
+                        <!-- Ô Tìm Kiếm Nội Dung Chi Tiết -->
+                        <div class="relative flex-1">
+                            <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input type="text" id="content-search-input" oninput="filterContentDetails()" placeholder="Tìm kiếm chi tiết nội dung hướng dẫn (ví dụ: tạo khách hàng, báo giá, cắt kéo, tạm ứng, sổ quỹ...)..." 
+                                   class="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-2xs">
+                            <button type="button" id="content-search-clear" onclick="clearContentSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="ph-bold ph-x-circle text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nút In Sổ Tay Khổ A4 -->
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer">
+                            <i class="ph-bold ph-printer text-teal-600 text-sm"></i>
+                            <span>In Sổ Tay Khổ A4</span>
+                        </button>
+                    </div>
+                </div>
+
             <!-- PHẦN I: MÔ TẢ PHÂN HỆ & TÍNH NĂNG -->
             <!-- ========================================================================= -->
 
@@ -473,12 +504,12 @@
                 </div>
             </div>
 
-            <!-- MỤC 1: KIẾN TRÚC & PHÂN QUYỀN (RBAC) -->
+            <!-- MỤC 1: KIẾN TRÚC & PHÂN QUYỀN  -->
             <section id="sec-overview" class="help-section scroll-mt-24 pb-8 border-b border-slate-200 last:border-b-0">
                 <div class="doc-section-title flex items-center justify-between">
                     <div>
                         <span class="text-[11px] font-black uppercase text-teal-700 tracking-wider">Mục 1 • Nền Tảng Hệ Thống</span>
-                        <h3 class="text-xl font-black text-slate-900 font-heading">Tổng Quan Kiến Trúc Vận Hành & Phân Quyền Vai Trò (RBAC)</h3>
+                        <h3 class="text-xl font-black text-slate-900 font-heading">Tổng Quan Kiến Trúc Vận Hành & Phân Quyền Vai Trò</h3>
                     </div>
                     <span class="text-xs font-mono font-bold text-slate-400">PHẦN I.1</span>
                 </div>
@@ -512,7 +543,7 @@
                     </div>
 
                     <h4 class="font-bold text-slate-900 text-xs sm:text-sm mt-4 font-heading flex items-center gap-1.5">
-                        <i class="ph-bold ph-shield-check text-teal-700"></i> Bảng Phân Quyền Vai Trò Người Dùng (Role-Based Access Control)
+                        <i class="ph-bold ph-shield-check text-teal-700"></i> Bảng Phân Quyền Vai Trò Người Dùng
                     </h4>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
@@ -1630,6 +1661,98 @@
                 });
             }
         });
+        // Ẩn / Mở thanh mục lục (Toggle Help Sidebar) để mở rộng không gian đọc
+        function toggleHelpSidebar() {
+            const sidebar = document.getElementById('help-sidebar');
+            const showBtn = document.getElementById('btn-show-sidebar');
+            if (sidebar) {
+                const isHidden = sidebar.classList.contains('hidden');
+                if (isHidden) {
+                    sidebar.classList.remove('hidden');
+                    if (showBtn) showBtn.classList.add('hidden');
+                } else {
+                    sidebar.classList.add('hidden');
+                    if (showBtn) showBtn.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Tìm kiếm chi tiết trong nội dung tài liệu (Content Detail Search)
+        function filterContentDetails() {
+            const query = document.getElementById('content-search-input').value.trim().toLowerCase();
+            const clearBtn = document.getElementById('content-search-clear');
+            const sections = document.querySelectorAll('.help-section');
+            const docItems = document.querySelectorAll('.doc-item-block');
+
+            if (clearBtn) {
+                clearBtn.classList.toggle('hidden', query.length === 0);
+            }
+
+            // Đồng bộ sang ô tìm kiếm topbar nếu có
+            const topbarInput = document.getElementById('help-search-input');
+            if (topbarInput && topbarInput.value !== query) {
+                topbarInput.value = query;
+            }
+
+            if (!query) {
+                sections.forEach(sec => sec.style.display = '');
+                docItems.forEach(item => item.style.display = '');
+                document.querySelectorAll('tr').forEach(tr => tr.style.display = '');
+                return;
+            }
+
+            // Lọc qua từng section lớn
+            sections.forEach(sec => {
+                const secText = sec.innerText.toLowerCase();
+                const secMatches = secText.includes(query);
+
+                // Lọc các mục con bên trong section nếu có
+                const innerItems = sec.querySelectorAll('.doc-item-block');
+                let anyInnerMatch = false;
+
+                if (innerItems.length > 0) {
+                    innerItems.forEach(item => {
+                        const itemText = item.innerText.toLowerCase();
+                        if (itemText.includes(query)) {
+                            item.style.display = '';
+                            anyInnerMatch = true;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                }
+
+                // Lọc các dòng trong bảng nếu có
+                const rows = sec.querySelectorAll('tbody tr');
+                let anyRowMatch = false;
+                if (rows.length > 0) {
+                    rows.forEach(tr => {
+                        const rowText = tr.innerText.toLowerCase();
+                        if (rowText.includes(query)) {
+                            tr.style.display = '';
+                            anyRowMatch = true;
+                        } else {
+                            tr.style.display = 'none';
+                        }
+                    });
+                }
+
+                if (secMatches || anyInnerMatch || anyRowMatch) {
+                    sec.style.display = '';
+                } else {
+                    sec.style.display = 'none';
+                }
+            });
+        }
+
+        function clearContentSearch() {
+            const input = document.getElementById('content-search-input');
+            if (input) {
+                input.value = '';
+                filterContentDetails();
+                input.focus();
+            }
+        }
     </script>
 </body>
 </html>
