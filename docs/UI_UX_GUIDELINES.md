@@ -276,6 +276,19 @@ function showView(viewName) {
 }
 ```
 
+### 5.4 Topbar & Avatar User Profile Dropdown (Tích Hợp Hồ Sơ & Đăng Xuất)
+
+- **Avatar Trigger:** Cụm avatar tròn kết hợp icon vai trò (Vương miện - Giám đốc, Vô lăng - Điều phối, Máy tính - Kế toán, Xe tải - Lái xe), chấm trạng thái hoạt động xanh lá và tên/chức vụ.
+- **Quy chuẩn gom nút Đăng xuất:** Nút Đăng xuất không nằm độc lập bên ngoài Topbar mà được tích hợp hoàn toàn vào dropdown của Avatar.
+- **Nội dung Dropdown Menu:**
+  * **Card Hồ sơ (Profile Header):** Avatar cỡ lớn, Họ và tên nhân sự (`full_name`), Chức danh và Phòng ban.
+  * **Thông tin định danh:** Tên đầy đủ, Tên đăng nhập (`username`), Email liên hệ, Mã nhân sự.
+  * **Hành động nhanh:**
+    - `Cài đặt`: Chuyển đến phân hệ Cài đặt hệ thống (`/settings` hoặc `switchTab('cai-dat')`).
+    - `Hướng dẫn sử dụng`: Mở sổ tay HDSD (`/helps`).
+    - `Đăng xuất`: Thoát khỏi phiên làm việc an toàn (`/logout/`).
+- **Tương tác chuẩn UI/UX:** Hỗ trợ click-outside để đóng, phím ESC để đóng, xoay caret 180° khi mở menu.
+
 ---
 
 ## 6. RESPONSIVE DESIGN

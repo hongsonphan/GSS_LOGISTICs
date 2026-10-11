@@ -131,30 +131,153 @@
             <span>Trợ giúp</span>
         </a>
         
-        <!-- User Profile & Authentication Status -->
+        <!-- User Profile & Authentication Status (Avatar Dropdown Cài đặt riêng & Đăng xuất) -->
         {% if request.user.is_authenticated %}
-        <div class="flex items-center space-x-2 pl-2 border-l border-slate-200">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                    {% if current_employee and current_employee.role == 'DIRECTOR' %}<i class="ph-bold ph-crown text-sm"></i>
-                    {% elif current_employee and current_employee.role == 'DISPATCHER' %}<i class="ph-bold ph-steering-wheel text-sm"></i>
-                    {% elif current_employee and current_employee.role == 'ACCOUNTANT' %}<i class="ph-bold ph-calculator text-sm"></i>
-                    {% elif current_employee and current_employee.role == 'DRIVER' %}<i class="ph-bold ph-truck text-sm"></i>
-                    {% else %}<i class="ph-bold ph-user text-sm"></i>{% endif %}
+        <div class="relative pl-2 border-l border-slate-200" id="topbar-user-dropdown-container">
+            <!-- Nút bấm Avatar kích hoạt Dropdown Cài đặt riêng -->
+            <button type="button" id="topbar-user-menu-btn" onclick="toggleUserDropdown(event)" 
+                class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100/90 text-slate-800 transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-teal-500/20 active:scale-98 select-none"
+                aria-haspopup="true" aria-expanded="false" title="Xem hồ sơ & Cài đặt tài khoản">
+                
+                <div class="relative">
+                    <div class="w-8.5 h-8.5 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold text-xs shadow-sm ring-2 ring-white group-hover:ring-teal-200 transition-all">
+                        {% if current_employee and current_employee.role == 'DIRECTOR' %}<i class="ph-bold ph-crown text-amber-300 text-sm"></i>
+                        {% elif current_employee and current_employee.role == 'DISPATCHER' %}<i class="ph-bold ph-steering-wheel text-sm"></i>
+                        {% elif current_employee and current_employee.role == 'ACCOUNTANT' %}<i class="ph-bold ph-calculator text-sm"></i>
+                        {% elif current_employee and current_employee.role == 'DRIVER' %}<i class="ph-bold ph-truck text-sm"></i>
+                        {% else %}<i class="ph-bold ph-user text-sm"></i>{% endif %}
+                    </div>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                 </div>
+
                 <div class="hidden lg:flex flex-col text-left">
-                    <span class="text-xs font-bold text-slate-800 leading-tight">
+                    <span class="text-xs font-bold text-slate-800 leading-tight group-hover:text-teal-900 transition-colors">
                         {{ current_employee.full_name|default:request.user.username }}
                     </span>
                     <span class="text-[10px] font-semibold text-teal-600 leading-none mt-0.5">
                         {{ current_employee.get_role_display|default:"Quản trị viên" }}
                     </span>
                 </div>
+
+                <i class="ph-bold ph-caret-down text-slate-400 text-xs ml-0.5 group-hover:text-slate-600 transition-transform duration-200" id="topbar-user-caret"></i>
+            </button>
+
+            <!-- Dropdown Menu: Cài đặt riêng của Avatar & Hồ sơ người dùng -->
+            <div id="topbar-user-menu" class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 z-50 animate-fade-in font-sans text-slate-800">
+                
+                <!-- 1. Header Profile: Tên, Chức vụ & Bộ phận -->
+                <div class="px-4 py-3 bg-gradient-to-r from-slate-50 via-teal-50/40 to-slate-50 border-b border-slate-100 flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold text-base shadow-sm ring-2 ring-teal-100 shrink-0">
+                        {% if current_employee and current_employee.role == 'DIRECTOR' %}<i class="ph-bold ph-crown text-amber-300 text-lg"></i>
+                        {% elif current_employee and current_employee.role == 'DISPATCHER' %}<i class="ph-bold ph-steering-wheel text-lg"></i>
+                        {% elif current_employee and current_employee.role == 'ACCOUNTANT' %}<i class="ph-bold ph-calculator text-lg"></i>
+                        {% elif current_employee and current_employee.role == 'DRIVER' %}<i class="ph-bold ph-truck text-lg"></i>
+                        {% else %}<i class="ph-bold ph-user text-lg"></i>{% endif %}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-[10px] font-bold text-teal-700 uppercase tracking-wider">Hồ sơ cá nhân</div>
+                        <h4 class="text-sm font-black text-slate-900 truncate font-heading leading-tight mt-0.5" title="{{ current_employee.full_name|default:request.user.get_full_name|default:request.user.username }}">
+                            {{ current_employee.full_name|default:request.user.get_full_name|default:request.user.username }}
+                        </h4>
+                        <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                                {{ current_employee.get_role_display|default:"Quản trị viên" }}
+                            </span>
+                            {% if current_employee and current_employee.department %}
+                            <span class="text-[10px] text-slate-500 font-medium truncate">
+                                {{ current_employee.get_department_display }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Chi tiết Profile: Tên, User, Email, Mã nhân viên -->
+                <div class="px-4 py-2.5 space-y-2 text-xs border-b border-slate-100">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-slate-500 flex items-center gap-1.5 shrink-0">
+                            <i class="ph-bold ph-user text-teal-600 text-sm"></i>
+                            <span>Tên:</span>
+                        </span>
+                        <span class="font-bold text-slate-800 text-right truncate">
+                            {{ current_employee.full_name|default:request.user.username }}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-slate-500 flex items-center gap-1.5 shrink-0">
+                            <i class="ph-bold ph-identification-badge text-teal-600 text-sm"></i>
+                            <span>User:</span>
+                        </span>
+                        <span class="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[11px] truncate">
+                            {{ request.user.username }}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-slate-500 flex items-center gap-1.5 shrink-0">
+                            <i class="ph-bold ph-envelope-simple text-teal-600 text-sm"></i>
+                            <span>Email:</span>
+                        </span>
+                        <span class="font-medium text-slate-700 text-right truncate max-w-[170px]" title="{{ request.user.email|default:'Chưa cập nhật' }}">
+                            {{ request.user.email|default:"Chưa cập nhật" }}
+                        </span>
+                    </div>
+                    {% if current_employee and current_employee.code %}
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-slate-500 flex items-center gap-1.5 shrink-0">
+                            <i class="ph-bold ph-barcode text-teal-600 text-sm"></i>
+                            <span>Mã NV:</span>
+                        </span>
+                        <span class="font-mono font-semibold text-slate-700">
+                            {{ current_employee.code }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- 3. Các mục hành động: Cài đặt & Đăng xuất -->
+                <div class="p-1.5 space-y-1">
+                    <!-- Cài đặt -->
+                    <a href="/settings" onclick="handleUserSettingsClick(event)" 
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-teal-900 hover:bg-teal-50/80 transition-colors cursor-pointer group"
+                        title="Mở phân hệ Cài đặt & Danh mục hệ thống">
+                        <div class="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-teal-100 text-slate-600 group-hover:text-teal-700 flex items-center justify-center transition-colors">
+                            <i class="ph-bold ph-gear text-sm"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <div>Cài đặt</div>
+                        </div>
+                        <i class="ph-bold ph-caret-right text-slate-300 group-hover:text-teal-600 text-xs transition-transform group-hover:translate-x-0.5"></i>
+                    </a>
+
+                    <!-- Trợ giúp & HDSD -->
+                    <a href="/helps" target="_blank" onclick="closeUserDropdown()"
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-teal-900 hover:bg-teal-50/80 transition-colors cursor-pointer group"
+                        title="Mở sổ tay hướng dẫn sử dụng hệ thống (/helps)">
+                        <div class="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-teal-100 text-slate-600 group-hover:text-teal-700 flex items-center justify-center transition-colors">
+                            <i class="ph-bold ph-book-open text-sm"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <div>Hướng dẫn sử dụng</div>
+                        </div>
+                        <i class="ph-bold ph-arrow-up-right text-slate-300 group-hover:text-teal-600 text-xs"></i>
+                    </a>
+
+                    <div class="border-t border-slate-100 my-1"></div>
+
+                    <!-- Đăng xuất (Đã gom vào avatar) -->
+                    <a href="{% url 'logout' %}" 
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer group"
+                        title="Đăng xuất khỏi hệ thống">
+                        <div class="w-7 h-7 rounded-lg bg-rose-50 group-hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors">
+                            <i class="ph-bold ph-sign-out text-sm"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <div>Đăng xuất</div>
+                        </div>
+                    </a>
+                </div>
+
             </div>
-            <a href="{% url 'logout' %}" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-full border border-rose-200 transition-all cursor-pointer shadow-2xs active:scale-95" title="Đăng xuất khỏi hệ thống">
-                <i class="ph-bold ph-sign-out text-sm"></i>
-                <span class="hidden sm:inline">Đăng xuất</span>
-            </a>
         </div>
         {% else %}
         <a href="{% url 'login' %}" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 rounded-full shadow-sm transition-all cursor-pointer active:scale-95">

@@ -748,6 +748,50 @@ function refreshCurrentView() {
 }
 window.refreshCurrentView = refreshCurrentView;
 
+// --- USER PROFILE & AVATAR DROPDOWN HANDLERS (TÁI CẤU TRÚC GIAO DIỆN TOPBAR) ---
+function toggleUserDropdown(e) {
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+    const menu = document.getElementById('topbar-user-menu');
+    const caret = document.getElementById('topbar-user-caret');
+    if (!menu) return;
+
+    // Đóng dropdown bộ chọn kỳ nếu đang mở
+    const periodMenu = document.getElementById('topbar-period-menu');
+    if (periodMenu) periodMenu.classList.add('hidden');
+    const periodPopover = document.getElementById('topbar-custom-date-popover');
+    if (periodPopover) periodPopover.classList.add('hidden');
+
+    const isHidden = menu.classList.contains('hidden');
+    if (isHidden) {
+        menu.classList.remove('hidden');
+        if (caret) caret.classList.add('rotate-180');
+    } else {
+        menu.classList.add('hidden');
+        if (caret) caret.classList.remove('rotate-180');
+    }
+}
+window.toggleUserDropdown = toggleUserDropdown;
+
+function closeUserDropdown() {
+    const menu = document.getElementById('topbar-user-menu');
+    const caret = document.getElementById('topbar-user-caret');
+    if (menu) menu.classList.add('hidden');
+    if (caret) caret.classList.remove('rotate-180');
+}
+window.closeUserDropdown = closeUserDropdown;
+
+function handleUserSettingsClick(e) {
+    closeUserDropdown();
+    if (typeof switchTab === 'function') {
+        if (e) e.preventDefault();
+        switchTab('cai-dat');
+    }
+}
+window.handleUserSettingsClick = handleUserSettingsClick;
+
 // Close dropdown and popover on click outside
 document.addEventListener('click', (e) => {
     const container = document.getElementById('dashboard-period-dropdown-container');
@@ -756,6 +800,18 @@ document.addEventListener('click', (e) => {
     if (container && !container.contains(e.target)) {
         if (menu) menu.classList.add('hidden');
         if (popover) popover.classList.add('hidden');
+    }
+
+    const userContainer = document.getElementById('topbar-user-dropdown-container');
+    if (userContainer && !userContainer.contains(e.target)) {
+        closeUserDropdown();
+    }
+});
+
+// Close dropdown on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeUserDropdown();
     }
 });
 

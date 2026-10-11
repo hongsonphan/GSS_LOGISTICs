@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v1.2] - 2026-10-11 (Tái Cấu Trúc Giao Diện Topbar: Tích Hợp Đăng Xuất & Menu Hồ Sơ, Cài Đặt Vào Avatar)
+
+### Tái Cấu Trúc Khối Người Dùng & Avatar Dropdown:
+- **Gom nút Đăng xuất vào trong Avatar:**
+  * Loại bỏ nút bấm Đăng xuất rời rạc dạng pill badge màu hồng trên thanh điều hướng Topbar nhằm tối ưu không gian hiển thị và tuân thủ chuẩn UI/UX quốc tế.
+  * Tích hợp toàn bộ hành động Đăng xuất an toàn vào bên trong menu popover của Avatar người dùng.
+- **Menu Cài đặt riêng & Hồ sơ người dùng (User Profile Popover):**
+  * Khi bấm vào Avatar hoặc cụm danh tính người dùng: Mở menu popup thanh lịch, hiện đại với hiệu ứng mở mượt mà và mũi tên caret đảo chiều.
+  * Hiển thị đầy đủ thông tin định danh:
+    - **Họ và tên (Tên):** Hiển thị tên đầy đủ từ nhân sự hoặc user (`full_name`).
+    - **Tên đăng nhập (User):** Hiển thị `username` kèm badge nền xám sắc nét.
+    - **Email:** Hiển thị địa chỉ email tài khoản người dùng (`email`).
+    - **Chức vụ & Đơn vị:** Hiển thị vai trò và phòng ban của nhân sự.
+  * Tích hợp phím tắt nhanh:
+    - **Cài đặt:** Chuyển nhanh tới phân hệ Cài đặt & Hệ thống danh mục (`/settings` hoặc `switchTab('cai-dat')`).
+    - **Hướng dẫn sử dụng:** Mở sổ tay HDSD hệ thống (`/helps`).
+    - **Đăng xuất:** Thoát khỏi hệ thống an toàn và dọn dẹp phiên làm việc.
+  * Hỗ trợ tự động đóng menu khi nhấp chuột ra ngoài (click-outside) hoặc nhấn phím ESC.
+
 ## [v1.1] - 2026-10-11 (Chuẩn Hóa Phân Quyền Django RBAC, Tách Biệt Quyền Admin & Tinh Gọn Flat Tab Cài Đặt Hệ Thống)
 
 ### 1. Chuẩn Hóa Phân Quyền Đúng Chuẩn Django (Standard Django RBAC):
