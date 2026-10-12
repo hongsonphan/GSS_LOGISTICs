@@ -67,14 +67,14 @@ class CustomerReimbursablesAPIView(APIView):
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
-                qs = qs.filter(created_at__date__gte=fd)
+                qs = qs.filter(Q(trip__loading_date__gte=fd) | Q(trip__loading_date__isnull=True, created_at__date__gte=fd))
             except ValueError:
                 pass
 
         if to_date:
             try:
                 td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
-                qs = qs.filter(created_at__date__lte=td)
+                qs = qs.filter(Q(trip__loading_date__lte=td) | Q(trip__loading_date__isnull=True, created_at__date__lte=td))
             except ValueError:
                 pass
 
@@ -620,14 +620,14 @@ class SubcontractorSettlementsAPIView(APIView):
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
-                qs = qs.filter(created_at__date__gte=fd)
+                qs = qs.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
             except ValueError:
                 pass
 
         if to_date:
             try:
                 td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
-                qs = qs.filter(created_at__date__lte=td)
+                qs = qs.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
             except ValueError:
                 pass
 
@@ -812,14 +812,14 @@ class BotTollAuditAPIView(APIView):
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
-                expenses_qs = expenses_qs.filter(created_at__date__gte=fd)
+                expenses_qs = expenses_qs.filter(Q(trip__loading_date__gte=fd) | Q(trip__loading_date__isnull=True, created_at__date__gte=fd))
             except ValueError:
                 pass
 
         if to_date:
             try:
                 td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
-                expenses_qs = expenses_qs.filter(created_at__date__lte=td)
+                expenses_qs = expenses_qs.filter(Q(trip__loading_date__lte=td) | Q(trip__loading_date__isnull=True, created_at__date__lte=td))
             except ValueError:
                 pass
 
@@ -1482,14 +1482,14 @@ class AccountingReportDrilldownAPIView(APIView):
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(created_at__date__gte=fd)
+                trips_qs = trips_qs.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
             except ValueError:
                 pass
 
         if to_date:
             try:
                 td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(created_at__date__lte=td)
+                trips_qs = trips_qs.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
             except ValueError:
                 pass
 

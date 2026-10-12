@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.9.5] - 2026-10-12 (Chuẩn Hóa Bộ Lọc Thời Gian Toàn Diện — Khắc Phục Rò Rỉ Bản Ghi Ngoại Kỳ)
+
+### 1. Chuẩn Hóa Bộ Lọc Thời Gian Tuyệt Đối (Strict Date-Range Filtering):
+- **Phân hệ Kinh doanh & Báo giá (`SalesAPIView`):**
+  * Loại bỏ triệt để điều kiện `Q(status__in=['APPROVED', 'NEGOTIATING', 'PENDING_APPROVAL'])` và `valid_until__gte` chen ngang gây hiển thị lọt các Báo giá tháng 9 khi người dùng chọn lọc tháng 10.
+  * Loại bỏ điều kiện `Q(status__in=[BookingStatus.PENDING_DISPATCH, BookingStatus.PARTIALLY_DISPATCHED])` trong bộ lọc `from_date` và `to_date` của Đơn hàng Booking.
+  * Khi chọn lọc bất kỳ khoảng ngày nào (vd: `01/10/2026 - 12/10/2026`), hệ thống lọc chính xác 100% theo ngày đóng hàng `loading_date` (hoặc `created_at` nếu không có loading_date). Cụm chỉ số KPI và danh sách đơn hàng hoàn toàn khớp với khoảng ngày được chọn.
+- **Phân hệ Điều vận & Báo cáo Vận hành (`ReportsAPIView`):**
+  * Tối ưu hàm `make_date_range_q`: Lọc theo `loading_date` kết hợp fallback an toàn `loading_date__isnull=True, created_at__date` đối với các chuyến xe chưa có loading_date.
+  * Hỗ trợ độc lập và linh hoạt cả khi chỉ truyền `from_date` hoặc `to_date`.
+- **Phân hệ Kế toán & Tài chính (`finance_reports_api.py` & `advance_views.py`):**
+  * Chuẩn hóa bộ lọc ngày cho Chi Hộ Khách Hàng (`ReimbursableExpensesAPIView`), Đối soát Thầu Phụ (`SubcontractorSettlementsAPIView`), Kiểm toán BOT (`BOTAwardAuditAPIView`), và Báo cáo Drill-down (`ReportDrilldownAPIView`) đồng bộ theo ngày vận hành thực tế của chuyến xe (`trip__loading_date`).
+  * Sửa lỗi điều kiện `OR` tại `CustomerARReconciliationAPIView` để chỉ fallback sang `created_at` khi `loading_date__isnull=True`.
+- **Khởi Tạo Dữ Liệu Mẫu (`seed_sample_data.py`):**
+  * Cập nhật gán chính xác `created_at` trong Tháng 9/2026 cho toàn bộ các model `Quotation`, `BookingOrder`, `DispatchTrip`, `TripExpense`, `CashTransaction`, `CustomsDeclaration`, ngăn chặn việc Django `auto_now_add` tự động lấy ngày hiện tại làm lệch dữ liệu kỳ kiểm thử.
+
+### 2. Kiểm Thử & Kiểm Chứng Hệ Thống:
+  * `node -c static/js/app.js` & `node -c static/js/column_manager.js`: 100% hợp lệ cú pháp.
+  * `python manage.py test --keepdb`: 92/92 tests PASSED (100%).
+  * `python scripts/audit_e2e_user_operations.py`: 36/36 kịch bản PASSED (100%).
+  * Xác thực truy vấn API `/api/sales/?from_date=2026-10-01&to_date=2026-10-12`: Chỉ trả về đúng 2 Báo giá và 4 Booking của tháng 10, không còn bất kỳ bản ghi tháng 9 nào.
+
 ## [v2.9.4] - 2026-10-11 (Audit Toàn Diện Người Dùng — 100% Pass 36/36 Kịch Bản CRUD, Báo Cáo, Mẫu In & Phân Hệ)
 
 ### 1. Nâng Cấp Kiến Trúc & Xử Lý Ngoại Lệ (Defensive Engineering):

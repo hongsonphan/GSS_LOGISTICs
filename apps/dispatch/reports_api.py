@@ -49,19 +49,27 @@ class ReportsAPIView(APIView):
 
         def make_date_range_q(start_d, end_d=None):
             if end_d:
-                return Q(loading_date__gte=start_d, loading_date__lte=end_d)
+                return (Q(loading_date__gte=start_d, loading_date__lte=end_d) | 
+                        Q(loading_date__isnull=True, created_at__date__gte=start_d, created_at__date__lte=end_d))
             else:
-                return Q(loading_date=start_d)
+                return (Q(loading_date=start_d) | 
+                        Q(loading_date__isnull=True, created_at__date=start_d))
 
         start_d = None
         end_d = None
-        if from_date and to_date:
-            try:
-                start_d = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
-                end_d = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
-                date_filter &= make_date_range_q(start_d, end_d)
-            except Exception:
-                pass
+        if from_date or to_date:
+            if from_date:
+                try:
+                    start_d = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                    date_filter &= (Q(loading_date__gte=start_d) | Q(loading_date__isnull=True, created_at__date__gte=start_d))
+                except Exception:
+                    pass
+            if to_date:
+                try:
+                    end_d = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                    date_filter &= (Q(loading_date__lte=end_d) | Q(loading_date__isnull=True, created_at__date__lte=end_d))
+                except Exception:
+                    pass
         elif period == 'today':
             start_d = today
             end_d = today

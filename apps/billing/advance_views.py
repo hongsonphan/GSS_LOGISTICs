@@ -924,13 +924,13 @@ class CustomerARReconciliationAPIView(APIView):
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
-                qs = qs.filter(Q(loading_date__gte=fd) | Q(created_at__date__gte=fd))
+                qs = qs.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
             except ValueError:
                 pass
         if to_date:
             try:
                 td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
-                qs = qs.filter(Q(loading_date__lte=td) | Q(created_at__date__lte=td))
+                qs = qs.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
             except ValueError:
                 pass
 

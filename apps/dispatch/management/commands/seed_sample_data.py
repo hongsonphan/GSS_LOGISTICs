@@ -132,6 +132,7 @@ class Command(BaseCommand):
                     'notes': 'Bảng giá cước vận chuyển áp dụng quý 3/2026'
                 }
             )
+            Quotation.objects.filter(id=q.id).update(created_at=timezone.make_aware(datetime.datetime(2026, 9, 1, 8, 0, 0)))
             quotations.append(q)
 
         # 8. Khởi tạo Quỹ Tạm Ứng Điều Vận (Tuần 1 & Tuần 3 tháng 9)
@@ -199,6 +200,7 @@ class Command(BaseCommand):
                     selling_freight_price=Decimal(4200000 if is_twin else (3800000 + (day % 3) * 150000)),
                     status=BookingStatus.COMPLETED if day < 28 else BookingStatus.PARTIALLY_DISPATCHED
                 )
+                BookingOrder.objects.filter(id=b_order.id).update(created_at=timezone.make_aware(datetime.datetime(2026, 9, day, 7, 30, 0)))
 
 
                 # Chọn tài xế và xe
@@ -261,12 +263,13 @@ class Command(BaseCommand):
                     cached_margin_percent=Decimal(round((revenue - trip_cost) / revenue * 100, 1)),
                     special_notes='Thuê xe thầu phụ 3PL' if is_sub else ('Cắt kéo đổi đầu xe chặng 2' if is_split else '')
                 )
+                DispatchTrip.objects.filter(id=trip.id).update(created_at=timezone.make_aware(datetime.datetime(2026, 9, day, 8, 0, 0)))
                 all_trips.append(trip)
 
 
                 # Tạm ứng tài xế
                 if trip_status in (TripStatus.COMPLETED, TripStatus.DELIVERED, TripStatus.IN_TRANSIT):
-                    DriverTripAdvance.objects.create(
+                    d_adv = DriverTripAdvance.objects.create(
                         code=f"TUTX-2609-{day_trip_counter:03d}",
                         trip=trip,
                         driver=driver,
@@ -278,6 +281,7 @@ class Command(BaseCommand):
                         status=DriverAdvanceStatus.SETTLED if is_settled else DriverAdvanceStatus.ADVANCED,
                         actual_spent=Decimal(1150000)
                     )
+                    DriverTripAdvance.objects.filter(id=d_adv.id).update(created_at=timezone.make_aware(datetime.datetime(2026, 9, day, 8, 30, 0)))
 
                 # Chi phí chuyến xe
                 # 1. Nâng cont (Chi hộ khách hàng)
@@ -313,6 +317,8 @@ class Command(BaseCommand):
                         notes='Phiếu cân tải trọng xe VGM'
                     )
                     all_expenses.append(exp2)
+                else:
+                    exp2 = None
 
                 # 3. Vé BOT cầu đường (Công ty chịu)
                 exp3 = TripExpense.objects.create(
@@ -329,6 +335,10 @@ class Command(BaseCommand):
                     notes='Vé cầu đường ETC'
                 )
                 all_expenses.append(exp3)
+
+                for e_item in [exp1, exp2, exp3]:
+                    if e_item:
+                        TripExpense.objects.filter(id=e_item.id).update(created_at=timezone.make_aware(datetime.datetime(2026, 9, day, 10, 0, 0)))
 
                 if is_settled:
                     trip.is_expenses_settled = True
@@ -507,9 +517,14 @@ class Command(BaseCommand):
                 notes="Thanh toán quyết toán cước xe chạy thuê ngoài tháng 9"
             )
 
+        for tx_code, tx_day in [("PT-2609-001", 10), ("PT-2609-002", 15), ("PC-2609-001", 1), ("PC-2609-002", 12), ("PC-2609-003", 28)]:
+            CashTransaction.objects.filter(code=tx_code).update(
+                created_at=timezone.make_aware(datetime.datetime(2026, 9, tx_day, 11, 0, 0))
+            )
+
         # 12. Tờ Khai Hải Quan trong tháng 9
         for idx, t in enumerate(all_trips[:15]):
-            CustomsDeclaration.objects.create(
+            c_decl = CustomsDeclaration.objects.create(
                 declaration_number=f"105909{idx+1:02d}882{idx:02d}",
                 declaration_date=t.loading_date,
                 customer=t.customer,
@@ -526,6 +541,9 @@ class Command(BaseCommand):
                 customs_service_fee=Decimal(1200000),
                 reimbursable_fee=Decimal(350000),
                 inspection_notes=f"Tờ khai thông quan container {t.container_number}"
+            )
+            CustomsDeclaration.objects.filter(id=c_decl.id).update(
+                created_at=timezone.make_aware(datetime.datetime(2026, 9, t.loading_date.day, 9, 0, 0))
             )
 
         self.stdout.write(self.style.SUCCESS("=== KHOI TAO TOAN DIEN DU LIEU THANG 9/2026 THANH CONG 100%! ==="))
