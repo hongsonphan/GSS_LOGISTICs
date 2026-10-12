@@ -14,26 +14,36 @@ def main():
     User = get_user_model()
     user = User.objects.filter(is_superuser=True).first()
     rf = RequestFactory()
-    req = rf.get('/api/sales/?from_date=2026-10-01&to_date=2026-10-12')
-    req.user = user
 
-    res = SalesAPIView.as_view()(req)
-    quotes = res.data.get('quotations', [])
-    bookings = res.data.get('bookings', [])
+    # 1. Test ky 01/10/2026 - 12/10/2026
+    req_oct = rf.get('/api/sales/?from_date=2026-10-01&to_date=2026-10-12')
+    req_oct.user = user
+    res_oct = SalesAPIView.as_view()(req_oct)
+    quotes_oct = res_oct.data.get('quotations', [])
+    bookings_oct = res_oct.data.get('bookings', [])
 
-    print('=== VERIFICATION KHI CHON 01/10/2026 - 12/10/2026 ===')
-    print(f'Quotations count: {len(quotes)}')
-    for q in quotes:
-        print(f"  Quotation: {q['code']} | Ngay: {q['created_at']} | Trang thai: {q['status_raw']}")
+    print('=== KET QUA KHI CHON 01/10/2026 - 12/10/2026 ===')
+    print(f'Quotations count: {len(quotes_oct)}')
+    for q in quotes_oct:
+        print(f"  Quotation: {q['code']} | Ngay tao: {q['created_at']}")
+    print(f'Bookings count: {len(bookings_oct)}')
+    for b in bookings_oct:
+        print(f"  Booking: {b['booking_code']} | Ngay dong hang: {b['loading_date']}")
 
-    print(f'Bookings count: {len(bookings)}')
-    for b in bookings:
-        print(f"  Booking: {b['booking_code']} | Ngay dong hang: {b['loading_date']} | Trang thai: {b['status']}")
+    # 2. Test ky 01/09/2026 - 30/09/2026
+    req_sep = rf.get('/api/sales/?from_date=2026-09-01&to_date=2026-09-30')
+    req_sep.user = user
+    res_sep = SalesAPIView.as_view()(req_sep)
+    quotes_sep = res_sep.data.get('quotations', [])
+    bookings_sep = res_sep.data.get('bookings', [])
 
-    sep_quotes = [q for q in quotes if '2609' in q['code'] or '09/' in q['created_at']]
-    sep_bookings = [b for b in bookings if '2609' in b['booking_code'] or '09/' in b['loading_date']]
-    print(f'September quotes leaking: {len(sep_quotes)}')
-    print(f'September bookings leaking: {len(sep_bookings)}')
+    print('\n=== KET QUA KHI CHON 01/09/2026 - 30/09/2026 ===')
+    print(f'Quotations count: {len(quotes_sep)}')
+    for q in quotes_sep:
+        print(f"  Quotation: {q['code']} | Ngay tao: {q['created_at']}")
+    print(f'Bookings count: {len(bookings_sep)}')
+    for b in bookings_sep:
+        print(f"  Booking: {b['booking_code']} | Ngay dong hang: {b['loading_date']}")
 
 if __name__ == '__main__':
     main()
