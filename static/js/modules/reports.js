@@ -88,6 +88,8 @@ const REPORT_GROUP_MAPPING = {
 function switchReportGroup(groupId, autoSwitchFirstChild = true) {
     currentActiveReportGroup = groupId;
 
+    currentReportViewMode = 'group';
+
     // Cập nhật trạng thái hiển thị của 4 Card Nhóm Lớn
     ['group-1', 'group-2', 'group-3', 'group-4'].forEach(g => {
         const num = g.replace('group-', '');
@@ -102,7 +104,7 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
         }
     });
 
-    // Lọc hiển thị các nút subtab con nếu ở chế độ 'group'
+    // Lọc hiển thị nghiêm ngặt: chỉ các nút subtab thuộc nhóm được chọn mới hiển thị
     applyReportGroupFilterToButtons();
 
     // Tự động kích hoạt báo cáo đầu tiên của nhóm nếu báo cáo hiện tại không nằm trong nhóm này
@@ -115,26 +117,7 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
 }
 
 function toggleReportViewMode(mode) {
-    currentReportViewMode = mode;
-    const btnGroup = document.getElementById('btn-report-view-group');
-    const btnAll = document.getElementById('btn-report-view-all');
-
-    if (mode === 'all') {
-        if (btnAll) {
-            btnAll.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading bg-teal-700 text-white shadow-2xs transition-colors';
-        }
-        if (btnGroup) {
-            btnGroup.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors';
-        }
-    } else {
-        if (btnGroup) {
-            btnGroup.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading bg-slate-100 text-slate-800 hover:bg-slate-200 transition-colors';
-        }
-        if (btnAll) {
-            btnAll.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors';
-        }
-    }
-
+    currentReportViewMode = mode || 'group';
     applyReportGroupFilterToButtons();
 }
 
@@ -142,10 +125,13 @@ function applyReportGroupFilterToButtons() {
     const subtabButtons = document.querySelectorAll('.report-subtab-btn');
     subtabButtons.forEach(btn => {
         const btnGroup = btn.getAttribute('data-report-group');
-        if (currentReportViewMode === 'all' || btnGroup === currentActiveReportGroup) {
+        // Chỉ hiển thị duy nhất các báo cáo thuộc nhóm đang chọn, ẩn triệt để các nhóm khác
+        if (btnGroup === currentActiveReportGroup) {
             btn.classList.remove('hidden');
+            btn.style.display = '';
         } else {
             btn.classList.add('hidden');
+            btn.style.display = 'none';
         }
     });
 }
@@ -160,6 +146,9 @@ function switchReportSubTab(subtabId) {
             break;
         }
     }
+
+    // Đảm bảo chỉ hiển thị subtab buttons thuộc nhóm hiện tại
+    applyReportGroupFilterToButtons();
 
     // Ẩn tất cả subtab content
     document.querySelectorAll('.report-subtab-content').forEach(el => el.classList.add('hidden'));
@@ -181,6 +170,7 @@ function switchReportSubTab(subtabId) {
         activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
         activeBtn.classList.add('bg-teal-700', 'text-white', 'shadow-sm', 'active');
         activeBtn.classList.remove('hidden'); // Đảm bảo nút được nhìn thấy
+        activeBtn.style.display = '';
     }
 }
 

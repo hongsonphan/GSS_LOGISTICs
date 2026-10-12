@@ -3117,6 +3117,9 @@ class QuotationStatusAPIView(APIView):
             'status_display': q.get_status_display()
         })
 
+    def post(self, request, pk):
+        return self.patch(request, pk)
+
 
 class BookingOrderDetailAPIView(APIView):
     """API Xem chi tiết, Cập nhật và Xóa mềm Đơn Đặt Hàng / Booking."""
@@ -3341,6 +3344,9 @@ class BookingOrderStatusAPIView(APIView):
             'status_display': b.get_status_display()
         })
 
+    def post(self, request, pk):
+        return self.patch(request, pk)
+
 
 class BookingDocumentDeleteAPIView(APIView):
     """API xóa tệp đính kèm lẻ của Booking."""
@@ -3441,6 +3447,21 @@ class TripDriverMilestoneAPIView(APIView):
                 'title': 'Tài xế từ chối chuyến — Cần phân xe lại',
                 'status': TripStatus.DISPATCHED,  # revert về DISPATCHED để điều độ phân lại
                 'msg': 'Tài xế đã từ chối nhận chuyến. Vui lòng liên hệ điều độ để phân xe lại.'
+            },
+            'PICKED_UP': {
+                'title': 'Tài xế đã nhận cont / đóng hàng xong',
+                'status': TripStatus.CONTAINER_PICKED,
+                'msg': 'Đã nhận container và niêm phong seal thành công.'
+            },
+            'IN_TRANSIT': {
+                'title': 'Xe đang trên đường vận chuyển',
+                'status': TripStatus.IN_TRANSIT,
+                'msg': 'Phương tiện đang lưu thông trên tuyến đường.'
+            },
+            'DELIVERED': {
+                'title': f'Đã giao hàng / cẩu hạ cont thành công ({trip.dropoff_location})',
+                'status': TripStatus.DELIVERED,
+                'msg': 'Đã hoàn tất giao hàng / hạ bãi cont.'
             },
         }
 

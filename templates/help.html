@@ -725,6 +725,65 @@
                             <li><strong>In ấn A4 chuẩn mực:</strong> Tự động điều chỉnh khổ A4 Dọc hoặc A4 Ngang theo quy định văn bản in ấn.</li>
                         </ul>
                     </div>
+
+                    <!-- DANH SÁCH 14 BÁO CÁO QUẢN TRỊ CHI TIẾT (4 NHÓM NGHIỆP VỤ) -->
+                    <div class="space-y-4 pt-2">
+                        <p class="font-bold text-slate-900 text-sm">Danh mục 14 Báo cáo Quản trị chuyên sâu (Phân theo 4 nhóm chiến lược):</p>
+
+                        <!-- NHÓM 1 -->
+                        <div class="p-3.5 bg-teal-50/50 rounded-xl border border-teal-200/80 space-y-2">
+                            <h4 class="text-xs sm:text-sm font-black uppercase text-teal-900 flex items-center gap-2">
+                                <i class="ph-bold ph-chart-line-up text-base text-teal-700"></i>
+                                <span>Nhóm 1: Doanh Thu & Hiệu Suất Đội Xe (3 Báo Cáo)</span>
+                            </h4>
+                            <ul class="text-xs sm:text-[13px] text-slate-700 space-y-2 pl-4 list-disc">
+                                <li><strong>Hiệu Suất Đội Xe & P&L:</strong> Phân tích lãi lỗ chi tiết từng đầu kéo/xe tải (Doanh thu trừ Nhiên liệu, Vé BOT, Sửa chữa, Lương tài xế), tỷ lệ lấp đầy tải và vòng quay chuyến xe.</li>
+                                <li><strong>Doanh Thu Khách & Sản Lượng TEU:</strong> Thống kê doanh thu và sản lượng container (TEU) theo từng khách hàng, tỷ trọng đóng góp và số chuyến hoàn thành trong kỳ.</li>
+                                <li><strong>Chi Phí Tuyến & Hoàn Chi Hộ:</strong> Kiểm soát chi phí phát sinh trên từng cung đường vận tải (phí nâng hạ, cược vỏ, lưu bãi, kiểm hóa) và bóc tách các khoản chi hộ cần thu lại từ khách hàng.</li>
+                            </ul>
+                        </div>
+
+                        <!-- NHÓM 2 -->
+                        <div class="p-3.5 bg-blue-50/50 rounded-xl border border-blue-200/80 space-y-2">
+                            <h4 class="text-xs sm:text-sm font-black uppercase text-blue-900 flex items-center gap-2">
+                                <i class="ph-bold ph-truck text-base text-blue-700"></i>
+                                <span>Nhóm 2: Vận Hành & Sự Cố (4 Báo Cáo)</span>
+                            </h4>
+                            <ul class="text-xs sm:text-[13px] text-slate-700 space-y-2 pl-4 list-disc">
+                                <li><strong>Vỏ Cont & DEM/DET Hãng Tàu:</strong> Theo dõi hạn miễn phí lưu bãi/lưu vỏ (Free DEM/DET) theo từng hãng tàu (ONE, Maersk, SITC...), cảnh báo cont sắp quá hạn hoặc phát sinh phí phạt DET để kịp thời trả vỏ.</li>
+                                <li><strong>Đúng Giờ & Chất Lượng OTP:</strong> Đo lường tỷ lệ giao hàng đúng hẹn (On-Time Performance - OTP) theo cam kết SLA (giờ hẹn kho, giờ hạ bãi closing time), thống kê các sự vụ trễ giờ và phân loại nguyên nhân.</li>
+                                <li><strong>Cắt Kéo & Lưu Xe Sau 0H:</strong> Giám sát các chuyến xe có thao tác cắt kéo (Drop & Hook), xe lưu đêm tại kho hoặc chờ hạ bãi sau 00:00; tính phí lưu đêm phạt khách và phụ cấp trực đêm cho tài xế.</li>
+                                <li><strong>Ngoại Lệ & Sự Cố (OS&D):</strong> Quản lý các biến cố hiện trường (hư hỏng hàng hóa, rách bạt, gãy seal cont, va quẹt giao thông, xử phạt CSGT), đính kèm hình ảnh và xác định trách nhiệm bồi thường.</li>
+                            </ul>
+                        </div>
+
+                        <!-- NHÓM 3 -->
+                        <div class="p-3.5 bg-indigo-50/50 rounded-xl border border-indigo-200/80 space-y-2">
+                            <h4 class="text-xs sm:text-sm font-black uppercase text-indigo-900 flex items-center gap-2">
+                                <i class="ph-bold ph-wallet text-base text-indigo-700"></i>
+                                <span>Nhóm 3: Lương Chuyến & Tạm Ứng (4 Báo Cáo)</span>
+                            </h4>
+                            <ul class="text-xs sm:text-[13px] text-slate-700 space-y-2 pl-4 list-disc">
+                                <li><strong>Quỹ Tạm Ứng Điều Vận (Kế Toán QL):</strong> Theo dõi hạn mức và dòng tiền tạm ứng từ phòng Kế toán giao cho Điều phối viên (Dispatcher Advance Fund); đối soát số tiền đã chi, tồn quỹ và thu hồi hoàn ứng.</li>
+                                <li><strong>Tạm Ứng & Chi Phí Tài Xế (Điều Vận QL):</strong> Quản lý tiền ứng trước cho tài xế theo từng chuyến xe (tiền dầu, vé cầu đường, ăn nghỉ); kiểm duyệt hóa đơn hiện trường và cấn trừ tự động khi thanh toán chuyến.</li>
+                                <li><strong>Lương Chuyến & Tài Xế:</strong> Tổng hợp chi tiết thu nhập tài xế theo lương khoán chuyến, phụ cấp cung đường, trợ cấp lưu ca đêm và các khoản thưởng/phạt theo kỳ lương.</li>
+                                <li><strong>Quyết Toán Xe Thầu Phụ 3PL:</strong> Quản lý công nợ phải trả (AP) cho các đối tác xe thuê ngoài (Xe bạn/3PL); đối chiếu đơn giá cước hợp đồng thầu, các khoản chi hộ và lập bảng kê thanh toán cho nhà xe.</li>
+                            </ul>
+                        </div>
+
+                        <!-- NHÓM 4 -->
+                        <div class="p-3.5 bg-amber-50/50 rounded-xl border border-amber-200/80 space-y-2">
+                            <h4 class="text-xs sm:text-sm font-black uppercase text-amber-900 flex items-center gap-2">
+                                <i class="ph-bold ph-coins text-base text-amber-700"></i>
+                                <span>Nhóm 4: Công Nợ Khách Hàng (3 Báo Cáo)</span>
+                            </h4>
+                            <ul class="text-xs sm:text-[13px] text-slate-700 space-y-2 pl-4 list-disc">
+                                <li><strong>Công Nợ Phải Thu (AR) & Bảng Kê SOA:</strong> Bảng kê đối soát công nợ khách hàng (Statement of Account - SOA); tổng hợp tiền cước, chi phí chi hộ, tình trạng thanh toán và in phôi đối soát A4 có chữ ký.</li>
+                                <li><strong>Quyết Toán Chuyến & Backlog:</strong> Theo dõi tiến độ khép hồ sơ chuyến xe từ lúc hoàn thành đến khi thu hồi đầy đủ chứng từ POD gốc; kiểm soát các chuyến chưa chốt quyết toán để phát hành hóa đơn VAT.</li>
+                                <li><strong>Tuổi Đơn Tồn Đọng Chưa Chốt:</strong> Phân loại tuổi nợ các chuyến xe chưa nghiệm thu theo các mốc thời gian (dưới 7 ngày, 8-15 ngày, 16-30 ngày, trên 30 ngày); cảnh báo rủi ro chôn vốn và đốc thúc thu hồi công nợ.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- 9. CÀI ĐẶT -->

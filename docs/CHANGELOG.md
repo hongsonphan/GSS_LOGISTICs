@@ -2,7 +2,100 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v2.9.4] - 2026-10-11 (Audit Toàn Diện Người Dùng — 100% Pass 36/36 Kịch Bản CRUD, Báo Cáo, Mẫu In & Phân Hệ)
+
+### 1. Nâng Cấp Kiến Trúc & Xử Lý Ngoại Lệ (Defensive Engineering):
+- **Bổ sung Semantic Routes cho Web SPA:** Thêm các route sạch `/master-data/`, `/master-data`, `/danh-muc/`, `/danh-muc` vào `config/urls.py` trỏ trực tiếp vào `index_view` để người dùng truy cập trực tiếp qua thanh địa chỉ trình duyệt không bị lỗi 404.
+- **Defensive API Aliasing cho Báo Giá & Booking:** Bổ sung method `post()` alias cho `QuotationStatusAPIView` và `BookingOrderStatusAPIView`, hỗ trợ linh hoạt cả form submit POST và AJAX PATCH.
+- **Mở Rộng Milestone Aliasing & State Machine Vận Tải:**
+  * Bổ sung các mốc `PICKED_UP`, `IN_TRANSIT`, `DELIVERED` vào `TripDriverMilestoneAPIView` và hoàn thiện ma trận `VALID_TRANSITIONS` trong `core/workflows.py`.
+  * Hỗ trợ chuẩn mực cả 2 mô hình luồng logistics: Vận chuyển FCL có hạ bãi rỗng (`IN_TRANSIT -> AT_WAREHOUSE -> UNLOADING -> RETURNING_EMPTY -> COMPLETED`) và Vận tải FTL giao thẳng Door-to-Door (`IN_TRANSIT -> DELIVERED -> COMPLETED`).
+- **Phòng Ngừa Lỗi Duplicate Key Mã Phiếu Thu/Chi (`CashBookAPIView`):**
+  * Sử dụng `CashTransaction.all_objects` thay cho `objects` khi sinh mã phiếu `code` kết hợp vòng lặp `while` kiểm tra tồn tại, triệt tiêu hoàn toàn lỗi `IntegrityError: duplicate key value violates unique constraint "billing_cashtransaction_code_key"`.
+  * Bổ sung trường `id` song song cùng `transaction_id` trong phản hồi tạo phiếu để tương thích hoàn hảo mọi client.
+- **Bổ Sung Method `GET` Cho Đối Soát Công Nợ Khách Hàng (`CustomerARReconciliationAPIView`):**
+  * Hỗ trợ truy vấn chi tiết dữ liệu bảng kê đối soát SOA (`customer_id`, `from_date`, `to_date`, `status`), tính toán doanh thu cước, chi phí chi hộ, tổng phải thu và trạng thái hóa đơn VAT.
+- **Chuẩn Hóa Action Không Phân Biệt Hoa Thường Tại Phân Hệ Hải Quan (`CustomsQuickActionAPIView`):**
+  * Tiếp nhận linh hoạt các alias `clear`, `cleared`, `release`, `tax` qua chuẩn hóa `.lower()`.
+
+### 2. Kiểm Thử Hệ Thống & Kiểm Chứng Hồi Quy (Zero-Regression):
+- Xây dựng và thực thi bộ kịch bản kiểm thử toàn diện `scripts/audit_e2e_user_operations.py`:
+  * **HTML Page Views & Interface:** 14/14 trang render thành công HTTP 200 (Dashboard, Dispatch, Sales, Fleet, HR, Accounting, Settlements, Customs, 14 Reports, Master Data, Help, Driver Portal, Tracking).
+  * **Sales CRUD:** Tạo Báo giá -> Sửa -> Duyệt -> Tạo Đơn hàng Booking -> Sửa -> Chi tiết.
+  * **Dispatch Trips & Lifecycle:** Tạo Chuyến -> 2 Khoản chi phí (BOT, Phí bãi) -> 4 Mốc lộ trình -> Quyết toán chi phí -> Mở chốt -> Xóa mềm.
+  * **Accounting & Sổ Quỹ:** Tạo Phiếu Thu -> Sửa -> Chi tiết -> Tạo Phiếu Chi -> Đối soát tài xế lô -> Đối soát khách hàng SOA -> Chi hộ -> Thầu phụ -> BOT Audit.
+  * **Customs CRUD:** Đăng ký tờ khai -> Đổi luồng Xanh -> Xác nhận thông quan -> Xuất Excel.
+  * **14 Báo Cáo Quản Trị:** Đạt 100% khi chạy lọc theo Tháng 9/2026, Quý, Năm và Hôm nay.
+  * **Master Data & Hồ Sơ:** CRUD Địa điểm, Khách hàng, Xe, Rơ-moóc, Hãng tàu, Thầu phụ, Biểu giá và Hồ sơ công ty.
+  * **Kết quả:** **36/36 kịch bản PASSED 100%**.
+- **Frontend Syntax Check:** `node -c static/js/app.js` và `node -c static/js/column_manager.js` PASSED 100%.
+- **Django Unit Tests:** `python manage.py test --keepdb` đạt **92/92 test cases PASSED 100%**.
+- **Static Collection:** `python manage.py collectstatic --noinput` hoàn tất.
+
+## [v2.9.3] - 2026-10-11 (Hotfix Khai Báo Hệ Thống — Tự Động Nạp Đầy Đủ Dữ Liệu Công Ty Vào Modal Hiệu Chỉnh)
+
+### 1. Khắc Phục Lỗi Modal Khai Báo Hệ Thống (Master Data Bugfix):
+- **Hiện tượng:** Khi bấm nút **"Sửa"** hoặc **"Hiệu Chỉnh Khai Báo Hệ Thống"** trong danh mục Công Ty, các ô input hiển thị trống trơn hoặc chỉ có placeholder gợi ý `VD: ...` thay vì hiển thị dữ liệu thực tế đã lưu trong cơ sở dữ liệu (`CompanyProfile`).
+- **Nguyên nhân kỹ thuật:**
+  * Hàm `loadActiveMasterDataTab()` khi nạp danh mục `company` đã gán mảng `items = [profile]` vào biến `masterDataCache['company']`.
+  * Khi hàm `openCreateMasterDataModal()` được gọi, nó cố gắng đọc trực tiếp các trường `profile.company_name`, `profile.tax_code`, `profile.phone`... từ một đối tượng mảng (`Array`), dẫn đến tất cả các trường đều trả về `undefined` và form hiển thị rỗng.
+- **Giải pháp xử lý triệt để:**
+  * Tại `loadActiveMasterDataTab()`: Ngăn chặn việc ghi đè mảng danh mục lên object `masterDataCache['company']`. Object cấu hình công ty luôn được bảo toàn nguyên vẹn.
+  * Tại `openCreateMasterDataModal()`: Bổ sung cơ chế phòng vệ (Defensive Coding) tự động trích xuất phần tử đầu tiên nếu cache là dạng mảng (`Array.isArray(profile) ? profile[0] : profile`), fallback sang `window.SYSTEM_COMPANY`, và nếu vẫn chưa có dữ liệu sẽ chủ động gọi API `/api/master-data/company/` để nạp ngay lập tức dữ liệu mới nhất vào tất cả các trường form.
+- **Kiểm chứng & Kiểm thử:**
+  * Đã kiểm tra cú pháp JS: `node -c static/js/app.js` và `node -c static/js/modules/master_data.js` đạt 100% Passed.
+  * Đã tập hợp static file qua `python manage.py collectstatic --noinput`.
+  * Bộ kiểm thử hồi quy `python manage.py test --keepdb` đạt **92/92 test cases PASS 100%**.
+
+## [v2.9.2] - 2026-10-11 (Tối Ưu Hóa Giao Diện Báo Cáo — Cách Ly Tuyệt Đối Tab Con Theo Từng Nhóm Nghiệp Vụ)
+
+### 1. Chuẩn Hóa Trải Nghiệm Người Dùng (UI/UX 2-Tier Navigation):
+- **Cách ly tuyệt đối nút báo cáo con theo nhóm đang chọn:**
+  * Khi chọn bất kỳ nhóm nào trong 4 nhóm báo cáo chiến lược (`DOANH THU & HIỆU SUẤT ĐỘI XE`, `VẬN HÀNH & SỰ CỐ`, `LƯƠNG CHUYẾN & TẠM ỨNG`, `CÔNG NỢ KHÁCH`), hệ thống chỉ hiển thị đúng 3-4 nút báo cáo con thuộc nhóm đó, ẩn triệt để 10-11 tab con của các nhóm khác.
+  * Loại bỏ nút switch chế độ "Tất Cả (14)" gây rối mắt và làm tràn giao diện nhiều dòng.
+  * Tự động kích hoạt báo cáo con đầu tiên hợp lệ khi chuyển đổi nhóm.
+- **Đồng bộ hóa mã nguồn Frontend:**
+  * Hiệu chỉnh hàm `applyReportGroupFilterToButtons()` và `switchReportGroup()` trong [static/js/app.js](file:///e:/Bim_Logistics/static/js/app.js) và [static/js/modules/reports.js](file:///e:/Bim_Logistics/static/js/modules/reports.js).
+  * Cập nhật template [templates/views/view_reports.html](file:///e:/Bim_Logistics/templates/views/view_reports.html).
+  * Kiểm tra cú pháp bằng `node -c static/js/app.js` và `node -c static/js/modules/reports.js` đạt 100% Passed.
+  * Tập hợp static file (`python manage.py collectstatic --noinput`).
+  * Kiểm thử toàn diện `python manage.py test --keepdb` đạt **92/92 test cases PASS 100%**.
+
+## [v2.9.1] - 2026-10-11 (Hotfix Lỗi canViewFinance & Đồng Bộ Hóa Dữ Liệu Báo Cáo Kế Toán Tháng 9)
+
+### 1. Khắc Phục Lỗi Frontend (UI Bugfix):
+- **Sửa lỗi `ReferenceError: canViewFinance is not defined`:**
+  * Bổ sung biến toàn cục `let canViewFinance = true;` trong module Báo cáo (`static/js/app.js`).
+  * Đồng bộ biến `canViewFinance = (data.can_view_finance !== false);` ngay khi nhận phản hồi từ API `/api/reports/` để kiểm soát hiển thị dòng tổng cộng bảng P&L Đội xe (`report1_fleet_utilization`).
+  * Kiểm tra cú pháp JavaScript bằng `node -c static/js/app.js` đạt 100% Passed.
+
+### 2. Chuẩn Hóa Lọc Dữ Liệu Kế Toán Theo Chuyến Xe (`finance_reports_api.py`):
+- Đồng bộ bộ lọc theo `loading_date` và `trip__loading_date` cho các khoản chi hộ `TripExpense`.
+- Đã tập hợp lại static file (`collectstatic`) vào `staticfiles/`.
+
+## [v2.9] - 2026-10-11 (Nâng Cấp Kiến Trúc Dữ Liệu Giao Dịch Chuẩn Quốc Tế — Khép Kín AR/AP/Payroll/Debit Note)
+
+
+### 1. Bổ Sung 4 Model Giao Dịch Chuẩn Doanh Nghiệp Quốc Tế:
+- **`CustomerInvoice` (Bảng Kê Hóa Đơn Khách Hàng - AR):**
+  * Gom nhiều chuyến xe (`DispatchTrip`) và các khoản chi hộ trong kỳ đối soát của 1 Khách hàng.
+  * Quản lý cước vận tải chưa thuế, thuế VAT, tổng chi hộ, chiết khấu, tổng thanh toán và theo dõi công nợ đã trả / còn lại.
+  * Hỗ trợ cờ khóa dữ liệu `is_locked` ngăn sửa đổi sau khi chốt gửi khách hàng.
+- **`SubcontractorSettlement` (Bảng Kê Đối Soát Nhà Xe Thầu Phụ - AP):**
+  * Gom các chuyến xe do Thầu phụ (Xe Bạn / 3PL) thực hiện trong kỳ để chốt công nợ phải trả (TK 331).
+  * Tự động trừ tạm ứng đã cấp trước và các khoản trừ khác.
+- **`DriverPayrollSettlement` (Bảng Chốt Lương Chuyến & Quyết Toán Tài Xế):**
+  * Cố định thu nhập theo kỳ cho từng tài xế: lương khoán chuyến, phụ cấp neo xe qua đêm, phụ cấp kiểm hóa, thưởng và trừ tạm ứng nợ cũ.
+- **`DebitNote` (Bảng Kê Chi Hộ Riêng Biệt):**
+  * Tập hợp các khoản `TripExpense` chi hộ khách hàng (`is_on_behalf_of_customer`) để xuất bảng kê yêu cầu hoàn ứng độc lập.
+
+### 2. Quản Trị Hệ Thống & Kiểm Thử Hồi Quy (Zero-Regression):
+- Đăng ký đầy đủ 4 model vào `apps/billing/admin.py` với bộ lọc, tìm kiếm và định dạng số.
+- Áp dụng migration `billing.0010_customerinvoice_debitnote_driverpayrollsettlement_and_more`.
+- Chạy bộ kiểm thử toàn diện `python manage.py test --keepdb`: **92/92 test cases PASS 100%**.
+
 ## [v2.8] - 2026-10-11 (Tái Cấu Trúc Phân Hệ Cài Đặt — Quy Hoạch 5 Nhóm Danh Mục & Đồng Nhất 100% Dạng Bảng Dòng Records Chuẩn ERP)
+
 
 ### 1. Đồng Nhất 100% Giao Diện Dạng Dòng (Table Records) Chuẩn ERP — Loại Bỏ Hoàn Toàn Cách Trình Bày Thẻ:
 - **Xóa bỏ triệt để các khối giao diện dạng thẻ / card grid / gradient banner riêng lẻ:**

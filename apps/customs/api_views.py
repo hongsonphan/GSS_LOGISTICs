@@ -334,9 +334,9 @@ class CustomsQuickActionAPIView(APIView):
         if not declaration:
             return Response({'error': 'Không tìm thấy tờ khai hải quan!'}, status=status.HTTP_404_NOT_FOUND)
 
-        action = request.data.get('action')
+        raw_action = str(request.data.get('action') or '').strip().lower()
 
-        if action == 'set_lane':
+        if raw_action in ['set_lane', 'lane']:
             lane = request.data.get('lane', '').upper()
             if lane in [CustomsLane.GREEN, CustomsLane.YELLOW, CustomsLane.RED]:
                 declaration.customs_lane = lane
@@ -347,17 +347,17 @@ class CustomsQuickActionAPIView(APIView):
                 return Response({'success': True, 'message': f'Đã đổi phân luồng thành {declaration.get_customs_lane_display()}'})
             return Response({'error': 'Mã luồng không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        elif action == 'set_cleared':
+        elif raw_action in ['set_cleared', 'clear', 'cleared']:
             declaration.status = CustomsDeclarationStatus.CLEARED
             declaration.save()
             return Response({'success': True, 'message': f'Tờ khai {declaration.declaration_number} đã được xác nhận THÔNG QUAN!'})
 
-        elif action == 'set_released':
+        elif raw_action in ['set_released', 'release', 'released']:
             declaration.status = CustomsDeclarationStatus.RELEASED
             declaration.save()
             return Response({'success': True, 'message': f'Tờ khai {declaration.declaration_number} đã QUA KHU VỰC GIÁM SÁT!'})
 
-        elif action == 'toggle_tax':
+        elif raw_action in ['toggle_tax', 'tax']:
             declaration.is_tax_paid = not declaration.is_tax_paid
             declaration.save()
             msg = 'ĐÃ HOÀN TẤT NỘP THUẾ' if declaration.is_tax_paid else 'CHƯA NỘP THUẾ'

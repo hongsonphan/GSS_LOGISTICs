@@ -467,3 +467,224 @@ class CashTransaction(TimeStampedModel, SoftDeleteModel):
         sign = "+" if self.transaction_type == TransactionType.INFLOW else "-"
         return f"[{self.code}] {self.get_payment_method_display()} {sign}{self.amount:,} đ ({self.get_category_display()})"
 
+
+# =========================================================================
+# QUẢN LÝ GIAO DỊCH THƯƠNG MẠI & TÀI CHÍNH QUỐC TẾ (ENTERPRISE BILLING)
+# =========================================================================
+
+class SettlementStatus(models.TextChoices):
+    DRAFT = 'DRAFT', 'Bản nháp'
+    CONFIRMED = 'CONFIRMED', 'Đã xác nhận / Đã gửi'
+    PARTIAL = 'PARTIAL', 'Thanh toán một phần'
+    PAID = 'PAID', 'Đã tất toán'
+    CANCELLED = 'CANCELLED', 'Đã hủy'
+
+
+class CustomerInvoice(TimeStampedModel, SoftDeleteModel):
+    """
+    Bảng Kê Vận Chuyển & Hóa Đơn Khách Hàng (Accounts Receivable - AR).
+    Gom nhiều chuyến xe (DispatchTrip) và các khoản chi hộ trong kỳ đối soát của 1 Khách hàng.
+    """
+    code = models.CharField(max_length=50, unique=True, db_index=True, help_text="Mã hóa đơn / Bảng kê (INV-2026-..., BK-2026-...)")
+    customer = models.ForeignKey(
+        'customers.Customer',
+        on_delete=models.PROTECT,
+        related_name='customer_invoices',
+        help_text="Khách hàng / Chủ hàng đối soát"
+    )
+    period_start = models.DateField(help_text="Ngày bắt đầu kỳ đối soát")
+    period_end = models.DateField(help_text="Ngày kết thúc kỳ đối soát")
+    issue_date = models.DateField(auto_now_add=True, help_text="Ngày lập hóa đơn / bảng kê")
+    due_date = models.DateField(null=True, blank=True, help_text="Hạn thanh toán công nợ")
+
+    trips = models.ManyToManyField(
+        'dispatch.DispatchTrip',
+        blank=True,
+        related_name='customer_invoices',
+        help_text="Danh sách chuyến xe đối soát trong hóa đơn này"
+    )
+
+    freight_subtotal = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng tiền cước vận tải chưa thuế")
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=8, help_text="Thuế suất GTGT %")
+    vat_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tiền thuế GTGT cước")
+    reimbursement_total = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng tiền chi hộ thu lại (Debit Note)")
+    discount_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Chiết khấu thương mại (nếu có)")
+    grand_total = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng tiền thanh toán cuối cùng (VNĐ)")
+    paid_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số tiền khách hàng đã thanh toán")
+
+    status = models.CharField(max_length=20, choices=SettlementStatus.choices, default=SettlementStatus.DRAFT, db_index=True)
+    is_locked = models.BooleanField(default=False, help_text="Đã khóa dữ liệu sau khi gửi khách hàng")
+
+    created_by = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_customer_invoices',
+        help_text="Kế toán công nợ lập bảng kê"
+    )
+    notes = models.TextField(blank=True, help_text="Ghi chú điều khoản thanh toán")
+
+    class Meta:
+        ordering = ['-issue_date', '-created_at']
+        indexes = [
+            models.Index(fields=['customer', 'status']),
+            models.Index(fields=['period_start', 'period_end']),
+        ]
+
+    def __str__(self):
+        return f"[{self.code}] {self.customer.name}: {self.grand_total:,} đ ({self.get_status_display()})"
+
+    @property
+    def remaining_balance(self):
+        return max(0, self.grand_total - self.paid_amount)
+
+
+class SubcontractorSettlement(TimeStampedModel, SoftDeleteModel):
+    """
+    Bảng Kê Đối Soát Nhà Xe Thầu Phụ / Xe Bạn (Accounts Payable - AP).
+    Gom các chuyến xe chạy thuê ngoài để chốt công nợ phải trả cho Đối tác 3PL (TK 331).
+    """
+    code = models.CharField(max_length=50, unique=True, db_index=True, help_text="Mã quyết toán thầu phụ (DS-TP-2026-...)")
+    subcontractor = models.ForeignKey(
+        'master_data.Subcontractor',
+        on_delete=models.PROTECT,
+        related_name='settlements',
+        help_text="Nhà xe bạn / Đối tác thầu phụ"
+    )
+    period_start = models.DateField(help_text="Ngày bắt đầu kỳ đối soát")
+    period_end = models.DateField(help_text="Ngày kết thúc kỳ đối soát")
+
+    trips = models.ManyToManyField(
+        'dispatch.DispatchTrip',
+        blank=True,
+        related_name='subcontractor_settlements',
+        help_text="Danh sách chuyến xe do thầu phụ này vận chuyển"
+    )
+
+    total_freight_cost = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng tiền cước thuê thầu phụ")
+    advance_deducted = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số tiền tạm ứng đã chi trước cho thầu phụ")
+    other_deductions = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Các khoản trừ khác (phạt, hư hỏng hàng nếu có)")
+    payable_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng số tiền còn phải trả thầu phụ")
+    paid_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số tiền công ty đã chi trả")
+
+    status = models.CharField(max_length=20, choices=SettlementStatus.choices, default=SettlementStatus.DRAFT, db_index=True)
+    is_locked = models.BooleanField(default=False, help_text="Khóa đối soát sau khi chốt")
+
+    created_by = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_subcontractor_settlements'
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['subcontractor', 'status']),
+        ]
+
+    def __str__(self):
+        return f"[{self.code}] {self.subcontractor.name}: {self.payable_amount:,} đ ({self.get_status_display()})"
+
+
+class DriverPayrollSettlement(TimeStampedModel, SoftDeleteModel):
+    """
+    Bảng Chốt Lương Chuyến & Quyết Toán Thu Nhập Tài Xế (Payroll Settlement).
+    Cố định số liệu thu nhập sản lượng theo kỳ cho tài xế, trừ các khoản tạm ứng còn tồn.
+    """
+    code = models.CharField(max_length=50, unique=True, db_index=True, help_text="Mã bảng lương chuyến (LC-TX-2026-...)")
+    driver = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.PROTECT,
+        related_name='payroll_settlements',
+        help_text="Tài xế nhận quyết toán lương chuyến"
+    )
+    period_start = models.DateField(help_text="Ngày bắt đầu kỳ chốt lương")
+    period_end = models.DateField(help_text="Ngày kết thúc kỳ chốt lương")
+
+    trips = models.ManyToManyField(
+        'dispatch.DispatchTrip',
+        blank=True,
+        related_name='driver_payroll_settlements',
+        help_text="Các chuyến xe tính lương trong kỳ"
+    )
+
+    base_trip_salary = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng tiền lương khoán chuyến theo biểu cước")
+    overnight_allowance = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng phụ cấp neo xe / qua đêm")
+    customs_inspection_allowance = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng phụ cấp kiểm hóa / chuyển bãi")
+    bonus_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tiền thưởng sản lượng / an toàn")
+    deductions = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Các khoản trừ (ứng tồn, phạt vi phạm)")
+    net_salary = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Thực nhận lương chuyến (VNĐ)")
+    paid_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số tiền công ty đã chi trả")
+
+    status = models.CharField(max_length=20, choices=SettlementStatus.choices, default=SettlementStatus.DRAFT, db_index=True)
+    is_locked = models.BooleanField(default=False, help_text="Đã khóa sổ lương")
+
+    created_by = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_driver_payrolls'
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-period_end', '-created_at']
+        indexes = [
+            models.Index(fields=['driver', 'status']),
+            models.Index(fields=['period_start', 'period_end']),
+        ]
+
+    def __str__(self):
+        return f"[{self.code}] {self.driver.full_name}: {self.net_salary:,} đ ({self.get_status_display()})"
+
+
+class DebitNote(TimeStampedModel, SoftDeleteModel):
+    """
+    Bảng Kê Chi Hộ Riêng Biệt (Debit Note / Phí Nâng Hạ, Cược Cont, Kiểm Hóa).
+    Tập hợp các khoản TripExpense có cờ is_on_behalf_of_customer để gửi chủ hàng thu tiền hoàn ứng.
+    """
+    code = models.CharField(max_length=50, unique=True, db_index=True, help_text="Mã Debit Note (DN-2026-...)")
+    customer = models.ForeignKey(
+        'customers.Customer',
+        on_delete=models.PROTECT,
+        related_name='debit_notes',
+        help_text="Khách hàng nhận Debit Note"
+    )
+    issue_date = models.DateField(auto_now_add=True, help_text="Ngày phát hành")
+    due_date = models.DateField(null=True, blank=True, help_text="Hạn hoàn tiền")
+
+    expenses = models.ManyToManyField(
+        'billing.TripExpense',
+        blank=True,
+        related_name='parent_debit_notes',
+        help_text="Các khoản chi hộ cấu thành Debit Note này"
+    )
+
+    total_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Tổng tiền chi hộ cần thu lại (VNĐ)")
+    collected_amount = models.DecimalField(max_digits=14, decimal_places=0, default=0, help_text="Số tiền khách hàng đã hoàn trả")
+    status = models.CharField(max_length=20, choices=SettlementStatus.choices, default=SettlementStatus.CONFIRMED, db_index=True)
+
+    created_by = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_debit_notes'
+    )
+    notes = models.TextField(blank=True, help_text="Ghi chú đối soát")
+
+    class Meta:
+        ordering = ['-issue_date', '-created_at']
+        indexes = [
+            models.Index(fields=['customer', 'status']),
+        ]
+
+    def __str__(self):
+        return f"[{self.code}] {self.customer.name}: {self.total_amount:,} đ ({self.get_status_display()})"
+
+

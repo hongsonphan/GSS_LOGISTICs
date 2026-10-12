@@ -91,6 +91,10 @@ urlpatterns = [
     path('customs/', index_view, name='spa-customs'),
     path('reports/', index_view, name='spa-reports'),
     path('settings/', index_view, name='spa-settings'),
+    path('master-data/', index_view, name='spa-master-data'),
+    path('master-data', index_view, name='spa-master-data-noslash'),
+    path('danh-muc/', index_view, name='spa-danhmuc'),
+    path('danh-muc', index_view, name='spa-danhmuc-noslash'),
 
     # Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng Hệ Thống (/helps)
     path('helps/', help_view, name='help-center'),

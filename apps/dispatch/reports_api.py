@@ -581,12 +581,12 @@ class ReportsAPIView(APIView):
         total_subcontractor_settled = 0
 
         for t in trips_qs:
-            is_sub = (t.vehicle and t.vehicle.ownership_type == 'SUBCONTRACTOR') or (t.subcontractor_cost > 0)
+            is_sub = (t.subcontractor_cost > 0) or (t.vehicle and t.vehicle.ownership_type == 'SUBCONTRACTOR')
             if not is_sub:
                 continue
 
             total_subcontractor_trips += 1
-            cost = int(t.subcontractor_cost or t.cached_expense or 0)
+            cost = int(t.subcontractor_cost) if t.subcontractor_cost > 0 else int(t.cached_expense or 0)
             advance = int(t.subcontractor_advance or 0)
             settled = cost if t.subcontractor_settlement_status == 'SETTLED' else advance
             balance = max(0, cost - settled)
@@ -601,6 +601,7 @@ class ReportsAPIView(APIView):
                 sub_name = f"Nhà xe {t.vehicle.brand or 'Đối tác'}"
             if not sub_name:
                 sub_name = 'Xe Thuê Ngoài / Vãng lai'
+
 
             # Tra cứu master data
             m_sub = subcontractors_master.get(sub_name.lower())

@@ -415,11 +415,14 @@ class CashBookAPIView(APIView):
         prefix = "PT" if t_type == TransactionType.INFLOW else "PC"
         yymm = t_date.strftime('%y%m')
         prefix_full = f"{prefix}.{yymm}."
-        last_tx = CashTransaction.objects.filter(code__startswith=prefix_full).order_by('-id').first()
+        last_tx = CashTransaction.all_objects.filter(code__startswith=prefix_full).order_by('-id').first()
         seq = 1
         if last_tx and last_tx.code.split('.')[-1].isdigit():
             seq = int(last_tx.code.split('.')[-1]) + 1
         code = f"{prefix_full}{seq:03d}"
+        while CashTransaction.all_objects.filter(code=code).exists():
+            seq += 1
+            code = f"{prefix_full}{seq:03d}"
 
         tx = CashTransaction.objects.create(
             code=code,
@@ -440,6 +443,7 @@ class CashBookAPIView(APIView):
         return Response({
             'success': True,
             'message': f"Đã tạo phiếu {tx.get_transaction_type_display()} [{tx.code}] thành công: {int(tx.amount):,} đ",
+            'id': tx.id,
             'transaction_id': tx.id,
             'code': tx.code
         }, status=status.HTTP_201_CREATED)
@@ -914,24 +918,27 @@ class AccountingReportsAPIView(APIView):
         driver_id = request.GET.get('driver_id')
         vehicle_id = request.GET.get('vehicle_id')
 
-        # Bộ lọc thời gian chung cho Chuyến xe
+        # Bộ lọc thời gian chung cho Chuyến xe (Ưu tiên loading_date, fallback created_at)
         trips_qs = DispatchTrip.objects.filter(is_deleted=False).select_related(
             'customer', 'driver', 'vehicle', 'booking_order'
         )
 
+        fd = None
+        td = None
         if from_date:
             try:
                 fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(created_at__date__gte=fd)
+                trips_qs = trips_qs.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
             except ValueError:
                 pass
 
         if to_date:
             try:
                 td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
-                trips_qs = trips_qs.filter(created_at__date__lte=td)
+                trips_qs = trips_qs.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
             except ValueError:
                 pass
+
 
         # ---------------------------------------------------------------------
         # 1. BÁO CÁO THEO KHÁCH HÀNG (BY_CUSTOMER)
@@ -989,12 +996,13 @@ class AccountingReportsAPIView(APIView):
                 total_exp += Decimal(c_exp)
                 total_profit += Decimal(c_prof)
 
-            # Lấy chi hộ theo từng khách hàng
-            reimb_qs = TripExpense.objects.filter(is_on_behalf_of_customer=True, is_deleted=False)
-            if from_date:
-                reimb_qs = reimb_qs.filter(created_at__date__gte=fd)
-            if to_date:
-                reimb_qs = reimb_qs.filter(created_at__date__lte=td)
+            # Lấy chi hộ theo từng khách hàng (Ưu tiên theo loading_date của Chuyến xe)
+            reimb_qs = TripExpense.objects.filter(is_on_behalf_of_customer=True, is_deleted=False).select_related('trip')
+            if fd:
+                reimb_qs = reimb_qs.filter(Q(trip__loading_date__gte=fd) | Q(trip__loading_date__isnull=True, trip__created_at__date__gte=fd))
+            if td:
+                reimb_qs = reimb_qs.filter(Q(trip__loading_date__lte=td) | Q(trip__loading_date__isnull=True, trip__created_at__date__lte=td))
+
 
             for rexp in reimb_qs:
                 cid = rexp.trip.customer_id if (rexp.trip and rexp.trip.customer_id) else 0

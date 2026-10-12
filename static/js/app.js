@@ -16309,7 +16309,7 @@ async function loadActiveMasterDataTab() {
         
         let items = [];
         if (currentMasterDataTab === 'company') {
-            const profile = data.data || data;
+            const profile = data.data || (data.results && data.results[0]) || data;
             masterDataCache['company'] = profile;
             window.SYSTEM_COMPANY = profile;
             syncCompanyProfileToPrintForms();
@@ -16324,7 +16324,9 @@ async function loadActiveMasterDataTab() {
             items = data.results || [];
         }
 
-        masterDataCache[currentMasterDataTab] = items;
+        if (currentMasterDataTab !== 'company') {
+            masterDataCache[currentMasterDataTab] = items;
+        }
         masterDataPagination.filteredItems = items;
         masterDataPagination.currentPage = 1;
 
@@ -17066,10 +17068,31 @@ async function openCreateMasterDataModal() {
     document.getElementById('md-catalog-key').value = currentMasterDataTab;
 
     if (currentMasterDataTab === 'company') {
-        const profile = masterDataCache['company'] || {};
+        let profile = masterDataCache['company'];
+        if (Array.isArray(profile) && profile.length > 0) {
+            profile = profile[0];
+        } else if (!profile || (!profile.company_name && !profile.short_name)) {
+            profile = window.SYSTEM_COMPANY || {};
+        }
+
+        // Nếu profile vẫn chưa có thông tin công ty, chủ động gọi API lấy dữ liệu thực tế
+        if (!profile.company_name && !profile.short_name) {
+            try {
+                const res = await fetchWithAuth('/api/master-data/company/');
+                if (res.ok) {
+                    const data = await res.json();
+                    profile = data.data || (data.results && data.results[0]) || data;
+                    masterDataCache['company'] = profile;
+                    window.SYSTEM_COMPANY = profile;
+                }
+            } catch (cpErr) {
+                console.error('[MasterData] Lỗi tải profile công ty:', cpErr);
+            }
+        }
+
         document.getElementById('md-modal-title').innerText = 'Hiệu Chỉnh Khai Báo Hệ Thống (Công Ty)';
         document.getElementById('md-modal-subtitle').innerText = 'Cập nhật thông tin pháp nhân & tham số vận hành chuẩn';
-        injectMasterDataModalFields(profile);
+        injectMasterDataModalFields(profile || {});
         document.getElementById('modal-master-data').classList.remove('hidden');
         return;
     }
@@ -18522,11 +18545,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let currentReportPeriod = 'month';
 let rawReportsData = null;
+let canViewFinance = true;
 
 // Caches & Sort States cho toàn bộ 14 Báo cáo TMS
 let rep1DataCache = [];
 let rep1SortCol = 'revenue';
 let rep1SortAsc = false;
+
 
 let rep2DataCache = [];
 let rep2SortCol = 'estimated_fines';
@@ -18698,6 +18723,7 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
     }
 
     currentActiveReportGroup = groupId;
+    currentReportViewMode = 'group'; // Luôn khóa cố định chế độ xem theo nhóm được chọn
 
     // Cập nhật trạng thái hiển thị của 4 Card Nhóm Lớn
     ['group-1', 'group-2', 'group-3', 'group-4'].forEach(g => {
@@ -18713,7 +18739,7 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
         }
     });
 
-    // Lọc hiển thị các nút subtab con nếu ở chế độ 'group'
+    // Lọc hiển thị nghiêm ngặt: chỉ các nút subtab thuộc nhóm được chọn mới hiển thị
     applyReportGroupFilterToButtons();
 
     // Tự động kích hoạt báo cáo đầu tiên của nhóm mà USER CÓ QUYỀN XEM
@@ -18726,26 +18752,7 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
 }
 
 function toggleReportViewMode(mode) {
-    currentReportViewMode = mode;
-    const btnGroup = document.getElementById('btn-report-view-group');
-    const btnAll = document.getElementById('btn-report-view-all');
-
-    if (mode === 'all') {
-        if (btnAll) {
-            btnAll.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading bg-teal-700 text-white shadow-2xs transition-colors';
-        }
-        if (btnGroup) {
-            btnGroup.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors';
-        }
-    } else {
-        if (btnGroup) {
-            btnGroup.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading bg-slate-100 text-slate-800 hover:bg-slate-200 transition-colors';
-        }
-        if (btnAll) {
-            btnAll.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-heading text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors';
-        }
-    }
-
+    currentReportViewMode = mode || 'group';
     applyReportGroupFilterToButtons();
 }
 
@@ -18758,12 +18765,14 @@ function applyReportGroupFilterToButtons() {
             btn.style.display = 'none';
             return;
         }
-        btn.style.display = '';
         const btnGroup = btn.getAttribute('data-report-group');
-        if (currentReportViewMode === 'all' || btnGroup === currentActiveReportGroup) {
+        // Chỉ hiển thị duy nhất các báo cáo thuộc nhóm đang chọn, ẩn triệt để các nhóm khác
+        if (btnGroup === currentActiveReportGroup) {
             btn.classList.remove('hidden');
+            btn.style.display = '';
         } else {
             btn.classList.add('hidden');
+            btn.style.display = 'none';
         }
     });
 }
@@ -18778,13 +18787,16 @@ function switchReportSubTab(subtabId) {
 
     currentActiveReportSubtab = subtabId;
 
-    // Tự động nhận diện và kích hoạt Nhóm cha tương ứng
+    // Tự động nhận diện và kích hoạt Nhóm cha tương ứng nếu khác nhóm hiện tại
     for (const [grp, rpts] of Object.entries(REPORT_GROUP_MAPPING)) {
         if (rpts.includes(subtabId) && currentActiveReportGroup !== grp) {
             switchReportGroup(grp, false);
             break;
         }
     }
+
+    // Đảm bảo chỉ hiển thị subtab buttons thuộc nhóm hiện tại
+    applyReportGroupFilterToButtons();
 
     // Ẩn tất cả subtab content
     document.querySelectorAll('.report-subtab-content').forEach(el => el.classList.add('hidden'));
@@ -18805,7 +18817,7 @@ function switchReportSubTab(subtabId) {
     if (activeBtn) {
         activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
         activeBtn.classList.add('bg-teal-700', 'text-white', 'shadow-sm', 'active');
-        activeBtn.classList.remove('hidden'); // Đảm bảo nút được nhìn thấy
+        activeBtn.classList.remove('hidden');
         activeBtn.style.display = '';
     }
 }
@@ -18885,9 +18897,11 @@ async function loadReportsData() {
         if (!res.ok) throw new Error('Không thể tải dữ liệu báo cáo');
         const data = await res.json();
         rawReportsData = data;
+        canViewFinance = (data.can_view_finance !== false);
 
         // Cập nhật số huy hiệu (Badges) trên Subtab bar
         const detWarningBadge = document.getElementById('badge-report-det-warning');
+
         if (detWarningBadge && data.report2_container_dem_det) {
             const warnCount = (data.report2_container_dem_det.warning_count || 0) + (data.report2_container_dem_det.overdue_count || 0);
             detWarningBadge.innerText = warnCount;

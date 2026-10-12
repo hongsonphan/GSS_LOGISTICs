@@ -62,6 +62,14 @@ Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
 
 ### H. Phân hệ Chi phí & Đối chiếu (`apps/billing`)
 - `billing.TripExpense`: Chi phí phát sinh hiện trường liên kết trực tiếp tới `master_data.ExpenseItem` (`expense_item`) và tương thích ngược với 8 danh mục Bảng Kê Chi Phí Triền Võ (`category`). Hỗ trợ phân loại chứng từ theo `ExpenseReceiptType` (tránh xung đột với documents app), cờ thu hộ/chi hộ khách hàng `is_on_behalf_of_customer`, lưu trữ đầy đủ metadata hóa đơn điện tử: đơn vị phát hành (`invoice_issuer`), số hóa đơn (`invoice_number`), mã tra cứu (`invoice_lookup_code`), link tra cứu online (`invoice_lookup_url`), tiền trước thuế, thuế suất và tiền thuế GTGT. Tự động tính tổng chi phí và cập nhật P&L chuyến xe.
+- `billing.DispatcherAdvanceFund`: Quỹ tạm ứng Cấp 1 cấp cho Điều phối viên để điều hành đội xe.
+- `billing.DriverTripAdvance`: Quỹ tạm ứng Cấp 2 cấp cho Tài xế theo từng chuyến xe.
+- `billing.CashTransaction`: Sổ quỹ dòng tiền Thu - Chi tổng hợp (Mẫu S03a-DN), hỗ trợ thu cước, chi thầu phụ, nạp ETC, tiền mặt và ngân hàng.
+- `billing.CustomerInvoice`: Bảng Kê Vận Chuyển & Hóa Đơn Khách Hàng (Accounts Receivable - AR). Gom nhiều chuyến xe (`DispatchTrip`) và các khoản chi hộ trong kỳ đối soát của 1 Khách hàng; quản lý hạn nợ, thuế VAT, tiền đã trả và khóa sổ kế toán.
+- `billing.SubcontractorSettlement`: Bảng Kê Đối Soát Nhà Xe Thầu Phụ / Xe Bạn (Accounts Payable - AP). Gom các chuyến xe chạy thuê ngoài để chốt công nợ phải trả cho Đối tác 3PL (TK 331), tự động trừ tạm ứng đã cấp.
+- `billing.DriverPayrollSettlement`: Bảng Chốt Lương Chuyến & Quyết Toán Thu Nhập Tài Xế (Payroll Settlement). Cố định thu nhập theo kỳ, lương khoán chuyến, phụ cấp qua đêm, thưởng phạt và trừ tạm ứng tồn.
+- `billing.DebitNote`: Bảng Kê Chi Hộ Riêng Biệt (Debit Note). Tập hợp các khoản `TripExpense` có cờ `is_on_behalf_of_customer` để gửi chủ hàng thu tiền hoàn ứng.
 
 ### I. Phân hệ Xử lý Sự cố (`apps/exceptions`)
 - `exceptions.TripException`: Ghi nhận sự cố kẹt cảng, kẹt kho, vỏ cont hư hỏng, va chạm tai nạn kèm mức độ nghiêm trọng và phương án xử lý.
+

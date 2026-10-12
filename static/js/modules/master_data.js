@@ -1171,10 +1171,31 @@ async function openCreateMasterDataModal() {
     document.getElementById('md-catalog-key').value = currentMasterDataTab;
 
     if (currentMasterDataTab === 'company') {
-        const profile = masterDataCache['company'] || {};
+        let profile = masterDataCache['company'];
+        if (Array.isArray(profile) && profile.length > 0) {
+            profile = profile[0];
+        } else if (!profile || (!profile.company_name && !profile.short_name)) {
+            profile = window.SYSTEM_COMPANY || {};
+        }
+
+        // Nếu profile vẫn chưa có thông tin công ty, chủ động gọi API lấy dữ liệu thực tế
+        if (!profile.company_name && !profile.short_name) {
+            try {
+                const res = await fetchWithAuth('/api/master-data/company/');
+                if (res.ok) {
+                    const data = await res.json();
+                    profile = data.data || (data.results && data.results[0]) || data;
+                    masterDataCache['company'] = profile;
+                    window.SYSTEM_COMPANY = profile;
+                }
+            } catch (cpErr) {
+                console.error('[MasterData] Lỗi tải profile công ty:', cpErr);
+            }
+        }
+
         document.getElementById('md-modal-title').innerText = 'Hiệu Chỉnh Khai Báo Hệ Thống (Công Ty)';
         document.getElementById('md-modal-subtitle').innerText = 'Cập nhật thông tin pháp nhân & tham số vận hành chuẩn';
-        injectMasterDataModalFields(profile);
+        injectMasterDataModalFields(profile || {});
         document.getElementById('modal-master-data').classList.remove('hidden');
         return;
     }

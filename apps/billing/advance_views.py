@@ -912,6 +912,86 @@ class CustomerARReconciliationAPIView(APIView):
     authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
     permission_classes = [IsDispatcherOrAccountant]
 
+    def get(self, request):
+        customer_id = request.GET.get('customer_id')
+        from_date = request.GET.get('from_date')
+        to_date = request.GET.get('to_date')
+        status_filter = request.GET.get('status', 'ALL').upper()
+
+        qs = DispatchTrip.objects.filter(is_deleted=False)
+        if customer_id:
+            qs = qs.filter(customer_id=customer_id)
+        if from_date:
+            try:
+                fd = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
+                qs = qs.filter(Q(loading_date__gte=fd) | Q(created_at__date__gte=fd))
+            except ValueError:
+                pass
+        if to_date:
+            try:
+                td = datetime.datetime.strptime(to_date, '%Y-%m-%d').date()
+                qs = qs.filter(Q(loading_date__lte=td) | Q(created_at__date__lte=td))
+            except ValueError:
+                pass
+
+        if status_filter == 'SETTLED':
+            qs = qs.filter(is_customer_settled=True)
+        elif status_filter == 'PENDING':
+            qs = qs.filter(is_customer_settled=False)
+
+        trips_data = []
+        total_rev = Decimal(0)
+        total_reimb = Decimal(0)
+        total_receivable = Decimal(0)
+        settled_count = 0
+        pending_count = 0
+
+        for t in qs.select_related('customer', 'driver', 'vehicle').order_by('-created_at'):
+            rev = Decimal(str(t.revenue or 0))
+            reimb = sum(Decimal(str(e.amount or 0)) for e in t.trip_expenses.filter(is_deleted=False, is_on_behalf_of_customer=True))
+            rec = rev + reimb
+            total_rev += rev
+            total_reimb += reimb
+            total_receivable += rec
+            if t.is_customer_settled:
+                settled_count += 1
+            else:
+                pending_count += 1
+
+            trips_data.append({
+                'id': t.id,
+                'trip_code': t.trip_code,
+                'customer_id': t.customer_id,
+                'customer_name': t.customer.name if t.customer else '',
+                'loading_date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else t.created_at.strftime('%d/%m/%Y'),
+                'vehicle': t.vehicle.license_plate if t.vehicle else '',
+                'driver': (t.driver.nickname or t.driver.full_name) if t.driver else '',
+                'container_number': t.container_number or '',
+                'route': f"{t.pickup_location} -> {t.warehouse_location} -> {t.dropoff_location}",
+                'revenue': int(rev),
+                'reimbursable': int(reimb),
+                'total_receivable': int(rec),
+                'is_customer_settled': t.is_customer_settled,
+                'vat_invoice_number': t.vat_invoice_number or '',
+                'vat_invoice_date': t.vat_invoice_date.strftime('%d/%m/%Y') if t.vat_invoice_date else '',
+                'soa_code': t.customer_soa_code or '',
+                'status': t.status,
+                'has_pod': bool(t.pod_document)
+            })
+
+        return Response({
+            'success': True,
+            'summary': {
+                'total_trips': len(trips_data),
+                'settled_trips': settled_count,
+                'pending_trips': pending_count,
+                'total_revenue': int(total_rev),
+                'total_reimbursable': int(total_reimb),
+                'total_receivable': int(total_receivable)
+            },
+            'trips': trips_data
+        })
+
     def post(self, request):
         import uuid
         raw_action = request.data.get('action', 'SETTLE').upper()
