@@ -947,7 +947,8 @@ class CustomerARReconciliationAPIView(APIView):
         pending_count = 0
 
         for t in qs.select_related('customer', 'driver', 'vehicle').order_by('-created_at'):
-            rev = Decimal(str(t.revenue or 0))
+            rev_val = getattr(t, 'cached_revenue', None) if getattr(t, 'cached_revenue', None) is not None else getattr(t, 'revenue', 0)
+            rev = Decimal(str(rev_val or 0))
             reimb = sum(Decimal(str(e.amount or 0)) for e in t.trip_expenses.filter(is_deleted=False, is_on_behalf_of_customer=True))
             rec = rev + reimb
             total_rev += rev
