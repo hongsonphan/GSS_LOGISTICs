@@ -353,7 +353,12 @@
                                 <i class="ph-bold ph-caret-down text-xs text-slate-400 transition-transform duration-200 tree-arrow"></i>
                             </div>
                             <div class="tree-children space-y-1 pl-2 mt-1">
-                                
+                                <!-- Quy Chuẩn Thao Tác Bảng: Chuẩn 2 Nút Xem & In -->
+                                <a href="#sec-action-standard" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-lg text-amber-900 bg-amber-50 hover:bg-amber-100/80 transition-all font-bold text-[13px] border border-amber-200">
+                                    <i class="ph-bold ph-lightning text-amber-600 shrink-0 text-xs"></i>
+                                    <span class="truncate">⭐ Chuẩn 2 Nút [Xem & In] (No Modal)</span>
+                                </a>
+
                                 <!-- Con 3.1: Dashboard Tổng quan -->
                                 <a href="#sec-input-dashboard" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
                                     <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
@@ -428,16 +433,31 @@
                                     <div class="tree-sub-header flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-slate-800" onclick="toggleTreeGroup(this)">
                                         <div class="flex items-center gap-2 truncate">
                                             <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
-                                            <span class="truncate text-[13px]">5. Hành chính & Nhân sự</span>
+                                            <span class="truncate text-[13px]">5. Nhân sự & Tiền lương</span>
                                         </div>
                                         <i class="ph-bold ph-caret-down text-xs text-slate-400 tree-arrow"></i>
                                     </div>
                                     <div class="tree-grandchildren pl-4 space-y-0.5 mt-0.5 border-l border-slate-200 ml-3">
                                         <a href="#sec-input-hr-staff" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
-                                            5.1. Quản lý Hồ sơ nhân sự
+                                            5.1. Khai báo Hồ sơ Nhân sự
+                                        </a>
+                                        <a href="#sec-input-hr-contracts" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            5.2. Hợp đồng & Người phụ thuộc
+                                        </a>
+                                        <a href="#sec-input-hr-attendance" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            5.3. Bảng Chấm công 26 ngày
                                         </a>
                                         <a href="#sec-input-hr-payroll" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
-                                            5.2. Chấm công & Tính lương
+                                            5.4. Động cơ Lương Hybrid (Ngày + Chuyến)
+                                        </a>
+                                        <a href="#sec-input-hr-advances" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            5.5. Khấu trừ Tạm ứng Lương & Chuyến
+                                        </a>
+                                        <a href="#sec-input-hr-workflow" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            5.6. Duyệt lương & Sinh Phiếu Chi Quỹ
+                                        </a>
+                                        <a href="#sec-input-hr-export" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            5.7. Xuất file Ngân hàng & In phiếu
                                         </a>
                                     </div>
                                 </div>
@@ -645,22 +665,24 @@
                     </div>
                 </section>
 
-                <!-- 5. HÀNH CHÍNH & NHÂN SỰ -->
+                <!-- 5. NHÂN SỰ & TIỀN LƯƠNG -->
                 <section id="sec-desc-hr" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
                     <div class="doc-section-title">
-                        <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">5. Hành chính & Nhân sự</h3>
+                        <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">5. Quản Trị Nhân Sự & Tiền Lương Hybrid Logistics</h3>
                     </div>
 
                     <p class="text-sm text-slate-700 leading-relaxed">
-                        Quản lý hồ sơ nhân viên nội bộ, đội ngũ tài xế và phụ xe. Đảm bảo bảo mật tiền lương và phân định rõ ràng giữa nhân viên văn phòng và tài xế chạy tuyến.
+                        Phân hệ Quản trị Nhân sự & Tiền lương chuyên sâu cho ngành Vận tải Logistics, giải quyết triệt để bài toán tính lương kết hợp: Lương thời gian cho khối văn phòng và Động cơ kép (Lương ngày công + Lương sản lượng chuyến xe + Khấu trừ tạm ứng dọc đường) cho đội ngũ tài xế.
                     </p>
 
                     <div class="text-sm text-slate-700 space-y-2">
                         <p class="font-bold text-slate-900">Chức năng chính:</p>
                         <ul class="list-disc pl-6 space-y-1">
-                            <li><strong>Hồ Sơ Nhân Sự:</strong> CCCD, bằng lái xe (hạng FC đối với tài xế đầu kéo), hạn khám sức khỏe và hợp đồng lao động.</li>
-                            <li><strong>Chấm Công & Phân Ca:</strong> Ghi nhận ngày công thực tế, ngày trực bãi và lịch nghỉ phép.</li>
-                            <li><strong>Bảng Lương Chuyến:</strong> Tự động tổng hợp lương chuyến từ các chuyến xe hoàn thành theo đúng Biểu phí lương chuyến đã thiết lập.</li>
+                            <li><strong>Hồ Sơ Nhân Sự 360°:</strong> Định danh CCCD, Mã số thuế, Sổ BHXH, Bằng lái xe hạng FC cảnh báo hạn trước 30 ngày, Tài khoản ngân hàng chi lương, Người phụ thuộc giảm trừ gia cảnh.</li>
+                            <li><strong>Hợp Đồng Lao Động & BHXH:</strong> Phân định rõ Mức lương căn bản HĐLĐ (tính lương ngày) và Mức lương đóng BHXH (khống chế mức trần 46.8 triệu đồng theo Nghị định 73/2024/NĐ-CP).</li>
+                            <li><strong>Bảng Chấm Công 26 Ngày Chuẩn:</strong> Tự động khởi tạo công toàn công ty 1-chạm; hỗ trợ ký hiệu chuẩn (X đi làm, P phép năm có lương, L lễ tết, Ro không lương, Om/Ts BHXH).</li>
+                            <li><strong>Động Cơ Tính Lương Kết Hợp Hybrid:</strong> Tự động quét sản lượng chuyến xe thực tế (chuyến chính, cắt kéo, neo xe, thưởng dầu) kết hợp lương ngày công và khấu trừ tự động tạm ứng lương + tạm ứng chuyến chưa hoàn.</li>
+                            <li><strong>Tích Hợp Dòng Tiền & Sổ Quỹ:</strong> Quy trình 4 bước DRAFT ➔ REVIEWED ➔ LOCKED ➔ PAID. Khi Giám đốc duyệt PAID, hệ thống tự động sinh Phiếu Chi Sổ Quỹ (<code>CashTransaction</code>) đúng 100% Tổng Net.</li>
                         </ul>
                     </div>
                 </section>
@@ -1067,6 +1089,71 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ⭐ QUY CHUẨN THAO TÁC BẢNG DỮ LIỆU: CHUẨN 2 NÚT XEM & IN (KHÔNG DÙNG MODAL) -->
+                <section id="sec-action-standard" class="help-section scroll-mt-24 space-y-4 p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-white to-teal-50/50 border-2 border-amber-300 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500 text-white shadow-sm shrink-0">
+                            <i class="ph-bold ph-lightning text-xl"></i>
+                        </span>
+                        <div>
+                            <span class="text-[11px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">Quy Chuẩn Trải Nghiệm Người Dùng (UI/UX Standard)</span>
+                            <h3 class="text-base sm:text-lg font-black text-slate-900 font-heading mt-0.5">Quy Chuẩn Thao Tác Bảng Dữ Liệu: 2 Nút [Xem] & [In] — Trang Chi Tiết Không Modal</h3>
+                        </div>
+                    </div>
+
+                    <div class="text-xs sm:text-sm text-slate-700 space-y-3 leading-relaxed">
+                        <p>
+                            Để đảm bảo tính nhất quán, chuyên nghiệp và tối ưu hóa không gian làm việc trên máy tính cũng như máy tính bảng hiện trường, toàn bộ hệ thống BIM Logistics tuân thủ nghiêm ngặt 2 nguyên tắc thao tác cốt lõi:
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                            <!-- Khối 1: Cột Thao Tác Chuẩn 2 Nút -->
+                            <div class="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2">
+                                <div class="font-bold text-slate-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-teal-600 shrink-0"></span>
+                                    <span>1. Cột Thao Tác Luôn Là 2 Nút: [Xem] & [In]</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-normal">
+                                    Trên mọi bảng danh sách (Khách hàng, Lệnh điều xe, Chuyến xe, Tạm ứng, Nhân sự, Hợp đồng, Bảng lương), cột Thao Tác chỉ có 2 nút bấm:
+                                </p>
+                                <div class="flex items-center gap-3 pt-1">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-teal-800 bg-teal-100 border border-teal-300">
+                                        <i class="ph-bold ph-eye"></i> Xem
+                                    </span>
+                                    <span class="text-xs text-slate-500">Mở toàn màn hình xem & sửa chi tiết.</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-slate-800 bg-slate-100 border border-slate-300">
+                                        <i class="ph-bold ph-printer"></i> In
+                                    </span>
+                                    <span class="text-xs text-slate-500">Mở tài liệu chuẩn in A4/A5 ngay lập tức.</span>
+                                </div>
+                            </div>
+
+                            <!-- Khối 2: Dedicated Full-Page View -->
+                            <div class="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2">
+                                <div class="font-bold text-slate-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-600 shrink-0"></span>
+                                    <span>2. Mở Trang Toàn Màn Hình (Tuyệt Đối Không Dùng Modal)</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-normal">
+                                    Khi bấm nút <strong>[Xem]</strong>, hệ thống chuyển sang trang giao diện phẳng chuyên biệt (Dedicated Detail View), không dùng popup modal chật hẹp.
+                                </p>
+                                <div class="pt-1 text-xs text-slate-700 space-y-1">
+                                    <div class="font-bold text-slate-800">Cụm nút công cụ trên trang chi tiết:</div>
+                                    <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 text-[11px] font-semibold text-slate-700 bg-slate-50"><i class="ph-bold ph-arrow-left"></i> Quay lại</span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-amber-400 text-[11px] font-semibold text-amber-800 bg-amber-50"><i class="ph-bold ph-pencil-simple"></i> Sửa</span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-teal-400 text-[11px] font-semibold text-teal-800 bg-teal-50"><i class="ph-bold ph-check-circle"></i> Lưu</span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-400 text-[11px] font-semibold text-slate-800 bg-slate-50"><i class="ph-bold ph-printer"></i> In</span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-rose-300 text-[11px] font-semibold text-rose-700 bg-rose-50"><i class="ph-bold ph-trash"></i> Xóa</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
                 <!-- 1. DASHBOARD TỔNG QUAN -->
                 <section id="sec-input-dashboard" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
@@ -1735,17 +1822,20 @@
                     </div>
                 </section>
 
-                <!-- 5. HÀNH CHÍNH & NHÂN SỰ -->
+                <!-- 5. NHÂN SỰ & TIỀN LƯƠNG -->
                 <section id="sec-input-hr" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
-                    <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">5. Hướng Dẫn Thao Tác Phân Hệ Hành Chính & Nhân Sự</h3>
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">5. Hướng Dẫn Thao Tác Phân Hệ Nhân Sự & Tiền Lương (HR & Hybrid Payroll)</h3>
+                        <span class="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">Động Cơ Kép Hybrid</span>
+                    </div>
 
                     <!-- 5.1 HỒ SƠ NHÂN SỰ -->
                     <div id="sec-input-hr-staff" class="scroll-mt-24 space-y-3">
                         <h4 class="text-base font-bold text-slate-900 font-heading">5.1. Hướng Dẫn Chi Tiết Khai Báo Hồ Sơ Cán Bộ Nhân Viên & Đội Ngũ Tài Xế</h4>
                         <div class="text-sm text-slate-700 space-y-3">
-                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Hành chính & Nhân sự</strong> ➔ Bấm nút <strong>Tạo mới</strong> ở góc trên bên phải màn hình.</p>
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Nhân sự</strong> ➔ Tab <strong>Nhân viên</strong> ➔ Bấm nút <strong>+ Thêm Nhân Viên</strong>.</p>
 
-                            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg shadow-2xs">
                                 <table class="w-full text-left text-xs erp-table border-collapse">
                                     <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
                                         <tr>
@@ -1759,68 +1849,362 @@
                                         <tr>
                                             <td class="p-2.5 font-bold text-slate-900">Mã Nhân Viên <span class="text-rose-500 font-bold">(*)</span></td>
                                             <td class="p-2.5 text-slate-600">Mã chữ/số in hoa</td>
-                                            <td class="p-2.5">Mã định danh duy nhất của nhân viên (Ví dụ: <code>TX012</code> cho tài xế, <code>DD002</code> cho điều phối, <code>KT001</code> cho kế toán).</td>
-                                            <td class="p-2.5 text-slate-500">Bắt buộc nhập. Mã duy nhất không được trùng lặp.</td>
+                                            <td class="p-2.5">Mã định danh duy nhất (Ví dụ: <code>TX019</code>, <code>DD002</code>, <code>KT001</code>).</td>
+                                            <td class="p-2.5 text-slate-500">Bắt buộc nhập. Hệ thống kiểm tra trùng lặp tự động.</td>
                                         </tr>
                                         <tr>
                                             <td class="p-2.5 font-bold text-slate-900">Họ Và Tên Đầy Đủ <span class="text-rose-500 font-bold">(*)</span></td>
                                             <td class="p-2.5 text-slate-600">Văn bản</td>
-                                            <td class="p-2.5">Họ tên chính xác theo Căn cước công dân (Ví dụ: <em>Nguyễn Văn An</em>).</td>
-                                            <td class="p-2.5 text-slate-500">Tên này tự động in trên Lệnh điều xe, Bảng lương và Phiếu chi.</td>
+                                            <td class="p-2.5">Họ tên chính xác theo Căn cước công dân (Ví dụ: <em>Hoàng Văn Thật</em>).</td>
+                                            <td class="p-2.5 text-slate-500">Tự động in trên HĐLĐ, Lệnh xe, Phiếu lương và Ủy nhiệm chi.</td>
                                         </tr>
                                         <tr>
                                             <td class="p-2.5 font-bold text-slate-900">Biệt Danh (Nickname)</td>
                                             <td class="p-2.5 text-slate-600">Văn bản ngắn</td>
-                                            <td class="p-2.5">Biệt danh gọi bộ đàm hoặc tên thường gọi tại bãi xe (Ví dụ: <em>BỤI 94, AN CHỢ LỚN</em>).</td>
-                                            <td class="p-2.5 text-slate-500">Giúp điều phối viên nhận diện nhanh khi gọi xe khẩn cấp.</td>
+                                            <td class="p-2.5">Tên thường gọi tại bãi xe hoặc gọi bộ đàm (Ví dụ: <em>Thật Xe Tải, Bụi 94</em>).</td>
+                                            <td class="p-2.5 text-slate-500">Giúp điều phối viên nhận diện nhanh khi phát lệnh điều xe.</td>
                                         </tr>
                                         <tr>
                                             <td class="p-2.5 font-bold text-slate-900">Số Điện Thoại <span class="text-rose-500 font-bold">(*)</span></td>
                                             <td class="p-2.5 text-slate-600">Số điện thoại</td>
-                                            <td class="p-2.5">Số điện thoại nhận cuộc gọi điều xe (Ví dụ: <code>0901234567</code>).</td>
+                                            <td class="p-2.5">10 chữ số dùng để liên hệ và kích hoạt nút gọi nhanh trên di động.</td>
                                             <td class="p-2.5 text-slate-500">Bắt buộc phải có để hệ thống bấm gọi nhanh từ phần mềm.</td>
                                         </tr>
                                         <tr>
-                                            <td class="p-2.5 font-bold text-slate-900">Số Zalo Liên Lạc</td>
-                                            <td class="p-2.5 text-slate-600">Số điện thoại Zalo</td>
-                                            <td class="p-2.5">Số điện thoại đăng ký tài khoản Zalo để hệ thống tự động gửi Lệnh Điều Động và tin nhắn báo mốc.</td>
+                                            <td class="p-2.5 font-bold text-slate-900">Phòng Ban & Vai Trò <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Select</td>
+                                            <td class="p-2.5">Phòng ban: <em>Đội xe (FLEET)</em>, <em>Điều vận (DISPATCH)</em>, <em>Kế toán (ACCOUNTING)</em>... Vai trò: <em>Tài xế (DRIVER)</em>, <em>Phụ xe</em>, <em>Kế toán</em>, <em>Giám đốc</em>...</td>
                                             <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
-                                                👉 Nhập đúng số Zalo để kích hoạt nút [Nhắn Zalo Tài Xế] trên màn hình điều xe.
+                                                👉 Khi chọn vai trò <strong>Tài xế</strong>, hệ thống tự động mở khung nhập GPLX và kết nối dữ liệu chuyến xe.
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="p-2.5 font-bold text-slate-900">Phòng Ban <span class="text-rose-500 font-bold">(*)</span></td>
-                                            <td class="p-2.5 text-slate-600">Select</td>
-                                            <td class="p-2.5">Chọn phòng ban: <em>Đội Xe & Bãi (FLEET)</em>, <em>Phòng Điều Vận (DISPATCH)</em>, <em>Kế Toán Tài Chính (ACCOUNTING)</em>, <em>Phòng Kinh Doanh (SALES)</em>, <em>Hành Chính Nhân Sự (HR)</em>...</td>
-                                            <td class="p-2.5 text-slate-500">Phục vụ phân quyền truy cập chức năng hệ thống.</td>
+                                            <td class="p-2.5 font-bold text-slate-900">Số CCCD / CMND <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">12 số định danh</td>
+                                            <td class="p-2.5">Số CCCD gắn chip phục vụ cơ quan Thuế, BHXH và pháp lý hợp đồng.</td>
+                                            <td class="p-2.5 text-slate-500">Được mã hóa an toàn theo tiêu chuẩn bảo mật danh tính.</td>
                                         </tr>
                                         <tr>
-                                            <td class="p-2.5 font-bold text-slate-900">Chức Vụ / Vai Trò <span class="text-rose-500 font-bold">(*)</span></td>
-                                            <td class="p-2.5 text-slate-600">Select</td>
-                                            <td class="p-2.5">Chọn vai trò: <em>Tài xế (DRIVER)</em>, <em>Điều độ viên (DISPATCHER)</em>, <em>Kế toán viên (ACCOUNTANT)</em>, <em>Nhân viên Kinh doanh (SALESMAN)</em>...</td>
-                                            <td class="p-2.5 text-slate-500">Khi chọn vai trò Tài xế, khung GPLX sẽ tự động mở ra.</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="p-2.5 font-bold text-slate-900">Số GPLX & Ngày Hết Hạn Bằng Lái</td>
-                                            <td class="p-2.5 text-slate-600">Mã bằng & Lịch</td>
-                                            <td class="p-2.5">Số giấy phép lái xe hạng FC/FE và ngày hết hạn hiệu lực của bằng.</td>
+                                            <td class="p-2.5 font-bold text-slate-900">Hạng GPLX & Hạn Bằng</td>
+                                            <td class="p-2.5 text-slate-600">Select & Date</td>
+                                            <td class="p-2.5">Hạng GPLX (chọn <em>Hạng C</em>, <em>Hạng FC</em> cho xe container) và ngày hết hạn.</td>
                                             <td class="p-2.5 text-amber-800 font-semibold bg-amber-50/50">
-                                                👉 Hệ thống tự cảnh báo màu đỏ trước 30 ngày để tài xế kịp thời đổi bằng, đảm bảo pháp lý giao thông.
+                                                👉 Hệ thống tự cảnh báo màu đỏ trước 30 ngày để tài xế kịp thời đổi bằng.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tài Khoản Ngân Hàng Chi Lương</td>
+                                            <td class="p-2.5 text-slate-600">Số TK & Tên NH</td>
+                                            <td class="p-2.5">Số tài khoản, Tên ngân hàng nhận lương (VCB, MB, Techcombank...).</td>
+                                            <td class="p-2.5 text-slate-500">Dùng để tự động xuất bảng kê chuyển khoản ngân hàng lô (Batch Payment).</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Tạm Ứng Lương Trong Tháng</td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5">Khoản tiền nhân sự tạm ứng sinh hoạt giữa tháng (<code>Employee.current_advance</code>).</td>
+                                            <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
+                                                👉 Hệ thống sẽ tự động trừ chính xác số tiền này vào kỳ tính lương cuối tháng.
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
-                            <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>. Hồ sơ nhân sự được lưu vào hệ thống và tài xế lập tức xuất hiện trong danh sách điều xe.</p>
+                            <p><strong>• Thao tác trên bảng:</strong> Cột thao tác luôn có 2 nút: <strong>[Xem]</strong> (mở trang chi tiết toàn màn hình) và <strong>[In]</strong> (in sơ yếu lý lịch A4).</p>
                         </div>
                     </div>
 
-                    <!-- 5.2 CHẤM CÔNG & LƯƠNG CHUYẾN -->
-                    <div id="sec-input-hr-payroll" class="scroll-mt-24 space-y-2 pt-2">
-                        <h4 class="text-base font-bold text-slate-900 font-heading">5.2. Chấm Công & Tính Lương Chuyến Tự Động</h4>
-                        <div class="text-sm text-slate-700 space-y-2">
-                            <p><strong>• Thao tác:</strong> Vào tab <strong>Bảng Lương Chuyến</strong> ➔ Chọn tháng cần tính (Ví dụ: <em>Tháng 10/2026</em>) ➔ Bấm nút <strong>Tổng Hợp Lương Chuyến</strong>.</p>
-                            <p><strong>• Cơ chế tính tự động:</strong> Phần mềm tự quét 100% các chuyến xe đã hoàn thành (trạng thái <em>POD Verified</em> hoặc <em>Settled</em>) của từng tài xế, áp đúng đơn giá lương theo tuyến từ Danh mục <strong>Biểu Phí Lương Chuyến</strong>, tự nhân hệ số ghép 2 cont và cộng các khoản phụ cấp kiểm hóa, lưu đêm để ra tổng thu nhập chính xác.</p>
+                    <!-- 5.2 HỢP ĐỒNG LAO ĐỘNG & NGƯỜI PHỤ THUỘC -->
+                    <div id="sec-input-hr-contracts" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">5.2. Quản Lý Hợp Đồng Lao Động & Người Phụ Thuộc Giảm Trừ Thuế</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Tab <strong>Hợp đồng lao động</strong> ➔ Bấm nút <strong>+ Ký Hợp Đồng Mới</strong>.</p>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg shadow-2xs">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-44">Tên Chỉ Tiêu</th>
+                                            <th class="p-2.5 w-32">Định Dạng</th>
+                                            <th class="p-2.5">Ý Nghĩa Nghiệp Vụ & Động Cơ Tính Lương</th>
+                                            <th class="p-2.5 w-64">Quy Chuẩn Pháp Lý Vận Hành</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Mức Lương Căn Bản HĐLĐ <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5 font-bold text-teal-900">
+                                                Mức lương thỏa thuận làm căn cứ tính LƯƠNG NGÀY CÔNG THỜI GIAN:<br>
+                                                <code>Lương ngày = round(Lương Căn Bản / 26 * Ngày công hưởng lương)</code>
+                                            </td>
+                                            <td class="p-2.5 text-slate-600">Quy định chuẩn 26 ngày công làm việc trong tháng.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Mức Lương Đóng BHXH <span class="text-rose-500 font-bold">(*)</span></td>
+                                            <td class="p-2.5 text-slate-600">Số tiền (VNĐ)</td>
+                                            <td class="p-2.5 font-bold text-slate-900">
+                                                Mức lương đăng ký cơ quan BHXH làm căn cứ trích nộp 10.5% NLĐ và 21.5% DN:
+                                                <code>Bảo hiểm NLĐ = Mức đóng BHXH * 10.5%</code>
+                                            </td>
+                                            <td class="p-2.5 text-amber-800 bg-amber-50/50">
+                                                Khống chế mức trần tối đa 20 lần mức lương cơ sở = <strong>46,800,000 đ</strong> (Nghị định 73/2024/NĐ-CP).
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Phụ Lục Gia Hạn Hợp Đồng</td>
+                                            <td class="p-2.5 text-slate-600">Tab phụ lục</td>
+                                            <td class="p-2.5">Quản lý tăng lương định kỳ hoặc điều chỉnh mức đóng BHXH mà không làm đứt gãy lịch sử hợp đồng gốc.</td>
+                                            <td class="p-2.5 text-slate-500">Mỗi phụ lục lưu vết ngày hiệu lực và số tiền lương mới.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">Người Phụ Thuộc Giảm Trừ Thuế</td>
+                                            <td class="p-2.5 text-slate-600">Tab Người phụ thuộc</td>
+                                            <td class="p-2.5">Khai báo con nhỏ, bố mẹ già giảm trừ gia cảnh thuế TNCN. Mức giảm trừ: <strong>4,400,000 đ/người/tháng</strong>.</td>
+                                            <td class="p-2.5 text-teal-800 bg-teal-50/50">
+                                                Hệ thống tự động trừ <code>4.4tr * Số NPT</code> vào thu nhập chịu thuế trước khi áp biểu lũy tiến.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5.3 CHẤM CÔNG THÁNG -->
+                    <div id="sec-input-hr-attendance" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">5.3. Bảng Chấm Công Tháng 26 Ngày Chuẩn & Quản Lý Nghỉ Phép</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Nơi thực hiện:</strong> Tab <strong>Chấm công tháng</strong> ➔ Chọn kỳ lương (Ví dụ: <em>Tháng 09/2026</em>).</p>
+
+                            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+                                <div class="font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="ph-bold ph-magic-wand text-teal-600 text-sm"></i>
+                                    <span>Tính Năng Khởi Tạo Công Tự Động (Auto-Generate):</span>
+                                </div>
+                                <p class="text-slate-600 leading-normal">
+                                    Bấm nút <strong>[Khởi Tạo Công Tự Động]</strong> ➔ Phần mềm tự quét 100% nhân viên đang làm việc và cấp sẵn định mức <strong>26.0 ngày công chuẩn</strong>. Chuyên viên nhân sự chỉ cần sửa những trường hợp nghỉ phép hoặc nghỉ không lương.
+                                </p>
+                            </div>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg shadow-2xs">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-32">Ký Hiệu</th>
+                                            <th class="p-2.5 w-44">Tên Chế Độ Chấm Công</th>
+                                            <th class="p-2.5">Quy Chế Tính Lương & Bảo Hiểm</th>
+                                            <th class="p-2.5 w-48">Hệ Số Công Hưởng Lương</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-teal-700"><code>X</code></td>
+                                            <td class="p-2.5 font-bold">Đi làm thực tế (<code>worked_days</code>)</td>
+                                            <td class="p-2.5">Có mặt làm việc tại văn phòng, điều xe, hoặc lái xe trên đường.</td>
+                                            <td class="p-2.5 font-bold text-teal-900">Tính 100% lương ngày</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-emerald-700"><code>P</code></td>
+                                            <td class="p-2.5 font-bold">Nghỉ phép năm hưởng lương (<code>paid_leave_days</code>)</td>
+                                            <td class="p-2.5">Nghỉ phép năm theo quy định Bộ luật Lao động 2019 (tối thiểu 12 ngày/năm).</td>
+                                            <td class="p-2.5 font-bold text-emerald-900">Tính 100% lương ngày</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-purple-700"><code>L</code></td>
+                                            <td class="p-2.5 font-bold">Nghỉ Lễ, Tết hưởng lương (<code>holiday_leave_days</code>)</td>
+                                            <td class="p-2.5">Nghỉ Tết Âm lịch, Dương lịch, Quốc khánh, Giỗ tổ Hùng Vương theo luật định.</td>
+                                            <td class="p-2.5 font-bold text-purple-900">Tính 100% lương ngày</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-rose-700"><code>Ro</code></td>
+                                            <td class="p-2.5 font-bold">Nghỉ việc riêng không lương (<code>unpaid_leave_days</code>)</td>
+                                            <td class="p-2.5">Nghỉ không hưởng lương ➔ Giảm trừ số ngày công hưởng lương tương ứng.</td>
+                                            <td class="p-2.5 font-bold text-rose-700">0% (Bị trừ lương ngày)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-600"><code>Om / Ts</code></td>
+                                            <td class="p-2.5 font-bold">Nghỉ ốm đau / Thai sản BHXH (<code>sick/maternity</code>)</td>
+                                            <td class="p-2.5">Không hưởng lương doanh nghiệp; cơ quan BHXH chi trả trợ cấp trực tiếp.</td>
+                                            <td class="p-2.5 text-slate-500">BHXH chi trả trợ cấp</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="text-xs text-slate-600"><strong>Công thức tổng công hưởng lương:</strong> <code>Tổng công = Đi làm (worked_days) + Phép năm (P) + Lễ tết (L)</code>.</p>
+                        </div>
+                    </div>
+
+                    <!-- 5.4 ĐỘNG CƠ TÍNH LƯƠNG HYBRID -->
+                    <div id="sec-input-hr-payroll" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">5.4. Động Cơ Tính Lương Kết Hợp Hybrid Payroll (Lương Ngày Công + Lương Chuyến Xe)</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p><strong>• Thao tác:</strong> Tại Tab <strong>Kỳ tính lương</strong> ➔ Chọn kỳ lương ➔ Bấm nút <strong>[Tính Toán Bảng Lương]</strong>.</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                <div class="p-3 bg-white border border-teal-200 rounded-xl space-y-2 text-xs">
+                                    <div class="font-bold text-teal-950 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-buildings text-teal-700"></i>
+                                        <span>Khối Văn Phòng & Gián Tiếp (Back-Office):</span>
+                                    </div>
+                                    <p class="text-slate-600">
+                                        Hệ thống áp dụng công thức tính lương theo thời gian thực tế:
+                                    </p>
+                                    <div class="bg-teal-50/70 p-2 rounded-lg font-mono text-[11.5px] text-teal-900 font-semibold border border-teal-200">
+                                        Lương nhận = round(Lương HĐ / 26 * Ngày công) + Phụ cấp + Thưởng KPI
+                                    </div>
+                                </div>
+
+                                <div class="p-3 bg-white border border-amber-200 rounded-xl space-y-2 text-xs">
+                                    <div class="font-bold text-amber-950 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-truck text-amber-700"></i>
+                                        <span>Khối Tài Xế & Đội Xe (Fleet Driver - Động Cơ Kép):</span>
+                                    </div>
+                                    <p class="text-slate-600">
+                                        Tài xế hưởng đồng thời Lương ngày công và Toàn bộ lương sản lượng chuyến xe:
+                                    </p>
+                                    <div class="bg-amber-50/70 p-2 rounded-lg font-mono text-[11.5px] text-amber-900 font-semibold border border-amber-200">
+                                        Gross = Lương ngày công + Lương chuyến xe + Phụ cấp/KPI
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto border border-slate-200 rounded-lg shadow-2xs">
+                                <table class="w-full text-left text-xs erp-table border-collapse">
+                                    <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-2.5 w-48">Cấu Phần Lương Chuyến</th>
+                                            <th class="p-2.5 w-44">Trường Dữ Liệu Kế Thừa</th>
+                                            <th class="p-2.5">Quy Trình Quét Dữ Liệu Chuyến Xe Tự Động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">1. Lương Chuyến Chính</td>
+                                            <td class="p-2.5 text-teal-800 font-mono">trip_allowance</td>
+                                            <td class="p-2.5">Quét toàn bộ chuyến xe trong tháng tài xế kéo chính, cộng dồn trường <code>driver_allowance</code> từ <code>DispatchTrip</code>.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">2. Lương Cắt Kéo / Hạ Cont</td>
+                                            <td class="p-2.5 text-teal-800 font-mono">dropoff_allowance</td>
+                                            <td class="p-2.5">Ghi nhận cho tài xế tham gia chặng hạ cont rỗng hoặc kéo vỏ, kế thừa từ <code>dropoff_driver_allowance</code>.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">3. Phụ Cấp Neo Xe / Qua Đêm</td>
+                                            <td class="p-2.5 text-teal-800 font-mono">detention_allowance</td>
+                                            <td class="p-2.5">Khoản tiền bồi dưỡng tài xế khi xe phải nằm bãi chờ dỡ hàng qua đêm, kế thừa từ <code>detention_driver_allowance</code>.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2.5 font-bold text-slate-900">4. Thưởng Tiết Kiệm Nhiên Liệu</td>
+                                            <td class="p-2.5 text-teal-800 font-mono">fuel_bonus</td>
+                                            <td class="p-2.5">Thưởng tài xế chạy tiết kiệm dầu diesel theo định mức lít của từng tuyến đường.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5.5 KHẤU TRỪ TẠM ỨNG -->
+                    <div id="sec-input-hr-advances" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">5.5. Quản Lý & Tự Động Khấu Trừ Tạm Ứng (Lương & Chuyến Xe)</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p>Khắc phục hoàn toàn việc thất thoát chi phí tạm ứng dọc đường bằng cơ chế <strong>Gom Khấu Trừ Tự Động 2 Nguồn</strong>:</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
+                                <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-1.5 shadow-2xs">
+                                    <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
+                                        <span>Nguồn 1: Tạm Ứng Lương Cá Nhân</span>
+                                    </div>
+                                    <p class="text-slate-600">
+                                        Số tiền nhân viên hoặc tài xế đã ứng trước tiền lương giữa tháng (<code>Employee.current_advance</code>). Tự động đưa vào mục khấu trừ và hoàn trả hạn mức về 0 khi bảng lương được duyệt chi.
+                                    </p>
+                                </div>
+
+                                <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-1.5 shadow-2xs">
+                                    <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
+                                        <span>Nguồn 2: Tạm Ứng Chuyến Chưa Hoàn Ứng</span>
+                                    </div>
+                                    <p class="text-slate-600">
+                                        Quét toàn bộ phiếu tạm ứng chuyến xe cấp 2 (<code>DriverTripAdvance</code>) của tài xế trong tháng:
+                                        <br>• Phiếu <code>SETTLED</code> (Đã quyết toán xong): <strong>KHÔNG TRỪ</strong>.
+                                        <br>• Phiếu <code>ADVANCED</code> (Chưa nộp hóa đơn hoàn ứng): <strong>TỰ ĐỘNG TRỪ VÀO LƯƠNG</strong>.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-teal-50/70 border border-teal-200 rounded-xl font-mono text-xs text-teal-900 font-bold">
+                                Tổng Khấu Trừ Tạm Ứng = Tạm Ứng Lương (current_advance) + Tạm Ứng Chuyến Chưa Hoàn (DriverTripAdvance: ADVANCED)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5.6 VÒNG ĐỜI DUYỆT LƯƠNG & SINH PHIẾU CHI SỔ QUỸ -->
+                    <div id="sec-input-hr-workflow" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">5.6. Quy Trình 4 Bước Phê Duyệt Kỳ Lương & Tự Động Sinh Phiếu Chi Sổ Quỹ</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <p>Bảng lương được kiểm soát nghiêm ngặt qua Máy trạng thái (State Machine) 4 bước:</p>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-center space-y-1">
+                                    <span class="font-bold text-slate-700">1. DRAFT (Dự thảo)</span>
+                                    <p class="text-[11px] text-slate-500">Khởi tạo và tính toán thử, cho phép sửa đổi số liệu.</p>
+                                </div>
+                                <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-center space-y-1">
+                                    <span class="font-bold text-blue-800">2. REVIEWED (Đã rà soát)</span>
+                                    <p class="text-[11px] text-blue-600">Kế toán trưởng đối soát công, cước chuyến và tạm ứng.</p>
+                                </div>
+                                <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-center space-y-1">
+                                    <span class="font-bold text-amber-800">3. LOCKED (Khóa sổ)</span>
+                                    <p class="text-[11px] text-amber-600">Chốt số liệu chống sửa đổi, trình Ban Giám Đốc duyệt.</p>
+                                </div>
+                                <div class="p-2.5 bg-emerald-50 border border-emerald-300 rounded-lg text-center space-y-1">
+                                    <span class="font-bold text-emerald-800">4. PAID (Đã chi trả)</span>
+                                    <p class="text-[11px] text-emerald-600">Giám đốc duyệt chi trả chuyển khoản cho nhân viên.</p>
+                                </div>
+                            </div>
+
+                            <div class="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-xl space-y-2 text-xs">
+                                <div class="font-bold text-emerald-950 flex items-center gap-2">
+                                    <i class="ph-bold ph-money text-emerald-700 text-sm"></i>
+                                    <span>Cơ Chế Tự Động Sinh Phiếu Chi Sổ Quỹ (Auto Cash Flow Integration):</span>
+                                </div>
+                                <p class="text-slate-700 leading-relaxed">
+                                    Khi Giám đốc bấm nút <strong>[Phê Duyệt & Chi Trả Lương]</strong> (chuyển trạng thái sang <strong>PAID</strong>), hệ thống tự động khởi tạo ngay một <strong>Phiếu Chi Sổ Quỹ (CashTransaction)</strong>:
+                                    <br>• <strong>Mã chứng từ:</strong> <code>PC-LUONG-YYYYMM</code> (Ví dụ: <code>PC-LUONG-202609</code>).
+                                    <br>• <strong>Số tiền chi quỹ:</strong> Khớp chính xác 100% với Tổng Thực Lĩnh Net toàn công ty.
+                                    <br>• <strong>Hạch toán tự động:</strong> Ghi nhận chi phí lương vào Sổ quỹ, cập nhật dòng tiền và báo cáo P&L Ban Giám Đốc mà kế toán không cần lập phiếu chi tay.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5.7 XUẤT FILE NGÂN HÀNG & IN PHIẾU LƯƠNG -->
+                    <div id="sec-input-hr-export" class="scroll-mt-24 space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-slate-900 font-heading">5.7. Xuất File Ngân Hàng Chuyển Khoản Lô & In Phiếu Lương A4/A5</h4>
+                        <div class="text-sm text-slate-700 space-y-3">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
+                                <div class="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2 shadow-2xs">
+                                    <div class="font-bold text-slate-900 flex items-center gap-2">
+                                        <i class="ph-bold ph-bank text-teal-700 text-sm"></i>
+                                        <span>1. Xuất File Ngân Hàng Chuyển Khoản Lô (Batch Banking):</span>
+                                    </div>
+                                    <p class="text-slate-600 leading-normal">
+                                        Bấm nút <strong>[Xuất File Ngân Hàng]</strong> tại kỳ lương ➔ Hệ thống trích xuất danh sách đầy đủ Số tài khoản, Ngân hàng, Người thụ hưởng, Số tiền Net và cú pháp chuyển khoản chuẩn của các ngân hàng Vietcombank, Techcombank, MB Bank, BIDV để kế toán đẩy lệnh chi lương hàng loạt.
+                                    </p>
+                                </div>
+
+                                <div class="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2 shadow-2xs">
+                                    <div class="font-bold text-slate-900 flex items-center gap-2">
+                                        <i class="ph-bold ph-printer text-slate-700 text-sm"></i>
+                                        <span>2. In Phiếu Lương Cá Nhân A4/A5 & Tra Cứu Tài Xế:</span>
+                                    </div>
+                                    <p class="text-slate-600 leading-normal">
+                                        Tại dòng phiếu lương, bấm nút <strong>[In]</strong> (icon <code>fas fa-print</code>) để xuất bản in phiếu lương phẳng chuẩn mẫu doanh nghiệp có chữ ký 3 bên. Bác tài đăng nhập cổng tài xế trên điện thoại có thể tra cứu chi tiết ngày công, số chuyến và tiền thực nhận chuyển khoản.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
