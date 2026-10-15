@@ -2,6 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.2.3] - 2026-10-15 (Cập Nhật Toàn Diện Sổ Tay Hướng Dẫn Sử Dụng & Kiểm Thử E2E Liên Hoàn 6 Vai Trò Vận Hành)
+
+### 1. Cập Nhật Sổ Tay Hướng Dẫn Sử Dụng (`docs/USER_GUIDE.md`):
+- **Bổ sung Mục 7: Phân Hệ Quản Trị Nhân Sự, Hợp Đồng Lao Động & Người Phụ Thuộc (HR Management):**
+  * Hướng dẫn chi tiết khai báo hồ sơ CBNV và Tài xế mới (CCCD, MST, BHXH, GPLX hạng FC, tài khoản ngân hàng chi lương).
+  * Hướng dẫn ký kết HĐLĐ, thiết lập Lương căn bản HĐLĐ (tính lương ngày) và Lương đóng BHXH (trần 46.8 triệu theo NĐ 73/2024/NĐ-CP).
+  * Hướng dẫn đăng ký Người phụ thuộc giảm trừ gia cảnh (4.4 triệu/người/tháng theo NQ 954/2020/UBTVQH14).
+- **Bổ sung Mục 8: Phân Hệ Chấm Công & Quản Lý Nghỉ Phép (Monthly Attendance):**
+  * Hướng dẫn tính năng Khởi tạo công tự động toàn công ty theo kỳ lương (26 ngày chuẩn).
+  * Hướng dẫn quy cách chấm công chi tiết: Đi làm thực tế (`worked_days`), Nghỉ phép năm có lương (`paid_leave_days` - ký hiệu `P`), Nghỉ lễ tết (`L`), Nghỉ không lương (`Ro`), Nghỉ chế độ BHXH (`Om`, `Ts`).
+- **Bổ sung Mục 9: Phân Hệ Tính Lương Logistics Hai Động Cơ (Hybrid Payroll) & Chi Trả Sổ Quỹ:**
+  * Hướng dẫn vận hành Động cơ tính lương kết hợp: Lương ngày công thời gian + Lương sản lượng chuyến xe (chuyến chính, cắt kéo, neo xe, thưởng dầu) + Phụ cấp ăn trưa, điện thoại, thưởng KPI.
+  * Hướng dẫn cơ chế đối soát và tự động khấu trừ tạm ứng: Gom tự động Tạm ứng lương cá nhân (`Employee.current_advance`) và Tạm ứng chuyến xe chưa hoàn ứng (`DriverTripAdvance` trạng thái `ADVANCED`). Các phiếu đã quyết toán `SETTLED` không trừ vào lương.
+  * Hướng dẫn quy trình 4 bước State Machine: DRAFT ➔ REVIEWED ➔ LOCKED ➔ PAID.
+  * Cơ chế Tích hợp Dòng tiền Tự động: Khi Giám đốc duyệt `PAID`, hệ thống tự động sinh Phiếu Chi Sổ Quỹ (`CashTransaction`) mã `PC-LUONG-YYYYMM` khớp đúng 100% Tổng Net toàn công ty.
+  * Hướng dẫn xuất bảng kê ủy nhiệm chi ngân hàng lô (Batch Banking Export) và in phiếu lương cá nhân A4/A5 (Printable Payslip).
+- **Bổ sung Mục 10: Quy Chuẩn Thao Tác Bảng Dữ Liệu: Chuẩn 2 Nút Xem & In (Không Dùng Modal):**
+  * Cột thao tác luôn chỉ gồm đúng 2 nút: **Xem** (`fas fa-eye`) và **In** (`fas fa-print`).
+  * Loại bỏ toàn bộ modal popup chật hẹp, mở trang chi tiết phẳng độc lập kèm thanh công cụ đồng bộ: Quay lại, Sửa, Lưu thay đổi, In chứng từ, Xóa mềm.
+
+### 2. Kiểm Thử E2E Mô Phỏng Thực Tế 6 Vai Trò (`scripts/test_multi_role_e2e_simulation.py`):
+- Mô phỏng trọn vẹn luồng tác nghiệp của 6 vai trò: HR ➔ Điều độ ➔ Chấm công ➔ Kế toán lương ➔ Ban Giám Đốc ➔ Tài xế.
+- Toàn bộ kết quả kiểm thử đạt 100% Passed, hệ thống hoạt động chính xác tuyệt đối không phát sinh sai lệch.
+
 ## [v3.2.2] - 2026-10-15 (Khắc Phục Lỗi Định Dạng Ngày Tháng Trong Form Hợp Đồng & Kiểm Thử Toàn Diện Luồng Nút Bấm Tạo, Xem, Lưu, Sửa)
 
 ### 1. Khắc Phục Triệt Để Lỗi Định Dạng Ngày Tháng (Date Formatting):

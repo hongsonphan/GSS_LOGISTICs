@@ -50,6 +50,10 @@
     - [4.6. Hướng Dẫn Quyết Toán Gom Chuyến Xe Hàng Loạt (Batch Settlement)](#46-hướng-dẫn-quyết-toán-gom-chuyến-xe-hàng-loạt-batch-settlement)
   - [5. Phân Hệ Dịch Vụ Hải Quan Điện Tử](#5-phân-hệ-dịch-vụ-hải-quan-điện-tử)
   - [6. Hướng Dẫn Tra Cứu, Lọc, Tùy Biến Cột & In 14 Báo Cáo BI Khổ A4](#6-hướng-dẫn-tra-cứu-lọc-tùy-biến-cột--in-14-báo-cáo-bi-khổ-a4)
+  - [7. Phân Hệ Quản Trị Nhân Sự, Hợp Đồng Lao Động & Người Phụ Thuộc (HR Management)](#7-phân-hệ-quản-trị-nhân-sự-hợp-đồng-lao-động--người-phụ-thuộc-hr-management)
+  - [8. Phân Hệ Chấm Công & Quản Lý Nghỉ Phép (Monthly Attendance)](#8-phân-hệ-chấm-công--quản-lý-nghỉ-phép-monthly-attendance)
+  - [9. Phân Hệ Tính Lương Logistics Hai Động Cơ (Hybrid Payroll) & Chi Trả Sổ Quỹ](#9-phân-hệ-tính-lương-logistics-hai-động-cơ-hybrid-payroll--chi-trả-sổ-quỹ)
+  - [10. Quy Chuẩn Thao Tác Bảng Dữ Liệu: Chuẩn 2 Nút Xem & In (Không Dùng Modal)](#10-quy-chuẩn-thao-tác-bảng-dữ-liệu-chuẩn-2-nút-xem--in-không-dùng-modal)
 
 ---
 
@@ -486,3 +490,197 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 - **Tìm kiếm tức thì & Sắp xếp:** Nhập từ khóa vào ô tìm kiếm trên đầu bảng để lọc nhanh. Bấm tiêu đề cột để đảo chiều sắp xếp tăng/giảm dần.
 - **Universal Column Manager:** Bấm nút **`Cột`** ở góc phải bảng để ẩn/hiện hoặc đổi vị trí cột theo nhu cầu cá nhân.
 - **In ấn A4 chuẩn mực:** Bấm nút **`In Báo Cáo A4`**. Hệ thống tự động chọn khổ **A4 Dọc** (dưới 8 cột) hoặc **A4 Ngang** (từ 8 cột trở lên), căn lề chuẩn 15mm-20mm theo Nghị định 30/2020/NĐ-CP.
+
+---
+
+## 7. Phân Hệ Quản Trị Nhân Sự, Hợp Đồng Lao Động & Người Phụ Thuộc (HR Management)
+
+- **Nơi thực hiện:** Menu **`Nhân sự`** (`/personnel/`).
+- **Phân hệ bao gồm 3 tab quản lý trọng tâm:**
+  1. **Tab `Nhân viên`:** Danh sách và hồ sơ 360° của toàn thể cán bộ nhân viên công ty (Khối Văn phòng, Điều vận, Kế toán, Quản lý kho và Đội ngũ Tài xế).
+  2. **Tab `Hợp đồng lao động`:** Quản lý vòng đời hợp đồng lao động, loại hợp đồng, mức lương thỏa thuận và lương trích đóng BHXH.
+  3. **Tab `Người phụ thuộc`:** Quản lý danh sách người phụ thuộc đăng ký giảm trừ gia cảnh thuế TNCN theo quy định của Tổng cục Thuế.
+
+### 7.1. Hướng Dẫn Khai Báo Hồ Sơ Cán Bộ Nhân Viên & Bác Tài Mới
+1. Tại Tab **`Nhân viên`**, bấm nút **`+ Thêm Nhân Viên`**.
+2. **Kê khai các trường thông tin:**
+   - **Mã Nhân Viên (`*`):** Định dạng viết hoa không dấu (Ví dụ: `NV019`, `TX025`).
+   - **Họ Và Tên (`*`):** Tên đầy đủ theo CCCD (Ví dụ: `Hoàng Văn Thật`).
+   - **Tên Gọi Thường Dùng (Biệt danh):** Tên gọi hiện trường (Ví dụ: `Thật Xe Tải`).
+   - **Số Điện Thoại (`*`):** 10 chữ số dùng để liên hệ và nhận thông báo điều vận.
+   - **Phòng Ban (`*`):** Chọn `Đội xe (Fleet)`, `Điều vận (Dispatch)`, `Kế toán (Accounting)`, `Kinh doanh (Sales)`, `Kho bãi (Warehouse)` hoặc `Ban Giám Đốc (Board of Directors)`.
+   - **Chức Danh / Vai Trò (`*`):** Chọn `Tài xế`, `Phụ xe`, `Điều phối viên`, `Kế toán`, `Thủ kho`, v.v.
+   - **Số CCCD / CMND (`*`):** 12 số CCCD gắn chip để phục vụ kê khai thuế và cơ quan bảo hiểm.
+   - **Mã Số Thuế Cá Nhân (MST):** Mã số thuế phục vụ khấu trừ thuế TNCN cuối năm.
+   - **Mã Số BHXH:** Mã số sổ bảo hiểm xã hội 10 số.
+   - **Hạng Giấy Phép Lái Xe (GPLX):** Bắt buộc đối với Tài xế (Chọn `Hạng C`, `Hạng FC` cho xe đầu kéo container).
+   - **Ngày Hết Hạn Bằng Lái:** Hệ thống tự động cảnh báo trước 30 ngày để tài xế đổi bằng.
+   - **Thông Tin Ngân Hàng Chi Lương:** Số tài khoản (`*`), Tên ngân hàng (`*`) (Vietcombank, MB, Techcombank...), Chi nhánh, Tên người thụ hưởng.
+3. Bấm nút **`Lưu`**. Hồ sơ được kích hoạt ngay lập tức.
+
+### 7.2. Hướng Dẫn Ký Kết Hợp Đồng Lao Động & Thiết Lập Lương Căn Bản
+1. Tại Tab **`Hợp đồng lao động`**, bấm nút **`+ Ký Hợp Đồng Mới`**.
+2. **Kê khai các thông số pháp lý & tiền lương:**
+   - **Số Hợp Đồng (`*`):** Định dạng `HDLD-{Mã NV}-{Năm}` (Ví dụ: `HDLD-TX025-2026`).
+   - **Cán Bộ Nhân Viên (`*`):** Chọn nhân sự từ danh sách.
+   - **Loại Hợp Đồng (`*`):** Chọn `Thử việc (2 tháng)`, `Xác định thời hạn (12-36 tháng)`, hoặc `Không xác định thời hạn`.
+   - **Ngày Bắt Đầu Hiệu Lực (`*`) & Ngày Kết Thúc:** Thời hạn hợp đồng.
+   - **Mức Lương Căn Bản HĐLĐ (`*`) (VNĐ):** Mức lương chính làm căn cứ tính lương ngày công thời gian:
+     $$\text{Lương 1 ngày công} = \frac{\text{Lương Căn Bản HĐLĐ}}{26\text{ ngày công chuẩn}}$$
+   - **Mức Lương Đóng BHXH (`*`) (VNĐ):** Mức lương đăng ký với cơ quan BHXH làm căn cứ trích đóng 10.5% (Tối thiểu không dưới lương tối thiểu vùng và không vượt quá trần 20 lần mức lương cơ sở = 46,800,000 đ theo Nghị định 73/2024/NĐ-CP).
+   - **Phụ Cấp Trách Nhiệm / Xăng Xe / Điện Thoại:** Các khoản phụ cấp cố định kèm theo hợp đồng.
+3. Bấm nút **`Lưu`**. Trạng thái hợp đồng chuyển sang `ACTIVE` (Đang hiệu lực).
+
+### 7.3. Hướng Dẫn Đăng Ký Người Phụ Thuộc Giảm Trừ Gia Cảnh
+1. Tại Tab **`Người phụ thuộc`**, bấm nút **`+ Khai Báo Người Phụ Thuộc`**.
+2. **Kê khai thông tin:**
+   - **Cán Bộ Nhân Viên (`*`):** Chọn nhân viên đăng ký giảm trừ.
+   - **Họ Tên Người Phụ Thuộc (`*`):** Tên con nhỏ, cha mẹ già hết tuổi lao động, hoặc người cần chăm sóc theo Luật Thuế TNCN.
+   - **Mối Quan Hệ (`*`):** Chọn `Con ruột/Con nuôi`, `Vợ/Chồng`, `Cha/Mẹ ruột`, v.v.
+   - **Số CCCD / Số Khai Sinh (`*`):** Mã định danh phục vụ cơ quan thuế đối soát.
+   - **Tháng Bắt Đầu Giảm Trừ (`*`) & Tháng Kết Thúc:** Thời gian hiệu lực áp dụng mức giảm trừ **4,400,000 đ/người/tháng** (theo Nghị quyết 954/2020/UBTVQH14).
+3. Bấm nút **`Lưu`**. Khi chạy tính lương, hệ thống sẽ tự động trừ $4,400,000 \times \text{Số NPT}$ vào thu nhập chịu thuế trước khi áp biểu thuế lũy tiến.
+
+---
+
+## 8. Phân Hệ Chấm Công & Quản Lý Nghỉ Phép (Monthly Attendance)
+
+- **Nơi thực hiện:** Menu **`Nhân sự`** ➔ Tab **`Chấm công tháng`**.
+- **Kỳ chấm công tiêu chuẩn:** Khớp với kỳ lương hàng tháng (Từ ngày 01 đến ngày cuối tháng; ngày công định mức chuẩn là **26.0 ngày**).
+
+### 8.1. Hướng Dẫn Tự Động Khởi Tạo Bảng Công Toàn Công Ty
+1. Chọn Kỳ lương cần chấm công (Ví dụ: `Tháng 09/2026`).
+2. Bấm nút **`[Khởi Tạo Công Tự Động]`**.
+3. Hệ thống sẽ tự động quét toàn bộ nhân sự đang làm việc (`is_active=True`), khởi tạo bản ghi công với mặc định 26 ngày công chuẩn, giúp bộ phận nhân sự không cần nhập lại danh sách thủ công.
+
+### 8.2. Hướng Dẫn Chấm Công Chi Tiết Từng Nhân Viên
+1. Tại dòng của nhân viên cần điều chỉnh công, bấm nút **`Xem`** (icon `fas fa-eye`).
+2. **Kê khai số ngày thực tế trong tháng:**
+   - **Số Ngày Đi Làm Thực Tế (`worked_days`):** Số ngày có mặt làm việc thực tế tại văn phòng, kho, hoặc điều xe trên đường (Ký hiệu `X`).
+   - **Nghỉ Phép Năm Hưởng Lương (`paid_leave_days`):** Số ngày nghỉ phép năm theo Luật Lao động (Ký hiệu `P`) $\rightarrow$ Được tính 100% lương ngày.
+   - **Nghỉ Lễ, Tết Hưởng Lương (`holiday_leave_days`):** Số ngày nghỉ Quốc khánh, Tết... có hưởng lương (Ký hiệu `L`) $\rightarrow$ Được tính 100% lương ngày.
+   - **Nghỉ Không Hưởng Lương (`unpaid_leave_days`):** Số ngày nghỉ việc riêng không lương (Ký hiệu `Ro`) $\rightarrow$ Bị trừ lương ngày tương ứng.
+   - **Nghỉ Hưởng Chế Độ BHXH (`sick_leave_days`, `maternity_leave_days`):** Nghỉ ốm đau hoặc thai sản do cơ quan BHXH chi trả trợ cấp trực tiếp (Ký hiệu `Om`, `Ts`).
+3. **Công thức tự động:**
+   $$\text{Tổng Ngày Công Hưởng Lương} = \text{Đi Làm Thực Tế} + \text{Phép Năm (P)} + \text{Nghỉ Lễ Tết (L)}$$
+4. Bấm nút **`Lưu`**. Dữ liệu công tổng hợp sẽ làm đầu vào trực tiếp cho động cơ tính lương.
+
+---
+
+## 9. Phân Hệ Tính Lương Logistics Hai Động Cơ (Hybrid Payroll) & Chi Trả Sổ Quỹ
+
+Hệ thống tiền lương của BIM Logistics Platform giải quyết triệt để bài toán đặc thù ngành vận tải container: **Kết hợp hài hòa giữa Khối Văn phòng (Lương thời gian) và Khối Tài xế (Lương thời gian + Lương sản lượng chuyến + Khấu trừ tạm ứng dọc đường)**.
+
+### 9.1. Động Cơ Tính Lương Kết Hợp (Hybrid Payroll Engine)
+Khi Kế toán bấm **`[Tính Toán Bảng Lương]`** (`POST /api/personnel/periods/{id}/calculate/`), động cơ xử lý tự động chạy ngầm theo 6 bước:
+
+```
+[Bảng Công Tháng] ────────┐
+                          ├─► [1. Lương Ngày Công] ──┐
+[Hợp Đồng Lao Động] ──────┘                          │
+                                                     ├─► [TỔNG THU NHẬP GROSS] ─┐
+[Chuyến Xe DispatchTrip] ───► [2. Lương Chuyến Xe] ──┘                          │
+                                                                                ├─► [THỰC LĨNH NET]
+[Tạm Ứng DriverTripAdvance] ─► [Khấu Trừ Tạm Ứng] ───┐                          │
+                                                     ├─► [TỔNG CÁC KHOẢN TRỪ] ──┘
+[BHXH 10.5% & Thuế TNCN] ───► [Bảo Hiểm & Thuế] ─────┘
+```
+
+#### Chi Tiết 3 Khối Cấu Phần Thu Nhập:
+1. **Lương Ngày Công Thời Gian (Áp dụng cho 100% CBNV):**
+   $$\text{Lương Ngày} = \text{round}\left(\frac{\text{Lương Căn Bản HĐLĐ}}{26} \times \text{Tổng Ngày Công Hưởng Lương}\right)$$
+2. **Lương Sản Lượng Chuyến Xe Logistics (Dành riêng cho Tài xế & Phụ xe):**
+   Tự động truy vấn toàn bộ các chuyến xe trong tháng của tài xế đạt trạng thái hoàn thành:
+   - **Lương chuyến chính (`trip_allowance`):** Lương kéo hàng nguyên chuyến từ Cảng về Kho hoặc ngược lại (kế thừa từ `DispatchTrip.driver_allowance`).
+   - **Lương cắt kéo / hạ cont rỗng (`dropoff_allowance`):** Lương phụ hạ cont hoặc kéo cont vỏ trả depot (kế thừa từ `DispatchTrip.dropoff_driver_allowance`).
+   - **Phụ cấp neo xe / qua đêm (`detention_allowance`):** Tiền bồi dưỡng tài xế khi xe phải nằm bãi chờ bốc xếp hàng quá giờ quy định.
+   - **Thưởng định mức nhiên liệu (`fuel_bonus`):** Thưởng tiết kiệm dầu diesel theo định mức lít quy định của tuyến đường.
+3. **Phụ Cấp & Khen Thưởng:**
+   - Phụ cấp ăn trưa (tối đa 730,000 đ/tháng được miễn thuế TNCN).
+   - Phụ cấp điện thoại công vụ.
+   - Thưởng KPI / Thưởng thành tích chuyến xe an toàn xuất sắc.
+
+$$\textbf{TỔNG THU NHẬP (GROSS)} = \text{Lương Ngày} + \text{Lương Chuyến} + \text{Phụ Cấp} + \text{Thưởng KPI}$$
+
+---
+
+### 9.2. Cơ Chế Khấu Trừ Tự Động Tạm Ứng (Advance Deductions)
+Khắc phục hoàn toàn tình trạng thất thoát quỹ tạm ứng đường dài của tài xế:
+- **Nguồn 1 — Tạm ứng lương cá nhân:** Số tiền nhân viên tạm ứng tiêu dùng trong tháng (`Employee.current_advance`).
+- **Nguồn 2 — Tạm ứng chuyến xe chưa hoàn ứng:** Quét toàn bộ các phiếu tạm ứng cấp 2 (`DriverTripAdvance`) của tài xế:
+  * **Phiếu đã quyết toán (`SETTLED`):** Tài xế đã nộp đủ hóa đơn dầu, vé BOT và tiền thừa $\rightarrow$ **Không trừ vào lương**.
+  * **Phiếu đang tạm ứng (`ADVANCED`):** Tài xế chưa nộp hóa đơn quyết toán hoặc còn nợ tiền ứng $\rightarrow$ **Tự động gom khấu trừ vào lương**.
+$$\textbf{Tổng Tạm Ứng Bị Trừ} = \text{Tạm Ứng Lương} + \text{Tạm Ứng Chuyến Chưa Quyết Toán}$$
+
+---
+
+### 9.3. Trích Đóng Bảo Hiểm Bắt Buộc & Thuế TNCN Lũy Tiến
+1. **Bảo hiểm xã hội, y tế, thất nghiệp:**
+   - Phần Người lao động đóng: **10.5%** mức lương đóng BHXH (BHXH 8%, BHYT 1.5%, BHTN 1%). Mức lương trích đóng không vượt trần 46.8 triệu đồng.
+   - Phần Doanh nghiệp đóng: **21.5%** BHXH/BHYT/BHTN + **2%** Kinh phí công đoàn = **23.5%** (hệ thống theo dõi riêng để báo cáo chi phí nhân sự tổng thể).
+2. **Thuế Thu nhập Cá nhân (TNCN) theo biểu lũy tiến từng phần:**
+   $$\text{Thu Nhập Chịu Thuế} = \text{Gross} - \text{Ăn Trưa (miễn tối đa 730k)} - \text{Điện Thoại} - \text{BHXH (10.5\%)}$$
+   $$\text{Thu Nhập Tính Thuế} = \max\left(0, \text{Thu Nhập Chịu Thuế} - 11,000,000 - (\text{Số NPT} \times 4,400,000)\right)$$
+   Áp dụng biểu thuế 7 bậc lũy tiến theo Luật Thuế Thu Nhập Cá Nhân. Nếu Thu nhập tính thuế $\le 0$ thì Thuế TNCN $= 0\text{ đ}$.
+
+$$\textbf{THỰC LĨNH CHUYỂN KHOẢN (NET)} = \text{Gross} - \text{Bảo Hiểm (10.5\%)} - \text{Thuế TNCN} - \text{Khấu Trừ Tạm Ứng} - \text{Trừ Khác}$$
+
+---
+
+### 9.4. Hướng Dẫn Kế Toán Điều Chỉnh Bổ Sung & Khóa Sổ Trình Duyệt
+1. Bấm nút **`Xem`** tại dòng phiếu lương của nhân viên cần điều chỉnh.
+2. Tại màn hình chi tiết, nhập bổ sung: Thưởng KPI, Phụ cấp ăn trưa, hoặc các khoản phạt vi phạm (nếu có) ➔ Bấm nút **`Lưu Thay Đổi`**. Hệ thống sẽ tự động tính lại toàn bộ Gross, Thuế TNCN và Thực lĩnh Net ngay tức thì.
+3. Khi toàn bộ bảng lương đã chuẩn xác, Kế toán bấm nút **`[Khóa Bảng Lương]`** (`LOCKED`). Bảng lương chuyển sang trạng thái đã chốt sổ, ngăn chặn việc sửa đổi số liệu trái phép và tự động gửi thông báo trình duyệt lên Ban Giám Đốc.
+
+---
+
+### 9.5. Hướng Dẫn Ban Giám Đốc Duyệt Chi Lương & Tự Động Sinh Sổ Quỹ
+1. Ban Giám Đốc đăng nhập hệ thống, truy cập menu **`Nhân sự`** ➔ Tab **`Kỳ tính lương`**.
+2. Kiểm tra tổng số nhân sự, tổng Gross, tổng chi phí BHXH và tổng Net cần chuyển khoản.
+3. Bấm nút **`[Phê Duyệt & Chi Trả Lương]`** (`POST /api/personnel/periods/{id}/status/` với trạng thái `PAID`).
+4. **Cơ chế Tích hợp Dòng tiền Tự động (Auto Cash Integration):**
+   - Kỳ lương lập tức chuyển sang trạng thái **`PAID (Đã thanh toán)`**.
+   - Hệ thống tự động khởi tạo ngay một **Phiếu Chi Sổ Quỹ (`CashTransaction`)** với:
+     * **Mã chứng từ:** `PC-LUONG-YYYYMM` (Ví dụ: `PC-LUONG-202609`).
+     * **Số tiền chi:** Khớp chính xác 100% với Tổng Thực Lĩnh Net toàn công ty.
+     * **Đối tượng nhận tiền:** Toàn thể Cán bộ Công nhân viên Công ty.
+     * **Diễn giải:** `Chi trả Lương Bảng lương Tháng MM/YYYY`.
+     * **Trạng thái:** Tự động trừ vào quỹ khả dụng của doanh nghiệp và hạch toán vào Báo cáo Dòng tiền (P&L BI).
+
+---
+
+### 9.6. Hướng Dẫn Xuất Bảng Kê Ngân Hàng Chuyển Khoản Lô (Batch Banking)
+1. Tại kỳ lương, bấm nút **`[Xuất File Ngân Hàng]`** (`/bank-export/`).
+2. Hệ thống xuất ra bảng kê chi tiết dạng bảng và file Excel/CSV chuẩn UTF-8 BOM gồm:
+   - Cột STT, Mã NV, Họ Tên, Tên Người Thụ Hưởng.
+   - Số Tài Khoản Ngân Hàng, Tên Ngân Hàng (Vietcombank, Techcombank, MB, ACB, BIDV...).
+   - Số Tiền Net chuyển khoản.
+   - Nội Dung Chuyển Khoản chuẩn hóa: `TRIEN VO LOGISTICS TRA LUONG THANG MM/YYYY NV {MA_NV}`.
+3. Kế toán chỉ cần tải file lên hệ thống Internet Banking Doanh nghiệp để thực hiện lệnh chuyển khoản lô 1 chạm.
+
+---
+
+### 9.7. Hướng Dẫn In Phiếu Lương A4/A5 & Tra Cứu Của Tài Xế
+1. **In Phiếu Lương:** Tại dòng phiếu lương, bấm nút **`In`** (icon `fas fa-print`). Hệ thống mở giao diện in phẳng (Printable Payslip View) chuẩn khổ giấy A4/A5 gồm tiêu đề công ty, quốc huy, bảng kê thu nhập, các khoản giảm trừ và dòng ký xác nhận của Người lập biểu, Kế toán trưởng và Giám đốc.
+2. **Tài Xế Tra Cứu:** Bác tài đăng nhập tài khoản cá nhân trên điện thoại để xem trực tiếp phiếu lương của mình: số ngày công, danh sách các chuyến xe đã chạy trong tháng, tiền tạm ứng bị trừ và số tiền thực nhận chuyển khoản.
+
+---
+
+## 10. Quy Chuẩn Thao Tác Bảng Dữ Liệu: Chuẩn 2 Nút Xem & In (Không Dùng Modal)
+
+Để mang lại trải nghiệm chuyên nghiệp, mượt mà và trực quan nhất cho người sử dụng trên máy tính cũng như máy tính bảng, toàn bộ hệ thống BIM Logistics Platform được chuẩn hóa theo quy ước giao diện đồng bộ:
+
+### 10.1. Cột Thao Tác Chuẩn 2 Nút Bấm
+Trên mọi bảng danh mục và bảng dữ liệu vận hành (Khách hàng, Lệnh điều xe, Chuyến xe, Tạm ứng, Nhân sự, Hợp đồng, Bảng lương), cột **`Thao tác`** luôn bao gồm đúng **2 nút bấm trực quan**:
+1. 👁️ **Nút `Xem` (Nút màu xanh lam hoặc xám viền):** Icon `fas fa-eye`. Bấm vào để điều hướng trực tiếp sang trang Chi tiết nghiệp vụ toàn màn hình.
+2. 🖨️ **Nút `In` (Nút màu xanh lục/teal):** Icon `fas fa-print`. Bấm vào để mở bản in văn bản phẳng chuẩn A4/A5 (In Báo giá, Lệnh điều xe, Phiếu tạm ứng, Phiếu thu/chi, Phiếu lương).
+
+### 10.2. Trang Chi Tiết Chuyên Biệt (Dedicated Full-Page View — Tuyệt Đối Không Dùng Modal)
+- **Loại bỏ Modal Popup:** Không sử dụng các khung popup nhỏ (modal) để xem hay chỉnh sửa thông tin phức tạp vì dễ gây tràn màn hình, che khuất dữ liệu và khó thao tác trên thiết bị di động.
+- **Thanh Công Cụ Đồng Bộ Trên Cùng (Standard Top Action Bar):**
+  Khi bấm **`Xem`**, hệ thống chuyển sang trang giao diện chi tiết phẳng với thanh công cụ phía trên gồm đầy đủ các hành động nghiệp vụ:
+  * ⬅️ **Nút `Quay lại` (`fas fa-arrow-left`):** Trở về bảng danh sách dữ liệu trước đó, giữ nguyên trạng thái tìm kiếm và bộ lọc đã chọn.
+  * 💾 **Nút `Lưu Thay Đổi` (`fas fa-save`):** Lưu các thông tin sau khi chỉnh sửa dữ liệu trên biểu mẫu.
+  * 🖨️ **Nút `In Chứng Từ` (`fas fa-print`):** In trực tiếp biểu mẫu tài liệu từ trang chi tiết.
+  * 🗑️ **Nút `Xóa Mềm` (`fas fa-trash`):** Thực hiện xóa mềm an toàn (`is_deleted=True`), bảo toàn lịch sử truy vết pháp lý và audit log của doanh nghiệp.
+
