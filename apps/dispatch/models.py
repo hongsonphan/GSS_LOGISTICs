@@ -374,6 +374,11 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
         return self.cached_revenue
 
     @property
+    def trip_expenses(self):
+        """Alias cho related_name expenses tương thích các module kế toán."""
+        return self.expenses
+
+    @property
     def hashid(self):
         """Mã hóa ID chuyến xe thành chuỗi HashID bảo mật chống IDOR (Tiêu chuẩn 10)."""
         from core.security import get_trip_hashid

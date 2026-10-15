@@ -949,7 +949,11 @@ class CustomerARReconciliationAPIView(APIView):
         for t in qs.select_related('customer', 'driver', 'vehicle').order_by('-created_at'):
             rev_val = getattr(t, 'cached_revenue', None) if getattr(t, 'cached_revenue', None) is not None else getattr(t, 'revenue', 0)
             rev = Decimal(str(rev_val or 0))
-            reimb = sum(Decimal(str(e.amount or 0)) for e in t.trip_expenses.filter(is_deleted=False, is_on_behalf_of_customer=True))
+            exp_mgr = getattr(t, 'expenses', None) or getattr(t, 'trip_expenses', None)
+            if exp_mgr is not None:
+                reimb = sum(Decimal(str(e.amount or 0)) for e in exp_mgr.filter(is_deleted=False, is_on_behalf_of_customer=True))
+            else:
+                reimb = Decimal(0)
             rec = rev + reimb
             total_rev += rev
             total_reimb += reimb
