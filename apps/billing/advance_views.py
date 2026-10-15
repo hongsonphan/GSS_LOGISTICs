@@ -981,7 +981,7 @@ class CustomerARReconciliationAPIView(APIView):
                 'vat_invoice_date': t.vat_invoice_date.strftime('%d/%m/%Y') if t.vat_invoice_date else '',
                 'soa_code': t.customer_soa_code or '',
                 'status': t.status,
-                'has_pod': bool(t.pod_document)
+                'has_pod': bool(getattr(t, 'pod_document', None)) or (hasattr(t, 'documents') and t.documents.filter(document_type__in=['POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE'], is_deleted=False).exists()) or bool(getattr(t, 'actual_gate_out_time', None))
             })
 
         return Response({

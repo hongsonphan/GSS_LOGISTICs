@@ -379,6 +379,16 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
         return self.expenses
 
     @property
+    def pod_document(self):
+        """Chứng từ POD / Phiếu giao nhận của chuyến xe."""
+        if hasattr(self, 'documents'):
+            return self.documents.filter(
+                document_type__in=['POD_RETURN', 'EIR_RECEIPT', 'POD', 'E_POD', 'DELIVERY_NOTE'],
+                is_deleted=False
+            ).first()
+        return None
+
+    @property
     def hashid(self):
         """Mã hóa ID chuyến xe thành chuỗi HashID bảo mật chống IDOR (Tiêu chuẩn 10)."""
         from core.security import get_trip_hashid
