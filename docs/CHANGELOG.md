@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.2.2] - 2026-10-15 (Khắc Phục Lỗi Định Dạng Ngày Tháng Trong Form Hợp Đồng & Kiểm Thử Toàn Diện Luồng Nút Bấm Tạo, Xem, Lưu, Sửa)
+
+### 1. Khắc Phục Triệt Để Lỗi Định Dạng Ngày Tháng (Date Formatting):
+- **Phân tích nguyên nhân:** Thiết lập `REST_FRAMEWORK['DATE_FORMAT'] = '%d/%m/%Y'` trả về dữ liệu định dạng ngày kiểu Việt Nam (`DD/MM/YYYY`), trong khi chuẩn HTML5 `<input type="date">` yêu cầu giá trị `YYYY-MM-DD`. Đồng thời `DATE_INPUT_FORMATS` của DRF mặc định chỉ chấp nhận `iso-8601`, dẫn đến việc submit form hợp đồng bị báo lỗi: `sign_date: Ngày sai định dạng; start_date: Ngày sai định dạng`.
+- **Giải pháp Backend:**
+  * Bổ sung `DATE_INPUT_FORMATS` và `DATETIME_INPUT_FORMATS` vào `config/settings.py` chấp nhận linh hoạt các chuẩn: `['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y', 'iso-8601']`.
+  * Chuẩn hóa kiểm tra duy nhất `Employee.all_objects` và `LaborContract.all_objects` trong serializer để tránh xung đột với các bản ghi xóa mềm (`SoftDeleteModel`).
+  * Bổ sung phương thức tính thuế TNCN `PayrollCalculateAPIView._calculate_pit` dùng chung cho cả động cơ tính lương kỳ và API cập nhật phiếu lương.
+- **Giải pháp Frontend:**
+  * Xây dựng hàm chuẩn hóa `normalizeDateToISO(dateStr)` tại `static/js/app.js`.
+  * Áp dụng khi nạp dữ liệu vào các thẻ `<input type="date">` và trước khi gửi payload lên API đối với: Form Hợp đồng (`cd-sign-date`, `cd-start-date`, `cd-end-date`), Form Phụ lục (`inline-app-date`), Form Nhân sự (`emp-dob`, `emp-national-id-date`, `emp-join-date`, `emp-license-expiry`), và Modal Kỳ lương (`new-period-from`, `new-period-to`).
+
+### 2. Kiểm Thử Toàn Diện Chuỗi Thao Tác 5 Bước (Tạo, Xem, Sửa, Lưu, Xóa):
+- Viết kịch bản kiểm thử tự động `scripts/test_hrm_buttons_flow.py` mô phỏng 100% hành vi người dùng trên giao diện:
+  * **Tạo (Create):** Khai báo nhân sự mới ➔ Tạo hợp đồng lao động mới ➔ Ký phụ lục ➔ Khởi tạo kỳ lương tháng.
+  * **Xem (View):** Truy xuất chi tiết nhân sự ➔ Mở chi tiết hợp đồng toàn màn hình ➔ Mở chi tiết phiếu lương.
+  * **Sửa (Edit):** Kích hoạt chế độ sửa `[Sửa]` (mở khóa các trường input readonly, bật nút Lưu).
+  * **Lưu (Save):** Cập nhật dữ liệu và gửi payload ➔ Lưu thành công HTTP 200/201, toast phản hồi tức thì.
+  * **Xóa / Chấm dứt (Delete/Terminate):** Chấm dứt hợp đồng lao động ➔ Xóa mềm hồ sơ nhân sự.
+- Toàn bộ kịch bản kiểm thử đạt tỷ lệ 100% Passed. Toàn bộ 95/95 test case hồi quy của hệ thống (`python manage.py test --keepdb`) đều vượt qua.
+
 ## [v3.2.1] - 2026-10-15 (Chuẩn Hóa Cột Thao Tác [Xem - In] & Chuyển Đổi 100% Sang Dedicated Full-Page View Không Dùng Modal)
 
 ### 1. Chuẩn Hóa Cột Thao Tác Của Toàn Bộ Bảng Danh Sách:
