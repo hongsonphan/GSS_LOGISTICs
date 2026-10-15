@@ -5685,10 +5685,12 @@ function switchHRSubTab(tabKey) {
 
     const createEmpBtn = document.getElementById('btn-create-employee');
     const createContractBtn = document.getElementById('btn-create-contract');
+    const autoAttendanceBtn = document.getElementById('btn-auto-attendance');
     const createPeriodBtn = document.getElementById('btn-create-period');
 
     if (createEmpBtn) createEmpBtn.classList.toggle('hidden', tabKey !== 'directory');
     if (createContractBtn) createContractBtn.classList.toggle('hidden', tabKey !== 'contracts');
+    if (autoAttendanceBtn) autoAttendanceBtn.classList.toggle('hidden', tabKey !== 'attendance');
     if (createPeriodBtn) createPeriodBtn.classList.toggle('hidden', tabKey !== 'payroll');
 
     if (tabKey === 'directory') loadEmployeesData();
@@ -5936,10 +5938,35 @@ function renderContractsTable(items) {
                         ${escapeHtml(c.status_label || c.status)}
                     </span>
                 </td>
-                <td class="py-2.5 px-3.5 text-center text-xs">
-                    <button type="button" onclick="openEmployee360Modal(${c.employee})" class="px-2 py-0.5 border border-indigo-600 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded font-bold cursor-pointer">
-                        Chi tiết
-                    </button>
+                <td class="py-2.5 px-3.5 text-center text-xs whitespace-nowrap">
+                    <div class="inline-flex items-center gap-1.5 justify-center">
+                        <button type="button" onclick="openEmployee360Modal(${c.employee})" 
+                            class="px-2 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Xem chi tiết hồ sơ nhân sự 360°">
+                            <i class="ph-bold ph-identification-card"></i>
+                            <span>Chi Tiết</span>
+                        </button>
+                        <button type="button" onclick="openEditContractModal(${c.id})" 
+                            class="px-2 py-1 bg-transparent hover:bg-amber-600 text-amber-700 hover:text-white border border-amber-600 rounded text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Sửa hợp đồng lao động">
+                            <i class="ph-bold ph-pencil-simple"></i>
+                            <span>Sửa</span>
+                        </button>
+                        <button type="button" onclick="openAddAppendixModal(${c.id})" 
+                            class="px-2 py-1 bg-transparent hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-600 rounded text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Thêm phụ lục hợp đồng">
+                            <i class="ph-bold ph-file-plus"></i>
+                            <span>Phụ Lục</span>
+                        </button>
+                        ${c.status === 'ACTIVE' ? `
+                            <button type="button" onclick="terminateContract(${c.id})" 
+                                class="px-2 py-1 bg-transparent hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-600 rounded text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                                title="Chấm dứt hợp đồng lao động">
+                                <i class="ph-bold ph-x-circle"></i>
+                                <span>Chấm Dứt</span>
+                            </button>
+                        ` : ''}
+                    </div>
                 </td>
             </tr>
         `;
@@ -6309,12 +6336,21 @@ function renderPayrollSlipsTable(slips) {
                 <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold">
                     ${s.is_paid ? '<span class="text-emerald-700 font-bold">Đã chi</span>' : '<span class="text-amber-600 font-bold">Chờ chi</span>'}
                 </td>
-                <td class="py-2 px-3 text-center">
-                    <button type="button" onclick="openPrintPayslipModal(${s.id})" 
-                        class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
-                        title="Xem và in phiếu lương chi tiết">
-                        <i class="ph-bold ph-printer"></i> In
-                    </button>
+                <td class="py-2 px-3 text-center whitespace-nowrap">
+                    <div class="inline-flex items-center gap-1 justify-center">
+                        <button type="button" onclick="openPrintPayslipModal(${s.id})" 
+                            class="px-2 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                            title="Xem và in phiếu lương chi tiết">
+                            <i class="ph-bold ph-printer"></i>
+                            <span>In</span>
+                        </button>
+                        <button type="button" onclick="openEditPayrollSlipModal(${s.id})" 
+                            class="px-2 py-1 bg-transparent hover:bg-amber-600 text-amber-700 hover:text-white border border-amber-600 rounded text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                            title="Điều chỉnh phụ cấp, KPI, khấu trừ khác">
+                            <i class="ph-bold ph-pencil-simple"></i>
+                            <span>Sửa</span>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -6626,9 +6662,444 @@ async function submitCreatePeriod(event) {
     }
 }
 
-// Modal tạo hợp đồng
-function openCreateContractModal() {
-    showToast('info', 'Chức năng ký hợp đồng mới: Vui lòng xem thông tin chi tiết qua Hồ sơ 360° của nhân sự.', 'Thông Báo');
+// =========================================================================
+// MODALS CRUD: HỢP ĐỒNG LAO ĐỘNG, PHỤ LỤC, NGƯỜI PHỤ THUỘC & PHIẾU LƯƠNG
+// =========================================================================
+let cachedEmployeesList = [];
+
+async function populateContractEmployeeDropdown(selectedEmpId = null) {
+    try {
+        const empSelect = document.getElementById('contract-form-employee');
+        const depEmpSelect = document.getElementById('dependent-select-emp');
+        
+        if (!cachedEmployeesList || cachedEmployeesList.length === 0) {
+            const res = await fetchWithAuth('/api/personnel/employees/');
+            if (res.ok) {
+                const data = await res.json();
+                cachedEmployeesList = Array.isArray(data) ? data : (data.results || []);
+            }
+        }
+        
+        const optionsHtml = '<option value="">-- Chọn nhân sự --</option>' + (cachedEmployeesList || []).map(emp => {
+            return `<option value="${emp.id}">[${escapeHtml(emp.code)}] ${escapeHtml(emp.full_name)} (${escapeHtml(emp.role || emp.department || 'Nhân viên')})</option>`;
+        }).join('');
+
+        if (empSelect) {
+            empSelect.innerHTML = optionsHtml;
+            if (selectedEmpId) empSelect.value = selectedEmpId;
+        }
+        if (depEmpSelect) {
+            depEmpSelect.innerHTML = optionsHtml;
+            if (selectedEmpId) depEmpSelect.value = selectedEmpId;
+        }
+    } catch (e) {
+        console.error('Lỗi tải danh mục nhân viên:', e);
+    }
+}
+
+async function openCreateContractModal(employeeId = null) {
+    const modal = document.getElementById('modal-contract-form');
+    const form = document.getElementById('form-contract');
+    if (!modal) return;
+
+    if (form) form.reset();
+    const idEl = document.getElementById('contract-form-id');
+    if (idEl) idEl.value = '';
+    
+    // Auto generate mã hợp đồng mẫu HDLD-YYYY-XXX
+    const curYear = new Date().getFullYear();
+    const randomCode = Math.floor(100 + Math.random() * 900);
+    const numInput = document.getElementById('contract-form-number');
+    if (numInput) numInput.value = `HDLD-${curYear}-${randomCode}`;
+
+    const today = new Date().toISOString().split('T')[0];
+    const signInput = document.getElementById('contract-form-sign-date');
+    const startInput = document.getElementById('contract-form-start-date');
+    if (signInput) signInput.value = today;
+    if (startInput) startInput.value = today;
+
+    const baseSalInput = document.getElementById('contract-form-base-salary');
+    const insSalInput = document.getElementById('contract-form-insurance-salary');
+    if (baseSalInput && !baseSalInput.value) baseSalInput.value = 7000000;
+    if (insSalInput && !insSalInput.value) insSalInput.value = 5000000;
+
+    const titleEl = modal.querySelector('h4 span');
+    if (titleEl) titleEl.innerText = 'Ký Hợp Đồng Lao Động Mới';
+    const btnSave = document.getElementById('btn-save-contract');
+    if (btnSave) {
+        const spanEl = btnSave.querySelector('span');
+        if (spanEl) spanEl.innerText = 'Lưu Hợp Đồng';
+    }
+
+    await populateContractEmployeeDropdown(employeeId);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+async function openEditContractModal(contractId) {
+    const modal = document.getElementById('modal-contract-form');
+    if (!modal) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/personnel/contracts/${contractId}/`);
+        if (!res.ok) throw new Error('Không thể tải chi tiết hợp đồng');
+        const c = await res.json();
+
+        const idEl = document.getElementById('contract-form-id');
+        if (idEl) idEl.value = c.id;
+        const numEl = document.getElementById('contract-form-number');
+        if (numEl) numEl.value = c.contract_number || '';
+        const typeEl = document.getElementById('contract-form-type');
+        if (typeEl) typeEl.value = c.contract_type || 'DEFINITE_TERM';
+        const stEl = document.getElementById('contract-form-status');
+        if (stEl) stEl.value = c.status || 'ACTIVE';
+        const jobEl = document.getElementById('contract-form-job');
+        if (jobEl) jobEl.value = c.job_title || '';
+        const addrEl = document.getElementById('contract-form-address');
+        if (addrEl) addrEl.value = c.working_address || '';
+        const signEl = document.getElementById('contract-form-sign-date');
+        if (signEl) signEl.value = c.sign_date || '';
+        const startEl = document.getElementById('contract-form-start-date');
+        if (startEl) startEl.value = c.start_date || '';
+        const endEl = document.getElementById('contract-form-end-date');
+        if (endEl) endEl.value = c.end_date || '';
+        const baseEl = document.getElementById('contract-form-base-salary');
+        if (baseEl) baseEl.value = c.base_salary || 0;
+        const insEl = document.getElementById('contract-form-insurance-salary');
+        if (insEl) insEl.value = c.insurance_salary || 0;
+        const noteEl = document.getElementById('contract-form-notes');
+        if (noteEl) noteEl.value = c.allowance_notes || c.notes || '';
+
+        await populateContractEmployeeDropdown(c.employee);
+
+        const titleEl = modal.querySelector('h4 span');
+        if (titleEl) titleEl.innerText = `Cập Nhật Hợp Đồng: ${c.contract_number}`;
+        const btnSave = document.getElementById('btn-save-contract');
+        if (btnSave) {
+            const spanEl = btnSave.querySelector('span');
+            if (spanEl) spanEl.innerText = 'Cập Nhật HĐ';
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } catch (e) {
+        console.error('Lỗi nạp HĐLĐ:', e);
+        showToast('error', e.message || 'Không thể tải chi tiết hợp đồng.', 'Lỗi');
+    }
+}
+
+function closeContractModal() {
+    const modal = document.getElementById('modal-contract-form');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function submitContractForm(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const contractId = document.getElementById('contract-form-id').value;
+    const isEdit = !!contractId;
+
+    const payload = {
+        contract_number: document.getElementById('contract-form-number').value.trim(),
+        employee: parseInt(document.getElementById('contract-form-employee').value),
+        contract_type: document.getElementById('contract-form-type').value,
+        status: document.getElementById('contract-form-status').value,
+        job_title: document.getElementById('contract-form-job').value.trim(),
+        working_address: document.getElementById('contract-form-address').value.trim(),
+        sign_date: document.getElementById('contract-form-sign-date').value,
+        start_date: document.getElementById('contract-form-start-date').value,
+        end_date: document.getElementById('contract-form-end-date').value || null,
+        base_salary: parseFloat(document.getElementById('contract-form-base-salary').value) || 0,
+        insurance_salary: parseFloat(document.getElementById('contract-form-insurance-salary').value) || 0,
+        allowance_notes: document.getElementById('contract-form-notes').value.trim()
+    };
+
+    if (!payload.employee) {
+        showToast('warning', 'Vui lòng chọn nhân viên thụ hưởng.', 'Chú ý');
+        return;
+    }
+
+    try {
+        const url = isEdit ? `/api/personnel/contracts/${contractId}/` : '/api/personnel/contracts/';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetchWithAuth(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            const errDetail = data.errors ? Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join('; ') : data.message;
+            throw new Error(errDetail || 'Không thể lưu hợp đồng.');
+        }
+
+        showToast('success', data.message || 'Đã lưu hợp đồng lao động thành công!', 'Thành Công');
+        closeContractModal();
+        await loadContractsData();
+    } catch (e) {
+        console.error('Lỗi lưu hợp đồng:', e);
+        showToast('error', e.message || 'Lỗi khi lưu thông tin hợp đồng.', 'Lỗi Thao Tác');
+    }
+}
+
+async function terminateContract(contractId) {
+    let confirmed = false;
+    if (typeof showConfirmModal === 'function') {
+        confirmed = await showConfirmModal({
+            title: 'Chấm Dứt Hợp Đồng Lao Động',
+            message: 'Bạn có chắc chắn muốn chuyển trạng thái hợp đồng này sang TERMINATED (Đã chấm dứt)?',
+            confirmText: 'Chấm Dứt HĐ',
+            cancelText: 'Huỷ Bỏ',
+            type: 'danger',
+            icon: 'ph-bold ph-x-circle text-2xl'
+        });
+    } else {
+        confirmed = confirm('Bạn có chắc chắn muốn chấm dứt hợp đồng lao động này?');
+    }
+
+    if (!confirmed) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/personnel/contracts/${contractId}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'TERMINATED' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi chấm dứt hợp đồng');
+
+        showToast('success', 'Đã chấm dứt hiệu lực hợp đồng thành công.', 'Đã Cập Nhật');
+        await loadContractsData();
+    } catch (e) {
+        console.error('Lỗi kết thúc HĐ:', e);
+        showToast('error', e.message || 'Không thể chấm dứt hợp đồng.', 'Lỗi');
+    }
+}
+
+// --- MODAL 5: PHỤ LỤC HỢP ĐỒNG (APPENDIX CRUD) ---
+async function openAddAppendixModal(contractId) {
+    const modal = document.getElementById('modal-appendix-form');
+    const form = document.getElementById('form-appendix');
+    if (!modal) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/personnel/contracts/${contractId}/`);
+        if (!res.ok) throw new Error('Không thể nạp thông tin hợp đồng gốc');
+        const c = await res.json();
+
+        if (form) form.reset();
+        document.getElementById('appendix-contract-id').value = c.id;
+        document.getElementById('appendix-contract-number-display').value = `${c.contract_number} - ${c.employee_name || ''}`;
+        
+        const nextIdx = (c.appendices ? c.appendices.length + 1 : 1).toString().padStart(2, '0');
+        document.getElementById('appendix-number').value = `PL-${nextIdx}/${c.contract_number}`;
+        document.getElementById('appendix-effective-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('appendix-new-salary').value = c.base_salary || '';
+        document.getElementById('appendix-new-role').value = c.job_title || '';
+        document.getElementById('appendix-summary').value = '';
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } catch (e) {
+        console.error('Lỗi mở modal phụ lục:', e);
+        showToast('error', e.message || 'Không thể mở phụ lục hợp đồng', 'Lỗi');
+    }
+}
+
+function closeAppendixModal() {
+    const modal = document.getElementById('modal-appendix-form');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function submitAppendixForm(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const contractId = document.getElementById('appendix-contract-id').value;
+    const newSalVal = document.getElementById('appendix-new-salary').value;
+
+    const payload = {
+        contract: parseInt(contractId),
+        appendix_number: document.getElementById('appendix-number').value.trim(),
+        effective_date: document.getElementById('appendix-effective-date').value,
+        new_base_salary: newSalVal ? parseFloat(newSalVal) : null,
+        new_role: document.getElementById('appendix-new-role').value.trim(),
+        change_summary: document.getElementById('appendix-summary').value.trim()
+    };
+
+    try {
+        const res = await fetchWithAuth('/api/personnel/appendices/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            const errDetail = data.errors ? Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join('; ') : data.message;
+            throw new Error(errDetail || 'Không thể tạo phụ lục.');
+        }
+
+        showToast('success', data.message || 'Đã ký phụ lục hợp đồng thành công!', 'Thành Công');
+        closeAppendixModal();
+        await loadContractsData();
+    } catch (e) {
+        console.error('Lỗi lưu phụ lục:', e);
+        showToast('error', e.message || 'Lỗi khi lưu phụ lục hợp đồng.', 'Lỗi');
+    }
+}
+
+// --- MODAL 6: KÊ KHAI NGƯỜI PHỤ THUỘC (DEPENDENTS CRUD) ---
+async function openCreateDependentModal(employeeId = null) {
+    const modal = document.getElementById('modal-dependent-form');
+    const form = document.getElementById('form-dependent');
+    if (!modal) return;
+
+    if (form) form.reset();
+    document.getElementById('dependent-emp-id').value = employeeId || '';
+    
+    // Mặc định ngày bắt đầu giảm trừ là ngày 01 của tháng hiện tại
+    const now = new Date();
+    const curMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    document.getElementById('dep-start-date').value = curMonthStr;
+
+    await populateContractEmployeeDropdown(employeeId);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeDependentModal() {
+    const modal = document.getElementById('modal-dependent-form');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function submitDependentForm(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const empSelect = document.getElementById('dependent-select-emp');
+    const empId = empSelect && empSelect.value ? empSelect.value : document.getElementById('dependent-emp-id').value;
+    
+    if (!empId) {
+        showToast('warning', 'Vui lòng chọn nhân viên thụ hưởng người phụ thuộc.', 'Chú ý');
+        return;
+    }
+
+    const payload = {
+        employee: parseInt(empId),
+        full_name: document.getElementById('dep-name').value.trim(),
+        relationship: document.getElementById('dep-relationship').value,
+        national_id: document.getElementById('dep-id-num').value.trim(),
+        date_of_birth: document.getElementById('dep-dob').value || null,
+        start_date: document.getElementById('dep-start-date').value,
+        end_date: document.getElementById('dep-end-date').value || null
+    };
+
+    try {
+        const res = await fetchWithAuth('/api/personnel/dependents/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            const errDetail = data.errors ? Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join('; ') : data.message;
+            throw new Error(errDetail || 'Không thể lưu người phụ thuộc.');
+        }
+
+        showToast('success', data.message || 'Đã thêm người phụ thuộc (giảm trừ 6.2tr/tháng) thành công!', 'Thành Công');
+        closeDependentModal();
+
+        // Nếu modal 360 đang mở, tự động reload lại tab người phụ thuộc
+        const modal360 = document.getElementById('modal-employee-360');
+        if (modal360 && !modal360.classList.contains('hidden') && typeof openEmployee360Modal === 'function') {
+            await openEmployee360Modal(empId);
+        }
+    } catch (e) {
+        console.error('Lỗi kê khai người phụ thuộc:', e);
+        showToast('error', e.message || 'Lỗi khi lưu người phụ thuộc.', 'Lỗi');
+    }
+}
+
+// --- MODAL 7: ĐIỀU CHỈNH PHIẾU LƯƠNG TRONG KỲ (PAYROLL SLIP CRUD) ---
+async function openEditPayrollSlipModal(slipId) {
+    const modal = document.getElementById('modal-edit-payroll-slip');
+    if (!modal) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/personnel/slips/${slipId}/`);
+        if (!res.ok) throw new Error('Không thể tải dữ liệu phiếu lương');
+        const s = await res.json();
+
+        document.getElementById('slip-edit-id').value = s.id;
+        document.getElementById('slip-edit-emp-name').value = `${s.employee_name || ''} (${s.employee_code || ''}) — Phiếu: ${s.slip_code || ''}`;
+        document.getElementById('slip-edit-kpi-bonus').value = Math.round(s.kpi_bonus || 0);
+        document.getElementById('slip-edit-other-allowance').value = Math.round(s.other_allowance || 0);
+        document.getElementById('slip-edit-phone-allowance').value = Math.round(s.phone_allowance || 0);
+        document.getElementById('slip-edit-lunch-allowance').value = Math.round(s.lunch_allowance || 0);
+        document.getElementById('slip-edit-advance-deductions').value = Math.round(s.advance_deductions || 0);
+        document.getElementById('slip-edit-other-deductions').value = Math.round(s.other_deductions || 0);
+        document.getElementById('slip-edit-notes').value = s.notes || '';
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } catch (e) {
+        console.error('Lỗi nạp phiếu lương:', e);
+        showToast('error', e.message || 'Không thể tải thông tin phiếu lương.', 'Lỗi');
+    }
+}
+
+function closeEditPayrollSlipModal() {
+    const modal = document.getElementById('modal-edit-payroll-slip');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function submitEditPayrollSlip(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const slipId = document.getElementById('slip-edit-id').value;
+    if (!slipId) return;
+
+    const payload = {
+        kpi_bonus: parseFloat(document.getElementById('slip-edit-kpi-bonus').value) || 0,
+        other_allowance: parseFloat(document.getElementById('slip-edit-other-allowance').value) || 0,
+        phone_allowance: parseFloat(document.getElementById('slip-edit-phone-allowance').value) || 0,
+        lunch_allowance: parseFloat(document.getElementById('slip-edit-lunch-allowance').value) || 0,
+        advance_deductions: parseFloat(document.getElementById('slip-edit-advance-deductions').value) || 0,
+        other_deductions: parseFloat(document.getElementById('slip-edit-other-deductions').value) || 0,
+        notes: document.getElementById('slip-edit-notes').value.trim()
+    };
+
+    try {
+        const res = await fetchWithAuth(`/api/personnel/slips/${slipId}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi cập nhật phiếu lương');
+
+        showToast('success', data.message || 'Đã cập nhật phiếu lương thành công!', 'Thành Công');
+        closeEditPayrollSlipModal();
+
+        // Tự động reload lại bảng phiếu lương của kỳ hiện hành
+        const select = document.getElementById('payroll-period-select');
+        if (select && select.value) {
+            await loadPayrollPeriodDetail(select.value);
+        }
+    } catch (e) {
+        console.error('Lỗi lưu điều chỉnh phiếu lương:', e);
+        showToast('error', e.message || 'Không thể cập nhật phiếu lương.', 'Lỗi Thao Tác');
+    }
 }
 
 // --- SUB-PANEL 4: CHÍNH SÁCH LƯƠNG, BẢO HIỂM, BIỂU THUẾ & PHỤ CẤP ---
@@ -25665,3 +26136,17 @@ window.closeCreatePeriodModal = typeof closeCreatePeriodModal !== 'undefined' ? 
 window.submitCreatePeriod = typeof submitCreatePeriod !== 'undefined' ? submitCreatePeriod : undefined;
 window.savePayrollPolicyConfig = typeof savePayrollPolicyConfig !== 'undefined' ? savePayrollPolicyConfig : undefined;
 window.saveSalaryDeductionRate = typeof saveSalaryDeductionRate !== 'undefined' ? saveSalaryDeductionRate : undefined;
+window.openCreateContractModal = typeof openCreateContractModal !== 'undefined' ? openCreateContractModal : undefined;
+window.openEditContractModal = typeof openEditContractModal !== 'undefined' ? openEditContractModal : undefined;
+window.closeContractModal = typeof closeContractModal !== 'undefined' ? closeContractModal : undefined;
+window.submitContractForm = typeof submitContractForm !== 'undefined' ? submitContractForm : undefined;
+window.terminateContract = typeof terminateContract !== 'undefined' ? terminateContract : undefined;
+window.openAddAppendixModal = typeof openAddAppendixModal !== 'undefined' ? openAddAppendixModal : undefined;
+window.closeAppendixModal = typeof closeAppendixModal !== 'undefined' ? closeAppendixModal : undefined;
+window.submitAppendixForm = typeof submitAppendixForm !== 'undefined' ? submitAppendixForm : undefined;
+window.openCreateDependentModal = typeof openCreateDependentModal !== 'undefined' ? openCreateDependentModal : undefined;
+window.closeDependentModal = typeof closeDependentModal !== 'undefined' ? closeDependentModal : undefined;
+window.submitDependentForm = typeof submitDependentForm !== 'undefined' ? submitDependentForm : undefined;
+window.openEditPayrollSlipModal = typeof openEditPayrollSlipModal !== 'undefined' ? openEditPayrollSlipModal : undefined;
+window.closeEditPayrollSlipModal = typeof closeEditPayrollSlipModal !== 'undefined' ? closeEditPayrollSlipModal : undefined;
+window.submitEditPayrollSlip = typeof submitEditPayrollSlip !== 'undefined' ? submitEditPayrollSlip : undefined;

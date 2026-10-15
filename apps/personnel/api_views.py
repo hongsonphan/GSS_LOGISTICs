@@ -788,6 +788,16 @@ class PayrollPeriodDetailAPIView(APIView):
             'slips_count': slips.count()
         })
 
+    def put(self, request, pk):
+        period = get_object_or_404(PayrollPeriod, pk=pk)
+        if period.status in [PayrollPeriodStatus.LOCKED, PayrollPeriodStatus.PAID]:
+            return Response({'success': False, 'message': 'Không thể sửa kỳ lương đã khóa sổ hoặc chi trả.'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = PayrollPeriodSerializer(period, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated = serializer.save()
+            return Response({'success': True, 'message': f"Đã cập nhật thông tin kỳ lương '{updated.name}'.", 'period': PayrollPeriodSerializer(updated).data})
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk):
         period = get_object_or_404(PayrollPeriod, pk=pk)
         if period.status == PayrollPeriodStatus.PAID and period.cash_transaction:
@@ -1238,3 +1248,94 @@ class PayrollSlipPrintAPIView(APIView):
                 'standard_days': float(period.standard_days),
             }
         })
+
+
+class PayrollSlipDetailAPIView(APIView):
+    """
+    API CHI TIẾT & ĐIỀU CHỈNH PHIẾU LƯƠNG:
+    Cho phép điều chỉnh các khoản phụ cấp, KPI, khấu trừ khác và tự động tính lại Net.
+    """
+    permission_classes = [EmployeePermission]
+
+    def get_object(self, pk):
+        return get_object_or_404(PayrollSlip.objects.select_related('period', 'employee'), pk=pk)
+
+    def get(self, request, pk):
+        slip = self.get_object(pk)
+        return Response(PayrollSlipSerializer(slip).data)
+
+    def put(self, request, pk):
+        slip = self.get_object(pk)
+        if slip.period.status in [PayrollPeriodStatus.LOCKED, PayrollPeriodStatus.PAID]:
+            return Response({
+                'success': False,
+                'message': 'Không thể sửa phiếu lương trong kỳ đã khóa sổ hoặc chi trả.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Cập nhật các trường cho phép chỉnh sửa
+        data = request.data
+        if 'phone_allowance' in data:
+            slip.phone_allowance = Decimal(str(data['phone_allowance'] or 0))
+        if 'lunch_allowance' in data:
+            slip.lunch_allowance = Decimal(str(data['lunch_allowance'] or 0))
+        if 'other_allowance' in data:
+            slip.other_allowance = Decimal(str(data['other_allowance'] or 0))
+        if 'kpi_bonus' in data:
+            slip.kpi_bonus = Decimal(str(data['kpi_bonus'] or 0))
+        if 'advance_deductions' in data:
+            slip.advance_deductions = Decimal(str(data['advance_deductions'] or 0))
+        if 'other_deductions' in data:
+            slip.other_deductions = Decimal(str(data['other_deductions'] or 0))
+        if 'notes' in data:
+            slip.notes = str(data['notes'])
+
+        # Tính toán lại Gross
+        slip.gross_income = (
+            slip.time_salary +
+            slip.trip_allowance +
+            slip.dropoff_allowance +
+            slip.detention_allowance +
+            slip.fuel_bonus +
+            slip.phone_allowance +
+            slip.lunch_allowance +
+            slip.other_allowance +
+            slip.kpi_bonus
+        )
+
+        # Tính lại thu nhập chịu thuế & Thuế TNCN
+        non_taxable_allowances = slip.phone_allowance + slip.lunch_allowance
+        income_before_relief = max(Decimal('0'), slip.gross_income - non_taxable_allowances - slip.total_insurance_employee)
+        total_relief = slip.personal_relief_amount + slip.dependent_relief_amount
+        slip.taxable_income = max(Decimal('0'), income_before_relief - total_relief)
+
+        # Áp biểu thuế
+        tax_brackets = list(TaxBracket.objects.filter(is_active=True).order_by('bracket_level'))
+        calc_view = PayrollCalculateAPIView()
+        slip.pit_amount = calc_view._calculate_pit(slip.taxable_income, tax_brackets)
+
+        # Tính lại Net
+        slip.net_salary = max(Decimal('0'), slip.gross_income - slip.total_insurance_employee - slip.pit_amount - slip.advance_deductions - slip.other_deductions)
+        slip.save()
+
+        # Cập nhật tổng của kỳ
+        period = slip.period
+        period_slips = period.slips.filter(is_deleted=False)
+        period.total_gross = sum(s.gross_income for s in period_slips)
+        period.total_net = sum(s.net_salary for s in period_slips)
+        period.total_pit = sum(s.pit_amount for s in period_slips)
+        period.total_advances_deducted = sum(s.advance_deductions for s in period_slips)
+        period.save()
+
+        return Response({
+            'success': True,
+            'message': f"Đã lưu điều chỉnh phiếu lương của '{slip.employee.full_name}'.",
+            'slip': PayrollSlipSerializer(slip).data
+        })
+
+    def delete(self, request, pk):
+        slip = self.get_object(pk)
+        if slip.period.status in [PayrollPeriodStatus.LOCKED, PayrollPeriodStatus.PAID]:
+            return Response({'success': False, 'message': 'Không thể xóa phiếu lương trong kỳ đã khóa sổ.'}, status=status.HTTP_400_BAD_REQUEST)
+        slip.is_deleted = True
+        slip.save()
+        return Response({'success': True, 'message': 'Đã xóa mềm phiếu lương.'})

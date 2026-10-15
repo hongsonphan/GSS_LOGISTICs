@@ -27,6 +27,7 @@ from apps.personnel.api_views import (
     PayrollPeriodStatusAPIView,
     PayrollExportBankAPIView,
     PayrollSlipPrintAPIView,
+    PayrollSlipDetailAPIView,
 )
 
 urlpatterns = [
@@ -67,5 +68,6 @@ urlpatterns = [
     path('periods/<int:pk>/calculate/', PayrollCalculateAPIView.as_view(), name='api-payroll-calculate'),
     path('periods/<int:pk>/status/', PayrollPeriodStatusAPIView.as_view(), name='api-payroll-status'),
     path('periods/<int:pk>/bank-export/', PayrollExportBankAPIView.as_view(), name='api-payroll-bank-export'),
+    path('slips/<int:pk>/', PayrollSlipDetailAPIView.as_view(), name='api-payroll-slip-detail'),
     path('slips/<int:pk>/print/', PayrollSlipPrintAPIView.as_view(), name='api-payroll-slip-print'),
 ]

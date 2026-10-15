@@ -21,13 +21,24 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * Cấu phần 4: Khấu trừ BHXH (10.5%), Thuế TNCN (biểu lũy tiến 5 bậc Luật 109/2025/QH15) và Khấu trừ tạm ứng chuyến xe (`DriverTripAdvance`).
   * Cấu phần 5: Thực lĩnh Net = Gross - Khấu trừ bảo hiểm - Thuế TNCN - Hoàn ứng chuyến.
 
-### 2. Nâng Cấp Giao Diện Web & Trải Nghiệm Người Dùng:
+### 2. Bổ Sung Trọn Bộ Form CRUD & Nút Bấm Chuẩn Hóa Toàn Phân Hệ:
+- **Modal Ký & Cập Nhật Hợp Đồng Lao Động (`modal-contract-form`):** Hỗ trợ thêm mới hoặc chỉnh sửa HĐLĐ đầy đủ các trường nghiệp vụ (Số HĐ, Nhân sự thụ hưởng, Loại HĐ, Trạng thái, Chức danh, Địa điểm làm việc, Ngày ký, Ngày bắt đầu/kết thúc, Lương căn bản, Lương đóng BHXH, Điều khoản phụ cấp).
+- **Modal Ký Phụ Lục Hợp Đồng (`modal-appendix-form`):** Ký phụ lục điều chỉnh lương, chức vụ hoặc điều khoản bổ sung gắn với hợp đồng gốc.
+- **Modal Kê Khai Người Phụ Thuộc (`modal-dependent-form`):** Kê khai NPT giảm trừ gia cảnh 6.2 triệu đồng/tháng theo Nghị quyết 110/2025/UBTVQH15.
+- **Modal Điều Chỉnh Phiếu Lương (`modal-edit-payroll-slip`):** Hỗ trợ kế toán điều chỉnh thưởng KPI, phụ cấp khác, ăn trưa, điện thoại, khấu trừ tạm ứng chuyến, khấu trừ phạt... Hệ thống tự động tính lại Gross, Thu nhập tính thuế, Thuế TNCN lũy tiến 5 bậc, Thực lĩnh Net và cập nhật tổng kỳ lương.
+- **Chuẩn hóa cụm nút thao tác (Action Buttons) toàn app:**
+  * Thao tác bảng Hợp đồng: Chi Tiết (`ph-identification-card` - teal), Sửa (`ph-pencil-simple` - amber), Phụ Lục (`ph-file-plus` - indigo), Chấm Dứt (`ph-x-circle` - rose).
+  * Thao tác bảng Phiếu lương: In (`ph-printer` - slate), Sửa (`ph-pencil-simple` - amber).
+  * Nút Primary / Submit: `bg-transparent border border-<color>-600 text-<color>-700 hover:bg-<color>-600 hover:text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer`.
+  * Nút Hủy / Đóng: `bg-transparent border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-bold transition-all cursor-pointer`.
+
+### 3. Nâng Cấp Giao Diện Web & Trải Nghiệm Người Dùng:
 - Thanh điều hướng Tab 5 bước: `1. Hồ Sơ Nhân Sự` ➔ `2. Hợp Đồng Lao Động` ➔ `3. Bảng Chấm Công` ➔ `4. Tính Lương (Hybrid Payroll)` ➔ `5. Chính Sách & Biểu Thuế`.
 - Bảng chấm công tương tác thời gian thực: input ngày công, tự động cập nhật tổng công tức thì.
 - Bảng lương chi tiết chuẩn hóa 19 cột phân nhóm rõ ràng (Lương Ngày Công vs. Lương Sản Phẩm Chuyến Xe Tài Xế).
 - Phiếu lương cá nhân A4 dạng văn bản phẳng (flat paper document), in ấn trực tiếp hoặc xuất bảng kê chuyển khoản ngân hàng lô (CSV UTF-8 BOM).
 
-### 3. Kết Quả Kiểm Thử Chất Lượng (Zero-Regression):
+### 4. Kết Quả Kiểm Thử Chất Lượng (Zero-Regression):
 - 100% cú pháp JS chuẩn mực (`node -c static/js/app.js`, `node -c static/js/column_manager.js`).
 - 95/95 test cases Django automated unit tests PASSED.
 - 40/40 test cases E2E user operations audit PASSED.
