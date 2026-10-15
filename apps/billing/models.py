@@ -417,6 +417,7 @@ class CashFlowCategory(models.TextChoices):
     FUEL_PAYMENT = 'FUEL_PAYMENT', 'Chi mua xăng dầu'
     ETC_TOPUP = 'ETC_TOPUP', 'Chi nạp tiền tài khoản BOT/ETC'
     VEHICLE_MAINTENANCE = 'VEHICLE_MAINTENANCE', 'Chi sửa chữa bảo dưỡng xe'
+    PAYROLL_SALARY = 'PAYROLL_SALARY', 'Chi trả lương nhân viên & tài xế'
     OTHER_OUTFLOW = 'OTHER_OUTFLOW', 'Chi phí khác'
 
 class CashTransaction(TimeStampedModel, SoftDeleteModel):

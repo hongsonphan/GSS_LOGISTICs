@@ -22,7 +22,21 @@
 | `POST` | `/api/trips/{trip_code}/unsettle/` | `TripUnsettleExpensesAPIView` | Kế toán mở khóa sổ |
 | `POST` | `/api/trips/{trip_code}/documents/` | `TripAddDocumentAPIView` | Tải lên chứng từ (EIR, POD) |
 | `POST` | `/api/trips/{trip_code}/transition/` | `TripWorkflowTransitionAPIView` | Chuyển trạng thái chuyến xe |
-| `GET` | `/api/personnel/` | `PersonnelPayrollAPIView` | Bảng lương tài xế tạm tính |
+| `GET/POST` | `/api/personnel/employees/` | `EmployeeListCreateAPIView` | Danh sách & Khai báo nhân sự 360° |
+| `GET/PUT/DEL`| `/api/personnel/employees/{id}/` | `EmployeeDetailAPIView` | Chi tiết, cập nhật & tạm ngưng nhân sự |
+| `GET` | `/api/personnel/stats/` | `EmployeeStatsAPIView` | Thống kê cơ cấu nhân sự & cảnh báo hạn |
+| `GET/POST` | `/api/personnel/dependents/` | `EmployeeDependentListCreateAPIView` | Danh sách & thêm người phụ thuộc |
+| `GET/POST` | `/api/personnel/contracts/` | `LaborContractListCreateAPIView` | Hợp đồng lao động & cảnh báo hạn |
+| `POST` | `/api/personnel/appendices/` | `ContractAppendixListCreateAPIView` | Thêm phụ lục hợp đồng lao động |
+| `GET/PUT` | `/api/personnel/policy-config/` | `PayrollPolicyConfigAPIView` | Tham số giảm trừ gia cảnh & ngày công |
+| `GET` | `/api/personnel/tax-brackets/` | `TaxBracketListAPIView` | Biểu thuế TNCN 7 bậc lũy tiến |
+| `GET/PUT` | `/api/personnel/deduction-rates/`| `SalaryDeductionRateAPIView` | Tỷ lệ trích nộp BHXH bắt buộc |
+| `GET/POST` | `/api/personnel/periods/` | `PayrollPeriodListCreateAPIView` | Danh mục kỳ lương & Tạo kỳ lương mới |
+| `GET` | `/api/personnel/periods/{id}/` | `PayrollPeriodDetailAPIView` | Chi tiết kỳ lương & bảng lương slips |
+| `POST` | `/api/personnel/periods/{id}/calculate/` | `PayrollCalculateAPIView` | Động cơ tính toán lương Hybrid Payroll |
+| `POST` | `/api/personnel/periods/{id}/status/` | `PayrollPeriodStatusAPIView` | Chuyển trạng thái & Chi tiền Sổ Quỹ |
+| `GET` | `/api/personnel/periods/{id}/bank-export/` | `PayrollExportBankAPIView` | Xuất dữ liệu chuyển khoản ngân hàng lô |
+| `GET` | `/api/personnel/slips/{id}/print/` | `PayrollSlipPrintAPIView` | Dữ liệu in phiếu lương cá nhân A4/A5 |
 | `GET` | `/api/fleet/` | `FleetAPIView` | Danh sách đội xe |
 | `GET` | `/api/bookings/active/` | `BookingActiveAPIView` | Booking chờ điều xe |
 | `GET/POST` | `/api/sales/` | `SalesAPIView` | Báo giá + Doanh thu |

@@ -1,4 +1,4 @@
-<!-- 3. PHÂN HỆ HÀNH CHÍNH & NHÂN SỰ (PERSONNEL & HR MANAGEMENT) -->
+<!-- 3. PHÂN HỆ QUẢN LÝ NHÂN SỰ & TIỀN LƯƠNG TOÀN DIỆN (HRM & HYBRID PAYROLL) -->
 <div id="view-nhan-su" class="view hidden-view p-4 md:p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
     <!-- Top KPI Cards for Personnel -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 shrink-0">
@@ -19,56 +19,71 @@
         <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs flex items-center">
             <div class="p-3 bg-blue-50 rounded-xl text-blue-700 mr-3.5"><i class="ph-bold ph-headset text-2xl"></i></div>
             <div>
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Điều độ & Kế toán</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Văn phòng & Điều độ</p>
                 <p class="text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-0.5" id="hr-kpi-office">0</p>
             </div>
         </div>
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-2xs flex items-center">
-            <div class="p-3 bg-amber-50 rounded-xl text-amber-700 mr-3.5"><i class="ph-bold ph-user-minus text-2xl"></i></div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-2xs flex items-center cursor-pointer hover:bg-amber-50/40 transition-colors" onclick="filterExpiringItems()">
+            <div class="p-3 bg-amber-50 rounded-xl text-amber-700 mr-3.5"><i class="ph-bold ph-bell-ringing text-2xl"></i></div>
             <div>
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Tạm ngưng / Nghỉ phép</p>
-                <p class="text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-0.5" id="hr-kpi-inactive">0</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Cảnh báo hạn (30 ngày)</p>
+                <p class="text-2xl font-black text-amber-600 tabular-nums font-heading tracking-tight mt-0.5" id="hr-kpi-warning">0</p>
             </div>
         </div>
     </div>
 
-    <!-- Main Card with Sub-tabs -->
+    <!-- Main Container with 4 Sub-Tabs -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col flex-1">
-        <!-- Sub-Navigation 2 Tabs & Action Button -->
+        <!-- Sub-Navigation 4 Tabs & Action Buttons -->
         <div class="border-b border-slate-200 px-4 pt-2 flex items-center justify-between flex-wrap gap-2 bg-slate-50/80 shrink-0">
-            <div class="flex items-center space-x-1" id="hr-sub-tabs">
-                <button onclick="switchHRSubTab('directory')" id="hr-tab-directory-btn" class="hr-tab-btn active px-4 py-2.5 text-xs md:text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-2 transition-all cursor-pointer">
+            <div class="flex items-center space-x-1 overflow-x-auto" id="hr-sub-tabs">
+                <button onclick="switchHRSubTab('directory')" id="hr-tab-directory-btn" class="hr-tab-btn active px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
                     <i class="ph-bold ph-address-book text-base text-teal-600"></i>
                     <span>Hồ Sơ Cán Bộ & Tài Xế</span>
                 </button>
-                <button onclick="switchHRSubTab('payroll')" id="hr-tab-payroll-btn" class="hr-tab-btn px-4 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2 transition-all cursor-pointer">
+                <button onclick="switchHRSubTab('contracts')" id="hr-tab-contracts-btn" class="hr-tab-btn px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
+                    <i class="ph-bold ph-file-text text-base text-indigo-600"></i>
+                    <span>Hợp Đồng Lao Động</span>
+                </button>
+                <button onclick="switchHRSubTab('payroll')" id="hr-tab-payroll-btn" class="hr-tab-btn px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
                     <i class="ph-bold ph-money text-base text-emerald-600"></i>
-                    <span>Bảng Tính Lương & Tạm Ứng Chuyến</span>
+                    <span>Kỳ Lương & Hybrid Payroll</span>
+                </button>
+                <button onclick="switchHRSubTab('policies')" id="hr-tab-policies-btn" class="hr-tab-btn px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
+                    <i class="ph-bold ph-sliders text-base text-amber-600"></i>
+                    <span>Chính Sách & Biểu Thuế</span>
                 </button>
             </div>
 
-            <div class="pb-2">
-                <button onclick="openCreateEmployeeModal()" id="btn-create-employee" class="px-3.5 py-1.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
+            <!-- Top Right Action Area -->
+            <div class="pb-2 flex items-center gap-2" id="hr-top-actions">
+                <button onclick="openCreateEmployeePage()" id="btn-create-employee" class="px-3.5 py-1.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
                     <i class="ph-bold ph-plus-circle text-base"></i>
-                    <span>Tạo mới</span>
+                    <span>Thêm Nhân Sự</span>
+                </button>
+                <button onclick="openCreateContractModal()" id="btn-create-contract" class="hidden px-3.5 py-1.5 bg-transparent border border-indigo-600 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
+                    <i class="ph-bold ph-plus-circle text-base"></i>
+                    <span>Tạo Hợp Đồng</span>
+                </button>
+                <button onclick="openCreatePeriodModal()" id="btn-create-period" class="hidden px-3.5 py-1.5 bg-transparent border border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
+                    <i class="ph-bold ph-calendar-plus text-base"></i>
+                    <span>Tạo Kỳ Lương Mới</span>
                 </button>
             </div>
         </div>
 
         <!-- ========================================================================= -->
-        <!-- SUB-PANEL 1: HỒ SƠ NHÂN SỰ & TÀI XẾ (CRUD DIRECTORY) -->
+        <!-- SUB-PANEL 1: HỒ SƠ NHÂN SỰ & TÀI XẾ 360° (DIRECTORY) -->
         <!-- ========================================================================= -->
         <div id="hr-panel-directory" class="flex flex-col flex-1">
             <!-- Filter & Search Toolbar -->
             <div class="p-3 px-4 border-b border-slate-200/80 bg-white flex flex-col md:flex-row items-center justify-between gap-2.5 shrink-0">
-                <!-- Search Input -->
                 <div class="relative w-full md:w-80">
                     <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
-                    <input type="text" id="emp-search-input" onkeyup="filterEmployeesTable()" placeholder="Tìm theo tên, mã NV, SĐT, biệt danh..."
+                    <input type="text" id="emp-search-input" onkeyup="filterEmployeesTable()" placeholder="Tìm theo tên, mã NV, CCCD, SĐT..."
                            class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs md:text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
                 </div>
 
-                <!-- Filters: Department, Role, Status -->
                 <div class="flex items-center flex-wrap gap-2 w-full md:w-auto justify-end">
                     <div class="flex items-center space-x-1.5">
                         <label class="text-xs font-bold text-slate-500 uppercase">Phòng ban:</label>
@@ -104,178 +119,440 @@
                         <select id="emp-filter-status" onchange="filterEmployeesTable()"
                                 class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
                             <option value="ALL">Tất cả</option>
-                            <option value="ACTIVE">Đang làm việc</option>
-                            <option value="INACTIVE">Tạm ngưng</option>
+                            <option value="ACTIVE" selected>Đang làm việc</option>
+                            <option value="INACTIVE">Tạm ngưng / Nghỉ</option>
                         </select>
                     </div>
-
-                    <!-- Nút Tùy Chỉnh Cột Hồ Sơ Nhân Sự -->
-                    <button type="button" onclick="openColumnCustomizer('employees-table')" 
-                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
-                        <i class="ph-bold ph-columns text-teal-700"></i>
-                        <span>Cột</span>
-                    </button>
-
-                    <button onclick="loadEmployeesData()" title="Làm mới danh sách" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer">
-                        <i class="ph-bold ph-arrows-clockwise text-base"></i>
-                    </button>
                 </div>
             </div>
 
-            <!-- Employee Data Table -->
-            <div class="overflow-x-auto relative border-b border-slate-200 erp-table-container min-h-[380px] max-h-[calc(100vh-360px)] overflow-y-auto">
-                <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="employees-table" data-table-title="Hồ Sơ Cán Bộ & Tài Xế">
+            <!-- Table Container -->
+            <div class="overflow-x-auto flex-1 min-h-[350px]">
+                <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="employees-table">
                     <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
                         <tr>
-                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 w-12 select-none">STT</th>
-                            <th data-col-key="code" data-col-name="Mã NV" data-col-locked="true" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Mã NV</th>
-                            <th data-col-key="full_name" data-col-name="Họ Và Tên" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Họ Và Tên</th>
-                            <th data-col-key="nickname" data-col-name="Biệt Danh" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Biệt Danh</th>
-                            <th data-col-key="phone" data-col-name="Số Điện Thoại / Zalo" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Số Điện Thoại / Zalo</th>
-                            <th data-col-key="department" data-col-name="Phòng Ban" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Phòng Ban</th>
-                            <th data-col-key="role" data-col-name="Chức Vụ" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">Chức Vụ</th>
-                            <th data-col-key="license" data-col-name="GPLX / Hạn Bằng" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200">GPLX / Hạn Bằng</th>
-                            <th data-col-key="base_salary" data-col-name="Lương Cơ Bản" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right border-r border-slate-200">Lương Cơ Bản</th>
-                            <th data-col-key="status" data-col-name="Trạng Thái" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200">Trạng Thái</th>
-                            <th data-col-key="actions" data-col-name="Thao Tác" data-col-locked="true" class="py-2.5 px-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center">Thao Tác</th>
+                            <th class="py-2.5 px-3.5 text-center font-bold text-slate-700 border-r border-slate-200 w-12 select-none">STT</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Mã NV</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Họ Và Tên</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Số CCCD / MST</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Điện Thoại / Zalo</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Phòng Ban</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Chức Vụ</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">GPLX & Hạn Bằng</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Tài Khoản Ngân Hàng</th>
+                            <th class="py-2.5 px-3.5 text-right font-bold text-slate-700 border-r border-slate-200">Lương CB</th>
+                            <th class="py-2.5 px-3.5 text-center font-bold text-slate-700 border-r border-slate-200">Trạng Thái</th>
+                            <th class="py-2.5 px-3.5 text-center font-bold text-slate-700">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium" id="employees-tbody">
-                        <tr>
-                            <td colspan="10" class="p-8 text-center text-slate-400">
-                                <i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>
-                                Đang tải hồ sơ nhân sự...
-                            </td>
-                        </tr>
+                        <!-- Rendered by JS -->
                     </tbody>
                 </table>
             </div>
 
             <!-- Footer Counter -->
-            <div class="p-2.5 px-4 bg-slate-50/90 flex items-center justify-between text-xs font-semibold text-slate-600 select-none shrink-0">
+            <div class="p-2.5 px-4 bg-slate-50/90 border-t border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-600 select-none shrink-0">
                 <div class="flex items-center space-x-1">
                     <span>Tổng số:</span>
                     <span id="emp-count-display" class="font-black text-teal-800">0</span>
                     <span>nhân sự</span>
                 </div>
                 <div class="text-[11px] text-slate-400">
-                    Hệ thống quản lý dữ liệu nhân sự chuẩn BIM Logistics
+                    Phân hệ Quản trị Nhân sự & Tiền lương chuẩn BIM Logistics
                 </div>
             </div>
         </div>
 
         <!-- ========================================================================= -->
-        <!-- SUB-PANEL 2: BẢNG LƯƠNG & TẠM ỨNG CHUYẾN (PAYROLL & ADVANCES) -->
+        <!-- SUB-PANEL 2: HỢP ĐỒNG LAO ĐỘNG & PHỤ LỤC (CONTRACTS) -->
+        <!-- ========================================================================= -->
+        <div id="hr-panel-contracts" class="hidden flex flex-col flex-1">
+            <div class="p-3 px-4 border-b border-slate-200 bg-white flex items-center justify-between gap-2 shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700">Danh Sách Hợp Đồng Lao Động & Phụ Lục</span>
+                    <span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200" id="contracts-count-badge">0 HĐ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="contract-filter-status" onchange="loadContractsData()" class="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="ACTIVE" selected>Đang hiệu lực</option>
+                        <option value="EXPIRED">Đã hết hạn</option>
+                        <option value="TERMINATED">Đã chấm dứt</option>
+                    </select>
+                    <button onclick="openCreateContractModal()" class="px-3 py-1 bg-transparent border border-indigo-600 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1">
+                        <i class="ph-bold ph-plus"></i> Ký HĐ Mới
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto flex-1 min-h-[350px]">
+                <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="contracts-table">
+                    <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
+                        <tr>
+                            <th class="py-2.5 px-3.5 text-center font-bold text-slate-700 border-r border-slate-200 w-12">STT</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Số Hợp Đồng</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Nhân Viên</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Loại HĐ</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Vị Trí Công Việc</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Ngày Hiệu Lực</th>
+                            <th class="py-2.5 px-3.5 font-bold text-slate-700 border-r border-slate-200">Hạn Hợp Đồng</th>
+                            <th class="py-2.5 px-3.5 text-right font-bold text-slate-700 border-r border-slate-200">Lương HĐ</th>
+                            <th class="py-2.5 px-3.5 text-right font-bold text-slate-700 border-r border-slate-200">Lương BHXH</th>
+                            <th class="py-2.5 px-3.5 text-center font-bold text-slate-700 border-r border-slate-200">Phụ Lục</th>
+                            <th class="py-2.5 px-3.5 text-center font-bold text-slate-700 border-r border-slate-200">Trạng Thái</th>
+                            <th class="py-2.5 px-3.5 text-center font-bold text-slate-700">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium" id="contracts-tbody">
+                        <!-- Rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- SUB-PANEL 3: KỲ LƯƠNG & HYBRID PAYROLL ENGINE -->
         <!-- ========================================================================= -->
         <div id="hr-panel-payroll" class="hidden flex flex-col flex-1">
-            <!-- Header thông tin & Bộ lọc thông minh cho Nhân Sự & Bảng Lương -->
-            <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5 shrink-0">
-                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
-                    <div class="flex items-center space-x-2 text-slate-700 font-semibold">
-                        <i class="ph-bold ph-funnel text-teal-700 text-sm"></i>
-                        <span>Bảng Lương Chuyến Tạm Tính: <strong>Dữ liệu chuyến hoàn thành trong kỳ</strong></span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2.5 py-1 rounded-full border border-teal-200">
-                            Hiển thị: <strong id="hr-filtered-count">0</strong> / <span id="hr-total-count">0</span> tài xế
-                        </span>
-                        <button type="button" onclick="openColumnCustomizer('personnel-payroll-table')" 
-                            class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                            title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
-                            <i class="ph-bold ph-columns text-teal-700"></i>
-                            <span>Cột</span>
-                        </button>
-                        <button type="button" onclick="resetHRFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1 cursor-pointer">
-                            <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
-                        </button>
-                    </div>
+            <!-- Toolbar Chọn Kỳ Lương & Hành Động -->
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-3 shrink-0">
+                <!-- Chọn Kỳ Lương & Status Badge -->
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <label class="text-xs font-bold text-slate-600 uppercase">Kỳ Lương:</label>
+                    <select id="payroll-period-select" onchange="onPayrollPeriodChange()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-teal-500">
+                        <option value="">-- Đang tải danh sách kỳ lương --</option>
+                    </select>
+
+                    <span id="period-status-badge" class="px-2.5 py-1 rounded-full text-xs font-bold border border-slate-200 bg-slate-100 text-slate-700">
+                        Dự thảo
+                    </span>
+
+                    <span class="text-xs text-slate-500 font-medium ml-2" id="period-date-range-display">
+                        (01/10/2026 ➔ 31/10/2026 | Công chuẩn: 26 ngày)
+                    </span>
                 </div>
 
-                <!-- Thanh tìm kiếm từ khóa -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 text-xs">
-                    <div class="sm:col-span-2">
-                        <div class="relative">
-                            <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <input type="text" id="filter-hr-search" oninput="applyHRFilters()" placeholder="Tìm mã nhân viên, họ tên tài xế..." 
-                                class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
-                            <button type="button" onclick="clearHRSearch()" id="btn-clear-hr-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
-                                <i class="ph-bold ph-x text-xs"></i>
-                            </button>
+                <!-- Cụm Hành Động Lương: Tính lương, Khóa sổ, Chi trả, Xuất Bank, In -->
+                <div class="flex items-center gap-2 flex-wrap justify-end">
+                    <!-- Nút 1: Tính toán tự động -->
+                    <button type="button" onclick="executePayrollCalculation()" id="btn-calculate-payroll"
+                            class="px-3.5 py-1.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Tự động quét chuyến xe, tính thưởng dầu, bảo hiểm và thuế TNCN">
+                        <i class="ph-bold ph-lightning text-amber-500 text-sm"></i>
+                        <span>Tính Lương Tự Động</span>
+                    </button>
+
+                    <!-- Nút 2: Chuyển trạng thái Vòng đời -->
+                    <button type="button" onclick="updatePayrollPeriodStatus('LOCKED')" id="btn-lock-payroll"
+                            class="hidden px-3 py-1.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
+                            title="Chốt số liệu bảng lương">
+                        <i class="ph-bold ph-lock text-sm"></i>
+                        <span>Khóa Sổ</span>
+                    </button>
+
+                    <!-- Nút 3: Chi trả & Sinh Phiếu Chi Sổ Quỹ -->
+                    <button type="button" onclick="updatePayrollPeriodStatus('PAID')" id="btn-pay-payroll"
+                            class="hidden px-3.5 py-1.5 bg-transparent border border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Xác nhận thanh toán và tự động ghi nhận phiếu chi Sổ Quỹ CashTransaction">
+                        <i class="ph-bold ph-check-circle text-sm"></i>
+                        <span>Chi Trả Lương (Sổ Quỹ)</span>
+                    </button>
+
+                    <!-- Nút 4: Xuất Excel Chuyển Khoản Ngân Hàng -->
+                    <button type="button" onclick="exportBankBatchTransfer()" id="btn-export-bank"
+                            class="px-3 py-1.5 bg-transparent border border-blue-600 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
+                            title="Xuất file danh sách chuyển khoản ngân hàng">
+                        <i class="ph-bold ph-file-xls text-sm"></i>
+                        <span>Xuất Excel Bank</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bảng Thống Kê Tổng Hợp Kỳ Lương (Summary Bar) -->
+            <div class="px-4 py-2 bg-teal-50/50 border-b border-teal-100 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-xs shrink-0 font-medium">
+                <div>
+                    <span class="text-slate-500 block text-[11px]">Tổng nhân sự:</span>
+                    <strong class="text-slate-900 font-bold" id="sum-total-employees">0 NV</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[11px]">Tổng Gross:</span>
+                    <strong class="text-slate-900 font-bold font-mono" id="sum-total-gross">0 đ</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[11px]">BHXH NLĐ (10.5%):</span>
+                    <strong class="text-indigo-700 font-bold font-mono" id="sum-total-ins-emp">0 đ</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[11px]">Thuế TNCN:</span>
+                    <strong class="text-rose-600 font-bold font-mono" id="sum-total-pit">0 đ</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[11px]">Trừ hoàn ứng:</span>
+                    <strong class="text-amber-700 font-bold font-mono" id="sum-total-advance">0 đ</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[11px]">Thực lĩnh (Net):</span>
+                    <strong class="text-emerald-700 font-black font-mono text-sm" id="sum-total-net">0 đ</strong>
+                </div>
+            </div>
+
+            <!-- Bảng Lương Chi Tiết Từng Nhân Viên (Hybrid Payroll Table) -->
+            <div class="overflow-x-auto flex-1 border-b border-slate-200 erp-table-container min-h-[350px]">
+                <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="payroll-slips-table">
+                    <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
+                        <tr>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200 w-12 select-none">STT</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Mã NV</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Họ Và Tên</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Chức Vụ</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200">Ngày Công</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Lương CB</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Lương Thời Gian</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200">Số Chuyến</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Lương Chuyến</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Cắt Kéo & Neo</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Phụ Cấp & Thưởng</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200 bg-slate-50">Tổng Gross</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-indigo-700 border-r border-slate-200">BHXH (10.5%)</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-rose-700 border-r border-slate-200">Thuế TNCN</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-amber-700 border-r border-slate-200">Trừ Tạm Ứng</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-emerald-800 border-r border-slate-200 bg-emerald-50/50">Thực Lĩnh Net</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200">Thanh Toán</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700">Phiếu Lương</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium" id="payroll-slips-tbody">
+                        <!-- Rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- SUB-PANEL 4: CHÍNH SÁCH LƯƠNG, BẢO HIỂM & BIỂU THUẾ (POLICIES) -->
+        <!-- ========================================================================= -->
+        <div id="hr-panel-policies" class="hidden p-5 overflow-y-auto space-y-6">
+            <!-- 1. Tham số giảm trừ gia cảnh & ngày công chuẩn -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-white">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                    <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
+                        <i class="ph-bold ph-sliders-horizontal text-teal-700 text-sm"></i>
+                        <span>1. Tham Số Giảm Trừ Gia Cảnh & Ngày Công Tiêu Chuẩn</span>
+                    </h5>
+                    <button onclick="savePayrollPolicyConfig()" class="px-3 py-1 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer">
+                        Lưu Cấu Hình
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Mức giảm trừ bản thân:</label>
+                        <input type="text" id="cfg-personal-relief" value="11,000,000" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-right">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Mức giảm trừ mỗi NPT:</label>
+                        <input type="text" id="cfg-dependent-relief" value="4,400,000" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-right">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Số ngày công chuẩn / tháng:</label>
+                        <input type="number" id="cfg-standard-days" value="26.0" step="0.5" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-center">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Mức trần lương đóng BHXH:</label>
+                        <input type="text" id="cfg-max-insurance" value="46,800,000" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-right">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Tỷ lệ trích nộp bảo hiểm xã hội -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-white">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                    <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
+                        <i class="ph-bold ph-shield-check text-indigo-700 text-sm"></i>
+                        <span>2. Tỷ Lệ Trích Đóng Bảo Hiểm Hiện Hành (Quy chuẩn Luật BHXH)</span>
+                    </h5>
+                    <button onclick="saveSalaryDeductionRate()" class="px-3 py-1 bg-transparent border border-indigo-600 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer">
+                        Lưu Tỷ Lệ
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                    <!-- Phía Người Lao Động (10.5%) -->
+                    <div class="p-3 bg-indigo-50/40 rounded-xl border border-indigo-100 space-y-2">
+                        <div class="font-bold text-indigo-900 border-b border-indigo-200 pb-1 flex justify-between">
+                            <span>Phía Người Lao Động Trích Nộp:</span>
+                            <span class="font-mono">Tổng: 10.5%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Bảo hiểm xã hội (BHXH):</span>
+                            <input type="number" id="rate-emp-bhxh" value="8.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Bảo hiểm y tế (BHYT):</span>
+                            <input type="number" id="rate-emp-bhyt" value="1.5" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Bảo hiểm thất nghiệp (BHTN):</span>
+                            <input type="number" id="rate-emp-bhtn" value="1.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                        </div>
+                    </div>
+
+                    <!-- Phía Doanh Nghiệp (21.5% + 2% CĐ) -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                        <div class="font-bold text-slate-900 border-b border-slate-200 pb-1 flex justify-between">
+                            <span>Phía Doanh Nghiệp Đóng:</span>
+                            <span class="font-mono">Tổng: 23.5%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Bảo hiểm xã hội (Hưu trí, tử tuất, TNLĐ):</span>
+                            <input type="number" id="rate-empr-bhxh" value="17.5" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Bảo hiểm y tế (BHYT):</span>
+                            <input type="number" id="rate-empr-bhyt" value="3.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Bảo hiểm thất nghiệp (BHTN):</span>
+                            <input type="number" id="rate-empr-bhtn" value="1.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Kinh phí công đoàn:</span>
+                            <input type="number" id="rate-empr-union" value="2.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="overflow-x-auto border-b border-slate-200 erp-table-container min-h-[380px] max-h-[calc(100vh-360px)] overflow-y-auto">
-                <table class="w-full text-left border-collapse erp-table whitespace-nowrap" id="personnel-payroll-table" data-table-title="Bảng Lương & Nhân Sự Vận Hành">
-                    <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
-                        <tr>
-                            <!-- 0. STT Cố Định -->
-                            <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center border-r border-slate-200 w-12 select-none">STT</th>
-
-                            <!-- 1. Mã NV -->
-                            <th data-col-key="code" data-col-name="Mã NV" data-col-locked="true" onclick="toggleHRSort('code')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Mã NV">
-                                <div class="flex items-center gap-1.5">
-                                    <span>Mã NV</span>
-                                    <i id="sort-icon-hr-code" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                                </div>
-                            </th>
-
-                            <!-- 2. Tài xế -->
-                            <th data-col-key="name" data-col-name="Tài xế" onclick="toggleHRSort('name')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Tên Tài xế">
-                                <div class="flex items-center gap-1.5">
-                                    <span>Tài xế</span>
-                                    <i id="sort-icon-hr-name" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                                </div>
-                            </th>
-
-                            <!-- 3. Số chuyến -->
-                            <th data-col-key="trips" data-col-name="Số chuyến (Tháng)" onclick="toggleHRSort('trips')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-center py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Số Chuyến">
-                                <div class="flex items-center justify-center gap-1.5">
-                                    <span>Số chuyến (Tháng)</span>
-                                    <i id="sort-icon-hr-trips" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                                </div>
-                            </th>
-
-                            <!-- 4. Lương Cơ Bản -->
-                            <th data-col-key="base_salary" data-col-name="Lương Cơ Bản" onclick="toggleHRSort('base_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Lương Cơ Bản">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <span>Lương Cơ Bản</span>
-                                    <i id="sort-icon-hr-base_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                                </div>
-                            </th>
-
-                            <!-- 5. Lương Chuyến -->
-                            <th data-col-key="trip_salary" data-col-name="Lương Chuyến (Tạm tính)" onclick="toggleHRSort('trip_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Lương Chuyến">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <span>Lương Chuyến (Tạm tính)</span>
-                                    <i id="sort-icon-hr-trip_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                                </div>
-                            </th>
-
-                            <!-- 6. Tạm ứng -->
-                            <th data-col-key="advance" data-col-name="Tạm ứng" onclick="toggleHRSort('advance')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right py-2.5 px-3.5 border-r border-slate-200" title="Click để sắp xếp theo Tạm Ứng">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <span>Tạm ứng</span>
-                                    <i id="sort-icon-hr-advance" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                                </div>
-                            </th>
-
-                            <!-- 7. Thực lãnh dự kiến -->
-                            <th data-col-key="net_salary" data-col-name="Thực lãnh dự kiến" onclick="toggleHRSort('net_salary')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right py-2.5 px-3.5" title="Click để sắp xếp theo Thực Lãnh Dự Kiến">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <span>Thực lãnh dự kiến</span>
-                                    <i id="sort-icon-hr-net_salary" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
-                                </div>
-                            </th>
+            <!-- 3. Biểu thuế thu nhập cá nhân 7 bậc lũy tiến từng phần -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-white">
+                <div class="pb-3 border-b border-slate-100 mb-3">
+                    <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
+                        <i class="ph-bold ph-receipt text-rose-700 text-sm"></i>
+                        <span>3. Biểu Thuế Thu Nhập Cá Nhân Lũy Tiến Từng Phần (7 Bậc)</span>
+                    </h5>
+                </div>
+                <table class="w-full text-left border-collapse erp-table text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200">
+                            <th class="py-2 px-3 text-center font-bold">Bậc</th>
+                            <th class="py-2 px-3 font-bold">Mức Thu Nhập Tính Thuế / Tháng</th>
+                            <th class="py-2 px-3 text-center font-bold">Thuế Suất</th>
+                            <th class="py-2 px-3 text-right font-bold">Số Trừ Nhanh</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 font-medium" id="hr-tbody">
-                        <!-- Rendered via API -->
+                    <tbody class="divide-y divide-slate-100 font-mono">
+                        <tr><td class="text-center font-bold">1</td><td>Đến 5,000,000 đ</td><td class="text-center font-bold text-teal-700">5%</td><td class="text-right">0 đ</td></tr>
+                        <tr><td class="text-center font-bold">2</td><td>Trên 5,000,000 đ đến 10,000,000 đ</td><td class="text-center font-bold text-teal-700">10%</td><td class="text-right">250,000 đ</td></tr>
+                        <tr><td class="text-center font-bold">3</td><td>Trên 10,000,000 đ đến 18,000,000 đ</td><td class="text-center font-bold text-teal-700">15%</td><td class="text-right">750,000 đ</td></tr>
+                        <tr><td class="text-center font-bold">4</td><td>Trên 18,000,000 đ đến 32,000,000 đ</td><td class="text-center font-bold text-teal-700">20%</td><td class="text-right">1,650,000 đ</td></tr>
+                        <tr><td class="text-center font-bold">5</td><td>Trên 32,000,000 đ đến 52,000,000 đ</td><td class="text-center font-bold text-teal-700">25%</td><td class="text-right">3,250,000 đ</td></tr>
+                        <tr><td class="text-center font-bold">6</td><td>Trên 52,000,000 đ đến 80,000,000 đ</td><td class="text-center font-bold text-teal-700">30%</td><td class="text-right">5,850,000 đ</td></tr>
+                        <tr><td class="text-center font-bold">7</td><td>Trên 80,000,000 đ</td><td class="text-center font-bold text-rose-700">35%</td><td class="text-right">9,850,000 đ</td></tr>
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 1: HỒ SƠ NHÂN SỰ 360° (FLAT MODAL VIEWER) -->
+<!-- ========================================================================= -->
+<div id="modal-employee-360" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-2xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-up">
+        <div class="p-4 px-6 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-black text-sm" id="m360-avatar">NV</div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900" id="m360-name">Họ Tên Nhân Viên</h3>
+                    <p class="text-xs text-slate-500 font-mono" id="m360-code-role">Mã NV • Chức Vụ</p>
+                </div>
+            </div>
+            <button onclick="closeEmployee360Modal()" class="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <div class="p-6 overflow-y-auto space-y-5 text-xs" id="m360-content">
+            <!-- Rendered by JS -->
+        </div>
+        <div class="p-3 px-6 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+            <button onclick="openCreateDependentModal()" class="px-3.5 py-1.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-lg font-bold flex items-center gap-1.5 cursor-pointer">
+                <i class="ph-bold ph-user-plus"></i> Kê Khai Người Phụ Thuộc
+            </button>
+            <button onclick="closeEmployee360Modal()" class="px-4 py-1.5 bg-slate-700 text-white hover:bg-slate-800 rounded-lg font-bold cursor-pointer">
+                Đóng
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2: TẠO KỲ LƯƠNG MỚI (CREATE PAYROLL PERIOD) -->
+<!-- ========================================================================= -->
+<div id="modal-create-period" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-2xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md overflow-hidden animate-scale-up">
+        <div class="p-4 px-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <h4 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                <i class="ph-bold ph-calendar-plus text-emerald-700 text-sm"></i>
+                <span>Khởi Tạo Kỳ Tính Lương Mới</span>
+            </h4>
+            <button onclick="closeCreatePeriodModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <form onsubmit="submitCreatePeriod(event)" class="p-5 space-y-3.5 text-xs">
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Mã Kỳ Lương (YYYY-MM) <span class="text-rose-500">*</span></label>
+                <input type="text" id="new-period-code" required placeholder="VD: 2026-10" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold uppercase">
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Tên Kỳ Lương</label>
+                <input type="text" id="new-period-name" placeholder="VD: Bảng lương Tháng 10/2026" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-bold">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Từ Ngày <span class="text-rose-500">*</span></label>
+                    <input type="date" id="new-period-from" required class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Đến Ngày <span class="text-rose-500">*</span></label>
+                    <input type="date" id="new-period-to" required class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono">
+                </div>
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Số Ngày Công Chuẩn</label>
+                <input type="number" id="new-period-std-days" value="26.0" step="0.5" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-center">
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="closeCreatePeriodModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-100 cursor-pointer">Hủy</button>
+                <button type="submit" class="px-4 py-2 bg-transparent border border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg font-bold cursor-pointer">Khởi Tạo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: IN PHIẾU LƯƠNG CÁ NHÂN (FLAT PRINTABLE PAYSLIP DOCUMENT) -->
+<!-- ========================================================================= -->
+<div id="modal-print-payslip" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-2xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden animate-scale-up">
+        <div class="p-3 px-5 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+            <h4 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                <i class="ph-bold ph-printer text-teal-700 text-sm"></i>
+                <span>Xem Trước & In Phiếu Lương Cá Nhân</span>
+            </h4>
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="px-3.5 py-1 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1">
+                    <i class="ph-bold ph-printer"></i> In Phiếu
+                </button>
+                <button onclick="closePrintPayslipModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Paper Body (Mô phỏng giấy in văn bản phẳng, không bọc thẻ lồng nhau) -->
+        <div class="flex-1 overflow-y-auto p-8 bg-white font-sans text-slate-900 space-y-4" id="payslip-paper-content">
+            <!-- Rendered by JS -->
         </div>
     </div>
 </div>

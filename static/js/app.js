@@ -5651,48 +5651,50 @@ async function submitOcrData() {
     }
 }
 
-// --- 6. PHÂN HỆ HÀNH CHÍNH & NHÂN SỰ (EMPLOYEE DIRECTORY & PAYROLL) ---
+// --- 6. PHÂN HỆ QUẢN TRỊ NHÂN SỰ & HYBRID PAYROLL ---
 let currentHRSubTab = 'directory';
 let rawEmployeesList = [];
-let rawHRData = [];
+let rawContractsList = [];
+let rawPayrollPeriodsList = [];
+let currentPayrollPeriodDetail = null;
+let currentPayrollSlipsList = [];
 let hrSortColumn = null;
 let hrSortDirection = 'asc';
 
 function switchHRSubTab(tabKey) {
     currentHRSubTab = tabKey;
-    const dirBtn = document.getElementById('hr-tab-directory-btn');
-    const payBtn = document.getElementById('hr-tab-payroll-btn');
-    const dirPanel = document.getElementById('hr-panel-directory');
-    const payPanel = document.getElementById('hr-panel-payroll');
-    const createBtn = document.getElementById('btn-create-employee');
+    const tabs = ['directory', 'contracts', 'payroll', 'policies'];
+    
+    tabs.forEach(t => {
+        const btn = document.getElementById(`hr-tab-${t}-btn`);
+        const panel = document.getElementById(`hr-panel-${t}`);
+        if (btn) {
+            if (t === tabKey) {
+                btn.classList.add('active', 'border-teal-600', 'text-teal-800');
+                btn.classList.remove('border-transparent', 'text-slate-500');
+            } else {
+                btn.classList.remove('active', 'border-teal-600', 'text-teal-800');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            }
+        }
+        if (panel) {
+            if (t === tabKey) panel.classList.remove('hidden');
+            else panel.classList.add('hidden');
+        }
+    });
 
-    if (tabKey === 'directory') {
-        if (dirBtn) {
-            dirBtn.classList.add('active', 'border-teal-600', 'text-teal-800');
-            dirBtn.classList.remove('border-transparent', 'text-slate-500');
-        }
-        if (payBtn) {
-            payBtn.classList.remove('active', 'border-teal-600', 'text-teal-800');
-            payBtn.classList.add('border-transparent', 'text-slate-500');
-        }
-        if (dirPanel) dirPanel.classList.remove('hidden');
-        if (payPanel) payPanel.classList.add('hidden');
-        if (createBtn) createBtn.classList.remove('hidden');
-        loadEmployeesData();
-    } else {
-        if (payBtn) {
-            payBtn.classList.add('active', 'border-teal-600', 'text-teal-800');
-            payBtn.classList.remove('border-transparent', 'text-slate-500');
-        }
-        if (dirBtn) {
-            dirBtn.classList.remove('active', 'border-teal-600', 'text-teal-800');
-            dirBtn.classList.add('border-transparent', 'text-slate-500');
-        }
-        if (payPanel) payPanel.classList.remove('hidden');
-        if (dirPanel) dirPanel.classList.add('hidden');
-        if (createBtn) createBtn.classList.add('hidden');
-        loadHRPayrollData();
-    }
+    const createEmpBtn = document.getElementById('btn-create-employee');
+    const createContractBtn = document.getElementById('btn-create-contract');
+    const createPeriodBtn = document.getElementById('btn-create-period');
+
+    if (createEmpBtn) createEmpBtn.classList.toggle('hidden', tabKey !== 'directory');
+    if (createContractBtn) createContractBtn.classList.toggle('hidden', tabKey !== 'contracts');
+    if (createPeriodBtn) createPeriodBtn.classList.toggle('hidden', tabKey !== 'payroll');
+
+    if (tabKey === 'directory') loadEmployeesData();
+    else if (tabKey === 'contracts') loadContractsData();
+    else if (tabKey === 'payroll') loadPayrollPeriodsData();
+    else if (tabKey === 'policies') loadPayrollPoliciesData();
 }
 
 async function loadEmployeesData() {
@@ -5708,8 +5710,9 @@ async function loadEmployeesData() {
             const el = id => document.getElementById(id);
             if (el('hr-kpi-total')) el('hr-kpi-total').innerText = s.total || 0;
             if (el('hr-kpi-drivers')) el('hr-kpi-drivers').innerText = s.drivers || 0;
-            if (el('hr-kpi-office')) el('hr-kpi-office').innerText = (s.dispatchers || 0) + (s.accountants || 0);
-            if (el('hr-kpi-inactive')) el('hr-kpi-inactive').innerText = s.inactive || 0;
+            if (el('hr-kpi-office')) el('hr-kpi-office').innerText = (s.dispatchers || 0) + (s.accountants || 0) + (s.sales || 0);
+            const warningTotal = (s.expiring_licenses_count || 0) + (s.expiring_contracts_count || 0);
+            if (el('hr-kpi-warning')) el('hr-kpi-warning').innerText = warningTotal;
         }
 
         if (empRes.ok) {
@@ -5722,6 +5725,12 @@ async function loadEmployeesData() {
     }
 }
 
+function filterExpiringItems() {
+    switchHRSubTab('contracts');
+    const statusSelect = document.getElementById('contract-filter-status');
+    if (statusSelect) statusSelect.value = 'ACTIVE';
+}
+
 function filterEmployeesTable() {
     const q = (document.getElementById('emp-search-input')?.value || '').trim().toLowerCase();
     const dept = document.getElementById('emp-filter-dept')?.value || 'ALL';
@@ -5729,15 +5738,11 @@ function filterEmployeesTable() {
     const status = document.getElementById('emp-filter-status')?.value || 'ALL';
 
     const filtered = (rawEmployeesList || []).filter(item => {
-        // Match Search Text
-        const str = `${item.code} ${item.full_name} ${item.nickname || ''} ${item.phone_number || ''} ${item.license_number || ''}`.toLowerCase();
+        const str = `${item.code} ${item.full_name} ${item.nickname || ''} ${item.phone_number || ''} ${item.national_id || ''} ${item.bank_account || ''}`.toLowerCase();
         const matchesQuery = !q || str.includes(q);
-
-        // Match Filters
         const matchesDept = dept === 'ALL' || item.department === dept;
         const matchesRole = role === 'ALL' || item.role === role;
         const matchesStatus = status === 'ALL' || (status === 'ACTIVE' ? item.is_active : !item.is_active);
-
         return matchesQuery && matchesDept && matchesRole && matchesStatus;
     });
 
@@ -5754,7 +5759,7 @@ function renderEmployeesTable(items) {
     if (!items || items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="11" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="12" class="p-8 text-center text-slate-400 font-medium">
                     <i class="ph ph-user-circle text-3xl mb-2 text-slate-300 block"></i>
                     Không tìm thấy nhân sự nào phù hợp với bộ lọc.
                 </td>
@@ -5763,443 +5768,711 @@ function renderEmployeesTable(items) {
         return;
     }
 
-    tbody.innerHTML = items.map((emp, index) => `
-        <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
-            <td class="py-2.5 px-3.5 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs tabular-nums select-none w-12">${index + 1}</td>
-            <td class="py-2.5 px-3.5 font-mono font-bold text-teal-900 border-r border-slate-200 text-xs">${escapeHtml(emp.code)}</td>
-            <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-sm">
-                <div>${escapeHtml(emp.full_name)}</div>
-                ${emp.username ? `<div class="text-[11px] text-slate-400 font-normal">@${escapeHtml(emp.username)}</div>` : ''}
-            </td>
-            <td class="py-2.5 px-3.5 text-xs font-semibold text-slate-700 border-r border-slate-200">${emp.nickname ? `<span class="text-slate-800 font-medium">${escapeHtml(emp.nickname)}</span>` : '—'}</td>
-            <td class="py-2.5 px-3.5 text-xs border-r border-slate-200 font-mono">
-                <div class="font-bold text-slate-800">${escapeHtml(emp.phone_number || '—')}</div>
-                ${emp.zalo_id ? `<div class="text-[11px] text-teal-600 font-medium">Zalo: ${escapeHtml(emp.zalo_id)}</div>` : ''}
-            </td>
-            <td class="py-2.5 px-3.5 text-xs font-medium text-slate-700 border-r border-slate-200">${escapeHtml(emp.department_label || emp.department)}</td>
-            <td class="py-2.5 px-3.5 text-xs font-bold border-r border-slate-200">
-                <span class="${emp.role === 'DRIVER' ? 'text-emerald-700' : (emp.role === 'DIRECTOR' ? 'text-purple-700' : 'text-blue-700')}">
-                    ${escapeHtml(emp.role_label || emp.role)}
-                </span>
-            </td>
-            <td class="py-2.5 px-3.5 text-xs border-r border-slate-200">
-                ${emp.license_number ? `
-                    <div class="font-mono font-bold text-slate-800">${escapeHtml(emp.license_number)}</div>
-                    ${emp.license_expiry ? `<div class="text-[11px] text-slate-500">Hạn: ${emp.license_expiry}</div>` : ''}
-                ` : '<span class="text-slate-400">—</span>'}
-            </td>
-            <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200 tabular-nums">${formatMoney(emp.base_salary)}</td>
-            <td class="py-2.5 px-3.5 text-center border-r border-slate-200 text-xs font-semibold whitespace-nowrap">
-                ${emp.is_active ? '<span class="text-emerald-700 font-bold">Đang làm</span>' : '<span class="text-slate-400 font-medium">Tạm ngưng</span>'}
-            </td>
-            <td class="py-2.5 px-3.5 text-center">
-                <div class="inline-flex items-center gap-1.5 justify-center">
-                    <!-- 1. Xem Hồ Sơ (Toàn màn hình) -->
-                    <button type="button" onclick="openEditEmployeePage(${emp.id})" 
-                        class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
-                        title="Xem chi tiết, Sửa, Lưu & Tạm ngưng hồ sơ">
-                        <i class="ph-bold ph-eye"></i>
-                        <span>Xem</span>
-                    </button>
-                    <!-- 2. In nhanh Hồ Sơ khổ A4 -->
-                    <button type="button" onclick="openDirectPrintEmployee(${emp.id})" 
-                        class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
-                        title="In nhanh hồ sơ nhân sự khổ A4">
-                        <i class="ph-bold ph-printer"></i>
-                        <span>In</span>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = items.map((emp, index) => {
+        const contractInfo = emp.active_contract ? `${emp.active_contract.contract_type_label || 'HĐ'}` : '<span class="text-slate-400">Chưa ký</span>';
+        const bankInfo = emp.bank_account ? `<span class="font-mono font-bold">${escapeHtml(emp.bank_account)}</span> (${escapeHtml(emp.bank_name || 'NH')})` : '<span class="text-slate-400">—</span>';
+        const legalInfo = emp.national_id ? `<span class="font-mono">${escapeHtml(emp.national_id)}</span>` : '<span class="text-slate-400">—</span>';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2.5 px-3.5 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs tabular-nums select-none w-12">${index + 1}</td>
+                <td class="py-2.5 px-3.5 font-mono font-bold text-teal-900 border-r border-slate-200 text-xs">${escapeHtml(emp.code)}</td>
+                <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-sm">
+                    <div>${escapeHtml(emp.full_name)} ${emp.nickname ? `<span class="text-xs text-slate-500 font-normal">(${escapeHtml(emp.nickname)})</span>` : ''}</div>
+                    <div class="text-[11px] text-slate-400 font-normal">${emp.gender_label || ''} ${emp.date_of_birth ? '• ' + emp.date_of_birth : ''}</div>
+                </td>
+                <td class="py-2.5 px-3.5 text-xs border-r border-slate-200">
+                    <div>${legalInfo}</div>
+                    ${emp.tax_id ? `<div class="text-[11px] text-slate-500">MST: ${escapeHtml(emp.tax_id)}</div>` : ''}
+                </td>
+                <td class="py-2.5 px-3.5 text-xs border-r border-slate-200 font-mono">
+                    <div class="font-bold text-slate-800">${escapeHtml(emp.phone_number || '—')}</div>
+                    ${emp.zalo_id ? `<div class="text-[11px] text-teal-600 font-medium">Zalo: ${escapeHtml(emp.zalo_id)}</div>` : ''}
+                </td>
+                <td class="py-2.5 px-3.5 text-xs font-medium text-slate-700 border-r border-slate-200">${escapeHtml(emp.department_label || emp.department)}</td>
+                <td class="py-2.5 px-3.5 text-xs font-bold border-r border-slate-200">
+                    <span class="${emp.role === 'DRIVER' ? 'text-emerald-700' : (emp.role === 'DIRECTOR' ? 'text-purple-700' : 'text-blue-700')}">
+                        ${escapeHtml(emp.role_label || emp.role)}
+                    </span>
+                </td>
+                <td class="py-2.5 px-3.5 text-xs border-r border-slate-200">
+                    ${emp.license_number ? `
+                        <div class="font-mono font-bold text-slate-800">${escapeHtml(emp.license_number)}</div>
+                        ${emp.license_expiry ? `<div class="text-[11px] text-slate-500">Hạn: ${emp.license_expiry}</div>` : ''}
+                    ` : '<span class="text-slate-400">—</span>'}
+                </td>
+                <td class="py-2.5 px-3.5 text-xs border-r border-slate-200">${bankInfo}</td>
+                <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200 tabular-nums">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</td>
+                <td class="py-2.5 px-3.5 text-center border-r border-slate-200 text-xs font-semibold whitespace-nowrap">
+                    ${emp.is_active ? '<span class="text-emerald-700 font-bold">Đang làm</span>' : '<span class="text-slate-400 font-medium">Tạm ngưng</span>'}
+                </td>
+                <td class="py-2.5 px-3.5 text-center">
+                    <div class="inline-flex items-center gap-1.5 justify-center">
+                        <button type="button" onclick="openEmployee360Modal(${emp.id})" 
+                            class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                            title="Xem hồ sơ 360 độ, HĐLĐ, người phụ thuộc">
+                            <i class="ph-bold ph-identification-card"></i>
+                            <span>Hồ Sơ 360°</span>
+                        </button>
+                        <button type="button" onclick="openEditEmployeePage(${emp.id})" 
+                            class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                            title="Sửa thông tin">
+                            <i class="ph-bold ph-pencil-simple"></i>
+                            <span>Sửa</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
-function handleEmployeeRoleChange() {
-    const roleSelect = document.getElementById('emp-role');
-    const driverFields = document.getElementById('emp-driver-fields');
-    if (roleSelect && driverFields) {
-        if (roleSelect.value === 'DRIVER') {
-            driverFields.classList.remove('hidden');
-        } else {
-            driverFields.classList.add('hidden');
-        }
-    }
-}
-
-function openCreateEmployeeModal() {
-    document.getElementById('emp-edit-id').value = '';
-    document.getElementById('emp-modal-title').innerText = 'Khai Báo Nhân Sự Mới';
-    document.getElementById('emp-modal-subtitle').innerText = 'Thêm mới nhân viên, tài xế vào danh bạ BIM Logistics';
-
-    document.getElementById('emp-code').value = '';
-    document.getElementById('emp-full-name').value = '';
-    document.getElementById('emp-nickname').value = '';
-    document.getElementById('emp-phone').value = '';
-    document.getElementById('emp-zalo').value = '';
-    document.getElementById('emp-department').value = 'FLEET';
-    document.getElementById('emp-role').value = 'DRIVER';
-    document.getElementById('emp-license-number').value = '';
-    document.getElementById('emp-license-expiry').value = '';
-    document.getElementById('emp-base-salary').value = '5,000,000';
-    document.getElementById('emp-is-active').value = 'true';
-
-    handleEmployeeRoleChange();
-}
-
-function openCreateEmployeePage(updateHistory = true) {
-    document.getElementById('emp-edit-id').value = '';
-    const form = document.getElementById('form-employee');
-    if (form) form.reset();
-
-    document.getElementById('emp-code').value = '';
-    document.getElementById('emp-full-name').value = '';
-    document.getElementById('emp-nickname').value = '';
-    document.getElementById('emp-phone').value = '';
-    document.getElementById('emp-zalo').value = '';
-    document.getElementById('emp-department').value = 'FLEET';
-    document.getElementById('emp-role').value = 'DRIVER';
-    document.getElementById('emp-license-number').value = '';
-    document.getElementById('emp-license-expiry').value = '';
-    document.getElementById('emp-base-salary').value = '5,000,000';
-    document.getElementById('emp-is-active').value = 'true';
-
-    handleEmployeeRoleChange();
-
-    if (updateHistory && window.history && window.history.pushState) {
-        const path = '/personnel/employees/new';
-        if (window.location.pathname !== path) {
-            window.history.pushState({ view: 'employee-form' }, '', path);
-        }
-    }
-
-    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
-    if (currentActiveView && currentActiveView.id !== 'view-employee-form') {
-        previousActiveTab = currentActiveView.id.replace('view-', '');
-    }
-
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
-    const formView = document.getElementById('view-employee-form');
-    if (formView) formView.classList.remove('hidden-view');
-
-    // Ở chế độ Tạo Mới: Form mở sẵn, ẩn Xóa/In/Sửa, chỉ hiện Lưu
-    setEmployeeFormReadOnly(false);
-    const delBtn = document.getElementById('btn-employee-delete-bottom');
-    if (delBtn) delBtn.classList.add('hidden');
-    const printBtn = document.getElementById('btn-employee-print-bottom');
-    if (printBtn) printBtn.classList.add('hidden');
-    const editBtn = document.getElementById('btn-employee-edit-bottom');
-    if (editBtn) editBtn.classList.add('hidden');
-    const submitBtnText = document.getElementById('emp-submit-btn-text');
-    if (submitBtnText) submitBtnText.innerText = 'Lưu';
-
-    setTopbarFullpageMode({
-        backFn: backToPersonnel,
-        prefix: 'Hành Chính & Nhân Sự',
-        title: 'Tạo Mới Nhân Sự',
-        subText: '',
-        badgesHtml: '',
-        actionsHtml: ''
-    });
-}
-
-function openEditEmployeePage(id, updateHistory = true) {
+function openEmployee360Modal(id) {
     const emp = (rawEmployeesList || []).find(e => e.id === id);
     if (!emp) return;
 
-    document.getElementById('emp-edit-id').value = id;
-    document.getElementById('emp-code').value = emp.code || '';
-    document.getElementById('emp-full-name').value = emp.full_name || '';
-    document.getElementById('emp-nickname').value = emp.nickname || '';
-    document.getElementById('emp-phone').value = emp.phone_number || '';
-    document.getElementById('emp-zalo').value = emp.zalo_id || '';
-    document.getElementById('emp-department').value = emp.department || 'FLEET';
-    document.getElementById('emp-role').value = emp.role || 'DRIVER';
-    document.getElementById('emp-license-number').value = emp.license_number || '';
-    document.getElementById('emp-license-expiry').value = emp.license_expiry || '';
-    document.getElementById('emp-base-salary').value = new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0);
-    document.getElementById('emp-is-active').value = emp.is_active ? 'true' : 'false';
+    const modal = document.getElementById('modal-employee-360');
+    if (!modal) return;
 
-    handleEmployeeRoleChange();
+    document.getElementById('m360-avatar').innerText = (emp.full_name || 'NV').slice(0, 2).toUpperCase();
+    document.getElementById('m360-name').innerText = `${emp.full_name} (${emp.nickname || emp.code})`;
+    document.getElementById('m360-code-role').innerText = `${emp.code} • ${emp.role_label || emp.role} • ${emp.department_label || emp.department}`;
 
-    if (updateHistory && window.history && window.history.pushState) {
-        const path = `/personnel/employees/${id}`;
-        if (window.location.pathname !== path) {
-            window.history.pushState({ view: 'employee-form', employeeId: id }, '', path);
-        }
-    }
+    const content = document.getElementById('m360-content');
+    content.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-3 border-b border-slate-200">
+            <div class="space-y-1.5">
+                <div class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Thông Tin Cá Nhân & Định Danh</div>
+                <div><strong>CCCD / CMND:</strong> ${emp.national_id || 'Chưa cập nhật'} (Ngày cấp: ${emp.national_id_date || '—'} tại ${emp.national_id_place || '—'})</div>
+                <div><strong>Mã số thuế:</strong> ${emp.tax_id || 'Chưa cập nhật'} | <strong>Số BHXH:</strong> ${emp.insurance_number || 'Chưa cập nhật'}</div>
+                <div><strong>Giới tính:</strong> ${emp.gender_label || '—'} | <strong>Ngày sinh:</strong> ${emp.date_of_birth || '—'}</div>
+                <div><strong>Điện thoại:</strong> ${emp.phone_number || '—'} | <strong>Email:</strong> ${emp.email || '—'}</div>
+                <div><strong>Địa chỉ thường trú:</strong> ${emp.permanent_address || '—'}</div>
+                <div><strong>Chỗ ở hiện nay:</strong> ${emp.current_address || '—'}</div>
+            </div>
+            <div class="space-y-1.5">
+                <div class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Tài Khoản Ngân Hàng & Chế Độ Lương</div>
+                <div><strong>Số tài khoản:</strong> <span class="font-mono font-bold">${emp.bank_account || 'Chưa khai báo'}</span></div>
+                <div><strong>Ngân hàng:</strong> ${emp.bank_name || '—'} ${emp.bank_branch ? '(' + emp.bank_branch + ')' : ''}</div>
+                <div><strong>Chủ thụ hưởng:</strong> ${emp.bank_beneficiary || emp.full_name.toUpperCase()}</div>
+                <div><strong>Lương cơ bản / khoán:</strong> <span class="font-mono font-bold">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</span></div>
+                <div><strong>Lương đóng BHXH:</strong> <span class="font-mono font-bold">${new Intl.NumberFormat('vi-VN').format(emp.insurance_salary || 0)} đ</span> (${emp.is_social_insurance_participant ? 'Có tham gia 10.5%' : 'Không tham gia'})</div>
+                <div><strong>Người phụ thuộc giảm trừ gia cảnh:</strong> <span class="font-bold text-teal-800">${emp.dependents_count || 0} người</span></div>
+                <div><strong>Giấy phép lái xe:</strong> ${emp.license_number || '—'} ${emp.license_expiry ? '(Hạn: ' + emp.license_expiry + ')' : ''}</div>
+            </div>
+        </div>
+    `;
 
-    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
-    if (currentActiveView && currentActiveView.id !== 'view-employee-form') {
-        previousActiveTab = currentActiveView.id.replace('view-', '');
-    }
-
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
-    const formView = document.getElementById('view-employee-form');
-    if (formView) formView.classList.remove('hidden-view');
-
-    // Ở chế độ Xem bản ghi: Khóa form, hiện Xóa, In, Sửa; làm mờ Lưu
-    setEmployeeFormReadOnly(true);
-    const submitBtnText = document.getElementById('emp-submit-btn-text');
-    if (submitBtnText) submitBtnText.innerText = 'Lưu';
-
-    setTopbarFullpageMode({
-        backFn: backToPersonnel,
-        prefix: 'Hành Chính & Nhân Sự',
-        title: `Hồ Sơ Nhân Sự | ${emp.full_name} (${emp.code || id})`,
-        subText: '',
-        badgesHtml: '',
-        actionsHtml: ''
-    });
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
-function backToPersonnel() {
-    const formView = document.getElementById('view-employee-form');
-    if (formView) formView.classList.add('hidden-view');
-
-    if (previousActiveTab && previousActiveTab !== 'employee-form') {
-        switchTab(previousActiveTab, true);
-    } else {
-        switchTab('nhan-su', true);
+function closeEmployee360Modal() {
+    const modal = document.getElementById('modal-employee-360');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
 }
 
-function openCreateEmployeeModal() {
-    openCreateEmployeePage();
-}
-
-function openEditEmployeeModal(id) {
-    openEditEmployeePage(id);
-}
-
-function closeEmployeeModal() {
-    backToPersonnel();
-}
-
-async function submitEmployeeForm(event) {
-    event.preventDefault();
-    const editId = document.getElementById('emp-edit-id').value;
-    const isEdit = Boolean(editId);
-
-    const baseSalaryClean = String(document.getElementById('emp-base-salary').value || '0').replace(/\D/g, '');
-
-    const payload = {
-        code: document.getElementById('emp-code').value.trim().toUpperCase(),
-        full_name: document.getElementById('emp-full-name').value.trim(),
-        nickname: document.getElementById('emp-nickname').value.trim(),
-        phone_number: document.getElementById('emp-phone').value.trim(),
-        zalo_id: document.getElementById('emp-zalo').value.trim(),
-        department: document.getElementById('emp-department').value,
-        role: document.getElementById('emp-role').value,
-        license_number: document.getElementById('emp-license-number').value.trim(),
-        license_expiry: document.getElementById('emp-license-expiry').value || null,
-        base_salary: parseInt(baseSalaryClean, 10) || 0,
-        is_active: document.getElementById('emp-is-active').value === 'true'
-    };
-
-    const url = isEdit ? `/api/personnel/employees/${editId}/` : '/api/personnel/employees/';
-    const method = isEdit ? 'PUT' : 'POST';
-
+// --- SUB-PANEL 2: HỢP ĐỒNG LAO ĐỘNG ---
+async function loadContractsData() {
     try {
-        const res = await fetchWithAuth(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        const status = document.getElementById('contract-filter-status')?.value || '';
+        const url = status ? `/api/personnel/contracts/?status=${status}` : '/api/personnel/contracts/';
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error('Lỗi tải danh sách hợp đồng');
+        rawContractsList = await res.json();
+        
+        const badge = document.getElementById('contracts-count-badge');
+        if (badge) badge.innerText = `${rawContractsList.length} HĐ`;
 
-        const data = await res.json();
-        if (!res.ok) {
-            const errStr = data.errors ? Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join('; ') : (data.message || 'Lỗi lưu hồ sơ');
-            throw new Error(errStr);
-        }
-
-        if (typeof showToast === 'function') {
-            showToast('success', data.message || 'Đã lưu hồ sơ nhân sự thành công!', 'Thành Công');
-        }
-        await loadEmployeesData();
-        const savedId = editId || data.id || data.employee?.id;
-        if (savedId) {
-            openEditEmployeePage(savedId, true);
-        } else {
-            backToPersonnel();
-        }
+        renderContractsTable(rawContractsList);
     } catch (err) {
-        console.error('Lỗi gửi form nhân sự:', err);
-        if (typeof showToast === 'function') {
-            showToast('error', err.message || 'Không thể lưu hồ sơ.', 'Lỗi Khai Báo');
-        } else {
-            alert('Lỗi: ' + err.message);
-        }
+        console.error('Lỗi tải HĐLĐ:', err);
     }
 }
 
-async function deleteEmployeeItem(id) {
-    const confirmed = await showConfirmModal({
-        title: 'Tạm Ngưng Nhân Sự',
-        message: 'Bạn có chắc chắn muốn chuyển nhân sự này sang trạng thái tạm ngưng công tác?\n\nDữ liệu lịch sử phân công và bảng lương vẫn được bảo lưu an toàn.',
-        confirmText: 'Tạm Ngưng',
-        cancelText: 'Huỷ bỏ',
-        type: 'danger',
-        icon: 'ph-bold ph-user-minus text-2xl'
-    });
-    if (!confirmed) return;
-
-    try {
-        const res = await fetchWithAuth(`/api/personnel/employees/${id}/`, {
-            method: 'DELETE'
-        });
-        const data = await res.json();
-        if (typeof showToast === 'function') {
-            showToast('success', data.message || 'Đã cập nhật trạng thái nhân sự!', 'Thành Công');
-        }
-        loadEmployeesData();
-    } catch (err) {
-        console.error('Lỗi tạm ngưng nhân sự:', err);
-    }
-}
-
-async function loadHRPayrollData() {
-    try {
-        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
-        const res = await fetchWithAuth(`/api/personnel/payroll/?from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`);
-        if (!res.ok) throw new Error('Lỗi tải bảng lương');
-        const data = await res.json();
-        rawHRData = data || [];
-        applyHRFilters();
-    } catch (err) {
-        console.error('Lỗi tải bảng lương HR:', err);
-    }
-}
-
-async function loadHRData() {
-    if (currentHRSubTab === 'directory') {
-        loadEmployeesData();
-    } else {
-        loadHRPayrollData();
-    }
-}
-
-function toggleHRSort(col) {
-    if (hrSortColumn === col) {
-        hrSortDirection = hrSortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        hrSortColumn = col;
-        hrSortDirection = 'asc';
-    }
-    applyHRFilters();
-}
-
-function clearHRSearch() {
-    const input = document.getElementById('filter-hr-search');
-    if (input) input.value = '';
-    applyHRFilters();
-}
-
-function resetHRFilters() {
-    const input = document.getElementById('filter-hr-search');
-    if (input) input.value = '';
-    hrSortColumn = null;
-    hrSortDirection = 'asc';
-    applyHRFilters();
-}
-
-function applyHRFilters() {
-    if (!rawHRData || !Array.isArray(rawHRData)) return;
-
-    const filterSearch = document.getElementById('filter-hr-search')?.value?.trim().toLowerCase() || '';
-    const clearBtn = document.getElementById('btn-clear-hr-search');
-    if (clearBtn) {
-        if (filterSearch) clearBtn.classList.remove('hidden');
-        else clearBtn.classList.add('hidden');
-    }
-
-    let list = rawHRData.filter(item => {
-        if (filterSearch) {
-            const combinedText = [
-                item.code,
-                item.name
-            ].filter(Boolean).join(' ').toLowerCase();
-            if (!combinedText.includes(filterSearch)) return false;
-        }
-        return true;
-    });
-
-    const filteredCountEl = document.getElementById('hr-filtered-count');
-    if (filteredCountEl) filteredCountEl.innerText = list.length;
-    const totalCountEl = document.getElementById('hr-total-count');
-    if (totalCountEl) totalCountEl.innerText = rawHRData.length;
-
-    // Cập nhật trạng thái hiển thị của các icon sắp xếp cột
-    const sortKeys = ['code', 'name', 'trips', 'base_salary', 'trip_salary', 'advance', 'net_salary'];
-    sortKeys.forEach(k => {
-        const icon = document.getElementById(`sort-icon-hr-${k}`);
-        if (icon) {
-            if (hrSortColumn === k) {
-                icon.className = hrSortDirection === 'asc' 
-                    ? 'ph-bold ph-arrow-up text-teal-600 text-xs' 
-                    : 'ph-bold ph-arrow-down text-teal-600 text-xs';
-            } else {
-                icon.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs';
-            }
-        }
-    });
-
-    if (hrSortColumn) {
-        list.sort((a, b) => {
-            let valA = a[hrSortColumn];
-            let valB = b[hrSortColumn];
-            if (valA === null || valA === undefined) valA = '';
-            if (valB === null || valB === undefined) valB = '';
-
-            if (typeof valA === 'string') {
-                return hrSortDirection === 'asc'
-                    ? valA.localeCompare(valB, 'vi')
-                    : valB.localeCompare(valA, 'vi');
-            } else {
-                return hrSortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
-            }
-        });
-    }
-
-    renderHRPayrollTable(list);
-}
-
-function renderHRPayrollTable(items) {
-    const tbody = document.getElementById('hr-tbody');
+function renderContractsTable(items) {
+    const tbody = document.getElementById('contracts-tbody');
     if (!tbody) return;
 
     if (!items || items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="p-8 text-center text-slate-400 font-medium">
-                    <i class="ph ph-receipt text-3xl mb-2 text-slate-300 block"></i>
-                    Không có dữ liệu lương chuyến trong kỳ đã chọn.
+                <td colspan="12" class="p-8 text-center text-slate-400 font-medium">
+                    <i class="ph ph-file-text text-3xl mb-2 text-slate-300 block"></i>
+                    Không có hợp đồng lao động nào.
                 </td>
             </tr>
         `;
         return;
     }
 
-    tbody.innerHTML = items.map((item, index) => `
-        <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
-            <td class="py-2.5 px-3.5 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs tabular-nums select-none w-12">${index + 1}</td>
-            <td class="py-2.5 px-3.5 font-mono font-bold text-teal-900 border-r border-slate-200 text-xs">${escapeHtml(item.code || '')}</td>
-            <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-sm">${escapeHtml(item.name || '')}</td>
-            <td class="py-2.5 px-3.5 text-center font-bold text-slate-800 border-r border-slate-200 text-xs">
-                <span class="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">${item.trips || 0}</span>
-            </td>
-            <td class="py-2.5 px-3.5 text-right font-mono text-xs font-semibold text-slate-700 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(item.base_salary || 0)} đ</td>
-            <td class="py-2.5 px-3.5 text-right font-mono text-xs font-bold text-teal-700 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(item.trip_salary || 0)} đ</td>
-            <td class="py-2.5 px-3.5 text-right font-mono text-xs font-semibold text-rose-600 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(item.advance || 0)} đ</td>
-            <td class="py-2.5 px-3.5 text-right font-mono text-xs font-bold text-emerald-700">${new Intl.NumberFormat('vi-VN').format(item.net_salary || 0)} đ</td>
-        </tr>
-    `).join('');
-    
-    // Tự động đồng bộ ẩn/hiện cột nếu ColumnManager đang hoạt động
-    if (window.BimTableColumnManager && typeof window.BimTableColumnManager.instances === 'object') {
-        const mgr = window.BimTableColumnManager.instances['personnel-payroll-table'];
-        if (mgr && typeof mgr.apply === 'function') {
-            mgr.apply();
+    tbody.innerHTML = items.map((c, index) => {
+        const isExpiring = c.end_date && new Date(c.end_date) <= new Date(Date.now() + 30 * 86400000);
+        const dateBadge = isExpiring && c.status === 'ACTIVE' 
+            ? `<span class="text-amber-600 font-bold font-mono">${c.end_date} (Sắp hết hạn)</span>`
+            : `<span class="font-mono text-slate-700">${c.end_date || 'Không thời hạn'}</span>`;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2.5 px-3.5 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs w-12">${index + 1}</td>
+                <td class="py-2.5 px-3.5 font-mono font-bold text-indigo-900 border-r border-slate-200 text-xs">${escapeHtml(c.contract_number)}</td>
+                <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-xs">
+                    <div>${escapeHtml(c.employee_name)}</div>
+                    <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(c.employee_code)}</div>
+                </td>
+                <td class="py-2.5 px-3.5 text-xs text-slate-700 border-r border-slate-200">${escapeHtml(c.contract_type_label || c.contract_type)}</td>
+                <td class="py-2.5 px-3.5 text-xs text-slate-700 border-r border-slate-200">${escapeHtml(c.job_title || '—')}</td>
+                <td class="py-2.5 px-3.5 text-xs font-mono border-r border-slate-200">${c.start_date}</td>
+                <td class="py-2.5 px-3.5 text-xs border-r border-slate-200">${dateBadge}</td>
+                <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(c.base_salary || 0)} đ</td>
+                <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(c.insurance_salary || 0)} đ</td>
+                <td class="py-2.5 px-3.5 text-center text-xs border-r border-slate-200 font-bold text-indigo-700">${c.appendices ? c.appendices.length : 0}</td>
+                <td class="py-2.5 px-3.5 text-center text-xs font-bold border-r border-slate-200">
+                    <span class="${c.status === 'ACTIVE' ? 'text-emerald-700' : (c.status === 'EXPIRED' ? 'text-amber-600' : 'text-slate-400')}">
+                        ${escapeHtml(c.status_label || c.status)}
+                    </span>
+                </td>
+                <td class="py-2.5 px-3.5 text-center text-xs">
+                    <button type="button" onclick="openEmployee360Modal(${c.employee})" class="px-2 py-0.5 border border-indigo-600 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded font-bold cursor-pointer">
+                        Chi tiết
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// --- SUB-PANEL 3: KỲ LƯƠNG & HYBRID PAYROLL ---
+async function loadPayrollPeriodsData() {
+    try {
+        const res = await fetchWithAuth('/api/personnel/periods/');
+        if (!res.ok) throw new Error('Lỗi tải danh mục kỳ lương');
+        rawPayrollPeriodsList = await res.json();
+
+        const select = document.getElementById('payroll-period-select');
+        if (select) {
+            if (rawPayrollPeriodsList.length === 0) {
+                select.innerHTML = '<option value="">Chưa có kỳ lương nào - Nhấn "Tạo Kỳ Lương Mới"</option>';
+            } else {
+                select.innerHTML = rawPayrollPeriodsList.map(p => 
+                    `<option value="${p.id}">[${p.period_code}] ${escapeHtml(p.name)} (${p.status_label || p.status})</option>`
+                ).join('');
+                // Mặc định chọn kỳ đầu tiên
+                onPayrollPeriodChange();
+            }
         }
+    } catch (err) {
+        console.error('Lỗi tải danh sách kỳ lương:', err);
+    }
+}
+
+async function onPayrollPeriodChange() {
+    const select = document.getElementById('payroll-period-select');
+    if (!select || !select.value) return;
+    const periodId = select.value;
+    await loadPayrollPeriodDetail(periodId);
+}
+
+async function loadPayrollPeriodDetail(periodId) {
+    try {
+        const res = await fetchWithAuth(`/api/personnel/periods/${periodId}/`);
+        if (!res.ok) throw new Error('Lỗi tải chi tiết bảng lương kỳ');
+        const data = await res.json();
+        currentPayrollPeriodDetail = data.period || {};
+        currentPayrollSlipsList = data.slips || [];
+
+        // 1. Cập nhật Badge Trạng Thái
+        const statusBadge = document.getElementById('period-status-badge');
+        const pStatus = currentPayrollPeriodDetail.status || 'DRAFT';
+        if (statusBadge) {
+            statusBadge.innerText = currentPayrollPeriodDetail.status_label || pStatus;
+            if (pStatus === 'PAID') {
+                statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border border-emerald-300 bg-emerald-100 text-emerald-800';
+            } else if (pStatus === 'LOCKED') {
+                statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border border-amber-300 bg-amber-100 text-amber-800';
+            } else if (pStatus === 'REVIEWED') {
+                statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border border-blue-300 bg-blue-100 text-blue-800';
+            } else {
+                statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold border border-slate-200 bg-slate-100 text-slate-700';
+            }
+        }
+
+        // Cập nhật khoảng ngày
+        const dateDisp = document.getElementById('period-date-range-display');
+        if (dateDisp) {
+            dateDisp.innerText = `(${currentPayrollPeriodDetail.from_date} ➔ ${currentPayrollPeriodDetail.to_date} | Công chuẩn: ${currentPayrollPeriodDetail.standard_days} ngày)`;
+        }
+
+        // 2. Cập nhật các nút thao tác theo vòng đời
+        const calcBtn = document.getElementById('btn-calculate-payroll');
+        const lockBtn = document.getElementById('btn-lock-payroll');
+        const payBtn = document.getElementById('btn-pay-payroll');
+
+        if (calcBtn) calcBtn.classList.toggle('hidden', pStatus === 'LOCKED' || pStatus === 'PAID');
+        if (lockBtn) lockBtn.classList.toggle('hidden', pStatus !== 'REVIEWED' && pStatus !== 'DRAFT');
+        if (payBtn) payBtn.classList.toggle('hidden', pStatus !== 'LOCKED');
+
+        // 3. Cập nhật Summary Bar
+        const el = id => document.getElementById(id);
+        if (el('sum-total-employees')) el('sum-total-employees').innerText = `${currentPayrollPeriodDetail.total_employees || currentPayrollSlipsList.length} NV`;
+        if (el('sum-total-gross')) el('sum-total-gross').innerText = `${new Intl.NumberFormat('vi-VN').format(currentPayrollPeriodDetail.total_gross || 0)} đ`;
+        if (el('sum-total-ins-emp')) el('sum-total-ins-emp').innerText = `${new Intl.NumberFormat('vi-VN').format(currentPayrollPeriodDetail.total_insurance_employee || 0)} đ`;
+        if (el('sum-total-pit')) el('sum-total-pit').innerText = `${new Intl.NumberFormat('vi-VN').format(currentPayrollPeriodDetail.total_pit || 0)} đ`;
+        if (el('sum-total-advance')) el('sum-total-advance').innerText = `${new Intl.NumberFormat('vi-VN').format(currentPayrollPeriodDetail.total_advances_deducted || 0)} đ`;
+        if (el('sum-total-net')) el('sum-total-net').innerText = `${new Intl.NumberFormat('vi-VN').format(currentPayrollPeriodDetail.total_net || 0)} đ`;
+
+        renderPayrollSlipsTable(currentPayrollSlipsList);
+    } catch (err) {
+        console.error('Lỗi chi tiết kỳ lương:', err);
+    }
+}
+
+function renderPayrollSlipsTable(slips) {
+    const tbody = document.getElementById('payroll-slips-tbody');
+    if (!tbody) return;
+
+    if (!slips || slips.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="18" class="p-8 text-center text-slate-400 font-medium">
+                    <i class="ph ph-receipt text-3xl mb-2 text-slate-300 block"></i>
+                    Chưa có bảng lương chi tiết. Hãy nhấn "⚡ Tính Lương Tự Động" để tính toán.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = slips.map((s, index) => {
+        const otherAllowance = (Number(s.phone_allowance) || 0) + (Number(s.lunch_allowance) || 0) + (Number(s.other_allowance) || 0) + (Number(s.kpi_bonus) || 0);
+        const dropoffDetention = (Number(s.dropoff_allowance) || 0) + (Number(s.detention_allowance) || 0);
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <td class="py-2 px-3 text-center font-mono font-bold text-slate-500 border-r border-slate-200 select-none">${index + 1}</td>
+                <td class="py-2 px-3 font-mono font-bold text-teal-900 border-r border-slate-200">${escapeHtml(s.employee_code)}</td>
+                <td class="py-2 px-3 font-bold text-slate-900 border-r border-slate-200">
+                    <div>${escapeHtml(s.employee_name)}</div>
+                    ${s.employee_nickname ? `<div class="text-[11px] text-slate-400 font-normal">(${escapeHtml(s.employee_nickname)})</div>` : ''}
+                </td>
+                <td class="py-2 px-3 text-slate-700 border-r border-slate-200">${escapeHtml(s.role_label || s.role)}</td>
+                <td class="py-2 px-3 text-center font-mono font-bold border-r border-slate-200">${s.actual_working_days}</td>
+                <td class="py-2 px-3 text-right font-mono border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(s.base_salary || 0)}</td>
+                <td class="py-2 px-3 text-right font-mono border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(s.time_salary || 0)}</td>
+                <td class="py-2 px-3 text-center font-bold text-teal-800 border-r border-slate-200">${s.trip_count || 0}</td>
+                <td class="py-2 px-3 text-right font-mono font-bold text-teal-700 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(s.trip_allowance || 0)}</td>
+                <td class="py-2 px-3 text-right font-mono border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(dropoffDetention)}</td>
+                <td class="py-2 px-3 text-right font-mono border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(otherAllowance)}</td>
+                <td class="py-2 px-3 text-right font-mono font-bold text-slate-900 border-r border-slate-200 bg-slate-50">${new Intl.NumberFormat('vi-VN').format(s.gross_income || 0)}</td>
+                <td class="py-2 px-3 text-right font-mono text-indigo-700 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(s.total_insurance_employee || 0)}</td>
+                <td class="py-2 px-3 text-right font-mono text-rose-700 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(s.pit_amount || 0)}</td>
+                <td class="py-2 px-3 text-right font-mono text-amber-700 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(s.advance_deductions || 0)}</td>
+                <td class="py-2 px-3 text-right font-mono font-black text-emerald-800 border-r border-slate-200 bg-emerald-50/50">${new Intl.NumberFormat('vi-VN').format(s.net_salary || 0)} đ</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold">
+                    ${s.is_paid ? '<span class="text-emerald-700 font-bold">Đã chi</span>' : '<span class="text-amber-600 font-bold">Chờ chi</span>'}
+                </td>
+                <td class="py-2 px-3 text-center">
+                    <button type="button" onclick="openPrintPayslipModal(${s.id})" 
+                        class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        title="Xem và in phiếu lương chi tiết">
+                        <i class="ph-bold ph-printer"></i> In
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function executePayrollCalculation() {
+    const select = document.getElementById('payroll-period-select');
+    if (!select || !select.value) {
+        showToast('warning', 'Vui lòng chọn một kỳ lương cần tính toán.', 'Chú ý');
+        return;
+    }
+
+    try {
+        const periodId = select.value;
+        const res = await fetchWithAuth(`/api/personnel/periods/${periodId}/calculate/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi tính toán lương');
+
+        showToast('success', data.message || 'Đã tính toán thành công bảng lương kỳ!', 'Thành Công');
+        await loadPayrollPeriodDetail(periodId);
+    } catch (err) {
+        console.error('Lỗi tính toán lương:', err);
+        showToast('error', err.message || 'Không thể tính toán lương.', 'Lỗi');
+    }
+}
+
+async function updatePayrollPeriodStatus(newStatus) {
+    const select = document.getElementById('payroll-period-select');
+    if (!select || !select.value) return;
+
+    const periodId = select.value;
+    let confirmMsg = `Bạn có chắc muốn chuyển kỳ lương sang trạng thái '${newStatus}'?`;
+    if (newStatus === 'PAID') {
+        confirmMsg = `XÁC NHẬN CHI TRẢ LƯƠNG:\n\nHệ thống sẽ tự động sinh PHIẾU CHI trên SỔ QUỸ (CashTransaction) tương ứng với tổng tiền thực lĩnh Net.\n\nBạn có chắc chắn muốn thực hiện?`;
+    }
+
+    const confirmed = await showConfirmModal({
+        title: 'Cập Nhật Trạng Thái Kỳ Lương',
+        message: confirmMsg,
+        confirmText: 'Xác Nhận',
+        cancelText: 'Huỷ',
+        type: newStatus === 'PAID' ? 'danger' : 'warning',
+        icon: 'ph-bold ph-check-circle text-2xl'
+    });
+    if (!confirmed) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/personnel/periods/${periodId}/status/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi cập nhật trạng thái kỳ lương');
+
+        showToast('success', data.message || 'Đã cập nhật trạng thái kỳ lương!', 'Thành Công');
+        await loadPayrollPeriodsData();
+        select.value = periodId;
+        await loadPayrollPeriodDetail(periodId);
+    } catch (err) {
+        console.error('Lỗi cập nhật trạng thái:', err);
+        showToast('error', err.message || 'Không thể cập nhật trạng thái.', 'Lỗi');
+    }
+}
+
+async function exportBankBatchTransfer() {
+    const select = document.getElementById('payroll-period-select');
+    if (!select || !select.value) return;
+
+    try {
+        const periodId = select.value;
+        const res = await fetchWithAuth(`/api/personnel/periods/${periodId}/bank-export/`);
+        if (!res.ok) throw new Error('Lỗi xuất dữ liệu chuyển khoản');
+        const data = await res.json();
+
+        // Tạo nội dung CSV BOM UTF-8 để mở trực tiếp trong Excel
+        let csv = '\uFEFF';
+        csv += `BẢNG KÊ CHUYỂN KHOẢN LƯƠNG QUA NGÂN HÀNG - ${data.period_name || data.period_code}\n`;
+        csv += `Tổng số cán bộ nhân viên: ${data.total_employees} | Tổng tiền chuyển: ${data.total_transfer_formatted}\n\n`;
+        csv += 'STT,Mã Nhân Viên,Họ Và Tên,Chủ Tài Khoản,Số Tài Khoản,Ngân Hàng,Chi Nhánh,Số Tiền (VNĐ),Nội Dung Chuyển Khoản\n';
+
+        (data.records || []).forEach(r => {
+            csv += `"${r.stt}","${r.employee_code}","${r.employee_name}","${r.beneficiary_name}","${r.account_number}","${r.bank_name}","${r.bank_branch}","${r.amount}","${r.memo}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Bang_Ke_Chuyen_Khoan_Luong_${data.period_code}.csv`;
+        link.click();
+
+        showToast('success', 'Đã tải xuống file danh sách chuyển khoản ngân hàng.', 'Xuất File Thành Công');
+    } catch (err) {
+        console.error('Lỗi xuất file bank:', err);
+        showToast('error', err.message || 'Không thể xuất file chuyển khoản.', 'Lỗi');
+    }
+}
+
+async function openPrintPayslipModal(slipId) {
+    try {
+        const res = await fetchWithAuth(`/api/personnel/slips/${slipId}/print/`);
+        if (!res.ok) throw new Error('Lỗi tải phiếu lương');
+        const data = await res.json();
+        
+        const modal = document.getElementById('modal-print-payslip');
+        const paper = document.getElementById('payslip-paper-content');
+        if (!modal || !paper) return;
+
+        const s = data.slip || {};
+        const emp = data.employee || {};
+        const co = data.company || {};
+        const period = data.period || {};
+
+        paper.innerHTML = `
+            <!-- Tiêu đề văn bản phẳng theo chuẩn chứng từ A4 -->
+            <div class="border-b border-slate-300 pb-3">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-sm font-black uppercase text-slate-900 tracking-tight">${co.name}</h2>
+                        <p class="text-xs text-slate-500">${co.address}</p>
+                        <p class="text-xs text-slate-500">MST: ${co.tax_id} | Hotline: ${co.hotline}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-mono font-bold text-xs text-teal-800">${s.slip_code}</div>
+                        <div class="text-xs text-slate-400">Ngày lập: ${new Date().toLocaleDateString('vi-VN')}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center py-2">
+                <h1 class="text-base font-black uppercase text-slate-900 tracking-wide">PHIẾU LƯƠNG CHI TIẾT</h1>
+                <p class="text-xs text-slate-600 font-semibold italic">${period.name} (Từ ${period.from_date} đến ${period.to_date})</p>
+            </div>
+
+            <!-- Khối thông tin nhân viên (Flat text layout) -->
+            <div class="grid grid-cols-2 gap-x-8 gap-y-1.5 text-xs py-2 border-y border-slate-200">
+                <div><strong>Họ và tên:</strong> ${emp.full_name} ${emp.nickname ? '(' + emp.nickname + ')' : ''}</div>
+                <div><strong>Mã nhân viên:</strong> <span class="font-mono font-bold">${emp.code}</span></div>
+                <div><strong>Phòng ban:</strong> ${emp.department}</div>
+                <div><strong>Chức vụ:</strong> ${emp.role}</div>
+                <div><strong>Số CCCD:</strong> ${emp.national_id || '—'}</div>
+                <div><strong>Số TK ngân hàng:</strong> <span class="font-mono">${emp.bank_account || '—'}</span> (${emp.bank_name || '—'})</div>
+                <div><strong>Mã số thuế:</strong> ${emp.tax_id || '—'}</div>
+                <div><strong>Số sổ BHXH:</strong> ${emp.insurance_number || '—'}</div>
+            </div>
+
+            <!-- Bảng chi tiết thu nhập & khấu trừ dạng tài liệu phẳng -->
+            <table class="w-full text-xs border-collapse border border-slate-300 my-2">
+                <thead>
+                    <tr class="bg-slate-100 font-bold border-b border-slate-300">
+                        <th class="p-2 border-r border-slate-300 text-left">MỤC THU NHẬP (A)</th>
+                        <th class="p-2 border-r border-slate-300 text-right w-36">SỐ TIỀN (VNĐ)</th>
+                        <th class="p-2 border-r border-slate-300 text-left">MỤC KHẤU TRỪ & TRÍCH NỘP (B)</th>
+                        <th class="p-2 text-right w-36">SỐ TIỀN (VNĐ)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 font-mono">
+                    <tr>
+                        <td class="p-2 border-r border-slate-300">1. Lương thời gian (${s.actual_working_days}/${period.standard_days} ngày)</td>
+                        <td class="p-2 border-r border-slate-300 text-right">${new Intl.NumberFormat('vi-VN').format(s.time_salary || 0)}</td>
+                        <td class="p-2 border-r border-slate-300">1. BHXH NLĐ (8.0%)</td>
+                        <td class="p-2 text-right">${new Intl.NumberFormat('vi-VN').format(s.bhxh_employee || 0)}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-2 border-r border-slate-300">2. Lương chuyến xe (${s.trip_count || 0} chuyến chính)</td>
+                        <td class="p-2 border-r border-slate-300 text-right">${new Intl.NumberFormat('vi-VN').format(s.trip_allowance || 0)}</td>
+                        <td class="p-2 border-r border-slate-300">2. BHYT NLĐ (1.5%)</td>
+                        <td class="p-2 text-right">${new Intl.NumberFormat('vi-VN').format(s.bhyt_employee || 0)}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-2 border-r border-slate-300">3. Lương cắt kéo / hạ cont (${s.dropoff_trip_count || 0} lượt)</td>
+                        <td class="p-2 border-r border-slate-300 text-right">${new Intl.NumberFormat('vi-VN').format(s.dropoff_allowance || 0)}</td>
+                        <td class="p-2 border-r border-slate-300">3. BHTN NLĐ (1.0%)</td>
+                        <td class="p-2 text-right">${new Intl.NumberFormat('vi-VN').format(s.bhtn_employee || 0)}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-2 border-r border-slate-300">4. Phụ cấp neo xe / qua đêm</td>
+                        <td class="p-2 border-r border-slate-300 text-right">${new Intl.NumberFormat('vi-VN').format(s.detention_allowance || 0)}</td>
+                        <td class="p-2 border-r border-slate-300">4. Thuế Thu Nhập Cá Nhân (TNCN)</td>
+                        <td class="p-2 text-right text-rose-700">${new Intl.NumberFormat('vi-VN').format(s.pit_amount || 0)}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-2 border-r border-slate-300">5. Thưởng nhiên liệu & KPI</td>
+                        <td class="p-2 border-r border-slate-300 text-right">${new Intl.NumberFormat('vi-VN').format((Number(s.fuel_bonus) || 0) + (Number(s.kpi_bonus) || 0))}</td>
+                        <td class="p-2 border-r border-slate-300">5. Khấu trừ hoàn ứng chuyến xe</td>
+                        <td class="p-2 text-right text-amber-700">${new Intl.NumberFormat('vi-VN').format(s.advance_deductions || 0)}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-2 border-r border-slate-300">6. Phụ cấp khác (Điện thoại, ăn trưa)</td>
+                        <td class="p-2 border-r border-slate-300 text-right">${new Intl.NumberFormat('vi-VN').format((Number(s.phone_allowance) || 0) + (Number(s.lunch_allowance) || 0) + (Number(s.other_allowance) || 0))}</td>
+                        <td class="p-2 border-r border-slate-300">6. Khấu trừ khác</td>
+                        <td class="p-2 text-right">${new Intl.NumberFormat('vi-VN').format(s.other_deductions || 0)}</td>
+                    </tr>
+                    <tr class="bg-slate-50 font-bold">
+                        <td class="p-2 border-r border-slate-300">TỔNG THU NHẬP (GROSS)</td>
+                        <td class="p-2 border-r border-slate-300 text-right">${new Intl.NumberFormat('vi-VN').format(s.gross_income || 0)}</td>
+                        <td class="p-2 border-r border-slate-300">TỔNG KHẤU TRỪ</td>
+                        <td class="p-2 text-right">${new Intl.NumberFormat('vi-VN').format((Number(s.total_insurance_employee) || 0) + (Number(s.pit_amount) || 0) + (Number(s.advance_deductions) || 0) + (Number(s.other_deductions) || 0))}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Dòng Thực Lĩnh Net -->
+            <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-lg flex justify-between items-center text-xs">
+                <div>
+                    <span class="font-bold text-slate-800 uppercase">SỐ TIỀN THỰC LĨNH (NET TAKE-HOME):</span>
+                    <span class="block text-[11px] text-slate-500 font-sans italic">Hình thức: ${s.payment_method === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản ngân hàng'}</span>
+                </div>
+                <div class="text-base font-black text-emerald-800 font-mono">
+                    ${new Intl.NumberFormat('vi-VN').format(s.net_salary || 0)} VNĐ
+                </div>
+            </div>
+
+            <!-- Chữ ký 4 bên theo chuẩn chứng từ văn bản phẳng -->
+            <div class="grid grid-cols-4 gap-4 text-center text-xs pt-8 pb-4">
+                <div>
+                    <p class="font-bold uppercase text-slate-800">Người Lập Biểu</p>
+                    <p class="text-[11px] text-slate-400 italic">(Ký, họ tên)</p>
+                </div>
+                <div>
+                    <p class="font-bold uppercase text-slate-800">Kế Toán Trưởng</p>
+                    <p class="text-[11px] text-slate-400 italic">(Ký, họ tên)</p>
+                </div>
+                <div>
+                    <p class="font-bold uppercase text-slate-800">Giám Đốc</p>
+                    <p class="text-[11px] text-slate-400 italic">(Ký, đóng dấu)</p>
+                </div>
+                <div>
+                    <p class="font-bold uppercase text-slate-800">Người Lao Động</p>
+                    <p class="text-[11px] text-slate-400 italic">(Ký, xác nhận)</p>
+                </div>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } catch (err) {
+        console.error('Lỗi in phiếu lương:', err);
+        showToast('error', err.message || 'Không thể xem phiếu lương.', 'Lỗi');
+    }
+}
+
+function closePrintPayslipModal() {
+    const modal = document.getElementById('modal-print-payslip');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+// Modal tạo kỳ lương
+function openCreatePeriodModal() {
+    const modal = document.getElementById('modal-create-period');
+    if (!modal) return;
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+
+    document.getElementById('new-period-code').value = `${y}-${m}`;
+    document.getElementById('new-period-name').value = `Bảng lương Tháng ${m}/${y}`;
+    document.getElementById('new-period-from').value = `${y}-${m}-01`;
+    document.getElementById('new-period-to').value = `${y}-${m}-${lastDay}`;
+    document.getElementById('new-period-std-days').value = '26.0';
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeCreatePeriodModal() {
+    const modal = document.getElementById('modal-create-period');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function submitCreatePeriod(event) {
+    event.preventDefault();
+    const payload = {
+        period_code: document.getElementById('new-period-code').value.trim(),
+        name: document.getElementById('new-period-name').value.trim(),
+        from_date: document.getElementById('new-period-from').value,
+        to_date: document.getElementById('new-period-to').value,
+        standard_days: parseFloat(document.getElementById('new-period-std-days').value || 26.0)
+    };
+
+    try {
+        const res = await fetchWithAuth('/api/personnel/periods/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi khởi tạo kỳ lương');
+
+        showToast('success', data.message || 'Đã khởi tạo kỳ lương mới thành công!', 'Thành Công');
+        closeCreatePeriodModal();
+        await loadPayrollPeriodsData();
+    } catch (err) {
+        console.error('Lỗi tạo kỳ lương:', err);
+        showToast('error', err.message || 'Không thể tạo kỳ lương.', 'Lỗi');
+    }
+}
+
+// Modal tạo hợp đồng
+function openCreateContractModal() {
+    showToast('info', 'Chức năng ký hợp đồng mới: Vui lòng xem thông tin chi tiết qua Hồ sơ 360° của nhân sự.', 'Thông Báo');
+}
+
+// --- SUB-PANEL 4: CHÍNH SÁCH LƯƠNG, BẢO HIỂM ---
+async function loadPayrollPoliciesData() {
+    try {
+        const [policyRes, rateRes] = await Promise.all([
+            fetchWithAuth('/api/personnel/policy-config/'),
+            fetchWithAuth('/api/personnel/deduction-rates/')
+        ]);
+
+        if (policyRes.ok) {
+            const p = await policyRes.json();
+            const el = id => document.getElementById(id);
+            if (el('cfg-personal-relief')) el('cfg-personal-relief').value = new Intl.NumberFormat('vi-VN').format(p.personal_relief || 11000000);
+            if (el('cfg-dependent-relief')) el('cfg-dependent-relief').value = new Intl.NumberFormat('vi-VN').format(p.dependent_relief || 4400000);
+            if (el('cfg-standard-days')) el('cfg-standard-days').value = p.standard_working_days || 26.0;
+            if (el('cfg-max-insurance')) el('cfg-max-insurance').value = new Intl.NumberFormat('vi-VN').format(p.max_insurance_salary || 46800000);
+        }
+
+        if (rateRes.ok) {
+            const r = await rateRes.json();
+            const el = id => document.getElementById(id);
+            if (el('rate-emp-bhxh')) el('rate-emp-bhxh').value = (Number(r.bhxh_employee_rate) * 100).toFixed(1);
+            if (el('rate-emp-bhyt')) el('rate-emp-bhyt').value = (Number(r.bhyt_employee_rate) * 100).toFixed(1);
+            if (el('rate-emp-bhtn')) el('rate-emp-bhtn').value = (Number(r.bhtn_employee_rate) * 100).toFixed(1);
+            if (el('rate-empr-bhxh')) el('rate-empr-bhxh').value = (Number(r.bhxh_employer_rate) * 100).toFixed(1);
+            if (el('rate-empr-bhyt')) el('rate-empr-bhyt').value = (Number(r.bhyt_employer_rate) * 100).toFixed(1);
+            if (el('rate-empr-bhtn')) el('rate-empr-bhtn').value = (Number(r.bhtn_employer_rate) * 100).toFixed(1);
+            if (el('rate-empr-union')) el('rate-empr-union').value = (Number(r.union_employer_rate) * 100).toFixed(1);
+        }
+    } catch (err) {
+        console.error('Lỗi tải chính sách lương:', err);
+    }
+}
+
+async function savePayrollPolicyConfig() {
+    const payload = {
+        personal_relief: parseInt(String(document.getElementById('cfg-personal-relief').value).replace(/\D/g, ''), 10) || 11000000,
+        dependent_relief: parseInt(String(document.getElementById('cfg-dependent-relief').value).replace(/\D/g, ''), 10) || 4400000,
+        standard_working_days: parseFloat(document.getElementById('cfg-standard-days').value) || 26.0,
+        max_insurance_salary: parseInt(String(document.getElementById('cfg-max-insurance').value).replace(/\D/g, ''), 10) || 46800000,
+    };
+
+    try {
+        const res = await fetchWithAuth('/api/personnel/policy-config/', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi lưu cấu hình chính sách');
+        showToast('success', 'Đã lưu cấu hình tham số lương & giảm trừ gia cảnh.', 'Thành Công');
+    } catch (err) {
+        showToast('error', err.message || 'Không thể lưu cấu hình.', 'Lỗi');
+    }
+}
+
+async function saveSalaryDeductionRate() {
+    const payload = {
+        bhxh_employee_rate: parseFloat(document.getElementById('rate-emp-bhxh').value) / 100,
+        bhyt_employee_rate: parseFloat(document.getElementById('rate-emp-bhyt').value) / 100,
+        bhtn_employee_rate: parseFloat(document.getElementById('rate-emp-bhtn').value) / 100,
+        bhxh_employer_rate: parseFloat(document.getElementById('rate-empr-bhxh').value) / 100,
+        bhyt_employer_rate: parseFloat(document.getElementById('rate-empr-bhyt').value) / 100,
+        bhtn_employer_rate: parseFloat(document.getElementById('rate-empr-bhtn').value) / 100,
+        union_employer_rate: parseFloat(document.getElementById('rate-empr-union').value) / 100,
+    };
+
+    try {
+        const res = await fetchWithAuth('/api/personnel/deduction-rates/', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi lưu tỷ lệ bảo hiểm');
+        showToast('success', 'Đã lưu tỷ lệ trích nộp bảo hiểm xã hội thành công.', 'Thành Công');
+    } catch (err) {
+        showToast('error', err.message || 'Không thể lưu tỷ lệ.', 'Lỗi');
     }
 }
 
@@ -24437,7 +24710,247 @@ async function openDirectPrintCustoms(customsId) {
         showToast('error', 'Không thể mở lệnh in tờ khai hải quan', 'Lỗi In');
     }
 }
-window.openDirectPrintCustoms = openDirectPrintCustoms;
+function handleEmployeeRoleChange() {
+    const roleSelect = document.getElementById('emp-role');
+    const driverFields = document.getElementById('emp-driver-fields');
+    if (roleSelect && driverFields) {
+        if (roleSelect.value === 'DRIVER') {
+            driverFields.classList.remove('hidden');
+        } else {
+            driverFields.classList.add('hidden');
+        }
+    }
+}
+window.handleEmployeeRoleChange = handleEmployeeRoleChange;
+
+function openCreateEmployeePage(updateHistory = true) {
+    const form = document.getElementById('form-employee');
+    if (form) form.reset();
+    document.getElementById('emp-edit-id').value = '';
+
+    const el = id => document.getElementById(id);
+    if (el('emp-code')) el('emp-code').value = '';
+    if (el('emp-full-name')) el('emp-full-name').value = '';
+    if (el('emp-nickname')) el('emp-nickname').value = '';
+    if (el('emp-phone')) el('emp-phone').value = '';
+    if (el('emp-zalo')) el('emp-zalo').value = '';
+    if (el('emp-email')) el('emp-email').value = '';
+    if (el('emp-department')) el('emp-department').value = 'FLEET';
+    if (el('emp-role')) el('emp-role').value = 'DRIVER';
+    if (el('emp-gender')) el('emp-gender').value = 'MALE';
+    if (el('emp-dob')) el('emp-dob').value = '';
+    if (el('emp-national-id')) el('emp-national-id').value = '';
+    if (el('emp-national-id-date')) el('emp-national-id-date').value = '';
+    if (el('emp-national-id-place')) el('emp-national-id-place').value = '';
+    if (el('emp-tax-id')) el('emp-tax-id').value = '';
+    if (el('emp-insurance-number')) el('emp-insurance-number').value = '';
+    if (el('emp-bank-account')) el('emp-bank-account').value = '';
+    if (el('emp-bank-name')) el('emp-bank-name').value = '';
+    if (el('emp-bank-beneficiary')) el('emp-bank-beneficiary').value = '';
+    if (el('emp-join-date')) el('emp-join-date').value = '';
+    if (el('emp-license-number')) el('emp-license-number').value = '';
+    if (el('emp-license-expiry')) el('emp-license-expiry').value = '';
+    if (el('emp-base-salary')) el('emp-base-salary').value = '5,000,000';
+    if (el('emp-insurance-salary')) el('emp-insurance-salary').value = '5,000,000';
+    if (el('emp-is-insurance')) el('emp-is-insurance').value = 'true';
+    if (el('emp-is-active')) el('emp-is-active').value = 'true';
+    if (el('emp-permanent-address')) el('emp-permanent-address').value = '';
+    if (el('emp-current-address')) el('emp-current-address').value = '';
+
+    handleEmployeeRoleChange();
+
+    if (updateHistory && window.history && window.history.pushState) {
+        const path = '/personnel/employees/new';
+        if (window.location.pathname !== path) {
+            window.history.pushState({ view: 'employee-form' }, '', path);
+        }
+    }
+
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-employee-form') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const formView = document.getElementById('view-employee-form');
+    if (formView) formView.classList.remove('hidden-view');
+
+    setEmployeeFormReadOnly(false);
+    const delBtn = document.getElementById('btn-employee-delete-bottom');
+    if (delBtn) delBtn.classList.add('hidden');
+    const printBtn = document.getElementById('btn-employee-print-bottom');
+    if (printBtn) printBtn.classList.add('hidden');
+    const editBtn = document.getElementById('btn-employee-edit-bottom');
+    if (editBtn) editBtn.classList.add('hidden');
+    const submitBtnText = document.getElementById('emp-submit-btn-text');
+    if (submitBtnText) submitBtnText.innerText = 'Lưu';
+
+    setTopbarFullpageMode({
+        backFn: backToPersonnel,
+        prefix: 'Hành Chính & Nhân Sự',
+        title: 'Tạo Mới Nhân Sự',
+        subText: '',
+        badgesHtml: '',
+        actionsHtml: ''
+    });
+}
+window.openCreateEmployeePage = openCreateEmployeePage;
+window.openCreateEmployeeModal = openCreateEmployeePage;
+
+function openEditEmployeePage(id, updateHistory = true) {
+    const emp = (rawEmployeesList || []).find(e => e.id === id);
+    if (!emp) return;
+
+    document.getElementById('emp-edit-id').value = id;
+    const el = id_ => document.getElementById(id_);
+    if (el('emp-code')) el('emp-code').value = emp.code || '';
+    if (el('emp-full-name')) el('emp-full-name').value = emp.full_name || '';
+    if (el('emp-nickname')) el('emp-nickname').value = emp.nickname || '';
+    if (el('emp-phone')) el('emp-phone').value = emp.phone_number || '';
+    if (el('emp-zalo')) el('emp-zalo').value = emp.zalo_id || '';
+    if (el('emp-email')) el('emp-email').value = emp.email || '';
+    if (el('emp-department')) el('emp-department').value = emp.department || 'FLEET';
+    if (el('emp-role')) el('emp-role').value = emp.role || 'DRIVER';
+    if (el('emp-gender')) el('emp-gender').value = emp.gender || 'MALE';
+    if (el('emp-dob')) el('emp-dob').value = emp.date_of_birth || '';
+    if (el('emp-national-id')) el('emp-national-id').value = emp.national_id || '';
+    if (el('emp-national-id-date')) el('emp-national-id-date').value = emp.national_id_date || '';
+    if (el('emp-national-id-place')) el('emp-national-id-place').value = emp.national_id_place || '';
+    if (el('emp-tax-id')) el('emp-tax-id').value = emp.tax_id || '';
+    if (el('emp-insurance-number')) el('emp-insurance-number').value = emp.insurance_number || '';
+    if (el('emp-bank-account')) el('emp-bank-account').value = emp.bank_account || '';
+    if (el('emp-bank-name')) el('emp-bank-name').value = emp.bank_name || '';
+    if (el('emp-bank-beneficiary')) el('emp-bank-beneficiary').value = emp.bank_beneficiary || '';
+    if (el('emp-join-date')) el('emp-join-date').value = emp.join_date || '';
+    if (el('emp-license-number')) el('emp-license-number').value = emp.license_number || '';
+    if (el('emp-license-expiry')) el('emp-license-expiry').value = emp.license_expiry || '';
+    if (el('emp-base-salary')) el('emp-base-salary').value = new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0);
+    if (el('emp-insurance-salary')) el('emp-insurance-salary').value = new Intl.NumberFormat('vi-VN').format(emp.insurance_salary || 0);
+    if (el('emp-is-insurance')) el('emp-is-insurance').value = emp.is_social_insurance_participant ? 'true' : 'false';
+    if (el('emp-is-active')) el('emp-is-active').value = emp.is_active ? 'true' : 'false';
+    if (el('emp-permanent-address')) el('emp-permanent-address').value = emp.permanent_address || '';
+    if (el('emp-current-address')) el('emp-current-address').value = emp.current_address || '';
+
+    handleEmployeeRoleChange();
+
+    if (updateHistory && window.history && window.history.pushState) {
+        const path = `/personnel/employees/${id}`;
+        if (window.location.pathname !== path) {
+            window.history.pushState({ view: 'employee-form', employeeId: id }, '', path);
+        }
+    }
+
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-employee-form') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
+    const formView = document.getElementById('view-employee-form');
+    if (formView) formView.classList.remove('hidden-view');
+
+    setEmployeeFormReadOnly(true);
+    const submitBtnText = document.getElementById('emp-submit-btn-text');
+    if (submitBtnText) submitBtnText.innerText = 'Lưu';
+
+    setTopbarFullpageMode({
+        backFn: backToPersonnel,
+        prefix: 'Hành Chính & Nhân Sự',
+        title: `Hồ Sơ Nhân Sự | ${emp.full_name} (${emp.code || id})`,
+        subText: '',
+        badgesHtml: '',
+        actionsHtml: ''
+    });
+}
+window.openEditEmployeePage = openEditEmployeePage;
+window.openEditEmployeeModal = openEditEmployeePage;
+
+function backToPersonnel() {
+    const formView = document.getElementById('view-employee-form');
+    if (formView) formView.classList.add('hidden-view');
+
+    if (previousActiveTab && previousActiveTab !== 'employee-form') {
+        switchTab(previousActiveTab, true);
+    } else {
+        switchTab('nhan-su', true);
+    }
+}
+window.backToPersonnel = backToPersonnel;
+window.closeEmployeeModal = backToPersonnel;
+
+async function submitEmployeeForm(event) {
+    event.preventDefault();
+    const editId = document.getElementById('emp-edit-id').value;
+    const isEdit = Boolean(editId);
+
+    const baseSalaryClean = String(document.getElementById('emp-base-salary').value || '0').replace(/\D/g, '');
+    const insSalaryClean = String(document.getElementById('emp-insurance-salary')?.value || '0').replace(/\D/g, '');
+
+    const payload = {
+        code: document.getElementById('emp-code').value.trim().toUpperCase(),
+        full_name: document.getElementById('emp-full-name').value.trim(),
+        nickname: document.getElementById('emp-nickname').value.trim(),
+        phone_number: document.getElementById('emp-phone').value.trim(),
+        zalo_id: document.getElementById('emp-zalo').value.trim(),
+        email: document.getElementById('emp-email')?.value.trim() || '',
+        department: document.getElementById('emp-department').value,
+        role: document.getElementById('emp-role').value,
+        gender: document.getElementById('emp-gender')?.value || 'MALE',
+        date_of_birth: document.getElementById('emp-dob')?.value || null,
+        national_id: document.getElementById('emp-national-id')?.value.trim() || '',
+        national_id_date: document.getElementById('emp-national-id-date')?.value || null,
+        national_id_place: document.getElementById('emp-national-id-place')?.value.trim() || '',
+        tax_id: document.getElementById('emp-tax-id')?.value.trim() || '',
+        insurance_number: document.getElementById('emp-insurance-number')?.value.trim() || '',
+        bank_account: document.getElementById('emp-bank-account')?.value.trim() || '',
+        bank_name: document.getElementById('emp-bank-name')?.value.trim() || '',
+        bank_beneficiary: document.getElementById('emp-bank-beneficiary')?.value.trim().toUpperCase() || '',
+        join_date: document.getElementById('emp-join-date')?.value || null,
+        license_number: document.getElementById('emp-license-number').value.trim(),
+        license_expiry: document.getElementById('emp-license-expiry').value || null,
+        base_salary: parseInt(baseSalaryClean, 10) || 0,
+        insurance_salary: parseInt(insSalaryClean, 10) || 5000000,
+        is_social_insurance_participant: document.getElementById('emp-is-insurance')?.value === 'true',
+        is_active: document.getElementById('emp-is-active').value === 'true',
+        permanent_address: document.getElementById('emp-permanent-address')?.value.trim() || '',
+        current_address: document.getElementById('emp-current-address')?.value.trim() || ''
+    };
+
+    const url = isEdit ? `/api/personnel/employees/${editId}/` : '/api/personnel/employees/';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetchWithAuth(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            const errStr = data.errors ? Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join('; ') : (data.message || 'Lỗi lưu hồ sơ');
+            throw new Error(errStr);
+        }
+
+        showToast('success', data.message || 'Đã lưu hồ sơ nhân sự thành công!', 'Thành Công');
+        await loadEmployeesData();
+        const savedId = editId || data.id || data.data?.id;
+        if (savedId) {
+            openEditEmployeePage(savedId, true);
+        } else {
+            backToPersonnel();
+        }
+    } catch (err) {
+        console.error('Lỗi gửi form nhân sự:', err);
+        showToast('error', err.message || 'Không thể lưu hồ sơ.', 'Lỗi Khai Báo');
+    }
+}
+window.submitEmployeeForm = submitEmployeeForm;
+
+function printCurrentEmployeeProfile() {
+    window.print();
+}
+window.printCurrentEmployeeProfile = printCurrentEmployeeProfile;
 
 /**
  * 4. NHÂN SỰ: Khóa form, mở sửa, xóa và in trực tiếp

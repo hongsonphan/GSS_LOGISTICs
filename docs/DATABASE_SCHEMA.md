@@ -30,7 +30,15 @@ Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
 - `core.TrackingEventLog`: Lưu chuỗi sự kiện bất biến (Event Sourcing) cho mọi thay đổi trạng thái, tọa độ GPS và thao tác của điều độ/tài xế.
 
 ### B. Phân hệ Nhân sự & Tiền lương (`apps/personnel`)
-- `personnel.Employee`: Quản lý toàn bộ nhân viên, phân loại theo `Department` (Điều vận, Đội xe, Kinh doanh, Hải quan, Kế toán, BGD) và chức danh. Lưu trữ số GPLX hạng FC, lương cơ bản, tạm ứng.
+- `personnel.Employee`: Quản lý hồ sơ nhân sự 360°, CCCD/CMND, MST, BHXH, tài khoản ngân hàng chi lương, phân loại theo `Department` và chức danh `role`. Lưu trữ số GPLX hạng C/FC có cảnh báo hạn 30 ngày, lương cơ bản, lương căn cứ đóng BHXH.
+- `personnel.EmployeeDependent`: Người phụ thuộc đăng ký giảm trừ gia cảnh thuế TNCN (4.4tr/người/tháng).
+- `personnel.LaborContract`: Hợp đồng lao động (Thử việc, Xác định thời hạn, Không xác định thời hạn, Thời vụ), mức lương, lương BHXH, cảnh báo hạn 30 ngày.
+- `personnel.ContractAppendix`: Phụ lục hợp đồng lao động điều chỉnh mức lương, chức danh.
+- `personnel.TaxBracket`: Biểu thuế TNCN 7 bậc lũy tiến từng phần kèm số trừ nhanh chuẩn pháp luật Việt Nam.
+- `personnel.SalaryDeductionRate`: Tỷ lệ trích nộp bảo hiểm bắt buộc (NLĐ 10.5%, Doanh nghiệp 21.5%, Kinh phí công đoàn 2%).
+- `personnel.PayrollPolicyConfig`: Tham số giảm trừ bản thân (11tr), giảm trừ NPT (4.4tr), ngày công tiêu chuẩn (26 ngày), trần BHXH (46.8tr).
+- `personnel.PayrollPeriod`: Kỳ tính lương hàng tháng (`YYYY-MM`), vòng đời 4 bước (`DRAFT ➔ REVIEWED ➔ LOCKED ➔ PAID`), liên thông Sổ Quỹ `CashTransaction`.
+- `personnel.PayrollSlip`: Phiếu lương cá nhân chi tiết theo động cơ Hybrid Payroll (Lương thời gian, Lương chuyến `DispatchTrip`, Lương cắt kéo, Neo xe, Phụ cấp, Thưởng dầu, BHXH 10.5%, Thuế TNCN 7 bậc, Khấu trừ tạm ứng `DriverTripAdvance`, Thực lĩnh Net).
 
 ### C. Phân hệ Quản lý Đội xe (`apps/fleet`)
 - `fleet.Vehicle`: Quản lý đầu kéo, xe tải 10T, xe tải 2T. Lưu trữ thông tin đăng kiểm (`registration_expiry`), định kỳ bảo trì (`next_maintenance_date`), tài xế chỉ định, trạng thái hoạt động (`ACTIVE`, `IDLE`, `MAINTENANCE`).

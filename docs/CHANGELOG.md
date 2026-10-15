@@ -2,6 +2,55 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.0.0] - 2026-10-15 (Xây Dựng Toàn Diện Phân Hệ Quản Lý Nhân Sự & Tiền Lương — HRM & Hybrid Payroll Engine)
+
+### 1. Kiến Trúc & Cơ Sở Dữ Liệu Nhân Sự 360° (Personnel & Legal Data Model):
+- **Mở rộng Hồ sơ Nhân sự 360° (`Employee`):**
+  * Bổ sung định danh công dân & pháp lý: `national_id` (CCCD/CMND 12 số), `national_id_date` (Ngày cấp), `national_id_place` (Nơi cấp), `tax_id` (Mã số thuế cá nhân), `insurance_number` (Mã số sổ BHXH).
+  * Bổ sung thông tin nhân thân: `gender` (MALE/FEMALE/OTHER), `date_of_birth` (Ngày sinh), `permanent_address` (Địa chỉ thường trú), `current_address` (Nơi ở hiện nay), `email`.
+  * Bổ sung tài khoản ngân hàng chi lương: `bank_account`, `bank_name`, `bank_branch`, `bank_beneficiary` (Tên thụ hưởng).
+  * Bổ sung chế độ việc làm & bảo hiểm: `join_date` (Ngày vào làm), `resign_date` (Ngày nghỉ việc), `is_social_insurance_participant` (Tham gia BHXH bắt buộc 10.5%), `insurance_salary` (Mức lương căn cứ trích nộp BHXH).
+- **Người Phụ Thuộc Giảm Trừ Gia Cảnh (`EmployeeDependent`):**
+  * Quản lý họ tên, mối quan hệ, số CCCD/khai sinh, MST người phụ thuộc, thời gian bắt đầu và kết thúc tính giảm trừ thuế TNCN.
+- **Hợp Đồng Lao Động & Phụ Lục (`LaborContract`, `ContractAppendix`):**
+  * Quản lý vòng đời hợp đồng: `DRAFT`, `ACTIVE`, `EXPIRED`, `TERMINATED`.
+  * Các loại hợp đồng: Thử việc, Xác định thời hạn (1 - 3 năm), Không xác định thời hạn, Thời vụ.
+  * Phụ lục hợp đồng lưu vết điều chỉnh lương cơ bản, vị trí công tác, điều khoản phụ cấp.
+  * Tích hợp cảnh báo tự động khi HĐLĐ hoặc bằng lái xe GPLX còn hạn dưới 30 ngày.
+
+### 2. Động Cơ Lương Kết Hợp & Liên Thông Vận Tải (Hybrid Payroll Engine):
+- **Chính Sách & Biểu Thuế Pháp Lý:**
+  * `PayrollPolicyConfig`: Tham số giảm trừ gia cảnh bản thân (11,000,000 đ/tháng), người phụ thuộc (4,400,000 đ/tháng), ngày công tiêu chuẩn hàng tháng (26.0 ngày), mức trần đóng BHXH (46,800,000 đ).
+  * `TaxBracket`: Biểu thuế thu nhập cá nhân (TNCN) 7 bậc lũy tiến từng phần kèm số trừ nhanh chuẩn pháp luật Việt Nam.
+  * `SalaryDeductionRate`: Tỷ lệ trích nộp bảo hiểm hiện hành: NLĐ đóng 10.5% (BHXH 8%, BHYT 1.5%, BHTN 1%) - Doanh nghiệp đóng 21.5% (BHXH 17.5%, BHYT 3%, BHTN 1%) + Kinh phí công đoàn 2%.
+- **Động Cơ Tính Lương Kết Hợp (`PayrollCalculateAPIView`):**
+  * **Khối văn phòng & quản lý:** Lương thời gian theo ngày công thực tế = `base_salary / 26 * actual_working_days` + phụ cấp điện thoại, ăn trưa + thưởng KPI.
+  * **Khối tài xế vận tải:** Kế thừa liên thông 100% dữ liệu thực tế từ `DispatchTrip`:
+    - Chuyến chạy chính: Tổng `driver_allowance` các chuyến hoàn thành trong kỳ.
+    - Chuyến cắt kéo (Drop & Hook): Tổng `dropoff_driver_allowance`.
+    - Phụ cấp lưu đêm / neo xe: Tổng `detention_driver_allowance`.
+    - Thưởng định mức tiêu hao nhiên liệu: `fuel_bonus`.
+  * **Khấu trừ tạm ứng chuyến xe (`DriverTripAdvance`):** Tự động đối soát và khấu trừ các khoản tạm ứng chuyến xe đã giải ngân cho tài xế trong kỳ.
+  * **Tính toán trích nộp BHXH & Thuế TNCN:** Tính chính xác từng đồng bảo hiểm trích vào lương và thuế TNCN theo biểu thuế lũy tiến 7 bậc sau khi trừ giảm trừ bản thân, người phụ thuộc và các khoản phụ cấp không chịu thuế.
+  * **Thực lĩnh Net:** `net_salary = max(0, gross - total_insurance_employee - pit_amount - advance_deductions - other_deductions)`.
+- **Vòng Đời Kỳ Lương & Tự Động Sinh Phiếu Chi Sổ Quỹ:**
+  * Vòng đời quản lý 4 bước: `DRAFT ➔ REVIEWED ➔ LOCKED ➔ PAID`.
+  * **Liên thông Sổ Quỹ dòng tiền (`CashTransaction`):** Khi chuyển kỳ lương sang trạng thái `PAID`, hệ thống tự động sinh Phiếu Chi Sổ Quỹ (`TransactionType.OUTFLOW`, `Category=PAYROLL_SALARY`, `PaymentMethod=BANK`, mã `PC-LUONG-...`), chốt sổ kế toán và đánh dấu thanh toán toàn bộ phiếu lương.
+- **Tiện Ích Ngân Hàng & In Ấn Chuẩn Mực:**
+  * `PayrollExportBankAPIView`: Xuất danh sách chuyển khoản ngân hàng hàng loạt (Batch Bank Transfer) dạng CSV BOM UTF-8 hỗ trợ Excel.
+  * `PayrollSlipPrintAPIView`: Mẫu in Phiếu lương cá nhân A4/A5 chuẩn văn bản phẳng (Flat Printable Document), đầy đủ pháp nhân công ty, chi tiết thu nhập, trích nộp, khấu trừ và chữ ký 4 bên.
+
+### 3. Giao Diện Người Dùng Web SPA & Kiểm Thử Hồi Quy:
+- Giao diện tab Nhân sự được tái cấu trúc thành 4 phân hệ con (Sub-Tabs):
+  1. `Hồ Sơ Cán Bộ & Tài Xế`: Tra cứu, lọc theo phòng ban/chức vụ/trạng thái, modal Hồ sơ 360°.
+  2. `Hợp Đồng Lao Động`: Quản lý hợp đồng, phụ lục, cảnh báo hạn.
+  3. `Kỳ Lương & Hybrid Payroll`: Bảng lương đa thành phần, bộ chuyển trạng thái, xuất Excel ngân hàng, in phiếu lương.
+  4. `Chính Sách & Biểu Thuế`: Tùy chỉnh tham số giảm trừ, tỷ lệ BHXH, biểu thuế 7 bậc.
+- Form tạo/sửa nhân sự (`view_employee_form.html`) được mở rộng 3 khối thông tin định danh 360°.
+- **Kiểm thử hồi quy toàn diện:**
+  * `node -c static/js/app.js` & `node -c static/js/column_manager.js`: 100% cú pháp sạch.
+  * `python manage.py test --keepdb`: 95/95 tests PASSED (100%), không phát sinh lỗi hồi quy.
+
 ## [v2.9.5] - 2026-10-12 (Chuẩn Hóa Bộ Lọc Thời Gian Toàn Diện — Khắc Phục Rò Rỉ Bản Ghi Ngoại Kỳ)
 
 ### 1. Chuẩn Hóa Bộ Lọc Thời Gian Tuyệt Đối (Strict Date-Range Filtering):
