@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.1.0] - 2026-10-15 (Đồng Bộ Chuẩn Chính Sách, Biểu Thuế 5 Bậc Mới & Danh Mục Phụ Cấp Từ BIM ERP)
+
+### 1. Đồng Bộ Biểu Thuế TNCN 5 Bậc Mới & Căn Cứ Pháp Lý (Luật 109/2025/QH15):
+- **Áp dụng Biểu thuế lũy tiến từng phần 5 bậc mới** theo Luật Thuế Thu nhập Cá nhân số 109/2025/QH15 ban hành ngày 10/12/2025 (hiệu lực từ 01/01/2026), thay thế biểu thuế 7 bậc cũ:
+  * **Bậc 1:** Thu nhập tính thuế đến 10,000,000 đ/tháng ➔ Thuế suất 5% (Trừ nhanh: 0 đ).
+  * **Bậc 2:** Trên 10,000,000 đ đến 30,000,000 đ/tháng ➔ Thuế suất 10% (Trừ nhanh: 500,000 đ).
+  * **Bậc 3:** Trên 30,000,000 đ đến 60,000,000 đ/tháng ➔ Thuế suất 20% (Trừ nhanh: 3,500,000 đ).
+  * **Bậc 4:** Trên 60,000,000 đ đến 100,000,000 đ/tháng ➔ Thuế suất 30% (Trừ nhanh: 9,500,000 đ).
+  * **Bậc 5:** Trên 100,000,000 đ/tháng ➔ Thuế suất 35% (Trừ nhanh: 14,500,000 đ).
+- Nâng cấp `TaxBracket` model với các trường chuẩn từ Bim ERP: `bracket_level`, `min_income`, `max_income`, `tax_rate`, `quick_subtraction`, `quick_formula`, `effective_date`, `expiry_date`, `status`, `legal_basis`, `description`, kèm property `rate_decimal`.
+
+### 2. Cập Nhật Mức Giảm Trừ Gia Cảnh & Trần Bảo Hiểm Mới Nhất:
+- **Mức giảm trừ gia cảnh** theo Nghị quyết số 110/2025/UBTVQH15:
+  * Giảm trừ cho bản thân người nộp thuế: Tăng từ 11,000,000 đ lên **15,500,000 đ/tháng**.
+  * Giảm trừ cho mỗi người phụ thuộc: Tăng từ 4,400,000 đ lên **6,200,000 đ/tháng**.
+- **Mức trần lương đóng BHXH & BHYT** theo Nghị định 73/2024/NĐ-CP:
+  * Tăng từ 46,800,000 đ lên **50,800,000 đ/tháng** (áp dụng mức lương cơ sở mới 2,540,000 đ x 20 lần).
+- **Tỷ lệ trích nộp theo lương & kinh phí công đoàn** theo Luật BHXH 2024 & Luật Công đoàn 2024:
+  * Người lao động: BHXH 8%, BHYT 1.5%, BHTN 1%, Đoàn phí công đoàn 1% (Tổng trích lương: 11.5%).
+  * Doanh nghiệp: BHXH 17.5%, BHYT 3%, BHTN 1%, Kinh phí công đoàn 2% (Tổng chi phí: 23.5%).
+
+### 3. Đồng Bộ Hệ Thống 20 Tham Số Chính Sách & Danh Mục Phụ Cấp:
+- **Tạo mới Model `PayrollParameter`:** Quản lý 20 tham số chính sách Lương & Thuế đồng bộ 100% từ Bim ERP (`BASE_SALARY`, `MIN_WAGE_R1`, `PERSONAL_RELIEF`, `DEPENDENT_RELIEF`, `MAX_INS_SALARY`, `UNION_FEE_MAX`...).
+- **Tạo mới Model `AllowanceGroup` & `AllowanceType`:** Chuẩn hóa 3 nhóm và 15 loại phụ cấp, trợ cấp, phúc lợi theo Thông tư 10/2020/TT-BLĐTBXH (Phụ cấp đóng BHXH, Phụ cấp không đóng BHXH chịu thuế TNCN, và Trợ cấp miễn thuế).
+- **Nâng cấp Động cơ tính thuế (`PayrollCalculateAPIView`):** Hỗ trợ tính toán tự động linh hoạt theo cả 5 bậc mới và 7 bậc cũ qua `rate_decimal` và `quick_subtraction`.
+- **Giao diện người dùng động:** Bảng biểu thuế 5 bậc, bảng 20 tham số và bảng 3 nhóm phụ cấp được render hoàn toàn từ REST API.
+
 ## [v3.0.0] - 2026-10-15 (Xây Dựng Toàn Diện Phân Hệ Quản Lý Nhân Sự & Tiền Lương — HRM & Hybrid Payroll Engine)
 
 ### 1. Kiến Trúc & Cơ Sở Dữ Liệu Nhân Sự 360° (Personnel & Legal Data Model):

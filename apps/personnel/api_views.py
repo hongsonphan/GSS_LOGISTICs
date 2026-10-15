@@ -12,7 +12,8 @@ from apps.personnel.models import (
     Employee, Department, EmployeeRole, EmployeeGender,
     EmployeeDependent, LaborContract, ContractAppendix, ContractType, ContractStatus,
     TaxBracket, SalaryDeductionRate, PayrollPolicyConfig,
-    PayrollPeriod, PayrollSlip, PayrollPeriodStatus
+    PayrollPeriod, PayrollSlip, PayrollPeriodStatus,
+    PayrollParameter, AllowanceGroup, AllowanceType
 )
 from apps.personnel.serializers import (
     EmployeeSerializer,
@@ -23,7 +24,10 @@ from apps.personnel.serializers import (
     SalaryDeductionRateSerializer,
     PayrollPolicyConfigSerializer,
     PayrollPeriodSerializer,
-    PayrollSlipSerializer
+    PayrollSlipSerializer,
+    PayrollParameterSerializer,
+    AllowanceGroupSerializer,
+    AllowanceTypeSerializer
 )
 from apps.dispatch.models import DispatchTrip, TripStatus
 from apps.billing.models import CashTransaction, TransactionType, PaymentMethod, CashFlowCategory, DriverTripAdvance
@@ -379,6 +383,163 @@ class TaxBracketListAPIView(APIView):
         serializer = TaxBracketSerializer(brackets, many=True)
         return Response(serializer.data)
 
+    def post(self, request):
+        serializer = TaxBracketSerializer(data=request.data)
+        if serializer.is_valid():
+            bracket = serializer.save()
+            return Response({
+                'success': True,
+                'message': f"Đã thêm bậc thuế {bracket.bracket_level} thành công.",
+                'data': TaxBracketSerializer(bracket).data
+            }, status=status.HTTP_201_CREATED)
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TaxBracketDetailAPIView(APIView):
+    permission_classes = [EmployeePermission]
+
+    def get_object(self, pk):
+        return get_object_or_404(TaxBracket, pk=pk)
+
+    def get(self, request, pk):
+        bracket = self.get_object(pk)
+        return Response(TaxBracketSerializer(bracket).data)
+
+    def put(self, request, pk):
+        bracket = self.get_object(pk)
+        serializer = TaxBracketSerializer(bracket, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated = serializer.save()
+            return Response({
+                'success': True,
+                'message': f"Đã cập nhật bậc thuế {updated.bracket_level}.",
+                'data': TaxBracketSerializer(updated).data
+            })
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        bracket = self.get_object(pk)
+        bracket.delete()
+        return Response({
+            'success': True,
+            'message': f"Đã xóa bậc thuế {bracket.bracket_level}."
+        })
+
+
+class PayrollParameterListCreateAPIView(APIView):
+    permission_classes = [EmployeePermission]
+
+    def get(self, request):
+        params = PayrollParameter.objects.all().order_by('order', 'code')
+        serializer = PayrollParameterSerializer(params, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = PayrollParameterSerializer(data=request.data)
+        if serializer.is_valid():
+            param = serializer.save()
+            return Response({
+                'success': True,
+                'message': f"Đã tạo tham số '{param.name}' ({param.code}).",
+                'data': PayrollParameterSerializer(param).data
+            }, status=status.HTTP_201_CREATED)
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PayrollParameterDetailAPIView(APIView):
+    permission_classes = [EmployeePermission]
+
+    def get_object(self, pk):
+        return get_object_or_404(PayrollParameter, pk=pk)
+
+    def get(self, request, pk):
+        param = self.get_object(pk)
+        return Response(PayrollParameterSerializer(param).data)
+
+    def put(self, request, pk):
+        param = self.get_object(pk)
+        serializer = PayrollParameterSerializer(param, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated = serializer.save()
+            return Response({
+                'success': True,
+                'message': f"Đã cập nhật tham số '{updated.name}'.",
+                'data': PayrollParameterSerializer(updated).data
+            })
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        param = self.get_object(pk)
+        param.delete()
+        return Response({
+            'success': True,
+            'message': f"Đã xóa tham số '{param.name}'."
+        })
+
+
+class AllowanceGroupListAPIView(APIView):
+    permission_classes = [EmployeePermission]
+
+    def get(self, request):
+        groups = AllowanceGroup.objects.prefetch_related('items').filter(is_active=True).order_by('order')
+        serializer = AllowanceGroupSerializer(groups, many=True)
+        return Response(serializer.data)
+
+
+class AllowanceTypeListCreateAPIView(APIView):
+    permission_classes = [EmployeePermission]
+
+    def get(self, request):
+        group_id = request.GET.get('group_id')
+        items = AllowanceType.objects.select_related('group').all()
+        if group_id:
+            items = items.filter(group_id=group_id)
+        items = items.order_by('order', 'code')
+        serializer = AllowanceTypeSerializer(items, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = AllowanceTypeSerializer(data=request.data)
+        if serializer.is_valid():
+            item = serializer.save()
+            return Response({
+                'success': True,
+                'message': f"Đã tạo danh mục phụ cấp '{item.name}' ({item.code}).",
+                'data': AllowanceTypeSerializer(item).data
+            }, status=status.HTTP_201_CREATED)
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AllowanceTypeDetailAPIView(APIView):
+    permission_classes = [EmployeePermission]
+
+    def get_object(self, pk):
+        return get_object_or_404(AllowanceType, pk=pk)
+
+    def get(self, request, pk):
+        item = self.get_object(pk)
+        return Response(AllowanceTypeSerializer(item).data)
+
+    def put(self, request, pk):
+        item = self.get_object(pk)
+        serializer = AllowanceTypeSerializer(item, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated = serializer.save()
+            return Response({
+                'success': True,
+                'message': f"Đã cập nhật danh mục phụ cấp '{updated.name}'.",
+                'data': AllowanceTypeSerializer(updated).data
+            })
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        item = self.get_object(pk)
+        item.delete()
+        return Response({
+            'success': True,
+            'message': f"Đã xóa phụ cấp '{item.name}'."
+        })
+
 
 class SalaryDeductionRateAPIView(APIView):
     permission_classes = [EmployeePermission]
@@ -646,12 +807,14 @@ class PayrollCalculateAPIView(APIView):
                     gross_income - non_taxable - total_ins_emp - personal_relief - dependent_relief
                 )
 
-                # Tìm bậc thuế lũy tiến tương ứng
+                # Tìm bậc thuế lũy tiến tương ứng (Hỗ trợ 5 bậc mới theo Luật 109/2025/QH15 hoặc 7 bậc cũ)
                 pit_amount = Decimal('0')
                 if taxable_income > 0 and tax_brackets:
                     for b in tax_brackets:
                         if b.max_income is None or taxable_income <= b.max_income:
-                            calc_tax = round(taxable_income * b.tax_rate - b.quick_subtraction)
+                            rate_val = b.rate_decimal
+                            quick_sub = b.quick_subtraction or Decimal('0')
+                            calc_tax = round(taxable_income * rate_val - quick_sub)
                             pit_amount = max(Decimal('0'), calc_tax)
                             break
 

@@ -2,7 +2,8 @@ from rest_framework import serializers
 from apps.personnel.models import (
     Employee, Department, EmployeeRole, EmployeeGender,
     EmployeeDependent, LaborContract, ContractAppendix, ContractType, ContractStatus,
-    TaxBracket, SalaryDeductionRate, PayrollPolicyConfig,
+    TaxBracket, TaxBracketStatus, SalaryDeductionRate, PayrollPolicyConfig,
+    PayrollParameter, AllowanceGroup, AllowanceType,
     PayrollPeriod, PayrollSlip, PayrollPeriodStatus
 )
 from django.contrib.auth import get_user_model
@@ -117,15 +118,22 @@ class LaborContractSerializer(serializers.ModelSerializer):
 
 class TaxBracketSerializer(serializers.ModelSerializer):
     tax_rate_percent = serializers.SerializerMethodField()
+    level = serializers.IntegerField(source='bracket_level', read_only=True)
+    quick_deduction = serializers.DecimalField(source='quick_subtraction', max_digits=15, decimal_places=0, read_only=True)
+    status_label = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
         model = TaxBracket
         fields = [
-            'id', 'bracket_level', 'min_income', 'max_income',
-            'tax_rate', 'tax_rate_percent', 'quick_subtraction'
+            'id', 'bracket_level', 'level', 'min_income', 'max_income',
+            'tax_rate', 'tax_rate_percent', 'quick_subtraction', 'quick_deduction',
+            'quick_formula', 'effective_date', 'expiry_date', 'status', 'status_label',
+            'is_active', 'legal_basis', 'description'
         ]
 
     def get_tax_rate_percent(self, obj):
+        if obj.tax_rate >= 1:
+            return f"{obj.tax_rate:,.0f}%"
         return f"{int(obj.tax_rate * 100)}%"
 
 
@@ -137,9 +145,9 @@ class SalaryDeductionRateSerializer(serializers.ModelSerializer):
         model = SalaryDeductionRate
         fields = [
             'id', 'name',
-            'bhxh_employee_rate', 'bhyt_employee_rate', 'bhtn_employee_rate', 'total_employee_rate',
+            'bhxh_employee_rate', 'bhyt_employee_rate', 'bhtn_employee_rate', 'union_employee_rate', 'total_employee_rate',
             'bhxh_employer_rate', 'bhyt_employer_rate', 'bhtn_employer_rate', 'union_employer_rate', 'total_employer_rate',
-            'is_active'
+            'effective_date', 'description', 'is_active'
         ]
 
     def get_total_employee_rate(self, obj):
@@ -150,12 +158,50 @@ class SalaryDeductionRateSerializer(serializers.ModelSerializer):
 
 
 class PayrollPolicyConfigSerializer(serializers.ModelSerializer):
+    personal_deduction = serializers.DecimalField(source='personal_relief', max_digits=15, decimal_places=0, read_only=True)
+    dependent_deduction = serializers.DecimalField(source='dependent_relief', max_digits=15, decimal_places=0, read_only=True)
+    base_salary_cap = serializers.DecimalField(source='max_insurance_salary', max_digits=15, decimal_places=0, read_only=True)
+
     class Meta:
         model = PayrollPolicyConfig
         fields = [
-            'id', 'personal_relief', 'dependent_relief',
-            'standard_working_days', 'max_insurance_salary', 'is_active'
+            'id', 'name', 'personal_relief', 'personal_deduction',
+            'dependent_relief', 'dependent_deduction',
+            'standard_working_days', 'max_insurance_salary', 'base_salary_cap',
+            'legal_basis', 'effective_date', 'is_active'
         ]
+
+
+class PayrollParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollParameter
+        fields = [
+            'id', 'code', 'name', 'value', 'unit',
+            'legal_basis', 'effective_date', 'expiry_date',
+            'is_active', 'order'
+        ]
+
+
+class AllowanceTypeSerializer(serializers.ModelSerializer):
+    category_label = serializers.CharField(source='get_category_display', read_only=True)
+    group_name = serializers.CharField(source='group.name', read_only=True)
+
+    class Meta:
+        model = AllowanceType
+        fields = [
+            'id', 'group', 'group_name', 'code', 'name',
+            'category', 'category_label', 'description', 'legal_basis',
+            'default_amount', 'level_1_amount', 'level_2_amount',
+            'is_insurance_applicable', 'is_taxable', 'is_active', 'order'
+        ]
+
+
+class AllowanceGroupSerializer(serializers.ModelSerializer):
+    items = AllowanceTypeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = AllowanceGroup
+        fields = ['id', 'code', 'name', 'description', 'order', 'is_active', 'items']
 
 
 class PayrollPeriodSerializer(serializers.ModelSerializer):

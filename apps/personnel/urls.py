@@ -10,7 +10,13 @@ from apps.personnel.api_views import (
     ContractAppendixListCreateAPIView,
     PayrollPolicyConfigAPIView,
     TaxBracketListAPIView,
+    TaxBracketDetailAPIView,
     SalaryDeductionRateAPIView,
+    PayrollParameterListCreateAPIView,
+    PayrollParameterDetailAPIView,
+    AllowanceGroupListAPIView,
+    AllowanceTypeListCreateAPIView,
+    AllowanceTypeDetailAPIView,
     PayrollPeriodListCreateAPIView,
     PayrollPeriodDetailAPIView,
     PayrollCalculateAPIView,
@@ -37,7 +43,13 @@ urlpatterns = [
     # 4. Chính sách lương, bảo hiểm & thuế TNCN
     path('policy-config/', PayrollPolicyConfigAPIView.as_view(), name='api-payroll-policy-config'),
     path('tax-brackets/', TaxBracketListAPIView.as_view(), name='api-tax-brackets'),
+    path('tax-brackets/<int:pk>/', TaxBracketDetailAPIView.as_view(), name='api-tax-bracket-detail'),
     path('deduction-rates/', SalaryDeductionRateAPIView.as_view(), name='api-deduction-rates'),
+    path('payroll-parameters/', PayrollParameterListCreateAPIView.as_view(), name='api-payroll-parameters'),
+    path('payroll-parameters/<int:pk>/', PayrollParameterDetailAPIView.as_view(), name='api-payroll-parameter-detail'),
+    path('allowance-groups/', AllowanceGroupListAPIView.as_view(), name='api-allowance-groups'),
+    path('allowance-types/', AllowanceTypeListCreateAPIView.as_view(), name='api-allowance-types'),
+    path('allowance-types/<int:pk>/', AllowanceTypeDetailAPIView.as_view(), name='api-allowance-type-detail'),
 
     # 5. Kỳ lương & Động cơ tính lương
     path('periods/', PayrollPeriodListCreateAPIView.as_view(), name='api-payroll-period-list-create'),

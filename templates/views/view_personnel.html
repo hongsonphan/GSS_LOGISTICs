@@ -330,125 +330,244 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- SUB-PANEL 4: CHÍNH SÁCH LƯƠNG, BẢO HIỂM & BIỂU THUẾ (POLICIES) -->
+        <!-- SUB-PANEL 4: CHÍNH SÁCH LƯƠNG, BẢO HIỂM, BIỂU THUẾ & PHỤ CẤP (POLICIES) -->
         <!-- ========================================================================= -->
         <div id="hr-panel-policies" class="hidden p-5 overflow-y-auto space-y-6">
             <!-- 1. Tham số giảm trừ gia cảnh & ngày công chuẩn -->
-            <div class="border border-slate-200 rounded-xl p-4 bg-white">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-                    <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
-                        <i class="ph-bold ph-sliders-horizontal text-teal-700 text-sm"></i>
-                        <span>1. Tham Số Giảm Trừ Gia Cảnh & Ngày Công Tiêu Chuẩn</span>
-                    </h5>
-                    <button onclick="savePayrollPolicyConfig()" class="px-3 py-1 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer">
-                        Lưu Cấu Hình
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-2xs">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                            <i class="ph-bold ph-sliders-horizontal text-teal-700 text-sm"></i>
+                            <span>1. Tham Số Giảm Trừ Gia Cảnh & Ngày Công Tiêu Chuẩn</span>
+                        </h5>
+                        <p class="text-[11px] text-slate-500 mt-0.5" id="cfg-legal-basis-label">
+                            Căn cứ: Nghị quyết 110/2025/UBTVQH15 (hiệu lực 01/01/2026) & Nghị định 73/2024/NĐ-CP
+                        </p>
+                    </div>
+                    <button type="button" onclick="savePayrollPolicyConfig()" class="px-3.5 py-1.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1">
+                        <i class="ph-bold ph-floppy-disk"></i> Lưu Cấu Hình
                     </button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                     <div>
                         <label class="block font-bold text-slate-600 mb-1">Mức giảm trừ bản thân:</label>
-                        <input type="text" id="cfg-personal-relief" value="11,000,000" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-right">
+                        <div class="relative">
+                            <input type="text" id="cfg-personal-relief" value="15,500,000" class="w-full h-9 px-3 pr-8 border border-slate-200 rounded-lg font-mono font-bold text-right text-slate-800 focus:ring-2 focus:ring-teal-500">
+                            <span class="absolute right-2.5 top-2 text-[11px] text-slate-400 font-bold">đ</span>
+                        </div>
+                        <span class="text-[10px] text-teal-700 font-medium">NQ 110/2025/UBTVQH15 (15.5tr/tháng)</span>
                     </div>
                     <div>
                         <label class="block font-bold text-slate-600 mb-1">Mức giảm trừ mỗi NPT:</label>
-                        <input type="text" id="cfg-dependent-relief" value="4,400,000" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-right">
+                        <div class="relative">
+                            <input type="text" id="cfg-dependent-relief" value="6,200,000" class="w-full h-9 px-3 pr-8 border border-slate-200 rounded-lg font-mono font-bold text-right text-slate-800 focus:ring-2 focus:ring-teal-500">
+                            <span class="absolute right-2.5 top-2 text-[11px] text-slate-400 font-bold">đ</span>
+                        </div>
+                        <span class="text-[10px] text-teal-700 font-medium">NQ 110/2025/UBTVQH15 (6.2tr/người)</span>
                     </div>
                     <div>
                         <label class="block font-bold text-slate-600 mb-1">Số ngày công chuẩn / tháng:</label>
-                        <input type="number" id="cfg-standard-days" value="26.0" step="0.5" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-center">
+                        <div class="relative">
+                            <input type="number" id="cfg-standard-days" value="26.0" step="0.5" class="w-full h-9 px-3 pr-12 border border-slate-200 rounded-lg font-mono font-bold text-center text-slate-800 focus:ring-2 focus:ring-teal-500">
+                            <span class="absolute right-2.5 top-2 text-[11px] text-slate-400 font-bold">ngày</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 font-medium">Quy chuẩn ngành Logistics (26 công)</span>
                     </div>
                     <div>
                         <label class="block font-bold text-slate-600 mb-1">Mức trần lương đóng BHXH:</label>
-                        <input type="text" id="cfg-max-insurance" value="46,800,000" class="w-full h-9 px-3 border border-slate-200 rounded-lg font-mono font-bold text-right">
+                        <div class="relative">
+                            <input type="text" id="cfg-max-insurance" value="50,800,000" class="w-full h-9 px-3 pr-8 border border-slate-200 rounded-lg font-mono font-bold text-right text-slate-800 focus:ring-2 focus:ring-teal-500">
+                            <span class="absolute right-2.5 top-2 text-[11px] text-slate-400 font-bold">đ</span>
+                        </div>
+                        <span class="text-[10px] text-teal-700 font-medium">20 lần lương cơ sở 2.54tr (NĐ 73/2024)</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Tỷ lệ trích nộp bảo hiểm xã hội -->
-            <div class="border border-slate-200 rounded-xl p-4 bg-white">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-                    <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
-                        <i class="ph-bold ph-shield-check text-indigo-700 text-sm"></i>
-                        <span>2. Tỷ Lệ Trích Đóng Bảo Hiểm Hiện Hành (Quy chuẩn Luật BHXH)</span>
-                    </h5>
-                    <button onclick="saveSalaryDeductionRate()" class="px-3 py-1 bg-transparent border border-indigo-600 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer">
-                        Lưu Tỷ Lệ
+            <!-- 2. Tỷ lệ trích nộp bảo hiểm xã hội & công đoàn -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-2xs">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                            <i class="ph-bold ph-shield-check text-indigo-700 text-sm"></i>
+                            <span>2. Tỷ Lệ Trích Đóng Bảo Hiểm & Kinh Phí Công Đoàn</span>
+                        </h5>
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Căn cứ: Luật BHXH 2024, Luật BHYT, Luật Việc làm & Luật Công đoàn 2024
+                        </p>
+                    </div>
+                    <button type="button" onclick="saveSalaryDeductionRate()" class="px-3.5 py-1.5 bg-transparent border border-indigo-600 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1">
+                        <i class="ph-bold ph-floppy-disk"></i> Lưu Tỷ Lệ
                     </button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-                    <!-- Phía Người Lao Động (10.5%) -->
-                    <div class="p-3 bg-indigo-50/40 rounded-xl border border-indigo-100 space-y-2">
-                        <div class="font-bold text-indigo-900 border-b border-indigo-200 pb-1 flex justify-between">
+                    <!-- Phía Người Lao Động (10.5% BH + 1% ĐPCĐ) -->
+                    <div class="p-3.5 bg-indigo-50/40 rounded-xl border border-indigo-100 space-y-2.5">
+                        <div class="font-bold text-indigo-900 border-b border-indigo-200 pb-1.5 flex justify-between items-center">
                             <span>Phía Người Lao Động Trích Nộp:</span>
-                            <span class="font-mono">Tổng: 10.5%</span>
+                            <span class="font-mono text-indigo-700 font-black bg-indigo-100 px-2 py-0.5 rounded" id="emp-total-rate-badge">Tổng: 11.5%</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span>Bảo hiểm xã hội (BHXH):</span>
-                            <input type="number" id="rate-emp-bhxh" value="8.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                            <span class="text-slate-700">Bảo hiểm xã hội (Hưu trí, tử tuất):</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="rate-emp-bhxh" value="8.0" step="0.1" class="w-16 h-7 px-2 border border-slate-300 rounded font-mono font-bold text-right">
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span>Bảo hiểm y tế (BHYT):</span>
-                            <input type="number" id="rate-emp-bhyt" value="1.5" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                            <span class="text-slate-700">Bảo hiểm y tế (BHYT):</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="rate-emp-bhyt" value="1.5" step="0.1" class="w-16 h-7 px-2 border border-slate-300 rounded font-mono font-bold text-right">
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span>Bảo hiểm thất nghiệp (BHTN):</span>
-                            <input type="number" id="rate-emp-bhtn" value="1.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                            <span class="text-slate-700">Bảo hiểm thất nghiệp (BHTN):</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="rate-emp-bhtn" value="1.0" step="0.1" class="w-16 h-7 px-2 border border-slate-300 rounded font-mono font-bold text-right">
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-700">Đoàn phí công đoàn (Đoàn viên CĐ):</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="rate-emp-union" value="1.0" step="0.1" class="w-16 h-7 px-2 border border-slate-300 rounded font-mono font-bold text-right">
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Phía Doanh Nghiệp (21.5% + 2% CĐ) -->
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                        <div class="font-bold text-slate-900 border-b border-slate-200 pb-1 flex justify-between">
+                    <!-- Phía Doanh Nghiệp (21.5% BH + 2% KPCĐ) -->
+                    <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                        <div class="font-bold text-slate-900 border-b border-slate-200 pb-1.5 flex justify-between items-center">
                             <span>Phía Doanh Nghiệp Đóng:</span>
-                            <span class="font-mono">Tổng: 23.5%</span>
+                            <span class="font-mono text-slate-800 font-black bg-slate-200 px-2 py-0.5 rounded" id="empr-total-rate-badge">Tổng: 23.5%</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span>Bảo hiểm xã hội (Hưu trí, tử tuất, TNLĐ):</span>
-                            <input type="number" id="rate-empr-bhxh" value="17.5" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                            <span class="text-slate-700">Bảo hiểm xã hội (Hưu trí, ốm đau, thai sản, TNLĐ):</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="rate-empr-bhxh" value="17.5" step="0.1" class="w-16 h-7 px-2 border border-slate-300 rounded font-mono font-bold text-right">
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span>Bảo hiểm y tế (BHYT):</span>
-                            <input type="number" id="rate-empr-bhyt" value="3.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                            <span class="text-slate-700">Bảo hiểm y tế (BHYT):</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="rate-empr-bhyt" value="3.0" step="0.1" class="w-16 h-7 px-2 border border-slate-300 rounded font-mono font-bold text-right">
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span>Bảo hiểm thất nghiệp (BHTN):</span>
-                            <input type="number" id="rate-empr-bhtn" value="1.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                            <span class="text-slate-700">Bảo hiểm thất nghiệp (BHTN):</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="rate-empr-bhtn" value="1.0" step="0.1" class="w-16 h-7 px-2 border border-slate-300 rounded font-mono font-bold text-right">
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span>Kinh phí công đoàn:</span>
-                            <input type="number" id="rate-empr-union" value="2.0" step="0.1" class="w-20 h-7 px-2 border rounded font-mono font-bold text-right"> %
+                            <span class="text-slate-700">Kinh phí công đoàn (KPCĐ bắt buộc):</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="rate-empr-union" value="2.0" step="0.1" class="w-16 h-7 px-2 border border-slate-300 rounded font-mono font-bold text-right">
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. Biểu thuế thu nhập cá nhân 7 bậc lũy tiến từng phần -->
-            <div class="border border-slate-200 rounded-xl p-4 bg-white">
-                <div class="pb-3 border-b border-slate-100 mb-3">
-                    <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
-                        <i class="ph-bold ph-receipt text-rose-700 text-sm"></i>
-                        <span>3. Biểu Thuế Thu Nhập Cá Nhân Lũy Tiến Từng Phần (7 Bậc)</span>
-                    </h5>
+            <!-- 3. Biểu thuế thu nhập cá nhân lũy tiến từng phần (Biểu thuế 5 bậc mới theo Luật 109/2025/QH15) -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-2xs">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                            <i class="ph-bold ph-receipt text-rose-700 text-sm"></i>
+                            <span>3. Biểu Thuế Thu Nhập Cá Nhân Lũy Tiến Từng Phần (Chuẩn Luật 109/2025/QH15)</span>
+                        </h5>
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Áp dụng từ 01/01/2026: Thu gọn từ 7 bậc xuống 5 bậc theo quy định Quốc hội ban hành ngày 10/12/2025
+                        </p>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold flex items-center gap-1">
+                        <i class="ph-fill ph-check-circle"></i> Đang Áp Dụng (5 Bậc Mới)
+                    </span>
                 </div>
-                <table class="w-full text-left border-collapse erp-table text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200">
-                            <th class="py-2 px-3 text-center font-bold">Bậc</th>
-                            <th class="py-2 px-3 font-bold">Mức Thu Nhập Tính Thuế / Tháng</th>
-                            <th class="py-2 px-3 text-center font-bold">Thuế Suất</th>
-                            <th class="py-2 px-3 text-right font-bold">Số Trừ Nhanh</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 font-mono">
-                        <tr><td class="text-center font-bold">1</td><td>Đến 5,000,000 đ</td><td class="text-center font-bold text-teal-700">5%</td><td class="text-right">0 đ</td></tr>
-                        <tr><td class="text-center font-bold">2</td><td>Trên 5,000,000 đ đến 10,000,000 đ</td><td class="text-center font-bold text-teal-700">10%</td><td class="text-right">250,000 đ</td></tr>
-                        <tr><td class="text-center font-bold">3</td><td>Trên 10,000,000 đ đến 18,000,000 đ</td><td class="text-center font-bold text-teal-700">15%</td><td class="text-right">750,000 đ</td></tr>
-                        <tr><td class="text-center font-bold">4</td><td>Trên 18,000,000 đ đến 32,000,000 đ</td><td class="text-center font-bold text-teal-700">20%</td><td class="text-right">1,650,000 đ</td></tr>
-                        <tr><td class="text-center font-bold">5</td><td>Trên 32,000,000 đ đến 52,000,000 đ</td><td class="text-center font-bold text-teal-700">25%</td><td class="text-right">3,250,000 đ</td></tr>
-                        <tr><td class="text-center font-bold">6</td><td>Trên 52,000,000 đ đến 80,000,000 đ</td><td class="text-center font-bold text-teal-700">30%</td><td class="text-right">5,850,000 đ</td></tr>
-                        <tr><td class="text-center font-bold">7</td><td>Trên 80,000,000 đ</td><td class="text-center font-bold text-rose-700">35%</td><td class="text-right">9,850,000 đ</td></tr>
-                    </tbody>
-                </table>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse erp-table text-xs whitespace-nowrap" id="tax-brackets-table">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 font-bold text-slate-700">
+                                <th class="py-2.5 px-3.5 text-center w-12">Bậc</th>
+                                <th class="py-2.5 px-3.5">Mức Thu Nhập Tính Thuế / Tháng</th>
+                                <th class="py-2.5 px-3.5 text-center">Thuế Suất</th>
+                                <th class="py-2.5 px-3.5 font-mono">Công Thức Tính Nhanh</th>
+                                <th class="py-2.5 px-3.5 text-right font-mono">Số Trừ Nhanh</th>
+                                <th class="py-2.5 px-3.5">Căn Cứ Pháp Lý</th>
+                                <th class="py-2.5 px-3.5 text-center">Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium" id="tax-brackets-tbody">
+                            <!-- Rendered dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. Hệ thống tham số chính sách Lương & Thuế (20 Tham số đồng bộ từ Bim ERP) -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-2xs">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                            <i class="ph-bold ph-gear-six text-teal-700 text-sm"></i>
+                            <span>4. Bảng Tham Số Quy Định Lương & Thuế Đồng Bộ (BIM ERP Standards)</span>
+                        </h5>
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Toàn bộ 20 tham số cốt lõi quy định mức trần, mức chuẩn và tỷ lệ trích nộp theo luật
+                        </p>
+                    </div>
+                    <span class="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200" id="payroll-params-badge">
+                        20 Tham Số
+                    </span>
+                </div>
+                <div class="overflow-x-auto max-h-[360px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse erp-table text-xs whitespace-nowrap" id="payroll-parameters-table">
+                        <thead class="sticky top-0 bg-slate-100 border-b border-slate-200 font-bold text-slate-700">
+                            <tr>
+                                <th class="py-2 px-3 text-center w-12">STT</th>
+                                <th class="py-2 px-3">Mã Tham Số</th>
+                                <th class="py-2 px-3">Tên Tham Số Quy Định</th>
+                                <th class="py-2 px-3 text-right font-mono">Giá Trị</th>
+                                <th class="py-2 px-3 text-center">Đơn Vị</th>
+                                <th class="py-2 px-3">Căn Cứ Pháp Lý</th>
+                                <th class="py-2 px-3 text-center">Ngày Áp Dụng</th>
+                                <th class="py-2 px-3 text-center">Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium" id="payroll-parameters-tbody">
+                            <!-- Rendered dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. Danh mục Phụ cấp, Trợ cấp & Phúc lợi theo chuẩn Logistics (3 Nhóm chính sách) -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-2xs">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5 font-heading">
+                            <i class="ph-bold ph-coins text-amber-600 text-sm"></i>
+                            <span>5. Danh Mục Phụ Cấp, Trợ Cấp & Phúc Lợi Theo Quy Định (3 Nhóm Cốt Lõi)</span>
+                        </h5>
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Phân loại chính xác tính đóng BHXH bắt buộc và tính thuế TNCN theo Thông tư 10/2020/TT-BLĐTBXH
+                        </p>
+                    </div>
+                    <span class="text-xs font-bold text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200" id="allowance-types-badge">
+                        3 Nhóm / 15 Loại
+                    </span>
+                </div>
+                <div class="space-y-4" id="allowance-groups-container">
+                    <!-- Rendered dynamically by JS -->
+                </div>
             </div>
         </div>
     </div>
