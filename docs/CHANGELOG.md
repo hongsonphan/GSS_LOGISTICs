@@ -2,6 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.2.1] - 2026-10-15 (Chuẩn Hóa Cột Thao Tác [Xem - In] & Chuyển Đổi 100% Sang Dedicated Full-Page View Không Dùng Modal)
+
+### 1. Chuẩn Hóa Cột Thao Tác Của Toàn Bộ Bảng Danh Sách:
+- Loại bỏ hoàn toàn các nút rườm rà (Hồ Sơ 360°, Sửa, Phụ Lục, Chấm Dứt) trên các bảng dữ liệu:
+  * **Bảng Danh sách Nhân sự (`employee-table`):** Chỉ gồm đúng 2 nút `[Xem]` (`ph-eye` - teal) và `[In]` (`ph-printer` - slate).
+  * **Bảng Hợp đồng Lao động (`contracts-table`):** Chỉ gồm đúng 2 nút `[Xem]` và `[In]`.
+  * **Bảng Phiếu lương Kỳ (`payroll-slips-table`):** Chỉ gồm đúng 2 nút `[Xem]` và `[In]`.
+
+### 2. Chuyển Đổi 100% Thao Tác Sang Mở Trang Toàn Màn Hình (No Modals):
+- Bấm `[Xem]` ở bất kỳ bảng nào đều điều hướng trực tiếp sang **Dedicated Full-Page View**:
+  * **Hồ sơ nhân sự:** Chuyển sang trang `view_employee_form.html`.
+  * **Hợp đồng lao động:** Chuyển sang trang `view_contract_detail.html` (hỗ trợ xem/sửa HĐ và quản lý phụ lục ngay trên trang).
+  * **Phiếu lương cá nhân:** Chuyển sang trang `view_payroll_slip_detail.html` (xem chi tiết 4 cấu phần lương và điều chỉnh tài chính).
+- Xóa bỏ hoàn toàn các modal popup (`modal-employee-360`, `modal-contract-form`, `modal-edit-payroll-slip`).
+
+### 3. Chuẩn Hóa Cụm Nút Hành Động Trên Trang Chi Tiết Theo Mẫu:
+- Tất cả các trang chi tiết khi mở ra đều có cụm nút hành động chuẩn:
+  * Bên trái: Nút `[Quay lại]` trở về phân hệ.
+  * Bên phải: Cụm 4 nút theo đúng thứ tự và màu sắc:
+    - `[Sửa]` (`border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white`, icon `ph-pencil-simple`)
+    - `[Lưu]` (`border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white`, icon `ph-check-circle`)
+    - `[In]` (`border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white`, icon `ph-printer`)
+    - `[Xóa]` (`border-rose-600 text-rose-700 hover:bg-rose-600 hover:text-white`, icon `ph-trash`)
+
 ## [v3.2.0] - 2026-10-15 (Chuẩn Hóa Trình Tự Nghiệp Vụ HRM: Hồ Sơ Nhân Viên ➔ Hợp Đồng ➔ Chấm Công ➔ Tính Lương Hybrid)
 
 ### 1. Triển Khai Hoàn Chỉnh Quy Trình 4 Giai Đoạn Liên Hoàn:
