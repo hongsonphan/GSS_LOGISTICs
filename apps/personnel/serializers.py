@@ -56,7 +56,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         code = value.strip().upper()
         if not code:
             raise serializers.ValidationError("Mã nhân viên không được để trống.")
-        qs = Employee.objects.filter(code=code)
+        qs = Employee.all_objects.filter(code=code)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
@@ -115,6 +115,17 @@ class LaborContractSerializer(serializers.ModelSerializer):
             'notes', 'appendices', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_contract_number(self, value):
+        val = value.strip() if value else ''
+        if not val:
+            raise serializers.ValidationError("Số hợp đồng không được để trống.")
+        qs = LaborContract.all_objects.filter(contract_number=val)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(f"Số hợp đồng '{val}' đã tồn tại trong hệ thống.")
+        return val
 
 
 class TaxBracketSerializer(serializers.ModelSerializer):

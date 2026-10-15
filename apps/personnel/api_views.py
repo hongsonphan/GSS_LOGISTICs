@@ -733,11 +733,41 @@ class PayrollPeriodListCreateAPIView(APIView):
                 'message': 'Vui lòng cung cấp đầy đủ Mã kỳ lương, Từ ngày và Đến ngày.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        if PayrollPeriod.objects.filter(period_code=period_code).exists():
-            return Response({
-                'success': False,
-                'message': f"Kỳ lương '{period_code}' đã tồn tại."
-            }, status=status.HTTP_400_BAD_REQUEST)
+        from datetime import datetime
+        def parse_date_defensive(d_str):
+            if not d_str:
+                return None
+            s = str(d_str).strip()
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y'):
+                try:
+                    return datetime.strptime(s, fmt).date()
+                except ValueError:
+                    continue
+            return s
+
+        from_date_val = parse_date_defensive(from_date_str)
+        to_date_val = parse_date_defensive(to_date_str)
+
+        existing_period = PayrollPeriod.all_objects.filter(period_code=period_code).first()
+        if existing_period:
+            if existing_period.is_deleted:
+                existing_period.is_deleted = False
+                existing_period.name = name or existing_period.name
+                existing_period.from_date = from_date_val
+                existing_period.to_date = to_date_val
+                existing_period.standard_days = Decimal(str(standard_days))
+                existing_period.status = PayrollPeriodStatus.DRAFT
+                existing_period.save()
+                return Response({
+                    'success': True,
+                    'message': f"Đã khôi phục kỳ lương '{existing_period.name}' thành công.",
+                    'data': PayrollPeriodSerializer(existing_period).data
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'success': False,
+                    'message': f"Kỳ lương '{period_code}' đã tồn tại trong hệ thống."
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         if not name:
             name = f"Bảng lương Tháng {period_code}"
@@ -745,8 +775,8 @@ class PayrollPeriodListCreateAPIView(APIView):
         period = PayrollPeriod.objects.create(
             period_code=period_code,
             name=name,
-            from_date=from_date_str,
-            to_date=to_date_str,
+            from_date=from_date_val,
+            to_date=to_date_val,
             standard_days=Decimal(str(standard_days)),
             status=PayrollPeriodStatus.DRAFT
         )
@@ -822,6 +852,19 @@ class PayrollCalculateAPIView(APIView):
     - Trích đóng bảo hiểm NLĐ 10.5% & DN 21.5%
     """
     permission_classes = [EmployeePermission]
+
+    @staticmethod
+    def _calculate_pit(taxable_income, tax_brackets):
+        pit_amount = Decimal('0')
+        if taxable_income > 0 and tax_brackets:
+            for b in tax_brackets:
+                if b.max_income is None or taxable_income <= b.max_income:
+                    rate_val = b.rate_decimal
+                    quick_sub = b.quick_subtraction or Decimal('0')
+                    calc_tax = round(taxable_income * rate_val - quick_sub)
+                    pit_amount = max(Decimal('0'), Decimal(str(calc_tax)))
+                    break
+        return pit_amount
 
     def post(self, request, pk):
         period = get_object_or_404(PayrollPeriod, pk=pk)

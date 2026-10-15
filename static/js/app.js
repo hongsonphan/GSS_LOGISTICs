@@ -21,6 +21,39 @@ function escapeHtml(text) {
 }
 
 /**
+ * Chuẩn hóa chuỗi ngày tháng từ bất kỳ định dạng nào (DD/MM/YYYY, ISO, Date) sang chuẩn YYYY-MM-DD
+ * để gán an toàn vào input[type="date"] và gửi chuẩn RFC/ISO lên DRF backend.
+ */
+function normalizeDateToISO(dateStr) {
+    if (!dateStr) return '';
+    dateStr = String(dateStr).trim();
+    if (!dateStr) return '';
+    // Nếu đã là YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    // Nếu là YYYY-MM-DDTHH:mm:ss...
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr.substring(0, 10);
+    // Nếu là DD/MM/YYYY hoặc DD-MM-YYYY hoặc DD.MM.YYYY
+    const dmyMatch = dateStr.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+    if (dmyMatch) {
+        const day = dmyMatch[1].padStart(2, '0');
+        const month = dmyMatch[2].padStart(2, '0');
+        const year = dmyMatch[3];
+        return `${year}-${month}-${day}`;
+    }
+    // Thử parse qua Date
+    try {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+    } catch (e) {}
+    return dateStr;
+}
+
+/**
  * Chuẩn hóa Header xác thực kép cho toàn bộ Client:
  * 1. JWT Bearer Token (kiểm tra hạn dùng exp, tự động dọn sạch nếu hết hạn)
  * 2. CSRF Token (nạp từ thẻ meta hoặc cookie csrftoken của Django Session)
@@ -6631,8 +6664,8 @@ async function submitCreatePeriod(event) {
     const payload = {
         period_code: document.getElementById('new-period-code').value.trim(),
         name: document.getElementById('new-period-name').value.trim(),
-        from_date: document.getElementById('new-period-from').value,
-        to_date: document.getElementById('new-period-to').value,
+        from_date: normalizeDateToISO(document.getElementById('new-period-from').value),
+        to_date: normalizeDateToISO(document.getElementById('new-period-to').value),
         standard_days: parseFloat(document.getElementById('new-period-std-days').value || 26.0)
     };
 
@@ -6773,9 +6806,9 @@ async function openContractDetailPage(contractId, updateHistory = true) {
         document.getElementById('cd-status').value = c.status || 'ACTIVE';
         document.getElementById('cd-job-title').value = c.job_title || '';
         document.getElementById('cd-working-address').value = c.working_address || '';
-        document.getElementById('cd-sign-date').value = c.sign_date || '';
-        document.getElementById('cd-start-date').value = c.start_date || '';
-        document.getElementById('cd-end-date').value = c.end_date || '';
+        document.getElementById('cd-sign-date').value = normalizeDateToISO(c.sign_date) || '';
+        document.getElementById('cd-start-date').value = normalizeDateToISO(c.start_date) || '';
+        document.getElementById('cd-end-date').value = normalizeDateToISO(c.end_date) || '';
         document.getElementById('cd-base-salary').value = new Intl.NumberFormat('vi-VN').format(c.base_salary || 0);
         document.getElementById('cd-insurance-salary').value = new Intl.NumberFormat('vi-VN').format(c.insurance_salary || 0);
         document.getElementById('cd-notes').value = c.allowance_notes || c.notes || '';
@@ -6903,9 +6936,9 @@ async function submitContractDetailForm(event) {
         status: document.getElementById('cd-status').value,
         job_title: document.getElementById('cd-job-title').value.trim(),
         working_address: document.getElementById('cd-working-address').value.trim(),
-        sign_date: document.getElementById('cd-sign-date').value,
-        start_date: document.getElementById('cd-start-date').value,
-        end_date: document.getElementById('cd-end-date').value || null,
+        sign_date: normalizeDateToISO(document.getElementById('cd-sign-date').value),
+        start_date: normalizeDateToISO(document.getElementById('cd-start-date').value),
+        end_date: normalizeDateToISO(document.getElementById('cd-end-date').value) || null,
         base_salary: parseFloat(baseSalClean) || 0,
         insurance_salary: parseFloat(insSalClean) || 0,
         allowance_notes: document.getElementById('cd-notes').value.trim()
@@ -7023,7 +7056,7 @@ async function submitInlineAppendix() {
     const payload = {
         contract: parseInt(contractId),
         appendix_number: document.getElementById('inline-app-number').value.trim(),
-        effective_date: document.getElementById('inline-app-date').value,
+        effective_date: normalizeDateToISO(document.getElementById('inline-app-date').value),
         new_base_salary: salClean ? parseFloat(salClean) : null,
         new_role: document.getElementById('inline-app-role').value.trim(),
         change_summary: document.getElementById('inline-app-summary').value.trim()
@@ -25916,18 +25949,18 @@ function openEditEmployeePage(id, updateHistory = true) {
     if (el('emp-department')) el('emp-department').value = emp.department || 'FLEET';
     if (el('emp-role')) el('emp-role').value = emp.role || 'DRIVER';
     if (el('emp-gender')) el('emp-gender').value = emp.gender || 'MALE';
-    if (el('emp-dob')) el('emp-dob').value = emp.date_of_birth || '';
+    if (el('emp-dob')) el('emp-dob').value = normalizeDateToISO(emp.date_of_birth) || '';
     if (el('emp-national-id')) el('emp-national-id').value = emp.national_id || '';
-    if (el('emp-national-id-date')) el('emp-national-id-date').value = emp.national_id_date || '';
+    if (el('emp-national-id-date')) el('emp-national-id-date').value = normalizeDateToISO(emp.national_id_date) || '';
     if (el('emp-national-id-place')) el('emp-national-id-place').value = emp.national_id_place || '';
     if (el('emp-tax-id')) el('emp-tax-id').value = emp.tax_id || '';
     if (el('emp-insurance-number')) el('emp-insurance-number').value = emp.insurance_number || '';
     if (el('emp-bank-account')) el('emp-bank-account').value = emp.bank_account || '';
     if (el('emp-bank-name')) el('emp-bank-name').value = emp.bank_name || '';
     if (el('emp-bank-beneficiary')) el('emp-bank-beneficiary').value = emp.bank_beneficiary || '';
-    if (el('emp-join-date')) el('emp-join-date').value = emp.join_date || '';
+    if (el('emp-join-date')) el('emp-join-date').value = normalizeDateToISO(emp.join_date) || '';
     if (el('emp-license-number')) el('emp-license-number').value = emp.license_number || '';
-    if (el('emp-license-expiry')) el('emp-license-expiry').value = emp.license_expiry || '';
+    if (el('emp-license-expiry')) el('emp-license-expiry').value = normalizeDateToISO(emp.license_expiry) || '';
     if (el('emp-base-salary')) el('emp-base-salary').value = new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0);
     if (el('emp-insurance-salary')) el('emp-insurance-salary').value = new Intl.NumberFormat('vi-VN').format(emp.insurance_salary || 0);
     if (el('emp-is-insurance')) el('emp-is-insurance').value = emp.is_social_insurance_participant ? 'true' : 'false';
@@ -26000,18 +26033,18 @@ async function submitEmployeeForm(event) {
         department: document.getElementById('emp-department').value,
         role: document.getElementById('emp-role').value,
         gender: document.getElementById('emp-gender')?.value || 'MALE',
-        date_of_birth: document.getElementById('emp-dob')?.value || null,
+        date_of_birth: normalizeDateToISO(document.getElementById('emp-dob')?.value) || null,
         national_id: document.getElementById('emp-national-id')?.value.trim() || '',
-        national_id_date: document.getElementById('emp-national-id-date')?.value || null,
+        national_id_date: normalizeDateToISO(document.getElementById('emp-national-id-date')?.value) || null,
         national_id_place: document.getElementById('emp-national-id-place')?.value.trim() || '',
         tax_id: document.getElementById('emp-tax-id')?.value.trim() || '',
         insurance_number: document.getElementById('emp-insurance-number')?.value.trim() || '',
         bank_account: document.getElementById('emp-bank-account')?.value.trim() || '',
         bank_name: document.getElementById('emp-bank-name')?.value.trim() || '',
         bank_beneficiary: document.getElementById('emp-bank-beneficiary')?.value.trim().toUpperCase() || '',
-        join_date: document.getElementById('emp-join-date')?.value || null,
+        join_date: normalizeDateToISO(document.getElementById('emp-join-date')?.value) || null,
         license_number: document.getElementById('emp-license-number').value.trim(),
-        license_expiry: document.getElementById('emp-license-expiry').value || null,
+        license_expiry: normalizeDateToISO(document.getElementById('emp-license-expiry')?.value) || null,
         base_salary: parseInt(baseSalaryClean, 10) || 0,
         insurance_salary: parseInt(insSalaryClean, 10) || 5000000,
         is_social_insurance_participant: document.getElementById('emp-is-insurance')?.value === 'true',

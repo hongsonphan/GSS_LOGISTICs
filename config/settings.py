@@ -207,6 +207,22 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'DATETIME_FORMAT': '%d/%m/%Y %H:%M',
     'DATE_FORMAT': '%d/%m/%Y',
+    'DATE_INPUT_FORMATS': [
+        '%Y-%m-%d',
+        '%d/%m/%Y',
+        '%d-%m-%Y',
+        '%d.%m.%Y',
+        'iso-8601',
+    ],
+    'DATETIME_INPUT_FORMATS': [
+        '%Y-%m-%d %H:%M:%S',
+        '%Y-%m-%d %H:%M',
+        '%d/%m/%Y %H:%M:%S',
+        '%d/%m/%Y %H:%M',
+        '%d-%m-%Y %H:%M:%S',
+        '%d-%m-%Y %H:%M',
+        'iso-8601',
+    ],
 }
 
 # 3. Simple JWT Configuration (Tiêu chuẩn 3 - Mobile Token Expiration & Blacklist)
