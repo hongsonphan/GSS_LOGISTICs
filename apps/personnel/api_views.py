@@ -133,10 +133,11 @@ class EmployeeDetailAPIView(APIView):
     def delete(self, request, pk):
         employee = self.get_object(pk)
         employee.is_active = False
-        employee.save(update_fields=['is_active'])
+        employee.is_deleted = True
+        employee.save(update_fields=['is_active', 'is_deleted'])
         return Response({
             'success': True,
-            'message': f"Đã chuyển nhân sự '{employee.full_name}' ({employee.code}) sang trạng thái tạm ngưng công tác."
+            'message': f"Đã chuyển nhân sự '{employee.full_name}' ({employee.code}) sang trạng thái tạm ngưng công tác và xóa mềm."
         })
 
 
@@ -255,7 +256,8 @@ class EmployeeDependentDetailAPIView(APIView):
     def delete(self, request, pk):
         dep = self.get_object(pk)
         dep.is_active = False
-        dep.save(update_fields=['is_active'])
+        dep.is_deleted = True
+        dep.save(update_fields=['is_active', 'is_deleted'])
         return Response({'success': True, 'message': 'Đã tạm dừng giảm trừ cho người phụ thuộc.'})
 
 
@@ -314,6 +316,16 @@ class LaborContractDetailAPIView(APIView):
                 'data': LaborContractSerializer(updated).data
             })
         return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        contract = self.get_object(pk)
+        contract.is_deleted = True
+        contract.status = ContractStatus.TERMINATED
+        contract.save()
+        return Response({
+            'success': True,
+            'message': f"Đã chấm dứt và xóa mềm HĐLĐ '{contract.contract_number}'."
+        })
 
 
 class ContractAppendixListCreateAPIView(APIView):
@@ -471,6 +483,19 @@ class PayrollPeriodDetailAPIView(APIView):
             'slips': PayrollSlipSerializer(slips, many=True).data,
             'slips_count': slips.count()
         })
+
+    def delete(self, request, pk):
+        period = get_object_or_404(PayrollPeriod, pk=pk)
+        if period.status == PayrollPeriodStatus.PAID and period.cash_transaction:
+            period.cash_transaction.is_deleted = True
+            period.cash_transaction.save()
+        period.slips.all().update(is_deleted=True)
+        period.is_deleted = True
+        period.save()
+        return Response({
+            'success': True,
+            'message': f"Đã xóa mềm kỳ lương '{period.name}' thành công."
+        }, status=status.HTTP_200_OK)
 
 
 class PayrollCalculateAPIView(APIView):
@@ -650,7 +675,9 @@ class PayrollCalculateAPIView(APIView):
                     gross_income - total_ins_emp - pit_amount - advance_deductions - other_deductions
                 )
 
-                slip_code = f"PS-{period.period_code.replace('-', '')}-{emp.code}"
+                clean_period = period.period_code.replace('-', '').replace(' ', '')[:25]
+                clean_code = emp.code.replace(' ', '')[:25]
+                slip_code = f"PS-{clean_period}-{clean_code}"[:64]
 
                 PayrollSlip.objects.update_or_create(
                     period=period,

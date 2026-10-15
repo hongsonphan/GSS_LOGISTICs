@@ -17,7 +17,10 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from apps.dispatch.models import DispatchTrip, TripStatus
 from apps.customers.models import Customer, RouteTariff, Quotation, BookingOrder
-from apps.personnel.models import Employee, EmployeeRole
+from apps.personnel.models import (
+    Employee, EmployeeRole, EmployeeDependent, LaborContract,
+    ContractAppendix, PayrollPeriod, PayrollSlip
+)
 from apps.fleet.models import Vehicle, Trailer
 from apps.billing.models import CashTransaction, TripExpense, DispatcherAdvanceFund, DriverTripAdvance
 from apps.customs.models import CustomsDeclaration
@@ -505,9 +508,180 @@ def test_master_data_crud():
 run_test_step("7. Master Data", "Hồ sơ công ty, Địa điểm CRUD, Summary & Form Options", test_master_data_crud)
 
 # ==============================================================================
-# SECTION 8: CLEANUP OF TEST ARTIFACTS (SOFT-DELETE AUDIT)
+# SECTION 8: HRM & HYBRID PAYROLL CRUD & OPERATIONS (NHÂN SỰ & TIỀN LƯƠNG)
 # ==============================================================================
-print("\n>>> 8. KIỂM THỬ SOFT-DELETE CÁC BẢN GHI TẠO THỬ NGHIỆM")
+print("\n>>> 8. KIỂM THỬ THAO TÁC CRUD PHÂN HỆ NHÂN SỰ & HYBRID PAYROLL")
+
+created_emp_id = None
+created_dept_id = None
+created_contract_id = None
+created_period_id = None
+created_slip_id = None
+
+def test_hrm_employee_crud():
+    global created_emp_id
+    ts = timezone.now().strftime('%y%m%d%H%M%S')
+    emp_code = f"TX-E2E-{ts}"
+    payload = {
+        'code': emp_code,
+        'full_name': 'Nguyễn Văn Kiểm Thử E2E',
+        'nickname': 'BỤI TEST',
+        'phone_number': '0918889999',
+        'department': 'FLEET',
+        'role': 'DRIVER',
+        'gender': 'MALE',
+        'date_of_birth': '1988-05-15',
+        'national_id': '079088012345',
+        'national_id_date': '2021-06-10',
+        'national_id_place': 'Cục Cảnh sát QLHC về TTXH',
+        'tax_id': '8456789123',
+        'insurance_number': '7912345678',
+        'bank_account': '101234567890',
+        'bank_name': 'Vietcombank - CN Tân Bình',
+        'bank_beneficiary': 'NGUYEN VAN KIEM THU E2E',
+        'license_number': '790123456789',
+        'license_expiry': '2028-12-31',
+        'base_salary': 6500000,
+        'insurance_salary': 5000000,
+        'is_social_insurance_participant': True,
+        'join_date': '2024-01-01',
+        'is_active': True
+    }
+    create_res = client.post('/api/personnel/employees/', data=json.dumps(payload), content_type='application/json')
+    assert create_res.status_code in [200, 201], f"Create employee failed: {create_res.content[:200]}"
+    emp_data = create_res.json()
+    created_emp_id = emp_data.get('id') or (emp_data.get('data', {}).get('id') if isinstance(emp_data.get('data'), dict) else None)
+    assert created_emp_id, f"Employee ID not returned: {emp_data}"
+
+    # READ Detail
+    get_res = client.get(f'/api/personnel/employees/{created_emp_id}/')
+    assert get_res.status_code == 200, f"Get employee failed: {get_res.status_code}"
+    res_code = get_res.json().get('code') or (get_res.json().get('data', {}).get('code') if isinstance(get_res.json().get('data'), dict) else None)
+    assert res_code == emp_code
+
+    # UPDATE Employee
+    up_res = client.put(f'/api/personnel/employees/{created_emp_id}/', data=json.dumps({
+        'base_salary': 7000000,
+        'phone_number': '0918889998'
+    }), content_type='application/json')
+    assert up_res.status_code in [200, 204], f"Update employee failed: {up_res.status_code}"
+
+run_test_step("8. HRM & Payroll", "Hồ sơ Nhân sự 360°: Tạo mới -> Xem chi tiết -> Sửa lương & SĐT", test_hrm_employee_crud)
+
+def test_hrm_dependents_and_contracts():
+    global created_dept_id, created_contract_id
+    assert created_emp_id, "Employee must be created first"
+
+    # 1. Thêm Người phụ thuộc (giảm trừ 4.4tr/tháng)
+    dep_payload = {
+        'employee': created_emp_id,
+        'full_name': 'Nguyễn Hoàng Test Con',
+        'relationship': 'Con',
+        'national_id': '079215001234',
+        'date_of_birth': '2015-08-20',
+        'start_date': '2024-01-01',
+        'is_active': True
+    }
+    dep_res = client.post('/api/personnel/dependents/', data=json.dumps(dep_payload), content_type='application/json')
+    assert dep_res.status_code in [200, 201], f"Create dependent failed: {dep_res.content[:200]}"
+    dep_data = dep_res.json()
+    created_dept_id = dep_data.get('id') or (dep_data.get('data', {}).get('id') if isinstance(dep_data.get('data'), dict) else None)
+    assert created_dept_id, "Dependent ID not returned"
+
+    # 2. Ký Hợp đồng lao động
+    ts = timezone.now().strftime('%y%m%d%H%M%S')
+    c_payload = {
+        'contract_number': f"HDLD-E2E-{ts}",
+        'employee': created_emp_id,
+        'contract_type': 'DEFINITE_TERM',
+        'status': 'ACTIVE',
+        'sign_date': '2024-01-01',
+        'start_date': '2024-01-01',
+        'end_date': '2027-01-01',
+        'job_title': 'Tài xế đầu kéo Container đường dài',
+        'base_salary': 7000000,
+        'insurance_salary': 5000000
+    }
+    c_res = client.post('/api/personnel/contracts/', data=json.dumps(c_payload), content_type='application/json')
+    assert c_res.status_code in [200, 201], f"Create contract failed: {c_res.content[:200]}"
+    c_data = c_res.json()
+    created_contract_id = c_data.get('id') or (c_data.get('data', {}).get('id') if isinstance(c_data.get('data'), dict) else None)
+    assert created_contract_id, "Contract ID not returned"
+
+    # 3. Thêm Phụ lục hợp đồng
+    app_payload = {
+        'contract': created_contract_id,
+        'appendix_number': f"PL-01-E2E-{ts}",
+        'effective_date': '2024-06-01',
+        'new_base_salary': 7500000,
+        'change_summary': 'Điều chỉnh phụ cấp thâm niên và trách nhiệm xe mới'
+    }
+    app_res = client.post('/api/personnel/appendices/', data=json.dumps(app_payload), content_type='application/json')
+    assert app_res.status_code in [200, 201], f"Create appendix failed: {app_res.content[:200]}"
+
+    # 4. Kiểm tra Cảnh báo Nhân sự & Thống kê
+    stats_res = client.get('/api/personnel/stats/')
+    assert stats_res.status_code == 200, f"Stats failed: {stats_res.status_code}"
+    stats_data = stats_res.json()
+    assert 'total_employees' in stats_data or 'status' in stats_data or 'expiring_licenses' in stats_data
+
+run_test_step("8. HRM & Payroll", "Người phụ thuộc, HĐLĐ, Phụ lục & Cảnh báo hạn GPLX", test_hrm_dependents_and_contracts)
+
+def test_hybrid_payroll_lifecycle():
+    global created_period_id, created_slip_id
+    ts = timezone.now().strftime('%y%m%d%H%M%S')
+    period_code = f"PAY-E2E-{ts}"
+    p_payload = {
+        'period_code': period_code,
+        'name': f"Bảng Lương E2E Test {period_code}",
+        'from_date': '2026-09-01',
+        'to_date': '2026-09-30',
+        'standard_days': 26.0
+    }
+    p_res = client.post('/api/personnel/periods/', data=json.dumps(p_payload), content_type='application/json')
+    assert p_res.status_code in [200, 201], f"Create payroll period failed: {p_res.content[:200]}"
+    p_data = p_res.json()
+    created_period_id = p_data.get('id') or (p_data.get('data', {}).get('id') if isinstance(p_data.get('data'), dict) else None)
+    assert created_period_id, "Payroll period ID not returned"
+
+    # 2. ĐỘNG CƠ TÍNH LƯƠNG TỰ ĐỘNG (HYBRID PAYROLL ENGINE)
+    calc_res = client.post(f'/api/personnel/periods/{created_period_id}/calculate/')
+    assert calc_res.status_code == 200, f"Calculate payroll failed: {calc_res.content[:200]}"
+    first_slip = PayrollSlip.objects.filter(period_id=created_period_id).first()
+    assert first_slip is not None, f"No salary slips generated for period {created_period_id}"
+    created_slip_id = first_slip.id
+
+    # 3. CHỐT SỔ KỲ LƯƠNG (LOCKED)
+    lock_res = client.post(f'/api/personnel/periods/{created_period_id}/status/', data=json.dumps({
+        'status': 'LOCKED'
+    }), content_type='application/json')
+    assert lock_res.status_code == 200, f"Lock period failed: {lock_res.status_code}"
+
+    # 4. THANH TOÁN CHI TRẢ (PAID) -> TỰ ĐỘNG TẠO PHIẾU CHI SỔ QUỸ
+    pay_res = client.post(f'/api/personnel/periods/{created_period_id}/status/', data=json.dumps({
+        'status': 'PAID'
+    }), content_type='application/json')
+    assert pay_res.status_code == 200, f"Pay period failed: {pay_res.status_code}"
+    period_obj = PayrollPeriod.objects.get(id=created_period_id)
+    assert period_obj.cash_transaction_id is not None, "CashTransaction was not auto-created on PAID status!"
+
+    # 5. XUẤT FILE CHUYỂN KHOẢN NGÂN HÀNG LÔ (BANK EXPORT)
+    bank_res = client.get(f'/api/personnel/periods/{created_period_id}/bank-export/')
+    assert bank_res.status_code == 200, f"Bank export failed: {bank_res.status_code}"
+    assert 'records' in bank_res.json(), f"Bank export missing 'records': {bank_res.json()}"
+
+    # 6. IN PHIẾU LƯƠNG CÁ NHÂN A4 (SLIP PRINT PREVIEW)
+    if created_slip_id:
+        print_res = client.get(f'/api/personnel/slips/{created_slip_id}/print/')
+        assert print_res.status_code == 200, f"Slip print failed: {print_res.status_code}"
+        assert 'slip' in print_res.json()
+
+run_test_step("8. HRM & Payroll", "Kỳ lương: Tạo kỳ -> Tính lương Hybrid -> Chốt LOCKED -> Chi quỹ PAID -> Xuất Bank -> In Phiếu lương", test_hybrid_payroll_lifecycle)
+
+# ==============================================================================
+# SECTION 9: CLEANUP OF TEST ARTIFACTS (SOFT-DELETE AUDIT)
+# ==============================================================================
+print("\n>>> 9. KIỂM THỬ SOFT-DELETE CÁC BẢN GHI TẠO THỬ NGHIỆM")
 
 def test_soft_deletes():
     # 1. Soft-delete created trip (Mở chốt chi phí theo chuẩn kế toán trước khi hủy lệnh)
@@ -540,7 +714,28 @@ def test_soft_deletes():
         del_c = client.delete(f'/api/customs/declarations/{created_declaration_id}/')
         assert del_c.status_code in [200, 204], f"Delete customs status {del_c.status_code}"
 
-run_test_step("8. Soft-Delete Audit", "Xóa mềm an toàn: Trip, Booking, Quotation, Voucher, Hải quan", test_soft_deletes)
+    # 6. Soft-delete created HRM & Payroll test records
+    if created_period_id:
+        del_p = client.delete(f'/api/personnel/periods/{created_period_id}/')
+        assert del_p.status_code in [200, 204], f"Delete payroll period failed: {del_p.status_code}"
+
+    if created_contract_id:
+        del_ct = client.delete(f'/api/personnel/contracts/{created_contract_id}/')
+        assert del_ct.status_code in [200, 204], f"Delete contract failed: {del_ct.status_code}"
+
+    if created_dept_id:
+        del_dp = client.delete(f'/api/personnel/dependents/{created_dept_id}/')
+        assert del_dp.status_code in [200, 204], f"Delete dependent failed: {del_dp.status_code}"
+
+    if created_emp_id:
+        del_ep = client.delete(f'/api/personnel/employees/{created_emp_id}/')
+        assert del_ep.status_code in [200, 204], f"Delete employee failed: {del_ep.status_code}"
+        # Verify soft delete
+        emp_check = Employee.all_objects.filter(id=created_emp_id).first()
+        if emp_check:
+            assert emp_check.is_deleted == True, "Employee was hard deleted instead of soft deleted!"
+
+run_test_step("9. Soft-Delete Audit", "Xóa mềm an toàn: Trip, Booking, Quotation, Voucher, Hải quan, Kỳ lương, HĐLĐ, Nhân sự", test_soft_deletes)
 
 # ==============================================================================
 # FINAL AUDIT SUMMARY

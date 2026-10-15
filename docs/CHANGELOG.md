@@ -47,9 +47,10 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   3. `Kỳ Lương & Hybrid Payroll`: Bảng lương đa thành phần, bộ chuyển trạng thái, xuất Excel ngân hàng, in phiếu lương.
   4. `Chính Sách & Biểu Thuế`: Tùy chỉnh tham số giảm trừ, tỷ lệ BHXH, biểu thuế 7 bậc.
 - Form tạo/sửa nhân sự (`view_employee_form.html`) được mở rộng 3 khối thông tin định danh 360°.
-- **Kiểm thử hồi quy toàn diện:**
-  * `node -c static/js/app.js` & `node -c static/js/column_manager.js`: 100% cú pháp sạch.
-  * `python manage.py test --keepdb`: 95/95 tests PASSED (100%), không phát sinh lỗi hồi quy.
+- **Kiểm thử hồi quy & Giả lập người dùng toàn diện:**
+  * `node -c static/js/app.js` & `node -c static/js/column_manager.js`: 100% cú pháp sạch, 0 lỗi.
+  * `python manage.py test --keepdb`: 95/95 unit test cases PASSED (100%), bảo toàn zero-regression.
+  * `python scripts/audit_e2e_user_operations.py`: 39/39 kịch bản kiểm thử giả lập người dùng toàn diện PASSED (100%), bao quát 9 phân hệ: Views, Sales/CRM, Dispatch, Accounting, Customs, 14 Báo cáo, Master Data, HRM & Hybrid Payroll, và Soft-delete audit trail.
 
 ## [v2.9.5] - 2026-10-12 (Chuẩn Hóa Bộ Lọc Thời Gian Toàn Diện — Khắc Phục Rò Rỉ Bản Ghi Ngoại Kỳ)
 

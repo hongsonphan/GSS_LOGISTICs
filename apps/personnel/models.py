@@ -289,7 +289,7 @@ class PayrollSlip(TimeStampedModel, SoftDeleteModel):
     """
     period = models.ForeignKey(PayrollPeriod, on_delete=models.CASCADE, related_name='slips')
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='payroll_slips')
-    slip_code = models.CharField(max_length=35, unique=True, db_index=True) # PS-202610-TX001
+    slip_code = models.CharField(max_length=64, unique=True, db_index=True) # PS-202610-TX001
 
     # Snapshot thông tin nhân sự tại thời điểm tính lương
     role = models.CharField(max_length=20)
