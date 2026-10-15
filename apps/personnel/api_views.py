@@ -1038,8 +1038,11 @@ class PayrollCalculateAPIView(APIView):
                             pit_amount = max(Decimal('0'), calc_tax)
                             break
 
-                # 6. Khấu trừ hoàn ứng chuyến xe (DriverTripAdvance)
-                # Tìm các khoản tạm ứng của tài xế phát sinh trong kỳ
+                # 6. Khấu trừ tạm ứng:
+                # Bao gồm tiền tạm ứng lương trong tháng (Employee.current_advance)
+                # và các khoản tạm ứng chuyến xe phát sinh trong kỳ (DriverTripAdvance)
+                emp_salary_advance = emp.current_advance or Decimal('0')
+
                 advances_qs = DriverTripAdvance.objects.filter(
                     driver=emp,
                     is_deleted=False
@@ -1047,7 +1050,15 @@ class PayrollCalculateAPIView(APIView):
                     Q(advance_date__gte=from_d, advance_date__lte=to_d) |
                     Q(advance_date__isnull=True, created_at__date__gte=from_d, created_at__date__lte=to_d)
                 )
-                auto_adv_deduct = advances_qs.aggregate(s=Sum('amount'))['s'] or Decimal('0')
+
+                unsettled_trip_adv = advances_qs.filter(status='ADVANCED').aggregate(s=Sum('amount'))['s'] or Decimal('0')
+                total_trip_adv = advances_qs.aggregate(s=Sum('amount'))['s'] or Decimal('0')
+
+                if emp_salary_advance > 0:
+                    auto_adv_deduct = emp_salary_advance + unsettled_trip_adv
+                else:
+                    auto_adv_deduct = unsettled_trip_adv if unsettled_trip_adv > 0 else total_trip_adv
+
                 # Hỗ trợ ghi đè từ payload nếu có điều chỉnh
                 advance_deductions = Decimal(str(emp_override.get('advance_deductions', auto_adv_deduct)))
                 other_deductions = Decimal(str(emp_override.get('other_deductions', 0)))
