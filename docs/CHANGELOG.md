@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.2.0] - 2026-10-15 (Chuẩn Hóa Trình Tự Nghiệp Vụ HRM: Hồ Sơ Nhân Viên ➔ Hợp Đồng ➔ Chấm Công ➔ Tính Lương Hybrid)
+
+### 1. Triển Khai Hoàn Chỉnh Quy Trình 4 Giai Đoạn Liên Hoàn:
+- **Giai đoạn 1: Hồ Sơ Nhân Sự (`Employee`):**
+  * Quản lý thông tin định danh CCCD/CMND, Mã số thuế, Sổ BHXH, Bằng lái GPLX (hạng, số, ngày hết hạn), Thông tin ngân hàng chi lương, Người phụ thuộc giảm trừ gia cảnh.
+- **Giai đoạn 2: Hợp Đồng Lao Động (`LaborContract`, `ContractAppendix`):**
+  * Xác lập mức Lương căn bản ký HĐ (`base_salary` - căn cứ tính Lương ngày công thời gian) và Mức lương đóng BHXH (`insurance_salary` - căn cứ trích nộp BHXH/BHYT/BHTN).
+  * Vòng đời HĐLĐ: DRAFT ➔ ACTIVE ➔ EXPIRED ➔ TERMINATED kèm cảnh báo trước 30 ngày.
+- **Giai đoạn 3: Bảng Chấm Công Tháng (`AttendanceCode`, `DailyAttendance`, `MonthlyAttendanceSummary`):**
+  * Danh mục ký hiệu chấm công chuẩn nghiệp vụ: `X` (Đủ công 1.0), `X/2` (Nửa công 0.5), `P` (Nghỉ phép năm), `L` (Nghỉ Lễ/Tết), `CT` (Công tác), `Ro` (Nghỉ không lương), `Om` (Nghỉ ốm đau/thai sản).
+  * Chức năng **Khởi tạo công tự động** (`MonthlyAttendanceAutoGenerateAPIView`): Mặc định công tiêu chuẩn 26 ngày cho toàn bộ CBNV đang hoạt động trong kỳ.
+  * Hỗ trợ chỉnh sửa trực tiếp từng dòng ngày công, tự động tính tổng công hưởng lương thời gian: `total_paid_days = worked_days + paid_leave_days + holiday_days`.
+- **Giai đoạn 4: Tính Lương Kết Hợp (Hybrid Payroll Engine):**
+  * Cấu phần 1: **Lương ngày công (thời gian)** = `(Lương HĐ / Công chuẩn 26) * Ngày công hưởng lương (total_paid_days)`.
+  * Cấu phần 2: **Lương sản phẩm chuyến xe (Tài xế)** = Lương chuyến chính (`driver_allowance`) + Chuyến cắt kéo (`dropoff_driver_allowance`) + Phụ cấp neo xe (`detention_driver_allowance`) + Thưởng định mức tiêu hao nhiên liệu (`fuel_bonus`) từ phân hệ Điều Vận (`DispatchTrip`).
+  * Cấu phần 3: Phụ cấp (điện thoại, ăn trưa) & Thưởng KPI.
+  * Cấu phần 4: Khấu trừ BHXH (10.5%), Thuế TNCN (biểu lũy tiến 5 bậc Luật 109/2025/QH15) và Khấu trừ tạm ứng chuyến xe (`DriverTripAdvance`).
+  * Cấu phần 5: Thực lĩnh Net = Gross - Khấu trừ bảo hiểm - Thuế TNCN - Hoàn ứng chuyến.
+
+### 2. Nâng Cấp Giao Diện Web & Trải Nghiệm Người Dùng:
+- Thanh điều hướng Tab 5 bước: `1. Hồ Sơ Nhân Sự` ➔ `2. Hợp Đồng Lao Động` ➔ `3. Bảng Chấm Công` ➔ `4. Tính Lương (Hybrid Payroll)` ➔ `5. Chính Sách & Biểu Thuế`.
+- Bảng chấm công tương tác thời gian thực: input ngày công, tự động cập nhật tổng công tức thì.
+- Bảng lương chi tiết chuẩn hóa 19 cột phân nhóm rõ ràng (Lương Ngày Công vs. Lương Sản Phẩm Chuyến Xe Tài Xế).
+- Phiếu lương cá nhân A4 dạng văn bản phẳng (flat paper document), in ấn trực tiếp hoặc xuất bảng kê chuyển khoản ngân hàng lô (CSV UTF-8 BOM).
+
+### 3. Kết Quả Kiểm Thử Chất Lượng (Zero-Regression):
+- 100% cú pháp JS chuẩn mực (`node -c static/js/app.js`, `node -c static/js/column_manager.js`).
+- 95/95 test cases Django automated unit tests PASSED.
+- 40/40 test cases E2E user operations audit PASSED.
+
 ## [v3.1.0] - 2026-10-15 (Đồng Bộ Chuẩn Chính Sách, Biểu Thuế 5 Bậc Mới & Danh Mục Phụ Cấp Từ BIM ERP)
 
 ### 1. Đồng Bộ Biểu Thuế TNCN 5 Bậc Mới & Căn Cứ Pháp Lý (Luật 109/2025/QH15):

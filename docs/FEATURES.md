@@ -360,16 +360,21 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 
 **View:** `view_personnel.html` | **API:** `GET /api/personnel/`
 
-### 11.1 Quản lý Nhân sự (Employee)
-- **7 Phòng ban:** Điều Vận | Đội Xe & Bãi | Kinh Doanh | Hải Quan | Nhân Sự | Kế Toán | Ban Giám Đốc
-- **6 Vai trò:** Giám đốc | Điều độ viên | Tài xế | Kế toán | Nhân viên KD | Kỹ thuật viên
-- Thông tin: Mã NV, Biệt danh hiện trường (BỤI 94, LIBRA...), SĐT, Zalo ID
-- Dành cho tài xế: Số GPLX, Hạn GPLX, Lương cơ bản, Tiền tạm ứng tháng
-
-### 11.2 Bảng lương Tài xế Tạm tính
-- Tính lương theo sản lượng chuyến thực tế trong tháng
-- Dựa trên `driver_allowance` của từng chuyến + phụ cấp
-- Phân biệt: Lương chặng 1 / Lương chặng 2 (Cắt kéo)
+### 11.1 Trình Tự Nghiệp Vụ Quản Trị Nhân Sự & Tiền Lương 4 Giai Đoạn Liên Hoàn:
+1. **Giai đoạn 1: Hồ Sơ Nhân Sự 360° (`Employee`):**
+   - Quản lý đầy đủ định danh CCCD/CMND, Mã số thuế cá nhân, Sổ BHXH, Bằng lái GPLX (hạng bằng, ngày hết hạn), Thông tin tài khoản ngân hàng chi lương, Người phụ thuộc giảm trừ gia cảnh (`EmployeeDependent`).
+2. **Giai đoạn 2: Hợp Đồng Lao Động & Phụ Lục (`LaborContract`, `ContractAppendix`):**
+   - Quản lý vòng đời hợp đồng: DRAFT ➔ ACTIVE ➔ EXPIRED ➔ TERMINATED, cảnh báo hết hạn trước 30 ngày.
+   - Xác lập rõ: Mức lương căn bản ký HĐ (`base_salary` - căn cứ tính Lương ngày công) và Mức lương đóng BHXH (`insurance_salary` - căn cứ trích nộp BHXH 10.5%).
+3. **Giai đoạn 3: Bảng Chấm Công Tháng (`AttendanceCode`, `MonthlyAttendanceSummary`):**
+   - Bộ ký hiệu chấm công chuẩn nghiệp vụ: X (1.0 công), X/2 (0.5 công), P (Phép năm), L (Lễ tết), Ro (Không lương), CT (Công tác), Om (Ốm đau).
+   - Tự động khởi tạo công tiêu chuẩn (26 ngày) cho CBNV; hỗ trợ sửa trực tiếp từng dòng ngày công và tự động tính `total_paid_days`.
+4. **Giai đoạn 4: Tính Lương Kết Hợp (Hybrid Payroll Engine):**
+   - **Lương ngày công (thời gian):** `(Lương HĐ / 26) * Ngày công hưởng lương`.
+   - **Lương sản phẩm chuyến xe (Tài xế):** Tổng lương chuyến chính (`driver_allowance`) + Lương cắt kéo (`dropoff_driver_allowance`) + Phụ cấp neo xe (`detention_driver_allowance`) + Thưởng định mức dầu (`fuel_bonus`) kế thừa trực tiếp từ `DispatchTrip`.
+   - **Khấu trừ pháp lý & hoàn ứng:** Trích nộp BHXH (10.5%), Thuế TNCN (biểu lũy tiến 5 bậc Luật 109/2025/QH15 sau giảm trừ gia cảnh 15.5tr bản thân & 6.2tr NPT), Khấu trừ tạm ứng chuyến xe (`DriverTripAdvance`).
+   - **Thực lĩnh Net:** Gross - BHXH - Thuế TNCN - Hoàn ứng.
+   - **Thanh toán & Xuất file:** Xuất bảng kê chuyển khoản ngân hàng lô (CSV UTF-8 BOM), in phiếu lương cá nhân dạng văn bản phẳng A4.
 
 ---
 

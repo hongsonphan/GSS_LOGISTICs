@@ -4,7 +4,8 @@ from apps.personnel.models import (
     EmployeeDependent, LaborContract, ContractAppendix, ContractType, ContractStatus,
     TaxBracket, TaxBracketStatus, SalaryDeductionRate, PayrollPolicyConfig,
     PayrollParameter, AllowanceGroup, AllowanceType,
-    PayrollPeriod, PayrollSlip, PayrollPeriodStatus
+    PayrollPeriod, PayrollSlip, PayrollPeriodStatus,
+    AttendanceCode, DailyAttendance, MonthlyAttendanceSummary
 )
 from django.contrib.auth import get_user_model
 
@@ -273,3 +274,60 @@ class PayrollSlipSerializer(serializers.ModelSerializer):
             if val == obj.department:
                 return lbl
         return obj.department
+
+
+# ==============================================================================
+# 5. SERIALIZERS CHẤM CÔNG (TIMEKEEPING SERIALIZERS)
+# ==============================================================================
+
+class AttendanceCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AttendanceCode
+        fields = [
+            'id', 'code', 'name', 'work_weight', 'salary_rate',
+            'is_paid', 'color', 'order', 'is_active'
+        ]
+
+
+class DailyAttendanceSerializer(serializers.ModelSerializer):
+    employee_code = serializers.CharField(source='employee.code', read_only=True)
+    employee_name = serializers.CharField(source='employee.full_name', read_only=True)
+    code_name = serializers.CharField(source='attendance_code.name', read_only=True)
+    color = serializers.CharField(source='attendance_code.color', read_only=True)
+
+    class Meta:
+        model = DailyAttendance
+        fields = [
+            'id', 'employee', 'employee_code', 'employee_name',
+            'work_date', 'attendance_code', 'code_symbol', 'code_name', 'color',
+            'work_hours', 'overtime_hours', 'notes'
+        ]
+
+
+class MonthlyAttendanceSummarySerializer(serializers.ModelSerializer):
+    employee_code = serializers.CharField(source='employee.code', read_only=True)
+    employee_name = serializers.CharField(source='employee.full_name', read_only=True)
+    employee_role = serializers.CharField(source='employee.role', read_only=True)
+    employee_role_label = serializers.CharField(source='employee.get_role_display', read_only=True)
+    department = serializers.CharField(source='employee.department', read_only=True)
+    department_label = serializers.CharField(source='employee.get_department_display', read_only=True)
+    period_code = serializers.CharField(source='period.period_code', read_only=True)
+    base_salary = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MonthlyAttendanceSummary
+        fields = [
+            'id', 'employee', 'employee_code', 'employee_name', 'employee_role', 'employee_role_label',
+            'department', 'department_label', 'base_salary',
+            'period', 'period_code', 'standard_days',
+            'worked_days', 'paid_leave_days', 'holiday_days', 'unpaid_leave_days',
+            'total_paid_days', 'overtime_hours', 'notes', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_base_salary(self, obj):
+        active_contract = LaborContract.objects.filter(employee=obj.employee, status='ACTIVE').first()
+        if active_contract and active_contract.base_salary:
+            return float(active_contract.base_salary)
+        return float(obj.employee.base_salary or 0)
+

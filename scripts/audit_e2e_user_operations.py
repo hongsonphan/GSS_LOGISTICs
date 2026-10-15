@@ -627,22 +627,63 @@ def test_hrm_dependents_and_contracts():
 
 run_test_step("8. HRM & Payroll", "Người phụ thuộc, HĐLĐ, Phụ lục & Cảnh báo hạn GPLX", test_hrm_dependents_and_contracts)
 
-def test_hybrid_payroll_lifecycle():
-    global created_period_id, created_slip_id
+created_attendance_id = None
+
+def test_hrm_monthly_attendance_timekeeping():
+    global created_period_id, created_attendance_id
+    # 1. Tạo kỳ lương/kỳ chấm công trước
     ts = timezone.now().strftime('%y%m%d%H%M%S')
-    period_code = f"PAY-E2E-{ts}"
+    period_code = f"ATT-E2E-{ts}"
     p_payload = {
         'period_code': period_code,
-        'name': f"Bảng Lương E2E Test {period_code}",
-        'from_date': '2026-09-01',
-        'to_date': '2026-09-30',
+        'name': f"Kỳ Chấm Công E2E Test {period_code}",
+        'from_date': '2026-10-01',
+        'to_date': '2026-10-31',
         'standard_days': 26.0
     }
     p_res = client.post('/api/personnel/periods/', data=json.dumps(p_payload), content_type='application/json')
-    assert p_res.status_code in [200, 201], f"Create payroll period failed: {p_res.content[:200]}"
+    assert p_res.status_code in [200, 201], f"Create period failed: {p_res.content[:200]}"
     p_data = p_res.json()
     created_period_id = p_data.get('id') or (p_data.get('data', {}).get('id') if isinstance(p_data.get('data'), dict) else None)
-    assert created_period_id, "Payroll period ID not returned"
+    assert created_period_id, "Payroll/attendance period ID not returned"
+
+    # 2. Danh mục Ký hiệu chấm công
+    codes_res = client.get('/api/personnel/attendance-codes/')
+    assert codes_res.status_code == 200, f"Attendance codes failed: {codes_res.status_code}"
+    assert len(codes_res.json()) >= 5, "Attendance codes list is too short or empty"
+
+    # 3. Khởi tạo Bảng tổng hợp công tháng tự động (Auto-Generate 26 ngày công)
+    auto_res = client.post('/api/personnel/monthly-attendance/auto-generate/', data=json.dumps({
+        'period_id': created_period_id
+    }), content_type='application/json')
+    assert auto_res.status_code == 200, f"Auto-generate attendance failed: {auto_res.content[:200]}"
+
+    # 4. Truy vấn danh sách Bảng chấm công theo kỳ
+    list_res = client.get(f'/api/personnel/monthly-attendance/?period_id={created_period_id}')
+    assert list_res.status_code == 200, f"List attendance failed: {list_res.status_code}"
+    att_list = list_res.json()
+    assert len(att_list) > 0, "No attendance summary returned after auto-generation"
+
+    # 5. Cập nhật chi tiết 1 dòng chấm công (Đi làm 23 công, Nghỉ phép 2 công, Nghỉ lễ 1 công, Không lương 1 công)
+    target_row = att_list[0]
+    created_attendance_id = target_row['id']
+    up_res = client.put(f'/api/personnel/monthly-attendance/{created_attendance_id}/', data=json.dumps({
+        'worked_days': 23.0,
+        'paid_leave_days': 2.0,
+        'holiday_days': 1.0,
+        'unpaid_leave_days': 1.0,
+        'overtime_hours': 4.0,
+        'notes': 'E2E Test cập nhật ngày công'
+    }), content_type='application/json')
+    assert up_res.status_code == 200, f"Update attendance row failed: {up_res.content[:200]}"
+    updated_data = up_res.json().get('data', {})
+    assert float(updated_data.get('total_paid_days', 0)) == 26.0, f"total_paid_days mismatch: {updated_data}"
+
+run_test_step("8. HRM & Payroll", "Chấm công tháng: Ký hiệu -> Khởi tạo tự động -> Sửa ngày công (X, P, L, Ro) -> Tự tính tổng công hưởng lương", test_hrm_monthly_attendance_timekeeping)
+
+def test_hybrid_payroll_lifecycle():
+    global created_period_id, created_slip_id
+    assert created_period_id, "Period ID from attendance step must exist"
 
     # 2. ĐỘNG CƠ TÍNH LƯƠNG TỰ ĐỘNG (HYBRID PAYROLL ENGINE)
     calc_res = client.post(f'/api/personnel/periods/{created_period_id}/calculate/')

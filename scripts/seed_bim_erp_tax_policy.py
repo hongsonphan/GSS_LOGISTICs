@@ -12,7 +12,8 @@ django.setup()
 
 from apps.personnel.models import (
     TaxBracket, TaxBracketStatus, SalaryDeductionRate,
-    PayrollPolicyConfig, PayrollParameter, AllowanceGroup, AllowanceType
+    PayrollPolicyConfig, PayrollParameter, AllowanceGroup, AllowanceType,
+    AttendanceCode
 )
 
 print("=" * 80)
@@ -266,4 +267,31 @@ for code, name, cat, def_amt, l1, l2, is_ins, is_tax, basis in allowances_g3:
     )
     print(f"  [+] Nhóm III: [{code}] {name} (BHXH={is_ins}, TNCN={is_tax})")
 
-print("\n🎉 HOÀN TẤT ĐỒNG BỘ 100% CHÍNH SÁCH, BIỂU THUẾ & DANH MỤC THU NHẬP TỪ BIM ERP!")
+# 6. BẢNG KÝ HIỆU CHẤM CÔNG CHUẨN (ATTENDANCE CODES)
+print("\n>>> 6. Đồng bộ Danh mục Ký hiệu Chấm công từ Bim ERP...")
+attendance_codes_data = [
+    ("X", "Đi làm đủ ngày (Đủ công)", Decimal("1.0"), Decimal("100.0"), True, "teal", 1),
+    ("X/2", "Đi làm nửa ngày (Nửa công)", Decimal("0.5"), Decimal("50.0"), True, "sky", 2),
+    ("P", "Nghỉ phép năm hưởng lương", Decimal("1.0"), Decimal("100.0"), True, "emerald", 3),
+    ("L", "Nghỉ Lễ / Tết hưởng nguyên lương", Decimal("1.0"), Decimal("100.0"), True, "amber", 4),
+    ("CT", "Đi công tác ngoại tỉnh / hiện trường", Decimal("1.0"), Decimal("100.0"), True, "indigo", 5),
+    ("Ro", "Nghỉ việc riêng không hưởng lương", Decimal("0.0"), Decimal("0.0"), False, "rose", 6),
+    ("Om", "Nghỉ ốm đau chế độ BHXH", Decimal("0.0"), Decimal("0.0"), False, "purple", 7),
+]
+
+for code, name, weight, rate, is_paid, color, order in attendance_codes_data:
+    AttendanceCode.objects.update_or_create(
+        code=code,
+        defaults={
+            'name': name,
+            'work_weight': weight,
+            'salary_rate': rate,
+            'is_paid': is_paid,
+            'color': color,
+            'order': order,
+            'is_active': True
+        }
+    )
+    print(f"  [+] Ký hiệu [{code}]: {name} (Hệ số: {weight}, Lương: {rate}%)")
+
+print("\n🎉 HOÀN TẤT ĐỒNG BỘ 100% CHÍNH SÁCH, BIỂU THUẾ, DANH MỤC THU NHẬP & KÝ HIỆU CHẤM CÔNG TỪ BIM ERP!")

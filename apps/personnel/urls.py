@@ -17,6 +17,10 @@ from apps.personnel.api_views import (
     AllowanceGroupListAPIView,
     AllowanceTypeListCreateAPIView,
     AllowanceTypeDetailAPIView,
+    AttendanceCodeListAPIView,
+    MonthlyAttendanceSummaryListAPIView,
+    MonthlyAttendanceSummaryDetailAPIView,
+    MonthlyAttendanceAutoGenerateAPIView,
     PayrollPeriodListCreateAPIView,
     PayrollPeriodDetailAPIView,
     PayrollCalculateAPIView,
@@ -40,7 +44,13 @@ urlpatterns = [
     path('contracts/<int:pk>/', LaborContractDetailAPIView.as_view(), name='api-contract-detail'),
     path('appendices/', ContractAppendixListCreateAPIView.as_view(), name='api-appendix-list-create'),
 
-    # 4. Chính sách lương, bảo hiểm & thuế TNCN
+    # 4. Chấm công & Quản lý ngày công
+    path('attendance-codes/', AttendanceCodeListAPIView.as_view(), name='api-attendance-codes'),
+    path('monthly-attendance/', MonthlyAttendanceSummaryListAPIView.as_view(), name='api-monthly-attendance-list'),
+    path('monthly-attendance/<int:pk>/', MonthlyAttendanceSummaryDetailAPIView.as_view(), name='api-monthly-attendance-detail'),
+    path('monthly-attendance/auto-generate/', MonthlyAttendanceAutoGenerateAPIView.as_view(), name='api-monthly-attendance-auto-generate'),
+
+    # 5. Chính sách lương, bảo hiểm & thuế TNCN
     path('policy-config/', PayrollPolicyConfigAPIView.as_view(), name='api-payroll-policy-config'),
     path('tax-brackets/', TaxBracketListAPIView.as_view(), name='api-tax-brackets'),
     path('tax-brackets/<int:pk>/', TaxBracketDetailAPIView.as_view(), name='api-tax-bracket-detail'),
@@ -51,7 +61,7 @@ urlpatterns = [
     path('allowance-types/', AllowanceTypeListCreateAPIView.as_view(), name='api-allowance-types'),
     path('allowance-types/<int:pk>/', AllowanceTypeDetailAPIView.as_view(), name='api-allowance-type-detail'),
 
-    # 5. Kỳ lương & Động cơ tính lương
+    # 6. Kỳ lương & Động cơ tính lương
     path('periods/', PayrollPeriodListCreateAPIView.as_view(), name='api-payroll-period-list-create'),
     path('periods/<int:pk>/', PayrollPeriodDetailAPIView.as_view(), name='api-payroll-period-detail'),
     path('periods/<int:pk>/calculate/', PayrollCalculateAPIView.as_view(), name='api-payroll-calculate'),

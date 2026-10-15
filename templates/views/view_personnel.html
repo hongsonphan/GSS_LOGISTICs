@@ -39,19 +39,23 @@
             <div class="flex items-center space-x-1 overflow-x-auto" id="hr-sub-tabs">
                 <button onclick="switchHRSubTab('directory')" id="hr-tab-directory-btn" class="hr-tab-btn active px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-teal-600 text-teal-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
                     <i class="ph-bold ph-address-book text-base text-teal-600"></i>
-                    <span>Hồ Sơ Cán Bộ & Tài Xế</span>
+                    <span>1. Hồ Sơ Nhân Sự</span>
                 </button>
                 <button onclick="switchHRSubTab('contracts')" id="hr-tab-contracts-btn" class="hr-tab-btn px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
                     <i class="ph-bold ph-file-text text-base text-indigo-600"></i>
-                    <span>Hợp Đồng Lao Động</span>
+                    <span>2. Hợp Đồng Lao Động</span>
+                </button>
+                <button onclick="switchHRSubTab('attendance')" id="hr-tab-attendance-btn" class="hr-tab-btn px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
+                    <i class="ph-bold ph-calendar-check text-base text-sky-600"></i>
+                    <span>3. Bảng Chấm Công</span>
                 </button>
                 <button onclick="switchHRSubTab('payroll')" id="hr-tab-payroll-btn" class="hr-tab-btn px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
                     <i class="ph-bold ph-money text-base text-emerald-600"></i>
-                    <span>Kỳ Lương & Hybrid Payroll</span>
+                    <span>4. Tính Lương (Hybrid Payroll)</span>
                 </button>
                 <button onclick="switchHRSubTab('policies')" id="hr-tab-policies-btn" class="hr-tab-btn px-3.5 py-2.5 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap">
                     <i class="ph-bold ph-sliders text-base text-amber-600"></i>
-                    <span>Chính Sách & Biểu Thuế</span>
+                    <span>5. Chính Sách & Biểu Thuế</span>
                 </button>
             </div>
 
@@ -64,6 +68,10 @@
                 <button onclick="openCreateContractModal()" id="btn-create-contract" class="hidden px-3.5 py-1.5 bg-transparent border border-indigo-600 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
                     <i class="ph-bold ph-plus-circle text-base"></i>
                     <span>Tạo Hợp Đồng</span>
+                </button>
+                <button onclick="autoGenerateMonthlyAttendance()" id="btn-auto-attendance" class="hidden px-3.5 py-1.5 bg-transparent border border-sky-600 text-sky-700 hover:bg-sky-600 hover:text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
+                    <i class="ph-bold ph-magic-wand text-base"></i>
+                    <span>Khởi Tạo Bảng Công</span>
                 </button>
                 <button onclick="openCreatePeriodModal()" id="btn-create-period" class="hidden px-3.5 py-1.5 bg-transparent border border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-xs md:text-sm font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
                     <i class="ph-bold ph-calendar-plus text-base"></i>
@@ -212,7 +220,64 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- SUB-PANEL 3: KỲ LƯƠNG & HYBRID PAYROLL ENGINE -->
+        <!-- SUB-PANEL 3: BẢNG CHẤM CÔNG THÁNG (ATTENDANCE & TIMEKEEPING) -->
+        <!-- ========================================================================= -->
+        <div id="hr-panel-attendance" class="hidden flex flex-col flex-1">
+            <div class="p-3 px-4 border-b border-slate-200 bg-white flex flex-col md:flex-row items-center justify-between gap-2.5 shrink-0">
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <label class="text-xs font-bold text-slate-600 uppercase">Kỳ Chấm Công:</label>
+                    <select id="attendance-period-select" onchange="loadAttendanceData()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-teal-500">
+                        <option value="">-- Đang nạp danh sách kỳ --</option>
+                    </select>
+                    <span class="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200" id="attendance-count-badge">
+                        0 Nhân sự
+                    </span>
+                    <span class="text-xs text-slate-500 font-medium hidden lg:inline" id="attendance-note-badge">
+                        (Công chuẩn: 26 ngày | Ký hiệu: X: 1.0 công, X/2: 0.5 công, P: Phép năm, L: Lễ tết, Ro: Không lương)
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="autoGenerateMonthlyAttendance()" class="px-3.5 py-1.5 bg-transparent border border-sky-600 text-sky-700 hover:bg-sky-600 hover:text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="ph-bold ph-magic-wand text-amber-500 text-sm"></i>
+                        <span>Khởi Tạo Công Tự Động</span>
+                    </button>
+                    <button type="button" onclick="saveAllAttendanceRows()" class="px-3.5 py-1.5 bg-transparent border border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="ph-bold ph-floppy-disk text-sm"></i>
+                        <span>Lưu Bảng Chấm Công</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bảng tổng hợp công tháng -->
+            <div class="overflow-x-auto flex-1 border-b border-slate-200 erp-table-container min-h-[350px]">
+                <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="attendance-table">
+                    <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
+                        <tr>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200 w-12">STT</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Mã NV</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Họ Và Tên</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Chức Vụ</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Phòng Ban</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Lương HĐ</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200 bg-slate-50">Công Chuẩn</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-teal-800 border-r border-slate-200">Đi Làm (X)</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-emerald-800 border-r border-slate-200">Nghỉ Phép (P)</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-amber-800 border-r border-slate-200">Nghỉ Lễ (L)</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-rose-700 border-r border-slate-200">Không Lương (Ro)</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-indigo-900 border-r border-slate-200 bg-indigo-50/50">Tổng Công Tính Lương</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200">Tăng Ca (h)</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium" id="attendance-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- SUB-PANEL 4: TÍNH LƯƠNG & HYBRID PAYROLL ENGINE -->
         <!-- ========================================================================= -->
         <div id="hr-panel-payroll" class="hidden flex flex-col flex-1">
             <!-- Toolbar Chọn Kỳ Lương & Hành Động -->
@@ -238,7 +303,7 @@
                     <!-- Nút 1: Tính toán tự động -->
                     <button type="button" onclick="executePayrollCalculation()" id="btn-calculate-payroll"
                             class="px-3.5 py-1.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
-                            title="Tự động quét chuyến xe, tính thưởng dầu, bảo hiểm và thuế TNCN">
+                            title="Tự động liên thông Chấm công, quét chuyến xe tài xế, tính bảo hiểm và thuế TNCN">
                         <i class="ph-bold ph-lightning text-amber-500 text-sm"></i>
                         <span>Tính Lương Tự Động</span>
                     </button>
@@ -284,11 +349,11 @@
                     <strong class="text-indigo-700 font-bold font-mono" id="sum-total-ins-emp">0 đ</strong>
                 </div>
                 <div>
-                    <span class="text-slate-500 block text-[11px]">Thuế TNCN:</span>
+                    <span class="text-slate-500 block text-[11px]">Thuế TNCN (5 Bậc):</span>
                     <strong class="text-rose-600 font-bold font-mono" id="sum-total-pit">0 đ</strong>
                 </div>
                 <div>
-                    <span class="text-slate-500 block text-[11px]">Trừ hoàn ứng:</span>
+                    <span class="text-slate-500 block text-[11px]">Trừ hoàn ứng chuyến:</span>
                     <strong class="text-amber-700 font-bold font-mono" id="sum-total-advance">0 đ</strong>
                 </div>
                 <div>
@@ -302,24 +367,33 @@
                 <table class="w-full text-left border-collapse erp-table whitespace-nowrap text-xs" id="payroll-slips-table">
                     <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-2xs">
                         <tr>
-                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200 w-12 select-none">STT</th>
-                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Mã NV</th>
-                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Họ Và Tên</th>
-                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200">Chức Vụ</th>
-                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200">Ngày Công</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Lương CB</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Lương Thời Gian</th>
-                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200">Số Chuyến</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Lương Chuyến</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Cắt Kéo & Neo</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200">Phụ Cấp & Thưởng</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200 bg-slate-50">Tổng Gross</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-indigo-700 border-r border-slate-200">BHXH (10.5%)</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-rose-700 border-r border-slate-200">Thuế TNCN</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-amber-700 border-r border-slate-200">Trừ Tạm Ứng</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-emerald-800 border-r border-slate-200 bg-emerald-50/50">Thực Lĩnh Net</th>
-                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200">Thanh Toán</th>
-                            <th class="py-2.5 px-3 text-center font-bold text-slate-700">Phiếu Lương</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200 w-12 select-none" rowspan="2">STT</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200" rowspan="2">Mã NV</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200" rowspan="2">Họ Và Tên</th>
+                            <th class="py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200" rowspan="2">Chức Vụ</th>
+                            <!-- Nhóm 1: Lương Ngày Công -->
+                            <th class="py-1 px-3 text-center font-bold text-teal-900 border-r border-slate-200 bg-teal-50" colspan="3">1. LƯƠNG NGÀY CÔNG (THỜI GIAN)</th>
+                            <!-- Nhóm 2: Lương Sản Phẩm Chuyến Xe (Tài Xế) -->
+                            <th class="py-1 px-3 text-center font-bold text-indigo-900 border-r border-slate-200 bg-indigo-50" colspan="4">2. LƯƠNG SẢN PHẨM CHUYẾN XE (TÀI XẾ)</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-700 border-r border-slate-200" rowspan="2">Phụ Cấp & KPI</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-900 border-r border-slate-200 bg-slate-100" rowspan="2">Tổng Gross</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-indigo-700 border-r border-slate-200" rowspan="2">BHXH (10.5%)</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-rose-700 border-r border-slate-200" rowspan="2">Thuế TNCN</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-amber-700 border-r border-slate-200" rowspan="2">Trừ Tạm Ứng</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-emerald-800 border-r border-slate-200 bg-emerald-50/50" rowspan="2">Thực Lĩnh Net</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700 border-r border-slate-200" rowspan="2">Thanh Toán</th>
+                            <th class="py-2.5 px-3 text-center font-bold text-slate-700" rowspan="2">Phiếu Lương</th>
+                        </tr>
+                        <tr>
+                            <!-- Con Lương Ngày Công -->
+                            <th class="py-1 px-2.5 text-center font-semibold text-teal-800 border-r border-slate-200 bg-teal-50/50">Số Công</th>
+                            <th class="py-1 px-2.5 text-right font-semibold text-teal-800 border-r border-slate-200 bg-teal-50/50">Lương HĐ</th>
+                            <th class="py-1 px-2.5 text-right font-bold text-teal-900 border-r border-slate-200 bg-teal-50">Thành Tiền</th>
+                            <!-- Con Lương Sản Phẩm -->
+                            <th class="py-1 px-2.5 text-center font-semibold text-indigo-800 border-r border-slate-200 bg-indigo-50/50">Chuyến Chính</th>
+                            <th class="py-1 px-2.5 text-right font-bold text-indigo-900 border-r border-slate-200 bg-indigo-50">Lương Chuyến</th>
+                            <th class="py-1 px-2.5 text-right font-semibold text-indigo-800 border-r border-slate-200 bg-indigo-50/50">Cắt Kéo & Neo</th>
+                            <th class="py-1 px-2.5 text-right font-semibold text-indigo-800 border-r border-slate-200 bg-indigo-50/50">Thưởng Dầu</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium" id="payroll-slips-tbody">

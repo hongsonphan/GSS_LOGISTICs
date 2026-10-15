@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -174,6 +175,86 @@ class ContractAppendix(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"Phụ lục {self.appendix_number} - HĐ: {self.contract.contract_number}"
+
+
+# ==============================================================================
+# 3. CHẤM CÔNG & QUẢN LÝ NGÀY CÔNG (TIMEKEEPING & ATTENDANCE TRACKING)
+# ==============================================================================
+
+class AttendanceCode(TimeStampedModel):
+    """
+    Bảng khai báo ký hiệu chấm công chuẩn toàn hệ thống (Bim ERP standard).
+    X (Đủ công), X/2 (Nửa công), P (Phép năm hưởng lương), L (Nghỉ Lễ hưởng lương),
+    CT (Công tác), Ro (Nghỉ không lương), Om (Nghỉ ốm BHXH).
+    """
+    code = models.CharField(max_length=15, unique=True, help_text="Ký hiệu chấm công (X, P, L, CT, Ro...)")
+    name = models.CharField(max_length=100, help_text="Tên diễn giải ký hiệu")
+    work_weight = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal('1.0'), help_text="Hệ số ngày công (1.0, 0.5, 0.0)")
+    salary_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('100.0'), help_text="Tỷ lệ hưởng lương % (100, 50, 0)")
+    is_paid = models.BooleanField(default=True, help_text="Nghỉ hưởng lương hay không")
+    color = models.CharField(max_length=30, default="teal", help_text="Mã màu badge hiển thị")
+    order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'code']
+
+    def __str__(self):
+        return f"{self.code} - {self.name} ({self.work_weight} công)"
+
+
+class DailyAttendance(TimeStampedModel, SoftDeleteModel):
+    """
+    Chấm công chi tiết theo từng ngày của nhân viên trong tháng.
+    """
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='daily_attendances')
+    work_date = models.DateField(db_index=True)
+    attendance_code = models.ForeignKey(AttendanceCode, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendances')
+    code_symbol = models.CharField(max_length=15, default='X', help_text="Ký hiệu công ngày (X, P, L, Ro...)")
+    work_hours = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('8.0'), help_text="Số giờ làm việc")
+    overtime_hours = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('0.0'), help_text="Số giờ tăng ca")
+    notes = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-work_date', 'employee__code']
+        unique_together = ('employee', 'work_date')
+
+    def __str__(self):
+        return f"{self.employee.code} - {self.work_date}: {self.code_symbol}"
+
+
+class MonthlyAttendanceSummary(TimeStampedModel, SoftDeleteModel):
+    """
+    Bảng tổng hợp công tháng của nhân sự phục vụ tính Lương Ngày Công:
+    - standard_days: Công chuẩn (26 ngày)
+    - worked_days: Số ngày đi làm thực tế
+    - paid_leave_days: Nghỉ phép năm hưởng lương (P)
+    - holiday_days: Nghỉ Lễ/Tết hưởng lương (L)
+    - unpaid_leave_days: Nghỉ việc riêng không lương (Ro)
+    - total_paid_days: Tổng ngày công tính lương thời gian = worked_days + paid_leave_days + holiday_days
+    - overtime_hours: Giờ tăng ca
+    """
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='monthly_attendances')
+    period = models.ForeignKey('PayrollPeriod', on_delete=models.CASCADE, related_name='monthly_attendances')
+    standard_days = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('26.0'))
+    worked_days = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('26.0'), help_text="Số ngày đi làm thực tế")
+    paid_leave_days = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('0.0'), help_text="Nghỉ phép hưởng lương")
+    holiday_days = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('0.0'), help_text="Nghỉ Lễ hưởng lương")
+    unpaid_leave_days = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('0.0'), help_text="Nghỉ không lương")
+    total_paid_days = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('26.0'), help_text="Tổng ngày công tính lương thời gian")
+    overtime_hours = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'), help_text="Giờ tăng ca")
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['employee__code']
+        unique_together = ('employee', 'period')
+
+    def __str__(self):
+        return f"{self.employee.full_name} ({self.period.period_code}): {self.total_paid_days}/{self.standard_days} công"
+
+    def calculate_total_paid_days(self):
+        self.total_paid_days = self.worked_days + self.paid_leave_days + self.holiday_days
+        return self.total_paid_days
 
 
 class TaxBracketStatus(models.TextChoices):

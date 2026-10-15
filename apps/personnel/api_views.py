@@ -13,7 +13,8 @@ from apps.personnel.models import (
     EmployeeDependent, LaborContract, ContractAppendix, ContractType, ContractStatus,
     TaxBracket, SalaryDeductionRate, PayrollPolicyConfig,
     PayrollPeriod, PayrollSlip, PayrollPeriodStatus,
-    PayrollParameter, AllowanceGroup, AllowanceType
+    PayrollParameter, AllowanceGroup, AllowanceType,
+    AttendanceCode, DailyAttendance, MonthlyAttendanceSummary
 )
 from apps.personnel.serializers import (
     EmployeeSerializer,
@@ -27,7 +28,10 @@ from apps.personnel.serializers import (
     PayrollSlipSerializer,
     PayrollParameterSerializer,
     AllowanceGroupSerializer,
-    AllowanceTypeSerializer
+    AllowanceTypeSerializer,
+    AttendanceCodeSerializer,
+    DailyAttendanceSerializer,
+    MonthlyAttendanceSummarySerializer
 )
 from apps.dispatch.models import DispatchTrip, TripStatus
 from apps.billing.models import CashTransaction, TransactionType, PaymentMethod, CashFlowCategory, DriverTripAdvance
@@ -566,7 +570,146 @@ class SalaryDeductionRateAPIView(APIView):
 
 
 # ==============================================================================
-# 5. KỲ LƯƠNG & ĐỘNG CƠ TÍNH LƯƠNG HYBRID (PAYROLL PERIOD & ENGINE)
+# 5. CHẤM CÔNG & QUẢN LÝ NGÀY CÔNG (TIMEKEEPING & ATTENDANCE)
+# ==============================================================================
+
+class AttendanceCodeListAPIView(APIView):
+    permission_classes = [EmployeePermission]
+
+    def get(self, request):
+        codes = AttendanceCode.objects.filter(is_active=True).order_by('order', 'code')
+        serializer = AttendanceCodeSerializer(codes, many=True)
+        return Response(serializer.data)
+
+
+class MonthlyAttendanceSummaryListAPIView(APIView):
+    """
+    Danh sách Bảng Chấm Công Tổng Hợp Tháng theo Kỳ lương (PayrollPeriod).
+    """
+    permission_classes = [EmployeePermission]
+
+    def get(self, request):
+        period_id = request.GET.get('period_id')
+        period_code = request.GET.get('period_code')
+
+        qs = MonthlyAttendanceSummary.objects.select_related('employee', 'period').all()
+        if period_id:
+            qs = qs.filter(period_id=period_id)
+        elif period_code:
+            qs = qs.filter(period__period_code=period_code)
+        else:
+            latest_period = PayrollPeriod.objects.order_by('-from_date').first()
+            if latest_period:
+                qs = qs.filter(period=latest_period)
+
+        qs = qs.order_by('employee__department', 'employee__role', 'employee__code')
+        serializer = MonthlyAttendanceSummarySerializer(qs, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        employee_id = request.data.get('employee')
+        period_id = request.data.get('period')
+        if not employee_id or not period_id:
+            return Response({'success': False, 'message': 'Thiếu mã nhân viên hoặc kỳ lương'}, status=status.HTTP_400_BAD_REQUEST)
+
+        worked_days = Decimal(str(request.data.get('worked_days', 26.0)))
+        paid_leave = Decimal(str(request.data.get('paid_leave_days', 0.0)))
+        holiday_days = Decimal(str(request.data.get('holiday_days', 0.0)))
+        unpaid_leave = Decimal(str(request.data.get('unpaid_leave_days', 0.0)))
+        overtime_hours = Decimal(str(request.data.get('overtime_hours', 0.0)))
+        notes = request.data.get('notes', '')
+
+        total_paid_days = worked_days + paid_leave + holiday_days
+
+        summary, created = MonthlyAttendanceSummary.objects.update_or_create(
+            employee_id=employee_id,
+            period_id=period_id,
+            defaults={
+                'worked_days': worked_days,
+                'paid_leave_days': paid_leave,
+                'holiday_days': holiday_days,
+                'unpaid_leave_days': unpaid_leave,
+                'total_paid_days': total_paid_days,
+                'overtime_hours': overtime_hours,
+                'notes': notes
+            }
+        )
+        return Response({
+            'success': True,
+            'message': f"Đã lưu bảng chấm công cho '{summary.employee.full_name}' ({summary.total_paid_days} công).",
+            'data': MonthlyAttendanceSummarySerializer(summary).data
+        })
+
+
+class MonthlyAttendanceSummaryDetailAPIView(APIView):
+    permission_classes = [EmployeePermission]
+
+    def get_object(self, pk):
+        return get_object_or_404(MonthlyAttendanceSummary, pk=pk)
+
+    def put(self, request, pk):
+        summary = self.get_object(pk)
+        serializer = MonthlyAttendanceSummarySerializer(summary, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated = serializer.save()
+            updated.calculate_total_paid_days()
+            updated.save()
+            return Response({
+                'success': True,
+                'message': f"Đã cập nhật ngày công cho '{updated.employee.full_name}'.",
+                'data': MonthlyAttendanceSummarySerializer(updated).data
+            })
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MonthlyAttendanceAutoGenerateAPIView(APIView):
+    """
+    Tự động khởi tạo Bảng chấm công tháng cho toàn bộ nhân sự đang hoạt động trong kỳ lương.
+    Mặc định: CBNV đi làm đủ ngày công tiêu chuẩn (26 ngày).
+    """
+    permission_classes = [EmployeePermission]
+
+    def post(self, request):
+        period_id = request.data.get('period_id')
+        period = get_object_or_404(PayrollPeriod, pk=period_id)
+
+        std_days = period.standard_days or Decimal('26.0')
+        employees = Employee.objects.filter(is_active=True)
+
+        created_count = 0
+        updated_count = 0
+
+        with transaction.atomic():
+            for emp in employees:
+                summary, created = MonthlyAttendanceSummary.objects.get_or_create(
+                    employee=emp,
+                    period=period,
+                    defaults={
+                        'standard_days': std_days,
+                        'worked_days': std_days,
+                        'paid_leave_days': Decimal('0.0'),
+                        'holiday_days': Decimal('0.0'),
+                        'unpaid_leave_days': Decimal('0.0'),
+                        'total_paid_days': std_days,
+                        'overtime_hours': Decimal('0.0'),
+                        'notes': 'Khởi tạo tự động mặc định đủ công'
+                    }
+                )
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+
+        return Response({
+            'success': True,
+            'message': f"Đã tự động khởi tạo bảng công kỳ '{period.name}': Thêm mới {created_count}, Hiện có {updated_count} nhân sự.",
+            'period_code': period.period_code,
+            'total_employees': employees.count()
+        })
+
+
+# ==============================================================================
+# 6. KỲ LƯƠNG & ĐỘNG CƠ TÍNH LƯƠNG HYBRID (PAYROLL PERIOD & ENGINE)
 # ==============================================================================
 
 class PayrollPeriodListCreateAPIView(APIView):
@@ -709,15 +852,36 @@ class PayrollCalculateAPIView(APIView):
             for emp in employees:
                 emp_override = overrides.get(str(emp.id), {})
 
-                # 1. Ngày công & Lương thời gian
-                actual_days = Decimal(str(emp_override.get('actual_working_days', std_days)))
-                base_sal = emp.base_salary or Decimal('0')
+                # 1. Giai đoạn Hợp đồng lao động: Ưu tiên lấy lương cơ bản ghi trong HĐLĐ đang hiệu lực
+                active_contract = emp.contracts.filter(
+                    status=ContractStatus.ACTIVE,
+                    is_deleted=False
+                ).order_by('-start_date').first()
+                if active_contract and active_contract.base_salary and active_contract.base_salary > 0:
+                    base_sal = active_contract.base_salary
+                else:
+                    base_sal = emp.base_salary or Decimal('0')
+
+                # 2. Giai đoạn Chấm công (Timekeeping): Lấy số ngày công hưởng lương từ Bảng tổng hợp công tháng
+                att_summary = MonthlyAttendanceSummary.objects.filter(
+                    employee=emp,
+                    period=period
+                ).first()
+
+                if 'actual_working_days' in emp_override:
+                    actual_days = Decimal(str(emp_override['actual_working_days']))
+                elif att_summary and att_summary.total_paid_days is not None:
+                    actual_days = att_summary.total_paid_days
+                else:
+                    actual_days = std_days
+
+                # 3. Cấu phần A: LƯƠNG NGÀY CÔNG (Lương thời gian theo công thực tế)
                 if std_days > 0:
                     time_salary = round(base_sal / std_days * actual_days)
                 else:
                     time_salary = Decimal('0')
 
-                # 2. Logistics Trip Income (Dành cho tài xế hoặc nhân viên có chạy chuyến)
+                # 4. Cấu phần B: LƯƠNG SẢN PHẨM CHUYẾN XE (Logistics Trip Piecework - Dành cho tài xế)
                 trips_main = DispatchTrip.objects.filter(
                     driver=emp,
                     is_deleted=False
@@ -745,16 +909,16 @@ class PayrollCalculateAPIView(APIView):
                 detention_drop = trips_dropoff.aggregate(s=Sum('detention_driver_allowance'))['s'] or Decimal('0')
                 detention_allowance = detention_main + detention_drop
 
-                # Thưởng nhiên liệu
+                # Thưởng định mức nhiên liệu (xăng dầu tiết kiệm)
                 fuel_bonus = Decimal(str(emp_override.get('fuel_bonus', 0)))
 
-                # 3. Phụ cấp & Thưởng
+                # 5. Phụ cấp nghiệp vụ & Thưởng KPI
                 phone_allowance = Decimal(str(emp_override.get('phone_allowance', 0)))
                 lunch_allowance = Decimal(str(emp_override.get('lunch_allowance', 0)))
                 other_allowance = Decimal(str(emp_override.get('other_allowance', 0)))
                 kpi_bonus = Decimal(str(emp_override.get('kpi_bonus', 0)))
 
-                # TỔNG GROSS
+                # TỔNG GROSS = Lương Ngày Công + Lương Sản Phẩm Chuyến + Phụ Cấp + Thưởng KPI
                 gross_income = (
                     time_salary +
                     trip_allowance +
@@ -767,9 +931,12 @@ class PayrollCalculateAPIView(APIView):
                     kpi_bonus
                 )
 
-                # 4. Trích nộp bảo hiểm
+                # 6. Trích nộp bảo hiểm (Mức lương BHXH ưu tiên lấy từ HĐLĐ đang hiệu lực)
                 if emp.is_social_insurance_participant:
-                    ins_sal = emp.insurance_salary or base_sal
+                    if active_contract and active_contract.insurance_salary and active_contract.insurance_salary > 0:
+                        ins_sal = active_contract.insurance_salary
+                    else:
+                        ins_sal = emp.insurance_salary or base_sal
                     ins_base = min(ins_sal, policy.max_insurance_salary)
                     bhxh_emp = round(ins_base * rate.bhxh_employee_rate)
                     bhyt_emp = round(ins_base * rate.bhyt_employee_rate)
