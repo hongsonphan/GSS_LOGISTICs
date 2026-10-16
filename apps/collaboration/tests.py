@@ -148,6 +148,63 @@ class CollaborationTestSuite(TestCase):
         self.assertEqual(len(res_list.json()['data']), 1)
         self.assertEqual(res_list.json()['data'][0]['comments_count'], 1)
 
+    def test_company_post_pinning_and_ordering(self):
+        """Kiểm thử tính năng ghim bài viết, phân quyền ghim và đảm bảo bài ghim luôn đứng đầu danh sách."""
+        # 1. Ban Giám Đốc tạo bài 1 (không ghim)
+        self.client.force_login(self.director_user)
+        res1 = self.client.post('/api/collaboration/news/posts/', {
+            'title': 'Bản tin số 1 (cũ)',
+            'content': 'Nội dung bài viết số 1',
+            'is_pinned': False,
+            'is_urgent': False
+        })
+        self.assertEqual(res1.status_code, 201)
+        post1_id = res1.json()['data']['id']
+
+        # 2. Ban Giám Đốc tạo bài 2 (tạo sau bài 1, không ghim)
+        res2 = self.client.post('/api/collaboration/news/posts/', {
+            'title': 'Bản tin số 2 (mới hơn)',
+            'content': 'Nội dung bài viết số 2',
+            'is_pinned': False,
+            'is_urgent': False
+        })
+        self.assertEqual(res2.status_code, 201)
+        post2_id = res2.json()['data']['id']
+
+        # Danh sách ban đầu: bài 2 (mới hơn) đứng trước bài 1
+        res_list1 = self.client.get('/api/collaboration/news/posts/')
+        self.assertEqual(res_list1.json()['data'][0]['id'], post2_id)
+        self.assertEqual(res_list1.json()['data'][1]['id'], post1_id)
+
+        # 3. Thử nhân viên cấp dưới (không phải trưởng phòng/BGD, không phải tác giả) ghim bài 1 -> Bị từ chối HTTP 403
+        self.client.force_login(self.staff_dispatcher_user)
+        res_staff_pin = self.client.post(f'/api/collaboration/news/posts/{post1_id}/pin/')
+        self.assertEqual(res_staff_pin.status_code, 403)
+
+        # 4. Ban Giám Đốc ghim bài 1 lên đầu trang
+        self.client.force_login(self.director_user)
+        res_pin = self.client.post(f'/api/collaboration/news/posts/{post1_id}/pin/')
+        self.assertEqual(res_pin.status_code, 200)
+        self.assertTrue(res_pin.json()['is_pinned'])
+        self.assertIn('Đã ghim', res_pin.json()['message'])
+
+        # 5. Kiểm tra danh sách: Bài 1 (được ghim) PHẢI LẬP TỨC NHẢY LÊN ĐẦU TIÊN (vị trí index 0)
+        res_list2 = self.client.get('/api/collaboration/news/posts/')
+        self.assertEqual(res_list2.json()['data'][0]['id'], post1_id)
+        self.assertTrue(res_list2.json()['data'][0]['is_pinned'])
+        self.assertEqual(res_list2.json()['data'][1]['id'], post2_id)
+        self.assertFalse(res_list2.json()['data'][1]['is_pinned'])
+
+        # 6. Bỏ ghim bài 1
+        res_unpin = self.client.post(f'/api/collaboration/news/posts/{post1_id}/pin/')
+        self.assertEqual(res_unpin.status_code, 200)
+        self.assertFalse(res_unpin.json()['is_pinned'])
+
+        # Sau khi bỏ ghim, bài 2 (mới hơn) lại đứng trước bài 1
+        res_list3 = self.client.get('/api/collaboration/news/posts/')
+        self.assertEqual(res_list3.json()['data'][0]['id'], post2_id)
+        self.assertEqual(res_list3.json()['data'][1]['id'], post1_id)
+
     # ----------------------------------------------------
     # 2. KIỂM THỬ GIAO VIỆC VĂN PHÒNG (JIRA/ASANA)
     # ----------------------------------------------------

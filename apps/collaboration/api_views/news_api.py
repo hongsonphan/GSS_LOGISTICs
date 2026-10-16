@@ -213,10 +213,18 @@ class CompanyPostPinAPIView(views.APIView):
         except CompanyPost.DoesNotExist:
             return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
 
+        employee = getattr(request.user, 'employee', None)
+        can_pin = request.user.is_superuser or (employee and employee.can_post_news()) or post.author == request.user
+        if not can_pin:
+            return Response({
+                'success': False,
+                'message': 'Bạn không có quyền ghim bài viết. Chỉ Ban Giám Đốc, Trưởng phòng hoặc người đăng bài mới có thẩm quyền này.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
         post.is_pinned = not post.is_pinned
         post.save(update_fields=['is_pinned'])
         return Response({
             'success': True, 
             'is_pinned': post.is_pinned,
-            'message': 'Đã ghim bài viết lên đầu' if post.is_pinned else 'Đã bỏ ghim bài viết'
+            'message': 'Đã ghim bài viết lên đầu trang' if post.is_pinned else 'Đã bỏ ghim bài viết'
         })

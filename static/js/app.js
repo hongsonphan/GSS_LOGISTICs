@@ -1239,7 +1239,7 @@ function renderDashboardNews(announcements) {
         
         html += `
         <div onclick="if(typeof openNewsDetailModal==='function') openNewsDetailModal(${p.id});" 
-            class="p-2.5 rounded-lg border border-slate-100 hover:border-teal-300 hover:bg-teal-50/30 transition-all cursor-pointer group flex flex-col justify-between space-y-1">
+            class="p-2.5 rounded-lg border ${p.is_pinned ? 'border-amber-300 ring-1 ring-amber-200/60 bg-amber-50/25' : 'border-slate-100 hover:border-teal-300 hover:bg-teal-50/30'} transition-all cursor-pointer group flex flex-col justify-between space-y-1">
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center space-x-1.5 flex-wrap">
                     ${pinnedBadge}

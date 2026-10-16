@@ -121,13 +121,13 @@ async function loadCompanyNews() {
             }
         }
 
-        const pinnedPosts = json.data.filter(p => p.is_pinned || p.is_urgent);
-        const regularPosts = json.data.filter(p => !p.is_pinned && !p.is_urgent);
+        const canCreatePost = json.can_create_post !== false;
 
-        // Render Pinned Banner
+        // 1. Render Pinned & Urgent Banner (nếu có bài ghim hoặc khẩn cấp)
+        const bannerPosts = json.data.filter(p => p.is_pinned || p.is_urgent);
         if (pinnedEl) {
-            if (pinnedPosts.length > 0) {
-                pinnedEl.innerHTML = pinnedPosts.map(p => `
+            if (bannerPosts.length > 0) {
+                pinnedEl.innerHTML = bannerPosts.map(p => `
                     <div onclick="openNewsDetailModal(${p.id})" class="p-4 rounded-2xl border ${p.is_urgent ? 'bg-rose-50/90 border-rose-300 shadow-rose-100' : 'bg-amber-50/80 border-amber-300 shadow-amber-100'} shadow-sm flex items-start justify-between gap-4 cursor-pointer hover:shadow-md transition-all group">
                         <div class="flex items-start gap-3.5">
                             <div class="w-10 h-10 rounded-xl ${p.is_urgent ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'} flex items-center justify-center shrink-0 shadow-xs">
@@ -158,29 +158,53 @@ async function loadCompanyNews() {
             }
         }
 
-        // Render Regular Grid
-        const renderTarget = regularPosts.length > 0 ? regularPosts : (pinnedPosts.length > 0 ? [] : []);
-        if (renderTarget.length === 0 && pinnedPosts.length === 0) {
+        // 2. Render Toàn Bộ Lưới Bản Tin Chính (Bài ghim ĐƯỢC ĐƯA LÊN ĐẦU TIÊN của grid!)
+        if (json.data.length === 0) {
             gridEl.innerHTML = '<div class="col-span-full text-center py-16 text-slate-400 text-xs">Chưa có thông báo nào được đăng tải.</div>';
             return;
         }
 
-        gridEl.innerHTML = renderTarget.map(p => `
-            <div onclick="openNewsDetailModal(${p.id})" class="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group">
+        gridEl.innerHTML = json.data.map(p => `
+            <div onclick="openNewsDetailModal(${p.id})" class="bg-white rounded-2xl border ${p.is_pinned ? 'border-amber-300 ring-2 ring-amber-300/40 bg-gradient-to-b from-amber-50/25 to-white shadow-xs' : 'border-slate-200 shadow-xs hover:border-slate-300'} hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group relative">
                 ${p.cover_image ? `
                     <div class="h-44 w-full bg-slate-100 overflow-hidden relative">
                         <img src="${p.cover_image}" alt="Ảnh bài viết" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        ${p.is_pinned ? `
+                            <div class="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shadow-md">
+                                <i class="ph-bold ph-push-pin text-xs"></i> Đã ghim
+                            </div>
+                        ` : ''}
+                        ${p.is_urgent ? `
+                            <div class="absolute top-3 ${p.is_pinned ? 'left-24' : 'left-3'} flex items-center gap-1 px-2 py-0.5 rounded-lg bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md">
+                                <i class="ph-bold ph-warning-octagon text-xs"></i> Khẩn cấp
+                            </div>
+                        ` : ''}
                     </div>
                 ` : `
-                    <div class="h-28 w-full bg-gradient-to-br from-teal-700 to-slate-800 p-4 flex flex-col justify-between text-white relative">
-                        <span class="text-xs font-bold uppercase tracking-wider text-teal-200">${escapeHtml(p.category_info?.name || 'Thông báo chung')}</span>
+                    <div class="h-28 w-full ${p.is_pinned ? 'bg-gradient-to-br from-amber-700 via-teal-800 to-slate-900' : 'bg-gradient-to-br from-teal-700 to-slate-800'} p-4 flex flex-col justify-between text-white relative">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            ${p.is_pinned ? `
+                                <span class="px-2 py-0.5 rounded-md bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                                    <i class="ph-bold ph-push-pin text-[11px]"></i> Đã ghim
+                                </span>
+                            ` : ''}
+                            ${p.is_urgent ? `
+                                <span class="px-2 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                                    <i class="ph-bold ph-warning-octagon text-[11px]"></i> Khẩn cấp
+                                </span>
+                            ` : ''}
+                            <span class="text-xs font-bold uppercase tracking-wider text-teal-200">${escapeHtml(p.category_info?.name || 'Thông báo chung')}</span>
+                        </div>
                         <i class="ph ph-newspaper text-3xl opacity-20 absolute right-3 bottom-3"></i>
                     </div>
                 `}
                 <div class="p-4 flex-1 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2 font-medium">
-                            <span>${p.author_name}</span>
+                            <span class="font-semibold text-slate-600 flex items-center gap-1">
+                                <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
+                                ${p.author_name}
+                            </span>
                             <span>${formatDateTime(p.created_at)}</span>
                         </div>
                         <h4 class="text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-2 leading-snug">
@@ -196,7 +220,14 @@ async function loadCompanyNews() {
                             <span class="flex items-center gap-1" title="Lượt xem"><i class="ph ph-eye text-sm"></i> ${p.view_count || 0}</span>
                             <span class="flex items-center gap-1" title="Bình luận"><i class="ph ph-chat-centered-text text-sm"></i> ${p.comments_count || 0}</span>
                         </div>
-                        <span class="text-teal-700 font-bold group-hover:underline text-[11px]">Đọc tiếp</span>
+                        <div class="flex items-center gap-2">
+                            ${canCreatePost ? `
+                                <button type="button" onclick="quickTogglePinNews(${p.id}, event)" class="p-1 rounded-md ${p.is_pinned ? 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-transparent'} transition-colors" title="${p.is_pinned ? 'Bỏ ghim khỏi đầu trang' : 'Ghim bài lên đầu trang'}">
+                                    <i class="ph-bold ph-push-pin text-xs"></i>
+                                </button>
+                            ` : ''}
+                            <span class="text-teal-700 font-bold group-hover:underline text-[11px]">Đọc tiếp</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -247,13 +278,15 @@ async function openNewsDetailModal(postId) {
             else urgentBadge.classList.add('hidden');
         }
 
-        // Pin button icon
+        // Pin button icon & tooltip
         const pinBtn = document.getElementById('news-modal-pin-btn');
         if (pinBtn) {
             if (p.is_pinned) {
-                pinBtn.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-300');
+                pinBtn.className = "p-1.5 rounded-lg border border-amber-300 bg-amber-100 hover:bg-amber-200 text-amber-800 transition-colors shadow-2xs cursor-pointer";
+                pinBtn.title = "Bỏ ghim khỏi đầu trang";
             } else {
-                pinBtn.classList.remove('bg-amber-100', 'text-amber-800', 'border-amber-300');
+                pinBtn.className = "p-1.5 rounded-lg border border-slate-200 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer";
+                pinBtn.title = "Ghim lên đầu trang";
             }
         }
 
@@ -359,11 +392,51 @@ async function togglePinCurrentNews() {
         const json = await res.json();
         if (json.success) {
             showToast('success', json.message);
-            closeNewsDetailModal();
-            loadCompanyNews();
+            // Cập nhật ngay visual state của nút ghim trong modal mà không đóng modal đột ngột
+            const pinBtn = document.getElementById('news-modal-pin-btn');
+            if (pinBtn) {
+                if (json.is_pinned) {
+                    pinBtn.className = "p-1.5 rounded-lg border border-amber-300 bg-amber-100 hover:bg-amber-200 text-amber-800 transition-colors shadow-2xs cursor-pointer";
+                    pinBtn.title = "Bỏ ghim khỏi đầu trang";
+                } else {
+                    pinBtn.className = "p-1.5 rounded-lg border border-slate-200 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer";
+                    pinBtn.title = "Ghim lên đầu trang";
+                }
+            }
+            // Làm mới danh sách bài viết phân hệ Bản tin để bài ghim lập tức nhảy lên đầu
+            if (typeof loadCompanyNews === 'function') loadCompanyNews();
+            // Đồng bộ widget Bản tin trên Dashboard
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast('error', json.message || 'Không thể thực hiện thao tác.');
         }
     } catch (e) {
         console.error('Error pinning post:', e);
+        showToast('error', 'Lỗi kết nối khi ghim bài viết.');
+    }
+}
+
+async function quickTogglePinNews(postId, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/pin/`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message);
+            if (typeof loadCompanyNews === 'function') loadCompanyNews();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast('error', json.message || 'Không thể thực hiện thao tác.');
+        }
+    } catch (e) {
+        console.error('Error quick pinning post:', e);
+        showToast('error', 'Lỗi kết nối khi ghim bài viết.');
     }
 }
 

@@ -2,6 +2,40 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.4.7] - 2026-10-16 (Sửa Triệt Để Logic Nút Ghim Bản Tin & Đưa Bài Viết Lên Đầu Danh Sách)
+
+### 1. Phân Tích Nguyên Nhân Gốc (Root Cause):
+- **Tại sao bài ghim bị biến mất khỏi danh sách thay vì đưa lên đầu?**
+  * Trong `static/js/collaboration.js` tại hàm `loadCompanyNews()`, logic cũ viết: `regularPosts = json.data.filter(p => !p.is_pinned && !p.is_urgent)` và gán `renderTarget = regularPosts`.
+  * Do đó, bất kỳ bài viết nào khi được ghim (`is_pinned=true`) đều bị lọc bỏ 100% khỏi lưới bản tin chính (`#news-posts-grid`), khiến người dùng nhìn vào danh sách bài viết tưởng rằng bài bị mất tích hoặc nút ghim không có tác dụng.
+  * Khi bấm nút ghim trong Modal chi tiết, modal bị đóng đột ngột (`closeNewsDetailModal()`) mà không cập nhật ngay màu nút ghim, gây ức chế cho người dùng.
+
+### 2. Cải Tiến Toàn Diện Logic & Trải Nghiệm Người Dùng:
+- **Lưới Bản Tin Chính (`#news-posts-grid`):**
+  * Hiển thị toàn bộ danh sách bài viết (`json.data`) mà không loại bỏ bài ghim.
+  * Nhờ sắp xếp backend `order_by('-is_pinned', '-is_urgent', '-created_at')`, **tất cả bài viết được ghim LUÔN NẰM Ở VỊ TRÍ ĐẦU TIÊN CỦA LƯỚI BẢN TIN CHÍNH**.
+  * Card bài viết được ghim sở hữu thiết kế nổi bật: Viền hổ phách `border-amber-300 ring-2 ring-amber-300/40 bg-gradient-to-b from-amber-50/25 to-white shadow-xs` và huy hiệu `[<i class="ph-bold ph-push-pin"></i> ĐÃ GHIM]` màu vàng hổ phách rực rỡ.
+  * Bổ sung nút ghim nhanh (Quick Pin button) trực tiếp trên góc từng thẻ bài viết dành cho Ban Giám Đốc/Quản trị viên để ghim/bỏ ghim 1 chạm mà không cần mở modal.
+- **Nút Ghim Trên Modal Chi Tiết (`news-modal-pin-btn`):**
+  * Khi bấm nút ghim: Nút đổi màu lập tức (Vàng hổ phách `bg-amber-100 text-amber-800 border-amber-300` khi Đã ghim; Xám `bg-white text-slate-500 border-slate-200` khi Bỏ ghim) cùng tooltip tương ứng ("Bỏ ghim khỏi đầu trang" / "Ghim lên đầu trang").
+  * **Không đóng modal đột ngột**, giữ màn hình để người dùng tiếp tục theo dõi nội dung.
+  * Bắn Toast thông báo tức thời: *"Đã ghim bài viết lên đầu trang"* hoặc *"Đã bỏ ghim bài viết"*.
+  * Tự động gọi ngầm làm mới danh sách bài viết (`loadCompanyNews()`) và widget Dashboard (`loadDashboardData()`) để bài viết lập tức nhảy lên vị trí số 1.
+- **Bảo Vệ Phân Quyền Backend (`CompanyPostPinAPIView`):**
+  * Bổ sung kiểm tra thẩm quyền: Chỉ Ban Giám Đốc, HR, Trưởng các phòng ban (`employee.can_post_news()`), Superuser hoặc tác giả bài viết mới được ghim bài; nhân viên thông thường bị từ chối với HTTP 403 Forbidden.
+- **Đồng Bộ Widget Bản Tin Dashboard (`renderDashboardNews`):**
+  * Cập nhật card bài ghim trên Dashboard với viền `border-amber-300 ring-1 ring-amber-200/60 bg-amber-50/25` và huy hiệu ghim nổi bật ở dòng số 1.
+
+### 3. Kiểm Thử Hệ Thống & Kiểm Chứng Thị Giác:
+- **Backend Unit Tests:** `Ran 102 tests in 32.207s, OK` (102/102 PASSED, bao gồm test case mới `test_company_post_pinning_and_ordering`).
+- **Frontend Syntax Check:** `node -c static/js/app.js` & `node -c static/js/collaboration.js` (0 lỗi).
+- **Playwright Visual Verification:**
+  * `106_news_board_pinned_at_top.png`: Bài viết được ghim đứng vị trí số 1 trên lưới bài viết với viền hổ phách và huy hiệu `[ĐÃ GHIM]`.
+  * `107_news_modal_pin_button_active.png`: Nút ghim trên Modal chi tiết hiển thị màu vàng hổ phách nhạt `bg-amber-100 text-amber-800 border-amber-300` khớp 100% hình ảnh người dùng phản hồi.
+  * `108_news_modal_re_pinned.png` & `109_news_board_after_pin_toggle.png`: Xác thực quá trình ghim/bỏ ghim và giữ vững bài ghim ở đầu bảng.
+
+---
+
 ## [v3.4.6] - 2026-10-16 (Bổ Sung Toàn Diện Hướng Dẫn Sử Dụng Trên Trung Tâm Trợ Giúp /helps)
 
 ### 1. Cập Nhật Cây Điều Hướng Phân Cấp & Mục Lục Trợ Giúp (Sidebar Tree Nav):
