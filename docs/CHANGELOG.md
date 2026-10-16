@@ -2,6 +2,79 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.4.9] - 2026-10-16 (Tái Cấu Trúc Form Giao Việc, Danh Sách Người Theo Dõi Dạng Bảng & Chuyển Drawer Thành Centered Modal Có Bộ 4 Nút Chuẩn SaaS)
+
+### 1. Phân Tích Yêu Cầu & Bất Cập Vận Hành Thực Tế (Operational & UX Needs):
+- **Bố trí thứ tự trường nhập liệu chưa thuận luồng:** Lãnh đạo giao việc cần chọn Phòng ban trước để hệ thống tự động lọc danh sách nhân sự phụ trách thuộc phòng ban đó, tránh việc phải dò tìm trong danh sách toàn bộ công ty.
+  * *Yêu cầu bố trí chuẩn:* `Người giao việc` | `Phòng Ban` | `Người phụ trách` | `Hạn hoàn thành`.
+- **Danh sách Người liên quan (Followers) khó nhìn và nút Xong bị khuất:**
+  * Dropdown chọn nhiều người theo dõi trước đây nhóm theo cụm dài, người dùng phải cuộn chuột xuống đáy mới thấy nút "Xong".
+  * *Yêu cầu:* Hiển thị danh sách nhân sự theo dạng bảng/list 3 cột rõ ràng: `Phòng Ban | Tên người | Chức vụ` và mở rộng chiều cao, ghim nút `Xong` cố định ở cả đầu và chân popover để thao tác 1 chạm không cần cuộn sâu.
+- **Xem việc đã giao trong Drawer hẹp, thiếu bộ 4 nút chuẩn SaaS:**
+  * Khi mở việc đã giao, giao diện ngăn kéo trượt (Drawer) bên phải màn hình quá hẹp, thiếu các công cụ điều khiển và in ấn.
+  * *Yêu cầu:* Chuyển thành Hộp thoại căn giữa màn hình (Centered Modal) rộng rãi `max-w-5xl`, nền mờ sâu và tích hợp **Bộ 4 nút chuẩn SaaS của BIM Logistics**: `[Xóa]` (Rose) | `[In]` (Dark) | `[Sửa]` (Amber) | `[Lưu]` (Teal).
+
+### 2. Cải Tiến Mã Nguồn & Thiết Kế Giao Diện (Implementation Details):
+- **Tái Cấu Trúc 4 Ô Thông Tin Modal Tạo Mới (`templates/views/view_tasks.html` & `static/js/collaboration.js`):**
+  * Sắp xếp lại thứ tự 4 cột: 1. `Người giao việc` (cố định người đăng nhập) $\rightarrow$ 2. `Phòng Ban` (select có `onchange="onTaskDepartmentChanged()"`) $\rightarrow$ 3. `Người phụ trách` (select lọc theo phòng ban đã chọn) $\rightarrow$ 4. `Hạn hoàn thành` (kèm 3 nút +1d, +3d, +7d).
+  * Hàm `populateAssigneeSelect(targetDepartment)`: Tự động gom nhóm `optgroup` nhân sự theo phòng ban được chọn lên đầu và chọn sẵn nhân viên đầu tiên hợp lệ.
+- **Nâng Cấp Popover Người Theo Dõi (Multi-Select Followers List):**
+  * Thiết kế cấu trúc Flex Column `max-h-[420px]` với thanh tìm kiếm thông minh và nút `Xong` (Teal) cố định ngay trên Header.
+  * Bổ sung thanh tiêu đề cột `PHÒNG BAN` | `HỌ VÀ TÊN NHÂN SỰ` | `CHỨC VỤ`.
+  * Mỗi dòng nhân sự là hàng 12 cột cân đối, hiển thị badge phòng ban, avatar + họ tên thật, chức vụ và checkbox tương tác tức thì.
+  * Chân popover có thanh thống kê số lượng đã chọn và nút `Xong` to rõ.
+- **Chuyển Drawer Thành Hộp Thoại Trung Tâm (Centered Modal) Kèm Bộ 4 Nút Chuẩn SaaS:**
+  * Chuyển container từ drawer trượt phải thành `fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 max-w-5xl`.
+  * **Hỗ trợ 2 chế độ Xem & Sửa:**
+    - Chế độ Xem (View Mode): Hiển thị thông tin trực quan, 3 nút `Xóa`, `In`, `Sửa` sáng rõ; nút `Lưu` mờ (`opacity-50 pointer-events-none`).
+    - Chế độ Sửa (Edit Mode): Khi bấm `[Sửa]`, các trường tiêu đề, mô tả, phòng ban, người phụ trách và hạn chót mở khóa cho phép biên tập trực tiếp; nút `Sửa` đổi thành `Hủy sửa`; nút `Lưu` sáng rực kích hoạt gửi PUT lên API backend `/api/collaboration/tasks/<id>/`.
+  * **In Phiếu Bàn Giao A4 Chuyên Nghiệp (`printCurrentTaskSlip`):**
+    - Thiết kế mẫu in khổ A4 chuẩn Triền Võ Logistics: Logo công ty, Mã nhiệm vụ, Bảng thông tin meta, Mô tả chi tiết, Bảng Checklist kiểm tra tiến độ, Danh mục tệp đính kèm và Phần chữ ký 2 bên (Người phụ trách & Người giao việc).
+  * **Chân Modal:** Bên trái là nút `[Quay lại]`; bên phải là cụm 4 nút chuẩn SaaS: `[Xóa]` (Rose) $\rightarrow$ `[In]` (Slate/Dark) $\rightarrow$ `[Sửa]` (Amber) $\rightarrow$ `[Lưu]` (Teal).
+- **Đồng Bộ Hóa Hướng Dẫn Sử Dụng (`templates/help.html`):**
+  * Cập nhật mục 9.1 và 9.3 Trung tâm Trợ Giúp để người dùng tra cứu tài liệu đồng bộ.
+
+### 3. Kiểm Thử Hệ Thống & Kiểm Chứng Thị Giác (Verification):
+- **Frontend Syntax Check:** `node -c static/js/app.js` & `node -c static/js/collaboration.js` (0 syntax errors).
+- **Playwright Visual Verification:**
+  * `113_modal_create_task_dept_before_assignee_4fields.png`: Bố cục 4 ô theo đúng thứ tự: Người giao việc | Phòng Ban | Người phụ trách | Hạn hoàn thành.
+  * `114_task_followers_dropdown_3columns_visible_done_btn.png`: Dropdown người liên quan dạng bảng 3 cột (Phòng ban | Họ tên | Chức vụ) và nút Xong nổi bật ngay trên Header.
+  * `115_task_detail_centered_modal_4_buttons.png`: Modal chi tiết căn giữa màn hình, nền mờ sâu và cụm 4 nút SaaS [Xóa - In - Sửa - Lưu] ở chân modal.
+  * `116_task_detail_modal_edit_mode_active.png`: Chế độ Sửa mở khóa nhập liệu, nút Hủy sửa và nút Lưu kích hoạt sáng rõ.
+
+---
+
+## [v3.4.8] - 2026-10-16 (Tối Ưu Hóa Nhập Liệu Hạn Hoàn Thành Khi Giao Việc: Mặc Định Ngày Mai & Chọn Nhanh +1d, +3d, +7d)
+
+### 1. Phân Tích Nhu Cầu Nghiệp Vụ & Điểm Tắc Nghẽn Trải Nghiệm (UX Pain Point):
+- Khi lãnh đạo hoặc quản trị viên giao việc trên giao diện Modal tạo mới (`#modal-create-task`), thao tác nhấp chuột mở lịch để chọn ngày hoàn thành tốn từ 3 - 4 thao tác.
+- Trong thực tế điều hành logistics, các công việc nội bộ văn phòng thường có chu kỳ xử lý ngắn: cần xử lý gấp vào ngày mai (+1d), xử lý trong tuần ngắn (+3d) hoặc hoàn thành trong vòng 1 tuần (+7d).
+- Người dùng yêu cầu:
+  * Tự động điền mặc định ô ngày là **ngày mai**.
+  * Bổ sung các nút bấm chọn nhanh ngay phía sau nhãn "Hạn hoàn thành" (ví dụ: `+1d`, `+3d`, `+7d`) để chọn hạn chót chỉ với 1 cú click chuột.
+
+### 2. Cải Tiến Mã Nguồn & Giao Diện (Implementation Details):
+- **Giao Diện HTML (`templates/views/view_tasks.html`):**
+  * Nhãn `Hạn hoàn thành` được tổ chức lại dạng flex container cân đối, đi kèm 3 nút pill badge chọn nhanh:
+    - `+1d` (`#btn-due-offset-1`): Chọn ngày mai.
+    - `+3d` (`#btn-due-offset-3`): Chọn 3 ngày sau.
+    - `+7d` (`#btn-due-offset-7`): Chọn 7 ngày sau.
+  * Ô input `#create-task-due` gắn sự kiện `onchange="updateDueDateQuickPills()"` để khi người dùng tự chọn ngày tùy ý từ lịch, hệ thống tự động kiểm tra và highlight badge tương ứng (nếu trùng) hoặc bỏ highlight nếu là ngày khác.
+- **Xử Lý Logic JavaScript (`static/js/collaboration.js`):**
+  * Viết hàm `setCreateTaskDueDateOffset(days)`: Tính toán ngày mục tiêu từ `new Date()`, định dạng `YYYY-MM-DD` chuẩn ISO cho ô input date, cập nhật giá trị và kích hoạt cập nhật trạng thái highlight.
+  * Viết hàm `updateDueDateQuickPills(activeDays)`: Highlight badge được chọn bằng tông màu Teal thương hiệu (`bg-teal-100 text-teal-800 border-teal-300 shadow-2xs`), đưa các nút khác về màu nền trung tính (`bg-slate-100 text-slate-600 hover:bg-slate-200`).
+  * Trong hàm `openCreateTaskModal()`: Gọi `setCreateTaskDueDateOffset(1)` ngay khi mở modal để tự động gán ngày mai và kích hoạt highlight `+1d`.
+- **Cập Nhật Trung Tâm Trợ Giúp (`templates/help.html`):**
+  * Cập nhật mục 9.1 Hướng dẫn tạo việc mới với thông tin chi tiết về cơ chế tự động điền ngày mai và các nút chọn nhanh `+1d`, `+3d`, `+7d`.
+
+### 3. Kiểm Thử Hệ Thống & Kiểm Chứng Thị Giác:
+- **Playwright Visual Verification:**
+  * `110_modal_create_task_default_tomorrow_due_date.png`: Ô Hạn hoàn thành mặc định ngày mai (17/10/2026), nút `+1d` được highlight teal sáng rõ.
+  * `111_modal_create_task_due_date_plus_3d.png`: Nhấn `+3d` tự động nhảy ngày 19/10/2026 và chuyển highlight sang `+3d`.
+  * `112_modal_create_task_due_date_plus_7d.png`: Nhấn `+7d` tự động nhảy ngày 23/10/2026 và chuyển highlight sang `+7d`.
+
+---
+
 ## [v3.4.7] - 2026-10-16 (Sửa Triệt Để Logic Nút Ghim Bản Tin & Đưa Bài Viết Lên Đầu Danh Sách)
 
 ### 1. Phân Tích Nguyên Nhân Gốc (Root Cause):

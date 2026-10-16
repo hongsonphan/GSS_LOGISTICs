@@ -2739,10 +2739,10 @@
                                         <td class="p-2.5 text-amber-800 font-semibold bg-amber-50/50">Mức Khẩn cấp sẽ hiển thị nhấp nháy trên Kanban và được đẩy lên đầu cột.</td>
                                     </tr>
                                     <tr>
-                                        <td class="p-2.5 font-bold text-slate-900">Thời Hạn Hoàn Thành (Deadline) <span class="text-rose-500 font-bold">(*)</span></td>
-                                        <td class="p-2.5 text-slate-600">Ngày & Giờ</td>
-                                        <td class="p-2.5">Mốc thời gian giới hạn phải nghiệm thu công việc. Nếu quá hạn, thẻ nhiệm vụ sẽ hiển thị huy hiệu đỏ <code>Quá hạn</code> để cảnh báo.</td>
-                                        <td class="p-2.5 text-slate-500">Mặc định là cuối ngày làm việc tiếp theo.</td>
+                                        <td class="p-2.5 font-bold text-slate-900">Hạn Hoàn Thành (Deadline) <span class="text-rose-500 font-bold">(*)</span></td>
+                                        <td class="p-2.5 text-slate-600">Ngày (Date)</td>
+                                        <td class="p-2.5">Mốc thời gian giới hạn phải hoàn thành công việc. Mặc định là <strong>ngày mai (+1d)</strong>. Trang bị 3 nút chọn nhanh ngay phía sau nhãn: <code>+1d</code> (Ngày mai), <code>+3d</code> (3 ngày tới), <code>+7d</code> (1 tuần tới) để chọn hạn chót tức thì chỉ với 1 click.</td>
+                                        <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">👉 Tự động gán ngày mai và highlight nút tương ứng. Quá hạn sẽ hiển thị huy hiệu cảnh báo đỏ.</td>
                                     </tr>
                                     <tr>
                                         <td class="p-2.5 font-bold text-slate-900">Mô Tả & Yêu Cầu Bàn Giao</td>
@@ -2787,10 +2787,10 @@
                     <div id="sec-input-tasks-drawer" class="space-y-3 pt-4 border-t border-slate-100">
                         <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
-                            9.3. Ngăn Kéo Chi Tiết (Drawer), Checklist & Tự Động Tính % Tiến Độ
+                            9.3. Hộp Thoại Chi Tiết (Centered Modal) & Chuẩn SaaS Bộ 4 Nút [Xóa - In - Sửa - Lưu]
                         </h4>
                         <p class="text-sm text-slate-700 leading-relaxed">
-                            Khi nhấp chuột vào bất kỳ thẻ nhiệm vụ nào trên bảng Kanban hoặc bấm biểu tượng Xem chi tiết, hệ thống sẽ mở một <strong>Ngăn kéo trượt (Drawer)</strong> bên phải màn hình:
+                            Khi nhấp chuột vào bất kỳ thẻ nhiệm vụ nào trên bảng Kanban hoặc bấm biểu tượng Xem chi tiết, hệ thống sẽ mở <strong>Hộp thoại chi tiết căn giữa màn hình (Centered Modal)</strong> rộng rãi, làm mờ nền sâu với đầy đủ bộ 4 nút SaaS [Xóa - In - Sửa - Lưu]:
                         </p>
                         <ul class="list-disc pl-6 text-sm text-slate-700 space-y-1.5">
                             <li><strong>Tiến Độ Tự Động (%):</strong> Thanh tiến độ màu xanh ngọc hiển thị trực quan. Mỗi khi người phụ trách tích chọn một ô checkbox trong Checklist, hệ thống tự động tính toán lại tỷ lệ (Ví dụ: 3/4 mục = 75%) và cập nhật ngay lập tức lên thẻ ngoài Kanban.</li>

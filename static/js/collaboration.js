@@ -774,13 +774,302 @@ async function handleDrop(e, targetStatus) {
     }
 }
 
-// Slide-over Drawer
+let currentTaskDetailData = null;
+let isTaskDetailInEditMode = false;
+
+function setTaskDetailEditMode(isEdit) {
+    isTaskDetailInEditMode = !!isEdit;
+    const viewHeader = document.getElementById('task-drawer-view-header');
+    const editHeader = document.getElementById('task-drawer-edit-header');
+    const viewMeta = document.getElementById('task-drawer-view-meta');
+    const editMeta = document.getElementById('task-drawer-edit-meta');
+    const editBtn = document.getElementById('btn-task-edit-bottom');
+    const saveBtn = document.getElementById('btn-task-save-bottom');
+
+    if (isTaskDetailInEditMode) {
+        if (viewHeader) viewHeader.classList.add('hidden');
+        if (editHeader) editHeader.classList.remove('hidden');
+        if (viewMeta) viewMeta.classList.add('hidden');
+        if (editMeta) editMeta.classList.remove('hidden');
+
+        if (editBtn) {
+            editBtn.className = "px-5 py-2.5 bg-transparent border border-slate-400 text-slate-700 hover:bg-slate-200 rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer";
+            editBtn.innerHTML = '<i class="ph-bold ph-x text-base"></i><span>Hủy sửa</span>';
+        }
+        if (saveBtn) {
+            saveBtn.classList.remove('opacity-50', 'pointer-events-none');
+            saveBtn.classList.add('hover:bg-teal-700', 'shadow-sm');
+        }
+    } else {
+        if (viewHeader) viewHeader.classList.remove('hidden');
+        if (editHeader) editHeader.classList.add('hidden');
+        if (viewMeta) viewMeta.classList.remove('hidden');
+        if (editMeta) editMeta.classList.add('hidden');
+
+        if (editBtn) {
+            editBtn.className = "px-5 py-2.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer";
+            editBtn.innerHTML = '<i class="ph-bold ph-pencil-simple text-base"></i><span>Sửa</span>';
+        }
+        if (saveBtn) {
+            saveBtn.classList.add('opacity-50', 'pointer-events-none');
+            saveBtn.classList.remove('hover:bg-teal-700', 'shadow-sm');
+        }
+    }
+}
+window.setTaskDetailEditMode = setTaskDetailEditMode;
+
+function toggleEditCurrentTask() {
+    setTaskDetailEditMode(!isTaskDetailInEditMode);
+}
+window.toggleEditCurrentTask = toggleEditCurrentTask;
+
+async function populateTaskDetailAssigneeSelect(targetDepartment = null, selectedAssigneeId = null) {
+    const select = document.getElementById('task-drawer-edit-assignee');
+    if (!select) return;
+
+    await ensureOfficeDirectoryLoaded();
+
+    const deptSelect = document.getElementById('task-drawer-edit-department');
+    const selectedDept = targetDepartment || deptSelect?.value || 'DISPATCH';
+    const deptName = deptSelect?.options[deptSelect.selectedIndex]?.text || selectedDept;
+
+    select.innerHTML = `<option value="">-- Chọn người phụ trách (${deptName}) --</option>`;
+
+    const deptUsers = officeDirectoryUsers.filter(u => (u.department === selectedDept || u.department_code === selectedDept));
+    const otherUsers = officeDirectoryUsers.filter(u => !(u.department === selectedDept || u.department_code === selectedDept));
+
+    if (deptUsers.length > 0) {
+        const grp = document.createElement('optgroup');
+        grp.label = `Nhân sự ${deptName} (${deptUsers.length})`;
+        deptUsers.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.user_id;
+            opt.textContent = `${cleanPersonName(u.full_name)} — ${u.role || u.position || ''}`;
+            grp.appendChild(opt);
+        });
+        select.appendChild(grp);
+    }
+
+    if (otherUsers.length > 0) {
+        const grpOther = document.createElement('optgroup');
+        grpOther.label = 'Nhân sự phòng ban khác';
+        otherUsers.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.user_id;
+            opt.textContent = `${cleanPersonName(u.full_name)} (${u.department_name}) — ${u.role || ''}`;
+            grpOther.appendChild(opt);
+        });
+        select.appendChild(grpOther);
+    }
+
+    if (selectedAssigneeId) {
+        select.value = selectedAssigneeId;
+    }
+}
+window.populateTaskDetailAssigneeSelect = populateTaskDetailAssigneeSelect;
+
+function onTaskDetailDepartmentChanged() {
+    const deptSelect = document.getElementById('task-drawer-edit-department');
+    if (deptSelect) {
+        populateTaskDetailAssigneeSelect(deptSelect.value);
+    }
+}
+window.onTaskDetailDepartmentChanged = onTaskDetailDepartmentChanged;
+
+async function saveCurrentTaskEdits() {
+    if (!currentViewingTaskId) return;
+
+    const titleInput = document.getElementById('task-drawer-edit-title');
+    const descInput = document.getElementById('task-drawer-edit-desc');
+    const deptSelect = document.getElementById('task-drawer-edit-department');
+    const assigneeSelect = document.getElementById('task-drawer-edit-assignee');
+    const dueInput = document.getElementById('task-drawer-edit-due');
+
+    const title = titleInput?.value.trim();
+    if (!title) {
+        showToast('warning', 'Vui lòng nhập tiêu đề công việc.');
+        return;
+    }
+
+    const payload = {
+        title: title,
+        description: descInput?.value.trim() || '',
+        department: deptSelect?.value || 'DISPATCH',
+        assignee_id: assigneeSelect?.value ? parseInt(assigneeSelect.value) : null,
+        due_date: dueInput?.value || null
+    };
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/`, {
+            method: 'PUT',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message || 'Cập nhật công việc thành công.');
+            setTaskDetailEditMode(false);
+            await openTaskDetailDrawer(currentViewingTaskId);
+            loadOfficeTasks();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast('error', json.message || 'Không thể lưu thay đổi.');
+        }
+    } catch (e) {
+        console.error('Error saving task edits:', e);
+        showToast('error', 'Có lỗi xảy ra khi lưu thay đổi.');
+    }
+}
+window.saveCurrentTaskEdits = saveCurrentTaskEdits;
+
+function printCurrentTaskSlip() {
+    if (!currentTaskDetailData) {
+        showToast('warning', 'Chưa có thông tin công việc để in.');
+        return;
+    }
+    const t = currentTaskDetailData;
+    const printWindow = window.open('', '_blank', 'width=850,height=1100');
+    if (!printWindow) {
+        window.print();
+        return;
+    }
+
+    const checklistsHtml = (t.checklists || []).map((c, i) => `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 6px 10px; text-align: center; width: 40px; font-weight: 700;">${i + 1}</td>
+            <td style="padding: 6px 10px; width: 45px; text-align: center; font-size: 16px;">${c.is_completed ? '☑' : '☐'}</td>
+            <td style="padding: 6px 10px; ${c.is_completed ? 'text-decoration: line-through; color: #64748b;' : 'font-weight: 600;'}">${escapeHtml(c.title)}</td>
+        </tr>
+    `).join('');
+
+    const attachmentsHtml = (t.attachments || []).map((a, i) => `
+        <li style="margin-bottom: 4px;">${i + 1}. ${escapeHtml(a.original_name)}</li>
+    `).join('');
+
+    const printHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Phiếu Giao Việc - ${formatTaskCode(t.code)}</title>
+            <style>
+                @page { size: A4 portrait; margin: 15mm 20mm; }
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #0f172a; margin: 0; padding: 20px; font-size: 13px; line-height: 1.5; }
+                .header-table { width: 100%; border-bottom: 2px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
+                .company-title { font-size: 16px; font-weight: 900; color: #0f766e; text-transform: uppercase; }
+                .doc-title { font-size: 20px; font-weight: 900; text-align: center; text-transform: uppercase; margin: 16px 0 6px 0; color: #0f172a; }
+                .doc-code { text-align: center; font-family: monospace; font-weight: 700; color: #0f766e; margin-bottom: 20px; font-size: 13px; }
+                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: #f8fafc; border: 1px solid #cbd5e1; }
+                .info-table td { padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 12px; }
+                .info-label { font-weight: 700; color: #475569; width: 22%; background: #f1f5f9; text-transform: uppercase; font-size: 11px; }
+                .section-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #0f766e; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin: 16px 0 8px 0; }
+                .task-desc { padding: 10px 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; white-space: pre-line; margin-bottom: 16px; }
+                .checklist-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                .checklist-table th { background: #0f766e; color: #fff; padding: 6px 10px; font-size: 11px; text-transform: uppercase; text-align: left; }
+                .signatures-table { width: 100%; margin-top: 40px; text-align: center; border-collapse: collapse; }
+                .signatures-table td { width: 50%; vertical-align: top; padding: 10px; }
+                .sig-title { font-weight: 800; text-transform: uppercase; font-size: 12px; margin-bottom: 70px; }
+                .sig-name { font-weight: 700; font-size: 13px; }
+            </style>
+        </head>
+        <body>
+            <table class="header-table">
+                <tr>
+                    <td>
+                        <div class="company-title">CÔNG TY TNHH VẬN TẢI & LOGISTICS TRIỀN VÕ</div>
+                        <div style="font-size: 11px; color: #64748b;">Hệ sinh thái Quản trị Vận tải & Chuỗi cung ứng BIM Logistics</div>
+                    </td>
+                    <td style="text-align: right; font-size: 11px; color: #64748b;">
+                        Ngày in: ${new Date().toLocaleDateString('vi-VN')}
+                    </td>
+                </tr>
+            </table>
+
+            <div class="doc-title">PHIẾU BÀN GIAO & THEO DÕI NHIỆM VỤ NỘI BỘ</div>
+            <div class="doc-code">Mã nhiệm vụ: ${formatTaskCode(t.code)} • Tiến độ: ${t.progress_percent || 0}%</div>
+
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Người giao việc</td>
+                    <td><strong>${escapeHtml(cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống')}</strong></td>
+                    <td class="info-label">Phòng ban</td>
+                    <td><strong>${escapeHtml(t.department || 'Văn Phòng')}</strong></td>
+                </tr>
+                <tr>
+                    <td class="info-label">Người phụ trách</td>
+                    <td><strong>${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</strong></td>
+                    <td class="info-label">Hạn hoàn thành</td>
+                    <td><strong>${t.due_date ? formatDateDMY(t.due_date) : 'Không có'}</strong></td>
+                </tr>
+                <tr>
+                    <td class="info-label">Mức độ ưu tiên</td>
+                    <td><strong>${getPriorityText(t.priority)}</strong></td>
+                    <td class="info-label">Trạng thái hiện tại</td>
+                    <td><strong>${getStatusText(t.status)}</strong></td>
+                </tr>
+            </table>
+
+            <div class="section-title">Tiêu đề & Nội dung công việc</div>
+            <div style="font-size: 14px; font-weight: 800; margin-bottom: 6px; color: #0f172a;">${escapeHtml(t.title)}</div>
+            <div class="task-desc">${escapeHtml(t.description || 'Không có mô tả chi tiết.')}</div>
+
+            ${(t.checklists && t.checklists.length > 0) ? `
+                <div class="section-title">Checklist các tiêu chí bàn giao & kiểm tra</div>
+                <table class="checklist-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center; width: 40px;">STT</th>
+                            <th style="text-align: center; width: 45px;">Đạt</th>
+                            <th>Nội dung bước kiểm tra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${checklistsHtml}
+                    </tbody>
+                </table>
+            ` : ''}
+
+            ${(t.attachments && t.attachments.length > 0) ? `
+                <div class="section-title">Tài liệu & Hồ sơ đính kèm</div>
+                <ul style="padding-left: 20px; font-size: 12px; color: #475569; margin: 4px 0 16px 0;">
+                    ${attachmentsHtml}
+                </ul>
+            ` : ''}
+
+            <table class="signatures-table">
+                <tr>
+                    <td>
+                        <div class="sig-title">Người phụ trách thực hiện</div>
+                        <div class="sig-name">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || '')}</div>
+                    </td>
+                    <td>
+                        <div class="sig-title">Người giao việc / Quản lý</div>
+                        <div class="sig-name">${escapeHtml(cleanPersonName(t.reporter_info?.full_name) || '')}</div>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 400);
+}
+window.printCurrentTaskSlip = printCurrentTaskSlip;
+
+// Modal Xem và Sửa chi tiết công việc (Hộp thoại Trung tâm, chuẩn SaaS Bộ 4 nút)
 async function openTaskDetailDrawer(taskId) {
     currentViewingTaskId = taskId;
     const drawer = document.getElementById('drawer-task-detail');
     if (!drawer) return;
 
     drawer.classList.remove('hidden');
+    setTaskDetailEditMode(false);
 
     try {
         const res = await authFetch(`/api/collaboration/tasks/${taskId}/`, {
@@ -790,13 +1079,37 @@ async function openTaskDetailDrawer(taskId) {
         if (!json.success || !json.data) return;
 
         const t = json.data;
-        document.getElementById('task-drawer-code').textContent = formatTaskCode(t.code);
-        document.getElementById('task-drawer-title').textContent = t.title;
-        document.getElementById('task-drawer-desc').textContent = t.description || 'Không có mô tả chi tiết.';
-        document.getElementById('task-drawer-assignee').textContent = cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán';
-        document.getElementById('task-drawer-reporter').textContent = cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống';
-        document.getElementById('task-drawer-due').textContent = t.due_date ? formatDateDMY(t.due_date) : 'Không có';
-        document.getElementById('task-drawer-department').textContent = t.department;
+        currentTaskDetailData = t;
+
+        // View Mode Population
+        const codeEl = document.getElementById('task-drawer-code');
+        if (codeEl) codeEl.textContent = formatTaskCode(t.code);
+        const titleEl = document.getElementById('task-drawer-title');
+        if (titleEl) titleEl.textContent = t.title;
+        const descEl = document.getElementById('task-drawer-desc');
+        if (descEl) descEl.textContent = t.description || 'Không có mô tả chi tiết.';
+        const assigneeEl = document.getElementById('task-drawer-assignee');
+        if (assigneeEl) assigneeEl.textContent = cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán';
+        const reporterEl = document.getElementById('task-drawer-reporter');
+        if (reporterEl) reporterEl.textContent = cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống';
+        const dueEl = document.getElementById('task-drawer-due');
+        if (dueEl) dueEl.textContent = t.due_date ? formatDateDMY(t.due_date) : 'Không có';
+        const deptEl = document.getElementById('task-drawer-department');
+        if (deptEl) deptEl.textContent = t.department;
+
+        // Edit Mode Population
+        const editTitleEl = document.getElementById('task-drawer-edit-title');
+        if (editTitleEl) editTitleEl.value = t.title || '';
+        const editDescEl = document.getElementById('task-drawer-edit-desc');
+        if (editDescEl) editDescEl.value = t.description || '';
+        const editReporterEl = document.getElementById('task-drawer-edit-reporter');
+        if (editReporterEl) editReporterEl.textContent = cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống';
+        const editDeptEl = document.getElementById('task-drawer-edit-department');
+        if (editDeptEl) editDeptEl.value = t.department || 'DISPATCH';
+        const editDueEl = document.getElementById('task-drawer-edit-due');
+        if (editDueEl) editDueEl.value = t.due_date || '';
+
+        await populateTaskDetailAssigneeSelect(t.department, t.assignee_id);
 
         // Status & Priority Badge
         const stBadge = document.getElementById('task-drawer-status-badge');
@@ -829,9 +1142,9 @@ async function openTaskDetailDrawer(taskId) {
             const followers = t.followers_info || [];
             if (followers.length > 0) {
                 followersListEl.innerHTML = followers.map(f => `
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80 shadow-2xs">
                         <i class="ph-bold ph-user-circle text-teal-600"></i>
-                        <span>${escapeHtml(f.full_name)} <span class="text-[10px] text-teal-600/70">(${escapeHtml(f.department || '')})</span></span>
+                        <span>${escapeHtml(cleanPersonName(f.full_name))} <span class="text-[10px] text-teal-600/70 font-normal">(${escapeHtml(f.department || '')})</span></span>
                     </span>
                 `).join('');
             } else {
@@ -1149,8 +1462,8 @@ function renderFollowersMultiSelectOptions(searchQuery = '') {
     const users = (officeDirectoryUsers || []).filter(u => {
         if (!q) return true;
         const name = (u.full_name || '').toLowerCase();
-        const dept = (u.department_name || '').toLowerCase();
-        const role = (u.role || '').toLowerCase();
+        const dept = (u.department_name || u.department || '').toLowerCase();
+        const role = (u.role || u.position || '').toLowerCase();
         const code = (u.employee_code || '').toLowerCase();
         return name.includes(q) || dept.includes(q) || role.includes(q) || code.includes(q);
     });
@@ -1160,48 +1473,40 @@ function renderFollowersMultiSelectOptions(searchQuery = '') {
         return;
     }
 
-    // Nhóm theo phòng ban
-    const groups = {};
-    users.forEach(u => {
-        const dept = u.department_name || 'Khác';
-        if (!groups[dept]) groups[dept] = [];
-        groups[dept].push(u);
-    });
-
     let html = '';
-    for (const [dept, deptUsers] of Object.entries(groups)) {
+    users.forEach(u => {
+        const isChecked = createTaskFollowersList.includes(u.user_id);
+        const initial = (u.full_name || 'U').charAt(0).toUpperCase();
+        const dept = u.department_name || u.department || 'Văn Phòng';
+        const role = u.role || u.position || u.employee_code || 'Nhân viên';
+
         html += `
-            <div class="mb-2">
-                <div class="text-[10px] font-extrabold uppercase tracking-wider text-teal-800 bg-teal-50/70 px-2.5 py-1 rounded-md mb-1 flex items-center justify-between">
-                    <span>${escapeHtml(dept)}</span>
-                    <span class="text-teal-600 font-normal">(${deptUsers.length})</span>
+            <div onclick="toggleFollowerSelection(${u.user_id})" class="grid grid-cols-12 items-center gap-2 px-3 py-2 rounded-xl hover:bg-teal-50/70 cursor-pointer select-none transition-all border ${isChecked ? 'bg-teal-50/70 border-teal-200 font-semibold shadow-2xs' : 'border-slate-100 hover:border-teal-200'}">
+                <!-- Cột 1: Checkbox & Phòng ban (4 cols) -->
+                <div class="col-span-4 flex items-center gap-2 min-w-0">
+                    <input type="checkbox" id="chk-follower-${u.user_id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleFollowerSelection(${u.user_id});" class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer shrink-0">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200/80 truncate" title="${escapeHtml(dept)}">
+                        ${escapeHtml(dept)}
+                    </span>
                 </div>
-                <div class="space-y-0.5">
-        `;
-        deptUsers.forEach(u => {
-            const isChecked = createTaskFollowersList.includes(u.user_id);
-            const initial = (u.full_name || 'U').charAt(0).toUpperCase();
-            html += `
-                <div onclick="toggleFollowerSelection(${u.user_id})" class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 cursor-pointer select-none transition-colors ${isChecked ? 'bg-teal-50/60 font-semibold' : ''}">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <input type="checkbox" id="chk-follower-${u.user_id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleFollowerSelection(${u.user_id});" class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer">
-                        <div class="w-6 h-6 rounded-full bg-teal-700 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
-                            ${initial}
-                        </div>
-                        <div class="truncate text-xs">
-                            <span class="text-slate-800">${escapeHtml(u.full_name)}</span>
-                            <span class="text-[10.5px] text-slate-400 ml-1 font-normal">(${escapeHtml(u.role || u.employee_code || '')})</span>
-                        </div>
+                <!-- Cột 2: Tên người (Avatar + Họ tên) (5 cols) -->
+                <div class="col-span-5 flex items-center gap-2 min-w-0">
+                    <div class="w-6 h-6 rounded-full bg-teal-700 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
+                        ${initial}
                     </div>
-                    ${isChecked ? '<i class="ph-bold ph-check text-teal-600 text-sm shrink-0"></i>' : ''}
+                    <span class="text-xs text-slate-900 font-bold truncate" title="${escapeHtml(u.full_name)}">
+                        ${escapeHtml(cleanPersonName(u.full_name))}
+                    </span>
                 </div>
-            `;
-        });
-        html += `
+                <!-- Cột 3: Chức vụ (3 cols) -->
+                <div class="col-span-3 text-right truncate">
+                    <span class="text-[11px] text-slate-500 font-normal" title="${escapeHtml(role)}">
+                        ${escapeHtml(role)}
+                    </span>
                 </div>
             </div>
         `;
-    }
+    });
 
     container.innerHTML = html;
     updateFollowersCounterUI();
@@ -1333,39 +1638,92 @@ document.addEventListener('click', (e) => {
     }
 });
 
-async function populateAssigneeSelect() {
+async function populateAssigneeSelect(targetDepartment = null) {
     const select = document.getElementById('create-task-assignee');
     if (!select) return;
 
     await ensureOfficeDirectoryLoaded();
 
-    select.innerHTML = '<option value="">-- Chọn người thực hiện chính --</option>';
+    const currentVal = select.value;
+    const deptSelect = document.getElementById('create-task-department');
+    const selectedDept = targetDepartment || deptSelect?.value || 'DISPATCH';
+    const deptName = deptSelect?.options[deptSelect.selectedIndex]?.text || selectedDept;
+
+    select.innerHTML = `<option value="">-- Chọn người phụ trách (${deptName}) --</option>`;
     const myId = window.CURRENT_USER?.id;
     const canAssignOthers = collaborationUserPerms ? collaborationUserPerms.can_assign_others : true;
 
-    officeDirectoryUsers.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.user_id;
+    // Phân loại: nhân sự thuộc phòng ban đã chọn & nhân sự phòng ban khác
+    const deptUsers = (officeDirectoryUsers || []).filter(u => (u.department === selectedDept || u.department_code === selectedDept));
+    const otherUsers = (officeDirectoryUsers || []).filter(u => !(u.department === selectedDept || u.department_code === selectedDept));
 
-        const isMe = u.user_id === myId;
-        if (isMe) {
-            opt.textContent = `${u.full_name} (${u.department_name}) — [Chính bạn - Việc cá nhân]`;
-            select.appendChild(opt);
-        } else if (u.can_assign) {
-            opt.textContent = `${u.full_name} (${u.department_name}) - ${u.role}`;
-            select.appendChild(opt);
-        } else {
-            opt.textContent = `${u.full_name} (${u.department_name}) — [Cấp trên / Ngoài thẩm quyền]`;
-            opt.disabled = true;
-            opt.className = 'text-slate-400 bg-slate-50';
-            select.appendChild(opt);
+    if (deptUsers.length > 0) {
+        const grp = document.createElement('optgroup');
+        grp.label = `Nhân sự ${deptName} (${deptUsers.length})`;
+        deptUsers.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.user_id;
+            const isMe = u.user_id === myId;
+            if (isMe) {
+                opt.textContent = `${cleanPersonName(u.full_name)} — [Chính bạn - Việc cá nhân]`;
+                grp.appendChild(opt);
+            } else if (u.can_assign) {
+                opt.textContent = `${cleanPersonName(u.full_name)} — ${u.role || u.position || ''}`;
+                grp.appendChild(opt);
+            } else {
+                opt.textContent = `${cleanPersonName(u.full_name)} — [Cấp trên / Ngoài thẩm quyền]`;
+                opt.disabled = true;
+                opt.className = 'text-slate-400 bg-slate-50';
+                grp.appendChild(opt);
+            }
+        });
+        select.appendChild(grp);
+    } else {
+        const emptyOpt = document.createElement('option');
+        emptyOpt.disabled = true;
+        emptyOpt.textContent = `(Chưa có nhân sự thuộc ${deptName})`;
+        select.appendChild(emptyOpt);
+    }
+
+    // Nhóm nhân sự phòng ban khác
+    if (otherUsers.length > 0 && canAssignOthers) {
+        const grpOther = document.createElement('optgroup');
+        grpOther.label = 'Nhân sự các phòng ban khác';
+        otherUsers.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.user_id;
+            const isMe = u.user_id === myId;
+            if (isMe) {
+                opt.textContent = `${cleanPersonName(u.full_name)} (${u.department_name}) — [Chính bạn]`;
+                grpOther.appendChild(opt);
+            } else if (u.can_assign) {
+                opt.textContent = `${cleanPersonName(u.full_name)} (${u.department_name}) — ${u.role || ''}`;
+                grpOther.appendChild(opt);
+            }
+        });
+        select.appendChild(grpOther);
+    }
+
+    // Khôi phục giá trị cũ nếu hợp lệ
+    if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
+        select.value = currentVal;
+    } else if (deptUsers.length > 0) {
+        // Tự động chọn nhân sự đầu tiên hợp lệ trong phòng ban
+        const firstAssignable = deptUsers.find(u => u.can_assign || u.user_id === myId);
+        if (firstAssignable) {
+            select.value = firstAssignable.user_id;
         }
-    });
-
-    if (!canAssignOthers && myId) {
-        select.value = myId;
     }
 }
+window.populateAssigneeSelect = populateAssigneeSelect;
+
+function onTaskDepartmentChanged() {
+    const deptSelect = document.getElementById('create-task-department');
+    if (deptSelect) {
+        populateAssigneeSelect(deptSelect.value);
+    }
+}
+window.onTaskDepartmentChanged = onTaskDepartmentChanged;
 
 // Quản lý Checklist và Tệp đính kèm khởi tạo trong trang con Tạo việc
 let createTaskInitialChecklists = [];
@@ -1458,6 +1816,49 @@ function renderCreateTaskInitialFiles() {
 }
 window.renderCreateTaskInitialFiles = renderCreateTaskInitialFiles;
 
+function setCreateTaskDueDateOffset(days) {
+    const dueInput = document.getElementById('create-task-due');
+    if (!dueInput) return;
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + days);
+
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(targetDate.getDate()).padStart(2, '0');
+    dueInput.value = `${yyyy}-${mm}-${dd}`;
+
+    updateDueDateQuickPills(days);
+}
+window.setCreateTaskDueDateOffset = setCreateTaskDueDateOffset;
+
+function updateDueDateQuickPills(activeDays) {
+    const dueInput = document.getElementById('create-task-due');
+    if (!dueInput) return;
+
+    if (activeDays === undefined && dueInput.value) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const parts = dueInput.value.split('-');
+        if (parts.length === 3) {
+            const selected = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            selected.setHours(0, 0, 0, 0);
+            const diffTime = selected.getTime() - today.getTime();
+            activeDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        }
+    }
+
+    [1, 3, 7].forEach(d => {
+        const btn = document.getElementById(`btn-due-offset-${d}`);
+        if (!btn) return;
+        if (d === activeDays) {
+            btn.className = "px-1.5 py-0.5 rounded text-[10.5px] font-extrabold bg-teal-100 text-teal-800 border border-teal-300 shadow-2xs cursor-pointer";
+        } else {
+            btn.className = "px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-teal-50 hover:text-teal-800 transition-colors cursor-pointer";
+        }
+    });
+}
+window.updateDueDateQuickPills = updateDueDateQuickPills;
+
 async function openCreateTaskModal() {
     const modal = document.getElementById('modal-create-task');
     if (modal) {
@@ -1476,7 +1877,13 @@ async function openCreateTaskModal() {
             `;
         }
 
-        await populateAssigneeSelect();
+        // Mặc định hạn hoàn thành là ngày mai (+1 ngày) và kích hoạt nút +1d
+        setCreateTaskDueDateOffset(1);
+
+        // Đồng bộ phòng ban mặc định và nạp danh sách người phụ trách thuộc phòng ban đó
+        const deptSelect = document.getElementById('create-task-department');
+        const defaultDept = deptSelect?.value || 'DISPATCH';
+        await populateAssigneeSelect(defaultDept);
         modal.classList.remove('hidden');
     }
 }

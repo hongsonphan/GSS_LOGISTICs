@@ -66,7 +66,7 @@
             </button>
 
             <!-- Create Task Button -->
-            <button type="button" onclick="openCreateTaskModal()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors">
+            <button type="button" id="btn-open-create-task" onclick="openCreateTaskModal()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors">
                 <i class="ph-bold ph-plus-circle text-sm"></i>
                 <span>Giao Việc Mới</span>
             </button>
@@ -160,56 +160,96 @@
     </div>
 </div>
 
-<!-- SLIDE-OVER TASK DETAIL DRAWER (BÊN PHẢI MÀN HÌNH) -->
-<div id="drawer-task-detail" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex justify-end">
-    <div class="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-slide-left overflow-hidden">
-        <!-- Drawer Header -->
-        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
-            <div class="flex items-center gap-2">
-                <span id="task-drawer-code" class="font-mono text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200"></span>
+<!-- MODAL HỘP THOẠI TRUNG TÂM: CHI TIẾT CÔNG VIỆC (RỘNG RÃI, NỀN LÀM MỜ SÂU, BỘ 4 NÚT CHUẨN) -->
+<div id="drawer-task-detail" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-y-auto" onclick="if(event.target === this) closeTaskDetailDrawer()">
+    <div class="w-full max-w-4xl lg:max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col border border-slate-200/80 animate-in fade-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh]" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-slate-50 to-teal-50/40 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <span id="task-drawer-code" class="font-mono text-xs font-bold text-teal-800 bg-teal-100/70 px-2.5 py-1 rounded-lg border border-teal-200/80"></span>
                 <span id="task-drawer-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span>
                 <span id="task-drawer-priority-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" onclick="deleteCurrentTask()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" title="Xóa công việc">
-                    <i class="ph-bold ph-trash text-base"></i>
+                <button type="button" onclick="printCurrentTaskSlip()" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors" title="In phiếu nhiệm vụ A4">
+                    <i class="ph-bold ph-printer text-base"></i>
                 </button>
-                <button type="button" onclick="closeTaskDetailDrawer()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors">
+                <button type="button" onclick="closeTaskDetailDrawer()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors" title="Đóng">
                     <i class="ph-bold ph-x text-lg"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Drawer Body -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-            <!-- Title -->
-            <div>
+        <!-- Modal Body (Cuộn mượt mà) -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+            <!-- 1. Tiêu đề & Mô tả (Hỗ trợ Chế độ Xem & Chế độ Sửa) -->
+            <div id="task-drawer-view-header">
                 <h2 id="task-drawer-title" class="text-xl font-extrabold text-slate-900 leading-snug font-heading"></h2>
                 <p id="task-drawer-desc" class="text-xs text-slate-600 mt-2 whitespace-pre-line leading-relaxed"></p>
             </div>
-
-            <!-- Meta Information Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+            <div id="task-drawer-edit-header" class="hidden space-y-2">
                 <div>
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Người thực hiện</span>
-                    <span id="task-drawer-assignee" class="font-bold text-slate-800 flex items-center gap-1"></span>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tiêu đề công việc *</label>
+                    <input type="text" id="task-drawer-edit-title" class="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl px-3.5 py-2 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
                 </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Mô tả & Hướng dẫn thực hiện</label>
+                    <textarea id="task-drawer-edit-desc" rows="2" class="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none leading-relaxed"></textarea>
+                </div>
+            </div>
+
+            <!-- 2. Meta Information Grid (4 cột cân đối chuẩn: Người giao việc | Phòng Ban | Người phụ trách | Hạn hoàn thành) -->
+            <div id="task-drawer-view-meta" class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 text-xs">
                 <div>
                     <span class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Người giao việc</span>
-                    <span id="task-drawer-reporter" class="font-bold text-slate-800"></span>
-                </div>
-                <div>
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Hạn hoàn thành</span>
-                    <span id="task-drawer-due" class="font-bold text-slate-800"></span>
+                    <span id="task-drawer-reporter" class="font-bold text-slate-800 flex items-center gap-1.5 py-0.5"></span>
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Phòng ban</span>
                     <span id="task-drawer-department" class="font-bold text-slate-800"></span>
                 </div>
+                <div>
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Người phụ trách</span>
+                    <span id="task-drawer-assignee" class="font-bold text-slate-800 flex items-center gap-1"></span>
+                </div>
+                <div>
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Hạn hoàn thành</span>
+                    <span id="task-drawer-due" class="font-bold text-slate-800"></span>
+                </div>
             </div>
 
-            <!-- Người liên quan (Theo dõi chung) trong Drawer -->
-            <div id="task-drawer-followers-wrapper" class="bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 text-xs space-y-1.5">
+            <!-- Chế độ sửa Meta (Ẩn mặc định) -->
+            <div id="task-drawer-edit-meta" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-teal-50/40 p-3.5 rounded-xl border border-teal-200/80 text-xs">
+                <div>
+                    <span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Người giao việc</span>
+                    <span id="task-drawer-edit-reporter" class="font-bold text-slate-700 py-1.5 block"></span>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Phòng ban</label>
+                    <select id="task-drawer-edit-department" onchange="onTaskDetailDepartmentChanged()" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
+                        <option value="DISPATCH">Phòng Điều Vận</option>
+                        <option value="ACCOUNTING">Kế Toán Tài Chính</option>
+                        <option value="SALES">Phòng Kinh Doanh</option>
+                        <option value="HR">Hành Chính Nhân Sự</option>
+                        <option value="FLEET">Đội Xe & Bãi</option>
+                        <option value="CUSTOMS">Thủ Tục Hải Quan</option>
+                        <option value="MANAGEMENT">Ban Giám Đốc</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Người phụ trách *</label>
+                    <select id="task-drawer-edit-assignee" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
+                        <option value="">-- Chọn người phụ trách --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hạn hoàn thành</label>
+                    <input type="date" id="task-drawer-edit-due" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
+                </div>
+            </div>
+
+            <!-- 3. Người liên quan (Theo dõi chung) trong Drawer -->
+            <div id="task-drawer-followers-wrapper" class="bg-slate-50/80 px-4 py-2.5 rounded-xl border border-slate-200/80 text-xs space-y-1.5">
                 <span class="block text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1.5">
                     <i class="ph-bold ph-users text-teal-600"></i>
                     Người liên quan / Theo dõi chung
@@ -219,7 +259,7 @@
                 </div>
             </div>
 
-            <!-- Optional Logistics Context -->
+            <!-- 4. Optional Logistics Context -->
             <div id="task-drawer-context-wrapper" class="hidden bg-teal-50/50 p-3 rounded-xl border border-teal-100 text-xs flex items-center justify-between">
                 <div class="flex items-center gap-2 text-teal-900">
                     <i class="ph-bold ph-link text-teal-600 text-base"></i>
@@ -227,72 +267,113 @@
                 </div>
             </div>
 
-            <!-- Checklist Section -->
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="ph-bold ph-list-checks text-teal-600 text-sm"></i>
-                        Checklist các bước kiểm tra
-                    </h3>
-                    <span id="task-drawer-progress-text" class="text-xs font-bold text-teal-700">0%</span>
+            <!-- 5. 2 CỘT SONG SONG: Checklist (trái) và Tài liệu / Trao đổi (phải) - Tận dụng tối đa không gian modal -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2 border-t border-slate-200">
+                <!-- Cột Trái: Checklist các bước kiểm tra & Tiến độ -->
+                <div class="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="ph-bold ph-list-checks text-teal-600 text-sm"></i>
+                                Checklist các bước kiểm tra
+                            </h3>
+                            <span id="task-drawer-progress-text" class="text-xs font-bold text-teal-700">0%</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div id="task-drawer-progress-bar" class="bg-teal-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+
+                        <!-- Checklist Items List -->
+                        <div id="task-drawer-checklists" class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1"></div>
+                    </div>
+
+                    <!-- Add Checklist Input -->
+                    <div class="flex gap-2 pt-2 border-t border-slate-200/60">
+                        <input type="text" id="task-new-checklist-input" onkeyup="if(event.key === 'Enter') addChecklistItem()" placeholder="Thêm bước kiểm tra mới..." class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                        <button type="button" onclick="addChecklistItem()" class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs">
+                            Thêm
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Progress Bar -->
-                <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                    <div id="task-drawer-progress-bar" class="bg-teal-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                </div>
+                <!-- Cột Phải: Tài liệu, Trao đổi & Hoạt động -->
+                <div class="space-y-4 flex flex-col justify-between">
+                    <!-- Tài liệu & Tệp đính kèm -->
+                    <div class="bg-slate-50/60 p-3.5 rounded-xl border border-slate-200/80 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="ph-bold ph-paperclip text-teal-600 text-sm"></i>
+                                Tài liệu & Tệp đính kèm
+                            </h3>
+                            <label class="cursor-pointer text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1">
+                                <i class="ph-bold ph-upload-simple"></i> Tải tệp lên
+                                <input type="file" id="task-upload-file-input" onchange="uploadTaskAttachment(event)" class="hidden" multiple>
+                            </label>
+                        </div>
+                        <div id="task-drawer-attachments" class="space-y-1.5 max-h-28 overflow-y-auto custom-scrollbar"></div>
+                    </div>
 
-                <!-- Checklist Items List -->
-                <div id="task-drawer-checklists" class="space-y-2"></div>
+                    <!-- Comments & Discussion -->
+                    <div class="bg-slate-50/60 p-3.5 rounded-xl border border-slate-200/80 space-y-2.5">
+                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="ph-bold ph-chat-circle-dots text-teal-600 text-sm"></i>
+                            Trao đổi & Thảo luận công việc
+                        </h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="task-new-comment-input" onkeyup="if(event.key === 'Enter') submitTaskComment()" placeholder="Viết trao đổi hoặc @tên đồng nghiệp..." class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                            <button type="button" onclick="submitTaskComment()" class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs">
+                                Gửi
+                            </button>
+                        </div>
+                        <div id="task-drawer-comments" class="space-y-2 max-h-36 overflow-y-auto custom-scrollbar"></div>
+                    </div>
 
-                <!-- Add Checklist Input -->
-                <div class="flex gap-2 pt-1">
-                    <input type="text" id="task-new-checklist-input" onkeyup="if(event.key === 'Enter') addChecklistItem()" placeholder="Thêm bước kiểm tra mới..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
-                    <button type="button" onclick="addChecklistItem()" class="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-colors">
-                        Thêm
-                    </button>
+                    <!-- Activity Log -->
+                    <div class="px-2 py-1 space-y-1.5 text-[11px] text-slate-500">
+                        <span class="font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                            <i class="ph ph-clock-counter-clockwise text-slate-400"></i> Nhật ký hoạt động
+                        </span>
+                        <div id="task-drawer-activities" class="space-y-1 max-h-24 overflow-y-auto custom-scrollbar text-[10.5px]"></div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Attachments Section -->
-            <div class="space-y-2 pt-2 border-t border-slate-100">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="ph-bold ph-paperclip text-teal-600 text-sm"></i>
-                        Tài liệu & Tệp đính kèm
-                    </h3>
-                    <label class="cursor-pointer text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1">
-                        <i class="ph-bold ph-upload-simple"></i> Tải tệp lên
-                        <input type="file" id="task-upload-file-input" onchange="uploadTaskAttachment(event)" class="hidden" multiple>
-                    </label>
-                </div>
-                <div id="task-drawer-attachments" class="space-y-1.5"></div>
-            </div>
+        <!-- Modal Footer: BỘ 4 NÚT CHUẨN SAAS CỦA BIM LOGISTICS [XÓA - IN - SỬA - LƯU] -->
+        <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-3 shrink-0">
+            <!-- Bên trái: Nút Quay lại / Đóng -->
+            <button type="button" onclick="closeTaskDetailDrawer()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-700 hover:text-white font-bold text-xs transition-all cursor-pointer font-heading flex items-center gap-1.5 shadow-2xs">
+                <i class="ph-bold ph-arrow-left text-sm"></i>
+                <span>Quay lại</span>
+            </button>
 
-            <!-- Comments & Discussion -->
-            <div class="space-y-3 pt-2 border-t border-slate-100">
-                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="ph-bold ph-chat-circle-dots text-teal-600 text-sm"></i>
-                    Trao đổi & Thảo luận công việc
-                </h3>
-                
-                <div class="flex gap-2">
-                    <input type="text" id="task-new-comment-input" onkeyup="if(event.key === 'Enter') submitTaskComment()" placeholder="Viết trao đổi hoặc @tên đồng nghiệp..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
-                    <button type="button" onclick="submitTaskComment()" class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-colors">
-                        Gửi
-                    </button>
-                </div>
+            <!-- Bên phải: Bộ 4 nút [Xóa | In | Sửa | Lưu] -->
+            <div class="flex items-center space-x-2.5 flex-wrap">
+                <!-- Nút 1: XÓA (Rose) -->
+                <button type="button" id="btn-task-delete-bottom" onclick="deleteCurrentTask()" class="px-4 py-2.5 bg-transparent border border-rose-600 text-rose-700 hover:bg-rose-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer" title="Xóa vĩnh viễn công việc này">
+                    <i class="ph-bold ph-trash text-sm"></i>
+                    <span>Xóa</span>
+                </button>
 
-                <div id="task-drawer-comments" class="space-y-2.5"></div>
-            </div>
+                <!-- Nút 2: IN (Slate/Dark) -->
+                <button type="button" id="btn-task-print-bottom" onclick="printCurrentTaskSlip()" class="px-4 py-2.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer" title="In phiếu bàn giao nhiệm vụ A4">
+                    <i class="ph-bold ph-printer text-base"></i>
+                    <span>In</span>
+                </button>
 
-            <!-- Activity Log -->
-            <div class="space-y-2 pt-2 border-t border-slate-100">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="ph ph-clock-counter-clockwise text-slate-400 text-sm"></i>
-                    Nhật ký hoạt động
-                </h3>
-                <div id="task-drawer-activities" class="space-y-1.5 text-[11px] text-slate-500"></div>
+                <!-- Nút 3: SỬA (Amber) -->
+                <button type="button" id="btn-task-edit-bottom" onclick="toggleEditCurrentTask()" class="px-5 py-2.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                    <i class="ph-bold ph-pencil-simple text-base"></i>
+                    <span id="btn-task-edit-bottom-text">Sửa</span>
+                </button>
+
+                <!-- Nút 4: LƯU (Teal) -->
+                <button type="button" id="btn-task-save-bottom" onclick="saveCurrentTaskEdits()" class="px-6 py-2.5 bg-teal-600 border border-teal-600 text-white hover:bg-teal-700 rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="ph-bold ph-check-circle text-base"></i>
+                    <span>Lưu</span>
+                </button>
             </div>
         </div>
     </div>
@@ -336,14 +417,9 @@
                 <textarea id="create-task-description" rows="2" placeholder="Chi tiết yêu cầu, tiêu chuẩn bàn giao hoặc lưu ý quy trình công việc..." class="w-full bg-slate-50/70 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none leading-relaxed transition-all"></textarea>
             </div>
 
-            <!-- 3. Meta Information Grid (4 cột cân đối, rộng thoáng) -->
+            <!-- 3. Meta Information Grid (4 cột cân đối: Người giao việc | Phòng Ban | Người phụ trách | Hạn hoàn thành) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 text-xs">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Người thực hiện</label>
-                    <select id="create-task-assignee" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
-                        <option value="">-- Chọn người thực hiện --</option>
-                    </select>
-                </div>
+                <!-- 1. Người giao việc -->
                 <div>
                     <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Người giao việc</span>
                     <span id="create-task-reporter-display" class="font-bold text-slate-800 flex items-center gap-1.5 py-1.5 px-2.5 bg-white rounded-lg border border-slate-200 truncate shadow-xs" title="Người giao việc">
@@ -351,13 +427,11 @@
                         <span class="truncate">Bạn (Tự động)</span>
                     </span>
                 </div>
+
+                <!-- 2. Phòng ban (Chọn trước để lọc người phụ trách) -->
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Hạn hoàn thành</label>
-                    <input type="date" id="create-task-due" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Phòng ban</label>
-                    <select id="create-task-department" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
+                    <label for="create-task-department" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Phòng ban</label>
+                    <select id="create-task-department" onchange="onTaskDepartmentChanged()" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
                         <option value="DISPATCH">Phòng Điều Vận</option>
                         <option value="ACCOUNTING">Kế Toán Tài Chính</option>
                         <option value="SALES">Phòng Kinh Doanh</option>
@@ -366,6 +440,27 @@
                         <option value="CUSTOMS">Thủ Tục Hải Quan</option>
                         <option value="MANAGEMENT">Ban Giám Đốc</option>
                     </select>
+                </div>
+
+                <!-- 3. Người phụ trách (Lọc theo phòng ban đã chọn) -->
+                <div>
+                    <label for="create-task-assignee" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Người phụ trách *</label>
+                    <select id="create-task-assignee" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
+                        <option value="">-- Chọn người phụ trách --</option>
+                    </select>
+                </div>
+
+                <!-- 4. Hạn hoàn thành + Chọn nhanh -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="create-task-due" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Hạn hoàn thành</label>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="setCreateTaskDueDateOffset(1)" id="btn-due-offset-1" class="px-1.5 py-0.5 rounded text-[10.5px] font-extrabold bg-teal-100 text-teal-800 border border-teal-300 shadow-2xs cursor-pointer hover:bg-teal-200" title="Mặc định: Ngày mai (+1 ngày)">+1d</button>
+                            <button type="button" onclick="setCreateTaskDueDateOffset(3)" id="btn-due-offset-3" class="px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-teal-50 hover:text-teal-800 transition-colors cursor-pointer" title="Hạn 3 ngày tới (+3 ngày)">+3d</button>
+                            <button type="button" onclick="setCreateTaskDueDateOffset(7)" id="btn-due-offset-7" class="px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-teal-50 hover:text-teal-800 transition-colors cursor-pointer" title="Hạn 7 ngày tới (+7 ngày)">+7d</button>
+                        </div>
+                    </div>
+                    <input type="date" id="create-task-due" onchange="updateDueDateQuickPills()" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none shadow-xs">
                 </div>
             </div>
 
@@ -416,27 +511,44 @@
                     </div>
                 </div>
 
-                <!-- Dropdown Popover List với Search & Checkbox -->
-                <div id="task-followers-dropdown-panel" class="hidden absolute left-4 right-4 top-full mt-1.5 z-40 bg-white rounded-2xl shadow-2xl border border-slate-200 p-3.5 space-y-3 animate-fade-in">
-                    <!-- Search bar & Quick controls -->
-                    <div class="flex items-center gap-2">
+                <!-- Dropdown Popover List với Search & Checkbox (Thiết kế Flex Column rộng thoáng, thấy ngay nút Xong) -->
+                <div id="task-followers-dropdown-panel" class="hidden absolute left-0 right-0 top-full mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[420px] overflow-hidden animate-fade-in">
+                    <!-- 1. Search bar & Quick controls (Sticky Header) -->
+                    <div class="p-3 bg-slate-50 border-b border-slate-200/80 flex items-center gap-2 shrink-0">
                         <div class="relative flex-1">
                             <i class="ph ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <input type="text" id="task-followers-search" oninput="filterFollowersDropdown(this.value)" placeholder="Tìm theo tên hoặc phòng ban..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                            <input type="text" id="task-followers-search" oninput="filterFollowersDropdown(this.value)" placeholder="Tìm theo tên, phòng ban hoặc chức vụ..." class="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
                         </div>
-                        <button type="button" onclick="selectAllFollowers()" class="px-2.5 py-1.5 text-[11px] font-bold text-teal-700 hover:bg-teal-50 rounded-lg transition-colors whitespace-nowrap">Chọn hết</button>
-                        <button type="button" onclick="clearAllFollowers()" class="px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors whitespace-nowrap">Bỏ chọn</button>
+                        <button type="button" onclick="selectAllFollowers()" class="px-2.5 py-1.5 text-[11px] font-bold text-teal-700 hover:bg-teal-100 rounded-lg transition-colors whitespace-nowrap">Chọn hết</button>
+                        <button type="button" onclick="clearAllFollowers()" class="px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-100 rounded-lg transition-colors whitespace-nowrap">Bỏ chọn</button>
+                        <!-- Nút Xong ngay trên Header giúp hoàn tất 1 chạm không cần cuộn -->
+                        <button type="button" onclick="closeFollowersDropdown()" class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold text-xs shadow-xs transition-colors shrink-0">
+                            Xong
+                        </button>
                     </div>
 
-                    <!-- Scrollable List of Checkboxes grouped by Department -->
-                    <div id="task-followers-options-list" class="max-h-56 overflow-y-auto space-y-2 pr-1 custom-scrollbar text-xs">
+                    <!-- 2. Column Headers Bar (Dạng List rõ ràng: Phòng Ban | Tên người | Chức vụ) -->
+                    <div class="grid grid-cols-12 gap-2 px-3.5 py-1.5 bg-slate-100/80 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200/80 shrink-0">
+                        <div class="col-span-4 flex items-center gap-1.5">
+                            <span>Phòng ban</span>
+                        </div>
+                        <div class="col-span-5">
+                            <span>Họ và tên nhân sự</span>
+                        </div>
+                        <div class="col-span-3 text-right">
+                            <span>Chức vụ</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Scrollable List of Items (Dạng List 3 cột cuộn độc lập) -->
+                    <div id="task-followers-options-list" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar text-xs">
                         <!-- Dynamic items rendered by JavaScript -->
                     </div>
 
-                    <!-- Footer bar with Done button -->
-                    <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                        <span class="text-slate-500">Đã chọn: <strong id="task-followers-summary-count" class="text-teal-700 font-extrabold">0</strong> người</span>
-                        <button type="button" onclick="closeFollowersDropdown()" class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold text-xs shadow-xs transition-colors">
+                    <!-- 4. Sticky Footer bar với Done button to rõ -->
+                    <div class="shrink-0 px-4 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-medium">Đã chọn: <strong id="task-followers-summary-count" class="text-teal-700 font-extrabold text-sm">0</strong> người liên quan</span>
+                        <button type="button" onclick="closeFollowersDropdown()" class="px-5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold text-xs shadow-xs transition-colors">
                             Xong
                         </button>
                     </div>
