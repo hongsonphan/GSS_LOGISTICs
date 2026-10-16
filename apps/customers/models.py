@@ -4,6 +4,7 @@ from core.models import TimeStampedModel, SoftDeleteModel
 class Customer(TimeStampedModel, SoftDeleteModel):
     code = models.CharField(max_length=50, unique=True, db_index=True) # TDA_VICACO, OASIS, WCA_TTI, TAKIGAWA...
     name = models.CharField(max_length=255)
+    short_name = models.CharField(max_length=100, blank=True, default='', verbose_name="Tên viết tắt / Tên giao dịch")
     tax_code = models.CharField(max_length=20, blank=True)
     address = models.CharField(max_length=255)
     contact_person = models.CharField(max_length=100, blank=True)
@@ -14,7 +15,8 @@ class Customer(TimeStampedModel, SoftDeleteModel):
         ordering = ['name']
 
     def __str__(self):
-        return f"{self.name} ({self.code})"
+        display_name = f"[{self.short_name}] {self.name}" if self.short_name else self.name
+        return f"{display_name} ({self.code})"
 
 class RouteTariff(TimeStampedModel, SoftDeleteModel):
     """Biểu cước vận tải theo tuyến của khách hàng."""

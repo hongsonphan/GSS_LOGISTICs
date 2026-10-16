@@ -82,7 +82,8 @@
     {% include 'components/modal_report_print.html' %}
     {% include 'components/modal_profile_settings.html' %}
 
-
+    <!-- 3.1. CHAT BUBBLE & TEAM MESSAGING (In-App Floating Chat) -->
+    {% include 'components/chat_bubble.html' %}
 
     <!-- 4. GRACEFUL TOAST NOTIFICATION CONTAINER (Bim_ERP-Solutions Standard) -->
     <div id="toast-container"></div>
@@ -153,6 +154,8 @@
             nickname: "{% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.nickname|escapejs }}{% else %}{% endif %}",
             is_staff: {{ request.user.is_staff|yesno:"true,false" }},
             is_superuser: {{ request.user.is_superuser|yesno:"true,false" }},
+            is_department_head: {% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.is_department_head|yesno:"true,false" }}{% else %}false{% endif %},
+            hierarchy_level: {% if request.user.is_authenticated and request.user.employee %}{{ request.user.employee.hierarchy_level }}{% else %}0{% endif %},
             permissions: [
                 {% if request.user.is_authenticated %}
                     {% for p in request.user.get_all_permissions %}"{{ p|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}
@@ -170,9 +173,13 @@
             }
             return perms.some(p => p.endsWith('.' + permCodename) || p === permCodename);
         };
+
+        // Danh bạ nhân sự văn phòng tiền tải (Zero-latency cho Modal Giao việc & Theo dõi chung)
+        window.PRELOADED_OFFICE_USERS = {{ office_users_json|default:"[]"|safe }};
     </script>
     <script src="{% static 'js/column_manager.js' %}?v=2.9.39"></script>
-    <script src="{% static 'js/app.js' %}?v=2.9.39"></script>
+    <script src="{% static 'js/app.js' %}?v=2.9.42"></script>
+    <script src="{% static 'js/collaboration.js' %}?v=1.4.2"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

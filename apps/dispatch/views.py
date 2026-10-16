@@ -120,7 +120,45 @@ def index_view(request, *args, **kwargs):
         return redirect(f"/login/?next={request.path}")
 
     employee = getattr(request.user, 'employee', None)
-    return render(request, 'index.html', {'current_employee': employee})
+
+    # Preload danh bạ nhân sự văn phòng cho tính năng Giao việc & Phối hợp (Zero-latency)
+    office_users_data = []
+    try:
+        from apps.personnel.models import Employee
+        is_super = request.user.is_superuser or (employee and employee.hierarchy_level >= 100)
+        employees = Employee.objects.filter(
+            is_deleted=False,
+            user__isnull=False
+        ).select_related('user').order_by('department', 'full_name')
+
+        for emp in employees:
+            can_assign = False
+            if is_super:
+                can_assign = True
+            elif employee:
+                can_assign = employee.can_assign_task_to(emp)
+
+            office_users_data.append({
+                'user_id': emp.user.id,
+                'username': emp.user.username,
+                'full_name': emp.full_name,
+                'employee_code': emp.code,
+                'department': emp.department,
+                'department_name': emp.get_department_display(),
+                'role': emp.get_role_display(),
+                'hierarchy_level': emp.hierarchy_level,
+                'is_department_head': emp.is_department_head,
+                'can_assign': can_assign
+            })
+    except Exception as e:
+        office_users_data = []
+
+    office_users_json = json.dumps(office_users_data, ensure_ascii=False)
+
+    return render(request, 'index.html', {
+        'current_employee': employee,
+        'office_users_json': office_users_json,
+    })
 
 
 @never_cache

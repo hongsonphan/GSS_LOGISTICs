@@ -1152,10 +1152,387 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// --- 1. TẢI DỮ LIỆU BAN GIÁM ĐỐC (CHUẨN QUỐC TẾ TMS & HẢI QUAN) ---
+// --- 1. TẢI DỮ LIỆU DASHBOARD ĐA VAI TRÒ (CHUẨN QUỐC TẾ TMS, WMS & FLEET) ---
+let currentDashboardRoleView = '';
+
+function changeDashboardRoleView(role) {
+    currentDashboardRoleView = role;
+    currentActiveRole = role;
+    if (bgdDataCache && bgdDataCache.role_charts) {
+        renderRoleCharts(role);
+    }
+    loadDashboardData();
+}
+window.changeDashboardRoleView = changeDashboardRoleView;
+
+function renderRoleKpiCards(cards) {
+    const container = document.getElementById('dashboard-row-pillars');
+    if (!container || !Array.isArray(cards) || cards.length === 0) return;
+
+    const themeColors = {
+        emerald: { border: 'border-l-emerald-500', badge: 'text-emerald-800 bg-emerald-100/70 border-emerald-200', icon: 'bg-emerald-100/80 text-emerald-700', val: 'text-emerald-600', link: 'text-emerald-700' },
+        teal: { border: 'border-l-teal-500', badge: 'text-teal-800 bg-teal-100/70 border-teal-200', icon: 'bg-teal-100/80 text-teal-700', val: 'text-teal-700', link: 'text-teal-700' },
+        indigo: { border: 'border-l-indigo-500', badge: 'text-indigo-800 bg-indigo-100/70 border-indigo-200', icon: 'bg-indigo-100/80 text-indigo-700', val: 'text-indigo-700', link: 'text-indigo-700' },
+        amber: { border: 'border-l-amber-500', badge: 'text-amber-800 bg-amber-100/70 border-amber-200', icon: 'bg-amber-100/80 text-amber-700', val: 'text-amber-700', link: 'text-amber-700' },
+        blue: { border: 'border-l-blue-500', badge: 'text-blue-800 bg-blue-100/70 border-blue-200', icon: 'bg-blue-100/80 text-blue-700', val: 'text-blue-700', link: 'text-blue-700' },
+        rose: { border: 'border-l-rose-500', badge: 'text-rose-800 bg-rose-100/70 border-rose-200', icon: 'bg-rose-100/80 text-rose-700', val: 'text-rose-600', link: 'text-rose-700' },
+    };
+
+    let html = '';
+    cards.forEach(card => {
+        const t = themeColors[card.theme] || themeColors.teal;
+        html += `
+        <div onclick="switchTab('${card.target_tab || 'dashboard'}')" class="bg-white p-3 2xl:p-4 rounded-xl border border-slate-200/90 shadow-xs border-l-[4px] ${t.border} cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem ${card.action_label || 'chi tiết'}">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] 2xl:text-xs font-black uppercase tracking-wider ${t.badge} px-2 py-0.5 rounded border font-heading">
+                        ${card.badge_title || card.title}
+                    </span>
+                    <div class="w-6 h-6 2xl:w-7 2xl:h-7 rounded-lg ${t.icon} flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="ph ${card.icon || 'ph-chart-bar'} text-sm 2xl:text-base font-bold"></i>
+                    </div>
+                </div>
+                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">${card.metric_label || 'Chỉ số'}</p>
+                <p class="text-xl 2xl:text-2xl font-black ${card.metric_color || t.val} tabular-nums font-heading mt-0.5">${card.metric_value || '0'}</p>
+            </div>
+            
+            <div class="space-y-1 mt-2 pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between text-[11px] 2xl:text-xs font-semibold text-slate-600 gap-1 truncate">
+                    <span class="truncate">${card.line_1 || ''}</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
+                    <span class="truncate">${card.line_2 || ''}</span>
+                    <span class="${t.link} font-black group-hover:translate-x-0.5 transition-transform flex items-center font-heading shrink-0 ml-1">
+                        ${card.action_label || 'Xem'} <i class="ph ph-arrow-right ml-0.5 font-bold text-[11px]"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function renderDashboardNews(announcements) {
+    const listEl = document.getElementById('dashboard-news-list');
+    const badgeEl = document.getElementById('dash-news-badge');
+    if (!listEl) return;
+
+    if (!Array.isArray(announcements) || announcements.length === 0) {
+        if (badgeEl) badgeEl.innerText = '0 bài';
+        listEl.innerHTML = `
+            <div class="text-center py-8 text-slate-400 text-xs">
+                <i class="ph-bold ph-newspaper-clipping text-2xl mb-1 text-slate-300 block"></i>
+                Chưa có bản tin nội bộ nào trong phân hệ này.
+            </div>
+        `;
+        return;
+    }
+
+    if (badgeEl) badgeEl.innerText = `${announcements.length} bài mới`;
+
+    let html = '';
+    announcements.forEach(p => {
+        const pinnedBadge = p.is_pinned ? `<span class="inline-flex items-center text-[10px] font-black text-amber-700 bg-amber-100/80 px-1.5 py-0.2 rounded border border-amber-200 mr-1"><i class="ph-bold ph-push-pin text-[10px] mr-0.5"></i>Ghim</span>` : '';
+        const urgentBadge = p.is_urgent ? `<span class="inline-flex items-center text-[10px] font-black text-rose-700 bg-rose-100/80 px-1.5 py-0.2 rounded border border-rose-200 mr-1"><i class="ph-bold ph-warning-circle text-[10px] mr-0.5"></i>Khẩn</span>` : '';
+        
+        html += `
+        <div onclick="if(typeof openNewsDetailModal==='function') openNewsDetailModal(${p.id});" 
+            class="p-2.5 rounded-lg border border-slate-100 hover:border-teal-300 hover:bg-teal-50/30 transition-all cursor-pointer group flex flex-col justify-between space-y-1">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center space-x-1.5 flex-wrap">
+                    ${pinnedBadge}
+                    ${urgentBadge}
+                    <span class="text-[10px] font-bold px-1.5 py-0.2 rounded text-slate-700 border" style="background-color: ${p.category_color}15; border-color: ${p.category_color}40; color: ${p.category_color};">
+                        ${p.category_name}
+                    </span>
+                </div>
+                <span class="text-[10.5px] font-medium text-slate-400 whitespace-nowrap">${p.created_at || ''}</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-800 group-hover:text-teal-800 transition-colors line-clamp-1 font-heading">
+                ${p.title}
+            </h4>
+            <p class="text-[11px] text-slate-500 line-clamp-1 font-normal">
+                ${p.summary}
+            </p>
+            <div class="flex items-center justify-between text-[10px] text-slate-400 pt-0.5 border-t border-slate-50">
+                <span>Người đăng: <strong class="text-slate-600 font-semibold">${p.author_name}</strong></span>
+                <span class="text-teal-700 font-bold group-hover:underline flex items-center">
+                    Đọc tiếp <i class="ph ph-caret-right ml-0.5"></i>
+                </span>
+            </div>
+        </div>
+        `;
+    });
+
+    listEl.innerHTML = html;
+}
+
+let cachedDashboardTasks = [];
+let currentDashboardTaskViewMode = localStorage.getItem('bim_dashboard_task_view_mode') || 'list';
+
+function setDashboardTaskViewMode(mode) {
+    currentDashboardTaskViewMode = mode;
+    localStorage.setItem('bim_dashboard_task_view_mode', mode);
+
+    const btnList = document.getElementById('btn-task-view-list');
+    const btnKanban = document.getElementById('btn-task-view-kanban');
+
+    if (mode === 'kanban') {
+        if (btnKanban) {
+            btnKanban.className = 'px-2 py-0.5 rounded bg-white text-indigo-800 shadow-2xs flex items-center gap-1 transition-all';
+        }
+        if (btnList) {
+            btnList.className = 'px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all';
+        }
+    } else {
+        if (btnList) {
+            btnList.className = 'px-2 py-0.5 rounded bg-white text-indigo-800 shadow-2xs flex items-center gap-1 transition-all';
+        }
+        if (btnKanban) {
+            btnKanban.className = 'px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all';
+        }
+    }
+
+    renderDashboardTasksView();
+}
+window.setDashboardTaskViewMode = setDashboardTaskViewMode;
+
+function formatTaskCode(code) {
+    if (!code) return '';
+    const match = String(code).match(/^TSK[-.](\d{6})[-.]0*(\d+)$/i);
+    if (match) {
+        return `TSK.${match[1]}.${String(parseInt(match[2], 10)).padStart(3, '0')}`;
+    }
+    return code;
+}
+window.formatTaskCode = formatTaskCode;
+
+function cleanPersonName(name) {
+    if (!name) return '';
+    return String(name).replace(/\s*\([^)]*\)/g, '').trim() || name;
+}
+window.cleanPersonName = cleanPersonName;
+
+function renderDashboardTasks(tasks) {
+    cachedDashboardTasks = Array.isArray(tasks) ? tasks : [];
+    const badgeEl = document.getElementById('dash-tasks-badge');
+    if (badgeEl) {
+        badgeEl.innerText = `${cachedDashboardTasks.length} việc`;
+    }
+
+    // Đồng bộ nút view active theo local storage
+    const btnList = document.getElementById('btn-task-view-list');
+    const btnKanban = document.getElementById('btn-task-view-kanban');
+    if (currentDashboardTaskViewMode === 'kanban') {
+        if (btnKanban) btnKanban.className = 'px-2 py-0.5 rounded bg-white text-indigo-800 shadow-2xs flex items-center gap-1 transition-all';
+        if (btnList) btnList.className = 'px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all';
+    } else {
+        if (btnList) btnList.className = 'px-2 py-0.5 rounded bg-white text-indigo-800 shadow-2xs flex items-center gap-1 transition-all';
+        if (btnKanban) btnKanban.className = 'px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all';
+    }
+
+    renderDashboardTasksView();
+}
+
+function renderDashboardTasksView() {
+    const listEl = document.getElementById('dashboard-tasks-list');
+    const kanbanEl = document.getElementById('dashboard-tasks-kanban');
+    if (!listEl || !kanbanEl) return;
+
+    if (cachedDashboardTasks.length === 0) {
+        listEl.classList.remove('hidden');
+        kanbanEl.classList.add('hidden');
+        listEl.innerHTML = `
+            <div class="text-center py-8 text-slate-400 text-xs">
+                <i class="ph-bold ph-check-circle text-2xl mb-1 text-emerald-400 block"></i>
+                Tuyệt vời! Hiện tại bạn không có công việc tồn đọng cần xử lý.
+            </div>
+        `;
+        return;
+    }
+
+    const priorityBadges = {
+        URGENT: '<span class="px-1.5 py-0.2 text-[10px] font-black rounded bg-rose-100 text-rose-800 border border-rose-200 font-heading shrink-0">Khẩn cấp</span>',
+        HIGH: '<span class="px-1.5 py-0.2 text-[10px] font-black rounded bg-amber-100 text-amber-800 border border-amber-200 font-heading shrink-0">Ưu tiên cao</span>',
+        MEDIUM: '<span class="px-1.5 py-0.2 text-[10px] font-bold rounded bg-blue-100 text-blue-800 border border-blue-200 font-heading shrink-0">Bình thường</span>',
+        LOW: '<span class="px-1.5 py-0.2 text-[10px] font-bold rounded bg-slate-100 text-slate-700 border border-slate-200 font-heading shrink-0">Thấp</span>',
+    };
+
+    if (currentDashboardTaskViewMode === 'kanban') {
+        // --- CHẾ ĐỘ XEM KANBAN MINI ---
+        listEl.classList.add('hidden');
+        kanbanEl.classList.remove('hidden');
+
+        const todoTasks = cachedDashboardTasks.filter(t => t.status === 'TODO');
+        const progressTasks = cachedDashboardTasks.filter(t => t.status === 'IN_PROGRESS');
+        const reviewTasks = cachedDashboardTasks.filter(t => !['TODO', 'IN_PROGRESS'].includes(t.status));
+
+        // Cập nhật số đếm các cột
+        const cntTodo = document.getElementById('kanban-col-count-todo');
+        if (cntTodo) cntTodo.innerText = todoTasks.length;
+        const cntProg = document.getElementById('kanban-col-count-progress');
+        if (cntProg) cntProg.innerText = progressTasks.length;
+        const cntRev = document.getElementById('kanban-col-count-review');
+        if (cntRev) cntRev.innerText = reviewTasks.length;
+
+        const renderKanbanCards = (tasks) => {
+            if (!tasks || tasks.length === 0) {
+                return '<div class="py-6 text-center text-[11px] text-slate-400 font-medium">Trống</div>';
+            }
+            return tasks.map(t => {
+                const prioBadge = priorityBadges[t.priority] || priorityBadges.MEDIUM;
+                const overdueDot = t.is_overdue ? '<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" title="Quá hạn"></span>' : '';
+                const reporterClean = cleanPersonName(t.reporter_name) || 'Hệ thống';
+                const assigneeClean = cleanPersonName(t.assignee_name) || 'Chưa gán';
+                const followersClean = (t.followers_list || []).map(cleanPersonName);
+                return `
+                <div onclick="if(typeof openTaskDetailDrawer==='function') openTaskDetailDrawer(${t.id});" 
+                    class="p-2.5 bg-white rounded-lg border border-slate-200/80 shadow-2xs hover:border-indigo-400 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between space-y-1.5">
+                    <div class="flex items-center justify-between gap-1">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="text-[9.5px] font-mono font-bold text-slate-500 bg-slate-100 px-1 py-0.2 rounded border border-slate-200 shrink-0">${formatTaskCode(t.code)}</span>
+                            ${t.due_date ? `<span class="text-[9.5px] text-slate-400 font-medium truncate"><i class="ph ph-calendar text-[10px]"></i> ${t.due_date}</span>` : ''}
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            ${overdueDot}
+                            ${prioBadge}
+                        </div>
+                    </div>
+
+                    <h5 class="text-xs font-bold text-slate-800 group-hover:text-indigo-700 transition-colors line-clamp-2 leading-snug font-heading">
+                        ${escapeHtml(t.title)}
+                    </h5>
+
+                    <!-- 3 Icon theo thứ tự trên 1 hàng: Người giao | Người phụ trách | Người liên quan -->
+                    <div class="pt-1.5 border-t border-slate-100 flex items-center gap-1.5 text-[10px] 2xl:text-[10.5px] text-slate-500 overflow-hidden select-none">
+                        <!-- 1. Người giao -->
+                        <span class="flex items-center gap-1 truncate text-slate-500 shrink min-w-0" title="Người giao: ${escapeHtml(reporterClean)}">
+                            <i class="ph-bold ph-paper-plane-tilt text-slate-400 shrink-0 text-xs"></i>
+                            <span class="truncate font-medium">${escapeHtml(reporterClean)}</span>
+                        </span>
+
+                        <!-- Phân cách 1 -->
+                        <span class="text-slate-300 shrink-0 font-light">|</span>
+
+                        <!-- 2. Người phụ trách -->
+                        <span class="flex items-center gap-1 truncate text-indigo-900 shrink min-w-0 font-semibold" title="Người phụ trách: ${escapeHtml(assigneeClean)}">
+                            <i class="ph-bold ph-user-check text-indigo-600 shrink-0 text-xs"></i>
+                            <span class="truncate">${escapeHtml(assigneeClean)}</span>
+                        </span>
+
+                        ${followersClean.length > 0 ? `
+                        <!-- Phân cách 2 -->
+                        <span class="text-slate-300 shrink-0 font-light">|</span>
+
+                        <!-- 3. Người liên quan -->
+                        <span class="flex items-center gap-1 text-teal-700 shrink-0 font-bold bg-teal-50/80 px-1 py-0.2 rounded border border-teal-200/60" title="Người liên quan / theo dõi: ${escapeHtml(followersClean.join(', '))}">
+                            <i class="ph-bold ph-users text-teal-600 shrink-0 text-xs"></i>
+                            <span>${followersClean.length}</span>
+                        </span>
+                        ` : ''}
+                    </div>
+
+                    <!-- Thanh tiến độ -->
+                    <div class="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                        <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${t.progress_percent || 0}%;"></div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        const colTodo = document.getElementById('kanban-col-items-todo');
+        if (colTodo) colTodo.innerHTML = renderKanbanCards(todoTasks);
+        const colProg = document.getElementById('kanban-col-items-progress');
+        if (colProg) colProg.innerHTML = renderKanbanCards(progressTasks);
+        const colRev = document.getElementById('kanban-col-items-review');
+        if (colRev) colRev.innerHTML = renderKanbanCards(reviewTasks);
+
+    } else {
+        // --- CHẾ ĐỘ XEM DANH SÁCH CHI TIẾT (LIST VIEW) ---
+        listEl.classList.remove('hidden');
+        kanbanEl.classList.add('hidden');
+
+        let html = '';
+        cachedDashboardTasks.forEach(t => {
+            const prioBadge = priorityBadges[t.priority] || priorityBadges.MEDIUM;
+            const overdueBadge = t.is_overdue ? `<span class="px-1.5 py-0.2 text-[10px] font-black rounded bg-rose-600 text-white font-heading animate-pulse shrink-0">Quá hạn</span>` : '';
+            const chkText = t.checklists_total > 0 ? `${t.checklists_done}/${t.checklists_total} mục` : 'Checklist';
+            const reporterClean = cleanPersonName(t.reporter_name) || 'Hệ thống';
+            const assigneeClean = cleanPersonName(t.assignee_name) || 'Chưa gán';
+            const followersClean = (t.followers_list || []).map(cleanPersonName);
+
+            // Danh sách người theo dõi dạng chuỗi hiển thị
+            const followersHtml = (followersClean.length > 0)
+                ? `<span class="inline-flex items-center text-teal-700 bg-teal-50/80 px-1.5 py-0.2 rounded border border-teal-200/70" title="Người theo dõi: ${escapeHtml(followersClean.join(', '))}">
+                    <i class="ph-bold ph-users text-teal-600 mr-1 text-xs shrink-0"></i>
+                    <span>Theo dõi: <strong class="text-teal-900 font-semibold">${escapeHtml(followersClean.join(', '))}</strong></span>
+                   </span>`
+                : '';
+
+            html += `
+            <div onclick="if(typeof openTaskDetailDrawer==='function') openTaskDetailDrawer(${t.id});" 
+                class="p-2.5 rounded-xl border border-slate-200/80 hover:border-indigo-300 hover:bg-indigo-50/20 transition-all cursor-pointer group flex flex-col justify-between space-y-1.5 shadow-2xs">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">${formatTaskCode(t.code)}</span>
+                        ${prioBadge}
+                        ${overdueBadge}
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-500 flex items-center">
+                        <i class="ph ph-calendar-blank mr-1 text-slate-400 text-xs"></i> Hạn: ${t.due_date}
+                    </span>
+                </div>
+                
+                <h4 class="text-xs 2xl:text-[13px] font-bold text-slate-800 group-hover:text-indigo-800 transition-colors line-clamp-1 font-heading">
+                    ${escapeHtml(t.title)}
+                </h4>
+
+                <!-- Hàng thông tin 3 icon theo thứ tự trên 1 hàng: Người Giao | Người Phụ Trách | Người Liên Quan -->
+                <div class="flex items-center gap-2 text-[10.5px] 2xl:text-[11px] text-slate-500 flex-wrap py-0.5">
+                    <span class="inline-flex items-center bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/70" title="Người giao việc">
+                        <i class="ph-bold ph-paper-plane-tilt text-slate-400 mr-1 text-xs shrink-0"></i>
+                        <span>Giao: <strong class="text-slate-700 font-semibold">${escapeHtml(reporterClean)}</strong></span>
+                    </span>
+                    <span class="text-slate-300 font-light">|</span>
+                    <span class="inline-flex items-center bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-200/70" title="Người phụ trách chính">
+                        <i class="ph-bold ph-user-check text-indigo-600 mr-1 text-xs shrink-0"></i>
+                        <span>Phụ trách: <strong class="text-indigo-900 font-bold">${escapeHtml(assigneeClean)}</strong></span>
+                    </span>
+                    ${followersClean.length > 0 ? `
+                    <span class="text-slate-300 font-light">|</span>
+                    <span class="inline-flex items-center text-teal-700 bg-teal-50/80 px-1.5 py-0.5 rounded border border-teal-200/70" title="Người liên quan / theo dõi: ${escapeHtml(followersClean.join(', '))}">
+                        <i class="ph-bold ph-users text-teal-600 mr-1 text-xs shrink-0"></i>
+                        <span>Liên quan: <strong class="text-teal-900 font-semibold">${escapeHtml(followersClean.join(', '))}</strong></span>
+                    </span>
+                    ` : ''}
+                </div>
+
+                <div class="space-y-1 pt-0.5">
+                    <div class="flex items-center justify-between text-[10.5px] text-slate-500">
+                        <span class="text-slate-400">Tiến độ công việc</span>
+                        <span class="font-bold text-indigo-700">${t.progress_percent || 0}% • ${chkText}</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${t.progress_percent || 0}%;"></div>
+                    </div>
+                </div>
+            </div>
+            `;
+        });
+
+        listEl.innerHTML = html;
+    }
+}
+
 async function loadDashboardData(periodOverride) {
     const period = periodOverride || currentDashboardPeriod || '7_days';
     let url = `/api/dashboard/?period=${period}`;
+    if (currentDashboardRoleView) {
+        url += `&view_as=${currentDashboardRoleView}`;
+    }
     if (period === 'custom' && currentDashboardCustomStart && currentDashboardCustomEnd) {
         url += `&start_date=${currentDashboardCustomStart}&end_date=${currentDashboardCustomEnd}`;
     }
@@ -1165,56 +1542,89 @@ async function loadDashboardData(periodOverride) {
         const data = await res.json();
         bgdDataCache = data;
 
-        // 1. Cập nhật 4 Trụ cột KPI Điều hành
-        const fin = data.financial || {};
-        const prod = data.productivity || {};
-        const fleet = data.fleet || {};
-        const pers = data.personnel || {};
-        const comm = data.commercial_customs || {};
+        // 0. Cập nhật Role Header Bar
+        const userNameEl = document.getElementById('dash-user-name');
+        if (userNameEl) {
+            userNameEl.innerText = window.CURRENT_USER?.full_name || 'Quý nhân sự';
+        }
+        const roleBadgeEl = document.getElementById('dash-role-badge');
+        if (roleBadgeEl && data.role_name) {
+            roleBadgeEl.innerText = data.role_name;
+            if (data.role_badge) {
+                roleBadgeEl.className = `px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border font-heading ${data.role_badge}`;
+            }
+        }
+        const roleDescEl = document.getElementById('dash-role-desc');
+        if (roleDescEl && data.role_description) {
+            roleDescEl.innerText = data.role_description;
+        }
 
-        // Pillar 1: Tài chính
-        const grossProfitEl = document.getElementById('bgd-gross-profit');
-        if (grossProfitEl) grossProfitEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.monthly_gross_profit || 0) + ' đ';
-        const monthlyRevEl = document.getElementById('bgd-monthly-rev');
-        if (monthlyRevEl) monthlyRevEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.monthly_revenue || 0) + ' đ';
-        const monthlyExpEl = document.getElementById('bgd-monthly-exp');
-        if (monthlyExpEl) monthlyExpEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.monthly_expense || 0) + ' đ';
-        const cashEl = document.getElementById('bgd-cash-val');
-        if (cashEl) cashEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.cash_on_hand || 150000000) + ' đ';
-        const bankEl = document.getElementById('bgd-bank-val');
-        if (bankEl) bankEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.bank_balance || 1250000000) + ' đ';
+        // Dropdown đổi góc nhìn dành cho Giám đốc / Superuser
+        const viewAsContainer = document.getElementById('dash-view-as-container');
+        const viewAsSelect = document.getElementById('dash-view-as-select');
+        if (viewAsContainer && viewAsSelect) {
+            if (data.can_switch_view) {
+                viewAsContainer.classList.remove('hidden');
+                viewAsContainer.classList.add('flex');
+                viewAsSelect.value = data.role || 'DIRECTOR';
+            } else {
+                viewAsContainer.classList.add('hidden');
+                viewAsContainer.classList.remove('flex');
+            }
+        }
 
-        // Pillar 2: Vận hành
-        const todayTripsEl = document.getElementById('bgd-today-trips');
-        if (todayTripsEl) todayTripsEl.innerText = prod.today_active ?? 5;
-        const totalTripsEl = document.getElementById('bgd-total-trips');
-        if (totalTripsEl) totalTripsEl.innerText = prod.total_trips ?? 16;
-        const yesterdayTripsEl = document.getElementById('bgd-yesterday-trips');
-        if (yesterdayTripsEl) yesterdayTripsEl.innerText = prod.completed_yesterday ?? 8;
-        const otdRateEl = document.getElementById('bgd-otd-rate');
-        if (otdRateEl) otdRateEl.innerText = `${prod.ontime_delivery_rate || 98.2}% OTD`;
+        // 1. Cập nhật 4 Trụ cột KPI Điều hành (Động theo Role)
+        if (data.kpi_cards && data.kpi_cards.length > 0) {
+            renderRoleKpiCards(data.kpi_cards);
+        } else {
+            // Fallback backward compatibility
+            const fin = data.financial || {};
+            const prod = data.productivity || {};
+            const fleet = data.fleet || {};
+            const pers = data.personnel || {};
+            const comm = data.commercial_customs || {};
 
-        // Pillar 3: Đội xe & Nhân sự
-        const utilizationEl = document.getElementById('bgd-fleet-utilization');
-        if (utilizationEl) utilizationEl.innerText = `${fleet.utilization_rate || 62.5}%`;
-        const fleetActiveEl = document.getElementById('bgd-fleet-active');
-        if (fleetActiveEl) fleetActiveEl.innerText = fleet.active ?? 5;
-        const fleetTotalEl = document.getElementById('bgd-fleet-total');
-        if (fleetTotalEl) fleetTotalEl.innerText = fleet.total ?? 8;
-        const fleetIdleEl = document.getElementById('bgd-fleet-idle');
-        if (fleetIdleEl) fleetIdleEl.innerText = fleet.idle ?? 3;
-        const fleetMaintEl = document.getElementById('bgd-fleet-maint');
-        if (fleetMaintEl) fleetMaintEl.innerText = fleet.maintenance ?? 0;
-        const hrActiveEl = document.getElementById('bgd-hr-active');
-        if (hrActiveEl) hrActiveEl.innerText = `${pers.active || 7}/10 Tài xế`;
+            const grossProfitEl = document.getElementById('bgd-gross-profit');
+            if (grossProfitEl) grossProfitEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.monthly_gross_profit || 0) + ' đ';
+            const monthlyRevEl = document.getElementById('bgd-monthly-rev');
+            if (monthlyRevEl) monthlyRevEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.monthly_revenue || 0) + ' đ';
+            const monthlyExpEl = document.getElementById('bgd-monthly-exp');
+            if (monthlyExpEl) monthlyExpEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.monthly_expense || 0) + ' đ';
+            const cashEl = document.getElementById('bgd-cash-val');
+            if (cashEl) cashEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.cash_on_hand || 150000000) + ' đ';
+            const bankEl = document.getElementById('bgd-bank-val');
+            if (bankEl) bankEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.bank_balance || 1250000000) + ' đ';
 
-        // Pillar 4: Đơn hàng & Hải quan
-        const customsGreenEl = document.getElementById('bgd-customs-green');
-        if (customsGreenEl) customsGreenEl.innerText = comm.customs_green ?? 85;
-        const pendingBookingsEl = document.getElementById('bgd-pending-bookings');
-        if (pendingBookingsEl) pendingBookingsEl.innerText = `${comm.pending_bookings ?? 6} đơn`;
+            const todayTripsEl = document.getElementById('bgd-today-trips');
+            if (todayTripsEl) todayTripsEl.innerText = prod.today_active ?? 5;
+            const totalTripsEl = document.getElementById('bgd-total-trips');
+            if (totalTripsEl) totalTripsEl.innerText = prod.total_trips ?? 16;
+            const yesterdayTripsEl = document.getElementById('bgd-yesterday-trips');
+            if (yesterdayTripsEl) yesterdayTripsEl.innerText = prod.completed_yesterday ?? 8;
+            const otdRateEl = document.getElementById('bgd-otd-rate');
+            if (otdRateEl) otdRateEl.innerText = `${prod.ontime_delivery_rate || 98.2}% OTD`;
+
+            const utilizationEl = document.getElementById('bgd-fleet-utilization');
+            if (utilizationEl) utilizationEl.innerText = `${fleet.utilization_rate || 62.5}%`;
+            const fleetActiveEl = document.getElementById('bgd-fleet-active');
+            if (fleetActiveEl) fleetActiveEl.innerText = fleet.active ?? 5;
+            const fleetTotalEl = document.getElementById('bgd-fleet-total');
+            if (fleetTotalEl) fleetTotalEl.innerText = fleet.total ?? 8;
+            const fleetIdleEl = document.getElementById('bgd-fleet-idle');
+            if (fleetIdleEl) fleetIdleEl.innerText = fleet.idle ?? 3;
+            const fleetMaintEl = document.getElementById('bgd-fleet-maint');
+            if (fleetMaintEl) fleetMaintEl.innerText = fleet.maintenance ?? 0;
+            const hrActiveEl = document.getElementById('bgd-hr-active');
+            if (hrActiveEl) hrActiveEl.innerText = `${pers.active || 7}/10 Tài xế`;
+
+            const customsGreenEl = document.getElementById('bgd-customs-green');
+            if (customsGreenEl) customsGreenEl.innerText = comm.customs_green ?? 85;
+            const pendingBookingsEl = document.getElementById('bgd-pending-bookings');
+            if (pendingBookingsEl) pendingBookingsEl.innerText = `${comm.pending_bookings ?? 6} đơn`;
+        }
 
         // Cập nhật 3 Thẻ Mini Dưới Biểu Đồ Doanh Thu & Subtitle
+        const fin = data.financial || {};
         const avgRevEl = document.getElementById('bgd-avg-rev');
         if (avgRevEl) avgRevEl.innerText = '~' + new Intl.NumberFormat('vi-VN').format(fin.avg_revenue || 0) + ' đ';
         const avgExpEl = document.getElementById('bgd-avg-exp');
@@ -1232,18 +1642,28 @@ async function loadDashboardData(periodOverride) {
         const chartSubEl = document.getElementById('bgd-chart-subtitle');
         if (chartSubEl && fin.chart_subtitle) chartSubEl.innerText = fin.chart_subtitle;
 
-        // 2. Khởi tạo Biểu đồ Chart.js nếu có thư viện
-        if (typeof Chart !== 'undefined' && data.charts) {
-            renderBgdRevenueChart(data.charts.daily_trend);
-            renderBgdDonutChart(currentDonutType);
+        // 2. Khởi tạo Biểu đồ Chart.js Đa Vai Trò nếu có thư viện
+        if (typeof Chart !== 'undefined') {
+            if (data.role_charts) {
+                renderRoleCharts(data.active_role || currentDashboardRoleView || 'DIRECTOR');
+            } else if (data.charts) {
+                renderBgdRevenueChart(data.charts.daily_trend);
+                renderBgdDonutChart(currentDonutType);
+            }
+            initChartResizer();
         }
 
-        // 3. Render Bảng P&L Chuyến Xe Hỗ Trợ Click Mở Chi Tiết Chuyến, Lọc & Sắp Xếp
+        // 3. Render 2 Widget Tương Tác Cốt Lõi: Bản Tin & Quản Lý Công Việc
+        renderDashboardNews(data.announcements || []);
+        renderDashboardTasks(data.my_tasks || []);
+        initWidgetResizer();
+
+        // 4. Render Bảng P&L Chuyến Xe Hỗ Trợ Click Mở Chi Tiết Chuyến, Lọc & Sắp Xếp
         rawDashboardTripsPnl = data.trips_pnl || [];
         applyDashboardPnlFilters();
     } catch (err) {
         console.error('Error loading dashboard data:', err);
-        showToast('warning', 'Không thể tải dữ liệu Ban Giám Đốc. Vui lòng kiểm tra lại kết nối.', 'Cảnh báo');
+        showToast('warning', 'Không thể tải dữ liệu Dashboard. Vui lòng kiểm tra lại kết nối.', 'Cảnh báo');
     }
 }
 
@@ -1285,6 +1705,8 @@ function toggleDashboardPnlSort(col) {
 
 function applyDashboardPnlFilters() {
     if (!rawDashboardTripsPnl || !Array.isArray(rawDashboardTripsPnl)) return;
+    const pnlTbody = document.getElementById('bgd-pnl-tbody');
+    if (!pnlTbody) return;
 
     const filterStatus = document.getElementById('dashboard-pnl-filter-status')?.value?.trim() || '';
     const filterSearch = document.getElementById('dashboard-pnl-search')?.value?.trim().toLowerCase() || '';
@@ -1444,57 +1866,155 @@ function renderDashboardPnlTable(trips) {
     });
 }
 
-// Biểu đồ Cột & Đường Doanh thu, Chi phí, Lợi nhuận gộp
-function renderBgdRevenueChart(trendData) {
+// --- HỆ THỐNG BIỂU ĐỒ PHÂN TÍCH ĐA CHIỀU THEO VAI TRÒ (ROLE-BASED CHARTS) ---
+let currentActiveRole = 'DIRECTOR';
+let currentDonutOption = 1;
+
+function renderRoleTrendChart(role) {
+    if (!bgdDataCache || !bgdDataCache.role_charts) return;
+    const roleChartConfig = bgdDataCache.role_charts[role] || bgdDataCache.role_charts['DIRECTOR'];
+    if (!roleChartConfig || !roleChartConfig.trend) return;
+
+    const trend = roleChartConfig.trend;
+    const titleEl = document.getElementById('bgd-chart-title');
+    if (titleEl) titleEl.innerText = trend.title;
+    const subEl = document.getElementById('bgd-chart-subtitle');
+    if (subEl) subEl.innerText = trend.subtitle;
+
+    // Render Chú Thích (Legend)
+    const legendEl = document.getElementById('bgd-chart-legend');
+    if (legendEl && Array.isArray(trend.datasets)) {
+        let legHtml = '';
+        trend.datasets.forEach(ds => {
+            if (ds.type === 'line') {
+                legHtml += `<span class="inline-flex items-center text-slate-700 mr-2"><span class="w-2.5 h-0.5 mr-1" style="background-color: ${ds.borderColor || '#10b981'};"></span> ${ds.label}</span>`;
+            } else {
+                legHtml += `<span class="inline-flex items-center text-slate-700 mr-2"><span class="w-2 h-2 rounded mr-1" style="background-color: ${ds.backgroundColor};"></span> ${ds.label}</span>`;
+            }
+        });
+        legendEl.innerHTML = legHtml;
+    }
+
+    // Render 3 Ô Tóm Tắt Dưới Đáy Biểu Đồ
+    const sumEl = document.getElementById('bgd-chart-metrics-summary');
+    if (sumEl && Array.isArray(trend.summary)) {
+        const themeClasses = {
+            teal: 'text-teal-800 bg-slate-50 border-slate-100',
+            amber: 'text-amber-700 bg-slate-50 border-slate-100',
+            emerald: 'text-emerald-700 bg-emerald-50/60 border-emerald-100',
+            blue: 'text-blue-700 bg-slate-50 border-slate-100',
+            indigo: 'text-indigo-700 bg-indigo-50/60 border-indigo-100',
+        };
+        let sumHtml = '';
+        trend.summary.forEach(s => {
+            const cls = themeClasses[s.theme] || themeClasses.teal;
+            sumHtml += `
+                <div class="p-1.5 2xl:p-2 rounded-lg border ${cls}">
+                    <p class="text-[10px] 2xl:text-[10.5px] text-slate-500 font-medium">${s.label}</p>
+                    <p class="text-xs 2xl:text-[13px] font-black font-heading mt-0.5 tabular-nums">${s.value}</p>
+                </div>
+            `;
+        });
+        sumEl.innerHTML = sumHtml;
+    }
+
+    // Ẩn nút khôi phục mặc định biểu đồ 1
+    const resetBtn1 = document.getElementById('btn-reset-chart-1');
+    if (resetBtn1) {
+        resetBtn1.classList.remove('inline-flex');
+        resetBtn1.classList.add('hidden');
+    }
+
+    // Khởi tạo Canvas Trend Chart
+    renderBgdTrendChart(trend);
+}
+window.renderRoleTrendChart = renderRoleTrendChart;
+
+function renderRoleCharts(role) {
+    if (!role) role = currentActiveRole || 'DIRECTOR';
+    currentActiveRole = role;
+
+    // 1. KIỂM TRA TÙY BIẾN BIỂU ĐỒ 1 (SLOT 1)
+    let hasCustom1 = false;
+    const savedCustom1 = localStorage.getItem('bim_custom_chart_1') || localStorage.getItem('bim_custom_pivot_chart');
+    if (savedCustom1) {
+        try {
+            const parsed = JSON.parse(savedCustom1);
+            if (parsed && parsed.data) {
+                renderCustomChartOnSlot(1, parsed.data);
+                hasCustom1 = true;
+            }
+        } catch (e) {
+            console.error('Error parsing custom chart 1 from localStorage:', e);
+        }
+    }
+    if (!hasCustom1) {
+        renderRoleTrendChart(role);
+    }
+
+    // 2. KIỂM TRA TÙY BIẾN BIỂU ĐỒ 2 (SLOT 2)
+    let hasCustom2 = false;
+    const savedCustom2 = localStorage.getItem('bim_custom_chart_2');
+    if (savedCustom2) {
+        try {
+            const parsed = JSON.parse(savedCustom2);
+            if (parsed && parsed.data) {
+                renderCustomChartOnSlot(2, parsed.data);
+                hasCustom2 = true;
+            }
+        } catch (e) {
+            console.error('Error parsing custom chart 2 from localStorage:', e);
+        }
+    }
+    if (!hasCustom2) {
+        renderRoleDonut(role, currentDonutOption);
+    }
+}
+window.renderRoleCharts = renderRoleCharts;
+
+function renderBgdTrendChart(trend) {
     const ctx = document.getElementById('bgd-revenue-trend-chart');
-    if (!ctx) return;
+    if (!ctx || typeof Chart === 'undefined') return;
     if (bgdRevenueChart) {
         bgdRevenueChart.destroy();
     }
-    
+
+    const isCurrency = trend.type === 'currency';
+
     bgdRevenueChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: trendData.labels,
-            datasets: [
-                {
-                    label: 'Lợi Nhuận Gộp',
-                    type: 'line',
-                    data: trendData.profit,
-                    borderColor: '#10b981',
-                    backgroundColor: '#10b981',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#10b981',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    tension: 0.35,
-                    order: 1
-                },
-                {
-                    label: 'Doanh Thu Cước',
-                    type: 'bar',
-                    data: trendData.revenue,
-                    backgroundColor: 'rgba(13, 148, 136, 0.85)',
-                    hoverBackgroundColor: '#0d9488',
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    barPercentage: 0.65,
-                    order: 2
-                },
-                {
-                    label: 'Chi Phí Vận Hành',
-                    type: 'bar',
-                    data: trendData.expense,
-                    backgroundColor: 'rgba(245, 158, 11, 0.75)',
-                    hoverBackgroundColor: '#f59e0b',
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    barPercentage: 0.65,
-                    order: 3
+            labels: trend.labels,
+            datasets: trend.datasets.map(ds => {
+                if (ds.type === 'line') {
+                    return {
+                        label: ds.label,
+                        type: 'line',
+                        data: ds.data,
+                        borderColor: ds.borderColor || '#10b981',
+                        backgroundColor: ds.backgroundColor || '#10b981',
+                        borderWidth: 3,
+                        pointBackgroundColor: ds.borderColor || '#10b981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.35,
+                        order: ds.order || 1
+                    };
                 }
-            ]
+                return {
+                    label: ds.label,
+                    type: 'bar',
+                    data: ds.data,
+                    backgroundColor: ds.backgroundColor,
+                    hoverBackgroundColor: ds.backgroundColor,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barPercentage: 0.65,
+                    order: ds.order || 2
+                };
+            })
         },
         options: {
             responsive: true,
@@ -1513,7 +2033,14 @@ function renderBgdRevenueChart(trendData) {
                     borderRadius: 8,
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: ${new Intl.NumberFormat('vi-VN').format(context.raw)} đ`;
+                            const val = context.raw;
+                            if (context.dataset.type === 'line' && (context.dataset.label.includes('%') || !isCurrency)) {
+                                return `${context.dataset.label}: ${val}%`;
+                            }
+                            if (isCurrency && context.dataset.type === 'bar') {
+                                return `${context.dataset.label}: ${new Intl.NumberFormat('vi-VN').format(val)} đ`;
+                            }
+                            return `${context.dataset.label}: ${val}`;
                         }
                     }
                 }
@@ -1532,7 +2059,7 @@ function renderBgdRevenueChart(trendData) {
                         font: { family: "'Inter', sans-serif", size: 10 },
                         color: '#94a3b8',
                         callback: function(value) {
-                            if (value >= 1000000) return (value / 1000000).toFixed(0) + ' tr';
+                            if (isCurrency && value >= 1000000) return (value / 1000000).toFixed(0) + ' tr';
                             return value;
                         }
                     }
@@ -1542,90 +2069,77 @@ function renderBgdRevenueChart(trendData) {
     });
 }
 
-// Biểu đồ Donut Khai thác Đội xe & Hải quan
-function renderBgdDonutChart(type = 'fleet') {
+function switchRoleDonutOption(optIdx) {
+    currentDonutOption = optIdx;
+    renderRoleDonut(currentActiveRole, optIdx);
+}
+window.switchRoleDonutOption = switchRoleDonutOption;
+
+function renderRoleDonut(role, optIdx = 1) {
     const ctx = document.getElementById('bgd-donut-chart');
-    if (!ctx || !bgdDataCache) return;
+    if (!ctx || !bgdDataCache || !bgdDataCache.role_charts || typeof Chart === 'undefined') return;
     if (bgdDonutChart) {
         bgdDonutChart.destroy();
     }
 
-    currentDonutType = type;
-    const isFleet = type === 'fleet';
-    
-    const btnFleet = document.getElementById('donut-toggle-fleet');
-    const btnCustoms = document.getElementById('donut-toggle-customs');
-    if (btnFleet && btnCustoms) {
-        if (isFleet) {
-            btnFleet.className = 'px-2.5 py-1 rounded-lg bg-white text-teal-800 shadow-xs transition-all font-heading';
-            btnCustoms.className = 'px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 transition-all font-heading';
+    const roleChartConfig = bgdDataCache.role_charts[role] || bgdDataCache.role_charts['DIRECTOR'];
+    const donutConfig = roleChartConfig.donut;
+    if (!donutConfig) return;
+
+    // Cập nhật Box Title & Subtitle
+    const titleEl = document.getElementById('donut-box-title');
+    if (titleEl) titleEl.innerText = donutConfig.title;
+    const subEl = document.getElementById('donut-box-subtitle');
+    if (subEl) subEl.innerText = donutConfig.subtitle;
+
+    // Cập nhật 2 nút toggle
+    const btn1 = document.getElementById('donut-toggle-btn1');
+    const btn2 = document.getElementById('donut-toggle-btn2');
+    if (btn1 && btn2) {
+        btn1.innerText = donutConfig.btn1 || 'Chế độ 1';
+        btn2.innerText = donutConfig.btn2 || 'Chế độ 2';
+        if (optIdx === 1) {
+            btn1.className = 'px-2 py-0.5 rounded bg-white text-teal-800 shadow-xs transition-all font-heading';
+            btn2.className = 'px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 transition-all font-heading';
         } else {
-            btnCustoms.className = 'px-2.5 py-1 rounded-lg bg-white text-teal-800 shadow-xs transition-all font-heading';
-            btnFleet.className = 'px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 transition-all font-heading';
+            btn2.className = 'px-2 py-0.5 rounded bg-white text-teal-800 shadow-xs transition-all font-heading';
+            btn1.className = 'px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 transition-all font-heading';
         }
     }
 
-    const labels = isFleet 
-        ? ['Đang chở hàng (Active)', 'Chờ bãi (Idle)', 'Bảo trì (Maintenance)'] 
-        : ['Luồng Xanh (Thông quan)', 'Luồng Vàng (Nộp hồ sơ)', 'Luồng Đỏ (Kiểm hóa)'];
-        
-    const dataVals = isFleet 
-        ? [bgdDataCache.fleet.active, bgdDataCache.fleet.idle, bgdDataCache.fleet.maintenance]
-        : [bgdDataCache.commercial_customs.customs_green, bgdDataCache.commercial_customs.customs_yellow, bgdDataCache.commercial_customs.customs_red];
+    const curOpt = optIdx === 1 ? donutConfig.opt1 : donutConfig.opt2;
+    if (!curOpt) return;
 
-    const bgColors = isFleet 
-        ? ['#10b981', '#0d9488', '#f43f5e']
-        : ['#10b981', '#f59e0b', '#f43f5e'];
-
+    // Cập nhật tâm rỗng
     const centerValEl = document.getElementById('donut-center-value');
     const centerLblEl = document.getElementById('donut-center-label');
     if (centerValEl && centerLblEl) {
-        centerValEl.innerText = isFleet ? `${bgdDataCache.fleet.utilization_rate}%` : `${bgdDataCache.commercial_customs.customs_clearance_rate}%`;
-        centerLblEl.innerText = isFleet ? 'Khai Thác' : 'Luồng Xanh';
+        centerValEl.innerText = curOpt.center_val || '0%';
+        centerLblEl.innerText = curOpt.center_lbl || '';
     }
 
+    // Cập nhật chú thích bên dưới
     const legendEl = document.getElementById('donut-legend-container');
-    if (legendEl) {
-        if (isFleet) {
-            legendEl.innerHTML = `
+    if (legendEl && Array.isArray(curOpt.items)) {
+        let legHtml = '';
+        curOpt.items.forEach(it => {
+            legHtml += `
                 <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> Đang có hàng (Active)</span>
-                    <strong class="font-heading text-slate-800">${bgdDataCache.fleet.active} xe (${bgdDataCache.fleet.utilization_rate}%)</strong>
-                </div>
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-teal-500 mr-2"></span> Sẵn sàng bãi (Idle)</span>
-                    <strong class="font-heading text-slate-800">${bgdDataCache.fleet.idle} xe</strong>
-                </div>
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2"></span> Bảo dưỡng (Maintenance)</span>
-                    <strong class="font-heading text-slate-800">${bgdDataCache.fleet.maintenance} xe</strong>
+                    <span class="flex items-center truncate mr-2"><span class="w-2 h-2 rounded-full ${it.color} mr-1.5 shrink-0"></span> <span class="truncate">${it.name}</span></span>
+                    <strong class="font-heading text-slate-800 shrink-0 font-bold">${it.val}</strong>
                 </div>
             `;
-        } else {
-            legendEl.innerHTML = `
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> Luồng Xanh (Thông quan tự động)</span>
-                    <strong class="font-heading text-emerald-700">${bgdDataCache.commercial_customs.customs_green} tờ (85%)</strong>
-                </div>
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2"></span> Luồng Vàng (Kiểm tra hồ sơ)</span>
-                    <strong class="font-heading text-amber-700">${bgdDataCache.commercial_customs.customs_yellow} tờ (12%)</strong>
-                </div>
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2"></span> Luồng Đỏ (Kiểm tra thực tế)</span>
-                    <strong class="font-heading text-rose-700">${bgdDataCache.commercial_customs.customs_red} tờ (3%)</strong>
-                </div>
-            `;
-        }
+        });
+        legendEl.innerHTML = legHtml;
     }
 
     bgdDonutChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: labels,
+            labels: curOpt.labels,
             datasets: [{
-                data: dataVals,
-                backgroundColor: bgColors,
+                data: curOpt.data,
+                backgroundColor: curOpt.colors,
                 borderWidth: 2,
                 borderColor: '#ffffff',
                 hoverOffset: 4
@@ -1639,17 +2153,857 @@ function renderBgdDonutChart(type = 'fleet') {
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e2e8f0',
                     padding: 8,
-                    borderRadius: 8
+                    borderRadius: 6
                 }
             }
         }
     });
 }
 
-function switchDonutChart(type) {
-    renderBgdDonutChart(type);
+// Giữ lại hàm cũ để tương thích ngược nếu có chỗ gọi
+function renderBgdRevenueChart(trendData) {
+    if (bgdDataCache && bgdDataCache.role_charts) {
+        renderRoleCharts(currentActiveRole);
+    }
 }
+function renderBgdDonutChart(type = 'fleet') {
+    switchRoleDonutOption(type === 'customs' ? 2 : 1);
+}
+function switchDonutChart(type) {
+    switchRoleDonutOption(type === 'customs' ? 2 : 1);
+}
+
+// =========================================================================
+// HỆ THỐNG TÙY BIẾN BIỂU ĐỒ BÁO CÁO (ĐỘC LẬP CHO CẢ 2 Ô BIỂU ĐỒ)
+// =========================================================================
+let currentCustomizingSlot = 1; // 1: Biểu đồ 1 bên trái, 2: Biểu đồ 2 bên phải
+let pivotPreviewChart = null;
+let currentPivotResultCache = null;
+
+const PIVOT_ENTITY_FIELDS = {
+    trips: {
+        name: 'Chuyến xe & Vận chuyển',
+        groups: [
+            { val: 'customer', label: 'Khách hàng' },
+            { val: 'driver', label: 'Tài xế' },
+            { val: 'vehicle', label: 'Đầu kéo / Xe' },
+            { val: 'route', label: 'Tuyến đường vận chuyển' },
+            { val: 'container_type', label: 'Loại Container' },
+            { val: 'shipment_type', label: 'Phân loại hàng' },
+            { val: 'status', label: 'Trạng thái chuyến' }
+        ],
+        metrics: [
+            { val: 'revenue', label: 'Doanh thu (VNĐ)', defaultAgg: 'sum' },
+            { val: 'expense', label: 'Chi phí vận hành (VNĐ)', defaultAgg: 'sum' },
+            { val: 'profit', label: 'Lợi nhuận gộp (VNĐ)', defaultAgg: 'sum' },
+            { val: 'trip_count', label: 'Số chuyến xe (chuyến)', defaultAgg: 'count' }
+        ]
+    },
+    expenses: {
+        name: 'Chi phí phát sinh & Hiện trường',
+        groups: [
+            { val: 'category', label: 'Khoản mục chi phí' },
+            { val: 'driver', label: 'Tài xế lập phiếu chi' },
+            { val: 'vehicle', label: 'Biển số xe' },
+            { val: 'status', label: 'Trạng thái duyệt chi' }
+        ],
+        metrics: [
+            { val: 'amount', label: 'Số tiền chi (VNĐ)', defaultAgg: 'sum' },
+            { val: 'expense_count', label: 'Số lượng phiếu chi (phiếu)', defaultAgg: 'count' }
+        ]
+    },
+    bookings: {
+        name: 'Đơn hàng & Đặt chỗ',
+        groups: [
+            { val: 'customer', label: 'Khách hàng' },
+            { val: 'shipping_line', label: 'Hãng tàu' },
+            { val: 'container_size', label: 'Kích cỡ Container' },
+            { val: 'status', label: 'Trạng thái điều xe' }
+        ],
+        metrics: [
+            { val: 'booking_count', label: 'Số lượng đơn hàng (đơn)', defaultAgg: 'count' },
+            { val: 'total_containers', label: 'Tổng số Container (cont)', defaultAgg: 'sum' }
+        ]
+    },
+    vehicles: {
+        name: 'Đội xe & Phương tiện',
+        groups: [
+            { val: 'status', label: 'Trạng thái hoạt động' },
+            { val: 'vehicle_type', label: 'Loại phương tiện' }
+        ],
+        metrics: [
+            { val: 'vehicle_count', label: 'Số lượng xe (xe)', defaultAgg: 'count' }
+        ]
+    },
+    quotations: {
+        name: 'Báo giá & Khách hàng',
+        groups: [
+            { val: 'customer', label: 'Khách hàng' },
+            { val: 'status', label: 'Trạng thái duyệt' },
+            { val: 'pricing_method', label: 'Phương thức định giá' }
+        ],
+        metrics: [
+            { val: 'unit_price', label: 'Đơn giá cước (VNĐ)', defaultAgg: 'avg' },
+            { val: 'expected_trips', label: 'Sản lượng cam kết (chuyến)', defaultAgg: 'sum' },
+            { val: 'quotation_count', label: 'Số lượng báo giá (hồ sơ)', defaultAgg: 'count' }
+        ]
+    },
+    advances: {
+        name: 'Tạm ứng & Hoàn ứng Lái xe',
+        groups: [
+            { val: 'driver', label: 'Tài xế nhận tạm ứng' },
+            { val: 'advance_source', label: 'Nguồn tiền tạm ứng' }
+        ],
+        metrics: [
+            { val: 'amount', label: 'Số tiền tạm ứng (VNĐ)', defaultAgg: 'sum' },
+            { val: 'advance_count', label: 'Số phiếu tạm ứng (phiếu)', defaultAgg: 'count' }
+        ]
+    },
+    exceptions: {
+        name: 'Sự cố & Khiếu nại vận tải',
+        groups: [
+            { val: 'exception_type', label: 'Loại sự cố vận tải' },
+            { val: 'severity', label: 'Mức độ nghiêm trọng' },
+            { val: 'is_resolved', label: 'Tình trạng xử lý' }
+        ],
+        metrics: [
+            { val: 'exception_count', label: 'Số vụ việc sự cố (vụ)', defaultAgg: 'count' }
+        ]
+    },
+    personnel: {
+        name: 'Nhân sự & Đội ngũ',
+        groups: [
+            { val: 'department', label: 'Phòng ban' },
+            { val: 'role', label: 'Chức danh & Vị trí' },
+            { val: 'gender', label: 'Giới tính' },
+            { val: 'is_active', label: 'Trạng thái công tác' }
+        ],
+        metrics: [
+            { val: 'employee_count', label: 'Số lượng nhân sự (người)', defaultAgg: 'count' },
+            { val: 'base_salary', label: 'Mức lương cơ bản (VNĐ)', defaultAgg: 'avg' }
+        ]
+    }
+};
+
+function openChartCustomizer(slot = 1) {
+    currentCustomizingSlot = Number(slot) || 1;
+    const modal = document.getElementById('modal-pivot-chart-builder');
+    if (!modal) return;
+
+    // Cập nhật Badge và Tên Nút theo Slot
+    const badge = document.getElementById('chart-builder-slot-badge');
+    if (badge) {
+        badge.innerText = `Biểu đồ ${currentCustomizingSlot}`;
+        badge.className = currentCustomizingSlot === 1 
+            ? 'px-2 py-0.5 rounded text-[11px] font-bold bg-teal-100 text-teal-800' 
+            : 'px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800';
+    }
+    const btnApplyText = document.getElementById('btn-apply-chart-text');
+    if (btnApplyText) {
+        btnApplyText.innerText = `Áp Dụng Vào Biểu Đồ ${currentCustomizingSlot}`;
+    }
+
+    modal.classList.remove('hidden');
+
+    // Nạp lại cấu hình đã lưu cho slot này (hoặc fallback cho slot 1)
+    let saved = localStorage.getItem('bim_custom_chart_' + currentCustomizingSlot);
+    if (!saved && currentCustomizingSlot === 1) {
+        saved = localStorage.getItem('bim_custom_pivot_chart');
+    }
+
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.config) {
+                const cfg = parsed.config;
+                const entSelect = document.getElementById('pivot-select-entity');
+                if (entSelect && cfg.entity) entSelect.value = cfg.entity;
+                onPivotEntityChange(false);
+
+                const grpSelect = document.getElementById('pivot-select-group-by');
+                if (grpSelect && cfg.group_by) grpSelect.value = cfg.group_by;
+
+                const metSelect = document.getElementById('pivot-select-metric');
+                if (metSelect && cfg.metric) metSelect.value = cfg.metric;
+
+                const aggSelect = document.getElementById('pivot-select-agg');
+                if (aggSelect && cfg.agg) aggSelect.value = cfg.agg;
+
+                const chartSelect = document.getElementById('pivot-select-chart-type');
+                if (chartSelect && cfg.chart_type) chartSelect.value = cfg.chart_type;
+
+                const perSelect = document.getElementById('pivot-select-period');
+                if (perSelect && cfg.period) perSelect.value = cfg.period;
+
+                const limSelect = document.getElementById('pivot-select-limit');
+                if (limSelect && cfg.limit) limSelect.value = cfg.limit;
+
+                const sortSelect = document.getElementById('pivot-select-sort');
+                if (sortSelect && cfg.sort) sortSelect.value = cfg.sort;
+            } else {
+                setCustomizerDefaultsForSlot(currentCustomizingSlot);
+            }
+        } catch (e) {
+            setCustomizerDefaultsForSlot(currentCustomizingSlot);
+        }
+    } else {
+        setCustomizerDefaultsForSlot(currentCustomizingSlot);
+    }
+
+    fetchAndRenderPivotPreview();
+}
+window.openChartCustomizer = openChartCustomizer;
+window.openPivotChartBuilderModal = openChartCustomizer; // Tương thích ngược
+
+function setCustomizerDefaultsForSlot(slot) {
+    const entSelect = document.getElementById('pivot-select-entity');
+    const chartSelect = document.getElementById('pivot-select-chart-type');
+    const perSelect = document.getElementById('pivot-select-period');
+    const limSelect = document.getElementById('pivot-select-limit');
+    const sortSelect = document.getElementById('pivot-select-sort');
+
+    if (slot === 2) {
+        if (entSelect) entSelect.value = 'trips';
+        onPivotEntityChange(false);
+        const grpSelect = document.getElementById('pivot-select-group-by');
+        if (grpSelect) grpSelect.value = 'status';
+        const metSelect = document.getElementById('pivot-select-metric');
+        if (metSelect) metSelect.value = 'trip_count';
+        const aggSelect = document.getElementById('pivot-select-agg');
+        if (aggSelect) aggSelect.value = 'count';
+        if (chartSelect) chartSelect.value = 'doughnut';
+    } else {
+        if (entSelect) entSelect.value = 'trips';
+        onPivotEntityChange(false);
+        const grpSelect = document.getElementById('pivot-select-group-by');
+        if (grpSelect) grpSelect.value = 'customer';
+        const metSelect = document.getElementById('pivot-select-metric');
+        if (metSelect) metSelect.value = 'revenue';
+        const aggSelect = document.getElementById('pivot-select-agg');
+        if (aggSelect) aggSelect.value = 'sum';
+        if (chartSelect) chartSelect.value = 'bar';
+    }
+
+    if (perSelect) perSelect.value = 'all';
+    if (limSelect) limSelect.value = '10';
+    if (sortSelect) sortSelect.value = 'desc';
+}
+
+function closePivotChartBuilderModal() {
+    const modal = document.getElementById('modal-pivot-chart-builder');
+    if (modal) modal.classList.add('hidden');
+}
+window.closePivotChartBuilderModal = closePivotChartBuilderModal;
+
+function onPivotEntityChange(triggerFetch = true) {
+    const entitySelect = document.getElementById('pivot-select-entity');
+    const entity = entitySelect ? entitySelect.value : 'trips';
+    const def = PIVOT_ENTITY_FIELDS[entity] || PIVOT_ENTITY_FIELDS.trips;
+
+    // Điền Dropdown Group By
+    const groupSelect = document.getElementById('pivot-select-group-by');
+    if (groupSelect) {
+        groupSelect.innerHTML = def.groups.map(g => `<option value="${g.val}">${g.label}</option>`).join('');
+    }
+
+    // Điền Dropdown Metric
+    const metricSelect = document.getElementById('pivot-select-metric');
+    if (metricSelect) {
+        metricSelect.innerHTML = def.metrics.map(m => `<option value="${m.val}" data-defagg="${m.defaultAgg}">${m.label}</option>`).join('');
+    }
+
+    // Tự động set aggregation phù hợp với metric đầu tiên
+    const aggSelect = document.getElementById('pivot-select-agg');
+    if (aggSelect && def.metrics.length > 0) {
+        aggSelect.value = def.metrics[0].defaultAgg || 'sum';
+    }
+
+    if (triggerFetch) {
+        fetchAndRenderPivotPreview();
+    }
+}
+window.onPivotEntityChange = onPivotEntityChange;
+
+function resetPivotChartBuilderDefaults() {
+    setCustomizerDefaultsForSlot(currentCustomizingSlot);
+    fetchAndRenderPivotPreview();
+}
+window.resetPivotChartBuilderDefaults = resetPivotChartBuilderDefaults;
+
+async function fetchAndRenderPivotPreview() {
+    const entity = document.getElementById('pivot-select-entity')?.value || 'trips';
+    const group_by = document.getElementById('pivot-select-group-by')?.value || 'customer';
+    const metric = document.getElementById('pivot-select-metric')?.value || 'revenue';
+    const agg = document.getElementById('pivot-select-agg')?.value || 'sum';
+    const chart_type = document.getElementById('pivot-select-chart-type')?.value || 'bar';
+    const period = document.getElementById('pivot-select-period')?.value || 'all';
+    const limit = document.getElementById('pivot-select-limit')?.value || '10';
+    const sort = document.getElementById('pivot-select-sort')?.value || 'desc';
+
+    const loadingEl = document.getElementById('pivot-preview-loading');
+    if (loadingEl) loadingEl.classList.remove('hidden');
+
+    try {
+        const url = `/api/dashboard/pivot/?entity=${entity}&group_by=${group_by}&metric=${metric}&agg=${agg}&chart_type=${chart_type}&period=${period}&limit=${limit}&sort=${sort}`;
+        const res = await fetchWithAuth(url);
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        const data = await res.json();
+
+        if (data && data.success) {
+            currentPivotResultCache = data;
+
+            // Cập nhật Tiêu đề & Tổng số trên Preview
+            const titleEl = document.getElementById('pivot-preview-title');
+            if (titleEl) titleEl.innerText = data.title;
+            const subEl = document.getElementById('pivot-preview-subtitle');
+            if (subEl) subEl.innerText = `Nguồn: ${entity.toUpperCase()} | Nhóm: ${group_by} | Loại: ${chart_type}`;
+            const totalEl = document.getElementById('pivot-preview-total');
+            if (totalEl) totalEl.innerText = data.formatted_total;
+            const countEl = document.getElementById('pivot-preview-row-count');
+            if (countEl) countEl.innerText = `${data.count} mục`;
+
+            // Vẽ Canvas Preview
+            renderPivotChartCanvas('pivot-preview-chart', data, true);
+
+            // Vẽ Bảng Chi Tiết Phân Bổ
+            renderPivotMiniTable(data.table_rows, data.unit);
+        } else {
+            showToast('error', data?.message || 'Không thể tổng hợp dữ liệu biểu đồ', 'Lỗi tổng hợp');
+        }
+    } catch (err) {
+        console.error('fetchAndRenderPivotPreview error:', err);
+    } finally {
+        if (loadingEl) loadingEl.classList.add('hidden');
+    }
+}
+window.fetchAndRenderPivotPreview = fetchAndRenderPivotPreview;
+
+function renderPivotChartCanvas(canvasId, pivotRes, isPreview = false, isSlot2 = false) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx || typeof Chart === 'undefined') return;
+
+    if (isPreview) {
+        if (pivotPreviewChart) pivotPreviewChart.destroy();
+    } else if (isSlot2 || canvasId === 'bgd-donut-chart') {
+        if (bgdDonutChart) bgdDonutChart.destroy();
+    } else {
+        if (bgdRevenueChart) bgdRevenueChart.destroy();
+    }
+
+    const chartType = pivotRes.chart_type || 'bar';
+    const isCurrency = pivotRes.is_currency;
+    const isHorizontal = (chartType === 'horizontal_bar');
+    const actualType = isHorizontal ? 'bar' : (chartType === 'pie' ? 'pie' : (chartType === 'doughnut' ? 'doughnut' : (chartType === 'line' ? 'line' : 'bar')));
+
+    let dataset = {
+        label: pivotRes.metric.toUpperCase(),
+        data: pivotRes.data,
+        backgroundColor: (actualType === 'doughnut' || actualType === 'pie') ? pivotRes.colors : (actualType === 'line' ? 'rgba(15, 118, 110, 0.15)' : pivotRes.colors[0] || 'rgba(15, 118, 110, 0.85)'),
+        borderColor: (actualType === 'doughnut' || actualType === 'pie') ? '#ffffff' : (actualType === 'line' ? '#0f766e' : (pivotRes.border_colors[0] || '#0f766e')),
+        borderWidth: actualType === 'line' ? 3 : (actualType === 'doughnut' || actualType === 'pie' ? 2 : 1),
+        borderRadius: actualType === 'bar' ? 6 : 0,
+        fill: actualType === 'line',
+        tension: actualType === 'line' ? 0.35 : 0,
+        pointBackgroundColor: '#0f766e',
+        pointBorderColor: '#ffffff',
+        pointRadius: actualType === 'line' ? 4 : 0
+    };
+
+    const config = {
+        type: actualType,
+        data: {
+            labels: pivotRes.labels,
+            datasets: [dataset]
+        },
+        options: {
+            indexAxis: isHorizontal ? 'y' : 'x',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: (actualType === 'doughnut' || actualType === 'pie'),
+                    position: isSlot2 ? 'bottom' : 'right',
+                    labels: { font: { family: "'Inter', sans-serif", size: 10 }, boxWidth: 10 }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e2e8f0',
+                    padding: 8,
+                    borderRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.raw;
+                            if (isCurrency) {
+                                return ` Giá trị: ${new Intl.NumberFormat('vi-VN').format(val)} đ`;
+                            }
+                            return ` Giá trị: ${val} ${pivotRes.unit || ''}`;
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    if (actualType === 'doughnut') {
+        config.options.cutout = '70%';
+    }
+
+    if (actualType !== 'doughnut' && actualType !== 'pie') {
+        if (isHorizontal) {
+            config.options.scales = {
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { family: "'Inter', sans-serif", size: 10, weight: '600' },
+                        color: '#334155'
+                    }
+                },
+                x: {
+                    grid: { color: 'rgba(226, 232, 240, 0.6)' },
+                    ticks: {
+                        font: { family: "'Inter', sans-serif", size: 10 },
+                        color: '#94a3b8',
+                        callback: function(val) {
+                            if (isCurrency && val >= 1000000) return (val / 1000000).toFixed(0) + ' tr';
+                            return val;
+                        }
+                    }
+                }
+            };
+        } else {
+            config.options.scales = {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { family: "'Inter', sans-serif", size: 10, weight: '600' },
+                        color: '#64748b',
+                        maxRotation: 35,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    grid: { color: 'rgba(226, 232, 240, 0.6)' },
+                    ticks: {
+                        font: { family: "'Inter', sans-serif", size: 10 },
+                        color: '#94a3b8',
+                        callback: function(val) {
+                            if (isCurrency && val >= 1000000) return (val / 1000000).toFixed(0) + ' tr';
+                            return val;
+                        }
+                    }
+                }
+            };
+        }
+    }
+
+    const createdChart = new Chart(ctx, config);
+    if (isPreview) {
+        pivotPreviewChart = createdChart;
+    } else if (isSlot2 || canvasId === 'bgd-donut-chart') {
+        bgdDonutChart = createdChart;
+    } else {
+        bgdRevenueChart = createdChart;
+    }
+}
+
+function renderPivotMiniTable(rows, unit) {
+    const tbody = document.getElementById('pivot-preview-table-body');
+    if (!tbody) return;
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">Không có dữ liệu phù hợp với bộ lọc</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = rows.map((r, i) => `
+        <tr class="hover:bg-slate-50 transition-colors">
+            <td class="py-1.5 px-2 font-mono text-[10px] text-slate-400 font-bold">${i + 1}</td>
+            <td class="py-1.5 px-2 font-semibold text-slate-800 truncate max-w-[150px]">${escapeHtml(r.label)}</td>
+            <td class="py-1.5 px-2 text-right font-mono font-bold text-teal-800">${escapeHtml(r.formatted_value)}</td>
+            <td class="py-1.5 px-2 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                    <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-teal-600 h-1.5 rounded-full" style="width: ${r.percentage}%"></div>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-500 w-8 text-right">${r.percentage}%</span>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function applyPivotChartToDashboard() {
+    if (!currentPivotResultCache) {
+        showToast('warning', 'Chưa có dữ liệu để áp dụng. Vui lòng thử lại.', 'Thông báo');
+        return;
+    }
+
+    const currentConfig = {
+        entity: document.getElementById('pivot-select-entity')?.value || 'trips',
+        group_by: document.getElementById('pivot-select-group-by')?.value || 'customer',
+        metric: document.getElementById('pivot-select-metric')?.value || 'revenue',
+        agg: document.getElementById('pivot-select-agg')?.value || 'sum',
+        chart_type: document.getElementById('pivot-select-chart-type')?.value || 'bar',
+        period: document.getElementById('pivot-select-period')?.value || 'all',
+        limit: document.getElementById('pivot-select-limit')?.value || '10',
+        sort: document.getElementById('pivot-select-sort')?.value || 'desc',
+    };
+
+    const slot = currentCustomizingSlot || 1;
+
+    // Lưu cấu hình vào localStorage theo slot
+    localStorage.setItem('bim_custom_chart_' + slot, JSON.stringify({
+        config: currentConfig,
+        data: currentPivotResultCache
+    }));
+
+    // Render trực tiếp lên Slot tương ứng
+    renderCustomChartOnSlot(slot, currentPivotResultCache);
+
+    // Đóng Modal và thông báo
+    closePivotChartBuilderModal();
+    showToast('success', `Đã áp dụng biểu đồ tùy biến cho Biểu đồ ${slot} thành công!`, 'Thành công');
+}
+window.applyPivotChartToDashboard = applyPivotChartToDashboard;
+
+function renderCustomChartOnSlot(slot, pivotRes) {
+    if (!pivotRes) return;
+
+    if (slot === 1) {
+        // Cập nhật Tiêu đề Card 1
+        const titleEl = document.getElementById('bgd-chart-title');
+        if (titleEl) titleEl.innerText = pivotRes.title;
+        const subEl = document.getElementById('bgd-chart-subtitle');
+        if (subEl) subEl.innerHTML = `<span class="inline-flex items-center gap-1 font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 text-[10px] mr-1">Tùy biến</span> Nguồn: ${pivotRes.entity.toUpperCase()} | Nhóm: ${pivotRes.group_by} | ${pivotRes.period_label}`;
+
+        // Hiện nút Khôi phục Mặc định Biểu đồ 1
+        const resetBtn1 = document.getElementById('btn-reset-chart-1');
+        if (resetBtn1) {
+            resetBtn1.classList.remove('hidden');
+            resetBtn1.classList.add('inline-flex');
+        }
+
+        // Cập nhật Legend Header
+        const legendEl = document.getElementById('bgd-chart-legend');
+        if (legendEl) {
+            legendEl.innerHTML = `<span class="inline-flex items-center text-teal-800 font-bold"><span class="w-2 h-2 rounded bg-teal-600 mr-1"></span> ${pivotRes.metric.toUpperCase()} (${pivotRes.unit || ''})</span>`;
+        }
+
+        // Vẽ Canvas `#bgd-revenue-trend-chart`
+        renderPivotChartCanvas('bgd-revenue-trend-chart', pivotRes, false, false);
+
+        // Cập nhật 3 ô tóm tắt dưới đáy
+        const sumEl = document.getElementById('bgd-chart-metrics-summary');
+        if (sumEl && pivotRes.table_rows) {
+            const topRow = pivotRes.table_rows[0];
+            const topVal = topRow ? topRow.formatted_value : '0';
+
+            sumEl.innerHTML = `
+                <div class="p-1.5 2xl:p-2 rounded-lg border text-teal-800 bg-slate-50 border-slate-100">
+                    <p class="text-[10px] 2xl:text-[10.5px] text-slate-500 font-medium">Tổng Chỉ Số</p>
+                    <p class="text-xs 2xl:text-[13px] font-black font-heading mt-0.5 tabular-nums text-teal-800">${pivotRes.formatted_total}</p>
+                </div>
+                <div class="p-1.5 2xl:p-2 rounded-lg border text-amber-700 bg-slate-50 border-slate-100">
+                    <p class="text-[10px] 2xl:text-[10.5px] text-slate-500 font-medium" title="${topRow ? topRow.label : ''}">Top 1 Phân Bổ</p>
+                    <p class="text-xs 2xl:text-[13px] font-black font-heading mt-0.5 tabular-nums text-amber-700 truncate">${topVal}</p>
+                </div>
+                <div class="p-1.5 2xl:p-2 rounded-lg border text-emerald-700 bg-emerald-50/60 border-emerald-100">
+                    <p class="text-[10px] 2xl:text-[10.5px] text-emerald-800 font-bold">Số Lượng Phân Nhóm</p>
+                    <p class="text-xs 2xl:text-[13px] font-black font-heading mt-0.5 tabular-nums text-emerald-700">${pivotRes.count} nhóm</p>
+                </div>
+            `;
+        }
+    } else if (slot === 2) {
+        // Cập nhật Tiêu đề Card 2
+        const titleEl = document.getElementById('donut-box-title');
+        if (titleEl) titleEl.innerText = pivotRes.title;
+        const subEl = document.getElementById('donut-box-subtitle');
+        if (subEl) subEl.innerHTML = `<span class="inline-flex items-center gap-1 font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200 text-[10px] mr-1">Tùy biến</span> Nguồn: ${pivotRes.entity.toUpperCase()} • ${pivotRes.group_by}`;
+
+        // Hiện nút Khôi phục Mặc định Biểu đồ 2
+        const resetBtn2 = document.getElementById('btn-reset-chart-2');
+        if (resetBtn2) {
+            resetBtn2.classList.remove('hidden');
+            resetBtn2.classList.add('inline-flex');
+        }
+
+        // Ẩn thanh toggle vai trò (Đội xe / Hải quan) khi đang tùy biến
+        const toggleContainer = document.getElementById('donut-toggle-container');
+        if (toggleContainer) {
+            toggleContainer.classList.add('hidden');
+        }
+
+        // Tâm donut: hiện nếu chart_type là doughnut, ẩn nếu chart khác
+        const centerContainer = document.getElementById('donut-center-container');
+        if (centerContainer) {
+            if (pivotRes.chart_type === 'doughnut') {
+                centerContainer.classList.remove('hidden');
+                const centerVal = document.getElementById('donut-center-value');
+                const centerLbl = document.getElementById('donut-center-label');
+                if (centerVal) centerVal.innerText = pivotRes.formatted_total;
+                if (centerLbl) centerLbl.innerText = 'Tổng';
+            } else {
+                centerContainer.classList.add('hidden');
+            }
+        }
+
+        // Cập nhật danh sách phân bổ bên dưới Biểu đồ 2
+        const legendEl = document.getElementById('donut-legend-container');
+        if (legendEl && Array.isArray(pivotRes.table_rows)) {
+            const displayRows = pivotRes.table_rows.slice(0, 3);
+            const palette = ['bg-teal-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-indigo-500'];
+            legendEl.innerHTML = displayRows.map((r, i) => `
+                <div class="flex justify-between items-center text-slate-600">
+                    <span class="flex items-center truncate mr-2">
+                        <span class="w-2 h-2 rounded-full ${palette[i % palette.length]} mr-1.5 shrink-0"></span> 
+                        <span class="truncate">${escapeHtml(r.label)}</span>
+                    </span>
+                    <strong class="font-heading text-slate-800 shrink-0 font-bold">${escapeHtml(r.formatted_value)} (${r.percentage}%)</strong>
+                </div>
+            `).join('');
+        }
+
+        // Vẽ Canvas `#bgd-donut-chart`
+        renderPivotChartCanvas('bgd-donut-chart', pivotRes, false, true);
+    }
+}
+window.renderCustomChartOnSlot = renderCustomChartOnSlot;
+window.renderCustomPivotChartOnDashboard = function(data) {
+    renderCustomChartOnSlot(1, data);
+};
+
+function resetChartSlotToDefault(slot) {
+    if (slot === 1) {
+        localStorage.removeItem('bim_custom_chart_1');
+        localStorage.removeItem('bim_custom_pivot_chart');
+        const resetBtn1 = document.getElementById('btn-reset-chart-1');
+        if (resetBtn1) {
+            resetBtn1.classList.remove('inline-flex');
+            resetBtn1.classList.add('hidden');
+        }
+        renderRoleTrendChart(currentActiveRole);
+        showToast('info', 'Đã khôi phục Biểu đồ 1 về mặc định theo vai trò', 'Khôi phục mặc định');
+    } else if (slot === 2) {
+        localStorage.removeItem('bim_custom_chart_2');
+        const resetBtn2 = document.getElementById('btn-reset-chart-2');
+        if (resetBtn2) {
+            resetBtn2.classList.remove('inline-flex');
+            resetBtn2.classList.add('hidden');
+        }
+        const toggleContainer = document.getElementById('donut-toggle-container');
+        if (toggleContainer) {
+            toggleContainer.classList.remove('hidden');
+        }
+        const centerContainer = document.getElementById('donut-center-container');
+        if (centerContainer) {
+            centerContainer.classList.remove('hidden');
+        }
+        renderRoleDonut(currentActiveRole, currentDonutOption);
+        showToast('info', 'Đã khôi phục Biểu đồ 2 về mặc định theo vai trò', 'Khôi phục mặc định');
+    }
+}
+window.resetChartSlotToDefault = resetChartSlotToDefault;
+window.resetToDefaultRoleChart = function() {
+    resetChartSlotToDefault(1);
+};
+
+// =========================================================================
+// THANH KÉO ĐIỀU CHỈNH KÍCH THƯỚC (CHART SPLITTER / RESIZER)
+// =========================================================================
+let chartResizerInitialized = false;
+
+function initChartResizer() {
+    if (chartResizerInitialized) return;
+    const resizer = document.getElementById('dash-chart-resizer');
+    const card1 = document.getElementById('dash-chart-card-1');
+    const card2 = document.getElementById('dash-chart-card-2');
+    const container = document.getElementById('dashboard-row-charts');
+    if (!resizer || !card1 || !card2 || !container) return;
+
+    chartResizerInitialized = true;
+
+    // Nạp lại tỷ lệ đã lưu trong localStorage (mặc định 65%)
+    const savedRatio = localStorage.getItem('bim_chart_split_ratio');
+    if (savedRatio) {
+        const r = parseFloat(savedRatio);
+        if (!isNaN(r) && r >= 20 && r <= 80) {
+            applyChartRatio(r);
+        }
+    }
+
+    let isDragging = false;
+
+    resizer.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        isDragging = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        function onMouseMove(ev) {
+            if (!isDragging) return;
+            const rect = container.getBoundingClientRect();
+            const offsetX = ev.clientX - rect.left;
+            let ratio = (offsetX / rect.width) * 100;
+            if (ratio < 20) ratio = 20;
+            if (ratio > 80) ratio = 80;
+            applyChartRatio(ratio);
+        }
+
+        function onMouseUp() {
+            if (isDragging) {
+                isDragging = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('mouseup', onMouseUp);
+
+                // Lưu tỷ lệ vào localStorage
+                const rect = container.getBoundingClientRect();
+                const card1Rect = card1.getBoundingClientRect();
+                if (rect.width > 0) {
+                    const ratio = ((card1Rect.width / rect.width) * 100).toFixed(1);
+                    localStorage.setItem('bim_chart_split_ratio', ratio);
+                }
+
+                // Gọi resize trên cả 2 Chart canvas để hình ảnh sắc nét
+                if (typeof bgdRevenueChart !== 'undefined' && bgdRevenueChart) {
+                    bgdRevenueChart.resize();
+                }
+                if (typeof bgdDonutChart !== 'undefined' && bgdDonutChart) {
+                    bgdDonutChart.resize();
+                }
+            }
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    });
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth < 1024) {
+            card1.style.width = '100%';
+            card2.style.width = '100%';
+        } else {
+            const saved = localStorage.getItem('bim_chart_split_ratio');
+            const r = saved ? parseFloat(saved) : 65;
+            applyChartRatio(r);
+        }
+        if (typeof bgdRevenueChart !== 'undefined' && bgdRevenueChart) bgdRevenueChart.resize();
+        if (typeof bgdDonutChart !== 'undefined' && bgdDonutChart) bgdDonutChart.resize();
+    });
+}
+window.initChartResizer = initChartResizer;
+
+function applyChartRatio(ratio) {
+    const card1 = document.getElementById('dash-chart-card-1');
+    const card2 = document.getElementById('dash-chart-card-2');
+    if (!card1 || !card2) return;
+
+    if (window.innerWidth >= 1024) {
+        card1.style.width = `calc(${ratio}% - 8px)`;
+        card2.style.width = `calc(${100 - ratio}% - 8px)`;
+    } else {
+        card1.style.width = '100%';
+        card2.style.width = '100%';
+    }
+}
+window.applyChartRatio = applyChartRatio;
+
+// =========================================================================
+// THANH KÉO ĐIỀU CHỈNH KÍCH THƯỚC WIDGET CÔNG VIỆC & BẢN TIN (WIDGET SPLITTER / RESIZER)
+// =========================================================================
+let widgetResizerInitialized = false;
+
+function initWidgetResizer() {
+    if (widgetResizerInitialized) return;
+    const resizer = document.getElementById('dash-widget-resizer');
+    const tasksCard = document.getElementById('dash-widget-tasks-card');
+    const newsCard = document.getElementById('dash-widget-news-card');
+    const container = document.getElementById('dashboard-row-widgets');
+    if (!resizer || !tasksCard || !newsCard || !container) return;
+
+    widgetResizerInitialized = true;
+
+    // Nạp lại tỷ lệ đã lưu trong localStorage (mặc định 62%)
+    const savedRatio = localStorage.getItem('bim_widget_split_ratio');
+    if (savedRatio) {
+        const r = parseFloat(savedRatio);
+        if (!isNaN(r) && r >= 25 && r <= 75) {
+            applyWidgetRatio(r);
+        }
+    }
+
+    let isDragging = false;
+
+    resizer.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        isDragging = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        function onMouseMove(ev) {
+            if (!isDragging) return;
+            const rect = container.getBoundingClientRect();
+            const offsetX = ev.clientX - rect.left;
+            let ratio = (offsetX / rect.width) * 100;
+            if (ratio < 25) ratio = 25;
+            if (ratio > 75) ratio = 75;
+            applyWidgetRatio(ratio);
+        }
+
+        function onMouseUp() {
+            if (isDragging) {
+                isDragging = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('mouseup', onMouseUp);
+
+                // Lưu tỷ lệ vào localStorage
+                const rect = container.getBoundingClientRect();
+                const tasksRect = tasksCard.getBoundingClientRect();
+                if (rect.width > 0) {
+                    const ratio = ((tasksRect.width / rect.width) * 100).toFixed(1);
+                    localStorage.setItem('bim_widget_split_ratio', ratio);
+                }
+            }
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    });
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth < 1024) {
+            tasksCard.style.width = '100%';
+            newsCard.style.width = '100%';
+        } else {
+            const saved = localStorage.getItem('bim_widget_split_ratio');
+            const r = saved ? parseFloat(saved) : 62;
+            applyWidgetRatio(r);
+        }
+    });
+}
+window.initWidgetResizer = initWidgetResizer;
+
+function applyWidgetRatio(ratio) {
+    const tasksCard = document.getElementById('dash-widget-tasks-card');
+    const newsCard = document.getElementById('dash-widget-news-card');
+    if (!tasksCard || !newsCard) return;
+
+    if (window.innerWidth >= 1024) {
+        tasksCard.style.width = `calc(${ratio}% - 8px)`;
+        newsCard.style.width = `calc(${100 - ratio}% - 8px)`;
+    } else {
+        tasksCard.style.width = '100%';
+        newsCard.style.width = '100%';
+    }
+}
+window.applyWidgetRatio = applyWidgetRatio;
 
 // --- 2. TẢI DỮ LIỆU PHÒNG ĐIỀU VẬN (TRIPS) ---
 let rawDispatchTrips = [];
@@ -11414,7 +12768,9 @@ const ROUTE_TAB_MAP = {
     '/quyet-toan': 'quyet-toan',
     '/customs': 'hai-quan',
     '/reports': 'bao-cao',
-    '/settings': 'cai-dat'
+    '/settings': 'cai-dat',
+    '/news': 'ban-tin',
+    '/tasks': 'giao-viec'
 };
 
 const TAB_ROUTE_MAP = {
@@ -11427,7 +12783,9 @@ const TAB_ROUTE_MAP = {
     'quyet-toan': '/settlements',
     'hai-quan': '/customs',
     'bao-cao': '/reports',
-    'cai-dat': '/settings'
+    'cai-dat': '/settings',
+    'ban-tin': '/news',
+    'giao-viec': '/tasks'
 };
 
 // --- QUẢN LÝ CHẾ ĐỘ HIỂN THỊ TOPBAR LINH HOẠT (FULLPAGE BREADCRUMB VS STANDARD TABS) ---
@@ -11584,7 +12942,9 @@ function switchTab(tabId, updateHistory = true) {
             'hai-quan': 'Dịch vụ Hải quan',
             'customs-form': 'Dịch vụ Hải quan',
             'bao-cao': 'Báo cáo & Thống kê',
-            'cai-dat': 'Cài đặt & Danh mục'
+            'cai-dat': 'Cài đặt & Danh mục',
+            'ban-tin': 'Bản tin Công ty & Thông báo Nội bộ',
+            'giao-viec': 'Quản lý Giao việc Văn phòng'
         };
         topbarTitleEl.innerText = TAB_NAME_MAP[tabId] || 'Dashboard Tổng quan';
     }
@@ -11654,6 +13014,12 @@ function switchTab(tabId, updateHistory = true) {
             loadReportsData();
         }
         if (tabId === 'cai-dat') loadMasterData();
+        if (tabId === 'ban-tin') {
+            if (typeof loadCompanyNews === 'function') loadCompanyNews();
+        }
+        if (tabId === 'giao-viec') {
+            if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+        }
     } catch (loadErr) {
         console.error(`[App] Lỗi nạp dữ liệu tab ${tabId}:`, loadErr);
     }
@@ -18230,7 +19596,12 @@ function renderMasterDataTable(items, total = items.length) {
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
-                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        ${item.short_name ? `<span class="px-1.5 py-0.2 rounded text-[10.5px] font-black bg-teal-100 text-teal-800 border border-teal-300 uppercase shrink-0" title="Tên viết tắt">${escapeHtml(item.short_name)}</span>` : ''}
+                        <span>${escapeHtml(item.name)}</span>
+                    </div>
+                </td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.address || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">${item.contact_person ? `${item.contact_person} (${item.phone || ''})` : (item.phone || '—')}</td>
@@ -18950,11 +20321,19 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
                 </div>
             </div>
-            <div>
-                <div class="flex items-center justify-between h-5 mb-1">
-                    <label class="block font-bold text-slate-700 text-xs truncate">Tên Khách Hàng / Doanh Nghiệp <span class="text-rose-500">*</span></label>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Khách Hàng / Doanh Nghiệp <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo giấy phép ĐKKD..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
                 </div>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo giấy phép ĐKKD..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Viết Tắt</label>
+                    </div>
+                    <input type="text" id="mdf-short-name" value="${d.short_name || ''}" placeholder="VD: ABC, OASIS..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-teal-800 bg-teal-50/40 border border-teal-300 rounded-md w-full">
+                </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
@@ -19663,6 +21042,7 @@ async function submitMasterDataForm(e) {
             code: document.getElementById('mdf-code').value,
             tax_code: document.getElementById('mdf-tax-code').value,
             name: document.getElementById('mdf-name').value,
+            short_name: document.getElementById('mdf-short-name')?.value?.trim() || '',
             address: document.getElementById('mdf-address').value,
             contact_person: document.getElementById('mdf-contact-person').value,
             phone: document.getElementById('mdf-phone').value,
@@ -26411,3 +27791,6 @@ window.enableSlipEdit = typeof enableSlipEdit !== 'undefined' ? enableSlipEdit :
 window.submitSlipDetailForm = typeof submitSlipDetailForm !== 'undefined' ? submitSlipDetailForm : undefined;
 window.printCurrentPayrollSlip = typeof printCurrentPayrollSlip !== 'undefined' ? printCurrentPayrollSlip : undefined;
 window.backToPayroll = typeof backToPayroll !== 'undefined' ? backToPayroll : undefined;
+window.renderRoleCharts = typeof renderRoleCharts !== 'undefined' ? renderRoleCharts : undefined;
+window.switchRoleDonutOption = typeof switchRoleDonutOption !== 'undefined' ? switchRoleDonutOption : undefined;
+

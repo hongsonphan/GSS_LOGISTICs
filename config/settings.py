@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'apps.exceptions',
     'apps.master_data',
     'apps.customs',
+    'apps.collaboration',
 ]
 
 MIDDLEWARE = [

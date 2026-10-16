@@ -923,7 +923,12 @@ function renderMasterDataTable(items, total = items.length) {
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
-                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        ${item.short_name ? `<span class="px-1.5 py-0.2 rounded text-[10.5px] font-black bg-teal-100 text-teal-800 border border-teal-300 uppercase shrink-0" title="Tên viết tắt">${escapeHtml(item.short_name)}</span>` : ''}
+                        <span>${escapeHtml(item.name)}</span>
+                    </div>
+                </td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.address || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">${item.contact_person ? `${item.contact_person} (${item.phone || ''})` : (item.phone || '—')}</td>
@@ -1632,11 +1637,19 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-tax-code" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
                 </div>
             </div>
-            <div>
-                <div class="flex items-center justify-between h-5 mb-1">
-                    <label class="block font-bold text-slate-700 text-xs truncate">Tên Khách Hàng / Doanh Nghiệp <span class="text-rose-500">*</span></label>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Khách Hàng / Doanh Nghiệp <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo giấy phép ĐKKD..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
                 </div>
-                <input type="text" id="mdf-name" value="${d.name || ''}" placeholder="Tên đầy đủ theo giấy phép ĐKKD..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Viết Tắt</label>
+                    </div>
+                    <input type="text" id="mdf-short-name" value="${d.short_name || ''}" placeholder="VD: ABC, OASIS..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-teal-800 bg-teal-50/40 border border-teal-300 rounded-md w-full">
+                </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
@@ -2261,6 +2274,7 @@ async function submitMasterDataForm(e) {
             code: document.getElementById('mdf-code').value,
             tax_code: document.getElementById('mdf-tax-code').value,
             name: document.getElementById('mdf-name').value,
+            short_name: document.getElementById('mdf-short-name')?.value?.trim() || '',
             address: document.getElementById('mdf-address').value,
             contact_person: document.getElementById('mdf-contact-person').value,
             phone: document.getElementById('mdf-phone').value,

@@ -7,6 +7,7 @@ from django.views.generic.base import RedirectView
 from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view, help_view
 from apps.dispatch.api_views import (
     DashboardBGDAPIView,
+    DashboardPivotChartAPIView,
     TripListCreateAPIView,
     TripDetailAPIView,
     TripAddExpenseAPIView,
@@ -95,6 +96,10 @@ urlpatterns = [
     path('master-data', index_view, name='spa-master-data-noslash'),
     path('danh-muc/', index_view, name='spa-danhmuc'),
     path('danh-muc', index_view, name='spa-danhmuc-noslash'),
+    path('news/', index_view, name='spa-news'),
+    path('news', index_view, name='spa-news-noslash'),
+    path('tasks/', index_view, name='spa-tasks'),
+    path('tasks', index_view, name='spa-tasks-noslash'),
 
     # Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng Hệ Thống (/helps)
     path('helps/', help_view, name='help-center'),
@@ -119,6 +124,7 @@ urlpatterns = [
 
     # REST APIs
     path('api/dashboard/', DashboardBGDAPIView.as_view(), name='api-dashboard'),
+    path('api/dashboard/pivot/', DashboardPivotChartAPIView.as_view(), name='api-dashboard-pivot'),
     path('api/trips/', TripListCreateAPIView.as_view(), name='api-trips'),
     path('api/trips/<str:trip_code>/', TripDetailAPIView.as_view(), name='api-trip-detail'),
     path('api/trips/<str:trip_code>/expenses/', TripAddExpenseAPIView.as_view(), name='api-trip-add-expense'),
@@ -163,6 +169,7 @@ urlpatterns = [
     path('api/accounting/reports/drilldown/', AccountingReportDrilldownAPIView.as_view(), name='api-accounting-reports-drilldown'),
     path('api/reports/', ReportsAPIView.as_view(), name='api-reports'),
     path('api/master-data/', include('apps.master_data.urls')),
+    path('api/collaboration/', include('apps.collaboration.urls')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,2221 @@
+/**
+ * ==========================================================================
+ * BIM LOGISTICS — COLLABORATION MODULE (NEWS, TASKS, IN-APP TEAM CHAT)
+ * Kế thừa chuẩn quốc tế từ Bim Ecosystem (Bim_Consulting & Bim_ERP-Solutions)
+ * Áp dụng riêng cho Ban Giám Đốc, Quản lý và Cán bộ Nhân viên Văn phòng
+ * ==========================================================================
+ */
+
+// Global State
+let currentNewsList = [];
+let currentViewingNewsId = null;
+let currentTaskViewMode = 'kanban'; // 'kanban' | 'list'
+let currentTaskScope = 'all'; // 'all' | 'my_tasks' | 'assigned_by_me'
+let currentTasksData = [];
+let currentViewingTaskId = null;
+let officeDirectoryUsers = [];
+let collaborationUserPerms = null;
+
+// Chat State
+let chatActiveRoomId = null;
+let chatLatestMessageId = 0;
+let chatPollTimer = null;
+let chatSelectedFiles = [];
+
+function formatTaskCode(code) {
+    if (!code) return '';
+    const match = String(code).match(/^TSK[-.](\d{6})[-.]0*(\d+)$/i);
+    if (match) {
+        return `TSK.${match[1]}.${String(parseInt(match[2], 10)).padStart(3, '0')}`;
+    }
+    return code;
+}
+window.formatTaskCode = formatTaskCode;
+
+function cleanPersonName(name) {
+    if (!name) return '';
+    return String(name).replace(/\s*\([^)]*\)/g, '').trim() || name;
+}
+window.cleanPersonName = cleanPersonName;
+
+async function authFetch(url, options = {}) {
+    if (typeof fetchWithAuth === 'function') {
+        return await fetchWithAuth(url, options);
+    }
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders(options.headers || {}) : (options.headers || {});
+    return await fetch(url, { ...options, headers });
+}
+
+// ==========================================================================
+// 1. PHÂN HỆ: BẢN TIN CÔNG TY & THÔNG BÁO NỘI BỘ
+// ==========================================================================
+
+async function loadCompanyNews() {
+    const gridEl = document.getElementById('news-posts-grid');
+    const pinnedEl = document.getElementById('news-pinned-container');
+    const totalBadge = document.getElementById('news-total-badge');
+    const catFilter = document.getElementById('news-category-filter');
+    const searchInput = document.getElementById('news-search-input');
+
+    if (!gridEl) return;
+
+    gridEl.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400 text-xs"><i class="ph ph-spinner ph-spin text-xl mb-2 block"></i>Đang tải bản tin công ty...</div>';
+    if (pinnedEl) pinnedEl.innerHTML = '';
+
+    // Load categories nếu filter chưa có
+    if (catFilter && catFilter.options.length <= 1) {
+        try {
+            const catRes = await authFetch('/api/collaboration/news/categories/', {
+                headers: getAuthHeaders()
+            });
+            const catJson = await catRes.json();
+            if (catJson.success && catJson.data) {
+                catFilter.innerHTML = '<option value="">Tất cả danh mục</option>';
+                const createCatSelect = document.getElementById('create-news-category');
+                if (createCatSelect) createCatSelect.innerHTML = '';
+
+                catJson.data.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    catFilter.appendChild(opt);
+
+                    if (createCatSelect) {
+                        const opt2 = document.createElement('option');
+                        opt2.value = c.id;
+                        opt2.textContent = c.name;
+                        createCatSelect.appendChild(opt2);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error loading news categories:', e);
+        }
+    }
+
+    // Build URL params
+    const params = new URLSearchParams();
+    if (catFilter && catFilter.value) params.append('category_id', catFilter.value);
+    if (searchInput && searchInput.value.trim()) params.append('search', searchInput.value.trim());
+
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/?${params.toString()}`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) {
+            gridEl.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400 text-xs">Không có dữ liệu bản tin.</div>';
+            return;
+        }
+
+        currentNewsList = json.data;
+        if (totalBadge) totalBadge.textContent = `${json.data.length} tin`;
+
+        // Kiểm soát hiển thị nút Đăng Bản Tin Mới theo phân quyền
+        const createBtn = document.getElementById('btn-open-create-news');
+        if (createBtn) {
+            if (json.can_create_post === false) {
+                createBtn.classList.add('hidden');
+            } else {
+                createBtn.classList.remove('hidden');
+            }
+        }
+
+        const pinnedPosts = json.data.filter(p => p.is_pinned || p.is_urgent);
+        const regularPosts = json.data.filter(p => !p.is_pinned && !p.is_urgent);
+
+        // Render Pinned Banner
+        if (pinnedEl) {
+            if (pinnedPosts.length > 0) {
+                pinnedEl.innerHTML = pinnedPosts.map(p => `
+                    <div onclick="openNewsDetailModal(${p.id})" class="p-4 rounded-2xl border ${p.is_urgent ? 'bg-rose-50/90 border-rose-300 shadow-rose-100' : 'bg-amber-50/80 border-amber-300 shadow-amber-100'} shadow-sm flex items-start justify-between gap-4 cursor-pointer hover:shadow-md transition-all group">
+                        <div class="flex items-start gap-3.5">
+                            <div class="w-10 h-10 rounded-xl ${p.is_urgent ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'} flex items-center justify-center shrink-0 shadow-xs">
+                                <i class="${p.is_urgent ? 'ph-bold ph-warning-octagon' : 'ph-bold ph-push-pin'} text-xl"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${p.is_urgent ? 'bg-rose-200 text-rose-900' : 'bg-amber-200 text-amber-900'}">
+                                        ${p.is_urgent ? 'Thông Báo Khẩn Cấp' : 'Được Ghim Lên Đầu'}
+                                    </span>
+                                    <span class="text-xs text-slate-500 font-medium">${p.author_name} • ${formatDateTime(p.created_at)}</span>
+                                </div>
+                                <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors leading-snug">
+                                    ${escapeHtml(p.title)}
+                                </h4>
+                                <p class="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
+                                    ${escapeHtml(p.summary || '')}
+                                </p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold ${p.is_urgent ? 'text-rose-700' : 'text-amber-700'} shrink-0 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                            Xem chi tiết <i class="ph-bold ph-arrow-right"></i>
+                        </span>
+                    </div>
+                `).join('');
+            } else {
+                pinnedEl.innerHTML = '';
+            }
+        }
+
+        // Render Regular Grid
+        const renderTarget = regularPosts.length > 0 ? regularPosts : (pinnedPosts.length > 0 ? [] : []);
+        if (renderTarget.length === 0 && pinnedPosts.length === 0) {
+            gridEl.innerHTML = '<div class="col-span-full text-center py-16 text-slate-400 text-xs">Chưa có thông báo nào được đăng tải.</div>';
+            return;
+        }
+
+        gridEl.innerHTML = renderTarget.map(p => `
+            <div onclick="openNewsDetailModal(${p.id})" class="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group">
+                ${p.cover_image ? `
+                    <div class="h-44 w-full bg-slate-100 overflow-hidden relative">
+                        <img src="${p.cover_image}" alt="Ảnh bài viết" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    </div>
+                ` : `
+                    <div class="h-28 w-full bg-gradient-to-br from-teal-700 to-slate-800 p-4 flex flex-col justify-between text-white relative">
+                        <span class="text-xs font-bold uppercase tracking-wider text-teal-200">${escapeHtml(p.category_info?.name || 'Thông báo chung')}</span>
+                        <i class="ph ph-newspaper text-3xl opacity-20 absolute right-3 bottom-3"></i>
+                    </div>
+                `}
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2 font-medium">
+                            <span>${p.author_name}</span>
+                            <span>${formatDateTime(p.created_at)}</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-2 leading-snug">
+                            ${escapeHtml(p.title)}
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                            ${escapeHtml(p.summary || '')}
+                        </p>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1" title="Lượt xem"><i class="ph ph-eye text-sm"></i> ${p.view_count || 0}</span>
+                            <span class="flex items-center gap-1" title="Bình luận"><i class="ph ph-chat-centered-text text-sm"></i> ${p.comments_count || 0}</span>
+                        </div>
+                        <span class="text-teal-700 font-bold group-hover:underline text-[11px]">Đọc tiếp</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (e) {
+        console.error('Error loading company news:', e);
+        gridEl.innerHTML = '<div class="col-span-full text-center py-12 text-rose-500 text-xs">Lỗi tải dữ liệu bản tin.</div>';
+    }
+}
+
+async function openNewsDetailModal(postId) {
+    currentViewingNewsId = postId;
+    const modal = document.getElementById('modal-news-detail');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) {
+            showToast('error', 'Không thể tải chi tiết bản tin.');
+            return;
+        }
+
+        const p = json.data;
+        document.getElementById('news-modal-title').textContent = p.title;
+        document.getElementById('news-modal-author').textContent = p.author_info?.full_name || p.author_name;
+        document.getElementById('news-modal-date').textContent = formatDateTime(p.created_at);
+        document.getElementById('news-modal-views').textContent = `${p.view_count} lượt xem`;
+        document.getElementById('news-modal-content').textContent = p.content;
+
+        // Category Badge
+        const catBadge = document.getElementById('news-modal-category-badge');
+        if (catBadge) {
+            catBadge.textContent = p.category_info?.name || 'Bản tin nội bộ';
+            catBadge.style.backgroundColor = (p.category_info?.color || '#0d9488') + '20';
+            catBadge.style.color = p.category_info?.color || '#0d9488';
+        }
+
+        // Urgent Badge
+        const urgentBadge = document.getElementById('news-modal-urgent-badge');
+        if (urgentBadge) {
+            if (p.is_urgent) urgentBadge.classList.remove('hidden');
+            else urgentBadge.classList.add('hidden');
+        }
+
+        // Pin button icon
+        const pinBtn = document.getElementById('news-modal-pin-btn');
+        if (pinBtn) {
+            if (p.is_pinned) {
+                pinBtn.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-300');
+            } else {
+                pinBtn.classList.remove('bg-amber-100', 'text-amber-800', 'border-amber-300');
+            }
+        }
+
+        // Cover
+        const coverWrapper = document.getElementById('news-modal-cover-wrapper');
+        const coverImg = document.getElementById('news-modal-cover');
+        if (coverWrapper && coverImg) {
+            if (p.cover_image) {
+                coverImg.src = p.cover_image;
+                coverWrapper.classList.remove('hidden');
+            } else {
+                coverWrapper.classList.add('hidden');
+            }
+        }
+
+        // Attachments
+        const attWrapper = document.getElementById('news-modal-attachments-wrapper');
+        const attList = document.getElementById('news-modal-attachments-list');
+        if (attWrapper && attList) {
+            if (p.attachments && p.attachments.length > 0) {
+                attWrapper.classList.remove('hidden');
+                attList.innerHTML = p.attachments.map(att => `
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 text-xs">
+                        <span class="flex items-center gap-2 font-medium text-slate-800 truncate">
+                            <i class="ph-bold ph-file-text text-teal-600 text-base"></i>
+                            ${escapeHtml(att.file_name)}
+                        </span>
+                        <a href="${att.file}" target="_blank" download class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded font-bold text-[11px] transition-colors shrink-0">
+                            Tải về
+                        </a>
+                    </div>
+                `).join('');
+            } else {
+                attWrapper.classList.add('hidden');
+            }
+        }
+
+        // Comments
+        renderNewsComments(p.comments || []);
+
+    } catch (e) {
+        console.error('Error fetching news detail:', e);
+    }
+}
+
+function renderNewsComments(comments) {
+    const listEl = document.getElementById('news-modal-comments-list');
+    const countEl = document.getElementById('news-modal-comments-count');
+    if (countEl) countEl.textContent = comments.length;
+    if (!listEl) return;
+
+    if (comments.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-2">Chưa có bình luận nào. Hãy là người đầu tiên đóng góp ý kiến!</div>';
+        return;
+    }
+
+    listEl.innerHTML = comments.map(c => `
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+            <div class="flex items-center justify-between font-bold text-slate-700">
+                <span class="flex items-center gap-1.5 text-teal-800">
+                    <i class="ph-bold ph-user-circle text-sm"></i>
+                    ${escapeHtml(c.author_info?.full_name || c.author_name)}
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">${formatDateTime(c.created_at)}</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed whitespace-pre-line">${escapeHtml(c.content)}</p>
+        </div>
+    `).join('');
+}
+
+async function submitNewsComment() {
+    if (!currentViewingNewsId) return;
+    const input = document.getElementById('news-comment-input');
+    if (!input || !input.value.trim()) return;
+
+    const content = input.value.trim();
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${currentViewingNewsId}/comments/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ content })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+            input.value = '';
+            // Reload news detail modal comments
+            openNewsDetailModal(currentViewingNewsId);
+        } else {
+            showToast('error', json.message || 'Không thể gửi bình luận.');
+        }
+    } catch (e) {
+        console.error('Error submitting comment:', e);
+    }
+}
+
+async function togglePinCurrentNews() {
+    if (!currentViewingNewsId) return;
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${currentViewingNewsId}/pin/`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message);
+            closeNewsDetailModal();
+            loadCompanyNews();
+        }
+    } catch (e) {
+        console.error('Error pinning post:', e);
+    }
+}
+
+function closeNewsDetailModal() {
+    const modal = document.getElementById('modal-news-detail');
+    if (modal) modal.classList.add('hidden');
+    currentViewingNewsId = null;
+}
+
+function openCreateNewsModal() {
+    const modal = document.getElementById('modal-create-news');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeCreateNewsModal() {
+    const modal = document.getElementById('modal-create-news');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function handleCreateNewsSubmit(e) {
+    e.preventDefault();
+    const title = document.getElementById('create-news-title').value.trim();
+    const content = document.getElementById('create-news-content').value.trim();
+    const catId = document.getElementById('create-news-category').value;
+    const dept = document.getElementById('create-news-department').value;
+    const summary = document.getElementById('create-news-summary').value.trim();
+    const isPinned = document.getElementById('create-news-pinned').checked;
+    const isUrgent = document.getElementById('create-news-urgent').checked;
+    const coverFile = document.getElementById('create-news-cover').files[0];
+    const files = document.getElementById('create-news-files').files;
+
+    if (!title || !content) {
+        showToast('warning', 'Vui lòng điền đầy đủ tiêu đề và nội dung.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    if (catId) formData.append('category_id', catId);
+    formData.append('target_department', dept);
+    formData.append('summary', summary);
+    formData.append('is_pinned', isPinned ? '1' : '0');
+    formData.append('is_urgent', isUrgent ? '1' : '0');
+    if (coverFile) formData.append('cover_image', coverFile);
+    for (let i = 0; i < files.length; i++) {
+        formData.append('attachments', files[i]);
+    }
+
+    try {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type']; // Let browser set boundary
+        const res = await authFetch('/api/collaboration/news/posts/', {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', 'Đã đăng bản tin thành công!');
+            closeCreateNewsModal();
+            document.getElementById('create-news-form').reset();
+            loadCompanyNews();
+        } else {
+            showToast('error', json.message || 'Không thể đăng bản tin.');
+        }
+    } catch (e) {
+        console.error('Error creating news:', e);
+        showToast('error', 'Lỗi hệ thống khi đăng bản tin.');
+    }
+}
+
+
+// ==========================================================================
+// 2. PHÂN HỆ: QUẢN LÝ CÔNG VIỆC & GIAO VIỆC VĂN PHÒNG (JIRA/ASANA STANDARD)
+// ==========================================================================
+
+async function loadOfficeTasks() {
+    const kanbanContainer = document.getElementById('tasks-kanban-container');
+    const listTbody = document.getElementById('tasks-list-tbody');
+    const totalBadge = document.getElementById('tasks-total-badge');
+    const deptFilter = document.getElementById('tasks-dept-filter');
+    const searchInput = document.getElementById('tasks-search-input');
+
+    // Build URL query params
+    const params = new URLSearchParams();
+    params.append('view', currentTaskViewMode);
+    params.append('scope', currentTaskScope);
+    if (deptFilter && deptFilter.value) params.append('department', deptFilter.value);
+    if (searchInput && searchInput.value.trim()) params.append('search', searchInput.value.trim());
+
+    // Nạp directory nếu chưa có
+    if (officeDirectoryUsers.length === 0) {
+        try {
+            const dirRes = await authFetch('/api/collaboration/tasks/directory/', {
+                headers: getAuthHeaders()
+            });
+            const dirJson = await dirRes.json();
+            if (dirJson.success && dirJson.office_users) {
+                officeDirectoryUsers = dirJson.office_users;
+                populateAssigneeSelect();
+            }
+        } catch (e) {
+            console.error('Error loading task directory:', e);
+        }
+    }
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/?${params.toString()}`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success) return;
+
+        if (totalBadge) totalBadge.textContent = `${json.counts?.total || json.total || 0} việc`;
+
+        if (currentTaskViewMode === 'kanban') {
+            renderKanbanColumns(json.columns || {});
+            updateKanbanBadgeCounts(json.counts || {});
+        } else {
+            renderTasksListTable(json.data || []);
+        }
+
+    } catch (e) {
+        console.error('Error loading tasks:', e);
+    }
+}
+
+function switchTaskView(mode) {
+    currentTaskViewMode = mode;
+    const btnKanban = document.getElementById('btn-view-kanban');
+    const btnList = document.getElementById('btn-view-list');
+    const kanbanContainer = document.getElementById('tasks-kanban-container');
+    const listContainer = document.getElementById('tasks-list-container');
+
+    if (mode === 'kanban') {
+        btnKanban.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-teal-800 shadow-xs';
+        btnList.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+        kanbanContainer.classList.remove('hidden');
+        listContainer.classList.add('hidden');
+    } else {
+        btnList.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-teal-800 shadow-xs';
+        btnKanban.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+        kanbanContainer.classList.add('hidden');
+        listContainer.classList.remove('hidden');
+    }
+    loadOfficeTasks();
+}
+
+function setTaskScope(scope) {
+    currentTaskScope = scope;
+    ['all', 'my_tasks', 'assigned_by_me'].forEach(s => {
+        const btn = document.getElementById(`scope-${s.replace('_', '-')}`);
+        if (btn) {
+            if (s === scope) {
+                btn.className = 'px-2.5 py-1 rounded-lg bg-white text-teal-800 shadow-xs transition-colors';
+            } else {
+                btn.className = 'px-2.5 py-1 rounded-lg hover:text-teal-800 transition-colors';
+            }
+        }
+    });
+    loadOfficeTasks();
+}
+
+function renderKanbanColumns(columns) {
+    const colStatuses = ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'];
+
+    colStatuses.forEach(st => {
+        const colEl = document.getElementById(`kanban-col-${st}`);
+        if (!colEl) return;
+
+        const tasks = columns[st] || [];
+        if (tasks.length === 0) {
+            colEl.innerHTML = '<div class="text-center py-8 text-slate-400 text-[11px] italic">Không có công việc nào</div>';
+            return;
+        }
+
+        colEl.innerHTML = tasks.map(t => `
+            <div id="task-card-${t.id}" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetailDrawer(${t.id})" class="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-teal-400 transition-all cursor-pointer group space-y-2.5 select-none">
+                <!-- Priority & Code -->
+                <div class="flex items-center justify-between text-[10px]">
+                    <span class="font-mono font-bold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">${formatTaskCode(t.code)}</span>
+                    <span class="px-2 py-0.5 rounded font-extrabold uppercase tracking-wide ${getPriorityBadgeClass(t.priority)}">
+                        ${getPriorityText(t.priority)}
+                    </span>
+                </div>
+
+                <!-- Title -->
+                <h4 class="text-xs font-extrabold text-slate-800 group-hover:text-teal-700 transition-colors leading-snug">
+                    ${escapeHtml(t.title)}
+                </h4>
+
+                <!-- Meta row: Checklist & Comments -->
+                <div class="flex items-center gap-3 text-[11px] text-slate-400">
+                    ${t.checklists_count?.total > 0 ? `
+                        <span class="flex items-center gap-1 font-semibold ${t.checklists_count.done === t.checklists_count.total ? 'text-emerald-600' : 'text-slate-600'}">
+                            <i class="ph-bold ph-list-checks text-xs"></i>
+                            ${t.checklists_count.done}/${t.checklists_count.total}
+                        </span>
+                    ` : ''}
+                    ${t.comments_count > 0 ? `
+                        <span class="flex items-center gap-1 font-semibold text-slate-600">
+                            <i class="ph-bold ph-chat-circle-dots text-xs"></i>
+                            ${t.comments_count}
+                        </span>
+                    ` : ''}
+                    <span class="text-[10px] text-slate-400 ml-auto font-medium">${t.department}</span>
+                </div>
+
+                <!-- Footer: 3 Icon theo thứ tự trên 1 hàng: Người giao | Người phụ trách | Người liên quan -->
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] select-none gap-1">
+                    <div class="flex items-center gap-1.5 truncate min-w-0 text-slate-500">
+                        <!-- 1. Người giao -->
+                        <span class="flex items-center gap-1 truncate shrink min-w-0" title="Người giao: ${escapeHtml(cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống')}">
+                            <i class="ph-bold ph-paper-plane-tilt text-slate-400 shrink-0 text-[11px]"></i>
+                            <span class="truncate font-medium">${escapeHtml(cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống')}</span>
+                        </span>
+
+                        <span class="text-slate-300 shrink-0 font-light">|</span>
+
+                        <!-- 2. Người phụ trách -->
+                        <span class="flex items-center gap-1 truncate shrink min-w-0 font-semibold text-teal-900" title="Người phụ trách: ${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}">
+                            <i class="ph-bold ph-user-check text-teal-600 shrink-0 text-[11px]"></i>
+                            <span class="truncate">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</span>
+                        </span>
+
+                        ${(t.followers_info && t.followers_info.length > 0) ? `
+                        <span class="text-slate-300 shrink-0 font-light">|</span>
+                        <!-- 3. Người liên quan -->
+                        <span class="flex items-center gap-1 text-teal-700 shrink-0 font-bold bg-teal-50 px-1 py-0.2 rounded border border-teal-200/80" title="Người liên quan / theo dõi: ${escapeHtml(t.followers_info.map(f => cleanPersonName(f.full_name)).join(', '))}">
+                            <i class="ph-bold ph-users text-teal-600 shrink-0 text-[11px]"></i>
+                            <span>${t.followers_info.length}</span>
+                        </span>
+                        ` : ''}
+                    </div>
+
+                    ${t.due_date ? `
+                        <span class="text-[9.5px] font-bold shrink-0 ml-1 ${t.is_overdue ? 'text-rose-600 bg-rose-50 px-1 py-0.5 rounded border border-rose-200 animate-pulse' : 'text-slate-400'}">
+                            ${formatDateDMY(t.due_date)}
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    });
+}
+
+function updateKanbanBadgeCounts(counts) {
+    const bTodo = document.getElementById('badge-count-todo');
+    const bInp = document.getElementById('badge-count-in_progress');
+    const bRev = document.getElementById('badge-count-review');
+    const bDone = document.getElementById('badge-count-done');
+
+    if (bTodo) bTodo.textContent = counts.todo || 0;
+    if (bInp) bInp.textContent = counts.in_progress || 0;
+    if (bRev) bRev.textContent = counts.review || 0;
+    if (bDone) bDone.textContent = counts.done || 0;
+}
+
+function renderTasksListTable(tasks) {
+    const tbody = document.getElementById('tasks-list-tbody');
+    if (!tbody) return;
+
+    if (tasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-12 text-slate-400">Không có công việc nào</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = tasks.map(t => `
+        <tr onclick="openTaskDetailDrawer(${t.id})" class="hover:bg-slate-50 cursor-pointer transition-colors">
+            <td class="py-3 px-4 font-mono font-bold text-teal-800">${formatTaskCode(t.code)}</td>
+            <td class="py-3 px-4 font-bold text-slate-800">${escapeHtml(t.title)}</td>
+            <td class="py-3 px-4 text-slate-600 font-medium">${t.department}</td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${getPriorityBadgeClass(t.priority)}">
+                    ${getPriorityText(t.priority)}
+                </span>
+            </td>
+            <td class="py-3 px-4 font-semibold text-slate-700">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</td>
+            <td class="py-3 px-4 font-medium ${t.is_overdue ? 'text-rose-600 font-bold' : 'text-slate-600'}">
+                ${t.due_date ? formatDateDMY(t.due_date) : '-'}
+            </td>
+            <td class="py-3 px-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-teal-600 h-1.5 rounded-full" style="width: ${t.progress_percent || 0}%"></div>
+                    </div>
+                    <span class="text-[10px] text-slate-500 font-bold">${t.progress_percent || 0}%</span>
+                </div>
+            </td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusBadgeClass(t.status)}">
+                    ${getStatusText(t.status)}
+                </span>
+            </td>
+            <td class="py-3 px-4 text-center">
+                <button type="button" class="text-teal-700 hover:text-teal-900 font-bold">Xem</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Drag & Drop handlers for Kanban
+let draggedTaskId = null;
+function handleDragStart(e, taskId) {
+    draggedTaskId = taskId;
+    e.dataTransfer.setData('text/plain', taskId);
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+async function handleDrop(e, targetStatus) {
+    e.preventDefault();
+    if (!draggedTaskId) return;
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${draggedTaskId}/status/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ status: targetStatus })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message);
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error changing task status:', e);
+    } finally {
+        draggedTaskId = null;
+    }
+}
+
+// Slide-over Drawer
+async function openTaskDetailDrawer(taskId) {
+    currentViewingTaskId = taskId;
+    const drawer = document.getElementById('drawer-task-detail');
+    if (!drawer) return;
+
+    drawer.classList.remove('hidden');
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${taskId}/`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        const t = json.data;
+        document.getElementById('task-drawer-code').textContent = formatTaskCode(t.code);
+        document.getElementById('task-drawer-title').textContent = t.title;
+        document.getElementById('task-drawer-desc').textContent = t.description || 'Không có mô tả chi tiết.';
+        document.getElementById('task-drawer-assignee').textContent = cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán';
+        document.getElementById('task-drawer-reporter').textContent = cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống';
+        document.getElementById('task-drawer-due').textContent = t.due_date ? formatDateDMY(t.due_date) : 'Không có';
+        document.getElementById('task-drawer-department').textContent = t.department;
+
+        // Status & Priority Badge
+        const stBadge = document.getElementById('task-drawer-status-badge');
+        if (stBadge) {
+            stBadge.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold ${getStatusBadgeClass(t.status)}`;
+            stBadge.textContent = getStatusText(t.status);
+        }
+
+        const prBadge = document.getElementById('task-drawer-priority-badge');
+        if (prBadge) {
+            prBadge.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold ${getPriorityBadgeClass(t.priority)}`;
+            prBadge.textContent = getPriorityText(t.priority);
+        }
+
+        // Context Trip
+        const ctxWrapper = document.getElementById('task-drawer-context-wrapper');
+        const ctxTrip = document.getElementById('task-drawer-context-trip');
+        if (ctxWrapper && ctxTrip) {
+            if (t.related_trip_code) {
+                ctxTrip.textContent = t.related_trip_code;
+                ctxWrapper.classList.remove('hidden');
+            } else {
+                ctxWrapper.classList.add('hidden');
+            }
+        }
+
+        // Followers (Người theo dõi / liên quan) trong Drawer
+        const followersListEl = document.getElementById('task-drawer-followers-list');
+        if (followersListEl) {
+            const followers = t.followers_info || [];
+            if (followers.length > 0) {
+                followersListEl.innerHTML = followers.map(f => `
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80">
+                        <i class="ph-bold ph-user-circle text-teal-600"></i>
+                        <span>${escapeHtml(f.full_name)} <span class="text-[10px] text-teal-600/70">(${escapeHtml(f.department || '')})</span></span>
+                    </span>
+                `).join('');
+            } else {
+                followersListEl.innerHTML = '<span class="text-slate-400 text-[11px] italic">Không có người theo dõi</span>';
+            }
+        }
+
+        // Progress & Checklist
+        updateDrawerProgress(t.progress_percent || 0);
+        renderDrawerChecklists(t.checklists || []);
+
+        // Attachments
+        renderDrawerAttachments(t.attachments || []);
+
+        // Comments
+        renderDrawerComments(t.comments || []);
+
+        // Activities
+        renderDrawerActivities(t.activities || []);
+
+    } catch (e) {
+        console.error('Error fetching task detail:', e);
+    }
+}
+
+function updateDrawerProgress(percent) {
+    const textEl = document.getElementById('task-drawer-progress-text');
+    const barEl = document.getElementById('task-drawer-progress-bar');
+    if (textEl) textEl.textContent = `${percent}%`;
+    if (barEl) barEl.style.width = `${percent}%`;
+}
+
+function renderDrawerChecklists(checklists) {
+    const listEl = document.getElementById('task-drawer-checklists');
+    if (!listEl) return;
+
+    if (checklists.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1">Chưa có bước kiểm tra nào</div>';
+        return;
+    }
+
+    listEl.innerHTML = checklists.map(c => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100/60 transition-colors">
+            <label class="flex items-center gap-2.5 cursor-pointer select-none flex-1">
+                <input type="checkbox" onchange="toggleChecklistItem(${c.id})" ${c.is_completed ? 'checked' : ''} class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500">
+                <span class="text-xs font-semibold ${c.is_completed ? 'line-through text-slate-400' : 'text-slate-700'}">
+                    ${escapeHtml(c.title)}
+                </span>
+            </label>
+            <button type="button" onclick="deleteChecklistItem(${c.id})" class="text-slate-400 hover:text-rose-600 p-1 transition-colors">
+                <i class="ph ph-trash text-xs"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+async function addChecklistItem() {
+    if (!currentViewingTaskId) return;
+    const input = document.getElementById('task-new-checklist-input');
+    if (!input || !input.value.trim()) return;
+
+    const title = input.value.trim();
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/checklists/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ title })
+        });
+        const json = await res.json();
+        if (json.success) {
+            input.value = '';
+            openTaskDetailDrawer(currentViewingTaskId);
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error adding checklist item:', e);
+    }
+}
+
+async function toggleChecklistItem(itemId) {
+    if (!currentViewingTaskId) return;
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/checklists/`, {
+            method: 'PATCH',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ item_id: itemId })
+        });
+        const json = await res.json();
+        if (json.success) {
+            updateDrawerProgress(json.progress_percent || 0);
+            openTaskDetailDrawer(currentViewingTaskId);
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error toggling checklist:', e);
+    }
+}
+
+async function deleteChecklistItem(itemId) {
+    if (!currentViewingTaskId) return;
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/checklists/?item_id=${itemId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            openTaskDetailDrawer(currentViewingTaskId);
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error deleting checklist item:', e);
+    }
+}
+
+function renderDrawerAttachments(attachments) {
+    const listEl = document.getElementById('task-drawer-attachments');
+    if (!listEl) return;
+
+    if (attachments.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1">Không có tệp đính kèm</div>';
+        return;
+    }
+
+    listEl.innerHTML = attachments.map(att => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
+            <span class="flex items-center gap-1.5 font-medium text-slate-800 truncate">
+                <i class="ph-bold ph-paperclip text-teal-600"></i>
+                ${escapeHtml(att.original_name)}
+            </span>
+            <a href="${att.file}" target="_blank" download class="px-2 py-0.5 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded font-bold text-[11px] transition-colors shrink-0">
+                Tải
+            </a>
+        </div>
+    `).join('');
+}
+
+async function uploadTaskAttachment(e) {
+    if (!currentViewingTaskId || !e.target.files || e.target.files.length === 0) return;
+    const files = e.target.files;
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+
+    try {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type'];
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/attachments/`, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', 'Đã tải tệp lên thành công');
+            openTaskDetailDrawer(currentViewingTaskId);
+        }
+    } catch (err) {
+        console.error('Error uploading attachment:', err);
+    }
+}
+
+function renderDrawerComments(comments) {
+    const listEl = document.getElementById('task-drawer-comments');
+    if (!listEl) return;
+
+    if (comments.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1">Chưa có trao đổi nào</div>';
+        return;
+    }
+
+    listEl.innerHTML = comments.map(c => `
+        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+            <div class="flex items-center justify-between font-bold text-slate-700">
+                <span class="text-teal-800 flex items-center gap-1">
+                    <i class="ph-bold ph-user-circle"></i>
+                    ${escapeHtml(c.author_info?.full_name || 'Đồng nghiệp')}
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">${formatDateTime(c.created_at)}</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed whitespace-pre-line">${escapeHtml(c.content)}</p>
+        </div>
+    `).join('');
+}
+
+async function submitTaskComment() {
+    if (!currentViewingTaskId) return;
+    const input = document.getElementById('task-new-comment-input');
+    if (!input || !input.value.trim()) return;
+
+    const content = input.value.trim();
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/comments/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ content })
+        });
+        const json = await res.json();
+        if (json.success) {
+            input.value = '';
+            openTaskDetailDrawer(currentViewingTaskId);
+        }
+    } catch (e) {
+        console.error('Error sending task comment:', e);
+    }
+}
+
+function renderDrawerActivities(activities) {
+    const listEl = document.getElementById('task-drawer-activities');
+    if (!listEl) return;
+
+    if (activities.length === 0) {
+        listEl.innerHTML = '<div>Chưa có nhật ký hoạt động</div>';
+        return;
+    }
+
+    listEl.innerHTML = activities.slice(0, 8).map(a => `
+        <div class="flex items-start gap-1.5 py-0.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-300 mt-1.5 shrink-0"></span>
+            <span><strong>${escapeHtml(a.user_name)}</strong>: ${escapeHtml(a.description)} <span class="text-slate-400">(${formatDateTime(a.created_at)})</span></span>
+        </div>
+    `).join('');
+}
+
+function closeTaskDetailDrawer() {
+    const drawer = document.getElementById('drawer-task-detail');
+    if (drawer) drawer.classList.add('hidden');
+    currentViewingTaskId = null;
+}
+
+async function deleteCurrentTask() {
+    if (!currentViewingTaskId) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa công việc này không?')) return;
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message);
+            closeTaskDetailDrawer();
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error deleting task:', e);
+    }
+}
+
+// Quản lý danh sách Người liên quan (Theo dõi chung) trong modal tạo việc (Hỗ trợ Multi-Select)
+let createTaskFollowersList = []; // Mảng chứa các user_id đã chọn
+
+async function ensureOfficeDirectoryLoaded() {
+    if (officeDirectoryUsers && officeDirectoryUsers.length > 0) {
+        return;
+    }
+    // Ưu tiên nạp tức thì từ window.PRELOADED_OFFICE_USERS (Zero latency)
+    if (window.PRELOADED_OFFICE_USERS && Array.isArray(window.PRELOADED_OFFICE_USERS) && window.PRELOADED_OFFICE_USERS.length > 0) {
+        officeDirectoryUsers = window.PRELOADED_OFFICE_USERS;
+        return;
+    }
+    // Fallback nạp từ API bất đồng bộ
+    try {
+        const res = await authFetch('/api/collaboration/tasks/directory/', {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            officeDirectoryUsers = json.office_users || [];
+            collaborationUserPerms = json.current_user_permission || null;
+        }
+    } catch (e) {
+        console.error('Error fetching office directory:', e);
+    }
+}
+window.ensureOfficeDirectoryLoaded = ensureOfficeDirectoryLoaded;
+
+function toggleFollowersDropdown(e) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById('task-followers-dropdown-panel');
+    const chevron = document.getElementById('task-followers-chevron');
+    if (!panel) return;
+
+    const isHidden = panel.classList.contains('hidden');
+    if (isHidden) {
+        panel.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+        renderFollowersMultiSelectOptions();
+        const searchInput = document.getElementById('task-followers-search');
+        if (searchInput) {
+            searchInput.value = '';
+            setTimeout(() => searchInput.focus(), 50);
+        }
+    } else {
+        closeFollowersDropdown();
+    }
+}
+window.toggleFollowersDropdown = toggleFollowersDropdown;
+
+function closeFollowersDropdown() {
+    const panel = document.getElementById('task-followers-dropdown-panel');
+    const chevron = document.getElementById('task-followers-chevron');
+    if (panel) panel.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+}
+window.closeFollowersDropdown = closeFollowersDropdown;
+
+function renderFollowersMultiSelectOptions(searchQuery = '') {
+    const container = document.getElementById('task-followers-options-list');
+    if (!container) return;
+
+    const q = searchQuery.trim().toLowerCase();
+    const users = (officeDirectoryUsers || []).filter(u => {
+        if (!q) return true;
+        const name = (u.full_name || '').toLowerCase();
+        const dept = (u.department_name || '').toLowerCase();
+        const role = (u.role || '').toLowerCase();
+        const code = (u.employee_code || '').toLowerCase();
+        return name.includes(q) || dept.includes(q) || role.includes(q) || code.includes(q);
+    });
+
+    if (users.length === 0) {
+        container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs italic">Không tìm thấy nhân sự phù hợp</div>';
+        return;
+    }
+
+    // Nhóm theo phòng ban
+    const groups = {};
+    users.forEach(u => {
+        const dept = u.department_name || 'Khác';
+        if (!groups[dept]) groups[dept] = [];
+        groups[dept].push(u);
+    });
+
+    let html = '';
+    for (const [dept, deptUsers] of Object.entries(groups)) {
+        html += `
+            <div class="mb-2">
+                <div class="text-[10px] font-extrabold uppercase tracking-wider text-teal-800 bg-teal-50/70 px-2.5 py-1 rounded-md mb-1 flex items-center justify-between">
+                    <span>${escapeHtml(dept)}</span>
+                    <span class="text-teal-600 font-normal">(${deptUsers.length})</span>
+                </div>
+                <div class="space-y-0.5">
+        `;
+        deptUsers.forEach(u => {
+            const isChecked = createTaskFollowersList.includes(u.user_id);
+            const initial = (u.full_name || 'U').charAt(0).toUpperCase();
+            html += `
+                <div onclick="toggleFollowerSelection(${u.user_id})" class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 cursor-pointer select-none transition-colors ${isChecked ? 'bg-teal-50/60 font-semibold' : ''}">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <input type="checkbox" id="chk-follower-${u.user_id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleFollowerSelection(${u.user_id});" class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer">
+                        <div class="w-6 h-6 rounded-full bg-teal-700 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
+                            ${initial}
+                        </div>
+                        <div class="truncate text-xs">
+                            <span class="text-slate-800">${escapeHtml(u.full_name)}</span>
+                            <span class="text-[10.5px] text-slate-400 ml-1 font-normal">(${escapeHtml(u.role || u.employee_code || '')})</span>
+                        </div>
+                    </div>
+                    ${isChecked ? '<i class="ph-bold ph-check text-teal-600 text-sm shrink-0"></i>' : ''}
+                </div>
+            `;
+        });
+        html += `
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+    updateFollowersCounterUI();
+}
+window.renderFollowersMultiSelectOptions = renderFollowersMultiSelectOptions;
+
+function toggleFollowerSelection(userId) {
+    userId = parseInt(userId);
+    if (!userId) return;
+
+    const idx = createTaskFollowersList.indexOf(userId);
+    if (idx > -1) {
+        createTaskFollowersList.splice(idx, 1);
+    } else {
+        createTaskFollowersList.push(userId);
+    }
+
+    // Update checkbox & class nếu panel đang mở
+    const chk = document.getElementById(`chk-follower-${userId}`);
+    if (chk) chk.checked = createTaskFollowersList.includes(userId);
+
+    renderCreateTaskFollowersChips();
+    updateFollowersCounterUI();
+}
+window.toggleFollowerSelection = toggleFollowerSelection;
+
+function selectAllFollowers() {
+    const searchInput = document.getElementById('task-followers-search');
+    const q = (searchInput?.value || '').trim().toLowerCase();
+    
+    // Nếu có tìm kiếm thì chỉ chọn những người đang hiển thị trong search
+    const visibleUsers = (officeDirectoryUsers || []).filter(u => {
+        if (!q) return true;
+        const name = (u.full_name || '').toLowerCase();
+        const dept = (u.department_name || '').toLowerCase();
+        return name.includes(q) || dept.includes(q);
+    });
+
+    visibleUsers.forEach(u => {
+        if (!createTaskFollowersList.includes(u.user_id)) {
+            createTaskFollowersList.push(u.user_id);
+        }
+    });
+
+    renderFollowersMultiSelectOptions(q);
+    renderCreateTaskFollowersChips();
+    updateFollowersCounterUI();
+}
+window.selectAllFollowers = selectAllFollowers;
+
+function clearAllFollowers() {
+    createTaskFollowersList = [];
+    const searchInput = document.getElementById('task-followers-search');
+    renderFollowersMultiSelectOptions(searchInput?.value || '');
+    renderCreateTaskFollowersChips();
+    updateFollowersCounterUI();
+}
+window.clearAllFollowers = clearAllFollowers;
+
+function filterFollowersDropdown(val) {
+    renderFollowersMultiSelectOptions(val);
+}
+window.filterFollowersDropdown = filterFollowersDropdown;
+
+function removeCreateTaskFollower(userId) {
+    userId = parseInt(userId);
+    createTaskFollowersList = createTaskFollowersList.filter(id => id !== userId);
+    
+    // Cập nhật checkbox trong dropdown nếu đang mở
+    const chk = document.getElementById(`chk-follower-${userId}`);
+    if (chk) chk.checked = false;
+
+    renderCreateTaskFollowersChips();
+    updateFollowersCounterUI();
+}
+window.removeCreateTaskFollower = removeCreateTaskFollower;
+
+function updateFollowersCounterUI() {
+    const count = createTaskFollowersList.length;
+    const badge = document.getElementById('task-followers-count-badge');
+    const summaryCount = document.getElementById('task-followers-summary-count');
+
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = `${count} người`;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    if (summaryCount) {
+        summaryCount.textContent = count;
+    }
+}
+
+function renderCreateTaskFollowersChips() {
+    const container = document.getElementById('create-task-followers-chips');
+    if (!container) return;
+
+    if (createTaskFollowersList.length === 0) {
+        container.innerHTML = `
+            <span id="create-task-followers-placeholder" class="text-xs text-slate-400 select-none">
+                -- Bấm để chọn người liên quan (chọn nhiều) --
+            </span>
+        `;
+        return;
+    }
+
+    const selectedUsers = officeDirectoryUsers.filter(u => createTaskFollowersList.includes(u.user_id));
+
+    container.innerHTML = selectedUsers.map(u => `
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200/90 shadow-2xs animate-fade-in select-none">
+            <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
+            <span>${escapeHtml(u.full_name)} <span class="text-[10px] text-teal-600/80 font-normal">(${escapeHtml(u.department_name)})</span></span>
+            <button type="button" onclick="event.stopPropagation(); removeCreateTaskFollower(${u.user_id});" class="ml-0.5 text-teal-600 hover:text-rose-600 hover:bg-rose-50 rounded p-0.5 transition-colors" title="Bỏ chọn">
+                <i class="ph-bold ph-x text-[11px]"></i>
+            </button>
+        </span>
+    `).join('');
+}
+window.renderCreateTaskFollowersChips = renderCreateTaskFollowersChips;
+
+// Lắng nghe click bên ngoài để đóng dropdown panel
+document.addEventListener('click', (e) => {
+    const multiselect = document.getElementById('task-followers-multiselect-container');
+    if (multiselect && !multiselect.contains(e.target)) {
+        closeFollowersDropdown();
+    }
+});
+
+async function populateAssigneeSelect() {
+    const select = document.getElementById('create-task-assignee');
+    if (!select) return;
+
+    await ensureOfficeDirectoryLoaded();
+
+    select.innerHTML = '<option value="">-- Chọn người thực hiện chính --</option>';
+    const myId = window.CURRENT_USER?.id;
+    const canAssignOthers = collaborationUserPerms ? collaborationUserPerms.can_assign_others : true;
+
+    officeDirectoryUsers.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.user_id;
+
+        const isMe = u.user_id === myId;
+        if (isMe) {
+            opt.textContent = `${u.full_name} (${u.department_name}) — [Chính bạn - Việc cá nhân]`;
+            select.appendChild(opt);
+        } else if (u.can_assign) {
+            opt.textContent = `${u.full_name} (${u.department_name}) - ${u.role}`;
+            select.appendChild(opt);
+        } else {
+            opt.textContent = `${u.full_name} (${u.department_name}) — [Cấp trên / Ngoài thẩm quyền]`;
+            opt.disabled = true;
+            opt.className = 'text-slate-400 bg-slate-50';
+            select.appendChild(opt);
+        }
+    });
+
+    if (!canAssignOthers && myId) {
+        select.value = myId;
+    }
+}
+
+// Quản lý Checklist và Tệp đính kèm khởi tạo trong trang con Tạo việc
+let createTaskInitialChecklists = [];
+let createTaskInitialFiles = [];
+
+function addInitialChecklistItem() {
+    const input = document.getElementById('create-task-new-checklist-input');
+    if (!input || !input.value.trim()) return;
+
+    const val = input.value.trim();
+    createTaskInitialChecklists.push(val);
+    input.value = '';
+    renderCreateTaskInitialChecklists();
+}
+window.addInitialChecklistItem = addInitialChecklistItem;
+
+function removeInitialChecklistItem(idx) {
+    if (idx >= 0 && idx < createTaskInitialChecklists.length) {
+        createTaskInitialChecklists.splice(idx, 1);
+        renderCreateTaskInitialChecklists();
+    }
+}
+window.removeInitialChecklistItem = removeInitialChecklistItem;
+
+function renderCreateTaskInitialChecklists() {
+    const listEl = document.getElementById('create-task-checklists-list');
+    const countEl = document.getElementById('create-task-checklists-count');
+    if (!listEl) return;
+
+    if (countEl) countEl.textContent = `${createTaskInitialChecklists.length} mục`;
+
+    if (createTaskInitialChecklists.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1" id="create-task-checklists-empty">Chưa có bước kiểm tra nào được thêm</div>';
+        return;
+    }
+
+    listEl.innerHTML = createTaskInitialChecklists.map((title, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/70 transition-colors">
+            <span class="flex items-center gap-2 text-xs font-semibold text-slate-700 min-w-0">
+                <span class="w-4 h-4 rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span>
+                <span class="truncate">${escapeHtml(title)}</span>
+            </span>
+            <button type="button" onclick="removeInitialChecklistItem(${idx})" class="text-slate-400 hover:text-rose-600 p-1 transition-colors" title="Xóa bước này">
+                <i class="ph ph-trash text-xs"></i>
+            </button>
+        </div>
+    `).join('');
+}
+window.renderCreateTaskInitialChecklists = renderCreateTaskInitialChecklists;
+
+function handleInitialFilesSelected(input) {
+    if (!input || !input.files) return;
+    for (let i = 0; i < input.files.length; i++) {
+        createTaskInitialFiles.push(input.files[i]);
+    }
+    input.value = '';
+    renderCreateTaskInitialFiles();
+}
+window.handleInitialFilesSelected = handleInitialFilesSelected;
+
+function removeInitialFile(idx) {
+    if (idx >= 0 && idx < createTaskInitialFiles.length) {
+        createTaskInitialFiles.splice(idx, 1);
+        renderCreateTaskInitialFiles();
+    }
+}
+window.removeInitialFile = removeInitialFile;
+
+function renderCreateTaskInitialFiles() {
+    const previewEl = document.getElementById('create-task-files-preview');
+    if (!previewEl) return;
+
+    if (createTaskInitialFiles.length === 0) {
+        previewEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1" id="create-task-files-empty">Chưa có tệp đính kèm nào</div>';
+        return;
+    }
+
+    previewEl.innerHTML = createTaskInitialFiles.map((file, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-xl border border-slate-200 bg-slate-50 text-xs">
+            <span class="flex items-center gap-2 truncate text-slate-700 min-w-0">
+                <i class="ph-bold ph-file-text text-teal-600 text-sm shrink-0"></i>
+                <span class="truncate font-medium">${escapeHtml(file.name)}</span>
+                <span class="text-[10px] text-slate-400 shrink-0 font-normal">(${Math.round(file.size / 1024)} KB)</span>
+            </span>
+            <button type="button" onclick="removeInitialFile(${idx})" class="text-slate-400 hover:text-rose-600 p-1 transition-colors" title="Bỏ tệp này">
+                <i class="ph ph-x text-xs"></i>
+            </button>
+        </div>
+    `).join('');
+}
+window.renderCreateTaskInitialFiles = renderCreateTaskInitialFiles;
+
+async function openCreateTaskModal() {
+    const modal = document.getElementById('modal-create-task');
+    if (modal) {
+        createTaskFollowersList = [];
+        createTaskInitialChecklists = [];
+        createTaskInitialFiles = [];
+        renderCreateTaskFollowersChips();
+        renderCreateTaskInitialChecklists();
+        renderCreateTaskInitialFiles();
+
+        const reporterDisplay = document.getElementById('create-task-reporter-display');
+        if (reporterDisplay && window.CURRENT_USER) {
+            reporterDisplay.innerHTML = `
+                <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
+                <span class="truncate">${escapeHtml(window.CURRENT_USER.full_name || window.CURRENT_USER.username)}</span>
+            `;
+        }
+
+        await populateAssigneeSelect();
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeCreateTaskModal() {
+    const modal = document.getElementById('modal-create-task');
+    if (modal) {
+        modal.classList.add('hidden');
+        createTaskFollowersList = [];
+        createTaskInitialChecklists = [];
+        createTaskInitialFiles = [];
+        renderCreateTaskFollowersChips();
+        renderCreateTaskInitialChecklists();
+        renderCreateTaskInitialFiles();
+    }
+}
+
+// ESC key to close create task modal
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('modal-create-task');
+        if (modal && !modal.classList.contains('hidden')) {
+            closeCreateTaskModal();
+        }
+    }
+});
+
+async function handleCreateTaskSubmit(e) {
+    e.preventDefault();
+    const title = document.getElementById('create-task-title').value.trim();
+    const department = document.getElementById('create-task-department').value;
+    const priority = document.getElementById('create-task-priority').value;
+    const assigneeId = document.getElementById('create-task-assignee').value || null;
+    const dueDate = document.getElementById('create-task-due').value || null;
+    const description = document.getElementById('create-task-description').value.trim();
+    const followersIds = createTaskFollowersList.map(item => (typeof item === 'object' && item !== null) ? item.user_id : parseInt(item)).filter(id => !isNaN(id) && id > 0);
+
+    if (!title) {
+        showToast('warning', 'Vui lòng nhập tên công việc.');
+        return;
+    }
+
+    try {
+        const res = await authFetch('/api/collaboration/tasks/', {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+                title,
+                department,
+                priority,
+                assignee_id: assigneeId,
+                followers_ids: followersIds,
+                due_date: dueDate,
+                description,
+                checklists: createTaskInitialChecklists
+            })
+        });
+        const json = await res.json();
+        if (json.success) {
+            const newTaskId = json.data?.id;
+
+            // Nếu có tệp đính kèm ban đầu, tải lên ngay lập tức
+            if (newTaskId && createTaskInitialFiles.length > 0) {
+                try {
+                    const formData = new FormData();
+                    createTaskInitialFiles.forEach(f => formData.append('files', f));
+                    const uploadHeaders = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {};
+                    delete uploadHeaders['Content-Type']; // Để browser tự động set multipart boundary
+                    await fetch(`/api/collaboration/tasks/${newTaskId}/attachments/`, {
+                        method: 'POST',
+                        headers: uploadHeaders,
+                        body: formData
+                    });
+                } catch (errUpload) {
+                    console.error('Error uploading initial attachments:', errUpload);
+                }
+            }
+
+            showToast('success', json.message);
+            closeCreateTaskModal();
+            document.getElementById('create-task-form').reset();
+            createTaskFollowersList = [];
+            createTaskInitialChecklists = [];
+            createTaskInitialFiles = [];
+            renderCreateTaskFollowersChips();
+            renderCreateTaskInitialChecklists();
+            renderCreateTaskInitialFiles();
+            loadOfficeTasks();
+            if (typeof loadDashboardData === 'function') {
+                loadDashboardData();
+            }
+        } else {
+            showToast('error', json.message || 'Không thể tạo công việc.');
+        }
+    } catch (e) {
+        console.error('Error creating task:', e);
+    }
+}
+
+
+// ==========================================================================
+// 3. PHÂN HỆ: CHAT BUBBLE & FLOATING TEAM CHAT (IN-APP MESSAGING)
+// ==========================================================================
+
+function initCollaborationChat() {
+    // Đếm tin nhắn chưa đọc định kỳ mỗi 30s
+    checkChatUnreadCount();
+    setInterval(checkChatUnreadCount, 30000);
+}
+
+async function checkChatUnreadCount() {
+    try {
+        const res = await authFetch('/api/collaboration/chat/rooms/', {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            const badge = document.getElementById('chat-unread-badge');
+            if (badge) {
+                if (json.total_unread > 0) {
+                    badge.textContent = json.total_unread > 99 ? '99+' : json.total_unread;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+    } catch (e) {
+        // Silent fail
+    }
+}
+
+async function ensureOfficeDirectoryLoaded() {
+    if (officeDirectoryUsers && officeDirectoryUsers.length > 0) {
+        return officeDirectoryUsers;
+    }
+    try {
+        const dirRes = await authFetch('/api/collaboration/tasks/directory/', {
+            headers: getAuthHeaders()
+        });
+        const dirJson = await dirRes.json();
+        if (dirJson.success && dirJson.office_users) {
+            officeDirectoryUsers = dirJson.office_users;
+            collaborationUserPerms = dirJson.current_user_permission || null;
+            return officeDirectoryUsers;
+        }
+    } catch (e) {
+        console.error('Error loading office directory:', e);
+    }
+    return [];
+}
+
+function toggleChatWindow() {
+    const win = document.getElementById('chat-floating-window');
+    if (!win) return;
+
+    if (win.classList.contains('hidden')) {
+        win.classList.remove('hidden');
+        if (chatActiveRoomId) {
+            const input = document.getElementById('chat-message-input');
+            if (input) setTimeout(() => input.focus(), 150);
+            const scrollEl = document.getElementById('chat-messages-scroll');
+            if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+            startChatPolling();
+        } else {
+            loadChatRooms();
+        }
+        // Pre-fetch directory users for fast direct messaging
+        ensureOfficeDirectoryLoaded();
+    } else {
+        win.classList.add('hidden');
+        stopChatPolling();
+    }
+}
+
+async function loadChatRooms() {
+    const listEl = document.getElementById('chat-rooms-list');
+    if (!listEl) return;
+
+    try {
+        const res = await authFetch('/api/collaboration/chat/rooms/', {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        if (json.data.length === 0) {
+            listEl.innerHTML = '<div class="text-center py-8 text-xs text-slate-400">Không có phòng trò chuyện nào.</div>';
+            return;
+        }
+
+        listEl.innerHTML = json.data.map(r => `
+            <div onclick="openChatRoom(${r.id}, '${escapeHtml(r.name)}')" class="p-3 bg-white rounded-xl border border-slate-200/80 hover:border-teal-400 hover:bg-teal-50/40 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-2xs group">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-9 h-9 rounded-xl ${r.room_type === 'COMPANY' ? 'bg-teal-700 text-white' : (r.room_type === 'DEPARTMENT' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-white')} flex items-center justify-center shrink-0 text-sm font-bold shadow-2xs">
+                        <i class="${r.room_type === 'COMPANY' ? 'ph-bold ph-buildings' : (r.room_type === 'DEPARTMENT' ? 'ph-bold ph-users-three' : 'ph-bold ph-chat-teardrop-text')}"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h5 class="text-xs font-bold text-slate-800 group-hover:text-teal-800 truncate">${escapeHtml(r.name)}</h5>
+                        <p class="text-[11px] text-slate-400 truncate mt-0.5">
+                            ${r.last_message ? `${r.last_message.sender_name}: ${escapeHtml(r.last_message.content || '[Tệp tin]')}` : 'Chưa có tin nhắn'}
+                        </p>
+                    </div>
+                </div>
+
+                ${r.unread_count > 0 ? `
+                    <span class="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold shrink-0">
+                        ${r.unread_count}
+                    </span>
+                ` : ''}
+            </div>
+        `).join('');
+
+    } catch (e) {
+        console.error('Error loading chat rooms:', e);
+    }
+}
+
+function showChatRoomsList() {
+    stopChatPolling();
+    chatActiveRoomId = null;
+
+    document.getElementById('chat-rooms-view').classList.remove('hidden');
+    document.getElementById('chat-messages-view').classList.add('hidden');
+    document.getElementById('chat-btn-back-rooms').classList.add('hidden');
+
+    document.getElementById('chat-header-title').textContent = 'Trò Chuyện Nội Bộ';
+    document.getElementById('chat-header-subtitle').textContent = 'Văn phòng Triền Võ Logistics';
+
+    loadChatRooms();
+}
+
+async function openChatRoom(roomId, roomTitle) {
+    chatActiveRoomId = roomId;
+    chatLatestMessageId = 0;
+
+    document.getElementById('chat-rooms-view').classList.add('hidden');
+    document.getElementById('chat-messages-view').classList.remove('hidden');
+    document.getElementById('chat-btn-back-rooms').classList.remove('hidden');
+
+    document.getElementById('chat-header-title').textContent = roomTitle;
+    document.getElementById('chat-header-subtitle').textContent = 'Đang trực tuyến';
+
+    const scrollEl = document.getElementById('chat-messages-scroll');
+    scrollEl.innerHTML = '<div class="text-center py-4 text-xs text-slate-400"><i class="ph ph-spinner ph-spin text-base mr-1"></i>Đang tải tin nhắn...</div>';
+
+    // Đánh dấu đã đọc
+    fetch(`/api/collaboration/chat/rooms/${roomId}/mark-read/`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+    });
+
+    // Tải tin nhắn ban đầu
+    await pollChatMessages(false);
+
+    // Kích hoạt Polling định kỳ mỗi 3s (Tối ưu cache backend)
+    startChatPolling();
+}
+
+async function pollChatMessages(isPeriodic = true) {
+    if (!chatActiveRoomId) return;
+
+    try {
+        const url = `/api/collaboration/chat/rooms/${chatActiveRoomId}/messages/?after_id=${chatLatestMessageId}`;
+        const res = await authFetch(url, { headers: getAuthHeaders() });
+        const json = await res.json();
+        if (!json.success) return;
+
+        const scrollEl = document.getElementById('chat-messages-scroll');
+        if (!isPeriodic) {
+            scrollEl.innerHTML = '';
+        }
+
+        // Cập nhật trạng thái 2 check (đã đọc) cho các tin nhắn trước đó của tôi nếu đối phương đã đọc
+        if (json.max_other_read_id) {
+            document.querySelectorAll('#chat-messages-scroll [data-my-msg-id]').forEach(el => {
+                const msgId = parseInt(el.getAttribute('data-my-msg-id'), 10);
+                if (msgId <= json.max_other_read_id) {
+                    const statusEl = el.querySelector('.chat-status-icon');
+                    if (statusEl && !statusEl.classList.contains('text-teal-600')) {
+                        statusEl.className = 'chat-status-icon text-teal-600 inline-flex items-center ml-1';
+                        statusEl.setAttribute('title', 'Đã đọc');
+                        statusEl.innerHTML = '<i class="ph-bold ph-checks text-[12px]"></i>';
+                    }
+                }
+            });
+        }
+
+        if (json.messages && json.messages.length > 0) {
+            const currentUserId = window.CURRENT_USER?.id;
+            json.messages.forEach(msg => {
+                const isMe = currentUserId && msg.sender === currentUserId;
+                const msgEl = document.createElement('div');
+                msgEl.id = `chat-msg-${msg.id}`;
+                msgEl.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`;
+                if (isMe) {
+                    msgEl.setAttribute('data-my-msg-id', msg.id);
+                }
+
+                const timeStr = formatTimeOnly(msg.created_at);
+                const checkIconHtml = isMe ? (
+                    msg.is_read ?
+                    `<span class="chat-status-icon text-teal-600 inline-flex items-center ml-1" title="Đã đọc"><i class="ph-bold ph-checks text-[12px]"></i></span>` :
+                    `<span class="chat-status-icon text-slate-400 inline-flex items-center ml-1" title="Đã gửi (Chưa đọc)"><i class="ph-bold ph-check text-[10.5px]"></i></span>`
+                ) : '';
+
+                msgEl.innerHTML = `
+                    ${!isMe ? `<span class="text-[10px] font-bold text-slate-500 px-1">${escapeHtml(msg.sender_info?.full_name || msg.sender_name)}</span>` : ''}
+                    <div class="max-w-[80%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed shadow-2xs ${isMe ? 'bg-teal-700 text-white rounded-br-xs' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-xs'}">
+                        ${msg.reply_to_snippet ? `
+                            <div class="mb-1 pb-1 border-b border-white/20 text-[10px] opacity-80">
+                                <strong>${escapeHtml(msg.reply_to_snippet.sender_name)}:</strong> ${escapeHtml(msg.reply_to_snippet.snippet)}
+                            </div>
+                        ` : ''}
+                        <div class="whitespace-pre-line">${escapeHtml(msg.content)}</div>
+                        ${msg.attachments && msg.attachments.length > 0 ? `
+                            <div class="mt-2 space-y-1 pt-1 border-t ${isMe ? 'border-teal-600' : 'border-slate-100'}">
+                                ${msg.attachments.map(att => `
+                                    <a href="${att.file}" target="_blank" download class="flex items-center gap-1.5 text-[10.5px] ${isMe ? 'text-teal-100 hover:text-white' : 'text-teal-700 hover:underline'}">
+                                        <i class="ph-bold ph-paperclip"></i> ${escapeHtml(att.original_name)}
+                                    </a>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="flex items-center text-[9px] text-slate-400 px-1">
+                        <span>${timeStr}</span>
+                        ${checkIconHtml}
+                    </div>
+                `;
+                scrollEl.appendChild(msgEl);
+            });
+
+            chatLatestMessageId = json.latest_id;
+            scrollEl.scrollTop = scrollEl.scrollHeight;
+        } else if (!isPeriodic && (!json.messages || json.messages.length === 0)) {
+            scrollEl.innerHTML = '<div class="text-center py-12 text-xs text-slate-400">Bắt đầu cuộc trò chuyện...</div>';
+        }
+
+    } catch (e) {
+        console.error('Error polling messages:', e);
+    }
+}
+
+function startChatPolling() {
+    stopChatPolling();
+    chatPollTimer = setInterval(() => {
+        pollChatMessages(true);
+    }, 3000);
+}
+
+function stopChatPolling() {
+    if (chatPollTimer) {
+        clearInterval(chatPollTimer);
+        chatPollTimer = null;
+    }
+}
+
+function handleChatInputKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+    }
+}
+
+async function sendChatMessage() {
+    if (!chatActiveRoomId) return;
+    const input = document.getElementById('chat-message-input');
+    const content = input.value.trim();
+
+    if (!content && chatSelectedFiles.length === 0) return;
+
+    const formData = new FormData();
+    formData.append('content', content);
+    for (let i = 0; i < chatSelectedFiles.length; i++) {
+        formData.append('files', chatSelectedFiles[i]);
+    }
+
+    input.value = '';
+    clearPendingChatFiles();
+
+    try {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type'];
+        const res = await authFetch(`/api/collaboration/chat/rooms/${chatActiveRoomId}/messages/`, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+            pollChatMessages(true);
+        }
+    } catch (e) {
+        console.error('Error sending chat message:', e);
+    }
+}
+
+function handleChatFilesSelected(e) {
+    chatSelectedFiles = Array.from(e.target.files);
+    const preview = document.getElementById('chat-pending-files-preview');
+    const text = document.getElementById('chat-pending-files-text');
+    if (preview && text) {
+        if (chatSelectedFiles.length > 0) {
+            text.textContent = `Đính kèm: ${chatSelectedFiles.map(f => f.name).join(', ')}`;
+            preview.classList.remove('hidden');
+        } else {
+            preview.classList.add('hidden');
+        }
+    }
+}
+
+function clearPendingChatFiles() {
+    chatSelectedFiles = [];
+    const fileInput = document.getElementById('chat-file-input');
+    if (fileInput) fileInput.value = '';
+    const preview = document.getElementById('chat-pending-files-preview');
+    if (preview) preview.classList.add('hidden');
+}
+
+async function toggleChatDirectoryDropdown() {
+    const dropdown = document.getElementById('chat-directory-dropdown');
+    const select = document.getElementById('chat-select-colleague');
+    if (!dropdown || !select) return;
+
+    if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        select.innerHTML = '<option value="">-- Đang tải nhân sự văn phòng... --</option>';
+        const users = await ensureOfficeDirectoryLoaded();
+        select.innerHTML = '<option value="">-- Chọn đồng nghiệp văn phòng --</option>';
+        if (users && users.length > 0) {
+            users.forEach(u => {
+                if (u.user_id !== window.CURRENT_USER?.id) {
+                    const opt = document.createElement('option');
+                    opt.value = u.user_id;
+                    opt.textContent = `${u.full_name} (${u.department_name})`;
+                    select.appendChild(opt);
+                }
+            });
+        }
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+async function startDirectChat(targetUserId) {
+    if (!targetUserId) return;
+    try {
+        const res = await authFetch('/api/collaboration/chat/rooms/', {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ target_user_id: targetUserId })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+            document.getElementById('chat-directory-dropdown').classList.add('hidden');
+            openChatRoom(json.data.id, json.data.name);
+        } else {
+            showToast('error', json.message || 'Không thể tạo cuộc trò chuyện.');
+        }
+    } catch (e) {
+        console.error('Error starting direct chat:', e);
+    }
+}
+
+
+// ==========================================================================
+// 4. HELPER UTILITIES
+// ==========================================================================
+
+function getPriorityBadgeClass(priority) {
+    switch (priority) {
+        case 'URGENT': return 'bg-rose-100 text-rose-800 border border-rose-200';
+        case 'HIGH': return 'bg-orange-100 text-orange-800 border border-orange-200';
+        case 'MEDIUM': return 'bg-sky-100 text-sky-800 border border-sky-200';
+        case 'LOW': return 'bg-slate-100 text-slate-700 border border-slate-200';
+        default: return 'bg-slate-100 text-slate-700';
+    }
+}
+
+function getPriorityText(priority) {
+    switch (priority) {
+        case 'URGENT': return 'Khẩn cấp';
+        case 'HIGH': return 'Cao';
+        case 'MEDIUM': return 'Bình thường';
+        case 'LOW': return 'Thấp';
+        default: return priority;
+    }
+}
+
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'DONE': return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+        case 'REVIEW': return 'bg-amber-100 text-amber-800 border border-amber-200';
+        case 'IN_PROGRESS': return 'bg-sky-100 text-sky-800 border border-sky-200';
+        case 'TODO': return 'bg-slate-100 text-slate-700 border border-slate-200';
+        default: return 'bg-slate-100 text-slate-700';
+    }
+}
+
+function getStatusText(status) {
+    switch (status) {
+        case 'DONE': return 'Hoàn thành';
+        case 'REVIEW': return 'Chờ nghiệm thu';
+        case 'IN_PROGRESS': return 'Đang làm';
+        case 'TODO': return 'Cần làm';
+        case 'CANCELLED': return 'Đã hủy';
+        default: return status;
+    }
+}
+
+function formatDateDMY(dStr) {
+    if (!dStr) return '';
+    const parts = dStr.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return dStr;
+}
+
+function parseDateFlexible(dateStr) {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr;
+    if (typeof dateStr === 'string') {
+        const str = dateStr.trim();
+        // Kiểm tra định dạng DD/MM/YYYY HH:mm[:ss] hoặc DD/MM/YYYY
+        const dmyMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+        if (dmyMatch) {
+            const day = parseInt(dmyMatch[1], 10);
+            const month = parseInt(dmyMatch[2], 10) - 1;
+            const year = parseInt(dmyMatch[3], 10);
+            const hour = parseInt(dmyMatch[4] || 0, 10);
+            const minute = parseInt(dmyMatch[5] || 0, 10);
+            const second = parseInt(dmyMatch[6] || 0, 10);
+            const parsed = new Date(year, month, day, hour, minute, second);
+            if (!isNaN(parsed.getTime())) return parsed;
+        }
+        // Thử parse Date thông thường (hỗ trợ ISO YYYY-MM-DDTHH:mm:ssZ)
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+}
+
+function formatDateTime(isoStr) {
+    if (!isoStr) return '';
+    const d = parseDateFlexible(isoStr);
+    if (!d) return isoStr;
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function formatTimeOnly(isoStr) {
+    if (!isoStr) return '';
+    // Nếu là string có dạng time HH:mm
+    if (typeof isoStr === 'string') {
+        const timeMatch = isoStr.match(/\b(\d{1,2}:\d{2})(?::\d{2})?\b/);
+        if (timeMatch) {
+            return timeMatch[1];
+        }
+    }
+    const d = parseDateFlexible(isoStr);
+    if (!d) return '';
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function formatTimeAgo(isoStr) {
+    if (!isoStr) return '';
+    const d = parseDateFlexible(isoStr);
+    if (!d) return '';
+    const diffMs = Date.now() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+
+// ==========================================================================
+// 5. PHÂN HỆ: CHUÔNG THÔNG BÁO NỘI BỘ (IN-APP BELL NOTIFICATIONS)
+// ==========================================================================
+
+let currentNotificationFilter = 'all'; // 'all' | 'unread'
+let currentNotificationsList = [];
+
+function initBellNotifications() {
+    checkNotificationUnreadCount();
+    // Định kỳ kiểm tra thông báo chuông mỗi 30s
+    setInterval(checkNotificationUnreadCount, 30000);
+
+    // Đóng dropdown khi click ra ngoài
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('topbar-notification-container');
+        const menu = document.getElementById('notification-dropdown-menu');
+        if (container && menu && !container.contains(e.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+}
+
+async function checkNotificationUnreadCount() {
+    try {
+        const res = await authFetch('/api/collaboration/notifications/?limit=1', {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            updateNotificationBadge(json.total_unread);
+        }
+    } catch (e) {
+        // Silent fail
+    }
+}
+
+function updateNotificationBadge(unreadCount) {
+    const badge = document.getElementById('notification-unread-badge');
+    const pill = document.getElementById('notification-count-pill');
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+    if (pill) {
+        pill.textContent = `${unreadCount} mới`;
+    }
+}
+
+function toggleNotificationDropdown(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('notification-dropdown-menu');
+    if (!menu) return;
+
+    if (menu.classList.contains('hidden')) {
+        menu.classList.remove('hidden');
+        loadNotifications(currentNotificationFilter);
+    } else {
+        menu.classList.add('hidden');
+    }
+}
+
+function filterNotifications(filterMode) {
+    currentNotificationFilter = filterMode;
+    const tabAll = document.getElementById('notif-tab-all');
+    const tabUnread = document.getElementById('notif-tab-unread');
+
+    if (filterMode === 'all') {
+        if (tabAll) {
+            tabAll.className = 'px-3 py-1.5 border-b-2 border-teal-600 text-teal-800 font-bold transition-colors';
+        }
+        if (tabUnread) {
+            tabUnread.className = 'px-3 py-1.5 border-b-2 border-transparent text-slate-600 hover:text-teal-800 transition-colors';
+        }
+    } else {
+        if (tabAll) {
+            tabAll.className = 'px-3 py-1.5 border-b-2 border-transparent text-slate-600 hover:text-teal-800 transition-colors';
+        }
+        if (tabUnread) {
+            tabUnread.className = 'px-3 py-1.5 border-b-2 border-teal-600 text-teal-800 font-bold transition-colors';
+        }
+    }
+    loadNotifications(filterMode);
+}
+
+async function loadNotifications(filterMode = 'all') {
+    const listEl = document.getElementById('notification-items-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div class="p-6 text-center text-xs text-slate-400"><i class="ph ph-spinner ph-spin text-lg mb-1 block"></i>Đang tải thông báo...</div>';
+
+    try {
+        const url = filterMode === 'unread' ? '/api/collaboration/notifications/?unread=1' : '/api/collaboration/notifications/';
+        const res = await authFetch(url, { headers: getAuthHeaders() });
+        const json = await res.json();
+        if (!json.success || !json.data) {
+            listEl.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">Không thể tải thông báo.</div>';
+            return;
+        }
+
+        updateNotificationBadge(json.total_unread);
+        currentNotificationsList = json.data;
+
+        if (json.data.length === 0) {
+            listEl.innerHTML = `
+                <div class="p-8 text-center text-xs text-slate-400">
+                    <i class="ph ph-bell-simple-slash text-2xl mb-1.5 text-slate-300 block"></i>
+                    ${filterMode === 'unread' ? 'Không có thông báo chưa đọc nào.' : 'Chưa có thông báo nào gửi đến bạn.'}
+                </div>
+            `;
+            return;
+        }
+
+        listEl.innerHTML = json.data.map(item => {
+            let iconClass = 'ph-bold ph-bell bg-slate-100 text-slate-600';
+            if (item.notification_type === 'TASK_ASSIGNED') {
+                iconClass = 'ph-bold ph-check-square-offset bg-amber-50 text-amber-700 border border-amber-200';
+            } else if (item.notification_type === 'TASK_STATUS_CHANGED') {
+                iconClass = 'ph-bold ph-arrows-clockwise bg-sky-50 text-sky-700 border border-sky-200';
+            } else if (item.notification_type === 'NEWS_URGENT') {
+                iconClass = 'ph-bold ph-warning-octagon bg-rose-50 text-rose-700 border border-rose-200';
+            } else if (item.notification_type === 'NEWS_NEW') {
+                iconClass = 'ph-bold ph-newspaper bg-teal-50 text-teal-700 border border-teal-200';
+            } else if (item.notification_type === 'CHAT_MENTION') {
+                iconClass = 'ph-bold ph-at bg-indigo-50 text-indigo-700 border border-indigo-200';
+            }
+
+            return `
+                <div onclick="handleNotificationClick(${item.id}, '${item.target_type}', ${item.target_id || 'null'}, '${escapeHtml(item.link_url || '')}')" 
+                    class="p-3.5 flex items-start gap-3 hover:bg-teal-50/50 cursor-pointer transition-colors relative group ${item.is_read ? 'bg-white opacity-85' : 'bg-slate-50/80 font-medium'}">
+                    
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm shadow-2xs ${iconClass}">
+                        <i class="${iconClass.split(' ')[0]} ${iconClass.split(' ')[1]}"></i>
+                    </div>
+
+                    <div class="flex-1 min-w-0 pr-4">
+                        <div class="flex items-center justify-between gap-2 mb-0.5">
+                            <span class="text-[10px] font-bold uppercase tracking-wider ${item.is_read ? 'text-slate-400' : 'text-teal-800'}">
+                                ${escapeHtml(item.type_display || 'Thông báo')}
+                            </span>
+                            <span class="text-[10px] text-slate-400 shrink-0 font-normal">
+                                ${formatTimeAgo(item.created_at)}
+                            </span>
+                        </div>
+                        <h5 class="text-xs font-bold ${item.is_read ? 'text-slate-700' : 'text-slate-900'} leading-snug truncate">
+                            ${escapeHtml(item.title)}
+                        </h5>
+                        <p class="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                            ${escapeHtml(item.message)}
+                        </p>
+                    </div>
+
+                    ${!item.is_read ? `
+                        <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0 absolute right-3 top-4 shadow-2xs" title="Chưa đọc"></span>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        console.error('Error loading notifications:', e);
+        listEl.innerHTML = '<div class="p-6 text-center text-xs text-rose-500">Lỗi kết nối máy chủ.</div>';
+    }
+}
+
+async function handleNotificationClick(notifId, targetType, targetId, linkUrl) {
+    // 1. Đánh dấu đã đọc
+    try {
+        await authFetch(`/api/collaboration/notifications/${notifId}/mark-read/`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        checkNotificationUnreadCount();
+    } catch (e) {
+        console.error('Error marking read:', e);
+    }
+
+    // 2. Đóng dropdown chuông
+    const menu = document.getElementById('notification-dropdown-menu');
+    if (menu) menu.classList.add('hidden');
+
+    // 3. Điều hướng thông minh
+    if (targetType === 'NEWS' && targetId) {
+        if (typeof showView === 'function') {
+            showView('view-ban-tin');
+            if (typeof openNewsDetailModal === 'function') {
+                openNewsDetailModal(targetId);
+            }
+        }
+    } else if (targetType === 'TASK' && targetId) {
+        if (typeof showView === 'function') {
+            showView('view-giao-viec');
+            if (typeof openTaskDetailDrawer === 'function') {
+                openTaskDetailDrawer(targetId);
+            }
+        }
+    } else if (targetType === 'CHAT') {
+        toggleChatWindow();
+    } else if (linkUrl) {
+        if (linkUrl.startsWith('#')) {
+            const viewId = linkUrl.substring(1);
+            if (typeof showView === 'function') {
+                showView(viewId === 'tasks' ? 'view-giao-viec' : (viewId === 'news' ? 'view-ban-tin' : viewId));
+            }
+        }
+    }
+}
+
+async function markAllNotificationsAsRead() {
+    try {
+        const res = await authFetch('/api/collaboration/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            updateNotificationBadge(0);
+            loadNotifications(currentNotificationFilter);
+            if (typeof showToast === 'function') {
+                showToast('success', 'Đã đánh dấu tất cả thông báo là đã đọc.');
+            }
+        }
+    } catch (e) {
+        console.error('Error marking all read:', e);
+    }
+}
+
+
+// Khởi chạy module Collaboration khi DOM sẵn sàng
+document.addEventListener('DOMContentLoaded', function() {
+    initCollaborationChat();
+    initBellNotifications();
+});

@@ -94,6 +94,7 @@ class Employee(TimeStampedModel, SoftDeleteModel):
     signature_image = models.FileField(upload_to='personnel/signatures/', blank=True, null=True, help_text="Chữ ký điện tử / mẫu")
 
     is_active = models.BooleanField(default=True)
+    is_department_head = models.BooleanField(default=False, verbose_name="Trưởng bộ phận / Quản lý", help_text="Đánh dấu là Trưởng phòng / Cấp quản lý bộ phận")
     excluded_permissions = models.ManyToManyField(
         'auth.Permission',
         blank=True,
@@ -107,6 +108,60 @@ class Employee(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         display_name = f"{self.full_name} ({self.nickname})" if self.nickname else self.full_name
         return f"[{self.code}] {display_name}"
+
+    @property
+    def hierarchy_level(self):
+        """
+        Cấp bậc quản trị nội bộ:
+        100: Ban Giám Đốc (DIRECTOR / MANAGEMENT / Superuser)
+        50: Trưởng phòng / Quản lý bộ phận (is_department_head hoặc HR)
+        20: Chuyên viên / Nhân viên văn phòng
+        10: Tài xế hiện trường
+        """
+        if self.role == EmployeeRole.DIRECTOR or self.department == Department.MANAGEMENT:
+            return 100
+        if self.is_department_head or self.department == Department.HR:
+            return 50
+        if self.role == EmployeeRole.DRIVER:
+            return 10
+        return 20
+
+    def can_post_news(self):
+        """
+        Kiểm tra quyền đăng bản tin công ty:
+        Chỉ Ban Giám Đốc (100), Hành chính Nhân sự (50) hoặc Trưởng các phòng ban (50) mới được đăng thông báo.
+        """
+        return self.hierarchy_level >= 50
+
+    def can_assign_task_to(self, target_employee):
+        """
+        Kiểm tra quyền giao việc theo nguyên tắc cấp trên giao cấp dưới:
+        1. Ban Giám Đốc (100): Toàn quyền giao việc cho bất kỳ ai.
+        2. Tự giao việc cho chính mình (Self-assignment): Luôn được phép để quản lý to-do cá nhân.
+        3. Tuyệt đối không ai được giao việc cho Ban Giám Đốc (trừ chính Giám Đốc).
+        4. Trưởng phòng (50):
+           - Được giao việc cho nhân viên cấp dưới trong cùng phòng ban (hierarchy_level < 50).
+           - Riêng HR (50): Được giao việc tuân thủ hồ sơ cho nhân sự các phòng ban khác.
+           - Được gửi đề nghị phối hợp công việc ngang hàng cho Trưởng phòng khác (hierarchy_level == 50).
+        5. Nhân viên chuyên viên thường (20): Chỉ được tự tạo việc cho chính bản thân mình, không được giao việc cho cấp trên hay đồng nghiệp.
+        """
+        if not target_employee:
+            return True
+        if self.id == target_employee.id:
+            return True
+        if self.hierarchy_level >= 100:
+            return True
+        if target_employee.hierarchy_level >= 100:
+            return False
+        if self.hierarchy_level >= 50:
+            if self.department == Department.HR:
+                return True
+            if target_employee.department == self.department and target_employee.hierarchy_level < self.hierarchy_level:
+                return True
+            if target_employee.hierarchy_level == 50:
+                return True
+            return False
+        return False
 
 
 class EmployeeDependent(TimeStampedModel, SoftDeleteModel):

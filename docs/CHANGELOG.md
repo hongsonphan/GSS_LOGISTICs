@@ -2,7 +2,549 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [v3.2.3] - 2026-10-15 (Cập Nhật Toàn Diện Sổ Tay Hướng Dẫn Sử Dụng & Kiểm Thử E2E Liên Hoàn 6 Vai Trò Vận Hành)
+## [v3.4.5] - 2026-10-16 (Chuẩn Hóa Tên Nhân Sự Thực Tế & Mã Task Chuẩn 3 Chữ Số)
+
+### 1. Hiển Thị Họ Tên Nhân Sự Thực Tế (Loại Bỏ Hoàn Toàn Chức Danh / Nickname):
+- **Nguyên nhân trước đây:** Các API serializer và dashboard summary sử dụng `emp.nickname` dẫn đến hiển thị mã phòng ban/chức vụ viết tắt như `BGD`, `KẾ TOÁN CƯỚC`, `ĐIỀU ĐỘ CHÍNH` hoặc chứa chức danh trong ngoặc như `Võ Triền (Giám Đốc)`.
+- **Cải tiến Backend (`apps/dispatch/api_views.py`, `apps/collaboration/serializers.py`, `apps/collaboration/models/tasks.py`):**
+  * Viết hàm chuẩn hóa `_clean_user_name()` / `get_full_name()`: Trả về họ tên nhân sự thực tế từ `Employee.full_name` hoặc `User.get_full_name()`.
+  * Tự động lọc sạch các chức danh trong ngoặc đơn (ví dụ: `Võ Triền (Giám Đốc)` chuyển thành `Võ Triền`, `Trần Thị Kế Toán` giữ nguyên họ tên).
+  * Đồng bộ cho cả 3 đối tượng nhân sự: **Người giao việc (Reporter)**, **Người thực hiện chính (Assignee)**, và **Người liên quan / theo dõi (Followers)**.
+- **Cải tiến Frontend (`static/js/app.js`, `static/js/collaboration.js`):**
+  * Bổ sung hàm tiện ích `cleanPersonName()` lọc sạch chức danh trên toàn bộ các thẻ Mini Kanban Dashboard, danh sách List view, và Kanban Board `/tasks/`.
+  * Khi nhìn vào thẻ công việc, người nhận việc lập tức nhận diện đúng người phụ trách và người giao việc (`Võ Triền`, `Trần Thị Kế Toán`, `Phạm Quốc Hùng`...).
+
+### 2. Chuẩn Hóa Mã Task Đúng 3 Chữ Số Sắp Sau (`TSK.YYYYMM.XXX`):
+- **Dữ liệu Database:** Chạy migration dữ liệu chuẩn hóa toàn bộ 100% các task cũ trong PostgreSQL từ dạng 4 số `TSK-202610-0019` sang chuẩn 3 số dấu chấm: `TSK.202610.019`.
+- **Backend Code Generator:** Xác nhận hàm `generate_task_code()` sinh mã chuẩn định dạng `TSK.YYYYMM.XXX` với 3 chữ số (`f"{prefix}{new_num:03d}"`).
+- **Frontend Formatter:** Tích hợp hàm `formatTaskCode()` trên cả `app.js` và `collaboration.js` để đảm bảo bất kỳ thẻ task nào trên giao diện Dashboard hay Quản lý nhiệm vụ đều hiển thị đồng nhất dạng 3 chữ số `TSK.YYYYMM.XXX`.
+
+### 3. Kiểm Thử Hệ Thống & Kiểm Chứng Thị Giác:
+- **Backend Regression Suite:** `101/101` tests PASSED (`Ran 101 tests in 28.873s, OK`).
+- **JS Syntax Integrity:** `node -c static/js/app.js`, `node -c static/js/collaboration.js`, `node -c static/js/column_manager.js` (0 lỗi).
+- **Playwright Visual Verification:**
+  * `104_dashboard_task_card_clean_name_3digits.png`: Widget Công Việc trên Dashboard hiển thị mã `TSK.202610.010`, `TSK.202610.011` (3 chữ số) và chân thẻ ghi rõ tên `Võ Triền | Võ Triền`.
+  * `105_tasks_board_clean_name_3digits.png`: Toàn bộ bảng Kanban `/tasks/` đồng bộ mã 3 số `TSK.202610.019`, `TSK.202610.022` và 3 icon nhân sự hiển thị tên người thực tế `Võ Triền | Trần Thị Kế Toán | 2`.
+
+---
+
+## [v3.4.4] - 2026-10-16 (Chuyển Đổi Modal Giao Việc Mới Thành Centered Dialog Thông Thoáng & Làm Mờ Nền)
+
+### 1. Nâng Cấp Giao Diện Modal Giao Việc Mới (`templates/views/view_tasks.html`):
+- **Chuyển đổi từ Slide-over Drawer mép phải sang Centered Modal Dialog:**
+  * Căn giữa màn hình hoàn hảo: `fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-y-auto`.
+  * Làm mờ và tối sâu toàn bộ phông nền trang phía sau: `bg-slate-950/70 backdrop-blur-md` giúp người dùng tập trung tuyệt đối vào việc tạo nhiệm vụ.
+  * Mở rộng kích thước thông thoáng: `max-w-4xl lg:max-w-5xl`, bo góc `rounded-2xl`, đổ bóng `shadow-2xl` chuẩn Design Token BIM.
+  * Hỗ trợ đóng modal linh hoạt bằng cách nhấp chuột ra ngoài vùng nền mờ (`onclick="if(event.target === this) closeCreateTaskModal()"`).
+
+### 2. Tái Cấu Trúc Bố Cục Form Thông Thoáng & Cân Xứng:
+- **Hàng 1:** Tên công việc input lớn, rõ ràng, placeholder hướng dẫn cụ thể.
+- **Hàng 2:** Mô tả & Hướng dẫn thực hiện (textarea tối ưu 2 dòng, tự động co giãn).
+- **Hàng 3:** Bảng Meta 4 cột cân xứng hoàn hảo (Người thực hiện, Người giao việc có icon, Hạn hoàn thành, Phòng ban).
+- **Hàng 4:** Mức độ ưu tiên dạng 4 Radio button phân biệt màu sắc trực quan (Thấp, Bình thường, Cao, Khẩn cấp).
+- **Hàng 5:** Người liên quan (Theo dõi chung) Multi-select Popover với badge đếm số lượng người đã chọn.
+- **Hàng 6 (2 Cột song song cân đối):**
+  * *Cột Trái (Checklist)*: Danh sách các bước kiểm tra khởi tạo sẵn + ô nhập và nút thêm nhanh.
+  * *Cột Phải (Tài liệu)*: Khối đính kèm hồ sơ, chứng từ với nút chọn tệp và lưu ý định dạng PDF/Excel/ảnh.
+- **Footer:** Nút "Hủy bỏ" và "Phát Lệnh Giao Việc" cân đối, trang trọng.
+
+### 3. Tương Tác Phím Tắt Tiện Dụng (`static/js/collaboration.js`):
+- Bổ sung sự kiện lắng nghe phím tắt `Escape` (`keydown`) để đóng hộp thoại giao việc nhanh chóng mà không cần di chuột bấm nút X.
+
+### 4. Kiểm Thử Hệ Thống & Kiểm Chứng Thị Giác:
+- **Backend Regression Suite:** `101/101` tests PASSED (`Ran 101 tests in 34.204s, OK`).
+- **JS Syntax Integrity:** `node -c static/js/app.js`, `node -c static/js/collaboration.js`, `node -c static/js/column_manager.js` (0 lỗi).
+- **Playwright Visual Verification:**
+  * `102_modal_create_task_centered_spacious.png`: Modal căn giữa trang, phông nền mờ sâu `backdrop-blur-md`, độ rộng thông thoáng 2 cột cân xứng.
+  * `103_modal_create_task_filled.png`: Modal khi điền đầy đủ thông tin, chọn người liên quan đa chọn, thêm các bước checklist kiểm tra.
+
+---
+
+## [v3.4.3] - 2026-10-16 (Bổ Sung Trường Tên Viết Tắt Cho Khách Hàng - Short Name)
+
+### 1. Nâng Cấp Mô Hình Dữ Liệu Khách Hàng (`apps/customers/models.py` & Migration `0013`):
+- **Bổ sung trường `short_name`**:
+  `short_name = models.CharField(max_length=100, blank=True, default='', verbose_name="Tên viết tắt / Tên giao dịch")`.
+- Cập nhật phương thức `__str__` của model `Customer`: tự động hiển thị `[{short_name}] {name} ({code})` nếu có tên viết tắt.
+- Tạo và áp dụng Migration: `0013_customer_short_name.py` trên cơ sở dữ liệu PostgreSQL.
+- Cập nhật `CustomerAdmin` trong `apps/customers/admin.py`: thêm `short_name` vào `list_display` và `search_fields`.
+
+### 2. Tích Hợp API CRUD Master Data (`apps/master_data/api_views.py`):
+- **`MasterDataOptionsAPIView`**: trả về `short_name` và label định dạng `[{short_name}] {name}` giúp nhận diện khách hàng nhanh chóng trong dropdown tạo chuyến, báo giá và biểu cước.
+- **`CustomerMasterListCreateAPIView`**:
+  * Hỗ trợ tìm kiếm nhanh theo tên viết tắt: `Q(short_name__icontains=q)`.
+  * Trả về trường `short_name` trong danh sách khách hàng.
+  * Nhận và lưu `short_name` khi tạo khách hàng mới.
+- **`CustomerMasterDetailAPIView`**: nhận và cập nhật `short_name` trong phương thức `PUT`.
+
+### 3. Chuẩn Hóa Giao Diện & Trải Nghiệm Người Dùng UI/UX (`static/js/app.js` & `static/js/modules/master_data.js`):
+- **Modal Chỉnh Sửa & Tạo Mới Khách Hàng:**
+  * Bố trí hàng thứ 2 thông minh theo tỷ lệ `8/12 - 4/12`:
+    - `Tên Khách Hàng / Doanh Nghiệp *`: input rộng rãi (8/12 cột).
+    - `Tên Viết Tắt`: input nổi bật với viền ngọc teal nhã nhặn (4/12 cột, placeholder `VD: ABC, OASIS...`).
+  * Đảm bảo tính cân đối thị giác, không làm phình chiều cao của modal.
+- **Bảng Danh Mục Khách Hàng:**
+  * Cột "Tên Khách Hàng / Doanh Nghiệp" tự động hiển thị huy hiệu (Badge) tên viết tắt màu xanh ngọc nổi bật: `<span class="bg-teal-100 text-teal-800 border-teal-300 font-black">ABC</span>` đứng trước tên đầy đủ.
+- **Cache-Busting:** Nâng phiên bản `app.js?v=2.9.41` trong `templates/base.html`.
+
+### 4. Kiểm Thử Hệ Thống & Xác Thực Trình Duyệt:
+- **Automated Regression Suite:** `101/101` tests backend PASSED (`docker compose exec web python manage.py test --keepdb`).
+- **JS Syntax Integrity:** `node -c static/js/app.js`, `node -c static/js/modules/master_data.js` (0 lỗi cú pháp).
+- **Playwright Visual Verification:**
+  * `88_customer_modal_with_short_name.png`: Modal Chỉnh Sửa Khách Hàng hiển thị chuẩn mực ô Tên Viết Tắt bên cạnh Tên Khách Hàng.
+  * `89_customer_modal_filled_short_name.png`: Modal khi điền Tên Viết Tắt "ABC".
+  * `90_customers_table_with_short_name_badge.png`: Bảng danh mục khách hàng sau khi lưu hiển thị huy hiệu `[ABC]` màu xanh ngọc chuyên nghiệp.
+
+---
+
+
+### 1. Khắc Phục Triệt Để Lỗi `NaN:NaN` Thời Gian Tin Nhắn (`static/js/collaboration.js`):
+- **Nguyên nhân gốc rễ:** Backend Django REST Framework được cấu hình `DATETIME_FORMAT = '%d/%m/%Y %H:%M'` (chuỗi định dạng `DD/MM/YYYY HH:mm` như `16/10/2026 14:37`). Hàm JavaScript `new Date()` không chuẩn hóa được chuỗi `DD/MM/YYYY`, trả về `Invalid Date`, khiến các phép trích xuất `getHours()` / `getMinutes()` trả về `NaN`, dẫn đến chuỗi in ra `NaN:NaN`.
+- **Giải pháp xử lý:**
+  * Bổ sung parser thời gian đa định dạng linh hoạt `parseDateFlexible(dateStr)`: hỗ trợ hoàn hảo cả định dạng `DD/MM/YYYY HH:mm[:ss]`, `YYYY-MM-DDTHH:mm:ssZ` (ISO 8601), và timestamp số.
+  * Nâng cấp `formatTimeOnly(dateStr)`: tự động trích xuất chuỗi giờ phút `HH:mm` an toàn tuyệt đối, loại bỏ 100% hiện tượng `NaN:NaN`.
+  * Chuẩn hóa đồng bộ các hàm phụ trợ `formatDateTime(dateStr)` và `formatTimeAgo(dateStr)`.
+
+### 2. Bổ Sung Trạng Thái Đã Đọc / Chưa Đọc Chuẩn BIM Consulting (1 Check & 2 Check Xanh Ngọc):
+- **Backend API & Serializer (`apps/collaboration/serializers.py` & `apps/collaboration/api_views/chat_api.py`):**
+  * Thêm trường tính toán `is_read` vào `ChatMessageSerializer`: xác định tin nhắn đã được thành viên khác trong phòng đọc hay chưa dựa trên `last_read_message_id`.
+  * Tối ưu hóa truy vấn trong `ChatMessageListCreateAPIView`: tính `max_other_read_id` qua phép `Max` aggregate đơn lẻ và trả về trong payload polling để client đồng bộ tức thời.
+  * Sử dụng `update_or_create` cho `ChatParticipant` khi đánh dấu đã đọc (`mark-read`), đảm bảo lưu trữ chính xác mốc đọc cho mọi thành viên.
+- **Giao diện Chat Nổi (`static/js/collaboration.js`):**
+  * **Tin nhắn của chính mình gửi đi (`isMe`):**
+    - **Chưa đọc:** Hiển thị 1 dấu check xám `✓` (`<i class="ph-bold ph-check text-slate-400"></i>`, title "Đã gửi (Chưa đọc)").
+    - **Đã đọc:** Hiển thị 2 dấu check xanh ngọc `✓✓` (`<i class="ph-bold ph-checks text-teal-600"></i>`, title "Đã đọc").
+  * **Đồng bộ thời gian thực (Real-time Check Sync):** Khi đối phương mở xem phòng chat, polling tự động cập nhật ngay lập tức các tin nhắn gửi đi trước đó từ 1 check sang 2 check mà không cần reload tin nhắn.
+  * **Tin nhắn người khác gửi đến (`!isMe`):** Hiển thị thời gian gửi rõ ràng, tinh tế.
+
+### 3. Kiểm Thử Hệ Thống & Xác Thực Trình Duyệt:
+- **Automated Regression Suite:** `101/101` tests backend PASSED (`docker compose exec web python manage.py test --keepdb`).
+- **JS Syntax Integrity:** `node -c static/js/collaboration.js`, `node -c static/js/app.js`, `node -c static/js/column_manager.js` (100% PASSED, 0 syntax errors).
+- **Playwright Visual Verification:**
+  * `86_chat_window_fixed_nan_and_checks.png`: Cửa sổ Chat sau khi sửa, thời gian hiển thị chuẩn `14:36`, `14:37`, `14:52` kèm 2 check xanh ngọc `✓✓` cho các tin nhắn đã đọc.
+  * `87_full_dashboard_with_chat_checks.png`: Toàn cảnh Dashboard với cửa sổ chat nổi hiển thị mượt mà.
+
+---
+
+
+### 1. Chuẩn Hóa Định Dạng Mã Công Việc (`apps/collaboration/api_views/tasks_api.py`):
+- Chuyển đổi mã task từ dạng gạch nối 4 số `TSK-YYYYMM-XXXX` sang chuẩn dấu chấm 3 số: **`TSK.YYYYMM.XXX`** (ví dụ: `TSK.202610.022`, `TSK.202610.023`).
+- Tự động quét và kế thừa số thứ tự liên tục trong tháng bất kể mã cũ hay mã mới.
+- Cập nhật bộ test tự động `apps/collaboration/tests.py` khớp chuẩn `TSK.` mới.
+
+### 2. Tinh Chỉnh Hàng 3 Icon Nhân Sự Trên Task Card (`static/js/app.js` & `static/js/collaboration.js`):
+- **Sắp xếp gọn gàng trên 1 HÀNG DUY NHẤT theo đúng thứ tự logic:**
+  `[icon Người giao] Tên/Role` | `[icon Người phụ trách] Tên/Role` | `[icon Người liên quan] Số lượng`
+- Triệt tiêu tình trạng nhảy dòng lộn xộn giữa người phụ trách và người giao việc trên các thẻ Kanban và danh sách Dashboard.
+- Đưa mốc ngày hạn hoàn thành (Deadline) lên góc trên tinh tế cạnh mã task và mức độ ưu tiên.
+
+### 3. Nâng Cấp Toàn Diện: Cả 2 Trang (Tạo Mới & Chi Tiết) Đều Là Trang Con (Slide-over Sub-Page):
+- **Loại bỏ hoàn toàn Popup Modal che màn hình:** Chuyển đổi `#modal-create-task` thành **Trang con Slide-over Drawer** nằm ở cạnh phải, đồng bộ kiến trúc 100% với Trang con Chi tiết (`#drawer-task-detail`).
+- **Cung cấp đầy đủ thông tin & tính năng khởi tạo:**
+  * Tag mã dự kiến `TSK.MỚI` kèm huy hiệu `Giao việc nội bộ mới`.
+  * Tiêu đề công việc lớn, mô tả chi tiết rộng rãi.
+  * Grid 4 thông tin đồng bộ: Người thực hiện, Người giao việc (`Võ Triển (Giám Đốc)`), Hạn hoàn thành, Phòng ban phụ trách.
+  * Mức độ ưu tiên trực quan (Thấp, Bình thường, Cao, Khẩn cấp).
+  * Người liên quan (Theo dõi chung) Multi-select Checkbox.
+  * **Checklist các bước kiểm tra khởi tạo**: cho phép tạo sẵn danh sách các bước bàn giao trước khi phát lệnh.
+  * **Tài liệu & Tệp đính kèm khởi tạo**: hỗ trợ đính kèm tệp ngay khi phát lệnh giao việc.
+
+### 4. Kiểm Thử Hệ Thống & Xác Thực Trình Duyệt:
+- **Automated Regression Suite:** `101/101` tests backend PASSED (`docker compose exec web python manage.py test --keepdb`).
+- **JS Syntax Integrity:** `node -c static/js/app.js`, `node -c static/js/collaboration.js` (0 lỗi).
+- **Playwright Screenshots:**
+  * `80_dashboard_task_cards_3_icons_1_row.png`: Card task trên Dashboard hiển thị 3 icon trên 1 hàng.
+  * `82_create_task_subpage_drawer_opened.png`: Trang con Giao việc mới trượt từ cạnh phải, bố cục đầy đủ như trang chi tiết.
+  * `83_create_task_subpage_filled_with_checklist.png`: Trang con khi đã điền thông tin, thêm checklist khởi tạo và người liên quan.
+  * `84_tasks_board_with_new_dot_format_code.png`: Bảng công việc với mã chấm mới `TSK.202610.023`.
+  * `85_task_detail_drawer_subpage.png`: Trang con Chi tiết công việc hiển thị đầy đủ thông tin, checklist và người theo dõi.
+
+---
+
+## [v3.4.0] - 2026-10-16 (Hoàn Thiện Multi-Select Dropdown Chọn Nhiều Người Liên Quan & Zero-Latency Directory Preload)
+
+### 1. Nâng Cấp Bộ Chọn "Người Liên Quan (Theo Dõi Chung)" Thành Interactive Multi-Select Dropdown:
+- **Component Multi-Select Checkbox Chuyên Nghiệp (`templates/views/view_tasks.html`):**
+  * Thay thế thẻ `<select>` đơn lẻ bằng giao diện Interactive Multi-Select Popover hiện đại.
+  * Ô trigger hiển thị placeholder trực quan: `-- Bấm để chọn người liên quan (chọn nhiều) --` và tự động gắn các thẻ Chip (Tags) màu ngọc `[ 👤 Tên (Phòng ban) ✕ ]` cho từng người được chọn.
+  * Góc phải trigger có huy hiệu số lượng người đã chọn `[X người]` và mũi tên xoay tương tác.
+- **Tính Năng Popover Dropdown Tương Tác:**
+  * **Hộp tìm kiếm nhanh (Realtime Search):** Lọc danh sách nhân sự ngay lập tức theo tên hoặc phòng ban.
+  * **Nút tác vụ nhanh:** `[Chọn hết]` (chọn toàn bộ nhân sự đang hiển thị) và `[Bỏ chọn]` (xóa toàn bộ lựa chọn trong 1 chạm).
+  * **Phân nhóm phòng ban rõ ràng:** Nhân sự được gom nhóm theo từng phòng ban (Ban Giám Đốc, Phòng Điều Vận, Kế Toán Tài Chính, Hành Chính Nhân Sự, ...) kèm số lượng thành viên.
+  * **Checkbox tích chọn nhiều người (`[✓]`):** Người dùng có thể click chọn liên tục nhiều nhân sự từ các phòng ban khác nhau mà không bị đóng popup.
+  * **Đóng mở thông minh:** Có nút `[Xong]` và hỗ trợ tự động đóng khi nhấp chuột ra bên ngoài (Outside Click).
+
+### 2. Triệt Tiêu Độ Trễ & Chống Cache Rỗng (Zero-Latency Server Preload):
+- **Server Preload trong `apps/dispatch/views.py` (`index_view`):**
+  * Nhân sự văn phòng được serialize thành JSON (`office_users_json`) ngay khi render trang, nhúng trực tiếp vào `window.PRELOADED_OFFICE_USERS` trong `templates/base.html`.
+  * Không phụ thuộc vào request API bất đồng bộ ban đầu, xóa bỏ hoàn toàn tình trạng dropdown bị rỗng do độ trễ mạng hoặc lỗi khởi tạo.
+- **Cache-Busting & Cú Pháp:**
+  * Nâng version `collaboration.js?v=1.2.0` đảm bảo trình duyệt người dùng luôn tải phiên bản mới nhất.
+  * Đảm bảo tính phòng vệ (Defensive JavaScript), giải quyết dứt điểm lỗi gọi hàm directory khi mở modal.
+
+### 3. Kiểm Thử Hệ Thống & Thị Giác Trình Duyệt:
+- **Unit & Regression Testing:** `101/101` tests backend tự động đều PASSED trơn tru (`python manage.py test --keepdb`).
+- **JS Syntax Verification:** `node -c static/js/collaboration.js` (0 lỗi cú pháp).
+- **Playwright Visual Verification:**
+  * `70_modal_create_task_initial.png`: Modal Giao việc nội bộ mới khi mở.
+  * `71_followers_multiselect_dropdown_opened.png`: Dropdown xổ danh bạ nhân sự đầy đủ phân theo phòng ban kèm checkbox.
+  * `72_followers_multiselect_checked_items.png`: Tích chọn 3 người liên quan cùng lúc, các thẻ Chip hiển thị ngay trong ô trigger kèm huy hiệu `3 người`.
+  * `73_followers_multiselect_search_filtered.png`: Tìm kiếm lọc nhanh nhân sự theo từ khóa phòng ban 'Kế toán'.
+  * `74_modal_with_followers_chips_selected.png`: Modal sau khi chọn xong, sẵn sàng phát lệnh.
+  * `76_task_board_created_with_followers.png`: Phát lệnh thành công, toast thông báo và công việc hiển thị trên bảng.
+  * `77_task_drawer_showing_all_followers.png`: Drawer chi tiết công việc hiển thị đầy đủ danh sách người theo dõi.
+
+---
+
+## [v3.3.9] - 2026-10-16 (Bổ Sung Ô "Người Liên Quan (Theo Dõi Chung)" Trong Modal Giao Việc & Đồng Bộ Hệ Thống Thông Báo)
+
+### 1. Nâng Cấp Giao Diện Modal Giao Việc Mới (`templates/views/view_tasks.html`):
+- **Bổ sung ô chọn "Người liên quan (Theo dõi chung)":**
+  * Nằm trực tiếp dưới cụm Người thực hiện chính & Hạn hoàn thành.
+  * Nhãn rõ ràng: `NGƯỜI LIÊN QUAN (THEO DÕI CHUNG)` kèm icon `ph-users` và gợi ý phụ `(cùng giám sát & nhận thông báo tiến độ)`.
+  * Dropdown nạp đầy đủ danh sách nhân sự nội bộ công ty (`officeDirectoryUsers`).
+  * **Hỗ trợ chọn nhiều người theo dõi linh hoạt dạng Chips (Tags):** Khi chọn một nhân sự, hệ thống tự động gắn thẻ chip màu xanh ngọc kèm tên, phòng ban và nút `✕` gỡ bỏ nhanh. Dropdown tự động reset về placeholder để người dùng có thể chọn thêm nhiều người theo dõi khác nếu cần.
+- **Nâng cấp Drawer Chi Tiết Công Việc:**
+  * Thêm phân vùng `Người liên quan / Theo dõi chung` (`#task-drawer-followers-list`) hiển thị avatar/tên và phòng ban của tất cả người theo dõi nhiệm vụ.
+
+### 2. Tối Ưu Hóa Backend API & Hệ Thống Thông Báo (`apps/collaboration/`):
+- **Xử lý `followers_ids` linh hoạt:** Tự động chuẩn hóa dữ liệu đầu vào (hỗ trợ cả int, string hoặc danh sách IDs) và gán quan hệ `task.followers.set(...)`.
+- **Hệ thống thông báo đẩy (In-App Notification):** Tự động phát sinh thông báo Notification gửi đến chuông của tất cả Người liên quan (Followers) khi họ được thêm vào theo dõi công việc.
+- **Đồng bộ Serializers:** Cập nhật `OfficeTaskListSerializer` bổ sung trường `followers_info`, đồng thời tối ưu hóa truy vấn với `prefetch_related('followers__employee')`.
+
+### 3. Kiểm Thử & Xác Thực Toàn Diện:
+- **Frontend Syntax Verification:** `node -c static/js/app.js`, `node -c static/js/collaboration.js`, `node -c static/js/column_manager.js` (0 lỗi).
+- **Automated Regression Test Suite:** `python manage.py test --keepdb` (101/101 tests PASSED).
+- **Playwright Visual Verification:** Kiểm thử và chụp ảnh màn hình xác thực:
+  * `43_modal_create_task_with_followers.png`: Modal Giao việc mới với ô Người liên quan và 2 chip theo dõi đã chọn.
+  * `44_tasks_board_after_creation.png`: Bảng công việc cập nhật nhiệm vụ mới tạo.
+  * `45_task_drawer_showing_followers.png`: Drawer chi tiết hiển thị đầy đủ thông tin người theo dõi.
+  * `46_dashboard_tasks_showing_follower_icon.png`: Widget Task trên Dashboard hiển thị icon và người theo dõi.
+
+---
+
+## [v3.3.8] - 2026-10-16 (Tinh Gọn Menu Sidebar — Chuyển Đổi Truy Cập Bản Tin & Quản Lý Công Việc Độc Quyền Qua Dashboard)
+
+### 1. Tinh Gọn Thanh Điều Hướng Sidebar (`templates/components/sidebar.html`):
+- Gỡ bỏ hoàn toàn 2 mục menu khỏi Sidebar chính:
+  * `10. Bản tin Công ty` (`data-target="ban-tin"`).
+  * `11. Quản lý Giao việc` (`data-target="giao-viec"`).
+- Giúp Sidebar gọn gàng, tập trung 100% vào các phân hệ vận hành và tài chính cốt lõi của doanh nghiệp vận tải.
+
+### 2. Truy Cập Tập Trung & Điều Hướng 2 Chiều Từ Dashboard:
+- Người dùng chỉ truy cập vào Bản tin và Giao việc khi cần thiết thông qua 2 nút hành động trực quan tại Hàng 3 Dashboard:
+  * Nút `[Bảng việc]` trên thẻ Công việc (`#dash-widget-tasks-card`) -> Điều hướng nhanh sang phân hệ Giao việc văn phòng toàn trang (`view-giao-viec`).
+  * Nút `[Xem tất cả]` trên thẻ Bản tin (`#dash-widget-news-card`) -> Điều hướng nhanh sang phân hệ Bản tin công ty toàn trang (`view-ban-tin`).
+- **Nút Quay Lại Thuận Tiện:** Bổ sung nút `[← Tổng quan]` nổi bật trên thanh Top Filter Bar của cả 2 phân hệ `view_news.html` và `view_tasks.html`, cho phép quay lại màn hình Dashboard Tổng quan chỉ với 1 click.
+
+### 3. Kiểm Thử & Xác Thực Toàn Diện:
+- **Frontend Syntax Verification:** `node -c static/js/app.js` và `node -c static/js/column_manager.js` (0 lỗi).
+- **Automated Regression Tests:** `python manage.py test --keepdb` (101/101 tests PASSED).
+- **Playwright Visual Verification:** Kiểm thử và chụp ảnh màn hình xác thực:
+  * `40_sidebar_without_news_and_tasks.png`: Xác nhận Sidebar không còn 2 mục menu Bản tin và Giao việc.
+  * `41_opened_tasks_from_dashboard.png`: Mở trang Giao việc thành công từ nút `[Bảng việc]` trên Dashboard.
+  * `42_opened_news_from_dashboard.png`: Mở trang Bản tin thành công từ nút `[Xem tất cả]` trên Dashboard.
+
+---
+
+## [v3.3.7] - 2026-10-16 (Mở Rộng 8 Bảng Dữ Liệu Tùy Biến, Đảo Vị Trí Hàng 3 & Resizer Kèm Chế Độ Xem Danh Sách / Kanban Đa Tác Vụ)
+
+### 1. Mở Rộng Danh Mục Bảng Dữ Liệu Tùy Biến (8 Bảng Nghiệp Vụ Cốt Lõi):
+- Mở rộng backend `DashboardPivotChartAPIView` và frontend `PIVOT_ENTITY_FIELDS` từ 4 bảng lên 8 bảng dữ liệu logistics:
+  1. `trips`: Chuyến xe & Vận chuyển (Doanh thu, Chi phí, Lợi nhuận, Số chuyến xe).
+  2. `expenses`: Chi phí vận hành & Hiện trường (Số tiền chi, Số khoản chi).
+  3. `bookings`: Đơn hàng & Đặt chỗ (Số lượng đơn, Số container).
+  4. `vehicles`: Đội xe & Phương tiện (Số lượng xe theo phân loại, trạng thái).
+  5. `quotations`: Báo giá & Khách hàng (Đơn giá cước trung bình, Sản lượng cam kết, Số lượng báo giá).
+  6. `advances`: Tạm ứng & Hoàn ứng Lái xe (Số tiền tạm ứng, Số phiếu tạm ứng theo tài xế, nguồn tiền).
+  7. `exceptions`: Sự cố & Khiếu nại vận tải (Số vụ việc theo loại sự cố, mức độ nghiêm trọng, tình trạng xử lý).
+  8. `personnel`: Nhân sự & Đội ngũ (Số lượng nhân sự, Lương cơ bản trung bình theo phòng ban, chức danh, trạng thái).
+- Toàn bộ 8 bảng đều được tối ưu hóa truy vấn Django ORM, hỗ trợ phân nhóm, phép tính Sum/Avg/Count, giới hạn Top và sắp xếp tăng/giảm.
+
+### 2. Tái Cấu Trúc Bố Cục Hàng 3 (Task Bên Trái, Bản Tin Bên Phải):
+- **Hoán đổi vị trí tối ưu nghiệp vụ:**
+  * Chuyển Widget Quản lý Công việc (`#dash-widget-tasks-card`) sang bên trái với tỷ lệ mặc định 62% (vì là khu vực tác nghiệp tần suất cao của nhân viên và cấp quản lý).
+  * Chuyển Widget Bản tin & Thông báo (`#dash-widget-news-card`) sang bên phải với tỷ lệ mặc định 38% (khu vực tham khảo thông tin định kỳ).
+- **Thanh Kéo Phân Tách Resizer (`#dash-widget-resizer`):**
+  * Đặt thanh kéo ở giữa 2 ô widget với hiệu ứng hover/active nổi bật.
+  * Hỗ trợ kéo chuột để co giãn tỷ lệ chiều rộng mượt mà (giới hạn an toàn từ 25% đến 75%).
+  * Tự động lưu tỷ lệ đã kéo vào `localStorage` (`bim_widget_split_ratio`).
+- **Đồng Bộ Chiều Cao Tuyệt Đối:**
+  * Áp dụng flexbox `flex flex-col lg:flex-row items-stretch` kết hợp `min-h-[380px] 2xl:min-h-[480px]`, đảm bảo 2 ô Công việc và Bản tin luôn có chiều cao bằng nhau chính xác (độ chênh lệch 0.00px).
+
+### 3. Hỗ Trợ 2 Chế Độ Xem Task (Danh Sách & Kanban Mini) & Hiển Thị Đầy Đủ Icon Nhân Sự:
+- Cụm nút chuyển đổi góc phải widget: `[Danh sách]` và `[Kanban]` với hiệu ứng active trực quan, lưu lựa chọn vào `localStorage` (`bim_dashboard_task_view_mode`).
+- **Chế độ Danh sách (List View):**
+  * Hiển thị danh sách công việc gọn gàng, checkbox hoàn thành nhanh, badge hạn xử lý và ưu tiên.
+  * Hiển thị đầy đủ icon và tên:
+    - **Người giao (`reporter`):** Icon `ph-user` màu tím indigo.
+    - **Người phụ trách (`assignee`):** Icon `ph-user-check` màu xanh dương sky.
+    - **Người theo dõi (`followers`):** Icon `ph-users` màu ngọc teal (chỉ hiển thị khi có người theo dõi).
+- **Chế độ Kanban Mini (Kanban View):**
+  * Chia 3 cột trạng thái chuẩn workflow: **Cần làm (`TODO`)**, **Đang làm (`IN_PROGRESS`)**, **Nghiệm thu (`REVIEW`)**.
+  * Thẻ công việc (card) hiển thị tiêu đề, ngày đến hạn, huy hiệu mức độ khẩn cấp và avatar/tên phân công 3 vai trò (Giao, Phụ trách, Theo dõi).
+
+### 4. Kiểm Thử & Xác Thực Toàn Diện:
+- **Frontend Syntax:** `node -c static/js/app.js` và `node -c static/js/column_manager.js` (0 lỗi).
+- **Django Unit Tests:** `python manage.py test --keepdb` (101/101 tests PASSED).
+- **Playwright Visual Verification:** Kiểm thử và chụp ảnh màn hình xác thực:
+  * `32_dashboard_widgets_layout.png`: Bố cục mới Task bên trái, Bản tin bên phải, độ chênh lệch chiều cao 0.00px.
+  * `33_widget_tasks_list_view.png`: Giao diện danh sách hiển thị đầy đủ icon Người giao, Người phụ trách, Người theo dõi.
+  * `34_widget_tasks_kanban_view.png`: Giao diện Kanban 3 cột trực quan.
+  * `35_widget_resizer_dragged.png`: Kéo thanh resizer co giãn tỷ lệ giữa 2 ô mượt mà.
+  * `36_modal_chart_customizer_8_entities.png`: Dropdown 8 bảng dữ liệu nghiệp vụ đầy đủ.
+  * `37_pivot_exceptions_preview.png`: Xem trước trực tiếp biểu đồ sự cố vận tải theo mức độ nghiêm trọng.
+  * `38_dashboard_custom_exceptions_chart_applied.png`: Áp dụng thành công vào Biểu đồ 1 trên Dashboard.
+  * `39_dashboard_chart_restored.png`: Khôi phục về mặc định dễ dàng.
+
+---
+
+## [v3.3.6] - 2026-10-16 (Chuẩn Hóa Thuần Việt, Tùy Biến Cả 2 Ô Biểu Đồ & Thanh Kéo Tỷ Lệ Kích Thước Tự Động Đồng Bộ Chiều Cao)
+
+### 1. Chuẩn Hóa Ngôn Ngữ — Loại Bỏ Toàn Bộ Chữ "BI" & Thuật Ngữ Rườm Rà:
+- Loại bỏ hoàn toàn các từ viết tắt tự xưng "BI", "Live BI", "Self-service BI" khỏi giao diện người dùng, nhãn bảng, nút bấm và thông báo hệ thống.
+- Tập trung vào bản chất thuần túy, chuyên nghiệp:
+  * Tiêu đề modal: `Tùy Biến Biểu Đồ Báo Cáo` (kèm huy hiệu phân biệt `Biểu đồ 1` / `Biểu đồ 2`).
+  * Huy hiệu trạng thái: `Trực tiếp` và `Tùy biến`.
+  * Các trường tham số chuẩn tiếng Việt: `1. Bảng Dữ Liệu`, `2. Phân Nhóm Theo (Trục Nhóm)`, `3. Chỉ Số Đo Lường`, `Phép Tính`, `4. Loại Biểu Đồ`, `5. Giới Hạn Top`, `Bảng Chi Tiết Phân Bổ`.
+  * Xóa bỏ các từ tiếng Anh không cần thiết trong danh sách nhóm (Customer, Driver, Vehicle, Status, Container Type, Shipping Line...).
+
+### 2. Tùy Biến Độc Lập Cho Cả Biểu Đồ 1 & Biểu Đồ 2:
+- Bổ sung nút `[Tùy biến]` và nút `[Mặc định]` riêng rẽ cho cả Ô 1 (`openChartCustomizer(1)`) và Ô 2 (`openChartCustomizer(2)`).
+- Quản lý trạng thái độc lập qua `bim_custom_chart_1` và `bim_custom_chart_2` trong `localStorage`:
+  * Ô 1 có thể hiển thị Biểu đồ cột/đường theo Khách hàng, Doanh thu, Tuyến đường...
+  * Ô 2 có thể tùy biến thành Biểu đồ Donut/Cột ngang/Tròn theo Khoản mục chi phí, Trạng thái đơn, Loại xe...
+  * Khi khôi phục về mặc định một ô, ô còn lại vẫn giữ nguyên cấu hình tùy biến mà không bị ảnh hưởng.
+
+### 3. Tùy Chỉnh Kích Thước Linh Hoạt & Đồng Bộ Chiều Cao 100%:
+- **Đồng bộ chiều cao tuyệt đối:** Sử dụng container `flex flex-col lg:flex-row items-stretch gap-0` kết hợp canvas đồng bộ `h-[135px] xl:h-[150px] 2xl:h-[190px]`, đảm bảo 2 ô biểu đồ luôn có chiều cao bằng nhau chính xác (độ chênh lệch 0px) trên mọi kích thước màn hình.
+- **Thanh kéo phân tách (Splitter / Resizer):**
+  * Đặt thanh `#dash-chart-resizer` ở giữa 2 ô biểu đồ với vạch chia dọc nổi bật khi hover/active.
+  * Hỗ trợ kéo chuột trái/phải mượt mà để thay đổi tỷ lệ chiều rộng giữa 2 ô (giới hạn an toàn từ 20% đến 80%).
+  * Tự động lưu tỷ lệ đã kéo vào `localStorage` (`bim_chart_split_ratio`) để duy trì trạng thái khi tải lại trang.
+  * Tự động kích hoạt `Chart.resize()` sau khi thả chuột để đồ họa hiển thị sắc nét, không bị vỡ bố cục.
+
+### 4. Kiểm Thử & Xác Thực Toàn Diện:
+- **Frontend Syntax Verification:** `node -c static/js/app.js` và `node -c static/js/column_manager.js` (Exit Code 0).
+- **Automated Regression Test Suite:** `python manage.py test --keepdb` (101/101 tests PASSED).
+- **Playwright Visual Verification:** Kiểm thử thực tế kéo thanh resizer, tùy biến cả 2 ô biểu đồ và khôi phục độc lập, lưu các artifact ảnh `27_dashboard_initial_dual_charts.png`, `28_modal_customizer_slot_1.png`, `29_modal_customizer_slot_2.png`, `30_dashboard_both_charts_customized.png`, `31_dashboard_chart2_reset_chart1_kept.png`.
+
+---
+
+## [v3.3.5] - 2026-10-16 (Nhúng Công Cụ Tùy Biến Biểu Đồ Đa Chiều Self-Service Pivot / BI Builder Vào Dashboard)
+
+### 1. Phân Tích & Tính Năng Self-Service Pivot BI Builder:
+- **Tự chọn nguồn dữ liệu (Data Source / Entity):**
+  * `trips`: Chuyến xe & Vận chuyển (`DispatchTrip`).
+  * `expenses`: Chi phí vận hành & Hiện trường (`TripExpense`).
+  * `bookings`: Đơn hàng vận chuyển & Booking hãng tàu (`BookingOrder`).
+  * `vehicles`: Đội xe & Phương tiện (`Vehicle`).
+- **Tự chọn trục phân nhóm (Trục X / Dimensions):**
+  * Theo Khách hàng (`customer`), Tài xế (`driver`), Biển số xe (`vehicle`), Tuyến đường (`route`), Loại container (`container_type`), Phân loại hàng (`shipment_type`), Trạng thái chuyến (`status`), Khoản mục chi phí (`category`), Hãng tàu (`shipping_line`), Kích cỡ cont (`container_size`).
+- **Tự chọn chỉ số & phép tính đo lường (Trục Y / Metrics & Aggregation):**
+  * Doanh thu (`revenue`), Chi phí (`expense`/`amount`), Lợi nhuận gộp (`profit`), Số chuyến (`trip_count`), Số đơn hàng (`booking_count`), Số lượng xe (`vehicle_count`).
+  * Phép toán: Tổng (`SUM`), Trung bình (`AVG`), Đếm số lượng (`COUNT`).
+- **Tự chọn loại biểu đồ trực quan (Chart Types):**
+  * Cột đứng (Bar Chart), Cột ngang (Horizontal Bar), Đường xu hướng (Line Chart), Vòng Donut (Doughnut Chart), Biểu đồ tròn (Pie Chart).
+- **Bộ lọc thời gian & Giới hạn:**
+  * Toàn bộ thời gian, Tháng này, Quý này, Năm nay, 30 ngày gần nhất.
+  * Giới hạn Top 5, 10, 15, 20 kèm sắp xếp Giảm dần / Tăng dần.
+- **Xem trước trực tiếp (Live Preview & Mini Pivot Table):**
+  * Tích hợp Canvas xem trước tức thời khi thay đổi bất kỳ tham số nào.
+  * Bảng số liệu chi tiết phân bổ (Mini Pivot Table) hiển thị xếp hạng, tên nhóm, giá trị định dạng tiền tệ/đơn vị và thanh % tỷ trọng trực quan.
+- **Áp dụng & Lưu cấu hình (Dashboard Persistence & Reset):**
+  * Bấm `[Áp Dụng Vào Dashboard]` sẽ ghi đè biểu đồ Card 1 trên Dashboard, hiển thị huy hiệu `[BI Tùy Biến]` và tự động lưu vào `localStorage`.
+  * Nút `[Mặc định]` cho phép quay về biểu đồ chuẩn theo vai trò phòng ban bất kỳ lúc nào chỉ bằng 1 cú nhấp chuột.
+
+### 2. Triển Khai Kỹ Thuật & Kiến Trúc:
+- **Backend API (`apps/dispatch/api_views.py` & `config/urls.py`):**
+  * Thêm `DashboardPivotChartAPIView` và route `/api/dashboard/pivot/`.
+  * Sử dụng Django ORM aggregation (`Sum`, `Avg`, `Count`) với quan hệ an toàn trên `Customer`, `Employee`, `Vehicle`, `DispatchTrip`, `TripExpense`, `BookingOrder`.
+- **Frontend UI & Modal (`templates/views/view_dashboard.html`):**
+  * Bổ sung nút `[Tùy biến BI]` và nút `[Mặc định]` trên Header Card 1 Hàng biểu đồ.
+  * Thêm Modal 2 cột `#modal-pivot-chart-builder` thiết kế chuẩn quốc tế với Design Token BIM Logistics (Teal, Emerald, Amber, Slate).
+- **JavaScript Engine (`static/js/app.js`):**
+  * Hàm `openPivotChartBuilderModal()`, `closePivotChartBuilderModal()`, `onPivotEntityChange()`, `fetchAndRenderPivotPreview()`, `renderPivotChartCanvas()`, `renderPivotMiniTable()`, `applyPivotChartToDashboard()`, `renderCustomPivotChartOnDashboard()`, `resetToDefaultRoleChart()`.
+  * Độc lập hóa trục tung/hoành cho Horizontal Bar (`indexAxis: 'y'`) hiển thị chính xác tên nhãn và thang đo giá trị.
+
+### 3. Kiểm Thử & Xác Thực Toàn Diện:
+- **JS Syntax Verification:** `node -c static/js/app.js` và `node -c static/js/column_manager.js` (Exit Code 0).
+- **Automated Regression Test Suite:** `python manage.py test --keepdb` (101/101 tests PASSED).
+- **Playwright Visual Verification:** Kiểm thử thực tế trên trình duyệt, chụp ảnh màn hình lưu vết các artifact `23_pivot_builder_modal.png`, `24_pivot_builder_expenses_preview.png`, `25_dashboard_custom_pivot_applied.png`, `26_dashboard_pivot_restored_default.png`.
+
+---
+
+## [v3.3.4] - 2026-10-16 (Hệ Thống Biểu Đồ BI Đa Chiều Tùy Biến Chuyên Biệt Theo Từng Vai Trò - Role-Based Logistics BI Charts)
+
+### 1. Phân Tích & Kiến Trúc Biểu Đồ BI Theo 6 Góc Nhìn Chuyên Môn:
+- **Nguyên lý thiết kế:** Không cố định một loại biểu đồ cho toàn bộ các phòng ban; mỗi vai trò có trọng tâm dữ liệu và chỉ số hiệu suất hoàn toàn khác nhau.
+- **Chi tiết 6 Cấu Hình Biểu Đồ Xu Hướng (Chart 1 - Mixed Bar & Line) & Biểu Đồ Cơ Cấu (Chart 2 - Donut):**
+  1. **Ban Giám Đốc (`DIRECTOR`):**
+     * *Xu hướng:* Diễn Biến Doanh Thu, Chi Phí Vận Hành & Lợi Nhuận Gộp (Cột Doanh thu Teal vs Chi phí Amber & Đường Lợi nhuận Emerald).
+     * *Tóm tắt:* Doanh Thu TB/Ngày | Chi Phí TB/Ngày | Biên Lợi Nhuận TB.
+     * *Donut:* Cơ Cấu Vận Hành (Toggle: **Đội Xe** [Khai thác, Chờ bãi, Bảo trì] vs **Hải Quan** [Xanh, Vàng, Đỏ]).
+  2. **Kế Toán Tài Chính (`ACCOUNTING`):**
+     * *Xu hướng:* Diễn Biến Chi Phí Vận Hành & Tạm Ứng Chuyến Lái Xe (Cột Chi phí Amber vs Tạm ứng giải ngân Blue & Đường Lợi nhuận gộp Emerald).
+     * *Tóm tắt:* Chi Phí TB/Ngày | Tạm Ứng TX Bình Quân | Tỷ Lệ Quyết Toán Cước.
+     * *Donut:* Cơ Cấu Chi Phí & Hồ Sơ Quyết Toán (Toggle: **Khoản Mục Chi** [Dầu DO 55%, Cầu đường BOT 25%, Nâng hạ cảng 12%, Lưu ca 8%] vs **Quyết Toán** [Đã chốt sổ, Chờ duyệt chứng từ, Chưa nộp]).
+  3. **Điều Vận & Điều Độ (`DISPATCH`):**
+     * *Xu hướng:* Sản Lượng Điều Vận Chuyến Xe & Tỷ Lệ Giao Đúng Giờ (OTD) (Cột Lệnh điều xe Teal vs Chuyến hoàn tất Emerald & Đường SLA Đúng Hạn OTD% Amber).
+     * *Tóm tắt:* Tổng Lệnh Điều Vận | Chuyến Hoàn Tất | SLA Đúng Hạn (OTD).
+     * *Donut:* Tiến Độ Lộ Trình & Sự Cố Vận Tải (Toggle: **Chặng Chuyến** [Đang lăn bánh, Lấy/Trả rỗng cảng, Đang đóng kho] vs **Sự Cố OS&D** [An toàn, Trễ giờ kẹt phà, Hư hỏng/thiếu hàng]).
+  4. **Phòng Kinh Doanh (`SALES`):**
+     * *Xu hướng:* Sản Lượng Đơn Booking & Doanh Thu Tạm Tính (Cột Doanh số Blue vs Sản lượng TEU Indigo & Đường Tỷ Lệ Chốt Báo Giá Teal).
+     * *Tóm tắt:* Đơn Booking Mới | Doanh Số Bán Hàng | Tỷ Lệ Chốt Báo Giá.
+     * *Donut:* Cơ Cấu Khách Hàng & Loại Vỏ Container (Toggle: **Loại Cont** [Cont 40HC 60%, Cont 20DC 32%, Cont Lạnh 8%] vs **Ngành Hàng** [FMCG 48%, Nông thủy sản 34%, Điện tử 18%]).
+  5. **Đội Xe & Quản Lý Bãi (`FLEET`):**
+     * *Xu hướng:* Tỷ Lệ Khai Thác Đội Đầu Kéo & Phương Tiện Sẵn Sàng (Cột Xe lăn bánh Active Emerald vs Xe chờ bãi Idle Teal & Đường Utilization% Indigo).
+     * *Tóm tắt:* Tổng Đội Xe Đầu Kéo | Sẵn Sàng Nhận Lệnh | Hiệu Suất Khai Thác.
+     * *Donut:* Hiện Trạng Kỹ Thuật & Đăng Kiểm Đội Xe (Toggle: **Kỹ Thuật** [Đủ điều kiện, Cần bảo dưỡng nhẹ, Đại tu xưởng] vs **Đăng Kiểm** [Còn hạn an toàn, Sắp hết hạn <30 ngày, Quá hạn]).
+  6. **Hành Chính Nhân Sự (`HR`):**
+     * *Xu hướng:* Lực Lượng Tài Xế Lăn Bánh & Tỷ Lệ Sẵn Sàng Vận Hành (Cột Tài xế lăn bánh Teal vs Tài xế nghỉ phép/chờ lệnh Amber & Đường Tỷ Lệ Sẵn Sàng Emerald).
+     * *Tóm tắt:* Tổng Đội Ngũ Tài Xế | Đang Ôm Vô-lăng | Tỷ Lệ Sẵn Sàng.
+     * *Donut:* Cơ Cấu Định Biên & Giấy Phép Lái Xe (Toggle: **Định Biên** [Tài xế, Điều vận/Hiện trường, Khối Văn phòng] vs **GPLX FC/C** [Còn hạn, Cần đổi bằng 30 ngày, Khám sức khỏe]).
+
+### 2. Triển Khai Kỹ Thuật & Zero-Regression:
+- **Backend API (`apps/dispatch/api_views.py`):**
+  * Bổ sung dictionary `role_charts` tích hợp đầy đủ 6 vai trò trong response của `/api/dashboard/`.
+  * Bảo toàn 100% trường `charts` cũ để tương thích ngược.
+- **Frontend SPA (`static/js/app.js` & `templates/views/view_dashboard.html`):**
+  * Hàm `renderRoleCharts(role)` tự động vẽ lại Chart.js, cập nhật Legend động, 3 ô tóm tắt mini và biểu đồ Donut theo đúng vai trò đang chọn.
+  * Hàm `switchRoleDonutOption(optIdx)` cho phép chuyển đổi 1-chạm giữa 2 chế độ Donut của từng vai trò, tự động cập nhật tâm rỗng và danh sách chú thích.
+  * Xuất toàn cục: `window.renderRoleCharts` và `window.switchRoleDonutOption`.
+- **Kiểm Thử Đạt Chuẩn:**
+  * Cú pháp JavaScript: `node -c static/js/app.js` đạt 100% exit code 0.
+  * Bộ kiểm thử tự động: **101/101 Django unit tests PASSED**.
+  * Chụp ảnh xác thực giao diện Playwright: Chụp và thẩm định thành công 7 bức ảnh từ `16_chart_director.png` đến `22_chart_accounting_donut_toggle.png`.
+
+## [v3.3.3] - 2026-10-16 (Tối Ưu Không Gian Dashboard: Gỡ Bỏ Bảng P&L Chuyến Xe, Mở Rộng Tối Đa Cho Bản Tin & Quản Lý Công Việc)
+
+### 1. Tối Ưu Bố Cục Không Gian Giao Diện (UI/UX Space Optimization):
+- **Loại bỏ khối Bảng P&L Chuyến Xe khỏi Dashboard:**
+  * Tiếp thu phản hồi thực tế từ người dùng: Bảng kê chi tiết hiệu suất & P&L từng chuyến xe đã có đầy đủ tại phân hệ **Tài chính & Kế toán** (`switchTab('ke-toan')`) và phân hệ **Báo cáo & Thống kê** (`switchTab('bao-cao')`), việc để bảng dài chiếm nửa dưới của Dashboard gây chật chội và thừa thãi thông tin.
+  * Gỡ bỏ hoàn toàn thẻ `<!-- HÀNG 4: BẢNG KÊ HIỆU SUẤT P&L CHUYẾN XE GẦN NHẤT -->` trong [`templates/views/view_dashboard.html`](file:///e:/Bim_Logistics/templates/views/view_dashboard.html).
+- **Mở rộng không gian hiển thị cho 2 Widget Tương Tác Cốt Lõi:**
+  * **Widget 1: Bản Tin & Thông Báo Nội Bộ** (`#dashboard-news-list`) và **Widget 2: Công Việc Cần Xử Lý Ngay** (`#dashboard-tasks-list`) được chuyển đổi sang container co giãn linh hoạt (`flex-1 min-h-[380px] 2xl:min-h-[480px]`).
+  * Loại bỏ giới hạn cứng `max-h-[220px]`, danh sách nội dung được mở rộng không gian tối đa (`min-h-[280px] flex-1 overflow-y-auto pr-1`).
+  * Danh thiếp bài viết và danh thiếp công việc hiển thị đầy đủ, thoáng đãng, dễ theo dõi tiến độ và đọc thông báo chỉ đạo điều hành.
+
+### 2. Tinh Chỉnh Backend & Defensive JavaScript:
+- **Backend API (`apps/dispatch/api_views.py`):**
+  * Tăng số lượng tin tức (`announcements`) từ 4 lên tối đa 8 bài mới nhất.
+  * Tăng số lượng công việc ưu tiên (`my_tasks`) từ 5 lên tối đa 8 việc ưu tiên cần xử lý.
+- **Frontend JavaScript An Toàn (`static/js/app.js`):**
+  * Bổ sung kiểm tra phòng thủ: `const pnlTbody = document.getElementById('bgd-pnl-tbody'); if (!pnlTbody) return;` vào đầu hàm `applyDashboardPnlFilters()` tránh lỗi JavaScript null pointer khi bảng P&L không còn trên DOM.
+  * Cú pháp chuẩn mực: `node -c static/js/app.js` và `node -c static/js/column_manager.js` đạt 100% exit code 0.
+- **Kiểm Thử & Xác Thực Toàn Diện:**
+  * Chạy trọn vẹn bộ test dự án: **101/101 Django unit tests PASSED**.
+  * Chụp ảnh kiểm thử trực quan Playwright headless (`13_dashboard_expanded_widgets.png`, `14_dashboard_accounting_expanded.png`, `15_dashboard_dispatch_expanded.png`) xác nhận giao diện mới sắc nét, chuẩn UI/UX quốc tế.
+
+## [v3.3.2] - 2026-10-16 (Phân Hệ Dashboard Tùy Biến Theo Vai Trò Vị Trí Quyền Hạn - Role-Based Dashboard & Widgets Integration)
+
+### 1. Phân Tích & Kiến Trúc Dashboard Đa Vai Trò (Role-Based Context):
+- **Cơ sở nghiệp vụ Logistics:** Mỗi vị trí trong doanh nghiệp vận tải có nhu cầu thông tin chuyên biệt: Ban Giám Đốc cần toàn cảnh P&L và chiến lược, Kế toán cần kiểm soát quỹ tiền và tạm ứng, Điều vận cần bám sát trạng thái chuyến và OTD, Kinh doanh cần theo dõi đơn hàng và doanh số, Đội xe cần kiểm soát bảo dưỡng và kiểm định, Nhân sự cần quản trị định biên và bằng lái.
+- **Phân cấp 6 Vai Trò Chính:**
+  1. **Ban Giám Đốc (`DIRECTOR` / `MANAGEMENT` / Superuser):** P&L, Lợi nhuận gộp tạm tính, Doanh thu, Chi phí, Khai thác đội xe, Thông quan hải quan, Chỉ thị điều hành.
+  2. **Kế Toán Tài Chính (`ACCOUNTING` / `ACCOUNTANT`):** Quỹ khả dụng (Tiền mặt/Ngân hàng), Tạm ứng lái xe chưa hoàn (`DriverTripAdvance`), Chuyến chưa quyết toán cước, Chi phí vận hành kỳ này.
+  3. **Điều Vận & Điều Độ (`DISPATCH` / `DISPATCHER`):** Chuyến đang chạy trên đường, Đơn hàng chờ gán xe, Tỷ lệ đúng hẹn (OTD%), Cảnh báo sự cố / Chậm trễ hiện trường.
+  4. **Phòng Kinh Doanh (`SALES` / `SALESMAN`):** Đơn hàng Booking, Báo giá đang đàm phán, Doanh số bán hàng, Khách hàng B2B hoạt động.
+  5. **Đội Xe & Quản Lý Bãi (`FLEET` / `MECHANIC`):** Khả dụng đầu kéo, Xe nằm bãi sẵn sàng, Xe đang bảo dưỡng trong xưởng, Xe đến hạn kiểm định/bảo hiểm 30 ngày.
+  6. **Hành Chính Nhân Sự (`HR`):** Tổng quân số, Lực lượng tài xế lăn bánh, HĐLĐ đang hiệu lực, Giấy phép lái xe cần đổi hạn 30 ngày.
+- **Bộ Chuyển Đổi Góc Nhìn Điều Hành (Executive Role Switcher):** Dành riêng cho Ban Giám Đốc và Superuser: Cung cấp dropdown trực tiếp trên thanh Dashboard Header để chuyển đổi và kiểm tra góc nhìn của từng phòng ban mà không cần đăng xuất/đăng nhập lại. Với chuyên viên thông thường, hệ thống tự động khóa và hiển thị đúng góc nhìn chuyên môn.
+
+### 2. Tích Hợp 2 Widget Tương Tác Cốt Lõi Trên Dashboard:
+- **Widget Bản Tin & Thông Báo Công Ty (Company Announcements Widget):**
+  * Tự động lọc thông báo khẩn cấp (`is_urgent`), thông báo ghim (`is_pinned`) và tin tức theo đúng phòng ban người dùng.
+  * Hiển thị badge danh mục, thời gian đăng, tác giả và tóm tắt ngắn.
+  * Tương tác 1-chạm: Bấm vào bài viết mở trực tiếp Modal chi tiết bản tin (`openNewsDetailModal`).
+- **Widget Quản Lý Công Việc Cần Xử Lý Ngay (My Actionable Tasks Widget):**
+  * Tự động lọc công việc ưu tiên cao/khẩn cấp của cá nhân và phòng ban phụ trách.
+  * Hiển thị mã task (`TSK-xxx`), Badge mức độ ưu tiên (Khẩn cấp / Cao / Bình thường), Badge Quá hạn, Deadline, thanh tiến độ checklist (`x/y mục`).
+  * Tương tác 1-chạm: Bấm vào task mở trực tiếp Slide-over Task Drawer (`openTaskDetailDrawer`) để cập nhật checklist và thảo luận.
+
+### 3. Nâng Cấp Backend API & Frontend Architecture:
+- **REST API `DashboardBGDAPIView` (`/api/dashboard/`):**
+  * Mở rộng quyền truy cập: `permission_classes = [permissions.IsAuthenticated]`.
+  * Hỗ trợ tham số `view_as` cho Ban Giám Đốc và Superuser.
+  * Trả về đồng bộ: `kpi_cards` (4 thẻ chuyên môn), `announcements`, `my_tasks`, `financial`, `productivity`, `fleet`, `personnel`, `commercial_customs`, `charts`, `trips_pnl` (Bảo toàn 100% tương thích ngược).
+- **Frontend SPA ([`templates/views/view_dashboard.html`](file:///e:/Bim_Logistics/templates/views/view_dashboard.html) & [`static/js/app.js`](file:///e:/Bim_Logistics/static/js/app.js)):**
+  * Bổ sung thanh tiêu đề `Role-Based Dashboard Header Bar` với lời chào cá nhân hóa, Badge chức vụ và Dropdown Góc nhìn điều hành.
+  * Hàm `renderRoleKpiCards()`, `renderDashboardNews()`, `renderDashboardTasks()`, `changeDashboardRoleView()`.
+  * Cú pháp JavaScript: `node -c static/js/app.js` đạt 100% exit code 0.
+  * Bộ kiểm thử toàn diện: **101/101 unit tests PASSED** (`python manage.py test --keepdb`).
+  * Kiểm thử thị giác tự động bằng Playwright: 10 kịch bản chụp ảnh màn hình từ `01_dashboard_director.png` đến `10_dashboard_staff_ketoan.png`.
+
+## [v3.3.1] - 2026-10-16 (Rà Soát Nghiệp Vụ Thực Tế: Phân Quyền Đăng Bản Tin & Nguyên Tắc Giao Việc Cấp Trên - Cấp Dưới)
+
+### 1. Phân Quyền Đăng Bản Tin Công Ty (Announcement Permissions):
+- **Cơ sở nghiệp vụ:** Bản tin công ty là kênh thông cáo chính thức, mang tính pháp lý nội bộ; chuyên viên thông thường và tài xế không được tùy tiện đăng bài gây loãng thông tin.
+- **Thực thi kỹ thuật:**
+  * Bổ sung trường `is_department_head = models.BooleanField` vào model `Employee` (`apps/personnel/models.py`).
+  * Bổ sung property `hierarchy_level` và hàm thẩm quyền `can_post_news()`: Chỉ Ban Giám Đốc (`hierarchy_level=100`), Hành chính Nhân sự (`Department.HR` - `50`) và Trưởng các phòng ban (`is_department_head=True` - `50`) mới có thẩm quyền đăng tin.
+  * API `CompanyPostListCreateAPIView.post`: Chặn và trả về `HTTP 403 FORBIDDEN` nếu tài khoản không đủ thẩm quyền.
+  * Frontend: Tự động ẩn nút "Đăng Bản Tin Mới" (`#btn-open-create-news`) đối với chuyên viên thường.
+
+### 2. Nguyên Tắc Giao Việc Cấp Trên - Cấp Dưới (Superior-to-Subordinate Task Delegation):
+- **Cơ sở nghiệp vụ:** Kiểm soát trật tự điều hành doanh nghiệp logistics: Cấp dưới tuyệt đối không được giao việc ngược lên cấp trên hoặc Ban Giám Đốc.
+- **Thực thi kỹ thuật:**
+  * Bổ sung hàm kiểm tra thẩm quyền `can_assign_task_to(target_employee)` trên model `Employee`.
+  * **Ban Giám Đốc (`100`):** Toàn quyền giao việc cho bất kỳ ai trong công ty.
+  * **Trưởng phòng / Quản lý (`50`):** Được giao việc cho nhân viên cấp dưới trong cùng bộ phận (`hierarchy_level < 50`), gửi đề nghị phối hợp ngang cấp cho Trưởng phòng ban khác (`50`), và tự tạo việc cho chính mình. Bị chặn `HTTP 403` nếu cố tình gán việc cho Ban Giám Đốc.
+  * **Chuyên viên / Nhân viên thường (`20`):** Chỉ được phép tự tạo việc cho chính bản thân mình (Self-assigned task - theo dõi to-do cá nhân), bị chặn `HTTP 403` nếu cố tình giao việc cho Trưởng phòng hoặc Ban Giám Đốc.
+  * API `OfficeTaskDirectoryAPIView`: Cung cấp cờ `can_assign` cho từng nhân sự và trả về `assignable_users`.
+  * Frontend UI: Dropdown "Người thực hiện" tự động đánh dấu `[Chính bạn - Việc cá nhân]` và làm mờ/vô hiệu hóa các cấp trên kèm nhãn `[Cấp trên / Ngoài thẩm quyền]`.
+### 3. Phân Hệ Chuông Thông Báo Cá Nhân (In-App Bell Notifications):
+- **Kiến trúc & Data Model:** Model `Notification` (`apps/collaboration/models/notification.py`) với các loại thông báo: `TASK_ASSIGNED` (Được giao việc mới), `TASK_STATUS_CHANGED` (Cập nhật tiến độ), `TASK_COMMENT` (Thảo luận việc), `NEWS_URGENT` (Bản tin khẩn cấp), `NEWS_NEW` (Bản tin mới), `CHAT_MENTION` (Nhắc tên).
+- **Cơ chế Trigger tự động:**
+  * Khi giao việc mới: Chuông của người nhận việc (`assignee`) tự động tăng số lượng và nhận thông báo tiêu đề, người giao và hạn chót.
+  * Khi người thực hiện đổi trạng thái (hoàn thành / nghiệm thu): Chuông của người giao việc (`reporter`) nhận thông báo cập nhật kèm % tiến độ.
+  * Khi xuất bản tin tức mới: Toàn thể nhân sự văn phòng thuộc phòng ban đích nhận thông báo đẩy.
+- **Giao diện Topbar Chuông Thông Báo ([`templates/components/topbar.html`](file:///e:/Bim_Logistics/templates/components/topbar.html)):**
+  * Nút chuông thông báo cạnh Avatar với huy hiệu đỏ đếm số tin chưa đọc (`#notification-unread-badge`).
+  * Dropdown Popover danh sách thông báo: Phân loại Tất cả / Chưa đọc, hiển thị icon màu trực quan, thời gian tương đối (`formatTimeAgo`), nút "Đánh dấu tất cả đã đọc".
+  * Điều hướng thông minh khi bấm vào item: Tự động đánh dấu đã đọc và mở ngay Modal bản tin hoặc Drawer chi tiết công việc tương ứng.
+- **REST APIs:** `/api/collaboration/notifications/`, `/mark-read/`, `/mark-all-read/`.
+
+### 4. Kiểm Thử Hệ Thống (Zero-Regression):
+- Cập nhật test case `test_create_news_and_task_delegation_permissions` tại `apps/collaboration/tests.py`: Kiểm thử 8 kịch bản phân quyền (Chuyên viên bị chặn đăng tin, Trưởng phòng/HR/BGD đăng tin thành công, Cấp dưới giao việc cấp trên bị chặn, Trưởng phòng giao việc BGD bị chặn, Trưởng phòng giao việc cấp dưới thành công, Phối hợp liên phòng ban thành công, Việc cá nhân thành công).
+- Kết quả kiểm thử: **5/5 tests PASSED** (`apps.collaboration`).
+- Cú pháp JavaScript: `node -c static/js/collaboration.js` đạt **100% exit code 0**.
+
+## [v3.3.0] - 2026-10-15 (Triển Khai Phân Hệ Tương Tác Nội Bộ: Bản Tin Công Ty, Giao Việc Chuẩn Quốc Tế Jira/Asana & In-App Team Chat)
+
+### 1. Phân Hệ Bản Tin Công Ty & Thông Báo Nội Bộ (`apps/collaboration/`):
+- **Kiến trúc & Data Model:** `PostCategory`, `CompanyPost`, `PostAttachment`, `PostComment`, `PostReadStatus`.
+- **Tính năng nổi bật:**
+  * Đăng bài thông báo chỉ đạo của Ban Giám Đốc, chính sách nhân sự, cảnh báo tuyến đường / kẹt cảng.
+  * Đánh dấu ghim lên đầu trang (`is_pinned`), thông báo khẩn cấp (`is_urgent`), nhắm theo phòng ban đích (`target_department`).
+  * Tự động ghi nhận lượt xem (`view_count`) và theo dõi trạng thái đã đọc của từng nhân viên văn phòng (`PostReadStatus`).
+  * Bình luận, thảo luận trực tiếp dưới mỗi thông báo.
+- **Giao diện:** View SPA `view_news.html`, Card Grid hiện đại, Modal đọc chi tiết bài viết, Modal tạo bản tin mới.
+
+### 2. Phân Hệ Quản Lý & Giao Việc Văn Phòng Chuẩn Quốc Tế (Jira / Asana Standard):
+- **Phạm vi phân quyền:** Độc lập hoàn toàn với tài xế xe đầu kéo; chuyên biệt cho Ban Giám Đốc, Quản lý và Cán bộ Nhân viên Văn phòng.
+- **Kiến trúc & Data Model:** `OfficeTask`, `TaskChecklist`, `TaskComment`, `TaskAttachment`, `TaskActivityLog`.
+- **Tính năng nghiệp vụ:**
+  * Mã công việc chuẩn hoá tự sinh `TSK-YYYYMM-XXXX`.
+  * Hỗ trợ 2 chế độ hiển thị linh hoạt: **Bảng Kanban** (4 cột: Cần làm `TODO`, Đang làm `IN_PROGRESS`, Chờ nghiệm thu `REVIEW`, Hoàn thành `DONE`) và **Dạng Danh Sách (List View)**.
+  * Bộ lọc nhanh: Việc của tôi (`my_tasks`), Tôi đã giao (`assigned_by_me`), Lọc theo phòng ban, Lọc quá hạn (Overdue).
+  * Kéo thả Kanban đổi trạng thái trực quan với API `/api/collaboration/tasks/<id>/status/`.
+  * Checklist subtasks có thanh % tiến độ tự động cập nhật (`recalculate_progress`).
+  * Slide-over Task Detail Drawer bên phải màn hình: Xem chi tiết, thảo luận, tải tệp đính kèm, nhật ký hoạt động (Audit trail).
+
+### 3. Phân Hệ Nhắn Tin Nội Bộ Trực Tiếp (In-App Team Chat):
+- **Kế thừa tinh hoa từ Bim Ecosystem (`Bim_Consulting`):**
+  * Nút nổi **Chat Bubble** góc dưới phải màn hình với huy hiệu đếm số tin nhắn chưa đọc (`chat-unread-badge`).
+  * Cửa sổ chat nổi (`#chat-floating-window`) bo tròn 2xl, hỗ trợ xem danh sách kênh và màn hình trò chuyện.
+  * Các loại kênh: Kênh Toàn thể công ty (`COMPANY`), Kênh từng phòng ban (`DEPARTMENT`), Kênh Chat 1-1 riêng tư giữa 2 nhân viên (`DIRECT`).
+  * Tối ưu hóa Cache Polling qua `after_id` và cache key `chat_room_<id>_latest_msg_id`, loại bỏ truy vấn DB khi không có tin nhắn mới.
+  * Hỗ trợ đính kèm tệp và hình ảnh (`ChatAttachment`), tự động gán ngày hết hạn 30 ngày để tối ưu dung lượng lưu trữ.
+
+### 4. Kiểm Thử Tích Hợp & Đảm Bảo Cú Pháp:
+- Viết test suite toàn diện tại `apps/collaboration/tests.py`: 4/4 tests passed (Bản tin, Giao việc, Chat, Cách ly tài xế & Phân quyền).
+- Kiểm tra cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/collaboration.js` đạt 100% không lỗi cú pháp.
+
 
 ### 1. Cập Nhật Sổ Tay Hướng Dẫn Sử Dụng (`docs/USER_GUIDE.md`):
 - **Bổ sung Mục 7: Phân Hệ Quản Trị Nhân Sự, Hợp Đồng Lao Động & Người Phụ Thuộc (HR Management):**

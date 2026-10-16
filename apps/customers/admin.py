@@ -8,9 +8,9 @@ class RouteTariffInline(admin.TabularInline):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name', 'tax_code', 'phone', 'contact_person', 'is_deleted', 'created_at')
+    list_display = ('code', 'short_name', 'name', 'tax_code', 'phone', 'contact_person', 'is_deleted', 'created_at')
     list_filter = ('is_deleted', 'created_at')
-    search_fields = ('code', 'name', 'tax_code', 'phone', 'contact_person')
+    search_fields = ('code', 'short_name', 'name', 'tax_code', 'phone', 'contact_person')
     inlines = [RouteTariffInline]
 
 @admin.register(RouteTariff)

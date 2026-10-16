@@ -34,3 +34,5 @@ Thumbs.db
 # Node / Scratch
 node_modules/
 scratch/
+test_screenshots/
+simulate_browser.py

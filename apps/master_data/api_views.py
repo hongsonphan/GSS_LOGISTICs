@@ -55,7 +55,8 @@ class MasterDataFormOptionsAPIView(APIView):
                 'id': c.id,
                 'code': c.code,
                 'name': c.name,
-                'label': f"{c.name} ({c.code})" if c.code else c.name
+                'short_name': c.short_name,
+                'label': f"[{c.short_name}] {c.name}" if c.short_name else (f"{c.name} ({c.code})" if c.code else c.name)
             }
             for c in Customer.objects.all().order_by('name')
         ]
@@ -455,7 +456,7 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
         q = request.GET.get('q', '').strip()
         qs = Customer.objects.all()
         if q:
-            qs = qs.filter(Q(code__icontains=q) | Q(name__icontains=q) | Q(tax_code__icontains=q))
+            qs = qs.filter(Q(code__icontains=q) | Q(name__icontains=q) | Q(short_name__icontains=q) | Q(tax_code__icontains=q))
 
         data = []
         for c in qs:
@@ -463,6 +464,7 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
                 'id': c.id,
                 'code': c.code,
                 'name': c.name,
+                'short_name': c.short_name,
                 'tax_code': c.tax_code,
                 'address': c.address,
                 'contact_person': c.contact_person,
@@ -475,6 +477,7 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
     def post(self, request):
         data = request.data
         name = data.get('name', '').strip()
+        short_name = data.get('short_name', '').strip()
         code = data.get('code', '').strip().upper()
         if not name:
             return Response({'error': 'Tên khách hàng không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
@@ -487,6 +490,7 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
         cust = Customer.objects.create(
             code=code,
             name=name,
+            short_name=short_name,
             tax_code=data.get('tax_code', '').strip(),
             address=data.get('address', '').strip(),
             contact_person=data.get('contact_person', '').strip(),
@@ -502,6 +506,7 @@ class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy khách hàng!'}, status=status.HTTP_404_NOT_FOUND)
         data = request.data
         if 'name' in data: cust.name = data['name'].strip()
+        if 'short_name' in data: cust.short_name = data['short_name'].strip()
         if 'tax_code' in data: cust.tax_code = data['tax_code'].strip()
         if 'address' in data: cust.address = data['address'].strip()
         if 'contact_person' in data: cust.contact_person = data['contact_person'].strip()

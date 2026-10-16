@@ -68,34 +68,123 @@ apps/
 
 ---
 
-## 2. Phân hệ 1: Dashboard Ban Giám Đốc
+## 2. Phân hệ 1: Dashboard Đa Vai Trò Tùy Biến (Role-Based Dashboard)
 
-**View:** `view_dashboard.html` | **API:** `GET /api/dashboard/` | **Quyền:** `IsAdminOrDirector`
+**View:** `view_dashboard.html` | **API:** `GET /api/dashboard/?period=...&view_as=...` | **Quyền:** `IsAuthenticated`
 
-### 2.1 Thẻ KPI Trụ Cột (4 Card)
-| KPI | Nội dung | Màu |
-|---|---|---|
-| **Doanh thu Tháng** | Tổng cước phí từ tất cả chuyến (kể cả đang chạy) | Teal |
-| **Chi phí Vận hành** | Tổng chi phí thực tế + Operating Ratio % | Rose |
-| **Lợi nhuận Gộp** | Doanh thu − Chi phí; Gross Margin % | Emerald |
-| **Năng suất OTD** | On-Time Delivery Rate % + số chuyến hoàn tất hôm nay | Teal |
+Hệ thống Dashboard thông minh được thiết kế theo chuẩn quản trị quốc tế, tự động tùy biến và thích ứng nội dung hiển thị dựa trên vai trò, bộ phận và thẩm quyền của người đăng nhập.
 
-### 2.2 Dòng Tài chính
-- Hiển thị song song Doanh thu | Chi phí trên cùng hàng
-- **Quỹ Khả Dụng:** Tách biệt Tiền mặt (Quỹ cty) vs. Tài khoản Ngân hàng
-- **Kế hoạch chi tuần:** Số tiền dự kiến phải chi trong 7 ngày tới
+### 2.1 Thanh Tiêu Đề Điều Hành & Executive Role Switcher
+- **Lời chào cá nhân hóa:** Tự động nhận diện tên nhân sự, chức danh và huy hiệu màu đặc trưng của từng phòng ban.
+- **Bộ chuyển đổi góc nhìn (Executive Role Switcher):** Dành riêng cho Ban Giám Đốc và Superuser: Dropdown trực tiếp trên thanh Header cho phép Giám đốc chuyển đổi và quan sát hệ thống qua góc nhìn chuyên môn của bất kỳ phòng ban nào (`Ban Giám Đốc`, `Kế Toán`, `Điều Vận`, `Kinh Doanh`, `Đội Xe`, `Nhân Sự`). Với chuyên viên thông thường, dropdown tự động ẩn và cố định đúng vai trò nghiệp vụ.
 
-### 2.3 Bảng Phân tích P&L Chuyến xe
-- Hiển thị **8 chuyến xe mới nhất** với đầy đủ: Mã chuyến, Khách hàng, Tuyến đường, Tài xế, Xe, Container, Doanh thu, Chi phí, Lợi nhuận, Margin %, Trạng thái
-- Nhấp vào dòng → Mở màn hình chi tiết chuyến
+### 2.2 Bộ Thẻ Số Liệu KPI Động Theo Vai Trò (4 Cards / Role)
+1. **Ban Giám Đốc (`DIRECTOR`):**
+   * *1. Tài Chính & Quỹ:* Lợi nhuận gộp tạm tính, Doanh thu, Chi phí vận hành, Quỹ tiền mặt & Ngân hàng.
+   * *2. Vận Hành Chuyến:* Chuyến đang vận hành, Tổng chuyến kỳ, Đã hoàn tất, Tỷ lệ đúng giờ OTD%.
+   * *3. Khả Dụng Đội Xe:* Tỷ lệ khai thác xe (Utilization %), Số xe bãi chờ lệnh, Xe bảo trì, Quân số tài xế.
+   * *4. Đơn Hàng & Hải Quan:* Tờ khai hải quan luồng xanh, Đơn hàng chờ gán xe, Cảnh báo DEM/DET.
+2. **Kế Toán Tài Chính (`ACCOUNTING`):**
+   * *1. Quỹ Khả Dụng:* Tổng quỹ tiền mặt + ngân hàng (1.4 Tỷ), kế hoạch chi quỹ tuần.
+   * *2. Tạm Ứng Lái Xe:* Tổng tiền tài xế đang giữ ứng chưa quyết toán (`DriverTripAdvance`), số tài xế giữ ứng.
+   * *3. Chuyến Chưa Quyết Toán:* Số chuyến cần kiểm toán hóa đơn dầu, vé BOT và chi phí phát sinh.
+   * *4. Chi Phí Vận Hành:* Tổng chi phí kỳ này, Operating Ratio % và doanh thu phát sinh tương ứng.
+3. **Điều Vận & Điều Độ (`DISPATCH`):**
+   * *1. Chuyến Đang Vận Hành:* Số lượng chuyến xe FTL đang lăn bánh trên đường, giám sát hành trình.
+   * *2. Đơn Chờ Gán Xe:* Số đơn hàng Booking mới cần phân bổ tài xế và đầu kéo container.
+   * *3. Tỷ Lệ Giao Đúng Hạn (OTD):* Chỉ số SLA giao hàng đúng hẹn (≥ 98.0%), số chuyến trễ hẹn.
+   * *4. Sự Cố & Cảnh Báo:* Số vụ việc bất thường (OS&D), tai nạn, hỏng hóc hoặc lưu ca đêm (Detention).
+4. **Phòng Kinh Doanh (`SALES`):**
+   * *1. Đơn Hàng Booking:* Tổng lượng đơn vận chuyển tiếp nhận, tiến độ thực hiện chỉ tiêu tháng.
+   * *2. Báo Giá Chờ Duyệt:* Số lượng hồ sơ báo giá đang đàm phán với khách hàng B2B.
+   * *3. Doanh Số Bán Hàng:* Doanh thu tạm tính trong kỳ, biên lợi nhuận gộp.
+   * *4. Khách Hàng Hoạt Động:* Số lượng đối tác B2B phát sinh đơn hàng, tờ khai thông quan.
+5. **Đội Xe & Quản Lý Bãi (`FLEET`):**
+   * *1. Khả Dụng Đầu Kéo:* Tỷ lệ xe lăn bánh (Utilization rate), tài xế phụ trách.
+   * *2. Xe Sẵn Sàng Tại Bãi:* Số lượng đầu kéo nằm bãi đã kiểm tra an toàn kỹ thuật, đầy bình nhiên liệu.
+   * *3. Bảo Dưỡng / Sửa Chữa:* Số xe đang nằm xưởng bảo dưỡng lốp, thay nhớt, kiểm tra động cơ.
+   * *4. Hạn Kiểm Định & Bảo Hiểm:* Số phương tiện sắp hết hạn đăng kiểm trong vòng 30 ngày cần đưa đi xét xe.
+6. **Hành Chính Nhân Sự (`HR`):**
+   * *1. Quân Số Nhân Sự:* Tổng định biên nhân sự toàn công ty, tách biệt khối Văn phòng vs. Đội Tài xế.
+   * *2. Tài Xế Đang Vận Hành:* Số lượng tài xế đang ôm vô-lăng, số tài xế nghỉ phép / chờ lệnh.
+   * *3. Hợp Đồng Lao Động:* Tình trạng tuân thủ pháp lý HĐLĐ, trích nộp BHXH/BHYT.
+   * *4. Hạn Giấy Phép Lái Xe:* Số lượng bằng lái hạng C/FC của tài xế sắp hết hạn trong 30 ngày cần gia hạn.
 
-### 2.4 Bảng trạng thái Đội xe (Fleet Overview)
-- Tổng quan: `Đang chạy` | `Nằm bãi` | `Bảo trì`
-- Danh sách từng xe với trạng thái và tài xế hiện tại
+### 2.3 Hai Widget Tương Tác Cốt Lõi Trên Dashboard & Thanh Kéo Tỷ Lệ (Widget Resizer)
+Bố cục Hàng 3 được tối ưu hóa theo tần suất tác nghiệp hiện trường với thanh kéo tùy chỉnh kích thước và đồng bộ chiều cao tuyệt đối (độ chênh lệch 0.00px):
+- **Widget 1 (Bên Trái) — Quản Lý Công Việc Cần Xử Lý (My Actionable Tasks - Chiếm 62% Mặc Định):**
+  * Đặt tại vị trí ưu tiên bên trái do là phân hệ tác nghiệp hàng ngày với tần suất thao tác cao của nhân viên và cấp quản lý.
+  * Hỗ trợ chuyển đổi nhanh giữa 2 chế độ hiển thị:
+    - **Chế độ Danh sách (List View):** Hiển thị danh sách task gọn gàng kèm checkbox hoàn thành, hạn xử lý và ưu tiên. Hiển thị rõ ràng icon + tên: **Người giao** (`reporter`), **Người phụ trách** (`assignee`), **Người theo dõi** (`followers` - nếu có).
+    - **Chế độ Kanban Mini (Kanban View):** Chia 3 cột chuẩn workflow: **Cần làm (`TODO`)**, **Đang làm (`IN_PROGRESS`)**, **Nghiệm thu (`REVIEW`)**. Mỗi thẻ card hiển thị tiêu đề, mức độ ưu tiên, ngày hết hạn và avatar/tên phân công 3 vai trò.
+  * Tự động lưu chế độ xem đã chọn vào `localStorage` (`bim_dashboard_task_view_mode`).
+  * Click vào task mở trực tiếp Slide-over Drawer để cập nhật tiến độ, đánh dấu checklist hoặc trao đổi.
+- **Thanh Kéo Phân Tách Resizer Ngăn Giữa (`#dash-widget-resizer`):**
+  * Nằm giữa 2 ô widget với vạch chia dọc thanh thoát, đổi màu tím Indigo khi hover/kéo.
+  * Hỗ trợ kéo chuột trái/phải để co giãn linh hoạt tỷ lệ độ rộng giữa Công việc và Bản tin (từ 25% đến 75%), lưu trạng thái vào `localStorage` (`bim_widget_split_ratio`).
+- **Truy cập tập trung từ Dashboard & Gỡ bỏ khỏi Sidebar:**
+  * Hai phân hệ Bản tin Công ty và Giao việc Văn phòng đã được gỡ khỏi danh mục Sidebar để tinh gọn tối đa thanh điều hướng.
+  * Người dùng truy cập toàn trang khi cần thông qua nút `[Bảng việc]` trên Widget Task và `[Xem tất cả]` trên Widget Bản tin.
+  * Mỗi phân hệ đều trang bị nút `[← Tổng quan]` trên thanh tiêu đề để quay lại Dashboard ngay lập tức.
 
-### 2.5 Biểu đồ xu hướng (Chart.js)
-- Bar chart: Doanh thu vs. Chi phí theo ngày/tuần/tháng
-- Line chart: Số chuyến xe hoàn thành theo thời gian
+### 2.4 Hệ Thống Biểu Đồ Trực Quan Đa Chiều Theo Vai Trò
+Hệ thống tự động tùy biến cặp biểu đồ (Chart 1 - Xu hướng chuỗi thời gian & Chart 2 - Cơ cấu Donut) theo đúng góc nhìn chuyên môn của 6 vai trò:
+1. **Ban Giám Đốc (`DIRECTOR`):**
+   * *Xu hướng:* Doanh Thu Cước (Cột Teal), Chi Phí Vận Hành (Cột Amber), Lợi Nhuận Gộp (Đường Emerald).
+   * *Tóm tắt:* Doanh Thu TB/Ngày, Chi Phí TB/Ngày, Biên Lợi Nhuận TB (%).
+   * *Donut:* Cơ Cấu Vận Hành (Toggle: **Đội Xe** [Khai thác, Chờ bãi, Bảo trì] vs **Hải Quan** [Xanh, Vàng, Đỏ]).
+2. **Kế Toán Tài Chính (`ACCOUNTING`):**
+   * *Xu hướng:* Chi Phí Vận Hành (Cột Amber), Tạm Ứng Giải Ngân (Cột Blue), Lợi Nhuận Gộp (Đường Emerald).
+   * *Tóm tắt:* Chi Phí TB/Ngày, Tạm Ứng TX Bình Quân, Tỷ Lệ Quyết Toán Cước (%).
+   * *Donut:* Cơ Cấu Chi Phí & Hồ Sơ Quyết Toán (Toggle: **Khoản Mục Chi** [Dầu DO 55%, Cầu đường BOT 25%, Nâng hạ cảng 12%, Khác 8%] vs **Quyết Toán** [Đã chốt, Chờ duyệt chứng từ, Chưa nộp]).
+3. **Điều Vận & Điều Độ (`DISPATCH`):**
+   * *Xu hướng:* Lệnh Điều Xe (Cột Teal), Chuyến Hoàn Tất (Cột Emerald), Tỷ Lệ Giao Đúng Giờ (Đường OTD% Amber).
+   * *Tóm tắt:* Tổng Lệnh Điều Vận, Chuyến Hoàn Tất, SLA Đúng Hạn (OTD%).
+   * *Donut:* Tiến Độ Lộ Trình & Sự Cố (Toggle: **Chặng Chuyến** [Đang lăn bánh, Lấy/Trả rỗng, Đang đóng kho] vs **Sự Cố OS&D** [An toàn, Cảnh báo trễ cảng, Hư hỏng/thiếu hàng]).
+4. **Phòng Kinh Doanh (`SALES`):**
+   * *Xu hướng:* Doanh Số Booking (Cột Blue), Sản Lượng TEU/Cont (Cột Indigo), Tỷ Lệ Chốt Báo Giá (Đường Win Rate% Teal).
+   * *Tóm tắt:* Đơn Booking Mới, Doanh Số Bán Hàng, Tỷ Lệ Chốt Báo Giá (%).
+   * *Donut:* Cơ Cấu Khách Hàng & Loại Vỏ Container (Toggle: **Loại Cont** [Cont 40HC, Cont 20DC, Cont Lạnh] vs **Ngành Hàng** [FMCG, Nông sản, Điện tử]).
+5. **Đội Xe & Quản Lý Bãi (`FLEET`):**
+   * *Xu hướng:* Xe Hoạt Động Active (Cột Emerald), Xe Nằm Bãi Idle (Cột Teal), Tỷ Lệ Khai Thác (Đường Utilization% Indigo).
+   * *Tóm tắt:* Tổng Đội Xe Đầu Kéo, Sẵn Sàng Nhận Lệnh, Hiệu Suất Khai Thác (%).
+   * *Donut:* Hiện Trạng Kỹ Thuật & Đăng Kiểm Đội Xe (Toggle: **Kỹ Thuật** [Đủ điều kiện, Cần bảo dưỡng nhẹ, Sửa chữa xưởng] vs **Đăng Kiểm** [Còn hạn, Sắp hết hạn <30 ngày, Quá hạn]).
+6. **Hành Chính Nhân Sự (`HR`):**
+   * *Xu hướng:* Tài Xế Lăn Bánh (Cột Teal), Tài Xế Nghỉ Phép/Chờ (Cột Amber), Tỷ Lệ Sẵn Sàng (Đường Emerald).
+   * *Tóm tắt:* Tổng Đội Ngũ Tài Xế, Đang Ôm Vô-lăng, Tỷ Lệ Sẵn Sàng (%).
+   * *Donut:* Cơ Cấu Định Biên & Giấy Phép Lái Xe (Toggle: **Định Biên** [Tài xế, Điều vận/Hiện trường, Khối Văn phòng] vs **GPLX FC/C** [Còn hạn, Cần đổi bằng 30 ngày, Khám sức khỏe]).
+
+- **Tối ưu không gian:** Nút thu gọn / mở rộng biểu đồ cho phép phóng to tối đa 100% màn hình cho 2 Widget Bản Tin & Công Việc khi cần tập trung tác nghiệp.
+
+### 2.5 Công Cụ Tùy Biến Biểu Đồ Báo Cáo & Thanh Kéo Tỷ Lệ Kích Thước
+**API:** `GET /api/dashboard/pivot/?entity=...&group_by=...&metric=...&agg=...&chart_type=...&period=...&limit=...&sort=...` | **Quyền:** `IsAuthenticated`
+
+Cho phép người dùng tự do phân tích dữ liệu đa chiều theo nhu cầu nghiệp vụ cho **cả 2 ô biểu đồ (Biểu đồ 1 & Biểu đồ 2)**:
+- **Chuẩn hóa ngôn ngữ thuần Việt:** Loại bỏ hoàn toàn các từ viết tắt tự xưng "BI", tập trung vào bản chất dữ liệu logistics chuyên nghiệp, dễ hiểu.
+- **Tùy biến độc lập cho cả 2 ô:**
+  * Biểu đồ 1 bên trái (`openChartCustomizer(1)`): Cột đứng/ngang, đường xu hướng hoặc vòng Donut theo Doanh thu, Khách hàng, Chuyến xe...
+  * Biểu đồ 2 bên phải (`openChartCustomizer(2)`): Tùy biến tương tự Biểu đồ 1 theo Chi phí, Khoản mục chi, Đơn hàng, Trạng thái xe...
+  * Nút `[Mặc định]` độc lập cho từng ô: Khôi phục một ô về biểu đồ vai trò mặc định mà không làm mất cấu hình tùy biến của ô còn lại.
+- **Mở rộng 8 nguồn bảng dữ liệu nghiệp vụ:**
+  1. `trips`: Chuyến xe & Vận chuyển (Doanh thu, Chi phí, Lợi nhuận gộp, Số chuyến xe).
+  2. `expenses`: Chi phí vận hành & Hiện trường (Tổng chi phí, Số lượng khoản chi).
+  3. `bookings`: Đơn hàng & Đặt chỗ (Số lượng booking, Tổng số container).
+  4. `vehicles`: Đội xe & Phương tiện (Số lượng phương tiện theo trạng thái, loại xe).
+  5. `quotations`: Báo giá & Khách hàng (Đơn giá cước TB, Sản lượng cam kết, Số lượng báo giá).
+  6. `advances`: Tạm ứng & Hoàn ứng Lái xe (Tổng số tiền ứng, Số phiếu ứng theo tài xế, nguồn tiền).
+  7. `exceptions`: Sự cố & Khiếu nại vận tải (Số lượng sự cố theo loại sự cố, mức độ nghiêm trọng, tình trạng xử lý).
+  8. `personnel`: Nhân sự & Đội ngũ (Tổng số nhân sự, Lương cơ bản TB theo phòng ban, chức danh, trạng thái).
+- **Tự chọn trục phân nhóm:** Khách hàng, Tài xế, Biển số xe, Tuyến đường, Loại Container, Loại hàng, Trạng thái chuyến, Khoản mục chi phí, Hãng tàu, Phòng ban, Mức độ sự cố...
+- **Tự chọn chỉ số & phép tính:** Doanh thu, Chi phí, Lợi nhuận gộp, Số chuyến xe, Số lượng đơn hàng, Số lượng xe. Phép tính: Tổng cộng (`SUM`), Trung bình (`AVG`), Đếm số lượng (`COUNT`).
+- **Tự chọn loại biểu đồ:** Cột đứng (`bar`), Cột ngang (`horizontal_bar`), Đường xu hướng (`line`), Vòng tròn Donut (`doughnut`), Biểu đồ tròn (`pie`).
+- **Thanh kéo phân tách (Splitter / Resizer) & Đồng bộ chiều cao:**
+  * Thanh kéo chuột `#dash-chart-resizer` đặt ở giữa 2 ô biểu đồ, cho phép tùy chỉnh độ rộng linh hoạt từ 20% đến 80%.
+  * Tự động lưu tỷ lệ kéo vào `localStorage` (`bim_chart_split_ratio`) và tự động gọi `Chart.resize()` để giữ nguyên độ sắc nét.
+  * Hai ô biểu đồ luôn đảm bảo **cùng chiều cao 100% (chênh lệch 0px)** nhờ cấu trúc CSS Flexbox `items-stretch`.
+
+*(Lưu ý: Bảng phân tích chi tiết hiệu suất & P&L từng chuyến xe đã được tinh giản khỏi trang Dashboard tổng quan để nhường không gian cho 2 Widget tương tác trên; toàn bộ số liệu P&L chi tiết được quy tụ đầy đủ tại Phân hệ 6: Quản lý Chi phí & Kế toán và Phân hệ 8: Báo cáo Tài chính Đa chiều).*
+
+*(Lưu ý: Bảng phân tích chi tiết hiệu suất & P&L từng chuyến xe đã được tinh giản khỏi trang Dashboard tổng quan để nhường không gian cho 2 Widget tương tác trên; toàn bộ số liệu P&L chi tiết được quy tụ đầy đủ tại Phân hệ 6: Quản lý Chi phí & Kế toán và Phân hệ 8: Báo cáo Tài chính Đa chiều).*
 
 ---
 
@@ -670,7 +759,35 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 | `documents` | `TripDocument` | 1 | Chứng từ pháp lý |
 | `exceptions` | `TripException` | 1 | Sự cố OS&D |
 | `customs` | *(đang phát triển)* | — | Hải quan |
-| **Tổng** | | **25 models** | |
+| `collaboration` | `PostCategory`, `CompanyPost`, `OfficeTask`, `ChatRoom`, `ChatMessage` | 5 | Tương tác & Giao việc |
+| **Tổng** | | **30 models** | |
+
+---
+
+## 23. Phân hệ 13: Bản Tin Công Ty, Giao Việc Chuẩn Quốc Tế & Team Chat (`collaboration`)
+
+### 23.1 Bản Tin Công Ty & Thông Báo Nội Bộ
+- **View:** `view_news.html` | **API:** `/api/collaboration/news/`
+- **Models:** `PostCategory`, `CompanyPost`, `PostAttachment`, `PostComment`, `PostReadStatus`
+- **Chức năng:** Đăng thông báo, phân loại danh mục, ghim bài viết (`is_pinned`), đánh dấu khẩn cấp (`is_urgent`), tự động ghi nhận lượt xem và trạng thái đã đọc của từng nhân sự, bình luận phản hồi dưới bản tin.
+
+### 23.2 Quản Lý & Giao Việc Văn Phòng (Jira / Asana Standard)
+- **View:** `view_tasks.html` | **API:** `/api/collaboration/tasks/`
+- **Models:** `OfficeTask`, `TaskChecklist`, `TaskComment`, `TaskAttachment`, `TaskActivityLog`
+- **Phạm vi phân quyền:** Độc lập với tài xế xe đầu kéo; chuyên biệt cho Ban Giám Đốc, Quản lý và Nhân viên Văn phòng.
+- **Chức năng:**
+  * Mã công việc tự sinh `TSK-YYYYMM-XXXX`.
+  * Hỗ trợ 2 chế độ hiển thị: **Bảng Kanban** 4 cột trực quan (`TODO`, `IN_PROGRESS`, `REVIEW`, `DONE`) và **Danh sách (List View)**.
+  * Kéo thả Kanban đổi trạng thái trực quan.
+  * Phân công nhiệm vụ 3 vai trò: **Người giao (`reporter`)**, **Người thực hiện chính (`assignee`)**, và **Người liên quan theo dõi chung (`followers`)**.
+  * Modal Giao việc hỗ trợ chọn nhiều người liên quan (Followers) dạng thẻ chip linh hoạt kèm thông báo tự động.
+  * Checklist subtasks tự động tính % tiến độ hoàn thành công việc.
+  * Slide-over Task Detail Drawer bên phải: trao đổi, hiển thị người theo dõi, đính kèm tài liệu, nhật ký hoạt động (Audit trail).
+
+### 23.3 Tin Nhắn Nội Bộ Trực Tiếp (In-App Team Chat)
+- **Component:** `chat_bubble.html` | **API:** `/api/collaboration/chat/`
+- **Models:** `ChatRoom`, `ChatParticipant`, `ChatMessage`, `ChatAttachment`
+- **Chức năng:** Nút nổi Chat Bubble góc phải, đếm số tin chưa đọc, kênh toàn công ty (`COMPANY`), kênh phòng ban (`DEPARTMENT`), kênh chat riêng 1-1 (`DIRECT`). Tối ưu Cache Polling qua `after_id` và tự động hết hạn file đính kèm sau 30 ngày để tiết kiệm dung lượng.
 
 ---
 

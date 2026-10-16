@@ -52,7 +52,7 @@ Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
 - `master_data.DriverAllowanceCatalog`: Danh mục phụ cấp cảng xa, kiểm hóa và tác nghiệp đặc thù.
 
 ### E. Phân hệ Khách hàng & Báo giá (`apps/customers`)
-- `customers.Customer`: Danh bạ khách hàng doanh nghiệp, mã số thuế, địa chỉ, người liên hệ.
+- `customers.Customer`: Danh bạ khách hàng doanh nghiệp, tên viết tắt / tên giao dịch (`short_name`), mã số thuế, địa chỉ, người liên hệ, số điện thoại, ghi chú.
 - `customers.RouteTariff`: Biểu cước theo từng tuyến đường, chuẩn hóa liên kết ForeignKey tới `master_data.Location` (`pickup_loc`, `delivery_loc`, `dropoff_loc`), đơn giá cước xuất hóa đơn và định mức lương chuyến tài xế.
 - `customers.Quotation`: Quản lý báo giá và phễu khách hàng (CRM).
 - `customers.BookingOrder`: Đơn hàng đặt xe / Booking tiếp nhận từ Sales/CS; chuẩn hóa lộ trình 3 điểm với ForeignKey `master_data.Location`. Đính kèm tệp tin gốc `booking_file` (`FileField` hỗ trợ PDF/Ảnh $\le 5\text{MB}$ có kiểm tra Magic Bytes và Pillow).
