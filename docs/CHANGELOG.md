@@ -2,6 +2,43 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.4.6] - 2026-10-16 (Bổ Sung Toàn Diện Hướng Dẫn Sử Dụng Trên Trung Tâm Trợ Giúp /helps)
+
+### 1. Cập Nhật Cây Điều Hướng Phân Cấp & Mục Lục Trợ Giúp (Sidebar Tree Nav):
+- **Cấp Cha 1 (Mô Tả Phân Hệ Chức Năng):** Bổ sung 3 phân hệ cốt lõi mới vào mục lục:
+  * `10. Quản Lý Giao Việc (Tasks)` (`#sec-desc-tasks`)
+  * `11. Bản Tin & Thông Báo (News)` (`#sec-desc-news`)
+  * `12. Chat Trực Tiếp & Thông Báo` (`#sec-desc-collaboration`)
+- **Cấp Cha 3 (Hướng Dẫn Nhập Liệu & Thao Tác Chi Tiết):** Bổ sung 4 nhóm hướng dẫn nghiệp vụ chuyên sâu:
+  * `9. Giao việc Văn phòng (Tasks)`: 9.1 Tạo việc Modal rộng & Mã 3 số TSK, 9.2 Bảng Kanban 4 cột & Kéo thả, 9.3 Drawer Chi tiết & Checklist %, 9.4 Chuẩn 3 Icon Nhân sự (Họ tên thật).
+  * `10. Bản tin & Thông báo (News)`: 10.1 Đăng tin & 4 Danh mục truyền thông, 10.2 Cấp ưu tiên & Ghim bài viết, 10.3 Đọc tin & Tự động ghi nhận đã đọc.
+  * `11. Chat Trực Tiếp & Chuông Báo`: 11.1 Bong bóng Chat nổi & Đa kênh, 11.2 Trích dẫn Reply & Gửi tệp/hình ảnh, 11.3 Trạng thái 1 check / 2 check đã đọc, 11.4 Chuông thông báo thông minh.
+  * `12. Tùy biến Biểu đồ Dashboard`: Hướng dẫn cấu hình chuỗi ngày (7/10/14/30 ngày) và bật/tắt đường chỉ số.
+
+### 2. Nội Dung Đặc Tả & Thao Tác Chi Tiết Trong Thân Văn Bản (`templates/help.html`):
+- **Phân Hệ Giao Việc Văn Phòng (`#sec-input-tasks`):**
+  * Hướng dẫn chi tiết bảng trường thông tin nhập liệu cho Modal tạo mới (Centered Dialog mờ nền).
+  * Quy chuẩn mã nhiệm vụ `TSK.YYYYMM.XXX` (3 chữ số).
+  * Cơ chế tự động tính tỷ lệ tiến độ % dựa trên Checklist đầu việc hoàn thành.
+  * Hướng dẫn kéo-thả (Drag & Drop) thẻ giữa 4 cột trạng thái.
+  * Giải thích chi tiết chuẩn 3 icon chân thẻ: `Người giao | Người phụ trách | Người liên quan` hiển thị họ tên thực tế, loại bỏ chức danh.
+- **Phân Hệ Bản Tin Công Ty (`#sec-input-news`):**
+  * Hướng dẫn phân loại 4 nhóm danh mục: Chỉ đạo Ban Giám Đốc, Thông báo chung, Khen thưởng & Quyết định, Văn hóa & Đào tạo.
+  * Thiết lập 3 cấp độ ưu tiên (Khẩn cấp, Quan trọng, Bình thường) và huy hiệu Ghim bài viết lên đầu trang.
+  * Cơ chế tự động ghi nhận nhân viên đã xem bài viết khi mở chi tiết.
+- **Hệ Thống Chat Trực Tiếp & Chuông Báo (`#sec-input-chat`):**
+  * Hướng dẫn sử dụng Floating Chat Bubble mở rộng đa kênh (Toàn công ty, Phòng ban, Chuyến xe).
+  * Gửi tệp tin Excel/PDF và hình ảnh chứng từ/biên bản hiện trường.
+  * Trích dẫn câu hỏi (Reply) giữ liền mạch luồng trao đổi.
+  * Giải thích cơ chế kiểm soát đọc tin: `1 check xám (✓)` (đã gửi nhưng chưa đọc) và `2 check xanh ngọc (✓✓)` (người nhận đã đọc) kèm cơ chế polling 5s.
+  * Trung tâm chuông thông báo thông minh trên Topbar, phân loại thông báo và điều hướng 1 chạm.
+- **Khai Báo Khách Hàng (`#sec-md-customers`):**
+  * Bổ sung hướng dẫn chi tiết về trường `Tên viết tắt (short_name)` và lợi ích hiển thị huy hiệu Badge `[ABC]` màu xanh ngọc nhận diện khách hàng tức thì.
+- **Tùy Biến Biểu Đồ Dashboard (`#sec-input-dashboard-customizer`):**
+  * Hướng dẫn người dùng chọn chuỗi ngày quan sát (7, 10, 14, 30 ngày) và lưu cấu hình cá nhân.
+
+---
+
 ## [v3.4.5] - 2026-10-16 (Chuẩn Hóa Tên Nhân Sự Thực Tế & Mã Task Chuẩn 3 Chữ Số)
 
 ### 1. Hiển Thị Họ Tên Nhân Sự Thực Tế (Loại Bỏ Hoàn Toàn Chức Danh / Nickname):

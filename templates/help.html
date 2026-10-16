@@ -275,6 +275,18 @@
                                     <span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>
                                     <span class="truncate">9. Cài đặt</span>
                                 </a>
+                                <a href="#sec-desc-tasks" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
+                                    <span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>
+                                    <span class="truncate">10. Quản Lý Giao Việc (Tasks)</span>
+                                </a>
+                                <a href="#sec-desc-news" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
+                                    <span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>
+                                    <span class="truncate">11. Bản Tin & Thông Báo (News)</span>
+                                </a>
+                                <a href="#sec-desc-collaboration" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
+                                    <span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>
+                                    <span class="truncate">12. Chat Trực Tiếp & Thông Báo</span>
+                                </a>
                             </div>
                         </div>
 
@@ -500,6 +512,84 @@
                                 <a href="#sec-input-reports" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
                                     <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
                                     <span class="truncate">8. Báo cáo & Thống kê</span>
+                                </a>
+
+                                <!-- Con 3.9: Quản lý Giao việc Văn phòng (Tasks) -->
+                                <div class="tree-subparent-group">
+                                    <div class="tree-sub-header flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-slate-800" onclick="toggleTreeGroup(this)">
+                                        <div class="flex items-center gap-2 truncate">
+                                            <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
+                                            <span class="truncate text-[13px]">9. Giao việc Văn phòng (Tasks)</span>
+                                        </div>
+                                        <i class="ph-bold ph-caret-down text-xs text-slate-400 tree-arrow"></i>
+                                    </div>
+                                    <div class="tree-grandchildren pl-4 space-y-0.5 mt-0.5 border-l border-slate-200 ml-3">
+                                        <a href="#sec-input-tasks-create" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            9.1. Tạo việc Modal rộng & Mã 3 số TSK
+                                        </a>
+                                        <a href="#sec-input-tasks-kanban" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            9.2. Bảng Kanban 4 cột & Kéo thả
+                                        </a>
+                                        <a href="#sec-input-tasks-drawer" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            9.3. Drawer Chi tiết & Checklist %
+                                        </a>
+                                        <a href="#sec-input-tasks-staff-badge" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            9.4. Chuẩn 3 Icon Nhân sự (Họ tên thật)
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Con 3.10: Bản tin Công ty & Thông báo (News) -->
+                                <div class="tree-subparent-group">
+                                    <div class="tree-sub-header flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-slate-800" onclick="toggleTreeGroup(this)">
+                                        <div class="flex items-center gap-2 truncate">
+                                            <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
+                                            <span class="truncate text-[13px]">10. Bản tin & Thông báo (News)</span>
+                                        </div>
+                                        <i class="ph-bold ph-caret-down text-xs text-slate-400 tree-arrow"></i>
+                                    </div>
+                                    <div class="tree-grandchildren pl-4 space-y-0.5 mt-0.5 border-l border-slate-200 ml-3">
+                                        <a href="#sec-input-news-post" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            10.1. Đăng tin & 4 Danh mục truyền thông
+                                        </a>
+                                        <a href="#sec-input-news-priority" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            10.2. Cấp ưu tiên & Ghim bài viết
+                                        </a>
+                                        <a href="#sec-input-news-read" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            10.3. Đọc tin & Tự động ghi nhận đã đọc
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Con 3.11: Chat Trực Tiếp & Chuông Thông Báo -->
+                                <div class="tree-subparent-group">
+                                    <div class="tree-sub-header flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer font-bold text-slate-800" onclick="toggleTreeGroup(this)">
+                                        <div class="flex items-center gap-2 truncate">
+                                            <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
+                                            <span class="truncate text-[13px]">11. Chat Trực Tiếp & Chuông Báo</span>
+                                        </div>
+                                        <i class="ph-bold ph-caret-down text-xs text-slate-400 tree-arrow"></i>
+                                    </div>
+                                    <div class="tree-grandchildren pl-4 space-y-0.5 mt-0.5 border-l border-slate-200 ml-3">
+                                        <a href="#sec-input-chat-bubble" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            11.1. Bong bóng Chat nổi & Đa kênh
+                                        </a>
+                                        <a href="#sec-input-chat-files" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            11.2. Trích dẫn Reply & Gửi tệp/hình ảnh
+                                        </a>
+                                        <a href="#sec-input-chat-status" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            11.3. Trạng thái 1 check / 2 check đã đọc
+                                        </a>
+                                        <a href="#sec-input-chat-notifications" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
+                                            11.4. Chuông thông báo thông minh
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Con 3.12: Tùy biến Biểu đồ Dashboard -->
+                                <a href="#sec-input-dashboard-customizer" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
+                                    <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
+                                    <span class="truncate">12. Tùy biến Biểu đồ Dashboard</span>
                                 </a>
                             </div>
                         </div>
@@ -807,6 +897,72 @@
                     </p>
                 </section>
 
+                <!-- 10. QUẢN LÝ GIAO VIỆC VĂN PHÒNG (TASKS) -->
+                <section id="sec-desc-tasks" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
+                    <div class="doc-section-title">
+                        <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">10. Quản Lý Giao Việc Văn Phòng (Office Tasks)</h3>
+                    </div>
+
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        Phân hệ điều phối và quản trị tiến độ công việc nội bộ toàn doanh nghiệp (tại đường dẫn <code>/tasks/</code>). Được thiết kế theo chuẩn bảng Kanban trực quan 4 cột trạng thái, hỗ trợ kéo thả thẻ mượt mà, phân quyền giao việc, gắn thẻ người theo dõi, lập danh sách kiểm tra (checklist) và tự động tính toán tỷ lệ hoàn thành (%).
+                    </p>
+
+                    <div class="text-sm text-slate-700 space-y-2">
+                        <p class="font-bold text-slate-900">Các tính năng trọng tâm:</p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Bảng Kanban 4 Cột Trực Quan:</strong> Phân luồng công việc rõ ràng: <code>Cần làm (TODO)</code>, <code>Đang làm (IN_PROGRESS)</code>, <code>Chờ nghiệm thu (IN_REVIEW)</code> và <code>Hoàn thành (DONE)</code>. Cho phép kéo-thả (Drag & Drop) thẻ để cập nhật trạng thái tức thì.</li>
+                            <li><strong>Mã Nhiệm Vụ Chuẩn 3 Chữ Số:</strong> Quy ước định danh khoa học <code>TSK.YYYYMM.XXX</code> (Ví dụ: <code>TSK.202610.001</code>, <code>TSK.202610.022</code>) giúp tra cứu nhanh và đồng bộ chuẩn kế toán - quản trị.</li>
+                            <li><strong>Hộp Thoại Khởi Tạo Thông Thoáng (Centered Modal):</strong> Giao diện tạo mới đặt ngay giữa màn hình với hiệu ứng mờ nền (backdrop blur), bố cục thoáng rộng, tự động điền phòng ban và người phụ trách.</li>
+                            <li><strong>Ngăn Kéo Chi Tiết (Drawer) & Checklist Tự Động:</strong> Mở rộng thông tin nhiệm vụ bên phải màn hình mà không cần rời trang. Hỗ trợ tạo checklist đầu việc, tích chọn từng mục để tự động tính tỷ lệ tiến độ % tương ứng.</li>
+                            <li><strong>Chuẩn 3 Icon Nhân Sự Chân Thẻ:</strong> Hiển thị rõ ràng họ tên thực tế của <code>Người giao việc</code> | <code>Người phụ trách</code> | <code>Người theo dõi</code> (không hiển thị chức danh chung chung) giúp nhận diện tức thì trách nhiệm từng cá nhân.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- 11. BẢN TIN CÔNG TY & TRUYỀN THÔNG NỘI BỘ (NEWS) -->
+                <section id="sec-desc-news" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
+                    <div class="doc-section-title">
+                        <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">11. Bản Tin Công Ty & Truyền Thông Nội Bộ (News & Announcements)</h3>
+                    </div>
+
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        Kênh truyền thông chính thức của doanh nghiệp (truy cập tại <code>/news/</code>). Kết nối toàn diện thông tin từ Ban Giám Đốc đến khối Văn phòng và Đội ngũ Tài xế/Hiện trường.
+                    </p>
+
+                    <div class="text-sm text-slate-700 space-y-2">
+                        <p class="font-bold text-slate-900">Các tính năng trọng tâm:</p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>4 Nhóm Phân Loại Danh Mục:</strong> <code>Chỉ đạo BGD (EXECUTIVE)</code>, <code>Thông báo chung (ANNOUNCEMENT)</code>, <code>Khen thưởng & Quyết định (REWARD_POLICY)</code>, và <code>Văn hóa & Đào tạo (CULTURE_TRAINING)</code>.</li>
+                            <li><strong>3 Mức Độ Ưu Tiên Rõ Ràng:</strong> <code>Khẩn cấp (EMERGENCY)</code> viền đỏ cảnh báo, <code>Quan trọng (IMPORTANT)</code> viền hổ phách, và <code>Bình thường (NORMAL)</code> viền lam.</li>
+                            <li><strong>Ghim Bài Viết Trọng Tâm (Pin to Top):</strong> Bài viết quan trọng hoặc chỉ đạo khẩn được ghim cố định lên đầu danh sách kèm huy hiệu kim ghim nổi bật.</li>
+                            <li><strong>Tự Động Ghi Nhận Đã Đọc:</strong> Hệ thống tự động ghi nhận nhân sự đã xem bài viết khi mở chi tiết, loại bỏ tình trạng nhân viên bỏ sót chỉ đạo của lãnh đạo.</li>
+                            <li><strong>Phân Quyền Đăng Tin Chặt Chẽ:</strong> Chỉ Ban Giám Đốc (Director), Trưởng phòng Nhân sự và Quản trị viên mới có quyền tạo mới, chỉnh sửa hoặc ghim bài viết; toàn thể nhân viên và tài xế đều được cấp quyền xem và tương tác.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- 12. TRAO ĐỔI TRỰC TIẾP & CHUÔNG THÔNG BÁO (CHAT & NOTIFICATIONS) -->
+                <section id="sec-desc-collaboration" class="help-section scroll-mt-24 space-y-4 pb-8 border-b border-slate-200">
+                    <div class="doc-section-title">
+                        <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">12. Trao Đổi Trực Tiếp & Chuông Thông Báo (In-App Team Chat & Smart Notifications)</h3>
+                    </div>
+
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        Hệ sinh thái tương tác tức thời được tích hợp ngay trên giao diện web, xóa bỏ sự rời rạc khi phải dùng ứng dụng nhắn tin bên ngoài và bảo mật 100% dữ liệu vận tải nội bộ.
+                    </p>
+
+                    <div class="text-sm text-slate-700 space-y-2">
+                        <p class="font-bold text-slate-900">Các tính năng trọng tâm:</p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Bong Bóng Nổi (Floating Chat Bubble):</strong> Luôn hiển thị ở góc dưới màn hình, bấm mở nhanh hộp thoại chat mọi lúc mọi nơi mà không làm gián đoạn màn hình làm việc hiện tại.</li>
+                            <li><strong>Hệ Thống Đa Kênh Thảo Luận:</strong> Kênh chung toàn công ty (General), Kênh theo phòng ban (Điều vận, Kế toán, Kinh doanh, Nhân sự) và Kênh chuyên biệt gắn với từng Chuyến xe hoặc Khách hàng.</li>
+                            <li><strong>Đính Kèm Tập Tin & Trích Dẫn Tin Nhắn:</strong> Hỗ trợ gửi ảnh chứng từ hiện trường, file Excel/PDF đính kèm và chức năng Reply trích dẫn đúng ngữ cảnh câu chuyện.</li>
+                            <li><strong>Chỉ Báo Đã Đọc Minh Bạch (1 Check / 2 Check):</strong> Kế thừa chuẩn hiển thị cao cấp: <code>1 dấu tích xám (✓)</code> là tin nhắn đã gửi đi nhưng người nhận chưa đọc; <code>2 dấu tích xanh ngọc (✓✓)</code> là người nhận đã xem tin nhắn.</li>
+                            <li><strong>Chuông Thông Báo Thông Minh (Smart Alerts):</strong> Biểu tượng chuông trên Topbar kèm chấm đỏ số lượng thông báo mới; bấm vào để xem danh sách cảnh báo (được giao việc mới, được tag theo dõi, bài viết khẩn) và click trực tiếp để chuyển ngay đến nội dung tương ứng.</li>
+                        </ul>
+                    </div>
+                </section>
+
                 <!-- ========================================================================= -->
                 <!-- II. KHAI BÁO DANH MỤC                                                    -->
                 <!-- ========================================================================= -->
@@ -921,12 +1077,13 @@
                     <h3 class="text-base sm:text-lg font-black text-slate-900 font-heading">7. Khách Hàng</h3>
                     <div class="text-sm text-slate-700 space-y-2">
                         <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Chọn tab <strong>Khách Hàng</strong> ➔ Bấm nút <strong>Tạo mới</strong>.</p>
-                        <p><strong>• Các trường bắt buộc:</strong></p>
+                        <p><strong>• Các trường bắt buộc và quan trọng:</strong></p>
                         <ul class="list-disc pl-6 space-y-1">
                             <li><strong>Mã Khách Hàng (*):</strong> Viết hoa không dấu (Ví dụ: <code>KH-VINAFOOD</code>).</li>
-                            <li><strong>Tên Doanh Nghiệp (*):</strong> Tên pháp nhân đầy đủ theo ĐKKD.</li>
-                            <li><strong>Mã Số Thuế (*):</strong> Nhập đúng MST để xuất hóa đơn điện tử.</li>
-                            <li><strong>Địa Chỉ Trụ Sở (*):</strong> Địa chỉ ghi nhận công nợ.</li>
+                            <li><strong>Tên Doanh Nghiệp (*):</strong> Tên pháp nhân đầy đủ theo ĐKKD (Ví dụ: <code>CÔNG TY CỔ PHẦN THỰC PHẨM VINA</code>).</li>
+                            <li><strong>Tên Viết Tắt (Short Name):</strong> Nhập tên giao dịch rút gọn (Ví dụ: <code>VINAFOOD</code>, <code>COCA</code>, <code>PEPSI</code>, <code>HÒA PHÁT</code>). Trường này sẽ được tự động gắn thành huy hiệu Badge <code>[ABC]</code> màu xanh ngọc nổi bật trên Bảng danh sách, Bảng điều vận, Lịch sử chuyến xe và các Báo cáo SOA/P&L, giúp nhân viên nhận diện khách hàng tức thì mà không bị tràn tên pháp nhân dài.</li>
+                            <li><strong>Mã Số Thuế (*):</strong> Nhập đúng MST để xuất hóa đơn điện tử và kiểm tra mã số thuế hợp lệ.</li>
+                            <li><strong>Địa Chỉ Trụ Sở (*):</strong> Địa chỉ ghi nhận công nợ và đối soát chứng từ.</li>
                             <li><strong>Hạn Mức Tín Dụng & Số Ngày Cho Nợ:</strong> Ví dụ 30 ngày, hạn mức 200.000.000 VNĐ.</li>
                         </ul>
                         <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
@@ -2517,6 +2674,373 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </section>
+
+                <!-- 9. QUẢN LÝ GIAO VIỆC VĂN PHÒNG (TASKS) -->
+                <section id="sec-input-tasks" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
+                    <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">9. Hướng Dẫn Thao Tác Phân Hệ Quản Lý & Giao Việc Văn Phòng (Tasks)</h3>
+
+                    <!-- 9.1 Tạo việc mới -->
+                    <div id="sec-input-tasks-create" class="space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            9.1. Khởi Tạo Nhiệm Vụ (Modal Rộng Thông Thoáng & Mã 3 Số TSK)
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Vào menu <strong>Giao Việc (Tasks)</strong> (đường dẫn <code>/tasks/</code>). Nhấp chuột vào nút <strong class="text-teal-800">+ Giao việc mới</strong> ở góc trên bên phải màn hình. Hệ thống sẽ hiển thị một <strong>Hộp thoại trung tâm (Centered Modal)</strong> rộng rãi, thông thoáng với nền mờ làm dịu không gian làm việc.
+                        </p>
+
+                        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                            <table class="w-full text-left text-xs erp-table border-collapse">
+                                <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-2.5 w-44">Tên Trường Thông Tin</th>
+                                        <th class="p-2.5 w-32">Định Dạng</th>
+                                        <th class="p-2.5">Quy Chuẩn & Hướng Dẫn Thao Tác</th>
+                                        <th class="p-2.5 w-64">Lưu Ý & Giá Trị Chuẩn</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Mã Nhiệm Vụ (Task Code) <span class="text-rose-500 font-bold">(*)</span></td>
+                                        <td class="p-2.5 font-mono text-teal-800 font-bold">Hệ thống tự sinh</td>
+                                        <td class="p-2.5">Hệ thống tự động sinh mã định danh theo chuẩn kế toán vận tải: <code>TSK.YYYYMM.XXX</code> (Ví dụ: <code>TSK.202610.001</code>, <code>TSK.202610.022</code>). Sử dụng <strong>3 chữ số</strong> tăng tuần tự trong tháng.</td>
+                                        <td class="p-2.5 text-slate-500">Mã duy nhất, không trùng lặp và không thể sửa sau khi đã khởi tạo.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Tiêu Đề Nhiệm Vụ <span class="text-rose-500 font-bold">(*)</span></td>
+                                        <td class="p-2.5 text-slate-600">Văn bản (Text)</td>
+                                        <td class="p-2.5">Tóm tắt ngắn gọn nội dung công việc (Ví dụ: <em>Đối soát cước hàng cont lạnh tuần 41</em>, <em>Kiểm định dàn rơ-moóc bãi Cát Lái</em>, <em>Xử lý khiếu nại seal cont khách Vinafood</em>).</td>
+                                        <td class="p-2.5 text-slate-500">Bắt buộc nhập, tối đa 255 ký tự.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Phòng Ban Phụ Trách <span class="text-rose-500 font-bold">(*)</span></td>
+                                        <td class="p-2.5 text-slate-600">Dropdown</td>
+                                        <td class="p-2.5">Chọn phòng ban chịu trách nhiệm chính: <code>Ban Giám Đốc</code>, <code>Điều Vận</code>, <code>Kế Toán</code>, <code>Kinh Doanh</code>, <code>Đội Xe - Kỹ Thuật</code>, hoặc <code>Hành Chính - Nhân Sự</code>.</td>
+                                        <td class="p-2.5 text-slate-500">Tự động gợi ý danh sách nhân sự thuộc phòng ban được chọn.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Người Phụ Trách (Assignee) <span class="text-rose-500 font-bold">(*)</span></td>
+                                        <td class="p-2.5 text-slate-600">Dropdown</td>
+                                        <td class="p-2.5">Chọn nhân viên chịu trách nhiệm trực tiếp hoàn thành công việc.</td>
+                                        <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">👉 Nhân viên này sẽ nhận được chuông thông báo ngay khi công việc được tạo.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Người Theo Dõi (Followers)</td>
+                                        <td class="p-2.5 text-slate-600">Multi-select</td>
+                                        <td class="p-2.5">Chọn một hoặc nhiều đồng nghiệp liên quan để cùng theo dõi tiến độ, trao đổi và nhận thông báo khi có cập nhật mới.</td>
+                                        <td class="p-2.5 text-slate-500">Có thể để trống hoặc chọn nhiều người.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Mức Độ Ưu Tiên</td>
+                                        <td class="p-2.5 text-slate-600">Select</td>
+                                        <td class="p-2.5">Chọn 1 trong 4 mức: <code>Khẩn cấp (Urgent)</code> - Viền đỏ, <code>Cao (High)</code> - Viền cam, <code>Bình thường (Medium)</code> - Viền lam, <code>Thấp (Low)</code> - Viền xám.</td>
+                                        <td class="p-2.5 text-amber-800 font-semibold bg-amber-50/50">Mức Khẩn cấp sẽ hiển thị nhấp nháy trên Kanban và được đẩy lên đầu cột.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Thời Hạn Hoàn Thành (Deadline) <span class="text-rose-500 font-bold">(*)</span></td>
+                                        <td class="p-2.5 text-slate-600">Ngày & Giờ</td>
+                                        <td class="p-2.5">Mốc thời gian giới hạn phải nghiệm thu công việc. Nếu quá hạn, thẻ nhiệm vụ sẽ hiển thị huy hiệu đỏ <code>Quá hạn</code> để cảnh báo.</td>
+                                        <td class="p-2.5 text-slate-500">Mặc định là cuối ngày làm việc tiếp theo.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Mô Tả & Yêu Cầu Bàn Giao</td>
+                                        <td class="p-2.5 text-slate-600">Khung văn bản</td>
+                                        <td class="p-2.5">Mô tả chi tiết các bước cần làm, tiêu chí bàn giao và các lưu ý nghiệp vụ liên quan.</td>
+                                        <td class="p-2.5 text-slate-500">Hỗ trợ xuống dòng và định dạng văn bản rõ ràng.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-900">Danh Sách Kiểm Tra (Checklist)</td>
+                                        <td class="p-2.5 text-slate-600">Danh sách đầu việc</td>
+                                        <td class="p-2.5">Nhập các hạng mục nhỏ cần hoàn thành. Bấm nút <code>+ Thêm mục</code> để bổ sung từng dòng checklist.</td>
+                                        <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">👉 Tỷ lệ % tiến độ của task sẽ được tự động tính toán dựa trên số mục đã tích hoàn tất!</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-xs text-slate-600 italic">Bấm <strong>Lưu & Giao việc</strong> để hoàn tất. Hệ thống lập tức tạo thẻ nhiệm vụ và gửi thông báo cho nhân sự phụ trách.</p>
+                    </div>
+
+                    <!-- 9.2 Kanban & Drag Drop -->
+                    <div id="sec-input-tasks-kanban" class="space-y-3 pt-4 border-t border-slate-100">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            9.2. Vận Hành Bảng Kanban 4 Cột & Kéo Thả Trạng Thái
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Màn hình làm việc chính phân chia rõ rệt 4 cột trạng thái:
+                        </p>
+                        <ul class="list-disc pl-6 text-sm text-slate-700 space-y-1">
+                            <li><strong>Cột 1 - CẦN LÀM (TODO):</strong> Nhiệm vụ vừa được giao, nhân sự chưa bắt tay vào thực hiện.</li>
+                            <li><strong>Cột 2 - ĐANG LÀM (IN_PROGRESS):</strong> Nhân sự đang trong quá trình xử lý công việc.</li>
+                            <li><strong>Cột 3 - CHỜ NGHIỆM THU (IN_REVIEW):</strong> Công việc đã xử lý xong các hạng mục chính, đang chờ Trưởng phòng hoặc Người giao việc kiểm tra và phê duyệt.</li>
+                            <li><strong>Cột 4 - HOÀN THÀNH (DONE):</strong> Nhiệm vụ đã được nghiệm thu đạt chuẩn chất lượng 100%.</li>
+                        </ul>
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
+                            <p class="font-bold flex items-center gap-1.5"><i class="ph-bold ph-hand-pointing text-sm"></i> Thao tác Kéo - Thả (Drag & Drop):</p>
+                            <p>Người dùng có thể dùng chuột nhấp giữ thẻ nhiệm vụ bất kỳ và kéo thả sang cột trạng thái mới. Hệ thống sẽ tự động gọi API cập nhật trạng thái mà không cần tải lại trang, đồng thời thông báo thời gian thực cho người liên quan.</p>
+                        </div>
+                    </div>
+
+                    <!-- 9.3 Task Detail Drawer & Checklist -->
+                    <div id="sec-input-tasks-drawer" class="space-y-3 pt-4 border-t border-slate-100">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            9.3. Ngăn Kéo Chi Tiết (Drawer), Checklist & Tự Động Tính % Tiến Độ
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Khi nhấp chuột vào bất kỳ thẻ nhiệm vụ nào trên bảng Kanban hoặc bấm biểu tượng Xem chi tiết, hệ thống sẽ mở một <strong>Ngăn kéo trượt (Drawer)</strong> bên phải màn hình:
+                        </p>
+                        <ul class="list-disc pl-6 text-sm text-slate-700 space-y-1.5">
+                            <li><strong>Tiến Độ Tự Động (%):</strong> Thanh tiến độ màu xanh ngọc hiển thị trực quan. Mỗi khi người phụ trách tích chọn một ô checkbox trong Checklist, hệ thống tự động tính toán lại tỷ lệ (Ví dụ: 3/4 mục = 75%) và cập nhật ngay lập tức lên thẻ ngoài Kanban.</li>
+                            <li><strong>Gửi Bình Luận & Trao Đổi:</strong> Khu vực trao đổi nội bộ dưới chân Drawer cho phép trao đổi phản hồi, báo cáo vướng mắc hoặc tag tên đồng nghiệp.</li>
+                            <li><strong>Đính Kèm Tài Liệu & Chứng Từ:</strong> Hỗ trợ tải lên các tệp hợp đồng, bảng kê chi phí, ảnh hiện trường phục vụ nghiệm thu.</li>
+                        </ul>
+                    </div>
+
+                    <!-- 9.4 3 Icon Chân Thẻ -->
+                    <div id="sec-input-tasks-staff-badge" class="space-y-3 pt-4 border-t border-slate-100">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            9.4. Quy Chuẩn 3 Icon Nhân Sự Chân Thẻ (Họ Tên Thật)
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Mỗi thẻ nhiệm vụ trên Kanban đều có hàng chân thẻ chứa 3 biểu tượng minh bạch theo đúng thứ tự tiêu chuẩn:
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="font-bold text-slate-900 flex items-center gap-1.5 mb-1 text-teal-800">
+                                    <i class="ph-bold ph-user-circle text-base"></i> Icon 1: Người Giao Việc
+                                </div>
+                                <p class="text-slate-600">Hiển thị <strong>Họ tên thật</strong> của lãnh đạo hoặc nhân sự khởi tạo (Ví dụ: <code>Võ Triền</code>). Không hiển thị chức vụ chung chung.</p>
+                            </div>
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="font-bold text-slate-900 flex items-center gap-1.5 mb-1 text-teal-800">
+                                    <i class="ph-bold ph-user-check text-base"></i> Icon 2: Người Phụ Trách
+                                </div>
+                                <p class="text-slate-600">Hiển thị <strong>Họ tên thật</strong> của nhân sự chịu trách nhiệm chính (Ví dụ: <code>Trần Thị Kế Toán</code>). Rõ ràng người nhận việc tức thì.</p>
+                            </div>
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="font-bold text-slate-900 flex items-center gap-1.5 mb-1 text-teal-800">
+                                    <i class="ph-bold ph-users text-base"></i> Icon 3: Người Theo Dõi
+                                </div>
+                                <p class="text-slate-600">Hiển thị <strong>Số lượng</strong> nhân sự cùng tham gia theo dõi (Ví dụ: <code>2</code> người). Rê chuột vào để xem danh sách họ tên chi tiết.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 10. BẢN TIN CÔNG TY & TRUYỀN THÔNG NỘI BỘ (NEWS) -->
+                <section id="sec-input-news" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
+                    <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">10. Hướng Dẫn Thao Tác Bản Tin Công Ty & Truyền Thông Nội Bộ (News)</h3>
+
+                    <!-- 10.1 Đăng bài -->
+                    <div id="sec-input-news-post" class="space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            10.1. Đăng Tin & 4 Phân Loại Danh Mục Truyền Thông
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Truy cập menu <strong>Bản tin (News)</strong> tại đường dẫn <code>/news/</code>. Người dùng có quyền quản trị (Ban Giám Đốc, Trưởng phòng Nhân sự) bấm nút <strong class="text-teal-800">+ Đăng bài viết mới</strong> để mở giao diện soạn thảo.
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl">
+                                <div class="font-bold text-teal-900 mb-1">1. Chỉ Đạo Ban Giám Đốc (EXECUTIVE)</div>
+                                <p class="text-slate-700">Thông tri định hướng kinh doanh, quy định điều hành vận tải, chỉ thị an toàn giao thông và quy chế vận hành toàn hệ thống.</p>
+                            </div>
+                            <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                                <div class="font-bold text-blue-900 mb-1">2. Thông Báo Chung (ANNOUNCEMENT)</div>
+                                <p class="text-slate-700">Lịch nghỉ lễ, thông báo bảo trì phần mềm, thay đổi chính sách cảng biển/hãng tàu, thông báo nội bộ các phòng ban.</p>
+                            </div>
+                            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                                <div class="font-bold text-emerald-900 mb-1">3. Khen Thưởng & Quyết Định (REWARD_POLICY)</div>
+                                <p class="text-slate-700">Vinh danh tài xế xuất sắc an toàn trong tháng, quyết định bổ nhiệm nhân sự mới, chính sách thưởng hoa hồng kinh doanh.</p>
+                            </div>
+                            <div class="p-3 bg-purple-50 border border-purple-200 rounded-xl">
+                                <div class="font-bold text-purple-900 mb-1">4. Văn Hóa & Đào Tạo (CULTURE_TRAINING)</div>
+                                <p class="text-slate-700">Tài liệu hướng dẫn nghiệp vụ logistics, kế hoạch tập huấn phòng cháy chữa cháy, hoạt động teambuilding và sinh nhật nhân sự.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 10.2 Mức ưu tiên & Ghim bài -->
+                    <div id="sec-input-news-priority" class="space-y-3 pt-4 border-t border-slate-100">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            10.2. Mức Độ Ưu Tiên (Khẩn Cấp, Quan Trọng, Bình Thường) & Tính Năng Ghim Bài
+                        </h4>
+                        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                            <table class="w-full text-left text-xs erp-table border-collapse">
+                                <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-2.5 w-40">Mức Độ Ưu Tiên</th>
+                                        <th class="p-2.5 w-32">Hiển Thị Giao Diện</th>
+                                        <th class="p-2.5">Mục Đích Áp Dụng & Hiệu Lực</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-rose-700">Khẩn Cấp (EMERGENCY)</td>
+                                        <td class="p-2.5"><span class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold text-[11px] border border-rose-300">Khẩn cấp</span></td>
+                                        <td class="p-2.5">Sự cố bão lũ đình trệ cảng, thay đổi giờ cấm tải khẩn cấp từ Sở GTVT, cảnh báo pháp lý cần toàn bộ tài xế và nhân viên đọc ngay. Kích hoạt thông báo đẩy ưu tiên cao.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-amber-700">Quan Trọng (IMPORTANT)</td>
+                                        <td class="p-2.5"><span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[11px] border border-amber-300">Quan trọng</span></td>
+                                        <td class="p-2.5">Quy định mới về hồ sơ hải quan, thay đổi biểu phí lưu bãi cảng, quy chế tính lương mới có hiệu lực trong tháng.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-slate-700">Bình Thường (NORMAL)</td>
+                                        <td class="p-2.5"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-[11px] border border-slate-200">Bình thường</span></td>
+                                        <td class="p-2.5">Tin tức nội bộ, chúc mừng sinh nhật, các hoạt động văn hóa công đoàn định kỳ.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-sm text-slate-700">
+                            <strong>Ghim bài viết (Pin to Top):</strong> Tích chọn ô <code>Ghim bài viết lên đầu trang</code> khi soạn thảo để bài viết luôn đứng ở vị trí số 1 trên bản tin, có huy hiệu kim ghim màu hổ phách để mọi nhân viên dễ dàng tiếp cận đầu tiên.
+                        </p>
+                    </div>
+
+                    <!-- 10.3 Đọc tin & ghi nhận đã đọc -->
+                    <div id="sec-input-news-read" class="space-y-3 pt-4 border-t border-slate-100">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            10.3. Đọc Tin, Đánh Dấu Đã Đọc & Tương Tác
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Khi nhân viên nhấp vào tiêu đề bài viết để đọc nội dung chi tiết:
+                        </p>
+                        <ul class="list-disc pl-6 text-sm text-slate-700 space-y-1">
+                            <li><strong>Cơ Chế Tự Động Đánh Dấu Đã Đọc:</strong> Hệ thống tự động ghi nhận thời điểm tài khoản mở đọc bài viết. Ban Giám Đốc có thể kiểm tra danh sách nhân viên đã đọc và nhân viên chưa đọc chỉ thị để đôn đốc.</li>
+                            <li><strong>Thả Tim & Bình Luận:</strong> Người đọc có thể bấm nút Thích hoặc gửi lời bình luận dưới bài viết để tăng cường gắn kết tinh thần đồng đội.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- 11. TRAO ĐỔI TRỰC TIẾP & CHUÔNG THÔNG BÁO (CHAT & NOTIFICATIONS) -->
+                <section id="sec-input-chat" class="help-section scroll-mt-24 space-y-6 pb-8 border-b border-slate-200">
+                    <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">11. Hướng Dẫn Sử Dụng Floating Chat Bubble & Chuông Thông Báo (Chat & Alerts)</h3>
+
+                    <!-- 11.1 Floating Bubble -->
+                    <div id="sec-input-chat-bubble" class="space-y-3 pt-2">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            11.1. Bong Bóng Nổi Chat (Floating Bubble) & Đa Kênh Thảo Luận
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Bong bóng chat màu xanh ngọc luôn hiển thị ở góc dưới bên phải màn hình làm việc. Bấm vào bong bóng để mở giao diện chat tức thì mà không chuyển trang:
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="font-bold text-slate-900 mb-1 flex items-center gap-1.5"><i class="ph-bold ph-globe text-teal-700"></i> Kênh Toàn Công Ty</div>
+                                <p class="text-slate-600">Trao đổi thông tin đại chúng giữa tất cả phòng ban và Ban Giám Đốc.</p>
+                            </div>
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="font-bold text-slate-900 mb-1 flex items-center gap-1.5"><i class="ph-bold ph-users-three text-teal-700"></i> Kênh Theo Phòng Ban</div>
+                                <p class="text-slate-600">Kênh riêng cho Điều vận, Kế toán, Kinh doanh, Nhân sự trao đổi công việc chuyên môn.</p>
+                            </div>
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="font-bold text-slate-900 mb-1 flex items-center gap-1.5"><i class="ph-bold ph-truck text-teal-700"></i> Kênh Chuyến Xe & Khách Hàng</div>
+                                <p class="text-slate-600">Kênh trao đổi chuyên biệt theo từng chuyến xe giữa Điều phối viên và Tài xế trên đường.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 11.2 Reply & Đính kèm -->
+                    <div id="sec-input-chat-files" class="space-y-3 pt-4 border-t border-slate-100">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            11.2. Trích Dẫn Reply & Đính Kèm Tệp Tin / Hình Ảnh Hiện Trường
+                        </h4>
+                        <ul class="list-disc pl-6 text-sm text-slate-700 space-y-1">
+                            <li><strong>Trích Dẫn Trả Lời (Reply):</strong> Rê chuột vào tin nhắn bất kỳ và bấm biểu tượng mũi tên quay đầu để trích dẫn tin nhắn gốc. Câu trả lời sẽ hiển thị kèm trích dẫn ngắn giúp giữ liền mạch cuộc hội thoại.</li>
+                            <li><strong>Đính Kèm Ảnh Chứng Từ:</strong> Bấm biểu tượng kẹp ghim hoặc máy ảnh để gửi ảnh phiếu cân xe, biên bản hạ bãi EIR, hoặc ảnh sự cố hàng hóa trực tiếp vào kênh chat.</li>
+                            <li><strong>Gửi Tệp Tin Nghiệp Vụ:</strong> Hỗ trợ tải lên file Excel bảng kê chi phí, file PDF hợp đồng để đồng nghiệp tải về đối chiếu.</li>
+                        </ul>
+                    </div>
+
+                    <!-- 11.3 Status 1 check / 2 check -->
+                    <div id="sec-input-chat-status" class="space-y-3 pt-4 border-t border-slate-100">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            11.3. Trạng Thái Đã Đọc (1 Check Chưa Đọc - 2 Check Đã Đọc) & Cơ Chế Polling 5s
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Tin nhắn trong hệ thống tích hợp biểu tượng kiểm soát đã đọc chuẩn hóa quốc tế:
+                        </p>
+                        <div class="flex items-center gap-4 text-xs font-medium">
+                            <div class="flex items-center gap-2 p-2.5 bg-slate-100 border border-slate-200 rounded-lg">
+                                <span class="text-slate-400 font-bold text-sm">✓</span>
+                                <span><strong>1 Dấu Tích Xám:</strong> Tin nhắn đã gửi lên máy chủ nhưng người nhận chưa đọc.</span>
+                            </div>
+                            <div class="flex items-center gap-2 p-2.5 bg-teal-50 border border-teal-200 rounded-lg text-teal-900">
+                                <span class="text-teal-600 font-bold text-sm">✓✓</span>
+                                <span><strong>2 Dấu Tích Xanh Ngọc:</strong> Người nhận đã mở xem tin nhắn.</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 italic">
+                            * Cơ chế Polling tự động làm mới sau mỗi 5 giây mà không làm giật màn hình hoặc tiêu tốn băng thông đường truyền.
+                        </p>
+                    </div>
+
+                    <!-- 11.4 Smart Notification -->
+                    <div id="sec-input-chat-notifications" class="space-y-3 pt-4 border-t border-slate-100">
+                        <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                            11.4. Chuông Thông Báo Thông Minh (Smart Notification Center)
+                        </h4>
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Biểu tượng chiếc chuông đặt trên thanh điều hướng Topbar giúp quản lý tập trung mọi biến động nghiệp vụ:
+                        </p>
+                        <ul class="list-disc pl-6 text-sm text-slate-700 space-y-1">
+                            <li><strong>Chấm Đỏ Báo Động:</strong> Hiển thị số lượng thông báo mới chưa đọc ngay trên quả chuông.</li>
+                            <li><strong>Phân Loại Sự Kiện Tự Động:</strong> Thông báo giao nhiệm vụ mới, thông báo tag tên vào nhiệm vụ, thông báo bài viết khẩn từ Ban Giám Đốc, thông báo duyệt tạm ứng.</li>
+                            <li><strong>Điều Hướng 1 Chạm:</strong> Bấm trực tiếp vào từng dòng thông báo trong menu thả xuống để chuyển ngay đến màn hình nhiệm vụ hoặc chi tiết chuyến xe cần xử lý.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- 12. TÙY BIẾN BIỂU ĐỒ DASHBOARD -->
+                <section id="sec-input-dashboard-customizer" class="help-section scroll-mt-24 space-y-4 pb-8">
+                    <h3 class="text-lg sm:text-xl font-black text-slate-900 font-heading">12. Hướng Dẫn Tùy Biến Chuỗi Ngày & Bộ Lọc Biểu Đồ Dashboard</h3>
+
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        Tại màn hình <strong>Dashboard Tổng quan</strong>, góc trên mỗi biểu đồ xu hướng (Biểu đồ Doanh thu & Chi phí, Biểu đồ Sản lượng chuyến xe) đều được trang bị nút công cụ <strong class="text-teal-800"><i class="ph-bold ph-sliders"></i> Tùy biến</strong>:
+                    </p>
+
+                    <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                        <table class="w-full text-left text-xs erp-table border-collapse">
+                            <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-2.5 w-44">Tùy Chọn Cấu Hình</th>
+                                    <th class="p-2.5 w-32">Thao Tác</th>
+                                    <th class="p-2.5">Ý Nghĩa & Lợi Ích Quản Trị</th>
+                                    <th class="p-2.5 w-64">Ghi Chú</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                <tr>
+                                    <td class="p-2.5 font-bold text-slate-900">Chuỗi Ngày Quan Sát</td>
+                                    <td class="p-2.5 text-slate-600">Chọn 7 / 10 / 14 / 30 ngày</td>
+                                    <td class="p-2.5">Thay đổi độ dài trục thời gian của biểu đồ để theo dõi xu hướng ngắn hạn (7-10 ngày) hoặc bức tranh toàn cảnh tháng (30 ngày).</td>
+                                    <td class="p-2.5 text-slate-500">Mặc định là 10 ngày gần nhất.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-bold text-slate-900">Ẩn / Hiện Đường Chỉ Số</td>
+                                    <td class="p-2.5 text-slate-600">Tích chọn Checkbox</td>
+                                    <td class="p-2.5">Bật/tắt đường Doanh thu, Chi phí, hoặc Lợi nhuận để tập trung phân tích riêng từng đường chỉ số mong muốn.</td>
+                                    <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">Biểu đồ tự động vẽ lại mượt mà không load trang.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-bold text-slate-900">Lưu Cấu Hình Cá Nhân</td>
+                                    <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">Tự động lưu</td>
+                                    <td class="p-2.5">Mọi tùy chỉnh được lưu trên hồ sơ trình duyệt, lần truy cập tiếp theo hệ thống tự động giữ nguyên thiết lập ưa thích.</td>
+                                    <td class="p-2.5 text-slate-500">Tiết kiệm thời gian thiết lập lại.</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </section>
 
