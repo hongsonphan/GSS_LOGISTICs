@@ -79,6 +79,9 @@
                 <span id="news-modal-urgent-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">Khẩn cấp</span>
             </div>
             <div class="flex items-center gap-2">
+                <button type="button" onclick="if(currentViewingNewsId) window.open('/news/' + currentViewingNewsId + '/', '_blank')" class="p-1.5 rounded-lg border border-slate-200 hover:bg-teal-50 text-slate-600 hover:text-teal-700 transition-colors" title="Mở trang toàn văn & xem trước tài liệu (tab mới)">
+                    <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                </button>
                 <button type="button" id="news-modal-pin-btn" onclick="togglePinCurrentNews()" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-200 text-slate-600 transition-colors" title="Ghim lên đầu">
                     <i class="ph-bold ph-push-pin text-sm"></i>
                 </button>
@@ -220,8 +223,9 @@
                     <input type="file" id="create-news-cover" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tài liệu đính kèm (PDF/Word...)</label>
-                    <input type="file" id="create-news-files" multiple class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tài liệu đính kèm (PDF, Word, Excel, Ảnh...)</label>
+                    <input type="file" id="create-news-files" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                    <p class="text-[10px] text-slate-400 mt-1">Đính kèm công văn, quyết định, biểu mẫu báo cáo...</p>
                 </div>
             </div>
 

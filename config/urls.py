@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 
-from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view, help_view
+from apps.dispatch.views import index_view, login_view, logout_view, driver_portal_view, public_tracking_view, help_view, news_detail_page_view
 from apps.dispatch.api_views import (
     DashboardBGDAPIView,
     DashboardPivotChartAPIView,
@@ -95,7 +95,9 @@ urlpatterns = [
     path('master-data/', index_view, name='spa-master-data'),
     path('master-data', index_view, name='spa-master-data-noslash'),
     path('danh-muc/', index_view, name='spa-danhmuc'),
-    path('danh-muc', index_view, name='spa-danhmuc-noslash'),
+    # Trang Chi Tiết Bản Tin & Xem Trước Tệp Đính Kèm (PDF, Word, Excel)
+    path('news/<int:pk>/', news_detail_page_view, name='news-detail-page'),
+    path('news/<int:pk>', news_detail_page_view, name='news-detail-page-noslash'),
     path('news/', index_view, name='spa-news'),
     path('news', index_view, name='spa-news-noslash'),
     path('tasks/', index_view, name='spa-tasks'),

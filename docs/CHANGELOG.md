@@ -2,6 +2,59 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.5.0] - 2026-10-17 (Sẵn Sàng Production, Chuẩn Hóa Trang Login, Trang Chi Tiết Bản Tin Mới Kèm Bộ Xem Trước Trực Tiếp PDF/Word/Excel)
+
+### 1. Rà Soát & Triển Khai Môi Trường Production:
+- **Tối Ưu Hóa Phục Vụ Tệp Tĩnh (Static Files) Với WhiteNoise:**
+  * Bổ sung gói `whitenoise>=6.6.0` vào `requirements.txt` và cài đặt vào môi trường máy chủ.
+  * Tích hợp `whitenoise.middleware.WhiteNoiseMiddleware` ngay sau `SecurityMiddleware` trong `MIDDLEWARE`.
+  * Cấu hình `STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'` nén gzip tệp tĩnh siêu tốc, đảm bảo phục vụ an toàn cả khi chạy trực tiếp qua Gunicorn lẫn Nginx reverse proxy mà không bao giờ bị lỗi 404.
+  * Bổ sung `web` vào `ALLOWED_HOSTS`.
+- **Trang Báo Lỗi Tùy Chỉnh Toàn Hệ Thống Chuẩn SaaS:**
+  * Xây dựng `templates/404.html` (Không tìm thấy tài nguyên / liên kết dời đổi) và `templates/500.html` (Máy chủ đang bận hoặc gặp sự cố xử lý) chuẩn nhận diện thương hiệu BIM Ecosystem và Triền Võ Enterprise.
+- **Rà Soát & Thiết Lập Cấu Hình Nginx Reverse Proxy SSL (`logistics.bim.info.vn`):**
+  * Tận dụng chứng chỉ Let's Encrypt SSL có sẵn trên VPS (`/etc/letsencrypt/live/logistics.bim.info.vn/`).
+  * Proxy an toàn từ port 443 tới Gunicorn `172.17.0.1:8085` kèm đầy đủ tiêu chuẩn bảo mật HTTP Headers (`X-Frame-Options`, `X-Content-Type-Options`, `X-Forwarded-Proto https`).
+
+### 2. Chuẩn Hóa Trang Đăng Nhập & Bàn Giao Tài Khoản:
+- **Gỡ Bỏ Hoàn Toàn 4 Nút Chọn Vai Trò Mẫu (Demo Roles):**
+  * Xóa bỏ khối thẻ quick roles và hàm `fillCredentials()` khỏi `templates/login.html`.
+  * Chuẩn hóa form đăng nhập thuần túy: Logo Triền Võ Logistics, ô Tài khoản đăng nhập (Username/Mã NV), Mật khẩu (kèm icon ẩn/hiện), Checkbox Ghi nhớ đăng nhập và Nút Đăng nhập gradient Teal sang trọng.
+  * Bổ sung Hộp thoại Trợ giúp Cấp lại Mật khẩu (`#forgot-modal`) khi người dùng bấm "Quên mật khẩu?", hướng dẫn liên hệ Quản trị viên/Ban Giám Đốc nội bộ.
+- **Thiết Lập & Đồng Bộ Ma Trận 6 Tài Khoản Production:**
+  * `admin` / `Admin@2026`: Võ Triền (Giám Đốc) - Ban Giám Đốc (Superuser toàn quyền).
+  * `dieudo` / `DieuDo@2026`: Trần Điều Độ - Phòng Điều Vận (Dispatcher).
+  * `ketoan` / `KeToan@2026`: Trần Thị Kế Toán - Kế Toán Tài Chính (Accountant).
+  * `sales` / `Sales@2026`: Lê Hoàng Nam - Phòng Kinh Doanh (Salesman).
+  * `nhansu` / `NhanSu@2026`: Lê Thị Thu Thảo - Hành Chính Nhân Sự (HR).
+  * `taixe` / `TaiXe@2026`: Hoàng Văn Thật (Tài Xế) - Đội Xe & Bãi (Driver).
+
+### 3. Trang Chi Tiết Bản Tin Mới & Bộ Xem Trước Trực Tiếp (Document Previewer):
+- **Trang Chi Tiết Riêng Biệt (`/news/<pk>/` - `templates/news_detail.html`):**
+  * Nhân viên khi bấm vào bất kỳ thông báo nào từ Dashboard hoặc phân hệ Bản tin sẽ mở ra một trang riêng biệt trên tab mới (`target="_blank"`).
+  * Trang hiển thị đầy đủ tiêu đề, phân loại danh mục, huy hiệu khẩn cấp/ghim, phòng ban áp dụng, thông tin người đăng (họ tên, chức vụ, avatar), thời gian đăng và nội dung chỉ đạo toàn văn.
+- **Bộ Xem Trước Tài Liệu Trực Tiếp (PDF, Word, Excel, Hình ảnh):**
+  * **Xem tệp PDF:** Nhúng trực tiếp qua thẻ `<iframe>` native, hỗ trợ xem toàn văn, phóng to, in ấn và điều hướng trang.
+  * **Xem bảng tính Excel (.xlsx, .xls):** Tích hợp thư viện SheetJS parse dữ liệu bảng tính trên client và render bảng tính HTML kẻ ô trực quan, hiển thị chi tiết tên sheet, các cột, dòng định mức và số liệu tài chính.
+  * **Xem văn bản Word (.docx):** Tích hợp thư viện Mammoth.js chuyển đổi tài liệu Word sang HTML hiển thị mượt mà không cần chuyển đổi server-side.
+  * **Các nút thao tác nhanh:** Nút "Tải tệp đang xem", "Mở trong tab mới", "In văn bản", "Sao chép liên kết".
+- **Hệ Thống Phản Hồi Dưới Bài Viết:**
+  * Nhân viên có thể gửi phản hồi, thảo luận ngay tại chân trang chi tiết thông báo, cập nhật danh sách tức thời.
+
+### 4. Kiểm Thử Hệ Thống & Kiểm Chứng Thị Giác (Verification):
+- **Full Backend Test Suite:** `python manage.py test --keepdb` $\rightarrow$ **102/102 test cases PASSED (37.7s)**.
+- **Frontend Syntax Check:** `node -c static/js/app.js` & `node -c static/js/collaboration.js` (0 errors).
+- **Playwright Visual Verification:**
+  * `123_production_clean_login_page.png`: Trang đăng nhập sạch sẽ, chuyên nghiệp, không còn các nút vai trò mẫu.
+  * `124_forgot_password_modal.png`: Hộp thoại hướng dẫn cấp lại mật khẩu an toàn.
+  * `125_login_success_dashboard.png`: Đăng nhập thật thành công với tài khoản Giám Đốc vào thẳng Dashboard.
+  * `126_news_detail_page_overview_pdf.png`: Trang chi tiết bản tin mở độc lập với thông tin bài viết và tab PDF.
+  * `127_news_detail_page_excel_preview.png`: Trình xem trước bảng tính Excel hiển thị toàn bộ cột và dữ liệu định mức cước.
+  * `128_news_detail_page_word_preview.png`: Trình xem trước văn bản Word chuyển đổi trực tiếp sang HTML.
+  * `129_news_detail_page_comment_success.png`: Gửi ý kiến phản hồi dưới bài viết thành công.
+
+---
+
 ## [v3.4.9] - 2026-10-16 (Tái Cấu Trúc Form Giao Việc, Danh Sách Người Theo Dõi Dạng Bảng & Chuyển Drawer Thành Centered Modal Có Bộ 4 Nút Chuẩn SaaS)
 
 ### 1. Phân Tích Yêu Cầu & Bất Cập Vận Hành Thực Tế (Operational & UX Needs):

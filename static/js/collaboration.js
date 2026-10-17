@@ -128,7 +128,7 @@ async function loadCompanyNews() {
         if (pinnedEl) {
             if (bannerPosts.length > 0) {
                 pinnedEl.innerHTML = bannerPosts.map(p => `
-                    <div onclick="openNewsDetailModal(${p.id})" class="p-4 rounded-2xl border ${p.is_urgent ? 'bg-rose-50/90 border-rose-300 shadow-rose-100' : 'bg-amber-50/80 border-amber-300 shadow-amber-100'} shadow-sm flex items-start justify-between gap-4 cursor-pointer hover:shadow-md transition-all group">
+                    <div onclick="openNewsDetailPage(${p.id}, event)" class="p-4 rounded-2xl border ${p.is_urgent ? 'bg-rose-50/90 border-rose-300 shadow-rose-100' : 'bg-amber-50/80 border-amber-300 shadow-amber-100'} shadow-sm flex items-start justify-between gap-4 cursor-pointer hover:shadow-md transition-all group" title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)">
                         <div class="flex items-start gap-3.5">
                             <div class="w-10 h-10 rounded-xl ${p.is_urgent ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'} flex items-center justify-center shrink-0 shadow-xs">
                                 <i class="${p.is_urgent ? 'ph-bold ph-warning-octagon' : 'ph-bold ph-push-pin'} text-xl"></i>
@@ -149,7 +149,7 @@ async function loadCompanyNews() {
                             </div>
                         </div>
                         <span class="text-xs font-bold ${p.is_urgent ? 'text-rose-700' : 'text-amber-700'} shrink-0 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                            Xem chi tiết <i class="ph-bold ph-arrow-right"></i>
+                            Mở xem trang mới <i class="ph-bold ph-arrow-square-out"></i>
                         </span>
                     </div>
                 `).join('');
@@ -165,7 +165,7 @@ async function loadCompanyNews() {
         }
 
         gridEl.innerHTML = json.data.map(p => `
-            <div onclick="openNewsDetailModal(${p.id})" class="bg-white rounded-2xl border ${p.is_pinned ? 'border-amber-300 ring-2 ring-amber-300/40 bg-gradient-to-b from-amber-50/25 to-white shadow-xs' : 'border-slate-200 shadow-xs hover:border-slate-300'} hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group relative">
+            <div onclick="openNewsDetailPage(${p.id}, event)" class="bg-white rounded-2xl border ${p.is_pinned ? 'border-amber-300 ring-2 ring-amber-300/40 bg-gradient-to-b from-amber-50/25 to-white shadow-xs' : 'border-slate-200 shadow-xs hover:border-slate-300'} hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group relative" title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)">
                 ${p.cover_image ? `
                     <div class="h-44 w-full bg-slate-100 overflow-hidden relative">
                         <img src="${p.cover_image}" alt="Ảnh bài viết" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -237,6 +237,13 @@ async function loadCompanyNews() {
         console.error('Error loading company news:', e);
         gridEl.innerHTML = '<div class="col-span-full text-center py-12 text-rose-500 text-xs">Lỗi tải dữ liệu bản tin.</div>';
     }
+}
+
+function openNewsDetailPage(postId, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    window.open(`/news/${postId}/`, '_blank');
 }
 
 async function openNewsDetailModal(postId) {

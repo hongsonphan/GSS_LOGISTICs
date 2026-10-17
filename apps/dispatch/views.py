@@ -388,3 +388,115 @@ def public_tracking_view(request, trip_hash):
     }
     return render(request, 'public_tracking.html', context)
 
+
+@never_cache
+def news_detail_page_view(request, pk):
+    """
+    Trang Xem Chi Tiết Bản Tin & Xem Trước Tệp Đính Kèm (PDF, Word, Excel).
+    Mở ra một trang chuyên dụng độc lập khi nhân viên bấm vào thông báo.
+    Hỗ trợ trình duyệt xem trước trực tiếp: PDF Viewer, Word Converter, Excel Table Viewer.
+    """
+    import os
+    from django.shortcuts import get_object_or_404
+    from django.db.models import F
+    from apps.collaboration.models.news import CompanyPost, PostAttachment, PostReadStatus
+
+    # Yêu cầu đăng nhập hệ thống
+    if not request.user.is_authenticated:
+        return redirect(f"/login/?next=/news/{pk}/")
+
+    post = get_object_or_404(
+        CompanyPost.objects.select_related('category', 'author'),
+        pk=pk,
+        is_deleted=False
+    )
+
+    # Tăng lượt xem & ghi nhận đã đọc
+    CompanyPost.objects.filter(pk=pk).update(view_count=F('view_count') + 1)
+    post.view_count += 1
+    PostReadStatus.objects.get_or_create(post=post, user=request.user)
+
+    # Phân tích danh sách tệp đính kèm và loại tệp
+    raw_attachments = post.attachments.filter(is_deleted=False).order_by('created_at')
+    attachments_data = []
+    
+    for att in raw_attachments:
+        fname = att.file_name or os.path.basename(att.file.name)
+        ext = os.path.splitext(fname)[1].lower()
+        
+        file_type = 'other'
+        icon_class = 'ph-file-text'
+        icon_color = 'text-slate-500'
+        badge_bg = 'bg-slate-100 text-slate-700'
+        
+        if ext in ['.pdf']:
+            file_type = 'pdf'
+            icon_class = 'ph-file-pdf'
+            icon_color = 'text-rose-600'
+            badge_bg = 'bg-rose-50 text-rose-700 border-rose-200'
+        elif ext in ['.doc', '.docx']:
+            file_type = 'word'
+            icon_class = 'ph-file-doc'
+            icon_color = 'text-blue-600'
+            badge_bg = 'bg-blue-50 text-blue-700 border-blue-200'
+        elif ext in ['.xls', '.xlsx', '.csv']:
+            file_type = 'excel'
+            icon_class = 'ph-file-xls'
+            icon_color = 'text-emerald-600'
+            badge_bg = 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        elif ext in ['.png', '.jpg', '.jpeg', '.webp', '.gif']:
+            file_type = 'image'
+            icon_class = 'ph-file-image'
+            icon_color = 'text-purple-600'
+            badge_bg = 'bg-purple-50 text-purple-700 border-purple-200'
+
+        # Tính dung lượng hiển thị
+        size_bytes = att.file_size or (att.file.size if att.file else 0)
+        if size_bytes >= 1024 * 1024:
+            size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
+        elif size_bytes >= 1024:
+            size_str = f"{size_bytes / 1024:.0f} KB"
+        else:
+            size_str = f"{size_bytes} B"
+
+        file_url = att.file.url if att.file else ''
+        absolute_file_url = request.build_absolute_uri(file_url) if file_url else ''
+
+        attachments_data.append({
+            'id': att.id,
+            'file_name': fname,
+            'file_url': file_url,
+            'absolute_url': absolute_file_url,
+            'file_type': file_type,
+            'ext': ext.replace('.', '').upper(),
+            'size_str': size_str,
+            'icon_class': icon_class,
+            'icon_color': icon_color,
+            'badge_bg': badge_bg,
+        })
+
+    # Bình luận phản hồi
+    comments = post.comments.filter(is_deleted=False).select_related('author').order_by('created_at')
+
+    # Thông tin tác giả
+    author_emp = getattr(post.author, 'employee', None) if post.author else None
+    author_name = author_emp.full_name if author_emp else (post.author.get_full_name() or post.author.username if post.author else 'Ban Giám Đốc')
+    author_role = author_emp.get_role_display() if author_emp else 'Quản trị viên'
+    author_dept = author_emp.get_department_display() if author_emp else 'Toàn công ty'
+
+    context = {
+        'post': post,
+        'author_name': author_name,
+        'author_role': author_role,
+        'author_dept': author_dept,
+        'attachments': attachments_data,
+        'has_attachments': len(attachments_data) > 0,
+        'primary_attachment': attachments_data[0] if attachments_data else None,
+        'comments': comments,
+        'comments_count': comments.count(),
+        'share_url': request.build_absolute_uri(),
+        'current_user': request.user,
+    }
+    return render(request, 'news_detail.html', context)
+
+

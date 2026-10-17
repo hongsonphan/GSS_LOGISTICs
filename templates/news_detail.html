@@ -1,0 +1,657 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ post.title }} - BIM Logistics</title>
+  <link rel="icon" type="image/png" href="{% static 'images/logo_clean.png' %}?v=3.0">
+  <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=3.0">
+  <meta name="description" content="{{ post.summary|default:post.title }}" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons & Font Awesome -->
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css"/>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+
+  <!-- SheetJS cho xem trước bảng tính Excel (.xlsx/.xls) trên máy khách -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Mammoth.js cho xem trước tài liệu Word (.docx) chuyển thành HTML -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap");
+    body {
+      font-family: "Inter", sans-serif;
+    }
+    .font-heading {
+      font-family: "Plus Jakarta Sans", sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* Style bảng tính Excel sau khi parse */
+    .excel-rendered-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .excel-rendered-table th, .excel-rendered-table td {
+      border: 1px solid #e2e8f0;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .excel-rendered-table th {
+      background-color: #f8fafc;
+      font-weight: 700;
+      color: #334155;
+    }
+    .excel-rendered-table tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .excel-rendered-table tr:hover {
+      background-color: #f1f5f9;
+    }
+    /* Style văn bản Word sau khi render */
+    .word-rendered-content {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #1e293b;
+    }
+    .word-rendered-content p {
+      margin-bottom: 0.85em;
+    }
+    .word-rendered-content h1, .word-rendered-content h2, .word-rendered-content h3 {
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 1.2em;
+      margin-bottom: 0.5em;
+    }
+    .word-rendered-content table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+    }
+    .word-rendered-content td, .word-rendered-content th {
+      border: 1px solid #cbd5e1;
+      padding: 6px 10px;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100/80 min-h-screen text-slate-800 flex flex-col selection:bg-teal-100 selection:text-teal-900">
+
+  <!-- Top Sticky Header -->
+  <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- Brand & Back Button -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors flex items-center gap-1.5 text-xs font-bold" title="Về bàn làm việc">
+          <i class="ph-bold ph-arrow-left text-base"></i>
+          <span class="hidden sm:inline">Về Bàn làm việc</span>
+        </a>
+        <div class="h-5 w-px bg-slate-200"></div>
+        <a href="/" class="flex items-center gap-2">
+          <img src="{% static 'images/logo_clean.png' %}" alt="Logo" class="h-8 w-auto">
+          <div class="hidden md:flex flex-col">
+            <span class="text-[9px] uppercase tracking-wider text-teal-600 font-black leading-none">BIM ECOSYSTEM</span>
+            <span class="text-sm font-black text-[#0f4c5c] leading-none">BIM LOGISTICS</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Quick Actions Header -->
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="window.print()" class="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" title="In thông báo này">
+          <i class="ph-bold ph-printer text-sm"></i>
+          <span class="hidden sm:inline">In văn bản</span>
+        </button>
+        <button type="button" onclick="copyShareLink()" class="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Sao chép liên kết">
+          <i class="ph-bold ph-link text-sm"></i>
+          <span class="hidden sm:inline">Sao chép link</span>
+        </button>
+        <a href="/news" class="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs">
+          <i class="ph-bold ph-newspaper text-sm"></i>
+          <span>Bản tin nội bộ</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+      <a href="/" class="hover:text-teal-700">Trang chủ</a>
+      <i class="ph ph-caret-right text-[10px]"></i>
+      <a href="/news" class="hover:text-teal-700">Bản tin & Thông báo</a>
+      <i class="ph ph-caret-right text-[10px]"></i>
+      <span class="text-slate-800 font-bold truncate max-w-xs sm:max-w-md">{{ post.title }}</span>
+    </nav>
+
+    <!-- Top Card: Header Thông Báo -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8 space-y-5">
+      <!-- Badges row -->
+      <div class="flex items-center gap-2 flex-wrap">
+        {% if post.category %}
+        <span class="px-3 py-1 rounded-full text-xs font-bold" style="background-color: {{ post.category.color }}20; color: {{ post.category.color }};">
+          <i class="ph-bold {{ post.category.icon|default:'ph-newspaper' }} mr-1"></i>
+          {{ post.category.name }}
+        </span>
+        {% endif %}
+
+        {% if post.is_urgent %}
+        <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200 flex items-center gap-1">
+          <i class="ph-bold ph-warning-circle"></i> Khẩn cấp
+        </span>
+        {% endif %}
+
+        {% if post.is_pinned %}
+        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+          <i class="ph-bold ph-push-pin"></i> Đã ghim
+        </span>
+        {% endif %}
+
+        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+          <i class="ph-bold ph-users-three"></i> Áp dụng: {{ post.get_target_department_display }}
+        </span>
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 leading-tight font-heading">
+        {{ post.title }}
+      </h1>
+
+      <!-- Meta info: Tác giả & Ngày đăng -->
+      <div class="flex items-center justify-between flex-wrap gap-4 pt-4 border-t border-slate-100 text-xs">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-800 font-extrabold flex items-center justify-center text-sm border border-teal-200 shrink-0">
+            <i class="ph-bold ph-user"></i>
+          </div>
+          <div>
+            <p class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+              {{ author_name }}
+              {% if author_role %}
+              <span class="text-[11px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">{{ author_role }}</span>
+              {% endif %}
+            </p>
+            <p class="text-slate-500 text-[11px] mt-0.5">
+              Phòng ban: <strong class="text-slate-700">{{ author_dept }}</strong> &bull; Đăng lúc: {{ post.created_at|date:"H:i d/m/Y" }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 text-slate-500 font-semibold">
+          <span class="flex items-center gap-1">
+            <i class="ph ph-eye text-base text-teal-600"></i>
+            {{ post.view_count }} lượt xem
+          </span>
+          <span class="flex items-center gap-1">
+            <i class="ph ph-chat-circle text-base text-teal-600"></i>
+            {{ comments_count }} thảo luận
+          </span>
+        </div>
+      </div>
+
+      <!-- Cover Image (nếu có) -->
+      {% if post.cover_image %}
+      <div class="rounded-2xl overflow-hidden border border-slate-200 max-h-[420px] bg-slate-50">
+        <img src="{{ post.cover_image.url }}" alt="Ảnh bìa bản tin" class="w-full h-auto object-cover max-h-[420px]">
+      </div>
+      {% endif %}
+
+      <!-- Nội dung văn bản bản tin -->
+      <div class="pt-2">
+        {% if post.summary %}
+        <div class="p-4 bg-teal-50/60 rounded-xl border border-teal-200/80 mb-5">
+          <p class="text-xs sm:text-sm font-bold text-teal-950 leading-relaxed italic">
+            {{ post.summary }}
+          </p>
+        </div>
+        {% endif %}
+
+        <div class="prose max-w-none text-slate-800 text-sm sm:text-base leading-relaxed whitespace-pre-line font-normal space-y-4">
+          {{ post.content }}
+        </div>
+      </div>
+    </div>
+
+    <!-- KHU VỰC: TỆP ĐÍNH KÈM & BỘ XEM TRƯỚC VĂN BẢN (DOCUMENT PREVIEWER) -->
+    {% if has_attachments %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8 space-y-5" id="attachments-preview-section">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+        <div>
+          <h2 class="text-lg font-black text-slate-900 font-heading flex items-center gap-2">
+            <i class="ph-bold ph-paperclip text-teal-600"></i>
+            Tài liệu đính kèm & Xem trước trực tiếp
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 font-bold font-sans">
+              {{ attachments|length }} tệp
+            </span>
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">Bấm vào từng tệp để xem trực tiếp toàn văn (PDF, Word, Excel) hoặc tải về máy</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="downloadCurrentAttachment()" class="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
+            <i class="ph-bold ph-download-simple text-sm"></i>
+            <span>Tải tệp đang xem</span>
+          </button>
+          <button type="button" onclick="openCurrentAttachmentNewTab()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 shadow-2xs flex items-center gap-1.5 cursor-pointer" title="Mở trong tab riêng">
+            <i class="ph-bold ph-arrow-square-out text-sm"></i>
+            <span class="hidden sm:inline">Mở tab mới</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs chọn tệp đính kèm -->
+      <div class="flex items-center gap-2.5 overflow-x-auto pb-2 custom-scrollbar">
+        {% for att in attachments %}
+        <button type="button" onclick="selectAttachment({{ forloop.counter0 }})" id="att-tab-{{ forloop.counter0 }}" 
+          class="att-tab flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all shrink-0 cursor-pointer {% if forloop.first %}bg-teal-700 text-white border-teal-700 shadow-xs{% else %}bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200{% endif %}">
+          <i class="ph-bold {{ att.icon_class }} text-base {% if forloop.first %}text-white{% else %}{{ att.icon_color }}{% endif %}"></i>
+          <span class="truncate max-w-[180px] sm:max-w-[240px]">{{ att.file_name }}</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded font-extrabold {% if forloop.first %}bg-white/20 text-white{% else %}{{ att.badge_bg }}{% endif %}">{{ att.ext }}</span>
+          <span class="text-[10px] opacity-75">({{ att.size_str }})</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <!-- Preview Header Bar -->
+      <div class="bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs text-slate-600 flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <i id="preview-active-icon" class="ph-bold ph-file-text text-base text-teal-600"></i>
+          <span>Đang xem: <strong id="preview-active-filename" class="text-slate-900 font-bold"></strong></span>
+          <span id="preview-active-size" class="text-slate-400"></span>
+        </div>
+        <div id="preview-mode-switch" class="flex items-center gap-2">
+          <!-- Quick toggle nếu có nhiều chế độ xem -->
+        </div>
+      </div>
+
+      <!-- Frame Viewer Container -->
+      <div id="preview-container" class="w-full bg-slate-900/5 rounded-2xl border border-slate-200 overflow-hidden min-h-[500px] flex flex-col items-center justify-center relative">
+        <div id="preview-loading" class="hidden absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 space-y-2">
+          <i class="ph-bold ph-spinner-gap fa-spin text-3xl text-teal-600"></i>
+          <span class="text-xs font-bold text-slate-600">Đang chuẩn bị hiển thị nội dung tài liệu...</span>
+        </div>
+
+        <!-- 1. PDF Native Frame -->
+        <iframe id="pdf-viewer-frame" src="" class="hidden w-full h-[720px] rounded-xl border-none"></iframe>
+
+        <!-- 2. Word HTML Rendered Container -->
+        <div id="word-viewer-container" class="hidden w-full max-h-[720px] overflow-y-auto p-8 bg-white custom-scrollbar word-rendered-content"></div>
+
+        <!-- 3. Excel Rendered Table Container -->
+        <div id="excel-viewer-container" class="hidden w-full max-h-[720px] overflow-auto p-4 bg-white custom-scrollbar excel-rendered-table"></div>
+
+        <!-- 4. Image Viewer Container -->
+        <div id="image-viewer-container" class="hidden w-full p-4 flex items-center justify-center bg-slate-900/10">
+          <img id="image-viewer-el" src="" alt="Tệp ảnh đính kèm" class="max-w-full max-h-[680px] object-contain rounded-xl shadow-md">
+        </div>
+
+        <!-- 5. Fallback Download Card -->
+        <div id="fallback-viewer-container" class="hidden py-16 px-6 text-center space-y-3">
+          <div class="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center mx-auto text-3xl">
+            <i class="ph-bold ph-file-arrow-down"></i>
+          </div>
+          <h4 class="text-base font-extrabold text-slate-900">Xem trước trực tiếp định dạng này</h4>
+          <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+            Bạn có thể tải tệp về để mở trên ứng dụng máy tính hoặc xem nhanh qua trình duyệt bên ngoài.
+          </p>
+          <div class="pt-2 flex items-center justify-center gap-2">
+            <a id="fallback-download-btn" href="" download class="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors inline-flex items-center gap-1.5">
+              <i class="ph-bold ph-download-simple"></i> Tải tệp về máy
+            </a>
+            <a id="fallback-external-btn" href="" target="_blank" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 border border-slate-200">
+              <i class="ph-bold ph-arrow-square-out"></i> Mở tab mới
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- KHU VỰC: BÌNH LUẬN & PHẢN HỒI NỘI BỘ -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8 space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <h3 class="text-base font-black text-slate-900 font-heading flex items-center gap-2">
+          <i class="ph-bold ph-chat-centered-text text-teal-600"></i>
+          Ý kiến đóng góp & Thảo luận (<span id="comments-count-badge">{{ comments_count }}</span>)
+        </h3>
+        <span class="text-xs text-slate-400">Chỉ nhân viên nội bộ có quyền phản hồi</span>
+      </div>
+
+      <!-- Ô nhập bình luận mới -->
+      <form onsubmit="handlePostCommentSubmit(event)" class="space-y-3">
+        <div class="flex gap-3">
+          <div class="w-9 h-9 rounded-full bg-teal-100 text-teal-800 font-bold flex items-center justify-center text-xs shrink-0 mt-1">
+            <i class="ph-bold ph-user"></i>
+          </div>
+          <div class="flex-1 space-y-2">
+            <textarea id="comment-input-content" rows="2" required placeholder="Viết ý kiến phản hồi hoặc đặt câu hỏi cho người đăng thông báo..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none leading-relaxed transition-all"></textarea>
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] text-slate-400">Nhấn nút Gửi để đăng bình luận</span>
+              <button type="submit" id="btn-submit-comment" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                <i class="ph-bold ph-paper-plane-tilt"></i>
+                <span>Gửi phản hồi</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <!-- Danh sách bình luận -->
+      <div id="comments-list" class="space-y-3 pt-2">
+        {% for c in comments %}
+        <div class="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/70 space-y-1 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-slate-900 flex items-center gap-1.5">
+              <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
+              {{ c.author_name }}
+            </span>
+            <span class="text-[10.5px] text-slate-400">{{ c.created_at|date:"H:i d/m/Y" }}</span>
+          </div>
+          <p class="text-slate-700 leading-relaxed pl-5 whitespace-pre-line">{{ c.content }}</p>
+        </div>
+        {% empty %}
+        <div id="no-comments-msg" class="text-center py-6 text-slate-400 text-xs italic">
+          Chưa có ý kiến phản hồi nào. Hãy là người đầu tiên trao đổi!
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer Bản Quyền -->
+  <footer class="py-6 border-t border-slate-200/80 text-center text-xs text-slate-500 bg-white/50 mt-10">
+    <p class="font-semibold">&copy; 2026 BIM LOGISTICS &bull; TRIỀN VÕ ENTERPRISE &bull; VẬN TẢI & CHUỖI CUNG ỨNG</p>
+    <p class="text-[11px] text-slate-400 mt-1">Hệ thống Quản trị Vận tải Đa phương thức & Chứng từ Điện tử FTL/LTL</p>
+  </footer>
+
+  <!-- Dữ liệu Attachments chuyển giao cho JavaScript -->
+  <script>
+    const ATTACHMENTS_DATA = {{ attachments|safe|default:"[]" }};
+    const POST_ID = {{ post.id }};
+    let currentAttIndex = 0;
+
+    // Khởi tạo trang khi tải xong
+    document.addEventListener('DOMContentLoaded', function() {
+      if (ATTACHMENTS_DATA.length > 0) {
+        selectAttachment(0);
+      }
+    });
+
+    // Hàm chọn tab tệp đính kèm và render xem trước
+    async function selectAttachment(index) {
+      if (index < 0 || index >= ATTACHMENTS_DATA.length) return;
+      currentAttIndex = index;
+      const att = ATTACHMENTS_DATA[index];
+
+      // Update Tabs style
+      ATTACHMENTS_DATA.forEach((_, i) => {
+        const tabEl = document.getElementById(`att-tab-${i}`);
+        if (!tabEl) return;
+        if (i === index) {
+          tabEl.className = 'att-tab flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all shrink-0 cursor-pointer bg-teal-700 text-white border-teal-700 shadow-xs';
+        } else {
+          tabEl.className = 'att-tab flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all shrink-0 cursor-pointer bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200';
+        }
+      });
+
+      // Update Header Info
+      document.getElementById('preview-active-filename').textContent = att.file_name;
+      document.getElementById('preview-active-size').textContent = `(${att.size_str})`;
+      const iconEl = document.getElementById('preview-active-icon');
+      iconEl.className = `ph-bold ${att.icon_class} text-base ${att.icon_color}`;
+
+      // Reset tất cả viewers
+      hideAllViewers();
+      showLoading(true);
+
+      const fileUrl = att.file_url;
+      const fileType = att.file_type;
+
+      try {
+        if (fileType === 'pdf') {
+          renderPdfPreview(fileUrl);
+        } else if (fileType === 'word') {
+          await renderWordPreview(fileUrl, att.absolute_url);
+        } else if (fileType === 'excel') {
+          await renderExcelPreview(fileUrl, att.absolute_url);
+        } else if (fileType === 'image') {
+          renderImagePreview(fileUrl);
+        } else {
+          renderFallback(fileUrl, att.file_name);
+        }
+      } catch (err) {
+        console.error('Error rendering attachment preview:', err);
+        renderFallback(fileUrl, att.file_name);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function hideAllViewers() {
+      document.getElementById('pdf-viewer-frame').classList.add('hidden');
+      document.getElementById('word-viewer-container').classList.add('hidden');
+      document.getElementById('excel-viewer-container').classList.add('hidden');
+      document.getElementById('image-viewer-container').classList.add('hidden');
+      document.getElementById('fallback-viewer-container').classList.add('hidden');
+    }
+
+    function showLoading(show) {
+      const loader = document.getElementById('preview-loading');
+      if (loader) {
+        if (show) loader.classList.remove('hidden');
+        else loader.classList.add('hidden');
+      }
+    }
+
+    // 1. Render PDF
+    function renderPdfPreview(url) {
+      const frame = document.getElementById('pdf-viewer-frame');
+      frame.src = url;
+      frame.classList.remove('hidden');
+    }
+
+    // 2. Render Image
+    function renderImagePreview(url) {
+      const img = document.getElementById('image-viewer-el');
+      const container = document.getElementById('image-viewer-container');
+      img.src = url;
+      container.classList.remove('hidden');
+    }
+
+    // 3. Render Word (.docx) dùng Mammoth.js (Client-side native)
+    async function renderWordPreview(fileUrl, absoluteUrl) {
+      const container = document.getElementById('word-viewer-container');
+      try {
+        // Tải arraybuffer tệp docx
+        const res = await fetch(fileUrl);
+        if (!res.ok) throw new Error('Không thể tải tệp Word');
+        const arrayBuffer = await res.arrayBuffer();
+
+        // Chuyển đổi bằng Mammoth
+        if (window.mammoth) {
+          const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+          container.innerHTML = `
+            <div class="max-w-3xl mx-auto space-y-4">
+              <div class="pb-3 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                <span class="font-bold flex items-center gap-1.5 text-blue-700">
+                  <i class="ph-bold ph-file-doc"></i> Xem trước định dạng Word (.docx)
+                </span>
+                <a href="${fileUrl}" download class="text-teal-700 hover:underline font-semibold">Tải tệp gốc (.docx)</a>
+              </div>
+              <div>${result.value || '<p class="text-slate-400 italic">Văn bản không có nội dung hiển thị.</p>'}</div>
+            </div>
+          `;
+          container.classList.remove('hidden');
+        } else {
+          // Fallback nhúng Office Online Viewer
+          renderOfficeOnlineViewer(absoluteUrl);
+        }
+      } catch (e) {
+        console.warn('Mammoth convert failed, fallback to Office Online:', e);
+        renderOfficeOnlineViewer(absoluteUrl);
+      }
+    }
+
+    // 4. Render Excel (.xlsx/.xls) dùng SheetJS (Client-side native)
+    async function renderExcelPreview(fileUrl, absoluteUrl) {
+      const container = document.getElementById('excel-viewer-container');
+      try {
+        const res = await fetch(fileUrl);
+        if (!res.ok) throw new Error('Không thể tải tệp Excel');
+        const arrayBuffer = await res.arrayBuffer();
+
+        if (window.XLSX) {
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const htmlTable = XLSX.utils.sheet_to_html(worksheet, { id: 'excel-table' });
+
+          container.innerHTML = `
+            <div class="space-y-3">
+              <div class="pb-2 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                <span class="font-bold flex items-center gap-1.5 text-emerald-700">
+                  <i class="ph-bold ph-file-xls"></i> Bảng tính Excel &bull; Trang: <strong>${firstSheetName}</strong>
+                </span>
+                <span class="text-[11px] text-slate-400">Hiển thị dữ liệu trực quan</span>
+              </div>
+              <div class="overflow-x-auto">${htmlTable}</div>
+            </div>
+          `;
+          container.classList.remove('hidden');
+        } else {
+          renderOfficeOnlineViewer(absoluteUrl);
+        }
+      } catch (e) {
+        console.warn('SheetJS convert failed, fallback to Office Online:', e);
+        renderOfficeOnlineViewer(absoluteUrl);
+      }
+    }
+
+    // Fallback qua Office Online iframe
+    function renderOfficeOnlineViewer(absoluteUrl) {
+      const frame = document.getElementById('pdf-viewer-frame');
+      frame.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteUrl)}`;
+      frame.classList.remove('hidden');
+    }
+
+    // Fallback khi không hỗ trợ xem trực tiếp
+    function renderFallback(url, fname) {
+      const fb = document.getElementById('fallback-viewer-container');
+      document.getElementById('fallback-download-btn').href = url;
+      document.getElementById('fallback-external-btn').href = url;
+      fb.classList.remove('hidden');
+    }
+
+    function downloadCurrentAttachment() {
+      if (ATTACHMENTS_DATA.length === 0) return;
+      const att = ATTACHMENTS_DATA[currentAttIndex];
+      const link = document.createElement('a');
+      link.href = att.file_url;
+      link.download = att.file_name;
+      link.click();
+    }
+
+    function openCurrentAttachmentNewTab() {
+      if (ATTACHMENTS_DATA.length === 0) return;
+      const att = ATTACHMENTS_DATA[currentAttIndex];
+      window.open(att.file_url, '_blank');
+    }
+
+    function copyShareLink() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('Đã sao chép liên kết bản tin vào bộ nhớ tạm!');
+      }).catch(() => {
+        prompt('Sao chép liên kết dưới đây:', window.location.href);
+      });
+    }
+
+    // Gửi bình luận phản hồi dưới bản tin
+    async function handlePostCommentSubmit(e) {
+      e.preventDefault();
+      const contentInput = document.getElementById('comment-input-content');
+      const content = contentInput.value.trim();
+      if (!content) return;
+
+      const btn = document.getElementById('btn-submit-comment');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      try {
+        const res = await fetch(`/api/collaboration/news/posts/${POST_ID}/comments/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken') || ''
+          },
+          body: JSON.stringify({ content })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          contentInput.value = '';
+          const commentsList = document.getElementById('comments-list');
+          const noMsg = document.getElementById('no-comments-msg');
+          if (noMsg) noMsg.remove();
+
+          const badge = document.getElementById('comments-count-badge');
+          if (badge) badge.textContent = parseInt(badge.textContent || '0') + 1;
+
+          const newEl = document.createElement('div');
+          newEl.className = 'p-3.5 bg-slate-50/80 rounded-xl border border-teal-200/80 space-y-1 text-xs animate-in fade-in';
+          newEl.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-slate-900 flex items-center gap-1.5">
+                <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
+                ${escapeHtml(json.data.author_name || 'Bạn')}
+              </span>
+              <span class="text-[10.5px] text-slate-400">Vừa xong</span>
+            </div>
+            <p class="text-slate-700 leading-relaxed pl-5 whitespace-pre-line">${escapeHtml(json.data.content)}</p>
+          `;
+          commentsList.appendChild(newEl);
+        } else {
+          alert(json.message || 'Không thể gửi bình luận. Vui lòng thử lại.');
+        }
+      } catch (err) {
+        console.error('Error submitting comment:', err);
+        alert('Lỗi kết nối máy chủ khi gửi phản hồi.');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+      }
+    }
+
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? match[2] : null;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+  </script>
+</body>
+</html>
