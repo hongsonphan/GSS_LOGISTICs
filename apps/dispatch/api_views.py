@@ -2255,10 +2255,10 @@ class TripListCreateAPIView(APIView):
 
         return Response({
             'stats': {
-                'total_trips_monthly': 128,
+                'total_trips_monthly': DispatchTrip.objects.filter(is_deleted=False).count(),
                 'transit_count': active_count,
                 'pending_expenses_count': pending_expenses_count,
-                'cutoff_warning_count': 1,
+                'cutoff_warning_count': 0,
             },
             'trips': trips_list
         })
