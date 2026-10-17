@@ -1393,8 +1393,4 @@ input[list="list-times-24h"]::-webkit-list-button {
         z-index: 9999 !important;
         margin: 0 !important;
     }
-
-    #chat-message-input {
-        font-size: 16px !important;
-    }
 }
