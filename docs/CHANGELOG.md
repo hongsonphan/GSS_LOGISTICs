@@ -11,15 +11,16 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * Cấu hình `STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'` nén gzip tệp tĩnh siêu tốc, đảm bảo phục vụ an toàn cả khi chạy trực tiếp qua Gunicorn lẫn Nginx reverse proxy mà không bao giờ bị lỗi 404.
   * Bổ sung `web` vào `ALLOWED_HOSTS`.
 - **Trang Báo Lỗi Tùy Chỉnh Toàn Hệ Thống Chuẩn SaaS:**
-  * Xây dựng `templates/404.html` (Không tìm thấy tài nguyên / liên kết dời đổi) và `templates/500.html` (Máy chủ đang bận hoặc gặp sự cố xử lý) chuẩn nhận diện thương hiệu BIM Ecosystem và Triền Võ Enterprise.
+  * Xây dựng `templates/404.html` (Không tìm thấy tài nguyên / liên kết dời đổi) và `templates/500.html` (Máy chủ đang bận hoặc gặp sự cố xử lý) chuẩn nhận diện thương hiệu BIZ SOLUTIONS - BIM LOGISTICS.
 - **Rà Soát & Thiết Lập Cấu Hình Nginx Reverse Proxy SSL (`logistics.bim.info.vn`):**
   * Tận dụng chứng chỉ Let's Encrypt SSL có sẵn trên VPS (`/etc/letsencrypt/live/logistics.bim.info.vn/`).
   * Proxy an toàn từ port 443 tới Gunicorn `172.17.0.1:8085` kèm đầy đủ tiêu chuẩn bảo mật HTTP Headers (`X-Frame-Options`, `X-Content-Type-Options`, `X-Forwarded-Proto https`).
 
 ### 2. Chuẩn Hóa Trang Đăng Nhập & Bàn Giao Tài Khoản:
-- **Gỡ Bỏ Hoàn Toàn 4 Nút Chọn Vai Trò Mẫu (Demo Roles):**
+- **Gỡ Bỏ Hoàn Toàn 4 Nút Chọn Vai Trò Mẫu (Demo Roles) & Đồng Bộ Thương Hiệu `BIZ SOLUTIONS`:**
   * Xóa bỏ khối thẻ quick roles và hàm `fillCredentials()` khỏi `templates/login.html`.
-  * Chuẩn hóa form đăng nhập thuần túy: Logo Triền Võ Logistics, ô Tài khoản đăng nhập (Username/Mã NV), Mật khẩu (kèm icon ẩn/hiện), Checkbox Ghi nhớ đăng nhập và Nút Đăng nhập gradient Teal sang trọng.
+  * Đồng bộ nhận diện thương hiệu trên Header từ `BIM ECOSYSTEM` sang chuẩn **`BIZ SOLUTIONS`** trên trang Đăng nhập (`templates/login.html`), trang Chi tiết Bản tin (`templates/news_detail.html`), và trang lỗi (`404.html`, `500.html`), khớp 100% với Sidebar chính và Sổ tay hướng dẫn.
+  * Chuẩn hóa form đăng nhập thuần túy: Logo BIM Logistics, ô Tài khoản đăng nhập (Username/Mã NV), Mật khẩu (kèm icon ẩn/hiện), Checkbox Ghi nhớ đăng nhập và Nút Đăng nhập gradient Teal sang trọng.
   * Bổ sung Hộp thoại Trợ giúp Cấp lại Mật khẩu (`#forgot-modal`) khi người dùng bấm "Quên mật khẩu?", hướng dẫn liên hệ Quản trị viên/Ban Giám Đốc nội bộ.
 - **Thiết Lập & Đồng Bộ Ma Trận 6 Tài Khoản Production:**
   * `admin` / `Admin@2026`: Võ Triền (Giám Đốc) - Ban Giám Đốc (Superuser toàn quyền).
