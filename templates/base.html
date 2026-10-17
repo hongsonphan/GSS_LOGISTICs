@@ -41,12 +41,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- International Enterprise Typography & Custom Styles -->
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.9.35">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.9.36">
 </head>
 <body class="flex h-screen bg-slate-100 selection:bg-teal-100 selection:text-teal-900">
 
-    <!-- 1. SIDEBAR COMPONENT -->
+    <!-- 1. SIDEBAR COMPONENT & MOBILE BACKDROP -->
     {% include 'components/sidebar.html' %}
+    <div id="sidebar-mobile-backdrop" onclick="collapseSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-[1px] z-50 hidden lg:hidden transition-opacity"></div>
 
     <!-- 2. MAIN APP CONTENT AREA -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
@@ -178,7 +179,7 @@
         window.PRELOADED_OFFICE_USERS = {{ office_users_json|default:"[]"|safe }};
     </script>
     <script src="{% static 'js/column_manager.js' %}?v=2.9.39"></script>
-    <script src="{% static 'js/app.js' %}?v=2.9.42"></script>
+    <script src="{% static 'js/app.js' %}?v=2.9.43"></script>
     <script src="{% static 'js/collaboration.js' %}?v=1.4.2"></script>
     {% block extra_scripts %}{% endblock %}
 </body>

@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.5.3] - 2026-10-17 (Tối Ưu Giao Diện Di Động Toàn Diện: Auto-Hide Sidebar & Mở Khóa Cuộn Dọc Cảm Ứng Mượt Mà)
+
+### 1. Cơ Chế Tự Động Ẩn Sidebar (Auto-Hide Sidebar) Khi Chọn Menu:
+- **Tự động thu gọn Sidebar để mở rộng không gian làm việc (`static/js/app.js`, `templates/base.html`, `static/css/main.css`):**
+  * Bổ sung hàm `collapseSidebar()` và `syncSidebarUIState()` đồng bộ trạng thái thu gọn của `.app-sidebar`, mũi tên chỉ báo trên Topbar và lớp nền mờ `#sidebar-mobile-backdrop`.
+  * Khi người dùng bấm vào **bất kỳ mục menu nào trên Sidebar** (`.sidebar-item-main`, logo trang chủ hoặc chuyển tab qua `switchTab()`), hệ thống lập tức **tự động ẩn (auto-hide) Sidebar** để trả lại 100% không gian làm việc.
+  * Khi mở bất kỳ màn hình chi tiết toàn trang nào (`setTopbarFullpageMode` cho Thông tin nhân viên, Hợp đồng lao động, Phiếu lương, Chuyến xe, Báo giá, Booking), Sidebar cũng tự động ẩn hoàn toàn.
+  * Trên thiết bị di động và máy tính bảng (`< 1024px`), Sidebar hoạt động dưới dạng **Fixed Slide-Over Drawer** (`position: fixed; z-index: 60`) kèm lớp nền mờ `#sidebar-mobile-backdrop` (chạm ra ngoài tự đóng), chấm dứt triệt để tình trạng Sidebar đẩy ép phần nội dung chính bên phải.
+
+### 2. Xử Lý Nạp Đầy Đủ Dữ Liệu & Mở Khóa Lướt/Cuộn Lên Xuống Trên Di Động:
+- **Bổ sung hàm điều phối `loadHRData()` & sửa luồng điều hướng Nhân sự (`static/js/app.js`):**
+  * Định nghĩa hàm `loadHRData()` tự động nạp đồng thời danh sách Hồ sơ nhân sự, 4 thẻ KPI tổng quan và sub-tab hiện hành ngay khi người dùng bấm vào menu **Hành chính & Nhân sự** (`nhan-su`).
+  * Nâng cấp `openEditEmployeePage()` sang cơ chế bất đồng bộ an toàn (`async`): tự động nạp danh sách nhân sự nếu bộ nhớ đệm chưa có dữ liệu và hỗ trợ deep-link `/personnel/employees/<id>`, `/personnel/contracts/<id>`.
+  * Sửa lỗi ID vùng hiển thị trong `backToContracts()` và `backToPayroll()` từ `#view-personnel` về chuẩn `#view-nhan-su` kèm `resetTopbarStandardMode('nhan-su')`.
+- **Mở khóa cuộn dọc cảm ứng (`-webkit-overflow-scrolling: touch`) trên toàn bộ màn hình thông tin (`static/css/main.css`, `templates/views/view_personnel.html`, `templates/components/topbar.html`):**
+  * Gỡ bỏ khóa chiều cao cứng (`overflow-hidden` / `flex-1` lồng nhau nhiều tầng) trên màn hình `< 1024px` cho `#main-views > .view:not(.hidden-view)`, cho phép người dùng chạm tay lướt lên/xuống mượt mà từ đầu trang (qua các thẻ KPI, bộ lọc) xuống hết danh sách **Hồ sơ nhân sự**, **Hợp đồng lao động**, **Thông tin nhân viên**, **Chi tiết hợp đồng**, **Điều vận**, **Xe & Bãi**, **Dịch vụ Hải quan**, **Kế toán** và các nút thao tác cuối trang (`Sửa`, `Lưu`, `In`, `Xóa`).
+  * Tối ưu thanh Topbar trên màn hình điện thoại hiển thị gọn gàng trên 1 dòng duy nhất (`white-space: nowrap; text-overflow: ellipsis`).
+
 ## [v3.5.0] - 2026-10-17 (Sẵn Sàng Production, Chuẩn Hóa Trang Login, Trang Chi Tiết Bản Tin Mới Kèm Bộ Xem Trước Trực Tiếp PDF/Word/Excel)
 
 ### 1. Rà Soát & Triển Khai Môi Trường Production:

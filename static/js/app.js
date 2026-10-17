@@ -7048,6 +7048,14 @@ let currentPayrollSlipsList = [];
 let hrSortColumn = null;
 let hrSortDirection = 'asc';
 
+async function loadHRData() {
+    const activeSubTab = currentHRSubTab || 'directory';
+    await loadEmployeesData();
+    if (activeSubTab !== 'directory') {
+        switchHRSubTab(activeSubTab);
+    }
+}
+
 function switchHRSubTab(tabKey) {
     currentHRSubTab = tabKey;
     const tabs = ['directory', 'contracts', 'attendance', 'payroll', 'policies'];
@@ -8117,7 +8125,12 @@ async function openCreateContractPage(employeeId = null, updateHistory = true) {
     // Chuyển View sang view-contract-detail
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
     const contractView = document.getElementById('view-contract-detail');
-    if (contractView) contractView.classList.remove('hidden-view');
+    if (contractView) {
+        contractView.classList.remove('hidden-view');
+        contractView.scrollTop = 0;
+        const innerScroll = contractView.querySelector('.overflow-y-auto');
+        if (innerScroll) innerScroll.scrollTop = 0;
+    }
 
     setContractFormReadOnly(false);
     
@@ -8191,7 +8204,12 @@ async function openContractDetailPage(contractId, updateHistory = true) {
         // Chuyển sang View view-contract-detail
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
         const contractView = document.getElementById('view-contract-detail');
-        if (contractView) contractView.classList.remove('hidden-view');
+        if (contractView) {
+            contractView.classList.remove('hidden-view');
+            contractView.scrollTop = 0;
+            const innerScroll = contractView.querySelector('.overflow-y-auto');
+            if (innerScroll) innerScroll.scrollTop = 0;
+        }
 
         // Khóa form ở chế độ xem (ReadOnly) và hiện cụm 4 nút chuẩn [Sửa, Lưu, In, Xóa]
         setContractFormReadOnly(true);
@@ -8376,8 +8394,12 @@ function backToContracts() {
     if (contractView) contractView.classList.add('hidden-view');
 
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
-    const personnelView = document.getElementById('view-personnel');
+    const personnelView = document.getElementById('view-nhan-su');
     if (personnelView) personnelView.classList.remove('hidden-view');
+
+    if (typeof resetTopbarStandardMode === 'function') {
+        resetTopbarStandardMode('nhan-su');
+    }
 
     if (typeof switchHRSubTab === 'function') {
         switchHRSubTab('contracts');
@@ -8589,7 +8611,12 @@ async function openPayrollSlipDetailPage(slipId, updateHistory = true) {
         // Chuyển View sang view-payroll-slip-detail
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
         const slipView = document.getElementById('view-payroll-slip-detail');
-        if (slipView) slipView.classList.remove('hidden-view');
+        if (slipView) {
+            slipView.classList.remove('hidden-view');
+            slipView.scrollTop = 0;
+            const innerScroll = slipView.querySelector('.overflow-y-auto');
+            if (innerScroll) innerScroll.scrollTop = 0;
+        }
 
         setSlipFormReadOnly(true);
 
@@ -8704,8 +8731,12 @@ function backToPayroll() {
     if (slipView) slipView.classList.add('hidden-view');
 
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
-    const personnelView = document.getElementById('view-personnel');
+    const personnelView = document.getElementById('view-nhan-su');
     if (personnelView) personnelView.classList.remove('hidden-view');
+
+    if (typeof resetTopbarStandardMode === 'function') {
+        resetTopbarStandardMode('nhan-su');
+    }
 
     if (typeof switchHRSubTab === 'function') {
         switchHRSubTab('payroll');
@@ -12790,6 +12821,11 @@ const TAB_ROUTE_MAP = {
 
 // --- QUẢN LÝ CHẾ ĐỘ HIỂN THỊ TOPBAR LINH HOẠT (FULLPAGE BREADCRUMB VS STANDARD TABS) ---
 function setTopbarFullpageMode(config) {
+    // Tự động ẩn Sidebar để mở rộng tối đa không gian làm việc khi vào màn hình chi tiết
+    if (typeof collapseSidebar === 'function') {
+        collapseSidebar();
+    }
+
     const stdWrapper = document.getElementById('topbar-standard-wrapper');
     const fullWrapper = document.getElementById('topbar-fullpage-wrapper');
     if (stdWrapper) stdWrapper.classList.add('hidden');
@@ -12855,6 +12891,11 @@ function resetTopbarStandardMode(tabId) {
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
 function switchTab(tabId, updateHistory = true) {
     if (!tabId) tabId = 'dashboard';
+
+    // Tự động ẩn (auto-hide) Sidebar khi người dùng bấm chọn menu hoặc đang trên thiết bị di động
+    if ((updateHistory || window.innerWidth < 1024) && typeof collapseSidebar === 'function') {
+        collapseSidebar();
+    }
 
     // 1. Luôn đồng bộ URL sạch trên thanh địa chỉ trình duyệt trước tiên
     if (updateHistory && window.history && window.history.pushState) {
@@ -12925,7 +12966,10 @@ function switchTab(tabId, updateHistory = true) {
     // Chuyển đổi hiển thị view
     document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
     const targetView = document.getElementById(`view-${tabId}`);
-    if (targetView) targetView.classList.remove('hidden-view');
+    if (targetView) {
+        targetView.classList.remove('hidden-view');
+        targetView.scrollTop = 0;
+    }
 
     // Cập nhật Tiêu đề Phân hệ trên Topbar
     const topbarTitleEl = document.getElementById('topbar-page-title');
@@ -12956,6 +13000,15 @@ function switchTab(tabId, updateHistory = true) {
             dashboardActionsEl.classList.add('hidden');
         } else {
             dashboardActionsEl.classList.remove('hidden');
+        }
+    }
+
+    const periodContainerEl = document.getElementById('dashboard-period-dropdown-container');
+    if (periodContainerEl) {
+        if (['nhan-su', 'xe-bai', 'cai-dat', 'ban-tin', 'giao-viec'].includes(tabId)) {
+            periodContainerEl.classList.add('hidden');
+        } else {
+            periodContainerEl.classList.remove('hidden');
         }
     }
 
@@ -21216,13 +21269,10 @@ async function deleteMasterDataItem(id) {
 // TIỆN ÍCH GIAO DIỆN: ẨN / HIỆN SIDEBAR & BIỂU ĐỒ DASHBOARD
 // =========================================================================
 
-function toggleSidebar() {
-    const sidebar = document.querySelector('.app-sidebar');
+function syncSidebarUIState(isCollapsed) {
     const arrowIn = document.getElementById('icon-sidebar-arrow-in');
     const arrowOut = document.getElementById('icon-sidebar-arrow-out');
-    if (!sidebar) return;
-    sidebar.classList.toggle('collapsed');
-    const isCollapsed = sidebar.classList.contains('collapsed');
+    const backdrop = document.getElementById('sidebar-mobile-backdrop');
     if (arrowIn && arrowOut) {
         if (isCollapsed) {
             arrowIn.classList.add('hidden');
@@ -21232,10 +21282,39 @@ function toggleSidebar() {
             arrowOut.classList.add('hidden');
         }
     }
+    if (backdrop) {
+        if (isCollapsed || window.innerWidth >= 1024) {
+            backdrop.classList.add('hidden');
+        } else {
+            backdrop.classList.remove('hidden');
+        }
+    }
+}
+
+function collapseSidebar(savePreference = true) {
+    const sidebar = document.querySelector('.app-sidebar');
+    if (!sidebar) return;
+    sidebar.classList.add('collapsed');
+    syncSidebarUIState(true);
+    if (savePreference) {
+        try {
+            localStorage.setItem('bim_sidebar_collapsed', 'true');
+        } catch (e) {}
+    }
+}
+window.collapseSidebar = collapseSidebar;
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.app-sidebar');
+    if (!sidebar) return;
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    syncSidebarUIState(isCollapsed);
     try {
         localStorage.setItem('bim_sidebar_collapsed', isCollapsed ? 'true' : 'false');
     } catch (e) {}
 }
+window.toggleSidebar = toggleSidebar;
 
 function toggleDashboardCharts() {
     const rowPillars = document.getElementById('dashboard-row-pillars');
@@ -21289,17 +21368,21 @@ document.addEventListener('DOMContentLoaded', () => {
         dateEl.innerText = `${dayName}, ${d}/${m}/${y}`;
     }
 
-    // Khôi phục trạng thái thu gọn Sidebar từ localStorage
+    // Gắn sự kiện: Khi bấm vào bất kỳ menu nào trên Sidebar -> Tự động ẩn (auto-hide) Sidebar ngay lập tức
+    document.querySelectorAll('.app-sidebar .sidebar-item-main, .app-sidebar-header a').forEach(menuEl => {
+        menuEl.addEventListener('click', () => {
+            collapseSidebar();
+        });
+    });
+
+    // Trên thiết bị di động / tablet (< 1024px) hoặc khi người dùng đã thu gọn trước đó: Mặc định auto-hide Sidebar
     try {
-        if (localStorage.getItem('bim_sidebar_collapsed') === 'true') {
-            const sidebar = document.querySelector('.app-sidebar');
-            const arrowIn = document.getElementById('icon-sidebar-arrow-in');
-            const arrowOut = document.getElementById('icon-sidebar-arrow-out');
-            if (sidebar) sidebar.classList.add('collapsed');
-            if (arrowIn) arrowIn.classList.add('hidden');
-            if (arrowOut) arrowOut.classList.remove('hidden');
+        if (window.innerWidth < 1024 || localStorage.getItem('bim_sidebar_collapsed') === 'true') {
+            collapseSidebar(false);
         }
-    } catch (e) {}
+    } catch (e) {
+        if (window.innerWidth < 1024) collapseSidebar(false);
+    }
 
     // Khôi phục trạng thái ẩn biểu đồ từ localStorage
     try {
@@ -24672,6 +24755,32 @@ function resolveInitialRoute() {
         return;
     }
 
+    // 1.4. Kiểm tra deep-link hồ sơ nhân sự trang riêng: /personnel/employees/<id>
+    const empMatch = pathname.match(/^\/personnel\/employees\/([a-zA-Z0-9_-]+)/);
+    if (empMatch && empMatch[1]) {
+        const empId = empMatch[1];
+        switchTab('nhan-su', false);
+        if (empId === 'new') {
+            if (typeof openCreateEmployeePage === 'function') openCreateEmployeePage(false);
+        } else {
+            if (typeof openEditEmployeePage === 'function') openEditEmployeePage(empId, false);
+        }
+        return;
+    }
+
+    // 1.5. Kiểm tra deep-link hợp đồng lao động trang riêng: /personnel/contracts/<id>
+    const contractMatch = pathname.match(/^\/personnel\/contracts\/([a-zA-Z0-9_-]+)/);
+    if (contractMatch && contractMatch[1]) {
+        const contractId = contractMatch[1];
+        switchTab('nhan-su', false);
+        if (contractId === 'new') {
+            if (typeof openCreateContractPage === 'function') openCreateContractPage(null, false);
+        } else {
+            if (typeof openContractDetailPage === 'function') openContractDetailPage(contractId, false);
+        }
+        return;
+    }
+
     // 2. Chuyển đổi tương thích ngược: nếu người dùng vào từ link cũ có hash (#dieu-van, #kinh-doanh...)
     if (hash) {
         const cleanHash = hash.replace(/^\/+/, '');
@@ -27290,7 +27399,12 @@ function openCreateEmployeePage(updateHistory = true) {
 
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
     const formView = document.getElementById('view-employee-form');
-    if (formView) formView.classList.remove('hidden-view');
+    if (formView) {
+        formView.classList.remove('hidden-view');
+        formView.scrollTop = 0;
+        const innerScroll = formView.querySelector('.overflow-y-auto');
+        if (innerScroll) innerScroll.scrollTop = 0;
+    }
 
     setEmployeeFormReadOnly(false);
     const delBtn = document.getElementById('btn-employee-delete-bottom');
@@ -27314,11 +27428,15 @@ function openCreateEmployeePage(updateHistory = true) {
 window.openCreateEmployeePage = openCreateEmployeePage;
 window.openCreateEmployeeModal = openCreateEmployeePage;
 
-function openEditEmployeePage(id, updateHistory = true) {
-    const emp = (rawEmployeesList || []).find(e => e.id === id);
+async function openEditEmployeePage(id, updateHistory = true) {
+    let emp = (rawEmployeesList || []).find(e => String(e.id) === String(id));
+    if (!emp) {
+        await loadEmployeesData();
+        emp = (rawEmployeesList || []).find(e => String(e.id) === String(id));
+    }
     if (!emp) return;
 
-    document.getElementById('emp-edit-id').value = id;
+    document.getElementById('emp-edit-id').value = emp.id;
     const el = id_ => document.getElementById(id_);
     if (el('emp-code')) el('emp-code').value = emp.code || '';
     if (el('emp-full-name')) el('emp-full-name').value = emp.full_name || '';
@@ -27351,9 +27469,9 @@ function openEditEmployeePage(id, updateHistory = true) {
     handleEmployeeRoleChange();
 
     if (updateHistory && window.history && window.history.pushState) {
-        const path = `/personnel/employees/${id}`;
+        const path = `/personnel/employees/${emp.id}`;
         if (window.location.pathname !== path) {
-            window.history.pushState({ view: 'employee-form', employeeId: id }, '', path);
+            window.history.pushState({ view: 'employee-form', employeeId: emp.id }, '', path);
         }
     }
 
@@ -27364,7 +27482,12 @@ function openEditEmployeePage(id, updateHistory = true) {
 
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
     const formView = document.getElementById('view-employee-form');
-    if (formView) formView.classList.remove('hidden-view');
+    if (formView) {
+        formView.classList.remove('hidden-view');
+        formView.scrollTop = 0;
+        const innerScroll = formView.querySelector('.overflow-y-auto');
+        if (innerScroll) innerScroll.scrollTop = 0;
+    }
 
     setEmployeeFormReadOnly(true);
     const submitBtnText = document.getElementById('emp-submit-btn-text');

@@ -1246,3 +1246,124 @@ input[list="list-times-24h"]::-webkit-list-button {
     height: 0 !important;
     pointer-events: none !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHUẨN HÓA GIAO DIỆN DI ĐỘNG & TABLET (MOBILE-FIRST RESPONSIVE & TOUCH SCROLL)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+    body {
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+    }
+
+    /* 1. Sidebar hoạt động dạng Fixed Slide-Over Drawer trên Mobile, không ép hẹp màn hình chính */
+    .app-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        z-index: 60 !important;
+        margin-left: 0 !important;
+        transform: translateX(0);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease !important;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.55) !important;
+    }
+
+    .app-sidebar.collapsed {
+        transform: translateX(-105%) !important;
+        margin-left: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        box-shadow: none !important;
+    }
+
+    /* 2. Tối ưu Topbar gọn gàng trên màn hình điện thoại */
+    header.sticky.top-0 {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    #topbar-page-title {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        font-size: 0.925rem !important;
+        line-height: 1.3 !important;
+    }
+
+    #topbar-period-btn {
+        white-space: nowrap !important;
+        padding: 0.3rem 0.5rem !important;
+        font-size: 11px !important;
+    }
+
+    #topbar-standard-wrapper #topbar-dashboard-actions #btn-toggle-dashboard-charts span,
+    #topbar-standard-wrapper #topbar-dashboard-actions button[onclick="refreshCurrentView()"] span {
+        display: none !important;
+    }
+
+    #topbar-fullpage-wrapper h2 {
+        font-size: 0.85rem !important;
+        line-height: 1.25 !important;
+    }
+
+    /* 3. Mở khóa cuộn dọc (Vertical Touch Scroll) tự nhiên cho toàn bộ các View thông tin & danh sách */
+    #main-views {
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    #main-views > .view:not(.hidden-view) {
+        display: block !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain;
+        padding-bottom: 5.5rem !important;
+    }
+
+    /* Gỡ bỏ khóa chiều cao cứng (flex-1 / overflow-hidden) của các khối con để vuốt lên/xuống mượt mà */
+    #main-views > .view:not(.hidden-view) > .flex-1,
+    #main-views > .view:not(.hidden-view) > .overflow-y-auto,
+    #main-views > .view:not(.hidden-view) > .overflow-hidden,
+    #view-nhan-su > .bg-white,
+    #hr-panel-directory:not(.hidden),
+    #hr-panel-contracts:not(.hidden),
+    #hr-panel-attendance:not(.hidden),
+    #hr-panel-payroll:not(.hidden),
+    #hr-panel-policies:not(.hidden),
+    #view-dieu-van > .bg-white,
+    #view-xe-bai > .bg-white,
+    #view-hai-quan > .bg-white,
+    #view-kinh-doanh > .bg-white,
+    #view-ke-toan > .bg-white,
+    #view-cai-dat > .bg-white,
+    #view-giao-viec > .flex-1,
+    #view-ban-tin > .flex-1 {
+        height: auto !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        overflow-y: visible !important;
+        flex: none !important;
+    }
+
+    /* Cho phép bảng dữ liệu vừa vuốt ngang xem cột vừa vuốt dọc cuộn trang */
+    #main-views .erp-table-container,
+    #main-views .overflow-x-auto {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: 100px !important;
+        flex: none !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-x pan-y !important;
+    }
+}
+
