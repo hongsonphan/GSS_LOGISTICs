@@ -53,6 +53,25 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * `127_news_detail_page_excel_preview.png`: Trình xem trước bảng tính Excel hiển thị toàn bộ cột và dữ liệu định mức cước.
   * `128_news_detail_page_word_preview.png`: Trình xem trước văn bản Word chuyển đổi trực tiếp sang HTML.
   * `129_news_detail_page_comment_success.png`: Gửi ý kiến phản hồi dưới bài viết thành công.
+  * `130_login_biz_solutions_verified.png`: Xác thực đồng bộ thương hiệu `BIZ SOLUTIONS` trên trang Login.
+  * `131_help_section9_tasks_guide.png`, `132_help_section10_news_preview_guide.png`, `133_help_section11_chat_guide.png`, `134_help_section12_custom_charts_guide.png`: Xác thực 4 phân mục mới trên trang `/helps`.
+
+### 5. Cập Nhật Toàn Diện Sổ Tay Hướng Dẫn Sử Dụng (`/helps` - `templates/help.html`):
+- **Đồng bộ Cây Mục Lục Sidebar (`#help-tree-nav` - 65 điểm neo chuẩn 100%):**
+  * Mở rộng và cập nhật chi tiết các nhánh mục lục từ Mục 9 đến Mục 12 để người dùng tra cứu 1 chạm.
+- **Mục 9 — Bảng Theo Dõi Task & Quản Lý Giao Việc Văn Phòng:**
+  * Hướng dẫn chi tiết quy trình tạo nhiệm vụ mới với bố cục 4 ô chuẩn ngang hàng (`Người giao việc | Phòng ban | Người phụ trách | Hạn hoàn thành`), mặc định hạn hoàn thành là ngày mai (`+1d`) và nút chọn nhanh `+3d`, `+7d`.
+  * Hướng dẫn chọn Người liên quan theo dõi qua bảng danh sách 3 cột (`Phòng Ban | Họ và Tên | Chức Vụ`) kèm nút `Xong` hiển thị cố định.
+  * Hướng dẫn theo dõi tiến độ trên Bảng việc Dashboard (bộ lọc Tất cả / Của tôi / Quá hạn, thanh tiến độ %), bảng Kanban 4 cột, danh sách List và **Centered Modal Chi Tiết Công Việc** tích hợp bộ 4 nút chuẩn (`Xóa`, `Sửa`, `Lưu`, `Đóng`).
+- **Mục 10 — Bảng Thông Báo & Bản Tin Công Ty:**
+  * Hướng dẫn đăng bản tin mới, đính kèm tệp tài liệu, cơ chế nút **Ghim lên đầu trang** (Pin to Top) đưa bài viết lên khu vực Banner Trọng Tâm và đứng đầu Bảng thông báo Dashboard.
+  * Hướng dẫn mở trang chi tiết riêng biệt (`/news/<id>/`) kèm **Bộ Xem Trước Tài Liệu Trực Tiếp (Live Document Previewer)** cho file PDF, Word (`.docx`) và Excel (`.xlsx`, `.xls`) ngay trên trình duyệt.
+- **Mục 11 — Tính Năng Chat Nội Bộ & Chuông Thông Báo Thông Minh:**
+  * Hướng dẫn sử dụng Bong bóng Chat nổi, Kênh chung, Kênh theo phòng ban và nút **`+ Nhắn tin mới`** để mở phòng **Chat 1-1** riêng tư từ danh bạ.
+  * Hướng dẫn gõ `@Mention` tag tên đồng nghiệp, trích dẫn trả lời (`Reply`), đính kèm nhiều tệp/hình ảnh có thanh xem trước, trạng thái `✓` (1 check) / `✓✓` (2 check xanh ngọc) và Chuông thông báo điều hướng 1 chạm.
+- **Mục 12 — Biểu Đồ Tùy Biến Trên Dashboard (Pivot Chart Builder & Splitter):**
+  * Hướng dẫn sử dụng nút `[Tùy biến]`, nút `[Mặc định]` và thanh kéo co giãn tỷ lệ độ rộng (`Splitter`).
+  * Hướng dẫn chi tiết **5 bước cấu hình Pivot Chart Builder** trên 8 nguồn dữ liệu cốt lõi, chọn trục phân nhóm, chỉ số đo lường (`SUM`, `AVG`, `COUNT`), 5 loại biểu đồ (`Cột đứng`, `Cột ngang`, `Đường xu hướng`, `Donut`, `Pie`), giới hạn Top 5/10/15/20, khung **Xem Trước Trực Tiếp (Live Preview)** kèm bảng tỷ trọng (%) và tự động lưu cấu hình cá nhân.
 
 ---
 
