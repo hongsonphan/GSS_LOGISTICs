@@ -2,21 +2,15 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [v3.5.4] - 2026-10-17 (Chuẩn Hóa Màn Hình Chat Di Động Full Visual Viewport Theo Chuẩn Bim Ecosystem)
+## [v3.5.4] - 2026-10-17 (Tối Ưu Không Gian Màn Hình Chat Di Động Full Visual Viewport — Giữ Nguyên Bộ Icon & Phong Cách Thiết Kế Hiện Đại)
 
 ### 1. Màn Hình Chat Di Động Toàn Khung Hình & Đồng Bộ Bàn Phím Ảo (`visualViewport`):
-- **Khắc phục triệt để lỗi đẩy lệch cửa sổ chat khi bật bàn phím ảo trên Mobile (`static/css/main.css`, `static/js/collaboration.js`):**
+- **Khắc phục triệt để lỗi đẩy lệch cửa sổ chat và vướng nút nổi khi bật bàn phím ảo trên Mobile (`static/css/main.css`, `static/js/collaboration.js`):**
   * Chuyển `#chat-floating-window` trên màn hình `< 1024px` sang chế độ **Full Visual Viewport** (`position: fixed; top: var(--chat-vv-top, 0px); left: 0; right: 0; width: 100vw; height: var(--chat-vv-height, 100dvh); border-radius: 0; z-index: 9999`).
-  * Xây dựng hàm `syncMobileChatViewport()` lắng nghe trực tiếp `window.visualViewport` (`resize`, `scroll`) và sự kiện `focus`/`blur` của ô nhập tin nhắn: khi bàn phím ảo bật lên trên iOS/Android, thanh Header màu xanh Teal luôn neo cố định ở đỉnh màn hình, vùng tin nhắn tự động co giãn vừa khít và cuộn xuống tin nhắn mới nhất ngay sát phía trên thanh nhập liệu.
-  * Tự động ẩn nút nổi `#chat-bubble-btn` khi cửa sổ chat đang mở trên di động (`#chat-bubble-container.chat-is-open #chat-bubble-btn { display: none !important; }`), không còn hiện tượng nút tròn đè lên màn hình chat.
-
-### 2. Đồng Bộ Thiết Kế Giao Diện Chat Theo Chuẩn Bim Consulting (`templates/components/chat_bubble.html`, `static/js/collaboration.js`):
-- **Header & Bong bóng tin nhắn chuẩn nhận diện `#00897b`:**
-  * Header màu xanh Teal `#00897b` với biểu tượng `ph-fill ph-chats` trắng, tiêu đề in hoa sắc nét và nút đóng `×`.
-  * Bong bóng tin nhắn gửi đi màu `#00897b` chữ trắng bo góc mềm mại (`rounded-[18px] rounded-br-[4px]`), tự động nhận diện và tạo liên kết gạch chân có thể bấm trực tiếp (`formatChatMessageContent()`) cho mọi đường dẫn `http://` hoặc `https://`.
-  * Hiển thị đầy đủ thời gian định dạng `HH:mm DD/MM/YYYY` kèm biểu tượng hai dấu check xanh `✓✓` (`formatChatTimestamp()`) bên dưới mỗi tin nhắn.
-- **Thanh nhập tin nhắn dạng Pill hiện đại:**
-  * Thiết kế thanh nhập liệu bo tròn dạng viên thuốc (`bg-[#f3f4f6] rounded-full`) tích hợp biểu tượng chọn hình ảnh/tệp (`ph-fill ph-image`) bên trái, ô nhập `Tin nhắn...` (`font-size: 16px` chống tự động phóng to trên di động) ở giữa và nút máy bay giấy màu xanh `#00897b` (`ph-fill ph-paper-plane-right`) bên phải.
+  * Xây dựng hàm `syncMobileChatViewport()` lắng nghe trực tiếp `window.visualViewport` (`resize`, `scroll`) và sự kiện `focus`/`blur` của ô nhập tin nhắn: khi bàn phím ảo bật lên trên iOS/Android, thanh Header luôn neo cố định ở đỉnh màn hình, vùng tin nhắn tự động co giãn vừa khít và cuộn xuống tin nhắn mới nhất ngay sát phía trên thanh nhập liệu.
+  * Tự động ẩn nút nổi `#chat-bubble-btn` khi cửa sổ chat đang mở trên di động (`#chat-bubble-container.chat-is-open #chat-bubble-btn { display: none !important; }`), mở rộng tối đa không gian trò chuyện và không còn hiện tượng nút tròn đè lên màn hình.
+- **Bảo toàn 100% bộ Icon Phosphor & Thiết kế hiện đại của hệ thống (`templates/components/chat_bubble.html`, `static/js/collaboration.js`):**
+  * Giữ nguyên bộ biểu tượng (`ph-bold ph-chats-circle`, `ph-bold ph-chats`, `ph-bold ph-paperclip`, `ph-bold ph-paper-plane-right`), Header `bg-teal-800`, bong bóng tin nhắn `bg-teal-700` / `bg-white border border-slate-200` và khung nhập liệu hiện đại của Bim Logistics.
 
 ## [v3.5.3] - 2026-10-17 (Tối Ưu Giao Diện Di Động Toàn Diện: Auto-Hide Sidebar & Mở Khóa Cuộn Dọc Cảm Ứng Mượt Mà)
 

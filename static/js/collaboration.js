@@ -2160,21 +2160,21 @@ async function loadChatRooms() {
         }
 
         listEl.innerHTML = json.data.map(r => `
-            <div onclick="openChatRoom(${r.id}, '${escapeHtml(r.name)}')" class="p-3.5 bg-white rounded-2xl border border-slate-200/80 hover:border-[#00897b] hover:bg-teal-50/40 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-2xs group">
+            <div onclick="openChatRoom(${r.id}, '${escapeHtml(r.name)}')" class="p-3 bg-white rounded-xl border border-slate-200/80 hover:border-teal-400 hover:bg-teal-50/40 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-2xs group">
                 <div class="flex items-center gap-3 overflow-hidden">
-                    <div class="w-10 h-10 rounded-xl ${r.room_type === 'COMPANY' ? 'bg-[#00897b] text-white' : (r.room_type === 'DEPARTMENT' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-white')} flex items-center justify-center shrink-0 text-base font-bold shadow-2xs">
-                        <i class="${r.room_type === 'COMPANY' ? 'ph-fill ph-chats' : (r.room_type === 'DEPARTMENT' ? 'ph-bold ph-users-three' : 'ph-bold ph-chat-teardrop-text')}"></i>
+                    <div class="w-9 h-9 rounded-xl ${r.room_type === 'COMPANY' ? 'bg-teal-700 text-white' : (r.room_type === 'DEPARTMENT' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-white')} flex items-center justify-center shrink-0 text-sm font-bold shadow-2xs">
+                        <i class="${r.room_type === 'COMPANY' ? 'ph-bold ph-buildings' : (r.room_type === 'DEPARTMENT' ? 'ph-bold ph-users-three' : 'ph-bold ph-chat-teardrop-text')}"></i>
                     </div>
                     <div class="overflow-hidden">
-                        <h5 class="text-[13px] sm:text-xs font-bold text-slate-800 group-hover:text-[#00897b] truncate">${escapeHtml(r.name)}</h5>
-                        <p class="text-xs sm:text-[11px] text-slate-400 truncate mt-0.5">
+                        <h5 class="text-xs font-bold text-slate-800 group-hover:text-teal-800 truncate">${escapeHtml(r.name)}</h5>
+                        <p class="text-[11px] text-slate-400 truncate mt-0.5">
                             ${r.last_message ? `${escapeHtml(r.last_message.sender_name)}: ${escapeHtml(r.last_message.content || '[Tệp tin]')}` : 'Chưa có tin nhắn'}
                         </p>
                     </div>
                 </div>
 
                 ${r.unread_count > 0 ? `
-                    <span class="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold shrink-0">
+                    <span class="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold shrink-0">
                         ${r.unread_count}
                     </span>
                 ` : ''}
@@ -2194,7 +2194,7 @@ function showChatRoomsList() {
     document.getElementById('chat-messages-view').classList.add('hidden');
     document.getElementById('chat-btn-back-rooms').classList.add('hidden');
 
-    document.getElementById('chat-header-title').textContent = 'THẢO LUẬN NỘI BỘ';
+    document.getElementById('chat-header-title').textContent = 'Trò Chuyện Nội Bộ';
     document.getElementById('chat-header-subtitle').textContent = 'Văn phòng Triền Võ Logistics';
 
     loadChatRooms();
@@ -2248,10 +2248,10 @@ async function pollChatMessages(isPeriodic = true) {
                 const msgId = parseInt(el.getAttribute('data-my-msg-id'), 10);
                 if (msgId <= json.max_other_read_id) {
                     const statusEl = el.querySelector('.chat-status-icon');
-                    if (statusEl) {
-                        statusEl.className = 'chat-status-icon text-[#00897b] inline-flex items-center ml-1';
+                    if (statusEl && !statusEl.classList.contains('text-teal-600')) {
+                        statusEl.className = 'chat-status-icon text-teal-600 inline-flex items-center ml-1';
                         statusEl.setAttribute('title', 'Đã đọc');
-                        statusEl.innerHTML = '<i class="ph-bold ph-checks text-[13px]"></i>';
+                        statusEl.innerHTML = '<i class="ph-bold ph-checks text-[12px]"></i>';
                     }
                 }
             });
@@ -2263,38 +2263,38 @@ async function pollChatMessages(isPeriodic = true) {
                 const isMe = currentUserId && msg.sender === currentUserId;
                 const msgEl = document.createElement('div');
                 msgEl.id = `chat-msg-${msg.id}`;
-                msgEl.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+                msgEl.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`;
                 if (isMe) {
                     msgEl.setAttribute('data-my-msg-id', msg.id);
                 }
 
-                const timeStr = formatChatTimestamp(msg.created_at);
+                const timeStr = formatTimeOnly(msg.created_at);
                 const checkIconHtml = isMe ? (
                     msg.is_read ?
-                    `<span class="chat-status-icon text-[#00897b] inline-flex items-center ml-1" title="Đã đọc"><i class="ph-bold ph-checks text-[13px]"></i></span>` :
-                    `<span class="chat-status-icon text-[#00897b] inline-flex items-center ml-1" title="Đã gửi"><i class="ph-bold ph-checks text-[13px] opacity-80"></i></span>`
+                    `<span class="chat-status-icon text-teal-600 inline-flex items-center ml-1" title="Đã đọc"><i class="ph-bold ph-checks text-[12px]"></i></span>` :
+                    `<span class="chat-status-icon text-slate-400 inline-flex items-center ml-1" title="Đã gửi (Chưa đọc)"><i class="ph-bold ph-check text-[10.5px]"></i></span>`
                 ) : '';
 
                 msgEl.innerHTML = `
-                    ${!isMe ? `<span class="text-[11px] font-bold text-slate-500 px-1 mb-1">${escapeHtml(msg.sender_info?.full_name || msg.sender_name)}</span>` : ''}
-                    <div class="max-w-[82%] rounded-[18px] px-4 py-2.5 text-[15px] sm:text-[13px] leading-snug shadow-2xs break-words ${isMe ? 'bg-[#00897b] text-white rounded-br-[4px]' : 'bg-[#f1f5f9] text-slate-800 rounded-bl-[4px]'}">
+                    ${!isMe ? `<span class="text-[10px] font-bold text-slate-500 px-1">${escapeHtml(msg.sender_info?.full_name || msg.sender_name)}</span>` : ''}
+                    <div class="max-w-[80%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed shadow-2xs ${isMe ? 'bg-teal-700 text-white rounded-br-xs' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-xs'}">
                         ${msg.reply_to_snippet ? `
-                            <div class="mb-1.5 pb-1 border-b ${isMe ? 'border-white/25' : 'border-slate-300'} text-xs opacity-85">
+                            <div class="mb-1 pb-1 border-b border-white/20 text-[10px] opacity-80">
                                 <strong>${escapeHtml(msg.reply_to_snippet.sender_name)}:</strong> ${escapeHtml(msg.reply_to_snippet.snippet)}
                             </div>
                         ` : ''}
                         <div class="whitespace-pre-line break-words">${formatChatMessageContent(msg.content, isMe)}</div>
                         ${msg.attachments && msg.attachments.length > 0 ? `
-                            <div class="mt-2 space-y-1 pt-1.5 border-t ${isMe ? 'border-white/20' : 'border-slate-200'}">
+                            <div class="mt-2 space-y-1 pt-1 border-t ${isMe ? 'border-teal-600' : 'border-slate-100'}">
                                 ${msg.attachments.map(att => `
-                                    <a href="${att.file}" target="_blank" download class="flex items-center gap-1.5 text-xs ${isMe ? 'text-white underline hover:text-teal-100' : 'text-[#00897b] underline hover:text-teal-800'}">
+                                    <a href="${att.file}" target="_blank" download class="flex items-center gap-1.5 text-[10.5px] ${isMe ? 'text-teal-100 hover:text-white' : 'text-teal-700 hover:underline'}">
                                         <i class="ph-bold ph-paperclip"></i> ${escapeHtml(att.original_name)}
                                     </a>
                                 `).join('')}
                             </div>
                         ` : ''}
                     </div>
-                    <div class="flex items-center text-[11px] sm:text-[10px] text-slate-400 px-1 mt-1">
+                    <div class="flex items-center text-[9px] text-slate-400 px-1">
                         <span>${timeStr}</span>
                         ${checkIconHtml}
                     </div>
