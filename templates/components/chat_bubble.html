@@ -2,34 +2,37 @@
 <!-- COMPONENT: CHAT BUBBLE & FLOATING TEAM CHAT WINDOW         -->
 <!-- Kế thừa tiêu chuẩn quốc tế từ Bim Ecosystem                -->
 <!-- ======================================================== -->
-<div id="chat-bubble-container" class="fixed bottom-6 right-6 z-50 select-none">
+<div id="chat-bubble-container" class="fixed bottom-5 right-5 z-[90] select-none">
     <!-- Nút Nổi Chat Bubble -->
-    <button type="button" id="chat-bubble-btn" onclick="toggleChatWindow()" class="bg-teal-700 hover:bg-teal-800 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 relative border-2 border-white">
-        <i class="ph-bold ph-chats-circle text-2xl"></i>
+    <button type="button" id="chat-bubble-btn" onclick="toggleChatWindow()" class="bg-[#00897b] hover:bg-teal-800 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 relative border-2 border-white">
+        <svg class="w-7 h-7 fill-current text-white" viewBox="0 0 24 24">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+        </svg>
         <!-- Huy hiệu tin nhắn chưa đọc -->
         <span id="chat-unread-badge" class="hidden absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-white shadow-md animate-pulse">0</span>
     </button>
 
-    <!-- Cửa Sổ Chat Nổi (Floating Chat Drawer - Chuẩn Bim Ecosystem) -->
-    <div id="chat-floating-window" style="bottom: 72px; right: 0;" class="hidden absolute right-0 w-[360px] sm:w-[420px] h-[520px] max-h-[calc(100vh-100px)] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-200 origin-bottom-right">
+    <!-- Cửa Sổ Chat Nổi (Desktop: Floating Drawer | Mobile: Full Visual Viewport như Bim Consulting) -->
+    <div id="chat-floating-window" style="bottom: 72px; right: 0;" class="hidden absolute right-0 w-[380px] sm:w-[420px] h-[540px] max-h-[calc(100vh-100px)] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-200 origin-bottom-right">
         
-        <!-- HEADER CỬA SỔ CHAT -->
-        <div class="bg-teal-800 px-4 py-3 flex justify-between items-center text-white shrink-0 shadow-xs">
-            <div class="flex items-center gap-2">
-                <button type="button" id="chat-btn-back-rooms" onclick="showChatRoomsList()" class="hidden p-1 hover:bg-teal-700 rounded-lg transition-colors mr-0.5">
-                    <i class="ph-bold ph-arrow-left text-base"></i>
+        <!-- HEADER CỬA SỔ CHAT (Chuẩn Bim Ecosystem - Teal #00897b) -->
+        <div class="bg-[#00897b] px-4 py-3.5 flex justify-between items-center text-white shrink-0 shadow-xs">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                <button type="button" id="chat-btn-back-rooms" onclick="showChatRoomsList()" class="hidden p-1 -ml-1 hover:bg-white/15 rounded-lg transition-colors shrink-0 text-white" title="Danh sách kênh chat">
+                    <i class="ph-bold ph-arrow-left text-lg"></i>
                 </button>
-                <div class="w-7 h-7 rounded-lg bg-teal-700/80 flex items-center justify-center text-teal-200">
-                    <i class="ph-bold ph-chats text-base"></i>
-                </div>
-                <div>
-                    <h4 id="chat-header-title" class="font-bold text-xs uppercase tracking-wide truncate max-w-[220px]">Trò Chuyện Nội Bộ</h4>
-                    <p id="chat-header-subtitle" class="text-[10.5px] text-teal-200 truncate">Văn phòng Triền Võ Logistics</p>
+                <!-- Biểu tượng 2 bong bóng chat đặc màu trắng chuẩn Hình 2 (fa-comments solid) -->
+                <svg class="w-6 h-6 fill-current text-white shrink-0" viewBox="0 0 640 512">
+                    <path d="M208 352c114.9 0 208-78.8 208-176S322.9 0 208 0S0 78.8 0 176c0 38.6 14.7 74.3 39.6 103.4c-3.5 9.4-8.7 17.7-14.2 24.7c-4.8 6.2-9.7 11-13.3 14.3c-1.8 1.6-3.3 2.9-4.3 3.7c-.5 .4-.9 .7-1.1 .8l-.2 .2 0 0 0 0C1 327.2-1.4 334.4 .8 340.9S9.1 352 16 352c21.8 0 43.8-5.6 62.1-12.5c9.2-3.5 17.8-7.4 25.3-11.4C134.1 343.3 169.8 352 208 352zM448 176c0 112.3-99.1 196.9-216.5 207C255.8 457.4 336.4 512 432 512c38.2 0 73.9-8.7 104.7-23.9c7.5 4 16 7.9 25.2 11.4c18.3 6.9 40.3 12.5 62.1 12.5c6.9 0 13.1-4.5 15.2-11.1c2.1-6.6-.2-13.8-5.8-17.9l0 0 0 0-.2-.2c-.2-.2-.6-.4-1.1-.8c-1-.8-2.5-2-4.3-3.7c-3.6-3.3-8.5-8.1-13.3-14.3c-5.5-7-10.7-15.4-14.2-24.7c24.9-29 39.6-64.7 39.6-103.4c0-92.8-84.9-168.9-192.6-175.5c.4 5.1 .6 10.3 .6 15.5z"/>
+                </svg>
+                <div class="min-w-0 flex-1">
+                    <h4 id="chat-header-title" class="font-bold text-[15px] sm:text-xs uppercase tracking-wide truncate text-white leading-tight">THẢO LUẬN NỘI BỘ</h4>
+                    <p id="chat-header-subtitle" class="hidden sm:block text-[10.5px] text-teal-100 truncate mt-0.5">Văn phòng Triền Võ Logistics</p>
                 </div>
             </div>
-            <div class="flex items-center gap-1">
-                <button type="button" onclick="toggleChatWindow()" class="p-1 hover:bg-teal-700 rounded-lg text-teal-200 hover:text-white transition-colors" title="Thu nhỏ">
-                    <i class="ph-bold ph-x text-lg"></i>
+            <div class="flex items-center shrink-0">
+                <button type="button" onclick="toggleChatWindow()" class="p-1 hover:bg-white/15 rounded-lg text-white/95 hover:text-white transition-colors" title="Đóng cửa sổ chat">
+                    <i class="ph-bold ph-x text-xl"></i>
                 </button>
             </div>
         </div>
@@ -37,63 +40,72 @@
         <!-- VIEW 1: DANH SÁCH CÁC KÊNH & CUỘC TRÒ CHUYỆN -->
         <div id="chat-rooms-view" class="flex-1 flex flex-col overflow-hidden bg-slate-50">
             <!-- Nút tạo chat 1-1 nhanh -->
-            <div class="p-3 bg-white border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
-                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Kênh & Trò chuyện</span>
-                <button type="button" onclick="toggleChatDirectoryDropdown()" class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 border border-teal-200">
-                    <i class="ph-bold ph-user-plus text-xs"></i>
+            <div class="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+                <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Kênh & Trò chuyện</span>
+                <button type="button" onclick="toggleChatDirectoryDropdown()" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-[#00897b] rounded-full text-xs font-bold transition-colors inline-flex items-center gap-1.5 border border-teal-200">
+                    <i class="ph-bold ph-user-plus text-sm"></i>
                     <span>Nhắn tin mới</span>
                 </button>
             </div>
 
             <!-- Dropdown chọn nhân viên chat 1-1 -->
-            <div id="chat-directory-dropdown" class="hidden p-2 bg-teal-50/90 border-b border-teal-200 shrink-0">
-                <p class="text-[10px] font-bold text-teal-800 uppercase mb-1">Chọn đồng nghiệp để nhắn tin:</p>
-                <select id="chat-select-colleague" onchange="startDirectChat(this.value)" class="w-full bg-white border border-teal-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 outline-none">
+            <div id="chat-directory-dropdown" class="hidden p-3 bg-teal-50/90 border-b border-teal-200 shrink-0">
+                <p class="text-[11px] font-bold text-teal-900 uppercase mb-1.5">Chọn đồng nghiệp để nhắn tin:</p>
+                <select id="chat-select-colleague" onchange="startDirectChat(this.value)" class="w-full bg-white border border-teal-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none">
                     <option value="">-- Chọn nhân sự văn phòng --</option>
                 </select>
             </div>
 
             <!-- Danh sách các phòng -->
-            <div id="chat-rooms-list" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+            <div id="chat-rooms-list" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
                 <div class="text-center py-8 text-xs text-slate-400">Đang tải danh sách kênh...</div>
             </div>
         </div>
 
-        <!-- VIEW 2: MÀN HÌNH TIN NHẮN TRONG PHÒNG -->
-        <div id="chat-messages-view" class="hidden flex-1 flex flex-col overflow-hidden bg-slate-100">
+        <!-- VIEW 2: MÀN HÌNH TIN NHẮN TRONG PHÒNG (Chuẩn giao diện Hình 2) -->
+        <div id="chat-messages-view" class="hidden flex-1 flex flex-col overflow-hidden bg-white">
             <!-- Khu vực cuộn tin nhắn -->
-            <div id="chat-messages-scroll" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar flex flex-col">
+            <div id="chat-messages-scroll" class="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 custom-scrollbar flex flex-col bg-white">
                 <div class="text-center py-4 text-xs text-slate-400">Đang tải tin nhắn...</div>
             </div>
 
             <!-- Preview tệp đính kèm trước khi gửi -->
-            <div id="chat-pending-files-preview" class="hidden px-3 py-1.5 bg-slate-200 border-t border-slate-300 text-xs text-slate-700 flex items-center justify-between">
+            <div id="chat-pending-files-preview" class="hidden px-4 py-2 bg-teal-50 border-t border-teal-100 text-xs text-teal-900 flex items-center justify-between shrink-0">
                 <span id="chat-pending-files-text" class="truncate font-semibold"></span>
-                <button type="button" onclick="clearPendingChatFiles()" class="text-rose-600 hover:text-rose-800 p-0.5">
+                <button type="button" onclick="clearPendingChatFiles()" class="text-rose-600 hover:text-rose-800 p-1">
                     <i class="ph-bold ph-x"></i>
                 </button>
             </div>
 
-            <!-- Form Nhập Tin Nhắn -->
-            <div class="p-2.5 bg-white border-t border-slate-200 shrink-0">
-                <div class="flex items-end gap-1.5 relative">
+            <!-- Thanh Nhập Tin Nhắn Dạng Pill (Chuẩn Hình 2) -->
+            <div class="px-3 py-2.5 bg-white border-t border-slate-100 shrink-0">
+                <div class="flex items-center gap-2.5 bg-[#f4f5f7] rounded-full px-3.5 py-2 relative">
                     <!-- Dropdown Mention @ -->
                     <div id="chat-mention-dropdown" class="hidden absolute bottom-full left-0 mb-2 w-64 bg-white border border-slate-200 shadow-2xl rounded-xl max-h-48 overflow-y-auto z-50 text-xs custom-scrollbar">
                         <!-- Mention items injected via JS -->
                     </div>
 
-                    <!-- Nút đính kèm tệp -->
-                    <label class="cursor-pointer p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0">
-                        <i class="ph-bold ph-paperclip text-lg"></i>
+                    <!-- Icon đính kèm hình ảnh / tệp (fa-image solid chuẩn Hình 2) -->
+                    <label class="cursor-pointer p-1 text-[#757575] hover:text-[#00897b] transition-colors shrink-0 flex items-center justify-center" title="Đính kèm hình ảnh hoặc tài liệu">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 512 512">
+                            <path d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
+                        </svg>
                         <input type="file" id="chat-file-input" onchange="handleChatFilesSelected(event)" class="hidden" multiple>
                     </label>
 
-                    <!-- Textarea Tin nhắn -->
-                    <textarea id="chat-message-input" rows="1" onkeydown="handleChatInputKeydown(event)" placeholder="Nhập tin nhắn (Enter để gửi, @tag tên)..." class="flex-1 bg-slate-100 border-none rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none resize-none max-h-24 leading-relaxed"></textarea>
+                    <!-- Ô nhập tin nhắn -->
+                    <textarea id="chat-message-input" rows="1"
+                        onkeydown="handleChatInputKeydown(event)"
+                        oninput="autoResizeChatInput(this)"
+                        placeholder="Tin nhắn..."
+                        style="border: none !important; box-shadow: none !important; outline: none !important; background: transparent !important;"
+                        class="flex-1 bg-transparent border-none outline-none focus:ring-0 text-[15px] sm:text-[13px] text-slate-800 placeholder:text-slate-400 resize-none py-1 max-h-24 leading-snug"></textarea>
 
-                    <!-- Nút Gửi -->
-                    <button type="button" onclick="sendChatMessage()" class="p-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl transition-colors shrink-0 shadow-xs">
-                        <i class="ph-bold ph-paper-plane-right text-base"></i>
+                    <!-- Nút Gửi (fa-paper-plane solid màu xanh Teal #00897b chuẩn Hình 2) -->
+                    <button type="button" onclick="sendChatMessage()" class="p-1 text-[#00897b] hover:text-teal-800 active:scale-95 transition-all shrink-0 flex items-center justify-center" title="Gửi tin nhắn">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 512 512">
+                            <path d="M498.1 5.6c10.1 7 15.4 19.1 13.5 31.2l-64 416c-1.5 9.7-7.4 18.2-16 23s-18.9 5.4-28 1.6L284 427.7l-68.5 74.1c-8.9 9.7-22.9 12.9-35.2 8.1S160 493.2 160 480V396.4c0-4 1.5-7.8 4.2-10.7L331.8 202.8c5.8-6.3 5.6-16-.4-22s-15.7-6.4-22-.7L106 360.8 17.7 316.6C7.1 311.3 .3 300.7 0 288.9s5.9-22.8 16.1-28.7l448-256c10.7-6.1 23.9-5.5 34 1.4z"/>
+                        </svg>
                     </button>
                 </div>
             </div>

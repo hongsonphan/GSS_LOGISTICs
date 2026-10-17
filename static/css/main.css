@@ -50,8 +50,14 @@ body, input, select, textarea, button, table, th, td {
 }
 
 /* Đảm bảo Font Phosphor Icons không bao giờ bị ghi đè font-family */
-i[class*="ph-"], i[class*="ph"], [class*="ph-"]::before, [class*="ph"]::before {
+i.ph, i[class^="ph-"], [class^="ph-"]::before {
     font-family: "Phosphor", "Phosphor-Fill", "Phosphor-Bold", "Phosphor-Thin", "Phosphor-Light" !important;
+}
+i.ph-fill, i.ph-fill::before {
+    font-family: "Phosphor-Fill", "Phosphor" !important;
+}
+i.ph-bold, i.ph-bold::before {
+    font-family: "Phosphor-Bold", "Phosphor" !important;
 }
 
 body {
@@ -1365,5 +1371,30 @@ input[list="list-times-24h"]::-webkit-list-button {
         -webkit-overflow-scrolling: touch !important;
         touch-action: pan-x pan-y !important;
     }
-}
 
+    /* 4. Chuẩn hóa Màn hình Chat trên Di động (Full Visual Viewport chuẩn Bim Ecosystem) */
+    #chat-bubble-container.chat-is-open #chat-bubble-btn {
+        display: none !important;
+    }
+
+    #chat-floating-window {
+        position: fixed !important;
+        top: var(--chat-vv-top, 0px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: var(--chat-vv-height, 100dvh) !important;
+        max-height: var(--chat-vv-height, 100dvh) !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        z-index: 9999 !important;
+        margin: 0 !important;
+    }
+
+    #chat-message-input {
+        font-size: 16px !important;
+    }
+}
