@@ -246,7 +246,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 - **Mục đích:** Quản lý hồ sơ đối tác chủ hàng, nhà máy xuất nhập khẩu và các công ty logistics giao dịch.
 - **Các trường thông tin chi tiết:**
   * **Mã Khách Hàng (`*`):** Mã hệ thống tự động hoặc thủ công viết hoa không dấu (Ví dụ: `KH001`, `SAMSUNG`, `VINFAST`, `THP_GROUP`).
-  * **Tên Viết Tắt (`short_name`):** Tên thương hiệu ngắn gọn (Ví dụ: `HHP`, `SAMSUNG`, `TRIỀN VÕ`), được hiển thị thành một **cột riêng biệt** trên bảng dữ liệu với badge màu xanh ngọc nhận diện nhanh.
+  * **Tên Viết Tắt (`short_name`):** Tên thương hiệu ngắn gọn (Ví dụ: `HHP`, `SAMSUNG`, `TRIỀN VÕ`), được hiển thị thành một **cột riêng biệt** trên bảng dữ liệu dưới dạng văn bản chuẩn mực, rõ ràng và có thể tùy biến ẩn/hiện hoặc đổi thứ tự.
   * **Tên Doanh Nghiệp Đầy Đủ (`*`):** Tên công ty pháp lý (Ví dụ: `CÔNG TY TNHH VẬT LIỆU XÂY DỰNG HOÀNG HẢI PHÁT`). Cột này được trình bày độc lập, rõ ràng, không bị lồng badge viết tắt.
   * **Mã Số Thuế (`*`):** MST 10 hoặc 13 số bắt buộc để phục vụ xuất hóa đơn điện tử hợp lệ.
   * **Địa Chỉ Trụ Sở Doanh Nghiệp (`*`):** Địa chỉ ghi trên giấy phép ĐKKD.

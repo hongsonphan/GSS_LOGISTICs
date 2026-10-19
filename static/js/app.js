@@ -20205,7 +20205,7 @@ function renderMasterDataTable(items, total = items.length) {
         tableHead.innerHTML = `
             <tr>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_code" data-col-name="Mã Khách">Mã Khách</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_short_name" data-col-name="Tên Viết Tắt">Tên Viết Tắt</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_short_name" data-col-name="Tên Viết Tắt">Tên Viết Tắt</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_name" data-col-name="Tên Khách Hàng / Doanh Nghiệp">Tên Khách Hàng / Doanh Nghiệp</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_tax_code" data-col-name="Mã Số Thuế">Mã Số Thuế</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_address" data-col-name="Địa Chỉ">Địa Chỉ</th>
@@ -20218,9 +20218,7 @@ function renderMasterDataTable(items, total = items.length) {
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200" data-col-key="customer_code">${escapeHtml(item.code || '')}</td>
-                <td class="py-2 px-3 text-center border-r border-slate-200" data-col-key="customer_short_name">
-                    ${item.short_name ? `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-black bg-teal-100 text-teal-800 border border-teal-300 uppercase tracking-wide shrink-0" title="Tên viết tắt">${escapeHtml(item.short_name)}</span>` : '<span class="text-slate-400 font-normal">—</span>'}
-                </td>
+                <td class="py-2 px-3 text-[12px] font-bold text-slate-800 border-r border-slate-200" data-col-key="customer_short_name">${escapeHtml(item.short_name || '—')}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200" data-col-key="customer_name">
                     <span>${escapeHtml(item.name || '—')}</span>
                 </td>

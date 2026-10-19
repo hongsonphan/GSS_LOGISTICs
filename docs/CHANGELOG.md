@@ -40,7 +40,7 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 ### 1. Tách Cột "Tên Viết Tắt" Thành Cột Riêng Biệt Trên Bảng Khách Hàng:
 - **Tách dữ liệu hiển thị (`static/js/app.js`, `static/js/modules/master_data.js`):**
   * Tách riêng trường `short_name` thành một cột riêng biệt mang tên **"Tên Viết Tắt"** (`customer_short_name`), nằm ở vị trí cột thứ 2 (ngay sau cột "Mã Khách").
-  * Thiết kế cột Tên Viết Tắt với badge màu xanh ngọc (teal badge: `bg-teal-100 text-teal-800 border-teal-300 font-black`) nổi bật, căn giữa, giúp người điều phối và kế toán nhận diện nhanh mã viết tắt của đối tác/khách hàng.
+  * Hiển thị dạng văn bản thuần túy chuẩn mực (`font-bold text-slate-800`), dễ đọc, đồng bộ với các cột khác trong bảng mà không cần khung viền badge màu mè.
   * Tinh giản cột **"Tên Khách Hàng / Doanh Nghiệp"** (`customer_name`): Chỉ hiển thị tên đầy đủ của doanh nghiệp một cách rõ ràng, trang nhã, không còn bị lồng ghép badge viết tắt vào cùng một ô.
   * Gán chuẩn xác các thuộc tính `data-col-key` và `data-col-name` cho toàn bộ các thẻ `<th>` và `<td>` của bảng Khách Hàng.
 
