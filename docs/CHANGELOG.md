@@ -2,6 +2,39 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.5.7] - 2026-10-19 (Tối Ưu Hóa Biểu Mẫu Booking Thích Ứng Động Theo 3 Loại Dịch Vụ Logistics & Điều Hướng Phím TAB Tốc Độ Cao)
+
+### 1. Phân Biệt & Thích Ứng Nghiệp Vụ Theo 3 Loại Hình Dịch Vụ Vận Tải:
+- **Kéo Cont Xuất Khẩu (`EXPORT_FCL`):**
+  * Hiển thị đầy đủ các trường: Hãng tàu, Tên tàu & Chuyến (`vessel_voyage`), Mã HS Code, Lộ trình 3 điểm (`1. Depot Cấp Rỗng` $\rightarrow$ `2. Kho Đóng Hàng` $\rightarrow$ `3. Cảng Hạ CY`).
+  * Bật đầy đủ các mốc thời gian hãng tàu: Ngày hẹn đóng hàng, Hạn Cắt Máng CY (Closing Time), Hạn nộp SI (SI Cut-off), Số ngày miễn phí lưu bãi / lưu vỏ (Free DEM/DET).
+  * Tiêu đề đính kèm tệp: *Đính Kèm File Booking / Lệnh Cấp Rỗng*.
+- **Kéo Cont Nhập Khẩu (`IMPORT_FCL`):**
+  * Tự động chuyển đổi thuật ngữ: Nhãn số đơn thành *Số Vận Đơn (B/L) / D/O*, Lộ trình 3 điểm thành (`1. Cảng Lấy Cont Hàng` $\rightarrow$ `2. Kho Rút Hàng` $\rightarrow$ `3. Depot Trả Rỗng`), Ngày hẹn đóng thành *Ngày Hẹn Dỡ Hàng*, DET/DEM thành *Free DET (Mượn vỏ)* và *Free DEM (Lưu bãi)*.
+  * **Vô hiệu hóa (disabled) & làm mờ trực quan (`opacity-40 pointer-events-none`)**: *Hạn Cắt Máng CY* và *Hạn SI Cut-off* (do hàng nhập không có các mốc cắt máng tàu xuất).
+  * Tiêu đề đính kèm tệp: *Đính Kèm Lệnh Giao Hàng D/O & Vận Đơn (B/L)*.
+- **Vận Chuyển Nội Địa / Nhà Máy (`DOMESTIC`):**
+  * Tự động chuyển đổi thuật ngữ: Nhãn số đơn thành *Số PO / Đơn Hàng / Lệnh Xe*, Lộ trình 2 điểm thành (`1. Điểm Bốc Hàng (Nơi đi)` $\rightarrow$ `2. Điểm Giao Hàng (Nơi đến)`), Ngày hẹn đóng thành *Ngày Bốc Hàng*.
+  * **Vô hiệu hóa (disabled) & làm mờ trực quan (`opacity-40 pointer-events-none`)**: *Hãng Tàu* (tự động gán mặc định 'NỘI ĐỊA'), *Tên Tàu & Chuyến*, *Mã HS Code*, *Điểm 3 (Điểm Hạ / Trả Cont)*, *Hạn Cắt Máng CY*, *Hạn SI Cut-off*, *Free DET* và *Free DEM*.
+  * Tiêu đề đính kèm tệp: *Đính Kèm PO / Lệnh Điều Xe / Phiếu Xuất Kho*.
+
+### 2. Tối Ưu Tốc Độ Nhập Liệu Bằng Phím TAB (Zero-Friction Tab Navigation):
+- **Cơ chế Tab navigation thông minh:**
+  * Toàn bộ các trường bị disabled đều được gán `tabindex="-1"`, giúp trình duyệt tự động lướt qua khi bấm phím `Tab` mà không dừng lại ở các ô không áp dụng.
+  * Tất cả các nút phụ trợ (Nút `+ Tạo mới` danh mục nhanh, nút chọn giờ nhanh `08:00`, `10:00`, `12:00`...) được gán `tabindex="-1"`, giúp phím `Tab` nhảy thẳng tắp từ ô nhập liệu này sang ô nhập liệu tiếp theo.
+  * Với đơn hàng Nội địa (`DOMESTIC`), người dùng chỉ cần lướt phím `Tab` qua: *Khách hàng* $\rightarrow$ *Số PO* $\rightarrow$ *Loại xe/cont* $\rightarrow$ *Số lượng* $\rightarrow$ *Hàng hóa* $\rightarrow$ *Điểm bốc* $\rightarrow$ *Điểm giao* $\rightarrow$ *Ngày bốc* $\rightarrow$ *Giờ hẹn* $\rightarrow$ *Cước* $\rightarrow$ *Lưu*, rút ngắn thời gian nhập liệu từ 3 đến 5 lần.
+
+### 3. Đồng Bộ Hóa Cả Hai Giao Diện & Bảo Toàn Dữ Liệu Backend (Zero-Regression):
+- **Đồng bộ song song 2 giao diện:** Áp dụng đồng bộ cho cả **Modal Tiếp Nhận Đơn** (`templates/components/modal_booking.html`) và **Màn Hình Chi Tiết Booking Toàn Trang** (`templates/views/view_booking_detail.html`).
+- **An toàn lưu trữ Backend (`saveBooking` & `saveFullpageBooking`):**
+  * Với loại `DOMESTIC`, tự động điền giá trị ngầm định an toàn cho các trường bị disabled (`dropoff_location = delivery_location`, `shipping_line = 'NỘI ĐỊA'`, `closing_time = ''`, `si_cutoff = ''`, `det = 0`, `dem = 0`), hoàn toàn tương thích với schema database và validation của Django REST Framework.
+  * Khôi phục chính xác trạng thái enabled khi chuyển ngược lại giữa các loại hình đơn hàng.
+
+### 4. Kiểm Thử Toàn Diện (System Verification):
+- **Cú pháp JavaScript:** `node -c static/js/app.js` và `node -c static/js/column_manager.js` $\rightarrow$ 100% Passed.
+- **Django System Check:** `python manage.py check` $\rightarrow$ System check identified no issues (0 silenced).
+- **Full Backend Regression Tests:** `python manage.py test --keepdb` $\rightarrow$ **102/102 test cases PASSED (32.5s)**.
+
 ## [v3.5.6] - 2026-10-19 (Tách Cột Tên Viết Tắt Riêng Biệt & Đồng Bộ Trình Quản Lý Cột Tùy Biến Cho Bảng Khách Hàng)
 
 ### 1. Tách Cột "Tên Viết Tắt" Thành Cột Riêng Biệt Trên Bảng Khách Hàng:
