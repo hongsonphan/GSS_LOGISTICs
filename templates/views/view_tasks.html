@@ -307,10 +307,15 @@
                                 <i class="ph-bold ph-paperclip text-teal-600 text-sm"></i>
                                 Tài liệu & Tệp đính kèm
                             </h3>
-                            <label class="cursor-pointer text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1">
-                                <i class="ph-bold ph-upload-simple"></i> Tải tệp lên
-                                <input type="file" id="task-upload-file-input" onchange="uploadTaskAttachment(event)" class="hidden" multiple>
-                            </label>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="pasteImageFromClipboard('task_detail')" class="text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1 cursor-pointer" title="Dán ảnh chụp màn hình từ Clipboard (Ctrl+V)">
+                                    <i class="ph-bold ph-clipboard-text"></i> Dán ảnh (Ctrl+V)
+                                </button>
+                                <label class="cursor-pointer text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1">
+                                    <i class="ph-bold ph-upload-simple"></i> Tải tệp lên
+                                    <input type="file" id="task-upload-file-input" onchange="uploadTaskAttachment(event)" class="hidden" multiple>
+                                </label>
+                            </div>
                         </div>
                         <div id="task-drawer-attachments" class="space-y-1.5 max-h-28 overflow-y-auto custom-scrollbar"></div>
                     </div>
@@ -591,10 +596,15 @@
                                 <i class="ph-bold ph-paperclip text-teal-600 text-sm"></i>
                                 Tài liệu & Tệp đính kèm
                             </h3>
-                            <label class="cursor-pointer text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center gap-1.5 py-1 px-3 rounded-lg bg-teal-50 hover:bg-teal-100/70 border border-teal-200/60 transition-colors shadow-xs">
-                                <i class="ph-bold ph-upload-simple"></i> Chọn tệp
-                                <input type="file" id="create-task-files-input" multiple onchange="handleInitialFilesSelected(this)" class="hidden">
-                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="pasteImageFromClipboard('create_task')" class="cursor-pointer text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center gap-1 py-1 px-2.5 rounded-lg bg-teal-50 hover:bg-teal-100/70 border border-teal-200/60 transition-colors shadow-xs" title="Dán ảnh chụp màn hình từ Clipboard (Ctrl+V)">
+                                    <i class="ph-bold ph-clipboard-text"></i> Dán ảnh (Ctrl+V)
+                                </button>
+                                <label class="cursor-pointer text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center gap-1.5 py-1 px-3 rounded-lg bg-teal-50 hover:bg-teal-100/70 border border-teal-200/60 transition-colors shadow-xs">
+                                    <i class="ph-bold ph-upload-simple"></i> Chọn tệp
+                                    <input type="file" id="create-task-files-input" multiple onchange="handleInitialFilesSelected(this)" class="hidden">
+                                </label>
+                            </div>
                         </div>
 
                         <div id="create-task-files-preview" class="space-y-1.5 max-h-36 overflow-y-auto pr-1 custom-scrollbar">

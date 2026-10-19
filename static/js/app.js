@@ -552,6 +552,288 @@ function resolveGlobalConfirm(result) {
 window.showConfirmModal = showConfirmModal;
 window.resolveGlobalConfirm = resolveGlobalConfirm;
 
+// ==============================================================================
+// UNIVERSAL CLIPBOARD IMAGE PASTE SYSTEM (CTRL+V / NÚT DÁN ẢNH TRÊN TOÀN HỆ THỐNG)
+// Hỗ trợ: Chat, Nhiệm vụ (Tạo mới & Chi tiết Drawer), Tờ khai Hải quan, 
+// Booking (Modal & Fullpage), Chuyến xe (Modal & View), Tin tức, Hóa đơn OCR/Phí phát sinh
+// ==============================================================================
+
+function extractImageFromClipboardEvent(e) {
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData || !clipboardData.items) return null;
+    for (let i = 0; i < clipboardData.items.length; i++) {
+        const item = clipboardData.items[i];
+        if (item.type && item.type.startsWith('image/')) {
+            const blob = item.getAsFile();
+            if (blob) {
+                const ext = item.type.split('/')[1] ? item.type.split('/')[1].replace('jpeg', 'jpg') : 'png';
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const timeStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+                return new File([blob], `clipboard_${timeStr}.${ext}`, { type: item.type });
+            }
+        }
+    }
+    return null;
+}
+
+function detectActiveUploadContext() {
+    // 1. OCR Camera modal (Hóa đơn, phí phát sinh, vé BOT)
+    const ocrModal = document.getElementById('modal-ocr');
+    if (ocrModal && !ocrModal.classList.contains('hidden-view') && !ocrModal.classList.contains('hidden')) {
+        return 'ocr';
+    }
+
+    // 2. Task modal tạo mới
+    const createTaskModal = document.getElementById('modal-create-task');
+    if (createTaskModal && !createTaskModal.classList.contains('hidden')) {
+        return 'create_task';
+    }
+
+    // 3. Task Detail Drawer
+    const taskDrawer = document.getElementById('task-detail-drawer');
+    if (taskDrawer && !taskDrawer.classList.contains('translate-x-full') && !taskDrawer.classList.contains('hidden')) {
+        return 'task_detail';
+    }
+
+    // 4. Modal Booking
+    const bookingModal = document.getElementById('modal-booking');
+    if (bookingModal && !bookingModal.classList.contains('hidden')) {
+        return 'booking';
+    }
+
+    // 5. Booking Fullpage View
+    const fullpageBookingFile = document.getElementById('fullpage-booking-order-file');
+    if (fullpageBookingFile && fullpageBookingFile.offsetParent !== null) {
+        return 'booking';
+    }
+
+    // 6. Modal Create Trip
+    const tripModal = document.getElementById('modal-create-trip');
+    if (tripModal && !tripModal.classList.contains('hidden')) {
+        return 'trip';
+    }
+
+    // 7. View Create Trip
+    const tripFileInp = document.getElementById('inp-booking-file');
+    if (tripFileInp && tripFileInp.offsetParent !== null) {
+        return 'trip';
+    }
+
+    // 8. Modal Customs Declaration
+    const custModal = document.getElementById('modal-customs-declaration');
+    if (custModal && !custModal.classList.contains('hidden')) {
+        return 'customs';
+    }
+
+    // 9. View Customs Form
+    const custFileInp = document.getElementById('cust-document-file');
+    if (custFileInp && custFileInp.offsetParent !== null) {
+        return 'customs';
+    }
+
+    // 10. View News Form
+    const newsFileInp = document.getElementById('create-news-files');
+    if (newsFileInp && newsFileInp.offsetParent !== null) {
+        return 'news';
+    }
+
+    // 11. Chat (Flyout Drawer hoặc Modal hoặc Đang focus ô chat)
+    const chatDrawer = document.getElementById('chat-flyout-drawer');
+    const chatModal = document.getElementById('chat-modal');
+    if ((chatDrawer && !chatDrawer.classList.contains('translate-x-full')) ||
+        (chatModal && !chatModal.classList.contains('hidden')) ||
+        (document.activeElement && (document.activeElement.id === 'chat-message-input' || document.activeElement.closest('#chat-messages-container')))) {
+        return 'chat';
+    }
+
+    return null;
+}
+
+function attachPastedImage(file, targetType) {
+    if (!file) return;
+
+    if (!targetType) {
+        targetType = detectActiveUploadContext();
+    }
+
+    if (!targetType) {
+        showToast('info', 'Đã sao chép ảnh vào bộ nhớ tạm. Hãy mở biểu mẫu hoặc khu vực tệp đính kèm rồi nhấn Ctrl+V để dán.', 'Đã Nhận Ảnh');
+        return;
+    }
+
+    switch (targetType) {
+        case 'chat': {
+            if (typeof window.addChatSelectedFile === 'function') {
+                window.addChatSelectedFile(file);
+                showToast('success', `Đã đính kèm ảnh "${file.name}" vào tin nhắn`, 'Dán Ảnh Thành Công');
+            } else if (typeof chatSelectedFiles !== 'undefined') {
+                chatSelectedFiles.push(file);
+                const preview = document.getElementById('chat-pending-files-preview');
+                const text = document.getElementById('chat-pending-files-text');
+                if (preview && text) {
+                    text.textContent = `Đính kèm: ${chatSelectedFiles.map(f => f.name).join(', ')}`;
+                    preview.classList.remove('hidden');
+                }
+                showToast('success', `Đã đính kèm ảnh "${file.name}" vào tin nhắn`, 'Dán Ảnh Thành Công');
+            }
+            break;
+        }
+
+        case 'booking': {
+            const fullpageFileInp = document.getElementById('fullpage-booking-order-file');
+            const isFullpage = fullpageFileInp && fullpageFileInp.offsetParent !== null;
+            if (isFullpage && typeof fullpageBookingFilesList !== 'undefined') {
+                fullpageBookingFilesList.push(file);
+                if (typeof renderFullpageBookingFilesList === 'function') renderFullpageBookingFilesList();
+                showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
+            } else if (typeof saleBookingFilesList !== 'undefined') {
+                saleBookingFilesList.push(file);
+                if (typeof renderSaleBookingFilesList === 'function') renderSaleBookingFilesList();
+                showToast('success', `Đã đính kèm ảnh "${file.name}" vào đơn Booking`, 'Dán Ảnh Thành Công');
+            }
+            break;
+        }
+
+        case 'trip': {
+            if (typeof tripBookingFilesList !== 'undefined') {
+                tripBookingFilesList.push(file);
+                if (typeof renderTripBookingFilesList === 'function') renderTripBookingFilesList();
+                showToast('success', `Đã đính kèm ảnh "${file.name}" vào chuyến xe`, 'Dán Ảnh Thành Công');
+            }
+            break;
+        }
+
+        case 'customs': {
+            const custInp = document.getElementById('cust-document-file');
+            if (custInp) {
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    custInp.files = dt.files;
+                    showToast('success', `Đã gán ảnh "${file.name}" vào hồ sơ tờ khai`, 'Dán Ảnh Thành Công');
+                } catch (err) {
+                    console.error('Không thể gán DataTransfer vào file input tờ khai:', err);
+                }
+            }
+            break;
+        }
+
+        case 'task_detail': {
+            if (typeof uploadTaskAttachment === 'function') {
+                showToast('info', `Đang tải ảnh "${file.name}" lên nhiệm vụ...`, 'Đang Tải Tệp');
+                uploadTaskAttachment({ target: { files: [file] } });
+            }
+            break;
+        }
+
+        case 'create_task': {
+            if (typeof window.addCreateTaskInitialFile === 'function') {
+                window.addCreateTaskInitialFile(file);
+                showToast('success', `Đã đính kèm ảnh "${file.name}" vào nhiệm vụ mới`, 'Dán Ảnh Thành Công');
+            } else if (typeof createTaskInitialFiles !== 'undefined') {
+                createTaskInitialFiles.push(file);
+                if (typeof renderCreateTaskInitialFiles === 'function') renderCreateTaskInitialFiles();
+                showToast('success', `Đã đính kèm ảnh "${file.name}" vào nhiệm vụ mới`, 'Dán Ảnh Thành Công');
+            }
+            break;
+        }
+
+        case 'news': {
+            const newsInp = document.getElementById('create-news-files');
+            if (newsInp) {
+                try {
+                    const dt = new DataTransfer();
+                    if (newsInp.files) {
+                        for (let i = 0; i < newsInp.files.length; i++) {
+                            dt.items.add(newsInp.files[i]);
+                        }
+                    }
+                    dt.items.add(file);
+                    newsInp.files = dt.files;
+                    showToast('success', `Đã đính kèm ảnh "${file.name}" vào bài viết tin tức`, 'Dán Ảnh Thành Công');
+                } catch (err) {
+                    console.error('Không thể gán DataTransfer vào file input tin tức:', err);
+                }
+            }
+            break;
+        }
+
+        case 'ocr':
+        case 'expense': {
+            const ocrModal = document.getElementById('modal-ocr');
+            if (ocrModal) {
+                showToast('info', `Đã nhận ảnh hóa đơn/chứng từ "${file.name}" từ Clipboard, đang quét AI...`, 'Đang Xử Lý Ảnh');
+                if (typeof startOcrScan === 'function') {
+                    startOcrScan();
+                }
+            }
+            break;
+        }
+
+        default:
+            console.warn('Chưa xác định được targetType:', targetType);
+            break;
+    }
+}
+
+async function pasteImageFromClipboard(targetType) {
+    try {
+        if (!targetType) {
+            targetType = detectActiveUploadContext();
+        }
+        if (!targetType) {
+            showToast('info', 'Vui lòng mở một biểu mẫu hoặc khu vực tải tệp trước khi dán ảnh.', 'Chưa Chọn Vị Trí Dán');
+            return;
+        }
+
+        if (!navigator.clipboard || !navigator.clipboard.read) {
+            showToast('warning', 'Trình duyệt chưa hỗ trợ đọc clipboard tự động qua nút bấm. Bạn vui lòng nhấn tổ hợp phím Ctrl + V để dán trực tiếp.', 'Dùng Phím Tắt Ctrl+V');
+            return;
+        }
+
+        const items = await navigator.clipboard.read();
+        let foundImage = false;
+        for (const item of items) {
+            const imageType = item.types.find(t => t.startsWith('image/'));
+            if (imageType) {
+                foundImage = true;
+                const blob = await item.getType(imageType);
+                const ext = imageType.split('/')[1] ? imageType.split('/')[1].replace('jpeg', 'jpg') : 'png';
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const timeStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+                const file = new File([blob], `clipboard_${timeStr}.${ext}`, { type: imageType });
+                attachPastedImage(file, targetType);
+                break;
+            }
+        }
+        if (!foundImage) {
+            showToast('warning', 'Không tìm thấy hình ảnh nào trong bộ nhớ tạm (Clipboard). Vui lòng chụp ảnh màn hình (PrintScreen / Win+Shift+S) rồi thử lại.', 'Clipboard Trống');
+        }
+    } catch (err) {
+        console.warn('Lỗi khi đọc clipboard qua navigator.clipboard.read():', err);
+        showToast('warning', 'Không thể truy cập bộ nhớ tạm. Hãy nhấn phím Ctrl + V tại biểu mẫu để dán ảnh trực tiếp.', 'Phím Tắt Ctrl+V');
+    }
+}
+
+// Bắt sự kiện Paste toàn cục: Khi người dùng bấm Ctrl+V ở bất kỳ đâu, nếu có ảnh thì tự động đính kèm
+window.addEventListener('paste', function(e) {
+    const file = extractImageFromClipboardEvent(e);
+    if (!file) return; // Nếu không có ảnh, để trình duyệt dán văn bản bình thường
+
+    const targetType = detectActiveUploadContext();
+    if (!targetType) return; // Nếu không nằm trong form/modal nào có upload ảnh, để mặc định
+
+    e.preventDefault();
+    attachPastedImage(file, targetType);
+});
+
+window.pasteImageFromClipboard = pasteImageFromClipboard;
+window.extractImageFromClipboardEvent = extractImageFromClipboardEvent;
+window.detectActiveUploadContext = detectActiveUploadContext;
+window.attachPastedImage = attachPastedImage;
+
 // Biến lưu trữ biểu đồ và dữ liệu Dashboard
 let bgdRevenueChart = null;
 let bgdDonutChart = null;
@@ -7854,7 +8136,13 @@ async function openPrintPayslipModal(slipId) {
 
         const s = data.slip || {};
         const emp = data.employee || {};
-        const co = data.company || {};
+        const sysCo = getSystemCompanyProfile();
+        const co = {
+            name: (data.company && data.company.name) || sysCo.company_name,
+            address: (data.company && data.company.address) || sysCo.address,
+            tax_id: (data.company && data.company.tax_id) || sysCo.tax_code,
+            hotline: (data.company && data.company.hotline) || sysCo.phone
+        };
         const period = data.period || {};
 
         paper.innerHTML = `
@@ -8474,6 +8762,7 @@ function openDirectPrintContract(contractId) {
         return;
     }
 
+    const co = getSystemCompanyProfile();
     const html = `
         <!DOCTYPE html>
         <html lang="vi">
@@ -8504,9 +8793,10 @@ function openDirectPrintContract(contractId) {
             <p>Hôm nay, ngày ${c.sign_date ? c.sign_date.split('-').reverse().join('/') : '.....'}, chúng tôi gồm có:</p>
             
             <div class="section-title">BÊN A (NGƯỜI SỬ DỤNG LAO ĐỘNG):</div>
-            <div><strong>CÔNG TY VẬN TẢI & LOGISTICS TRIỀN VÕ (BIM LOGISTICS)</strong></div>
-            <div>Địa chỉ: Trụ sở chính / Bãi xe Triền Võ Logistics</div>
-            <div>Đại diện bởi: Ban Giám Đốc</div>
+            <div><strong>${co.company_name.toUpperCase()}</strong></div>
+            <div>Địa chỉ: ${co.address || 'Trụ sở chính công ty'}</div>
+            <div>Đại diện bởi: <strong>${co.representative_name || 'Ban Giám Đốc'}</strong> — Chức vụ: ${co.representative_role || 'Đại diện pháp luật'}</div>
+            <div>Mã số thuế: ${co.tax_code || '—'} | Điện thoại: ${co.phone || '—'}</div>
 
             <div class="section-title">BÊN B (NGƯỜI LAO ĐỘNG):</div>
             <div>Họ và tên: <strong>${c.employee_name || '—'}</strong> (${c.employee_code || ''})</div>
@@ -10250,6 +10540,7 @@ function enableFullpageBookingEdit() {
     const editBtn = document.getElementById('btn-fullpage-edit-booking-bottom');
     if (editBtn) editBtn.classList.add('hidden');
     setFullpageSaveButtonState('btn-fullpage-save-booking-bottom', true);
+    if (typeof onFullpageBookingTypeChange === 'function') onFullpageBookingTypeChange();
     showToast('info', 'Đã chuyển sang chế độ Sửa Đơn Hàng / Booking. Bạn có thể thay đổi thông tin và bấm Lưu.', 'Chế Độ Sửa');
 }
 window.enableFullpageBookingEdit = enableFullpageBookingEdit;
@@ -13092,6 +13383,7 @@ function handleSearch(e) {
 
 // --- MASTER DATA FORM OPTIONS CACHE & POPULATION (Anti-Garbage Master Data Standard) ---
 let masterDataFormOptionsCache = null;
+let quickMasterDataTargetSelectId = null;
 
 async function loadMasterDataFormOptions(forceReload = false) {
     if (masterDataFormOptionsCache && !forceReload) {
@@ -16036,9 +16328,12 @@ async function openCashVoucherModal(txDataOrId) {
     const amountWords = numberToWordsVN(tx.amount);
     const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
     const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
-    const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe vận tải Triền Võ Logistics';
+    const co = getSystemCompanyProfile();
+    const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - ${co.short_name || co.company_name}` : `Đội xe vận tải ${co.short_name || co.company_name}`;
     const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
     const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
+
+    syncCompanyProfileToPrintForms();
 
     // Helper cập nhật tất cả selector cùng class (đồng bộ Liên 1 & Liên 2)
     const setAllClassText = (cls, val) => {
@@ -16187,7 +16482,9 @@ function renderFullpageVoucherContent(tx) {
     const amountWords = numberToWordsVN(tx.amount);
     const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
     const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
-    const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe vận tải Triền Võ Logistics';
+    const co = getSystemCompanyProfile();
+    const compDisplayName = co.short_name || co.company_name || 'Triền Võ Logistics';
+    const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - ${compDisplayName}` : `Đội xe vận tải ${compDisplayName}`;
     const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
     const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
 
@@ -16753,7 +17050,9 @@ async function openDirectPrintCashVoucher(voucherIdentifier) {
         const amountWords = numberToWordsVN(tx.amount);
         const amountFormatted = new Intl.NumberFormat('vi-VN').format(Math.round(tx.amount || 0)) + ' đ';
         const methodFormatted = tx.payment_method === 'BANK' ? 'Chuyển khoản Ngân hàng' : 'Quỹ Tiền mặt';
-        const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - Triền Võ Logistics` : 'Đội xe vận tải Triền Võ Logistics';
+        const co = getSystemCompanyProfile();
+        const compDisplayName = co.short_name || co.company_name || 'Triền Võ Logistics';
+        const departmentFormatted = tx.partner_type_label ? `${tx.partner_type_label} - ${compDisplayName}` : `Đội xe vận tải ${compDisplayName}`;
         const reasonFormatted = tx.notes || tx.category_label || (isInflow ? 'Thu hoàn ứng tiền thừa quyết toán gom chuyến' : 'Chi bù vượt ứng quyết toán gom chuyến');
         const attachmentsFormatted = tx.ref_code ? `01 Bảng kê [${tx.ref_code}] & chứng từ gốc` : '01 Bảng kê quyết toán chuyến & chứng từ gốc';
 
@@ -17443,9 +17742,9 @@ function switchMasterDataTab(tabKey) {
     }
 
     const labels = {
-        'company': '✏️ Sửa Thông Tin Công Ty',
-        'roles_permissions': '🛡️ Quản Lý Vai Trò',
-        'opening_balance': '💰 Khai Báo Số Dư Đầu Kỳ',
+        'company': 'Sửa Thông Tin Công Ty',
+        'roles_permissions': 'Quản Lý Vai Trò',
+        'opening_balance': 'Khai Báo Số Dư Đầu Kỳ',
         'driver_tariffs': 'Tạo mới',
         'allowances': 'Tạo mới',
         'locations': 'Tạo mới',
@@ -17487,36 +17786,77 @@ function reloadActiveMasterDataTab() {
     loadActiveMasterDataTab();
 }
 
+function getSystemCompanyProfile() {
+    const comp = (typeof masterDataCache !== 'undefined' && masterDataCache['company']) || window.SYSTEM_COMPANY || {};
+    return {
+        id: comp.id || 1,
+        company_name: comp.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ',
+        short_name: comp.short_name || 'TRIỀN VÕ LOGISTICS',
+        address: comp.headquarters_address || comp.address || '153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh',
+        tax_code: comp.tax_code || '0314567890',
+        phone: comp.hotline || comp.phone || '0965 559 561',
+        email: comp.email || 'phongkinhdoanh.tvl@trienvo.com',
+        representative_name: comp.representative_name || 'Võ Văn Triền',
+        representative_role: comp.representative_role || 'Giám Đốc',
+        bank_account_number: comp.bank_account_number || '',
+        bank_name: comp.bank_name || '',
+        bank_branch: comp.bank_branch || '',
+        operating_license: comp.operating_license || '',
+        branch_name: comp.branch_name || '',
+        branch_address: comp.branch_address || '',
+        branch_phone: comp.branch_phone || '',
+        fleet_yard_name: comp.fleet_yard_name || '',
+        fleet_yard_address: comp.fleet_yard_address || '',
+        fleet_yard_hotline: comp.fleet_yard_hotline || '',
+        logo_url: comp.logo_url || '/static/images/trienvo_logo.png'
+    };
+}
+window.getSystemCompanyProfile = getSystemCompanyProfile;
+
 function syncCompanyProfileToPrintForms() {
-    const comp = masterDataCache['company'] || window.SYSTEM_COMPANY || {};
-    const compName = comp.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ';
-    const compAddress = comp.headquarters_address || comp.address || '153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh';
-    const compTax = comp.tax_code || '0314567890';
-    const compPhone = comp.hotline || comp.phone || '0965 559 561';
-    const compEmail = comp.email || 'phongkinhdoanh.tvl@trienvo.com';
-    
-    // Đảm bảo luôn lấy logo chính thức của Công ty Triền Võ (không lấy logo phần mềm BIM)
-    let compLogo = comp.logo_url || '/static/images/trienvo_logo.png';
+    const co = getSystemCompanyProfile();
+
+    // 1. Đồng bộ Tên công ty đầy đủ
+    document.querySelectorAll('.print-comp-name').forEach(el => {
+        el.innerText = co.company_name.toUpperCase();
+    });
+
+    // 2. Đồng bộ Tên viết tắt / Thương hiệu
+    document.querySelectorAll('.print-comp-short-name').forEach(el => {
+        el.innerText = (co.short_name || co.company_name).toUpperCase();
+    });
+
+    // 3. Đồng bộ Địa chỉ
+    document.querySelectorAll('.print-comp-address').forEach(el => {
+        const prefix = el.getAttribute('data-prefix') || 'Đ/c:';
+        el.innerText = `${prefix} ${co.address}`;
+    });
+
+    // 4. Đồng bộ Khối liên hệ tổng hợp (MST, Hotline, Email)
+    document.querySelectorAll('.print-comp-contact').forEach(el => {
+        el.innerText = `MST: ${co.tax_code} • Hotline: ${co.phone} • Email: ${co.email}`;
+    });
+
+    // 5. Đồng bộ Số điện thoại / Hotline
+    document.querySelectorAll('.print-comp-phone').forEach(el => {
+        el.innerText = co.phone;
+    });
+
+    // 6. Đồng bộ Email
+    document.querySelectorAll('.print-comp-email').forEach(el => {
+        el.innerText = co.email;
+    });
+
+    // 7. Đồng bộ Mã số thuế
+    document.querySelectorAll('.print-comp-tax').forEach(el => {
+        el.innerText = co.tax_code;
+    });
+
+    // 8. Đồng bộ Logo Công ty Triền Võ (không lấy nhầm logo chung BIM)
+    let compLogo = co.logo_url || '/static/images/trienvo_logo.png';
     if (!compLogo || compLogo.endsWith('/logo.png') || compLogo.includes('static/images/logo.png')) {
         compLogo = '/static/images/trienvo_logo.png';
     }
-
-    // 1. Đồng bộ Tên công ty
-    document.querySelectorAll('.print-comp-name').forEach(el => {
-        el.innerText = compName.toUpperCase();
-    });
-
-    // 2. Đồng bộ Địa chỉ
-    document.querySelectorAll('.print-comp-address').forEach(el => {
-        el.innerText = `Đ/c: ${compAddress}`;
-    });
-
-    // 3. Đồng bộ Liên hệ (MST, Hotline, Email)
-    document.querySelectorAll('.print-comp-contact').forEach(el => {
-        el.innerText = `MST: ${compTax} • Hotline: ${compPhone} • Email: ${compEmail}`;
-    });
-
-    // 4. Đồng bộ Logo Công ty Triền Võ
     document.querySelectorAll('.print-comp-logo').forEach(el => {
         el.src = compLogo;
         el.onerror = () => { el.src = '/media/trienvo_logo.png'; };
@@ -19636,31 +19976,32 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'customers') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Khách</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Khách Hàng / Doanh Nghiệp</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Liên Hệ / SĐT</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Số Biểu Cước</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_code" data-col-name="Mã Khách">Mã Khách</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_short_name" data-col-name="Tên Viết Tắt">Tên Viết Tắt</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_name" data-col-name="Tên Khách Hàng / Doanh Nghiệp">Tên Khách Hàng / Doanh Nghiệp</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_tax_code" data-col-name="Mã Số Thuế">Mã Số Thuế</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_address" data-col-name="Địa Chỉ">Địa Chỉ</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_contact" data-col-name="Người Liên Hệ / SĐT">Người Liên Hệ / SĐT</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_tariffs_count" data-col-name="Số Biểu Cước">Số Biểu Cước</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_notes" data-col-name="Ghi Chú">Ghi Chú</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none" data-col-key="thao_tac" data-col-name="Thao Tác" data-col-locked="true">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
-                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
-                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        ${item.short_name ? `<span class="px-1.5 py-0.2 rounded text-[10.5px] font-black bg-teal-100 text-teal-800 border border-teal-300 uppercase shrink-0" title="Tên viết tắt">${escapeHtml(item.short_name)}</span>` : ''}
-                        <span>${escapeHtml(item.name)}</span>
-                    </div>
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200" data-col-key="customer_code">${escapeHtml(item.code || '')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200" data-col-key="customer_short_name">
+                    ${item.short_name ? `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-black bg-teal-100 text-teal-800 border border-teal-300 uppercase tracking-wide shrink-0" title="Tên viết tắt">${escapeHtml(item.short_name)}</span>` : '<span class="text-slate-400 font-normal">—</span>'}
                 </td>
-                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
-                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.address || '—'}</td>
-                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">${item.contact_person ? `${item.contact_person} (${item.phone || ''})` : (item.phone || '—')}</td>
-                <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold text-[12px] text-slate-800">${item.tariffs_count || 0} tuyến</td>
-                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${item.notes || '—'}</td>
-                <td class="py-2 px-3 text-center">
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200" data-col-key="customer_name">
+                    <span>${escapeHtml(item.name || '—')}</span>
+                </td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200" data-col-key="customer_tax_code">${escapeHtml(item.tax_code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200" data-col-key="customer_address" title="${escapeHtml(item.address || '')}">${escapeHtml(item.address || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200" data-col-key="customer_contact">${item.contact_person ? `${escapeHtml(item.contact_person)} (${escapeHtml(item.phone || '')})` : escapeHtml(item.phone || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold text-[12px] text-slate-800" data-col-key="customer_tariffs_count">${item.tariffs_count || 0} tuyến</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200" data-col-key="customer_notes" title="${escapeHtml(item.notes || '')}">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-center" data-col-key="thao_tac">
                     <div class="flex items-center justify-center space-x-1">
                         <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
@@ -19892,6 +20233,11 @@ function renderMasterDataTable(items, total = items.length) {
                 </td>
             </tr>
         `).join('');
+    }
+
+    // Tự động đồng bộ với Universal Table Column Manager nếu có
+    if (window.BimTableColumnManager && window.BimTableColumnManager.instances['md-main-table']) {
+        window.BimTableColumnManager.instances['md-main-table'].refreshColumnsFromDOM();
     }
 }
 
@@ -21194,13 +21540,28 @@ async function submitMasterDataForm(e) {
         if (res.ok && (data.success || data.id)) {
             showToast('success', data.message || 'Lưu bản ghi thành công!');
             closeMasterDataModal();
+
+            if (tabKey === 'company') {
+                if (data.data) {
+                    if (typeof masterDataCache !== 'undefined') {
+                        masterDataCache['company'] = data.data;
+                    }
+                    window.SYSTEM_COMPANY = data.data;
+                }
+                syncCompanyProfileToPrintForms();
+                if (typeof loadCompanyProfile === 'function') {
+                    loadCompanyProfile();
+                }
+                return;
+            }
+
             loadMasterData();
 
             // Tự động tải lại danh mục cho các Modal đang mở và chọn ngay bản ghi vừa tạo
             await loadMasterDataFormOptions(true);
             populateMasterDataDropdowns();
 
-            if (quickMasterDataTargetSelectId) {
+            if (typeof quickMasterDataTargetSelectId !== 'undefined' && quickMasterDataTargetSelectId) {
                 const targetEl = document.getElementById(quickMasterDataTargetSelectId);
                 const createdName = payload.name || payload.code || payload.license_plate || payload.route_name || '';
                 if (targetEl && createdName) {
@@ -21219,6 +21580,7 @@ async function submitMasterDataForm(e) {
             showToast('danger', data.message || data.error || data.detail || 'Có lỗi xảy ra khi lưu dữ liệu!');
         }
     } catch (err) {
+        console.error('Lỗi submitMasterDataForm:', err);
         showToast('danger', 'Lỗi kết nối máy chủ!');
     }
 }
@@ -26811,6 +27173,7 @@ async function openDirectPrintBooking(bookingId) {
             return;
         }
 
+        const co = getSystemCompanyProfile();
         const html = `
             <!DOCTYPE html>
             <html>
@@ -26932,8 +27295,8 @@ async function openDirectPrintBooking(bookingId) {
                 <div class="print-sheet">
                     <div class="header">
                         <div>
-                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">TRIỀN VÕ LOGISTICS</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Đ/c: 153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP.HCM • Hotline: 0965.559.561</div>
+                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name}</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Đ/c: ${co.address || '—'} • Hotline: ${co.phone || '0965.559.561'}${co.tax_code ? ` • MST: ${co.tax_code}` : ''}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">${b.booking_code || ('BK-' + b.id)}</div>
@@ -27005,7 +27368,7 @@ async function openDirectPrintBooking(bookingId) {
 
                     <div class="footer-note">
                         <span>* Phiếu tiếp nhận vận tải là căn cứ điều phối và đối chiếu giao nhận hàng hóa.</span>
-                        <span>BIM Logistics Platform • Hotline: 0965.559.561</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
                     </div>
                 </div>
             </body>
@@ -27119,6 +27482,7 @@ async function openDirectPrintCustoms(customsId) {
             return;
         }
 
+        const co = getSystemCompanyProfile();
         const html = `
             <!DOCTYPE html>
             <html>
@@ -27240,8 +27604,8 @@ async function openDirectPrintCustoms(customsId) {
                 <div class="print-sheet">
                     <div class="header">
                         <div>
-                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">TRIỀN VÕ LOGISTICS — PHÒNG THỦ TỤC HẢI QUAN</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline thông quan: 0965.559.561 • Cổng kết nối VNACCS/VCIS EDI Gateway</div>
+                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name} — PHÒNG THỦ TỤC HẢI QUAN</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline thông quan: ${co.phone || '0965.559.561'} • Đ/c: ${co.address || '—'} • Cổng kết nối VNACCS/VCIS EDI Gateway</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">TK: ${item.declaration_number}</div>
@@ -27317,7 +27681,7 @@ async function openDirectPrintCustoms(customsId) {
 
                     <div class="footer-note">
                         <span>* Phiếu theo dõi thủ tục hải quan lưu kèm hồ sơ chứng từ điện tử gốc.</span>
-                        <span>BIM Logistics Platform • Hotline: 0965.559.561</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
                     </div>
                 </div>
             </body>
@@ -27675,6 +28039,7 @@ async function openDirectPrintEmployee(empId) {
             return;
         }
 
+        const co = getSystemCompanyProfile();
         const html = `
             <!DOCTYPE html>
             <html>
@@ -27796,8 +28161,8 @@ async function openDirectPrintEmployee(empId) {
                 <div class="print-sheet">
                     <div class="header">
                         <div>
-                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">TRIỀN VÕ LOGISTICS — PHÒNG HÀNH CHÍNH NHÂN SỰ</div>
-                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline: 0965.559.561 • Hệ thống Quản trị Nhân sự & Đội xe Triền Võ</div>
+                            <div style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f766e; letter-spacing: 0.5px;">${co.company_name} — PHÒNG HÀNH CHÍNH NHÂN SỰ</div>
+                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">Hotline: ${co.phone || '0965.559.561'} • Đ/c: ${co.address || '—'}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 800; font-family: monospace; font-size: 15px; color: #0f766e;">MÃ NV: ${emp.code || emp.id}</div>
@@ -27857,7 +28222,7 @@ async function openDirectPrintEmployee(empId) {
 
                     <div class="footer-note">
                         <span>* Hồ sơ nhân sự lưu hành nội bộ, bảo mật thông tin theo quy định doanh nghiệp.</span>
-                        <span>BIM Logistics Platform • Hotline: 0965.559.561</span>
+                        <span>${co.short_name || co.company_name} • Hotline: ${co.phone || '0965.559.561'}</span>
                     </div>
                 </div>
             </body>

@@ -48,6 +48,11 @@
                 return;
             }
 
+            // Đồng bộ lại thead mới nhất từ DOM nếu bảng có dynamic thead (như md-main-table)
+            if (typeof mgr.refreshColumnsFromDOM === 'function') {
+                mgr.refreshColumnsFromDOM();
+            }
+
             this.activeTableId = tableId;
             mgr.buildModalUI();
 
@@ -108,7 +113,8 @@
             lockedKeys: ['actions', 'thao_tac', 'action', 'stt', 'check', 'select']
         }, options);
 
-        this.storageKey = this.options.storagePrefix + this.tableId;
+        this.storageKey = this.getStorageKey();
+        this.tableName = this.getTableName();
         this.columns = [];         // Cấu hình hiện tại [{ key, label, visible, locked, origIdx }]
         this.defaultColumns = [];  // Cấu hình mặc định ban đầu
         this.isApplying = false;
@@ -128,7 +134,55 @@
         return 'Bảng Dữ Liệu';
     };
 
+    TableColumnInstance.prototype.getStorageKey = function() {
+        let key = this.options.storagePrefix + this.tableId;
+        if (this.tableId === 'md-main-table') {
+            const subtab = (typeof window.currentMasterDataTab !== 'undefined' ? window.currentMasterDataTab : (this.table.getAttribute('data-subtab') || '')).trim();
+            if (subtab) {
+                key += '_' + subtab;
+            }
+        }
+        return key;
+    };
+
+    TableColumnInstance.prototype.getTableName = function() {
+        let name = this.options.tableName || this.detectTableName();
+        if (this.tableId === 'md-main-table' && typeof window.currentMasterDataTab !== 'undefined') {
+            const tabNames = {
+                'company': 'Khai Báo Doanh Nghiệp',
+                'roles_permissions': 'Vai Trò & Quyền Hạn',
+                'opening_balance': 'Số Dư Đầu Kỳ Kế Toán',
+                'driver_tariffs': 'Lương Chuyến Tài Xế',
+                'allowances': 'Phụ Cấp & Phí Kiểm Hóa',
+                'locations': 'Cảng & Kho Bãi',
+                'tariffs': 'Biểu Cước Khách Hàng',
+                'customers': 'Danh Mục Khách Hàng',
+                'expenses': 'Khoản Mục Chi Phí',
+                'containers': 'Quy Cách Cont & Xe',
+                'vehicles': 'Đầu Kéo & Xe Tải',
+                'trailers': 'Rơ-Moóc Container',
+                'shipping_lines': 'Hãng Tàu Biển',
+                'subcontractors': 'Đội Xe Thầu Phụ'
+            };
+            const subName = tabNames[window.currentMasterDataTab];
+            if (subName) {
+                name = `Hệ Thống Danh Mục (${subName})`;
+            }
+        }
+        return name;
+    };
+
     TableColumnInstance.prototype.init = function() {
+        this.refreshColumnsFromDOM();
+
+        // Lắng nghe thay đổi của tbody để tự động áp dụng khi có dữ liệu mới render
+        this.setupMutationObserver();
+    };
+
+    TableColumnInstance.prototype.refreshColumnsFromDOM = function() {
+        this.storageKey = this.getStorageKey();
+        this.tableName = this.getTableName();
+
         const thead = this.table.querySelector('thead');
         if (!thead) return;
 
@@ -177,9 +231,6 @@
 
         // Áp dụng cấu hình ngay lập tức lên DOM
         this.apply();
-
-        // Lắng nghe thay đổi của tbody để tự động áp dụng khi có dữ liệu mới render
-        this.setupMutationObserver();
     };
 
     TableColumnInstance.prototype.slugify = function(text) {
@@ -215,12 +266,16 @@
                         }
                     });
 
-                    // Thêm bất kỳ cột mới nào chưa có trong cache (cột STT luôn ưu tiên chèn đầu bảng)
-                    Object.values(defaultMap).forEach(function(c) {
+                    // Thêm bất kỳ cột mới nào chưa có trong cache theo thứ tự origIdx
+                    const remainingCols = Object.values(defaultMap).sort(function(a, b) {
+                        return a.origIdx - b.origIdx;
+                    });
+                    remainingCols.forEach(function(c) {
                         if (c.key === 'stt' || c.origIdx === 0) {
                             merged.unshift(Object.assign({}, c));
                         } else {
-                            merged.push(Object.assign({}, c));
+                            const targetIdx = Math.min(c.origIdx, merged.length);
+                            merged.splice(targetIdx, 0, Object.assign({}, c));
                         }
                     });
 

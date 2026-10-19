@@ -200,6 +200,9 @@
                 <div>
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tệp Tờ Khai Thông Quan (PDF hoặc Hình Ảnh)</label>
+                        <button type="button" onclick="pasteImageFromClipboard('customs')" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 cursor-pointer" title="Dán ảnh chụp tờ khai từ Clipboard (Ctrl+V)">
+                            <i class="ph-bold ph-clipboard-text"></i> Dán ảnh (Ctrl+V)
+                        </button>
                     </div>
                     <input type="file" id="cust-document-file" accept=".pdf,.png,.jpg,.jpeg" class="form-input h-8.5 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer w-full">
                     <div id="cust-current-doc-link" class="mt-1 hidden">

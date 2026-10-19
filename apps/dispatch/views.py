@@ -153,11 +153,38 @@ def index_view(request, *args, **kwargs):
     except Exception as e:
         office_users_data = []
 
+    from apps.master_data.models import CompanyProfile
+    try:
+        company = CompanyProfile.get_default_company()
+        company_profile_data = {
+            'id': company.id,
+            'company_name': company.company_name,
+            'short_name': company.short_name,
+            'tax_code': company.tax_code,
+            'phone': company.phone,
+            'email': company.email,
+            'website': company.website,
+            'address': company.address,
+            'representative_name': company.representative_name,
+            'representative_role': company.representative_role,
+            'bank_account_number': company.bank_account_number,
+            'bank_name': company.bank_name,
+            'bank_branch': company.bank_branch,
+            'operating_license': company.operating_license,
+            'default_vat_rate': float(company.default_vat_rate) if company.default_vat_rate else 8.0,
+            'fuel_reference_price': float(company.fuel_reference_price) if company.fuel_reference_price else 21000.0,
+            'logo_url': company.logo_url or '/static/images/trienvo_logo.png',
+        }
+    except Exception as e:
+        company_profile_data = {}
+
     office_users_json = json.dumps(office_users_data, ensure_ascii=False)
+    company_profile_json = json.dumps(company_profile_data, ensure_ascii=False)
 
     return render(request, 'index.html', {
         'current_employee': employee,
         'office_users_json': office_users_json,
+        'company_profile_json': company_profile_json,
     })
 
 
@@ -484,8 +511,10 @@ def news_detail_page_view(request, pk):
     author_role = author_emp.get_role_display() if author_emp else 'Quản trị viên'
     author_dept = author_emp.get_department_display() if author_emp else 'Toàn công ty'
 
+    company = CompanyProfile.get_default_company()
     context = {
         'post': post,
+        'company': company,
         'author_name': author_name,
         'author_role': author_role,
         'author_dept': author_dept,

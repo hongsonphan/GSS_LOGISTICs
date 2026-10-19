@@ -1823,6 +1823,13 @@ function renderCreateTaskInitialFiles() {
 }
 window.renderCreateTaskInitialFiles = renderCreateTaskInitialFiles;
 
+function addCreateTaskInitialFile(file) {
+    if (!file) return;
+    createTaskInitialFiles.push(file);
+    renderCreateTaskInitialFiles();
+}
+window.addCreateTaskInitialFile = addCreateTaskInitialFile;
+
 function setCreateTaskDueDateOffset(days) {
     const dueInput = document.getElementById('create-task-due');
     if (!dueInput) return;
@@ -2389,6 +2396,18 @@ function clearPendingChatFiles() {
     const preview = document.getElementById('chat-pending-files-preview');
     if (preview) preview.classList.add('hidden');
 }
+
+function addChatSelectedFile(file) {
+    if (!file) return;
+    chatSelectedFiles.push(file);
+    const preview = document.getElementById('chat-pending-files-preview');
+    const text = document.getElementById('chat-pending-files-text');
+    if (preview && text) {
+        text.textContent = `Đính kèm: ${chatSelectedFiles.map(f => f.name).join(', ')}`;
+        preview.classList.remove('hidden');
+    }
+}
+window.addChatSelectedFile = addChatSelectedFile;
 
 async function toggleChatDirectoryDropdown() {
     const dropdown = document.getElementById('chat-directory-dropdown');

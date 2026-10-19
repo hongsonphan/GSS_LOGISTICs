@@ -2,6 +2,61 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.5.6] - 2026-10-19 (Tách Cột Tên Viết Tắt Riêng Biệt & Đồng Bộ Trình Quản Lý Cột Tùy Biến Cho Bảng Khách Hàng)
+
+### 1. Tách Cột "Tên Viết Tắt" Thành Cột Riêng Biệt Trên Bảng Khách Hàng:
+- **Tách dữ liệu hiển thị (`static/js/app.js`, `static/js/modules/master_data.js`):**
+  * Tách riêng trường `short_name` thành một cột riêng biệt mang tên **"Tên Viết Tắt"** (`customer_short_name`), nằm ở vị trí cột thứ 2 (ngay sau cột "Mã Khách").
+  * Thiết kế cột Tên Viết Tắt với badge màu xanh ngọc (teal badge: `bg-teal-100 text-teal-800 border-teal-300 font-black`) nổi bật, căn giữa, giúp người điều phối và kế toán nhận diện nhanh mã viết tắt của đối tác/khách hàng.
+  * Tinh giản cột **"Tên Khách Hàng / Doanh Nghiệp"** (`customer_name`): Chỉ hiển thị tên đầy đủ của doanh nghiệp một cách rõ ràng, trang nhã, không còn bị lồng ghép badge viết tắt vào cùng một ô.
+  * Gán chuẩn xác các thuộc tính `data-col-key` và `data-col-name` cho toàn bộ các thẻ `<th>` và `<td>` của bảng Khách Hàng.
+
+### 2. Đồng Bộ Hóa Hoàn Toàn Với Trình Quản Lý Cột Toàn Năng (Universal Table Column Manager):
+- **Nâng cấp `column_manager.js` (`static/js/column_manager.js`):**
+  * Nâng cấp `TableColumnInstance` hỗ trợ nhận diện động từng sub-tab của bảng `md-main-table` thông qua `getStorageKey()` (ví dụ: `bim_table_cols_md-main-table_customers`), chống xung đột cache giữa 13 danh mục khác nhau.
+  * Thêm hàm `refreshColumnsFromDOM()` tự động quét lại cấu trúc `<th>` mới nhất của bảng và hợp nhất các cột mới thêm vào đúng thứ tự thiết kế (`origIdx`).
+  * Modal Tùy chỉnh cột hiển thị đầy đủ 9/9 cột (bao gồm cột mới "Tên Viết Tắt"), hỗ trợ:
+    1. Bật/tắt ẩn hiện cột bằng checkbox.
+    2. Kéo thả HTML5 Drag & Drop hoặc bấm mũi tên Lên/Xuống để sắp xếp thứ tự cột theo ý muốn.
+    3. Ghi nhớ cấu hình riêng biệt vào `localStorage` cho từng người dùng.
+    4. Nút Khôi phục mặc định 1 chạm đưa về trạng thái 9 cột gốc.
+
+### 3. Kiểm Thử Hệ Thống (Verification):
+- **Kiểm thử cú pháp JavaScript:** `node -c static/js/app.js`, `node -c static/js/column_manager.js`, `node -c static/js/modules/master_data.js` $\rightarrow$ 100% hợp lệ.
+- **Full Backend Regression Tests:** `python manage.py test --keepdb` $\rightarrow$ **102/102 test cases PASSED (34.5s)**.
+
+## [v3.5.5] - 2026-10-19 (Khắc Phục Lưu Cài Đặt Doanh Nghiệp Trong Master Data & Hệ Thống Dán Ảnh Clipboard Toàn Hệ Thống)
+
+### 1. Khắc Phục Lưu Cài Đặt Doanh Nghiệp (Master Data - Tab Thông Tin Công Ty):
+- **Sửa dứt điểm lỗi ReferenceError khi lưu Master Data (`static/js/app.js`, `core/views.py`):**
+  * Khắc phục lỗi `quickMasterDataTargetSelectId is not defined` và `loadMasterDataFormOptions is not a function` khi lưu tab `company`.
+  * Khai báo biến toàn cục an toàn `let quickMasterDataTargetSelectId = null;` và bọc kiểm tra điều kiện an toàn khi cập nhật form option.
+  * Tách luồng xử lý riêng biệt khi `tabKey === 'company'`: cập nhật bộ nhớ cache `masterDataCache['company']`, làm mới `window.SYSTEM_COMPANY`, gọi `syncCompanyProfileToPrintForms()` và `loadCompanyProfile()`, hiển thị thông báo thành công xanh ngọc mượt mà.
+  * Mở rộng form chỉnh sửa chi tiết Doanh nghiệp trong `templates/components/master_data_modal.html` (`#mdf-company-fields`), hỗ trợ nhập đầy đủ: Tên công ty, Tên viết tắt, Mã số thuế, Đại diện pháp luật, Chức danh, Hotline, Email, Địa chỉ trụ sở, Tài khoản ngân hàng, Giấy phép kinh doanh, Thuế VAT mặc định, Giá dầu tham chiếu và Đường dẫn Logo.
+
+### 2. Đồng Bộ Hóa Toàn Diện Thông Tin Doanh Nghiệp Lên Tất Cả Bản In & Phiếu Biểu:
+- **Chuẩn hóa hàm `getSystemCompanyProfile()` & `syncCompanyProfileToPrintForms()` (`static/js/app.js`):**
+  * Tự động quét và cập nhật các class `.print-comp-name`, `.print-comp-short-name`, `.print-comp-tax`, `.print-comp-address`, `.print-comp-phone`, `.print-comp-email`, `.print-comp-contact`, `.print-comp-logo` trên tất cả các mẫu in và tài liệu xuất bản.
+  * Đồng bộ hóa dữ liệu động lên Phiếu thu/chi sổ quỹ (chế độ Modal & Full-page View), Hợp đồng lao động, Phiếu lương nhân sự, Báo giá khách hàng, Đơn Booking và Tờ khai hải quan, gỡ bỏ toàn bộ chuỗi hardcode cũ.
+
+### 3. Hệ Thống Dán Ảnh Trực Tiếp Từ Clipboard (Universal Clipboard Image Paste & Ctrl+V):
+- **Hỗ trợ dán ảnh chụp màn hình 1 chạm (`static/js/app.js`, `static/js/collaboration.js`):**
+  * Xây dựng cơ chế trích xuất ảnh `extractImageFromClipboardEvent(e)` và nhận diện ngữ cảnh đang kích hoạt `detectActiveUploadContext()`.
+  * Lắng nghe sự kiện `paste` toàn cục (`window.addEventListener('paste', ...)`): Khi người dùng bấm `Ctrl+V` (ảnh chụp từ PrintScreen, Snipping Tool, Win+Shift+S hoặc Copy Image từ trình duyệt), hệ thống tự động phát hiện khu vực tải tệp của biểu mẫu đang mở và đính kèm ngay lập tức mà không chặn việc dán văn bản thuần túy vào các ô nhập liệu.
+  * Xây dựng hàm `pasteImageFromClipboard(targetType)` tích hợp `navigator.clipboard.read()` kèm nút bấm trực quan `Dán ảnh (Ctrl+V)` tại tất cả các giao diện:
+    1. **Bong bóng Chat & Kênh nội bộ** (`templates/components/chat_bubble.html`).
+    2. **Quản lý Nhiệm vụ Tasks**: Drawer Chi tiết Công việc & Modal Tạo Mới Nhiệm Vụ (`templates/views/view_tasks.html`).
+    3. **Tờ khai Hải quan**: Modal Khai báo & Màn hình Chi tiết Tờ khai (`templates/components/modal_customs_declaration.html`, `templates/views/view_customs_form.html`).
+    4. **Booking Vận tải**: Modal Booking & Màn hình Chi tiết Booking Đơn Hàng (`templates/components/modal_booking.html`, `templates/views/view_booking_detail.html`).
+    5. **Chuyến xe Điều vận**: Modal Tạo Chuyến Xe & Màn hình Chi tiết Lệnh Điều Động (`templates/components/modal_create_trip.html`, `templates/views/view_create_trip.html`).
+    6. **Bảng tin tức & Thông báo**: Form Đăng Tin Tức Mới (`templates/views/view_news.html`).
+    7. **Hóa đơn OCR & Phí phát sinh**: Modal AI OCR Nhận diện Chứng từ (`templates/components/modal_ocr.html`).
+
+### 4. Kiểm Thử Hệ Thống (Verification):
+- **Kiểm thử cú pháp JavaScript:** `node -c static/js/app.js` và `node -c static/js/collaboration.js` $\rightarrow$ 100% hợp lệ, không lỗi cú pháp.
+- **Django System Check:** `python manage.py check` $\rightarrow$ System check identified no issues (0 silenced).
+- **Full Backend Regression Tests:** `python manage.py test --keepdb` $\rightarrow$ **102/102 test cases PASSED (32.3s)**.
+
 ## [v3.5.4] - 2026-10-17 (Tối Ưu Không Gian Màn Hình Chat Di Động Full Visual Viewport — Giữ Nguyên Bộ Icon & Phong Cách Thiết Kế Hiện Đại)
 
 ### 1. Màn Hình Chat Di Động Toàn Khung Hình & Đồng Bộ Bàn Phím Ảo (`visualViewport`):

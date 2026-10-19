@@ -245,15 +245,19 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 - **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`**.
 - **Mục đích:** Quản lý hồ sơ đối tác chủ hàng, nhà máy xuất nhập khẩu và các công ty logistics giao dịch.
 - **Các trường thông tin chi tiết:**
-  * **Mã Khách Hàng (`*`):** Mã viết tắt viết hoa không dấu (Ví dụ: `SAMSUNG`, `VINFAST`, `THP_GROUP`).
-  * **Tên Doanh Nghiệp Đầy Đủ (`*`):** Tên công ty pháp lý (Ví dụ: `CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM`).
+  * **Mã Khách Hàng (`*`):** Mã hệ thống tự động hoặc thủ công viết hoa không dấu (Ví dụ: `KH001`, `SAMSUNG`, `VINFAST`, `THP_GROUP`).
+  * **Tên Viết Tắt (`short_name`):** Tên thương hiệu ngắn gọn (Ví dụ: `HHP`, `SAMSUNG`, `TRIỀN VÕ`), được hiển thị thành một **cột riêng biệt** trên bảng dữ liệu với badge màu xanh ngọc nhận diện nhanh.
+  * **Tên Doanh Nghiệp Đầy Đủ (`*`):** Tên công ty pháp lý (Ví dụ: `CÔNG TY TNHH VẬT LIỆU XÂY DỰNG HOÀNG HẢI PHÁT`). Cột này được trình bày độc lập, rõ ràng, không bị lồng badge viết tắt.
   * **Mã Số Thuế (`*`):** MST 10 hoặc 13 số bắt buộc để phục vụ xuất hóa đơn điện tử hợp lệ.
   * **Địa Chỉ Trụ Sở Doanh Nghiệp (`*`):** Địa chỉ ghi trên giấy phép ĐKKD.
-  * **Số Điện Thoại Liên Lạc (`*`):** Số điện thoại người đại diện hoặc phòng XNK.
-  * **Email Nhận Hóa Đơn VAT (`*`):** Email hòm thư kế toán nhận hóa đơn cước vận tải.
-  * **Người Phụ Trách Giao Nhận:** Tên và số điện thoại quản lý kho hàng bên khách.
-  * **Hạn Mức Công Nợ (VNĐ):** Số tiền tối đa khách được phép nợ gối đầu.
-  * **Thời Hạn Cho Phép Nợ (Ngày):** Số ngày được thanh toán chậm (Ví dụ: 30 ngày, 45 ngày).
+  * **Người Liên Hệ & Số Điện Thoại:** Tên người liên hệ kèm số điện thoại liên lạc.
+  * **Số Biểu Cước Đang Áp Dụng:** Số lượng tuyến cước liên kết với khách hàng.
+  * **Ghi Chú:** Các yêu cầu giao nhận đặc thù.
+- **Tính năng Tùy Biến Cột (Universal Column Manager):**
+  * Bấm nút **`Cột`** trên thanh công cụ để mở Modal **"Tùy Chỉnh Cột Hiển Thị (9/9)"**.
+  * Dễ dàng **Ẩn/Hiện** bất kỳ cột nào bằng Checkbox (cột *Tên Viết Tắt*, *Địa Chỉ*, *Ghi Chú*...).
+  * **Thay đổi thứ tự cột:** Bấm mũi tên Lên/Xuống hoặc dùng chuột **Kéo & Thả (Drag & Drop)** để xếp thứ tự cột theo ý muốn.
+  * **Khôi phục mặc định:** Bấm nút **"Khôi Phục Mặc Định"** để đưa cấu hình về chuẩn 9 cột ban đầu bất cứ lúc nào.
 - **Thao tác lưu:** Kiểm tra kỹ mã số thuế ➔ Bấm nút **`Lưu`**.
 
 ---

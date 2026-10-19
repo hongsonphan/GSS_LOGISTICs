@@ -910,31 +910,32 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'customers') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Khách</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Khách Hàng / Doanh Nghiệp</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Liên Hệ / SĐT</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Số Biểu Cước</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_code" data-col-name="Mã Khách">Mã Khách</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_short_name" data-col-name="Tên Viết Tắt">Tên Viết Tắt</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_name" data-col-name="Tên Khách Hàng / Doanh Nghiệp">Tên Khách Hàng / Doanh Nghiệp</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_tax_code" data-col-name="Mã Số Thuế">Mã Số Thuế</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_address" data-col-name="Địa Chỉ">Địa Chỉ</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_contact" data-col-name="Người Liên Hệ / SĐT">Người Liên Hệ / SĐT</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_tariffs_count" data-col-name="Số Biểu Cước">Số Biểu Cước</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_notes" data-col-name="Ghi Chú">Ghi Chú</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none" data-col-key="thao_tac" data-col-name="Thao Tác" data-col-locked="true">Thao Tác</th>
             </tr>
         `;
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
-                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
-                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        ${item.short_name ? `<span class="px-1.5 py-0.2 rounded text-[10.5px] font-black bg-teal-100 text-teal-800 border border-teal-300 uppercase shrink-0" title="Tên viết tắt">${escapeHtml(item.short_name)}</span>` : ''}
-                        <span>${escapeHtml(item.name)}</span>
-                    </div>
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200" data-col-key="customer_code">${escapeHtml(item.code || '')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200" data-col-key="customer_short_name">
+                    ${item.short_name ? `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-black bg-teal-100 text-teal-800 border border-teal-300 uppercase tracking-wide shrink-0" title="Tên viết tắt">${escapeHtml(item.short_name)}</span>` : '<span class="text-slate-400 font-normal">—</span>'}
                 </td>
-                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
-                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.address || '—'}</td>
-                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">${item.contact_person ? `${item.contact_person} (${item.phone || ''})` : (item.phone || '—')}</td>
-                <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold text-[12px] text-slate-800">${item.tariffs_count || 0} tuyến</td>
-                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200">${item.notes || '—'}</td>
-                <td class="py-2 px-3 text-center">
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200" data-col-key="customer_name">
+                    <span>${escapeHtml(item.name || '—')}</span>
+                </td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200" data-col-key="customer_tax_code">${escapeHtml(item.tax_code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200" data-col-key="customer_address" title="${escapeHtml(item.address || '')}">${escapeHtml(item.address || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200" data-col-key="customer_contact">${item.contact_person ? `${escapeHtml(item.contact_person)} (${escapeHtml(item.phone || '')})` : escapeHtml(item.phone || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold text-[12px] text-slate-800" data-col-key="customer_tariffs_count">${item.tariffs_count || 0} tuyến</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200" data-col-key="customer_notes" title="${escapeHtml(item.notes || '')}">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-center" data-col-key="thao_tac">
                     <div class="flex items-center justify-center space-x-1">
                         <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteMasterDataItem(${item.id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa mềm"><i class="ph-bold ph-trash text-sm"></i></button>
@@ -1166,6 +1167,11 @@ function renderMasterDataTable(items, total = items.length) {
                 </td>
             </tr>
         `).join('');
+    }
+
+    // Tự động đồng bộ với Universal Table Column Manager nếu có
+    if (window.BimTableColumnManager && window.BimTableColumnManager.instances['md-main-table']) {
+        window.BimTableColumnManager.instances['md-main-table'].refreshColumnsFromDOM();
     }
 }
 

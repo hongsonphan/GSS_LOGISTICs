@@ -35,6 +35,7 @@ from apps.personnel.serializers import (
 )
 from apps.dispatch.models import DispatchTrip, TripStatus
 from apps.billing.models import CashTransaction, TransactionType, PaymentMethod, CashFlowCategory, DriverTripAdvance
+from apps.master_data.models import CompanyProfile
 
 
 class EmployeePermission(permissions.BasePermission):
@@ -1224,6 +1225,9 @@ class PayrollExportBankAPIView(APIView):
         bank_rows = []
         total_transfer = Decimal('0')
 
+        company = CompanyProfile.get_default_company()
+        comp_brand = (company.short_name or company.company_name or "TRIEN VO LOGISTICS").upper()
+
         for idx, slip in enumerate(slips, start=1):
             emp = slip.employee
             beneficiary = slip.bank_beneficiary or emp.bank_beneficiary or emp.full_name.upper()
@@ -1231,7 +1235,7 @@ class PayrollExportBankAPIView(APIView):
             b_name = slip.bank_name or emp.bank_name or ''
             b_branch = emp.bank_branch or ''
             amount = slip.net_salary
-            memo = f"TRIEN VO LOGISTICS TRA LUONG {period.period_code} NV {emp.code}"
+            memo = f"{comp_brand} TRA LUONG {period.period_code} NV {emp.code}"
 
             bank_rows.append({
                 'stt': idx,
@@ -1272,13 +1276,19 @@ class PayrollSlipPrintAPIView(APIView):
         )
         emp = slip.employee
         period = slip.period
+        company = CompanyProfile.get_default_company()
 
         return Response({
             'company': {
-                'name': "CÔNG TY TNHH TIẾP VẬN TRIỀN VÕ (BIM LOGISTICS)",
-                'address': "Số 10, Đường 12, P. Long Bình, TP. Thủ Đức, TP. Hồ Chí Minh",
-                'tax_id': "0316888888",
-                'hotline': "0908 123 456",
+                'name': company.company_name,
+                'short_name': company.short_name,
+                'address': company.address,
+                'tax_id': company.tax_code,
+                'hotline': company.phone,
+                'email': company.email,
+                'representative_name': company.representative_name,
+                'representative_role': company.representative_role,
+                'logo_url': company.logo_url or '/static/images/trienvo_logo.png',
             },
             'slip': PayrollSlipSerializer(slip).data,
             'employee': {

@@ -177,6 +177,8 @@
 
         // Danh bạ nhân sự văn phòng tiền tải (Zero-latency cho Modal Giao việc & Theo dõi chung)
         window.PRELOADED_OFFICE_USERS = {{ office_users_json|default:"[]"|safe }};
+        // Thông tin công ty gốc tiền tải từ Cài đặt hệ thống (Zero-latency cho Báo cáo & Bản in)
+        window.SYSTEM_COMPANY = {{ company_profile_json|default:"{}"|safe }};
     </script>
     <script src="{% static 'js/column_manager.js' %}?v=2.9.39"></script>
     <script src="{% static 'js/app.js' %}?v=2.9.43"></script>

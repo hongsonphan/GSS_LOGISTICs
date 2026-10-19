@@ -83,10 +83,13 @@
                     </div>
 
                     <!-- Nút đính kèm tệp -->
-                    <label class="cursor-pointer p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0">
+                    <label class="cursor-pointer p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0" title="Chọn tệp đính kèm">
                         <i class="ph-bold ph-paperclip text-lg"></i>
                         <input type="file" id="chat-file-input" onchange="handleChatFilesSelected(event)" class="hidden" multiple>
                     </label>
+                    <button type="button" onclick="pasteImageFromClipboard('chat')" class="p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0 cursor-pointer" title="Dán ảnh chụp màn hình từ Clipboard (Ctrl+V)">
+                        <i class="ph-bold ph-clipboard-text text-lg"></i>
+                    </button>
 
                     <!-- Textarea Tin nhắn -->
                     <textarea id="chat-message-input" rows="1" onkeydown="handleChatInputKeydown(event)" oninput="autoResizeChatInput(this)" placeholder="Nhập tin nhắn (Enter để gửi, @tag tên)..." class="flex-1 bg-slate-100 border-none rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none resize-none max-h-24 leading-relaxed"></textarea>
