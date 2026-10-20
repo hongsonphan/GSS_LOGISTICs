@@ -2482,10 +2482,13 @@ class CurrentUserProfileAPITestCase(TestCase):
 
 class SidebarHoverPeekTestCase(TestCase):
     def test_sidebar_hover_peek_assets_and_templates(self):
-        # 1. Kiểm tra template sidebar có nút toggle ghim
+        # 1. Kiểm tra template sidebar có nút toggle ghim đồng bộ
         with open('templates/components/sidebar.html', 'r', encoding='utf-8') as f:
             s_html = f.read()
         self.assertIn('app-sidebar-header', s_html)
+        self.assertIn('id="btn-sidebar-header-toggle"', s_html)
+        self.assertIn('id="icon-sidebar-header-arrow-in"', s_html)
+        self.assertIn('id="icon-sidebar-header-arrow-out"', s_html)
         self.assertIn('toggleSidebar()', s_html)
 
         # 2. Kiểm tra template topbar có nút hide/show sidebar

@@ -22160,16 +22160,38 @@ async function deleteMasterDataItem(id) {
 function syncSidebarUIState(isCollapsed) {
     const arrowIn = document.getElementById('icon-sidebar-arrow-in');
     const arrowOut = document.getElementById('icon-sidebar-arrow-out');
+    const headerArrowIn = document.getElementById('icon-sidebar-header-arrow-in');
+    const headerArrowOut = document.getElementById('icon-sidebar-header-arrow-out');
+    const headerToggleBtn = document.getElementById('btn-sidebar-header-toggle');
+    const topbarToggleBtn = document.getElementById('btn-toggle-sidebar');
     const backdrop = document.getElementById('sidebar-mobile-backdrop');
+
     if (arrowIn && arrowOut) {
         if (isCollapsed) {
             arrowIn.classList.add('hidden');
             arrowOut.classList.remove('hidden');
+            if (topbarToggleBtn) topbarToggleBtn.title = "Mở rộng thanh điều hướng Sidebar";
         } else {
             arrowIn.classList.remove('hidden');
             arrowOut.classList.add('hidden');
+            if (topbarToggleBtn) topbarToggleBtn.title = "Thu gọn / Ẩn Sidebar";
         }
     }
+
+    if (headerArrowIn && headerArrowOut) {
+        if (isCollapsed) {
+            // Khi đang ở chế độ hide: Nút trên sidebar hiển thị mũi tên hướng ra (phải) để bấm ghim mở cố định
+            headerArrowIn.classList.add('hidden');
+            headerArrowOut.classList.remove('hidden');
+            if (headerToggleBtn) headerToggleBtn.title = "Ghim mở cố định Sidebar";
+        } else {
+            // Khi đang mở cố định: Nút trên sidebar hiển thị mũi tên hướng vô (trái) để bấm thu gọn
+            headerArrowIn.classList.remove('hidden');
+            headerArrowOut.classList.add('hidden');
+            if (headerToggleBtn) headerToggleBtn.title = "Thu gọn / Ẩn Sidebar";
+        }
+    }
+
     if (backdrop) {
         if (isCollapsed || window.innerWidth >= 1024) {
             backdrop.classList.add('hidden');
@@ -22196,7 +22218,20 @@ window.collapseSidebar = collapseSidebar;
 function toggleSidebar() {
     const sidebar = document.querySelector('.app-sidebar');
     if (!sidebar) return;
+
+    const isPeek = sidebar.classList.contains('sidebar-peek');
     sidebar.classList.remove('sidebar-peek');
+
+    // Nếu đang ở chế độ Peek (hover khi đang hide): Bấm vào nút có nghĩa là người dùng muốn GHIM MỞ CỐ ĐỊNH (uncollapse)
+    if (isPeek && sidebar.classList.contains('collapsed')) {
+        sidebar.classList.remove('collapsed');
+        syncSidebarUIState(false);
+        try {
+            localStorage.setItem('bim_sidebar_collapsed', 'false');
+        } catch (e) {}
+        return;
+    }
+
     sidebar.classList.toggle('collapsed');
     const isCollapsed = sidebar.classList.contains('collapsed');
     syncSidebarUIState(isCollapsed);
