@@ -125,6 +125,7 @@ class ContractAppendixSerializer(serializers.ModelSerializer):
 
 
 class LaborContractSerializer(serializers.ModelSerializer):
+    contract_number = serializers.CharField(required=False, allow_blank=True)
     employee_code = serializers.CharField(source='employee.code', read_only=True)
     employee_name = serializers.CharField(source='employee.full_name', read_only=True)
     department_label = serializers.CharField(source='get_department_display', read_only=True)
