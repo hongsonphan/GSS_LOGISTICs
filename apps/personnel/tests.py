@@ -185,7 +185,7 @@ class PersonnelHRMAPITestCase(TestCase):
 
     def test_create_contract_and_appendix(self):
         contract_payload = {
-            'contract_number': 'HDLD-TX999-2025',
+            'contract_number': 'HDLD.2025.0001',
             'employee': self.driver_emp.id,
             'contract_type': 'DEFINITE_TERM',
             'status': 'ACTIVE',
@@ -201,7 +201,7 @@ class PersonnelHRMAPITestCase(TestCase):
         # Thêm phụ lục
         app_payload = {
             'contract': contract_id,
-            'appendix_number': 'PL01',
+            'appendix_number': 'HDLD.2025.0001.PL1',
             'effective_date': '2025-06-01',
             'new_base_salary': 7000000,
             'change_summary': 'Tăng lương cơ bản'
@@ -209,6 +209,57 @@ class PersonnelHRMAPITestCase(TestCase):
         res2 = self.client.post('/api/personnel/appendices/', app_payload, format='json')
         self.assertEqual(res2.status_code, status.HTTP_201_CREATED)
         self.assertTrue(res2.json()['success'])
+
+    def test_contract_and_appendix_numbering_rules(self):
+        """
+        Kiểm thử quy tắc sinh mã HĐLĐ và Phụ lục theo chuẩn:
+        - HĐLĐ: HDLD.2026.xxxx
+        - Phụ lục: HDLD.2026.xxxx.PL1, HDLD.2026.xxxx.PL2
+        - HDTV: HDTV.2026.xxxx
+        - HDKV: HDKV.2026.xxxx
+        """
+        # 1. Sinh số tự động
+        hdld_code = LaborContract.generate_next_contract_number('DEFINITE_TERM', 2026)
+        self.assertTrue(hdld_code.startswith('HDLD.2026.'))
+        
+        hdtv_code = LaborContract.generate_next_contract_number('PROBATION', 2026)
+        self.assertTrue(hdtv_code.startswith('HDTV.2026.'))
+
+        hdkv_code = LaborContract.generate_next_contract_number('SEASONAL', 2026)
+        self.assertTrue(hdkv_code.startswith('HDKV.2026.'))
+
+        # 2. Tạo HĐ qua API không truyền contract_number -> hệ thống tự sinh theo rule
+        c_res = self.client.post('/api/personnel/contracts/', {
+            'employee': self.driver_emp.id,
+            'contract_type': 'DEFINITE_TERM',
+            'sign_date': '2026-01-01',
+            'start_date': '2026-01-01',
+            'base_salary': 8000000,
+        }, format='json')
+        self.assertEqual(c_res.status_code, status.HTTP_201_CREATED)
+        c_data = c_res.json()['data']
+        contract_num = c_data['contract_number']
+        self.assertTrue(contract_num.startswith('HDLD.2026.'))
+
+        # 3. Tạo Phụ lục 1 tự sinh số
+        app1_res = self.client.post('/api/personnel/appendices/', {
+            'contract': c_data['id'],
+            'effective_date': '2026-03-01',
+            'change_summary': 'Điều chỉnh phụ cấp PL1',
+        }, format='json')
+        self.assertEqual(app1_res.status_code, status.HTTP_201_CREATED)
+        app1_data = app1_res.json()['data']
+        self.assertEqual(app1_data['appendix_number'], f"{contract_num}.PL1")
+
+        # 4. Tạo Phụ lục 2 tự sinh số
+        app2_res = self.client.post('/api/personnel/appendices/', {
+            'contract': c_data['id'],
+            'effective_date': '2026-06-01',
+            'change_summary': 'Điều chỉnh lương PL2',
+        }, format='json')
+        self.assertEqual(app2_res.status_code, status.HTTP_201_CREATED)
+        app2_data = app2_res.json()['data']
+        self.assertEqual(app2_data['appendix_number'], f"{contract_num}.PL2")
 
     # -------------------------------------------------------------
     # Test Hybrid Payroll Engine & Sổ Quỹ CashTransaction Integration

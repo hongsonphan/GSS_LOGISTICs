@@ -8447,6 +8447,64 @@ function calculateContractTotalSalary() {
 }
 window.calculateContractTotalSalary = calculateContractTotalSalary;
 
+function getContractTypePrefix(type) {
+    if (!type) return 'HDLD';
+    const t = String(type).toUpperCase();
+    if (t === 'PROBATION') return 'HDTV';
+    if (t === 'SEASONAL') return 'HDKV';
+    return 'HDLD';
+}
+
+async function suggestContractNumber(type = 'DEFINITE_TERM', year = null) {
+    const curYear = year || new Date().getFullYear();
+    const prefix = getContractTypePrefix(type);
+    try {
+        const res = await fetchWithAuth(`/api/personnel/contracts/?action=suggest_number&type=${encodeURIComponent(type)}&year=${curYear}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.suggested_contract_number) return data.suggested_contract_number;
+        }
+    } catch (e) {
+        console.warn('Lỗi lấy mã HĐ gợi ý từ máy chủ:', e);
+    }
+    // Fallback tính số tiếp theo nếu mạng chậm
+    let maxSeq = 0;
+    if (Array.isArray(rawContractsList)) {
+        rawContractsList.forEach(c => {
+            const num = c.contract_number || '';
+            const m = num.match(/\.(\d{1,6})$/);
+            if (m) {
+                const s = parseInt(m[1], 10);
+                if (s > maxSeq) maxSeq = s;
+            }
+        });
+    }
+    const nextSeq = String(maxSeq + 1).padStart(4, '0');
+    return `${prefix}.${curYear}.${nextSeq}`;
+}
+
+function onContractTypeChange() {
+    const contractId = document.getElementById('contract-detail-id')?.value;
+    if (contractId) return; // Nếu đang chỉnh sửa HĐ đã có ID thì giữ nguyên
+    const type = document.getElementById('cd-type')?.value || 'DEFINITE_TERM';
+    const numInput = document.getElementById('cd-number');
+    if (!numInput) return;
+    const curVal = numInput.value.trim();
+    const prefix = getContractTypePrefix(type);
+
+    // Nếu mã hiện tại đang khớp format chuẩn: (HDLD|HDTV|HDKV).\d{4}.\d{4}
+    const m = curVal.match(/^(HDLD|HDTV|HDKV)\.(\d{4})\.(\d{4})$/);
+    if (m) {
+        numInput.value = `${prefix}.${m[2]}.${m[3]}`;
+    } else {
+        suggestContractNumber(type).then(num => {
+            if (numInput && !document.getElementById('contract-detail-id')?.value) {
+                numInput.value = num;
+            }
+        });
+    }
+}
+
 async function openCreateContractPage(employeeId = null, updateHistory = true) {
     currentViewingContractId = null;
     const form = document.getElementById('form-contract-detail');
@@ -8454,11 +8512,23 @@ async function openCreateContractPage(employeeId = null, updateHistory = true) {
     
     document.getElementById('contract-detail-id').value = '';
     
-    // Tự sinh số HĐ mẫu chuẩn
+    // Tự sinh số HĐ chuẩn: [Loại hợp đồng].[Năm].[SốTT trong năm]
     const curYear = new Date().getFullYear();
-    const randomCode = Math.floor(100 + Math.random() * 900);
+    const typeSelect = document.getElementById('cd-type');
+    const contractType = typeSelect ? typeSelect.value : 'DEFINITE_TERM';
     const numInput = document.getElementById('cd-number');
-    if (numInput) numInput.value = `HDLD-${curYear}-${randomCode}`;
+    if (numInput) {
+        numInput.value = 'Đang tạo mã...';
+        suggestContractNumber(contractType, curYear).then(suggested => {
+            if (numInput && (numInput.value === 'Đang tạo mã...' || !numInput.value)) {
+                numInput.value = suggested;
+            }
+        }).catch(() => {
+            if (numInput && (numInput.value === 'Đang tạo mã...' || !numInput.value)) {
+                numInput.value = `HDLD.${curYear}.0001`;
+            }
+        });
+    }
 
     const today = new Date().toISOString().split('T')[0];
     const signInput = document.getElementById('cd-sign-date');
@@ -8598,6 +8668,15 @@ async function openContractDetailPage(contractId, updateHistory = true) {
         }
 
         await populateContractEmployeeDropdown(c.employee);
+
+        // Lưu mã phụ lục gợi ý theo chuẩn [Mã HĐ].PL[SốTT]
+        if (c.suggested_appendix_number) {
+            window._currentContractSuggestedAppendix = c.suggested_appendix_number;
+        } else {
+            const numHĐ = c.contract_number || '';
+            const nextPl = (c.appendices ? c.appendices.length : 0) + 1;
+            window._currentContractSuggestedAppendix = `${numHĐ}.PL${nextPl}`;
+        }
 
         // Hiển thị danh sách Phụ Lục HĐ
         const appCard = document.getElementById('contract-appendices-card');
@@ -8830,11 +8909,36 @@ function toggleAddAppendixInline() {
 
     box.classList.toggle('hidden');
     if (!box.classList.contains('hidden')) {
-        const numHĐ = document.getElementById('cd-number')?.value || '';
-        document.getElementById('inline-app-number').value = `PL-01/${numHĐ}`;
+        const numHĐ = document.getElementById('cd-number')?.value.trim() || '';
+        
+        let suggestedPl = window._currentContractSuggestedAppendix;
+        if (!suggestedPl || !suggestedPl.startsWith(numHĐ)) {
+            const tbody = document.getElementById('contract-appendices-tbody');
+            const rows = tbody ? tbody.querySelectorAll('tr') : [];
+            let maxPl = 0;
+            rows.forEach(r => {
+                const txt = r.innerText || '';
+                const m = txt.match(/\.PL(\d+)/i) || txt.match(/PL-?(\d+)/i);
+                if (m) {
+                    const s = parseInt(m[1], 10);
+                    if (s > maxPl) maxPl = s;
+                }
+            });
+            if (maxPl === 0) {
+                const validRows = Array.from(rows).filter(r => !r.innerText.includes('Chưa có phụ lục'));
+                maxPl = validRows.length;
+            }
+            suggestedPl = `${numHĐ}.PL${maxPl + 1}`;
+        }
+
+        document.getElementById('inline-app-number').value = suggestedPl;
         document.getElementById('inline-app-date').value = new Date().toISOString().split('T')[0];
         document.getElementById('inline-app-salary').value = document.getElementById('cd-base-salary')?.value || '';
-        document.getElementById('inline-app-role').value = document.getElementById('cd-job-title')?.value || '';
+        document.getElementById('inline-app-insurance-salary').value = document.getElementById('cd-insurance-salary')?.value || '';
+        document.getElementById('inline-app-allowance').value = document.getElementById('cd-allowance-amount')?.value || '0';
+        document.getElementById('inline-app-subsidy').value = document.getElementById('cd-subsidy-amount')?.value || '0';
+        document.getElementById('inline-app-department').value = document.getElementById('cd-department')?.value || '';
+        document.getElementById('inline-app-role').value = document.getElementById('cd-job-title')?.value || document.getElementById('cd-role')?.value || '';
         document.getElementById('inline-app-summary').value = '';
     }
 }
@@ -8851,9 +8955,15 @@ async function submitInlineAppendix() {
     const allowClean = String(document.getElementById('inline-app-allowance')?.value || '').replace(/\D/g, '');
     const subClean = String(document.getElementById('inline-app-subsidy')?.value || '').replace(/\D/g, '');
 
+    const numHĐ = document.getElementById('cd-number')?.value.trim() || '';
+    let appNum = document.getElementById('inline-app-number').value.trim();
+    if (!appNum) {
+        appNum = window._currentContractSuggestedAppendix || `${numHĐ}.PL1`;
+    }
+
     const payload = {
         contract: parseInt(contractId),
-        appendix_number: document.getElementById('inline-app-number').value.trim(),
+        appendix_number: appNum,
         effective_date: normalizeDateToISO(document.getElementById('inline-app-date').value),
         new_base_salary: salClean ? parseFloat(salClean) : null,
         new_insurance_salary: insClean ? parseFloat(insClean) : null,
@@ -13593,9 +13703,17 @@ function resetTopbarStandardMode(tabId) {
 function switchTab(tabId, updateHistory = true) {
     if (!tabId) tabId = 'dashboard';
 
-    // Tự động ẩn (auto-hide) Sidebar khi người dùng bấm chọn menu hoặc đang trên thiết bị di động
-    if ((updateHistory || window.innerWidth < 1024) && typeof collapseSidebar === 'function') {
-        collapseSidebar();
+    // Tự động ẩn (auto-hide) Sidebar khi đang trên thiết bị di động hoặc đang ở chế độ Hover Peek
+    const curSidebar = document.querySelector('.app-sidebar');
+    const isSidebarPeekActive = curSidebar && curSidebar.classList.contains('sidebar-peek');
+    const isSavedSidebarCollapsed = localStorage.getItem('bim_sidebar_collapsed') === 'true';
+
+    if (isSidebarPeekActive) {
+        curSidebar.classList.remove('sidebar-peek');
+    } else if (window.innerWidth < 1024 || isSavedSidebarCollapsed) {
+        if (typeof collapseSidebar === 'function') {
+            collapseSidebar(isSavedSidebarCollapsed);
+        }
     }
 
     // 1. Luôn đồng bộ URL sạch trên thanh địa chỉ trình duyệt trước tiên
@@ -22064,6 +22182,7 @@ function syncSidebarUIState(isCollapsed) {
 function collapseSidebar(savePreference = true) {
     const sidebar = document.querySelector('.app-sidebar');
     if (!sidebar) return;
+    sidebar.classList.remove('sidebar-peek');
     sidebar.classList.add('collapsed');
     syncSidebarUIState(true);
     if (savePreference) {
@@ -22077,6 +22196,7 @@ window.collapseSidebar = collapseSidebar;
 function toggleSidebar() {
     const sidebar = document.querySelector('.app-sidebar');
     if (!sidebar) return;
+    sidebar.classList.remove('sidebar-peek');
     sidebar.classList.toggle('collapsed');
     const isCollapsed = sidebar.classList.contains('collapsed');
     syncSidebarUIState(isCollapsed);
@@ -22085,6 +22205,87 @@ function toggleSidebar() {
     } catch (e) {}
 }
 window.toggleSidebar = toggleSidebar;
+
+/**
+ * Khởi tạo tính năng Hover Peek cho Sidebar trên Desktop (Bim_ERP Standard):
+ * - Khi sidebar đang ở trạng thái Hide (collapsed):
+ *   Quơ con chuột vào nút hide (hình) sẽ hiển thị sidebar ra dạng flyout để bấm chọn menu.
+ * - Rời con chuột đi (khỏi nút và khỏi sidebar) -> sidebar tự động hide lại.
+ * - Bấm vào bất kỳ mục menu nào trong sidebar -> chuyển trang và sidebar tự động hide lại.
+ * - Không ảnh hưởng đến hành vi của mobile (<1024px) và thao tác click ghim cố định desktop.
+ */
+function initSidebarHoverPeek() {
+    const btnToggle = document.getElementById('btn-toggle-sidebar');
+    const sidebar = document.querySelector('.app-sidebar');
+    if (!btnToggle || !sidebar) return;
+
+    let peekTimer = null;
+    let isOverTrigger = false;
+    let isOverSidebar = false;
+
+    const canHover = () => window.innerWidth >= 1024 && window.matchMedia('(hover: hover)').matches;
+
+    const showPeek = () => {
+        if (!canHover()) return;
+        // Chỉ kích hoạt khi sidebar đang ở trạng thái hide (collapsed)
+        if (!sidebar.classList.contains('collapsed')) return;
+
+        if (peekTimer) {
+            clearTimeout(peekTimer);
+            peekTimer = null;
+        }
+        sidebar.classList.add('sidebar-peek');
+    };
+
+    const scheduleHidePeek = () => {
+        if (peekTimer) clearTimeout(peekTimer);
+        peekTimer = setTimeout(() => {
+            if (!isOverTrigger && !isOverSidebar) {
+                sidebar.classList.remove('sidebar-peek');
+            }
+        }, 220); // 220ms debounce mượt mà, không bị giật
+    };
+
+    btnToggle.addEventListener('mouseenter', () => {
+        if (!canHover()) return;
+        isOverTrigger = true;
+        showPeek();
+    });
+
+    btnToggle.addEventListener('mouseleave', () => {
+        if (!canHover()) return;
+        isOverTrigger = false;
+        scheduleHidePeek();
+    });
+
+    sidebar.addEventListener('mouseenter', () => {
+        if (!canHover()) return;
+        isOverSidebar = true;
+        if (peekTimer) {
+            clearTimeout(peekTimer);
+            peekTimer = null;
+        }
+    });
+
+    sidebar.addEventListener('mouseleave', () => {
+        if (!canHover()) return;
+        isOverSidebar = false;
+        scheduleHidePeek();
+    });
+
+    // Khi người dùng click vào bất kỳ menu nào trong sidebar: Tắt peek ngay
+    sidebar.querySelectorAll('a, button').forEach(el => {
+        el.addEventListener('click', () => {
+            if (sidebar.classList.contains('sidebar-peek')) {
+                sidebar.classList.remove('sidebar-peek');
+                isOverTrigger = false;
+                isOverSidebar = false;
+                if (peekTimer) clearTimeout(peekTimer);
+            }
+        });
+    });
+}
+window.initSidebarHoverPeek = initSidebarHoverPeek;
 
 function toggleDashboardCharts() {
     const rowPillars = document.getElementById('dashboard-row-pillars');
@@ -22138,10 +22339,18 @@ document.addEventListener('DOMContentLoaded', () => {
         dateEl.innerText = `${dayName}, ${d}/${m}/${y}`;
     }
 
-    // Gắn sự kiện: Khi bấm vào bất kỳ menu nào trên Sidebar -> Tự động ẩn (auto-hide) Sidebar ngay lập tức
+    // Khởi tạo tính năng Hover Peek cho Desktop khi sidebar đang ở trạng thái Hide
+    initSidebarHoverPeek();
+
+    // Gắn sự kiện: Khi bấm vào bất kỳ menu nào trên Sidebar
     document.querySelectorAll('.app-sidebar .sidebar-item-main, .app-sidebar-header a').forEach(menuEl => {
         menuEl.addEventListener('click', () => {
-            collapseSidebar();
+            const sidebar = document.querySelector('.app-sidebar');
+            if (sidebar && sidebar.classList.contains('sidebar-peek')) {
+                sidebar.classList.remove('sidebar-peek');
+            } else if (window.innerWidth < 1024 || localStorage.getItem('bim_sidebar_collapsed') === 'true') {
+                collapseSidebar();
+            }
         });
     });
 
@@ -28793,6 +29002,9 @@ window.closeCreatePeriodModal = typeof closeCreatePeriodModal !== 'undefined' ? 
 window.submitCreatePeriod = typeof submitCreatePeriod !== 'undefined' ? submitCreatePeriod : undefined;
 window.savePayrollPolicyConfig = typeof savePayrollPolicyConfig !== 'undefined' ? savePayrollPolicyConfig : undefined;
 window.saveSalaryDeductionRate = typeof saveSalaryDeductionRate !== 'undefined' ? saveSalaryDeductionRate : undefined;
+window.getContractTypePrefix = typeof getContractTypePrefix !== 'undefined' ? getContractTypePrefix : undefined;
+window.suggestContractNumber = typeof suggestContractNumber !== 'undefined' ? suggestContractNumber : undefined;
+window.onContractTypeChange = typeof onContractTypeChange !== 'undefined' ? onContractTypeChange : undefined;
 window.openCreateContractPage = typeof openCreateContractPage !== 'undefined' ? openCreateContractPage : undefined;
 window.openContractDetailPage = typeof openContractDetailPage !== 'undefined' ? openContractDetailPage : undefined;
 window.openCreateContractModal = typeof openCreateContractPage !== 'undefined' ? openCreateContractPage : undefined;

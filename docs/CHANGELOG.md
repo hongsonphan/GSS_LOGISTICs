@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.0] - 2026-10-20 (Nâng Cấp Trải Nghiệm Điều Hướng: Tính Năng Hover Peek Cho Sidebar Desktop Khi Đang Hide & Bảo Toàn 100% Drawer Mobile)
+
+### 1. Trải Nghiệm Hover Peek Tốc Độ Cao Trên Màn Hình Desktop (`static/js/app.js`, `static/css/main.css`):
+- **Cơ chế Hover to Peek:**
+  * Khi người dùng chọn Hide Sidebar (sidebar ở trạng thái `collapsed`), việc quơ con chuột (`mouseenter`) vào nút hide trên Topbar (`#btn-toggle-sidebar`) sẽ kích hoạt chế độ `sidebar-peek`.
+  * Sidebar trượt ra êm ái dạng Floating Flyout Drawer (`z-index: 60`, bóng đổ nổi `box-shadow: 14px 0 40px -4px rgba(15, 23, 42, 0.55)`), giúp người dùng xem và bấm chọn các menu một cách tức thì.
+  * Khi con chuột rời khỏi (`mouseleave`) cả nút toggle và sidebar: Hệ thống tự động kích hoạt bộ đếm thời gian debounce 220ms và tự động thu gọn (hide lại) sidebar, trả lại không gian làm việc rộng rãi toàn màn hình.
+  * Khi người dùng click vào bất kỳ menu nào trong sidebar: Trang tự động điều hướng sang phân hệ tương ứng và sidebar peek tự động thu gọn lại ngay lập tức.
+- **Bảo toàn khả năng Ghim Cố Định (Pin/Unpin):**
+  * Thao tác click chuột trực tiếp vào nút toggle trên Topbar (`#btn-toggle-sidebar`) hoặc nút pin mới trên header sidebar (`app-sidebar-header`) vẫn thực hiện ghim mở cố định hoặc thu gọn vĩnh viễn theo ý muốn người dùng (`localStorage.setItem('bim_sidebar_collapsed', ...)`).
+  * Khi sidebar đang mở cố định trên Desktop, việc bấm chuyển tab trong nội bộ hệ thống sẽ giữ nguyên sidebar không bị co lại.
+
+### 2. Bảo Toàn Tuyệt Đối 100% Tính Năng Giao Diện Mobile & Responsive:
+- **Zero-Regression trên Mobile:**
+  * Giữ nguyên cơ chế Fixed Slide-Over Drawer và backdrop bán trong suốt (`#sidebar-mobile-backdrop`) trên thiết bị di động / tablet (`< 1024px`).
+  * Cơ chế Hover Peek chỉ được kích hoạt khi màn hình `>= 1024px` và có con trỏ chuột (`window.matchMedia('(hover: hover)').matches`), hoàn toàn không gây ảnh hưởng đến thao tác cảm ứng chạm (Touch / Tap) trên điện thoại.
+
+### 3. Kiểm Thử Hệ Thống (Verification):
+- **Cú pháp JavaScript:** `node -c static/js/app.js` $ightarrow$ 100% Passed.
+- **Django System Check:** `python manage.py check` $ightarrow$ 0 issues.
+- **Unit & Integrity Tests:** `python manage.py test core.tests.SidebarHoverPeekTestCase core.tests.FrontendSyntaxIntegrityTestCase --keepdb` $ightarrow$ 4/4 Passed.
+
 ## [v3.5.9] - 2026-10-20 (Chuẩn Hóa Phân Hệ Nhân Sự Theo BIM ERP: Tách Biệt Hồ Sơ Cá Nhân & Quản Trị Tính Lương Bằng Hợp Đồng Lao Động Hiện Hành)
 
 ### 1. Tách Biệt Hồ Sơ Nhân Thân Cá Nhân & Hợp Đồng Lao Động (Employee vs. LaborContract):

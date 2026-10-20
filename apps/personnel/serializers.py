@@ -108,6 +108,7 @@ class EmployeeDependentSerializer(serializers.ModelSerializer):
 class ContractAppendixSerializer(serializers.ModelSerializer):
     contract_number = serializers.CharField(source='contract.contract_number', read_only=True)
     department_label = serializers.CharField(source='get_new_department_display', read_only=True)
+    appendix_number = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = ContractAppendix
@@ -131,6 +132,7 @@ class LaborContractSerializer(serializers.ModelSerializer):
     contract_type_label = serializers.CharField(source='get_contract_type_display', read_only=True)
     status_label = serializers.CharField(source='get_status_display', read_only=True)
     tax_resident_type_label = serializers.CharField(source='get_tax_resident_type_display', read_only=True)
+    suggested_appendix_number = serializers.SerializerMethodField()
     appendices = ContractAppendixSerializer(many=True, read_only=True)
 
     class Meta:
@@ -143,14 +145,20 @@ class LaborContractSerializer(serializers.ModelSerializer):
             'base_salary', 'insurance_salary', 'allowance_amount', 'subsidy_amount', 'total_salary',
             'probation_rate', 'is_social_insurance_participant', 'is_taxable', 'is_union_member',
             'tax_resident_type', 'tax_resident_type_label', 'is_active',
-            'allowance_notes', 'contract_file', 'notes', 'appendices', 'created_at', 'updated_at'
+            'allowance_notes', 'contract_file', 'notes', 'suggested_appendix_number', 'appendices', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_suggested_appendix_number(self, obj):
+        return ContractAppendix.generate_next_appendix_number(obj)
 
     def validate_contract_number(self, value):
         val = value.strip() if value else ''
         if not val:
-            raise serializers.ValidationError("Số hợp đồng không được để trống.")
+            c_type = self.initial_data.get('contract_type', 'DEFINITE_TERM') if hasattr(self, 'initial_data') else 'DEFINITE_TERM'
+            sign_d = self.initial_data.get('sign_date') if hasattr(self, 'initial_data') else None
+            year = int(str(sign_d).split('-')[0]) if sign_d and '-' in str(sign_d) else None
+            return LaborContract.generate_next_contract_number(c_type, year)
         qs = LaborContract.all_objects.filter(contract_number=val)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)

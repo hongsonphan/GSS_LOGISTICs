@@ -278,6 +278,12 @@ class LaborContractListCreateAPIView(APIView):
     permission_classes = [EmployeePermission]
 
     def get(self, request):
+        if request.GET.get('action') == 'suggest_number':
+            c_type = request.GET.get('type', 'DEFINITE_TERM')
+            year = request.GET.get('year')
+            suggested = LaborContract.generate_next_contract_number(c_type, year)
+            return Response({'success': True, 'suggested_contract_number': suggested})
+
         qs = LaborContract.objects.all().select_related('employee').prefetch_related('appendices').order_by('-start_date')
         employee_id = request.GET.get('employee_id')
         if employee_id:

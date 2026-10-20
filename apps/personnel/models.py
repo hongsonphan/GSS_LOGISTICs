@@ -378,7 +378,71 @@ class LaborContract(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"[{self.contract_number}] {self.employee.full_name} - {self.get_contract_type_display()}"
 
+    @classmethod
+    def get_contract_type_prefix(cls, contract_type):
+        mapping = {
+            'PROBATION': 'HDTV',
+            'DEFINITE_TERM': 'HDLD',
+            'INDEFINITE_TERM': 'HDLD',
+            'INDEFINITE': 'HDLD',
+            'SEASONAL': 'HDKV',
+        }
+        return mapping.get(str(contract_type).upper(), 'HDLD')
+
+    @classmethod
+    def generate_next_contract_number(cls, contract_type='DEFINITE_TERM', year=None):
+        """
+        Sinh ký hiệu hợp đồng theo đúng rule:
+        [Loại hợp đồng].[Năm].[SốTT trong năm]
+        Ví dụ:
+        - Hợp đồng lao động: HDLD.2026.0015
+        - Hợp đồng Thử việc: HDTV.2026.0016
+        - Hợp đồng Khoán việc: HDKV.2026.0017
+        """
+        import re
+        from django.utils import timezone
+        
+        if not year:
+            year = timezone.localdate().year if hasattr(timezone, 'localdate') else timezone.now().year
+        year = int(year)
+        prefix = cls.get_contract_type_prefix(contract_type)
+
+        # Lấy tất cả HĐ có liên quan đến năm này để tìm số thứ tự lớn nhất
+        contracts = cls.all_objects.filter(
+            models.Q(contract_number__contains=f".{year}.") |
+            models.Q(contract_number__contains=f"-{year}-") |
+            models.Q(contract_number__endswith=f"-{year}") |
+            models.Q(contract_number__endswith=f".{year}") |
+            models.Q(sign_date__year=year) |
+            models.Q(start_date__year=year)
+        )
+
+        max_seq = 0
+        for c in contracts:
+            num = c.contract_number or ''
+            # Tìm dạng chuẩn .2026.0015
+            m = re.search(r'\.(\d{1,6})$', num)
+            if m:
+                seq = int(m.group(1))
+                if seq > max_seq:
+                    max_seq = seq
+            else:
+                m_old = re.search(r'-(\d{1,6})$', num)
+                if m_old:
+                    seq = int(m_old.group(1))
+                    if seq > max_seq:
+                        max_seq = seq
+
+        if max_seq == 0 and contracts.exists():
+            max_seq = contracts.count()
+
+        next_seq = max_seq + 1
+        return f"{prefix}.{year}.{next_seq:04d}"
+
     def save(self, *args, **kwargs):
+        if not self.contract_number:
+            year = self.sign_date.year if self.sign_date else None
+            self.contract_number = self.generate_next_contract_number(self.contract_type, year)
         self.total_salary = (self.base_salary or Decimal('0')) + (self.allowance_amount or Decimal('0')) + (self.subsidy_amount or Decimal('0'))
         super().save(*args, **kwargs)
 
@@ -411,7 +475,45 @@ class ContractAppendix(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"Phụ lục {self.appendix_number} - HĐ: {self.contract.contract_number}"
 
+    @classmethod
+    def generate_next_appendix_number(cls, contract):
+        """
+        Sinh ký hiệu phụ lục hợp đồng theo đúng rule:
+        [Mã Hợp Đồng].PL[SốTT]
+        Ví dụ:
+        - Phụ lục cho HDLD.2026.0015: HDLD.2026.0015.PL1, HDLD.2026.0015.PL2
+        - Hợp đồng Thử việc: HDTV.2026.0016: HDTV.2026.0016.PL1, HDTV.2026.0016.PL2
+        - Hợp đồng Khoán việc: HDKV.2026.0017: HDKV.2026.0017.PL1
+        """
+        import re
+        if not contract:
+            return "PL1"
+        
+        existing = cls.all_objects.filter(contract=contract)
+        max_seq = 0
+        for app in existing:
+            num = app.appendix_number or ''
+            m = re.search(r'\.PL(\d+)$', num, re.IGNORECASE)
+            if m:
+                seq = int(m.group(1))
+                if seq > max_seq:
+                    max_seq = seq
+            else:
+                m_alt = re.search(r'PL-?(\d+)', num, re.IGNORECASE)
+                if m_alt:
+                    seq = int(m_alt.group(1))
+                    if seq > max_seq:
+                        max_seq = seq
+
+        if max_seq == 0 and existing.exists():
+            max_seq = existing.count()
+
+        next_seq = max_seq + 1
+        return f"{contract.contract_number}.PL{next_seq}"
+
     def save(self, *args, **kwargs):
+        if not self.appendix_number and self.contract_id:
+            self.appendix_number = self.generate_next_appendix_number(self.contract)
         base = self.new_base_salary if self.new_base_salary is not None else (self.contract.base_salary or Decimal('0'))
         allow = self.new_allowance_amount if self.new_allowance_amount is not None else (self.contract.allowance_amount or Decimal('0'))
         sub = self.new_subsidy_amount if self.new_subsidy_amount is not None else (self.contract.subsidy_amount or Decimal('0'))

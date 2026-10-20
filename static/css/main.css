@@ -242,6 +242,37 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     pointer-events: none;
 }
 
+/* ── 2.1 SIDEBAR HOVER PEEK (DESKTOP QUICK-PREVIEW KHI ĐANG HIDE) ── */
+@media (min-width: 1024px) {
+    .app-sidebar.collapsed.sidebar-peek {
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        margin-left: 0 !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 60 !important;
+        transform: translateX(0) !important;
+        box-shadow: 14px 0 40px -4px rgba(15, 23, 42, 0.55), 0 0 0 1px rgba(15, 23, 42, 0.15) !important;
+        transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease !important;
+        animation: sidebarPeekSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes sidebarPeekSlideIn {
+        from {
+            transform: translateX(-100%);
+            opacity: 0.4;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+}
+
 .app-sidebar-header {
     background-color: var(--sidebar-header-bg);
     border-bottom: 1px solid var(--sidebar-border);

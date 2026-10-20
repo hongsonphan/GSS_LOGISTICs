@@ -2480,6 +2480,34 @@ class CurrentUserProfileAPITestCase(TestCase):
         self.assertTrue(self.user.check_password('NewPassword@2026'))
 
 
+class SidebarHoverPeekTestCase(TestCase):
+    def test_sidebar_hover_peek_assets_and_templates(self):
+        # 1. Kiểm tra template sidebar có nút toggle ghim
+        with open('templates/components/sidebar.html', 'r', encoding='utf-8') as f:
+            s_html = f.read()
+        self.assertIn('app-sidebar-header', s_html)
+        self.assertIn('toggleSidebar()', s_html)
+
+        # 2. Kiểm tra template topbar có nút hide/show sidebar
+        with open('templates/components/topbar.html', 'r', encoding='utf-8') as f:
+            t_html = f.read()
+        self.assertIn('id="btn-toggle-sidebar"', t_html)
+        self.assertIn('id="icon-sidebar-arrow-in"', t_html)
+        self.assertIn('id="icon-sidebar-arrow-out"', t_html)
+
+        # 3. Kiểm tra CSS main.css có rule sidebar-peek
+        with open('static/css/main.css', 'r', encoding='utf-8') as f:
+            css_text = f.read()
+        self.assertIn('.app-sidebar.collapsed.sidebar-peek', css_text)
+
+        # 4. Kiểm tra JS app.js có hàm initSidebarHoverPeek
+        with open('static/js/app.js', 'r', encoding='utf-8') as f:
+            js_text = f.read()
+        self.assertIn('function initSidebarHoverPeek()', js_text)
+        self.assertIn('sidebar-peek', js_text)
+
+
+
 
 
 
