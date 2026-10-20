@@ -1626,103 +1626,22 @@ function renderDashboardTasks(tasks) {
  */
 function getTaskDeadlineBadgeHtml(t) {
     if (!t.due_date || t.due_date === 'Không có hạn') {
-        return '<span class="px-2 py-0.5 text-[10px] font-semibold rounded-lg bg-slate-100 text-slate-500 border border-slate-200 shrink-0 flex items-center gap-1"><i class="ph ph-calendar-blank text-slate-400"></i> Không hạn</span>';
+        return '';
     }
 
     const isPendingExt = (t.extension_status === 'PENDING');
-    let extBadge = '';
+    let extText = isPendingExt ? ' <span class="text-purple-600 font-bold">(Chờ gia hạn)</span>' : '';
+
+    if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+        return `<span class="text-[10px] text-rose-600 font-bold flex items-center gap-1"><i class="ph-bold ph-calendar text-rose-600 text-[11px]"></i> Hạn: ${t.due_date} (Quá hạn)${extText}</span>`;
+    }
+    if (t.days_remaining === 0) {
+        return `<span class="text-[10px] text-amber-600 font-bold flex items-center gap-1"><i class="ph-bold ph-alarm text-amber-600 text-[11px]"></i> Hạn: Hôm nay${extText}</span>`;
+    }
     if (isPendingExt) {
-        extBadge = `<span class="px-2 py-0.5 text-[10.5px] font-bold rounded-lg bg-purple-100 text-purple-900 border border-purple-300 shrink-0 flex items-center gap-1 shadow-2xs animate-pulse" title="Đang chờ người giao việc duyệt gia hạn đến ${t.requested_deadline || ''}">
-            <i class="ph-bold ph-hourglass-medium text-purple-700"></i>
-            <span>Chờ gia hạn: <strong>${t.requested_deadline || ''}</strong></span>
-        </span>`;
+        return `<span class="text-[10px] text-purple-600 font-bold flex items-center gap-1"><i class="ph-bold ph-hourglass text-purple-600 text-[11px]"></i> Hạn: ${t.due_date}${extText}</span>`;
     }
-
-    // Xác định số ngày còn lại
-    let days = t.days_remaining;
-    if (days === null || days === undefined) {
-        try {
-            let dObj = null;
-            if (t.raw_due_date) {
-                dObj = new Date(t.raw_due_date);
-            } else if (t.due_date && t.due_date.includes('/')) {
-                const parts = t.due_date.split('/');
-                dObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-            }
-            if (dObj) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                dObj.setHours(0, 0, 0, 0);
-                days = Math.round((dObj - today) / (1000 * 60 * 60 * 24));
-            }
-        } catch (e) {
-            days = 999;
-        }
-    }
-
-    // 1. Quá hạn (days < 0 hoặc t.is_overdue)
-    if (t.is_overdue || (days !== null && days < 0)) {
-        const lateDays = Math.abs(days || 1);
-        return `
-            <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                ${extBadge}
-                <span class="px-2.5 py-0.5 text-[11px] font-black rounded-lg bg-rose-50 text-rose-700 border border-rose-300 shrink-0 flex items-center gap-1.5 shadow-2xs animate-pulse" title="Công việc đã quá hạn ${lateDays} ngày! Cần xử lý khẩn cấp">
-                    <i class="ph-fill ph-warning-circle text-rose-600 text-xs"></i>
-                    <span>Hạn: ${t.due_date} <strong class="text-rose-900 bg-rose-200/90 px-1.5 py-0.2 rounded font-black">(Quá hạn ${lateDays} ngày)</strong></span>
-                </span>
-            </div>
-        `;
-    }
-
-    // 2. Đến hạn hôm nay (days === 0)
-    if (days === 0) {
-        return `
-            <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                ${extBadge}
-                <span class="px-2.5 py-0.5 text-[11px] font-black rounded-lg bg-amber-50 text-amber-900 border border-amber-400 shrink-0 flex items-center gap-1.5 shadow-2xs" title="Hạn chót là hôm nay! Vui lòng hoàn thành trong ca làm việc">
-                    <i class="ph-fill ph-alarm text-amber-600 text-xs animate-bounce"></i>
-                    <span>Hạn: ${t.due_date} <strong class="text-amber-950 bg-amber-200/90 px-1.5 py-0.2 rounded font-black">(Hôm nay)</strong></span>
-                </span>
-            </div>
-        `;
-    }
-
-    // 3. Sắp đến hạn (còn 1 ngày - ngày mai)
-    if (days === 1) {
-        return `
-            <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                ${extBadge}
-                <span class="px-2 py-0.5 text-[10.5px] font-bold rounded-lg bg-sky-50 text-sky-900 border border-sky-300 shrink-0 flex items-center gap-1.5 shadow-2xs" title="Hạn chót ngày mai!">
-                    <i class="ph-bold ph-clock-countdown text-sky-600 text-xs"></i>
-                    <span>Hạn: ${t.due_date} <strong class="text-sky-800 font-extrabold">(Còn 1 ngày)</strong></span>
-                </span>
-            </div>
-        `;
-    }
-
-    // 4. Sắp đến hạn (còn 2 ngày)
-    if (days === 2) {
-        return `
-            <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                ${extBadge}
-                <span class="px-2 py-0.5 text-[10.5px] font-bold rounded-lg bg-sky-50/80 text-sky-800 border border-sky-200 shrink-0 flex items-center gap-1.5" title="Còn 2 ngày">
-                    <i class="ph-bold ph-clock text-sky-600 text-xs"></i>
-                    <span>Hạn: ${t.due_date} <span class="text-sky-700 font-semibold">(Còn 2 ngày)</span></span>
-                </span>
-            </div>
-        `;
-    }
-
-    // 5. Còn nhiều thời gian (> 2 ngày)
-    return `
-        <div class="flex items-center gap-1.5 flex-wrap justify-end">
-            ${extBadge}
-            <span class="px-2 py-0.5 text-[10.5px] font-semibold rounded-lg bg-slate-50 text-slate-700 border border-slate-200/90 shrink-0 flex items-center gap-1.5" title="Hạn: ${t.due_date} (Còn ${days} ngày)">
-                <i class="ph ph-calendar text-teal-600 text-xs"></i>
-                <span>Hạn: <strong>${t.due_date}</strong> ${days && days < 30 ? `<span class="text-slate-400 font-normal">(còn ${days} ngày)</span>` : ''}</span>
-            </span>
-        </div>
-    `;
+    return `<span class="text-[10px] text-slate-400 font-medium flex items-center gap-1"><i class="ph ph-calendar text-slate-400 text-[11px]"></i> ${t.due_date}</span>`;
 }
 window.getTaskDeadlineBadgeHtml = getTaskDeadlineBadgeHtml;
 
@@ -1736,53 +1655,18 @@ window.getTaskDeadlineBadgeHtml = getTaskDeadlineBadgeHtml;
  */
 function getTaskProgressHtml(percent, checklistsDone, checklistsTotal) {
     const p = Math.max(0, Math.min(100, parseInt(percent, 10) || 0));
-    let badgeClass = '';
-    let barGradient = '';
-    let statusText = '';
-
-    if (p === 0) {
-        badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
-        barGradient = 'bg-slate-200';
-        statusText = 'Chưa bắt đầu';
-    } else if (p < 50) {
-        badgeClass = 'bg-amber-50 text-amber-900 border-amber-300 font-bold';
-        barGradient = 'bg-gradient-to-r from-amber-400 to-amber-500';
-        statusText = 'Đang làm';
-    } else if (p < 80) {
-        badgeClass = 'bg-sky-50 text-sky-900 border-sky-300 font-bold';
-        barGradient = 'bg-gradient-to-r from-sky-500 to-indigo-500';
-        statusText = 'Đang tiến triển';
-    } else if (p < 100) {
-        badgeClass = 'bg-teal-50 text-teal-900 border-teal-300 font-extrabold';
-        barGradient = 'bg-gradient-to-r from-teal-500 to-emerald-500';
-        statusText = 'Sắp hoàn tất';
-    } else {
-        badgeClass = 'bg-emerald-100 text-emerald-900 border-emerald-300 font-black';
-        barGradient = 'bg-gradient-to-r from-emerald-500 to-emerald-600';
-        statusText = 'Hoàn thành';
-    }
-
     const chkHtml = (checklistsTotal > 0)
-        ? `<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200/80 shadow-2xs">
-             <i class="ph-bold ph-check-square ${checklistsDone === checklistsTotal ? 'text-emerald-600' : 'text-teal-600'} text-xs"></i>
-             <span>Checklist: <strong class="text-slate-800">${checklistsDone}/${checklistsTotal}</strong> mục</span>
-           </span>`
-        : `<span class="text-[11px] text-slate-400 italic">Không có checklist</span>`;
+        ? `<span class="text-[10px] text-slate-400 font-medium">${checklistsDone}/${checklistsTotal}</span>`
+        : '';
 
     return `
-        <div class="space-y-1.5 pt-1">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-                <div class="flex items-center gap-2">
-                    <span class="px-2.5 py-0.5 rounded-lg border text-xs shadow-2xs inline-flex items-center gap-1.5 ${badgeClass}">
-                        <strong class="text-sm font-black font-mono">${p}%</strong>
-                        <span class="text-[10px] uppercase font-bold tracking-tight">${statusText}</span>
-                    </span>
-                    ${chkHtml}
-                </div>
+        <div class="pt-1 space-y-1">
+            <div class="flex items-center justify-between text-[10px] text-slate-500">
+                <span class="font-mono font-bold ${p === 100 ? 'text-emerald-600' : 'text-slate-700'}">${p}%</span>
+                ${chkHtml}
             </div>
-            <!-- Thanh Progress Bar dày dặn hơn, bo tròn đẹp mắt -->
-            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200/70 shadow-inner">
-                <div class="${barGradient} h-full rounded-full transition-all duration-500 shadow-2xs" style="width: ${p}%;"></div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${p}%;"></div>
             </div>
         </div>
     `;
@@ -1841,31 +1725,18 @@ function renderDashboardTasksView() {
                 const reporterClean = cleanPersonName(t.reporter_name) || 'Hệ thống';
                 const assigneeClean = cleanPersonName(t.assignee_name) || 'Chưa gán';
                 const followersClean = (t.followers_list || []).map(cleanPersonName);
-                const isMyTask = (myUserId && t.assignee_id === myUserId);
-                const myTaskBadge = isMyTask ? `<span class="px-1.5 py-0.2 text-[9px] font-black rounded-md bg-indigo-600 text-white font-heading shadow-2xs shrink-0 flex items-center gap-0.5"><i class="ph-fill ph-user text-[9px]"></i> Của bạn</span>` : '';
-
-                // Border accent theo mức độ khẩn cấp
-                let borderAccent = 'border-l-[4px] border-l-slate-300';
-                if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
-                    borderAccent = 'border-l-[4px] border-l-rose-500 bg-rose-50/15';
-                } else if (t.days_remaining === 0) {
-                    borderAccent = 'border-l-[4px] border-l-amber-500 bg-amber-50/15';
-                } else if (t.extension_status === 'PENDING') {
-                    borderAccent = 'border-l-[4px] border-l-purple-500 bg-purple-50/15';
-                }
-
                 const deadlineBadge = getTaskDeadlineBadgeHtml(t);
                 const progressHtml = getTaskProgressHtml(t.progress_percent, t.checklists_done, t.checklists_total);
 
                 return `
                 <div onclick="if(typeof openTaskDetailDrawer==='function') openTaskDetailDrawer(${t.id});" 
-                    class="p-2.5 bg-white rounded-xl border border-slate-200/90 ${borderAccent} shadow-2xs hover:border-indigo-400 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between space-y-2">
+                    class="p-2.5 bg-white rounded-lg border border-slate-200/80 shadow-2xs hover:border-indigo-400 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between space-y-1.5">
                     
-                    <!-- Header thẻ Kanban: Mã, Ưu tiên, Của bạn -->
+                    <!-- Header thẻ Kanban: Mã, Hạn, Ưu tiên -->
                     <div class="flex items-center justify-between gap-1">
-                        <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
-                            <span class="text-[9.5px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200 shrink-0">${formatTaskCode(t.code)}</span>
-                            ${myTaskBadge}
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="text-[9.5px] font-mono font-bold text-slate-500 bg-slate-100 px-1 py-0.2 rounded border border-slate-200 shrink-0">${formatTaskCode(t.code)}</span>
+                            ${deadlineBadge}
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
                             ${prioBadge}
@@ -1876,11 +1747,6 @@ function renderDashboardTasksView() {
                     <h5 class="text-xs font-bold text-slate-800 group-hover:text-indigo-700 transition-colors line-clamp-2 leading-snug font-heading">
                         ${escapeHtml(t.title)}
                     </h5>
-
-                    <!-- Hạn hoàn thành cảnh báo màu sắc -->
-                    <div class="pt-0.5">
-                        ${deadlineBadge}
-                    </div>
 
                     <!-- 3 Icon theo thứ tự trên 1 hàng: Người giao | Người phụ trách | Người liên quan -->
                     <div class="pt-1.5 border-t border-slate-100 flex items-center gap-1.5 text-[10px] 2xl:text-[10.5px] text-slate-500 overflow-hidden select-none">
@@ -1930,28 +1796,17 @@ function renderDashboardTasksView() {
             const isMyTask = (myUserId && t.assignee_id === myUserId);
             const myTaskBadge = isMyTask ? `<span class="px-2 py-0.5 text-[10px] font-black rounded-md bg-indigo-600 text-white font-heading shadow-2xs shrink-0 flex items-center gap-1"><i class="ph-fill ph-user text-[10px]"></i> Việc của bạn</span>` : '';
 
-            // Viền trái & Nền cảnh báo màu sắc
-            let borderAccent = 'border-l-[5px] border-l-slate-300 hover:border-l-indigo-500 bg-white';
-            if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
-                borderAccent = 'border-l-[5px] border-l-rose-500 bg-rose-50/20 hover:border-l-rose-600 hover:bg-rose-50/30';
-            } else if (t.days_remaining === 0) {
-                borderAccent = 'border-l-[5px] border-l-amber-500 bg-amber-50/20 hover:border-l-amber-600 hover:bg-amber-50/30';
-            } else if (t.extension_status === 'PENDING') {
-                borderAccent = 'border-l-[5px] border-l-purple-500 bg-purple-50/20 hover:border-l-purple-600';
-            }
-
             const deadlineBadge = getTaskDeadlineBadgeHtml(t);
             const progressHtml = getTaskProgressHtml(t.progress_percent, t.checklists_done, t.checklists_total);
 
             html += `
             <div onclick="if(typeof openTaskDetailDrawer==='function') openTaskDetailDrawer(${t.id});" 
-                class="p-3 rounded-xl border border-slate-200/90 ${borderAccent} hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between space-y-2 shadow-2xs">
+                class="p-2.5 rounded-xl border border-slate-200/80 hover:border-indigo-300 hover:bg-indigo-50/20 transition-all cursor-pointer group flex flex-col justify-between space-y-1.5 shadow-2xs">
                 
-                <!-- Hàng 1: Mã, Ưu tiên, Của bạn, Deadline cảnh báo màu sắc -->
+                <!-- Hàng 1: Mã, Ưu tiên, Deadline -->
                 <div class="flex items-center justify-between gap-2 flex-wrap">
-                    <div class="flex items-center space-x-1.5 flex-wrap">
-                        <span class="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80">${formatTaskCode(t.code)}</span>
-                        ${myTaskBadge}
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">${formatTaskCode(t.code)}</span>
                         ${prioBadge}
                     </div>
                     ${deadlineBadge}

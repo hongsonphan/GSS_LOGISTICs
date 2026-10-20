@@ -622,55 +622,55 @@ function renderKanbanColumns(columns) {
         }
 
         colEl.innerHTML = tasks.map(t => {
-            const myUserId = window.CURRENT_USER?.id;
-            const isMyTask = (myUserId && (t.assignee === myUserId || t.assignee_info?.id === myUserId));
-            const myTaskBadge = isMyTask ? `<span class="px-1.5 py-0.2 text-[9px] font-black rounded-md bg-teal-700 text-white font-heading shadow-2xs shrink-0 flex items-center gap-0.5"><i class="ph-fill ph-user text-[9px]"></i> Của bạn</span>` : '';
-
-            // Viền trái cảnh báo màu sắc
-            let borderAccent = 'border-l-[4px] border-l-slate-300';
+            // Xác định màu deadline: chỉ highlight khác màu text, không bọc badge to
+            let deadlineColorClass = 'text-slate-400';
+            let deadlineText = t.due_date ? formatDateDMY(t.due_date) : '';
             if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
-                borderAccent = 'border-l-[4px] border-l-rose-500 bg-rose-50/15';
+                deadlineColorClass = 'text-rose-600 font-bold';
             } else if (t.days_remaining === 0) {
-                borderAccent = 'border-l-[4px] border-l-amber-500 bg-amber-50/15';
+                deadlineColorClass = 'text-amber-600 font-bold';
+                if (deadlineText) deadlineText = `Hôm nay (${deadlineText})`;
             } else if (t.extension_status === 'PENDING') {
-                borderAccent = 'border-l-[4px] border-l-purple-500 bg-purple-50/15';
+                deadlineColorClass = 'text-purple-600 font-bold';
+                if (deadlineText) deadlineText += ' (Chờ gia hạn)';
             }
 
-            const deadlineBadge = (typeof getTaskDeadlineBadgeHtml === 'function') 
-                ? getTaskDeadlineBadgeHtml(t) 
-                : (t.due_date ? `<span class="text-[10px] text-slate-500 font-semibold">Hạn: ${formatDateDMY(t.due_date)}</span>` : '');
-
-            const p = t.progress_percent || 0;
-            const chkDone = t.checklists_count?.done || 0;
-            const chkTotal = t.checklists_count?.total || 0;
-            const progressHtml = (typeof getTaskProgressHtml === 'function')
-                ? getTaskProgressHtml(p, chkDone, chkTotal)
-                : `<div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div class="bg-teal-600 h-full rounded-full" style="width: ${p}%"></div></div>`;
-
             return `
-            <div id="task-card-${t.id}" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetailDrawer(${t.id})" class="bg-white rounded-xl p-3 border border-slate-200/90 ${borderAccent} shadow-2xs hover:shadow-md hover:border-teal-400 transition-all cursor-pointer group space-y-2 select-none">
-                <!-- Priority, Code & Của bạn -->
-                <div class="flex items-center justify-between text-[10px] gap-1 flex-wrap">
-                    <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="font-mono font-bold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 shrink-0">${formatTaskCode(t.code)}</span>
-                        ${myTaskBadge}
-                    </div>
-                    <span class="px-2 py-0.5 rounded font-extrabold uppercase tracking-wide shrink-0 ${getPriorityBadgeClass(t.priority)}">
+            <div id="task-card-${t.id}" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetailDrawer(${t.id})" class="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-teal-400 transition-all cursor-pointer group space-y-2.5 select-none">
+                <!-- Priority & Code -->
+                <div class="flex items-center justify-between text-[10px]">
+                    <span class="font-mono font-bold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">${formatTaskCode(t.code)}</span>
+                    <span class="px-2 py-0.5 rounded font-extrabold uppercase tracking-wide ${getPriorityBadgeClass(t.priority)}">
                         ${getPriorityText(t.priority)}
                     </span>
                 </div>
 
                 <!-- Title -->
-                <h4 class="text-xs font-extrabold text-slate-800 group-hover:text-teal-700 transition-colors leading-snug line-clamp-2">
+                <h4 class="text-xs font-extrabold text-slate-800 group-hover:text-teal-700 transition-colors leading-snug">
                     ${escapeHtml(t.title)}
                 </h4>
 
-                <!-- Hạn hoàn thành cảnh báo màu sắc -->
-                <div>
-                    ${deadlineBadge}
+                <!-- Meta row: Checklist & Comments & Progress -->
+                <div class="flex items-center gap-3 text-[11px] text-slate-400">
+                    ${t.checklists_count?.total > 0 ? `
+                        <span class="flex items-center gap-1 font-semibold ${t.checklists_count.done === t.checklists_count.total ? 'text-emerald-600' : 'text-slate-600'}">
+                            <i class="ph-bold ph-list-checks text-xs"></i>
+                            ${t.checklists_count.done}/${t.checklists_count.total}
+                        </span>
+                    ` : ''}
+                    ${t.comments_count > 0 ? `
+                        <span class="flex items-center gap-1 font-semibold text-slate-600">
+                            <i class="ph-bold ph-chat-circle-dots text-xs"></i>
+                            ${t.comments_count}
+                        </span>
+                    ` : ''}
+                    ${(t.progress_percent !== undefined && t.progress_percent !== null) ? `
+                        <span class="font-mono font-bold ${t.progress_percent === 100 ? 'text-emerald-600' : 'text-teal-700'}">${t.progress_percent}%</span>
+                    ` : ''}
+                    <span class="text-[10px] text-slate-400 ml-auto font-medium">${t.department}</span>
                 </div>
 
-                <!-- Footer: 3 Icon: Người giao | Người phụ trách | Người liên quan -->
+                <!-- Footer: 3 Icon: Người giao | Người phụ trách | Người liên quan + Hạn chót -->
                 <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] select-none gap-1">
                     <div class="flex items-center gap-1.5 truncate min-w-0 text-slate-500">
                         <!-- 1. Người giao -->
@@ -682,7 +682,7 @@ function renderKanbanColumns(columns) {
                         <span class="text-slate-300 shrink-0 font-light">|</span>
 
                         <!-- 2. Người phụ trách -->
-                        <span class="flex items-center gap-1 truncate shrink min-w-0 font-bold text-teal-900" title="Người phụ trách: ${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}">
+                        <span class="flex items-center gap-1 truncate shrink min-w-0 font-semibold text-teal-900" title="Người phụ trách: ${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}">
                             <i class="ph-bold ph-user-check text-teal-600 shrink-0 text-[11px]"></i>
                             <span class="truncate">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</span>
                         </span>
@@ -696,10 +696,13 @@ function renderKanbanColumns(columns) {
                         </span>
                         ` : ''}
                     </div>
-                </div>
 
-                <!-- Khối tiến độ % trực quan -->
-                ${progressHtml}
+                    ${deadlineText ? `
+                        <span class="text-[9.5px] font-semibold shrink-0 ml-1 ${deadlineColorClass}">
+                            ${deadlineText}
+                        </span>
+                    ` : ''}
+                </div>
             </div>
             `;
         }).join('');
@@ -739,15 +742,15 @@ function renderTasksListTable(tasks) {
             </td>
             <td class="py-3 px-4 font-semibold text-slate-700">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</td>
             <td class="py-3 px-4">
-                ${(typeof getTaskDeadlineBadgeHtml === 'function') 
-                    ? getTaskDeadlineBadgeHtml(t) 
-                    : `<span class="font-medium ${t.is_overdue ? 'text-rose-600 font-bold' : 'text-slate-600'}">${t.due_date ? formatDateDMY(t.due_date) : '-'}</span>`}
+                <span class="${t.is_overdue ? 'text-rose-600 font-bold' : (t.days_remaining === 0 ? 'text-amber-600 font-bold' : (t.extension_status === 'PENDING' ? 'text-purple-600 font-bold' : 'text-slate-600 font-medium'))}">
+                    ${t.due_date ? formatDateDMY(t.due_date) : '-'}${t.extension_status === 'PENDING' ? ' (Chờ gia hạn)' : ''}
+                </span>
             </td>
             <td class="py-3 px-4">
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded text-[11px] font-black font-mono bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs">${t.progress_percent || 0}%</span>
-                    <div class="w-20 bg-slate-200 rounded-full h-2 overflow-hidden p-0.2">
-                        <div class="bg-gradient-to-r from-teal-500 to-emerald-500 h-full rounded-full transition-all" style="width: ${t.progress_percent || 0}%"></div>
+                    <span class="text-xs font-mono font-bold text-slate-700">${t.progress_percent || 0}%</span>
+                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-teal-600 h-full rounded-full transition-all" style="width: ${t.progress_percent || 0}%"></div>
                     </div>
                 </div>
             </td>
@@ -2124,10 +2127,10 @@ function formatChatMessageContent(rawText, isMe) {
         return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="${linkClass}">${url}</a>`;
     });
 
-    // 2. Format @ Tag Tên nhân sự
+    // 2. Format @ Tag Tên nhân sự: chỉ highlight khác màu, không bọc badge
     const userMentionClass = isMe
-        ? 'inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md font-bold bg-white/20 text-white'
-        : 'inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md font-bold bg-teal-50 text-teal-800 border border-teal-200/80';
+        ? 'font-bold text-teal-100 underline decoration-teal-300/60'
+        : 'font-bold text-teal-700 hover:underline';
     text = text.replace(/@([A-ZÀ-Ỹa-zà-ỹ0-9_.\s]+?)(?=[.,!?\s]|$)/g, (match, name) => {
         if (name.trim().length >= 2) {
             return `<span class="${userMentionClass}">@${name.trim()}</span>`;
@@ -2135,12 +2138,12 @@ function formatChatMessageContent(rawText, isMe) {
         return match;
     });
 
-    // 3. Format # Mã công việc
+    // 3. Format # Mã công việc: chỉ highlight khác màu, không bọc badge
     const taskMentionClass = isMe
-        ? 'inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md font-bold bg-white/20 text-teal-100 hover:underline cursor-pointer'
-        : 'inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 hover:bg-indigo-100 cursor-pointer';
+        ? 'font-bold text-sky-200 underline cursor-pointer'
+        : 'font-bold text-indigo-600 hover:underline cursor-pointer';
     text = text.replace(/#(CV-[0-9.]+)(\s*\[.*?\])?/g, (match, code) => {
-        return `<span class="${taskMentionClass}" onclick="openOfficeTaskFromChat('${code}')"><i class="ph-bold ph-check-square"></i>${match}</span>`;
+        return `<span class="${taskMentionClass}" onclick="openOfficeTaskFromChat('${code}')">${match}</span>`;
     });
 
     return text;

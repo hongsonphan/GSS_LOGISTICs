@@ -9,9 +9,10 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * **Tab @ Thành viên:** Tải danh bạ nhân sự nội bộ công ty kèm ảnh avatar, chức vụ, phòng ban; gõ tìm kiếm lọc theo thời gian thực; bấm để chèn \@Họ_Tên\ vào vị trí con trỏ trong ô chat.
   * **Tab # Mục việc:** Tải danh sách công việc/nhiệm vụ kèm mã \CV-xx.yyy\, tên công việc, trạng thái (\IN_PROGRESS\, \DONE\...); bấm để chèn \#Mã_Việc [Tên_Việc]\ vào vị trí con trỏ và tự động liên kết ID nhiệm vụ vào tin nhắn.
 - **Tự động gợi ý khi gõ phím:** Khi người dùng nhập ký tự \@\ hoặc \#\ trực tiếp trong ô gõ tin nhắn (\#chat-message-input\), dropdown gợi ý tự động kích hoạt và chuyển đúng tab tương ứng.
-- **Định dạng hiển thị tin nhắn thông minh:**
-  * Thẻ \@Tên_Nhân_Sự\: Tự động format thành badge nổi bật, trang nhã.
-  * Thẻ \#Mã_Việc\: Tự động format thành link tương tác màu chàm, bấm vào mở ngay chi tiết Drawer công việc (\openTaskDetailDrawer\).
+- **Định dạng hiển thị tinh giản, không bọc badge cồng kềnh:**
+  * Ký hiệu \@Tên_Nhân_Sự\: Giữ text tự nhiên, chỉ highlight khác màu font (xanh ngọc teal đậm trang nhã, không bọc badge viền/nền hộp rườm rà).
+  * Ký hiệu \#Mã_Việc\: Giữ text tự nhiên màu chàm nổi bật, nhấp chuột mở ngay Drawer chi tiết nhiệm vụ (\openTaskDetailDrawer\).
+  * Thẻ công việc (Kanban & List): Tinh giản thẻ Task sạch sẽ, loại bỏ viền loang màu hay badge pill to kềnh; hạn chót và tiến độ chỉ highlight màu font chữ (đỏ khi quá hạn, cam khi đến hạn, tím khi chờ duyệt gia hạn) thanh lịch chuẩn ERP.
 
 ### 2. Chụp Màn Hình Trực Tiếp & Dán Ảnh Clipboard Siêu Tốc (Screen Capture & Image Paste):
 - **Phím tắt dán ảnh toàn cầu & cục bộ (Ctrl + V):**
