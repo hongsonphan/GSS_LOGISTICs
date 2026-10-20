@@ -66,37 +66,72 @@
                 <div class="text-center py-4 text-xs text-slate-400">Đang tải tin nhắn...</div>
             </div>
 
-            <!-- Preview tệp đính kèm trước khi gửi -->
-            <div id="chat-pending-files-preview" class="hidden px-3 py-1.5 bg-slate-200 border-t border-slate-300 text-xs text-slate-700 flex items-center justify-between shrink-0">
-                <span id="chat-pending-files-text" class="truncate font-semibold"></span>
-                <button type="button" onclick="clearPendingChatFiles()" class="text-rose-600 hover:text-rose-800 p-0.5">
-                    <i class="ph-bold ph-x"></i>
+            <!-- Preview tệp & ảnh đính kèm trước khi gửi -->
+            <div id="chat-pending-files-preview" class="hidden px-3 py-2 bg-slate-100 border-t border-slate-200 text-xs text-slate-700 flex items-center justify-between shrink-0 shadow-xs">
+                <div class="flex items-center gap-2 overflow-x-auto max-w-[calc(100%-40px)] custom-scrollbar py-0.5" id="chat-pending-files-content">
+                    <span id="chat-pending-files-text" class="truncate font-semibold text-[11px]"></span>
+                </div>
+                <button type="button" onclick="clearPendingChatFiles()" class="text-rose-600 hover:text-rose-800 p-1 rounded-lg hover:bg-rose-50 cursor-pointer shrink-0" title="Hủy đính kèm">
+                    <i class="ph-bold ph-x text-sm"></i>
                 </button>
             </div>
 
             <!-- Form Nhập Tin Nhắn -->
-            <div class="p-2.5 bg-white border-t border-slate-200 shrink-0">
-                <div class="flex items-end gap-1.5 relative">
-                    <!-- Dropdown Mention @ -->
-                    <div id="chat-mention-dropdown" class="hidden absolute bottom-full left-0 mb-2 w-64 bg-white border border-slate-200 shadow-2xl rounded-xl max-h-48 overflow-y-auto z-50 text-xs custom-scrollbar">
-                        <!-- Mention items injected via JS -->
+            <div class="p-2.5 bg-white border-t border-slate-200 shrink-0 relative">
+                <!-- Dropdown Mention @ & # -->
+                <div id="chat-mention-dropdown" class="hidden absolute bottom-full left-2 right-2 mb-2 bg-white border border-slate-200 shadow-2xl rounded-2xl max-h-64 overflow-hidden z-50 text-xs flex flex-col">
+                    <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-2 py-1.5 gap-1 shrink-0">
+                        <div class="flex items-center gap-1">
+                            <button type="button" id="chat-mention-tab-users" onclick="switchChatMentionTab('users')" class="py-1 px-2.5 rounded-lg font-bold text-xs flex items-center gap-1 bg-white text-teal-800 shadow-xs border border-slate-200/80 cursor-pointer transition-all">
+                                <i class="ph-bold ph-at text-teal-600"></i> Thành viên (@)
+                            </button>
+                            <button type="button" id="chat-mention-tab-tasks" onclick="switchChatMentionTab('tasks')" class="py-1 px-2.5 rounded-lg font-bold text-xs flex items-center gap-1 text-slate-600 hover:text-slate-900 cursor-pointer transition-all">
+                                <i class="ph-bold ph-check-square text-indigo-600"></i> Mục việc (#)
+                            </button>
+                        </div>
+                        <button type="button" onclick="closeChatMentionDropdown()" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
+                            <i class="ph-bold ph-x text-xs"></i>
+                        </button>
                     </div>
+                    <div class="p-1.5 border-b border-slate-100 bg-white shrink-0">
+                        <div class="relative flex items-center">
+                            <i class="ph-bold ph-magnifying-glass text-slate-400 absolute left-2 text-xs"></i>
+                            <input type="text" id="chat-mention-search-input" oninput="filterChatMentionList(this.value)" placeholder="Tìm kiếm nhanh..." class="w-full pl-7 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:bg-white transition-all">
+                        </div>
+                    </div>
+                    <div id="chat-mention-items-list" class="flex-1 overflow-y-auto p-1 max-h-44 custom-scrollbar divide-y divide-slate-50">
+                        <!-- Items rendered via JS -->
+                    </div>
+                </div>
 
-                    <!-- Nút đính kèm tệp -->
+                <div class="flex items-end gap-1 relative">
+                    <!-- 1. Nút Đính kèm tệp -->
                     <label class="cursor-pointer p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0" title="Chọn tệp đính kèm">
                         <i class="ph-bold ph-paperclip text-lg"></i>
                         <input type="file" id="chat-file-input" onchange="handleChatFilesSelected(event)" class="hidden" multiple>
                     </label>
-                    <button type="button" onclick="pasteImageFromClipboard('chat')" class="p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0 cursor-pointer" title="Dán ảnh chụp màn hình từ Clipboard (Ctrl+V)">
+
+                    <!-- 2. Nút Chụp ảnh màn hình (Screen Capture) -->
+                    <button type="button" onclick="captureScreenForChat()" class="p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0 cursor-pointer" title="Chụp ảnh màn hình (Screen Capture)">
+                        <i class="ph-bold ph-camera text-lg"></i>
+                    </button>
+
+                    <!-- 3. Nút Dán ảnh từ Clipboard (Paste) -->
+                    <button type="button" onclick="pasteImageFromClipboard('chat')" class="p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0 cursor-pointer" title="Dán ảnh chụp màn hình từ Clipboard (Ctrl + V)">
                         <i class="ph-bold ph-clipboard-text text-lg"></i>
                     </button>
 
-                    <!-- Textarea Tin nhắn -->
-                    <textarea id="chat-message-input" rows="1" onkeydown="handleChatInputKeydown(event)" oninput="autoResizeChatInput(this)" placeholder="Nhập tin nhắn (Enter để gửi, @tag tên)..." class="flex-1 bg-slate-100 border-none rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none resize-none max-h-24 leading-relaxed"></textarea>
+                    <!-- 4. Nút Gắn thẻ @ Tag tên / # Mục việc -->
+                    <button type="button" id="chat-btn-mention-trigger" onclick="toggleChatMentionMenu(event)" class="p-2 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-xl transition-colors shrink-0 cursor-pointer" title="Gắn thẻ (@ Nhân sự, # Mục việc)">
+                        <i class="ph-bold ph-at text-lg"></i>
+                    </button>
 
-                    <!-- Nút Gửi -->
-                    <button type="button" onclick="sendChatMessage()" class="p-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl transition-colors shrink-0 shadow-xs">
-                        <i class="ph-bold ph-paper-plane-right text-base"></i>
+                    <!-- 5. Ô nhập tin nhắn -->
+                    <textarea id="chat-message-input" rows="1" onkeydown="handleChatInputKeydown(event)" oninput="handleChatInputTyping(this)" placeholder="Nhập tin nhắn (Enter để gửi, @tag tên, #việc)..." class="flex-1 bg-slate-100 border border-transparent rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none resize-none max-h-24 leading-relaxed transition-all"></textarea>
+
+                    <!-- 6. Nút Gửi -->
+                    <button type="button" onclick="sendChatMessage()" class="p-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl transition-colors shrink-0 shadow-xs cursor-pointer" title="Gửi tin nhắn">
+                        <i class="ph-bold ph-paper-plane-right text-base text-white"></i>
                     </button>
                 </div>
             </div>

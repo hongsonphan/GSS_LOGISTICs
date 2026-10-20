@@ -638,12 +638,10 @@ function detectActiveUploadContext() {
         return 'news';
     }
 
-    // 11. Chat (Flyout Drawer hoặc Modal hoặc Đang focus ô chat)
-    const chatDrawer = document.getElementById('chat-flyout-drawer');
-    const chatModal = document.getElementById('chat-modal');
-    if ((chatDrawer && !chatDrawer.classList.contains('translate-x-full')) ||
-        (chatModal && !chatModal.classList.contains('hidden')) ||
-        (document.activeElement && (document.activeElement.id === 'chat-message-input' || document.activeElement.closest('#chat-messages-container')))) {
+    // 11. Chat (Floating Window hoặc Đang focus ô chat)
+    const chatFloating = document.getElementById('chat-floating-window');
+    if ((chatFloating && !chatFloating.classList.contains('hidden')) ||
+        (document.activeElement && (document.activeElement.id === 'chat-message-input' || document.activeElement.closest('#chat-floating-window')))) {
         return 'chat';
     }
 

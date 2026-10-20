@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.4] - 2026-10-20 (Nâng Cấp Cửa Sổ Chat Nội Bộ: Thanh Công Cụ Đa Năng, Tag @ Thành Viên, Tag # Mục Việc, Chụp Màn Hình & Dán Ảnh Clipboard Siêu Tốc)
+
+### 1. Nút Tag @ Thành Viên & # Mục Việc (Mention Dropdown & Quick Insertion):
+- **Nút @ trên thanh công cụ chat:** Thiết kế nút biểu tượng @ nổi bật (\g-teal-50 text-teal-800 border-teal-200/80 hover:bg-teal-100\). Bấm vào mở ngay menu popup tiện ích gồm 2 tab:
+  * **Tab @ Thành viên:** Tải danh bạ nhân sự nội bộ công ty kèm ảnh avatar, chức vụ, phòng ban; gõ tìm kiếm lọc theo thời gian thực; bấm để chèn \@Họ_Tên\ vào vị trí con trỏ trong ô chat.
+  * **Tab # Mục việc:** Tải danh sách công việc/nhiệm vụ kèm mã \CV-xx.yyy\, tên công việc, trạng thái (\IN_PROGRESS\, \DONE\...); bấm để chèn \#Mã_Việc [Tên_Việc]\ vào vị trí con trỏ và tự động liên kết ID nhiệm vụ vào tin nhắn.
+- **Tự động gợi ý khi gõ phím:** Khi người dùng nhập ký tự \@\ hoặc \#\ trực tiếp trong ô gõ tin nhắn (\#chat-message-input\), dropdown gợi ý tự động kích hoạt và chuyển đúng tab tương ứng.
+- **Định dạng hiển thị tin nhắn thông minh:**
+  * Thẻ \@Tên_Nhân_Sự\: Tự động format thành badge nổi bật, trang nhã.
+  * Thẻ \#Mã_Việc\: Tự động format thành link tương tác màu chàm, bấm vào mở ngay chi tiết Drawer công việc (\openTaskDetailDrawer\).
+
+### 2. Chụp Màn Hình Trực Tiếp & Dán Ảnh Clipboard Siêu Tốc (Screen Capture & Image Paste):
+- **Phím tắt dán ảnh toàn cầu & cục bộ (Ctrl + V):**
+  * Tự động phát hiện khi cửa sổ chat đang mở (\#chat-floating-window\), hỗ trợ dán ảnh màn hình trực tiếp từ Clipboard vào tin nhắn.
+  * Bổ sung nút **Dán clipboard** (\ph-clipboard-text\) đọc trực tiếp hình ảnh từ avigator.clipboard.read()\ đối với các trình duyệt hỗ trợ.
+- **Nút Chụp màn hình tích hợp (ph-camera):**
+  * Tích hợp Screen Capture API (avigator.mediaDevices.getDisplayMedia\), cho phép người dùng chọn cửa sổ/màn hình để chụp ngay tức thì một ảnh tĩnh chất lượng cao, tự động đặt tên theo thời gian thực và đính kèm vào khung chat.
+  * Fallback thông minh: Hướng dẫn người dùng dùng tổ hợp phím chuẩn \Win + Shift + S\ rồi \Ctrl + V\ nếu trình duyệt chặn quyền hoặc không hỗ trợ capture stream.
+- **Preview Thumbnail trực quan:**
+  * Hiển thị danh sách ảnh/file đang chờ gửi dạng thumbnail ảnh bo góc xinh xắn, có nút xóa x nhanh, biểu tượng tệp và kích thước dung lượng.
+- **Hiển thị trực tiếp ảnh trong tin nhắn:**
+  * Cả phía gửi (me) và phía nhận đều hiển thị ảnh preview to rõ, bo tròn thẩm mỹ, bấm vào ảnh để phóng to xem chi tiết trong tab mới mà không bị đứt quãng luồng trao đổi.
+
+### 3. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
+- **Cú pháp JavaScript:** ode -c static/js/app.js\ và ode -c static/js/collaboration.js\ -> 100% Passed.
+- **Unit Tests:** \pps.collaboration.tests\ & \core.tests.FrontendSyntaxIntegrityTestCase\ -> 11/11 Passed.
+
 ## [v3.6.3] - 2026-10-20 (Nâng Cấp Toàn Diện Phân Hệ Quản Lý Công Việc Task: Deadline Màu Nhắc Nhở, % Tiến Độ Trực Quan & Nghiệp Vụ Đề Xuất / Duyệt Gia Hạn Hạn Chót)
 
 ### 1. Hiển Thị Hạn (Deadline) Theo Màu Cảnh Báo Trực Quan (Color-Coded Deadline Alerts & Left Border Accent):
