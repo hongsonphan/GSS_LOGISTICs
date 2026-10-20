@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.2] - 2026-10-20 (Chuẩn Hóa Trạng Thái Ẩn/Hiện Sidebar & Lưu Cấu Hình LocalStorage: Unhide Luôn Unhide Ở Mọi Màn Hình, Hide Luôn Hide & Hover Peek)
+
+### 1. Chuẩn Hóa Quản Lý Trạng Thái Sidebar Tập Trung (static/js/app.js):
+- **Loại bỏ tình trạng nhảy trạng thái ngẫu nhiên:**
+  * Xóa bỏ việc tự động gọi collapseSidebar() ghi đè localStorage trong setTopbarFullpageMode khi xem màn hình chi tiết (Tạo/Sửa chuyến, Booking, HĐLĐ, Phiếu lương...).
+  * Tạo hàm chuẩn hóa tập trung applySidebarStateFromStorage():
+    - **Trường hợp UNHIDE (bim_sidebar_collapsed !== 'true'):** Sidebar luôn luôn mở rộng cố định ở **TẤT CẢ** các màn hình (Dashboard, Danh sách, Trang chi tiết Fullpage, chuyển tab, reload trang).
+    - **Trường hợp HIDE (bim_sidebar_collapsed === 'true'):** Sidebar luôn ở trạng thái thu gọn (collapsed) trên toàn hệ thống; khi quơ chuột (mouseenter) vào nút hide/toggle trên Topbar, sidebar trượt ra dạng Floating Flyout (sidebar-peek) để người dùng thao tác nhanh; rời chuột thì tự động thu gọn lại sau 220ms.
+- **Bảo toàn 100% cơ chế Drawer trên Mobile / Tablet (< 1024px):**
+  * Trên màn hình di động, đóng/mở drawer bằng collapseSidebar(false) / expandSidebar(false), tuyệt đối không ghi đè trạng thái localStorage của giao diện Desktop.
+  * Cập nhật backdrop trong templates/base.html gọi collapseSidebar(false).
+  * Thêm listener resize cửa sổ (debounce 150ms) để tự động điều chỉnh mượt mà giữa các kích thước màn hình.
+
+### 2. Đồng Bộ Nút Toggle & Trạng Thái Mũi Tên Động (templates/components/topbar.html, templates/components/sidebar.html):
+- Giữ nút toggle sidebar luôn hiển thị bên cạnh nút Back trên Topbar ở mọi chế độ để người dùng luôn có điểm chạm hover peek hoặc bật/tắt ghim.
+- Hiển thị chính xác icon mũi tên theo trạng thái: Mũi tên hướng trái < khi đang Unhide (để thu gọn), Mũi tên hướng phải > khi đang Hide (để mở rộng/ghim cố định).
+
+### 3. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
+- **Cú pháp JavaScript:** node -c static/js/app.js -> 100% Passed.
+- **Unit Test:** core.tests.SidebarHoverPeekTestCase -> 4/4 Passed.
+- **Toàn bộ hệ thống:** python manage.py test --keepdb -> 107/107 Passed.
+
 ## [v3.6.1] - 2026-10-20 (Chuẩn Hóa Quy Tắc Ký Hiệu Hợp Đồng Lao Động & Phụ Lục HĐ Chuẩn BIM ERP: [Loại HĐ].[Năm].[SốTT] & [Mã HĐ].PL[SốTT])
 
 ### 1. Chuẩn Hóa Cú Pháp Sinh Mã Hợp Đồng Lao Động (apps/personnel/models.py, apps/personnel/serializers.py):

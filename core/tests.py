@@ -2498,16 +2498,28 @@ class SidebarHoverPeekTestCase(TestCase):
         self.assertIn('id="icon-sidebar-arrow-in"', t_html)
         self.assertIn('id="icon-sidebar-arrow-out"', t_html)
 
-        # 3. Kiểm tra CSS main.css có rule sidebar-peek
+        # 3. Kiểm tra mobile backdrop gọi collapseSidebar(false)
+        with open('templates/base.html', 'r', encoding='utf-8') as f:
+            b_html = f.read()
+        self.assertIn('collapseSidebar(false)', b_html)
+
+        # 4. Kiểm tra CSS main.css có rule sidebar-peek
         with open('static/css/main.css', 'r', encoding='utf-8') as f:
             css_text = f.read()
         self.assertIn('.app-sidebar.collapsed.sidebar-peek', css_text)
 
-        # 4. Kiểm tra JS app.js có hàm initSidebarHoverPeek
+        # 5. Kiểm tra JS app.js có chuẩn hóa applySidebarStateFromStorage, expandSidebar, initSidebarHoverPeek
         with open('static/js/app.js', 'r', encoding='utf-8') as f:
             js_text = f.read()
         self.assertIn('function initSidebarHoverPeek()', js_text)
+        self.assertIn('function applySidebarStateFromStorage()', js_text)
+        self.assertIn('function expandSidebar(savePreference = true)', js_text)
+        self.assertIn('window.applySidebarStateFromStorage', js_text)
+        self.assertIn('window.expandSidebar', js_text)
         self.assertIn('sidebar-peek', js_text)
+
+        # 6. Kiểm tra switchTab và setTopbarFullpageMode gọi applySidebarStateFromStorage
+        self.assertIn('applySidebarStateFromStorage();', js_text)
 
 
 

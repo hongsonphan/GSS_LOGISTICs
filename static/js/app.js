@@ -13632,9 +13632,9 @@ const TAB_ROUTE_MAP = {
 
 // --- QUẢN LÝ CHẾ ĐỘ HIỂN THỊ TOPBAR LINH HOẠT (FULLPAGE BREADCRUMB VS STANDARD TABS) ---
 function setTopbarFullpageMode(config) {
-    // Tự động ẩn Sidebar để mở rộng tối đa không gian làm việc khi vào màn hình chi tiết
-    if (typeof collapseSidebar === 'function') {
-        collapseSidebar();
+    // Áp dụng đúng trạng thái đã lưu của người dùng (nếu unhide thì giữ unhide, nếu hide thì giữ hide)
+    if (typeof applySidebarStateFromStorage === 'function') {
+        applySidebarStateFromStorage();
     }
 
     const stdWrapper = document.getElementById('topbar-standard-wrapper');
@@ -13644,7 +13644,7 @@ function setTopbarFullpageMode(config) {
 
     const btnSidebar = document.getElementById('btn-toggle-sidebar');
     const btnBack = document.getElementById('btn-topbar-back');
-    if (btnSidebar) btnSidebar.classList.add('hidden');
+    if (btnSidebar) btnSidebar.classList.remove('hidden');
     if (btnBack) {
         btnBack.classList.remove('hidden');
         btnBack.title = `Quay lại ${config.prefix || 'trang mẹ'}`;
@@ -13697,23 +13697,19 @@ function resetTopbarStandardMode(tabId) {
     const btnBack = document.getElementById('btn-topbar-back');
     if (btnBack) btnBack.classList.add('hidden');
     if (btnSidebar) btnSidebar.classList.remove('hidden');
+
+    if (typeof applySidebarStateFromStorage === 'function') {
+        applySidebarStateFromStorage();
+    }
 }
 
 // --- 9. ĐIỀU HƯỚNG TAB & SỰ KIỆN (CLEAN SEMANTIC URL ROUTING) ---
 function switchTab(tabId, updateHistory = true) {
     if (!tabId) tabId = 'dashboard';
 
-    // Tự động ẩn (auto-hide) Sidebar khi đang trên thiết bị di động hoặc đang ở chế độ Hover Peek
-    const curSidebar = document.querySelector('.app-sidebar');
-    const isSidebarPeekActive = curSidebar && curSidebar.classList.contains('sidebar-peek');
-    const isSavedSidebarCollapsed = localStorage.getItem('bim_sidebar_collapsed') === 'true';
-
-    if (isSidebarPeekActive) {
-        curSidebar.classList.remove('sidebar-peek');
-    } else if (window.innerWidth < 1024 || isSavedSidebarCollapsed) {
-        if (typeof collapseSidebar === 'function') {
-            collapseSidebar(isSavedSidebarCollapsed);
-        }
+    // Chuẩn hóa trạng thái Sidebar từ localStorage (Unhide luôn Unhide ở tất cả màn hình, Hide luôn Hide và tắt peek)
+    if (typeof applySidebarStateFromStorage === 'function') {
+        applySidebarStateFromStorage();
     }
 
     // 1. Luôn đồng bộ URL sạch trên thanh địa chỉ trình duyệt trước tiên
@@ -22207,13 +22203,60 @@ function collapseSidebar(savePreference = true) {
     sidebar.classList.remove('sidebar-peek');
     sidebar.classList.add('collapsed');
     syncSidebarUIState(true);
-    if (savePreference) {
+    // CHỈ lưu preference trên Desktop (>= 1024px) khi người dùng chủ động chọn
+    if (savePreference && window.innerWidth >= 1024) {
         try {
             localStorage.setItem('bim_sidebar_collapsed', 'true');
         } catch (e) {}
     }
 }
 window.collapseSidebar = collapseSidebar;
+
+function expandSidebar(savePreference = true) {
+    const sidebar = document.querySelector('.app-sidebar');
+    if (!sidebar) return;
+    sidebar.classList.remove('sidebar-peek');
+    sidebar.classList.remove('collapsed');
+    syncSidebarUIState(false);
+    // CHỈ lưu preference trên Desktop (>= 1024px) khi người dùng chủ động chọn
+    if (savePreference && window.innerWidth >= 1024) {
+        try {
+            localStorage.setItem('bim_sidebar_collapsed', 'false');
+        } catch (e) {}
+    }
+}
+window.expandSidebar = expandSidebar;
+
+/**
+ * Chuẩn hóa trạng thái Sidebar tập trung duy nhất từ localStorage (Bim_ERP Standard):
+ * - Nếu là Mobile / Tablet (< 1024px): Mặc định luôn thu gọn drawer, không lưu đè preference desktop.
+ * - Nếu là Desktop (>= 1024px):
+ *   + bim_sidebar_collapsed === 'true': Ở trạng thái Hide (collapsed), hỗ trợ Hover Peek.
+ *   + bim_sidebar_collapsed !== 'true': Luôn ở trạng thái Mở Rộng (unhide) ở tất cả màn hình.
+ */
+function applySidebarStateFromStorage() {
+    const sidebar = document.querySelector('.app-sidebar');
+    if (!sidebar) return;
+
+    if (window.innerWidth < 1024) {
+        collapseSidebar(false);
+        return;
+    }
+
+    let isCollapsed = false;
+    try {
+        isCollapsed = (localStorage.getItem('bim_sidebar_collapsed') === 'true');
+    } catch (e) {
+        isCollapsed = false;
+    }
+
+    if (isCollapsed) {
+        collapseSidebar(false);
+    } else {
+        expandSidebar(false);
+    }
+}
+window.applySidebarStateFromStorage = applySidebarStateFromStorage;
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.app-sidebar');
@@ -22222,22 +22265,29 @@ function toggleSidebar() {
     const isPeek = sidebar.classList.contains('sidebar-peek');
     sidebar.classList.remove('sidebar-peek');
 
-    // Nếu đang ở chế độ Peek (hover khi đang hide): Bấm vào nút có nghĩa là người dùng muốn GHIM MỞ CỐ ĐỊNH (uncollapse)
-    if (isPeek && sidebar.classList.contains('collapsed')) {
-        sidebar.classList.remove('collapsed');
-        syncSidebarUIState(false);
-        try {
-            localStorage.setItem('bim_sidebar_collapsed', 'false');
-        } catch (e) {}
+    // Trên thiết bị di động (< 1024px): Đóng mở drawer đơn thuần, không ghi đè localStorage của desktop
+    if (window.innerWidth < 1024) {
+        if (sidebar.classList.contains('collapsed')) {
+            expandSidebar(false);
+        } else {
+            collapseSidebar(false);
+        }
         return;
     }
 
-    sidebar.classList.toggle('collapsed');
-    const isCollapsed = sidebar.classList.contains('collapsed');
-    syncSidebarUIState(isCollapsed);
-    try {
-        localStorage.setItem('bim_sidebar_collapsed', isCollapsed ? 'true' : 'false');
-    } catch (e) {}
+    // Trên Desktop (>= 1024px):
+    // Nếu đang ở chế độ Peek (hover khi đang hide): Bấm vào nút có nghĩa là người dùng muốn GHIM MỞ CỐ ĐỊNH (Unhide)
+    if (isPeek && sidebar.classList.contains('collapsed')) {
+        expandSidebar(true);
+        return;
+    }
+
+    // Toggle trạng thái và lưu cấu hình của người dùng
+    if (sidebar.classList.contains('collapsed')) {
+        expandSidebar(true);
+    } else {
+        collapseSidebar(true);
+    }
 }
 window.toggleSidebar = toggleSidebar;
 
@@ -22308,9 +22358,10 @@ function initSidebarHoverPeek() {
         scheduleHidePeek();
     });
 
-    // Khi người dùng click vào bất kỳ menu nào trong sidebar: Tắt peek ngay
+    // Khi người dùng click vào bất kỳ menu nào trong sidebar: Tắt peek ngay (trừ nút toggle ghim)
     sidebar.querySelectorAll('a, button').forEach(el => {
         el.addEventListener('click', () => {
+            if (el.id === 'btn-sidebar-header-toggle') return;
             if (sidebar.classList.contains('sidebar-peek')) {
                 sidebar.classList.remove('sidebar-peek');
                 isOverTrigger = false;
@@ -22383,20 +22434,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const sidebar = document.querySelector('.app-sidebar');
             if (sidebar && sidebar.classList.contains('sidebar-peek')) {
                 sidebar.classList.remove('sidebar-peek');
-            } else if (window.innerWidth < 1024 || localStorage.getItem('bim_sidebar_collapsed') === 'true') {
-                collapseSidebar();
+            }
+            if (window.innerWidth < 1024) {
+                collapseSidebar(false);
             }
         });
     });
 
-    // Trên thiết bị di động / tablet (< 1024px) hoặc khi người dùng đã thu gọn trước đó: Mặc định auto-hide Sidebar
-    try {
-        if (window.innerWidth < 1024 || localStorage.getItem('bim_sidebar_collapsed') === 'true') {
-            collapseSidebar(false);
-        }
-    } catch (e) {
-        if (window.innerWidth < 1024) collapseSidebar(false);
-    }
+    // Áp dụng chuẩn hóa trạng thái Sidebar từ localStorage ngay khi nạp trang
+    applySidebarStateFromStorage();
+
+    // Lắng nghe thay đổi kích thước cửa sổ để chuyển đổi linh hoạt giữa Mobile drawer và Desktop state
+    let sidebarResizeTimer = null;
+    window.addEventListener('resize', () => {
+        if (sidebarResizeTimer) clearTimeout(sidebarResizeTimer);
+        sidebarResizeTimer = setTimeout(() => {
+            applySidebarStateFromStorage();
+        }, 150);
+    });
 
     // Khôi phục trạng thái ẩn biểu đồ từ localStorage
     try {
@@ -27333,6 +27388,8 @@ window.switchReportGroup = typeof switchReportGroup !== 'undefined' ? switchRepo
 window.switchReportSubTab = typeof switchReportSubTab !== 'undefined' ? switchReportSubTab : undefined;
 window.switchDonutChart = typeof switchDonutChart !== 'undefined' ? switchDonutChart : undefined;
 window.toggleSidebar = typeof toggleSidebar !== 'undefined' ? toggleSidebar : undefined;
+window.expandSidebar = typeof expandSidebar !== 'undefined' ? expandSidebar : undefined;
+window.applySidebarStateFromStorage = typeof applySidebarStateFromStorage !== 'undefined' ? applySidebarStateFromStorage : undefined;
 window.toggleDashboardCharts = typeof toggleDashboardCharts !== 'undefined' ? toggleDashboardCharts : undefined;
 window.refreshCurrentView = typeof refreshCurrentView !== 'undefined' ? refreshCurrentView : undefined;
 window.applyDashboardCustomDate = typeof applyDashboardCustomDate !== 'undefined' ? applyDashboardCustomDate : undefined;
