@@ -6894,23 +6894,31 @@ function renderSaleBookingFilesList() {
     // Render các file đã lưu trong CSDL
     saleBookingExistingDocs.forEach(doc => {
         const isPdf = (doc.name || doc.url || '').toLowerCase().endsWith('.pdf');
+        const docName = doc.name || doc.file_name || 'Tài liệu Booking';
+        const docUrl = doc.url || doc.file_url || '#';
+        const hasValidUrl = docUrl && docUrl !== '#';
+
         itemsHtml += `
-            <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 border border-teal-200 shadow-2xs text-xs">
-                <div class="flex items-center space-x-2 truncate pr-2">
-                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0"></i>
+            <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 hover:bg-teal-100/60 border border-teal-200 shadow-2xs text-xs transition-colors group">
+                <a ${hasValidUrl ? `href="${docUrl}" target="_blank" rel="noopener noreferrer"` : ''} 
+                   class="flex items-center space-x-2 truncate pr-2 flex-1 cursor-pointer no-underline" 
+                   title="Nhấn để mở / tải file: ${docName}">
+                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0 group-hover:scale-110 transition-transform"></i>
                     <div class="truncate">
-                        <p class="font-bold text-teal-900 truncate" title="${doc.name || 'File Booking'}">${doc.name || 'File Booking'}</p>
-                        <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'}</span>
+                        <p class="font-bold text-teal-900 group-hover:text-teal-700 group-hover:underline truncate font-mono text-[11px]" title="${docName}">${docName}</p>
+                        <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'} · <span class="text-teal-600 underline">Bấm để mở</span></span>
                     </div>
-                </div>
+                </a>
                 <div class="flex items-center space-x-1 shrink-0">
-                    <a href="${doc.url}" target="_blank" rel="noopener noreferrer" 
-                        class="p-1 rounded text-teal-700 hover:text-teal-900 hover:bg-teal-100 transition-colors" title="Mở file">
-                        <i class="ph-bold ph-arrow-square-out text-sm"></i>
-                    </a>
+                    ${hasValidUrl ? `
+                        <a href="${docUrl}" target="_blank" rel="noopener noreferrer" 
+                            class="p-1.5 rounded-md text-teal-700 hover:text-white hover:bg-teal-600 transition-colors shadow-xs" title="Mở file trong tab mới">
+                            <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                        </a>
+                    ` : ''}
                     ${doc.id ? `
                         <button type="button" onclick="deleteSaleBookingExistingDoc(${doc.id})" 
-                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors" title="Xóa tài liệu này">
+                            class="p-1.5 rounded-md text-rose-600 hover:text-white hover:bg-rose-600 transition-colors shadow-xs" title="Xóa tài liệu này">
                             <i class="ph-bold ph-trash text-sm"></i>
                         </button>
                     ` : ''}
@@ -6925,24 +6933,43 @@ function renderSaleBookingFilesList() {
         const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
         const sizeKb = (file.size / 1024).toFixed(0);
         const sizeStr = file.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
-        const tempUrl = URL.createObjectURL(file);
+        let tempUrl = '';
+        try {
+            tempUrl = URL.createObjectURL(file);
+        } catch (e) {
+            tempUrl = '';
+        }
 
         itemsHtml += `
-            <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-blue-200 shadow-2xs text-xs">
-                <div class="flex items-center space-x-2 truncate pr-2">
-                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0"></i>
-                    <div class="truncate">
-                        <p class="font-bold text-slate-800 truncate" title="${file.name}">${file.name}</p>
-                        <span class="text-[10px] text-blue-600 font-medium">Mới: (${sizeStr})</span>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-1 shrink-0">
+            <div class="flex items-center justify-between p-2 rounded-lg bg-blue-50 hover:bg-blue-100/60 border border-blue-200 shadow-2xs text-xs transition-colors group">
+                ${tempUrl ? `
                     <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
-                        class="p-1 rounded text-blue-700 hover:text-blue-900 hover:bg-blue-50 transition-colors" title="Xem trước">
-                        <i class="ph-bold ph-eye text-sm"></i>
+                       class="flex items-center space-x-2 truncate pr-2 flex-1 cursor-pointer no-underline" 
+                       title="Xem trước file: ${file.name}">
+                        <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0 group-hover:scale-110 transition-transform"></i>
+                        <div class="truncate">
+                            <p class="font-bold text-slate-800 group-hover:text-blue-700 group-hover:underline truncate font-mono text-[11px]" title="${file.name}">${file.name}</p>
+                            <span class="text-[10px] text-blue-600 font-medium font-mono">(${sizeStr} - Chờ lưu) · <span class="underline">Xem trước</span></span>
+                        </div>
                     </a>
+                ` : `
+                    <div class="flex items-center space-x-2 truncate pr-2 flex-1">
+                        <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-blue-600'} text-base shrink-0"></i>
+                        <div class="truncate">
+                            <p class="font-bold text-slate-800 truncate font-mono text-[11px]" title="${file.name}">${file.name}</p>
+                            <span class="text-[10px] text-blue-600 font-medium font-mono">(${sizeStr} - Chờ lưu)</span>
+                        </div>
+                    </div>
+                `}
+                <div class="flex items-center space-x-1 shrink-0">
+                    ${tempUrl ? `
+                        <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
+                            class="p-1.5 rounded-md text-blue-700 hover:text-white hover:bg-blue-600 transition-colors shadow-xs" title="Xem trước">
+                            <i class="ph-bold ph-eye text-sm"></i>
+                        </a>
+                    ` : ''}
                     <button type="button" onclick="removeSaleBookingNewFile(${idx})" 
-                        class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors" title="Bỏ file này">
+                        class="p-1.5 rounded-md text-rose-600 hover:text-white hover:bg-rose-600 transition-colors shadow-xs shrink-0" title="Bỏ file này">
                         <i class="ph-bold ph-trash text-sm"></i>
                     </button>
                 </div>
@@ -6972,11 +6999,16 @@ function clearSaleBookingFileSelection() {
 function showSaleExistingBookingFile(fileUrl, fileName, docs = []) {
     saleBookingFilesList = [];
     if (docs && docs.length > 0) {
-        saleBookingExistingDocs = [...docs];
+        saleBookingExistingDocs = docs.map(d => ({
+            id: d.id,
+            name: d.file_name || d.name || d.title || 'Tài liệu Booking',
+            url: d.file_url || d.url || (d.file_path ? `/media/${d.file_path}` : '#'),
+            size_formatted: d.file_size_formatted || d.size_formatted || ''
+        }));
     } else if (fileUrl) {
         saleBookingExistingDocs = [{
             id: null,
-            name: fileName || 'File_Booking_Dinh_Kem',
+            name: fileName || 'Tài liệu Booking',
             url: fileUrl,
             size_formatted: ''
         }];
@@ -6985,7 +7017,6 @@ function showSaleExistingBookingFile(fileUrl, fileName, docs = []) {
     }
     renderSaleBookingFilesList();
 }
-
 // --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (Bim_ERP Standard) ---
 async function submitNewTrip() {
     const is_split_trip = document.getElementById('chk-drop-hook')?.checked || false;
@@ -10741,23 +10772,31 @@ function renderFullpageBookingFilesList() {
 
     fullpageBookingExistingDocs.forEach(doc => {
         const isPdf = (doc.name || doc.url || '').toLowerCase().endsWith('.pdf');
+        const docName = doc.name || doc.file_name || 'Tài liệu Booking';
+        const docUrl = doc.url || doc.file_url || '#';
+        const hasValidUrl = docUrl && docUrl !== '#';
+
         itemsHtml += `
-            <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 border border-teal-200 shadow-2xs text-xs">
-                <div class="flex items-center space-x-2 truncate pr-2">
-                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0"></i>
+            <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 hover:bg-teal-100/60 border border-teal-200 shadow-2xs text-xs transition-colors group">
+                <a ${hasValidUrl ? `href="${docUrl}" target="_blank" rel="noopener noreferrer"` : ''} 
+                   class="flex items-center space-x-2 truncate pr-2 flex-1 cursor-pointer no-underline" 
+                   title="Nhấn để mở / tải file: ${docName}">
+                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-teal-600'} text-base shrink-0 group-hover:scale-110 transition-transform"></i>
                     <div class="truncate">
-                        <p class="font-bold text-teal-900 truncate" title="${doc.name || 'File Booking'}">${doc.name || 'File Booking'}</p>
-                        <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'}</span>
+                        <p class="font-bold text-teal-900 group-hover:text-teal-700 group-hover:underline truncate font-mono text-[11px]" title="${docName}">${docName}</p>
+                        <span class="text-[10px] text-teal-700 font-medium">${doc.size_formatted ? `(${doc.size_formatted})` : '(Đã lưu)'} · <span class="text-teal-600 underline">Bấm để mở</span></span>
                     </div>
-                </div>
+                </a>
                 <div class="flex items-center space-x-1 shrink-0">
-                    <a href="${doc.url}" target="_blank" rel="noopener noreferrer" 
-                        class="p-1 rounded text-teal-700 hover:text-teal-900 hover:bg-teal-100 transition-colors" title="Mở file">
-                        <i class="ph-bold ph-arrow-square-out text-sm"></i>
-                    </a>
+                    ${hasValidUrl ? `
+                        <a href="${docUrl}" target="_blank" rel="noopener noreferrer" 
+                            class="p-1.5 rounded-md text-teal-700 hover:text-white hover:bg-teal-600 transition-colors shadow-xs" title="Mở file trong tab mới">
+                            <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                        </a>
+                    ` : ''}
                     ${doc.id ? `
                         <button type="button" onclick="deleteFullpageBookingExistingDoc(${doc.id})" 
-                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors" title="Xóa tài liệu này">
+                            class="p-1.5 rounded-md text-rose-600 hover:text-white hover:bg-rose-600 transition-colors shadow-xs" title="Xóa tài liệu này">
                             <i class="ph-bold ph-trash text-sm"></i>
                         </button>
                     ` : ''}
@@ -10771,20 +10810,46 @@ function renderFullpageBookingFilesList() {
         const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
         const sizeKb = (file.size / 1024).toFixed(0);
         const sizeStr = file.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
+        let tempUrl = '';
+        try {
+            tempUrl = URL.createObjectURL(file);
+        } catch (e) {
+            tempUrl = '';
+        }
 
         itemsHtml += `
-            <div class="flex items-center justify-between p-2 rounded-lg bg-amber-50 border border-amber-200 shadow-2xs text-xs">
-                <div class="flex items-center space-x-2 truncate pr-2">
-                    <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-amber-600'} text-base shrink-0"></i>
-                    <div class="truncate">
-                        <p class="font-bold text-amber-900 truncate" title="${file.name}">${file.name}</p>
-                        <span class="text-[10px] text-amber-700 font-semibold font-mono">(${sizeStr} - Chờ tải lên)</span>
+            <div class="flex items-center justify-between p-2 rounded-lg bg-amber-50 hover:bg-amber-100/60 border border-amber-200 shadow-2xs text-xs transition-colors group">
+                ${tempUrl ? `
+                    <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
+                       class="flex items-center space-x-2 truncate pr-2 flex-1 cursor-pointer no-underline" 
+                       title="Xem trước file: ${file.name}">
+                        <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-amber-600'} text-base shrink-0 group-hover:scale-110 transition-transform"></i>
+                        <div class="truncate">
+                            <p class="font-bold text-amber-900 group-hover:text-amber-700 group-hover:underline truncate font-mono text-[11px]" title="${file.name}">${file.name}</p>
+                            <span class="text-[10px] text-amber-700 font-semibold font-mono">(${sizeStr} - Chờ lưu) · <span class="underline">Xem trước</span></span>
+                        </div>
+                    </a>
+                ` : `
+                    <div class="flex items-center space-x-2 truncate pr-2 flex-1">
+                        <i class="${isPdf ? 'ph-bold ph-file-pdf text-rose-600' : 'ph-bold ph-file-image text-amber-600'} text-base shrink-0"></i>
+                        <div class="truncate">
+                            <p class="font-bold text-amber-900 truncate font-mono text-[11px]" title="${file.name}">${file.name}</p>
+                            <span class="text-[10px] text-amber-700 font-semibold font-mono">(${sizeStr} - Chờ lưu)</span>
+                        </div>
                     </div>
+                `}
+                <div class="flex items-center space-x-1 shrink-0">
+                    ${tempUrl ? `
+                        <a href="${tempUrl}" target="_blank" rel="noopener noreferrer" 
+                            class="p-1.5 rounded-md text-amber-700 hover:text-white hover:bg-amber-600 transition-colors shadow-xs" title="Xem trước file">
+                            <i class="ph-bold ph-eye text-sm"></i>
+                        </a>
+                    ` : ''}
+                    <button type="button" onclick="removeFullpageBookingNewFile(${idx})" 
+                        class="p-1.5 rounded-md text-rose-600 hover:text-white hover:bg-rose-600 transition-colors shadow-xs shrink-0" title="Hủy tệp này">
+                        <i class="ph-bold ph-x text-sm"></i>
+                    </button>
                 </div>
-                <button type="button" onclick="removeFullpageBookingNewFile(${idx})" 
-                    class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-100 transition-colors shrink-0" title="Hủy tệp này">
-                    <i class="ph-bold ph-x text-sm"></i>
-                </button>
             </div>
         `;
     });
@@ -10808,7 +10873,6 @@ function clearFullpageBookingFileSelection() {
     if (input) input.value = '';
     renderFullpageBookingFilesList();
 }
-
 /**
  * Tối ưu hóa biểu mẫu Booking thích ứng động theo 3 loại dịch vụ:
  * 1. EXPORT_FCL (Kéo cont xuất khẩu)
@@ -11344,22 +11408,21 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
         if (b.documents && b.documents.length > 0) {
             fullpageBookingExistingDocs = b.documents.map(d => ({
                 id: d.id,
-                name: d.file_name || d.title || 'File Booking',
-                url: d.file_url || (d.file_path ? `/media/${d.file_path}` : '#'),
-                size_formatted: d.file_size_formatted || ''
+                name: d.file_name || d.name || d.title || 'Tài liệu Booking',
+                url: d.file_url || d.url || (d.file_path ? `/media/${d.file_path}` : '#'),
+                size_formatted: d.file_size_formatted || d.size_formatted || ''
             }));
         } else if (b.booking_file_url) {
             fullpageBookingExistingDocs.push({
                 id: null,
-                name: b.booking_file_name || 'File Booking gốc',
+                name: b.booking_file_name || 'Tài liệu Booking',
                 url: b.booking_file_url,
                 size_formatted: ''
             });
         }
         renderFullpageBookingFilesList();
 
-        if (tripsSection) {
-            tripsSection.classList.remove('hidden');
+        if (tripsSection) {            tripsSection.classList.remove('hidden');
             const tripsCountBadge = document.getElementById('fullpage-booking-trips-count-badge');
             const tripsTbody = document.getElementById('fullpage-booking-trips-tbody');
 

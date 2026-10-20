@@ -393,3 +393,58 @@ class QuotationEnterprisePrintAPITest(TestCase):
         self.assertEqual(found[0]['customer_tax_code'], '0301234567')
 
 
+class BookingDocumentNamingTestCase(TestCase):
+    def setUp(self):
+        from apps.customers.models import Customer, BookingOrder, BookingDocument
+        from django.contrib.auth.models import User
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client = Client()
+        self.user = User.objects.create_superuser(username="admin_booking_test", password="password123")
+        self.client.force_login(self.user)
+        self.customer = Customer.objects.create(code="CUST_BK", name="Khách Hàng BK Test")
+
+    def test_format_booking_attachment_filename(self):
+        from core.validators import format_booking_attachment_filename
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        file_obj = SimpleUploadedFile("bang_ke_hang_hoa.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 100, content_type="image/png")
+        formatted = format_booking_attachment_filename(file_obj, "BK.2610.005")
+        self.assertEqual(formatted.name, "BK.2610.005_bang_ke_hang_hoa.png")
+
+        # Thử lại khi đã có prefix
+        formatted_again = format_booking_attachment_filename(formatted, "BK.2610.005")
+        self.assertEqual(formatted_again.name, "BK.2610.005_bang_ke_hang_hoa.png")
+
+    def test_booking_detail_api_returns_clean_names_and_links(self):
+        from apps.customers.models import BookingOrder, BookingDocument
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from core.validators import format_booking_attachment_filename
+
+        booking = BookingOrder.objects.create(
+            booking_code="BK.2610.099",
+            customer=self.customer,
+            booking_number="ONE1234567",
+            shipping_line="ONE",
+            selling_freight_price=4500000
+        )
+        fake_file = SimpleUploadedFile("bill_goc.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 100, content_type="image/png")
+        format_booking_attachment_filename(fake_file, booking.booking_code)
+        doc = BookingDocument.objects.create(
+            booking=booking,
+            file=fake_file,
+            file_name=fake_file.name,
+            file_size=fake_file.size
+        )
+
+        res = self.client.get(f'/api/bookings/{booking.id}/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['booking_code'], "BK.2610.099")
+        self.assertEqual(data['documents_count'], 1)
+        doc_data = data['documents'][0]
+        self.assertTrue(doc_data['name'].startswith("BK.2610.099_"))
+        self.assertEqual(doc_data['file_name'], doc_data['name'])
+        self.assertTrue(bool(doc_data['url']))
+        self.assertEqual(doc_data['file_url'], doc_data['url'])
+
+
+

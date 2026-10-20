@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.5.8] - 2026-10-20 (Chuẩn Hóa Đặt Tên Chứng Từ Booking Kèm Mã Phiếu [Mã Booking]_[Tên File] & Cho Phép Truy Cập Xem Trực Tiếp)
+
+### 1. Chuẩn Hóa Tên Tệp Đính Kèm Tự Động Gán Mã Phiếu (`core/validators.py`, `apps/dispatch/api_views.py`):
+- **Quy chuẩn đặt tên đồng nhất:**
+  * Bổ sung hàm `format_booking_attachment_filename(file_obj, booking_code)` trong `core/validators.py`.
+  * Khử ký tự nguy hiểm, chống Directory Traversal, thay thế khoảng trắng bằng dấu gạch dưới `_`.
+  * Tự động gán tiền tố `f"{booking_code}_"` vào tên file đính kèm nếu chưa có (ví dụ: `BK.2610.005_clipboard_20261019_201846.png`, `BK.2610.005_Booking.png`).
+- **Xử lý lưu trữ Backend (`SalesAPIView` & `BookingOrderDetailAPIView`):**
+  * Tự động đổi tên file trong `request.FILES` trước khi lưu vào đĩa vật lý qua Django Storage (`upload_to='booking_files/%Y/%m/'`).
+  * Đồng bộ trường `BookingDocument.file_name` và `BookingOrder.booking_file` với tên file đã gán mã booking.
+  * API GET `/api/bookings/<id>/` trả về đầy đủ các trường `name`, `file_name`, `url`, `file_url`, `size_formatted`, `file_size_formatted` với tên file sạch sẽ, luôn có tiền tố mã Booking.
+- **Kịch bản đồng bộ dữ liệu cũ (`scripts/sync_booking_files_naming.py`):**
+  * Quét toàn bộ CSDL và storage `media/`, tự động đổi tên file vật lý và cập nhật `file_name` trong database cho các đơn hàng cũ.
+
+### 2. Trải Nghiệm Người Dùng (UI/UX) — Hiển Thị Rõ Tên File & Bấm Để Mở/Tải Trực Tiếp (`static/js/app.js`):
+- **Hiển thị tên file thực tế:**
+  * Khắc phục triệt để lỗi hiển thị chữ chung chung "File Booking", thay thế bằng tên file thực tế với font monospace rõ ràng (`font-mono text-[11px] font-bold`).
+- **Tương tác 1 chạm trực quan:**
+  * Toàn bộ khối hàng tài liệu được bọc bằng link `<a href="${doc.url}" target="_blank">`, người dùng có thể bấm trực tiếp vào tên file, biểu tượng file hoặc nút mở góc phải để xem/tải tài liệu tức thì.
+  * Thêm hiệu ứng hover nổi bật (`group-hover:text-teal-700 group-hover:underline`), chú thích `· Bấm để mở` và preview cho tệp mới chọn chưa lưu.
+  * Áp dụng đồng bộ cho cả **Màn hình Chi tiết Booking toàn trang** (`view_booking_detail.html`) và **Modal tiếp nhận đơn hàng** (`modal_booking.html`).
+
+### 3. Kiểm Thử & Xác Thực Toàn Diện (System Verification):
+- **Cú pháp JavaScript:** `node -c static/js/app.js` → 100% Passed.
+- **Django Unit Tests:** `python manage.py test apps.dispatch.tests.BookingDocumentNamingTestCase --keepdb` → 2/2 tests OK.
+- **Frontend Syntax Integrity:** `python manage.py test core.tests.FrontendSyntaxIntegrityTestCase --keepdb` → 3/3 tests OK.
+
 ## [v3.5.7] - 2026-10-19 (Tối Ưu Hóa Biểu Mẫu Booking Thích Ứng Động Theo 3 Loại Dịch Vụ Logistics & Điều Hướng Phím TAB Tốc Độ Cao)
 
 ### 1. Phân Biệt & Thích Ứng Nghiệp Vụ Theo 3 Loại Hình Dịch Vụ Vận Tải:

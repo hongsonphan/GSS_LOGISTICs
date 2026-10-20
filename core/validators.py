@@ -120,3 +120,29 @@ def sanitize_filename(filename):
     base = os.path.basename(filename)
     clean_name = "".join(c for c in base if c.isalnum() or c in "._- ")
     return clean_name or "document"
+
+def format_booking_attachment_filename(file_obj, booking_code):
+    """
+    Chuẩn hóa và gán mã phiếu (booking_code) vào tên tệp đính kèm:
+    Định dạng yêu cầu: [Mã booking]_[Tên file gốc]
+    Ví dụ: BK.2610.005_clipboard_20261019_201846.png
+    """
+    if not file_obj or not hasattr(file_obj, 'name'):
+        return file_obj
+
+    import re
+    orig_name = sanitize_filename(file_obj.name or '')
+    clean_name = re.sub(r'\s+', '_', orig_name).strip()
+    if not clean_name:
+        clean_name = "booking_document"
+
+    code_str = re.sub(r'\s+', '_', str(booking_code).strip())
+    prefix = f"{code_str}_"
+
+    if not clean_name.startswith(prefix):
+        new_name = f"{prefix}{clean_name}"
+    else:
+        new_name = clean_name
+
+    file_obj.name = new_name
+    return file_obj

@@ -30,7 +30,7 @@ from core.permissions import (
     IsTripDriverOrDispatcher,
 )
 import re
-from core.validators import validate_uploaded_document, sanitize_filename
+from core.validators import validate_uploaded_document, sanitize_filename, format_booking_attachment_filename
 
 
 def resolve_customer(customer_input):
@@ -4207,6 +4207,7 @@ class SalesAPIView(APIView):
                     validate_uploaded_document(bf)
                 except DjangoValidationError as ve:
                     return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+                format_booking_attachment_filename(bf, booking_code)
 
             uploaded_bk_file = uploaded_bk_files[0] if uploaded_bk_files else None
 
@@ -4245,12 +4246,13 @@ class SalesAPIView(APIView):
                 notes=data.get('notes', '')
             )
 
-            # Lưu tất cả các file đính kèm vào BookingDocument
+            # Lưu tất cả các file đính kèm vào BookingDocument với tên đã gán mã Booking
             for bf in uploaded_bk_files:
+                doc_file_name = getattr(bf, 'name', '') or f"{booking.booking_code}_booking_document"
                 BookingDocument.objects.create(
                     booking=booking,
                     file=bf,
-                    file_name=getattr(bf, 'name', '') or 'booking_document',
+                    file_name=doc_file_name,
                     file_size=getattr(bf, 'size', 0)
                 )
 
@@ -4674,25 +4676,53 @@ class BookingOrderDetailAPIView(APIView):
                 'profit': float(t.cached_profit or 0),
             })
 
-        docs_data = [
-            {
+        def get_clean_booking_doc_name(raw_name, booking_code):
+            raw_base = os.path.basename(raw_name or '').strip()
+            if not raw_base:
+                return f"{booking_code}_booking_document"
+            code_prefix = f"{booking_code}_"
+            if not raw_base.startswith(code_prefix):
+                return f"{code_prefix}{raw_base}"
+            return raw_base
+
+        docs_data = []
+        for d in b.documents.filter(is_deleted=False):
+            raw_name = d.file_name or (os.path.basename(d.file.name) if d.file else '')
+            clean_name = get_clean_booking_doc_name(raw_name, b.booking_code)
+            file_url = d.file.url if d.file else ''
+            f_size = d.file_size or (d.file.size if d.file else 0)
+            size_fmt = f"{round(f_size / 1024, 1)} KB" if f_size < 1024*1024 else f"{round(f_size / (1024*1024), 2)} MB"
+            docs_data.append({
                 'id': d.id,
-                'name': d.file_name or os.path.basename(d.file.name),
-                'url': d.file.url if d.file else '',
-                'size': d.file_size or (d.file.size if d.file else 0),
-                'size_formatted': f"{round(d.file_size / 1024, 1)} KB" if (d.file_size or 0) < 1024*1024 else f"{round((d.file_size or 0) / (1024*1024), 2)} MB",
+                'name': clean_name,
+                'file_name': clean_name,
+                'url': file_url,
+                'file_url': file_url,
+                'size': f_size,
+                'file_size': f_size,
+                'size_formatted': size_fmt,
+                'file_size_formatted': size_fmt,
                 'created_at': d.created_at.strftime('%H:%M %d/%m/%Y')
-            }
-            for d in b.documents.filter(is_deleted=False)
-        ]
+            })
+
         if b.booking_file and not docs_data:
-            f_size = b.booking_file.size if hasattr(b.booking_file, 'size') else 0
+            raw_name = os.path.basename(b.booking_file.name)
+            clean_name = get_clean_booking_doc_name(raw_name, b.booking_code)
+            try:
+                f_size = b.booking_file.size
+            except Exception:
+                f_size = 0
+            size_fmt = f"{round(f_size / 1024, 1)} KB" if f_size < 1024*1024 else f"{round(f_size / (1024*1024), 2)} MB"
             docs_data.append({
                 'id': 0,
-                'name': os.path.basename(b.booking_file.name),
+                'name': clean_name,
+                'file_name': clean_name,
                 'url': b.booking_file.url,
+                'file_url': b.booking_file.url,
                 'size': f_size,
-                'size_formatted': f"{round(f_size / 1024, 1)} KB" if f_size < 1024*1024 else f"{round(f_size / (1024*1024), 2)} MB",
+                'file_size': f_size,
+                'size_formatted': size_fmt,
+                'file_size_formatted': size_fmt,
                 'created_at': b.created_at.strftime('%H:%M %d/%m/%Y')
             })
 
@@ -4727,7 +4757,7 @@ class BookingOrderDetailAPIView(APIView):
             'status_label': b.get_status_display(),
             'trips': trips_data,
             'booking_file_url': b.booking_file.url if b.booking_file else '',
-            'booking_file_name': os.path.basename(b.booking_file.name) if b.booking_file else '',
+            'booking_file_name': get_clean_booking_doc_name(b.booking_file.name, b.booking_code) if b.booking_file else '',
             'documents': docs_data,
             'documents_count': len(docs_data),
             'notes': b.notes
@@ -4752,12 +4782,15 @@ class BookingOrderDetailAPIView(APIView):
                     validate_uploaded_document(bf)
                 except DjangoValidationError as ve:
                     return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+                format_booking_attachment_filename(bf, b.booking_code)
+
             b.booking_file = uploaded_bk_files[0]
             for bf in uploaded_bk_files:
+                doc_file_name = getattr(bf, 'name', '') or f"{b.booking_code}_booking_document"
                 BookingDocument.objects.create(
                     booking=b,
                     file=bf,
-                    file_name=getattr(bf, 'name', '') or 'booking_document',
+                    file_name=doc_file_name,
                     file_size=getattr(bf, 'size', 0)
                 )
 
