@@ -13,7 +13,8 @@ from apps.collaboration.api_views.tasks_api import (
     OfficeTaskChecklistAPIView,
     OfficeTaskCommentAPIView,
     OfficeTaskAttachmentAPIView,
-    OfficeTaskDirectoryAPIView
+    OfficeTaskDirectoryAPIView,
+    OfficeTaskExtensionAPIView
 )
 from apps.collaboration.api_views.chat_api import (
     ChatRoomListCreateAPIView,
@@ -42,6 +43,7 @@ urlpatterns = [
     path('tasks/<int:pk>/checklists/', OfficeTaskChecklistAPIView.as_view(), name='collab-task-checklist'),
     path('tasks/<int:pk>/comments/', OfficeTaskCommentAPIView.as_view(), name='collab-task-comment'),
     path('tasks/<int:pk>/attachments/', OfficeTaskAttachmentAPIView.as_view(), name='collab-task-attachment'),
+    path('tasks/<int:pk>/extension/', OfficeTaskExtensionAPIView.as_view(), name='collab-task-extension'),
 
     # CHAT NỘI BỘ VĂN PHÒNG
     path('chat/rooms/', ChatRoomListCreateAPIView.as_view(), name='collab-chat-rooms'),

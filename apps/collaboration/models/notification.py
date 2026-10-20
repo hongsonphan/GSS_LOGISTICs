@@ -7,6 +7,8 @@ class NotificationType(models.TextChoices):
     TASK_ASSIGNED = 'TASK_ASSIGNED', 'Được giao công việc mới'
     TASK_STATUS_CHANGED = 'TASK_STATUS_CHANGED', 'Cập nhật trạng thái công việc'
     TASK_COMMENT = 'TASK_COMMENT', 'Thảo luận trong công việc'
+    TASK_EXTENSION_REQUESTED = 'TASK_EXTENSION_REQUESTED', 'Đề xuất gia hạn hạn chót'
+    TASK_EXTENSION_REVIEWED = 'TASK_EXTENSION_REVIEWED', 'Kết quả duyệt gia hạn hạn chót'
     NEWS_URGENT = 'NEWS_URGENT', 'Bản tin khẩn cấp từ Ban Giám Đốc'
     NEWS_NEW = 'NEWS_NEW', 'Bản tin công ty mới'
     CHAT_MENTION = 'CHAT_MENTION', 'Được nhắc tên trong tin nhắn'

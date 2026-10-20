@@ -170,8 +170,10 @@ class OfficeTaskListSerializer(serializers.ModelSerializer):
     reporter_info = UserSimpleSerializer(source='reporter', read_only=True)
     followers_info = UserSimpleSerializer(source='followers', many=True, read_only=True)
     is_overdue = serializers.BooleanField(read_only=True)
+    days_remaining = serializers.IntegerField(read_only=True)
     checklists_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
+    extension_requested_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = OfficeTask
@@ -179,10 +181,18 @@ class OfficeTaskListSerializer(serializers.ModelSerializer):
             'id', 'code', 'title', 'department', 'priority', 'status',
             'assignee', 'assignee_info', 'reporter', 'reporter_info',
             'followers', 'followers_info',
-            'start_date', 'due_date', 'progress_percent', 'is_overdue',
+            'start_date', 'due_date', 'days_remaining', 'progress_percent', 'is_overdue',
+            'extension_status', 'requested_deadline', 'extension_reason',
+            'extension_requested_at', 'extension_requested_by', 'extension_requested_by_name',
             'related_trip', 'related_customer', 'related_vehicle',
             'checklists_count', 'comments_count', 'created_at'
         ]
+
+    def get_extension_requested_by_name(self, obj):
+        if obj.extension_requested_by:
+            emp = getattr(obj.extension_requested_by, 'employee', None)
+            return emp.full_name if emp else (obj.extension_requested_by.get_full_name() or obj.extension_requested_by.username)
+        return None
 
     def get_checklists_count(self, obj):
         total = obj.checklists.filter(is_deleted=False).count()
@@ -202,6 +212,9 @@ class OfficeTaskDetailSerializer(serializers.ModelSerializer):
     attachments = TaskAttachmentSerializer(many=True, read_only=True)
     activities = TaskActivityLogSerializer(many=True, read_only=True)
     is_overdue = serializers.BooleanField(read_only=True)
+    days_remaining = serializers.IntegerField(read_only=True)
+    extension_requested_by_info = UserSimpleSerializer(source='extension_requested_by', read_only=True)
+    extension_reviewed_by_info = UserSimpleSerializer(source='extension_reviewed_by', read_only=True)
     related_trip_code = serializers.SerializerMethodField()
     related_customer_name = serializers.SerializerMethodField()
     related_vehicle_plate = serializers.SerializerMethodField()
@@ -212,7 +225,11 @@ class OfficeTaskDetailSerializer(serializers.ModelSerializer):
             'id', 'code', 'title', 'description', 'department', 'priority', 'status',
             'assignee', 'assignee_info', 'reporter', 'reporter_info',
             'followers', 'followers_info',
-            'start_date', 'due_date', 'completed_at', 'progress_percent', 'is_overdue',
+            'start_date', 'due_date', 'days_remaining', 'completed_at', 'progress_percent', 'is_overdue',
+            'extension_status', 'requested_deadline', 'extension_reason',
+            'extension_requested_at', 'extension_requested_by', 'extension_requested_by_info',
+            'extension_reviewed_at', 'extension_reviewed_by', 'extension_reviewed_by_info',
+            'extension_review_note',
             'related_trip', 'related_trip_code',
             'related_customer', 'related_customer_name',
             'related_vehicle', 'related_vehicle_plate',

@@ -577,3 +577,224 @@ class OfficeTaskDirectoryAPIView(views.APIView):
                 'can_assign_others': bool(is_super or (current_emp and current_emp.hierarchy_level >= 50))
             }
         })
+
+
+
+class OfficeTaskExtensionAPIView(views.APIView):
+    """
+    Quản lý luồng Đề xuất gia hạn và Phê duyệt gia hạn hạn chót công việc (Chuẩn ERP Bim Logistics).
+    - action = 'request': Người được giao việc (Assignee) gửi đề xuất dời hạn kèm lý do.
+    - action = 'approve': Người giao việc (Reporter) hoặc Admin duyệt dời hạn chót.
+    - action = 'reject': Người giao việc (Reporter) hoặc Admin từ chối đề xuất dời hạn.
+    - action = 'cancel': Người được giao việc hủy yêu cầu khi đang chờ duyệt.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            task = OfficeTask.objects.select_related(
+                'assignee', 'reporter'
+            ).prefetch_related('followers').get(pk=pk, is_deleted=False)
+        except OfficeTask.DoesNotExist:
+            return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('action')
+        user = request.user
+        current_emp = getattr(user, 'employee', None)
+        is_admin = user.is_superuser or (current_emp and current_emp.hierarchy_level >= 100)
+        is_reporter = (task.reporter_id == user.id) or is_admin
+        is_assignee = (task.assignee_id == user.id) or task.followers.filter(id=user.id).exists() or is_admin
+
+        # 1. ĐỀ XUẤT GIA HẠN
+        if action == 'request':
+            if not is_assignee:
+                return Response({'success': False, 'message': 'Bạn không có quyền gửi đề xuất gia hạn cho công việc này.'}, status=status.HTTP_403_FORBIDDEN)
+
+            requested_deadline_str = request.data.get('requested_deadline')
+            reason = (request.data.get('reason') or '').strip()
+
+            if not requested_deadline_str:
+                return Response({'success': False, 'message': 'Vui lòng chọn hạn hoàn thành mới đề xuất.'}, status=status.HTTP_400_BAD_REQUEST)
+            if not reason:
+                return Response({'success': False, 'message': 'Vui lòng nhập lý do đề xuất gia hạn để quản lý phê duyệt.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                from datetime import datetime
+                new_date = datetime.strptime(requested_deadline_str[:10], '%Y-%m-%d').date()
+            except Exception:
+                return Response({'success': False, 'message': 'Định dạng ngày hạn không hợp lệ (YYYY-MM-DD).'}, status=status.HTTP_400_BAD_REQUEST)
+
+            old_due = task.due_date.strftime('%d/%m/%Y') if task.due_date else 'Không có'
+            new_due = new_date.strftime('%d/%m/%Y')
+
+            from apps.collaboration.models import TaskExtensionStatus
+            task.extension_status = TaskExtensionStatus.PENDING
+            task.requested_deadline = new_date
+            task.extension_reason = reason
+            task.extension_requested_at = timezone.now()
+            task.extension_requested_by = user
+            task.extension_reviewed_at = None
+            task.extension_reviewed_by = None
+            task.extension_review_note = ''
+            task.save(update_fields=[
+                'extension_status', 'requested_deadline', 'extension_reason',
+                'extension_requested_at', 'extension_requested_by',
+                'extension_reviewed_at', 'extension_reviewed_by', 'extension_review_note'
+            ])
+
+            # Ghi Activity Log
+            TaskActivityLog.objects.create(
+                task=task,
+                user=user,
+                action="Đề xuất gia hạn",
+                description=f"Đề xuất dời hạn từ {old_due} sang {new_due}. Lý do: {reason}"
+            )
+
+            # Gửi Notification cho người giao việc
+            if task.reporter and task.reporter_id != user.id:
+                emp_name = current_emp.full_name if current_emp else user.username
+                Notification.objects.create(
+                    recipient=task.reporter,
+                    sender=user,
+                    notification_type=NotificationType.TASK_STATUS_CHANGED,
+                    title=f"Đề xuất gia hạn: [{task.code}]",
+                    message=f"{emp_name} đề xuất dời hạn công việc '{task.title}' sang ngày {new_due}. Lý do: {reason}",
+                    target_type="TASK",
+                    target_id=task.id,
+                    link_url=f"/tasks/#task-{task.id}"
+                )
+
+            serializer = OfficeTaskDetailSerializer(task)
+            return Response({
+                'success': True,
+                'message': f'Đã gửi đề xuất gia hạn đến ngày {new_due} thành công. Vui lòng chờ người giao việc phê duyệt.',
+                'data': serializer.data
+            })
+
+        # 2. DUYỆT GIA HẠN
+        elif action == 'approve':
+            if not is_reporter:
+                return Response({'success': False, 'message': 'Chỉ người giao việc hoặc Quản lý cấp cao mới có quyền duyệt gia hạn.'}, status=status.HTTP_403_FORBIDDEN)
+
+            from apps.collaboration.models import TaskExtensionStatus
+            if task.extension_status != TaskExtensionStatus.PENDING or not task.requested_deadline:
+                return Response({'success': False, 'message': 'Công việc hiện không có đề xuất gia hạn nào đang chờ duyệt.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            note = (request.data.get('note') or '').strip()
+            old_due = task.due_date.strftime('%d/%m/%Y') if task.due_date else 'Không có'
+            new_due = task.requested_deadline.strftime('%d/%m/%Y')
+
+            task.due_date = task.requested_deadline
+            task.extension_status = TaskExtensionStatus.APPROVED
+            task.extension_reviewed_at = timezone.now()
+            task.extension_reviewed_by = user
+            task.extension_review_note = note
+            task.save(update_fields=[
+                'due_date', 'extension_status', 'extension_reviewed_at',
+                'extension_reviewed_by', 'extension_review_note'
+            ])
+
+            desc = f"Đã duyệt gia hạn hạn chót từ {old_due} sang {new_due}."
+            if note:
+                desc += f" Ghi chú: {note}"
+            TaskActivityLog.objects.create(
+                task=task,
+                user=user,
+                action="Duyệt gia hạn",
+                description=desc
+            )
+
+            if task.assignee and task.assignee_id != user.id:
+                reviewer_name = current_emp.full_name if current_emp else user.username
+                Notification.objects.create(
+                    recipient=task.assignee,
+                    sender=user,
+                    notification_type=NotificationType.TASK_STATUS_CHANGED,
+                    title=f"Gia hạn đã được duyệt: [{task.code}]",
+                    message=f"{reviewer_name} đã phê duyệt dời hạn hoàn thành công việc '{task.title}' sang ngày {new_due}." + (f" Ghi chú: {note}" if note else ""),
+                    target_type="TASK",
+                    target_id=task.id,
+                    link_url=f"/tasks/#task-{task.id}"
+                )
+
+            serializer = OfficeTaskDetailSerializer(task)
+            return Response({
+                'success': True,
+                'message': f'Đã phê duyệt gia hạn công việc đến ngày {new_due}.',
+                'data': serializer.data
+            })
+
+        # 3. TỪ CHỐI GIA HẠN
+        elif action == 'reject':
+            if not is_reporter:
+                return Response({'success': False, 'message': 'Chỉ người giao việc hoặc Quản lý cấp cao mới có quyền từ chối gia hạn.'}, status=status.HTTP_403_FORBIDDEN)
+
+            from apps.collaboration.models import TaskExtensionStatus
+            if task.extension_status != TaskExtensionStatus.PENDING:
+                return Response({'success': False, 'message': 'Công việc hiện không có đề xuất gia hạn nào đang chờ duyệt.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            note = (request.data.get('note') or '').strip()
+            task.extension_status = TaskExtensionStatus.REJECTED
+            task.extension_reviewed_at = timezone.now()
+            task.extension_reviewed_by = user
+            task.extension_review_note = note
+            task.save(update_fields=[
+                'extension_status', 'extension_reviewed_at',
+                'extension_reviewed_by', 'extension_review_note'
+            ])
+
+            desc = "Từ chối đề xuất gia hạn hạn chót."
+            if note:
+                desc += f" Lý do: {note}"
+            TaskActivityLog.objects.create(
+                task=task,
+                user=user,
+                action="Từ chối gia hạn",
+                description=desc
+            )
+
+            if task.assignee and task.assignee_id != user.id:
+                reviewer_name = current_emp.full_name if current_emp else user.username
+                Notification.objects.create(
+                    recipient=task.assignee,
+                    sender=user,
+                    notification_type=NotificationType.TASK_STATUS_CHANGED,
+                    title=f"Đề xuất gia hạn bị từ chối: [{task.code}]",
+                    message=f"{reviewer_name} đã từ chối đề xuất dời hạn công việc '{task.title}'." + (f" Lý do: {note}" if note else ""),
+                    target_type="TASK",
+                    target_id=task.id,
+                    link_url=f"/tasks/#task-{task.id}"
+                )
+
+            serializer = OfficeTaskDetailSerializer(task)
+            return Response({
+                'success': True,
+                'message': 'Đã từ chối đề xuất gia hạn. Hạn chót ban đầu vẫn được giữ nguyên.',
+                'data': serializer.data
+            })
+
+        # 4. HỦY ĐỀ XUẤT GIA HẠN
+        elif action == 'cancel':
+            from apps.collaboration.models import TaskExtensionStatus
+            if task.extension_status != TaskExtensionStatus.PENDING:
+                return Response({'success': False, 'message': 'Không có đề xuất gia hạn nào đang chờ để hủy.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            task.extension_status = TaskExtensionStatus.NONE
+            task.requested_deadline = None
+            task.save(update_fields=['extension_status', 'requested_deadline'])
+
+            TaskActivityLog.objects.create(
+                task=task,
+                user=user,
+                action="Hủy đề xuất gia hạn",
+                description="Người gửi đã tự thu hồi yêu cầu đề xuất gia hạn."
+            )
+
+            serializer = OfficeTaskDetailSerializer(task)
+            return Response({
+                'success': True,
+                'message': 'Đã hủy đề xuất gia hạn.',
+                'data': serializer.data
+            })
+
+        return Response({'success': False, 'message': 'Hành động không hợp lệ (chấp nhận: request, approve, reject, cancel).'}, status=status.HTTP_400_BAD_REQUEST)

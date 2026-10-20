@@ -541,22 +541,22 @@ button.btn-emerald:hover * {
 }
 
 /* ── QUY TẮC TỰ ĐỘNG CHO CÁC NÚT TAILWIND SOLID THÀNH CHUẨN OUTLINE -> HOVER FULL SOLID ── */
-button[class*="bg-teal-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]),
-button[class*="bg-teal-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]) {
+button[class*="bg-teal-700"]:not(.btn-keep-solid):not(#chat-bubble-btn):not([class*="/"]):not([disabled]),
+button[class*="bg-teal-600"]:not(.btn-keep-solid):not(#chat-bubble-btn):not([class*="/"]):not([disabled]) {
     background-color: transparent !important;
     border: 1.5px solid #0d9488 !important;
     color: #0f766e !important;
     box-shadow: none !important;
 }
-button[class*="bg-teal-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover,
-button[class*="bg-teal-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover {
+button[class*="bg-teal-700"]:not(.btn-keep-solid):not(#chat-bubble-btn):not([class*="/"]):not([disabled]):hover,
+button[class*="bg-teal-600"]:not(.btn-keep-solid):not(#chat-bubble-btn):not([class*="/"]):not([disabled]):hover {
     background-color: #0d9488 !important;
     border-color: #0d9488 !important;
     color: #ffffff !important;
     box-shadow: 0 4px 10px -2px rgba(13, 148, 136, 0.35) !important;
 }
-button[class*="bg-teal-700"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover *,
-button[class*="bg-teal-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled]):hover * {
+button[class*="bg-teal-700"]:not(.btn-keep-solid):not(#chat-bubble-btn):not([class*="/"]):not([disabled]):hover *,
+button[class*="bg-teal-600"]:not(.btn-keep-solid):not(#chat-bubble-btn):not([class*="/"]):not([disabled]):hover * {
     color: #ffffff !important;
 }
 
@@ -1424,4 +1424,30 @@ input[list="list-times-24h"]::-webkit-list-button {
         z-index: 9999 !important;
         margin: 0 !important;
     }
+}
+
+/* ── NÚT NỔI CHAT BUBBLE TOÀN TRANG (SOLID FILL BẢO TOÀN NỀN & NỔI BẬT KHÔNG BỊ LẪN TEXT) ── */
+#chat-bubble-btn {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%) !important;
+    background-color: #0f766e !important;
+    color: #ffffff !important;
+    border: 2.5px solid #ffffff !important;
+    box-shadow: 0 10px 25px -4px rgba(13, 148, 136, 0.55), 0 4px 12px -2px rgba(15, 23, 42, 0.35) !important;
+    opacity: 1 !important;
+}
+#chat-bubble-btn:hover {
+    background: linear-gradient(135deg, #115e59 0%, #0f766e 100%) !important;
+    background-color: #115e59 !important;
+    color: #ffffff !important;
+    transform: scale(1.08) !important;
+    box-shadow: 0 14px 30px -4px rgba(13, 148, 136, 0.65), 0 6px 16px -2px rgba(15, 23, 42, 0.4) !important;
+}
+#chat-bubble-btn:active {
+    transform: scale(0.95) !important;
+}
+#chat-bubble-btn i,
+#chat-bubble-btn svg,
+#chat-bubble-btn * {
+    color: #ffffff !important;
+    fill: #ffffff !important;
 }

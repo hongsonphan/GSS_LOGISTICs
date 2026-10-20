@@ -20,6 +20,13 @@ class TaskStatus(models.TextChoices):
     CANCELLED = 'CANCELLED', 'Đã hủy'
 
 
+class TaskExtensionStatus(models.TextChoices):
+    NONE = 'NONE', 'Bình thường'
+    PENDING = 'PENDING', 'Chờ duyệt gia hạn'
+    APPROVED = 'APPROVED', 'Đã duyệt gia hạn'
+    REJECTED = 'REJECTED', 'Đã từ chối gia hạn'
+
+
 class OfficeTask(TimeStampedModel, SoftDeleteModel):
     """
     Công việc văn phòng nội bộ & Quản lý điều hành (Chuẩn Jira / Asana).
@@ -83,6 +90,54 @@ class OfficeTask(TimeStampedModel, SoftDeleteModel):
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Thời điểm hoàn thành")
     progress_percent = models.PositiveSmallIntegerField(default=0, verbose_name="Tiến độ (%)")
 
+    # Quản lý đề xuất & Phê duyệt gia hạn hạn chót (Chuẩn ERP Bim Logistics)
+    extension_status = models.CharField(
+        max_length=20,
+        choices=TaskExtensionStatus.choices,
+        default=TaskExtensionStatus.NONE,
+        db_index=True,
+        verbose_name="Trạng thái đề xuất gia hạn"
+    )
+    requested_deadline = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Hạn mới đề xuất"
+    )
+    extension_reason = models.TextField(
+        blank=True,
+        verbose_name="Lý do đề xuất gia hạn"
+    )
+    extension_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Thời điểm gửi đề xuất gia hạn"
+    )
+    extension_requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='requested_task_extensions',
+        verbose_name="Người gửi đề xuất gia hạn"
+    )
+    extension_reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Thời điểm duyệt gia hạn"
+    )
+    extension_reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_task_extensions',
+        verbose_name="Người duyệt gia hạn"
+    )
+    extension_review_note = models.TextField(
+        blank=True,
+        verbose_name="Ghi chú phản hồi duyệt gia hạn"
+    )
+
     # Ngữ cảnh liên kết Logistics tùy chọn (Optional B2B Context)
     related_trip = models.ForeignKey(
         'dispatch.DispatchTrip',
@@ -116,6 +171,20 @@ class OfficeTask(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"[{self.code}] {self.title}"
+
+    @property
+    def days_remaining(self):
+        """Số ngày còn lại đến hạn (dương: còn hạn, 0: hôm nay, âm: quá hạn)."""
+        if self.due_date:
+            d = self.due_date
+            if isinstance(d, str):
+                try:
+                    from datetime import date
+                    d = date.fromisoformat(d[:10])
+                except Exception:
+                    return None
+            return (d - timezone.now().date()).days
+        return None
 
     @property
     def is_overdue(self):
