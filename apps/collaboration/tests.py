@@ -516,4 +516,88 @@ class CollaborationTestSuite(TestCase):
         self.assertEqual(res_mark_all.status_code, 200)
         self.assertEqual(res_mark_all.json()['total_unread'], 0)
 
+    def test_task_extension_request_and_approval_flow(self):
+        """Kiểm thử luồng Đề xuất gia hạn & Phê duyệt gia hạn hạn chót công việc (Chuẩn ERP)."""
+        from datetime import date, timedelta
+        from apps.collaboration.models import TaskExtensionStatus
+
+        # 1. Ban Giám Đốc giao việc cho Chuyên viên Điều Độ (hạn ngày mai)
+        self.client.force_login(self.director_user)
+        initial_due = date.today() + timedelta(days=1)
+        res_create = self.client.post('/api/collaboration/tasks/', {
+            'title': 'Kiểm tra hạ bãi cont rỗng ICD Sóng Thần',
+            'department': Department.DISPATCH,
+            'assignee_id': self.staff_dispatcher_user.id,
+            'priority': TaskPriority.HIGH,
+            'due_date': initial_due.strftime('%Y-%m-%d'),
+            'description': 'Hoàn thành bàn giao trước 17h00'
+        })
+        self.assertEqual(res_create.status_code, 201)
+        task_id = res_create.json()['data']['id']
+
+        # 2. Chuyên viên Điều Độ đăng nhập và gửi đề xuất gia hạn thêm 4 ngày
+        self.client.force_login(self.staff_dispatcher_user)
+        requested_due = date.today() + timedelta(days=5)
+        res_req = self.client.post(f'/api/collaboration/tasks/{task_id}/extension/', {
+            'action': 'request',
+            'requested_deadline': requested_due.strftime('%Y-%m-%d'),
+            'reason': 'Chờ hãng tàu cấp seal và cập nhật booking note mới.'
+        })
+        self.assertEqual(res_req.status_code, 200)
+        data_req = res_req.json()['data']
+        self.assertEqual(data_req['extension_status'], TaskExtensionStatus.PENDING)
+        self.assertIn(data_req['requested_deadline'], [requested_due.strftime('%d/%m/%Y'), requested_due.strftime('%Y-%m-%d')])
+        self.assertEqual(data_req['extension_reason'], 'Chờ hãng tàu cấp seal và cập nhật booking note mới.')
+
+        # Kiểm tra chuông người giao việc (Giám đốc) nhận thông báo
+        self.client.force_login(self.director_user)
+        res_dir_notif = self.client.get('/api/collaboration/notifications/')
+        self.assertEqual(res_dir_notif.status_code, 200)
+        self.assertTrue(any('Đề xuất gia hạn' in n['title'] for n in res_dir_notif.json()['data']))
+
+        # 3. Người giao việc (Giám đốc) duyệt gia hạn
+        res_approve = self.client.post(f'/api/collaboration/tasks/{task_id}/extension/', {
+            'action': 'approve',
+            'note': 'Đồng ý dời hạn theo đề xuất của điều độ.'
+        })
+        self.assertEqual(res_approve.status_code, 200)
+        data_approved = res_approve.json()['data']
+        self.assertEqual(data_approved['extension_status'], TaskExtensionStatus.APPROVED)
+        self.assertIn(data_approved['due_date'], [requested_due.strftime('%d/%m/%Y'), requested_due.strftime('%Y-%m-%d')])
+
+        # Kiểm tra chuông người phụ trách nhận thông báo duyệt gia hạn
+        self.client.force_login(self.staff_dispatcher_user)
+        res_staff_notif = self.client.get('/api/collaboration/notifications/')
+        self.assertEqual(res_staff_notif.status_code, 200)
+        self.assertTrue(any('Gia hạn đã được duyệt' in n['title'] for n in res_staff_notif.json()['data']))
+
+        # 4. Kiểm tra luồng từ chối gia hạn trên một task mới
+        self.client.force_login(self.director_user)
+        res_create_2 = self.client.post('/api/collaboration/tasks/', {
+            'title': 'Quyết toán tạm ứng đội xe Vũng Tàu',
+            'department': Department.DISPATCH,
+            'assignee_id': self.staff_dispatcher_user.id,
+            'priority': TaskPriority.MEDIUM,
+            'due_date': initial_due.strftime('%Y-%m-%d')
+        })
+        task2_id = res_create_2.json()['data']['id']
+
+        # Chuyên viên gửi đề xuất gia hạn
+        self.client.force_login(self.staff_dispatcher_user)
+        self.client.post(f'/api/collaboration/tasks/{task2_id}/extension/', {
+            'action': 'request',
+            'requested_deadline': requested_due.strftime('%Y-%m-%d'),
+            'reason': 'Chưa thu đủ hóa đơn xăng dầu.'
+        })
+
+        # Giám đốc từ chối gia hạn
+        self.client.force_login(self.director_user)
+        res_reject = self.client.post(f'/api/collaboration/tasks/{task2_id}/extension/', {
+            'action': 'reject',
+            'note': 'Cần chốt số liệu đúng hạn để kịp báo cáo thuế.'
+        })
+        self.assertEqual(res_reject.status_code, 200)
+        data_rejected = res_reject.json()['data']
+        self.assertEqual(data_rejected['extension_status'], TaskExtensionStatus.REJECTED)
+        self.assertIn(data_rejected['due_date'], [initial_due.strftime('%d/%m/%Y'), initial_due.strftime('%Y-%m-%d')]) # Hạn cũ được bảo toàn!
 

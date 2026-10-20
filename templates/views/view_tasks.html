@@ -198,6 +198,84 @@
                 </div>
             </div>
 
+            <!-- CẢNH BÁO ĐỀ XUẤT GIA HẠN CÔNG VIỆC (Hiển thị khi extension_status === 'PENDING') -->
+            <div id="task-drawer-extension-banner" class="hidden p-4 bg-gradient-to-r from-purple-50 via-purple-50/80 to-amber-50 rounded-xl border-2 border-purple-300 shadow-sm space-y-2.5 animate-in fade-in">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="flex items-center gap-2 text-purple-950 font-black text-xs font-heading">
+                        <span class="w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping"></span>
+                        <i class="ph-fill ph-clock-countdown text-base text-purple-700"></i>
+                        <span>ĐỀ XUẤT GIA HẠN HẠN CHÓT HOÀN THÀNH</span>
+                    </div>
+                    <div class="text-xs font-bold text-purple-900 bg-white/90 px-3 py-1 rounded-lg border border-purple-200 shadow-2xs">
+                        Hạn hiện tại: <span id="ext-banner-old-due" class="line-through text-slate-400 font-semibold"></span>
+                        <i class="ph-bold ph-arrow-right text-purple-600 mx-1.5"></i>
+                        Hạn mới đề xuất: <span id="ext-banner-new-due" class="text-purple-950 font-black text-sm bg-purple-100 px-2 py-0.5 rounded"></span>
+                    </div>
+                </div>
+
+                <div class="text-xs text-purple-950 bg-white/90 p-3 rounded-lg border border-purple-200/80 leading-relaxed shadow-2xs">
+                    <div class="font-bold text-purple-900 mb-0.5 flex items-center gap-1">
+                        <i class="ph-bold ph-chat-text text-purple-600"></i> Lý do đề xuất gia hạn:
+                    </div>
+                    <p id="ext-banner-reason" class="text-slate-800 italic pl-5"></p>
+                </div>
+
+                <div class="flex items-center justify-between pt-1 text-[11px] text-purple-800/90 flex-wrap gap-2">
+                    <div class="flex items-center gap-1.5">
+                        <i class="ph ph-user-circle text-sm text-purple-600"></i>
+                        <span>Đề xuất bởi: <strong id="ext-banner-by" class="text-purple-950 font-bold"></strong></span>
+                        <span class="text-purple-300">•</span>
+                        <span id="ext-banner-at" class="text-slate-500"></span>
+                    </div>
+
+                    <!-- Nút Thao Tác: Duyệt / Từ chối (Dành cho Người Giao Việc & Ban Giám Đốc) -->
+                    <div id="ext-banner-actions-reporter" class="hidden flex items-center gap-2">
+                        <button type="button" onclick="reviewTaskExtension('approve')" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95">
+                            <i class="ph-bold ph-check text-sm"></i> Duyệt gia hạn
+                        </button>
+                        <button type="button" onclick="reviewTaskExtension('reject')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-lg text-xs font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer active:scale-95">
+                            <i class="ph-bold ph-x text-sm"></i> Từ chối
+                        </button>
+                    </div>
+
+                    <!-- Nút Thao Tác: Thu hồi đề xuất (Dành cho Người Được Giao) -->
+                    <div id="ext-banner-actions-assignee" class="hidden">
+                        <button type="button" onclick="cancelTaskExtension()" class="px-2.5 py-1 text-slate-600 hover:text-rose-700 text-xs font-semibold hover:underline flex items-center gap-1 cursor-pointer">
+                            <i class="ph ph-arrow-u-up-left"></i> Thu hồi đề xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORM INLINE: GỬI ĐỀ XUẤT GIA HẠN (Mở khi bấm nút 'Đề xuất gia hạn') -->
+            <div id="task-drawer-request-extension-form" class="hidden p-4 bg-purple-50/80 rounded-xl border border-purple-200 shadow-sm space-y-3 animate-in fade-in">
+                <div class="flex items-center justify-between text-xs font-black text-purple-950 font-heading border-b border-purple-200/80 pb-2">
+                    <span class="flex items-center gap-1.5">
+                        <i class="ph-bold ph-clock-countdown text-purple-700 text-sm"></i>
+                        ĐỀ XUẤT DỜI HẠN HOÀN THÀNH CÔNG VIỆC
+                    </span>
+                    <button type="button" onclick="closeRequestExtensionInline()" class="text-slate-400 hover:text-slate-700 text-sm p-1">✕</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label class="block text-[11px] font-bold text-purple-950 mb-1">Hạn hoàn thành mới đề xuất *</label>
+                        <input type="date" id="ext-input-new-deadline" class="w-full bg-white border border-purple-300 rounded-lg px-3 py-2 text-xs font-bold text-purple-950 outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-purple-950 mb-1">Lý do đề xuất dời hạn *</label>
+                        <input type="text" id="ext-input-reason" placeholder="Ví dụ: Chờ khách ký chứng từ, thiếu vật tư bãi..." class="w-full bg-white border border-purple-300 rounded-lg px-3 py-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-1 border-t border-purple-200/60">
+                    <button type="button" onclick="closeRequestExtensionInline()" class="px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 text-xs font-semibold">
+                        Hủy
+                    </button>
+                    <button type="button" onclick="submitTaskExtensionRequest()" class="px-4 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95">
+                        <i class="ph-bold ph-paper-plane-tilt text-sm"></i> Gửi đề xuất đến người giao việc
+                    </button>
+                </div>
+            </div>
+
             <!-- 2. Meta Information Grid (4 cột cân đối chuẩn: Người giao việc | Phòng Ban | Người phụ trách | Hạn hoàn thành) -->
             <div id="task-drawer-view-meta" class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 text-xs">
                 <div>
@@ -214,7 +292,12 @@
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Hạn hoàn thành</span>
-                    <span id="task-drawer-due" class="font-bold text-slate-800"></span>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span id="task-drawer-due" class="font-bold text-slate-800"></span>
+                        <button type="button" id="btn-open-request-extension" onclick="openRequestExtensionInline()" class="hidden px-2 py-0.5 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 rounded-md text-[10.5px] font-bold items-center gap-1 transition-all shadow-2xs cursor-pointer" title="Đề xuất dời hạn hoàn thành lên người giao việc">
+                            <i class="ph-bold ph-clock-countdown text-purple-600"></i> Đề xuất gia hạn
+                        </button>
+                    </div>
                 </div>
             </div>
 

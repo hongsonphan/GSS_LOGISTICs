@@ -621,39 +621,56 @@ function renderKanbanColumns(columns) {
             return;
         }
 
-        colEl.innerHTML = tasks.map(t => `
-            <div id="task-card-${t.id}" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetailDrawer(${t.id})" class="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-teal-400 transition-all cursor-pointer group space-y-2.5 select-none">
-                <!-- Priority & Code -->
-                <div class="flex items-center justify-between text-[10px]">
-                    <span class="font-mono font-bold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">${formatTaskCode(t.code)}</span>
-                    <span class="px-2 py-0.5 rounded font-extrabold uppercase tracking-wide ${getPriorityBadgeClass(t.priority)}">
+        colEl.innerHTML = tasks.map(t => {
+            const myUserId = window.CURRENT_USER?.id;
+            const isMyTask = (myUserId && (t.assignee === myUserId || t.assignee_info?.id === myUserId));
+            const myTaskBadge = isMyTask ? `<span class="px-1.5 py-0.2 text-[9px] font-black rounded-md bg-teal-700 text-white font-heading shadow-2xs shrink-0 flex items-center gap-0.5"><i class="ph-fill ph-user text-[9px]"></i> Của bạn</span>` : '';
+
+            // Viền trái cảnh báo màu sắc
+            let borderAccent = 'border-l-[4px] border-l-slate-300';
+            if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+                borderAccent = 'border-l-[4px] border-l-rose-500 bg-rose-50/15';
+            } else if (t.days_remaining === 0) {
+                borderAccent = 'border-l-[4px] border-l-amber-500 bg-amber-50/15';
+            } else if (t.extension_status === 'PENDING') {
+                borderAccent = 'border-l-[4px] border-l-purple-500 bg-purple-50/15';
+            }
+
+            const deadlineBadge = (typeof getTaskDeadlineBadgeHtml === 'function') 
+                ? getTaskDeadlineBadgeHtml(t) 
+                : (t.due_date ? `<span class="text-[10px] text-slate-500 font-semibold">Hạn: ${formatDateDMY(t.due_date)}</span>` : '');
+
+            const p = t.progress_percent || 0;
+            const chkDone = t.checklists_count?.done || 0;
+            const chkTotal = t.checklists_count?.total || 0;
+            const progressHtml = (typeof getTaskProgressHtml === 'function')
+                ? getTaskProgressHtml(p, chkDone, chkTotal)
+                : `<div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div class="bg-teal-600 h-full rounded-full" style="width: ${p}%"></div></div>`;
+
+            return `
+            <div id="task-card-${t.id}" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetailDrawer(${t.id})" class="bg-white rounded-xl p-3 border border-slate-200/90 ${borderAccent} shadow-2xs hover:shadow-md hover:border-teal-400 transition-all cursor-pointer group space-y-2 select-none">
+                <!-- Priority, Code & Của bạn -->
+                <div class="flex items-center justify-between text-[10px] gap-1 flex-wrap">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="font-mono font-bold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 shrink-0">${formatTaskCode(t.code)}</span>
+                        ${myTaskBadge}
+                    </div>
+                    <span class="px-2 py-0.5 rounded font-extrabold uppercase tracking-wide shrink-0 ${getPriorityBadgeClass(t.priority)}">
                         ${getPriorityText(t.priority)}
                     </span>
                 </div>
 
                 <!-- Title -->
-                <h4 class="text-xs font-extrabold text-slate-800 group-hover:text-teal-700 transition-colors leading-snug">
+                <h4 class="text-xs font-extrabold text-slate-800 group-hover:text-teal-700 transition-colors leading-snug line-clamp-2">
                     ${escapeHtml(t.title)}
                 </h4>
 
-                <!-- Meta row: Checklist & Comments -->
-                <div class="flex items-center gap-3 text-[11px] text-slate-400">
-                    ${t.checklists_count?.total > 0 ? `
-                        <span class="flex items-center gap-1 font-semibold ${t.checklists_count.done === t.checklists_count.total ? 'text-emerald-600' : 'text-slate-600'}">
-                            <i class="ph-bold ph-list-checks text-xs"></i>
-                            ${t.checklists_count.done}/${t.checklists_count.total}
-                        </span>
-                    ` : ''}
-                    ${t.comments_count > 0 ? `
-                        <span class="flex items-center gap-1 font-semibold text-slate-600">
-                            <i class="ph-bold ph-chat-circle-dots text-xs"></i>
-                            ${t.comments_count}
-                        </span>
-                    ` : ''}
-                    <span class="text-[10px] text-slate-400 ml-auto font-medium">${t.department}</span>
+                <!-- Hạn hoàn thành cảnh báo màu sắc -->
+                <div>
+                    ${deadlineBadge}
                 </div>
 
-                <!-- Footer: 3 Icon theo thứ tự trên 1 hàng: Người giao | Người phụ trách | Người liên quan -->
+                <!-- Footer: 3 Icon: Người giao | Người phụ trách | Người liên quan -->
                 <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] select-none gap-1">
                     <div class="flex items-center gap-1.5 truncate min-w-0 text-slate-500">
                         <!-- 1. Người giao -->
@@ -665,7 +682,7 @@ function renderKanbanColumns(columns) {
                         <span class="text-slate-300 shrink-0 font-light">|</span>
 
                         <!-- 2. Người phụ trách -->
-                        <span class="flex items-center gap-1 truncate shrink min-w-0 font-semibold text-teal-900" title="Người phụ trách: ${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}">
+                        <span class="flex items-center gap-1 truncate shrink min-w-0 font-bold text-teal-900" title="Người phụ trách: ${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}">
                             <i class="ph-bold ph-user-check text-teal-600 shrink-0 text-[11px]"></i>
                             <span class="truncate">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</span>
                         </span>
@@ -679,15 +696,13 @@ function renderKanbanColumns(columns) {
                         </span>
                         ` : ''}
                     </div>
-
-                    ${t.due_date ? `
-                        <span class="text-[9.5px] font-bold shrink-0 ml-1 ${t.is_overdue ? 'text-rose-600 bg-rose-50 px-1 py-0.5 rounded border border-rose-200 animate-pulse' : 'text-slate-400'}">
-                            ${formatDateDMY(t.due_date)}
-                        </span>
-                    ` : ''}
                 </div>
+
+                <!-- Khối tiến độ % trực quan -->
+                ${progressHtml}
             </div>
-        `).join('');
+            `;
+        }).join('');
     });
 }
 
@@ -723,15 +738,17 @@ function renderTasksListTable(tasks) {
                 </span>
             </td>
             <td class="py-3 px-4 font-semibold text-slate-700">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</td>
-            <td class="py-3 px-4 font-medium ${t.is_overdue ? 'text-rose-600 font-bold' : 'text-slate-600'}">
-                ${t.due_date ? formatDateDMY(t.due_date) : '-'}
+            <td class="py-3 px-4">
+                ${(typeof getTaskDeadlineBadgeHtml === 'function') 
+                    ? getTaskDeadlineBadgeHtml(t) 
+                    : `<span class="font-medium ${t.is_overdue ? 'text-rose-600 font-bold' : 'text-slate-600'}">${t.due_date ? formatDateDMY(t.due_date) : '-'}</span>`}
             </td>
             <td class="py-3 px-4">
                 <div class="flex items-center gap-2">
-                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div class="bg-teal-600 h-1.5 rounded-full" style="width: ${t.progress_percent || 0}%"></div>
+                    <span class="px-2 py-0.5 rounded text-[11px] font-black font-mono bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs">${t.progress_percent || 0}%</span>
+                    <div class="w-20 bg-slate-200 rounded-full h-2 overflow-hidden p-0.2">
+                        <div class="bg-gradient-to-r from-teal-500 to-emerald-500 h-full rounded-full transition-all" style="width: ${t.progress_percent || 0}%"></div>
                     </div>
-                    <span class="text-[10px] text-slate-500 font-bold">${t.progress_percent || 0}%</span>
                 </div>
             </td>
             <td class="py-3 px-4">
@@ -1171,6 +1188,58 @@ async function openTaskDetailDrawer(taskId) {
 
         // Activities
         renderDrawerActivities(t.activities || []);
+
+        // --- XỬ LÝ BANNER ĐỀ XUẤT GIA HẠN & BẬT TẮT NÚT HÀNH ĐỘNG ---
+        const extBanner = document.getElementById('task-drawer-extension-banner');
+        const extForm = document.getElementById('task-drawer-request-extension-form');
+        const btnOpenExt = document.getElementById('btn-open-request-extension');
+        const extActionsReporter = document.getElementById('ext-banner-actions-reporter');
+        const extActionsAssignee = document.getElementById('ext-banner-actions-assignee');
+
+        if (extForm) extForm.classList.add('hidden');
+
+        const myUserId = window.CURRENT_USER?.id;
+        const isSuper = Boolean(window.CURRENT_USER?.is_superuser);
+        const isReporter = (myUserId && (t.reporter === myUserId || t.reporter_info?.id === myUserId)) || isSuper;
+        const isAssignee = (myUserId && (t.assignee === myUserId || t.assignee_info?.id === myUserId)) || isSuper;
+        const isCompleted = ['DONE', 'CANCELLED'].includes(t.status);
+
+        if (t.extension_status === 'PENDING') {
+            if (extBanner) {
+                extBanner.classList.remove('hidden');
+                const oldDueEl = document.getElementById('ext-banner-old-due');
+                if (oldDueEl) oldDueEl.textContent = t.due_date ? formatDateDMY(t.due_date) : 'Không có';
+                const newDueEl = document.getElementById('ext-banner-new-due');
+                if (newDueEl) newDueEl.textContent = t.requested_deadline ? formatDateDMY(t.requested_deadline) : '';
+                const reasonEl = document.getElementById('ext-banner-reason');
+                if (reasonEl) reasonEl.textContent = t.extension_reason || 'Không có lý do chi tiết.';
+                const byEl = document.getElementById('ext-banner-by');
+                if (byEl) byEl.textContent = cleanPersonName(t.extension_requested_by_info?.full_name) || 'Người phụ trách';
+                const atEl = document.getElementById('ext-banner-at');
+                if (atEl) atEl.textContent = t.extension_requested_at ? formatDateTimeDMY(t.extension_requested_at) : '';
+            }
+            if (btnOpenExt) btnOpenExt.classList.add('hidden');
+
+            if (extActionsReporter) {
+                if (isReporter) extActionsReporter.classList.remove('hidden');
+                else extActionsReporter.classList.add('hidden');
+            }
+            if (extActionsAssignee) {
+                if (isAssignee && !isReporter) extActionsAssignee.classList.remove('hidden');
+                else extActionsAssignee.classList.add('hidden');
+            }
+        } else {
+            if (extBanner) extBanner.classList.add('hidden');
+            if (btnOpenExt) {
+                if (isAssignee && !isCompleted) {
+                    btnOpenExt.classList.remove('hidden');
+                    btnOpenExt.classList.add('inline-flex');
+                } else {
+                    btnOpenExt.classList.add('hidden');
+                    btnOpenExt.classList.remove('inline-flex');
+                }
+            }
+        }
 
     } catch (e) {
         console.error('Error fetching task detail:', e);
@@ -2804,3 +2873,157 @@ document.addEventListener('DOMContentLoaded', function() {
     initCollaborationChat();
     initBellNotifications();
 });
+
+
+// ==========================================
+// THAO TÁC ĐỀ XUẤT GIA HẠN & PHÊ DUYỆT GIA HẠN CÔNG VIỆC
+// ==========================================
+
+function openRequestExtensionInline() {
+    const form = document.getElementById('task-drawer-request-extension-form');
+    if (!form) return;
+    form.classList.remove('hidden');
+
+    const inputDate = document.getElementById('ext-input-new-deadline');
+    const inputReason = document.getElementById('ext-input-reason');
+
+    if (inputReason) inputReason.value = '';
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const minDateStr = tomorrow.toISOString().split('T')[0];
+
+    if (inputDate) {
+        inputDate.min = minDateStr;
+        if (currentTaskDetailData && currentTaskDetailData.due_date) {
+            try {
+                const cur = new Date(currentTaskDetailData.due_date);
+                cur.setDate(cur.getDate() + 3);
+                inputDate.value = cur.toISOString().split('T')[0];
+            } catch(e) {
+                inputDate.value = minDateStr;
+            }
+        } else {
+            inputDate.value = minDateStr;
+        }
+        inputDate.focus();
+    }
+}
+window.openRequestExtensionInline = openRequestExtensionInline;
+
+function closeRequestExtensionInline() {
+    const form = document.getElementById('task-drawer-request-extension-form');
+    if (form) form.classList.add('hidden');
+}
+window.closeRequestExtensionInline = closeRequestExtensionInline;
+
+async function submitTaskExtensionRequest() {
+    if (!currentViewingTaskId) return;
+    const inputDate = document.getElementById('ext-input-new-deadline');
+    const inputReason = document.getElementById('ext-input-reason');
+
+    const requested_deadline = inputDate?.value;
+    const reason = inputReason?.value?.trim();
+
+    if (!requested_deadline) {
+        showToast('Vui lòng chọn hạn hoàn thành mới đề xuất.', 'warning');
+        if (inputDate) inputDate.focus();
+        return;
+    }
+    if (!reason) {
+        showToast('Vui lòng nhập lý do đề xuất dời hạn để người giao việc duyệt.', 'warning');
+        if (inputReason) inputReason.focus();
+        return;
+    }
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/extension/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+                action: 'request',
+                requested_deadline,
+                reason
+            })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast(json.message || 'Đã gửi đề xuất gia hạn thành công!', 'success');
+            closeRequestExtensionInline();
+            await openTaskDetailDrawer(currentViewingTaskId);
+            if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast(json.message || 'Không thể gửi đề xuất gia hạn.', 'error');
+        }
+    } catch (e) {
+        console.error('Error requesting task extension:', e);
+        showToast('Lỗi kết nối máy chủ.', 'error');
+    }
+}
+window.submitTaskExtensionRequest = submitTaskExtensionRequest;
+
+async function reviewTaskExtension(action) {
+    if (!currentViewingTaskId) return;
+    let note = '';
+
+    if (action === 'approve') {
+        const ok = confirm('XÁC NHẬN DUYỆT GIA HẠN:\nBạn có chắc chắn muốn phê duyệt dời hạn hoàn thành công việc này sang ngày mới?');
+        if (!ok) return;
+    } else if (action === 'reject') {
+        const reason = prompt('Lý do từ chối đề xuất gia hạn (tùy chọn):');
+        if (reason === null) return;
+        note = reason.trim();
+    }
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/extension/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+                action,
+                note
+            })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast(json.message || 'Đã cập nhật trạng thái gia hạn!', 'success');
+            await openTaskDetailDrawer(currentViewingTaskId);
+            if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast(json.message || 'Thao tác không thành công.', 'error');
+        }
+    } catch (e) {
+        console.error('Error reviewing task extension:', e);
+        showToast('Lỗi kết nối máy chủ.', 'error');
+    }
+}
+window.reviewTaskExtension = reviewTaskExtension;
+
+async function cancelTaskExtension() {
+    if (!currentViewingTaskId) return;
+    const ok = confirm('Bạn có chắc chắn muốn thu hồi yêu cầu đề xuất gia hạn này?');
+    if (!ok) return;
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/extension/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ action: 'cancel' })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast(json.message || 'Đã thu hồi đề xuất gia hạn.', 'info');
+            await openTaskDetailDrawer(currentViewingTaskId);
+            if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast(json.message || 'Thao tác không thành công.', 'error');
+        }
+    } catch (e) {
+        console.error('Error cancelling task extension:', e);
+        showToast('Lỗi kết nối máy chủ.', 'error');
+    }
+}
+window.cancelTaskExtension = cancelTaskExtension;

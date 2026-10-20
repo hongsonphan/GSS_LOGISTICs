@@ -2,6 +2,46 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.3] - 2026-10-20 (Nâng Cấp Toàn Diện Phân Hệ Quản Lý Công Việc Task: Deadline Màu Nhắc Nhở, % Tiến Độ Trực Quan & Nghiệp Vụ Đề Xuất / Duyệt Gia Hạn Hạn Chót)
+
+### 1. Hiển Thị Hạn (Deadline) Theo Màu Cảnh Báo Trực Quan (Color-Coded Deadline Alerts & Left Border Accent):
+- **Cơ chế phân loại hạn động:**
+  * **Quá hạn:** Badge đỏ rực rỡ (`bg-rose-50 text-rose-700 border-rose-300`), icon nhấp nháy, kèm số ngày trễ cụ thể: `Hạn: 19/10/2026 (Quá hạn 1 ngày)`. Thẻ Task có viền cạnh trái đỏ (`border-l-[5px] border-l-rose-500 bg-rose-50/20`).
+  * **Đến hạn hôm nay:** Badge hổ phách nổi bật (`bg-amber-50 text-amber-900 border-amber-400`), icon đồng hồ cát nảy: `Hạn: 20/10/2026 (Hôm nay)`. Thẻ có viền cạnh trái cam (`border-l-[5px] border-l-amber-500 bg-amber-50/20`).
+  * **Sắp đến hạn (Còn 1-2 ngày):** Badge xanh dương sáng (`bg-sky-50 text-sky-900 border-sky-300`), icon đồng hồ: `Hạn: Ngày mai (Còn 1 ngày)`.
+  * **Còn nhiều thời gian (> 2 ngày):** Badge slate dịu mắt kèm số ngày còn lại.
+  * **Đang chờ duyệt gia hạn:** Badge tím nổi bật (`bg-purple-100 text-purple-900 border-purple-300`), viền cạnh trái tím.
+
+### 2. Hiển Thị % Tiến Độ To Rõ & Thanh Progress Bar Chuyển Màu Sinh Động:
+- **Pill % Tiến độ:** Badge to rõ, có trạng thái trực quan:
+  * 0%: `0% Chưa bắt đầu` (slate)
+  * 1-49%: `[p]% Đang làm` (amber)
+  * 50-79%: `[p]% Đang tiến triển` (sky/indigo)
+  * 80-99%: `[p]% Sắp hoàn tất` (teal)
+  * 100%: `100% Hoàn thành` (emerald)
+- **Thanh Progress Bar dày dặn:** Tăng chiều cao lên `h-2.5`, nền rãnh xám bo tròn, đổ gradient màu chuyển tiếp theo tiến độ thực tế.
+- **Badge "Việc của bạn" (My Task Indicator):** Tự động gắn tag nổi bật `Việc của bạn` cho những công việc mà người dùng đăng nhập là người phụ trách chính.
+
+### 3. Nghiệp Vụ Quản Lý Gia Hạn Hạn Chót Chuẩn ERP (Task Extension Workflow):
+- **Data Model (apps/collaboration/models/tasks.py & notification.py):**
+  * Bổ sung enum `TaskExtensionStatus`: `NONE`, `PENDING`, `APPROVED`, `REJECTED`.
+  * Thêm các trường: `extension_status`, `requested_deadline`, `extension_reason`, `extension_requested_at`, `extension_requested_by`, `extension_reviewed_at`, `extension_reviewed_by`, `extension_review_note`.
+  * Bổ sung thông báo `TASK_EXTENSION_REQUESTED`, `TASK_EXTENSION_REVIEWED` vào chuông thông báo.
+- **REST API (OfficeTaskExtensionAPIView trong apps/collaboration/api_views/tasks_api.py):**
+  * `action = 'request'`: Người được giao gửi đề xuất dời hạn kèm ngày mới và lý do; ghi nhật ký và thông báo lên chuông người giao.
+  * `action = 'approve'`: Người giao việc/Admin duyệt dời hạn; tự động cập nhật `due_date`, đổi trạng thái sang `APPROVED`, ghi nhật ký và thông báo cho người được giao.
+  * `action = 'reject'`: Người giao việc/Admin từ chối; giữ nguyên hạn cũ, đổi trạng thái sang `REJECTED`, ghi nhận lý do.
+  * `action = 'cancel'`: Người gửi thu hồi đề xuất gia hạn khi đang chờ duyệt.
+- **Giao Diện Modal Chi Tiết Task (templates/views/view_tasks.html & static/js/collaboration.js):**
+  * Hiển thị Banner cảnh báo gia hạn tím hổ phách khi có yêu cầu đang chờ duyệt.
+  * Nút "Đề xuất gia hạn" kèm form inline cho người phụ trách.
+  * Bộ nút "Duyệt gia hạn" (xanh lá) và "Từ chối" (đỏ) cho người giao việc và Ban Giám Đốc.
+
+### 4. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
+- **Cú pháp JavaScript:** `node -c static/js/app.js` và `node -c static/js/collaboration.js` -> 100% Passed.
+- **Unit Tests:** `apps.collaboration.tests` -> 8/8 Passed (bao gồm `test_task_extension_request_and_approval_flow`).
+- **Toàn bộ hệ thống:** `python manage.py test --keepdb` -> 108/108 Passed.
+
 ## [v3.6.2] - 2026-10-20 (Chuẩn Hóa Trạng Thái Ẩn/Hiện Sidebar & Lưu Cấu Hình LocalStorage: Unhide Luôn Unhide Ở Mọi Màn Hình, Hide Luôn Hide & Hover Peek)
 
 ### 1. Chuẩn Hóa Quản Lý Trạng Thái Sidebar Tập Trung (static/js/app.js):
