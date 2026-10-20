@@ -60,15 +60,42 @@
                             </select>
                         </div>
 
-                        <!-- Chức danh -->
-                        <div class="md:col-span-5">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Chức Danh / Vị Trí Công Tác <span class="text-rose-500">*</span></label>
+                        <!-- Chức danh & Phòng ban -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phòng Ban Công Tác <span class="text-rose-500">*</span></label>
+                            <select id="cd-department" required
+                                class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
+                                <option value="FLEET">Đội Xe & Bãi (FLEET)</option>
+                                <option value="DISPATCH">Phòng Điều Vận (DISPATCH)</option>
+                                <option value="ACCOUNTING">Kế Toán Tài Chính (ACCOUNTING)</option>
+                                <option value="SALES">Phòng Kinh Doanh (SALES)</option>
+                                <option value="CUSTOMS">Thủ Tục Hải Quan (CUSTOMS)</option>
+                                <option value="HR">Hành Chính Nhân Sự (HR)</option>
+                                <option value="MANAGEMENT">Ban Giám Đốc (MANAGEMENT)</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Chức Vụ / Vai Trò <span class="text-rose-500">*</span></label>
+                            <select id="cd-role" required
+                                class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
+                                <option value="DRIVER">Tài xế (DRIVER)</option>
+                                <option value="DISPATCHER">Điều độ viên (DISPATCHER)</option>
+                                <option value="ACCOUNTANT">Kế toán viên (ACCOUNTANT)</option>
+                                <option value="SALESMAN">Nhân viên Kinh doanh (SALESMAN)</option>
+                                <option value="MECHANIC">Kỹ thuật viên bãi xe (MECHANIC)</option>
+                                <option value="DIRECTOR">Ban Giám Đốc (DIRECTOR)</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Chức Danh Chi Tiết <span class="text-rose-500">*</span></label>
                             <input type="text" id="cd-job-title" required placeholder="VD: Tài xế xe đầu kéo container đường dài"
                                 class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
                         </div>
 
                         <!-- Địa điểm làm việc -->
-                        <div class="md:col-span-4">
+                        <div class="md:col-span-12">
                             <label class="block font-bold text-slate-700 text-xs mb-1">Địa Điểm Làm Việc</label>
                             <input type="text" id="cd-working-address" placeholder="Bãi xe Triền Võ / Trụ sở công ty"
                                 class="w-full h-10 px-3 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
@@ -102,31 +129,98 @@
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
                             <i class="ph-bold ph-coins text-indigo-700 text-sm"></i>
-                            <span>2. Chế Độ Lương & Căn Cứ Trích Nộp BHXH</span>
+                            <span>2. Chế Độ Tiền Lương, Trợ Cấp & Căn Cứ Pháp Lý Tính Lương Hiện Hành</span>
                         </h4>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
                         <!-- Lương căn bản -->
-                        <div class="md:col-span-6">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Lương Căn Bản Theo HĐ (VNĐ) <span class="text-rose-500">*</span></label>
-                            <input type="text" id="cd-base-salary" required placeholder="7,000,000"
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Lương Căn Bản HĐ (VNĐ) <span class="text-rose-500">*</span></label>
+                            <input type="text" id="cd-base-salary" required placeholder="7,000,000" oninput="calculateContractTotalSalary()"
                                 class="w-full h-10 px-3 text-xs font-mono font-bold text-indigo-900 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
-                            <span class="text-[11px] text-slate-400 italic mt-0.5 block">Căn cứ tính Lương ngày công thời gian theo số ngày làm thực tế</span>
+                            <span class="text-[11px] text-slate-400 italic mt-0.5 block">Căn cứ tính Lương ngày công thời gian</span>
                         </div>
 
                         <!-- Lương đóng BHXH -->
-                        <div class="md:col-span-6">
+                        <div class="md:col-span-4">
                             <label class="block font-bold text-slate-700 text-xs mb-1">Lương Đóng BHXH Bắt Buộc (VNĐ) <span class="text-rose-500">*</span></label>
                             <input type="text" id="cd-insurance-salary" required placeholder="5,000,000"
                                 class="w-full h-10 px-3 text-xs font-mono font-bold text-teal-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
                             <span class="text-[11px] text-slate-400 italic mt-0.5 block">Căn cứ trích nộp BHXH (8%), BHYT (1.5%), BHTN (1%)</span>
                         </div>
 
+                        <!-- Tỷ lệ hưởng lương -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Tỷ Lệ Hưởng Lương (%) <span class="text-rose-500">*</span></label>
+                            <input type="number" id="cd-probation-rate" required min="1" max="100" value="100"
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-slate-800 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
+                            <span class="text-[11px] text-slate-400 italic mt-0.5 block">100% chính thức, 85% thử việc theo BLLĐ</span>
+                        </div>
+
+                        <!-- Phụ cấp lương cố định -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phụ Cấp Cố Định Theo HĐ (VNĐ)</label>
+                            <input type="text" id="cd-allowance-amount" placeholder="0" oninput="calculateContractTotalSalary()"
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-indigo-700 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
+                            <span class="text-[11px] text-slate-400 italic mt-0.5 block">Trách nhiệm, kiêm nhiệm, điện thoại...</span>
+                        </div>
+
+                        <!-- Trợ cấp / hỗ trợ phúc lợi -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Trợ Cấp / Hỗ Trợ Phúc Lợi (VNĐ)</label>
+                            <input type="text" id="cd-subsidy-amount" placeholder="0" oninput="calculateContractTotalSalary()"
+                                class="w-full h-10 px-3 text-xs font-mono font-bold text-emerald-700 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
+                            <span class="text-[11px] text-slate-400 italic mt-0.5 block">Ăn trưa, xăng xe, nhà ở (miễn thuế TNCN)</span>
+                        </div>
+
+                        <!-- Tổng thu nhập theo HĐ -->
+                        <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Tổng Thu Nhập HĐ (VNĐ)</label>
+                            <input type="text" id="cd-total-salary" readonly placeholder="0"
+                                class="w-full h-10 px-3 text-xs font-mono font-extrabold text-indigo-950 border border-indigo-200 rounded-xl bg-indigo-50/70 cursor-not-allowed">
+                            <span class="text-[11px] text-indigo-600 italic mt-0.5 block">= Lương CB + Phụ cấp + Trợ cấp</span>
+                        </div>
+
+                        <!-- Loại đối tượng thuế TNCN -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Loại Đối Tượng Thuế TNCN <span class="text-rose-500">*</span></label>
+                            <select id="cd-tax-resident-type" required
+                                class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all">
+                                <option value="RESIDENT">Cá nhân cư trú (Biểu thuế lũy tiến từng phần - HĐ >= 3 tháng)</option>
+                                <option value="CASUAL_10">Thời vụ / Vãng lai (Khấu trừ 10% tại nguồn nếu thu nhập >= 2tr)</option>
+                                <option value="NON_RESIDENT">Cá nhân không cư trú (Khấu trừ 20%)</option>
+                            </select>
+                        </div>
+
+                        <!-- Cụm 3 Công tắc tuân thủ pháp lý -->
+                        <div class="md:col-span-6 grid grid-cols-3 gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <!-- Switch BHXH -->
+                            <label class="flex flex-col items-center justify-center p-2 rounded-lg bg-white border border-slate-200 hover:border-teal-500 cursor-pointer text-center">
+                                <input type="checkbox" id="cd-is-insurance" checked class="w-4 h-4 text-teal-600 rounded">
+                                <span class="text-[11px] font-bold text-slate-800 mt-1">Đóng BHXH</span>
+                                <span class="text-[9px] text-slate-400">isBHXH (10.5%)</span>
+                            </label>
+
+                            <!-- Switch Thuế TNCN -->
+                            <label class="flex flex-col items-center justify-center p-2 rounded-lg bg-white border border-slate-200 hover:border-indigo-500 cursor-pointer text-center">
+                                <input type="checkbox" id="cd-is-taxable" checked class="w-4 h-4 text-indigo-600 rounded">
+                                <span class="text-[11px] font-bold text-slate-800 mt-1">Tính Thuế</span>
+                                <span class="text-[9px] text-slate-400">isTNCN</span>
+                            </label>
+
+                            <!-- Switch Công đoàn -->
+                            <label class="flex flex-col items-center justify-center p-2 rounded-lg bg-white border border-slate-200 hover:border-amber-500 cursor-pointer text-center">
+                                <input type="checkbox" id="cd-is-union" class="w-4 h-4 text-amber-600 rounded">
+                                <span class="text-[11px] font-bold text-slate-800 mt-1">Công Đoàn</span>
+                                <span class="text-[9px] text-slate-400">isCongDoan (1%)</span>
+                            </label>
+                        </div>
+
                         <!-- Điều khoản phụ cấp & thỏa thuận khác -->
                         <div class="md:col-span-12">
                             <label class="block font-bold text-slate-700 text-xs mb-1">Điều Khoản Phụ Cấp, Chế Độ Lương Chuyến & Thỏa Thuận Khác</label>
-                            <textarea id="cd-notes" rows="3" placeholder="Các chế độ phụ cấp điện thoại, công tác phí, quy định lương chuyến tài xế..."
+                            <textarea id="cd-notes" rows="2" placeholder="Các chế độ phụ cấp điện thoại, công tác phí, quy định lương chuyến tài xế..."
                                 class="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-hidden transition-all"></textarea>
                         </div>
                     </div>
@@ -148,31 +242,61 @@
 
                     <!-- Inline Form Thêm Phụ Lục (ẩn/hiện) -->
                     <div id="inline-appendix-box" class="hidden p-4 rounded-xl border border-indigo-200 bg-indigo-50/40 space-y-3">
-                        <div class="text-xs font-bold text-indigo-900 uppercase">Khai Báo Phụ Lục HĐ Điều Chỉnh</div>
+                        <div class="text-xs font-bold text-indigo-900 uppercase">Khai Báo Phụ Lục HĐ Điều Chỉnh Thu Nhập / Chức Danh</div>
                         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs">
-                            <div class="md:col-span-4">
+                            <div class="md:col-span-3">
                                 <label class="block font-bold text-slate-700 mb-1">Số Phụ Lục <span class="text-rose-500">*</span></label>
                                 <input type="text" id="inline-app-number" placeholder="PL-01/HDLD..."
                                     class="w-full h-9 px-3 font-mono font-bold border border-slate-200 rounded-lg bg-white">
                             </div>
-                            <div class="md:col-span-4">
+                            <div class="md:col-span-3">
                                 <label class="block font-bold text-slate-700 mb-1">Ngày Hiệu Lực <span class="text-rose-500">*</span></label>
                                 <input type="date" id="inline-app-date"
                                     class="w-full h-9 px-3 font-mono border border-slate-200 rounded-lg bg-white">
                             </div>
-                            <div class="md:col-span-4">
-                                <label class="block font-bold text-slate-700 mb-1">Mức Lương Mới (VNĐ)</label>
+                            <div class="md:col-span-3">
+                                <label class="block font-bold text-slate-700 mb-1">Lương Chính Mới (VNĐ)</label>
                                 <input type="text" id="inline-app-salary" placeholder="Để trống nếu không đổi"
                                     class="w-full h-9 px-3 font-mono font-bold text-indigo-900 border border-slate-200 rounded-lg bg-white">
                             </div>
-                            <div class="md:col-span-4">
+                            <div class="md:col-span-3">
+                                <label class="block font-bold text-slate-700 mb-1">Lương Đóng BHXH Mới (VNĐ)</label>
+                                <input type="text" id="inline-app-insurance-salary" placeholder="Để trống nếu không đổi"
+                                    class="w-full h-9 px-3 font-mono font-bold text-teal-800 border border-slate-200 rounded-lg bg-white">
+                            </div>
+
+                            <div class="md:col-span-3">
+                                <label class="block font-bold text-slate-700 mb-1">Phụ Cấp Mới (VNĐ)</label>
+                                <input type="text" id="inline-app-allowance" placeholder="Để trống nếu không đổi"
+                                    class="w-full h-9 px-3 font-mono font-bold text-indigo-700 border border-slate-200 rounded-lg bg-white">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block font-bold text-slate-700 mb-1">Trợ Cấp Phúc Lợi Mới (VNĐ)</label>
+                                <input type="text" id="inline-app-subsidy" placeholder="Để trống nếu không đổi"
+                                    class="w-full h-9 px-3 font-mono font-bold text-emerald-700 border border-slate-200 rounded-lg bg-white">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block font-bold text-slate-700 mb-1">Phòng Ban Mới</label>
+                                <select id="inline-app-department" class="w-full h-9 px-2 font-bold border border-slate-200 rounded-lg bg-white">
+                                    <option value="">-- Giữ nguyên --</option>
+                                    <option value="FLEET">Đội Xe & Bãi</option>
+                                    <option value="DISPATCH">Phòng Điều Vận</option>
+                                    <option value="ACCOUNTING">Kế Toán Tài Chính</option>
+                                    <option value="SALES">Phòng Kinh Doanh</option>
+                                    <option value="CUSTOMS">Thủ Tục Hải Quan</option>
+                                    <option value="HR">Hành Chính Nhân Sự</option>
+                                    <option value="MANAGEMENT">Ban Giám Đốc</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
                                 <label class="block font-bold text-slate-700 mb-1">Chức Danh Mới</label>
                                 <input type="text" id="inline-app-role" placeholder="Để trống nếu không đổi"
                                     class="w-full h-9 px-3 font-medium border border-slate-200 rounded-lg bg-white">
                             </div>
-                            <div class="md:col-span-8">
-                                <label class="block font-bold text-slate-700 mb-1">Nội Dung Điều Chỉnh / Bổ Sung <span class="text-rose-500">*</span></label>
-                                <input type="text" id="inline-app-summary" placeholder="Ghi rõ nội dung thỏa thuận điều chỉnh..."
+
+                            <div class="md:col-span-12">
+                                <label class="block font-bold text-slate-700 mb-1">Nội Dung Thỏa Thuận Điều Chỉnh Chi Tiết <span class="text-rose-500">*</span></label>
+                                <input type="text" id="inline-app-summary" placeholder="VD: Nâng lương cơ bản lên bậc 2 và bổ sung phụ cấp trách nhiệm..."
                                     class="w-full h-9 px-3 border border-slate-200 rounded-lg bg-white">
                             </div>
                         </div>
@@ -194,14 +318,16 @@
                                     <th class="py-2 px-3 text-center w-12">STT</th>
                                     <th class="py-2 px-3">Số Phụ Lục</th>
                                     <th class="py-2 px-3 text-center">Ngày Hiệu Lực</th>
-                                    <th class="py-2 px-3 text-right">Lương Mới</th>
+                                    <th class="py-2 px-3 text-right">Lương Chính Mới</th>
+                                    <th class="py-2 px-3 text-right">Lương BHXH Mới</th>
                                     <th class="py-2 px-3">Chức Danh Mới</th>
+                                    <th class="py-2 px-3">Phòng Ban Mới</th>
                                     <th class="py-2 px-3">Nội Dung Điều Chỉnh</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 font-medium" id="contract-appendices-tbody">
                                 <tr>
-                                    <td colspan="6" class="p-4 text-center text-slate-400">Chưa có phụ lục hợp đồng nào.</td>
+                                    <td colspan="8" class="p-4 text-center text-slate-400">Chưa có phụ lục hợp đồng nào.</td>
                                 </tr>
                             </tbody>
                         </table>

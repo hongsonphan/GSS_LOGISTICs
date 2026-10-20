@@ -333,3 +333,93 @@ class PersonnelHRMAPITestCase(TestCase):
         self.assertIn('company', print_data)
         self.assertIn('employee', print_data)
         self.assertIn('slip', print_data)
+
+    def test_active_contract_integration_and_union_deduction(self):
+        """
+        Kiểm thử chuyên sâu tính lương theo Hợp Đồng Lao Động Hiện Hành (BIM ERP Standard):
+        - HĐLĐ thiết lập: Lương CB, Lương BHXH, Phụ cấp, Trợ cấp, Tỷ lệ hưởng lương, Trích nộp BHXH/Thuế/Công đoàn
+        - Phụ lục điều chỉnh mức lương mới
+        - Tính toán kỳ lương: Kế thừa đầy đủ các thông số HĐ hiện hành & phụ lục, trích 1% đoàn phí công đoàn NLĐ.
+        """
+        # 1. Ký Hợp đồng lao động mới cho tài xế
+        contract_res = self.client.post('/api/personnel/contracts/', {
+            'contract_number': 'HDLD-TEST-2026',
+            'employee': self.driver_emp.id,
+            'contract_type': 'DEFINITE_TERM',
+            'status': 'ACTIVE',
+            'department': 'FLEET',
+            'role': 'DRIVER',
+            'job_title': 'Tài xế container đường dài',
+            'start_date': '2026-01-01',
+            'end_date': '2027-01-01',
+            'base_salary': 8000000,
+            'insurance_salary': 6000000,
+            'allowance_amount': 1500000,
+            'subsidy_amount': 730000,
+            'probation_rate': 100.0,
+            'is_social_insurance_participant': True,
+            'is_taxable': True,
+            'is_union_member': True,
+            'tax_resident_type': 'RESIDENT'
+        }, format='json')
+        self.assertEqual(contract_res.status_code, status.HTTP_201_CREATED)
+        contract_id = contract_res.json()['data']['id']
+
+        # Kiểm tra Employee property helper
+        self.driver_emp.refresh_from_db()
+        self.assertIsNotNone(self.driver_emp.active_contract)
+        self.assertEqual(self.driver_emp.active_base_salary, Decimal('8000000'))
+        self.assertEqual(self.driver_emp.active_insurance_salary, Decimal('6000000'))
+        self.assertEqual(self.driver_emp.active_allowance_amount, Decimal('1500000'))
+        self.assertEqual(self.driver_emp.active_subsidy_amount, Decimal('730000'))
+        self.assertEqual(self.driver_emp.active_total_salary, Decimal('10230000'))
+        self.assertTrue(self.driver_emp.active_is_bhxh)
+        self.assertTrue(self.driver_emp.active_is_tncn)
+        self.assertTrue(self.driver_emp.active_is_cong_doan)
+
+        # 2. Tạo Phụ lục hợp đồng điều chỉnh lương
+        app_res = self.client.post('/api/personnel/appendices/', {
+            'contract': contract_id,
+            'appendix_number': 'PL02/HDLD-TEST',
+            'effective_date': '2026-02-01',
+            'new_base_salary': 9000000,
+            'new_insurance_salary': 7000000,
+            'new_allowance_amount': 2000000,
+            'new_subsidy_amount': 800000,
+            'change_summary': 'Điều chỉnh nâng bậc lương và phụ cấp trách nhiệm'
+        }, format='json')
+        self.assertEqual(app_res.status_code, status.HTTP_201_CREATED)
+
+        self.driver_emp.refresh_from_db()
+        self.assertIsNotNone(self.driver_emp.latest_appendix)
+        self.assertEqual(self.driver_emp.active_base_salary, Decimal('9000000'))
+        self.assertEqual(self.driver_emp.active_insurance_salary, Decimal('7000000'))
+        self.assertEqual(self.driver_emp.active_total_salary, Decimal('11800000'))
+
+        # 3. Tính lương cho kỳ Tháng 11/2026
+        period_res = self.client.post('/api/personnel/periods/', {
+            'period_code': '2026-11',
+            'name': 'Bảng lương Tháng 11/2026',
+            'from_date': '2026-11-01',
+            'to_date': '2026-11-30',
+            'standard_days': 26.0
+        }, format='json')
+        self.assertEqual(period_res.status_code, status.HTTP_201_CREATED)
+        p_id = period_res.json()['data']['id']
+
+        calc_res = self.client.post(f'/api/personnel/periods/{p_id}/calculate/', {}, format='json')
+        self.assertEqual(calc_res.status_code, status.HTTP_200_OK)
+
+        # 4. Kiểm tra phiếu lương của tài xế kế thừa từ HĐ và phụ lục
+        slip = PayrollSlip.objects.get(period_id=p_id, employee=self.driver_emp)
+        self.assertEqual(slip.contract_id, contract_id)
+        self.assertEqual(slip.base_salary, Decimal('9000000'))
+        self.assertEqual(slip.allowance_amount, Decimal('2000000'))
+        self.assertEqual(slip.subsidy_amount, Decimal('800000'))
+        # Đoàn phí công đoàn 1% LCB: 9,000,000 * 1% = 90,000 đ
+        self.assertEqual(slip.union_fee_employee, Decimal('90000'))
+        # Bảo hiểm NLĐ: 7,000,000 * 10.5% = 735,000 đ
+        self.assertEqual(slip.total_insurance_employee, Decimal('735000'))
+        # Kiểm tra Net = Gross - BHXH - Công đoàn - Thuế - Tạm ứng
+        expected_net = slip.gross_income - slip.total_insurance_employee - slip.union_fee_employee - slip.pit_amount - slip.advance_deductions - slip.other_deductions
+        self.assertEqual(slip.net_salary, expected_net)

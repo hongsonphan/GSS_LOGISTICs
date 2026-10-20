@@ -38,6 +38,11 @@ class ContractStatus(models.TextChoices):
     EXPIRED = 'EXPIRED', 'Đã hết hạn'
     TERMINATED = 'TERMINATED', 'Đã chấm dứt'
 
+class TaxResidentType(models.TextChoices):
+    RESIDENT = 'RESIDENT', 'Cá nhân cư trú (Biểu lũy tiến)'
+    CASUAL_10 = 'CASUAL_10', 'Thời vụ / Vãng lai (Khấu trừ 10%)'
+    NON_RESIDENT = 'NON_RESIDENT', 'Không cư trú (Khấu trừ 20%)'
+
 class PayrollPeriodStatus(models.TextChoices):
     DRAFT = 'DRAFT', 'Dự thảo (Đang tính)'
     REVIEWED = 'REVIEWED', 'Đã kiểm tra'
@@ -163,6 +168,151 @@ class Employee(TimeStampedModel, SoftDeleteModel):
             return False
         return False
 
+    @property
+    def active_contract(self):
+        """Hợp đồng lao động đang có hiệu lực pháp lý cao nhất."""
+        return self.contracts.filter(
+            status=ContractStatus.ACTIVE,
+            is_active=True,
+            is_deleted=False
+        ).order_by('-start_date', '-created_at').first()
+
+    @property
+    def latest_appendix(self):
+        """Phụ lục hợp đồng mới nhất đang có hiệu lực."""
+        c = self.active_contract
+        if not c:
+            return None
+        return c.appendices.filter(
+            is_active=True,
+            is_deleted=False,
+            effective_date__lte=timezone.localdate()
+        ).order_by('-effective_date', '-created_at').first()
+
+    @property
+    def active_department(self):
+        app = self.latest_appendix
+        if app and app.new_department:
+            return app.new_department
+        c = self.active_contract
+        if c and c.department:
+            return c.department
+        return self.department
+
+    @property
+    def active_role(self):
+        c = self.active_contract
+        if c and c.role:
+            return c.role
+        return self.role
+
+    @property
+    def active_job_title(self):
+        app = self.latest_appendix
+        if app and app.new_role:
+            return app.new_role
+        c = self.active_contract
+        if c and c.job_title:
+            return c.job_title
+        return self.get_role_display()
+
+    @property
+    def active_base_salary(self):
+        app = self.latest_appendix
+        if app and app.new_base_salary is not None:
+            return app.new_base_salary
+        c = self.active_contract
+        if c and c.base_salary is not None:
+            return c.base_salary
+        return self.base_salary or Decimal('0')
+
+    @property
+    def active_insurance_salary(self):
+        app = self.latest_appendix
+        if app and app.new_insurance_salary is not None:
+            return app.new_insurance_salary
+        c = self.active_contract
+        if c and c.insurance_salary is not None:
+            return c.insurance_salary
+        return self.insurance_salary or self.active_base_salary
+
+    @property
+    def active_allowance_amount(self):
+        app = self.latest_appendix
+        if app and app.new_allowance_amount is not None:
+            return app.new_allowance_amount
+        c = self.active_contract
+        if c and c.allowance_amount is not None:
+            return c.allowance_amount
+        return Decimal('0')
+
+    @property
+    def active_subsidy_amount(self):
+        app = self.latest_appendix
+        if app and app.new_subsidy_amount is not None:
+            return app.new_subsidy_amount
+        c = self.active_contract
+        if c and c.subsidy_amount is not None:
+            return c.subsidy_amount
+        return Decimal('0')
+
+    @property
+    def active_total_salary(self):
+        app = self.latest_appendix
+        if app and app.new_total_salary is not None:
+            return app.new_total_salary
+        c = self.active_contract
+        if c and c.total_salary is not None and c.total_salary > 0:
+            return c.total_salary
+        return self.active_base_salary + self.active_allowance_amount + self.active_subsidy_amount
+
+    @property
+    def active_is_bhxh(self):
+        app = self.latest_appendix
+        if app and app.is_social_insurance_participant is not None:
+            return app.is_social_insurance_participant
+        c = self.active_contract
+        if c is not None:
+            return c.is_social_insurance_participant
+        return self.is_social_insurance_participant
+
+    @property
+    def active_is_tncn(self):
+        app = self.latest_appendix
+        if app and app.is_taxable is not None:
+            return app.is_taxable
+        c = self.active_contract
+        if c is not None:
+            return c.is_taxable
+        return True
+
+    @property
+    def active_is_cong_doan(self):
+        app = self.latest_appendix
+        if app and app.is_union_member is not None:
+            return app.is_union_member
+        c = self.active_contract
+        if c is not None:
+            return c.is_union_member
+        return False
+
+    @property
+    def active_probation_rate(self):
+        app = self.latest_appendix
+        if app and app.probation_rate is not None:
+            return app.probation_rate
+        c = self.active_contract
+        if c and c.probation_rate is not None:
+            return c.probation_rate
+        return Decimal('100.0')
+
+    @property
+    def active_tax_resident_type(self):
+        c = self.active_contract
+        if c and c.tax_resident_type:
+            return c.tax_resident_type
+        return TaxResidentType.RESIDENT
+
 
 class EmployeeDependent(TimeStampedModel, SoftDeleteModel):
     """
@@ -195,13 +345,29 @@ class LaborContract(TimeStampedModel, SoftDeleteModel):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='contracts')
     contract_type = models.CharField(max_length=30, choices=ContractType.choices, default=ContractType.DEFINITE_TERM)
     status = models.CharField(max_length=20, choices=ContractStatus.choices, default=ContractStatus.ACTIVE)
+    department = models.CharField(max_length=20, choices=Department.choices, default=Department.FLEET, help_text="Phòng ban làm việc theo HĐ")
+    role = models.CharField(max_length=20, choices=EmployeeRole.choices, default=EmployeeRole.DRIVER, help_text="Vị trí / Chức danh theo HĐ")
     sign_date = models.DateField(default=timezone.localdate)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True, help_text="Để trống nếu là HĐ không xác định thời hạn")
-    job_title = models.CharField(max_length=100, blank=True, help_text="Chức danh công việc theo HĐ")
+    job_title = models.CharField(max_length=100, blank=True, help_text="Chức danh công việc chi tiết theo HĐ")
     working_address = models.CharField(max_length=255, blank=True, default="Văn phòng / Bãi xe Triền Võ Logistics")
+
+    # Chế độ tiền lương & trợ cấp theo HĐ
     base_salary = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Mức lương chính theo HĐ")
     insurance_salary = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Lương căn cứ đóng BHXH")
+    allowance_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Các khoản phụ cấp lương cố định (điện thoại, trách nhiệm...)")
+    subsidy_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Các khoản trợ cấp/hỗ trợ phúc lợi (ăn trưa, xăng xe, nhà ở...)")
+    total_salary = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Tổng thu nhập theo hợp đồng")
+    probation_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('100.0'), help_text="Tỷ lệ hưởng lương % (VD: 85% thử việc, 100% chính thức)")
+
+    # Cờ tuân thủ pháp lý
+    is_social_insurance_participant = models.BooleanField(default=True, help_text="Đóng BHXH theo HĐ (isBHXH)")
+    is_taxable = models.BooleanField(default=True, help_text="Khấu trừ thuế TNCN theo HĐ (isTNCN)")
+    is_union_member = models.BooleanField(default=False, help_text="Đoàn viên công đoàn - trích 1% LCB (isCongDoan)")
+    tax_resident_type = models.CharField(max_length=20, choices=TaxResidentType.choices, default=TaxResidentType.RESIDENT, help_text="Phân loại đối tượng thuế TNCN")
+    is_active = models.BooleanField(default=True, help_text="Hợp đồng đang có hiệu lực sử dụng")
+
     allowance_notes = models.TextField(blank=True, help_text="Chế độ phụ cấp, công tác phí, thưởng chuyến")
     contract_file = models.FileField(upload_to='personnel/contracts/', blank=True, null=True, help_text="File scan HĐ đính kèm")
     notes = models.TextField(blank=True)
@@ -212,6 +378,10 @@ class LaborContract(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"[{self.contract_number}] {self.employee.full_name} - {self.get_contract_type_display()}"
 
+    def save(self, *args, **kwargs):
+        self.total_salary = (self.base_salary or Decimal('0')) + (self.allowance_amount or Decimal('0')) + (self.subsidy_amount or Decimal('0'))
+        super().save(*args, **kwargs)
+
 
 class ContractAppendix(TimeStampedModel, SoftDeleteModel):
     """
@@ -220,8 +390,18 @@ class ContractAppendix(TimeStampedModel, SoftDeleteModel):
     contract = models.ForeignKey(LaborContract, on_delete=models.CASCADE, related_name='appendices')
     appendix_number = models.CharField(max_length=50)
     effective_date = models.DateField()
-    new_base_salary = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True)
-    new_role = models.CharField(max_length=50, blank=True)
+    new_base_salary = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True, help_text="Mức lương chính mới")
+    new_insurance_salary = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True, help_text="Mức lương đóng BHXH mới nếu điều chỉnh")
+    new_allowance_amount = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True, help_text="Phụ cấp mới")
+    new_subsidy_amount = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True, help_text="Trợ cấp mới")
+    new_total_salary = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True, help_text="Tổng thu nhập mới")
+    new_department = models.CharField(max_length=20, choices=Department.choices, blank=True, help_text="Phòng ban mới")
+    new_role = models.CharField(max_length=50, blank=True, help_text="Chức danh mới")
+    is_social_insurance_participant = models.BooleanField(null=True, blank=True, help_text="Điều chỉnh tham gia BHXH (None = giữ nguyên HĐ)")
+    is_taxable = models.BooleanField(null=True, blank=True, help_text="Điều chỉnh tính thuế TNCN (None = giữ nguyên HĐ)")
+    is_union_member = models.BooleanField(null=True, blank=True, help_text="Điều chỉnh tham gia công đoàn (None = giữ nguyên HĐ)")
+    probation_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Tỷ lệ hưởng lương mới %")
+    is_active = models.BooleanField(default=True)
     change_summary = models.TextField(help_text="Nội dung điều chỉnh chi tiết")
     appendix_file = models.FileField(upload_to='personnel/contracts/', blank=True, null=True)
 
@@ -230,6 +410,13 @@ class ContractAppendix(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"Phụ lục {self.appendix_number} - HĐ: {self.contract.contract_number}"
+
+    def save(self, *args, **kwargs):
+        base = self.new_base_salary if self.new_base_salary is not None else (self.contract.base_salary or Decimal('0'))
+        allow = self.new_allowance_amount if self.new_allowance_amount is not None else (self.contract.allowance_amount or Decimal('0'))
+        sub = self.new_subsidy_amount if self.new_subsidy_amount is not None else (self.contract.subsidy_amount or Decimal('0'))
+        self.new_total_salary = base + allow + sub
+        super().save(*args, **kwargs)
 
 
 # ==============================================================================
@@ -552,6 +739,15 @@ class PayrollSlip(TimeStampedModel, SoftDeleteModel):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='payroll_slips')
     slip_code = models.CharField(max_length=64, unique=True, db_index=True) # PS-202610-TX001
 
+    # Căn cứ hợp đồng lao động & phụ lục áp dụng tính lương
+    contract = models.ForeignKey(LaborContract, on_delete=models.SET_NULL, null=True, blank=True, related_name='payroll_slips')
+    appendix = models.ForeignKey(ContractAppendix, on_delete=models.SET_NULL, null=True, blank=True, related_name='payroll_slips')
+    probation_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('100.0'), help_text="Tỷ lệ hưởng lương % áp dụng")
+    is_social_insurance_participant = models.BooleanField(default=True, help_text="Có trích nộp BHXH trong kỳ")
+    is_taxable = models.BooleanField(default=True, help_text="Có tính thuế TNCN trong kỳ")
+    is_union_member = models.BooleanField(default=False, help_text="Có trích đoàn phí công đoàn")
+    tax_resident_type = models.CharField(max_length=20, default='RESIDENT', help_text="Loại đối tượng thuế TNCN áp dụng")
+
     # Snapshot thông tin nhân sự tại thời điểm tính lương
     role = models.CharField(max_length=20)
     department = models.CharField(max_length=20)
@@ -562,7 +758,9 @@ class PayrollSlip(TimeStampedModel, SoftDeleteModel):
     # 1. THU NHẬP THEO THỜI GIAN & CHỨC DANH
     actual_working_days = models.DecimalField(max_digits=4, decimal_places=1, default=26.0)
     base_salary = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Lương căn bản hợp đồng")
-    time_salary = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Lương thời gian thực tế = Lương CB / 26 * Ngày công")
+    time_salary = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Lương thời gian thực tế = Lương CB / 26 * Ngày công * (Tỷ lệ / 100)")
+    allowance_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Phụ cấp cố định theo HĐ")
+    subsidy_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Trợ cấp/hỗ trợ theo HĐ")
 
     # 2. THU NHẬP LOGISTICS SẢN LƯỢNG (TÀI XẾ & ĐIỀU VẬN)
     trip_count = models.IntegerField(default=0, help_text="Số chuyến chạy chính trong kỳ")
@@ -581,12 +779,13 @@ class PayrollSlip(TimeStampedModel, SoftDeleteModel):
     # TỔNG THU NHẬP TRƯỚC GIẢM TRỪ (GROSS)
     gross_income = models.DecimalField(max_digits=12, decimal_places=0, default=0)
 
-    # 4. TRÍCH ĐÓNG BẢO HIỂM BẮT BUỘC
+    # 4. TRÍCH ĐÓNG BẢO HIỂM BẮT BUỘC & CÔNG ĐOÀN
     insurance_base = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Mức lương căn cứ đóng BHXH")
     bhxh_employee = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="BHXH NLĐ (8%)")
     bhyt_employee = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="BHYT NLĐ (1.5%)")
     bhtn_employee = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="BHTN NLĐ (1%)")
     total_insurance_employee = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Tổng bảo hiểm trừ vào lương (10.5%)")
+    union_fee_employee = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Đoàn phí công đoàn NLĐ (1% LCB)")
 
     # Chi phí bảo hiểm phía Doanh nghiệp (để thống kê chi phí nhân sự)
     total_insurance_employer = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Tổng BH phía DN (21.5%)")

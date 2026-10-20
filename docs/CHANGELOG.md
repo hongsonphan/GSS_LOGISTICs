@@ -2,6 +2,48 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.5.9] - 2026-10-20 (Chuẩn Hóa Phân Hệ Nhân Sự Theo BIM ERP: Tách Biệt Hồ Sơ Cá Nhân & Quản Trị Tính Lương Bằng Hợp Đồng Lao Động Hiện Hành)
+
+### 1. Tách Biệt Hồ Sơ Nhân Thân Cá Nhân & Hợp Đồng Lao Động (Employee vs. LaborContract):
+- **Nguyên tắc thiết kế cốt lõi (BIM ERP Standard):**
+  * **Hồ Sơ Nhân Viên (Employee):** Độc lập hoàn toàn với chính sách công ty; chỉ lưu trữ thông tin nhân thân pháp lý của người lao động (Họ tên, CCCD, ngày cấp, nơi cấp, MST cá nhân, số sổ BHXH, tài khoản ngân hàng, thông tin GPLX của tài xế, địa chỉ, người phụ thuộc giảm trừ gia cảnh).
+  * **Hợp Đồng Lao Động (LaborContract) & Phụ Lục (ContractAppendix):** Lưu trữ toàn bộ các cam kết kinh tế và chế độ lao động gắn liền doanh nghiệp: Lương căn bản, Lương đóng BHXH, Phụ cấp cố định (allowance_amount), Trợ cấp/hỗ trợ phúc lợi (subsidy_amount), Tổng thu nhập hợp đồng (total_salary), Tỷ lệ hưởng lương/thử việc (probation_rate), cùng các cờ tuân thủ pháp lý: Tham gia BHXH (is_social_insurance_participant), Tính thuế TNCN (is_taxable), Tham gia Công đoàn (is_union_member), Phân loại cư trú thuế TNCN (tax_resident_type).
+- **Cơ chế Helper Properties kế thừa tự động trên Model Employee:**
+  * Bổ sung các properties: active_contract, latest_appendix, active_department, active_role, active_job_title, active_base_salary, active_insurance_salary, active_allowance_amount, active_subsidy_amount, active_total_salary, active_is_bhxh, active_is_tncn, active_is_cong_doan, active_probation_rate, active_tax_resident_type.
+  * Tự động ưu tiên lấy thông số điều chỉnh từ Phụ lục hợp đồng mới nhất còn hiệu lực, nếu không có thì lấy từ HĐLĐ đang hiệu lực (ACTIVE).
+
+### 2. Nâng Cấp Động Cơ Tính Lương Kết Hợp Hybrid Payroll (apps/personnel/api_views.py):
+- **Kế thừa chính xác từ Hợp đồng lao động hiện hành:**
+  * Lương thời gian: Tính theo công thức chuẩn Bộ Luật Lao Động: Lương CB / Công chuẩn * Công thực tế * (Tỷ lệ thử việc / 100).
+  * Tổng Gross: Bao gồm Lương thời gian + Lương sản lượng chuyến xe tài xế + Phụ cấp HĐ + Trợ cấp HĐ + Thưởng KPI + Phụ cấp khác.
+- **Trích nộp Công đoàn và Bảo hiểm:**
+  * Đoàn phí Công đoàn người lao động (union_fee_employee): Trích đúng 1% Lương cơ bản nếu is_union_member=True trên HĐ; bằng 0 nếu chưa tham gia.
+  * Phía Doanh nghiệp: Nộp 2% KPCĐ và 21.5% BHXH căn cứ theo mức lương BHXH của HĐ.
+- **Phân nhánh Thuế TNCN đa chế độ:**
+  * Nếu is_taxable=False: Miễn tính thuế (0 đ).
+  * Nếu tax_resident_type='CASUAL_10': Khấu trừ 10% tại nguồn cho lao động thời vụ/vãng lai khi thu nhập >= 2,000,000 đ.
+  * Nếu tax_resident_type='NON_RESIDENT': Khấu trừ 20% thu nhập.
+  * Nếu tax_resident_type='RESIDENT': Trừ các khoản miễn thuế (ăn trưa <= 730k, điện thoại, trợ cấp phúc lợi HĐ), trừ BHXH NLĐ, trừ đoàn phí công đoàn NLĐ, trừ giảm trừ gia cảnh (bản thân 15.5tr + NPT 6.2tr), phần còn lại áp biểu lũy tiến.
+
+### 3. Cập Nhật Trải Nghiệm Giao Diện Người Dùng (UI/UX Master 360°):
+- **Trang Chi Tiết Nhân Sự (templates/views/view_employee_form.html & static/js/app.js):**
+  * Tích hợp Card 4: Hợp Đồng Lao Động Hiện Hành & Chế Độ Lương (Master Form 360°): Tự động kéo dữ liệu từ HĐ hiện hành để hiển thị toàn bộ snapshot kinh tế của nhân viên.
+  * Cung cấp nút chuyển tiếp 1 chạm: Xem & Sửa HĐ Hiện Hành hoặc Ký HĐ Lao Động Ngay nếu chưa có HĐ.
+- **Trang Chi Tiết Hợp Đồng (templates/views/view_contract_detail.html):**
+  * Bổ sung đầy đủ các trường nhập: Phòng ban, Chức vụ, Phụ cấp, Trợ cấp, Tỷ lệ thử việc, Cụm 3 switch (isBHXH, isTNCN, isCongDoan) và Loại cư trú thuế TNCN.
+  * Tự động tính toán Tổng thu nhập HĐ (cd-total-salary) ngay khi gõ phím.
+- **Bảng Danh Sách Hợp Đồng (templates/views/view_personnel.html):**
+  * Mở rộng bảng lên 14 cột chi tiết, có badges trực quan cho BHXH/Thuế/Công đoàn.
+- **Trang Chi Tiết Phiếu Lương (templates/views/view_payroll_slip_detail.html):**
+  * Hiển thị số HĐLĐ & Phụ lục áp dụng, Đoàn phí công đoàn 1%, Phụ cấp & Trợ cấp HĐ.
+
+### 4. Kiểm Thử & Xác Thực Toàn Diện (System Verification):
+- **Cú pháp JavaScript:** node -c static/js/app.js; node -c static/js/column_manager.js -> 100% Passed.
+- **Personnel Unit Tests:** python manage.py test apps.personnel --keepdb -> 11/11 tests OK.
+- **Toàn bộ Test Suite hệ thống:** python manage.py test --keepdb -> 105/105 tests OK (Zero-Regression).
+
+---
+
 ## [v3.5.8] - 2026-10-20 (Chuẩn Hóa Đặt Tên Chứng Từ Booking Kèm Mã Phiếu [Mã Booking]_[Tên File] & Cho Phép Truy Cập Xem Trực Tiếp)
 
 ### 1. Chuẩn Hóa Tên Tệp Đính Kèm Tự Động Gán Mã Phiếu (`core/validators.py`, `apps/dispatch/api_views.py`):

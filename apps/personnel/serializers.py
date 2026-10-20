@@ -40,15 +40,35 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return obj.dependents.filter(is_active=True).count()
 
     def get_active_contract(self, obj):
-        c = obj.contracts.filter(status=ContractStatus.ACTIVE).first()
+        c = obj.active_contract
         if c:
+            app = obj.latest_appendix
             return {
                 'id': c.id,
                 'contract_number': c.contract_number,
                 'contract_type': c.contract_type,
                 'contract_type_label': c.get_contract_type_display(),
+                'status': c.status,
+                'status_label': c.get_status_display(),
                 'start_date': c.start_date,
                 'end_date': c.end_date,
+                'department': obj.active_department,
+                'department_label': Department(obj.active_department).label if obj.active_department in Department.values else obj.active_department,
+                'role': obj.active_role,
+                'role_label': EmployeeRole(obj.active_role).label if obj.active_role in EmployeeRole.values else obj.active_role,
+                'job_title': obj.active_job_title,
+                'base_salary': float(obj.active_base_salary or 0),
+                'insurance_salary': float(obj.active_insurance_salary or 0),
+                'allowance_amount': float(obj.active_allowance_amount or 0),
+                'subsidy_amount': float(obj.active_subsidy_amount or 0),
+                'total_salary': float(obj.active_total_salary or 0),
+                'probation_rate': float(obj.active_probation_rate or 100),
+                'is_social_insurance_participant': obj.active_is_bhxh,
+                'is_taxable': obj.active_is_tncn,
+                'is_union_member': obj.active_is_cong_doan,
+                'tax_resident_type': obj.active_tax_resident_type,
+                'appendix_number': app.appendix_number if app else None,
+                'appendix_effective_date': app.effective_date if app else None,
             }
         return None
 
@@ -87,12 +107,17 @@ class EmployeeDependentSerializer(serializers.ModelSerializer):
 
 class ContractAppendixSerializer(serializers.ModelSerializer):
     contract_number = serializers.CharField(source='contract.contract_number', read_only=True)
+    department_label = serializers.CharField(source='get_new_department_display', read_only=True)
 
     class Meta:
         model = ContractAppendix
         fields = [
             'id', 'contract', 'contract_number', 'appendix_number',
-            'effective_date', 'new_base_salary', 'new_role', 'change_summary',
+            'effective_date', 'new_base_salary', 'new_insurance_salary',
+            'new_allowance_amount', 'new_subsidy_amount', 'new_total_salary',
+            'new_department', 'department_label', 'new_role',
+            'is_social_insurance_participant', 'is_taxable', 'is_union_member',
+            'probation_rate', 'is_active', 'change_summary',
             'appendix_file', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
@@ -101,8 +126,11 @@ class ContractAppendixSerializer(serializers.ModelSerializer):
 class LaborContractSerializer(serializers.ModelSerializer):
     employee_code = serializers.CharField(source='employee.code', read_only=True)
     employee_name = serializers.CharField(source='employee.full_name', read_only=True)
+    department_label = serializers.CharField(source='get_department_display', read_only=True)
+    role_label = serializers.CharField(source='get_role_display', read_only=True)
     contract_type_label = serializers.CharField(source='get_contract_type_display', read_only=True)
     status_label = serializers.CharField(source='get_status_display', read_only=True)
+    tax_resident_type_label = serializers.CharField(source='get_tax_resident_type_display', read_only=True)
     appendices = ContractAppendixSerializer(many=True, read_only=True)
 
     class Meta:
@@ -110,9 +138,12 @@ class LaborContractSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'contract_number', 'employee', 'employee_code', 'employee_name',
             'contract_type', 'contract_type_label', 'status', 'status_label',
+            'department', 'department_label', 'role', 'role_label',
             'sign_date', 'start_date', 'end_date', 'job_title', 'working_address',
-            'base_salary', 'insurance_salary', 'allowance_notes', 'contract_file',
-            'notes', 'appendices', 'created_at', 'updated_at'
+            'base_salary', 'insurance_salary', 'allowance_amount', 'subsidy_amount', 'total_salary',
+            'probation_rate', 'is_social_insurance_participant', 'is_taxable', 'is_union_member',
+            'tax_resident_type', 'tax_resident_type_label', 'is_active',
+            'allowance_notes', 'contract_file', 'notes', 'appendices', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -249,6 +280,8 @@ class PayrollSlipSerializer(serializers.ModelSerializer):
     employee_phone = serializers.CharField(source='employee.phone_number', read_only=True)
     period_code = serializers.CharField(source='period.period_code', read_only=True)
     period_name = serializers.CharField(source='period.name', read_only=True)
+    contract_number = serializers.CharField(source='contract.contract_number', read_only=True)
+    appendix_number = serializers.CharField(source='appendix.appendix_number', read_only=True)
     role_label = serializers.SerializerMethodField()
     department_label = serializers.SerializerMethodField()
 
@@ -257,15 +290,19 @@ class PayrollSlipSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'period', 'period_code', 'period_name',
             'employee', 'employee_code', 'employee_name', 'employee_nickname', 'employee_phone',
+            'contract', 'contract_number', 'appendix', 'appendix_number',
+            'probation_rate', 'is_social_insurance_participant', 'is_taxable', 'is_union_member', 'tax_resident_type',
             'slip_code', 'role', 'role_label', 'department', 'department_label',
             'bank_account', 'bank_name', 'bank_beneficiary',
             'actual_working_days', 'base_salary', 'time_salary',
+            'allowance_amount', 'subsidy_amount',
             'trip_count', 'trip_allowance', 'dropoff_trip_count', 'dropoff_allowance',
             'detention_allowance', 'fuel_bonus',
             'phone_allowance', 'lunch_allowance', 'other_allowance', 'kpi_bonus',
             'gross_income',
             'insurance_base', 'bhxh_employee', 'bhyt_employee', 'bhtn_employee',
-            'total_insurance_employee', 'total_insurance_employer', 'union_fee_employer',
+            'total_insurance_employee', 'total_insurance_employer',
+            'union_fee_employee', 'union_fee_employer',
             'dependents_count', 'personal_relief_amount', 'dependent_relief_amount',
             'taxable_income', 'pit_amount',
             'advance_deductions', 'other_deductions',
@@ -337,8 +374,5 @@ class MonthlyAttendanceSummarySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def get_base_salary(self, obj):
-        active_contract = LaborContract.objects.filter(employee=obj.employee, status='ACTIVE').first()
-        if active_contract and active_contract.base_salary:
-            return float(active_contract.base_salary)
-        return float(obj.employee.base_salary or 0)
+        return float(obj.employee.active_base_salary or 0)
 

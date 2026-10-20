@@ -7613,7 +7613,7 @@ function renderContractsTable(items) {
     if (!items || items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="12" class="p-8 text-center text-slate-400 font-medium">
+                <td colspan="14" class="p-8 text-center text-slate-400 font-medium">
                     <i class="ph ph-file-text text-3xl mb-2 text-slate-300 block"></i>
                     Không có hợp đồng lao động nào.
                 </td>
@@ -7628,36 +7628,64 @@ function renderContractsTable(items) {
             ? `<span class="text-amber-600 font-bold font-mono">${c.end_date} (Sắp hết hạn)</span>`
             : `<span class="font-mono text-slate-700">${c.end_date || 'Không thời hạn'}</span>`;
 
+        const totalSalaryVal = (c.total_salary !== undefined && c.total_salary !== null) ? c.total_salary : ((c.base_salary || 0) + (c.allowance_amount || 0) + (c.subsidy_amount || 0));
+        const allowancesSum = (c.allowance_amount || 0) + (c.subsidy_amount || 0);
+
+        const bhxhBadge = c.is_social_insurance_participant !== false 
+            ? `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200" title="Có đóng BHXH">BHXH</span>`
+            : `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-400" title="Không tham gia BHXH">-</span>`;
+        const tncnBadge = c.is_taxable !== false 
+            ? `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title="Có tính thuế TNCN">TNCN</span>`
+            : `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-400" title="Miễn tính thuế">-</span>`;
+        const congDoanBadge = c.is_union_member === true 
+            ? `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Đoàn viên công đoàn">CĐ</span>`
+            : `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-400" title="Không tham gia">-</span>`;
+
+        const deptDisplay = c.department_label || c.department || '—';
+        const roleDisplay = c.job_title || c.role_label || c.role || '—';
+
         return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
-                <td class="py-2.5 px-3.5 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs w-12">${index + 1}</td>
-                <td class="py-2.5 px-3.5 font-mono font-bold text-indigo-900 border-r border-slate-200 text-xs">${escapeHtml(c.contract_number)}</td>
-                <td class="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 text-xs">
+                <td class="py-2.5 px-3 text-center font-mono font-bold text-slate-500 border-r border-slate-200 text-xs w-12">${index + 1}</td>
+                <td class="py-2.5 px-3 font-mono font-bold text-indigo-900 border-r border-slate-200 text-xs">${escapeHtml(c.contract_number)}</td>
+                <td class="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200 text-xs">
                     <div>${escapeHtml(c.employee_name)}</div>
                     <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(c.employee_code)}</div>
                 </td>
-                <td class="py-2.5 px-3.5 text-xs text-slate-700 border-r border-slate-200">${escapeHtml(c.contract_type_label || c.contract_type)}</td>
-                <td class="py-2.5 px-3.5 text-xs text-slate-700 border-r border-slate-200">${escapeHtml(c.job_title || '—')}</td>
-                <td class="py-2.5 px-3.5 text-xs font-mono border-r border-slate-200">${c.start_date}</td>
-                <td class="py-2.5 px-3.5 text-xs border-r border-slate-200">${dateBadge}</td>
-                <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(c.base_salary || 0)} đ</td>
-                <td class="py-2.5 px-3.5 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200">${new Intl.NumberFormat('vi-VN').format(c.insurance_salary || 0)} đ</td>
-                <td class="py-2.5 px-3.5 text-center text-xs border-r border-slate-200 font-bold text-indigo-700">${c.appendices ? c.appendices.length : 0}</td>
-                <td class="py-2.5 px-3.5 text-center text-xs font-bold border-r border-slate-200">
+                <td class="py-2.5 px-3 text-xs text-slate-700 border-r border-slate-200 whitespace-nowrap">${escapeHtml(c.contract_type_label || c.contract_type)}</td>
+                <td class="py-2.5 px-3 text-xs text-slate-700 border-r border-slate-200">
+                    <div class="font-bold text-slate-800">${escapeHtml(roleDisplay)}</div>
+                    <div class="text-[11px] text-slate-500">${escapeHtml(deptDisplay)}</div>
+                </td>
+                <td class="py-2.5 px-3 text-xs font-mono border-r border-slate-200 text-center whitespace-nowrap">
+                    <div>${c.start_date}</div>
+                    <div class="text-[11px]">${dateBadge}</div>
+                </td>
+                <td class="py-2.5 px-3 text-xs font-mono font-bold text-right text-slate-900 border-r border-slate-200 whitespace-nowrap">${new Intl.NumberFormat('vi-VN').format(c.base_salary || 0)} đ</td>
+                <td class="py-2.5 px-3 text-xs font-mono font-medium text-right text-slate-700 border-r border-slate-200 whitespace-nowrap">${allowancesSum > 0 ? new Intl.NumberFormat('vi-VN').format(allowancesSum) + ' đ' : '0 đ'}</td>
+                <td class="py-2.5 px-3 text-xs font-mono font-black text-right text-indigo-950 border-r border-slate-200 bg-indigo-50/40 whitespace-nowrap">${new Intl.NumberFormat('vi-VN').format(totalSalaryVal)} đ</td>
+                <td class="py-2.5 px-3 text-xs font-mono font-bold text-right text-teal-800 border-r border-slate-200 whitespace-nowrap">${new Intl.NumberFormat('vi-VN').format(c.insurance_salary || 0)} đ</td>
+                <td class="py-2.5 px-3 text-center text-xs border-r border-slate-200 whitespace-nowrap">
+                    <div class="inline-flex items-center gap-1">
+                        ${bhxhBadge}
+                        ${tncnBadge}
+                        ${congDoanBadge}
+                    </div>
+                </td>
+                <td class="py-2.5 px-3 text-center text-xs border-r border-slate-200 font-bold text-indigo-700">${c.appendices ? c.appendices.length : 0}</td>
+                <td class="py-2.5 px-3 text-center text-xs font-bold border-r border-slate-200 whitespace-nowrap">
                     <span class="${c.status === 'ACTIVE' ? 'text-emerald-700' : (c.status === 'EXPIRED' ? 'text-amber-600' : 'text-slate-400')}">
                         ${escapeHtml(c.status_label || c.status)}
                     </span>
                 </td>
-                <td class="py-2.5 px-3.5 text-center text-xs whitespace-nowrap">
+                <td class="py-2.5 px-3 text-center text-xs whitespace-nowrap">
                     <div class="inline-flex items-center gap-1.5 justify-center">
-                        <!-- 1. Xem Hợp Đồng (Toàn màn hình) -->
                         <button type="button" onclick="openContractDetailPage(${c.id})" 
                             class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
                             title="Xem chi tiết, Sửa, Lưu, In & Chấm dứt hợp đồng">
                             <i class="ph-bold ph-eye"></i>
                             <span>Xem</span>
                         </button>
-                        <!-- 2. In nhanh Hợp Đồng khổ A4 -->
                         <button type="button" onclick="openDirectPrintContract(${c.id})" 
                             class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
                             title="In hợp đồng lao động khổ A4">
@@ -8406,6 +8434,19 @@ async function populateContractEmployeeDropdown(selectedEmpId = null) {
 // -------------------------------------------------------------------------
 // 1. DEDICATED FULL-PAGE VIEW: HỢP ĐỒNG LAO ĐỘNG (LABOR CONTRACT)
 // -------------------------------------------------------------------------
+function calculateContractTotalSalary() {
+    const baseSal = parseFloat(String(document.getElementById('cd-base-salary')?.value || '0').replace(/\D/g, '')) || 0;
+    const allowVal = parseFloat(String(document.getElementById('cd-allowance-amount')?.value || '0').replace(/\D/g, '')) || 0;
+    const subVal = parseFloat(String(document.getElementById('cd-subsidy-amount')?.value || '0').replace(/\D/g, '')) || 0;
+    const total = baseSal + allowVal + subVal;
+    const totalEl = document.getElementById('cd-total-salary');
+    if (totalEl) {
+        totalEl.value = new Intl.NumberFormat('vi-VN').format(total) + ' đ';
+    }
+    return total;
+}
+window.calculateContractTotalSalary = calculateContractTotalSalary;
+
 async function openCreateContractPage(employeeId = null, updateHistory = true) {
     currentViewingContractId = null;
     const form = document.getElementById('form-contract-detail');
@@ -8430,6 +8471,24 @@ async function openCreateContractPage(employeeId = null, updateHistory = true) {
     if (baseSal) baseSal.value = '7,000,000';
     if (insSal) insSal.value = '5,000,000';
 
+    const allowEl = document.getElementById('cd-allowance-amount');
+    const subEl = document.getElementById('cd-subsidy-amount');
+    const probEl = document.getElementById('cd-probation-rate');
+    const taxTypeEl = document.getElementById('cd-tax-resident-type');
+    const isInsEl = document.getElementById('cd-is-insurance');
+    const isTaxEl = document.getElementById('cd-is-taxable');
+    const isUnionEl = document.getElementById('cd-is-union');
+
+    if (allowEl) allowEl.value = '0';
+    if (subEl) subEl.value = '0';
+    if (probEl) probEl.value = '100';
+    if (taxTypeEl) taxTypeEl.value = 'RESIDENT';
+    if (isInsEl) isInsEl.checked = true;
+    if (isTaxEl) isTaxEl.checked = true;
+    if (isUnionEl) isUnionEl.checked = false;
+
+    calculateContractTotalSalary();
+
     const statusBadge = document.getElementById('contract-detail-status-badge');
     if (statusBadge) {
         statusBadge.className = 'px-3 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200';
@@ -8440,6 +8499,19 @@ async function openCreateContractPage(employeeId = null, updateHistory = true) {
     if (appCard) appCard.classList.add('hidden'); // Chưa lưu HĐ gốc thì ẩn phụ lục
 
     await populateContractEmployeeDropdown(employeeId);
+
+    // Nếu truyền employeeId, tự điền phòng ban & vị trí từ nhân viên nếu có
+    if (employeeId && Array.isArray(rawEmployeesList)) {
+        const selectedEmp = rawEmployeesList.find(e => String(e.id) === String(employeeId));
+        if (selectedEmp) {
+            const deptEl = document.getElementById('cd-department');
+            const roleEl = document.getElementById('cd-role');
+            const jobTitleEl = document.getElementById('cd-job-title');
+            if (deptEl && selectedEmp.department) deptEl.value = selectedEmp.department;
+            if (roleEl && selectedEmp.role) roleEl.value = selectedEmp.role;
+            if (jobTitleEl && !jobTitleEl.value) jobTitleEl.value = selectedEmp.role_label || selectedEmp.role || '';
+        }
+    }
 
     // Chuyển View sang view-contract-detail
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden-view'));
@@ -8490,6 +8562,8 @@ async function openContractDetailPage(contractId, updateHistory = true) {
         document.getElementById('cd-number').value = c.contract_number || '';
         document.getElementById('cd-type').value = c.contract_type || 'DEFINITE_TERM';
         document.getElementById('cd-status').value = c.status || 'ACTIVE';
+        if (document.getElementById('cd-department')) document.getElementById('cd-department').value = c.department || 'FLEET';
+        if (document.getElementById('cd-role')) document.getElementById('cd-role').value = c.role || 'DRIVER';
         document.getElementById('cd-job-title').value = c.job_title || '';
         document.getElementById('cd-working-address').value = c.working_address || '';
         document.getElementById('cd-sign-date').value = normalizeDateToISO(c.sign_date) || '';
@@ -8497,6 +8571,16 @@ async function openContractDetailPage(contractId, updateHistory = true) {
         document.getElementById('cd-end-date').value = normalizeDateToISO(c.end_date) || '';
         document.getElementById('cd-base-salary').value = new Intl.NumberFormat('vi-VN').format(c.base_salary || 0);
         document.getElementById('cd-insurance-salary').value = new Intl.NumberFormat('vi-VN').format(c.insurance_salary || 0);
+        
+        if (document.getElementById('cd-allowance-amount')) document.getElementById('cd-allowance-amount').value = new Intl.NumberFormat('vi-VN').format(c.allowance_amount || 0);
+        if (document.getElementById('cd-subsidy-amount')) document.getElementById('cd-subsidy-amount').value = new Intl.NumberFormat('vi-VN').format(c.subsidy_amount || 0);
+        if (document.getElementById('cd-probation-rate')) document.getElementById('cd-probation-rate').value = c.probation_rate || 100;
+        if (document.getElementById('cd-tax-resident-type')) document.getElementById('cd-tax-resident-type').value = c.tax_resident_type || 'RESIDENT';
+        if (document.getElementById('cd-is-insurance')) document.getElementById('cd-is-insurance').checked = c.is_social_insurance_participant !== false;
+        if (document.getElementById('cd-is-taxable')) document.getElementById('cd-is-taxable').checked = c.is_taxable !== false;
+        if (document.getElementById('cd-is-union')) document.getElementById('cd-is-union').checked = c.is_union_member === true;
+
+        calculateContractTotalSalary();
         document.getElementById('cd-notes').value = c.allowance_notes || c.notes || '';
 
         const statusBadge = document.getElementById('contract-detail-status-badge');
@@ -8554,7 +8638,7 @@ function renderContractAppendicesList(appendices) {
     if (!tbody) return;
 
     if (!appendices || appendices.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Chưa có phụ lục hợp đồng nào được ký kết.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Chưa có phụ lục hợp đồng nào được ký kết.</td></tr>`;
         return;
     }
 
@@ -8564,7 +8648,9 @@ function renderContractAppendicesList(appendices) {
             <td class="py-2 px-3 font-mono font-bold text-indigo-900">${escapeHtml(app.appendix_number)}</td>
             <td class="py-2 px-3 text-center font-mono">${escapeHtml(app.effective_date || '—')}</td>
             <td class="py-2 px-3 text-right font-mono font-bold text-indigo-950">${app.new_base_salary ? new Intl.NumberFormat('vi-VN').format(app.new_base_salary) + ' đ' : '—'}</td>
+            <td class="py-2 px-3 text-right font-mono font-bold text-teal-800">${app.new_insurance_salary ? new Intl.NumberFormat('vi-VN').format(app.new_insurance_salary) + ' đ' : '—'}</td>
             <td class="py-2 px-3 font-medium text-slate-800">${escapeHtml(app.new_role || '—')}</td>
+            <td class="py-2 px-3 text-slate-600">${escapeHtml(app.department_label || app.new_department || '—')}</td>
             <td class="py-2 px-3 text-slate-600 max-w-xs truncate">${escapeHtml(app.change_summary || '—')}</td>
         </tr>
     `).join('');
@@ -8573,7 +8659,7 @@ function renderContractAppendicesList(appendices) {
 function setContractFormReadOnly(isReadOnly) {
     const form = document.getElementById('form-contract-detail');
     if (form) {
-        form.querySelectorAll('input:not(#contract-detail-id), select, textarea').forEach(el => {
+        form.querySelectorAll('input:not(#contract-detail-id):not(#cd-total-salary), select, textarea').forEach(el => {
             el.disabled = isReadOnly;
             if (isReadOnly) {
                 el.classList.add('bg-slate-50', 'cursor-not-allowed');
@@ -8619,12 +8705,16 @@ async function submitContractDetailForm(event) {
 
     const baseSalClean = String(document.getElementById('cd-base-salary').value || '0').replace(/\D/g, '');
     const insSalClean = String(document.getElementById('cd-insurance-salary').value || '0').replace(/\D/g, '');
+    const allowClean = String(document.getElementById('cd-allowance-amount')?.value || '0').replace(/\D/g, '');
+    const subClean = String(document.getElementById('cd-subsidy-amount')?.value || '0').replace(/\D/g, '');
 
     const payload = {
         contract_number: document.getElementById('cd-number').value.trim(),
         employee: parseInt(document.getElementById('cd-employee').value),
         contract_type: document.getElementById('cd-type').value,
         status: document.getElementById('cd-status').value,
+        department: document.getElementById('cd-department')?.value || 'FLEET',
+        role: document.getElementById('cd-role')?.value || 'DRIVER',
         job_title: document.getElementById('cd-job-title').value.trim(),
         working_address: document.getElementById('cd-working-address').value.trim(),
         sign_date: normalizeDateToISO(document.getElementById('cd-sign-date').value),
@@ -8632,6 +8722,13 @@ async function submitContractDetailForm(event) {
         end_date: normalizeDateToISO(document.getElementById('cd-end-date').value) || null,
         base_salary: parseFloat(baseSalClean) || 0,
         insurance_salary: parseFloat(insSalClean) || 0,
+        allowance_amount: parseFloat(allowClean) || 0,
+        subsidy_amount: parseFloat(subClean) || 0,
+        probation_rate: parseFloat(document.getElementById('cd-probation-rate')?.value) || 100,
+        tax_resident_type: document.getElementById('cd-tax-resident-type')?.value || 'RESIDENT',
+        is_social_insurance_participant: document.getElementById('cd-is-insurance')?.checked !== false,
+        is_taxable: document.getElementById('cd-is-taxable')?.checked !== false,
+        is_union_member: document.getElementById('cd-is-union')?.checked === true,
         allowance_notes: document.getElementById('cd-notes').value.trim()
     };
 
@@ -8658,6 +8755,7 @@ async function submitContractDetailForm(event) {
 
         showToast('success', data.message || 'Đã lưu hợp đồng lao động thành công!', 'Thành Công');
         await loadContractsData();
+        await loadEmployeesData();
 
         if (!isEdit && data.data && data.data.id) {
             openContractDetailPage(data.data.id);
@@ -8701,6 +8799,7 @@ async function confirmDeleteContract() {
 
         showToast('success', 'Đã chấm dứt hiệu lực hợp đồng thành công.', 'Đã Cập Nhật');
         await loadContractsData();
+        await loadEmployeesData();
         backToContracts();
     } catch (e) {
         console.error('Lỗi kết thúc HĐ:', e);
@@ -8747,18 +8846,26 @@ async function submitInlineAppendix() {
         return;
     }
 
-    const salClean = String(document.getElementById('inline-app-salary').value || '').replace(/\D/g, '');
+    const salClean = String(document.getElementById('inline-app-salary')?.value || '').replace(/\D/g, '');
+    const insClean = String(document.getElementById('inline-app-insurance-salary')?.value || '').replace(/\D/g, '');
+    const allowClean = String(document.getElementById('inline-app-allowance')?.value || '').replace(/\D/g, '');
+    const subClean = String(document.getElementById('inline-app-subsidy')?.value || '').replace(/\D/g, '');
+
     const payload = {
         contract: parseInt(contractId),
         appendix_number: document.getElementById('inline-app-number').value.trim(),
         effective_date: normalizeDateToISO(document.getElementById('inline-app-date').value),
         new_base_salary: salClean ? parseFloat(salClean) : null,
-        new_role: document.getElementById('inline-app-role').value.trim(),
+        new_insurance_salary: insClean ? parseFloat(insClean) : null,
+        new_allowance_amount: allowClean ? parseFloat(allowClean) : null,
+        new_subsidy_amount: subClean ? parseFloat(subClean) : null,
+        new_department: document.getElementById('inline-app-department')?.value || '',
+        new_role: document.getElementById('inline-app-role')?.value.trim() || '',
         change_summary: document.getElementById('inline-app-summary').value.trim()
     };
 
     if (!payload.appendix_number || !payload.effective_date || !payload.change_summary) {
-        showToast('warning', 'Vui lòng điền đầy đủ số phụ lục, ngày hiệu lực và nội dung điều chỉnh.', 'Chú ý');
+        showToast('warning', 'Vui lòng nhập đầy đủ Số phụ lục, Ngày hiệu lực và Nội dung điều chỉnh.', 'Thiếu thông tin');
         return;
     }
 
@@ -8769,14 +8876,14 @@ async function submitInlineAppendix() {
             body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Lỗi lưu phụ lục');
+        if (!res.ok) throw new Error(data.message || 'Lỗi thêm phụ lục hợp đồng');
 
-        showToast('success', 'Đã ký phụ lục hợp đồng thành công!', 'Thành Công');
+        showToast('success', data.message || 'Đã thêm phụ lục hợp đồng thành công.', 'Thành Công');
         toggleAddAppendixInline();
-        await openContractDetailPage(contractId);
-    } catch (e) {
-        console.error('Lỗi lưu phụ lục:', e);
-        showToast('error', e.message || 'Không thể lưu phụ lục.', 'Lỗi');
+        openContractDetailPage(contractId);
+    } catch (err) {
+        console.error('Lỗi lưu phụ lục:', err);
+        showToast('error', err.message || 'Không thể lưu phụ lục hợp đồng.', 'Lỗi');
     }
 }
 
@@ -8885,7 +8992,7 @@ async function openPayrollSlipDetailPage(slipId, updateHistory = true) {
         document.getElementById('slip-detail-id').value = s.id;
         document.getElementById('sd-avatar').innerText = (s.employee_name || 'NV').slice(0, 2).toUpperCase();
         document.getElementById('sd-emp-name').innerText = `${s.employee_name} (${s.employee_code})`;
-        document.getElementById('sd-emp-sub').innerText = `${s.role || 'Nhân viên'} • ${s.department || ''} • STK: ${s.bank_account || '—'} (${s.bank_name || ''})`;
+        document.getElementById('sd-emp-sub').innerText = `${s.role_label || s.role || 'Nhân viên'} • ${s.department_label || s.department || ''} • STK: ${s.bank_account || '—'} (${s.bank_name || ''})`;
         document.getElementById('sd-slip-code').innerText = s.slip_code || `PL-${s.id}`;
         
         const statusBadge = document.getElementById('sd-status-badge');
@@ -8899,14 +9006,23 @@ async function openPayrollSlipDetailPage(slipId, updateHistory = true) {
         // Cập nhật 3 Card tổng số
         const fmt = val => new Intl.NumberFormat('vi-VN').format(Math.round(val || 0)) + ' đ';
         document.getElementById('sd-gross-display').innerText = fmt(s.gross_income);
-        const totalDeductions = (s.total_insurance_employee || 0) + (s.pit_amount || 0) + (s.advance_deductions || 0) + (s.other_deductions || 0);
+        const totalDeductions = (s.total_insurance_employee || 0) + (s.union_fee_employee || 0) + (s.pit_amount || 0) + (s.advance_deductions || 0) + (s.other_deductions || 0);
         document.getElementById('sd-deductions-display').innerText = '-' + fmt(totalDeductions);
         document.getElementById('sd-net-display').innerText = fmt(s.net_salary);
 
-        // Cấu phần 1: Lương ngày công
+        // Cấu phần 1: Lương ngày công & HĐLĐ áp dụng
         document.getElementById('sd-time-salary').innerText = fmt(s.time_salary);
-        document.getElementById('sd-contract-base').innerText = fmt(s.contract_base_salary);
-        document.getElementById('sd-days-ratio').innerText = `${s.worked_days || 0} / ${s.standard_days || 26} công`;
+        if (document.getElementById('sd-contract-number')) {
+            document.getElementById('sd-contract-number').innerText = s.contract_number ? `${s.contract_number} ${s.appendix_number ? '(PL: ' + s.appendix_number + ')' : ''}` : 'Chưa có HĐ';
+        }
+        document.getElementById('sd-contract-base').innerText = fmt(s.base_salary);
+        if (document.getElementById('sd-contract-allowances')) {
+            document.getElementById('sd-contract-allowances').innerText = fmt((s.allowance_amount || 0) + (s.subsidy_amount || 0));
+        }
+        document.getElementById('sd-days-ratio').innerText = `${s.actual_working_days || 0} / 26 công`;
+        if (document.getElementById('sd-probation-rate')) {
+            document.getElementById('sd-probation-rate').innerText = `${s.probation_rate || 100}%`;
+        }
         document.getElementById('sd-paid-leave').innerText = `${s.paid_leave_days || 0} ngày`;
         document.getElementById('sd-holiday-leave').innerText = `${s.holiday_days || 0} ngày`;
 
@@ -8926,6 +9042,9 @@ async function openPayrollSlipDetailPage(slipId, updateHistory = true) {
         document.getElementById('sd-advance-deductions').value = new Intl.NumberFormat('vi-VN').format(s.advance_deductions || 0);
         document.getElementById('sd-other-deductions').value = new Intl.NumberFormat('vi-VN').format(s.other_deductions || 0);
         document.getElementById('sd-insurance-employee').value = fmt(s.total_insurance_employee);
+        if (document.getElementById('sd-union-fee')) {
+            document.getElementById('sd-union-fee').value = fmt(s.union_fee_employee || 0);
+        }
         document.getElementById('sd-pit-amount').value = fmt(s.pit_amount);
         document.getElementById('sd-notes').value = s.notes || '';
 
@@ -28038,6 +28157,20 @@ function openCreateEmployeePage(updateHistory = true) {
 
     handleEmployeeRoleChange();
 
+    const contractCard = document.getElementById('emp-active-contract-card');
+    const badgeContainer = document.getElementById('emp-contract-badge-container');
+    const infoBox = document.getElementById('emp-contract-info-box');
+    if (badgeContainer) {
+        badgeContainer.innerHTML = `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">Chưa ký HĐ</span>`;
+    }
+    if (infoBox) {
+        infoBox.innerHTML = `
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 italic">
+                Sau khi lưu hồ sơ cá nhân của nhân sự mới, bạn có thể thực hiện ký Hợp Đồng Lao Động để kích hoạt chính sách tiền lương và bảo hiểm.
+            </div>
+        `;
+    }
+
     if (updateHistory && window.history && window.history.pushState) {
         const path = '/personnel/employees/new';
         if (window.location.pathname !== path) {
@@ -28110,16 +28243,126 @@ async function openEditEmployeePage(id, updateHistory = true) {
     if (el('emp-bank-name')) el('emp-bank-name').value = emp.bank_name || '';
     if (el('emp-bank-beneficiary')) el('emp-bank-beneficiary').value = emp.bank_beneficiary || '';
     if (el('emp-join-date')) el('emp-join-date').value = normalizeDateToISO(emp.join_date) || '';
+    if (el('emp-resign-date')) el('emp-resign-date').value = normalizeDateToISO(emp.resign_date) || '';
     if (el('emp-license-number')) el('emp-license-number').value = emp.license_number || '';
     if (el('emp-license-expiry')) el('emp-license-expiry').value = normalizeDateToISO(emp.license_expiry) || '';
-    if (el('emp-base-salary')) el('emp-base-salary').value = new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0);
-    if (el('emp-insurance-salary')) el('emp-insurance-salary').value = new Intl.NumberFormat('vi-VN').format(emp.insurance_salary || 0);
+    if (el('emp-base-salary')) el('emp-base-salary').value = emp.base_salary || 0;
+    if (el('emp-insurance-salary')) el('emp-insurance-salary').value = emp.insurance_salary || 5000000;
     if (el('emp-is-insurance')) el('emp-is-insurance').value = emp.is_social_insurance_participant ? 'true' : 'false';
     if (el('emp-is-active')) el('emp-is-active').value = emp.is_active ? 'true' : 'false';
     if (el('emp-permanent-address')) el('emp-permanent-address').value = emp.permanent_address || '';
     if (el('emp-current-address')) el('emp-current-address').value = emp.current_address || '';
 
     handleEmployeeRoleChange();
+
+    // RENDER CARD 4: THÔNG TIN HỢP ĐỒNG LAO ĐỘNG HIỆN HÀNH (BIM ERP STANDARD - MASTER 360°)
+    const contractCard = document.getElementById('emp-active-contract-card');
+    const badgeContainer = document.getElementById('emp-contract-badge-container');
+    const infoBox = document.getElementById('emp-contract-info-box');
+
+    if (contractCard && infoBox) {
+        contractCard.classList.remove('hidden');
+        const c = emp.active_contract;
+        if (c) {
+            if (badgeContainer) {
+                badgeContainer.innerHTML = `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1"><i class="ph-bold ph-check-circle"></i><span>HĐ Hiệu Lực: ${escapeHtml(c.contract_number)}</span></span>`;
+            }
+            
+            const fmt = v => new Intl.NumberFormat('vi-VN').format(Math.round(v || 0)) + ' đ';
+            const taxTypeLabel = c.tax_resident_type === 'CASUAL_10' ? 'Thời vụ / Vãng lai (Khấu trừ 10%)' : (c.tax_resident_type === 'NON_RESIDENT' ? 'Không cư trú (Khấu trừ 20%)' : 'Cư trú (Biểu lũy tiến 5/7 bậc)');
+
+            infoBox.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs bg-white p-4 rounded-xl border border-slate-200">
+                    <div class="md:col-span-4 space-y-1">
+                        <span class="text-slate-500 font-medium block">Số & Loại Hợp Đồng:</span>
+                        <div class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                            <span class="font-mono text-indigo-900">${escapeHtml(c.contract_number)}</span>
+                            <span class="text-[11px] text-slate-500 font-normal">(${escapeHtml(c.contract_type_label || '')})</span>
+                        </div>
+                        <span class="text-[11px] font-mono text-slate-500 block">Thời hạn: ${c.start_date || '—'} ➔ ${c.end_date || 'Không thời hạn'}</span>
+                    </div>
+
+                    <div class="md:col-span-4 space-y-1">
+                        <span class="text-slate-500 font-medium block">Vị Trí & Phòng Ban HĐ:</span>
+                        <div class="font-bold text-slate-900">${escapeHtml(c.job_title || c.role_label || '')}</div>
+                        <span class="text-[11px] text-slate-500 block">${escapeHtml(c.department_label || '')}</span>
+                    </div>
+
+                    <div class="md:col-span-4 space-y-1">
+                        <span class="text-slate-500 font-medium block">Tỷ Lệ Hưởng Lương & Trợ Cấp:</span>
+                        <div class="font-bold text-indigo-900 font-mono">${c.probation_rate || 100}% lương chính</div>
+                        ${c.appendix_number ? `<span class="text-[11px] text-emerald-700 font-bold block">Đang áp dụng Phụ lục ${escapeHtml(c.appendix_number)} (${c.appendix_effective_date || ''})</span>` : '<span class="text-[11px] text-slate-400 block">Áp dụng HĐLĐ gốc</span>'}
+                    </div>
+
+                    <div class="md:col-span-12 grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-2 border-t border-slate-100">
+                        <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase block">Lương Căn Bản</span>
+                            <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block">${fmt(c.base_salary)}</span>
+                        </div>
+                        <div class="p-2 rounded-lg bg-teal-50/70 border border-teal-200">
+                            <span class="text-[10px] text-teal-800 font-bold uppercase block">Lương Đóng BHXH</span>
+                            <span class="font-mono font-bold text-teal-900 text-xs mt-0.5 block">${fmt(c.insurance_salary)}</span>
+                        </div>
+                        <div class="p-2 rounded-lg bg-indigo-50/70 border border-indigo-200">
+                            <span class="text-[10px] text-indigo-800 font-bold uppercase block">Phụ Cấp HĐ</span>
+                            <span class="font-mono font-bold text-indigo-900 text-xs mt-0.5 block">${fmt(c.allowance_amount)}</span>
+                        </div>
+                        <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                            <span class="text-[10px] text-emerald-800 font-bold uppercase block">Trợ Cấp Phúc Lợi</span>
+                            <span class="font-mono font-bold text-emerald-900 text-xs mt-0.5 block">${fmt(c.subsidy_amount)}</span>
+                        </div>
+                        <div class="p-2 rounded-lg bg-amber-50/70 border border-amber-300 col-span-2 sm:col-span-1">
+                            <span class="text-[10px] text-amber-900 font-black uppercase block">Tổng Thu Nhập HĐ</span>
+                            <span class="font-mono font-black text-amber-950 text-xs mt-0.5 block">${fmt(c.total_salary)}</span>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-12 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span class="text-[11px] font-bold ${c.is_social_insurance_participant ? 'text-teal-700' : 'text-slate-400'}">
+                                ${c.is_social_insurance_participant ? '✓ Trích nộp BHXH (10.5%)' : '✗ Không tham gia BHXH'}
+                            </span>
+                            <span class="text-slate-300">•</span>
+                            <span class="text-[11px] font-bold ${c.is_taxable ? 'text-indigo-700' : 'text-slate-400'}">
+                                ${c.is_taxable ? '✓ Tính thuế: ' + taxTypeLabel : '✗ Miễn tính thuế'}
+                            </span>
+                            <span class="text-slate-300">•</span>
+                            <span class="text-[11px] font-bold ${c.is_union_member ? 'text-amber-700' : 'text-slate-400'}">
+                                ${c.is_union_member ? '✓ Đoàn viên Công đoàn (1%)' : '✗ Không tham gia Công đoàn'}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="openContractDetailPage(${c.id})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer">
+                                <i class="ph-bold ph-pencil-simple"></i>
+                                <span>Xem & Sửa HĐ Hiện Hành</span>
+                            </button>
+                            <button type="button" onclick="openCreateContractPage(${emp.id})" class="px-3 py-1.5 border border-indigo-600 text-indigo-700 hover:bg-indigo-50 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
+                                <i class="ph-bold ph-plus-circle"></i>
+                                <span>Ký HĐ Mới</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            if (badgeContainer) {
+                badgeContainer.innerHTML = `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Chưa Ký HĐLĐ</span>`;
+            }
+            infoBox.innerHTML = `
+                <div class="p-4 rounded-xl bg-amber-50/60 border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="text-amber-900">
+                        <span class="font-bold block text-sm">Nhân viên này chưa có Hợp đồng lao động đang hiệu lực.</span>
+                        <span class="text-slate-600 mt-0.5 block">Cần ký kết HĐLĐ để thiết lập mức lương căn bản, lương BHXH và các phụ cấp làm căn cứ tính lương tự động.</span>
+                    </div>
+                    <button type="button" onclick="openCreateContractPage(${emp.id})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+                        <i class="ph-bold ph-plus-circle text-base"></i>
+                        <span>Ký HĐ Lao Động Ngay</span>
+                    </button>
+                </div>
+            `;
+        }
+    }
 
     if (updateHistory && window.history && window.history.pushState) {
         const path = `/personnel/employees/${emp.id}`;

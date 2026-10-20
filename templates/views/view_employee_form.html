@@ -163,19 +163,19 @@
                     </div>
                 </div>
 
-                <!-- CARD 3: VỊ TRÍ CÔNG TÁC, LƯƠNG & CHẾ ĐỘ BẢO HIỂM -->
+                <!-- CARD 3: THÔNG TIN CÔNG TÁC & CHUYÊN MÔN NGHỀ NGHIỆP -->
                 <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 font-heading">
                             <i class="ph-bold ph-briefcase text-teal-700 text-sm"></i>
-                            <span>3. Vị Trí Công Tác, Lương & Chế Độ Bảo Hiểm</span>
+                            <span>3. Thông Tin Chuyên Môn & Trạng Thái Công Tác</span>
                         </h4>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
                         <!-- Phòng ban -->
                         <div class="md:col-span-4">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Phòng Ban <span class="text-rose-500">*</span></label>
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Phòng Ban Công Tác <span class="text-rose-500">*</span></label>
                             <select id="emp-department" required class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
                                 <option value="FLEET">Đội Xe & Bãi (FLEET)</option>
                                 <option value="DISPATCH">Phòng Điều Vận (DISPATCH)</option>
@@ -200,10 +200,26 @@
                             </select>
                         </div>
 
-                        <!-- Ngày vào làm -->
+                        <!-- Trạng thái hoạt động -->
                         <div class="md:col-span-4">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Trạng Thái Công Tác</label>
+                            <select id="emp-is-active" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="true">Đang làm việc (ACTIVE)</option>
+                                <option value="false">Tạm ngưng / Nghỉ việc (INACTIVE)</option>
+                            </select>
+                        </div>
+
+                        <!-- Ngày vào làm -->
+                        <div class="md:col-span-6">
                             <label class="block font-bold text-slate-700 text-xs mb-1">Ngày Bắt Đầu Làm Việc</label>
                             <input type="date" id="emp-join-date"
+                                   class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                        </div>
+
+                        <!-- Ngày thôi việc -->
+                        <div class="md:col-span-6">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Ngày Thôi Việc (Nếu có)</label>
+                            <input type="date" id="emp-resign-date"
                                    class="w-full h-10 px-3 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
                         </div>
 
@@ -221,37 +237,32 @@
                             </div>
                         </div>
 
-                        <!-- Mức Lương Cơ Bản -->
-                        <div class="md:col-span-3">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Lương Cơ Bản / Khoán (VNĐ)</label>
-                            <input type="text" id="emp-base-salary" placeholder="5,000,000"
-                                   class="w-full h-10 px-3 text-xs font-mono font-bold text-right border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
-                        </div>
+                        <!-- Các trường ẩn để tương thích backward backend API -->
+                        <input type="hidden" id="emp-base-salary" value="0">
+                        <input type="hidden" id="emp-insurance-salary" value="0">
+                        <input type="hidden" id="emp-is-insurance" value="true">
+                    </div>
+                </div>
 
-                        <!-- Lương đóng BHXH -->
-                        <div class="md:col-span-3">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Lương Căn Cứ Đóng BHXH</label>
-                            <input type="text" id="emp-insurance-salary" placeholder="5,000,000"
-                                   class="w-full h-10 px-3 text-xs font-mono font-bold text-right border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                <!-- CARD 4: HỢP ĐỒNG LAO ĐỘNG & CHẾ ĐỘ LƯƠNG HIỆN HÀNH (MASTER FORM 360° - BIM ERP STANDARD) -->
+                <div class="bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 p-5 sm:p-6 rounded-2xl border border-indigo-200/80 shadow-xs space-y-4" id="emp-active-contract-card">
+                    <div class="flex items-center justify-between pb-3 border-b border-indigo-100 flex-wrap gap-2">
+                        <div class="flex items-center space-x-2">
+                            <i class="ph-bold ph-certificate text-indigo-700 text-base"></i>
+                            <h4 class="text-xs font-bold text-indigo-950 uppercase tracking-wider font-heading">
+                                4. Hợp Đồng Lao Động Hiện Hành & Chế Độ Lương (Tự Động Kéo Từ HĐLĐ)
+                            </h4>
                         </div>
+                        <div id="emp-contract-badge-container">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200" id="emp-contract-status-badge">
+                                Đang kiểm tra HĐ...
+                            </span>
+                        </div>
+                    </div>
 
-                        <!-- Tham gia BHXH -->
-                        <div class="md:col-span-3">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Trích Đóng BHXH Bắt Buộc</label>
-                            <select id="emp-is-insurance" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
-                                <option value="true">Có trích đóng (10.5%)</option>
-                                <option value="false">Không tham gia BHXH</option>
-                            </select>
-                        </div>
-
-                        <!-- Trạng thái hoạt động -->
-                        <div class="md:col-span-3">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">Trạng Thái Công Tác</label>
-                            <select id="emp-is-active" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
-                                <option value="true">Đang làm việc (ACTIVE)</option>
-                                <option value="false">Tạm ngưng / Nghỉ việc (INACTIVE)</option>
-                            </select>
-                        </div>
+                    <!-- Khung hiển thị thông tin HĐ hiện hành -->
+                    <div id="emp-contract-info-box" class="space-y-3.5">
+                        <!-- Sẽ render động qua JS khi nạp hồ sơ nhân viên -->
                     </div>
                 </div>
 

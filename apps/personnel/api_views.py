@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from apps.personnel.models import (
     Employee, Department, EmployeeRole, EmployeeGender,
-    EmployeeDependent, LaborContract, ContractAppendix, ContractType, ContractStatus,
+    EmployeeDependent, LaborContract, ContractAppendix, ContractType, ContractStatus, TaxResidentType,
     TaxBracket, SalaryDeductionRate, PayrollPolicyConfig,
     PayrollPeriod, PayrollSlip, PayrollPeriodStatus,
     PayrollParameter, AllowanceGroup, AllowanceType,
@@ -906,15 +906,22 @@ class PayrollCalculateAPIView(APIView):
             for emp in employees:
                 emp_override = overrides.get(str(emp.id), {})
 
-                # 1. Giai đoạn Hợp đồng lao động: Ưu tiên lấy lương cơ bản ghi trong HĐLĐ đang hiệu lực
-                active_contract = emp.contracts.filter(
-                    status=ContractStatus.ACTIVE,
-                    is_deleted=False
-                ).order_by('-start_date').first()
-                if active_contract and active_contract.base_salary and active_contract.base_salary > 0:
-                    base_sal = active_contract.base_salary
-                else:
-                    base_sal = emp.base_salary or Decimal('0')
+                # 1. Giai đoạn Hợp đồng lao động & Phụ lục hiện hành:
+                # Kế thừa toàn bộ thông số kinh tế lao động & chính sách pháp lý từ HĐ hiện hành
+                active_contract = emp.active_contract
+                latest_appendix = emp.latest_appendix
+
+                base_sal = emp.active_base_salary
+                ins_sal = emp.active_insurance_salary
+                contract_allowance = emp.active_allowance_amount
+                contract_subsidy = emp.active_subsidy_amount
+                probation_rate = emp.active_probation_rate
+                is_bhxh = emp.active_is_bhxh
+                is_tncn = emp.active_is_tncn
+                is_cong_doan = emp.active_is_cong_doan
+                tax_resident_type = emp.active_tax_resident_type
+                active_role = emp.active_role
+                active_dept = emp.active_department
 
                 # 2. Giai đoạn Chấm công (Timekeeping): Lấy số ngày công hưởng lương từ Bảng tổng hợp công tháng
                 att_summary = MonthlyAttendanceSummary.objects.filter(
@@ -929,9 +936,10 @@ class PayrollCalculateAPIView(APIView):
                 else:
                     actual_days = std_days
 
-                # 3. Cấu phần A: LƯƠNG NGÀY CÔNG (Lương thời gian theo công thực tế)
+                # 3. Cấu phần A: LƯƠNG NGÀY CÔNG (Lương thời gian theo công thực tế & tỷ lệ thử việc)
                 if std_days > 0:
-                    time_salary = round(base_sal / std_days * actual_days)
+                    probation_factor = probation_rate / Decimal('100.0') if probation_rate else Decimal('1.0')
+                    time_salary = round(base_sal / std_days * actual_days * probation_factor)
                 else:
                     time_salary = Decimal('0')
 
@@ -966,13 +974,13 @@ class PayrollCalculateAPIView(APIView):
                 # Thưởng định mức nhiên liệu (xăng dầu tiết kiệm)
                 fuel_bonus = Decimal(str(emp_override.get('fuel_bonus', 0)))
 
-                # 5. Phụ cấp nghiệp vụ & Thưởng KPI
+                # 5. Phụ cấp nghiệp vụ, Trợ cấp HĐ & Thưởng KPI
                 phone_allowance = Decimal(str(emp_override.get('phone_allowance', 0)))
                 lunch_allowance = Decimal(str(emp_override.get('lunch_allowance', 0)))
                 other_allowance = Decimal(str(emp_override.get('other_allowance', 0)))
                 kpi_bonus = Decimal(str(emp_override.get('kpi_bonus', 0)))
 
-                # TỔNG GROSS = Lương Ngày Công + Lương Sản Phẩm Chuyến + Phụ Cấp + Thưởng KPI
+                # TỔNG GROSS = Lương Thời Gian + Lương Sản Phẩm Chuyến + Phụ Cấp HĐ + Trợ Cấp HĐ + Phụ Cấp Khác + Thưởng KPI
                 gross_income = (
                     time_salary +
                     trip_allowance +
@@ -982,16 +990,14 @@ class PayrollCalculateAPIView(APIView):
                     phone_allowance +
                     lunch_allowance +
                     other_allowance +
+                    contract_allowance +
+                    contract_subsidy +
                     kpi_bonus
                 )
 
-                # 6. Trích nộp bảo hiểm (Mức lương BHXH ưu tiên lấy từ HĐLĐ đang hiệu lực)
-                if emp.is_social_insurance_participant:
-                    if active_contract and active_contract.insurance_salary and active_contract.insurance_salary > 0:
-                        ins_sal = active_contract.insurance_salary
-                    else:
-                        ins_sal = emp.insurance_salary or base_sal
-                    ins_base = min(ins_sal, policy.max_insurance_salary)
+                # 6. Trích nộp bảo hiểm & Công đoàn
+                if is_bhxh:
+                    ins_base = min(ins_sal or base_sal, policy.max_insurance_salary)
                     bhxh_emp = round(ins_base * rate.bhxh_employee_rate)
                     bhyt_emp = round(ins_base * rate.bhyt_employee_rate)
                     bhtn_emp = round(ins_base * rate.bhtn_employee_rate)
@@ -1008,8 +1014,13 @@ class PayrollCalculateAPIView(APIView):
                     total_ins_empr = Decimal('0')
                     union_fee_empr = Decimal('0')
 
-                # 5. Thuế Thu Nhập Cá Nhân (TNCN)
-                # Đếm số NPT đang hiệu lực trong kỳ
+                # Đoàn phí công đoàn phía NLĐ (1% LCB nếu tham gia công đoàn)
+                if is_cong_doan:
+                    union_fee_emp = round(base_sal * rate.union_employee_rate)
+                else:
+                    union_fee_emp = Decimal('0')
+
+                # 7. Thuế Thu Nhập Cá Nhân (TNCN)
                 active_dependents = emp.dependents.filter(
                     is_active=True,
                     start_date__lte=to_d
@@ -1020,28 +1031,30 @@ class PayrollCalculateAPIView(APIView):
                 personal_relief = policy.personal_relief
                 dependent_relief = Decimal(active_dependents) * policy.dependent_relief
 
-                # Khoản không tính thuế (tiền ăn trưa <= 730k, phụ cấp điện thoại công việc)
-                non_taxable = min(lunch_allowance, Decimal('730000')) + phone_allowance
-
-                taxable_income = max(
-                    Decimal('0'),
-                    gross_income - non_taxable - total_ins_emp - personal_relief - dependent_relief
-                )
-
-                # Tìm bậc thuế lũy tiến tương ứng (Hỗ trợ 5 bậc mới theo Luật 109/2025/QH15 hoặc 7 bậc cũ)
                 pit_amount = Decimal('0')
-                if taxable_income > 0 and tax_brackets:
-                    for b in tax_brackets:
-                        if b.max_income is None or taxable_income <= b.max_income:
-                            rate_val = b.rate_decimal
-                            quick_sub = b.quick_subtraction or Decimal('0')
-                            calc_tax = round(taxable_income * rate_val - quick_sub)
-                            pit_amount = max(Decimal('0'), calc_tax)
-                            break
+                taxable_income = Decimal('0')
 
-                # 6. Khấu trừ tạm ứng:
-                # Bao gồm tiền tạm ứng lương trong tháng (Employee.current_advance)
-                # và các khoản tạm ứng chuyến xe phát sinh trong kỳ (DriverTripAdvance)
+                if is_tncn:
+                    if tax_resident_type == TaxResidentType.CASUAL_10:
+                        # Lao động thời vụ / thử việc < 3 tháng / vãng lai: khấu trừ 10% tại nguồn nếu Gross >= 2tr
+                        if gross_income >= Decimal('2000000'):
+                            taxable_income = gross_income
+                            pit_amount = round(gross_income * Decimal('0.10'))
+                    elif tax_resident_type == TaxResidentType.NON_RESIDENT:
+                        # Cá nhân không cư trú: khấu trừ 20%
+                        taxable_income = gross_income
+                        pit_amount = round(gross_income * Decimal('0.20'))
+                    else:
+                        # Cá nhân cư trú: Biểu thuế lũy tiến từng phần
+                        # Khoản miễn thuế (ăn trưa <= 730k, điện thoại, trợ cấp phúc lợi hợp đồng)
+                        non_taxable = min(lunch_allowance, Decimal('730000')) + phone_allowance + contract_subsidy
+                        taxable_income = max(
+                            Decimal('0'),
+                            gross_income - non_taxable - total_ins_emp - union_fee_emp - personal_relief - dependent_relief
+                        )
+                        pit_amount = self._calculate_pit(taxable_income, tax_brackets)
+
+                # 8. Khấu trừ tạm ứng:
                 emp_salary_advance = emp.current_advance or Decimal('0')
 
                 advances_qs = DriverTripAdvance.objects.filter(
@@ -1060,14 +1073,13 @@ class PayrollCalculateAPIView(APIView):
                 else:
                     auto_adv_deduct = unsettled_trip_adv if unsettled_trip_adv > 0 else total_trip_adv
 
-                # Hỗ trợ ghi đè từ payload nếu có điều chỉnh
                 advance_deductions = Decimal(str(emp_override.get('advance_deductions', auto_adv_deduct)))
                 other_deductions = Decimal(str(emp_override.get('other_deductions', 0)))
 
-                # 7. THỰC LĨNH (NET SALARY)
+                # 9. THỰC LĨNH (NET SALARY)
                 net_salary = max(
                     Decimal('0'),
-                    gross_income - total_ins_emp - pit_amount - advance_deductions - other_deductions
+                    gross_income - total_ins_emp - union_fee_emp - pit_amount - advance_deductions - other_deductions
                 )
 
                 clean_period = period.period_code.replace('-', '').replace(' ', '')[:25]
@@ -1079,14 +1091,23 @@ class PayrollCalculateAPIView(APIView):
                     employee=emp,
                     defaults={
                         'slip_code': slip_code,
-                        'role': emp.role,
-                        'department': emp.department,
+                        'contract': active_contract,
+                        'appendix': latest_appendix,
+                        'probation_rate': probation_rate,
+                        'is_social_insurance_participant': is_bhxh,
+                        'is_taxable': is_tncn,
+                        'is_union_member': is_cong_doan,
+                        'tax_resident_type': tax_resident_type,
+                        'role': active_role,
+                        'department': active_dept,
                         'bank_account': emp.bank_account,
                         'bank_name': emp.bank_name,
                         'bank_beneficiary': emp.bank_beneficiary,
                         'actual_working_days': actual_days,
                         'base_salary': base_sal,
                         'time_salary': time_salary,
+                        'allowance_amount': contract_allowance,
+                        'subsidy_amount': contract_subsidy,
                         'trip_count': trip_count,
                         'trip_allowance': trip_allowance,
                         'dropoff_trip_count': dropoff_trip_count,
@@ -1104,6 +1125,7 @@ class PayrollCalculateAPIView(APIView):
                         'bhtn_employee': bhtn_emp,
                         'total_insurance_employee': total_ins_emp,
                         'total_insurance_employer': total_ins_empr,
+                        'union_fee_employee': union_fee_emp,
                         'union_fee_employer': union_fee_empr,
                         'dependents_count': active_dependents,
                         'personal_relief_amount': personal_relief,
@@ -1363,22 +1385,39 @@ class PayrollSlipDetailAPIView(APIView):
             slip.phone_allowance +
             slip.lunch_allowance +
             slip.other_allowance +
+            (slip.allowance_amount or Decimal('0')) +
+            (slip.subsidy_amount or Decimal('0')) +
             slip.kpi_bonus
         )
 
         # Tính lại thu nhập chịu thuế & Thuế TNCN
-        non_taxable_allowances = slip.phone_allowance + slip.lunch_allowance
-        income_before_relief = max(Decimal('0'), slip.gross_income - non_taxable_allowances - slip.total_insurance_employee)
-        total_relief = slip.personal_relief_amount + slip.dependent_relief_amount
-        slip.taxable_income = max(Decimal('0'), income_before_relief - total_relief)
+        if not slip.is_taxable:
+            slip.taxable_income = Decimal('0')
+            slip.pit_amount = Decimal('0')
+        elif slip.tax_resident_type == TaxResidentType.CASUAL_10:
+            if slip.gross_income >= Decimal('2000000'):
+                slip.taxable_income = slip.gross_income
+                slip.pit_amount = round(slip.gross_income * Decimal('0.10'))
+            else:
+                slip.taxable_income = Decimal('0')
+                slip.pit_amount = Decimal('0')
+        elif slip.tax_resident_type == TaxResidentType.NON_RESIDENT:
+            slip.taxable_income = slip.gross_income
+            slip.pit_amount = round(slip.gross_income * Decimal('0.20'))
+        else:
+            non_taxable_allowances = min(slip.lunch_allowance, Decimal('730000')) + slip.phone_allowance + (slip.subsidy_amount or Decimal('0'))
+            union_fee = slip.union_fee_employee or Decimal('0')
+            income_before_relief = max(Decimal('0'), slip.gross_income - non_taxable_allowances - slip.total_insurance_employee - union_fee)
+            total_relief = slip.personal_relief_amount + slip.dependent_relief_amount
+            slip.taxable_income = max(Decimal('0'), income_before_relief - total_relief)
 
-        # Áp biểu thuế
-        tax_brackets = list(TaxBracket.objects.filter(is_active=True).order_by('bracket_level'))
-        calc_view = PayrollCalculateAPIView()
-        slip.pit_amount = calc_view._calculate_pit(slip.taxable_income, tax_brackets)
+            tax_brackets = list(TaxBracket.objects.filter(is_active=True).order_by('bracket_level'))
+            calc_view = PayrollCalculateAPIView()
+            slip.pit_amount = calc_view._calculate_pit(slip.taxable_income, tax_brackets)
 
         # Tính lại Net
-        slip.net_salary = max(Decimal('0'), slip.gross_income - slip.total_insurance_employee - slip.pit_amount - slip.advance_deductions - slip.other_deductions)
+        union_fee = slip.union_fee_employee or Decimal('0')
+        slip.net_salary = max(Decimal('0'), slip.gross_income - slip.total_insurance_employee - union_fee - slip.pit_amount - slip.advance_deductions - slip.other_deductions)
         slip.save()
 
         # Cập nhật tổng của kỳ
