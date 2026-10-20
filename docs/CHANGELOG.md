@@ -2,6 +2,44 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.1] - 2026-10-20 (Chuẩn Hóa Quy Tắc Ký Hiệu Hợp Đồng Lao Động & Phụ Lục HĐ Chuẩn BIM ERP: [Loại HĐ].[Năm].[SốTT] & [Mã HĐ].PL[SốTT])
+
+### 1. Chuẩn Hóa Cú Pháp Sinh Mã Hợp Đồng Lao Động (apps/personnel/models.py, apps/personnel/serializers.py):
+- **Cấu trúc ký hiệu:** [Loại hợp đồng].[Năm].[SốTT trong năm]
+  * **Tiền tố theo loại hợp đồng:**
+    - Hợp đồng lao động chính thức / xác định thời hạn / không xác định thời hạn: HDLD (Ví dụ: HDLD.2026.0015).
+    - Hợp đồng Thử việc: HDTV (Ví dụ: HDTV.2026.0016).
+    - Hợp đồng Khoán việc / Thời vụ / Cộng tác viên: HDKV (Ví dụ: HDKV.2026.0017).
+  * **SốTT trong năm:** Gồm 4 chữ số tăng dần (0001, 0002, ..., 0015), được cấp phát liên tục trong từng năm tài chính dựa trên số thứ tự lớn nhất của năm đó.
+- **Tự động hóa Backend:**
+  * Bổ sung class method LaborContract.generate_next_contract_number(contract_type, year).
+  * Tự động sinh mã hợp đồng chuẩn nếu người dùng để trống contract_number khi gọi API hoặc lưu model.
+  * Hỗ trợ API đề xuất mã: GET /api/personnel/contracts/?action=suggest_number&type=...&year=...
+
+### 2. Chuẩn Hóa Cú Pháp Sinh Mã Phụ Lục Hợp Đồng (apps/personnel/models.py, apps/personnel/serializers.py):
+- **Cấu trúc ký hiệu:** [Mã Hợp Đồng].PL[SốTT phụ lục]
+  * Ví dụ:
+    - Cho HDLD.2026.0015: Phụ lục 1 là HDLD.2026.0015.PL1, Phụ lục 2 là HDLD.2026.0015.PL2...
+    - Cho HDTV.2026.0016: HDTV.2026.0016.PL1, HDTV.2026.0016.PL2...
+    - Cho HDKV.2026.0017: HDKV.2026.0017.PL1...
+- **Tự động hóa Backend:**
+  * Bổ sung class method ContractAppendix.generate_next_appendix_number(contract).
+  * Bổ sung trường suggested_appendix_number trong LaborContractSerializer để giao diện tự động điền số phụ lục tiếp theo.
+
+### 3. Trải Nghiệm Người Dùng (UI/UX) — Thích Ứng Động & Gợi Ý Mã 1 Chạm (static/js/app.js, view_contract_detail.html):
+- **Form Tạo Mới & Chi Tiết Hợp Đồng (view_contract_detail.html):**
+  * Tự động lấy số HĐ đề xuất chuẩn HDLD.2026.0015 khi mở trang tạo mới (openCreateContractPage).
+  * Tự động chuyển đổi tiền tố mã (HDLD <-> HDTV <-> HDKV) khi người dùng thay đổi dropdown Loại Hợp Đồng (onContractTypeChange).
+  * Khi mở form Ký phụ lục inline (toggleAddAppendixInline): Tự động điền số phụ lục kế tiếp chuẩn [Mã HĐ].PL[nextIndex] (ví dụ: HDLD.2026.0015.PL1).
+
+### 4. Đồng Bộ Dữ Liệu Thực Tế & Kiểm Thử Toàn Diện (System Verification):
+- **Kịch bản đồng bộ dữ liệu CSDL (scripts/sync_contract_appendix_naming.py):**
+  * Đã chuẩn hóa toàn bộ các hợp đồng cũ (như HDLD-KT001-2024 -> HDLD.2024.0004, v.v.) và các phụ lục cũ trên cả Local DB và Production VPS DB.
+- **Cú pháp JavaScript:** node -c static/js/app.js -> 100% Passed.
+- **Django Unit Tests:** python manage.py test apps.personnel.tests --keepdb -> 12/12 Passed.
+- **Toàn bộ hệ thống:** python manage.py test --keepdb -> 107/107 Passed (Zero-Regression).
+- **Triển khai VPS:** Đã deploy, collect static và restart container web trên VPS 149.118.60.194 an toàn.
+
 ## [v3.6.0] - 2026-10-20 (Nâng Cấp Trải Nghiệm Điều Hướng: Tính Năng Hover Peek Cho Sidebar Desktop Khi Đang Hide & Bảo Toàn 100% Drawer Mobile)
 
 ### 1. Trải Nghiệm Hover Peek Tốc Độ Cao Trên Màn Hình Desktop (`static/js/app.js`, `static/css/main.css`):
@@ -20,9 +58,12 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * Cơ chế Hover Peek chỉ được kích hoạt khi màn hình `>= 1024px` và có con trỏ chuột (`window.matchMedia('(hover: hover)').matches`), hoàn toàn không gây ảnh hưởng đến thao tác cảm ứng chạm (Touch / Tap) trên điện thoại.
 
 ### 3. Kiểm Thử Hệ Thống (Verification):
-- **Cú pháp JavaScript:** `node -c static/js/app.js` $ightarrow$ 100% Passed.
-- **Django System Check:** `python manage.py check` $ightarrow$ 0 issues.
-- **Unit & Integrity Tests:** `python manage.py test core.tests.SidebarHoverPeekTestCase core.tests.FrontendSyntaxIntegrityTestCase --keepdb` $ightarrow$ 4/4 Passed.
+- **Cú pháp JavaScript:** `node -c static/js/app.js` $
+ightarrow$ 100% Passed.
+- **Django System Check:** `python manage.py check` $
+ightarrow$ 0 issues.
+- **Unit & Integrity Tests:** `python manage.py test core.tests.SidebarHoverPeekTestCase core.tests.FrontendSyntaxIntegrityTestCase --keepdb` $
+ightarrow$ 4/4 Passed.
 
 ## [v3.5.9] - 2026-10-20 (Chuẩn Hóa Phân Hệ Nhân Sự Theo BIM ERP: Tách Biệt Hồ Sơ Cá Nhân & Quản Trị Tính Lương Bằng Hợp Đồng Lao Động Hiện Hành)
 
