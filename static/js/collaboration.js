@@ -891,35 +891,34 @@ async function populateTaskDetailAssigneeSelect(targetDepartment = null, selecte
 
     select.innerHTML = `<option value="">-- Chọn người phụ trách (${deptName}) --</option>`;
 
-    const deptUsers = officeDirectoryUsers.filter(u => (u.department === selectedDept || u.department_code === selectedDept));
-    const otherUsers = officeDirectoryUsers.filter(u => !(u.department === selectedDept || u.department_code === selectedDept));
+    // CHỈ LẤY DUY NHẤT NHÂN SỰ THUỘC ĐÚNG PHÒNG BAN ĐÃ CHỌN ĐỂ LỌC DỄ DÀNG
+    const deptUsers = (officeDirectoryUsers || []).filter(u => {
+        const userDept = String(u.department || u.department_code || '').trim().toUpperCase();
+        const targetDept = String(selectedDept || '').trim().toUpperCase();
+        return userDept === targetDept;
+    });
 
     if (deptUsers.length > 0) {
-        const grp = document.createElement('optgroup');
-        grp.label = `Nhân sự ${deptName} (${deptUsers.length})`;
         deptUsers.forEach(u => {
             const opt = document.createElement('option');
             opt.value = u.user_id;
             opt.textContent = `${cleanPersonName(u.full_name)} — ${u.role || u.position || ''}`;
-            grp.appendChild(opt);
+            select.appendChild(opt);
         });
-        select.appendChild(grp);
+    } else {
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = "";
+        emptyOpt.disabled = true;
+        emptyOpt.textContent = `(Chưa có nhân sự trong ${deptName})`;
+        select.appendChild(emptyOpt);
     }
 
-    if (otherUsers.length > 0) {
-        const grpOther = document.createElement('optgroup');
-        grpOther.label = 'Nhân sự phòng ban khác';
-        otherUsers.forEach(u => {
-            const opt = document.createElement('option');
-            opt.value = u.user_id;
-            opt.textContent = `${cleanPersonName(u.full_name)} (${u.department_name}) — ${u.role || ''}`;
-            grpOther.appendChild(opt);
-        });
-        select.appendChild(grpOther);
-    }
-
-    if (selectedAssigneeId) {
+    if (selectedAssigneeId && select.querySelector(`option[value="${selectedAssigneeId}"]`)) {
         select.value = selectedAssigneeId;
+    } else if (deptUsers.length > 0) {
+        select.value = deptUsers[0].user_id;
+    } else {
+        select.value = "";
     }
 }
 window.populateTaskDetailAssigneeSelect = populateTaskDetailAssigneeSelect;
@@ -1905,68 +1904,53 @@ async function populateAssigneeSelect(targetDepartment = null) {
 
     select.innerHTML = `<option value="">-- Chọn người phụ trách (${deptName}) --</option>`;
     const myId = window.CURRENT_USER?.id;
-    const canAssignOthers = collaborationUserPerms ? collaborationUserPerms.can_assign_others : true;
 
-    // Phân loại: nhân sự thuộc phòng ban đã chọn & nhân sự phòng ban khác
-    const deptUsers = (officeDirectoryUsers || []).filter(u => (u.department === selectedDept || u.department_code === selectedDept));
-    const otherUsers = (officeDirectoryUsers || []).filter(u => !(u.department === selectedDept || u.department_code === selectedDept));
+    // CHỈ LẤY DUY NHẤT NHÂN SỰ THUỘC ĐÚNG PHÒNG BAN ĐÃ CHỌN ĐỂ LỌC DỄ DÀNG
+    const deptUsers = (officeDirectoryUsers || []).filter(u => {
+        const userDept = String(u.department || u.department_code || '').trim().toUpperCase();
+        const targetDept = String(selectedDept || '').trim().toUpperCase();
+        return userDept === targetDept;
+    });
 
     if (deptUsers.length > 0) {
-        const grp = document.createElement('optgroup');
-        grp.label = `Nhân sự ${deptName} (${deptUsers.length})`;
         deptUsers.forEach(u => {
             const opt = document.createElement('option');
             opt.value = u.user_id;
             const isMe = u.user_id === myId;
             if (isMe) {
                 opt.textContent = `${cleanPersonName(u.full_name)} — [Chính bạn - Việc cá nhân]`;
-                grp.appendChild(opt);
-            } else if (u.can_assign) {
+                select.appendChild(opt);
+            } else if (u.can_assign !== false) {
                 opt.textContent = `${cleanPersonName(u.full_name)} — ${u.role || u.position || ''}`;
-                grp.appendChild(opt);
+                select.appendChild(opt);
             } else {
                 opt.textContent = `${cleanPersonName(u.full_name)} — [Cấp trên / Ngoài thẩm quyền]`;
                 opt.disabled = true;
                 opt.className = 'text-slate-400 bg-slate-50';
-                grp.appendChild(opt);
+                select.appendChild(opt);
             }
         });
-        select.appendChild(grp);
     } else {
         const emptyOpt = document.createElement('option');
+        emptyOpt.value = "";
         emptyOpt.disabled = true;
-        emptyOpt.textContent = `(Chưa có nhân sự thuộc ${deptName})`;
+        emptyOpt.textContent = `(Chưa có nhân sự trong ${deptName})`;
         select.appendChild(emptyOpt);
     }
 
-    // Nhóm nhân sự phòng ban khác
-    if (otherUsers.length > 0 && canAssignOthers) {
-        const grpOther = document.createElement('optgroup');
-        grpOther.label = 'Nhân sự các phòng ban khác';
-        otherUsers.forEach(u => {
-            const opt = document.createElement('option');
-            opt.value = u.user_id;
-            const isMe = u.user_id === myId;
-            if (isMe) {
-                opt.textContent = `${cleanPersonName(u.full_name)} (${u.department_name}) — [Chính bạn]`;
-                grpOther.appendChild(opt);
-            } else if (u.can_assign) {
-                opt.textContent = `${cleanPersonName(u.full_name)} (${u.department_name}) — ${u.role || ''}`;
-                grpOther.appendChild(opt);
-            }
-        });
-        select.appendChild(grpOther);
-    }
-
-    // Khôi phục giá trị cũ nếu hợp lệ
-    if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
+    // Nếu giá trị hiện tại vẫn thuộc đúng phòng ban mới này thì giữ nguyên
+    if (currentVal && select.querySelector(`option[value="${currentVal}"]:not([disabled])`)) {
         select.value = currentVal;
     } else if (deptUsers.length > 0) {
         // Tự động chọn nhân sự đầu tiên hợp lệ trong phòng ban
-        const firstAssignable = deptUsers.find(u => u.can_assign || u.user_id === myId);
+        const firstAssignable = deptUsers.find(u => u.can_assign !== false || u.user_id === myId);
         if (firstAssignable) {
             select.value = firstAssignable.user_id;
+        } else {
+            select.value = "";
         }
+    } else {
+        select.value = "";
     }
 }
 window.populateAssigneeSelect = populateAssigneeSelect;
