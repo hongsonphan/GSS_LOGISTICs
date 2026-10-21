@@ -2669,9 +2669,9 @@ function renderRoleDonut(role, optIdx = 1) {
         let legHtml = '';
         curOpt.items.forEach(it => {
             legHtml += `
-                <div class="flex justify-between items-center text-slate-700 text-xs 2xl:text-[13px]">
-                    <span class="flex items-center truncate mr-2"><span class="w-2.5 h-2.5 rounded-full ${it.color} mr-2 shrink-0"></span> <span class="truncate font-medium">${it.name}</span></span>
-                    <strong class="font-heading text-slate-900 shrink-0 font-bold text-xs 2xl:text-[13px]">${it.val}</strong>
+                <div class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 border border-transparent hover:border-slate-100">
+                    <span class="flex items-center min-w-0 mr-2"><span class="w-2.5 h-2.5 rounded-full ${it.color} mr-1.5 shrink-0 shadow-2xs"></span> <span class="truncate font-semibold text-slate-800 text-[11px] 2xl:text-xs">${it.name}</span></span>
+                    <strong class="font-heading text-slate-900 shrink-0 font-bold text-[11.5px] 2xl:text-xs tabular-nums">${it.val}</strong>
                 </div>
             `;
         });
@@ -3081,45 +3081,12 @@ function renderPivotChartCanvas(canvasId, pivotRes, isPreview = false, isSlot2 =
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: (actualType === 'doughnut' || actualType === 'pie'),
-                    position: isSlot2 ? 'bottom' : 'right',
+                    display: isPreview && (actualType === 'doughnut' || actualType === 'pie'),
+                    position: 'bottom',
                     labels: {
                         font: { family: "'Inter', sans-serif", size: 10.5, weight: '600' },
                         boxWidth: 9,
-                        padding: 6,
-                        generateLabels: function(chart) {
-                            const data = chart.data;
-                            if (data.labels && data.labels.length && data.datasets && data.datasets.length) {
-                                const dataset = data.datasets[0];
-                                const total = dataset.data.reduce((a, b) => a + (Number(b) || 0), 0);
-                                return data.labels.map((label, i) => {
-                                    const val = dataset.data[i] || 0;
-                                    let valText = '';
-                                    if (typeof val === 'number') {
-                                        if (val >= 1000000) {
-                                            valText = (val / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tr';
-                                        } else if (val >= 1000) {
-                                            valText = new Intl.NumberFormat('vi-VN').format(val);
-                                        } else {
-                                            valText = String(val);
-                                        }
-                                    } else {
-                                        valText = String(val);
-                                    }
-                                    const pct = total > 0 ? (val / total * 100).toFixed(1) + '%' : '';
-                                    const bg = Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[i % dataset.backgroundColor.length] : dataset.backgroundColor;
-                                    return {
-                                        text: `${label}: ${valText} (${pct})`,
-                                        fillStyle: bg,
-                                        strokeStyle: '#ffffff',
-                                        lineWidth: 1,
-                                        hidden: !chart.getDataVisibility(i),
-                                        index: i
-                                    };
-                                });
-                            }
-                            return [];
-                        }
+                        padding: 6
                     }
                 },
                 tooltip: {
@@ -3372,18 +3339,23 @@ function renderCustomChartOnSlot(slot, pivotRes) {
             }
         }
 
-        // Cập nhật danh sách phân bổ bên dưới Biểu đồ 2
+        // Cập nhật danh sách thông số / khách hàng ở cột bên phải Biểu đồ 2
         const legendEl = document.getElementById('donut-legend-container');
         if (legendEl && Array.isArray(pivotRes.table_rows)) {
-            const displayRows = pivotRes.table_rows.slice(0, 4);
-            const palette = ['bg-teal-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-indigo-500'];
-            legendEl.innerHTML = displayRows.map((r, i) => `
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center truncate mr-2">
-                        <span class="w-2 h-2 rounded-full ${palette[i % palette.length]} mr-1.5 shrink-0"></span> 
-                        <span class="truncate">${escapeHtml(r.label)}</span>
+            const palette = [
+                'bg-teal-500', 'bg-emerald-500', 'bg-blue-500', 'bg-amber-500', 
+                'bg-purple-500', 'bg-rose-500', 'bg-indigo-500', 'bg-cyan-500', 'bg-orange-500', 'bg-slate-400'
+            ];
+            legendEl.innerHTML = pivotRes.table_rows.map((r, i) => `
+                <div class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                    <span class="flex items-center min-w-0 mr-2">
+                        <span class="w-2.5 h-2.5 rounded-full ${palette[i % palette.length]} mr-1.5 shrink-0 shadow-2xs"></span> 
+                        <span class="truncate font-semibold text-slate-800 text-[11px] 2xl:text-xs" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span>
                     </span>
-                    <strong class="font-heading text-slate-800 shrink-0 font-bold">${escapeHtml(r.formatted_value)} (${r.percentage}%)</strong>
+                    <div class="text-right shrink-0">
+                        <span class="font-bold text-slate-900 font-heading text-[11.5px] 2xl:text-xs tabular-nums">${escapeHtml(r.formatted_value)}</span>
+                        <span class="text-[10px] font-semibold text-slate-400 ml-1">(${r.percentage}%)</span>
+                    </div>
                 </div>
             `).join('');
         }

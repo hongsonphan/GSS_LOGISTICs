@@ -22,6 +22,22 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * 121/121 automated tests passed (`python manage.py test --keepdb`).
   * Kiểm thử cú pháp JavaScript đạt chuẩn 100% (`node -c static/js/app.js`).
 
+## [v3.8.3] - 2026-10-21 (Thiết Kế Lại Bố Cục Biểu Đồ Donut Ngang & Loại Bỏ Hoàn Toàn Trùng Lặp Thông Tin)
+
+### 1. Chuyển Đổi Sang Bố Cục Ngang Đối Xứng 2 Cột (Side-by-Side Chart & Metrics Layout):
+- **Cột Trái (48% width): Vòng Tròn Donut Mở Rộng Gần Full Ô (Maximized Donut Canvas):**
+  * Tắt triệt để legend nội bộ của Chart.js (`legend: { display: false }`), giải phóng 100% diện tích bên dưới.
+  * Đường kính vòng tròn Donut được Chart.js tự động phóng to tối đa, nở rộng gần như chạm mép khung, to tròn, thoáng đãng và bề thế.
+  * Tâm vòng tròn hiển thị số TỔNG tự động co giãn (`14px - 15px`), chữ TỔNG thanh thoát bên dưới.
+  * Trên các lát cắt dải màu Donut vẫn hiển thị đầy đủ các con số con (`5,5 tr`, `4,4 tr`...) có viền trắng sắc nét.
+- **Cột Phải (52% width): Bảng Danh Sách Khách Hàng / Thông Số Phân Bổ (Dedicated Metrics Panel):**
+  * Toàn bộ danh sách Khách hàng / Đối tượng được bố trí sang cột bên phải với thanh cuộn mượt mà `custom-scrollbar`.
+  * Mỗi dòng hiển thị tinh tế: Dấu chấm tròn màu đại diện lát cắt, Tên viết tắt khách hàng, Giá trị số tiền đậm nét và Tỷ lệ phần trăm `(%)`.
+  * Hiệu ứng hover nổi bật nền xám nhạt hiện đại, không còn bị chèn ép hoặc hiển thị lặp lại 2 lần thông tin như trước.
+
+### 2. Tinh Chỉnh Tỷ Lệ Chiều Rộng 2 Khối Biểu Đồ Trên Dashboard:
+- Điều chỉnh tỷ lệ mặc định giữa Biểu đồ 1 và Biểu đồ 2 từ `65% / 35%` sang **`58% / 42%`**, tạo không gian lý tưởng cho Biểu đồ 2 phô diễn trọn vẹn cả vòng tròn lớn và danh sách khách hàng chi tiết.
+
 ## [v3.8.2] - 2026-10-21 (Thu Gọn Số Tổng Hài Hòa & Hiển Thị Số Liệu Con Trên Từng Ô Lát Cắt Donut)
 
 ### 1. Thu Gọn Số Tổng Tâm Donut Tự Động Theo Độ Dài Chuỗi (Harmonious Donut Center):

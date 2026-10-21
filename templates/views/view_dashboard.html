@@ -186,7 +186,7 @@
     <div id="dashboard-row-charts" class="flex flex-col lg:flex-row items-stretch gap-0 shrink-0 transition-all duration-300 relative">
         
         <!-- Biểu đồ 1: Cột & Đường Xu Hướng Đa Chiều Hoặc Tùy Biến (Ô 1) -->
-        <div id="dash-chart-card-1" class="bg-white p-3 2xl:p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between min-w-[280px] w-full lg:w-[65%] shrink-0">
+        <div id="dash-chart-card-1" class="bg-white p-3 2xl:p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between min-w-[280px] w-full lg:w-[58%] shrink-0">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5 pb-1.5 border-b border-slate-100">
                 <div class="truncate mr-1">
                     <h3 class="text-[13.5px] 2xl:text-[14px] font-bold text-slate-800 flex items-center font-heading truncate">
@@ -244,8 +244,7 @@
         </div>
 
         <!-- Biểu đồ 2: Cơ Cấu Hoặc Tùy Biến Đa Chiều (Ô 2) -->
-        <div id="dash-chart-card-2" class="bg-white p-3 2xl:p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between min-w-[260px] w-full lg:w-[35%] shrink-0">
-            <div>
+        <div id="dash-chart-card-2" class="bg-white p-3 2xl:p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between min-w-[300px] w-full lg:w-[42%] shrink-0">
                 <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 gap-1 flex-wrap">
                     <div class="truncate mr-1">
                         <h3 class="text-[13.5px] 2xl:text-[14px] font-bold text-slate-800 flex items-center font-heading truncate">
@@ -280,29 +279,31 @@
                     </div>
                 </div>
 
-                <!-- Canvas Biểu đồ 2 -->
-                <div class="relative w-full h-[155px] xl:h-[175px] 2xl:h-[215px] flex items-center justify-center">
+            <!-- Body Biểu đồ 2: Bố trí ngang cân đối (Vòng tròn to bên Trái - Thông số bên Phải) -->
+            <div class="flex-1 flex flex-col sm:flex-row items-center gap-3 pt-1 min-h-0 w-full overflow-hidden" id="dash-donut-body-wrapper">
+                <!-- Cột Trái: Canvas Vòng Tròn Donut mở rộng to đẹp -->
+                <div class="relative w-full sm:w-[48%] h-[165px] xl:h-[185px] 2xl:h-[220px] flex items-center justify-center shrink-0">
                     <canvas id="bgd-donut-chart"></canvas>
                     <div id="donut-center-container" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span class="text-base 2xl:text-lg font-black text-slate-800 font-heading tracking-tight text-center max-w-[80%] truncate" id="donut-center-value">62.5%</span>
-                        <span class="text-[10px] 2xl:text-[10.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5" id="donut-center-label">Khai Thác</span>
+                        <span class="text-sm 2xl:text-base font-black text-slate-800 font-heading tracking-tight text-center max-w-[85%] truncate" id="donut-center-value">62.5%</span>
+                        <span class="text-[9.5px] 2xl:text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-0.5" id="donut-center-label">Khai Thác</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Chú thích / Tóm tắt chi tiết dưới Biểu Đồ 2 -->
-            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1.5 text-xs 2xl:text-[13px]" id="donut-legend-container">
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5"></span> Đang có hàng (Active)</span>
-                    <strong class="font-heading text-slate-800 font-bold" id="legend-fleet-active">5 xe (62.5%)</strong>
-                </div>
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-teal-500 mr-1.5"></span> Sẵn sàng bãi (Idle)</span>
-                    <strong class="font-heading text-slate-800 font-bold" id="legend-fleet-idle">3 xe (37.5%)</strong>
-                </div>
-                <div class="flex justify-between items-center text-slate-600">
-                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-rose-500 mr-1.5"></span> Bảo dưỡng (Maintenance)</span>
-                    <strong class="font-heading text-slate-800 font-bold" id="legend-fleet-maint">0 xe (0.0%)</strong>
+                <!-- Cột Phải: Danh Sách Thông Số / Khách Hàng Bên Cạnh -->
+                <div class="w-full sm:w-[52%] flex-1 overflow-y-auto max-h-[165px] xl:max-h-[185px] 2xl:max-h-[220px] pr-1 space-y-1 text-xs 2xl:text-[12.5px] custom-scrollbar" id="donut-legend-container">
+                    <div class="flex justify-between items-center p-1 rounded-lg text-slate-600">
+                        <span class="flex items-center truncate mr-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5 shrink-0"></span> <span class="truncate">Đang có hàng (Active)</span></span>
+                        <strong class="font-heading text-slate-800 font-bold shrink-0" id="legend-fleet-active">5 xe (62.5%)</strong>
+                    </div>
+                    <div class="flex justify-between items-center p-1 rounded-lg text-slate-600">
+                        <span class="flex items-center truncate mr-2"><span class="w-2.5 h-2.5 rounded-full bg-teal-500 mr-1.5 shrink-0"></span> <span class="truncate">Sẵn sàng bãi (Idle)</span></span>
+                        <strong class="font-heading text-slate-800 font-bold shrink-0" id="legend-fleet-idle">3 xe (37.5%)</strong>
+                    </div>
+                    <div class="flex justify-between items-center p-1 rounded-lg text-slate-600">
+                        <span class="flex items-center truncate mr-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-1.5 shrink-0"></span> <span class="truncate">Bảo dưỡng (Maintenance)</span></span>
+                        <strong class="font-heading text-slate-800 font-bold shrink-0" id="legend-fleet-maint">0 xe (0.0%)</strong>
+                    </div>
                 </div>
             </div>
         </div>
