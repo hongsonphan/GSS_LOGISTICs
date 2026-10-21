@@ -1104,7 +1104,7 @@ class ReportsAPIView(APIView):
         # Phân định rõ ràng: Đối soát Khách hàng (Thương mại) vs Quyết toán Tài xế (Nội bộ).
         # =========================================================================
         customer_ar_map = {}
-        all_customers = Customer.objects.filter(is_deleted=False)
+        all_customers = Customer.objects.all()
         for cust in all_customers:
             customer_ar_map[cust.id] = {
                 'customer_id': cust.id,
@@ -1164,16 +1164,17 @@ class ReportsAPIView(APIView):
             cust_obj = t.customer
             cid = cust_obj.id if cust_obj else None
             
-            if not cid:
+            if not cid or cid not in customer_ar_map:
                 c_name = cust_obj.name if cust_obj else 'Khách Vãng Lai'
-                cid = f"adhoc_{c_name}"
+                if not cid:
+                    cid = f"adhoc_{c_name}"
                 if cid not in customer_ar_map:
                     customer_ar_map[cid] = {
                         'customer_id': cid,
-                        'customer_code': cust_obj.code if cust_obj else '-',
+                        'customer_code': getattr(cust_obj, 'code', '-') or '-',
                         'customer_name': c_name,
-                        'tax_code': '-',
-                        'contact_phone': '-',
+                        'tax_code': getattr(cust_obj, 'tax_code', '-') or '-',
+                        'contact_phone': getattr(cust_obj, 'phone', '-') or '-',
                         'trips_count': 0,
                         'settled_trips_count': 0,           # Đã quyết toán với khách (Tính nợ)
                         'pending_settlement_trips_count': 0,# Chờ quyết toán với khách (Chưa tính nợ)

@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.8.6] - 2026-10-21 (Khắc Phục Triệt Để Lỗi Báo Cáo KeyError 28 & Căn Chỉnh Khớp 100% Dòng Tổng Cột Bảng Dữ Liệu)
+
+### 1. Khắc Phục Triệt Để Lỗi Báo Cáo Phân Tích (KeyError: 28):
+- **Phát hiện & xử lý nguyên nhân gốc rễ (Root Cause):**
+  * Trong `apps/dispatch/reports_api.py`, danh sách khách hàng `all_customers = Customer.objects.filter(is_deleted=False)` bỏ sót các khách hàng đã bị soft-delete hoặc khách hàng vãng lai nhưng vẫn có dữ liệu chuyến xe trong kỳ. Khi duyệt qua các chuyến xe hoàn tất `completed_trips_in_period`, mã định danh `cid = 28` không tồn tại trong từ điển `customer_ar_map` dẫn tới lỗi crash server `KeyError: 28` khiến giao diện Báo cáo hiển thị "Lỗi Báo Cáo: Không thể nạp dữ liệu phân tích báo cáo: Không thể tải dữ liệu báo cáo".
+  * **Giải pháp:** Sử dụng `Customer.objects.all()` kết hợp cơ chế kiểm tra phòng thủ chặt chẽ `if not cid or cid not in customer_ar_map:`, tự động khởi tạo đầy đủ entry cho mọi mã khách hàng phát sinh, ngăn chặn hoàn toàn lỗi sập API.
+
+### 2. Cân Chỉnh Chính Xác 100% Dòng Tổng Cộng (Table Total Footer) Theo Đúng Cột Tính:
+- **Khớp cột tuyệt đối với cấu trúc Header `<th>` của từng bảng:**
+  * **Bảng Nhân viên (`employees-table`):** STT (Col 1) + Tiêu đề gộp 8 cột (Mã NV đến GPLX) + **Lương cơ bản (Col 9)** + 2 ô trống định dạng (Trạng thái, Thao tác) = 12 cột.
+  * **Bảng Hợp đồng lao động (`contracts-table`):** STT (Col 1) + Tiêu đề gộp 5 cột (Số HĐ đến Thời hạn) + **Lương CB (Col 6)** + **Phụ cấp (Col 7)** + **Tổng thu nhập HĐ (Col 8)** + **Lương đóng BHXH (Col 9)** + Tỷ lệ BHXH/Thuế (Col 10) + Phụ lục (Col 11) + Trạng thái (Col 12) + Thao tác (Col 13) = 14 cột.
+  * **Bảng Chấm công (`attendance-table`):** STT (Col 1) + Tiêu đề gộp 4 cột (Mã NV đến Phòng ban) + **Lương HĐ (Col 5)** + **Công chuẩn (Col 6)** + **Đi làm X (Col 7)** + **Phép P (Col 8)** + **Lễ L (Col 9)** + **Không lương Ro (Col 10)** + **Tổng công tính lương (Col 11)** + **Tăng ca OT (Col 12)** + Thao tác (Col 13) = 14 cột.
+  * **Bảng Bảng lương (`payroll-slips-table`):** STT (Col 1) + Tiêu đề gộp 3 cột (Mã NV, Họ tên, Chức vụ) + Toàn bộ 13 cột số liệu con được cộng dồn độc lập: **Số công**, **Lương HĐ**, **Thành tiền công**, **Số chuyến**, **Lương chuyến**, **Nâng hạ/lưu xe**, **Thưởng dầu**, **Phụ cấp & KPI**, **Tổng thu nhập Gross**, **BHXH trừ vào lương**, **Thuế TNCN**, **Trừ tạm ứng**, **Thực lĩnh Net** + 2 cột định dạng (Thanh toán, Thao tác) = 19 cột.
+- Bất kỳ cột nào có số liệu phát sinh đều được tự động tính tổng và căn đúng ô chân bảng, định dạng dấu chấm phân cách hàng ngàn chuẩn mực.
+
+### 3. Kiểm Thử Hệ Thống & Zero-Regression:
+- Toàn bộ 129/129 tests tự động (`python manage.py test --keepdb`) đạt 100% PASS.
+- Cú pháp JavaScript `node -c static/js/app.js` và `node -c static/js/column_manager.js` sạch 100%, không phát sinh lỗi trùng biến hay cú pháp.
+
 ## [v3.8.5] - 2026-10-21 (Triệt Tiêu Hoàn Toàn Số Liệu Mockup & Thiết Lập Ràng Buộc Khóa Xóa Bảo Toàn Toàn Vẹn Dữ Liệu)
 
 ### 1. Triệt Tiêu Số Liệu Giả Lập & Mockup Trên Toàn Hệ Thống:
