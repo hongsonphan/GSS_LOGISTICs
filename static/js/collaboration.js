@@ -1334,7 +1334,7 @@ async function openTaskDetailDrawer(taskId) {
                 const byEl = document.getElementById('ext-banner-by');
                 if (byEl) byEl.textContent = cleanPersonName(t.extension_requested_by_info?.full_name) || 'Người phụ trách';
                 const atEl = document.getElementById('ext-banner-at');
-                if (atEl) atEl.textContent = t.extension_requested_at ? formatDateTimeDMY(t.extension_requested_at) : '';
+                if (atEl) atEl.textContent = t.extension_requested_at ? (typeof formatDateTime === 'function' ? formatDateTime(t.extension_requested_at) : t.extension_requested_at) : '';
             }
 
             if (btnOpenExt) {
@@ -3140,11 +3140,14 @@ function parseDateFlexible(dateStr) {
 }
 
 function formatDateTime(isoStr) {
+
     if (!isoStr) return '';
     const d = parseDateFlexible(isoStr);
     if (!d) return isoStr;
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
+window.formatDateTime = formatDateTime;
+window.formatDateTimeDMY = formatDateTime;
 
 function formatTimeOnly(isoStr) {
     if (!isoStr) return '';
