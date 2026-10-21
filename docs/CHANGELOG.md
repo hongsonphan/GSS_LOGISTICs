@@ -22,6 +22,22 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * 121/121 automated tests passed (`python manage.py test --keepdb`).
   * Kiểm thử cú pháp JavaScript đạt chuẩn 100% (`node -c static/js/app.js`).
 
+## [v3.8.1] - 2026-10-21 (Cân Bằng Kích Cỡ Trục Y & Tách Biệt Màu Sắc Tương Phản Doanh Thu - Chi Phí - Lợi Nhuận)
+
+### 1. Nâng Cấp Kích Thước & Độ Tương Phản Trục Tọa Độ Trái (Trục Y):
+- **Cân Bằng Hoàn Hảo Với Trục Ngang (Trục X):**
+  * Tăng font chữ các mốc số liệu trục Y (`0`, `1 tr`, `2 tr`, `3 tr`...) từ `11.5px / weight 600` lên **`12.5px / weight 700 (bold)`**.
+  * Chuyển đổi mã màu nhãn trục Y từ màu xám mờ (`#64748b` / `#94a3b8`) sang **màu đen than đậm nét (`#1e293b`)**, cân đối 100% với trục ngày tháng bên dưới, giúp người xem đọc mốc giá trị triệu đồng dễ dàng không cần căng mắt.
+
+### 2. Tách Biệt 3 Hệ Màu Tương Phản Sắc Nét Cho Doanh Thu - Chi Phí - Lợi Nhuận:
+- **Nguyên Tắc Phối Màu Độc Lập Chống Nhầm Lẫn:**
+  * 🔵 **Doanh Thu Cước (Revenue):** Chuyển sang màu **Xanh Dương Đậm (Royal Blue `#2563eb` / `rgba(37, 99, 235, 0.88)`)**, số liệu đỉnh cột màu `#1d4ed8` viền trắng sắc sảo.
+  * 🟠 **Chi Phí Vận Hành (Expense):** Giữ tone màu **Cam Hổ Phách Tương Phản (Amber `#f59e0b` / `rgba(245, 158, 11, 0.88)`)**, số liệu đỉnh cột màu `#b45309` viền trắng.
+  * 🟢 **Lợi Nhuận Gộp (Profit):** Đường Line màu **Xanh Ngọc Lục Bảo Tươi (Emerald Green `#059669`)**, điểm mốc có viền trắng 2.5px, số liệu trên line màu `#047857` viền trắng.
+- **Đồng Bộ Hệ Thống Chú Thích & Thẻ Tóm Tắt (Legend & Summary Cards):**
+  * Chú thích góc trên (`#bgd-chart-legend`): Icon vuông Xanh Dương (Doanh thu), Icon vuông Cam (Chi phí), Icon tròn Xanh Lá (Lợi nhuận).
+  * Thẻ tóm tắt đáy biểu đồ 1: Thẻ Doanh thu TB chuyển sang theme Xanh Dương (`bg-blue-50/70 border-blue-200 text-blue-800`), tương ứng nhịp nhàng với cột biểu đồ.
+
 ## [v3.8.0] - 2026-10-21 (Tăng Kích Thước Số Liệu & Nâng Cấp Typography Trực Quan Biểu Đồ Dashboard)
 
 ### 1. Tối Ưu Hóa Kích Thước & Độ Tương Phản Số Liệu Biểu Đồ (Data Labels & Typography):

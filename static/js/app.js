@@ -2374,11 +2374,14 @@ const chartDataLabelsPlugin = {
                 } else {
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'bottom';
-                    let textColor = '#0f766e';
-                    if (dataset.type === 'line') {
-                        textColor = '#047857';
-                    } else if (dataset.label && (dataset.label.toLowerCase().includes('chi phí') || dataset.label.toLowerCase().includes('phí'))) {
-                        textColor = '#b45309';
+                    let textColor = '#1e293b';
+                    const lbl = (dataset.label || '').toLowerCase();
+                    if (dataset.type === 'line' || lbl.includes('lợi nhuận')) {
+                        textColor = '#047857'; // Xanh lá cây đậm cho Lợi nhuận
+                    } else if (lbl.includes('doanh thu') || lbl.includes('lệnh điều')) {
+                        textColor = '#1d4ed8'; // Xanh dương đậm cho Doanh thu
+                    } else if (lbl.includes('chi phí') || lbl.includes('phí')) {
+                        textColor = '#b45309'; // Cam đất đậm cho Chi phí
                     } else if (dataset.borderColor) {
                         textColor = dataset.borderColor;
                     }
@@ -2453,29 +2456,42 @@ function renderBgdTrendChart(trend) {
         data: {
             labels: trend.labels,
             datasets: trend.datasets.map(ds => {
+                const labelLower = (ds.label || '').toLowerCase();
                 if (ds.type === 'line') {
+                    const isProfit = labelLower.includes('lợi nhuận');
+                    const lineColor = isProfit ? '#059669' : (ds.borderColor || '#10b981');
                     return {
                         label: ds.label,
                         type: 'line',
                         data: ds.data,
-                        borderColor: ds.borderColor || '#10b981',
-                        backgroundColor: ds.backgroundColor || '#10b981',
-                        borderWidth: 3,
-                        pointBackgroundColor: ds.borderColor || '#10b981',
+                        borderColor: lineColor,
+                        backgroundColor: lineColor,
+                        borderWidth: 3.5,
+                        pointBackgroundColor: lineColor,
                         pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        pointBorderWidth: 2.5,
+                        pointRadius: 4.5,
+                        pointHoverRadius: 6.5,
                         tension: 0.35,
                         order: ds.order || 1
                     };
+                }
+                // Tách biệt màu sắc rõ nét: Doanh Thu = Xanh Dương (Blue), Chi Phí = Cam Hổ Phách (Amber)
+                let barColor = ds.backgroundColor;
+                let hoverColor = ds.hoverBackgroundColor || ds.backgroundColor;
+                if (labelLower.includes('doanh thu') || labelLower.includes('lệnh điều')) {
+                    barColor = 'rgba(37, 99, 235, 0.88)'; // Xanh Dương Royal Blue
+                    hoverColor = 'rgba(29, 78, 216, 0.98)';
+                } else if (labelLower.includes('chi phí') || labelLower.includes('phí')) {
+                    barColor = 'rgba(245, 158, 11, 0.88)'; // Cam Hổ Phách Amber
+                    hoverColor = 'rgba(217, 119, 6, 0.98)';
                 }
                 return {
                     label: ds.label,
                     type: 'bar',
                     data: ds.data,
-                    backgroundColor: ds.backgroundColor,
-                    hoverBackgroundColor: ds.backgroundColor,
+                    backgroundColor: barColor,
+                    hoverBackgroundColor: hoverColor,
                     borderRadius: 6,
                     borderSkipped: false,
                     barPercentage: 0.65,
@@ -2531,8 +2547,8 @@ function renderBgdTrendChart(trend) {
                 y: {
                     grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
                     ticks: {
-                        font: { family: "'Inter', sans-serif", size: 11.5, weight: '600' },
-                        color: '#64748b',
+                        font: { family: "'Inter', sans-serif", size: 12.5, weight: '700' },
+                        color: '#1e293b',
                         callback: function(value) {
                             if (isCurrency && value >= 1000000) return (value / 1000000).toFixed(0) + ' tr';
                             return value;
@@ -3080,8 +3096,8 @@ function renderPivotChartCanvas(canvasId, pivotRes, isPreview = false, isSlot2 =
                 y: {
                     grid: { color: 'rgba(226, 232, 240, 0.6)' },
                     ticks: {
-                        font: { family: "'Inter', sans-serif", size: 11, weight: '600' },
-                        color: '#64748b',
+                        font: { family: "'Inter', sans-serif", size: 12.5, weight: '700' },
+                        color: '#1e293b',
                         callback: function(val) {
                             if (isCurrency && val >= 1000000) return (val / 1000000).toFixed(0) + ' tr';
                             return val;

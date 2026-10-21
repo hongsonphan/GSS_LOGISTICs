@@ -1047,28 +1047,28 @@ class DashboardBGDAPIView(APIView):
                             'label': 'Lợi Nhuận Gộp',
                             'type': 'line',
                             'data': chart_profit,
-                            'borderColor': '#10b981',
-                            'backgroundColor': '#10b981',
-                            'borderWidth': 3,
+                            'borderColor': '#059669',
+                            'backgroundColor': '#059669',
+                            'borderWidth': 3.5,
                             'order': 1
                         },
                         {
                             'label': 'Doanh Thu Cước',
                             'type': 'bar',
                             'data': chart_revenue,
-                            'backgroundColor': 'rgba(13, 148, 136, 0.85)',
+                            'backgroundColor': 'rgba(37, 99, 235, 0.88)',
                             'order': 2
                         },
                         {
                             'label': 'Chi Phí Vận Hành',
                             'type': 'bar',
                             'data': chart_expense,
-                            'backgroundColor': 'rgba(245, 158, 11, 0.75)',
+                            'backgroundColor': 'rgba(245, 158, 11, 0.88)',
                             'order': 3
                         }
                     ],
                     'summary': [
-                        {'label': rev_label, 'value': f"~{int(avg_rev):,} đ".replace(',', '.'), 'theme': 'teal'},
+                        {'label': rev_label, 'value': f"~{int(avg_rev):,} đ".replace(',', '.'), 'theme': 'blue'},
                         {'label': exp_label, 'value': f"~{int(avg_exp):,} đ".replace(',', '.'), 'theme': 'amber'},
                         {'label': margin_label, 'value': f"{profit_margin}%", 'theme': 'emerald'}
                     ]

@@ -351,11 +351,14 @@ const chartDataLabelsPlugin = {
                 } else {
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'bottom';
-                    let textColor = '#0f766e';
-                    if (dataset.type === 'line') {
-                        textColor = '#047857';
-                    } else if (dataset.label && (dataset.label.toLowerCase().includes('chi phí') || dataset.label.toLowerCase().includes('phí'))) {
-                        textColor = '#b45309';
+                    let textColor = '#1e293b';
+                    const lbl = (dataset.label || '').toLowerCase();
+                    if (dataset.type === 'line' || lbl.includes('lợi nhuận')) {
+                        textColor = '#047857'; // Xanh lá cây đậm cho Lợi nhuận
+                    } else if (lbl.includes('doanh thu') || lbl.includes('lệnh điều')) {
+                        textColor = '#1d4ed8'; // Xanh dương đậm cho Doanh thu
+                    } else if (lbl.includes('chi phí') || lbl.includes('phí')) {
+                        textColor = '#b45309'; // Cam đất đậm cho Chi phí
                     } else if (dataset.borderColor) {
                         textColor = dataset.borderColor;
                     }
