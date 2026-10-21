@@ -436,10 +436,6 @@ def news_detail_page_view(request, post_identifier):
     from apps.master_data.models import CompanyProfile
     from core.security import decode_news_hashid, get_news_hashid
 
-    # Yêu cầu đăng nhập hệ thống
-    if not request.user.is_authenticated:
-        return redirect(f"/login/?next={request.path}")
-
     # 1. Phân giải HashID hoặc ID nguyên bản (Hỗ trợ tương thích ngược)
     post_id = None
     is_raw_numeric_id = False
@@ -460,10 +456,15 @@ def news_detail_page_view(request, post_identifier):
     )
 
     # 2. Chuẩn hóa URL: Nếu truy cập bằng ID số thô (/news/2/),
-    # tự động redirect vĩnh viễn (301) sang URL HashID bảo mật (/news/<hashid>/)
+    # tự động redirect vĩnh viễn (301) sang URL HashID bảo mật (/news/<hashid>/) ngay lập tức
+    # (kể cả trước khi kiểm tra đăng nhập để trình duyệt cập nhật URL và ?next= luôn là HashID)
     secure_hashid = post.hashid
     if is_raw_numeric_id and secure_hashid:
         return redirect(f"/news/{secure_hashid}/", permanent=True)
+
+    # 3. Yêu cầu đăng nhập hệ thống
+    if not request.user.is_authenticated:
+        return redirect(f"/login/?next={request.path}")
 
     employee = getattr(request.user, 'employee', None)
     is_privileged = (

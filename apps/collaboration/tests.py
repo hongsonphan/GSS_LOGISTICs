@@ -637,13 +637,18 @@ class CollaborationTestSuite(TestCase):
             is_published=True
         )
 
-        # 2. Truy cập khi chưa đăng nhập -> Chuyển hướng về trang đăng nhập
+        # 2. Truy cập URL ID số nguyên cũ (/news/<id>/) khi chưa đăng nhập -> Vẫn Redirect 301 sang HashID chuẩn bảo mật (/news/<hashid>/)
         self.client.logout()
-        res_anon = self.client.get(f'/news/{post_public.id}/')
-        self.assertEqual(res_anon.status_code, 302)
-        self.assertIn('/login/', res_anon.url)
+        res_anon_old = self.client.get(f'/news/{post_public.id}/')
+        self.assertEqual(res_anon_old.status_code, 301)
+        self.assertEqual(res_anon_old.url, f'/news/{post_public.hashid}/')
 
-        # 3. Truy cập URL ID số nguyên cũ (/news/<id>/) -> Redirect 301 sang HashID chuẩn bảo mật (/news/<hashid>/)
+        # 2b. Truy cập HashID khi chưa đăng nhập -> Chuyển hướng 302 về trang đăng nhập kèm next mang HashID
+        res_anon_hash = self.client.get(f'/news/{post_public.hashid}/')
+        self.assertEqual(res_anon_hash.status_code, 302)
+        self.assertIn(f'/login/?next=/news/{post_public.hashid}/', res_anon_hash.url)
+
+        # 3. Truy cập URL ID số nguyên cũ khi đã đăng nhập -> Redirect 301 sang HashID chuẩn bảo mật
         self.client.force_login(self.accountant_user)
         res_old_url = self.client.get(f'/news/{post_public.id}/')
         self.assertEqual(res_old_url.status_code, 301)
