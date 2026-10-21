@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.9.6] - 2026-10-21 (Khắc Phục Lỗi Nút [Xóa] Nhân Sự Không Phản Hồi & Đồng Bộ Quy Trình Xóa Mềm An Toàn)
+
+### 1. Khắc Phục Lỗi Frontend — Hàm `deleteEmployeeItem`:
+- **Nguyên nhân sự cố:** Nút `[Xóa]` trên màn hình Chi tiết Hồ sơ nhân sự (`view_employee_form.html`) gọi hàm `confirmDeleteCurrentEmployee()`, hàm này cố gắng gọi `deleteEmployeeItem(id)`. Tuy nhiên, hàm `deleteEmployeeItem` chưa từng được định nghĩa trong `static/js/app.js`, gây ra lỗi Javascript `ReferenceError: deleteEmployeeItem is not defined`, làm cho hộp thoại xác nhận không bật lên và nút bấm hoàn toàn đứng im.
+- **Giải pháp xử lý:**
+  * Xây dựng hàm `deleteEmployeeItem(empId)` tích hợp hộp thoại xác nhận chuẩn BIM `showConfirmModal` (cảnh báo xóa mềm an toàn, icon thùng rác, nút Hủy / Xác Nhận).
+  * Gửi yêu cầu `DELETE /api/personnel/employees/${empId}/`, hiển thị thông báo kết quả qua Toast notification.
+  * Tự động điều hướng quay lại danh sách nhân sự (`backToPersonnel()`) và tải lại bảng dữ liệu (`loadEmployeesData()`).
+
+### 2. Tối Ưu Hóa & Đồng Bộ Xóa Mềm Ở Backend (`apps/personnel/api_views.py`):
+- **Bảo Vệ Tính Toàn Vẹn Dữ Liệu:** Kiểm tra ràng buộc và từ chối xóa nếu nhân sự đã phát sinh chuyến xe điều vận (`DispatchTrip`), tạm ứng tài xế (`DriverTripAdvance`), chứng từ chi phí (`TripExpense`) hoặc phiếu lương trong kỳ đã chốt/thanh toán (`PayrollSlip`).
+- **Đồng Bộ Xóa Mềm (Cascaded Soft-Delete):**
+  * Đánh dấu nhân sự `is_deleted = True`, `is_active = False`, cập nhật `deleted_at = timezone.now()`.
+  * Tự động chuyển toàn bộ hợp đồng lao động (`LaborContract`) liên quan sang `status = TERMINATED` và `is_deleted = True`.
+  * Đồng bộ xóa mềm danh sách người phụ thuộc (`EmployeeDependent`).
+  * Hủy gán xe nếu đang là tài xế chính của phương tiện (`Vehicle.current_driver = None`).
+  * Vô hiệu hóa tài khoản đăng nhập người dùng liên kết (`user.is_active = False`).
+
+---
+
 ## [v3.9.5] - 2026-10-21 (Rà Soát & Biên Soạn Chuẩn Hướng Dẫn Sử Dụng Người Dùng Cuối, Cổng Tài Xế Mobile, Tra Cứu Công Khai & Bộ Q&A 10 Tình Huống)
 
 ### 1. Trung Tâm Trợ Giúp Tương Tác & Tài Liệu Sổ Tay Người Dùng (`templates/help.html` & `docs/USER_GUIDE.md`):

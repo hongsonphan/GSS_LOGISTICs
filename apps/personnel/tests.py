@@ -597,3 +597,42 @@ class PersonnelHRMAPITestCase(TestCase):
 
         emp_thao.refresh_from_db()
         self.assertFalse(emp_thao.is_deleted)
+
+
+    def test_delete_employee_with_contracts_and_reasons(self):
+        # 1. Tạo nhân viên có hợp đồng lao động
+        emp = Employee.objects.create(
+            full_name='Nhân Viên Test Xóa',
+            phone_number='0944000111',
+            department=Department.HR,
+            role=EmployeeRole.DIRECTOR
+        )
+        contract = LaborContract.objects.create(
+            employee=emp,
+            contract_number='HDLD-TEST-DELETE-001',
+            contract_type=ContractType.DEFINITE_TERM,
+            start_date=datetime.date(2024, 1, 1),
+            status=ContractStatus.ACTIVE
+        )
+        dep = EmployeeDependent.objects.create(
+            employee=emp,
+            full_name='Người Phụ Thuộc Test',
+            relationship='Con',
+            start_date=datetime.date(2024, 1, 1)
+        )
+
+        # Xóa nhân viên -> thành công, hợp đồng và người phụ thuộc tự động đồng bộ soft-delete
+        res = self.client.delete(f'/api/personnel/employees/{emp.id}/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data.get('success'))
+
+        emp.refresh_from_db()
+        self.assertTrue(emp.is_deleted)
+        self.assertFalse(emp.is_active)
+
+        contract.refresh_from_db()
+        self.assertTrue(contract.is_deleted)
+        self.assertEqual(contract.status, ContractStatus.TERMINATED)
+
+        dep.refresh_from_db()
+        self.assertTrue(dep.is_deleted)

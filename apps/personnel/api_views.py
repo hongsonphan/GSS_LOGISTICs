@@ -144,6 +144,8 @@ class EmployeeDetailAPIView(APIView):
 
         from apps.dispatch.models import DispatchTrip
         from apps.billing.models import DriverTripAdvance, TripExpense
+        from apps.personnel.models import LaborContract, ContractStatus, EmployeeDependent, PayrollSlip, PayrollPeriodStatus
+        from apps.fleet.models import Vehicle
         from django.db.models import Q
 
         reasons = []
@@ -162,17 +164,56 @@ class EmployeeDetailAPIView(APIView):
         if e_count > 0:
             reasons.append(f"{e_count} chứng từ chi phí")
 
+        paid_slips_count = PayrollSlip.objects.filter(
+            employee=employee,
+            is_deleted=False,
+            period__status__in=[PayrollPeriodStatus.LOCKED, PayrollPeriodStatus.PAID]
+        ).count()
+        if paid_slips_count > 0:
+            reasons.append(f"{paid_slips_count} phiếu lương trong kỳ đã chốt/thanh toán")
+
         if reasons:
             return Response({
                 'error': f"Không thể xóa nhân sự '{employee.full_name}' ({employee.code}) vì đã phát sinh dữ liệu liên quan ({', '.join(reasons)}). Vui lòng xử lý các phát sinh trước khi xóa nhân sự này!"
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        now = timezone.now()
         employee.is_active = False
         employee.is_deleted = True
-        employee.save(update_fields=['is_active', 'is_deleted'])
+        employee.deleted_at = now
+        employee.save(update_fields=['is_active', 'is_deleted', 'deleted_at'])
+
+        # Đồng bộ soft-delete các hợp đồng lao động và phụ lục liên quan
+        LaborContract.objects.filter(employee=employee, is_deleted=False).update(
+            is_deleted=True,
+            deleted_at=now,
+            status=ContractStatus.TERMINATED
+        )
+
+        # Đồng bộ soft-delete người phụ thuộc
+        EmployeeDependent.objects.filter(employee=employee, is_deleted=False).update(
+            is_deleted=True,
+            deleted_at=now
+        )
+
+        # Xóa các phiếu lương trong kỳ DRAFT (chưa khóa) nếu có
+        PayrollSlip.objects.filter(
+            employee=employee,
+            is_deleted=False,
+            period__status=PayrollPeriodStatus.DRAFT
+        ).update(is_deleted=True)
+
+        # Hủy gán xe nếu đang là tài xế chính của phương tiện
+        Vehicle.objects.filter(current_driver=employee).update(current_driver=None)
+
+        # Tắt kích hoạt tài khoản đăng nhập nếu có liên kết
+        if employee.user:
+            employee.user.is_active = False
+            employee.user.save(update_fields=['is_active'])
+
         return Response({
             'success': True,
-            'message': f"Đã chuyển nhân sự '{employee.full_name}' ({employee.code}) sang trạng thái tạm ngưng công tác và xóa mềm."
+            'message': f"Đã chuyển nhân sự '{employee.full_name}' ({employee.code}) sang trạng thái tạm ngưng công tác và xóa mềm an toàn."
         })
 
 

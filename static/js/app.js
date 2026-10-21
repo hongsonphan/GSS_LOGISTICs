@@ -30762,6 +30762,50 @@ function enableEmployeeEdit() {
 }
 window.enableEmployeeEdit = enableEmployeeEdit;
 
+async function deleteEmployeeItem(empId) {
+    if (!empId) {
+        showToast('warning', 'Không xác định được ID hồ sơ nhân sự cần xóa!');
+        return;
+    }
+    const empName = document.getElementById('emp-full-name')?.value || 'nhân sự này';
+    const empCode = document.getElementById('emp-code')?.value || '';
+    const label = empCode ? `[${empCode}] ${empName}` : empName;
+
+    const confirmed = await showConfirmModal({
+        title: 'Xác Nhận Xóa Hồ Sơ Nhân Sự',
+        message: `Bạn có chắc chắn muốn xóa hồ sơ nhân sự "${label}" không?\n\nDữ liệu sẽ được lưu vết kiểm toán và chuyển sang trạng thái xóa mềm (Soft-Delete) an toàn.`,
+        confirmText: 'Xác Nhận Xóa',
+        cancelText: 'Hủy Bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
+
+    try {
+        const res = await fetchWithAuth(`/api/personnel/employees/${empId}/`, {
+            method: 'DELETE'
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && (data.success || res.status === 204)) {
+            showToast('success', data.message || `Đã xóa nhân sự ${label} thành công!`, 'Thành Công');
+            if (typeof backToPersonnel === 'function') {
+                backToPersonnel();
+            }
+            if (typeof loadEmployeesData === 'function') {
+                await loadEmployeesData();
+            }
+        } else {
+            const errMsg = data.error || data.message || 'Không thể xóa hồ sơ nhân sự này do đã phát sinh ràng buộc nghiệp vụ!';
+            showToast('danger', errMsg, 'Lỗi Xóa Nhân Sự');
+        }
+    } catch (err) {
+        console.error('Lỗi khi xóa nhân sự:', err);
+        showToast('danger', 'Lỗi kết nối máy chủ khi thực hiện xóa nhân sự!', 'Lỗi');
+    }
+}
+window.deleteEmployeeItem = deleteEmployeeItem;
+
 function confirmDeleteCurrentEmployee() {
     const id = document.getElementById('emp-edit-id')?.value;
     if (!id) {
