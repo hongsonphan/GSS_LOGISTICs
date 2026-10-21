@@ -139,6 +139,17 @@ async function fetchWithAuth(url, options = {}) {
             fetchOptions.headers = fallbackHeaders;
             res = await fetch(url, fetchOptions);
         }
+        if (res.status === 401 && !window._isRedirectingToLogin && !window.location.pathname.startsWith('/login')) {
+            window._isRedirectingToLogin = true;
+            console.warn('Phiên làm việc đã hết hạn. Đang chuyển hướng về trang đăng nhập...');
+            if (typeof showToast === 'function') {
+                showToast('Phiên làm việc đã hết hạn. Đang chuyển về trang đăng nhập...', 'warning');
+            }
+            setTimeout(() => {
+                const nextParam = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = `/login/?next=${nextParam}`;
+            }, 800);
+        }
     }
     return res;
 }
@@ -21030,7 +21041,11 @@ async function loadActiveMasterDataTab() {
         renderMasterDataPagedView();
     } catch (err) {
         console.error('Lỗi tải danh mục:', err);
-        tableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}</td></tr>`;
+        const isAuthError = (err.message || '').includes('401') || (err.message || '').includes('Unauthorized');
+        const errorContent = isAuthError
+            ? `Phiên đăng nhập đã hết hạn. Vui lòng <a href="/login/?next=${encodeURIComponent(window.location.pathname)}" class="underline text-teal-700 font-black hover:text-teal-900 ml-1">đăng nhập lại tại đây</a>.`
+            : `Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}`;
+        tableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>${errorContent}</td></tr>`;
         renderMasterDataPagination(0, 0, 0, 1, 1);
     }
 }
