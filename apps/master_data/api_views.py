@@ -1324,8 +1324,53 @@ class SubcontractorVehicleListCreateAPIView(MasterDataBaseAPIView):
 
 class SubcontractorVehicleDetailAPIView(MasterDataBaseAPIView):
     """
-    API Gỡ phương tiện khỏi Nhà xe Thầu phụ.
+    API Sửa / Gỡ phương tiện khỏi Nhà xe Thầu phụ.
     """
+    def put(self, request, pk, vehicle_id):
+        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+        veh = Vehicle.objects.filter(id=vehicle_id, subcontractor=sc, is_deleted=False).first()
+        if not veh:
+            return Response({'error': 'Không tìm thấy xe thuộc nhà xe này!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'license_plate' in data and data['license_plate'].strip():
+            new_plate = data['license_plate'].strip().upper()
+            existing = Vehicle.objects.filter(license_plate=new_plate, is_deleted=False).exclude(id=veh.id).first()
+            if existing:
+                return Response({'error': f'Biển số xe [{new_plate}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
+            veh.license_plate = new_plate
+
+        if 'vehicle_type' in data and data['vehicle_type']:
+            veh.vehicle_type = data['vehicle_type']
+
+        if 'brand' in data:
+            veh.brand = data['brand'].strip()
+
+        if 'payload_capacity_kg' in data and data['payload_capacity_kg']:
+            try:
+                veh.payload_capacity_kg = int(str(data['payload_capacity_kg']).replace('.', '').replace(',', ''))
+            except (ValueError, TypeError):
+                pass
+
+        veh.save()
+        return Response({
+            'success': True,
+            'message': f'Đã cập nhật phương tiện [{veh.license_plate}] thành công!',
+            'vehicle': {
+                'id': veh.id,
+                'license_plate': veh.license_plate,
+                'vehicle_type': veh.get_vehicle_type_display(),
+                'vehicle_type_code': veh.vehicle_type,
+                'brand': veh.brand,
+                'payload_capacity_kg': veh.payload_capacity_kg,
+            }
+        })
+
+    def patch(self, request, pk, vehicle_id):
+        return self.put(request, pk, vehicle_id)
+
     def delete(self, request, pk, vehicle_id):
         sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
         if not sc:

@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.1] - 2026-10-21 (Chế Độ Sửa Trực Tiếp Trên Bảng & Lưu Toàn Bộ Dữ Liệu Xe, Bác Tài Thuộc Nhà Xe 3PL)
+
+### 1. Chuẩn Hóa Cột "Thao Tác" Kèm Bộ Đôi Nút [Sửa | Xóa] Trên 2 Bảng Con Nhà Xe:
+- **Đổi Tên Cột:** Đổi tiêu đề cột từ `Xóa` thành **`Thao Tác`** chuẩn mực UI/UX quốc tế.
+- **Bộ Đôi Nút [Sửa | Xóa] Trên Mỗi Dòng:**
+  * **Nút Sửa (`ph-pencil-simple`):** Kích hoạt chế độ chỉnh sửa trực tiếp (Inline Editing) ngay trên từng dòng bản ghi của cả 2 bảng (Đội xe & Danh bạ tài xế).
+  * **Nút Hủy (`ph-arrow-u-up-left`):** Hủy thao tác sửa và khôi phục lại dữ liệu ban đầu của dòng.
+  * **Nút Xóa (`ph-trash`):** Gỡ xe hoặc xóa tài xế khỏi danh bạ đối tác kèm popup xác nhận an toàn.
+
+### 2. Chế Độ Nhập Liệu Trực Tiếp Trên Bảng & Cơ Chế "Lưu Toàn Bộ" (Unified Save):
+- **Nhập Liệu Ngay Trên Bảng (Inline Edit Inputs):**
+  * **Bảng Đội Xe:** Khi bấm Sửa, các ô dòng biến thành input Biển số, select Loại xe (Đầu kéo, Xe tải 10T, 2T, Van), input Tải trọng (kg) và Hãng xe ngay trên bảng.
+  * **Bảng Danh Bạ Bác Tài:** Khi bấm Sửa, các ô dòng biến thành input Họ tên, input Số điện thoại và input Số GPLX.
+- **Cơ Chế "Nút Lưu Là Lưu Toàn Bộ":**
+  * Khi bấm nút **`[ ✓ Lưu ]`** của Modal: Hệ thống tự động thu thập thông tin nhà xe, quét toàn bộ các dòng xe và dòng tài xế đang ở trạng thái chỉnh sửa trên 2 bảng, đồng thời tự động lưu cả xe mới hoặc tài xế mới nếu form thêm nhanh đang có dữ liệu. Toàn bộ thay đổi được lưu đồng bộ chỉ trong 1 lần bấm!
+
+### 3. Nâng Cấp REST API Backend (`apps/master_data/api_views.py`):
+  * Bổ sung method `PUT` & `PATCH` vào `SubcontractorVehicleDetailAPIView` (`/api/master-data/subcontractors/<id>/vehicles/<vehicle_id>/`) hỗ trợ cập nhật biển số, loại xe, tải trọng, hãng xe.
+
 ## [v3.7.0] - 2026-10-21 (Hoàn Thiện Quản Lý 2 Bảng Con Xe & Bác Tài 3PL Trong Modal Thầu Phụ, Thêm Tên Viết Tắt, Địa Chỉ Công Ty & Khắc Phục Lỗi Phát Lệnh Điều Xe)
 
 ### 1. Bổ Sung Tên Viết Tắt & Địa Chỉ Trong Quản Lý Đối Tác Thầu Phụ:

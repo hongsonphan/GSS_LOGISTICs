@@ -22175,7 +22175,7 @@ function injectMasterDataModalFields(data) {
                                 <th class="py-2 px-3">Loại Xe</th>
                                 <th class="py-2 px-3 text-right">Tải Trọng Cho Phép</th>
                                 <th class="py-2 px-3">Hãng / Dòng Xe</th>
-                                <th class="py-2 px-2.5 text-center w-16">Xóa</th>
+                                <th class="py-2 px-2.5 text-center w-24">Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody id="sub-vehicles-tbody" class="divide-y divide-slate-100">
@@ -22224,7 +22224,7 @@ function injectMasterDataModalFields(data) {
                                 <th class="py-2 px-3">Họ & Tên Tài Xế</th>
                                 <th class="py-2 px-3">Số Điện Thoại</th>
                                 <th class="py-2 px-3">Số GPLX</th>
-                                <th class="py-2 px-2.5 text-center w-16">Xóa</th>
+                                <th class="py-2 px-2.5 text-center w-24">Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody id="sub-drivers-tbody" class="divide-y divide-slate-100">
@@ -22518,6 +22518,12 @@ async function submitMasterDataForm(e) {
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && (data.success || data.id)) {
+            if (tabKey === 'subcontractors') {
+                const subId = editId || data.id || (data.data && data.data.id);
+                if (subId && typeof saveAllSubcontractorFleetInlineChanges === 'function') {
+                    await saveAllSubcontractorFleetInlineChanges(subId);
+                }
+            }
             showToast('success', data.message || 'Lưu bản ghi thành công!');
             closeMasterDataModal();
 
@@ -29954,6 +29960,11 @@ window.switchRoleDonutOption = typeof switchRoleDonutOption !== 'undefined' ? sw
 // QUẢN LÝ ĐỘI XE & TÀI XẾ 3PL TRỰC THUỘC ĐỐI TÁC (PHƯƠNG ÁN 3)
 // =========================================================================
 
+let subVehiclesCache = {};
+let subVehiclesEditingSet = new Set();
+let subDriversCache = {};
+let subDriversEditingSet = new Set();
+
 // --- 1. Quản lý Phương tiện Thuộc Nhà Xe (3PL) ---
 async function loadSubcontractorVehiclesInModal(subId) {
     const tbody = document.getElementById('sub-vehicles-tbody');
@@ -29963,26 +29974,89 @@ async function loadSubcontractorVehiclesInModal(subId) {
         if (!res.ok) throw new Error('Không thể tải danh sách phương tiện');
         const data = await res.json();
         const vehicles = data.results || [];
-        if (vehicles.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-slate-400 italic">Chưa có phương tiện nào gán cho nhà xe này. Bấm "Thêm mới" ở trên.</td></tr>';
-            return;
+        subVehiclesCache[subId] = vehicles;
+        renderSubcontractorVehiclesTable(subId);
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-rose-500">Lỗi: ${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+function renderSubcontractorVehiclesTable(subId) {
+    const tbody = document.getElementById('sub-vehicles-tbody');
+    if (!tbody) return;
+    const vehicles = subVehiclesCache[subId] || [];
+    if (vehicles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-slate-400 italic">Chưa có phương tiện nào gán cho nhà xe này. Bấm "Thêm mới" ở trên.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = vehicles.map(v => {
+        const isEditing = subVehiclesEditingSet.has(v.id);
+        if (isEditing) {
+            const vTypeCode = v.vehicle_type_code || v.vehicle_type || 'TRACTOR';
+            return `
+                <tr id="subveh-row-${v.id}" class="bg-teal-50/50 border-b border-teal-200 transition-colors">
+                    <td class="py-1 px-2">
+                        <input type="text" id="edit-subveh-plate-${v.id}" value="${escapeHtml(v.license_plate)}" class="form-input h-7.5 px-2 py-0.5 text-xs font-mono font-bold uppercase w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="Biển số *">
+                    </td>
+                    <td class="py-1 px-2">
+                        <select id="edit-subveh-type-${v.id}" class="form-select h-7.5 px-1.5 py-0.5 text-xs font-semibold w-full rounded border-teal-500 bg-white shadow-2xs">
+                            <option value="TRACTOR" ${vTypeCode === 'TRACTOR' || v.vehicle_type === 'Đầu kéo Container' || v.vehicle_type === 'Đầu kéo' ? 'selected' : ''}>Đầu kéo Container</option>
+                            <option value="TRUCK_10T" ${vTypeCode === 'TRUCK_10T' || v.vehicle_type === 'Xe tải 10 Tấn' ? 'selected' : ''}>Xe tải 10 Tấn</option>
+                            <option value="TRUCK_2T" ${vTypeCode === 'TRUCK_2T' || v.vehicle_type === 'Xe tải 2 Tấn' ? 'selected' : ''}>Xe tải 2 Tấn</option>
+                            <option value="VAN" ${vTypeCode === 'VAN' || v.vehicle_type === 'Xe tải nhỏ / Van' ? 'selected' : ''}>Xe tải nhỏ / Van</option>
+                        </select>
+                    </td>
+                    <td class="py-1 px-2">
+                        <input type="text" id="edit-subveh-payload-${v.id}" value="${v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) : '30.000'}" class="form-input h-7.5 px-2 py-0.5 text-xs font-mono text-right w-full rounded border-teal-500 bg-white shadow-2xs input-number-vn" placeholder="Tải trọng">
+                    </td>
+                    <td class="py-1 px-2">
+                        <input type="text" id="edit-subveh-brand-${v.id}" value="${escapeHtml(v.brand || '')}" class="form-input h-7.5 px-2 py-0.5 text-xs w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="Hãng / Dòng xe">
+                    </td>
+                    <td class="py-1 px-2 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button type="button" onclick="cancelEditSubVehicleRow(${v.id}, ${subId})" class="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded transition-colors cursor-pointer" title="Hủy chỉnh sửa">
+                                <i class="ph-bold ph-arrow-u-up-left text-sm"></i>
+                            </button>
+                            <button type="button" onclick="deleteSubVehicleInline(${v.id}, ${subId})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Gỡ xe">
+                                <i class="ph-bold ph-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
         }
-        tbody.innerHTML = vehicles.map(v => `
-            <tr class="hover:bg-amber-50/50 transition-colors">
+        return `
+            <tr id="subveh-row-${v.id}" class="hover:bg-amber-50/50 transition-colors border-b border-slate-100">
                 <td class="py-2 px-3 font-mono font-bold text-slate-900">${escapeHtml(v.license_plate)}</td>
                 <td class="py-2 px-3 font-medium text-slate-800">${escapeHtml(v.vehicle_type || '—')}</td>
                 <td class="py-2 px-3 font-mono text-slate-700 text-right">${v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) + ' kg' : '—'}</td>
                 <td class="py-2 px-3 text-slate-600">${escapeHtml(v.brand || '—')}</td>
-                <td class="py-2 px-2.5 text-center">
-                    <button type="button" onclick="deleteSubVehicleInline(${v.id}, ${subId})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Gỡ xe khỏi nhà xe">
-                        <i class="ph-bold ph-trash text-sm"></i>
-                    </button>
+                <td class="py-2 px-2.5 text-center whitespace-nowrap">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <button type="button" onclick="editSubVehicleRow(${v.id}, ${subId})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Sửa thông tin xe">
+                            <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        </button>
+                        <button type="button" onclick="deleteSubVehicleInline(${v.id}, ${subId})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Gỡ xe khỏi nhà xe">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
-        `).join('');
-    } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-rose-500">Lỗi: ${escapeHtml(e.message)}</td></tr>`;
+        `;
+    }).join('');
+    if (typeof initAllNumberInputs === 'function') {
+        initAllNumberInputs();
     }
+}
+
+function editSubVehicleRow(vehicleId, subId) {
+    subVehiclesEditingSet.add(vehicleId);
+    renderSubcontractorVehiclesTable(subId);
+}
+
+function cancelEditSubVehicleRow(vehicleId, subId) {
+    subVehiclesEditingSet.delete(vehicleId);
+    renderSubcontractorVehiclesTable(subId);
 }
 
 function showAddSubVehicleInline() {
@@ -30048,6 +30122,7 @@ async function deleteSubVehicleInline(vehicleId, subId) {
         const result = await res.json();
         if (res.ok && result.success) {
             showToast('success', result.message || 'Đã gỡ phương tiện thành công!');
+            subVehiclesEditingSet.delete(vehicleId);
             loadSubcontractorVehiclesInModal(subId);
             if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
@@ -30081,25 +30156,76 @@ async function loadSubcontractorDriversInModal(subId) {
         if (!res.ok) throw new Error('Không thể tải danh sách tài xế 3PL');
         const data = await res.json();
         const drivers = data.results || [];
-        if (drivers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-slate-400 italic">Chưa có tài xế nào được khai báo cho nhà xe này. Bấm "Thêm mới" ở trên.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = drivers.map(drv => `
-            <tr class="hover:bg-amber-50/50 transition-colors">
-                <td class="py-2 px-3 font-bold text-slate-900">${escapeHtml(drv.full_name)}</td>
-                <td class="py-2 px-3 font-mono font-bold text-teal-800">${escapeHtml(drv.phone || '—')}</td>
-                <td class="py-2 px-3 font-mono text-slate-600">${escapeHtml(drv.license_number || '—')}</td>
-                <td class="py-2 px-2.5 text-center">
-                    <button type="button" onclick="deleteSubDriverInline(${drv.id}, ${subId})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa tài xế">
-                        <i class="ph-bold ph-trash text-sm"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        subDriversCache[subId] = drivers;
+        renderSubcontractorDriversTable(subId);
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3 text-rose-500">Lỗi: ${escapeHtml(e.message)}</td></tr>`;
     }
+}
+
+function renderSubcontractorDriversTable(subId) {
+    const tbody = document.getElementById('sub-drivers-tbody');
+    if (!tbody) return;
+    const drivers = subDriversCache[subId] || [];
+    if (drivers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-slate-400 italic">Chưa có tài xế nào được khai báo cho nhà xe này. Bấm "Thêm mới" ở trên.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = drivers.map(drv => {
+        const isEditing = subDriversEditingSet.has(drv.id);
+        if (isEditing) {
+            return `
+                <tr id="subdrv-row-${drv.id}" class="bg-teal-50/50 border-b border-teal-200 transition-colors">
+                    <td class="py-1 px-2">
+                        <input type="text" id="edit-subdrv-name-${drv.id}" value="${escapeHtml(drv.full_name)}" class="form-input h-7.5 px-2 py-0.5 text-xs font-bold w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="Họ & tên tài xế *">
+                    </td>
+                    <td class="py-1 px-2">
+                        <input type="tel" id="edit-subdrv-phone-${drv.id}" value="${escapeHtml(drv.phone || '')}" class="form-input h-7.5 px-2 py-0.5 text-xs font-mono font-bold text-teal-800 w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="Số điện thoại *">
+                    </td>
+                    <td class="py-1 px-2">
+                        <input type="text" id="edit-subdrv-license-${drv.id}" value="${escapeHtml(drv.license_number || '')}" class="form-input h-7.5 px-2 py-0.5 text-xs font-mono w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="Số GPLX">
+                    </td>
+                    <td class="py-1 px-2 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button type="button" onclick="cancelEditSubDriverRow(${drv.id}, ${subId})" class="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded transition-colors cursor-pointer" title="Hủy chỉnh sửa">
+                                <i class="ph-bold ph-arrow-u-up-left text-sm"></i>
+                            </button>
+                            <button type="button" onclick="deleteSubDriverInline(${drv.id}, ${subId})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa tài xế">
+                                <i class="ph-bold ph-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        return `
+            <tr id="subdrv-row-${drv.id}" class="hover:bg-amber-50/50 transition-colors border-b border-slate-100">
+                <td class="py-2 px-3 font-bold text-slate-900">${escapeHtml(drv.full_name)}</td>
+                <td class="py-2 px-3 font-mono font-bold text-teal-800">${escapeHtml(drv.phone || '—')}</td>
+                <td class="py-2 px-3 font-mono text-slate-600">${escapeHtml(drv.license_number || '—')}</td>
+                <td class="py-2 px-2.5 text-center whitespace-nowrap">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <button type="button" onclick="editSubDriverRow(${drv.id}, ${subId})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors cursor-pointer" title="Sửa thông tin tài xế">
+                            <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        </button>
+                        <button type="button" onclick="deleteSubDriverInline(${drv.id}, ${subId})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa tài xế">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function editSubDriverRow(driverId, subId) {
+    subDriversEditingSet.add(driverId);
+    renderSubcontractorDriversTable(subId);
+}
+
+function cancelEditSubDriverRow(driverId, subId) {
+    subDriversEditingSet.delete(driverId);
+    renderSubcontractorDriversTable(subId);
 }
 
 function showAddSubDriverInline() {
@@ -30169,6 +30295,7 @@ async function deleteSubDriverInline(driverId, subId) {
         const result = await res.json();
         if (res.ok && result.success) {
             showToast('success', result.message || 'Đã xóa tài xế thành công!');
+            subDriversEditingSet.delete(driverId);
             loadSubcontractorDriversInModal(subId);
             if (typeof loadMasterDataFormOptions === 'function') {
                 loadMasterDataFormOptions(true);
@@ -30178,6 +30305,106 @@ async function deleteSubDriverInline(driverId, subId) {
         }
     } catch (e) {
         showToast('danger', 'Lỗi kết nối máy chủ!');
+    }
+}
+
+// --- 3. Lưu toàn bộ các dòng đang sửa hoặc thêm mới trên bảng phương tiện & tài xế ---
+async function saveAllSubcontractorFleetInlineChanges(subId) {
+    if (!subId) return;
+
+    // 1. Cập nhật các dòng xe đang ở trạng thái chỉnh sửa
+    if (subVehiclesEditingSet && subVehiclesEditingSet.size > 0) {
+        const vIds = Array.from(subVehiclesEditingSet);
+        for (const vId of vIds) {
+            const plateInp = document.getElementById(`edit-subveh-plate-${vId}`);
+            const typeInp = document.getElementById(`edit-subveh-type-${vId}`);
+            const payloadInp = document.getElementById(`edit-subveh-payload-${vId}`);
+            const brandInp = document.getElementById(`edit-subveh-brand-${vId}`);
+            if (plateInp && plateInp.value.trim()) {
+                const license_plate = plateInp.value.trim().toUpperCase();
+                const vehicle_type = typeInp ? typeInp.value : 'TRACTOR';
+                const payload_capacity_kg = payloadInp ? payloadInp.value : '30.000';
+                const brand = brandInp ? brandInp.value.trim() : '';
+                try {
+                    await fetchWithAuth(`/api/master-data/subcontractors/${subId}/vehicles/${vId}/`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ license_plate, vehicle_type, payload_capacity_kg, brand })
+                    });
+                } catch (e) {
+                    console.error(`Lỗi cập nhật xe [${vId}]:`, e);
+                }
+            }
+        }
+        subVehiclesEditingSet.clear();
+    }
+
+    // 2. Thêm xe mới nếu form inline đang có dữ liệu
+    const newPlateInp = document.getElementById('new-subveh-plate');
+    if (newPlateInp && newPlateInp.value.trim()) {
+        const license_plate = newPlateInp.value.trim().toUpperCase();
+        const vehicle_type = document.getElementById('new-subveh-type')?.value || 'TRACTOR';
+        const payload_capacity_kg = document.getElementById('new-subveh-payload')?.value || '30.000';
+        const brand = document.getElementById('new-subveh-brand')?.value.trim() || '';
+        try {
+            await fetchWithAuth(`/api/master-data/subcontractors/${subId}/vehicles/`, {
+                method: 'POST',
+                body: JSON.stringify({ license_plate, vehicle_type, payload_capacity_kg, brand })
+            });
+            newPlateInp.value = '';
+            if (document.getElementById('new-subveh-brand')) document.getElementById('new-subveh-brand').value = '';
+            hideAddSubVehicleInline();
+        } catch (e) {
+            console.error('Lỗi lưu thêm mới xe:', e);
+        }
+    }
+
+    // 3. Cập nhật các dòng tài xế đang ở trạng thái chỉnh sửa
+    if (subDriversEditingSet && subDriversEditingSet.size > 0) {
+        const drvIds = Array.from(subDriversEditingSet);
+        for (const drvId of drvIds) {
+            const nameInp = document.getElementById(`edit-subdrv-name-${drvId}`);
+            const phoneInp = document.getElementById(`edit-subdrv-phone-${drvId}`);
+            const licInp = document.getElementById(`edit-subdrv-license-${drvId}`);
+            if (nameInp && nameInp.value.trim()) {
+                const full_name = nameInp.value.trim();
+                const phone = phoneInp ? phoneInp.value.trim() : '';
+                const license_number = licInp ? licInp.value.trim() : '';
+                try {
+                    await fetchWithAuth(`/api/master-data/subcontractor-drivers/${drvId}/`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ full_name, phone, license_number })
+                    });
+                } catch (e) {
+                    console.error(`Lỗi cập nhật tài xế [${drvId}]:`, e);
+                }
+            }
+        }
+        subDriversEditingSet.clear();
+    }
+
+    // 4. Thêm tài xế mới nếu form inline đang có dữ liệu
+    const newDrvNameInp = document.getElementById('new-subdrv-name');
+    if (newDrvNameInp && newDrvNameInp.value.trim()) {
+        const full_name = newDrvNameInp.value.trim();
+        const phone = document.getElementById('new-subdrv-phone')?.value.trim() || '';
+        const license_number = document.getElementById('new-subdrv-license')?.value.trim() || '';
+        try {
+            await fetchWithAuth(`/api/master-data/subcontractors/${subId}/drivers/`, {
+                method: 'POST',
+                body: JSON.stringify({ full_name, phone, license_number, is_active: true })
+            });
+            newDrvNameInp.value = '';
+            if (document.getElementById('new-subdrv-phone')) document.getElementById('new-subdrv-phone').value = '';
+            if (document.getElementById('new-subdrv-license')) document.getElementById('new-subdrv-license').value = '';
+            hideAddSubDriverInline();
+        } catch (e) {
+            console.error('Lỗi lưu thêm mới tài xế:', e);
+        }
+    }
+
+    // Tải lại danh mục cho các dropdown
+    if (typeof loadMasterDataFormOptions === 'function') {
+        loadMasterDataFormOptions(true);
     }
 }
 
@@ -30191,14 +30418,21 @@ async function openSubcontractorFleetModal(subId) {
 
 // Window bindings
 window.loadSubcontractorVehiclesInModal = typeof loadSubcontractorVehiclesInModal !== 'undefined' ? loadSubcontractorVehiclesInModal : undefined;
+window.renderSubcontractorVehiclesTable = typeof renderSubcontractorVehiclesTable !== 'undefined' ? renderSubcontractorVehiclesTable : undefined;
+window.editSubVehicleRow = typeof editSubVehicleRow !== 'undefined' ? editSubVehicleRow : undefined;
+window.cancelEditSubVehicleRow = typeof cancelEditSubVehicleRow !== 'undefined' ? cancelEditSubVehicleRow : undefined;
 window.showAddSubVehicleInline = typeof showAddSubVehicleInline !== 'undefined' ? showAddSubVehicleInline : undefined;
 window.hideAddSubVehicleInline = typeof hideAddSubVehicleInline !== 'undefined' ? hideAddSubVehicleInline : undefined;
 window.saveNewSubVehicleInline = typeof saveNewSubVehicleInline !== 'undefined' ? saveNewSubVehicleInline : undefined;
 window.deleteSubVehicleInline = typeof deleteSubVehicleInline !== 'undefined' ? deleteSubVehicleInline : undefined;
 window.toggleVehicleSubcontractorField = typeof toggleVehicleSubcontractorField !== 'undefined' ? toggleVehicleSubcontractorField : undefined;
 window.loadSubcontractorDriversInModal = typeof loadSubcontractorDriversInModal !== 'undefined' ? loadSubcontractorDriversInModal : undefined;
+window.renderSubcontractorDriversTable = typeof renderSubcontractorDriversTable !== 'undefined' ? renderSubcontractorDriversTable : undefined;
+window.editSubDriverRow = typeof editSubDriverRow !== 'undefined' ? editSubDriverRow : undefined;
+window.cancelEditSubDriverRow = typeof cancelEditSubDriverRow !== 'undefined' ? cancelEditSubDriverRow : undefined;
 window.showAddSubDriverInline = typeof showAddSubDriverInline !== 'undefined' ? showAddSubDriverInline : undefined;
 window.hideAddSubDriverInline = typeof hideAddSubDriverInline !== 'undefined' ? hideAddSubDriverInline : undefined;
 window.saveNewSubDriverInline = typeof saveNewSubDriverInline !== 'undefined' ? saveNewSubDriverInline : undefined;
 window.deleteSubDriverInline = typeof deleteSubDriverInline !== 'undefined' ? deleteSubDriverInline : undefined;
+window.saveAllSubcontractorFleetInlineChanges = typeof saveAllSubcontractorFleetInlineChanges !== 'undefined' ? saveAllSubcontractorFleetInlineChanges : undefined;
 window.openSubcontractorFleetModal = typeof openSubcontractorFleetModal !== 'undefined' ? openSubcontractorFleetModal : undefined;
