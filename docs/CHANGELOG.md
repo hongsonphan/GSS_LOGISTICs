@@ -24,7 +24,12 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * Bổ sung điều kiện lọc `.filter(subcontractor__isnull=True)` tại bộ tính lương chuyến tài xế chính (`trips_main`) và tài xế cắt kéo (`trips_dropoff`).
   * Ngăn chặn 100% rủi ro tính nhầm cước xe bạn / xe 3PL vào bảng lương của tài xế công ty.
 
-### 4. Hệ Thống API Master Data & Điều Xe Động (On-The-Fly):
+### 4. Quản Lý Danh Bạ Tài Xế 3PL Ngay Trên Giao Diện Danh Mục & Điều Xe Động:
+- **Quản Lý Tập Trung Tại Phân Hệ Cài Đặt Danh Mục (Master Data):**
+  * Tích hợp khối Quản lý Danh bạ Tài xế trực thuộc ngay trong Modal Chỉnh sửa Đối tác Thầu Phụ (pps/master_data).
+  * Cho phép xem danh sách tài xế, thêm nhanh bác tài mới (Họ tên, SĐT, Số GPLX) và xóa tài xế trực tiếp từ giao diện với Toast thông báo phản hồi tức thì.
+  * Bổ sung nút tắt icon Vô-lăng trên bảng danh sách Thầu Phụ để mở nhanh danh bạ tài xế.
+- **Hệ Thống API Master Data & Điều Xe Động (On-The-Fly):
 - **REST APIs Quản Lý Đội Xe & Tài Xế Thầu Phụ:**
   * Endpoint `/api/master-data/subcontractors/<id>/fleet/`: truy xuất nhanh danh sách xe và tài xế được gán cho đối tác.
   * Endpoints CRUD tài xế 3PL: `/api/master-data/subcontractors/<id>/drivers/` và `/api/master-data/subcontractor-drivers/<id>/`.
