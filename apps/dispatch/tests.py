@@ -577,3 +577,121 @@ class Subcontractor3PLDispatchTestCase(TestCase):
         self.assertIsNotNone(saved_driver)
         self.assertEqual(saved_driver.phone, "0988776655")
         self.assertEqual(trip.subcontractor_driver, saved_driver)
+
+
+class DashboardDynamicMetricsTestCase(TestCase):
+    """
+    Kiểm thử độ chính xác và tính toàn vẹn dữ liệu động trên Dashboard:
+    - Chống ảo tưởng (Anti-Hallucination): Không bao giờ hardcode 150M hay 1.25 tỷ.
+    - Tính toán chuẩn xác theo CSDL thực tế: OpeningBalance + CashTransaction.
+    """
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_superuser(username="admin_dash", password="password123")
+        self.client.force_login(self.user)
+
+    def test_dashboard_empty_data_no_hallucinations(self):
+        """Khi hệ thống chưa có dữ liệu quỹ, Dashboard phải trả về 0 đ, không bao giờ trả về 150M hay 1.25 tỷ."""
+        res = self.client.get('/api/dashboard/?period=7_days')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+
+        fin = data.get('financial', {})
+        funds = data.get('funds', {})
+        self.assertEqual(fin.get('cash_on_hand'), 0)
+        self.assertEqual(fin.get('bank_balance'), 0)
+        self.assertEqual(fin.get('total_liquidity'), 0)
+
+        self.assertEqual(funds.get('cash_on_hand'), 0)
+        self.assertEqual(funds.get('bank_balance'), 0)
+        self.assertEqual(funds.get('total_liquidity'), 0)
+
+        # Kiểm tra kpi_cards của DIRECTOR
+        cards = {c['id']: c for c in data.get('kpi_cards', [])}
+        fin_card = cards.get('pillar_financial')
+        self.assertIsNotNone(fin_card)
+        self.assertNotIn("150M", fin_card['line_2'])
+        self.assertNotIn("1.25B", fin_card['line_2'])
+        self.assertIn("Quỹ TM: <strong>0 đ</strong>", fin_card['line_2'])
+
+        # Kiểm tra kpi_cards của ACCOUNTING
+        res_acct = self.client.get('/api/dashboard/?period=7_days&view_as=ACCOUNTING')
+        self.assertEqual(res_acct.status_code, 200)
+        acct_cards = {c['id']: c for c in res_acct.json().get('kpi_cards', [])}
+        liq_card = acct_cards.get('acct_liquidity')
+        self.assertIsNotNone(liq_card)
+        self.assertNotIn("1.400.000.000", liq_card['metric_value'])
+        self.assertNotIn("150.000.000", liq_card['line_1'])
+        self.assertNotIn("1.250.000.000", liq_card['line_1'])
+        self.assertNotIn("450.000.000", liq_card['line_2'])
+        self.assertEqual(liq_card['metric_value'], "0 đ")
+
+    def test_dashboard_real_balance_calculation(self):
+        """Tính toán dòng tiền chuẩn xác khi có số dư đầu kỳ và phát sinh sổ quỹ."""
+        from apps.master_data.models import OpeningBalance, OpeningBalanceCategory
+        from apps.billing.models import CashTransaction, PaymentMethod, TransactionType
+
+        # Tạo số dư đầu kỳ TK 1111: 50.000.000 đ, TK 1121: 200.000.000 đ
+        OpeningBalance.objects.create(
+            account_code="1111",
+            account_name="Quỹ tiền mặt",
+            category=OpeningBalanceCategory.CASH_FUND,
+            amount=50000000,
+            debit_amount=50000000,
+            credit_amount=0,
+            is_debit=True,
+            opening_date=timezone.now().date(),
+            fiscal_year=2026
+        )
+        OpeningBalance.objects.create(
+            account_code="1121",
+            account_name="Techcombank",
+            category=OpeningBalanceCategory.BANK_ACCOUNT,
+            amount=200000000,
+            debit_amount=200000000,
+            credit_amount=0,
+            is_debit=True,
+            opening_date=timezone.now().date(),
+            fiscal_year=2026
+        )
+
+        # Phát sinh Chi tiền mặt: 10.000.000 đ -> Tồn quỹ TM = 40.000.000 đ
+        CashTransaction.objects.create(
+            code="PC-TEST-01",
+            transaction_type=TransactionType.OUTFLOW,
+            payment_method=PaymentMethod.CASH,
+            amount=10000000,
+            transaction_date=timezone.now().date(),
+            created_by=self.user
+        )
+
+        # Phát sinh Thu ngân hàng: 30.000.000 đ -> Tồn quỹ NH = 230.000.000 đ
+        CashTransaction.objects.create(
+            code="PT-TEST-01",
+            transaction_type=TransactionType.INFLOW,
+            payment_method=PaymentMethod.BANK,
+            amount=30000000,
+            transaction_date=timezone.now().date(),
+            created_by=self.user
+        )
+
+        res = self.client.get('/api/dashboard/?period=7_days')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+
+        fin = data.get('financial', {})
+        self.assertEqual(fin.get('cash_on_hand'), 40000000)
+        self.assertEqual(fin.get('bank_balance'), 230000000)
+        self.assertEqual(fin.get('total_liquidity'), 270000000)
+
+        # Kiểm tra DIRECTOR card hiển thị đúng 40M và 230M
+        cards = {c['id']: c for c in data.get('kpi_cards', [])}
+        fin_card = cards.get('pillar_financial')
+        self.assertIn("Quỹ TM: <strong>40M</strong> | NH: <strong>230M</strong>", fin_card['line_2'])
+
+        # Kiểm tra ACCOUNTING card
+        res_acct = self.client.get('/api/dashboard/?period=7_days&view_as=ACCOUNTING')
+        acct_cards = {c['id']: c for c in res_acct.json().get('kpi_cards', [])}
+        liq_card = acct_cards.get('acct_liquidity')
+        self.assertEqual(liq_card['metric_value'], "270.000.000 đ")
+        self.assertIn("Tiền mặt: <strong>40.000.000 đ</strong> | NH: <strong>230.000.000 đ</strong>", liq_card['line_1'])

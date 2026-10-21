@@ -204,9 +204,9 @@ class DashboardBGDAPIView(APIView):
 
         # 4. Nhân sự & Tài xế tham gia theo kỳ
         period_driver_ids = list(trips_period.exclude(driver__isnull=True).values_list('driver_id', flat=True).distinct())
-        total_drivers = Employee.objects.filter(role=EmployeeRole.DRIVER, is_deleted=False).count() or 10
+        total_drivers = Employee.objects.filter(role=EmployeeRole.DRIVER, is_deleted=False).count()
         drivers_working = len(period_driver_ids) if period_driver_ids else Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True, is_deleted=False).count()
-        drivers_working = min(drivers_working, total_drivers)
+        drivers_working = min(drivers_working, total_drivers) if total_drivers > 0 else 0
         drivers_on_leave = max(0, total_drivers - drivers_working)
 
         # 5. Khách hàng, Booking & Tờ khai Hải quan
@@ -410,8 +410,8 @@ class DashboardBGDAPIView(APIView):
             c_cleared = CustomsDeclaration.objects.filter(status__in=[CustomsDeclarationStatus.CLEARED, CustomsDeclarationStatus.RELEASED]).count()
             c_rate = round(c_cleared / total_customs * 100, 1)
         else:
-            c_green, c_yellow, c_red, c_rate = 85, 12, 3, 85.0
-            c_cleared = 85
+            c_green, c_yellow, c_red, c_rate = 0, 0, 0, 0.0
+            c_cleared = 0
 
         # --- 8. PHÂN TÍCH VAI TRÒ NGƯỜI DÙNG & TÙY BIẾN DASHBOARD (ROLE-BASED ADAPTATION) ---
         user = request.user
@@ -445,6 +445,55 @@ class DashboardBGDAPIView(APIView):
                 active_role = 'DISPATCH'
 
         # --- 9. TÍNH TOÁN BỘ THẺ Ô SỐ LIỆU (KPI CARDS) THEO TỪNG VAI TRÒ ---
+        # 9.0. Dữ liệu Quỹ Tiền Mặt & Ngân Hàng thực tế (Cash & Bank Balances)
+        from decimal import Decimal
+        from apps.master_data.models import OpeningBalance
+        from apps.billing.models import CashTransaction, PaymentMethod, TransactionType
+
+        # Số dư đầu kỳ TK 1111 (Tiền mặt) và TK 1121 (Tiền gửi ngân hàng)
+        ob_cash_qs = OpeningBalance.objects.filter(is_deleted=False, account_code__startswith='111')
+        ob_cash = Decimal(0)
+        for b in ob_cash_qs:
+            d = b.debit_amount or (b.amount if b.is_debit else Decimal(0))
+            c = b.credit_amount or (b.amount if not b.is_debit else Decimal(0))
+            ob_cash += (d - c)
+
+        ob_bank_qs = OpeningBalance.objects.filter(is_deleted=False, account_code__startswith='112')
+        ob_bank = Decimal(0)
+        for b in ob_bank_qs:
+            d = b.debit_amount or (b.amount if b.is_debit else Decimal(0))
+            c = b.credit_amount or (b.amount if not b.is_debit else Decimal(0))
+            ob_bank += (d - c)
+
+        # Phát sinh thực tế từ Sổ quỹ (CashTransaction)
+        all_tx = CashTransaction.objects.filter(is_deleted=False)
+        cash_inflow = all_tx.filter(payment_method=PaymentMethod.CASH, transaction_type=TransactionType.INFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+        cash_outflow = all_tx.filter(payment_method=PaymentMethod.CASH, transaction_type=TransactionType.OUTFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+        cash_on_hand = int(ob_cash + cash_inflow - cash_outflow)
+
+        bank_inflow = all_tx.filter(payment_method=PaymentMethod.BANK, transaction_type=TransactionType.INFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+        bank_outflow = all_tx.filter(payment_method=PaymentMethod.BANK, transaction_type=TransactionType.OUTFLOW).aggregate(total=Sum('amount'))['total'] or Decimal(0)
+        bank_balance = int(ob_bank + bank_inflow - bank_outflow)
+
+        total_liquidity = cash_on_hand + bank_balance
+
+        # Kế hoạch chi / Nghĩa vụ thanh toán chờ chi (Chi phí chuyến đã duyệt + Tạm ứng chưa chốt)
+        unsettled_expenses = TripExpense.objects.filter(is_deleted=False, status='APPROVED').aggregate(total=Sum('amount'))['total'] or Decimal(0)
+        pending_advances = DriverTripAdvance.objects.filter(is_deleted=False, status='ADVANCED').aggregate(total=Sum('amount'))['total'] or Decimal(0)
+        weekly_planned_expenses = int(unsettled_expenses + pending_advances)
+
+        def _format_short_money(amt):
+            val = int(amt)
+            abs_val = abs(val)
+            prefix = '-' if val < 0 else ''
+            if abs_val >= 1_000_000_000:
+                return f"{prefix}{abs_val / 1_000_000_000:.2f}B".rstrip('0').rstrip('.')
+            elif abs_val >= 1_000_000:
+                return f"{prefix}{abs_val / 1_000_000:.1f}M".rstrip('0').rstrip('.')
+            elif abs_val >= 1_000:
+                return f"{prefix}{abs_val / 1_000:.0f}K"
+            return f"{prefix}{abs_val} đ"
+
         # 9.1. Dữ liệu bổ sung cho Kế toán: Tạm ứng tài xế chưa hoàn
         pending_adv_qs = DriverTripAdvance.objects.filter(is_deleted=False).exclude(status='SETTLED')
         pending_adv_total = int(pending_adv_qs.aggregate(total=Sum('amount'))['total'] or 0)
@@ -453,6 +502,7 @@ class DashboardBGDAPIView(APIView):
         # 9.2. Dữ liệu bổ sung cho Kinh doanh & Khách hàng
         total_bookings_count = BookingOrder.objects.filter(is_deleted=False).count()
         quotes_count = Quotation.objects.filter(is_deleted=False).count()
+        quote_conversion_rate = round(Quotation.objects.filter(is_deleted=False, status='APPROVED').count() / quotes_count * 100, 1) if quotes_count > 0 else 0.0
         active_customers_count = Customer.objects.filter(is_deleted=False).count()
 
         # 9.3. Dữ liệu bổ sung cho Đội xe: Kiểm định sắp hết hạn trong 30 ngày
@@ -463,7 +513,7 @@ class DashboardBGDAPIView(APIView):
         ).count()
 
         # 9.4. Dữ liệu bổ sung cho Nhân sự
-        total_employees = Employee.objects.filter(is_deleted=False, is_active=True).count() or 18
+        total_employees = Employee.objects.filter(is_deleted=False, is_active=True).count()
         office_staff_count = max(0, total_employees - total_drivers)
         expiring_licenses_count = Employee.objects.filter(
             role=EmployeeRole.DRIVER, 
@@ -488,7 +538,7 @@ class DashboardBGDAPIView(APIView):
                         'icon': 'ph-calculator',
                         'theme': 'emerald',
                         'line_1': f"Doanh thu: <strong>{int(agg_revenue):,} đ".replace(',', '.') + f"</strong> | Chi phí: <strong class='text-amber-700'>{int(agg_expense):,} đ".replace(',', '.') + "</strong>",
-                        'line_2': "Quỹ TM: <strong>150M</strong> | NH: <strong>1.25B</strong>",
+                        'line_2': f"Quỹ TM: <strong>{_format_short_money(cash_on_hand)}</strong> | NH: <strong>{_format_short_money(bank_balance)}</strong>",
                         'target_tab': 'ke-toan',
                         'action_label': 'Sổ kế toán',
                     },
@@ -502,7 +552,7 @@ class DashboardBGDAPIView(APIView):
                         'icon': 'ph-truck',
                         'theme': 'teal',
                         'line_1': f"Đã xong: <strong>{completed_trips} chuyến</strong> | OTD: <span class='text-teal-800 font-black'>{ontime_rate}%</span>",
-                        'line_2': "Hành trình: <strong class='text-emerald-700'>100% Đúng hẹn</strong>",
+                        'line_2': f"Hành trình: <strong class='text-rose-600'>{delayed_count} sự cố/chậm trễ</strong>" if delayed_count > 0 else "Hành trình: <strong class='text-emerald-700'>100% Đúng tiến độ</strong>",
                         'target_tab': 'dieu-van',
                         'action_label': 'Bàn điều xe',
                     },
@@ -546,12 +596,12 @@ class DashboardBGDAPIView(APIView):
                         'title': '1. Quỹ Khả Dụng',
                         'badge_title': 'Quỹ & Dòng Tiền',
                         'metric_label': 'Tổng Quỹ Khả Dụng',
-                        'metric_value': "1.400.000.000 đ",
+                        'metric_value': f"{int(total_liquidity):,} đ".replace(',', '.'),
                         'metric_color': 'text-blue-700',
                         'icon': 'ph-vault',
                         'theme': 'blue',
-                        'line_1': "Tiền mặt: <strong>150.000.000 đ</strong> | NH: <strong>1.250.000.000 đ</strong>",
-                        'line_2': "Kế hoạch chi tuần: <strong class='text-amber-700'>450.000.000 đ</strong>",
+                        'line_1': f"Tiền mặt: <strong>{int(cash_on_hand):,} đ".replace(',', '.') + f"</strong> | NH: <strong>{int(bank_balance):,} đ".replace(',', '.') + "</strong>",
+                        'line_2': f"Kế hoạch chi tuần: <strong class='text-amber-700'>{int(weekly_planned_expenses):,} đ".replace(',', '.') + "</strong>",
                         'target_tab': 'ke-toan',
                         'action_label': 'Sổ quỹ tiền',
                     },
@@ -690,7 +740,7 @@ class DashboardBGDAPIView(APIView):
                         'metric_color': 'text-blue-700',
                         'icon': 'ph-file-text',
                         'theme': 'blue',
-                        'line_1': "Tỷ lệ chốt hợp đồng: <strong class='text-emerald-700'>68.5%</strong>",
+                        'line_1': f"Tỷ lệ chốt hợp đồng: <strong class='text-emerald-700'>{quote_conversion_rate}%</strong>",
                         'line_2': "Phản hồi khách hàng: <strong class='text-slate-800'>Trong vòng 2 giờ</strong>",
                         'target_tab': 'kinh-doanh',
                         'action_label': 'Xem báo giá',
@@ -803,7 +853,7 @@ class DashboardBGDAPIView(APIView):
                         'icon': 'ph-identification-card',
                         'theme': 'rose',
                         'line_1': f"Văn phòng: <strong>{office_staff_count}</strong> • Đội tài xế: <strong>{total_drivers}</strong>",
-                        'line_2': "Tỷ lệ chuyên cần: <strong class='text-emerald-700'>98.5%</strong>",
+                        'line_2': f"Tài xế sẵn sàng: <strong class='text-emerald-700'>{round(drivers_working / max(total_drivers, 1) * 100, 1) if total_drivers > 0 else 0.0}%</strong>",
                         'target_tab': 'nhan-su',
                         'action_label': 'Sổ nhân sự',
                     },
@@ -1212,7 +1262,7 @@ class DashboardBGDAPIView(APIView):
                         {
                             'label': 'Tỷ Lệ Chốt Báo Giá (%)',
                             'type': 'line',
-                            'data': [78.5] * len(chart_days),
+                            'data': [quote_conversion_rate] * len(chart_days),
                             'borderColor': '#0d9488',
                             'backgroundColor': '#0d9488',
                             'borderWidth': 3,
@@ -1222,7 +1272,7 @@ class DashboardBGDAPIView(APIView):
                     'summary': [
                         {'label': 'Đơn Booking Mới', 'value': f"{pending_bookings} Đơn", 'theme': 'blue'},
                         {'label': 'Doanh Số Bán Hàng', 'value': f"~{int(agg_revenue):,} đ".replace(',', '.'), 'theme': 'teal'},
-                        {'label': 'Tỷ Lệ Chốt Báo Giá', 'value': '78.5%', 'theme': 'emerald'}
+                        {'label': 'Tỷ Lệ Chốt Báo Giá', 'value': f"{quote_conversion_rate}%", 'theme': 'emerald'}
                     ]
                 },
                 'donut': {
@@ -1411,10 +1461,10 @@ class DashboardBGDAPIView(APIView):
             'my_tasks': tasks_list,
             # Core financial & operational metrics (Backward compatibility)
             'financial': {
-                'cash_on_hand': 150000000,
-                'bank_balance': 1250000000,
-                'total_liquidity': 1400000000,
-                'weekly_planned_expenses': 450000000,
+                'cash_on_hand': cash_on_hand,
+                'bank_balance': bank_balance,
+                'total_liquidity': total_liquidity,
+                'weekly_planned_expenses': weekly_planned_expenses,
                 'monthly_revenue': agg_revenue,
                 'monthly_expense': agg_expense,
                 'monthly_gross_profit': agg_profit,
@@ -1472,9 +1522,10 @@ class DashboardBGDAPIView(APIView):
                 }
             },
             'funds': {
-                'cash_on_hand': 150000000,
-                'bank_balance': 1250000000,
-                'weekly_planned_expenses': 450000000,
+                'cash_on_hand': cash_on_hand,
+                'bank_balance': bank_balance,
+                'total_liquidity': total_liquidity,
+                'weekly_planned_expenses': weekly_planned_expenses,
             },
             'trips_pnl': trips_pnl
         })

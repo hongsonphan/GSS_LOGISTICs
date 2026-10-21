@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.8.0] - 2026-10-21 (Tăng Kích Thước Số Liệu & Nâng Cấp Typography Trực Quan Biểu Đồ Dashboard)
+
+### 1. Tối Ưu Hóa Kích Thước & Độ Tương Phản Số Liệu Biểu Đồ (Data Labels & Typography):
+- **Tăng Kích Thước Datalabels Trên Đỉnh Cột & Đường Line (chartDataLabelsPlugin):**
+  * Nâng cỡ chữ từ `bold 9.5px` lên `bold 12px "Inter", sans-serif` rõ ràng, sắc nét.
+  * Tích hợp lớp viền trắng bảo vệ xung quanh chữ (`ctx.lineWidth = 3`, `ctx.strokeStyle = '#ffffff'`, `ctx.strokeText`), giúp số liệu nổi bật rõ ràng trên mọi nền màu (cột xanh Teal, cột vàng Amber, đường cong Line).
+  * Phân tầng màu chữ ngữ nghĩa: Doanh thu & Nhãn mặc định (`#0f766e`), Chi phí vận hành (`#b45309`), Lợi nhuận/Line (`#047857`).
+  * Điều chỉnh khoảng cách hiển thị (`pos.y - 5` và `pos.x + 8`) tránh dính đè lên đỉnh cột hay điểm mốc.
+- **Mở Rộng Không Gian & Cỡ Chữ Trục Tọa Độ (Chart Scales & Canvas Padding):**
+  * Tăng chiều cao khung biểu đồ từ `135px/150px/190px` lên `155px/175px/215px` tạo độ thoáng đãng cho không gian trực quan.
+  * Bổ sung `layout.padding.top: 18` chống cắt mép chữ ở các cột giá trị cao.
+  * Tăng font trục X (ngày tháng / phân nhóm) lên `12px` font bold (`weight: '700'`), màu sắc đậm nét (`#334155`).
+  * Tăng font trục Y lên `11.5px` font semibold (`#64748b`).
+- **Nâng Cấp 3 Thẻ Chỉ Số Tóm Tắt Dưới Biểu Đồ 1:**
+  * Kích thước số tiền tăng từ `text-xs / 13px` lên `text-sm 2xl:text-base font-black tabular-nums`.
+  * Nhãn mô tả tăng lên `text-[11px] 2xl:text-xs font-bold`.
+- **Nâng Cấp Biểu Đồ Donut & Chú Thích (Biểu đồ 2):**
+  * Số liệu phần trăm tại tâm Donut tăng từ `text-lg / 2xl:text-xl` lên `text-2xl 2xl:text-3xl font-black text-slate-800`.
+  * Chú thích tỷ trọng bên dưới tăng lên `text-xs 2xl:text-[13px] font-bold`, màu sắc rõ nét hơn.
+
 ## [v3.7.9] - 2026-10-21 (Vá Lỗi Lệch Cấu Trúc DOM & Tràn Layout Toàn Bộ Giao Diện Ứng Dụng)
 
 ### 1. Khắc Phục Lỗi Layout Lệch Sang Phải & Khoảng Trắng DOM (Layout Shift & Sidebar Offset Fix):

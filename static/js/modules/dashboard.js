@@ -30,39 +30,39 @@ async function loadDashboardData(periodOverride) {
         const monthlyExpEl = document.getElementById('bgd-monthly-exp');
         if (monthlyExpEl) monthlyExpEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.monthly_expense || 0) + ' đ';
         const cashEl = document.getElementById('bgd-cash-val');
-        if (cashEl) cashEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.cash_on_hand || 150000000) + ' đ';
+        if (cashEl) cashEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.cash_on_hand ?? 0) + ' đ';
         const bankEl = document.getElementById('bgd-bank-val');
-        if (bankEl) bankEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.bank_balance || 1250000000) + ' đ';
+        if (bankEl) bankEl.innerText = new Intl.NumberFormat('vi-VN').format(fin.bank_balance ?? 0) + ' đ';
 
         // Pillar 2: Vận hành
         const todayTripsEl = document.getElementById('bgd-today-trips');
-        if (todayTripsEl) todayTripsEl.innerText = prod.today_active ?? 5;
+        if (todayTripsEl) todayTripsEl.innerText = prod.today_active ?? 0;
         const totalTripsEl = document.getElementById('bgd-total-trips');
-        if (totalTripsEl) totalTripsEl.innerText = prod.total_trips ?? 16;
+        if (totalTripsEl) totalTripsEl.innerText = prod.total_trips ?? 0;
         const yesterdayTripsEl = document.getElementById('bgd-yesterday-trips');
-        if (yesterdayTripsEl) yesterdayTripsEl.innerText = prod.completed_yesterday ?? 8;
+        if (yesterdayTripsEl) yesterdayTripsEl.innerText = `${prod.completed_yesterday ?? 0} chuyến`;
         const otdRateEl = document.getElementById('bgd-otd-rate');
-        if (otdRateEl) otdRateEl.innerText = `${prod.ontime_delivery_rate || 98.2}% OTD`;
+        if (otdRateEl) otdRateEl.innerText = `${prod.ontime_delivery_rate ?? 0}% OTD`;
 
         // Pillar 3: Đội xe & Nhân sự
         const utilizationEl = document.getElementById('bgd-fleet-utilization');
-        if (utilizationEl) utilizationEl.innerText = `${fleet.utilization_rate || 62.5}%`;
+        if (utilizationEl) utilizationEl.innerText = `${fleet.utilization_rate ?? 0}%`;
         const fleetActiveEl = document.getElementById('bgd-fleet-active');
-        if (fleetActiveEl) fleetActiveEl.innerText = fleet.active ?? 5;
+        if (fleetActiveEl) fleetActiveEl.innerText = fleet.active ?? 0;
         const fleetTotalEl = document.getElementById('bgd-fleet-total');
-        if (fleetTotalEl) fleetTotalEl.innerText = fleet.total ?? 8;
+        if (fleetTotalEl) fleetTotalEl.innerText = fleet.total ?? 0;
         const fleetIdleEl = document.getElementById('bgd-fleet-idle');
-        if (fleetIdleEl) fleetIdleEl.innerText = fleet.idle ?? 3;
+        if (fleetIdleEl) fleetIdleEl.innerText = fleet.idle ?? 0;
         const fleetMaintEl = document.getElementById('bgd-fleet-maint');
         if (fleetMaintEl) fleetMaintEl.innerText = fleet.maintenance ?? 0;
         const hrActiveEl = document.getElementById('bgd-hr-active');
-        if (hrActiveEl) hrActiveEl.innerText = `${pers.active || 7}/10 Tài xế`;
+        if (hrActiveEl) hrActiveEl.innerText = `${pers.active ?? 0}/${fleet.total_drivers || pers.total || 0} TX`;
 
         // Pillar 4: Đơn hàng & Hải quan
         const customsGreenEl = document.getElementById('bgd-customs-green');
-        if (customsGreenEl) customsGreenEl.innerText = comm.customs_green ?? 85;
+        if (customsGreenEl) customsGreenEl.innerText = comm.customs_green ?? 0;
         const pendingBookingsEl = document.getElementById('bgd-pending-bookings');
-        if (pendingBookingsEl) pendingBookingsEl.innerText = `${comm.pending_bookings ?? 6} đơn`;
+        if (pendingBookingsEl) pendingBookingsEl.innerText = `${comm.pending_bookings ?? 0} đơn`;
 
         // Cập nhật 3 Thẻ Mini Dưới Biểu Đồ Doanh Thu & Subtitle
         const avgRevEl = document.getElementById('bgd-avg-rev');
@@ -309,9 +309,12 @@ const chartDataLabelsPlugin = {
         if (!pluginOptions || !pluginOptions.display) return;
         if (chart.config.type === 'doughnut' || chart.config.type === 'pie') return;
 
-        const { ctx, data } = chart;
+        const { ctx } = chart;
         ctx.save();
-        ctx.font = 'bold 9.5px "Inter", sans-serif';
+        ctx.font = 'bold 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#ffffff';
 
         chart.data.datasets.forEach((dataset, datasetIndex) => {
             const meta = chart.getDatasetMeta(datasetIndex);
@@ -343,12 +346,22 @@ const chartDataLabelsPlugin = {
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = '#0f766e';
-                    ctx.fillText(text, pos.x + 5, pos.y);
+                    ctx.strokeText(text, pos.x + 8, pos.y);
+                    ctx.fillText(text, pos.x + 8, pos.y);
                 } else {
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'bottom';
-                    ctx.fillStyle = (dataset.type === 'line' || dataset.borderColor) ? (dataset.borderColor || '#059669') : '#0f766e';
-                    ctx.fillText(text, pos.x, pos.y - 4);
+                    let textColor = '#0f766e';
+                    if (dataset.type === 'line') {
+                        textColor = '#047857';
+                    } else if (dataset.label && (dataset.label.toLowerCase().includes('chi phí') || dataset.label.toLowerCase().includes('phí'))) {
+                        textColor = '#b45309';
+                    } else if (dataset.borderColor) {
+                        textColor = dataset.borderColor;
+                    }
+                    ctx.fillStyle = textColor;
+                    ctx.strokeText(text, pos.x, pos.y - 5);
+                    ctx.fillText(text, pos.x, pos.y - 5);
                 }
             });
         });
