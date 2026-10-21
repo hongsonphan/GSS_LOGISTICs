@@ -1,7 +1,7 @@
 # FEATURES.md — BIM LOGISTICS PLATFORM
 ## Tài liệu Đặc tả Tính năng Đầy đủ (Living Document)
 
-> **Phiên bản:** 2.9.20 | **Cập nhật lần cuối:** 2026-10-07
+> **Phiên bản:** 3.7.2 | **Cập nhật lần cuối:** 2026-10-21
 > **Trạng thái:** Production-Ready
 > **Công ty:** Triền Võ Logistics (BIM Ecosystem)
 > **Mục đích:** Tài liệu này ghi nhận **toàn bộ tính năng đã được lập trình và triển khai** trên nền tảng BIM Logistics, được cập nhật liên tục sau mỗi thay đổi. Dùng để tham khảo trước khi phát triển tính năng mới (tránh viết lại những gì đã có).
@@ -319,17 +319,22 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 | Xe vào cổng (thực tế) | `actual_gate_in_time` |
 | Kho gọi kéo ra / Xe ra cổng | `actual_gate_out_time` |
 
-### 6.4 Bảng Kê Chi phí 8 Mục (TripExpense Table)
+### 6.4 Bảng Kê Chi phí 8 Mục & Cụm 3 Nút Phân Loại Trách Nhiệm (TripExpense Table)
 | Danh mục | Mã |
 |---|---|
-| Nâng cont | `LIFT_ON` |
-| Hạ cont | `LIFT_OFF` |
-| Cược cont | `CONTAINER_DEPOSIT` |
-| Cân xe | `WEIGHING` |
-| Bốc xếp | `LABOR_STEVEDORING` |
-| Vé cầu đường BOT | `TOLL_FEE` |
-| Chi phí khác | `OTHER` |
-| *(Chi hộ KH — riêng biệt)* | `is_on_behalf_of_customer` |
+| Nâng cont | LIFT_ON |
+| Hạ cont | LIFT_OFF |
+| Cược cont | CONTAINER_DEPOSIT |
+| Cân xe | WEIGHING |
+| Bốc xếp | LABOR_STEVEDORING |
+| Vé cầu đường BOT | TOLL_FEE |
+| Chi phí khác | OTHER |
+| *(Chi hộ KH — riêng biệt)* | is_on_behalf_of_customer / TVL_OBH / SUB_OBH |
+
+**Cụm 3 Nút Phân Loại Trách Nhiệm Chi Phí (Touch Target >= 48px):**
+- **[ 🏢 Chi phí TVL ] (TVL_COST - Mặc định):** Chi phí do Triền Võ chịu -> tính vào cached_expense chuyến xe.
+- **[ ↗ TVL chi hộ ] (TVL_OBH):** Triền Võ ứng tiền trước chi hộ cho Khách hàng -> thu lại qua Debit Note -> không tính vào chi phí TVL.
+- **[ 🔄 3PL chi hộ ] (SUB_OBH):** Tài xế/chủ xe 3PL tự chi tiền trước cho Khách hàng -> Triền Võ hoàn tiền lại cho 3PL trong Bảng Kê Quyết Toán Thầu Phụ (sub_reimbursable_expenses) -> đồng thời thu lại từ Khách qua Debit Note -> không tính vào chi phí TVL.
 
 **Thông tin mỗi khoản chi:**
 - Đơn vị phát hành, Số hóa đơn, Mã tra cứu HĐĐT, Link tra cứu
@@ -508,9 +513,15 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - Thông tin: SĐT, Email, Website cổng tra cứu eDO
 - Ngày DEM/DET miễn phí mặc định của từng hãng
 
-### 13.7 Danh mục Nhà xe Thầu phụ / 3PL (Subcontractor)
-- Tên công ty, MST, Đầu mối điều xe
-- Tài khoản ngân hàng thụ hưởng cho đối soát cước
+### 13.7 Danh mục Đối Tác Thầu Phụ / 3PL / Gara / NCC (Subcontractor)
+- **Phân loại đối tác (partner_type):**
+  * CARRIER (Nhà xe vận tải 3PL / Xe bạn): Lọc vào dropdown điều xe #inp-subcontractor. Hiển thị 2 bảng con Đội xe & Bác tài trong modal.
+  * GARAGE (Gara sửa chữa / bảo dưỡng): Ẩn 2 bảng con xe & bác tài, tách biệt khỏi luồng điều xe hàng.
+  * SUPPLIER (Nhà cung cấp vật tư / dịch vụ): Ẩn 2 bảng con xe & bác tài.
+- **Thông tin doanh nghiệp:** Tên viết tắt (short_name), Tên pháp nhân, MST, Số điện thoại, Địa chỉ công ty (ddress), Người liên hệ, STK ngân hàng.
+- **2 Bảng con trực tiếp (Inline Editing & Action Buttons):**
+  * *Bảng con Đội xe (Vehicle):* Thêm mới trực tiếp, sửa biển số, loại xe, tải trọng, ngày đăng kiểm.
+  * *Bảng con Danh bạ bác tài (SubcontractorDriver):* Thêm mới trực tiếp, sửa họ tên, SĐT, số bằng lái GPLX, ghi chú.
 
 ### 13.8 Thông tin Công ty & Cài đặt Hệ thống (CompanyProfile)
 - Pháp nhân: Tên, MST, Đại diện, GPLX vận tải
