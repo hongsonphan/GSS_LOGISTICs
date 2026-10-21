@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.5] - 2026-10-21 (Chuẩn Hóa Luồng Gia Hạn & Duyệt Gia Hạn Task: Phân Quyền Người Phụ Trách, Bắt Buộc Lý Do Từ Chối, Chuông Thông Báo 2 Chiều & Line Bọc Viền Đổi Màu Theo Trạng Thái)
+
+### 1. Phân Quyền Yêu Cầu Gia Hạn Nghiêm Ngặt:
+- **Chỉ Người Phụ Trách mới có quyền yêu cầu gia hạn:** Siết chặt logic backend API (`apps/collaboration/api_views/tasks_api.py`) và Frontend UI (`static/js/collaboration.js`). Người theo dõi (Follower) hay các nhân sự khác không được phép gửi yêu cầu thay (trả về HTTP 403 Forbidden).
+- **Giao diện Task Drawer:** Nút 'Đề xuất gia hạn' chỉ hiển thị với đúng người phụ trách của công việc đó khi công việc chưa hoàn thành và chưa có yêu cầu gia hạn đang chờ xử lý.
+
+### 2. Màn Hình Người Giao Việc & Form Duyệt / Từ Chối Bắt Buộc Lý Do:
+- **Hiển thị thông tin đề xuất nổi bật:** Khi có yêu cầu gia hạn đang chờ (`PENDING`), màn hình Người giao việc hiển thị Banner viền tím với đầy đủ thông tin: Hạn hiện tại -> Hạn mới đề xuất, Người đề xuất, Lý do gia hạn chi tiết.
+- **Nút Đồng ý gia hạn:** Phê duyệt dời hạn hoàn thành sang ngày mới, cập nhật trạng thái `APPROVED`.
+- **Nút Không đồng ý:** Mở form inline viền đỏ bắt buộc nhập lý do từ chối; hệ thống chặn gửi nếu để trống lý do (trả về HTTP 400 Bad Request).
+- **Lịch sử gia hạn trong Drawer:** Hiển thị khối ghi nhận kết quả duyệt (viền xanh lá khi đã duyệt, viền đỏ kèm lý do khi bị từ chối).
+
+### 3. Chuông Thông Báo Hai Chiều Tức Thì (Notifications):
+- **Gửi đến Người Giao:** Nhận thông báo `TASK_EXTENSION_REQUESTED` ngay khi người phụ trách gửi yêu cầu gia hạn.
+- **Gửi đến Người Phụ Trách:** Nhận thông báo `TASK_EXTENSION_REVIEWED` ngay khi người giao Đồng ý hoặc Không đồng ý (kèm lý do từ chối).
+- **Hủy yêu cầu:** Người giao nhận thông báo thu hồi khi người phụ trách hủy yêu cầu đang chờ.
+
+### 4. Line Bọc Viền (Border) Đổi Màu Trực Quan Trùng Với Trạng Thái:
+- **Thẻ Task (Kanban & Dashboard):** Giữ nền trắng sạch sẽ, đổi màu đường viền bao quanh (line bọc) trùng với màu trạng thái để người dùng lướt mắt qua là nhận diện được ngay:
+  * **Chờ duyệt gia hạn:** Line viền màu tím (`border-2 border-purple-400 hover:border-purple-500 shadow-purple-500/10`).
+  * **Quá hạn:** Line viền màu đỏ (`border-2 border-rose-400 hover:border-rose-500 shadow-rose-500/10`).
+  * **Đến hạn hôm nay:** Line viền màu cam/hổ phách (`border-2 border-amber-400 hover:border-amber-500 shadow-amber-500/10`).
+  * **Hoàn thành:** Line viền màu xanh lá (`border border-emerald-300 hover:border-emerald-400`).
+  * **Bình thường:** Line viền xám mặc định (`border border-slate-200/90`).
+- **Bảng danh sách (List View):** Đường viền cạnh trái `border-l-4` đổi màu sắc đồng bộ.
+
+### 5. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
+- **Cú pháp JavaScript:** `node -c static/js/app.js` & `node -c static/js/collaboration.js` -> 100% Passed.
+- **Unit Tests:** `apps.collaboration.tests` & `core.tests.FrontendSyntaxIntegrityTestCase` -> 11/11 Passed.
+
 ## [v3.6.4] - 2026-10-20 (Nâng Cấp Cửa Sổ Chat Nội Bộ: Thanh Công Cụ Đa Năng, Tag @ Thành Viên, Tag # Mục Việc, Chụp Màn Hình & Dán Ảnh Clipboard Siêu Tốc)
 
 ### 1. Nút Tag @ Thành Viên & # Mục Việc (Mention Dropdown & Quick Insertion):

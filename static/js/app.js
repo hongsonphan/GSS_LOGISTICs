@@ -1728,9 +1728,20 @@ function renderDashboardTasksView() {
                 const deadlineBadge = getTaskDeadlineBadgeHtml(t);
                 const progressHtml = getTaskProgressHtml(t.progress_percent, t.checklists_done, t.checklists_total);
 
+                let cardBorderClass = 'border-slate-200/80 hover:border-indigo-400';
+                if (t.status === 'DONE') {
+                    cardBorderClass = 'border-emerald-300 hover:border-emerald-400';
+                } else if (t.extension_status === 'PENDING') {
+                    cardBorderClass = 'border-2 border-purple-400 hover:border-purple-500 shadow-purple-500/10';
+                } else if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+                    cardBorderClass = 'border-2 border-rose-400 hover:border-rose-500 shadow-rose-500/10';
+                } else if (t.days_remaining === 0) {
+                    cardBorderClass = 'border-2 border-amber-400 hover:border-amber-500 shadow-amber-500/10';
+                }
+
                 return `
                 <div onclick="if(typeof openTaskDetailDrawer==='function') openTaskDetailDrawer(${t.id});" 
-                    class="p-2.5 bg-white rounded-lg border border-slate-200/80 shadow-2xs hover:border-indigo-400 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between space-y-1.5">
+                    class="p-2.5 bg-white rounded-lg border ${cardBorderClass} shadow-2xs hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between space-y-1.5">
                     
                     <!-- Header thẻ Kanban: Mã, Hạn, Ưu tiên -->
                     <div class="flex items-center justify-between gap-1">
@@ -1799,9 +1810,20 @@ function renderDashboardTasksView() {
             const deadlineBadge = getTaskDeadlineBadgeHtml(t);
             const progressHtml = getTaskProgressHtml(t.progress_percent, t.checklists_done, t.checklists_total);
 
+            let cardBorderClass = 'border-slate-200/80 hover:border-indigo-300';
+            if (t.status === 'DONE') {
+                cardBorderClass = 'border-emerald-300 hover:border-emerald-400';
+            } else if (t.extension_status === 'PENDING') {
+                cardBorderClass = 'border-2 border-purple-400 hover:border-purple-500 shadow-purple-500/10';
+            } else if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+                cardBorderClass = 'border-2 border-rose-400 hover:border-rose-500 shadow-rose-500/10';
+            } else if (t.days_remaining === 0) {
+                cardBorderClass = 'border-2 border-amber-400 hover:border-amber-500 shadow-amber-500/10';
+            }
+
             html += `
             <div onclick="if(typeof openTaskDetailDrawer==='function') openTaskDetailDrawer(${t.id});" 
-                class="p-2.5 rounded-xl border border-slate-200/80 hover:border-indigo-300 hover:bg-indigo-50/20 transition-all cursor-pointer group flex flex-col justify-between space-y-1.5 shadow-2xs">
+                class="p-2.5 rounded-xl border ${cardBorderClass} hover:bg-indigo-50/20 transition-all cursor-pointer group flex flex-col justify-between space-y-1.5 shadow-2xs">
                 
                 <!-- Hàng 1: Mã, Ưu tiên, Deadline -->
                 <div class="flex items-center justify-between gap-2 flex-wrap">

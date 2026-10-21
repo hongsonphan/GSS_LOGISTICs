@@ -601,3 +601,27 @@ class CollaborationTestSuite(TestCase):
         self.assertEqual(data_rejected['extension_status'], TaskExtensionStatus.REJECTED)
         self.assertIn(data_rejected['due_date'], [initial_due.strftime('%d/%m/%Y'), initial_due.strftime('%Y-%m-%d')]) # Hạn cũ được bảo toàn!
 
+        # 5. Kiểm tra bảo mật: Người khác (không phải người phụ trách) cố tình yêu cầu gia hạn -> 403 Forbidden
+        self.client.force_login(self.accountant_user)
+        res_unauth = self.client.post(f'/api/collaboration/tasks/{task2_id}/extension/', {
+            'action': 'request',
+            'requested_deadline': requested_due.strftime('%Y-%m-%d'),
+            'reason': 'Cố tình yêu cầu gia hạn không đúng quyền.'
+        })
+        self.assertEqual(res_unauth.status_code, 403)
+
+        # 6. Kiểm tra quy tắc: Không đồng ý gia hạn bắt buộc phải ghi lý do -> nếu để trống thì trả về 400 Bad Request
+        self.client.force_login(self.staff_dispatcher_user)
+        self.client.post(f'/api/collaboration/tasks/{task2_id}/extension/', {
+            'action': 'request',
+            'requested_deadline': requested_due.strftime('%Y-%m-%d'),
+            'reason': 'Xin gia hạn lần 2 do đối tác bổ sung hồ sơ.'
+        })
+        self.client.force_login(self.director_user)
+        res_no_reason = self.client.post(f'/api/collaboration/tasks/{task2_id}/extension/', {
+            'action': 'reject',
+            'note': '   '
+        })
+        self.assertEqual(res_no_reason.status_code, 400)
+        self.assertIn('Vui lòng nhập lý do không đồng ý gia hạn', res_no_reason.json()['message'])
+

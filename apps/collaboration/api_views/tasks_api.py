@@ -583,10 +583,10 @@ class OfficeTaskDirectoryAPIView(views.APIView):
 class OfficeTaskExtensionAPIView(views.APIView):
     """
     Quản lý luồng Đề xuất gia hạn và Phê duyệt gia hạn hạn chót công việc (Chuẩn ERP Bim Logistics).
-    - action = 'request': Người được giao việc (Assignee) gửi đề xuất dời hạn kèm lý do.
+    - action = 'request': CHỈ Người phụ trách công việc (Assignee) mới có quyền yêu cầu gia hạn kèm lý do.
     - action = 'approve': Người giao việc (Reporter) hoặc Admin duyệt dời hạn chót.
-    - action = 'reject': Người giao việc (Reporter) hoặc Admin từ chối đề xuất dời hạn.
-    - action = 'cancel': Người được giao việc hủy yêu cầu khi đang chờ duyệt.
+    - action = 'reject': Người giao việc (Reporter) hoặc Admin từ chối đề xuất dời hạn (bắt buộc ghi lý do).
+    - action = 'cancel': Người phụ trách hủy yêu cầu khi đang chờ duyệt.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -603,12 +603,16 @@ class OfficeTaskExtensionAPIView(views.APIView):
         current_emp = getattr(user, 'employee', None)
         is_admin = user.is_superuser or (current_emp and current_emp.hierarchy_level >= 100)
         is_reporter = (task.reporter_id == user.id) or is_admin
-        is_assignee = (task.assignee_id == user.id) or task.followers.filter(id=user.id).exists() or is_admin
+        # CHỈ Người phụ trách công việc mới được quyền yêu cầu gia hạn
+        is_assignee = (task.assignee_id == user.id)
 
-        # 1. ĐỀ XUẤT GIA HẠN
+        # 1. YÊU CẦU GIA HẠN (CHỈ DÀNH CHO NGƯỜI PHỤ TRÁCH)
         if action == 'request':
             if not is_assignee:
-                return Response({'success': False, 'message': 'Bạn không có quyền gửi đề xuất gia hạn cho công việc này.'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({
+                    'success': False, 
+                    'message': 'Chỉ Người phụ trách công việc này mới có quyền yêu cầu gia hạn.'
+                }, status=status.HTTP_403_FORBIDDEN)
 
             requested_deadline_str = request.data.get('requested_deadline')
             reason = (request.data.get('reason') or '').strip()
@@ -616,7 +620,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
             if not requested_deadline_str:
                 return Response({'success': False, 'message': 'Vui lòng chọn hạn hoàn thành mới đề xuất.'}, status=status.HTTP_400_BAD_REQUEST)
             if not reason:
-                return Response({'success': False, 'message': 'Vui lòng nhập lý do đề xuất gia hạn để quản lý phê duyệt.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success': False, 'message': 'Vui lòng nhập lý do đề xuất gia hạn để người giao việc phê duyệt.'}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
                 from datetime import datetime
@@ -650,15 +654,15 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 description=f"Đề xuất dời hạn từ {old_due} sang {new_due}. Lý do: {reason}"
             )
 
-            # Gửi Notification cho người giao việc
+            # Gửi Notification lên chuông Người giao việc
             if task.reporter and task.reporter_id != user.id:
                 emp_name = current_emp.full_name if current_emp else user.username
                 Notification.objects.create(
                     recipient=task.reporter,
                     sender=user,
-                    notification_type=NotificationType.TASK_STATUS_CHANGED,
+                    notification_type=NotificationType.TASK_EXTENSION_REQUESTED,
                     title=f"Đề xuất gia hạn: [{task.code}]",
-                    message=f"{emp_name} đề xuất dời hạn công việc '{task.title}' sang ngày {new_due}. Lý do: {reason}",
+                    message=f"{emp_name} yêu cầu gia hạn công việc '{task.title}' đến ngày {new_due}. Lý do: {reason}",
                     target_type="TASK",
                     target_id=task.id,
                     link_url=f"/tasks/#task-{task.id}"
@@ -671,7 +675,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 'data': serializer.data
             })
 
-        # 2. DUYỆT GIA HẠN
+        # 2. DUYỆT GIA HẠN (ĐỒNG Ý - DÀNH CHO NGƯỜI GIAO VIỆC HOẶC ADMIN)
         elif action == 'approve':
             if not is_reporter:
                 return Response({'success': False, 'message': 'Chỉ người giao việc hoặc Quản lý cấp cao mới có quyền duyệt gia hạn.'}, status=status.HTTP_403_FORBIDDEN)
@@ -704,14 +708,15 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 description=desc
             )
 
+            # Gửi Notification lên chuông Người phụ trách
             if task.assignee and task.assignee_id != user.id:
                 reviewer_name = current_emp.full_name if current_emp else user.username
                 Notification.objects.create(
                     recipient=task.assignee,
                     sender=user,
-                    notification_type=NotificationType.TASK_STATUS_CHANGED,
+                    notification_type=NotificationType.TASK_EXTENSION_REVIEWED,
                     title=f"Gia hạn đã được duyệt: [{task.code}]",
-                    message=f"{reviewer_name} đã phê duyệt dời hạn hoàn thành công việc '{task.title}' sang ngày {new_due}." + (f" Ghi chú: {note}" if note else ""),
+                    message=f"{reviewer_name} đã đồng ý dời hạn công việc '{task.title}' sang ngày {new_due}." + (f" Ghi chú: {note}" if note else ""),
                     target_type="TASK",
                     target_id=task.id,
                     link_url=f"/tasks/#task-{task.id}"
@@ -724,7 +729,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 'data': serializer.data
             })
 
-        # 3. TỪ CHỐI GIA HẠN
+        # 3. TỪ CHỐI GIA HẠN (KHÔNG ĐỒNG Ý - BẮT BUỘC GHI LÝ DO)
         elif action == 'reject':
             if not is_reporter:
                 return Response({'success': False, 'message': 'Chỉ người giao việc hoặc Quản lý cấp cao mới có quyền từ chối gia hạn.'}, status=status.HTTP_403_FORBIDDEN)
@@ -734,6 +739,12 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 return Response({'success': False, 'message': 'Công việc hiện không có đề xuất gia hạn nào đang chờ duyệt.'}, status=status.HTTP_400_BAD_REQUEST)
 
             note = (request.data.get('note') or '').strip()
+            if not note:
+                return Response({
+                    'success': False, 
+                    'message': 'Vui lòng nhập lý do không đồng ý gia hạn để phản hồi cho người phụ trách.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             task.extension_status = TaskExtensionStatus.REJECTED
             task.extension_reviewed_at = timezone.now()
             task.extension_reviewed_by = user
@@ -743,9 +754,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 'extension_reviewed_by', 'extension_review_note'
             ])
 
-            desc = "Từ chối đề xuất gia hạn hạn chót."
-            if note:
-                desc += f" Lý do: {note}"
+            desc = f"Từ chối đề xuất gia hạn hạn chót. Lý do: {note}"
             TaskActivityLog.objects.create(
                 task=task,
                 user=user,
@@ -753,14 +762,15 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 description=desc
             )
 
+            # Gửi Notification lên chuông Người phụ trách
             if task.assignee and task.assignee_id != user.id:
                 reviewer_name = current_emp.full_name if current_emp else user.username
                 Notification.objects.create(
                     recipient=task.assignee,
                     sender=user,
-                    notification_type=NotificationType.TASK_STATUS_CHANGED,
-                    title=f"Đề xuất gia hạn bị từ chối: [{task.code}]",
-                    message=f"{reviewer_name} đã từ chối đề xuất dời hạn công việc '{task.title}'." + (f" Lý do: {note}" if note else ""),
+                    notification_type=NotificationType.TASK_EXTENSION_REVIEWED,
+                    title=f"Từ chối gia hạn: [{task.code}]",
+                    message=f"{reviewer_name} không đồng ý dời hạn công việc '{task.title}'. Lý do: {note}",
                     target_type="TASK",
                     target_id=task.id,
                     link_url=f"/tasks/#task-{task.id}"
@@ -773,7 +783,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 'data': serializer.data
             })
 
-        # 4. HỦY ĐỀ XUẤT GIA HẠN
+        # 4. HỦY ĐỀ XUẤT GIA HẠN (DÀNH CHO NGƯỜI PHỤ TRÁCH)
         elif action == 'cancel':
             from apps.collaboration.models import TaskExtensionStatus
             if task.extension_status != TaskExtensionStatus.PENDING:
@@ -790,11 +800,26 @@ class OfficeTaskExtensionAPIView(views.APIView):
                 description="Người gửi đã tự thu hồi yêu cầu đề xuất gia hạn."
             )
 
+            # Gửi Notification lên chuông Người giao việc nếu có
+            if task.reporter and task.reporter_id != user.id:
+                emp_name = current_emp.full_name if current_emp else user.username
+                Notification.objects.create(
+                    recipient=task.reporter,
+                    sender=user,
+                    notification_type=NotificationType.TASK_STATUS_CHANGED,
+                    title=f"Hủy yêu cầu gia hạn: [{task.code}]",
+                    message=f"{emp_name} đã thu hồi yêu cầu gia hạn công việc '{task.title}'.",
+                    target_type="TASK",
+                    target_id=task.id,
+                    link_url=f"/tasks/#task-{task.id}"
+                )
+
             serializer = OfficeTaskDetailSerializer(task)
             return Response({
                 'success': True,
-                'message': 'Đã hủy đề xuất gia hạn.',
+                'message': 'Đã thu hồi đề xuất gia hạn.',
                 'data': serializer.data
             })
 
         return Response({'success': False, 'message': 'Hành động không hợp lệ (chấp nhận: request, approve, reject, cancel).'}, status=status.HTTP_400_BAD_REQUEST)
+

@@ -635,8 +635,20 @@ function renderKanbanColumns(columns) {
                 if (deadlineText) deadlineText += ' (Chờ gia hạn)';
             }
 
+            // Line bọc (border) trùng màu trạng thái để nổi bật trực quan
+            let cardBorderClass = 'border-slate-200/90 hover:border-teal-400';
+            if (t.status === 'DONE') {
+                cardBorderClass = 'border-emerald-300 hover:border-emerald-400';
+            } else if (t.extension_status === 'PENDING') {
+                cardBorderClass = 'border-2 border-purple-400 hover:border-purple-500 shadow-purple-500/10';
+            } else if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+                cardBorderClass = 'border-2 border-rose-400 hover:border-rose-500 shadow-rose-500/10';
+            } else if (t.days_remaining === 0) {
+                cardBorderClass = 'border-2 border-amber-400 hover:border-amber-500 shadow-amber-500/10';
+            }
+
             return `
-            <div id="task-card-${t.id}" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetailDrawer(${t.id})" class="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-teal-400 transition-all cursor-pointer group space-y-2.5 select-none">
+            <div id="task-card-${t.id}" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetailDrawer(${t.id})" class="bg-white rounded-xl p-3.5 border ${cardBorderClass} shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-2.5 select-none">
                 <!-- Priority & Code -->
                 <div class="flex items-center justify-between text-[10px]">
                     <span class="font-mono font-bold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">${formatTaskCode(t.code)}</span>
@@ -730,8 +742,20 @@ function renderTasksListTable(tasks) {
         return;
     }
 
-    tbody.innerHTML = tasks.map(t => `
-        <tr onclick="openTaskDetailDrawer(${t.id})" class="hover:bg-slate-50 cursor-pointer transition-colors">
+    tbody.innerHTML = tasks.map(t => {
+        let rowBorderClass = 'border-l-2 border-transparent';
+        if (t.status === 'DONE') {
+            rowBorderClass = 'border-l-4 border-l-emerald-400';
+        } else if (t.extension_status === 'PENDING') {
+            rowBorderClass = 'border-l-4 border-l-purple-500 bg-purple-50/15';
+        } else if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+            rowBorderClass = 'border-l-4 border-l-rose-500 bg-rose-50/15';
+        } else if (t.days_remaining === 0) {
+            rowBorderClass = 'border-l-4 border-l-amber-500 bg-amber-50/15';
+        }
+
+        return `
+        <tr onclick="openTaskDetailDrawer(${t.id})" class="hover:bg-slate-50 cursor-pointer transition-colors ${rowBorderClass}">
             <td class="py-3 px-4 font-mono font-bold text-teal-800">${formatTaskCode(t.code)}</td>
             <td class="py-3 px-4 font-bold text-slate-800">${escapeHtml(t.title)}</td>
             <td class="py-3 px-4 text-slate-600 font-medium">${t.department}</td>
@@ -763,7 +787,8 @@ function renderTasksListTable(tasks) {
                 <button type="button" class="text-teal-700 hover:text-teal-900 font-bold">Xem</button>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Drag & Drop handlers for Kanban
@@ -1203,9 +1228,17 @@ async function openTaskDetailDrawer(taskId) {
 
         const myUserId = window.CURRENT_USER?.id;
         const isSuper = Boolean(window.CURRENT_USER?.is_superuser);
-        const isReporter = (myUserId && (t.reporter === myUserId || t.reporter_info?.id === myUserId)) || isSuper;
-        const isAssignee = (myUserId && (t.assignee === myUserId || t.assignee_info?.id === myUserId)) || isSuper;
+        const isReporter = Boolean((myUserId && (t.reporter === myUserId || t.reporter_info?.id === myUserId)) || isSuper);
+        // QUY TẮC BẢO MẬT: CHỈ Người phụ trách công việc mới có quyền yêu cầu gia hạn
+        const isAssignee = Boolean(myUserId && (t.assignee === myUserId || t.assignee_info?.id === myUserId));
         const isCompleted = ['DONE', 'CANCELLED'].includes(t.status);
+
+        // Ẩn form từ chối khi mở lại Drawer
+        const rejectBox = document.getElementById('ext-reject-reason-box');
+        if (rejectBox) rejectBox.classList.add('hidden');
+
+        // Khối hiển thị lịch sử / kết quả gia hạn trước đó
+        const extHist = document.getElementById('task-drawer-extension-history');
 
         if (t.extension_status === 'PENDING') {
             if (extBanner) {
@@ -1222,6 +1255,7 @@ async function openTaskDetailDrawer(taskId) {
                 if (atEl) atEl.textContent = t.extension_requested_at ? formatDateTimeDMY(t.extension_requested_at) : '';
             }
             if (btnOpenExt) btnOpenExt.classList.add('hidden');
+            if (extHist) extHist.classList.add('hidden');
 
             if (extActionsReporter) {
                 if (isReporter) extActionsReporter.classList.remove('hidden');
@@ -1233,6 +1267,8 @@ async function openTaskDetailDrawer(taskId) {
             }
         } else {
             if (extBanner) extBanner.classList.add('hidden');
+
+            // Chỉ Người phụ trách mới được thấy nút 'Đề xuất gia hạn'
             if (btnOpenExt) {
                 if (isAssignee && !isCompleted) {
                     btnOpenExt.classList.remove('hidden');
@@ -1240,6 +1276,23 @@ async function openTaskDetailDrawer(taskId) {
                 } else {
                     btnOpenExt.classList.add('hidden');
                     btnOpenExt.classList.remove('inline-flex');
+                }
+            }
+
+            // Hiển thị kết quả duyệt / từ chối nếu có
+            if (extHist) {
+                if (t.extension_status === 'APPROVED') {
+                    extHist.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50/70 text-xs text-emerald-950 flex items-center justify-between gap-2 shadow-2xs';
+                    const noteStr = t.extension_review_note ? `<span class="text-emerald-700 italic">(${escapeHtml(t.extension_review_note)})</span>` : '';
+                    extHist.innerHTML = `<span class="flex items-center gap-1.5 font-bold"><i class="ph-bold ph-check-circle text-emerald-600 text-sm"></i> Hạn chót đã được người giao duyệt dời sang <strong>${formatDateDMY(t.due_date)}</strong></span> ${noteStr}`;
+                    extHist.classList.remove('hidden');
+                } else if (t.extension_status === 'REJECTED') {
+                    extHist.className = 'p-3 rounded-xl border border-rose-300 bg-rose-50/70 text-xs text-rose-950 flex items-center justify-between gap-2 shadow-2xs';
+                    const noteStr = t.extension_review_note ? `<span class="text-rose-700 font-medium italic">Lý do: ${escapeHtml(t.extension_review_note)}</span>` : '';
+                    extHist.innerHTML = `<span class="flex items-center gap-1.5 font-bold"><i class="ph-bold ph-x-circle text-rose-600 text-sm"></i> Đề xuất gia hạn đã bị từ chối</span> ${noteStr}`;
+                    extHist.classList.remove('hidden');
+                } else {
+                    extHist.classList.add('hidden');
                 }
             }
         }
@@ -3343,17 +3396,43 @@ async function submitTaskExtensionRequest() {
 }
 window.submitTaskExtensionRequest = submitTaskExtensionRequest;
 
-async function reviewTaskExtension(action) {
+function toggleRejectExtensionBox(show) {
+    const box = document.getElementById('ext-reject-reason-box');
+    if (!box) return;
+    if (show) {
+        box.classList.remove('hidden');
+        const input = document.getElementById('ext-reject-reason-input');
+        if (input) {
+            input.value = '';
+            setTimeout(() => input.focus(), 60);
+        }
+    } else {
+        box.classList.add('hidden');
+    }
+}
+window.toggleRejectExtensionBox = toggleRejectExtensionBox;
+
+async function submitRejectTaskExtension() {
     if (!currentViewingTaskId) return;
-    let note = '';
+    const input = document.getElementById('ext-reject-reason-input');
+    const note = (input ? input.value : '').trim();
+    if (!note) {
+        showToast('Vui lòng nhập lý do không đồng ý gia hạn để phản hồi cho người phụ trách.', 'warning');
+        if (input) input.focus();
+        return;
+    }
+    await reviewTaskExtension('reject', note);
+    toggleRejectExtensionBox(false);
+}
+window.submitRejectTaskExtension = submitRejectTaskExtension;
+
+async function reviewTaskExtension(action, directNote = '') {
+    if (!currentViewingTaskId) return;
+    let note = directNote;
 
     if (action === 'approve') {
-        const ok = confirm('XÁC NHẬN DUYỆT GIA HẠN:\nBạn có chắc chắn muốn phê duyệt dời hạn hoàn thành công việc này sang ngày mới?');
+        const ok = confirm('XÁC NHẬN ĐỒNG Ý GIA HẠN:\nBạn có chắc chắn muốn phê duyệt dời hạn hoàn thành công việc này sang ngày mới?');
         if (!ok) return;
-    } else if (action === 'reject') {
-        const reason = prompt('Lý do từ chối đề xuất gia hạn (tùy chọn):');
-        if (reason === null) return;
-        note = reason.trim();
     }
 
     try {
