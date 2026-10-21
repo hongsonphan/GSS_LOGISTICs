@@ -31,19 +31,19 @@ urlpatterns = [
     # BẢN TIN CÔNG TY
     path('news/categories/', PostCategoryListAPIView.as_view(), name='collab-news-categories'),
     path('news/posts/', CompanyPostListCreateAPIView.as_view(), name='collab-news-posts'),
-    path('news/posts/<int:pk>/', CompanyPostDetailAPIView.as_view(), name='collab-news-post-detail'),
-    path('news/posts/<int:pk>/comments/', CompanyPostCommentCreateAPIView.as_view(), name='collab-news-post-comment'),
-    path('news/posts/<int:pk>/pin/', CompanyPostPinAPIView.as_view(), name='collab-news-post-pin'),
+    path('news/posts/<str:pk>/', CompanyPostDetailAPIView.as_view(), name='collab-news-post-detail'),
+    path('news/posts/<str:pk>/comments/', CompanyPostCommentCreateAPIView.as_view(), name='collab-news-post-comment'),
+    path('news/posts/<str:pk>/pin/', CompanyPostPinAPIView.as_view(), name='collab-news-post-pin'),
 
     # GIAO VIỆC VĂN PHÒNG (TASKS)
     path('tasks/', OfficeTaskListCreateAPIView.as_view(), name='collab-tasks-list-create'),
     path('tasks/directory/', OfficeTaskDirectoryAPIView.as_view(), name='collab-tasks-directory'),
-    path('tasks/<int:pk>/', OfficeTaskDetailAPIView.as_view(), name='collab-task-detail'),
-    path('tasks/<int:pk>/status/', OfficeTaskStatusUpdateAPIView.as_view(), name='collab-task-status-update'),
-    path('tasks/<int:pk>/checklists/', OfficeTaskChecklistAPIView.as_view(), name='collab-task-checklist'),
-    path('tasks/<int:pk>/comments/', OfficeTaskCommentAPIView.as_view(), name='collab-task-comment'),
-    path('tasks/<int:pk>/attachments/', OfficeTaskAttachmentAPIView.as_view(), name='collab-task-attachment'),
-    path('tasks/<int:pk>/extension/', OfficeTaskExtensionAPIView.as_view(), name='collab-task-extension'),
+    path('tasks/<str:pk>/', OfficeTaskDetailAPIView.as_view(), name='collab-task-detail'),
+    path('tasks/<str:pk>/status/', OfficeTaskStatusUpdateAPIView.as_view(), name='collab-task-status-update'),
+    path('tasks/<str:pk>/checklists/', OfficeTaskChecklistAPIView.as_view(), name='collab-task-checklist'),
+    path('tasks/<str:pk>/comments/', OfficeTaskCommentAPIView.as_view(), name='collab-task-comment'),
+    path('tasks/<str:pk>/attachments/', OfficeTaskAttachmentAPIView.as_view(), name='collab-task-attachment'),
+    path('tasks/<str:pk>/extension/', OfficeTaskExtensionAPIView.as_view(), name='collab-task-extension'),
 
     # CHAT NỘI BỘ VĂN PHÒNG
     path('chat/rooms/', ChatRoomListCreateAPIView.as_view(), name='collab-chat-rooms'),
@@ -52,6 +52,6 @@ urlpatterns = [
 
     # THÔNG BÁO NỘI BỘ LÊN CHUÔNG (BELL NOTIFICATIONS)
     path('notifications/', NotificationListAPIView.as_view(), name='collab-notifications-list'),
-    path('notifications/<int:pk>/mark-read/', NotificationMarkReadAPIView.as_view(), name='collab-notification-mark-read'),
+    path('notifications/<str:pk>/mark-read/', NotificationMarkReadAPIView.as_view(), name='collab-notification-mark-read'),
     path('notifications/mark-all-read/', NotificationMarkAllReadAPIView.as_view(), name='collab-notifications-mark-all-read'),
 ]

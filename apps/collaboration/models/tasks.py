@@ -220,6 +220,12 @@ class OfficeTask(TimeStampedModel, SoftDeleteModel):
             return clean or raw
         return "Hệ thống"
 
+    @property
+    def hashid(self):
+        """Mã HashID bảo mật cho URL (/tasks/<hashid>/) chống IDOR."""
+        from core.security import get_task_hashid
+        return get_task_hashid(self.id)
+
     def recalculate_progress(self):
         """Tự động tính lại % tiến độ dựa trên số lượng checklist đã hoàn thành."""
         total = self.checklists.filter(is_deleted=False).count()

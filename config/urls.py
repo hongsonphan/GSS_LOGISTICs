@@ -95,11 +95,13 @@ urlpatterns = [
     path('master-data/', index_view, name='spa-master-data'),
     path('master-data', index_view, name='spa-master-data-noslash'),
     path('danh-muc/', index_view, name='spa-danhmuc'),
-    # Trang Chi Tiết Bản Tin & Xem Trước Tệp Đính Kèm (PDF, Word, Excel)
-    path('news/<int:pk>/', news_detail_page_view, name='news-detail-page'),
-    path('news/<int:pk>', news_detail_page_view, name='news-detail-page-noslash'),
+    # Trang Chi Tiết Bản Tin & Xem Trước Tệp Đính Kèm (PDF, Word, Excel) — Chuẩn HashID Bảo Mật IDOR
+    path('news/<str:post_identifier>/', news_detail_page_view, name='news-detail-page'),
+    path('news/<str:post_identifier>', news_detail_page_view, name='news-detail-page-noslash'),
     path('news/', index_view, name='spa-news'),
     path('news', index_view, name='spa-news-noslash'),
+    path('tasks/<str:task_hash>/', index_view, name='spa-tasks-detail-slash'),
+    path('tasks/<str:task_hash>', index_view, name='spa-tasks-detail'),
     path('tasks/', index_view, name='spa-tasks'),
     path('tasks', index_view, name='spa-tasks-noslash'),
 

@@ -389,6 +389,7 @@
   <script>
     const ATTACHMENTS_DATA = {{ attachments|safe|default:"[]" }};
     const POST_ID = {{ post.id }};
+    const POST_HASHID = "{{ post.hashid }}";
     let currentAttIndex = 0;
 
     // Khởi tạo trang khi tải xong
@@ -579,10 +580,11 @@
     }
 
     function copyShareLink() {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        alert('Đã sao chép liên kết bản tin vào bộ nhớ tạm!');
+      const shareUrl = window.location.origin + '/news/{{ post.hashid }}/';
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Đã sao chép liên kết bản tin chuẩn bảo mật HashID vào bộ nhớ tạm!');
       }).catch(() => {
-        prompt('Sao chép liên kết dưới đây:', window.location.href);
+        prompt('Sao chép liên kết dưới đây:', shareUrl);
       });
     }
 

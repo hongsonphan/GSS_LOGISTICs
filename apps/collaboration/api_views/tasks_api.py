@@ -247,7 +247,7 @@ class OfficeTaskListCreateAPIView(views.APIView):
                 message=f"{reporter_name} đã giao cho bạn: '{task.title}'{due_str}",
                 target_type='TASK',
                 target_id=task.id,
-                link_url=f"/tasks/#task-{task.id}"
+                link_url=f"/tasks/{task.hashid}/"
             )
 
         # Thông báo đẩy lên chuông cho Người liên quan / theo dõi chung
@@ -260,11 +260,25 @@ class OfficeTaskListCreateAPIView(views.APIView):
                 message=f"{reporter_name} đã thêm bạn vào danh sách theo dõi chung: '{task.title}'",
                 target_type='TASK',
                 target_id=task.id,
-                link_url=f"/tasks/#task-{task.id}"
+                link_url=f"/tasks/{task.hashid}/"
             )
 
         serializer = OfficeTaskDetailSerializer(task)
         return Response({'success': True, 'data': serializer.data, 'message': f'Đã tạo công việc {task.code} thành công.'}, status=status.HTTP_201_CREATED)
+
+
+def resolve_task_id(pk_val):
+    """Phân giải pk từ chuỗi số, mã code hoặc HashID bảo mật."""
+    if not pk_val:
+        return None
+    if str(pk_val).isdigit():
+        return int(pk_val)
+    from core.security import decode_task_hashid
+    decoded = decode_task_hashid(str(pk_val))
+    if decoded:
+        return decoded
+    task = OfficeTask.all_objects.filter(code__iexact=str(pk_val).strip()).first()
+    return task.id if task else None
 
 
 class OfficeTaskDetailAPIView(views.APIView):
@@ -277,7 +291,7 @@ class OfficeTaskDetailAPIView(views.APIView):
                 'assignee', 'reporter', 'related_trip', 'related_customer', 'related_vehicle'
             ).prefetch_related(
                 'checklists', 'comments__author', 'attachments', 'activities__user', 'followers'
-            ).get(pk=pk, is_deleted=False)
+            ).get(pk=resolve_task_id(pk), is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -286,7 +300,7 @@ class OfficeTaskDetailAPIView(views.APIView):
 
     def put(self, request, pk):
         try:
-            task = OfficeTask.objects.get(pk=pk, is_deleted=False)
+            task = OfficeTask.objects.get(pk=resolve_task_id(pk), is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -350,7 +364,7 @@ class OfficeTaskDetailAPIView(views.APIView):
 
     def delete(self, request, pk):
         try:
-            task = OfficeTask.objects.get(pk=pk, is_deleted=False)
+            task = OfficeTask.objects.get(pk=resolve_task_id(pk), is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Công việc không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -382,7 +396,7 @@ class OfficeTaskStatusUpdateAPIView(views.APIView):
             return Response({'success': False, 'message': 'Trạng thái không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            task = OfficeTask.objects.get(pk=pk, is_deleted=False)
+            task = OfficeTask.objects.get(pk=resolve_task_id(pk), is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -415,7 +429,7 @@ class OfficeTaskStatusUpdateAPIView(views.APIView):
                 message=f"{actor_name} đã chuyển việc '{task.title}' sang [{task.get_status_display()}] (Tiến độ: {task.progress_percent}%)",
                 target_type='TASK',
                 target_id=task.id,
-                link_url=f"/tasks/#task-{task.id}"
+                link_url=f"/tasks/{task.hashid}/"
             )
 
         return Response({
@@ -437,7 +451,7 @@ class OfficeTaskChecklistAPIView(views.APIView):
             return Response({'success': False, 'message': 'Nội dung checklist không được để trống.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            task = OfficeTask.objects.get(pk=pk, is_deleted=False)
+            task = OfficeTask.objects.get(pk=resolve_task_id(pk), is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -479,7 +493,7 @@ class OfficeTaskChecklistAPIView(views.APIView):
         try:
             item = TaskChecklist.objects.get(id=item_id, task_id=pk)
             item.delete()
-            task = OfficeTask.objects.get(pk=pk)
+            task = OfficeTask.objects.get(pk=resolve_task_id(pk))
             task.recalculate_progress()
             return Response({'success': True, 'progress_percent': task.progress_percent})
         except TaskChecklist.DoesNotExist:
@@ -496,7 +510,7 @@ class OfficeTaskCommentAPIView(views.APIView):
             return Response({'success': False, 'message': 'Nội dung bình luận không được rỗng.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            task = OfficeTask.objects.get(pk=pk, is_deleted=False)
+            task = OfficeTask.objects.get(pk=resolve_task_id(pk), is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -523,7 +537,7 @@ class OfficeTaskAttachmentAPIView(views.APIView):
 
     def post(self, request, pk):
         try:
-            task = OfficeTask.objects.get(pk=pk, is_deleted=False)
+            task = OfficeTask.objects.get(pk=resolve_task_id(pk), is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -621,17 +635,22 @@ class OfficeTaskExtensionAPIView(views.APIView):
         try:
             task = OfficeTask.objects.select_related(
                 'assignee', 'reporter'
-            ).prefetch_related('followers').get(pk=pk, is_deleted=False)
+            ).prefetch_related('followers').get(pk=resolve_task_id(pk), is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
 
         action = request.data.get('action')
         user = request.user
         current_emp = getattr(user, 'employee', None)
-        is_admin = user.is_superuser or (current_emp and current_emp.hierarchy_level >= 100)
+        is_admin = (
+            user.is_superuser 
+            or user.is_staff 
+            or (current_emp and (current_emp.hierarchy_level >= 100 or current_emp.role in ['DIRECTOR', 'ADMIN']))
+            or user.has_perm('collaboration.change_officetask')
+        )
         is_reporter = (task.reporter_id == user.id) or is_admin
         # CHỈ Người phụ trách công việc mới được quyền yêu cầu gia hạn
-        is_assignee = (task.assignee_id == user.id)
+        is_assignee = (task.assignee_id == user.id) or (is_admin and not task.assignee_id)
 
         # 1. YÊU CẦU GIA HẠN (CHỈ DÀNH CHO NGƯỜI PHỤ TRÁCH)
         if action == 'request':
@@ -692,7 +711,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
                     message=f"{emp_name} yêu cầu gia hạn công việc '{task.title}' đến ngày {new_due}. Lý do: {reason}",
                     target_type="TASK",
                     target_id=task.id,
-                    link_url=f"/tasks/#task-{task.id}"
+                    link_url=f"/tasks/{task.hashid}/"
                 )
 
             serializer = OfficeTaskDetailSerializer(task)
@@ -746,7 +765,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
                     message=f"{reviewer_name} đã đồng ý dời hạn công việc '{task.title}' sang ngày {new_due}." + (f" Ghi chú: {note}" if note else ""),
                     target_type="TASK",
                     target_id=task.id,
-                    link_url=f"/tasks/#task-{task.id}"
+                    link_url=f"/tasks/{task.hashid}/"
                 )
 
             serializer = OfficeTaskDetailSerializer(task)
@@ -800,7 +819,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
                     message=f"{reviewer_name} không đồng ý dời hạn công việc '{task.title}'. Lý do: {note}",
                     target_type="TASK",
                     target_id=task.id,
-                    link_url=f"/tasks/#task-{task.id}"
+                    link_url=f"/tasks/{task.hashid}/"
                 )
 
             serializer = OfficeTaskDetailSerializer(task)
@@ -838,7 +857,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
                     message=f"{emp_name} đã thu hồi yêu cầu gia hạn công việc '{task.title}'.",
                     target_type="TASK",
                     target_id=task.id,
-                    link_url=f"/tasks/#task-{task.id}"
+                    link_url=f"/tasks/{task.hashid}/"
                 )
 
             serializer = OfficeTaskDetailSerializer(task)

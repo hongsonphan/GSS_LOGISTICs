@@ -239,11 +239,14 @@ async function loadCompanyNews() {
     }
 }
 
-function openNewsDetailPage(postId, event) {
+let currentViewingNewsHashid = null;
+
+function openNewsDetailPage(postIdentifier, event) {
     if (event) {
         event.stopPropagation();
     }
-    window.open(`/news/${postId}/`, '_blank');
+    const target = postIdentifier || currentViewingNewsHashid || currentViewingNewsId;
+    window.open(`/news/${target}/`, '_blank');
 }
 
 async function openNewsDetailModal(postId) {
@@ -264,6 +267,7 @@ async function openNewsDetailModal(postId) {
         }
 
         const p = json.data;
+        currentViewingNewsHashid = p.hashid || p.id;
         document.getElementById('news-modal-title').textContent = p.title;
         document.getElementById('news-modal-author').textContent = p.author_info?.full_name || p.author_name;
         document.getElementById('news-modal-date').textContent = formatDateTime(p.created_at);
@@ -1115,12 +1119,74 @@ function printCurrentTaskSlip() {
 window.printCurrentTaskSlip = printCurrentTaskSlip;
 
 // Modal Xem và Sửa chi tiết công việc (Hộp thoại Trung tâm, chuẩn SaaS Bộ 4 nút)
+function resetTaskExtensionUI() {
+    const extBanner = document.getElementById('task-drawer-extension-banner');
+    if (extBanner) {
+        extBanner.classList.add('hidden');
+        extBanner.style.display = 'none';
+        const oldDueEl = document.getElementById('ext-banner-old-due');
+        if (oldDueEl) oldDueEl.textContent = '';
+        const newDueEl = document.getElementById('ext-banner-new-due');
+        if (newDueEl) newDueEl.textContent = '';
+        const reasonEl = document.getElementById('ext-banner-reason');
+        if (reasonEl) reasonEl.textContent = '';
+        const byEl = document.getElementById('ext-banner-by');
+        if (byEl) byEl.textContent = '';
+        const atEl = document.getElementById('ext-banner-at');
+        if (atEl) atEl.textContent = '';
+    }
+
+    const extActionsReporter = document.getElementById('ext-banner-actions-reporter');
+    if (extActionsReporter) {
+        extActionsReporter.classList.add('hidden');
+        extActionsReporter.style.display = 'none';
+    }
+
+    const extActionsAssignee = document.getElementById('ext-banner-actions-assignee');
+    if (extActionsAssignee) {
+        extActionsAssignee.classList.add('hidden');
+        extActionsAssignee.style.display = 'none';
+    }
+
+    const rejectBox = document.getElementById('ext-reject-reason-box');
+    if (rejectBox) {
+        rejectBox.classList.add('hidden');
+        rejectBox.style.display = 'none';
+        const rejectInput = document.getElementById('ext-reject-reason-input');
+        if (rejectInput) rejectInput.value = '';
+    }
+
+    const extHist = document.getElementById('task-drawer-extension-history');
+    if (extHist) {
+        extHist.classList.add('hidden');
+        extHist.style.display = 'none';
+        extHist.innerHTML = '';
+    }
+
+    const extForm = document.getElementById('task-drawer-request-extension-form');
+    if (extForm) {
+        extForm.classList.add('hidden');
+        extForm.style.display = 'none';
+        const inputReason = document.getElementById('ext-input-reason');
+        if (inputReason) inputReason.value = '';
+    }
+
+    const btnOpenExt = document.getElementById('btn-open-request-extension');
+    if (btnOpenExt) {
+        btnOpenExt.classList.add('hidden');
+        btnOpenExt.style.display = 'none';
+    }
+}
+window.resetTaskExtensionUI = resetTaskExtensionUI;
+
 async function openTaskDetailDrawer(taskId) {
     currentViewingTaskId = taskId;
+    resetTaskExtensionUI();
     const drawer = document.getElementById('drawer-task-detail');
     if (!drawer) return;
 
     drawer.classList.remove('hidden');
+    drawer.style.display = '';
     setTaskDetailEditMode(false);
 
     try {
@@ -1223,36 +1289,40 @@ async function openTaskDetailDrawer(taskId) {
         const btnOpenExt = document.getElementById('btn-open-request-extension');
         const extActionsReporter = document.getElementById('ext-banner-actions-reporter');
         const extActionsAssignee = document.getElementById('ext-banner-actions-assignee');
-
-        if (extForm) extForm.classList.add('hidden');
-
-        const myUserId = window.CURRENT_USER?.id;
-        const isSuper = Boolean(
-            window.CURRENT_USER?.is_superuser || 
-            window.CURRENT_USER?.is_staff || 
-            (window.CURRENT_USER?.hierarchy_level >= 100) || 
-            window.CURRENT_USER?.role === 'DIRECTOR'
-        );
-        // Người giao việc: người tạo task HOẶC Admin/Ban Giám Đốc quản trị
-        const isReporter = Boolean(
-            (myUserId && (String(t.reporter) === String(myUserId) || String(t.reporter_info?.id) === String(myUserId))) || 
-            isSuper
-        );
-        // Người phụ trách: đúng người được giao task
-        const isAssignee = Boolean(myUserId && (String(t.assignee) === String(myUserId) || String(t.assignee_info?.id) === String(myUserId)));
-        const isCompleted = ['DONE', 'CANCELLED'].includes(t.status);
-
-        // Ẩn form từ chối khi mở lại Drawer
+        const extHist = document.getElementById('task-drawer-extension-history');
         const rejectBox = document.getElementById('ext-reject-reason-box');
+
+        if (extForm) {
+            extForm.classList.add('hidden');
+            extForm.style.display = 'none';
+        }
         if (rejectBox) {
             rejectBox.classList.add('hidden');
             rejectBox.style.display = 'none';
         }
 
-        // Khối hiển thị lịch sử / kết quả gia hạn trước đó
-        const extHist = document.getElementById('task-drawer-extension-history');
+        const myUserId = window.CURRENT_USER?.id ? Number(window.CURRENT_USER.id) : null;
+        const isSuper = Boolean(
+            window.CURRENT_USER?.is_superuser === true || 
+            window.CURRENT_USER?.is_staff === true || 
+            (Number(window.CURRENT_USER?.hierarchy_level) >= 100) || 
+            window.CURRENT_USER?.role === 'DIRECTOR' ||
+            window.CURRENT_USER?.role === 'ADMIN' ||
+            (window.hasUserPermission && window.hasUserPermission('collaboration.change_officetask'))
+        );
+
+        const reporterId = Number(t.reporter || t.reporter_id || t.reporter_info?.id);
+        const assigneeId = Number(t.assignee || t.assignee_id || t.assignee_info?.id);
+
+        // Người giao việc: người tạo task HOẶC Admin/Ban Giám Đốc quản trị
+        const isReporter = Boolean((myUserId && reporterId && myUserId === reporterId) || isSuper);
+
+        // Người phụ trách: đúng người được giao task
+        const isAssignee = Boolean((myUserId && assigneeId && myUserId === assigneeId) || (isSuper && !assigneeId));
+        const isCompleted = ['DONE', 'CANCELLED'].includes(t.status);
 
         if (t.extension_status === 'PENDING') {
+            // Task đang có đề xuất gia hạn chờ duyệt
             if (extBanner) {
                 extBanner.classList.remove('hidden');
                 extBanner.style.display = 'block';
@@ -1267,6 +1337,7 @@ async function openTaskDetailDrawer(taskId) {
                 const atEl = document.getElementById('ext-banner-at');
                 if (atEl) atEl.textContent = t.extension_requested_at ? formatDateTimeDMY(t.extension_requested_at) : '';
             }
+
             if (btnOpenExt) {
                 btnOpenExt.classList.add('hidden');
                 btnOpenExt.style.display = 'none';
@@ -1276,44 +1347,70 @@ async function openTaskDetailDrawer(taskId) {
                 extHist.style.display = 'none';
             }
 
+            // Hiển thị nút Duyệt cho Người giao việc hoặc Quản lý / Ban Giám Đốc
             if (extActionsReporter) {
-                extActionsReporter.style.display = isReporter ? 'flex' : 'none';
-                if (isReporter) extActionsReporter.classList.remove('hidden');
-                else extActionsReporter.classList.add('hidden');
-            }
-            if (extActionsAssignee) {
-                extActionsAssignee.style.display = (isAssignee && !isReporter) ? 'block' : 'none';
-                if (isAssignee && !isReporter) extActionsAssignee.classList.remove('hidden');
-                else extActionsAssignee.classList.add('hidden');
-            }
-        } else {
-            if (extBanner) extBanner.classList.add('hidden');
-
-            // Chỉ Người phụ trách mới được thấy nút 'Đề xuất gia hạn'
-            if (btnOpenExt) {
-                if (isAssignee && !isCompleted) {
-                    btnOpenExt.classList.remove('hidden');
-                    btnOpenExt.classList.add('inline-flex');
+                if (isReporter) {
+                    extActionsReporter.classList.remove('hidden');
+                    extActionsReporter.style.display = 'flex';
                 } else {
-                    btnOpenExt.classList.add('hidden');
-                    btnOpenExt.classList.remove('inline-flex');
+                    extActionsReporter.classList.add('hidden');
+                    extActionsReporter.style.display = 'none';
                 }
             }
 
-            // Hiển thị kết quả duyệt / từ chối nếu có
+            // Hiển thị trạng thái & nút Thu hồi cho Người phụ trách
+            if (extActionsAssignee) {
+                if (isAssignee) {
+                    extActionsAssignee.classList.remove('hidden');
+                    extActionsAssignee.style.display = 'flex';
+                } else {
+                    extActionsAssignee.classList.add('hidden');
+                    extActionsAssignee.style.display = 'none';
+                }
+            }
+        } else {
+            // Task KHÔNG có đề xuất gia hạn chờ duyệt: Ẩn triệt để banner
+            if (extBanner) {
+                extBanner.classList.add('hidden');
+                extBanner.style.display = 'none';
+            }
+            if (extActionsReporter) {
+                extActionsReporter.classList.add('hidden');
+                extActionsReporter.style.display = 'none';
+            }
+            if (extActionsAssignee) {
+                extActionsAssignee.classList.add('hidden');
+                extActionsAssignee.style.display = 'none';
+            }
+
+            // Nút "Đề xuất gia hạn": Chỉ Người phụ trách mới được gửi khi task chưa xong
+            if (btnOpenExt) {
+                if (isAssignee && !isCompleted) {
+                    btnOpenExt.classList.remove('hidden');
+                    btnOpenExt.style.display = 'inline-flex';
+                } else {
+                    btnOpenExt.classList.add('hidden');
+                    btnOpenExt.style.display = 'none';
+                }
+            }
+
+            // Hiển thị kết quả duyệt / từ chối trước đó nếu có
             if (extHist) {
                 if (t.extension_status === 'APPROVED') {
                     extHist.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50/70 text-xs text-emerald-950 flex items-center justify-between gap-2 shadow-2xs';
                     const noteStr = t.extension_review_note ? `<span class="text-emerald-700 italic">(${escapeHtml(t.extension_review_note)})</span>` : '';
                     extHist.innerHTML = `<span class="flex items-center gap-1.5 font-bold"><i class="ph-bold ph-check-circle text-emerald-600 text-sm"></i> Hạn chót đã được người giao duyệt dời sang <strong>${formatDateDMY(t.due_date)}</strong></span> ${noteStr}`;
                     extHist.classList.remove('hidden');
+                    extHist.style.display = 'flex';
                 } else if (t.extension_status === 'REJECTED') {
                     extHist.className = 'p-3 rounded-xl border border-rose-300 bg-rose-50/70 text-xs text-rose-950 flex items-center justify-between gap-2 shadow-2xs';
                     const noteStr = t.extension_review_note ? `<span class="text-rose-700 font-medium italic">Lý do: ${escapeHtml(t.extension_review_note)}</span>` : '';
                     extHist.innerHTML = `<span class="flex items-center gap-1.5 font-bold"><i class="ph-bold ph-x-circle text-rose-600 text-sm"></i> Đề xuất gia hạn đã bị từ chối</span> ${noteStr}`;
                     extHist.classList.remove('hidden');
+                    extHist.style.display = 'flex';
                 } else {
                     extHist.classList.add('hidden');
+                    extHist.style.display = 'none';
                 }
             }
         }
@@ -1525,7 +1622,11 @@ function renderDrawerActivities(activities) {
 
 function closeTaskDetailDrawer() {
     const drawer = document.getElementById('drawer-task-detail');
-    if (drawer) drawer.classList.add('hidden');
+    if (drawer) {
+        drawer.classList.add('hidden');
+        drawer.style.display = 'none';
+    }
+    resetTaskExtensionUI();
     currentViewingTaskId = null;
 }
 
@@ -3220,6 +3321,10 @@ async function loadNotifications(filterMode = 'all') {
                 iconClass = 'ph-bold ph-newspaper bg-teal-50 text-teal-700 border border-teal-200';
             } else if (item.notification_type === 'CHAT_MENTION') {
                 iconClass = 'ph-bold ph-at bg-indigo-50 text-indigo-700 border border-indigo-200';
+            } else if (item.notification_type === 'TASK_EXTENSION_REQUESTED') {
+                iconClass = 'ph-bold ph-clock-countdown bg-purple-50 text-purple-700 border border-purple-200';
+            } else if (item.notification_type === 'TASK_EXTENSION_REVIEWED') {
+                iconClass = 'ph-bold ph-calendar-check bg-emerald-50 text-emerald-700 border border-emerald-200';
             }
 
             return `
@@ -3284,7 +3389,7 @@ async function handleNotificationClick(notifId, targetType, targetId, linkUrl) {
                 openNewsDetailModal(targetId);
             }
         } else {
-            window.location.href = `/news/${targetId}/`;
+            window.location.href = linkUrl || `/news/${targetId}/`;
         }
     } else if (targetType === 'TASK' && targetId) {
         if (typeof showView === 'function') {
@@ -3372,6 +3477,7 @@ function openRequestExtensionInline() {
     const form = document.getElementById('task-drawer-request-extension-form');
     if (!form) return;
     form.classList.remove('hidden');
+    form.style.display = 'block';
 
     const inputDate = document.getElementById('ext-input-new-deadline');
     const inputReason = document.getElementById('ext-input-reason');
@@ -3402,7 +3508,10 @@ window.openRequestExtensionInline = openRequestExtensionInline;
 
 function closeRequestExtensionInline() {
     const form = document.getElementById('task-drawer-request-extension-form');
-    if (form) form.classList.add('hidden');
+    if (form) {
+        form.classList.add('hidden');
+        form.style.display = 'none';
+    }
 }
 window.closeRequestExtensionInline = closeRequestExtensionInline;
 

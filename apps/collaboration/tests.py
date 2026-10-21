@@ -643,11 +643,20 @@ class CollaborationTestSuite(TestCase):
         self.assertEqual(res_anon.status_code, 302)
         self.assertIn('/login/', res_anon.url)
 
-        # 3. Truy cập khi đã đăng nhập -> HTTP 200 OK, CompanyProfile được nạp chính xác không văng lỗi 500 NameError
+        # 3. Truy cập URL ID số nguyên cũ (/news/<id>/) -> Redirect 301 sang HashID chuẩn bảo mật (/news/<hashid>/)
         self.client.force_login(self.accountant_user)
-        res_auth = self.client.get(f'/news/{post_public.id}/')
-        self.assertEqual(res_auth.status_code, 200)
-        self.assertContains(res_auth, "Quy chế thưởng quý IV")
+        res_old_url = self.client.get(f'/news/{post_public.id}/')
+        self.assertEqual(res_old_url.status_code, 301)
+        self.assertEqual(res_old_url.url, f'/news/{post_public.hashid}/')
+
+        # 3b. Truy cập trực tiếp qua HashID (/news/<hashid>/) -> HTTP 200 OK không lỗi NameError
+        res_hashid = self.client.get(f'/news/{post_public.hashid}/')
+        self.assertEqual(res_hashid.status_code, 200)
+        self.assertContains(res_hashid, "Quy chế thưởng quý IV")
+
+        # 3c. Truy cập HashID không tồn tại hoặc sai lệch -> HTTP 404 Not Found
+        res_invalid_hash = self.client.get('/news/invalidhash999/')
+        self.assertEqual(res_invalid_hash.status_code, 404)
 
         # 4. Kiểm tra bảo mật Trung tâm trợ giúp (/helps) -> Yêu cầu đăng nhập
         self.client.logout()
@@ -666,18 +675,18 @@ class CollaborationTestSuite(TestCase):
 
         # Kế toán viên truy cập bài viết của Điều độ -> 403 Forbidden
         self.client.force_login(self.accountant_user)
-        res_forbidden = self.client.get(f'/news/{post_dispatch.id}/')
+        res_forbidden = self.client.get(f'/news/{post_dispatch.hashid}/')
         self.assertEqual(res_forbidden.status_code, 403)
         self.assertContains(res_forbidden, "chỉ dành riêng cho phòng ban", status_code=403)
 
         # Nhân viên Điều độ truy cập -> 200 OK
         self.client.force_login(self.staff_dispatcher_user)
-        res_allowed = self.client.get(f'/news/{post_dispatch.id}/')
+        res_allowed = self.client.get(f'/news/{post_dispatch.hashid}/')
         self.assertEqual(res_allowed.status_code, 200)
 
         # Ban Giám Đốc truy cập -> 200 OK (Quản lý cấp cao xem được mọi phòng ban)
         self.client.force_login(self.director_user)
-        res_dir_allowed = self.client.get(f'/news/{post_dispatch.id}/')
+        res_dir_allowed = self.client.get(f'/news/{post_dispatch.hashid}/')
         self.assertEqual(res_dir_allowed.status_code, 200)
 
         # 6. Bản tin chưa xuất bản -> Nhân viên thường nhận 404, tác giả nhận 200
@@ -689,11 +698,11 @@ class CollaborationTestSuite(TestCase):
             is_published=False
         )
         self.client.force_login(self.accountant_user)
-        res_draft_user = self.client.get(f'/news/{post_draft.id}/')
+        res_draft_user = self.client.get(f'/news/{post_draft.hashid}/')
         self.assertEqual(res_draft_user.status_code, 404)
 
         self.client.force_login(self.director_user)
-        res_draft_author = self.client.get(f'/news/{post_draft.id}/')
+        res_draft_author = self.client.get(f'/news/{post_draft.hashid}/')
         self.assertEqual(res_draft_author.status_code, 200)
 
     def test_api_permissions_security(self):

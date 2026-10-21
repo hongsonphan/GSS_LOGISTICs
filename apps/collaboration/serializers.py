@@ -69,7 +69,7 @@ class CompanyPostListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyPost
         fields = [
-            'id', 'title', 'category', 'category_info', 'author_name',
+            'id', 'hashid', 'title', 'category', 'category_info', 'author_name',
             'summary', 'cover_image', 'is_pinned', 'is_urgent',
             'target_department', 'published_at', 'view_count',
             'comments_count', 'is_read', 'created_at'
@@ -92,7 +92,7 @@ class CompanyPostDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyPost
         fields = [
-            'id', 'title', 'category', 'category_info', 'author_info',
+            'id', 'hashid', 'title', 'category', 'category_info', 'author_info',
             'summary', 'content', 'cover_image', 'is_pinned', 'is_urgent',
             'target_department', 'is_published', 'published_at', 'view_count',
             'attachments', 'comments', 'is_read', 'created_at', 'updated_at'
@@ -178,7 +178,7 @@ class OfficeTaskListSerializer(serializers.ModelSerializer):
     class Meta:
         model = OfficeTask
         fields = [
-            'id', 'code', 'title', 'department', 'priority', 'status',
+            'id', 'hashid', 'code', 'title', 'department', 'priority', 'status',
             'assignee', 'assignee_info', 'reporter', 'reporter_info',
             'followers', 'followers_info',
             'start_date', 'due_date', 'days_remaining', 'progress_percent', 'is_overdue',
@@ -222,7 +222,7 @@ class OfficeTaskDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OfficeTask
         fields = [
-            'id', 'code', 'title', 'description', 'department', 'priority', 'status',
+            'id', 'hashid', 'code', 'title', 'description', 'department', 'priority', 'status',
             'assignee', 'assignee_info', 'reporter', 'reporter_info',
             'followers', 'followers_info',
             'start_date', 'due_date', 'days_remaining', 'completed_at', 'progress_percent', 'is_overdue',

@@ -84,6 +84,12 @@ class CompanyPost(TimeStampedModel, SoftDeleteModel):
     def comments_count(self):
         return self.comments.filter(is_deleted=False).count()
 
+    @property
+    def hashid(self):
+        """Mã HashID bảo mật cho URL (/news/<hashid>/) chống IDOR."""
+        from core.security import get_news_hashid
+        return get_news_hashid(self.id)
+
 
 class PostAttachment(TimeStampedModel, SoftDeleteModel):
     """Tệp đính kèm bài viết bản tin (PDF, văn bản, thông tư, quy chế)."""

@@ -137,7 +137,7 @@ class CompanyPostListCreateAPIView(views.APIView):
                     message=msg_preview,
                     target_type='NEWS',
                     target_id=post.id,
-                    link_url=f"/news/{post.id}/"
+                    link_url=f"/news/{post.hashid}/"
                 )
                 for emp in target_emps
             ]
@@ -150,13 +150,26 @@ class CompanyPostListCreateAPIView(views.APIView):
         return Response({'success': True, 'data': serializer.data, 'message': 'Đã đăng bản tin thành công.'}, status=status.HTTP_201_CREATED)
 
 
+def resolve_post_id(pk_val):
+    """Phân giải pk từ chuỗi số hoặc HashID bảo mật."""
+    if not pk_val:
+        return None
+    if str(pk_val).isdigit():
+        return int(pk_val)
+    from core.security import decode_news_hashid
+    return decode_news_hashid(str(pk_val))
+
+
 class CompanyPostDetailAPIView(views.APIView):
     """Chi tiết bản tin, tự động tăng view_count và ghi nhận đã đọc."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk):
+        post_id = resolve_post_id(pk)
+        if not post_id:
+            return Response({'success': False, 'message': 'Không tìm thấy bản tin.'}, status=status.HTTP_404_NOT_FOUND)
         try:
-            post = CompanyPost.objects.select_related('category', 'author').get(pk=pk, is_deleted=False)
+            post = CompanyPost.objects.select_related('category', 'author').get(pk=post_id, is_deleted=False)
         except CompanyPost.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy bản tin.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -189,8 +202,11 @@ class CompanyPostDetailAPIView(views.APIView):
         return Response({'success': True, 'data': serializer.data})
 
     def delete(self, request, pk):
+        post_id = resolve_post_id(pk)
+        if not post_id:
+            return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
         try:
-            post = CompanyPost.objects.get(pk=pk, is_deleted=False)
+            post = CompanyPost.objects.get(pk=post_id, is_deleted=False)
         except CompanyPost.DoesNotExist:
             return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -224,8 +240,11 @@ class CompanyPostCommentCreateAPIView(views.APIView):
         if not content:
             return Response({'success': False, 'message': 'Nội dung bình luận không được rỗng.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        post_id = resolve_post_id(pk)
+        if not post_id:
+            return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
         try:
-            post = CompanyPost.objects.get(pk=pk, is_deleted=False)
+            post = CompanyPost.objects.get(pk=post_id, is_deleted=False)
         except CompanyPost.DoesNotExist:
             return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -244,8 +263,11 @@ class CompanyPostPinAPIView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        post_id = resolve_post_id(pk)
+        if not post_id:
+            return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
         try:
-            post = CompanyPost.objects.get(pk=pk, is_deleted=False)
+            post = CompanyPost.objects.get(pk=post_id, is_deleted=False)
         except CompanyPost.DoesNotExist:
             return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
 

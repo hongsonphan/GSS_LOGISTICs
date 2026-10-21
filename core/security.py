@@ -14,6 +14,8 @@ _TRACKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TRACKING", min_length=MIN_LENG
 _BOOKING_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_BOOKING", min_length=MIN_LENGTH, alphabet=ALPHABET)
 _QUOTATION_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_QUOTATION", min_length=MIN_LENGTH, alphabet=ALPHABET)
 _EXPENSE_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_EXPENSE", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_NEWS_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_NEWS", min_length=MIN_LENGTH, alphabet=ALPHABET)
+_TASK_HASHIDS = Hashids(salt=f"{DEFAULT_SALT}_TASK", min_length=MIN_LENGTH, alphabet=ALPHABET)
 
 
 def encode_id(number: int, domain: str = 'TRIP') -> str:
@@ -30,6 +32,10 @@ def encode_id(number: int, domain: str = 'TRIP') -> str:
         return _QUOTATION_HASHIDS.encode(number)
     elif domain == 'EXPENSE':
         return _EXPENSE_HASHIDS.encode(number)
+    elif domain == 'NEWS':
+        return _NEWS_HASHIDS.encode(number)
+    elif domain == 'TASK':
+        return _TASK_HASHIDS.encode(number)
     return _TRIP_HASHIDS.encode(number)
 
 
@@ -48,6 +54,10 @@ def decode_id(hashid_str: str, domain: str = 'TRIP') -> int | None:
             numbers = _QUOTATION_HASHIDS.decode(hashid_str.strip())
         elif domain == 'EXPENSE':
             numbers = _EXPENSE_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'NEWS':
+            numbers = _NEWS_HASHIDS.decode(hashid_str.strip())
+        elif domain == 'TASK':
+            numbers = _TASK_HASHIDS.decode(hashid_str.strip())
         else:
             numbers = _TRIP_HASHIDS.decode(hashid_str.strip())
 
@@ -96,6 +106,26 @@ def get_quotation_hashid(quote_id: int) -> str:
 def decode_quotation_hashid(hashid_str: str) -> int | None:
     """Helper giải mã HashID Báo Giá về số nguyên ID ban đầu."""
     return decode_id(hashid_str, domain='QUOTATION')
+
+
+def get_news_hashid(post_id: int) -> str:
+    """Helper mã hóa ID Bản tin thành chuỗi HashID bảo mật cho URL (/news/<hashid>/)."""
+    return encode_id(post_id, domain='NEWS')
+
+
+def decode_news_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã HashID Bản tin về số nguyên ID ban đầu."""
+    return decode_id(hashid_str, domain='NEWS')
+
+
+def get_task_hashid(task_id: int) -> str:
+    """Helper mã hóa ID Công việc (Task) thành chuỗi HashID bảo mật (/tasks/<hashid>/)."""
+    return encode_id(task_id, domain='TASK')
+
+
+def decode_task_hashid(hashid_str: str) -> int | None:
+    """Helper giải mã HashID Công việc (Task) về số nguyên ID ban đầu."""
+    return decode_id(hashid_str, domain='TASK')
 
 
 from rest_framework_simplejwt.authentication import JWTAuthentication

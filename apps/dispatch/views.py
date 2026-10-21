@@ -422,28 +422,48 @@ def public_tracking_view(request, trip_hash):
 
 
 @never_cache
-def news_detail_page_view(request, pk):
+def news_detail_page_view(request, post_identifier):
     """
     Trang Xem Chi Tiết Bản Tin & Xem Trước Tệp Đính Kèm (PDF, Word, Excel).
     Mở ra một trang chuyên dụng độc lập khi nhân viên bấm vào thông báo.
-    Hỗ trợ trình duyệt xem trước trực tiếp: PDF Viewer, Word Converter, Excel Table Viewer.
-    Bảo mật: Xác thực người dùng, kiểm soát phân quyền phòng ban đích và chế độ xuất bản.
+    Bảo mật: Chuẩn mã hóa HashID chống quét IDOR, kiểm soát phân quyền phòng ban và chế độ xuất bản.
+    Tự động Redirect 301 chuyển đổi các link ID số nguyên cũ (/news/2/) sang HashID chuẩn (/news/<hashid>/).
     """
     import os
-    from django.shortcuts import get_object_or_404
+    from django.shortcuts import get_object_or_404, redirect, render
     from django.db.models import F
     from apps.collaboration.models.news import CompanyPost, PostAttachment, PostReadStatus
     from apps.master_data.models import CompanyProfile
+    from core.security import decode_news_hashid, get_news_hashid
 
     # Yêu cầu đăng nhập hệ thống
     if not request.user.is_authenticated:
         return redirect(f"/login/?next={request.path}")
 
+    # 1. Phân giải HashID hoặc ID nguyên bản (Hỗ trợ tương thích ngược)
+    post_id = None
+    is_raw_numeric_id = False
+
+    if str(post_identifier).isdigit():
+        post_id = int(post_identifier)
+        is_raw_numeric_id = True
+    else:
+        post_id = decode_news_hashid(post_identifier)
+
+    if not post_id:
+        return render(request, '404.html', status=404)
+
     post = get_object_or_404(
         CompanyPost.objects.select_related('category', 'author'),
-        pk=pk,
+        pk=post_id,
         is_deleted=False
     )
+
+    # 2. Chuẩn hóa URL: Nếu truy cập bằng ID số thô (/news/2/),
+    # tự động redirect vĩnh viễn (301) sang URL HashID bảo mật (/news/<hashid>/)
+    secure_hashid = post.hashid
+    if is_raw_numeric_id and secure_hashid:
+        return redirect(f"/news/{secure_hashid}/", permanent=True)
 
     employee = getattr(request.user, 'employee', None)
     is_privileged = (
@@ -465,7 +485,7 @@ def news_detail_page_view(request, pk):
             }, status=403)
 
     # Tăng lượt xem & ghi nhận đã đọc
-    CompanyPost.objects.filter(pk=pk).update(view_count=F('view_count') + 1)
+    CompanyPost.objects.filter(pk=post.id).update(view_count=F('view_count') + 1)
     post.view_count += 1
     PostReadStatus.objects.get_or_create(post=post, user=request.user)
 
@@ -564,7 +584,8 @@ def news_detail_page_view(request, pk):
         'primary_attachment': attachments_data[0] if attachments_data else None,
         'comments': comments,
         'comments_count': comments.count(),
-        'share_url': request.build_absolute_uri(),
+        'share_url': request.build_absolute_uri(f'/news/{post.hashid}/'),
+        'post_hashid': post.hashid,
         'current_user': request.user,
     }
     return render(request, 'news_detail.html', context)

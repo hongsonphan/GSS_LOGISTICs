@@ -199,66 +199,79 @@
             </div>
 
             <!-- CẢNH BÁO ĐỀ XUẤT GIA HẠN CÔNG VIỆC (Hiển thị khi extension_status === 'PENDING') -->
-            <div id="task-drawer-extension-banner" class="hidden p-4 bg-gradient-to-r from-purple-50 via-purple-50/80 to-amber-50 rounded-xl border-2 border-purple-300 shadow-sm space-y-2.5 animate-in fade-in">
+            <div id="task-drawer-extension-banner" class="hidden p-4 bg-gradient-to-br from-purple-50 via-purple-50/70 to-amber-50/60 rounded-xl border-2 border-purple-400 shadow-sm space-y-3 animate-in fade-in">
+                <!-- Tiêu đề Banner & Mốc Hạn Chót -->
                 <div class="flex items-center justify-between gap-2 flex-wrap">
                     <div class="flex items-center gap-2 text-purple-950 font-black text-xs font-heading">
-                        <span class="w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping"></span>
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-purple-700"></span>
+                        </span>
                         <i class="ph-fill ph-clock-countdown text-base text-purple-700"></i>
-                        <span>ĐỀ XUẤT GIA HẠN HẠN CHÓT HOÀN THÀNH</span>
+                        <span class="tracking-wide">ĐỀ XUẤT GIA HẠN HẠN CHÓT HOÀN THÀNH</span>
                     </div>
-                    <div class="text-xs font-bold text-purple-900 bg-white/90 px-3 py-1 rounded-lg border border-purple-200 shadow-2xs">
-                        Hạn hiện tại: <span id="ext-banner-old-due" class="line-through text-slate-400 font-semibold"></span>
-                        <i class="ph-bold ph-arrow-right text-purple-600 mx-1.5"></i>
-                        Hạn mới đề xuất: <span id="ext-banner-new-due" class="text-purple-950 font-black text-sm bg-purple-100 px-2 py-0.5 rounded"></span>
+                    <div class="text-xs font-bold text-purple-900 bg-white px-3 py-1.5 rounded-lg border border-purple-200 shadow-2xs flex items-center gap-1.5">
+                        <span class="text-slate-500">Hạn cũ:</span>
+                        <span id="ext-banner-old-due" class="line-through text-slate-400 font-semibold"></span>
+                        <i class="ph-bold ph-arrow-right text-purple-600"></i>
+                        <span class="text-purple-950 font-extrabold text-[13px] bg-purple-100 text-purple-900 px-2 py-0.5 rounded border border-purple-200">
+                            Hạn mới: <span id="ext-banner-new-due"></span>
+                        </span>
                     </div>
                 </div>
 
-                <div class="text-xs text-purple-950 bg-white/90 p-3 rounded-lg border border-purple-200/80 leading-relaxed shadow-2xs">
-                    <div class="font-bold text-purple-900 mb-0.5 flex items-center gap-1">
-                        <i class="ph-bold ph-chat-text text-purple-600"></i> Lý do đề xuất gia hạn:
+                <!-- Lý do đề xuất -->
+                <div class="text-xs text-purple-950 bg-white/95 p-3 rounded-lg border border-purple-200/90 leading-relaxed shadow-2xs">
+                    <div class="font-bold text-purple-900 mb-1 flex items-center gap-1.5">
+                        <i class="ph-bold ph-chat-text text-purple-600"></i>
+                        <span>Lý do đề xuất gia hạn:</span>
                     </div>
-                    <p id="ext-banner-reason" class="text-slate-800 italic pl-5"></p>
+                    <p id="ext-banner-reason" class="text-slate-800 italic pl-5 whitespace-pre-line"></p>
                 </div>
 
-                <div class="flex items-center justify-between pt-1 text-[11px] text-purple-800/90 flex-wrap gap-2">
-                    <div class="flex items-center gap-1.5">
-                        <i class="ph ph-user-circle text-sm text-purple-600"></i>
+                <!-- Thanh Thao Tác (Action Bar) -->
+                <div class="pt-2.5 border-t border-purple-200/80 flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-1.5 text-[11px] text-purple-900">
+                        <i class="ph-bold ph-user-circle text-purple-600 text-sm"></i>
                         <span>Đề xuất bởi: <strong id="ext-banner-by" class="text-purple-950 font-bold"></strong></span>
                         <span class="text-purple-300">•</span>
-                        <span id="ext-banner-at" class="text-slate-500"></span>
+                        <span id="ext-banner-at" class="text-slate-500 font-medium"></span>
                     </div>
 
                     <!-- Nút Thao Tác: Duyệt / Từ chối (Dành cho Người Giao Việc & Ban Giám Đốc) -->
-                    <div id="ext-banner-actions-reporter" class="hidden flex items-center gap-2">
+                    <div id="ext-banner-actions-reporter" class="hidden items-center gap-2">
                         <button type="button" onclick="reviewTaskExtension('approve')" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95" title="Đồng ý dời hạn chót sang ngày mới">
                             <i class="ph-bold ph-check text-sm"></i> Đồng ý gia hạn
                         </button>
-                        <button type="button" onclick="toggleRejectExtensionBox(true)" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-lg text-xs font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer active:scale-95" title="Không đồng ý dời hạn (bắt buộc nhập lý do)">
+                        <button type="button" onclick="toggleRejectExtensionBox(true)" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95" title="Không đồng ý dời hạn (bắt buộc nhập lý do)">
                             <i class="ph-bold ph-x text-sm"></i> Không đồng ý
                         </button>
                     </div>
 
-                    <!-- Nút Thao Tác: Thu hồi đề xuất (Dành cho Người Phụ Trách) -->
-                    <div id="ext-banner-actions-assignee" class="hidden">
-                        <button type="button" onclick="cancelTaskExtension()" class="px-2.5 py-1 text-slate-600 hover:text-rose-700 text-xs font-semibold hover:underline flex items-center gap-1 cursor-pointer">
-                            <i class="ph ph-arrow-u-up-left"></i> Thu hồi đề xuất
+                    <!-- Nút Thao Tác: Trạng thái & Thu hồi đề xuất (Dành cho Người Phụ Trách) -->
+                    <div id="ext-banner-actions-assignee" class="hidden items-center gap-2">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-[11px] font-bold">
+                            <i class="ph-bold ph-hourglass-medium text-amber-600"></i> Đang chờ người giao phê duyệt
+                        </span>
+                        <button type="button" onclick="cancelTaskExtension()" class="px-2.5 py-1 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-md text-xs font-semibold transition-all shadow-2xs flex items-center gap-1 cursor-pointer">
+                            <i class="ph-bold ph-arrow-u-up-left"></i> Thu hồi đề xuất
                         </button>
                     </div>
                 </div>
 
                 <!-- Form nhập lý do khi Người giao việc Không đồng ý gia hạn -->
-                <div id="ext-reject-reason-box" class="hidden p-3 bg-rose-50/80 rounded-xl border border-rose-200 shadow-2xs space-y-2 animate-in fade-in">
+                <div id="ext-reject-reason-box" class="hidden p-3.5 bg-rose-50 rounded-xl border border-rose-300 shadow-2xs space-y-2.5 animate-in fade-in">
                     <div class="flex items-center justify-between text-xs font-bold text-rose-900">
-                        <span class="flex items-center gap-1">
-                            <i class="ph-bold ph-warning-circle text-rose-600"></i>
-                            Lý do không đồng ý gia hạn (bắt buộc):
+                        <span class="flex items-center gap-1.5">
+                            <i class="ph-bold ph-warning-circle text-rose-600 text-sm"></i>
+                            Lý do không đồng ý gia hạn (bắt buộc phản hồi cho người phụ trách):
                         </span>
-                        <button type="button" onclick="toggleRejectExtensionBox(false)" class="text-slate-400 hover:text-slate-600 text-xs p-1">✕</button>
+                        <button type="button" onclick="toggleRejectExtensionBox(false)" class="text-slate-400 hover:text-slate-600 text-xs p-1" title="Đóng">✕</button>
                     </div>
-                    <textarea id="ext-reject-reason-input" rows="2" placeholder="Ghi rõ lý do không đồng ý dời hạn để người phụ trách nắm rõ..." class="w-full bg-white border border-rose-300 rounded-lg p-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-rose-500 shadow-2xs"></textarea>
+                    <textarea id="ext-reject-reason-input" rows="2" placeholder="Ghi rõ lý do không đồng ý dời hạn để người phụ trách nắm rõ và đẩy nhanh tiến độ..." class="w-full bg-white border border-rose-300 rounded-lg p-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-rose-500 shadow-2xs"></textarea>
                     <div class="flex justify-end gap-2">
-                        <button type="button" onclick="toggleRejectExtensionBox(false)" class="px-3 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 text-xs font-medium">Hủy</button>
-                        <button type="button" onclick="submitRejectTaskExtension()" class="px-3.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 active:scale-95">
+                        <button type="button" onclick="toggleRejectExtensionBox(false)" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 text-xs font-semibold cursor-pointer">Hủy</button>
+                        <button type="button" onclick="submitRejectTaskExtension()" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 active:scale-95 cursor-pointer">
                             <i class="ph-bold ph-paper-plane-tilt text-xs"></i> Gửi phản hồi từ chối
                         </button>
                     </div>
