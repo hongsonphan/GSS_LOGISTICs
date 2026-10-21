@@ -307,12 +307,54 @@ const chartDataLabelsPlugin = {
     id: 'customDataLabels',
     afterDatasetsDraw(chart, args, pluginOptions) {
         if (!pluginOptions || !pluginOptions.display) return;
-        if (chart.config.type === 'doughnut' || chart.config.type === 'pie') return;
 
         const { ctx } = chart;
         ctx.save();
-        ctx.font = 'bold 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.lineJoin = 'round';
+
+        // 1. XỬ LÝ RIÊNG CHO BIỂU ĐỒ TRÒN / DONUT (HIỂN THỊ SỐ LIỆU CON TRÊN TỪNG Ô LÁT CẮT)
+        if (chart.config.type === 'doughnut' || chart.config.type === 'pie') {
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                const meta = chart.getDatasetMeta(datasetIndex);
+                if (!meta || meta.hidden) return;
+                const total = dataset.data.reduce((acc, curr) => acc + (Number(curr) || 0), 0);
+
+                meta.data.forEach((element, index) => {
+                    const val = dataset.data[index];
+                    if (val === null || val === undefined || val === 0) return;
+                    const pct = total > 0 ? (val / total * 100) : 0;
+                    if (pct < 3.5) return;
+
+                    let text = '';
+                    if (typeof val === 'number') {
+                        if (val >= 1000000) {
+                            text = (val / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tr';
+                        } else if (val >= 1000) {
+                            text = new Intl.NumberFormat('vi-VN').format(val);
+                        } else {
+                            text = String(val);
+                        }
+                    } else {
+                        text = String(val);
+                    }
+
+                    const pos = element.tooltipPosition();
+                    ctx.font = 'bold 11px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.fillStyle = '#0f172a';
+                    ctx.strokeText(text, pos.x, pos.y);
+                    ctx.fillText(text, pos.x, pos.y);
+                });
+            });
+            ctx.restore();
+            return;
+        }
+
+        // 2. XỬ LÝ CHO BIỂU ĐỒ CỘT (BAR) & ĐƯỜNG (LINE)
+        ctx.font = 'bold 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#ffffff';
 
@@ -354,11 +396,11 @@ const chartDataLabelsPlugin = {
                     let textColor = '#1e293b';
                     const lbl = (dataset.label || '').toLowerCase();
                     if (dataset.type === 'line' || lbl.includes('lợi nhuận')) {
-                        textColor = '#047857'; // Xanh lá cây đậm cho Lợi nhuận
+                        textColor = '#047857';
                     } else if (lbl.includes('doanh thu') || lbl.includes('lệnh điều')) {
-                        textColor = '#1d4ed8'; // Xanh dương đậm cho Doanh thu
+                        textColor = '#1d4ed8';
                     } else if (lbl.includes('chi phí') || lbl.includes('phí')) {
-                        textColor = '#b45309'; // Cam đất đậm cho Chi phí
+                        textColor = '#b45309';
                     } else if (dataset.borderColor) {
                         textColor = dataset.borderColor;
                     }

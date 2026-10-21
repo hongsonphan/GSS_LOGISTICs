@@ -2330,12 +2330,54 @@ const chartDataLabelsPlugin = {
     id: 'customDataLabels',
     afterDatasetsDraw(chart, args, pluginOptions) {
         if (!pluginOptions || !pluginOptions.display) return;
-        if (chart.config.type === 'doughnut' || chart.config.type === 'pie') return;
 
         const { ctx } = chart;
         ctx.save();
-        ctx.font = 'bold 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.lineJoin = 'round';
+
+        // 1. XỬ LÝ RIÊNG CHO BIỂU ĐỒ TRÒN / DONUT (HIỂN THỊ SỐ LIỆU CON TRÊN TỪNG Ô LÁT CẮT)
+        if (chart.config.type === 'doughnut' || chart.config.type === 'pie') {
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                const meta = chart.getDatasetMeta(datasetIndex);
+                if (!meta || meta.hidden) return;
+                const total = dataset.data.reduce((acc, curr) => acc + (Number(curr) || 0), 0);
+
+                meta.data.forEach((element, index) => {
+                    const val = dataset.data[index];
+                    if (val === null || val === undefined || val === 0) return;
+                    const pct = total > 0 ? (val / total * 100) : 0;
+                    if (pct < 3.5) return; // Không vẽ các góc quá hẹp để tránh rối mắt
+
+                    let text = '';
+                    if (typeof val === 'number') {
+                        if (val >= 1000000) {
+                            text = (val / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tr';
+                        } else if (val >= 1000) {
+                            text = new Intl.NumberFormat('vi-VN').format(val);
+                        } else {
+                            text = String(val);
+                        }
+                    } else {
+                        text = String(val);
+                    }
+
+                    const pos = element.tooltipPosition();
+                    ctx.font = 'bold 11px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.fillStyle = '#0f172a';
+                    ctx.strokeText(text, pos.x, pos.y);
+                    ctx.fillText(text, pos.x, pos.y);
+                });
+            });
+            ctx.restore();
+            return;
+        }
+
+        // 2. XỬ LÝ CHO BIỂU ĐỒ CỘT (BAR) & ĐƯỜNG (LINE)
+        ctx.font = 'bold 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#ffffff';
 
@@ -2601,12 +2643,24 @@ function renderRoleDonut(role, optIdx = 1) {
     const curOpt = optIdx === 1 ? donutConfig.opt1 : donutConfig.opt2;
     if (!curOpt) return;
 
-    // Cập nhật tâm rỗng
+    // Cập nhật tâm rỗng tự động điều chỉnh font size hài hòa
     const centerValEl = document.getElementById('donut-center-value');
     const centerLblEl = document.getElementById('donut-center-label');
     if (centerValEl && centerLblEl) {
-        centerValEl.innerText = curOpt.center_val || '0%';
+        const valText = curOpt.center_val || '0%';
+        centerValEl.innerText = valText;
         centerLblEl.innerText = curOpt.center_lbl || '';
+        const len = String(valText).length;
+        if (len > 12) {
+            centerValEl.style.fontSize = '13.5px';
+        } else if (len > 9) {
+            centerValEl.style.fontSize = '15px';
+        } else if (len > 6) {
+            centerValEl.style.fontSize = '17px';
+        } else {
+            centerValEl.style.fontSize = '20px';
+        }
+        centerValEl.style.lineHeight = '1.2';
     }
 
     // Cập nhật chú thích bên dưới
@@ -2639,7 +2693,7 @@ function renderRoleDonut(role, optIdx = 1) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '72%',
+            cutout: '74%',
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -3029,7 +3083,44 @@ function renderPivotChartCanvas(canvasId, pivotRes, isPreview = false, isSlot2 =
                 legend: {
                     display: (actualType === 'doughnut' || actualType === 'pie'),
                     position: isSlot2 ? 'bottom' : 'right',
-                    labels: { font: { family: "'Inter', sans-serif", size: 10 }, boxWidth: 10 }
+                    labels: {
+                        font: { family: "'Inter', sans-serif", size: 10.5, weight: '600' },
+                        boxWidth: 9,
+                        padding: 6,
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels && data.labels.length && data.datasets && data.datasets.length) {
+                                const dataset = data.datasets[0];
+                                const total = dataset.data.reduce((a, b) => a + (Number(b) || 0), 0);
+                                return data.labels.map((label, i) => {
+                                    const val = dataset.data[i] || 0;
+                                    let valText = '';
+                                    if (typeof val === 'number') {
+                                        if (val >= 1000000) {
+                                            valText = (val / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tr';
+                                        } else if (val >= 1000) {
+                                            valText = new Intl.NumberFormat('vi-VN').format(val);
+                                        } else {
+                                            valText = String(val);
+                                        }
+                                    } else {
+                                        valText = String(val);
+                                    }
+                                    const pct = total > 0 ? (val / total * 100).toFixed(1) + '%' : '';
+                                    const bg = Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[i % dataset.backgroundColor.length] : dataset.backgroundColor;
+                                    return {
+                                        text: `${label}: ${valText} (${pct})`,
+                                        fillStyle: bg,
+                                        strokeStyle: '#ffffff',
+                                        lineWidth: 1,
+                                        hidden: !chart.getDataVisibility(i),
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
@@ -3056,7 +3147,7 @@ function renderPivotChartCanvas(canvasId, pivotRes, isPreview = false, isSlot2 =
     };
 
     if (actualType === 'doughnut') {
-        config.options.cutout = '70%';
+        config.options.cutout = '74%';
     }
 
     if (actualType !== 'doughnut' && actualType !== 'pie') {
@@ -3257,8 +3348,25 @@ function renderCustomChartOnSlot(slot, pivotRes) {
                 centerContainer.classList.remove('hidden');
                 const centerVal = document.getElementById('donut-center-value');
                 const centerLbl = document.getElementById('donut-center-label');
-                if (centerVal) centerVal.innerText = pivotRes.formatted_total;
-                if (centerLbl) centerLbl.innerText = 'Tổng';
+                if (centerVal) {
+                    const totalStr = pivotRes.formatted_total || '';
+                    centerVal.innerText = totalStr;
+                    const len = totalStr.length;
+                    if (len > 12) {
+                        centerVal.style.fontSize = '13.5px';
+                    } else if (len > 9) {
+                        centerVal.style.fontSize = '15px';
+                    } else if (len > 6) {
+                        centerVal.style.fontSize = '17px';
+                    } else {
+                        centerVal.style.fontSize = '20px';
+                    }
+                    centerVal.style.lineHeight = '1.2';
+                }
+                if (centerLbl) {
+                    centerLbl.innerText = 'TỔNG';
+                    centerLbl.style.fontSize = '10px';
+                }
             } else {
                 centerContainer.classList.add('hidden');
             }
@@ -3267,7 +3375,7 @@ function renderCustomChartOnSlot(slot, pivotRes) {
         // Cập nhật danh sách phân bổ bên dưới Biểu đồ 2
         const legendEl = document.getElementById('donut-legend-container');
         if (legendEl && Array.isArray(pivotRes.table_rows)) {
-            const displayRows = pivotRes.table_rows.slice(0, 3);
+            const displayRows = pivotRes.table_rows.slice(0, 4);
             const palette = ['bg-teal-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-indigo-500'];
             legendEl.innerHTML = displayRows.map((r, i) => `
                 <div class="flex justify-between items-center text-slate-600">

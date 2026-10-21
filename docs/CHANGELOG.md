@@ -22,6 +22,23 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * 121/121 automated tests passed (`python manage.py test --keepdb`).
   * Kiểm thử cú pháp JavaScript đạt chuẩn 100% (`node -c static/js/app.js`).
 
+## [v3.8.2] - 2026-10-21 (Thu Gọn Số Tổng Hài Hòa & Hiển Thị Số Liệu Con Trên Từng Ô Lát Cắt Donut)
+
+### 1. Thu Gọn Số Tổng Tâm Donut Tự Động Theo Độ Dài Chuỗi (Harmonious Donut Center):
+- **Tự Động Co Giãn Kích Thước (Auto-Scale Typography):**
+  * Đối với các số tiền lớn dài (ví dụ: `8,500,000 đ` hay `1.250.000.000 đ`): Font size tự động co về `13.5px - 15px` vừa vặn, không bao giờ bị tràn lấn hay đè lên các dải màu của Donut.
+  * Đối với các tỷ lệ ngắn (ví dụ: `100.0%`, `62.5%`, `15 xe`): Font size hiển thị ở mức `18px - 20px` to tròn, thanh thoát.
+- **Mở Rộng Không Gian Tâm Vòng Donut (Cutout):**
+  * Tăng tỷ lệ khoét tâm Donut từ `70% - 72%` lên `74%`, tạo không gian thoáng đãng, cân xứng hoàn hảo.
+
+### 2. Hiển Thị Số Liệu Con Trực Tiếp Lên Từng Ô Lát Cắt & Chú Thích (Slice Datalabels & Rich Legend):
+- **Hiển Thị Số Liệu Con Trên Từng Dải Màu Donut (Datalabels On Arcs):**
+  * Nâng cấp `chartDataLabelsPlugin` hỗ trợ đầy đủ `doughnut` và `pie`.
+  * Tự động tính toán tâm của từng lát cắt (`element.tooltipPosition()`), vẽ trực tiếp giá trị con tương ứng (ví dụ: `2,5 tr`, `3 tr`, `1,8 tr`...) với viền trắng 3px chống lóa và chữ đen than `#0f172a` sắc nét.
+  * Tự động lọc thông minh: các lát cắt cực nhỏ (< 3.5%) được ẩn số để tránh rối mắt.
+- **Hiển Thị Đầy Đủ Số Liệu Con Trong Chú Thích (Rich Legend):**
+  * Hệ thống Legend của Donut Chart tự động bổ sung số tiền và tỷ lệ phần trăm cụ thể bên cạnh tên (ví dụ: `■ Phạm Sơn: 3 tr (35.3%)`, `■ Lê Hòa: 2,5 tr (29.4%)`...).
+
 ## [v3.8.1] - 2026-10-21 (Cân Bằng Kích Cỡ Trục Y & Tách Biệt Màu Sắc Tương Phản Doanh Thu - Chi Phí - Lợi Nhuận)
 
 ### 1. Nâng Cấp Kích Thước & Độ Tương Phản Trục Tọa Độ Trái (Trục Y):
