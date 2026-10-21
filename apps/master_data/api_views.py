@@ -1,8 +1,16 @@
+from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
 from core.permissions import CanManageMasterData
+from apps.master_data.import_export_service import (
+    generate_catalog_template,
+    generate_catalog_data_export,
+    process_catalog_import,
+    CATALOG_REGISTRY
+)
 
 class MasterDataBaseAPIView(APIView):
     permission_classes = [CanManageMasterData]
@@ -1822,3 +1830,92 @@ class OpeningBalanceDetailAPIView(MasterDataBaseAPIView):
             'message': f'Đã xóa số dư đầu kỳ "{record.entity_name}".'
         })
 
+
+
+
+# =====================================================================
+# TÍNH NĂNG XUẤT MẪU & NHẬP EXCEL DANH MỤC BAN ĐẦU (MASTER DATA IMPORT/EXPORT)
+# =====================================================================
+
+class MasterDataExportTemplateAPIView(APIView):
+    """API xuất file Excel mẫu chuẩn hóa để người dùng nhập liệu ban đầu."""
+    permission_classes = [CanManageMasterData]
+
+    def get(self, request):
+        catalog = request.GET.get('catalog', '').strip().lower()
+        if not catalog or catalog not in CATALOG_REGISTRY:
+            return Response(
+                {'error': f"Danh mục '{catalog}' không hợp lệ. Các danh mục hỗ trợ: {', '.join(CATALOG_REGISTRY.keys())}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            wb, filename = generate_catalog_template(catalog)
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            wb.save(response)
+            return response
+        except Exception as e:
+            return Response({'error': f'Lỗi xuất file mẫu: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class MasterDataExportDataAPIView(APIView):
+    """API xuất toàn bộ dữ liệu danh mục hiện hành ra file Excel."""
+    permission_classes = [CanManageMasterData]
+
+    def get(self, request):
+        catalog = request.GET.get('catalog', '').strip().lower()
+        if not catalog or catalog not in CATALOG_REGISTRY:
+            return Response(
+                {'error': f"Danh mục '{catalog}' không hợp lệ. Các danh mục hỗ trợ: {', '.join(CATALOG_REGISTRY.keys())}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            wb, filename = generate_catalog_data_export(catalog)
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            wb.save(response)
+            return response
+        except Exception as e:
+            return Response({'error': f'Lỗi xuất dữ liệu: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class MasterDataImportAPIView(APIView):
+    """API nhập danh mục từ tệp Excel chuẩn hóa."""
+    permission_classes = [CanManageMasterData]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        catalog = request.data.get('catalog', '').strip().lower()
+        if not catalog or catalog not in CATALOG_REGISTRY:
+            return Response(
+                {'success': False, 'message': f"Danh mục '{catalog}' không hợp lệ. Các danh mục hỗ trợ: {', '.join(CATALOG_REGISTRY.keys())}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        file_obj = request.FILES.get('file')
+        if not file_obj:
+            return Response(
+                {'success': False, 'message': 'Vui lòng chọn tệp Excel (.xlsx) để tải lên.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not (file_obj.name.endswith('.xlsx') or file_obj.name.endswith('.xls')):
+            return Response(
+                {'success': False, 'message': 'Định dạng tệp không hợp lệ. Hệ thống chỉ hỗ trợ tệp Excel (.xlsx).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        update_existing = str(request.data.get('update_existing', 'true')).lower() in ['true', '1', 'yes']
+
+        result = process_catalog_import(
+            catalog_key=catalog,
+            file_obj=file_obj,
+            update_existing=update_existing,
+            user=request.user
+        )
+
+        return Response(result, status=status.HTTP_200_OK if result.get('success') else status.HTTP_400_BAD_REQUEST)

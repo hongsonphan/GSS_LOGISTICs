@@ -16,6 +16,9 @@ from apps.master_data.api_views import (
     SubcontractorFleetAPIView, SubcontractorDriverListCreateAPIView, SubcontractorDriverDetailAPIView,
     CompanyProfileAPIView,
     OpeningBalanceListCreateAPIView, OpeningBalanceDetailAPIView,
+    MasterDataExportTemplateAPIView,
+    MasterDataExportDataAPIView,
+    MasterDataImportAPIView,
 )
 from apps.master_data.permission_views import RolesPermissionsAPIView
 
@@ -28,6 +31,11 @@ urlpatterns = [
     path('roles-permissions/', RolesPermissionsAPIView.as_view(), name='master-roles-permissions'),
     path('opening-balances/', OpeningBalanceListCreateAPIView.as_view(), name='master-opening-balances'),
     path('opening-balances/<int:pk>/', OpeningBalanceDetailAPIView.as_view(), name='master-opening-balance-detail'),
+
+    # Export mẫu & Nhập Excel danh mục ban đầu
+    path('export-template/', MasterDataExportTemplateAPIView.as_view(), name='master-export-template'),
+    path('export-data/', MasterDataExportDataAPIView.as_view(), name='master-export-data'),
+    path('import/', MasterDataImportAPIView.as_view(), name='master-import'),
 
     # 1. Địa điểm / Cảng bãi
     path('locations/', LocationListCreateAPIView.as_view(), name='master-locations'),

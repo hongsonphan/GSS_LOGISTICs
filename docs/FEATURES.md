@@ -517,6 +517,15 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - Tài khoản ngân hàng, Logo, Địa chỉ trụ sở + Chi nhánh
 - Tham số hệ thống: VAT mặc định, Giá dầu tham chiếu, Hệ số CBM
 
+### 13.10 Tính năng Xuất Mẫu & Nhập Danh Mục Ban Đầu Từ Excel (Master Data Import/Export)
+- **Tải Mẫu Excel Chuẩn Hóa:** Cho phép tải template Excel (`.xlsx`) cho 12 danh mục với header chuẩn BIM Logistics, giải thích định dạng và dữ liệu mẫu thực tế.
+- **Nhập Danh Mục Hàng Loạt:** Hỗ trợ kéo thả/chọn file Excel để nạp dữ liệu ban đầu cho các bảng Cảng bãi, Khách hàng, Biểu cước, Đội xe, Lương chuyến, Khoản chi, Số dư đầu kỳ.
+- **Cơ Chế Upsert Thông Minh:** Tự động nhận diện bản ghi đã tồn tại qua mã định danh để cập nhật thông tin thay vì báo lỗi trùng lặp.
+- **API Endpoints:**
+  * `GET /api/master-data/export-template/?catalog=<catalog>` — Tải file mẫu.
+  * `GET /api/master-data/export-data/?catalog=<catalog>` — Xuất dữ liệu hiện tại.
+  * `POST /api/master-data/import/` — Nạp dữ liệu từ file Excel.
+
 ### 13.9 API Form Options
 - `GET /api/master-data/form-options/` — Tổng hợp tất cả dropdown options cho form giao diện
 - `GET /api/master-data/summary/` — Số lượng bản ghi mỗi danh mục

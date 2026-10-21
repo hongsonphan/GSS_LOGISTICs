@@ -373,3 +373,129 @@ class OpeningBalanceAPITestCase(TestCase):
         }, format='json')
         self.assertEqual(add_drv.status_code, status.HTTP_201_CREATED)
         self.assertEqual(SubcontractorDriver.objects.filter(subcontractor=sub).count(), 4)
+
+    def test_export_template_api(self):
+        res = self.client.get('/api/master-data/export-template/?catalog=locations')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertIn('attachment;', res['Content-Disposition'])
+
+        res_cust = self.client.get('/api/master-data/export-template/?catalog=customers')
+        self.assertEqual(res_cust.status_code, status.HTTP_200_OK)
+
+        res_invalid = self.client.get('/api/master-data/export-template/?catalog=nonexistent')
+        self.assertEqual(res_invalid.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_export_data_api(self):
+        res = self.client.get('/api/master-data/export-data/?catalog=locations')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    def test_import_master_data_locations(self):
+        import io
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.master_data.import_export_service import generate_catalog_template
+
+        wb, _ = generate_catalog_template('locations')
+        ws = wb.active
+        ws.append(['TEST_NEW_LOC', 'Cảng Mới Nhập Excel', 'Cảng Biển', 'Bình Dương', 'KCN VSIP', 'Anh Test', '0912345678', 'Test ghi chu', 'Hoạt động'])
+
+        out = io.BytesIO()
+        wb.save(out)
+        out.seek(0)
+
+        uploaded_file = SimpleUploadedFile(
+            'locations_import.xlsx',
+            out.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        res = self.client.post('/api/master-data/import/', {
+            'catalog': 'locations',
+            'file': uploaded_file,
+            'update_existing': 'true'
+        }, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data.get('success'))
+        self.assertGreaterEqual(res.data.get('created_count'), 1)
+        self.assertTrue(Location.objects.filter(code='TEST_NEW_LOC').exists())
+
+        # Test Upsert: Nhập lại với tên được chỉnh sửa
+        out_update = io.BytesIO()
+        ws.cell(row=ws.max_row, column=2, value='Cảng Mới Đã Cập Nhật Tên')
+        wb.save(out_update)
+        out_update.seek(0)
+
+        uploaded_file_2 = SimpleUploadedFile(
+            'locations_import_2.xlsx',
+            out_update.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        res_update = self.client.post('/api/master-data/import/', {
+            'catalog': 'locations',
+            'file': uploaded_file_2,
+            'update_existing': 'true'
+        }, format='multipart')
+
+        self.assertEqual(res_update.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_update.data.get('success'))
+        self.assertGreaterEqual(res_update.data.get('updated_count'), 1)
+        loc = Location.objects.get(code='TEST_NEW_LOC')
+        self.assertEqual(loc.name, 'Cảng Mới Đã Cập Nhật Tên')
+
+    def test_import_master_data_customers_and_tariffs(self):
+        import io
+        from decimal import Decimal
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.customers.models import Customer, RouteTariff
+        from apps.master_data.import_export_service import generate_catalog_template
+
+        # 1. Import Khách hàng
+        wb_c, _ = generate_catalog_template('customers')
+        ws_c = wb_c.active
+        ws_c.append(['KH_IMPORT_TEST', 'Công Ty Test Import Cước', 'TEST IMPORT', '0319998888', '123 Test Street, Q12', 'Nguyễn Test', '0909999888', 'Hợp đồng mới'])
+
+        out_c = io.BytesIO()
+        wb_c.save(out_c)
+        out_c.seek(0)
+
+        uploaded_cust = SimpleUploadedFile(
+            'customers_import.xlsx',
+            out_c.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        res_c = self.client.post('/api/master-data/import/', {
+            'catalog': 'customers',
+            'file': uploaded_cust,
+            'update_existing': 'true'
+        }, format='multipart')
+
+        self.assertEqual(res_c.status_code, status.HTTP_200_OK)
+        self.assertTrue(Customer.objects.filter(code='KH_IMPORT_TEST').exists())
+
+        # 2. Import Biểu cước RouteTariff cho khách hàng vừa tạo
+        wb_t, _ = generate_catalog_template('tariffs')
+        ws_t = wb_t.active
+        ws_t.append(['KH_IMPORT_TEST', 'Cát Lái', 'Bình Dương', 'Cảng Cát Lái', 'Kho Test Sóng Thần', 'Depot Sóng Thần', '40HC', 3800000, 520000, 150000, 45])
+
+        out_t = io.BytesIO()
+        wb_t.save(out_t)
+        out_t.seek(0)
+
+        uploaded_tariff = SimpleUploadedFile(
+            'tariffs_import.xlsx',
+            out_t.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        res_t = self.client.post('/api/master-data/import/', {
+            'catalog': 'tariffs',
+            'file': uploaded_tariff,
+            'update_existing': 'true'
+        }, format='multipart')
+
+        self.assertEqual(res_t.status_code, status.HTTP_200_OK)
+        self.assertTrue(RouteTariff.objects.filter(customer__code='KH_IMPORT_TEST', container_size='40HC').exists())

@@ -2,6 +2,47 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.9] - 2026-10-21 (Tính Năng Tải File Mẫu Excel & Nhập Danh Mục Ban Đầu Trực Tiếp Trên Từng Bảng Master Data Cho Người Dùng Admin)
+
+### 1. Kiến Trúc Dịch Vụ Xuất Mẫu & Nhập Dữ Liệu Excel (`apps/master_data/import_export_service.py`):
+- **Cấu hình Đầy Đủ 12 Danh Mục Cốt Lõi (`CATALOG_REGISTRY`):**
+  * Hỗ trợ 100% các bảng danh mục quan trọng của ERP/TMS: Cảng & Kho bãi (`locations`), Quy cách cont & xe (`containers`), Khoản mục chi (`expenses`), Biểu phí lương chuyến (`driver_tariffs`), Phụ cấp & kiểm hóa (`allowances`), Khách hàng (`customers`), Biểu cước tuyến khách (`tariffs`), Phương tiện xe (`vehicles`), Rơ-moóc (`trailers`), Hãng tàu (`shipping_lines`), Nhà xe thầu phụ 3PL (`subcontractors`), Số dư ban đầu kế toán (`opening_balance`).
+- **Tạo File Mẫu Chuẩn Hóa Thương Hiệu BIM Logistics (`generate_catalog_template`):**
+  * Định dạng file `.xlsx` chuyên nghiệp với mã màu nhận diện thương hiệu BIM (Teal `#115E59` header), font chuẩn, đường viền mảnh (thin borders), tính năng tự động co giãn độ rộng cột (auto-fit width) và bật hiển thị đường lưới ô (gridlines).
+  * Tiêu đề bảng rõ ràng kèm ghi chú hướng dẫn các cột bắt buộc có dấu `(*)`.
+  * Có sẵn các dòng dữ liệu mẫu mang tính thực tế nghiệp vụ vận tải Triền Võ để người dùng dễ dàng hình dung và điền thông tin chính xác.
+- **Trình Xử Lý Nhập Liệu An Toàn & Linh Hoạt (`process_catalog_import`):**
+  * Tự động dò tìm dòng header thông minh hoặc theo vị trí cột.
+  * Hỗ trợ làm sạch dữ liệu: tự động parse chuỗi, số nguyên, số thực (VNĐ/kg/CBM loại bỏ dấu phẩy, chữ 'đ', khoảng trắng), kiểu ngày tháng (`DD/MM/YYYY`, `YYYY-MM-DD`), kiểu logic (Có/Không, Hoạt động/Ngừng, True/False, 1/0) và lựa chọn enum tiếng Việt.
+  * Tự động tra cứu và liên kết khóa ngoại (Foreign Key) như liên kết Khách hàng trong Biểu cước (`tariffs`), liên kết Thầu phụ 3PL trong Phương tiện (`vehicles`).
+  * Cơ chế Upsert thông minh: tự động cập nhật nếu đã tồn tại mã hoặc bỏ qua tránh ghi đè tùy chọn của người dùng.
+  * Thực thi trong giao dịch nguyên tử (`transaction.atomic()`) bảo toàn tính toàn vẹn dữ liệu và cơ chế Soft-Delete (`is_deleted=False`).
+
+### 2. Hệ Thống REST API Master Data (`apps/master_data/api_views.py` & `urls.py`):
+- `GET /api/master-data/export-template/?catalog=<catalog_key>`: Tạo và tải về file Excel mẫu chuẩn hóa cho danh mục được chọn.
+- `GET /api/master-data/export-data/?catalog=<catalog_key>`: Xuất toàn bộ dữ liệu hiện hành trong bảng ra file Excel.
+- `POST /api/master-data/import/`: Nhận file `.xlsx` (`multipart/form-data`), kiểm tra quyền quản trị (`CanManageMasterData`), xử lý nạp dữ liệu và phản hồi báo cáo chi tiết (số bản ghi tạo mới, cập nhật, bỏ qua và danh sách lỗi từng dòng).
+
+### 3. Giao Diện Người Dùng Master Data SPA (`templates/views/view_master_data.html`, `templates/components/modal_master_data_import.html` & `static/js/app.js`):
+- **Cụm Nút Tác Vụ Chuẩn Trên Từng Bảng:**
+  * Hiển thị trực quan ngay trên thanh công cụ của từng bảng danh mục:
+    + `[Tải Mẫu Excel]` (Nút màu trắng viền xám, icon download teal)
+    + `[Nhập Excel]` (Nút màu xanh ngọc emerald nổi bật, icon upload)
+    + `[Xuất File]` (Nút xuất toàn bộ dữ liệu bảng)
+    + `[Tạo Mới]` (Nút thêm mới thủ công từng bản ghi)
+  * Nút tự động thích ứng: chỉ hiển thị trên các bảng danh mục dữ liệu, ẩn đi trên các tab đặc thù như Hồ sơ công ty hay Phân quyền Django.
+- **Modal Nhập Dữ Liệu Chuyên Nghiệp (`modal-master-data-import`):**
+  * Tự động đồng bộ bảng danh mục đích theo tab hiện tại, hỗ trợ chuyển đổi linh hoạt.
+  * Tích hợp nút tải nhanh file mẫu ngay trong modal nếu người dùng chưa có mẫu.
+  * Vùng kéo thả (Drag & Drop) tệp Excel trực quan, hiển thị tên file và dung lượng tệp được chọn.
+  * Hộp kiểm "Cập nhật dữ liệu nếu đã tồn tại mã (Upsert - Khuyến nghị)".
+  * Hiển thị trạng thái tiến trình (spinner) và báo cáo tổng kết chi tiết dạng alert trực quan kèm tự động làm mới bảng dữ liệu và số liệu thống kê.
+
+### 4. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
+- **Kiểm tra Cú pháp JS:** `node -c static/js/app.js` & `node -c static/js/column_manager.js` -> 100% Passed.
+- **Bộ Kiểm Thử Tự Động Toàn Phân Hệ Master Data:** 14/14 tests Passed (`apps/master_data/tests.py`).
+- **Kiểm Thử Thị Giác Playwright Browser:** Chụp ảnh màn hình thực tế giao diện các nút thao tác trên từng bảng và Modal nhập liệu (`test_screenshots/`).
+
 ## [v3.6.8] - 2026-10-21 (Triển Khai Quản Lý Tập Trung Xe & Tài Xế Đối Tác 3PL Làm Trọng Tâm: Model SubcontractorDriver, Cách Ly Bảng Lương Nhân Sự, Gom Nhóm Công Nợ Theo Pháp Nhân & Điều Xe Động On-The-Fly)
 
 ### 1. Kiến Trúc Quản Lý Tập Trung Theo Pháp Nhân Đối Tác 3PL (Thầu Phụ):
