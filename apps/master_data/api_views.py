@@ -171,10 +171,11 @@ class MasterDataFormOptionsAPIView(APIView):
             {
                 'id': sc.id,
                 'code': sc.code,
+                'short_name': sc.short_name or sc.code,
                 'name': sc.name,
                 'phone': sc.phone,
                 'contact_person': sc.contact_person,
-                'label': f"{sc.name} ({sc.code})"
+                'label': f"[{sc.short_name or sc.code}] {sc.name}"
             }
             for sc in Subcontractor.objects.filter(is_active=True).order_by('name')
         ]
@@ -620,7 +621,7 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         ownership = request.GET.get('ownership', '').strip()
-        qs = Vehicle.objects.select_related('current_driver').all()
+        qs = Vehicle.objects.select_related('current_driver', 'subcontractor').all()
         if q:
             qs = qs.filter(Q(license_plate__icontains=q) | Q(brand__icontains=q))
         if ownership and ownership != 'ALL':
@@ -642,6 +643,8 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
                 'next_maintenance_date': v.next_maintenance_date.strftime('%d/%m/%Y') if v.next_maintenance_date else '-',
                 'current_driver_id': v.current_driver_id,
                 'driver_name': (v.current_driver.nickname or v.current_driver.full_name) if v.current_driver else '-',
+                'subcontractor_id': v.subcontractor_id,
+                'subcontractor_name': (v.subcontractor.short_name or v.subcontractor.name) if v.subcontractor else '-',
                 'status': v.status,
                 'status_label': v.get_status_display(),
             })
@@ -691,11 +694,15 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
 
         driver_id = data.get('current_driver_id')
         driver = Employee.objects.filter(id=driver_id).first() if driver_id else None
+        subcontractor_id = data.get('subcontractor_id')
+        subcontractor = Subcontractor.objects.filter(id=subcontractor_id).first() if subcontractor_id else None
+        ownership = data.get('ownership_type', VehicleOwnership.OWNED)
 
         veh = Vehicle.objects.create(
             license_plate=plate,
             vehicle_type=data.get('vehicle_type', VehicleType.TRACTOR),
-            ownership_type=data.get('ownership_type', VehicleOwnership.OWNED),
+            ownership_type=ownership,
+            subcontractor=subcontractor if ownership == VehicleOwnership.SUBCONTRACTOR else None,
             brand=data.get('brand', 'Freightliner').strip(),
             payload_capacity_kg=int(data.get('payload_capacity_kg', 30000)),
             registration_expiry=reg_expiry,
@@ -720,6 +727,11 @@ class VehicleMasterDetailAPIView(MasterDataBaseAPIView):
         if 'current_driver_id' in data:
             d_id = data['current_driver_id']
             veh.current_driver = Employee.objects.filter(id=d_id).first() if d_id else None
+        if 'subcontractor_id' in data:
+            s_id = data['subcontractor_id']
+            veh.subcontractor = Subcontractor.objects.filter(id=s_id).first() if s_id else None
+        if veh.ownership_type != VehicleOwnership.SUBCONTRACTOR:
+            veh.subcontractor = None
 
         import datetime
         if 'registration_expiry' in data and data['registration_expiry']:
@@ -1091,6 +1103,7 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
             data.append({
                 'id': sc.id,
                 'code': sc.code,
+                'short_name': sc.short_name or sc.code,
                 'name': sc.name,
                 'tax_code': sc.tax_code,
                 'contact_person': sc.contact_person,
@@ -1108,6 +1121,7 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
         data = request.data
         code = data.get('code', '').strip().upper()
         name = data.get('name', '').strip()
+        short_name = data.get('short_name', '').strip()
         if not name:
             return Response({'error': 'Tên nhà xe không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1118,11 +1132,15 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
             clean = re.sub(r'[^A-Z0-9_]', '', clean)[:15]
             code = f"NX_{clean}"
 
+        if not short_name:
+            short_name = code
+
         if Subcontractor.objects.filter(code=code).exists():
             return Response({'error': f'Mã nhà xe [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
 
         sc = Subcontractor.objects.create(
             code=code,
+            short_name=short_name,
             name=name,
             tax_code=data.get('tax_code', '').strip(),
             contact_person=data.get('contact_person', '').strip(),
@@ -1148,6 +1166,7 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
 
         data = request.data
         if 'name' in data: sc.name = data['name'].strip()
+        if 'short_name' in data: sc.short_name = data['short_name'].strip()
         if 'tax_code' in data: sc.tax_code = data['tax_code'].strip()
         if 'contact_person' in data: sc.contact_person = data['contact_person'].strip()
         if 'phone' in data: sc.phone = data['phone'].strip()
@@ -1179,7 +1198,7 @@ class SubcontractorFleetAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
         vehicles = Vehicle.objects.filter(
-            Q(subcontractor=sc) | Q(ownership_type=VehicleOwnership.SUBCONTRACTOR),
+            subcontractor=sc,
             is_deleted=False
         ).order_by('license_plate')
 
@@ -1194,6 +1213,7 @@ class SubcontractorFleetAPIView(MasterDataBaseAPIView):
             'subcontractor': {
                 'id': sc.id,
                 'code': sc.code,
+                'short_name': sc.short_name or sc.code,
                 'name': sc.name,
                 'phone': sc.phone,
                 'contact_person': sc.contact_person,
@@ -1222,6 +1242,101 @@ class SubcontractorFleetAPIView(MasterDataBaseAPIView):
                 for d in drivers
             ]
         })
+
+class SubcontractorVehicleListCreateAPIView(MasterDataBaseAPIView):
+    """
+    API Danh sách & Thêm mới Phương tiện thuộc Nhà xe Thầu phụ (Xe Bạn).
+    """
+    def get(self, request, pk):
+        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+        vehicles = Vehicle.objects.filter(subcontractor=sc, is_deleted=False).order_by('license_plate')
+        return Response({
+            'results': [
+                {
+                    'id': v.id,
+                    'license_plate': v.license_plate,
+                    'vehicle_type': v.get_vehicle_type_display(),
+                    'vehicle_type_code': v.vehicle_type,
+                    'brand': v.brand,
+                    'payload_capacity_kg': v.payload_capacity_kg,
+                    'status': v.status,
+                    'status_label': v.get_status_display(),
+                }
+                for v in vehicles
+            ],
+            'total': len(vehicles)
+        })
+
+    def post(self, request, pk):
+        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+        data = request.data
+        plate = data.get('license_plate', '').strip().upper()
+        if not plate:
+            return Response({'error': 'Biển số xe không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payload = 30000
+        if 'payload_capacity_kg' in data and data['payload_capacity_kg']:
+            try:
+                payload = int(str(data['payload_capacity_kg']).replace('.', '').replace(',', ''))
+            except ValueError:
+                payload = 30000
+
+        veh = Vehicle.objects.filter(license_plate=plate).first()
+        if veh:
+            veh.subcontractor = sc
+            veh.ownership_type = VehicleOwnership.SUBCONTRACTOR
+            if 'vehicle_type' in data and data['vehicle_type']:
+                veh.vehicle_type = data['vehicle_type']
+            if payload:
+                veh.payload_capacity_kg = payload
+            if 'brand' in data and data['brand']:
+                veh.brand = data['brand'].strip()
+            veh.is_deleted = False
+            veh.save()
+            msg = f'Đã gán xe [{veh.license_plate}] cho nhà xe {sc.short_name or sc.name}!'
+        else:
+            veh = Vehicle.objects.create(
+                license_plate=plate,
+                vehicle_type=data.get('vehicle_type', VehicleType.TRACTOR),
+                ownership_type=VehicleOwnership.SUBCONTRACTOR,
+                subcontractor=sc,
+                brand=data.get('brand', '').strip(),
+                payload_capacity_kg=payload,
+                status=VehicleStatus.IDLE,
+            )
+            msg = f'Đã thêm xe [{veh.license_plate}] vào đội xe của {sc.short_name or sc.name}!'
+
+        return Response({
+            'success': True,
+            'message': msg,
+            'vehicle': {
+                'id': veh.id,
+                'license_plate': veh.license_plate,
+                'vehicle_type': veh.get_vehicle_type_display(),
+                'payload_capacity_kg': veh.payload_capacity_kg,
+            }
+        }, status=status.HTTP_201_CREATED)
+
+
+class SubcontractorVehicleDetailAPIView(MasterDataBaseAPIView):
+    """
+    API Gỡ phương tiện khỏi Nhà xe Thầu phụ.
+    """
+    def delete(self, request, pk, vehicle_id):
+        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+        veh = Vehicle.objects.filter(id=vehicle_id, subcontractor=sc).first()
+        if not veh:
+            return Response({'error': 'Không tìm thấy xe thuộc nhà xe này!'}, status=status.HTTP_404_NOT_FOUND)
+        veh.subcontractor = None
+        veh.save()
+        return Response({'success': True, 'message': f'Đã gỡ xe [{veh.license_plate}] khỏi nhà xe {sc.short_name or sc.name}!'})
+
 
 class SubcontractorDriverListCreateAPIView(MasterDataBaseAPIView):
     """

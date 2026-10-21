@@ -374,6 +374,39 @@ class OpeningBalanceAPITestCase(TestCase):
         self.assertEqual(add_drv.status_code, status.HTTP_201_CREATED)
         self.assertEqual(SubcontractorDriver.objects.filter(subcontractor=sub).count(), 4)
 
+        # 6. Kiểm tra API Vehicles list & create (/api/master-data/subcontractors/<id>/vehicles/)
+        veh_res = self.client.get(f'/api/master-data/subcontractors/{sub.id}/vehicles/')
+        self.assertEqual(veh_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(veh_res.data['total'], 3)
+
+        # Thêm xe thứ 4 cho An Phú qua API
+        add_veh = self.client.post(f'/api/master-data/subcontractors/{sub.id}/vehicles/', {
+            'license_plate': '51C-444.44',
+            'vehicle_type': 'TRACTOR',
+            'payload_capacity_kg': '32000',
+            'brand': 'Freightliner'
+        }, format='json')
+        self.assertEqual(add_veh.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Vehicle.objects.filter(subcontractor=sub).count(), 4)
+
+        # Gỡ xe khỏi An Phú
+        del_veh = self.client.delete(f'/api/master-data/subcontractors/{sub.id}/vehicles/{v1.id}/')
+        self.assertEqual(del_veh.status_code, status.HTTP_200_OK)
+        v1.refresh_from_db()
+        self.assertIsNone(v1.subcontractor)
+        self.assertEqual(Vehicle.objects.filter(subcontractor=sub).count(), 3)
+
+        # 7. Kiểm tra Tên viết tắt (short_name) trong options
+        sub.short_name = 'AN PHU'
+        sub.save()
+        opt_res = self.client.get('/api/master-data/form-options/')
+        self.assertEqual(opt_res.status_code, status.HTTP_200_OK)
+        sub_opts = opt_res.data.get('subcontractors', [])
+        anphu_opt = next((x for x in sub_opts if x['id'] == sub.id), None)
+        self.assertIsNotNone(anphu_opt)
+        self.assertEqual(anphu_opt['short_name'], 'AN PHU')
+        self.assertIn('[AN PHU]', anphu_opt['label'])
+
     def test_export_template_api(self):
         res = self.client.get('/api/master-data/export-template/?catalog=locations')
         self.assertEqual(res.status_code, status.HTTP_200_OK)

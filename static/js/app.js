@@ -7233,8 +7233,24 @@ function onSubDriverSelectChange(val, triggerEl = null) {
 }
 
 // --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (Bim_ERP Standard) ---
-async function submitNewTrip() {
-    const is_split_trip = document.getElementById('chk-drop-hook')?.checked || false;
+async function submitNewTrip(sourceEl = null) {
+    // 1. Xác định context container chính xác: Nếu modal đang hiển thị thì ưu tiên modal, ngược lại nếu view-create-trip đang mở thì dùng view-create-trip
+    const modalEl = document.getElementById('modal-create-trip');
+    const isModalActive = modalEl && !modalEl.classList.contains('hidden-view') && !modalEl.classList.contains('hidden');
+    const viewEl = document.getElementById('view-create-trip');
+    const isViewActive = viewEl && !viewEl.classList.contains('hidden-view') && !viewEl.classList.contains('hidden');
+
+    let container = document;
+    if (sourceEl && sourceEl.closest) {
+        container = sourceEl.closest('#modal-create-trip') || sourceEl.closest('#view-create-trip') || (isModalActive ? modalEl : (isViewActive ? viewEl : document));
+    } else {
+        container = isModalActive ? modalEl : (isViewActive ? viewEl : document);
+    }
+
+    const getEl = (id) => container.querySelector('#' + id) || document.getElementById(id);
+    const getVal = (id) => (getEl(id)?.value || '').trim();
+
+    const is_split_trip = getEl('chk-drop-hook')?.checked || false;
 
     // Reset lỗi cũ & cấu hình danh sách trường bắt buộc theo chế độ chạy
     const requiredFields = [
@@ -7243,25 +7259,27 @@ async function submitNewTrip() {
         { id: 'inp-warehouse', errId: 'err-warehouse', label: 'Nơi đóng/trả hàng' }
     ];
 
-    const carrier_mode = document.getElementById('inp-carrier-mode')?.value || 'OWNED';
+    const carrier_mode = getVal('inp-carrier-mode') || 'OWNED';
     let subcontractor_id = null;
     let subcontractor_driver_id = null;
     let subcontractor_driver_name = '';
     let subcontractor_driver_phone = '';
     let subcontractor_cost = 0;
     let subcontractor_advance = 0;
+    let driver = '';
+    let vehicle = '';
 
     if (carrier_mode === 'SUBCONTRACTOR') {
         requiredFields.push({ id: 'inp-subcontractor', errId: 'err-subcontractor', label: 'Nhà xe / 3PL' });
         requiredFields.push({ id: 'inp-sub-cost', errId: 'err-sub-cost', label: 'Giá cước khoán 3PL' });
 
-        const subVehSel = document.getElementById('inp-sub-vehicle');
-        const subVehCustom = document.getElementById('inp-sub-vehicle-custom');
-        const subDrvSel = document.getElementById('inp-sub-driver');
-        const subDrvName = document.getElementById('inp-sub-driver-name');
-        const subDrvPhone = document.getElementById('inp-sub-driver-phone');
+        const subVehSel = getEl('inp-sub-vehicle');
+        const subVehCustom = getEl('inp-sub-vehicle-custom');
+        const subDrvSel = getEl('inp-sub-driver');
+        const subDrvName = getEl('inp-sub-driver-name');
+        const subDrvPhone = getEl('inp-sub-driver-phone');
 
-        subcontractor_id = document.getElementById('inp-subcontractor')?.value || '';
+        subcontractor_id = getVal('inp-subcontractor') || '';
 
         if (subVehSel && subVehSel.value === 'CUSTOM') {
             vehicle = subVehCustom ? subVehCustom.value.trim() : '';
@@ -7289,9 +7307,9 @@ async function submitNewTrip() {
             requiredFields.push({ id: 'inp-sub-driver', errId: 'err-sub-driver', label: 'Tài xế 3PL' });
         }
 
-        const rawCost = document.getElementById('inp-sub-cost')?.value || '0';
+        const rawCost = getVal('inp-sub-cost') || '0';
         subcontractor_cost = parseFloat(rawCost.replace(/\./g, '').replace(/,/g, '')) || 0;
-        const rawAdv = document.getElementById('inp-sub-advance')?.value || '0';
+        const rawAdv = getVal('inp-sub-advance') || '0';
         subcontractor_advance = parseFloat(rawAdv.replace(/\./g, '').replace(/,/g, '')) || 0;
     } else {
         if (is_split_trip) {
@@ -7307,8 +7325,8 @@ async function submitNewTrip() {
     const missingLabels = [];
 
     requiredFields.forEach(f => {
-        const inputEl = document.getElementById(f.id);
-        const errEl = document.getElementById(f.errId);
+        const inputEl = getEl(f.id);
+        const errEl = getEl(f.errId);
         if (!inputEl) return;
         
         if (!inputEl.value || !inputEl.value.trim()) {
@@ -7345,71 +7363,72 @@ async function submitNewTrip() {
         return;
     }
 
-    const bookingOrderEl = document.getElementById('select-booking-order');
+    const bookingOrderEl = getEl('select-booking-order');
     const booking_order_id = bookingOrderEl && bookingOrderEl.value ? parseInt(bookingOrderEl.value) : null;
-    const customer = document.getElementById('inp-customer')?.value || '';
-    const type = document.getElementById('inp-type')?.value || 'Nhập';
-    const is_twin_container = document.getElementById('chk-twin-cont')?.checked || false;
-    let container_type = document.getElementById('inp-cont-type') ? document.getElementById('inp-cont-type').value : (is_twin_container ? '2x20DC' : '40HC');
+    const customer = getVal('inp-customer');
+    const type = getVal('inp-type') || 'Nhập';
+    const is_twin_container = getEl('chk-twin-cont')?.checked || false;
+    let container_type = getVal('inp-cont-type') || (is_twin_container ? '2x20DC' : '40HC');
     if (is_twin_container && (!container_type || container_type === '40HC')) {
         container_type = '2x20DC';
     }
-    const container = document.getElementById('inp-cont')?.value || '';
-    const booking = document.getElementById('inp-booking')?.value || '';
-    const seal = document.getElementById('inp-seal')?.value || '';
-    const vgm_weight = document.getElementById('inp-vgm')?.value || '';
+    const container_code = getVal('inp-cont');
+    const booking = getVal('inp-booking');
+    const seal = getVal('inp-seal');
+    const vgm_weight = getVal('inp-vgm');
     syncTripCutoff();
-    const cutoff = document.getElementById('inp-cutoff')?.value || '';
-    const commercial_invoice = document.getElementById('inp-invoice') ? document.getElementById('inp-invoice').value.trim() : '';
-    const warehouse_dock = document.getElementById('inp-dock') ? document.getElementById('inp-dock').value.trim() : '';
-    const loading_time = document.getElementById('inp-load-time') ? document.getElementById('inp-load-time').value.trim() : '08:00';
-    const cont_location_type = document.getElementById('inp-cont-loc') ? document.getElementById('inp-cont-loc').value.trim() : 'NHÀ MÁY';
+    const cutoff = getVal('inp-cutoff');
+    const commercial_invoice = getVal('inp-invoice');
+    const warehouse_dock = getVal('inp-dock');
+    const loading_time = getVal('inp-load-time') || '08:00';
+    const cont_location_type = getVal('inp-cont-loc') || 'NHÀ MÁY';
 
     // Trường Cont thứ 2 (Kẹp 20ft)
-    const container_2 = is_twin_container ? (document.getElementById('inp-cont-2')?.value || '').trim() : '';
-    const seal_2 = is_twin_container ? (document.getElementById('inp-seal-2')?.value || '').trim() : '';
-    const booking_2 = is_twin_container ? (document.getElementById('inp-booking-2')?.value || '').trim() : '';
-    const vgm_weight_2 = is_twin_container ? (document.getElementById('inp-vgm-2')?.value || '').trim() : '';
-    const cargo_notes_2 = is_twin_container ? (document.getElementById('inp-cargo-notes-2')?.value || '').trim() : '';
+    const container_2 = is_twin_container ? getVal('inp-cont-2') : '';
+    const seal_2 = is_twin_container ? getVal('inp-seal-2') : '';
+    const booking_2 = is_twin_container ? getVal('inp-booking-2') : '';
+    const vgm_weight_2 = is_twin_container ? getVal('inp-vgm-2') : '';
+    const cargo_notes_2 = is_twin_container ? getVal('inp-cargo-notes-2') : '';
 
     // Nghiệp vụ Cảng: Quản lý Hạn Free DEM/DET & Giám định EIR
-    const det_free_days = parseInt(document.getElementById('inp-det-free-days')?.value) || 3;
-    const dem_free_days = parseInt(document.getElementById('inp-dem-free-days')?.value) || 3;
-    const det_expiry_date = document.getElementById('inp-det-expiry')?.value || '';
-    const dem_expiry_date = document.getElementById('inp-dem-expiry')?.value || '';
-    const container_condition = document.getElementById('select-container-condition')?.value || 'GOOD';
-    const damage_description = (document.getElementById('inp-damage-desc')?.value || '').trim();
+    const det_free_days = parseInt(getVal('inp-det-free-days')) || 3;
+    const dem_free_days = parseInt(getVal('inp-dem-free-days')) || 3;
+    const det_expiry_date = getVal('inp-det-expiry');
+    const dem_expiry_date = getVal('inp-dem-expiry');
+    const container_condition = getVal('select-container-condition') || 'GOOD';
+    const damage_description = getVal('inp-damage-desc');
 
-    const pickup = document.getElementById('inp-pickup')?.value || '';
-    const warehouse = document.getElementById('inp-warehouse')?.value || '';
-    const dropoff = document.getElementById('inp-dropoff')?.value || '';
-    let driver = '';
-    let vehicle = '';
+    const pickup = getVal('inp-pickup');
+    const warehouse = getVal('inp-warehouse');
+    const dropoff = getVal('inp-dropoff');
     let dropoff_driver = '';
     let dropoff_vehicle = '';
     let driver_split_ratio = 50;
 
-    if (is_split_trip) {
-        driver = document.getElementById('inp-driver-leg1')?.value || '';
-        vehicle = document.getElementById('inp-vehicle-leg1')?.value || '';
-        dropoff_driver = document.getElementById('inp-dropoff-driver')?.value || '';
-        dropoff_vehicle = document.getElementById('inp-dropoff-vehicle')?.value || '';
-        const splitRatioVal = document.getElementById('inp-driver-split-ratio')?.value;
-        if (splitRatioVal === 'custom') {
-            driver_split_ratio = parseFloat(document.getElementById('inp-custom-split-ratio-leg1')?.value) || 50;
+    if (carrier_mode !== 'SUBCONTRACTOR') {
+        if (is_split_trip) {
+            driver = getVal('inp-driver-leg1');
+            vehicle = getVal('inp-vehicle-leg1');
+            dropoff_driver = getVal('inp-dropoff-driver');
+            dropoff_vehicle = getVal('inp-dropoff-vehicle');
+            const splitRatioVal = getVal('inp-driver-split-ratio');
+            if (splitRatioVal === 'custom') {
+                driver_split_ratio = parseFloat(getVal('inp-custom-split-ratio-leg1')) || 50;
+            } else {
+                driver_split_ratio = parseFloat(splitRatioVal) || 50;
+            }
         } else {
-            driver_split_ratio = parseFloat(splitRatioVal) || 50;
+            driver = getVal('inp-driver');
+            vehicle = getVal('inp-vehicle');
         }
-    } else {
-        driver = document.getElementById('inp-driver')?.value || '';
     }
 
     const notes = is_split_trip 
-        ? (document.getElementById('inp-notes-drop-hook')?.value || document.getElementById('inp-notes')?.value || '')
-        : (document.getElementById('inp-notes')?.value || '');
+        ? (getVal('inp-notes-drop-hook') || getVal('inp-notes') || '')
+        : (getVal('inp-notes') || '');
 
     // Hiệu ứng Visual Feedback trên nút Lưu
-    const submitBtn = document.getElementById('btn-submit-trip') || document.querySelector('#form-create-trip button');
+    const submitBtn = getEl('btn-submit-trip') || container.querySelector('button[type="submit"]') || document.querySelector('#form-create-trip button');
     let originalBtnHtml = '';
     if (submitBtn) {
         originalBtnHtml = submitBtn.innerHTML;
@@ -7423,7 +7442,7 @@ async function submitNewTrip() {
         formData.append('customer', customer);
         formData.append('type', type);
         formData.append('container_type', container_type);
-        formData.append('container', container);
+        formData.append('container', container_code);
         formData.append('booking', booking);
         formData.append('seal', seal);
         formData.append('cutoff', cutoff);
@@ -20908,7 +20927,11 @@ function renderMasterDataTable(items, total = items.length) {
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 <td class="py-2 px-3 text-[13px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.license_plate}</td>
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.vehicle_type_label || item.vehicle_type}</td>
-                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.ownership_type_label || item.ownership_type}</td>
+                <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">
+                    ${item.ownership_type === 'SUBCONTRACTOR' 
+                        ? `<span class="inline-flex items-center gap-1 text-amber-800 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px] border border-amber-200" title="Xe bạn / 3PL: ${escapeHtml(item.subcontractor_name || '')}"><i class="ph-bold ph-handshake"></i> ${item.subcontractor_name && item.subcontractor_name !== '-' ? escapeHtml(item.subcontractor_name) : 'Xe Bạn (3PL)'}</span>`
+                        : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe Nhà (TVL)'}</span>`}
+                </td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.driver_name || '—'}</td>
@@ -21002,7 +21025,9 @@ function renderMasterDataTable(items, total = items.length) {
         tableHead.innerHTML = `
             <tr>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Nhà Xe</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Viết Tắt</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đơn Vị / Đối Tác Vận Tải</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Công Ty</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Điều Hành & SĐT</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Thông Tin Tài Khoản Ngân Hàng</th>
@@ -21014,18 +21039,23 @@ function renderMasterDataTable(items, total = items.length) {
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[12px] font-bold text-amber-900 border-r border-slate-200">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-900 border border-amber-200 font-mono font-bold">${escapeHtml(item.short_name || item.code)}</span>
+                </td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
                     <div class="flex items-center justify-between gap-2">
-                        <span class="hover:text-teal-700 cursor-pointer" onclick="openSubcontractorFleetModal(${item.id})" title="Nhấp để xem & quản lý danh bạ tài xế">${item.name}</span>
-                        <button type="button" onclick="openSubcontractorFleetModal(${item.id})" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shrink-0" title="Bấm để xem và thêm danh bạ tài xế của nhà xe này">
-                            <i class="ph-bold ph-steering-wheel text-amber-700"></i> Bác tài 3PL
+                        <span class="hover:text-teal-700 cursor-pointer" onclick="openSubcontractorFleetModal(${item.id})" title="Nhấp để xem & quản lý đội xe và danh bạ tài xế">${escapeHtml(item.name)}</span>
+                        <button type="button" onclick="openSubcontractorFleetModal(${item.id})" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shrink-0" title="Bấm để xem và quản lý đội xe & tài xế của nhà xe này">
+                            <i class="ph-bold ph-truck text-amber-700"></i> Đội xe & Bác tài
                         </button>
                     </div>
-                    ${item.address ? `<div class="text-[11px] text-slate-500 font-normal truncate max-w-xs">${item.address}</div>` : ''}
+                </td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 max-w-xs border-r border-slate-200">
+                    <div class="truncate" title="${escapeHtml(item.address || '')}">${item.address ? escapeHtml(item.address) : '<span class="text-slate-400 italic">Chưa cập nhật</span>'}</div>
                 </td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">
-                    <div class="font-bold">${item.contact_person || '—'}</div>
+                    <div class="font-bold">${(item.contact_person && item.contact_person !== 'null') ? escapeHtml(item.contact_person) : '—'}</div>
                     <div class="font-mono text-slate-700">${item.phone || '—'}</div>
                 </td>
                 <td class="py-2 px-3 text-[12px] border-r border-slate-200">
@@ -21814,11 +21844,23 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Nguồn Sở Hữu</label>
                     </div>
-                    <select id="mdf-ownership" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
+                    <select id="mdf-ownership" onchange="toggleVehicleSubcontractorField(this.value)" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="OWNED" ${d.ownership_type === 'OWNED' ? 'selected' : ''}>Xe Nhà (Đội Xe Công Ty)</option>
                         <option value="SUBCONTRACTOR" ${d.ownership_type === 'SUBCONTRACTOR' ? 'selected' : ''}>Xe Bạn (Thuê Ngoài / 3PL)</option>
                     </select>
                 </div>
+            </div>
+            <!-- Khối chọn Nhà Xe Thầu Phụ nếu là Xe Bạn -->
+            <div id="div-mdf-subcontractor" class="${d.ownership_type === 'SUBCONTRACTOR' ? '' : 'hidden-view'} p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-amber-900 text-xs truncate">
+                        <i class="ph-bold ph-handshake mr-1"></i> Nhà Cung Cấp / Đối Tác 3PL Sở Hữu <span class="text-rose-500">*</span>
+                    </label>
+                </div>
+                <select id="mdf-subcontractor-id" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-amber-950 border-amber-300 w-full bg-white">
+                    <option value="">-- Chọn Nhà Cung Cấp / Đối Tác 3PL Sở Hữu --</option>
+                    ${(masterDataFormOptionsCache?.subcontractors || []).map(sc => `<option value="${sc.id}" ${d.subcontractor_id === sc.id ? 'selected' : ''}>[${sc.short_name || sc.code}] ${sc.name}</option>`).join('')}
+                </select>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
@@ -22005,72 +22047,79 @@ function injectMasterDataModalFields(data) {
             </div>
         `;
     } else if (currentMasterDataTab === 'subcontractors') {
+        const contactVal = (d.contact_person && d.contact_person !== 'null') ? d.contact_person : '';
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
-                <div class="md:col-span-6">
+                <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe</label>
                     </div>
-                    <input type="text" id="mdf-sc-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống (NX_...)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh nếu để trống (NX_...)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
                 </div>
-                <div class="md:col-span-6">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-amber-900 text-xs truncate">Tên Viết Tắt <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-sc-short-name" value="${escapeHtml(d.short_name || d.code || '')}" placeholder="VD: 3S, HOANGNAM..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold text-amber-950 border-amber-300 w-full" required>
+                </div>
+                <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (MST)</label>
                     </div>
-                    <input type="text" id="mdf-sc-tax" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-tax" value="${escapeHtml(d.tax_code || '')}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
                 </div>
             </div>
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
                     <label class="block font-bold text-slate-700 text-xs truncate">Tên Nhà Xe / Đơn Vị Vận Tải 3PL <span class="text-rose-500">*</span></label>
                 </div>
-                <input type="text" id="mdf-sc-name" value="${d.name || ''}" placeholder="VD: Công ty TNHH Vận tải Hoàng Nam..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
+                <input type="text" id="mdf-sc-name" value="${escapeHtml(d.name || '')}" placeholder="VD: CÔNG TY TNHH 3S LOGISTICS..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Người Điều Hành Xe</label>
                     </div>
-                    <input type="text" id="mdf-sc-person" value="${d.contact_person || ''}" placeholder="Tên điều độ / chủ xe..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-person" value="${escapeHtml(contactVal)}" placeholder="Tên điều độ / chủ xe..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Số Điện Thoại Điều Xe <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-sc-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ gấp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 w-full" required>
+                    <input type="text" id="mdf-sc-phone" value="${escapeHtml(d.phone || '')}" placeholder="SĐT liên hệ gấp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 w-full" required>
                 </div>
             </div>
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
                     <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Bãi Xe / Văn Phòng</label>
                 </div>
-                <input type="text" id="mdf-sc-address" value="${d.address || ''}" placeholder="Địa chỉ..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                <input type="text" id="mdf-sc-address" value="${escapeHtml(d.address || '')}" placeholder="Địa chỉ..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Số Tài Khoản</label>
                     </div>
-                    <input type="text" id="mdf-sc-acc" value="${d.bank_account_number || ''}" placeholder="Số TK..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-acc" value="${escapeHtml(d.bank_account_number || '')}" placeholder="Số TK..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tên Ngân Hàng</label>
                     </div>
-                    <input type="text" id="mdf-sc-bank" value="${d.bank_name || ''}" placeholder="VD: VCB, MB..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-bank" value="${escapeHtml(d.bank_name || '')}" placeholder="VD: VCB, MB..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Chủ Tài Khoản</label>
                     </div>
-                    <input type="text" id="mdf-sc-holder" value="${d.bank_account_holder || ''}" placeholder="Tên in hoa..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-holder" value="${escapeHtml(d.bank_account_holder || '')}" placeholder="Tên in hoa..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase text-slate-800 w-full">
                 </div>
             </div>
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
                     <label class="block font-bold text-slate-700 text-xs truncate">Tuyến Thế Mạnh & Ghi Chú Đơn Giá</label>
                 </div>
-                <input type="text" id="mdf-sc-notes" value="${d.notes || ''}" placeholder="VD: Chuyên tuyến Long An, 10 xe đầu kéo..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                <input type="text" id="mdf-sc-notes" value="${escapeHtml(d.notes || '')}" placeholder="VD: Chuyên tuyến Long An, 10 xe đầu kéo..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
             <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
@@ -22078,13 +22127,72 @@ function injectMasterDataModalFields(data) {
             </div>
 
             ${d.id ? `
-            <div class="mt-4 pt-3 border-t border-slate-200" id="section-subcontractor-drivers-mgmt">
+            <!-- KHỐI 1: QUẢN LÝ ĐỘI XE THUỘC NHÀ XE (3PL) -->
+            <div class="mt-4 pt-3 border-t border-slate-200" id="section-subcontractor-vehicles-mgmt">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block font-bold text-amber-950 text-xs flex items-center gap-1.5 font-heading uppercase tracking-wider">
+                        <i class="ph-bold ph-truck text-amber-700 text-sm"></i> Đội Xe / Phương Tiện Thuộc Nhà Xe (3PL)
+                    </label>
+                    <button type="button" onclick="showAddSubVehicleInline()" class="btn-bim-primary px-2.5 py-1 text-[11px] font-bold rounded-md flex items-center gap-1 cursor-pointer">
+                        <i class="ph-bold ph-plus text-[10px]"></i> Thêm mới
+                    </button>
+                </div>
+
+                <!-- Form Thêm Nhanh Xe 3PL Inline -->
+                <div id="sub-vehicle-add-row" class="hidden-view p-2.5 bg-amber-50/90 border border-amber-300 rounded-xl mb-2.5 space-y-2">
+                    <div class="text-[11px] font-bold text-amber-900 uppercase">Khai Báo Xe Mới Gán Cho Nhà Xe</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <div class="sm:col-span-4">
+                            <input type="text" id="new-subveh-plate" placeholder="Biển số xe (51H-123.45) *" class="form-input h-8 px-2 py-1 text-xs uppercase font-mono font-bold text-slate-800 border-amber-300 w-full rounded">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <select id="new-subveh-type" class="form-select h-8 px-2 py-1 text-xs font-semibold border-amber-300 w-full rounded">
+                                <option value="TRACTOR">Đầu kéo</option>
+                                <option value="TRUCK_10T">Xe tải 10 Tấn</option>
+                                <option value="TRUCK_2T">Xe tải 2 Tấn</option>
+                                <option value="VAN">Xe tải nhỏ / Van</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <input type="text" id="new-subveh-payload" placeholder="Tải trọng (kg)" value="30.000" class="form-input h-8 px-2 py-1 text-xs font-mono text-right border-amber-300 w-full rounded input-number-vn">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <input type="text" id="new-subveh-brand" placeholder="Hãng/Dòng xe (Hino...)" class="form-input h-8 px-2 py-1 text-xs border-amber-300 w-full rounded">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-1">
+                        <button type="button" onclick="hideAddSubVehicleInline()" class="px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-200 rounded font-semibold cursor-pointer">Hủy</button>
+                        <button type="button" onclick="saveNewSubVehicleInline(${d.id})" class="btn-bim-primary px-3.5 py-1 text-xs font-bold shadow-xs cursor-pointer">Lưu Phương Tiện</button>
+                    </div>
+                </div>
+
+                <!-- Bảng Danh Sách Xe Thuộc Nhà Xe -->
+                <div class="border border-slate-200 rounded-xl overflow-hidden max-h-44 overflow-y-auto bg-white shadow-2xs mb-3">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold sticky top-0">
+                            <tr>
+                                <th class="py-2 px-3">Biển Số Xe</th>
+                                <th class="py-2 px-3">Loại Xe</th>
+                                <th class="py-2 px-3 text-right">Tải Trọng Cho Phép</th>
+                                <th class="py-2 px-3">Hãng / Dòng Xe</th>
+                                <th class="py-2 px-2.5 text-center w-16">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sub-vehicles-tbody" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="text-center py-3 text-slate-400"><i class="ph ph-spinner animate-spin mr-1"></i> Đang tải danh sách xe...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- KHỐI 2: QUẢN LÝ DANH BẠ TÀI XẾ THUỘC NHÀ XE (3PL) -->
+            <div class="mt-3 pt-3 border-t border-slate-200" id="section-subcontractor-drivers-mgmt">
                 <div class="flex items-center justify-between mb-2">
                     <label class="block font-bold text-amber-950 text-xs flex items-center gap-1.5 font-heading uppercase tracking-wider">
                         <i class="ph-bold ph-steering-wheel text-amber-700 text-sm"></i> Danh Bạ Tài Xế Thuộc Nhà Xe (3PL)
                     </label>
-                    <button type="button" onclick="showAddSubDriverInline()" class="px-2.5 py-1 text-[11px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-md flex items-center gap-1 cursor-pointer transition-colors">
-                        <i class="ph-bold ph-plus text-[10px]"></i> Thêm Bác Tài Mới
+                    <button type="button" onclick="showAddSubDriverInline()" class="btn-bim-primary px-2.5 py-1 text-[11px] font-bold rounded-md flex items-center gap-1 cursor-pointer">
+                        <i class="ph-bold ph-plus text-[10px]"></i> Thêm mới
                     </button>
                 </div>
 
@@ -22104,12 +22212,12 @@ function injectMasterDataModalFields(data) {
                     </div>
                     <div class="flex items-center justify-end gap-2 pt-1">
                         <button type="button" onclick="hideAddSubDriverInline()" class="px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-200 rounded font-semibold cursor-pointer">Hủy</button>
-                        <button type="button" onclick="saveNewSubDriverInline(${d.id})" class="px-3.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold shadow-xs cursor-pointer">Lưu Bác Tài</button>
+                        <button type="button" onclick="saveNewSubDriverInline(${d.id})" class="btn-bim-primary px-3.5 py-1 text-xs font-bold shadow-xs cursor-pointer">Lưu Bác Tài</button>
                     </div>
                 </div>
 
                 <!-- Bảng Danh Sách Tài Xế Thuộc Nhà Xe -->
-                <div class="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto bg-white shadow-2xs">
+                <div class="border border-slate-200 rounded-xl overflow-hidden max-h-44 overflow-y-auto bg-white shadow-2xs">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold sticky top-0">
                             <tr>
@@ -22120,7 +22228,7 @@ function injectMasterDataModalFields(data) {
                             </tr>
                         </thead>
                         <tbody id="sub-drivers-tbody" class="divide-y divide-slate-100">
-                            <tr><td colspan="4" class="text-center py-3 text-slate-400"><i class="ph ph-spinner animate-spin mr-1"></i> Đang tải danh sách...</td></tr>
+                            <tr><td colspan="4" class="text-center py-3 text-slate-400"><i class="ph ph-spinner animate-spin mr-1"></i> Đang tải danh sách tài xế...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -22128,7 +22236,10 @@ function injectMasterDataModalFields(data) {
             ` : ''}
         `;
         if (d.id) {
-            setTimeout(() => loadSubcontractorDriversInModal(d.id), 50);
+            setTimeout(() => {
+                loadSubcontractorVehiclesInModal(d.id);
+                loadSubcontractorDriversInModal(d.id);
+            }, 50);
         }
     } else if (currentMasterDataTab === 'opening_balance') {
         container.innerHTML = `
@@ -22348,9 +22459,11 @@ async function submitMasterDataForm(e) {
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'vehicles') {
+        const subIdVal = document.getElementById('mdf-subcontractor-id')?.value;
         payload = {
             license_plate: document.getElementById('mdf-license-plate').value,
             ownership_type: document.getElementById('mdf-ownership').value,
+            subcontractor_id: (document.getElementById('mdf-ownership').value === 'SUBCONTRACTOR' && subIdVal) ? parseInt(subIdVal) : null,
             vehicle_type: document.getElementById('mdf-vehicle-type').value,
             brand: document.getElementById('mdf-brand').value,
             payload_capacity_kg: parseNumberVN(document.getElementById('mdf-payload').value) || 0,
@@ -22384,6 +22497,7 @@ async function submitMasterDataForm(e) {
     } else if (tabKey === 'subcontractors') {
         payload = {
             code: document.getElementById('mdf-sc-code').value,
+            short_name: document.getElementById('mdf-sc-short-name')?.value || '',
             tax_code: document.getElementById('mdf-sc-tax').value,
             name: document.getElementById('mdf-sc-name').value,
             contact_person: document.getElementById('mdf-sc-person').value,
@@ -29837,8 +29951,128 @@ window.switchRoleDonutOption = typeof switchRoleDonutOption !== 'undefined' ? sw
 
 
 // =========================================================================
-// QUẢN LÝ DANH BẠ TÀI XẾ 3PL TRỰC THUỘC ĐỐI TÁC (PHƯƠNG ÁN 3)
+// QUẢN LÝ ĐỘI XE & TÀI XẾ 3PL TRỰC THUỘC ĐỐI TÁC (PHƯƠNG ÁN 3)
 // =========================================================================
+
+// --- 1. Quản lý Phương tiện Thuộc Nhà Xe (3PL) ---
+async function loadSubcontractorVehiclesInModal(subId) {
+    const tbody = document.getElementById('sub-vehicles-tbody');
+    if (!tbody) return;
+    try {
+        const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/vehicles/`);
+        if (!res.ok) throw new Error('Không thể tải danh sách phương tiện');
+        const data = await res.json();
+        const vehicles = data.results || [];
+        if (vehicles.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-slate-400 italic">Chưa có phương tiện nào gán cho nhà xe này. Bấm "Thêm mới" ở trên.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = vehicles.map(v => `
+            <tr class="hover:bg-amber-50/50 transition-colors">
+                <td class="py-2 px-3 font-mono font-bold text-slate-900">${escapeHtml(v.license_plate)}</td>
+                <td class="py-2 px-3 font-medium text-slate-800">${escapeHtml(v.vehicle_type || '—')}</td>
+                <td class="py-2 px-3 font-mono text-slate-700 text-right">${v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) + ' kg' : '—'}</td>
+                <td class="py-2 px-3 text-slate-600">${escapeHtml(v.brand || '—')}</td>
+                <td class="py-2 px-2.5 text-center">
+                    <button type="button" onclick="deleteSubVehicleInline(${v.id}, ${subId})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Gỡ xe khỏi nhà xe">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-rose-500">Lỗi: ${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+function showAddSubVehicleInline() {
+    const row = document.getElementById('sub-vehicle-add-row');
+    if (row) {
+        row.classList.remove('hidden-view');
+        const plateInp = document.getElementById('new-subveh-plate');
+        if (plateInp) plateInp.focus();
+    }
+}
+
+function hideAddSubVehicleInline() {
+    const row = document.getElementById('sub-vehicle-add-row');
+    if (row) row.classList.add('hidden-view');
+}
+
+async function saveNewSubVehicleInline(subId) {
+    const plateInp = document.getElementById('new-subveh-plate');
+    const typeInp = document.getElementById('new-subveh-type');
+    const payloadInp = document.getElementById('new-subveh-payload');
+    const brandInp = document.getElementById('new-subveh-brand');
+
+    const license_plate = plateInp ? plateInp.value.trim().toUpperCase() : '';
+    const vehicle_type = typeInp ? typeInp.value : 'TRACTOR';
+    const payload_capacity_kg = payloadInp ? payloadInp.value : '30.000';
+    const brand = brandInp ? brandInp.value.trim() : '';
+
+    if (!license_plate) {
+        showToast('warning', 'Vui lòng nhập Biển số xe!');
+        if (plateInp) plateInp.focus();
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/vehicles/`, {
+            method: 'POST',
+            body: JSON.stringify({ license_plate, vehicle_type, payload_capacity_kg, brand })
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+            showToast('success', result.message || `Đã lưu xe [${license_plate}] thành công!`);
+            if (plateInp) plateInp.value = '';
+            if (brandInp) brandInp.value = '';
+            hideAddSubVehicleInline();
+            loadSubcontractorVehiclesInModal(subId);
+            if (typeof loadMasterDataFormOptions === 'function') {
+                loadMasterDataFormOptions(true);
+            }
+        } else {
+            showToast('danger', result.error || 'Không thể lưu phương tiện!');
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi kết nối máy chủ khi lưu xe!');
+    }
+}
+
+async function deleteSubVehicleInline(vehicleId, subId) {
+    if (!confirm('Bạn có chắc chắn muốn gỡ phương tiện này khỏi nhà xe?')) return;
+    try {
+        const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/vehicles/${vehicleId}/`, {
+            method: 'DELETE'
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+            showToast('success', result.message || 'Đã gỡ phương tiện thành công!');
+            loadSubcontractorVehiclesInModal(subId);
+            if (typeof loadMasterDataFormOptions === 'function') {
+                loadMasterDataFormOptions(true);
+            }
+        } else {
+            showToast('danger', result.error || 'Không thể gỡ phương tiện!');
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi kết nối máy chủ!');
+    }
+}
+
+function toggleVehicleSubcontractorField(val) {
+    const el = document.getElementById('div-mdf-subcontractor');
+    if (!el) return;
+    if (val === 'SUBCONTRACTOR') {
+        el.classList.remove('hidden-view');
+    } else {
+        el.classList.add('hidden-view');
+        const sel = document.getElementById('mdf-subcontractor-id');
+        if (sel) sel.value = '';
+    }
+}
+
+// --- 2. Quản lý Tài xế Thuộc Nhà Xe (3PL) ---
 async function loadSubcontractorDriversInModal(subId) {
     const tbody = document.getElementById('sub-drivers-tbody');
     if (!tbody) return;
@@ -29848,7 +30082,7 @@ async function loadSubcontractorDriversInModal(subId) {
         const data = await res.json();
         const drivers = data.results || [];
         if (drivers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-slate-400 italic">Chưa có tài xế nào được khai báo cho nhà xe này. Bấm "Thêm Bác Tài Mới" ở trên.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-slate-400 italic">Chưa có tài xế nào được khai báo cho nhà xe này. Bấm "Thêm mới" ở trên.</td></tr>';
             return;
         }
         tbody.innerHTML = drivers.map(drv => `
@@ -29915,9 +30149,8 @@ async function saveNewSubDriverInline(subId) {
             if (licInp) licInp.value = '';
             hideAddSubDriverInline();
             loadSubcontractorDriversInModal(subId);
-            // Cập nhật lại cache master data để màn hình điều vận có tài xế mới ngay lập tức
             if (typeof loadMasterDataFormOptions === 'function') {
-                loadMasterDataFormOptions();
+                loadMasterDataFormOptions(true);
             }
         } else {
             showToast('danger', result.error || 'Không thể lưu tài xế!');
@@ -29938,7 +30171,7 @@ async function deleteSubDriverInline(driverId, subId) {
             showToast('success', result.message || 'Đã xóa tài xế thành công!');
             loadSubcontractorDriversInModal(subId);
             if (typeof loadMasterDataFormOptions === 'function') {
-                loadMasterDataFormOptions();
+                loadMasterDataFormOptions(true);
             }
         } else {
             showToast('danger', result.error || 'Không thể xóa tài xế!');
@@ -29951,7 +30184,21 @@ async function deleteSubDriverInline(driverId, subId) {
 async function openSubcontractorFleetModal(subId) {
     await openEditMasterDataModal(subId);
     setTimeout(() => {
-        const sec = document.getElementById('section-subcontractor-drivers-mgmt');
+        const sec = document.getElementById('section-subcontractor-vehicles-mgmt') || document.getElementById('section-subcontractor-drivers-mgmt');
         if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 200);
 }
+
+// Window bindings
+window.loadSubcontractorVehiclesInModal = typeof loadSubcontractorVehiclesInModal !== 'undefined' ? loadSubcontractorVehiclesInModal : undefined;
+window.showAddSubVehicleInline = typeof showAddSubVehicleInline !== 'undefined' ? showAddSubVehicleInline : undefined;
+window.hideAddSubVehicleInline = typeof hideAddSubVehicleInline !== 'undefined' ? hideAddSubVehicleInline : undefined;
+window.saveNewSubVehicleInline = typeof saveNewSubVehicleInline !== 'undefined' ? saveNewSubVehicleInline : undefined;
+window.deleteSubVehicleInline = typeof deleteSubVehicleInline !== 'undefined' ? deleteSubVehicleInline : undefined;
+window.toggleVehicleSubcontractorField = typeof toggleVehicleSubcontractorField !== 'undefined' ? toggleVehicleSubcontractorField : undefined;
+window.loadSubcontractorDriversInModal = typeof loadSubcontractorDriversInModal !== 'undefined' ? loadSubcontractorDriversInModal : undefined;
+window.showAddSubDriverInline = typeof showAddSubDriverInline !== 'undefined' ? showAddSubDriverInline : undefined;
+window.hideAddSubDriverInline = typeof hideAddSubDriverInline !== 'undefined' ? hideAddSubDriverInline : undefined;
+window.saveNewSubDriverInline = typeof saveNewSubDriverInline !== 'undefined' ? saveNewSubDriverInline : undefined;
+window.deleteSubDriverInline = typeof deleteSubDriverInline !== 'undefined' ? deleteSubDriverInline : undefined;
+window.openSubcontractorFleetModal = typeof openSubcontractorFleetModal !== 'undefined' ? openSubcontractorFleetModal : undefined;

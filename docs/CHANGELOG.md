@@ -2,6 +2,41 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.0] - 2026-10-21 (Hoàn Thiện Quản Lý 2 Bảng Con Xe & Bác Tài 3PL Trong Modal Thầu Phụ, Thêm Tên Viết Tắt, Địa Chỉ Công Ty & Khắc Phục Lỗi Phát Lệnh Điều Xe)
+
+### 1. Bổ Sung Tên Viết Tắt & Địa Chỉ Trong Quản Lý Đối Tác Thầu Phụ:
+- **Model `Subcontractor` (`apps/master_data/models.py`):**
+  * Bổ sung trường `short_name` (Tên viết tắt) giúp hiển thị ngắn gọn, trực quan trên các màn hình điều độ và danh sách.
+  * Tự động sinh `short_name` từ `code` nếu người dùng để trống.
+- **REST API Master Data (`apps/master_data/api_views.py`):**
+  * Bổ sung `short_name` trong các endpoint CRUD `Subcontractor` và endpoint `form-options`.
+  * Chuẩn hóa nhãn hiển thị trong options: `[Tên viết tắt] Tên đầy đủ công ty` (ví dụ `[3S] CÔNG TY TNHH 3S LOGISTICS`).
+- **Giao Diện Bảng Thầu Phụ (`static/js/app.js`):**
+  * Tách riêng cột **`Tên Viết Tắt`** (badge nổi bật) và cột riêng **`Địa Chỉ Công Ty`** trên bảng danh mục Thầu phụ thay vì gom chung chữ nhỏ.
+
+### 2. Quản Lý Đồng Bộ 2 Bảng Con (Đội Xe & Tài Xế) Ngay Trong Màn Hình Modal Thầu Phụ:
+- **Tích hợp 2 Bảng Con Trực Quan & Thống Nhất:**
+  * **Bảng 1: Đội Xe / Phương Tiện Thuộc Nhà Xe (3PL):** Cho phép khai báo nhanh biển số xe, loại xe (đầu kéo, xe tải...), tải trọng (kg) và dòng xe. Xe được gán trực tiếp vào nhà xe với nguồn sở hữu `SUBCONTRACTOR`.
+  * **Bảng 2: Danh Bạ Tài Xế Thuộc Nhà Xe (3PL):** Cho phép khai báo họ tên tài xế, số điện thoại liên hệ nhận lệnh Zalo và số GPLX.
+  * **Chuẩn Hóa Nút Bấm Toàn App:** Thống nhất chữ **`Thêm mới`** cho tất cả các nút thêm bản ghi con và bảng chính (thay thế hoàn toàn nhãn `+ Thêm Bác Tài Mới`, `+ Thêm 3PL`...).
+  * Khắc phục triệt để lỗi hiển thị chữ `null` trong ô "Người Điều Hành Xe".
+- **REST API Phương Tiện Thầu Phụ (`apps/master_data/api_views.py` & `urls.py`):**
+  * `GET /api/master-data/subcontractors/<id>/vehicles/`: Tải danh sách xe trực thuộc nhà xe.
+  * `POST /api/master-data/subcontractors/<id>/vehicles/`: Thêm xe mới hoặc gán xe hiện có vào nhà xe.
+  * `DELETE /api/master-data/subcontractors/<id>/vehicles/<vehicle_id>/`: Gỡ xe khỏi nhà xe.
+
+### 3. Gán Nhà Cung Cấp / Đối Tác 3PL Trong Danh Mục Phương Tiện:
+- **Modal Thêm/Sửa Phương Tiện (`currentMasterDataTab === 'vehicles'`):**
+  * Khi chọn `Nguồn Sở Hữu = Xe Bạn (Thuê Ngoài / 3PL)`, tự động hiển thị dropdown **`Nhà Cung Cấp / Đối Tác 3PL Sở Hữu (*)`** tải danh sách thầu phụ kèm tên viết tắt.
+  * Lưu và đồng bộ trường `subcontractor_id` lên backend API.
+  * Trên bảng danh sách xe: Hiển thị badge màu hổ phách trực quan ghi rõ tên viết tắt của nhà xe sở hữu phương tiện.
+
+### 4. Khắc Phục Triệt Để Sự Cố Không Bấm Phát Lệnh Điều Xe Được (`submitNewTrip`):
+- **Phân Tích & Sửa Lỗi Gốc:**
+  * Khắc phục xung đột ID DOM giữa modal ẩn (`modal-create-trip`) và trang giao diện tạo lệnh toàn màn hình (`view-create-trip`). Trước đây, hàm submit dùng `document.getElementById` toàn cục làm trỏ nhầm vào các input rỗng của modal ẩn, khiến việc kiểm tra trường bắt buộc thất bại trong âm thầm.
+  * Hàm `submitNewTrip(sourceEl)` giờ đây tự động nhận diện container đang hoạt động (active context) và truy vấn chính xác input trên form mà người dùng đang thao tác.
+  * Cải tiến Visual Feedback: Khi thiếu trường bắt buộc (như Giá cước khoán 3PL), hệ thống lập tức hiển thị viền đỏ nổi bật, tự động cuộn màn hình và focus con trỏ vào đúng ô input còn thiếu, đồng thời hiển thị Toast cảnh báo chi tiết tên trường cần nhập.
+
 ## [v3.6.9] - 2026-10-21 (Tính Năng Tải File Mẫu Excel & Nhập Danh Mục Ban Đầu Trực Tiếp Trên Từng Bảng Master Data Cho Người Dùng Admin)
 
 ### 1. Kiến Trúc Dịch Vụ Xuất Mẫu & Nhập Dữ Liệu Excel (`apps/master_data/import_export_service.py`):

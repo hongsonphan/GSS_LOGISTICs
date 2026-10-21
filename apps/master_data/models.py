@@ -169,6 +169,7 @@ class Subcontractor(TimeStampedModel, SoftDeleteModel):
     Quản lý thông tin nhà xe, người điều hành và tài khoản ngân hàng phục vụ đối soát cước.
     """
     code = models.CharField(max_length=50, unique=True, db_index=True) # NX_HOANGNAM, NX_MINHTHU...
+    short_name = models.CharField(max_length=100, blank=True, help_text="Tên viết tắt của nhà xe để hiển thị ngắn gọn khi điều xe")
     name = models.CharField(max_length=200) # Công ty TNHH Vận tải Hoàng Nam...
     tax_code = models.CharField(max_length=30, blank=True)
     contact_person = models.CharField(max_length=100, blank=True) # Người phụ trách điều xe

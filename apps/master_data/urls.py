@@ -14,6 +14,7 @@ from apps.master_data.api_views import (
     TrailerMasterListCreateAPIView, TrailerMasterDetailAPIView,
     SubcontractorListCreateAPIView, SubcontractorDetailAPIView,
     SubcontractorFleetAPIView, SubcontractorDriverListCreateAPIView, SubcontractorDriverDetailAPIView,
+    SubcontractorVehicleListCreateAPIView, SubcontractorVehicleDetailAPIView,
     CompanyProfileAPIView,
     OpeningBalanceListCreateAPIView, OpeningBalanceDetailAPIView,
     MasterDataExportTemplateAPIView,
@@ -81,6 +82,8 @@ urlpatterns = [
     path('subcontractors/', SubcontractorListCreateAPIView.as_view(), name='master-subcontractors'),
     path('subcontractors/<int:pk>/', SubcontractorDetailAPIView.as_view(), name='master-subcontractor-detail'),
     path('subcontractors/<int:pk>/fleet/', SubcontractorFleetAPIView.as_view(), name='master-subcontractor-fleet'),
+    path('subcontractors/<int:pk>/vehicles/', SubcontractorVehicleListCreateAPIView.as_view(), name='master-subcontractor-vehicles'),
+    path('subcontractors/<int:pk>/vehicles/<int:vehicle_id>/', SubcontractorVehicleDetailAPIView.as_view(), name='master-subcontractor-vehicle-detail'),
     path('subcontractors/<int:pk>/drivers/', SubcontractorDriverListCreateAPIView.as_view(), name='master-subcontractor-drivers'),
     path('subcontractor-drivers/<int:pk>/', SubcontractorDriverDetailAPIView.as_view(), name='master-subcontractor-driver-detail'),
 ]
