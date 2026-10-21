@@ -5,21 +5,47 @@ from django.utils import timezone
 from core.models import TimeStampedModel, SoftDeleteModel
 
 class Department(models.TextChoices):
+    ADMIN_ACC = 'ADMIN_ACC', 'Phòng Hành Chính & Kế Toán'
     DISPATCH = 'DISPATCH', 'Phòng Điều Vận'
-    FLEET = 'FLEET', 'Đội Xe & Bãi'
     SALES = 'SALES', 'Phòng Kinh Doanh'
-    CUSTOMS = 'CUSTOMS', 'Thủ Tục Hải Quan'
-    HR = 'HR', 'Hành Chính Nhân Sự'
-    ACCOUNTING = 'ACCOUNTING', 'Kế Toán Tài Chính'
+    MAINTENANCE = 'MAINTENANCE', 'Phòng Bảo Trì Vận Hành'
+    CUSTOMS = 'CUSTOMS', 'Phòng Dịch Vụ Hải Quan'
     MANAGEMENT = 'MANAGEMENT', 'Ban Giám Đốc'
 
+    # Tương thích ngược dữ liệu cũ
+    FLEET = 'FLEET', 'Đội Xe & Bãi (Bảo Trì Vận Hành)'
+    ACCOUNTING = 'ACCOUNTING', 'Kế Toán Tài Chính'
+    HR = 'HR', 'Hành Chính Nhân Sự'
+
 class EmployeeRole(models.TextChoices):
-    DIRECTOR = 'DIRECTOR', 'Ban Giám Đốc'
-    DISPATCHER = 'DISPATCHER', 'Điều độ viên'
-    DRIVER = 'DRIVER', 'Tài xế'
-    ACCOUNTANT = 'ACCOUNTANT', 'Kế toán viên'
+    # Cấp Quản Trị
+    DIRECTOR = 'DIRECTOR', 'Giám Đốc'
+
+    # 1. Phòng Hành Chính & Kế Toán (2 vị trí)
+    LEAD_ADMIN_ACC = 'LEAD_ADMIN_ACC', 'Chuyên viên Phụ trách (HC & Kế toán)'
+    STAFF_ADMIN_ACC = 'STAFF_ADMIN_ACC', 'Nhân viên (HC & Kế toán)'
+
+    # 2. Phòng Điều Vận (4 vị trí)
+    LEAD_DISPATCH = 'LEAD_DISPATCH', 'Chuyên viên Phụ trách (Điều vận)'
+    DISPATCHER = 'DISPATCHER', 'Nhân viên Điều vận'
+    DISPATCH_ASST = 'DISPATCH_ASST', 'Nhân viên Hỗ trợ (Điều vận)'
+    DRIVER = 'DRIVER', 'Tài xế & Giao nhận'
+
+    # 3. Phòng Kinh Doanh (3 vị trí)
+    LEAD_SALES = 'LEAD_SALES', 'Chuyên viên Phụ trách (Kinh doanh)'
     SALESMAN = 'SALESMAN', 'Nhân viên Kinh doanh'
-    MECHANIC = 'MECHANIC', 'Kỹ thuật viên bãi xe'
+    CSKH = 'CSKH', 'Admin / CSKH'
+
+    # 4. Phòng Bảo Trì Vận Hành (2 vị trí)
+    LEAD_MAINT = 'LEAD_MAINT', 'Chuyên viên Phụ trách (Bảo trì vận hành)'
+    MECHANIC = 'MECHANIC', 'Nhân viên Bảo trì'
+
+    # 5. Phòng Dịch Vụ Hải Quan (2 vị trí)
+    LEAD_CUSTOMS = 'LEAD_CUSTOMS', 'Chuyên viên Phụ trách (Dịch vụ hải quan)'
+    CUSTOMS_STAFF = 'CUSTOMS_STAFF', 'Nhân viên xử lý (Hải quan)'
+
+    # Tương thích ngược
+    ACCOUNTANT = 'ACCOUNTANT', 'Kế toán viên'
 
 class EmployeeGender(models.TextChoices):
     MALE = 'MALE', 'Nam'
@@ -120,16 +146,18 @@ class Employee(TimeStampedModel, SoftDeleteModel):
         - Khác: NV[STT]
         """
         import re
-        if role == EmployeeRole.DRIVER or department == Department.FLEET:
+        if role == EmployeeRole.DRIVER or (department in [Department.DISPATCH, Department.FLEET] and role == EmployeeRole.DRIVER):
             prefix = 'TX'
-        elif role == EmployeeRole.DISPATCHER or department == Department.DISPATCH:
+        elif role in [EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.DISPATCH_ASST] or department == Department.DISPATCH:
             prefix = 'DD'
-        elif role == EmployeeRole.ACCOUNTANT or department == Department.ACCOUNTING:
+        elif role in [EmployeeRole.LEAD_ADMIN_ACC, EmployeeRole.STAFF_ADMIN_ACC, EmployeeRole.ACCOUNTANT] or department in [Department.ADMIN_ACC, Department.ACCOUNTING, Department.HR]:
             prefix = 'KT'
-        elif role == EmployeeRole.SALESMAN or department == Department.SALES:
+        elif role in [EmployeeRole.SALESMAN, EmployeeRole.LEAD_SALES, EmployeeRole.CSKH] or department == Department.SALES:
             prefix = 'KD'
-        elif role == EmployeeRole.MECHANIC:
-            prefix = 'CK'
+        elif role in [EmployeeRole.MECHANIC, EmployeeRole.LEAD_MAINT] or department in [Department.MAINTENANCE, Department.FLEET]:
+            prefix = 'BT'
+        elif role in [EmployeeRole.CUSTOMS_STAFF, EmployeeRole.LEAD_CUSTOMS] or department == Department.CUSTOMS:
+            prefix = 'HQ'
         elif role == EmployeeRole.DIRECTOR or department == Department.MANAGEMENT:
             prefix = 'BGD'
         else:
@@ -173,7 +201,10 @@ class Employee(TimeStampedModel, SoftDeleteModel):
         """
         if self.role == EmployeeRole.DIRECTOR or self.department == Department.MANAGEMENT:
             return 100
-        if self.is_department_head or self.department == Department.HR:
+        if self.is_department_head or self.role in [
+            EmployeeRole.LEAD_ADMIN_ACC, EmployeeRole.LEAD_DISPATCH,
+            EmployeeRole.LEAD_SALES, EmployeeRole.LEAD_MAINT, EmployeeRole.LEAD_CUSTOMS
+        ] or self.department in [Department.ADMIN_ACC, Department.HR]:
             return 50
         if self.role == EmployeeRole.DRIVER:
             return 10

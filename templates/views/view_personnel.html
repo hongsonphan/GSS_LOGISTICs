@@ -205,25 +205,14 @@
                         <label class="text-xs font-bold text-slate-500 uppercase">Phòng ban:</label>
 
                         <select id="emp-filter-dept" onchange="filterEmployeesTable()"
-
                                 class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
-
                             <option value="ALL">Tất cả phòng ban</option>
-
-                            <option value="FLEET">Đội Xe & Bãi</option>
-
-                            <option value="DISPATCH">Phòng Điều Vận</option>
-
-                            <option value="ACCOUNTING">Kế Toán Tài Chính</option>
-
-                            <option value="SALES">Phòng Kinh Doanh</option>
-
-                            <option value="CUSTOMS">Thủ Tục Hải Quan</option>
-
-                            <option value="HR">Hành Chính Nhân Sự</option>
-
                             <option value="MANAGEMENT">Ban Giám Đốc</option>
-
+                            <option value="ADMIN_ACC">Phòng Hành Chính & Kế Toán</option>
+                            <option value="DISPATCH">Phòng Điều Vận</option>
+                            <option value="SALES">Phòng Kinh Doanh</option>
+                            <option value="MAINTENANCE">Phòng Bảo Trì Vận Hành</option>
+                            <option value="CUSTOMS">Phòng Dịch Vụ Hải Quan</option>
                         </select>
 
                     </div>
@@ -235,23 +224,34 @@
                         <label class="text-xs font-bold text-slate-500 uppercase">Chức vụ:</label>
 
                         <select id="emp-filter-role" onchange="filterEmployeesTable()"
-
                                 class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-teal-500">
-
-                            <option value="ALL">Tất cả chức vụ</option>
-
-                            <option value="DRIVER">Tài xế (DRIVER)</option>
-
-                            <option value="DISPATCHER">Điều độ viên</option>
-
-                            <option value="ACCOUNTANT">Kế toán viên</option>
-
-                            <option value="SALESMAN">Nhân viên Sale</option>
-
-                            <option value="MECHANIC">Kỹ thuật bãi</option>
-
-                            <option value="DIRECTOR">Ban Giám Đốc</option>
-
+                            <option value="ALL">Tất cả chức vụ (13 vị trí)</option>
+                            <optgroup label="Ban Giám Đốc">
+                                <option value="DIRECTOR">Giám Đốc</option>
+                            </optgroup>
+                            <optgroup label="Phòng Hành Chính & Kế Toán">
+                                <option value="LEAD_ADMIN_ACC">Chuyên viên Phụ trách (HCKT)</option>
+                                <option value="STAFF_ADMIN_ACC">Nhân viên (HCKT)</option>
+                            </optgroup>
+                            <optgroup label="Phòng Điều Vận">
+                                <option value="LEAD_DISPATCH">Chuyên viên Phụ trách (Điều vận)</option>
+                                <option value="DISPATCHER">Nhân viên Điều vận</option>
+                                <option value="DISPATCH_ASST">Nhân viên Hỗ trợ (Điều vận)</option>
+                                <option value="DRIVER">Tài xế & Giao nhận</option>
+                            </optgroup>
+                            <optgroup label="Phòng Kinh Doanh">
+                                <option value="LEAD_SALES">Chuyên viên Phụ trách (Kinh doanh)</option>
+                                <option value="SALESMAN">Nhân viên Kinh doanh</option>
+                                <option value="CSKH">Admin / CSKH</option>
+                            </optgroup>
+                            <optgroup label="Phòng Bảo Trì Vận Hành">
+                                <option value="LEAD_MAINT">Chuyên viên Phụ trách (Bảo trì)</option>
+                                <option value="MECHANIC">Nhân viên Bảo trì</option>
+                            </optgroup>
+                            <optgroup label="Phòng Dịch Vụ Hải Quan">
+                                <option value="LEAD_CUSTOMS">Chuyên viên Phụ trách (Hải quan)</option>
+                                <option value="CUSTOMS_STAFF">Nhân viên xử lý (Hải quan)</option>
+                            </optgroup>
                         </select>
 
                     </div>

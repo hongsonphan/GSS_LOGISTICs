@@ -66,35 +66,39 @@ EMPLOYEE_SAMPLES = [
     ]
 ]
 
-# Mapping chuẩn hóa phòng ban từ nhiều cách viết
+# Mapping chuẩn hóa phòng ban từ nhiều cách viết (4 Ô XANH + PHÒNG HẢI QUAN + BAN GIÁM ĐỐC)
 DEPARTMENT_LOOKUP = {
+    'ADMIN_ACC': Department.ADMIN_ACC,
+    'PHÒNG HÀNH CHÍNH & KẾ TOÁN': Department.ADMIN_ACC,
+    'HÀNH CHÍNH & KẾ TOÁN': Department.ADMIN_ACC,
+    'HÀNH CHÍNH KẾ TOÁN': Department.ADMIN_ACC,
+    'HC & KT': Department.ADMIN_ACC,
+    'HR': Department.ADMIN_ACC,
+    'ACCOUNTING': Department.ADMIN_ACC,
+    'HÀNH CHÍNH NHÂN SỰ': Department.ADMIN_ACC,
+    'KẾ TOÁN TÀI CHÍNH': Department.ADMIN_ACC,
+
     'DISPATCH': Department.DISPATCH,
     'PHÒNG ĐIỀU VẬN': Department.DISPATCH,
     'ĐIỀU VẬN': Department.DISPATCH,
     'ĐIỀU ĐỘ': Department.DISPATCH,
-    
-    'FLEET': Department.FLEET,
-    'ĐỘI XE & BÃI': Department.FLEET,
-    'ĐỘI XE': Department.FLEET,
-    'ĐỘI XE BÃI': Department.FLEET,
-    'TÀI XẾ': Department.FLEET,
 
     'SALES': Department.SALES,
     'PHÒNG KINH DOANH': Department.SALES,
     'KINH DOANH': Department.SALES,
 
+    'MAINTENANCE': Department.MAINTENANCE,
+    'PHÒNG BẢO TRÌ VẬN HÀNH': Department.MAINTENANCE,
+    'BẢO TRÌ VẬN HÀNH': Department.MAINTENANCE,
+    'BẢO TRÌ': Department.MAINTENANCE,
+    'FLEET': Department.MAINTENANCE,
+    'ĐỘI XE & BÃI': Department.MAINTENANCE,
+
     'CUSTOMS': Department.CUSTOMS,
-    'THỦ TỤC HẢI QUAN': Department.CUSTOMS,
+    'PHÒNG DỊCH VỤ HẢI QUAN': Department.CUSTOMS,
+    'DỊCH VỤ HẢI QUAN': Department.CUSTOMS,
     'HẢI QUAN': Department.CUSTOMS,
-
-    'HR': Department.HR,
-    'HÀNH CHÍNH NHÂN SỰ': Department.HR,
-    'NHÂN SỰ': Department.HR,
-    'HÀNH CHÍNH': Department.HR,
-
-    'ACCOUNTING': Department.ACCOUNTING,
-    'KẾ TOÁN TÀI CHÍNH': Department.ACCOUNTING,
-    'KẾ TOÁN': Department.ACCOUNTING,
+    'THỦ TỤC HẢI QUAN': Department.CUSTOMS,
 
     'MANAGEMENT': Department.MANAGEMENT,
     'BAN GIÁM ĐỐC': Department.MANAGEMENT,
@@ -102,36 +106,85 @@ DEPARTMENT_LOOKUP = {
     'BGD': Department.MANAGEMENT,
 }
 
-# Mapping chuẩn hóa vai trò/chức vụ
+# Mapping chuẩn hóa 13 vị trí theo cơ cấu tổ chức
 ROLE_LOOKUP = {
-    'DRIVER': EmployeeRole.DRIVER,
-    'TÀI XẾ': EmployeeRole.DRIVER,
-    'LÁI XE': EmployeeRole.DRIVER,
-    'TÀI XẾ CONTAINER': EmployeeRole.DRIVER,
+    # Cấp quản trị
+    'DIRECTOR': EmployeeRole.DIRECTOR,
+    'GIÁM ĐỐC': EmployeeRole.DIRECTOR,
+    'BAN GIÁM ĐỐC': EmployeeRole.DIRECTOR,
+
+    # 1. Phòng Hành Chính & Kế Toán (2 vị trí)
+    'LEAD_ADMIN_ACC': EmployeeRole.LEAD_ADMIN_ACC,
+    'CHUYÊN VIÊN PHỤ TRÁCH (HC & KẾ TOÁN)': EmployeeRole.LEAD_ADMIN_ACC,
+    'CHUYÊN VIÊN PHỤ TRÁCH HÀNH CHÍNH & KẾ TOÁN': EmployeeRole.LEAD_ADMIN_ACC,
+    'PHỤ TRÁCH HÀNH CHÍNH KẾ TOÁN': EmployeeRole.LEAD_ADMIN_ACC,
+    'KẾ TOÁN TRƯỞNG': EmployeeRole.LEAD_ADMIN_ACC,
+
+    'STAFF_ADMIN_ACC': EmployeeRole.STAFF_ADMIN_ACC,
+    'NHÂN VIÊN (HC & KẾ TOÁN)': EmployeeRole.STAFF_ADMIN_ACC,
+    'NHÂN VIÊN HÀNH CHÍNH & KẾ TOÁN': EmployeeRole.STAFF_ADMIN_ACC,
+    'NHÂN VIÊN KẾ TOÁN': EmployeeRole.STAFF_ADMIN_ACC,
+    'KẾ TOÁN VIÊN': EmployeeRole.STAFF_ADMIN_ACC,
+    'ACCOUNTANT': EmployeeRole.STAFF_ADMIN_ACC,
+
+    # 2. Phòng Điều Vận (4 vị trí)
+    'LEAD_DISPATCH': EmployeeRole.LEAD_DISPATCH,
+    'CHUYÊN VIÊN PHỤ TRÁCH (ĐIỀU VẬN)': EmployeeRole.LEAD_DISPATCH,
+    'CHUYÊN VIÊN PHỤ TRÁCH ĐIỀU VẬN': EmployeeRole.LEAD_DISPATCH,
+    'TRƯỞNG PHÒNG ĐIỀU VẬN': EmployeeRole.LEAD_DISPATCH,
 
     'DISPATCHER': EmployeeRole.DISPATCHER,
+    'NHÂN VIÊN ĐIỀU VẬN': EmployeeRole.DISPATCHER,
     'ĐIỀU ĐỘ VIÊN': EmployeeRole.DISPATCHER,
-    'ĐIỀU ĐỘ': EmployeeRole.DISPATCHER,
     'ĐIỀU VẬN': EmployeeRole.DISPATCHER,
 
-    'ACCOUNTANT': EmployeeRole.ACCOUNTANT,
-    'KẾ TOÁN VIÊN': EmployeeRole.ACCOUNTANT,
-    'KẾ TOÁN': EmployeeRole.ACCOUNTANT,
+    'DISPATCH_ASST': EmployeeRole.DISPATCH_ASST,
+    'NHÂN VIÊN HỖ TRỢ': EmployeeRole.DISPATCH_ASST,
+    'NHÂN VIÊN HỖ TRỢ (ĐIỀU VẬN)': EmployeeRole.DISPATCH_ASST,
+    'HỖ TRỢ ĐIỀU VẬN': EmployeeRole.DISPATCH_ASST,
+
+    'DRIVER': EmployeeRole.DRIVER,
+    'TÀI XẾ & GIAO NHẬN': EmployeeRole.DRIVER,
+    'TÀI XẾ': EmployeeRole.DRIVER,
+    'LÁI XE': EmployeeRole.DRIVER,
+
+    # 3. Phòng Kinh Doanh (3 vị trí)
+    'LEAD_SALES': EmployeeRole.LEAD_SALES,
+    'CHUYÊN VIÊN PHỤ TRÁCH (KINH DOANH)': EmployeeRole.LEAD_SALES,
+    'CHUYÊN VIÊN PHỤ TRÁCH KINH DOANH': EmployeeRole.LEAD_SALES,
+    'TRƯỞNG PHÒNG KINH DOANH': EmployeeRole.LEAD_SALES,
 
     'SALESMAN': EmployeeRole.SALESMAN,
     'NHÂN VIÊN KINH DOANH': EmployeeRole.SALESMAN,
-    'KINH DOANH': EmployeeRole.SALESMAN,
     'SALES': EmployeeRole.SALESMAN,
 
+    'CSKH': EmployeeRole.CSKH,
+    'ADMIN / CSKH': EmployeeRole.CSKH,
+    'ADMIN/CSKH': EmployeeRole.CSKH,
+    'CSKH': EmployeeRole.CSKH,
+    'CHĂM SÓC KHÁCH HÀNG': EmployeeRole.CSKH,
+
+    # 4. Phòng Bảo Trì Vận Hành (2 vị trí)
+    'LEAD_MAINT': EmployeeRole.LEAD_MAINT,
+    'CHUYÊN VIÊN PHỤ TRÁCH (BẢO TRÌ VẬN HÀNH)': EmployeeRole.LEAD_MAINT,
+    'CHUYÊN VIÊN PHỤ TRÁCH BẢO TRÌ': EmployeeRole.LEAD_MAINT,
+    'TRƯỞNG PHÒNG BẢO TRÌ': EmployeeRole.LEAD_MAINT,
+
     'MECHANIC': EmployeeRole.MECHANIC,
+    'NHÂN VIÊN BẢO TRÌ': EmployeeRole.MECHANIC,
     'KỸ THUẬT VIÊN BÃI XE': EmployeeRole.MECHANIC,
-    'KỸ THUẬT': EmployeeRole.MECHANIC,
     'THỢ MÁY': EmployeeRole.MECHANIC,
 
-    'DIRECTOR': EmployeeRole.DIRECTOR,
-    'BAN GIÁM ĐỐC': EmployeeRole.DIRECTOR,
-    'GIÁM ĐỐC': EmployeeRole.DIRECTOR,
-    'TỔNG GIÁM ĐỐC': EmployeeRole.DIRECTOR,
+    # 5. Phòng Dịch Vụ Hải Quan (2 vị trí)
+    'LEAD_CUSTOMS': EmployeeRole.LEAD_CUSTOMS,
+    'CHUYÊN VIÊN PHỤ TRÁCH (DỊCH VỤ HẢI QUAN)': EmployeeRole.LEAD_CUSTOMS,
+    'CHUYÊN VIÊN PHỤ TRÁCH HẢI QUAN': EmployeeRole.LEAD_CUSTOMS,
+    'TRƯỞNG PHÒNG HẢI QUAN': EmployeeRole.LEAD_CUSTOMS,
+
+    'CUSTOMS_STAFF': EmployeeRole.CUSTOMS_STAFF,
+    'NHÂN VIÊN XỬ LÝ': EmployeeRole.CUSTOMS_STAFF,
+    'NHÂN VIÊN XỬ LÝ (HẢI QUAN)': EmployeeRole.CUSTOMS_STAFF,
+    'NHÂN VIÊN HẢI QUAN': EmployeeRole.CUSTOMS_STAFF,
 }
 
 def parse_date_val(val):

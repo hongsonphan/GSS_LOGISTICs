@@ -2,6 +2,48 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.9.7] - 2026-10-21 (Cập Nhật Chuẩn Hóa Cơ Cấu Tổ Chức: 5 Phòng Ban & 13 Vị Trí Chức Danh Theo Sơ Đồ Doanh Nghiệp)
+
+### 1. Chuẩn Hóa Danh Mục Phòng Ban (5 Phòng Ban + Ban Giám Đốc):
+- **Cơ Cấu Phòng Ban Mới:**
+  1. **Ban Giám Đốc** (`MANAGEMENT`)
+  2. **Phòng Hành Chính & Kế Toán** (`ADMIN_ACC` - 4 Ô Xanh)
+  3. **Phòng Điều Vận** (`DISPATCH` - 4 Ô Xanh)
+  4. **Phòng Kinh Doanh** (`SALES` - 4 Ô Xanh)
+  5. **Phòng Bảo Trì Vận Hành** (`MAINTENANCE` - 4 Ô Xanh)
+  6. **Phòng Dịch Vụ Hải Quan** (`CUSTOMS` - Dịch Vụ Hải Quan)
+- **Tương Thích Ngược:** Giữ nguyên các enum cũ `FLEET`, `ACCOUNTING`, `HR` để không làm gián đoạn các dữ liệu nhân sự đã lưu trước đây.
+
+### 2. Chuẩn Hóa 13 Vị Trí Chức Danh Theo Đúng Sơ Đồ Tổ Chức:
+- **Phòng Hành Chính & Kế Toán (2 vị trí):**
+  * `LEAD_ADMIN_ACC`: Chuyên viên Phụ trách (Hành chính & Kế toán)
+  * `STAFF_ADMIN_ACC`: Nhân viên (Hành chính & Kế toán)
+- **Phòng Điều Vận (4 vị trí):**
+  * `LEAD_DISPATCH`: Chuyên viên Phụ trách (Điều vận)
+  * `DISPATCHER`: Nhân viên Điều vận
+  * `DISPATCH_ASST`: Nhân viên Hỗ trợ (Điều vận)
+  * `DRIVER`: Tài xế & Giao nhận
+- **Phòng Kinh Doanh (3 vị trí):**
+  * `LEAD_SALES`: Chuyên viên Phụ trách (Kinh doanh)
+  * `SALESMAN`: Nhân viên Kinh doanh
+  * `CSKH`: Admin / CSKH
+- **Phòng Bảo Trì Vận Hành (2 vị trí):**
+  * `LEAD_MAINT`: Chuyên viên Phụ trách (Bảo trì vận hành)
+  * `MECHANIC`: Nhân viên Bảo trì
+- **Phòng Dịch Vụ Hải Quan (2 vị trí):**
+  * `LEAD_CUSTOMS`: Chuyên viên Phụ trách (Dịch vụ hải quan)
+  * `CUSTOMS_STAFF`: Nhân viên xử lý (Hải quan)
+- **Ban Giám Đốc:**
+  * `DIRECTOR`: Giám Đốc
+
+### 3. Nâng Cấp Frontend & Trải Nghiệm Người Dùng (Dynamic Cascading Dropdown):
+- **Phân Cấp Dropdown Thông Minh:** Khi chọn Phòng Ban tại form tạo mới/chỉnh sửa hồ sơ nhân sự (`view_employee_form.html`), danh sách vị trí chức danh (`emp-role`) tự động lọc và nạp chính xác các chức danh thuộc phòng ban đó qua hàm `handleEmployeeDeptChange(deptVal, selectedRole)`.
+- **Bộ Lọc Toàn Diện:** Cập nhật bộ lọc Phòng Ban (`emp-filter-dept`) và Chức Vụ (`emp-filter-role`) trên màn hình Quản lý Nhân sự (`view_personnel.html`) với phân nhóm `optgroup` trực quan.
+- **Dịch Vụ Nhập/Xuất Excel (`apps/personnel/import_export_service.py`):** Bổ sung tra cứu tiếng Việt đầy đủ cho 5 phòng ban và 13 vị trí chức danh mới, cho phép import danh sách nhân sự từ file Excel linh hoạt.
+
+---
+
+
 ## [v3.9.6] - 2026-10-21 (Khắc Phục Lỗi Nút [Xóa] Nhân Sự Không Phản Hồi & Đồng Bộ Quy Trình Xóa Mềm An Toàn)
 
 ### 1. Khắc Phục Lỗi Frontend — Hàm `deleteEmployeeItem`:

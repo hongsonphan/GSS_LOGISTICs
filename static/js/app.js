@@ -30331,6 +30331,66 @@ async function openDirectPrintCustoms(customsId) {
         showToast('error', 'Không thể mở lệnh in tờ khai hải quan', 'Lỗi In');
     }
 }
+const DEPARTMENT_POSITIONS = {
+    'MANAGEMENT': [
+        { value: 'DIRECTOR', label: 'Giám Đốc' }
+    ],
+    'ADMIN_ACC': [
+        { value: 'LEAD_ADMIN_ACC', label: 'Chuyên viên Phụ trách' },
+        { value: 'STAFF_ADMIN_ACC', label: 'Nhân viên' }
+    ],
+    'DISPATCH': [
+        { value: 'LEAD_DISPATCH', label: 'Chuyên viên Phụ trách' },
+        { value: 'DISPATCHER', label: 'Nhân viên Điều vận' },
+        { value: 'DISPATCH_ASST', label: 'Nhân viên Hỗ trợ' },
+        { value: 'DRIVER', label: 'Tài xế & Giao nhận' }
+    ],
+    'SALES': [
+        { value: 'LEAD_SALES', label: 'Chuyên viên Phụ trách' },
+        { value: 'SALESMAN', label: 'Nhân viên Kinh doanh' },
+        { value: 'CSKH', label: 'Admin / CSKH' }
+    ],
+    'MAINTENANCE': [
+        { value: 'LEAD_MAINT', label: 'Chuyên viên Phụ trách' },
+        { value: 'MECHANIC', label: 'Nhân viên Bảo trì' }
+    ],
+    'CUSTOMS': [
+        { value: 'LEAD_CUSTOMS', label: 'Chuyên viên Phụ trách' },
+        { value: 'CUSTOMS_STAFF', label: 'Nhân viên xử lý' }
+    ],
+    'FLEET': [
+        { value: 'DRIVER', label: 'Tài xế & Giao nhận' },
+        { value: 'LEAD_MAINT', label: 'Chuyên viên Phụ trách' },
+        { value: 'MECHANIC', label: 'Nhân viên Bảo trì' }
+    ],
+    'ACCOUNTING': [
+        { value: 'LEAD_ADMIN_ACC', label: 'Chuyên viên Phụ trách' },
+        { value: 'STAFF_ADMIN_ACC', label: 'Nhân viên' },
+        { value: 'ACCOUNTANT', label: 'Kế toán viên' }
+    ],
+    'HR': [
+        { value: 'LEAD_ADMIN_ACC', label: 'Chuyên viên Phụ trách' },
+        { value: 'STAFF_ADMIN_ACC', label: 'Nhân viên' }
+    ]
+};
+window.DEPARTMENT_POSITIONS = DEPARTMENT_POSITIONS;
+
+function handleEmployeeDeptChange(deptVal, selectedRole = null) {
+    const roleSelect = document.getElementById('emp-role');
+    if (!roleSelect) return;
+    const positions = DEPARTMENT_POSITIONS[deptVal] || [];
+    if (positions.length > 0) {
+        roleSelect.innerHTML = positions.map(p => `<option value="${p.value}">${p.label} (${p.value})</option>`).join('');
+        if (selectedRole && positions.some(p => p.value === selectedRole)) {
+            roleSelect.value = selectedRole;
+        } else {
+            roleSelect.value = positions[0].value;
+        }
+    }
+    handleEmployeeRoleChange();
+}
+window.handleEmployeeDeptChange = handleEmployeeDeptChange;
+
 function handleEmployeeRoleChange() {
     const roleSelect = document.getElementById('emp-role');
     const driverFields = document.getElementById('emp-driver-fields');
@@ -30356,7 +30416,8 @@ function openCreateEmployeePage(updateHistory = true) {
     if (el('emp-phone')) el('emp-phone').value = '';
     if (el('emp-zalo')) el('emp-zalo').value = '';
     if (el('emp-email')) el('emp-email').value = '';
-    if (el('emp-department')) el('emp-department').value = 'FLEET';
+    if (el('emp-department')) el('emp-department').value = 'DISPATCH';
+    handleEmployeeDeptChange('DISPATCH', 'DRIVER');
     if (el('emp-role')) el('emp-role').value = 'DRIVER';
     if (el('emp-gender')) el('emp-gender').value = 'MALE';
     if (el('emp-dob')) el('emp-dob').value = '';
@@ -30453,7 +30514,9 @@ async function openEditEmployeePage(id, updateHistory = true) {
     if (el('emp-phone')) el('emp-phone').value = emp.phone_number || '';
     if (el('emp-zalo')) el('emp-zalo').value = emp.zalo_id || '';
     if (el('emp-email')) el('emp-email').value = emp.email || '';
-    if (el('emp-department')) el('emp-department').value = emp.department || 'FLEET';
+    const curEmpDept = emp.department || 'DISPATCH';
+    if (el('emp-department')) el('emp-department').value = curEmpDept;
+    handleEmployeeDeptChange(curEmpDept, emp.role || 'DRIVER');
     if (el('emp-role')) el('emp-role').value = emp.role || 'DRIVER';
     if (el('emp-gender')) el('emp-gender').value = emp.gender || 'MALE';
     if (el('emp-dob')) el('emp-dob').value = normalizeDateToISO(emp.date_of_birth) || '';

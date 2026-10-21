@@ -573,7 +573,7 @@ class PersonnelHRMAPITestCase(TestCase):
 
         emp_thao = Employee.objects.get(code='KT901')
         self.assertEqual(emp_thao.full_name, 'Vũ Thị Thanh Thảo')
-        self.assertEqual(emp_thao.role, EmployeeRole.ACCOUNTANT)
+        self.assertEqual(emp_thao.role, EmployeeRole.STAFF_ADMIN_ACC)
 
         # Test xóa mềm (soft-delete) sau đó import lại có cờ update_existing=True -> khôi phục
         emp_thao.is_deleted = True
@@ -636,3 +636,59 @@ class PersonnelHRMAPITestCase(TestCase):
 
         dep.refresh_from_db()
         self.assertTrue(dep.is_deleted)
+
+    def test_org_chart_departments_and_13_positions(self):
+        """
+        Kiểm tra toàn diện cơ cấu tổ chức theo sơ đồ:
+        - 5 Phòng ban (4 ô xanh + hải quan) + Ban Giám Đốc
+        - 13 Vị trí (+ Giám Đốc)
+        - Quy tắc sinh mã tương ứng từng phòng ban/vị trí
+        """
+        # 1. Ban Giám Đốc
+        self.assertEqual(Department.MANAGEMENT, 'MANAGEMENT')
+        self.assertEqual(EmployeeRole.DIRECTOR, 'DIRECTOR')
+        code_dir = Employee.generate_next_code(role=EmployeeRole.DIRECTOR, department=Department.MANAGEMENT)
+        self.assertTrue(code_dir.startswith('BGD'))
+
+        # 2. Phòng Hành Chính & Kế Toán (2 vị trí)
+        self.assertEqual(Department.ADMIN_ACC, 'ADMIN_ACC')
+        self.assertEqual(EmployeeRole.LEAD_ADMIN_ACC, 'LEAD_ADMIN_ACC')
+        self.assertEqual(EmployeeRole.STAFF_ADMIN_ACC, 'STAFF_ADMIN_ACC')
+        code_lead_acc = Employee.generate_next_code(role=EmployeeRole.LEAD_ADMIN_ACC, department=Department.ADMIN_ACC)
+        self.assertTrue(code_lead_acc.startswith('KT'))
+
+        # 3. Phòng Điều Vận (4 vị trí)
+        self.assertEqual(Department.DISPATCH, 'DISPATCH')
+        self.assertEqual(EmployeeRole.LEAD_DISPATCH, 'LEAD_DISPATCH')
+        self.assertEqual(EmployeeRole.DISPATCHER, 'DISPATCHER')
+        self.assertEqual(EmployeeRole.DISPATCH_ASST, 'DISPATCH_ASST')
+        self.assertEqual(EmployeeRole.DRIVER, 'DRIVER')
+        code_driver = Employee.generate_next_code(role=EmployeeRole.DRIVER, department=Department.DISPATCH)
+        self.assertTrue(code_driver.startswith('TX'))
+        code_lead_disp = Employee.generate_next_code(role=EmployeeRole.LEAD_DISPATCH, department=Department.DISPATCH)
+        self.assertTrue(code_lead_disp.startswith('DD'))
+
+        # 4. Phòng Kinh Doanh (3 vị trí)
+        self.assertEqual(Department.SALES, 'SALES')
+        self.assertEqual(EmployeeRole.LEAD_SALES, 'LEAD_SALES')
+        self.assertEqual(EmployeeRole.SALESMAN, 'SALESMAN')
+        self.assertEqual(EmployeeRole.CSKH, 'CSKH')
+        code_lead_sales = Employee.generate_next_code(role=EmployeeRole.LEAD_SALES, department=Department.SALES)
+        self.assertTrue(code_lead_sales.startswith('KD'))
+        code_cskh = Employee.generate_next_code(role=EmployeeRole.CSKH, department=Department.SALES)
+        self.assertTrue(code_cskh.startswith('KD'))
+
+        # 5. Phòng Bảo Trì Vận Hành (2 vị trí)
+        self.assertEqual(Department.MAINTENANCE, 'MAINTENANCE')
+        self.assertEqual(EmployeeRole.LEAD_MAINT, 'LEAD_MAINT')
+        self.assertEqual(EmployeeRole.MECHANIC, 'MECHANIC')
+        code_lead_maint = Employee.generate_next_code(role=EmployeeRole.LEAD_MAINT, department=Department.MAINTENANCE)
+        self.assertTrue(code_lead_maint.startswith('BT'))
+
+        # 6. Phòng Dịch Vụ Hải Quan (2 vị trí)
+        self.assertEqual(Department.CUSTOMS, 'CUSTOMS')
+        self.assertEqual(EmployeeRole.LEAD_CUSTOMS, 'LEAD_CUSTOMS')
+        self.assertEqual(EmployeeRole.CUSTOMS_STAFF, 'CUSTOMS_STAFF')
+        code_lead_customs = Employee.generate_next_code(role=EmployeeRole.LEAD_CUSTOMS, department=Department.CUSTOMS)
+        self.assertTrue(code_lead_customs.startswith('HQ'))
+

@@ -176,14 +176,13 @@
                         <!-- Phòng ban -->
                         <div class="md:col-span-4">
                             <label class="block font-bold text-slate-700 text-xs mb-1">Phòng Ban Công Tác <span class="text-rose-500">*</span></label>
-                            <select id="emp-department" required class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
-                                <option value="FLEET">Đội Xe & Bãi (FLEET)</option>
-                                <option value="DISPATCH">Phòng Điều Vận (DISPATCH)</option>
-                                <option value="ACCOUNTING">Kế Toán Tài Chính (ACCOUNTING)</option>
-                                <option value="SALES">Phòng Kinh Doanh (SALES)</option>
-                                <option value="CUSTOMS">Thủ Tục Hải Quan (CUSTOMS)</option>
-                                <option value="HR">Hành Chính Nhân Sự (HR)</option>
-                                <option value="MANAGEMENT">Ban Giám Đốc (MANAGEMENT)</option>
+                            <select id="emp-department" required onchange="handleEmployeeDeptChange(this.value)" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
+                                <option value="ADMIN_ACC">Phòng Hành Chính & Kế Toán</option>
+                                <option value="DISPATCH" selected>Phòng Điều Vận</option>
+                                <option value="SALES">Phòng Kinh Doanh</option>
+                                <option value="MAINTENANCE">Phòng Bảo Trì Vận Hành</option>
+                                <option value="CUSTOMS">Phòng Dịch Vụ Hải Quan</option>
+                                <option value="MANAGEMENT">Ban Giám Đốc</option>
                             </select>
                         </div>
 
@@ -191,12 +190,10 @@
                         <div class="md:col-span-4">
                             <label class="block font-bold text-slate-700 text-xs mb-1">Chức Vụ / Vai Trò <span class="text-rose-500">*</span></label>
                             <select id="emp-role" required onchange="handleEmployeeRoleChange()" class="w-full h-10 px-3 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-hidden transition-all">
-                                <option value="DRIVER">Tài xế (DRIVER)</option>
-                                <option value="DISPATCHER">Điều độ viên (DISPATCHER)</option>
-                                <option value="ACCOUNTANT">Kế toán viên (ACCOUNTANT)</option>
-                                <option value="SALESMAN">Nhân viên Kinh doanh (SALESMAN)</option>
-                                <option value="MECHANIC">Kỹ thuật viên bãi xe (MECHANIC)</option>
-                                <option value="DIRECTOR">Ban Giám Đốc (DIRECTOR)</option>
+                                <option value="DRIVER" selected>Tài xế & Giao nhận (DRIVER)</option>
+                                <option value="LEAD_DISPATCH">Chuyên viên Phụ trách (LEAD_DISPATCH)</option>
+                                <option value="DISPATCHER">Nhân viên Điều vận (DISPATCHER)</option>
+                                <option value="DISPATCH_ASST">Nhân viên Hỗ trợ (DISPATCH_ASST)</option>
                             </select>
                         </div>
 
