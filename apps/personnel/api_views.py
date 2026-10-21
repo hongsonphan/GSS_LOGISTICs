@@ -1476,3 +1476,82 @@ class PayrollSlipDetailAPIView(APIView):
         slip.is_deleted = True
         slip.save()
         return Response({'success': True, 'message': 'Đã xóa mềm phiếu lương.'})
+
+
+# ==============================================================================
+# 7. XUẤT NHẬP EXCEL HỒ SƠ NHÂN SỰ (EXCEL IMPORT / EXPORT)
+# ==============================================================================
+class EmployeeExportTemplateAPIView(APIView):
+    """
+    API Tải file Excel mẫu để nhập hồ sơ nhân sự
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        import io
+        from django.http import HttpResponse
+        from apps.personnel.import_export_service import generate_employee_template
+        wb, filename = generate_employee_template()
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+
+class EmployeeImportAPIView(APIView):
+    """
+    API Nhập danh sách nhân sự từ file Excel (.xlsx, .xls)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        file_obj = request.FILES.get('file')
+        if not file_obj:
+            return Response({'error': 'Vui lòng chọn file Excel để nhập dữ liệu!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        update_existing = str(request.POST.get('update_existing', 'false')).lower() in ['true', '1', 'yes']
+        from apps.personnel.import_export_service import import_employees_from_excel
+        result = import_employees_from_excel(file_obj, update_existing=update_existing, user=request.user)
+        if not result.get('success'):
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result)
+
+
+class EmployeeExportDataAPIView(APIView):
+    """
+    API Xuất toàn bộ danh sách nhân sự hiện tại ra file Excel
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        import io
+        from django.http import HttpResponse
+        from apps.personnel.import_export_service import export_employees_to_excel
+        from apps.personnel.models import Employee
+
+        qs = Employee.objects.all().order_by('department', 'role', 'code')
+        status_filter = request.GET.get('status')
+        if status_filter == 'ACTIVE':
+            qs = qs.filter(is_active=True)
+        elif status_filter == 'INACTIVE':
+            qs = qs.filter(is_active=False)
+
+        dept = request.GET.get('department')
+        if dept and dept != 'ALL':
+            qs = qs.filter(department=dept)
+
+        wb, filename = export_employees_to_excel(qs)
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response

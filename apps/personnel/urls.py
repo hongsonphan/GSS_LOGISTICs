@@ -3,6 +3,9 @@ from apps.personnel.api_views import (
     EmployeeListCreateAPIView,
     EmployeeDetailAPIView,
     EmployeeStatsAPIView,
+    EmployeeExportTemplateAPIView,
+    EmployeeImportAPIView,
+    EmployeeExportDataAPIView,
     EmployeeDependentListCreateAPIView,
     EmployeeDependentDetailAPIView,
     LaborContractListCreateAPIView,
@@ -33,6 +36,9 @@ from apps.personnel.api_views import (
 urlpatterns = [
     # 1. Hồ sơ nhân sự
     path('employees/', EmployeeListCreateAPIView.as_view(), name='api-employee-list-create'),
+    path('employees/export-template/', EmployeeExportTemplateAPIView.as_view(), name='api-employee-export-template'),
+    path('employees/import/', EmployeeImportAPIView.as_view(), name='api-employee-import'),
+    path('employees/export-data/', EmployeeExportDataAPIView.as_view(), name='api-employee-export-data'),
     path('employees/<int:pk>/', EmployeeDetailAPIView.as_view(), name='api-employee-detail'),
     path('stats/', EmployeeStatsAPIView.as_view(), name='api-employee-stats'),
 

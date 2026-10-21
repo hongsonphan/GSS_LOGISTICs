@@ -474,3 +474,126 @@ class PersonnelHRMAPITestCase(TestCase):
         # Kiểm tra Net = Gross - BHXH - Công đoàn - Thuế - Tạm ứng
         expected_net = slip.gross_income - slip.total_insurance_employee - slip.union_fee_employee - slip.pit_amount - slip.advance_deductions - slip.other_deductions
         self.assertEqual(slip.net_salary, expected_net)
+
+
+    def test_employee_auto_code_generation(self):
+        # Kiểm tra quy tắc sinh mã tự động theo vai trò và phòng ban
+        code_driver = Employee.generate_next_code(role=EmployeeRole.DRIVER)
+        self.assertTrue(code_driver.startswith('TX'))
+        self.assertGreaterEqual(len(code_driver), 5) # TX001
+
+        code_disp = Employee.generate_next_code(role=EmployeeRole.DISPATCHER)
+        self.assertTrue(code_disp.startswith('DD'))
+
+        code_acc = Employee.generate_next_code(role=EmployeeRole.ACCOUNTANT)
+        self.assertTrue(code_acc.startswith('KT'))
+
+        # Tạo nhân sự không truyền code -> tự sinh mã
+        emp1 = Employee.objects.create(
+            full_name='Lái xe Tự Sinh Mã 1',
+            phone_number='0988111222',
+            role=EmployeeRole.DRIVER,
+            department=Department.FLEET
+        )
+        self.assertEqual(emp1.code, code_driver)
+
+        # Tạo nhân sự thứ 2 cùng vai trò -> tăng STT
+        emp2 = Employee.objects.create(
+            full_name='Lái xe Tự Sinh Mã 2',
+            phone_number='0988333444',
+            role=EmployeeRole.DRIVER,
+            department=Department.FLEET
+        )
+        expected_stt = int(emp1.code.replace('TX', '')) + 1
+        self.assertEqual(emp2.code, f"TX{expected_stt:03d}")
+
+    def test_export_employee_template_and_data_api(self):
+        # 1. Tải mẫu template
+        res_tpl = self.client.get('/api/personnel/employees/export-template/')
+        self.assertEqual(res_tpl.status_code, status.HTTP_200_OK)
+        self.assertIn('spreadsheetml', res_tpl['Content-Type'])
+        self.assertIn('Mau_Nhap_Ho_So_Nhan_Su.xlsx', res_tpl['Content-Disposition'])
+
+        # 2. Xuất dữ liệu nhân sự hiện tại
+        res_data = self.client.get('/api/personnel/employees/export-data/')
+        self.assertEqual(res_data.status_code, status.HTTP_200_OK)
+        self.assertIn('spreadsheetml', res_data['Content-Type'])
+        self.assertIn('Danh_Sach_Nhan_Su', res_data['Content-Disposition'])
+
+    def test_import_employees_create_and_update(self):
+        import io
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.personnel.import_export_service import generate_employee_template
+
+        wb, _ = generate_employee_template()
+        ws = wb.active
+
+        # Thêm 2 dòng nhân viên mới vào file Excel
+        # Dòng 1: Tài xế mới để trống mã NV (tự sinh TX...)
+        ws.append([
+            '', 'Phan Minh Hoàng', 'HOÀNG 50B', '0937888999', 'hoang.phan@trienvo.vn',
+            'Đội Xe & Bãi', 'Tài xế', 'Nam', '1990-08-12', '079090001234', '2020-05-10', 'Cục CS QLHC về TTXH',
+            '8090001234', '7990001234', 'Xã Phú Hữu, Nhơn Trạch, Đồng Nai', 'Bãi xe Suối Tiên',
+            '012345678901', 'Vietcombank', 'CN Thủ Đức', 'PHAN MINH HOANG', '2024-01-15',
+            7000000, 5500000, 'GPLX-FC-999888', '2029-08-12', 'Hoạt động'
+        ])
+
+        # Dòng 2: Kế toán mới có mã chỉ định KT901
+        ws.append([
+            'KT901', 'Vũ Thị Thanh Thảo', 'THẢO KT', '0912444555', 'thao.vu@trienvo.vn',
+            'Kế Toán Tài Chính', 'Kế toán viên', 'Nữ', '1996-03-25', '079096005555', '2022-01-15', 'Cục CS QLHC về TTXH',
+            '8096005555', '7996005555', 'Q. Bình Thạnh, TP.HCM', 'Q. Bình Thạnh, TP.HCM',
+            '987654321098', 'Techcombank', 'CN Sài Gòn', 'VU THI THANH THAO', '2024-02-01',
+            11000000, 6000000, '', '', 'Hoạt động'
+        ])
+
+        out = io.BytesIO()
+        wb.save(out)
+        out.seek(0)
+
+        uploaded = SimpleUploadedFile(
+            'test_employees_import.xlsx',
+            out.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        res = self.client.post('/api/personnel/employees/import/', {
+            'file': uploaded,
+            'update_existing': 'true'
+        }, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data.get('success'))
+        self.assertEqual(res.data.get('created_count'), 2)
+
+        # Kiểm tra database: 2 nhân viên đã được tạo
+        emp_hoang = Employee.objects.get(phone_number='0937888999')
+        self.assertEqual(emp_hoang.full_name, 'Phan Minh Hoàng')
+        self.assertTrue(emp_hoang.code.startswith('TX'))
+
+        emp_thao = Employee.objects.get(code='KT901')
+        self.assertEqual(emp_thao.full_name, 'Vũ Thị Thanh Thảo')
+        self.assertEqual(emp_thao.role, EmployeeRole.ACCOUNTANT)
+
+        # Test xóa mềm (soft-delete) sau đó import lại có cờ update_existing=True -> khôi phục
+        emp_thao.is_deleted = True
+        emp_thao.save()
+
+        out2 = io.BytesIO()
+        wb.save(out2)
+        out2.seek(0)
+        uploaded2 = SimpleUploadedFile(
+            'test_employees_import_update.xlsx',
+            out2.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        res2 = self.client.post('/api/personnel/employees/import/', {
+            'file': uploaded2,
+            'update_existing': 'true'
+        }, format='multipart')
+        self.assertEqual(res2.status_code, status.HTTP_200_OK)
+        self.assertEqual(res2.data.get('updated_count'), 2)
+
+        emp_thao.refresh_from_db()
+        self.assertFalse(emp_thao.is_deleted)

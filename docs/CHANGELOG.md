@@ -2,6 +2,46 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.9.1] - 2026-10-21 (Thêm Tính Năng Xuất Mẫu & Nhập Danh Sách Nhân Sự & Tài Xế Từ File Excel)
+
+### 1. Phân Hệ Quản Lý Nhân Sự — Excel Import & Export Service (`apps/personnel/import_export_service.py`):
+- **Tải file mẫu Excel chuẩn Triền Võ Logistics (`Mau_Nhap_Ho_So_Nhan_Su.xlsx`):**
+  * Tự động sinh file mẫu định dạng openpyxl chuyên nghiệp: tiêu đề lớn Teal `#0F766E`, dải banner lưu ý hướng dẫn, header cột có chỉ dẫn bắt buộc `(*)`, 3 dòng mẫu chuẩn (Tài xế, Điều độ, Kế toán) và tự động căn chỉnh độ rộng cột.
+  * Phủ sóng toàn bộ 26 trường thông tin nhân sự: Mã NV, Họ tên, Biệt danh, SĐT, Email, Phòng ban, Chức vụ, Giới tính, Ngày sinh, CCCD, Ngày/Nơi cấp, MST, BHXH, Địa chỉ thường trú, Chỗ ở hiện nay, Tài khoản ngân hàng, Lương căn bản, Lương đóng BHXH, Số GPLX, Hạn GPLX và Trạng thái hoạt động.
+- **Dịch vụ nhập dữ liệu (Import Engine) & Savepoint Isolation:**
+  * Hỗ trợ đọc cả `.xlsx` và `.xls`.
+  * Tự động nhận diện mapping cột linh hoạt (theo tiếng Việt có dấu hoặc mã kỹ thuật tiếng Anh).
+  * Chuyển đổi thông minh các giá trị thực tế: mapping phòng ban/chức vụ/giới tính từ nhiều cách nhập tiếng Việt (`Đội Xe & Bãi`, `Tài xế`, `Nam`...), định dạng ngày tháng đa chuẩn (`YYYY-MM-DD`, `DD/MM/YYYY`).
+  * Tự động bỏ qua các dòng mẫu chưa chỉnh sửa.
+  * Mỗi dòng được bọc trong `transaction.atomic()` savepoint riêng biệt, chống lỗi dây chuyền (Defensive PostgreSQL).
+  * Hỗ trợ cập nhật và khôi phục soft-delete (`is_deleted=False`) khi chọn cờ `update_existing=True`.
+
+### 2. Thuật Toán Sinh Mã Nhân Viên Tự Động (`Employee.generate_next_code`):
+- Nếu cột "Mã Nhân Viên" để trống, hệ thống tự động sinh mã theo vai trò và phòng ban:
+  * **Tài xế (DRIVER / FLEET):** `TX[STT]` (VD: `TX001`, `TX002`...).
+  * **Điều độ (DISPATCHER / DISPATCH):** `DD[STT]` (VD: `DD001`, `DD002`...).
+  * **Kế toán (ACCOUNTANT / ACCOUNTING):** `KT[STT]` (VD: `KT001`, `KT002`...).
+  * **Kinh doanh (SALESMAN / SALES):** `KD[STT]` (VD: `KD001`, `KD002`...).
+  * **Kỹ thuật / Cơ khí (MECHANIC):** `CK[STT]` (VD: `CK001`, `CK002`...).
+  * **Ban Giám Đốc (DIRECTOR / MANAGEMENT):** `BGD[STT]`.
+  * **Khác:** `NV[STT]`.
+- Quét qua `Employee.all_objects` chống trùng mã va chạm tuyệt đối.
+
+### 3. Giao Diện & Trải Nghiệm Người Dùng (UI/UX Accessibility):
+- **Bổ sung 3 nút thao tác nhanh trên thanh công cụ Hồ sơ nhân sự (`view_personnel.html`):**
+  * `[Mẫu Excel]`: Tải nhanh file template `.xlsx`.
+  * `[Nhập Excel]`: Mở modal kéo thả / chọn file nhập dữ liệu.
+  * `[Xuất Excel]`: Xuất toàn bộ danh sách nhân sự hiện tại kèm bộ lọc phòng ban và trạng thái ra Excel.
+- **Modal Nhập Dữ Liệu Nhân Sự (`modal_employee_import.html`):**
+  * Giao diện chuẩn BIM: Dropzone kéo thả trực quan, preview tên file & kích thước, checkbox tùy chọn cập nhật hồ sơ cũ, trạng thái spinner loading và hiển thị kết quả chi tiết từng dòng lỗi nếu có.
+
+### 4. Kiểm Thử Hệ Thống & Zero-Regression:
+- Bộ kiểm thử `apps.personnel` đạt **15/15 tests passed 100%**.
+- Bộ kiểm thử `apps.master_data` đạt **24/24 tests passed 100%**.
+- Kiểm tra cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` hoàn toàn sạch sẽ, không lỗi cú pháp.
+
+---
+
 ## [v3.9.0] - 2026-10-21 (Thêm Quy Tắc Tự Động Sinh Mã Nhà Cung Cấp / Đối Tác Theo Phân Loại: 3PL, Garage, NCC)
 
 ### 1. Chuẩn Hóa Bảng Mã Định Danh Đối Tác & Nhà Cung Cấp:

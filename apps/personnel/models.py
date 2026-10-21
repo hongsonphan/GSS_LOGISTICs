@@ -107,6 +107,54 @@ class Employee(TimeStampedModel, SoftDeleteModel):
         verbose_name="Quyền bị loại trừ khỏi nhóm"
     )
 
+    @classmethod
+    def generate_next_code(cls, role=None, department=None):
+        """
+        Quy tắc sinh mã nhân viên tự động:
+        - Tài xế (DRIVER) hoặc Đội xe (FLEET): TX[STT]
+        - Điều độ (DISPATCHER) hoặc Điều vận (DISPATCH): DD[STT]
+        - Kế toán (ACCOUNTANT) hoặc Kế toán tài chính (ACCOUNTING): KT[STT]
+        - Kinh doanh (SALESMAN) hoặc Kinh doanh (SALES): KD[STT]
+        - Kỹ thuật / Cơ khí (MECHANIC): CK[STT]
+        - Ban Giám Đốc (DIRECTOR / MANAGEMENT): BGD[STT]
+        - Khác: NV[STT]
+        """
+        import re
+        if role == EmployeeRole.DRIVER or department == Department.FLEET:
+            prefix = 'TX'
+        elif role == EmployeeRole.DISPATCHER or department == Department.DISPATCH:
+            prefix = 'DD'
+        elif role == EmployeeRole.ACCOUNTANT or department == Department.ACCOUNTING:
+            prefix = 'KT'
+        elif role == EmployeeRole.SALESMAN or department == Department.SALES:
+            prefix = 'KD'
+        elif role == EmployeeRole.MECHANIC:
+            prefix = 'CK'
+        elif role == EmployeeRole.DIRECTOR or department == Department.MANAGEMENT:
+            prefix = 'BGD'
+        else:
+            prefix = 'NV'
+
+        codes = cls.all_objects.filter(code__startswith=prefix).values_list('code', flat=True)
+        max_num = 0
+        pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$", re.IGNORECASE)
+        for c in codes:
+            match = pattern.match(c or '')
+            if match:
+                try:
+                    num = int(match.group(1))
+                    if num > max_num:
+                        max_num = num
+                except ValueError:
+                    pass
+        next_num = max_num + 1
+        return f"{prefix}{next_num:03d}"
+
+    def save(self, *args, **kwargs):
+        if not self.code or not str(self.code).strip():
+            self.code = self.generate_next_code(self.role, self.department)
+        super().save(*args, **kwargs)
+
     class Meta:
         ordering = ['code']
 
