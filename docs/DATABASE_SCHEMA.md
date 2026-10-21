@@ -45,7 +45,7 @@ Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
 - `fleet.Trailer`: Quản lý sơ-mi rơ-moóc 40ft, moóc cổ cò, moóc xương.
 
 ### D. Phân hệ Danh mục Dùng chung (`apps/master_data`)
-- `master_data.Subcontractor`: Danh mục đối tác vận tải 3PL / thầu phụ / nhà xe ngoài (mã số, tên pháp nhân, MST, số điện thoại, địa chỉ, người liên hệ, tài khoản ngân hàng, cờ kích hoạt).
+- `master_data.Subcontractor`: Danh mục đối tác vận tải 3PL / thầu phụ / nhà xe ngoài, gara sửa chữa và nhà cung cấp vật tư (`partner_type`: CARRIER, GARAGE, SUPPLIER; mã số, tên viết tắt `short_name`, tên pháp nhân, MST, số điện thoại, địa chỉ công ty `address`, người liên hệ, tài khoản ngân hàng, cờ kích hoạt).
 - `master_data.SubcontractorDriver`: Danh bạ tài xế thuộc đối tác 3PL (`subcontractor`, `full_name`, `phone`, `license_number`, `is_active`, `notes`). Quản lý tập trung theo pháp nhân đối tác vận tải, cách ly tuyệt đối khỏi nhân sự nội bộ `personnel.Employee`.
 - `master_data.Location`: Danh mục cảng biển, ICD, Depot bãi rỗng và Kho nhà máy khách hàng chuẩn hóa (`LocationType`: PORT, ICD, DEPOT, WAREHOUSE, YARD).
 - `master_data.ContainerType`: Quy cách container và thùng xe tải (20DC, 40HC, 45G1...), chuẩn hóa hệ số TEU, CBM và tải trọng payload kg.
@@ -71,7 +71,7 @@ Mô hình: Django ORM • Modular Monolith • SQLite3 / PostgreSQL
 - `documents.TripDocument`: Lưu trữ ảnh chụp phiếu EIR lấy cont, EIR hạ cont, biên bản giao nhận hàng (POD), phiếu cân xe, hóa đơn nâng hạ, và file Booking / Lệnh cấp rỗng (`BOOKING_NOTE`) kèm kết quả nhận diện OCR AI. Tự động sinh bản ghi chứng từ khi chuyến xe có file booking đính kèm.
 
 ### H. Phân hệ Chi phí & Đối chiếu (`apps/billing`)
-- `billing.TripExpense`: Chi phí phát sinh hiện trường liên kết trực tiếp tới `master_data.ExpenseItem` (`expense_item`) và tương thích ngược với 8 danh mục Bảng Kê Chi Phí Triền Võ (`category`). Hỗ trợ phân loại chứng từ theo `ExpenseReceiptType` (tránh xung đột với documents app), cờ thu hộ/chi hộ khách hàng `is_on_behalf_of_customer`, lưu trữ đầy đủ metadata hóa đơn điện tử: đơn vị phát hành (`invoice_issuer`), số hóa đơn (`invoice_number`), mã tra cứu (`invoice_lookup_code`), link tra cứu online (`invoice_lookup_url`), tiền trước thuế, thuế suất và tiền thuế GTGT. Tự động tính tổng chi phí và cập nhật P&L chuyến xe.
+- `billing.TripExpense`: Chi phí phát sinh hiện trường liên kết trực tiếp tới `master_data.ExpenseItem` (`expense_item`) và tương thích ngược với 8 danh mục Bảng Kê Chi Phí Triền Võ (`category`). Hỗ trợ phân loại 3 dòng chi phí chuẩn tài xế (`expense_payer_type`: TVL_COST, TVL_OBH, SUB_OBH), cờ hoàn chi hộ cho nhà xe thầu phụ `reimburse_to_subcontractor`, cờ thu hộ/chi hộ khách hàng `is_on_behalf_of_customer`, lưu trữ đầy đủ metadata hóa đơn điện tử: đơn vị phát hành (`invoice_issuer`), số hóa đơn (`invoice_number`), mã tra cứu (`invoice_lookup_code`), link tra cứu online (`invoice_lookup_url`), tiền trước thuế, thuế suất và tiền thuế GTGT. Tự động tính tổng chi phí và cập nhật P&L chuyến xe.
 - `billing.DispatcherAdvanceFund`: Quỹ tạm ứng Cấp 1 cấp cho Điều phối viên để điều hành đội xe.
 - `billing.DriverTripAdvance`: Quỹ tạm ứng Cấp 2 cấp cho Tài xế theo từng chuyến xe.
 - `billing.CashTransaction`: Sổ quỹ dòng tiền Thu - Chi tổng hợp (Mẫu S03a-DN), hỗ trợ thu cước, chi thầu phụ, nạp ETC, tiền mặt và ngân hàng.

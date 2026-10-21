@@ -21,6 +21,11 @@ class ExpenseCategory(models.TextChoices):
     STEVEDORING = 'STEVEDORING', 'Cước Phí Bốc Xếp (Cũ)'
     REPAIR_TIRE = 'REPAIR_TIRE', 'Vá vỏ / Sửa chữa gấp (Cũ)'
 
+class ExpensePayerType(models.TextChoices):
+    TVL_COST = 'TVL_COST', 'Chi phí TVL'
+    TVL_OBH = 'TVL_OBH', 'TVL chi hộ'
+    SUB_OBH = 'SUB_OBH', '3PL chi hộ'
+
 class ApprovalStatus(models.TextChoices):
     PENDING = 'PENDING', 'Chờ duyệt'
     APPROVED = 'APPROVED', 'Đã duyệt'
@@ -113,6 +118,18 @@ class TripExpense(TimeStampedModel, SoftDeleteModel):
     approved_at = models.DateTimeField(null=True, blank=True, help_text="Thời điểm phê duyệt / chốt sổ")
     company_borne = models.BooleanField(default=True, help_text="Công ty chịu (True) hay trừ lương tài xế (False)")
     
+    expense_payer_type = models.CharField(
+        max_length=20,
+        choices=ExpensePayerType.choices,
+        default='TVL_COST',
+        db_index=True,
+        help_text="Phân loại dòng chi phí: Chi phí TVL, TVL chi hộ Khách, hoặc 3PL chi hộ Khách"
+    )
+    reimburse_to_subcontractor = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Cần hoàn trả lại cho Nhà xe Thầu phụ 3PL (khi 3PL chi hộ)"
+    )
     is_on_behalf_of_customer = models.BooleanField(
         default=False,
         db_index=True,
@@ -187,10 +204,26 @@ class TripExpense(TimeStampedModel, SoftDeleteModel):
 
     def save(self, *args, **kwargs):
         self.clean()
-        if self.is_on_behalf_of_customer and self.reimbursement_status == ReimbursementStatus.NOT_APPLICABLE:
-            self.reimbursement_status = ReimbursementStatus.PENDING
-        elif not self.is_on_behalf_of_customer:
+        # Tương thích ngược: Nếu truyền is_on_behalf_of_customer=True trực tiếp mà chưa đổi expense_payer_type
+        if self.is_on_behalf_of_customer and self.expense_payer_type == ExpensePayerType.TVL_COST:
+            self.expense_payer_type = ExpensePayerType.SUB_OBH if self.reimburse_to_subcontractor else ExpensePayerType.TVL_OBH
+
+        # Đồng bộ trạng thái theo 3 nút: Chi phí TVL | TVL chi hộ | 3PL chi hộ
+        if self.expense_payer_type == ExpensePayerType.TVL_COST:
+            self.is_on_behalf_of_customer = False
+            self.reimburse_to_subcontractor = False
             self.reimbursement_status = ReimbursementStatus.NOT_APPLICABLE
+        elif self.expense_payer_type == ExpensePayerType.TVL_OBH:
+            self.is_on_behalf_of_customer = True
+            self.reimburse_to_subcontractor = False
+            if self.reimbursement_status == ReimbursementStatus.NOT_APPLICABLE:
+                self.reimbursement_status = ReimbursementStatus.PENDING
+        elif self.expense_payer_type == ExpensePayerType.SUB_OBH:
+            self.is_on_behalf_of_customer = True
+            self.reimburse_to_subcontractor = True
+            if self.reimbursement_status == ReimbursementStatus.NOT_APPLICABLE:
+                self.reimbursement_status = ReimbursementStatus.PENDING
+
         super().save(*args, **kwargs)
         # Tự động cập nhật lại P&L chuyến xe
         if self.trip_id:

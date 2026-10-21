@@ -2,6 +2,45 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.2] - 2026-10-21 (Phân Loại Đối Tác Thầu Phụ, Chuẩn Hóa DOM Scoped Bền Vững & Cụm 3 Nút Chi Phí Chuẩn Bàn Tay Tài Xế)
+
+### 1. Phân Loại Đối Tác Chuẩn Hóa (`partner_type` trong `Subcontractor`):
+- **Model `Subcontractor` (`apps/master_data/models.py`):**
+  * Bổ sung enum `PartnerType`: `CARRIER` (Nhà xe vận tải 3PL), `GARAGE` (Gara sửa chữa / bảo dưỡng), `SUPPLIER` (Nhà cung cấp vật tư / dịch vụ khác).
+  * Thêm trường `partner_type` có đánh index `db_index=True`, mặc định `CARRIER`.
+- **Dropdown Điều Xe & Tạo Chuyến (`apps/master_data/api_views.py`):**
+  * Danh sách chọn nhà xe thầu phụ (`#inp-subcontractor`) tự động lọc chỉ lấy `partner_type=CARRIER`, loại bỏ triệt để Gara hoặc Nhà cung cấp khỏi luồng điều xe chở hàng.
+- **Giao Diện Master Data & Modal Đối Tác (`static/js/app.js`):**
+  * Bảng Thầu phụ bổ sung cột **`Loại Đối Tác`** với badge trực quan phân biệt: Xanh Teal (Nhà xe 3PL), Vàng Cam (Gara bảo dưỡng), Tím Indigo (Nhà cung cấp).
+  * Toolbar Master Data hỗ trợ bộ lọc phụ nhanh theo Loại đối tác.
+  * Trong Modal Sửa/Tạo Đối Tác: Nếu là `CARRIER` mới hiển thị 2 bảng con (Đội Xe & Danh Bạ Bác Tài); nếu chọn `GARAGE` hoặc `SUPPLIER` thì tự động ẩn 2 bảng con này để giao diện tinh gọn, không nhầm lẫn.
+
+### 2. Chuẩn Hóa DOM Scoped Container Bền Vững (Zero-Regression DOM Conflict):
+- **Xử lý triệt để xung đột ID trùng lặp giữa Modal ẩn và Full-Page View:**
+  * Nâng cấp hàm `submitCustomsDeclarationForm(e)` và `submitEmployeeForm(event)` sang cơ chế Scoped Container Selector (`event.target.closest('form')`), đảm bảo luôn truy vấn đúng context submit, ngăn chặn 100% tình trạng submit rỗng hoặc bắt nhầm input ngầm trong DOM.
+
+### 3. Cụm 3 Nút Phân Loại Chi Phí Chuẩn Bàn Tay Tài Xế (Touch Target $\ge 48\text{px}$):
+- **Model `TripExpense` & Vòng Đời Kế Toán (`apps/billing/models.py`):**
+  * Bổ sung enum `ExpensePayerType`:
+    1. **`TVL_COST` (Chi phí TVL - Mặc định):** Triền Võ chịu $\rightarrow$ tính vào chi phí vận hành chuyến xe (`cached_expense`).
+    2. **`TVL_OBH` (TVL chi hộ):** Triền Võ ứng tiền trước $\rightarrow$ lập Debit Note thu lại từ Khách hàng $\rightarrow$ không tính vào chi phí vận hành chuyến đi.
+    3. **`SUB_OBH` (3PL chi hộ):** Tài xế/chủ xe 3PL tự bỏ tiền túi trả trước $\rightarrow$ Triền Võ hoàn trả cho 3PL khi quyết toán cước $\rightarrow$ đồng thời thu lại từ Khách hàng $\rightarrow$ không tính vào chi phí vận hành TVL.
+  * Thêm trường `reimburse_to_subcontractor = BooleanField(default=False)` tự động kích hoạt khi chọn `SUB_OBH`.
+  * Cơ chế tự động đồng bộ 2 chiều tương thích ngược hoàn hảo trong hàm `save()`.
+- **Giao Diện Màn Hình Tài Xế Hiện Trường (`templates/driver_portal.html`):**
+  * Thiết kế cụm 3 nút Segmented to bản, chiều cao 48px, chuẩn kích thước ngón tay tài xế trên điện thoại di động:
+    * `[ 🏢 Chi phí TVL ]` (Mặc định - Màu Teal)
+    * `[ ↗ TVL chi hộ ]` (Màu Sky Blue)
+    * `[ 🔄 3PL chi hộ ]` (Màu Amber Orange)
+  * Thao tác 1 chạm chuyển đổi tức thì kèm dòng hướng dẫn rõ nghĩa ngay bên dưới.
+  * Tích hợp đồng bộ trên cả Form Kê Nhiều Dòng (Batch Entry), Form Sửa Dòng (Edit Modal) và Danh Sách Lịch Sử Chi Phí.
+- **Giao Diện Điều Hành & Chi Tiết Chuyến Xe (`templates/views/view_trip_detail.html`):**
+  * Thay thế toggle cũ bằng cụm 3 nút to trực quan trên cả Modal Thêm Chi Phí và Modal Sửa Chi Phí.
+  * Bảng Kê Chi Phí hiển thị rõ nét badge `🏢 TVL`, `↗ TVL CHI HỘ`, `🔄 3PL CHI HỘ` trên từng dòng chi phí.
+- **Quyết Toán Công Nợ Đối Tác 3PL (`apps/billing/finance_reports_api.py` & `modal_subcontractor_settle.html`):**
+  * Tự động tính toán tổng các khoản 3PL chi hộ (`sub_reimbursable_expenses`) trên mỗi chuyến đi.
+  * Số tiền thanh toán cho 3PL được tự động cộng thêm: `Còn phải trả = Cước thỏa thuận + Hoàn chi hộ 3PL - Tạm ứng`.
+
 ## [v3.7.1] - 2026-10-21 (Chế Độ Sửa Trực Tiếp Trên Bảng & Lưu Toàn Bộ Dữ Liệu Xe, Bác Tài Thuộc Nhà Xe 3PL)
 
 ### 1. Chuẩn Hóa Cột "Thao Tác" Kèm Bộ Đôi Nút [Sửa | Xóa] Trên 2 Bảng Con Nhà Xe:

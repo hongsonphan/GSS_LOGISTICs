@@ -1,3 +1,11 @@
+function toggleSubcontractorTypePanels(typeVal) {
+    const isCarrier = (typeVal === 'CARRIER');
+    const vehSec = document.getElementById('section-subcontractor-vehicles-mgmt');
+    const drvSec = document.getElementById('section-subcontractor-drivers-mgmt');
+    if (vehSec) vehSec.style.display = isCarrier ? 'block' : 'none';
+    if (drvSec) drvSec.style.display = isCarrier ? 'block' : 'none';
+}
+window.toggleSubcontractorTypePanels = toggleSubcontractorTypePanels;
 /**
  * ==========================================================================
  * BIM LOGISTICS — FRONTEND APPLICATION LOGIC (TMS & FLEET)
@@ -4623,11 +4631,19 @@ function renderCostSheetTable(trip) {
                             <td class="py-1.5 px-2.5 text-slate-700 text-[11.5px] font-medium border-r border-slate-200/70">
                                 <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
                                     <span>${subExp.invoice_issuer || subExp.notes || '<span class="text-slate-400">-</span>'}</span>
-                                    ${subExp.is_on_behalf_of_customer ? `
-                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
-                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>CHI HỘ KH
+                                    ${(subExp.expense_payer_type === 'TVL_OBH' || (subExp.is_on_behalf_of_customer && !subExp.reimburse_to_subcontractor)) ? `
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300 whitespace-nowrap">
+                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>TVL CHI HỘ
                                         </span>
-                                    ` : ''}
+                                    ` : ((subExp.expense_payer_type === 'SUB_OBH' || subExp.reimburse_to_subcontractor) ? `
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">
+                                            <i class="ph-bold ph-truck mr-0.5 text-[10px]"></i>3PL CHI HỘ
+                                        </span>
+                                    ` : `
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 whitespace-nowrap">
+                                            🏢 TVL
+                                        </span>
+                                    `)}
                                 </div>
                             </td>
                             <td class="py-1.5 px-2.5 text-center border-r border-slate-200/70">
@@ -4692,11 +4708,21 @@ function renderCostSheetTable(trip) {
                         <td class="py-1.5 px-3 text-slate-600 text-[11.5px] border-r border-slate-200/70">
                             <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
                                 <span>${issuerText || '<span class="text-slate-400">-</span>'}</span>
-                                ${(singleExp && singleExp.is_on_behalf_of_customer) ? `
-                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
-                                        <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>CHI HỘ KH
-                                    </span>
-                                ` : ''}
+                                ${singleExp ? (
+                                    (singleExp.expense_payer_type === 'TVL_OBH' || (singleExp.is_on_behalf_of_customer && !singleExp.reimburse_to_subcontractor)) ? `
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300 whitespace-nowrap">
+                                            <i class="ph-bold ph-arrow-up-right mr-0.5 text-[10px]"></i>TVL CHI HỘ
+                                        </span>
+                                    ` : ((singleExp.expense_payer_type === 'SUB_OBH' || singleExp.reimburse_to_subcontractor) ? `
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">
+                                            <i class="ph-bold ph-truck mr-0.5 text-[10px]"></i>3PL CHI HỘ
+                                        </span>
+                                    ` : `
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 whitespace-nowrap">
+                                            🏢 TVL
+                                        </span>
+                                    `)
+                                ) : ''}
                             </div>
                         </td>
                         <td class="py-1.5 px-3 text-center border-r border-slate-200/70">
@@ -5888,13 +5914,100 @@ function setBehalfToggle(value, checkboxId, wrapId, dotId, trackId) {
     }
 }
 
+function selectExpensePayer(payerType) {
+    const input = document.getElementById('expense-payer-type-input');
+    const chk = document.getElementById('expense-on-behalf-checkbox');
+    if (input) input.value = payerType;
+    if (chk) chk.checked = (payerType !== 'TVL_COST');
+
+    const btnCost = document.getElementById('btn-payer-tvl-cost');
+    const btnTvlObh = document.getElementById('btn-payer-tvl-obh');
+    const btnSubObh = document.getElementById('btn-payer-sub-obh');
+    const badge = document.getElementById('expense-payer-badge');
+    const guide = document.getElementById('expense-payer-guide');
+
+    const reset = (btn) => {
+        if (!btn) return;
+        btn.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn";
+    };
+    reset(btnCost);
+    reset(btnTvlObh);
+    reset(btnSubObh);
+
+    if (payerType === 'TVL_COST') {
+        if (btnCost) btnCost.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
+        if (badge) {
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
+            badge.innerText = "🏢 Chi phí của Triền Võ";
+        }
+        if (guide) guide.innerHTML = "🏢 <strong>Chi phí TVL:</strong> Đưa vào chi phí vận hành chuyến xe của Triền Võ.";
+    } else if (payerType === 'TVL_OBH') {
+        if (btnTvlObh) btnTvlObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
+        if (badge) {
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
+            badge.innerText = "↗ Triền Võ chi hộ Khách hàng";
+        }
+        if (guide) guide.innerHTML = "↗ <strong>TVL chi hộ:</strong> Triền Võ ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
+    } else if (payerType === 'SUB_OBH') {
+        if (btnSubObh) btnSubObh.className = "payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-amber-600 text-white cursor-pointer touch-btn";
+        if (badge) {
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-heading";
+            badge.innerText = "🔄 3PL chi hộ Khách hàng";
+        }
+        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ Triền Võ hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
+    }
+}
+
+function selectEditExpensePayer(payerType) {
+    const input = document.getElementById('edit-expense-payer-type-input');
+    const chk = document.getElementById('edit-expense-on-behalf-checkbox');
+    if (input) input.value = payerType;
+    if (chk) chk.checked = (payerType !== 'TVL_COST');
+
+    const btnCost = document.getElementById('btn-edit-payer-tvl-cost');
+    const btnTvlObh = document.getElementById('btn-edit-payer-tvl-obh');
+    const btnSubObh = document.getElementById('btn-edit-payer-sub-obh');
+    const badge = document.getElementById('edit-expense-payer-badge');
+    const guide = document.getElementById('edit-expense-payer-guide');
+
+    const reset = (btn) => {
+        if (!btn) return;
+        btn.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all bg-white text-slate-700 hover:bg-slate-100 cursor-pointer touch-btn";
+    };
+    reset(btnCost);
+    reset(btnTvlObh);
+    reset(btnSubObh);
+
+    if (payerType === 'TVL_COST') {
+        if (btnCost) btnCost.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-teal-700 text-white cursor-pointer touch-btn";
+        if (badge) {
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 font-heading";
+            badge.innerText = "🏢 Chi phí của Triền Võ";
+        }
+        if (guide) guide.innerHTML = "🏢 <strong>Chi phí TVL:</strong> Đưa vào chi phí vận hành chuyến xe của Triền Võ.";
+    } else if (payerType === 'TVL_OBH') {
+        if (btnTvlObh) btnTvlObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-sky-700 text-white cursor-pointer touch-btn";
+        if (badge) {
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-heading";
+            badge.innerText = "↗ Triền Võ chi hộ Khách hàng";
+        }
+        if (guide) guide.innerHTML = "↗ <strong>TVL chi hộ:</strong> Triền Võ ứng tiền trước ➔ Thu lại từ Khách hàng qua Bảng kê Chi hộ (Debit Note). Không tính vào chi phí vận hành chuyến xe.";
+    } else if (payerType === 'SUB_OBH') {
+        if (btnSubObh) btnSubObh.className = "edit-payer-btn h-12 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs bg-amber-600 text-white cursor-pointer touch-btn";
+        if (badge) {
+            badge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-heading";
+            badge.innerText = "🔄 3PL chi hộ Khách hàng";
+        }
+        if (guide) guide.innerHTML = "🔄 <strong>3PL chi hộ:</strong> Tài xế/3PL bỏ tiền túi trả ➔ Triền Võ hoàn trả cho 3PL khi quyết toán cước ➔ Thu lại từ Khách hàng.";
+    }
+}
+
 function closeModalAddExpense() {
     const modal = document.getElementById('modal-add-expense');
     if (modal) modal.classList.add('hidden-view');
     const form = document.getElementById('form-add-expense');
     if (form) form.reset();
-    // Reset toggle về OFF
-    resetBehalfToggle('expense-on-behalf-checkbox', 'expense-behalf-toggle-wrap', 'expense-behalf-toggle-dot', 'expense-behalf-toggle-track');
+    selectExpensePayer('TVL_COST');
 }
 
 async function submitAddExpense(e) {
@@ -5933,7 +6046,8 @@ async function submitAddExpense(e) {
     const invoice_issuer = document.getElementById('expense-inv-issuer').value.trim();
     const invoice_lookup_url = document.getElementById('expense-inv-lookup-url').value.trim();
     const notes = document.getElementById('expense-notes-input').value.trim();
-    const is_on_behalf_of_customer = document.getElementById('expense-on-behalf-checkbox')?.checked || false;
+    const expense_payer_type = document.getElementById('expense-payer-type-input')?.value || 'TVL_COST';
+    const is_on_behalf_of_customer = (expense_payer_type !== 'TVL_COST');
 
     const payload = {
         category,
@@ -5944,6 +6058,7 @@ async function submitAddExpense(e) {
         invoice_issuer,
         invoice_lookup_url,
         notes,
+        expense_payer_type,
         is_on_behalf_of_customer
     };
     if (driver_id) payload.driver_id = driver_id;
@@ -5998,11 +6113,9 @@ function openModalEditExpense(exp) {
     document.getElementById('edit-expense-inv-lookup-url').value = exp.invoice_lookup_url || '';
     document.getElementById('edit-expense-notes-input').value = exp.notes || '';
 
-    // Đồng bộ toggle Chi hộ KH với giá trị hiện tại của expense
-    resetBehalfToggle('edit-expense-on-behalf-checkbox', 'edit-expense-behalf-toggle-wrap', 'edit-expense-behalf-toggle-dot', 'edit-expense-behalf-toggle-track');
-    if (exp.is_on_behalf_of_customer) {
-        toggleBehalfCheckbox('edit-expense-on-behalf-checkbox', 'edit-expense-behalf-toggle-wrap', 'edit-expense-behalf-toggle-dot', 'edit-expense-behalf-toggle-track');
-    }
+    // Đồng bộ cụm 3 nút phân loại chi phí
+    const payerType = exp.expense_payer_type || (exp.is_on_behalf_of_customer ? (exp.reimburse_to_subcontractor ? 'SUB_OBH' : 'TVL_OBH') : 'TVL_COST');
+    selectEditExpensePayer(payerType);
 
     initAllNumberInputs();
     modal.classList.remove('hidden-view');
@@ -6013,8 +6126,7 @@ function closeModalEditExpense() {
     if (modal) modal.classList.add('hidden-view');
     const form = document.getElementById('form-edit-expense');
     if (form) form.reset();
-    // Reset toggle về OFF
-    resetBehalfToggle('edit-expense-on-behalf-checkbox', 'edit-expense-behalf-toggle-wrap', 'edit-expense-behalf-toggle-dot', 'edit-expense-behalf-toggle-track');
+    selectEditExpensePayer('TVL_COST');
 }
 
 function editExpensePrompt(expenseId) {
@@ -6068,7 +6180,8 @@ async function submitEditExpense(e) {
     const invoice_issuer = document.getElementById('edit-expense-inv-issuer').value.trim();
     const invoice_lookup_url = document.getElementById('edit-expense-inv-lookup-url').value.trim();
     const notes = document.getElementById('edit-expense-notes-input').value.trim();
-    const is_on_behalf_of_customer = document.getElementById('edit-expense-on-behalf-checkbox')?.checked || false;
+    const expense_payer_type = document.getElementById('edit-expense-payer-type-input')?.value || 'TVL_COST';
+    const is_on_behalf_of_customer = (expense_payer_type !== 'TVL_COST');
 
     const payload = {
         category,
@@ -6079,6 +6192,7 @@ async function submitEditExpense(e) {
         invoice_issuer,
         invoice_lookup_url,
         notes,
+        expense_payer_type,
         is_on_behalf_of_customer,
         driver_id,
         vehicle_id
@@ -18165,6 +18279,7 @@ function renderSubcontractorTable(list) {
                 </td>
                 <td class="text-right font-black text-rose-700 tabular-nums font-heading">
                     ${formatMoneyVND(item.subcontractor_cost)}
+                    ${item.sub_reimbursable_expenses > 0 ? `<div class="text-[10px] text-amber-700 font-bold" title="Khoản 3PL chi hộ hoàn trả lại">+ ${formatMoneyVND(item.sub_reimbursable_expenses)} hoàn chi hộ</div>` : ''}
                 </td>
                 <td class="text-right font-bold tabular-nums ${marginClass}">
                     ${formatMoneyVND(item.gross_company_margin)}
@@ -18248,9 +18363,15 @@ function calculateSubcontractorMargin() {
     const cost = parseInt(document.getElementById('subcon-cost')?.value || '0', 10) || 0;
     const adv = parseInt(document.getElementById('subcon-advance')?.value || '0', 10) || 0;
     const rev = activeSubcontractorTrip.cached_revenue || 0;
+    const reimburse = activeSubcontractorTrip.sub_reimbursable_expenses || 0;
 
     const margin = rev - cost;
-    const rem = Math.max(0, cost - adv);
+    const rem = Math.max(0, cost + reimburse - adv);
+
+    const reimbEl = document.getElementById('subcon-calc-reimburse');
+    if (reimbEl) {
+        reimbEl.innerText = formatMoneyVND(reimburse);
+    }
 
     const marginEl = document.getElementById('subcon-calc-margin');
     if (marginEl) {
@@ -20375,7 +20496,14 @@ function setupMasterDataSecondaryFilter(items) {
     } else if (currentMasterDataTab === 'shipping_lines') {
         optionsHtml += '<option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Ngừng hoạt động</option>';
     } else if (currentMasterDataTab === 'subcontractors') {
-        optionsHtml += '<option value="ACTIVE">Đang hợp tác</option><option value="INACTIVE">Tạm ngưng</option>';
+        optionsHtml = `
+            <option value="ALL">Tất cả đối tác</option>
+            <option value="CARRIER">Nhà xe vận tải (3PL)</option>
+            <option value="GARAGE">Gara sửa chữa / Bảo dưỡng</option>
+            <option value="SUPPLIER">Nhà cung cấp vật tư / Dịch vụ</option>
+            <option value="ACTIVE">Đang hợp tác</option>
+            <option value="INACTIVE">Tạm ngưng</option>
+        `;
     }
     select.innerHTML = optionsHtml;
 }
@@ -20402,7 +20530,11 @@ function filterMasterDataTable() {
             else if (currentMasterDataTab === 'vehicles') matchesSub = (item.ownership_type_label === subFilter || item.ownership_type === subFilter);
             else if (currentMasterDataTab === 'trailers') matchesSub = item.trailer_type === subFilter;
             else if (currentMasterDataTab === 'shipping_lines') matchesSub = (subFilter === 'ACTIVE' ? item.is_active : !item.is_active);
-            else if (currentMasterDataTab === 'subcontractors') matchesSub = (subFilter === 'ACTIVE' ? item.is_active : !item.is_active);
+            else if (currentMasterDataTab === 'subcontractors') {
+        if (subFilter === 'ACTIVE') matchesSub = item.is_active;
+        else if (subFilter === 'INACTIVE') matchesSub = !item.is_active;
+        else if (['CARRIER', 'GARAGE', 'SUPPLIER'].includes(subFilter)) matchesSub = (item.partner_type === subFilter);
+    }
         }
         return matchesQuery && matchesSub;
     });
@@ -21024,9 +21156,10 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'subcontractors') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Nhà Xe</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Đối Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Loại Đối Tác</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Viết Tắt</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đơn Vị / Đối Tác Vận Tải</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đơn Vị / Đối Tác</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Công Ty</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Điều Hành & SĐT</th>
@@ -21039,15 +21172,32 @@ function renderMasterDataTable(items, total = items.length) {
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[12px] border-r border-slate-200 font-heading">
+                    ${item.partner_type === 'GARAGE' ? `
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-900 border border-amber-300 font-bold">
+                            <i class="ph-bold ph-wrench text-amber-700"></i> Gara bảo dưỡng
+                        </span>
+                    ` : (item.partner_type === 'SUPPLIER' ? `
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-indigo-50 text-indigo-900 border border-indigo-300 font-bold">
+                            <i class="ph-bold ph-package text-indigo-700"></i> Nhà cung cấp
+                        </span>
+                    ` : `
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-teal-50 text-teal-900 border border-teal-300 font-bold">
+                            <i class="ph-bold ph-truck text-teal-700"></i> Nhà xe 3PL
+                        </span>
+                    `)}
+                </td>
                 <td class="py-2 px-3 text-[12px] font-bold text-amber-900 border-r border-slate-200">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-900 border border-amber-200 font-mono font-bold">${escapeHtml(item.short_name || item.code)}</span>
                 </td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
                     <div class="flex items-center justify-between gap-2">
-                        <span class="hover:text-teal-700 cursor-pointer" onclick="openSubcontractorFleetModal(${item.id})" title="Nhấp để xem & quản lý đội xe và danh bạ tài xế">${escapeHtml(item.name)}</span>
-                        <button type="button" onclick="openSubcontractorFleetModal(${item.id})" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shrink-0" title="Bấm để xem và quản lý đội xe & tài xế của nhà xe này">
-                            <i class="ph-bold ph-truck text-amber-700"></i> Đội xe & Bác tài
-                        </button>
+                        <span class="hover:text-teal-700 cursor-pointer" onclick="${(item.partner_type === 'CARRIER' || !item.partner_type) ? `openSubcontractorFleetModal(${item.id})` : ''}">${escapeHtml(item.name)}</span>
+                        ${(item.partner_type === 'CARRIER' || !item.partner_type) ? `
+                            <button type="button" onclick="openSubcontractorFleetModal(${item.id})" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shrink-0" title="Bấm để xem và quản lý đội xe & tài xế của nhà xe này">
+                                <i class="ph-bold ph-truck text-amber-700"></i> Đội xe & Bác tài
+                            </button>
+                        ` : ''}
                     </div>
                 </td>
                 <td class="py-2 px-3 text-[12px] text-slate-700 max-w-xs border-r border-slate-200">
@@ -22048,13 +22198,18 @@ function injectMasterDataModalFields(data) {
         `;
     } else if (currentMasterDataTab === 'subcontractors') {
         const contactVal = (d.contact_person && d.contact_person !== 'null') ? d.contact_person : '';
+        const partnerTypeVal = d.partner_type || 'CARRIER';
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe</label>
+                        <label class="block font-bold text-teal-900 text-xs truncate">Loại Đối Tác <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh nếu để trống (NX_...)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                    <select id="mdf-sc-partner-type" onchange="toggleSubcontractorTypePanels(this.value)" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-teal-950 border-teal-300 bg-teal-50/40 w-full rounded">
+                        <option value="CARRIER" ${partnerTypeVal === 'CARRIER' ? 'selected' : ''}>🏢 Nhà xe vận tải (3PL)</option>
+                        <option value="GARAGE" ${partnerTypeVal === 'GARAGE' ? 'selected' : ''}>🔧 Gara sửa chữa / Bảo dưỡng</option>
+                        <option value="SUPPLIER" ${partnerTypeVal === 'SUPPLIER' ? 'selected' : ''}>📦 Nhà cung cấp vật tư / Dịch vụ</option>
+                    </select>
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -22064,17 +22219,26 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe</label>
+                    </div>
+                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh nếu để trống (NX_...)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Doanh Nghiệp / Đơn Vị <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-sc-name" value="${escapeHtml(d.name || '')}" placeholder="VD: CÔNG TY TNHH 3S LOGISTICS..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (MST)</label>
                     </div>
                     <input type="text" id="mdf-sc-tax" value="${escapeHtml(d.tax_code || '')}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
                 </div>
             </div>
-            <div>
-                <div class="flex items-center justify-between h-5 mb-1">
-                    <label class="block font-bold text-slate-700 text-xs truncate">Tên Nhà Xe / Đơn Vị Vận Tải 3PL <span class="text-rose-500">*</span></label>
-                </div>
-                <input type="text" id="mdf-sc-name" value="${escapeHtml(d.name || '')}" placeholder="VD: CÔNG TY TNHH 3S LOGISTICS..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
-            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
@@ -22241,6 +22405,7 @@ function injectMasterDataModalFields(data) {
                 loadSubcontractorDriversInModal(d.id);
             }, 50);
         }
+        toggleSubcontractorTypePanels(d.partner_type || 'CARRIER');
     } else if (currentMasterDataTab === 'opening_balance') {
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -22496,6 +22661,7 @@ async function submitMasterDataForm(e) {
         };
     } else if (tabKey === 'subcontractors') {
         payload = {
+            partner_type: document.getElementById('mdf-sc-partner-type')?.value || 'CARRIER',
             code: document.getElementById('mdf-sc-code').value,
             short_name: document.getElementById('mdf-sc-short-name')?.value || '',
             tax_code: document.getElementById('mdf-sc-tax').value,
@@ -27131,36 +27297,40 @@ function closeCustomsModal() {
 
 async function submitCustomsDeclarationForm(e) {
     e.preventDefault();
-    const id = document.getElementById('customs-edit-id').value;
+    const formEl = (e && e.target && e.target.closest) ? e.target.closest('form') : document;
+    const getEl = (id) => formEl.querySelector('#' + id) || document.getElementById(id);
+    const getVal = (id) => (getEl(id)?.value || '').trim();
+
+    const id = getVal('customs-edit-id');
     const isEdit = !!id;
 
-    const officeSelect = document.getElementById('cust-office-code');
-    const officeCode = officeSelect.value;
-    const officeName = officeSelect.getAttribute('data-office-name') || officeSelect.options[officeSelect.selectedIndex]?.text || '';
+    const officeSelect = getEl('cust-office-code');
+    const officeCode = officeSelect ? officeSelect.value : '';
+    const officeName = officeSelect ? (officeSelect.getAttribute('data-office-name') || officeSelect.options[officeSelect.selectedIndex]?.text || '') : '';
 
     const formData = new FormData();
-    formData.append('declaration_number', document.getElementById('cust-decl-number').value.trim());
-    formData.append('declaration_date', document.getElementById('cust-decl-date').value);
-    formData.append('customer_id', document.getElementById('cust-customer-id').value);
-    formData.append('direction', document.getElementById('cust-direction').value);
-    formData.append('declaration_type', document.getElementById('cust-decl-type').value);
+    formData.append('declaration_number', getVal('cust-decl-number'));
+    formData.append('declaration_date', getVal('cust-decl-date'));
+    formData.append('customer_id', getVal('cust-customer-id'));
+    formData.append('direction', getVal('cust-direction'));
+    formData.append('declaration_type', getVal('cust-decl-type'));
     formData.append('customs_office_code', officeCode);
     formData.append('customs_office_name', officeName);
-    formData.append('customs_lane', document.getElementById('cust-lane').value);
-    formData.append('status', document.getElementById('cust-status').value);
-    formData.append('bill_of_lading', document.getElementById('cust-bl-number').value.trim());
-    formData.append('container_numbers', document.getElementById('cust-container-numbers').value.trim());
+    formData.append('customs_lane', getVal('cust-lane'));
+    formData.append('status', getVal('cust-status'));
+    formData.append('bill_of_lading', getVal('cust-bl-number'));
+    formData.append('container_numbers', getVal('cust-container-numbers'));
     
-    const tripId = document.getElementById('cust-trip-id').value;
+    const tripId = getVal('cust-trip-id');
     if (tripId) formData.append('dispatch_trip_id', tripId);
 
-    formData.append('is_tax_paid', document.getElementById('cust-is-tax-paid').checked);
-    formData.append('tax_amount_vnd', document.getElementById('cust-tax-amount').value || 0);
-    formData.append('customs_service_fee', document.getElementById('cust-service-fee').value || 0);
-    formData.append('reimbursable_fee', document.getElementById('cust-reimbursable-fee').value || 0);
-    formData.append('inspection_notes', document.getElementById('cust-inspection-notes').value.trim());
+    formData.append('is_tax_paid', getEl('cust-is-tax-paid')?.checked || false);
+    formData.append('tax_amount_vnd', getVal('cust-tax-amount') || 0);
+    formData.append('customs_service_fee', getVal('cust-service-fee') || 0);
+    formData.append('reimbursable_fee', getVal('cust-reimbursable-fee') || 0);
+    formData.append('inspection_notes', getVal('cust-inspection-notes'));
 
-    const fileInput = document.getElementById('cust-document-file');
+    const fileInput = getEl('cust-document-file');
     if (fileInput && fileInput.files && fileInput.files[0]) {
         formData.append('declaration_document', fileInput.files[0]);
     }
@@ -28250,6 +28420,9 @@ window.openModalDetention = typeof openModalDetention !== 'undefined' ? openModa
 window.closeModalDetention = typeof closeModalDetention !== 'undefined' ? closeModalDetention : undefined;
 window.openModalAddExpense = typeof openModalAddExpense !== 'undefined' ? openModalAddExpense : undefined;
 window.closeModalAddExpense = typeof closeModalAddExpense !== 'undefined' ? closeModalAddExpense : undefined;
+window.selectExpensePayer = typeof selectExpensePayer !== 'undefined' ? selectExpensePayer : undefined;
+window.selectEditExpensePayer = typeof selectEditExpensePayer !== 'undefined' ? selectEditExpensePayer : undefined;
+window.toggleSubcontractorTypePanels = typeof toggleSubcontractorTypePanels !== 'undefined' ? toggleSubcontractorTypePanels : undefined;
 window.submitAddExpense = typeof submitAddExpense !== 'undefined' ? submitAddExpense : undefined;
 window.openModalEditExpense = typeof openModalEditExpense !== 'undefined' ? openModalEditExpense : undefined;
 window.closeModalEditExpense = typeof closeModalEditExpense !== 'undefined' ? closeModalEditExpense : undefined;
@@ -29553,40 +29726,44 @@ window.closeEmployeeModal = backToPersonnel;
 
 async function submitEmployeeForm(event) {
     event.preventDefault();
-    const editId = document.getElementById('emp-edit-id').value;
+    const formEl = (event && event.target && event.target.closest) ? event.target.closest('form') : document;
+    const getEl = (id) => formEl.querySelector('#' + id) || document.getElementById(id);
+    const getVal = (id) => (getEl(id)?.value || '').trim();
+
+    const editId = getVal('emp-edit-id');
     const isEdit = Boolean(editId);
 
-    const baseSalaryClean = String(document.getElementById('emp-base-salary').value || '0').replace(/\D/g, '');
-    const insSalaryClean = String(document.getElementById('emp-insurance-salary')?.value || '0').replace(/\D/g, '');
+    const baseSalaryClean = String(getVal('emp-base-salary') || '0').replace(/\D/g, '');
+    const insSalaryClean = String(getVal('emp-insurance-salary') || '0').replace(/\D/g, '');
 
     const payload = {
-        code: document.getElementById('emp-code').value.trim().toUpperCase(),
-        full_name: document.getElementById('emp-full-name').value.trim(),
-        nickname: document.getElementById('emp-nickname').value.trim(),
-        phone_number: document.getElementById('emp-phone').value.trim(),
-        zalo_id: document.getElementById('emp-zalo').value.trim(),
-        email: document.getElementById('emp-email')?.value.trim() || '',
-        department: document.getElementById('emp-department').value,
-        role: document.getElementById('emp-role').value,
-        gender: document.getElementById('emp-gender')?.value || 'MALE',
-        date_of_birth: normalizeDateToISO(document.getElementById('emp-dob')?.value) || null,
-        national_id: document.getElementById('emp-national-id')?.value.trim() || '',
-        national_id_date: normalizeDateToISO(document.getElementById('emp-national-id-date')?.value) || null,
-        national_id_place: document.getElementById('emp-national-id-place')?.value.trim() || '',
-        tax_id: document.getElementById('emp-tax-id')?.value.trim() || '',
-        insurance_number: document.getElementById('emp-insurance-number')?.value.trim() || '',
-        bank_account: document.getElementById('emp-bank-account')?.value.trim() || '',
-        bank_name: document.getElementById('emp-bank-name')?.value.trim() || '',
-        bank_beneficiary: document.getElementById('emp-bank-beneficiary')?.value.trim().toUpperCase() || '',
-        join_date: normalizeDateToISO(document.getElementById('emp-join-date')?.value) || null,
-        license_number: document.getElementById('emp-license-number').value.trim(),
-        license_expiry: normalizeDateToISO(document.getElementById('emp-license-expiry')?.value) || null,
+        code: getVal('emp-code').toUpperCase(),
+        full_name: getVal('emp-full-name'),
+        nickname: getVal('emp-nickname'),
+        phone_number: getVal('emp-phone'),
+        zalo_id: getVal('emp-zalo'),
+        email: getVal('emp-email'),
+        department: getVal('emp-department'),
+        role: getVal('emp-role'),
+        gender: getVal('emp-gender') || 'MALE',
+        date_of_birth: normalizeDateToISO(getVal('emp-dob')) || null,
+        national_id: getVal('emp-national-id'),
+        national_id_date: normalizeDateToISO(getVal('emp-national-id-date')) || null,
+        national_id_place: getVal('emp-national-id-place'),
+        tax_id: getVal('emp-tax-id'),
+        insurance_number: getVal('emp-insurance-number'),
+        bank_account: getVal('emp-bank-account'),
+        bank_name: getVal('emp-bank-name'),
+        bank_beneficiary: getVal('emp-bank-beneficiary').toUpperCase(),
+        join_date: normalizeDateToISO(getVal('emp-join-date')) || null,
+        license_number: getVal('emp-license-number'),
+        license_expiry: normalizeDateToISO(getVal('emp-license-expiry')) || null,
         base_salary: parseInt(baseSalaryClean, 10) || 0,
         insurance_salary: parseInt(insSalaryClean, 10) || 5000000,
-        is_social_insurance_participant: document.getElementById('emp-is-insurance')?.value === 'true',
-        is_active: document.getElementById('emp-is-active').value === 'true',
-        permanent_address: document.getElementById('emp-permanent-address')?.value.trim() || '',
-        current_address: document.getElementById('emp-current-address')?.value.trim() || ''
+        is_social_insurance_participant: getVal('emp-is-insurance') === 'true',
+        is_active: getVal('emp-is-active') === 'true',
+        permanent_address: getVal('emp-permanent-address'),
+        current_address: getVal('emp-current-address')
     };
 
     const url = isEdit ? `/api/personnel/employees/${editId}/` : '/api/personnel/employees/';

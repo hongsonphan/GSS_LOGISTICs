@@ -666,7 +666,18 @@ class SubcontractorSettlementsAPIView(APIView):
             plate = trip.vehicle.license_plate if trip.vehicle else 'Xe ngoài chưa gán'
             c_cost = int(trip.subcontractor_cost)
             c_adv = int(trip.subcontractor_advance)
-            rem = max(0, c_cost - c_adv)
+
+            # Các khoản chi hộ do 3PL trả cần hoàn lại:
+            sub_reimbursable_expenses = trip.expenses.filter(
+                is_deleted=False,
+                reimburse_to_subcontractor=True
+            ).exclude(
+                status=ApprovalStatus.REJECTED
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            sub_reimbursable_expenses = int(sub_reimbursable_expenses)
+
+            total_sub_payable = c_cost + sub_reimbursable_expenses
+            rem = max(0, total_sub_payable - c_adv)
 
             if sub:
                 partner_key = f"sub_{sub.id}"
@@ -715,6 +726,8 @@ class SubcontractorSettlementsAPIView(APIView):
                 'trip_status_label': trip.get_status_display(),
                 'cached_revenue': int(trip.cached_revenue),
                 'subcontractor_cost': c_cost,
+                'sub_reimbursable_expenses': sub_reimbursable_expenses,
+                'total_sub_payable': total_sub_payable,
                 'subcontractor_advance': c_adv,
                 'remaining_payable': rem,
                 'gross_company_margin': int(trip.cached_revenue - trip.subcontractor_cost),

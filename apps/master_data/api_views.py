@@ -166,10 +166,13 @@ class MasterDataFormOptionsAPIView(APIView):
             for sl in ShippingLine.objects.filter(is_active=True).order_by('code')
         ]
 
-        # 7. Nhà Xe Thầu Phụ / 3PL
+        # 7. Nhà Xe Thầu Phụ / 3PL (Chỉ lấy đối tác là Nhà xe CARRIER cho điều vận)
+        from apps.master_data.models import PartnerType
         subcontractors = [
             {
                 'id': sc.id,
+                'partner_type': sc.partner_type,
+                'partner_type_display': sc.get_partner_type_display(),
                 'code': sc.code,
                 'short_name': sc.short_name or sc.code,
                 'name': sc.name,
@@ -177,7 +180,7 @@ class MasterDataFormOptionsAPIView(APIView):
                 'contact_person': sc.contact_person,
                 'label': f"[{sc.short_name or sc.code}] {sc.name}"
             }
-            for sc in Subcontractor.objects.filter(is_active=True).order_by('name')
+            for sc in Subcontractor.objects.filter(is_active=True, partner_type=PartnerType.CARRIER).order_by('name')
         ]
 
         # 8. Tuyến đường & Khu Vực (DriverSalaryTariff)
@@ -1088,7 +1091,10 @@ class TrailerMasterDetailAPIView(MasterDataBaseAPIView):
 class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
+        partner_type_filter = request.GET.get('partner_type', '').strip()
         qs = Subcontractor.objects.all()
+        if partner_type_filter:
+            qs = qs.filter(partner_type=partner_type_filter)
         if q:
             qs = qs.filter(
                 Q(code__icontains=q) |
@@ -1138,7 +1144,10 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
         if Subcontractor.objects.filter(code=code).exists():
             return Response({'error': f'Mã nhà xe [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
 
+        from apps.master_data.models import PartnerType
+        partner_type = data.get('partner_type', PartnerType.CARRIER)
         sc = Subcontractor.objects.create(
+            partner_type=partner_type,
             code=code,
             short_name=short_name,
             name=name,
@@ -1165,6 +1174,7 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data
+        if 'partner_type' in data: sc.partner_type = data['partner_type'].strip()
         if 'name' in data: sc.name = data['name'].strip()
         if 'short_name' in data: sc.short_name = data['short_name'].strip()
         if 'tax_code' in data: sc.tax_code = data['tax_code'].strip()

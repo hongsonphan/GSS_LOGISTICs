@@ -163,11 +163,23 @@ class ShippingLine(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
+class PartnerType(models.TextChoices):
+    CARRIER = 'CARRIER', 'Nhà xe vận tải (3PL)'
+    GARAGE = 'GARAGE', 'Gara sửa chữa / Bảo dưỡng'
+    SUPPLIER = 'SUPPLIER', 'Nhà cung cấp vật tư / Dịch vụ khác'
+
 class Subcontractor(TimeStampedModel, SoftDeleteModel):
     """
-    Danh mục Nhà Xe Thầu Phụ / Đối Tác Vận Tải 3PL (Xe Bạn).
+    Danh mục Nhà Xe Thầu Phụ / Đối Tác Vận Tải 3PL (Xe Bạn), Gara và Nhà Cung Cấp.
     Quản lý thông tin nhà xe, người điều hành và tài khoản ngân hàng phục vụ đối soát cước.
     """
+    partner_type = models.CharField(
+        max_length=20,
+        choices=PartnerType.choices,
+        default=PartnerType.CARRIER,
+        db_index=True,
+        help_text="Phân loại đối tác: Nhà xe 3PL, Gara sửa chữa, hoặc Nhà cung cấp khác"
+    )
     code = models.CharField(max_length=50, unique=True, db_index=True) # NX_HOANGNAM, NX_MINHTHU...
     short_name = models.CharField(max_length=100, blank=True, help_text="Tên viết tắt của nhà xe để hiển thị ngắn gọn khi điều xe")
     name = models.CharField(max_length=200) # Công ty TNHH Vận tải Hoàng Nam...

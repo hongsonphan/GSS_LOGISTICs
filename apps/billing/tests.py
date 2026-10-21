@@ -265,3 +265,104 @@ class DriverBatchSettlementTests(TestCase):
         self.assertFalse(self.trip1.customer_reconciled)
         self.assertEqual(self.trip1.customer_soa_code, '')
 
+
+    def test_expense_payer_type_three_buttons(self):
+        """Kiểm tra 3 nút chi phí: TVL_COST | TVL_OBH | SUB_OBH và tác động lên cached_expense."""
+        from apps.billing.models import ExpensePayerType, ReimbursementStatus
+
+        # 1. Chi phí TVL: TVL chịu -> TÍNH vào chi phí vận hành chuyến đi
+        exp_cost = TripExpense.objects.create(
+            trip=self.trip1,
+            category=ExpenseCategory.TOLL_FEE,
+            amount=200000,
+            expense_payer_type=ExpensePayerType.TVL_COST
+        )
+        self.assertFalse(exp_cost.is_on_behalf_of_customer)
+        self.assertFalse(exp_cost.reimburse_to_subcontractor)
+        self.assertEqual(exp_cost.reimbursement_status, ReimbursementStatus.NOT_APPLICABLE)
+
+        # 2. TVL chi hộ: TVL ứng trước thu lại từ khách -> KHÔNG tính vào chi phí vận hành
+        exp_tvl_obh = TripExpense.objects.create(
+            trip=self.trip1,
+            category=ExpenseCategory.LIFT_ON,
+            amount=450000,
+            expense_payer_type=ExpensePayerType.TVL_OBH
+        )
+        self.assertTrue(exp_tvl_obh.is_on_behalf_of_customer)
+        self.assertFalse(exp_tvl_obh.reimburse_to_subcontractor)
+        self.assertEqual(exp_tvl_obh.reimbursement_status, ReimbursementStatus.PENDING)
+
+        # 3. 3PL chi hộ: 3PL bỏ tiền túi -> TVL hoàn tiền 3PL + thu lại từ KH -> KHÔNG tính vào chi phí TVL
+        exp_sub_obh = TripExpense.objects.create(
+            trip=self.trip1,
+            category=ExpenseCategory.CONTAINER_DEPOSIT,
+            amount=1000000,
+            expense_payer_type=ExpensePayerType.SUB_OBH
+        )
+        self.assertTrue(exp_sub_obh.is_on_behalf_of_customer)
+        self.assertTrue(exp_sub_obh.reimburse_to_subcontractor)
+        self.assertEqual(exp_sub_obh.reimbursement_status, ReimbursementStatus.PENDING)
+
+        self.trip1.update_financials()
+        # cached_expense chỉ gồm exp1 (500k từ setUp) + exp_cost (200k) = 700k
+        self.assertEqual(self.trip1.cached_expense, 700000)
+
+    def test_subcontractor_partner_type_and_settlement_reimbursement(self):
+        """Kiểm tra phân loại đối tác (CARRIER/GARAGE/SUPPLIER) và đối soát hoàn chi hộ 3PL."""
+        from apps.master_data.models import Subcontractor, PartnerType
+        from apps.billing.models import ExpensePayerType
+
+        # 1. Tạo đối tác nhà xe CARRIER và GARA
+        carrier = Subcontractor.objects.create(
+            code='NX_TEST_3PL',
+            short_name='TEST 3PL',
+            name='Công ty Vận Tải Test 3PL',
+            partner_type=PartnerType.CARRIER
+        )
+        garage = Subcontractor.objects.create(
+            code='GARA_TEST',
+            short_name='GARA QUẬN 12',
+            name='Gara Sửa Chữa Quận 12',
+            partner_type=PartnerType.GARAGE
+        )
+
+        # 2. Kiểm tra API options điều xe chỉ lấy CARRIER
+        self.client.force_authenticate(user=self.accountant_user)
+        opt_res = self.client.get('/api/master-data/form-options/')
+        self.assertEqual(opt_res.status_code, status.HTTP_200_OK)
+        sub_list = opt_res.data.get('subcontractors', [])
+        sub_codes = [s['code'] for s in sub_list]
+        self.assertIn('NX_TEST_3PL', sub_codes)
+        self.assertNotIn('GARA_TEST', sub_codes)
+
+        # 3. Tạo chuyến xe do 3PL chạy với cước 3tr, tạm ứng 1tr, và khoản 3PL chi hộ 500k
+        trip_3pl = DispatchTrip.objects.create(
+            trip_code='TRIP-3PL-001',
+            customer=self.customer,
+            subcontractor=carrier,
+            vehicle=self.vehicle,
+            driver=self.driver_emp,
+            subcontractor_cost=Decimal('3000000'),
+            subcontractor_advance=Decimal('1000000'),
+            status=TripStatus.IN_TRANSIT,
+            loading_date=datetime.date.today(),
+            cached_revenue=Decimal('4000000')
+        )
+        TripExpense.objects.create(
+            trip=trip_3pl,
+            category=ExpenseCategory.LIFT_ON,
+            amount=500000,
+            expense_payer_type=ExpensePayerType.SUB_OBH
+        )
+
+        # 4. Kiểm tra API Quyết toán thầu phụ (Subcontractor Payables)
+        settle_res = self.client.get('/api/accounting/subcontractor-settlements/')
+        self.assertEqual(settle_res.status_code, status.HTTP_200_OK)
+        trips = settle_res.data.get('trips', [])
+        target_trip = next((t for t in trips if t['trip_code'] == 'TRIP-3PL-001'), None)
+        self.assertIsNotNone(target_trip)
+        self.assertEqual(target_trip['subcontractor_cost'], 3000000)
+        self.assertEqual(target_trip['sub_reimbursable_expenses'], 500000)
+        self.assertEqual(target_trip['subcontractor_advance'], 1000000)
+        # Còn phải trả = 3,000,000 (cước) + 500,000 (hoàn chi hộ) - 1,000,000 (tạm ứng) = 2,500,000
+        self.assertEqual(target_trip['remaining_payable'], 2500000)

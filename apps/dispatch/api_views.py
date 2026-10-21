@@ -2698,6 +2698,9 @@ class TripDetailAPIView(APIView):
                 'receipt_image_path': exp.receipt_image_path or '',
                 'notes': exp.notes or '',
                 'company_borne': exp.company_borne,
+                'expense_payer_type': getattr(exp, 'expense_payer_type', 'TVL_COST'),
+                'expense_payer_label': exp.get_expense_payer_type_display() if hasattr(exp, 'get_expense_payer_type_display') else ('Chi phí TVL' if not exp.is_on_behalf_of_customer else ('3PL chi hộ' if getattr(exp, 'reimburse_to_subcontractor', False) else 'TVL chi hộ')),
+                'reimburse_to_subcontractor': getattr(exp, 'reimburse_to_subcontractor', False),
                 'is_on_behalf_of_customer': exp.is_on_behalf_of_customer,
                 'driver_id': exp.driver_id,
                 'driver_name': (exp.driver.nickname or exp.driver.full_name) if exp.driver else '',
@@ -3315,6 +3318,11 @@ class TripAddExpenseAPIView(APIView):
                         except Exception:
                             r_file = None
 
+                    from apps.billing.models import ExpensePayerType
+                    payer_choice = item.get('expense_payer_type') or item.get('payer_type')
+                    if not payer_choice:
+                        payer_choice = ExpensePayerType.TVL_OBH if item.get('is_on_behalf_of_customer') else ExpensePayerType.TVL_COST
+
                     exp = TripExpense.objects.create(
                         trip=trip,
                         driver=trip.driver,
@@ -3326,6 +3334,7 @@ class TripAddExpenseAPIView(APIView):
                         receipt_image_path=r_path_str,
                         receipt_image=r_file if r_file else None,
                         status=ApprovalStatus.APPROVED,
+                        expense_payer_type=payer_choice,
                         company_borne=True,
                         notes=notes or f"Kê khai chi phí: {dict(ExpenseCategory.choices).get(category, 'Chi phí')}"
                     )
@@ -3416,6 +3425,11 @@ class TripAddExpenseAPIView(APIView):
             else:
                 vehicle = Vehicle.objects.filter(current_driver=driver).first()
 
+        from apps.billing.models import ExpensePayerType
+        req_payer_type = request.data.get('expense_payer_type') or request.data.get('payer_type')
+        if not req_payer_type:
+            req_payer_type = ExpensePayerType.TVL_OBH if request.data.get('is_on_behalf_of_customer') else ExpensePayerType.TVL_COST
+
         expense = TripExpense.objects.create(
             trip=trip,
             driver=driver,
@@ -3435,8 +3449,8 @@ class TripAddExpenseAPIView(APIView):
             tax_amount=tax_amount,
             ocr_raw_text=raw_ocr,
             status=req_status,
+            expense_payer_type=req_payer_type,
             company_borne=request.data.get('company_borne', True),
-            is_on_behalf_of_customer=request.data.get('is_on_behalf_of_customer', False),
             notes=notes or "Chi phí phát sinh hiện trường"
         )
 
@@ -3522,8 +3536,11 @@ class TripExpenseDetailAPIView(APIView):
             expense.status = data['status']
         if 'company_borne' in data:
             expense.company_borne = bool(data['company_borne'])
-        if 'is_on_behalf_of_customer' in data:
-            expense.is_on_behalf_of_customer = bool(data['is_on_behalf_of_customer'])
+        if 'expense_payer_type' in data or 'payer_type' in data:
+            expense.expense_payer_type = data.get('expense_payer_type') or data.get('payer_type')
+        elif 'is_on_behalf_of_customer' in data:
+            from apps.billing.models import ExpensePayerType
+            expense.expense_payer_type = ExpensePayerType.TVL_OBH if data['is_on_behalf_of_customer'] else ExpensePayerType.TVL_COST
 
         if 'trip_leg' in data:
             from apps.billing.models import TripLegChoice

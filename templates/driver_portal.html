@@ -489,6 +489,13 @@
           <div class="space-y-1">
             <div class="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
               <span>{{ exp.get_category_display }}</span>
+              {% if exp.expense_payer_type == 'TVL_COST' or not exp.is_on_behalf_of_customer %}
+              <span class="text-[10px] bg-slate-100 text-slate-700 border border-slate-300 px-1.5 py-0.5 rounded font-bold">🏢 Chi phí TVL</span>
+              {% elif exp.expense_payer_type == 'TVL_OBH' or not exp.reimburse_to_subcontractor %}
+              <span class="text-[10px] bg-sky-100 text-sky-800 border border-sky-300 px-1.5 py-0.5 rounded font-bold">↗ TVL chi hộ</span>
+              {% else %}
+              <span class="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-bold">🔄 3PL chi hộ</span>
+              {% endif %}
               {% if exp.invoice_number %}
               <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.2 rounded font-mono font-bold">HĐ: {{ exp.invoice_number }}</span>
               {% endif %}
@@ -514,7 +521,7 @@
             </div>
             {% if not trip.is_expenses_settled and exp.status != 'SETTLED' %}
             <div class="flex items-center gap-1 shrink-0">
-              <button type="button" onclick="openEditExpenseModal({{ exp.id }}, '{{ exp.category }}', {{ exp.amount }}, '{{ exp.notes|default:''|escapejs }}', '{{ exp.invoice_number|default:''|escapejs }}')"
+              <button type="button" onclick="openEditExpenseModal({{ exp.id }}, '{{ exp.category }}', {{ exp.amount }}, '{{ exp.notes|default:''|escapejs }}', '{{ exp.invoice_number|default:''|escapejs }}', '{{ exp.expense_payer_type|default:'TVL_COST' }}')"
                 class="px-2.5 py-1.5 bg-slate-200/80 hover:bg-teal-100 text-slate-700 hover:text-teal-900 rounded-xl text-xs font-bold inline-flex items-center gap-1 touch-btn" title="Hiệu chỉnh nếu kê nhầm">
                 <i class="ph-bold ph-pencil-simple text-sm text-teal-700"></i> <span>Sửa</span>
               </button>
@@ -1347,6 +1354,29 @@
 
       <form id="editExpenseForm" onsubmit="submitEditExpense(event)" class="space-y-3.5">
         <input type="hidden" id="editExpenseId" value="">
+        <!-- CỤM 3 NÚT CHỌN DÒNG TIỀN CHI PHÍ (CHUẨN TAY TÀI XẾ) -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-slate-700">Người chịu / Dòng chi phí <span class="text-rose-500">*</span></label>
+          <div class="grid grid-cols-3 gap-1.5 p-1 bg-slate-200/90 rounded-2xl" id="edit-payer-group">
+            <button type="button" onclick="setDriverEditExpensePayer('TVL_COST')" id="btn-driver-edit-tvl-cost"
+              class="h-12 rounded-xl text-xs sm:text-sm font-black transition-all shadow-xs flex items-center justify-center gap-1 bg-teal-700 text-white touch-btn">
+              <i class="ph-bold ph-buildings text-base"></i> Chi phí TVL
+            </button>
+            <button type="button" onclick="setDriverEditExpensePayer('TVL_OBH')" id="btn-driver-edit-tvl-obh"
+              class="h-12 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1 bg-white text-slate-700 hover:bg-slate-100 touch-btn">
+              <i class="ph-bold ph-arrow-up-right text-base text-sky-600"></i> TVL chi hộ
+            </button>
+            <button type="button" onclick="setDriverEditExpensePayer('SUB_OBH')" id="btn-driver-edit-sub-obh"
+              class="h-12 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1 bg-white text-slate-700 hover:bg-slate-100 touch-btn">
+              <i class="ph-bold ph-truck text-base text-amber-600"></i> 3PL chi hộ
+            </button>
+          </div>
+          <input type="hidden" id="editExpensePayerType" value="TVL_COST">
+          <p id="editExpensePayerDesc" class="text-[11.5px] font-medium text-slate-500 px-1 pt-0.5">
+            Tính vào chi phí chuyến đi của Triền Võ
+          </p>
+        </div>
+
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Loại chi phí <span class="text-rose-500">*</span></label>
           <select id="editExpenseCategory" required class="w-full text-xs font-bold rounded-xl border border-slate-300 p-2.5 focus:border-teal-500 bg-white">
@@ -1760,6 +1790,67 @@
       }
     }
 
+    function setRowExpensePayer(rowId, payerType) {
+      const card = document.getElementById(rowId);
+      if (!card) return;
+      const input = card.querySelector('.row-payer-input');
+      if (input) input.value = payerType;
+
+      const btnTvlCost = card.querySelector('.btn-payer-tvl-cost');
+      const btnTvlObh = card.querySelector('.btn-payer-tvl-obh');
+      const btnSubObh = card.querySelector('.btn-payer-sub-obh');
+      const descEl = card.querySelector('.row-payer-desc');
+
+      const resetBtn = (b) => {
+        b.className = b.className.replace(/bg-\S+|text-white|shadow-xs/g, '').trim() + ' bg-white text-slate-700 hover:bg-slate-100';
+      };
+
+      if (btnTvlCost) resetBtn(btnTvlCost);
+      if (btnTvlObh) resetBtn(btnTvlObh);
+      if (btnSubObh) resetBtn(btnSubObh);
+
+      if (payerType === 'TVL_COST') {
+        if (btnTvlCost) btnTvlCost.className = btnTvlCost.className.replace('bg-white text-slate-700 hover:bg-slate-100', 'bg-teal-700 text-white shadow-xs');
+        if (descEl) descEl.innerText = '🏢 Tính vào chi phí chuyến đi của Triền Võ';
+      } else if (payerType === 'TVL_OBH') {
+        if (btnTvlObh) btnTvlObh.className = btnTvlObh.className.replace('bg-white text-slate-700 hover:bg-slate-100', 'bg-sky-700 text-white shadow-xs');
+        if (descEl) descEl.innerText = '↗ Triền Võ chi hộ Khách hàng (sẽ thu lại từ Khách hàng)';
+      } else if (payerType === 'SUB_OBH') {
+        if (btnSubObh) btnSubObh.className = btnSubObh.className.replace('bg-white text-slate-700 hover:bg-slate-100', 'bg-amber-600 text-white shadow-xs');
+        if (descEl) descEl.innerText = '🔄 3PL chi hộ Khách hàng (Triền Võ sẽ hoàn tiền lại cho 3PL)';
+      }
+    }
+
+    function setDriverEditExpensePayer(payerType) {
+      const input = document.getElementById('editExpensePayerType');
+      if (input) input.value = payerType;
+
+      const btnTvlCost = document.getElementById('btn-driver-edit-tvl-cost');
+      const btnTvlObh = document.getElementById('btn-driver-edit-tvl-obh');
+      const btnSubObh = document.getElementById('btn-driver-edit-sub-obh');
+      const descEl = document.getElementById('editExpensePayerDesc');
+
+      const resetBtn = (b) => {
+        if (!b) return;
+        b.className = b.className.replace(/bg-\S+|text-white|shadow-xs/g, '').trim() + ' bg-white text-slate-700 hover:bg-slate-100';
+      };
+
+      resetBtn(btnTvlCost);
+      resetBtn(btnTvlObh);
+      resetBtn(btnSubObh);
+
+      if (payerType === 'TVL_COST') {
+        if (btnTvlCost) btnTvlCost.className = btnTvlCost.className.replace('bg-white text-slate-700 hover:bg-slate-100', 'bg-teal-700 text-white shadow-xs');
+        if (descEl) descEl.innerText = '🏢 Tính vào chi phí chuyến đi của Triền Võ';
+      } else if (payerType === 'TVL_OBH') {
+        if (btnTvlObh) btnTvlObh.className = btnTvlObh.className.replace('bg-white text-slate-700 hover:bg-slate-100', 'bg-sky-700 text-white shadow-xs');
+        if (descEl) descEl.innerText = '↗ Triền Võ chi hộ Khách hàng (sẽ thu lại từ Khách hàng)';
+      } else if (payerType === 'SUB_OBH') {
+        if (btnSubObh) btnSubObh.className = btnSubObh.className.replace('bg-white text-slate-700 hover:bg-slate-100', 'bg-amber-600 text-white shadow-xs');
+        if (descEl) descEl.innerText = '🔄 3PL chi hộ Khách hàng (Triền Võ sẽ hoàn tiền lại cho 3PL)';
+      }
+    }
+
     function addExpenseRow(data = {}) {
       const container = document.getElementById('expenseRowsContainer');
       if (!container) return;
@@ -1790,7 +1881,27 @@
           </button>
         </div>
 
-        <!-- 1. Chọn loại chi phí -->
+        <!-- 1. Cụm 3 nút phân loại chi phí to chuẩn bàn tay tài xế (Cao 44px - 48px, chạm 1 lần) -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-slate-700">Dòng chi phí / Người chịu <span class="text-rose-500">*</span></label>
+          <div class="grid grid-cols-3 gap-1.5 p-1 bg-slate-200/90 rounded-2xl payer-button-trio">
+            <button type="button" onclick="setRowExpensePayer('${rowId}', 'TVL_COST')" class="btn-payer-choice btn-payer-tvl-cost h-12 rounded-xl text-xs sm:text-sm font-black transition-all shadow-xs flex items-center justify-center gap-1 bg-teal-700 text-white touch-btn">
+              <i class="ph-bold ph-buildings text-base"></i> Chi phí TVL
+            </button>
+            <button type="button" onclick="setRowExpensePayer('${rowId}', 'TVL_OBH')" class="btn-payer-choice btn-payer-tvl-obh h-12 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1 bg-white text-slate-700 hover:bg-slate-100 touch-btn">
+              <i class="ph-bold ph-arrow-up-right text-base text-sky-600"></i> TVL chi hộ
+            </button>
+            <button type="button" onclick="setRowExpensePayer('${rowId}', 'SUB_OBH')" class="btn-payer-choice btn-payer-sub-obh h-12 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1 bg-white text-slate-700 hover:bg-slate-100 touch-btn">
+              <i class="ph-bold ph-truck text-base text-amber-600"></i> 3PL chi hộ
+            </button>
+          </div>
+          <input type="hidden" class="row-payer-input" value="${data.expense_payer_type || 'TVL_COST'}">
+          <div class="row-payer-desc text-[11.5px] font-medium text-slate-500 px-1 pt-0.5">
+            Tính vào chi phí chuyến đi của Triền Võ
+          </div>
+        </div>
+
+        <!-- 2. Chọn loại chi phí -->
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Loại khoản mục <span class="text-rose-500">*</span></label>
           <select name="exp_category_${expenseRowCounter}" class="row-category-input w-full h-11 text-xs font-bold text-slate-800 rounded-xl border border-slate-300 bg-white px-3 focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
@@ -1947,6 +2058,7 @@
 
       let validCount = 0;
       rows.forEach((row, idx) => {
+        const payerType = row.querySelector('.row-payer-input')?.value || 'TVL_COST';
         const category = row.querySelector('.row-category-input')?.value || 'TOLL_FEE';
         const amtStr = row.querySelector('.row-amount-input')?.value || '0';
         const amount = parseInt(amtStr.replace(/\D/g, ''), 10) || 0;
@@ -1957,6 +2069,8 @@
           validCount++;
           items.push({
             id: idx,
+            expense_payer_type: payerType,
+            is_on_behalf_of_customer: (payerType !== 'TVL_COST'),
             category: category,
             amount: amount,
             notes: notes
@@ -2582,12 +2696,13 @@
     // =========================================================================
 
     // --- SỬA / XÓA CHI PHÍ ---
-    function openEditExpenseModal(id, category, amount, notes, invoiceNumber) {
+    function openEditExpenseModal(id, category, amount, notes, invoiceNumber, payerType = 'TVL_COST') {
       document.getElementById('editExpenseId').value = id;
       document.getElementById('editExpenseCategory').value = category || 'TOLL_FEE';
       document.getElementById('editExpenseAmount').value = amount || '';
       document.getElementById('editExpenseInvoice').value = invoiceNumber || '';
       document.getElementById('editExpenseNotes').value = notes || '';
+      setDriverEditExpensePayer(payerType || 'TVL_COST');
       
       const modal = document.getElementById('editExpenseModal');
       if (modal) {
@@ -2607,6 +2722,7 @@
     async function submitEditExpense(event) {
       event.preventDefault();
       const id = document.getElementById('editExpenseId').value;
+      const payerType = document.getElementById('editExpensePayerType')?.value || 'TVL_COST';
       const category = document.getElementById('editExpenseCategory').value;
       const amount = parseInt(document.getElementById('editExpenseAmount').value, 10);
       const invoiceNumber = document.getElementById('editExpenseInvoice').value.trim();
@@ -2633,6 +2749,8 @@
           method: 'PUT',
           headers: headers,
           body: JSON.stringify({
+            expense_payer_type: payerType,
+            is_on_behalf_of_customer: (payerType !== 'TVL_COST'),
             category: category,
             amount: amount,
             invoice_number: invoiceNumber,
