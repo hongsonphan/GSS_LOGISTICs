@@ -247,7 +247,7 @@ class OfficeTaskListCreateAPIView(views.APIView):
                 message=f"{reporter_name} đã giao cho bạn: '{task.title}'{due_str}",
                 target_type='TASK',
                 target_id=task.id,
-                link_url='#tasks'
+                link_url=f"/tasks/#task-{task.id}"
             )
 
         # Thông báo đẩy lên chuông cho Người liên quan / theo dõi chung
@@ -260,7 +260,7 @@ class OfficeTaskListCreateAPIView(views.APIView):
                 message=f"{reporter_name} đã thêm bạn vào danh sách theo dõi chung: '{task.title}'",
                 target_type='TASK',
                 target_id=task.id,
-                link_url='#tasks'
+                link_url=f"/tasks/#task-{task.id}"
             )
 
         serializer = OfficeTaskDetailSerializer(task)
@@ -289,6 +289,18 @@ class OfficeTaskDetailAPIView(views.APIView):
             task = OfficeTask.objects.get(pk=pk, is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy công việc.'}, status=status.HTTP_404_NOT_FOUND)
+
+        employee = getattr(request.user, 'employee', None)
+        is_own_dept_head = employee and employee.is_department_head and (employee.department == task.department)
+        can_edit = (
+            request.user.is_superuser or
+            (task.reporter == request.user) or
+            (task.assignee == request.user) or
+            is_own_dept_head or
+            (employee and employee.hierarchy_level >= 80)
+        )
+        if not can_edit:
+            return Response({'success': False, 'message': 'Bạn không có quyền chỉnh sửa công việc này.'}, status=status.HTTP_403_FORBIDDEN)
 
         data = request.data
         changes = []
@@ -338,11 +350,26 @@ class OfficeTaskDetailAPIView(views.APIView):
 
     def delete(self, request, pk):
         try:
-            task = OfficeTask.objects.get(pk=pk)
-            task.delete() # Soft delete
-            return Response({'success': True, 'message': f'Đã xóa công việc {task.code}.'})
+            task = OfficeTask.objects.get(pk=pk, is_deleted=False)
         except OfficeTask.DoesNotExist:
             return Response({'success': False, 'message': 'Công việc không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
+
+        employee = getattr(request.user, 'employee', None)
+        is_own_dept_head = employee and employee.is_department_head and (employee.department == task.department)
+        can_delete = (
+            request.user.is_superuser or
+            (task.reporter == request.user) or
+            is_own_dept_head or
+            (employee and employee.hierarchy_level >= 80)
+        )
+        if not can_delete:
+            return Response({
+                'success': False,
+                'message': 'Bạn không có quyền xóa công việc này. Chỉ người giao việc hoặc Trưởng phòng mới có quyền xóa.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        task.delete() # Soft delete
+        return Response({'success': True, 'message': f'Đã xóa công việc {task.code}.'})
 
 
 class OfficeTaskStatusUpdateAPIView(views.APIView):
@@ -388,7 +415,7 @@ class OfficeTaskStatusUpdateAPIView(views.APIView):
                 message=f"{actor_name} đã chuyển việc '{task.title}' sang [{task.get_status_display()}] (Tiến độ: {task.progress_percent}%)",
                 target_type='TASK',
                 target_id=task.id,
-                link_url='#tasks'
+                link_url=f"/tasks/#task-{task.id}"
             )
 
         return Response({

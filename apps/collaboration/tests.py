@@ -624,4 +624,122 @@ class CollaborationTestSuite(TestCase):
         })
         self.assertEqual(res_no_reason.status_code, 400)
         self.assertIn('Vui lòng nhập lý do không đồng ý gia hạn', res_no_reason.json()['message'])
+    def test_news_detail_page_security_and_rendering(self):
+        """Kiểm thử bảo mật URL và hiển thị trang chi tiết bản tin (/news/<id>/) không lỗi CompanyProfile."""
+        from apps.collaboration.models import CompanyPost
+
+        # 1. Tạo bài viết công khai toàn công ty
+        post_public = CompanyPost.objects.create(
+            title="Quy chế thưởng quý IV",
+            content="Nội dung thưởng cho toàn bộ cán bộ công nhân viên.",
+            author=self.director_user,
+            target_department='ALL',
+            is_published=True
+        )
+
+        # 2. Truy cập khi chưa đăng nhập -> Chuyển hướng về trang đăng nhập
+        self.client.logout()
+        res_anon = self.client.get(f'/news/{post_public.id}/')
+        self.assertEqual(res_anon.status_code, 302)
+        self.assertIn('/login/', res_anon.url)
+
+        # 3. Truy cập khi đã đăng nhập -> HTTP 200 OK, CompanyProfile được nạp chính xác không văng lỗi 500 NameError
+        self.client.force_login(self.accountant_user)
+        res_auth = self.client.get(f'/news/{post_public.id}/')
+        self.assertEqual(res_auth.status_code, 200)
+        self.assertContains(res_auth, "Quy chế thưởng quý IV")
+
+        # 4. Kiểm tra bảo mật Trung tâm trợ giúp (/helps) -> Yêu cầu đăng nhập
+        self.client.logout()
+        res_help_anon = self.client.get('/helps/')
+        self.assertEqual(res_help_anon.status_code, 302)
+        self.assertIn('/login/', res_help_anon.url)
+
+        # 5. Tạo bài viết giới hạn riêng cho phòng Điều Độ
+        post_dispatch = CompanyPost.objects.create(
+            title="Kế hoạch tăng ca phòng Điều Độ",
+            content="Chi tiết phân công ca trực ban đêm.",
+            author=self.dispatcher_user,
+            target_department=Department.DISPATCH,
+            is_published=True
+        )
+
+        # Kế toán viên truy cập bài viết của Điều độ -> 403 Forbidden
+        self.client.force_login(self.accountant_user)
+        res_forbidden = self.client.get(f'/news/{post_dispatch.id}/')
+        self.assertEqual(res_forbidden.status_code, 403)
+        self.assertContains(res_forbidden, "chỉ dành riêng cho phòng ban", status_code=403)
+
+        # Nhân viên Điều độ truy cập -> 200 OK
+        self.client.force_login(self.staff_dispatcher_user)
+        res_allowed = self.client.get(f'/news/{post_dispatch.id}/')
+        self.assertEqual(res_allowed.status_code, 200)
+
+        # Ban Giám Đốc truy cập -> 200 OK (Quản lý cấp cao xem được mọi phòng ban)
+        self.client.force_login(self.director_user)
+        res_dir_allowed = self.client.get(f'/news/{post_dispatch.id}/')
+        self.assertEqual(res_dir_allowed.status_code, 200)
+
+        # 6. Bản tin chưa xuất bản -> Nhân viên thường nhận 404, tác giả nhận 200
+        post_draft = CompanyPost.objects.create(
+            title="Dự thảo chính sách mới",
+            content="Chưa hoàn thiện nội dung.",
+            author=self.director_user,
+            target_department='ALL',
+            is_published=False
+        )
+        self.client.force_login(self.accountant_user)
+        res_draft_user = self.client.get(f'/news/{post_draft.id}/')
+        self.assertEqual(res_draft_user.status_code, 404)
+
+        self.client.force_login(self.director_user)
+        res_draft_author = self.client.get(f'/news/{post_draft.id}/')
+        self.assertEqual(res_draft_author.status_code, 200)
+
+    def test_api_permissions_security(self):
+        """Kiểm thử bảo mật phân quyền API: Xóa bài viết, Sửa/Xóa công việc trái thẩm quyền."""
+        from apps.collaboration.models import CompanyPost, OfficeTask
+
+        post = CompanyPost.objects.create(
+            title="Thông báo quan trọng BGD",
+            content="Nội dung BGD đăng.",
+            author=self.director_user,
+            target_department='ALL',
+            is_published=True
+        )
+
+        # Kế toán viên không thể xóa bài của Giám đốc qua API -> 403 Forbidden
+        self.client.force_login(self.accountant_user)
+        res_del_post = self.client.delete(f'/api/collaboration/news/posts/{post.id}/')
+        self.assertEqual(res_del_post.status_code, 403)
+        self.assertFalse(CompanyPost.objects.get(id=post.id).is_deleted)
+
+        # Giám đốc giao việc cho Điều độ
+        task = OfficeTask.objects.create(
+            code="TSK-202610-099",
+            title="Nhiệm vụ tuyệt mật",
+            reporter=self.director_user,
+            assignee=self.staff_dispatcher_user,
+            department=Department.DISPATCH
+        )
+
+        # Kế toán viên (không liên quan) không thể sửa công việc -> 403
+        import json
+        res_edit_task = self.client.put(
+            f'/api/collaboration/tasks/{task.id}/',
+            data=json.dumps({'title': 'Đã bị kẻ xấu sửa đổi'}),
+            content_type='application/json'
+        )
+        self.assertEqual(res_edit_task.status_code, 403)
+
+        # Kế toán viên không thể xóa công việc -> 403
+        res_del_task = self.client.delete(f'/api/collaboration/tasks/{task.id}/')
+        self.assertEqual(res_del_task.status_code, 403)
+        self.assertFalse(OfficeTask.objects.get(id=task.id).is_deleted)
+
+        # Người giao việc (Giám đốc) có thể xóa công việc -> 200 OK
+        self.client.force_login(self.director_user)
+        res_del_by_reporter = self.client.delete(f'/api/collaboration/tasks/{task.id}/')
+        self.assertEqual(res_del_by_reporter.status_code, 200)
+        self.assertTrue(OfficeTask.all_objects.get(id=task.id).is_deleted)
 

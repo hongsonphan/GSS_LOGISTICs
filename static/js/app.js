@@ -25910,8 +25910,30 @@ function resolveInitialRoute() {
         return;
     }
 
-    // 2. Chuyển đổi tương thích ngược: nếu người dùng vào từ link cũ có hash (#dieu-van, #kinh-doanh...)
+    // 2. Chuyển đổi tương thích ngược & Deep-link qua Hash (#tasks, #news, #task-123...)
     if (hash) {
+        const taskMatch = hash.match(/^task-(\d+)/);
+        if (taskMatch && taskMatch[1]) {
+            switchTab('giao-viec', false);
+            setTimeout(() => {
+                if (typeof openTaskDetailDrawer === 'function') {
+                    openTaskDetailDrawer(parseInt(taskMatch[1], 10));
+                }
+            }, 300);
+            return;
+        }
+
+        const newsMatch = hash.match(/^news-(\d+)/);
+        if (newsMatch && newsMatch[1]) {
+            switchTab('ban-tin', false);
+            setTimeout(() => {
+                if (typeof openNewsDetailModal === 'function') {
+                    openNewsDetailModal(parseInt(newsMatch[1], 10));
+                }
+            }, 300);
+            return;
+        }
+
         const cleanHash = hash.replace(/^\/+/, '');
         const validLegacyTabs = {
             'dashboard': 'dashboard',
@@ -25922,7 +25944,11 @@ function resolveInitialRoute() {
             'ke-toan': 'ke-toan',
             'hai-quan': 'hai-quan',
             'bao-cao': 'bao-cao',
-            'cai-dat': 'cai-dat'
+            'cai-dat': 'cai-dat',
+            'ban-tin': 'ban-tin',
+            'news': 'ban-tin',
+            'giao-viec': 'giao-viec',
+            'tasks': 'giao-viec'
         };
         if (validLegacyTabs[cleanHash]) {
             const mappedTab = validLegacyTabs[cleanHash];

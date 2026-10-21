@@ -137,7 +137,7 @@ class CompanyPostListCreateAPIView(views.APIView):
                     message=msg_preview,
                     target_type='NEWS',
                     target_id=post.id,
-                    link_url='#news'
+                    link_url=f"/news/{post.id}/"
                 )
                 for emp in target_emps
             ]
@@ -160,6 +160,24 @@ class CompanyPostDetailAPIView(views.APIView):
         except CompanyPost.DoesNotExist:
             return Response({'success': False, 'message': 'Không tìm thấy bản tin.'}, status=status.HTTP_404_NOT_FOUND)
 
+        employee = getattr(request.user, 'employee', None)
+        is_privileged = (
+            request.user.is_superuser or
+            (post.author_id == request.user.id) or
+            (employee and employee.hierarchy_level >= 80)
+        )
+
+        if not post.is_published and not is_privileged:
+            return Response({'success': False, 'message': 'Không tìm thấy bản tin.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if post.target_department != 'ALL':
+            user_dept = employee.department if employee else None
+            if not (is_privileged or user_dept == post.target_department):
+                return Response({
+                    'success': False,
+                    'message': f'Bản tin này chỉ dành riêng cho phòng ban {post.get_target_department_display()}.'
+                }, status=status.HTTP_403_FORBIDDEN)
+
         # Tăng view_count
         post.view_count += 1
         post.save(update_fields=['view_count'])
@@ -172,11 +190,29 @@ class CompanyPostDetailAPIView(views.APIView):
 
     def delete(self, request, pk):
         try:
-            post = CompanyPost.objects.get(pk=pk)
-            post.delete() # Soft delete
-            return Response({'success': True, 'message': 'Đã xóa bản tin.'})
+            post = CompanyPost.objects.get(pk=pk, is_deleted=False)
         except CompanyPost.DoesNotExist:
             return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
+
+        employee = getattr(request.user, 'employee', None)
+        from apps.personnel.models import Department
+        is_bgd_or_hr = employee and (
+            employee.hierarchy_level >= 100 or 
+            (employee.department == Department.HR and employee.is_department_head)
+        )
+        can_delete = (
+            request.user.is_superuser or
+            (post.author_id == request.user.id) or
+            is_bgd_or_hr
+        )
+        if not can_delete:
+            return Response({
+                'success': False,
+                'message': 'Bạn không có quyền xóa bản tin này. Chỉ người đăng, Ban Giám Đốc hoặc Trưởng phòng Nhân sự mới có thẩm quyền xóa.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        post.delete() # Soft delete
+        return Response({'success': True, 'message': 'Đã xóa bản tin.'})
 
 
 class CompanyPostCommentCreateAPIView(views.APIView):

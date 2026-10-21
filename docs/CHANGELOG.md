@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.6] - 2026-10-21 (Khắc Phục Lỗi NameError CompanyProfile Tại /news/<id>/, Tăng Cường Bảo Mật URL Toàn Ứng Dụng, Phân Quyền Phòng Ban & Trang 403 Chuẩn ERP)
+
+### 1. Khắc Phục Triệt Để Lỗi 500 NameError Tại Trang Bản Tin (/news/<pk>/):
+- **Import CompanyProfile:** Bổ sung import rom apps.master_data.models import CompanyProfile tại đầu tệp pps/dispatch/views.py.
+- **Defensive Error Handling:** Bọc lệnh gọi CompanyProfile.get_default_company() và trích xuất dung lượng/tên tệp đính kèm trong khối 	ry...except phòng thủ, loại bỏ hoàn toàn nguy cơ sập trang 500 do lỗi dữ liệu công ty hoặc tệp tin.
+
+### 2. Tăng Cường Bảo Mật URL & Phân Quyền Toàn Ứng Dụng:
+- **Bảo vệ Trung tâm Trợ Giúp (/helps/ & /help):** Bắt buộc nhân viên đăng nhập hệ thống (@login_required), chống lộ lọt SOP và bí quyết vận hành nội bộ logistics cho người dùng vãng lai chưa xác thực.
+- **Phân quyền Xem Bản tin (/news/<pk>/ & CompanyPostDetailAPIView):**
+  * Bản tin nháp/chưa xuất bản (is_published=False): Chỉ tác giả bài viết hoặc Ban Giám Đốc mới được xem trước; người khác nhận phản hồi HTTP 404 Not Found.
+  * Bản tin giới hạn phòng ban (	arget_department != 'ALL'): Chỉ nhân viên cùng phòng ban, tác giả hoặc Ban Giám Đốc (hierarchy_level >= 80) mới được xem; nhân sự phòng ban khác bị chặn bởi HTTP 403 Forbidden.
+- **Trang lỗi 403 Forbidden Chuyên Dụng (	emplates/403.html):** Thiết kế giao diện sang trọng, chuẩn nhận diện BIM Logistics (icon ph-shield-warning, viền đỏ/nền xám tinh tế) kèm thông điệp giải thích rõ ràng và các nút điều hướng 'Quay lại', 'Về Bàn Làm Việc'.
+
+### 3. Siết Chặt Phân Quyền REST API (Least Privilege & RBAC):
+- **API Bản tin (CompanyPostDetailAPIView.delete):** Chặn xóa bài viết trái thẩm quyền. Chỉ tác giả bài viết, Ban Giám Đốc hoặc Trưởng phòng Hành chính Nhân sự mới có quyền xóa.
+- **API Giao việc (OfficeTaskDetailAPIView.put & .delete):** Chặn chỉnh sửa và xóa công việc chéo phòng ban. Chỉ người giao việc, người phụ trách, Trưởng phòng phụ trách trực tiếp phòng ban đó hoặc Ban Giám Đốc mới có thẩm quyền thao tác.
+
+### 4. Chuẩn Hóa Điều Hướng Chuông Thông Báo (Smart & Secure Notification Routing):
+- **Deep-link Thông báo Chuông:** Gán chính xác URL đích dạng /news/<id>/ hoặc /tasks/#task-<id> thay vì hash thô.
+- **Chống Lỗ hổng Open Redirect:** handleNotificationClick trong static/js/collaboration.js chỉ chấp nhận đường dẫn nội bộ an toàn (bắt đầu bằng # hoặc /). Tự động mở modal xem trước/drawer khi người dùng đang ở trong SPA, hoặc chuyển hướng trang mượt mà khi người dùng đang ở trang độc lập.
+- **Deep-link Khởi tạo Trang (
+esolveInitialRoute trong static/js/app.js):** Tự động phát hiện và kích hoạt Drawer công việc (#task-<id>) hoặc Modal bản tin (#news-<id>) khi người dùng click link chia sẻ hoặc truy cập trực tiếp từ URL trình duyệt.
+
+### 5. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
+- **Kiểm tra Cú pháp JS:** 
+ode -c static/js/app.js & 
+ode -c static/js/collaboration.js -> 100% Passed.
+- **Bộ Kiểm Thử Tự Động:** Toàn bộ 110 Unit Tests của dự án (python manage.py test --keepdb) -> 100% Passed (110/110 passed, 0 failures, 0 errors).
+
 ## [v3.6.5] - 2026-10-21 (Chuẩn Hóa Luồng Gia Hạn & Duyệt Gia Hạn Task: Phân Quyền Người Phụ Trách, Bắt Buộc Lý Do Từ Chối, Chuông Thông Báo 2 Chiều & Line Bọc Viền Đổi Màu Theo Trạng Thái)
 
 ### 1. Phân Quyền Yêu Cầu Gia Hạn Nghiêm Ngặt:

@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.personnel.models import Employee
+from apps.master_data.models import CompanyProfile
 
 from django.utils.http import url_has_allowed_host_and_scheme
 import json
@@ -193,8 +194,12 @@ def help_view(request):
     """
     Trang Trung Tâm Trợ Giúp & Hướng Dẫn Sử Dụng Toàn Diện BIM Logistics (/helps).
     Cung cấp tài liệu hướng dẫn tương tác, tra cứu trường dữ liệu và quy trình SOP từng phân hệ.
+    Bảo mật: Yêu cầu nhân viên đăng nhập hệ thống trước khi xem tài liệu SOP nội bộ.
     """
-    employee = getattr(request.user, 'employee', None) if request.user.is_authenticated else None
+    if not request.user.is_authenticated:
+        return redirect(f"/login/?next={request.path}")
+
+    employee = getattr(request.user, 'employee', None)
     return render(request, 'help.html', {
         'current_employee': employee,
         'user': request.user,
@@ -422,21 +427,42 @@ def news_detail_page_view(request, pk):
     Trang Xem Chi Tiết Bản Tin & Xem Trước Tệp Đính Kèm (PDF, Word, Excel).
     Mở ra một trang chuyên dụng độc lập khi nhân viên bấm vào thông báo.
     Hỗ trợ trình duyệt xem trước trực tiếp: PDF Viewer, Word Converter, Excel Table Viewer.
+    Bảo mật: Xác thực người dùng, kiểm soát phân quyền phòng ban đích và chế độ xuất bản.
     """
     import os
     from django.shortcuts import get_object_or_404
     from django.db.models import F
     from apps.collaboration.models.news import CompanyPost, PostAttachment, PostReadStatus
+    from apps.master_data.models import CompanyProfile
 
     # Yêu cầu đăng nhập hệ thống
     if not request.user.is_authenticated:
-        return redirect(f"/login/?next=/news/{pk}/")
+        return redirect(f"/login/?next={request.path}")
 
     post = get_object_or_404(
         CompanyPost.objects.select_related('category', 'author'),
         pk=pk,
         is_deleted=False
     )
+
+    employee = getattr(request.user, 'employee', None)
+    is_privileged = (
+        request.user.is_superuser or
+        (post.author_id == request.user.id) or
+        (employee and employee.hierarchy_level >= 80)
+    )
+
+    # 1. Nếu bản tin chưa xuất bản, chỉ người đăng hoặc quản lý cấp cao mới được xem trước
+    if not post.is_published and not is_privileged:
+        return render(request, '404.html', status=404)
+
+    # 2. Nếu bản tin giới hạn phòng ban, chỉ nhân viên cùng phòng ban hoặc quản lý cấp cao mới được xem
+    if post.target_department != 'ALL':
+        user_dept = employee.department if employee else None
+        if not (is_privileged or user_dept == post.target_department):
+            return render(request, '403.html', {
+                'message': f'Bản tin này chỉ dành riêng cho phòng ban {post.get_target_department_display()}. Tài khoản của bạn không thuộc phạm vi tiếp nhận thông báo này.'
+            }, status=403)
 
     # Tăng lượt xem & ghi nhận đã đọc
     CompanyPost.objects.filter(pk=pk).update(view_count=F('view_count') + 1)
@@ -448,7 +474,10 @@ def news_detail_page_view(request, pk):
     attachments_data = []
     
     for att in raw_attachments:
-        fname = att.file_name or os.path.basename(att.file.name)
+        try:
+            fname = att.file_name or (os.path.basename(att.file.name) if att.file else "Tệp đính kèm")
+        except Exception:
+            fname = "Tệp đính kèm"
         ext = os.path.splitext(fname)[1].lower()
         
         file_type = 'other'
@@ -478,7 +507,11 @@ def news_detail_page_view(request, pk):
             badge_bg = 'bg-purple-50 text-purple-700 border-purple-200'
 
         # Tính dung lượng hiển thị
-        size_bytes = att.file_size or (att.file.size if att.file else 0)
+        try:
+            size_bytes = att.file_size or (att.file.size if att.file else 0)
+        except Exception:
+            size_bytes = 0
+
         if size_bytes >= 1024 * 1024:
             size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
         elif size_bytes >= 1024:
@@ -486,8 +519,12 @@ def news_detail_page_view(request, pk):
         else:
             size_str = f"{size_bytes} B"
 
-        file_url = att.file.url if att.file else ''
-        absolute_file_url = request.build_absolute_uri(file_url) if file_url else ''
+        try:
+            file_url = att.file.url if att.file else ''
+            absolute_file_url = request.build_absolute_uri(file_url) if file_url else ''
+        except Exception:
+            file_url = ''
+            absolute_file_url = ''
 
         attachments_data.append({
             'id': att.id,
@@ -511,7 +548,11 @@ def news_detail_page_view(request, pk):
     author_role = author_emp.get_role_display() if author_emp else 'Quản trị viên'
     author_dept = author_emp.get_department_display() if author_emp else 'Toàn công ty'
 
-    company = CompanyProfile.get_default_company()
+    try:
+        company = CompanyProfile.get_default_company()
+    except Exception:
+        company = None
+
     context = {
         'post': post,
         'company': company,

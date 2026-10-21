@@ -3254,13 +3254,15 @@ async function handleNotificationClick(notifId, targetType, targetId, linkUrl) {
     const menu = document.getElementById('notification-dropdown-menu');
     if (menu) menu.classList.add('hidden');
 
-    // 3. Điều hướng thông minh
+    // 3. Điều hướng an toàn & thông minh
     if (targetType === 'NEWS' && targetId) {
         if (typeof showView === 'function') {
             showView('view-ban-tin');
             if (typeof openNewsDetailModal === 'function') {
                 openNewsDetailModal(targetId);
             }
+        } else {
+            window.location.href = `/news/${targetId}/`;
         }
     } else if (targetType === 'TASK' && targetId) {
         if (typeof showView === 'function') {
@@ -3268,15 +3270,40 @@ async function handleNotificationClick(notifId, targetType, targetId, linkUrl) {
             if (typeof openTaskDetailDrawer === 'function') {
                 openTaskDetailDrawer(targetId);
             }
+        } else {
+            window.location.href = `/tasks/#task-${targetId}`;
         }
     } else if (targetType === 'CHAT') {
         toggleChatWindow();
     } else if (linkUrl) {
+        // Bảo mật URL: Chặn Open Redirect sang domain ngoài, chỉ hỗ trợ relative link (# hoặc /)
         if (linkUrl.startsWith('#')) {
             const viewId = linkUrl.substring(1);
             if (typeof showView === 'function') {
                 showView(viewId === 'tasks' ? 'view-giao-viec' : (viewId === 'news' ? 'view-ban-tin' : viewId));
+            } else {
+                window.location.href = `/${linkUrl}`;
             }
+        } else if (linkUrl.startsWith('/tasks')) {
+            if (typeof showView === 'function') {
+                showView('view-giao-viec');
+                if (targetId && typeof openTaskDetailDrawer === 'function') {
+                    openTaskDetailDrawer(targetId);
+                }
+            } else {
+                window.location.href = linkUrl;
+            }
+        } else if (linkUrl.startsWith('/news')) {
+            if (typeof showView === 'function' && targetId) {
+                showView('view-ban-tin');
+                if (typeof openNewsDetailModal === 'function') {
+                    openNewsDetailModal(targetId);
+                }
+            } else {
+                window.location.href = linkUrl;
+            }
+        } else if (linkUrl.startsWith('/') && !linkUrl.startsWith('//')) {
+            window.location.href = linkUrl;
         }
     }
 }
