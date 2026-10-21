@@ -17,7 +17,7 @@
   - [6. Phân Hệ Tài Chính, Tạm Ứng & Sổ Quỹ (Accounting & Cash Flow)](#6-phân-hệ-tài-chính-tạm-ứng--sổ-quỹ-accounting--cash-flow)
   - [7. Phân Hệ Thủ Tục Hải Quan Điện Tử (Customs Declaration)](#7-phân-hệ-thủ-tục-hải-quan-điện-tử-customs-declaration)
   - [8. Hệ Thống 14 Báo Cáo Thông Minh BI Vận Tải](#8-hệ-thống-14-báo-cáo-thông-minh-bi-vận-tải)
-- [PHẦN II: HƯỚNG DẪN CÀI ĐẶT 13 DANH MỤC GỐC (MASTER DATA)](#phần-ii-hướng-dẫn-cài-đặt-13-danh-mục-gốc-master-data)
+- [PHẦN II: HƯỚNG DẪN CÀI ĐẶT 14 DANH MỤC GỐC (MASTER DATA)](#phần-ii-hướng-dẫn-cài-đặt-14-danh-mục-gốc-master-data)
   - [1. Khai Báo Hệ Thống / Hồ Sơ Doanh Nghiệp (Company Profile)](#1-khai-báo-hệ-thống--hồ-sơ-doanh-nghiệp-company-profile)
   - [2. Phân Quyền & Vai Trò Hệ Thống (Roles & Permissions)](#2-phân-quyền--vai-trò-hệ-thống-roles--permissions)
   - [3. Biểu Phí Lương Chuyến Tài Xế (Driver Trip Tariffs)](#3-biểu-phí-lương-chuyến-tài-xế-driver-trip-tariffs)
@@ -28,7 +28,10 @@
   - [8. Hãng Tàu Biển (Shipping Lines)](#8-hãng-tàu-biển-shipping-lines)
   - [9. Đầu Kéo & Xe Tải (Tractors & Trucks)](#9-đầu-kéo--xe-tải-tractors--trucks)
   - [10. Rơ-Moóc Vận Tải (Semi-Trailers)](#10-rơ-moóc-vận-tải-semi-trailers)
-  - [11. Nhà Xe Thầu Phụ 3PL (Subcontractors / Partner Fleets)](#11-nhà-xe-thầu-phụ-3pl-subcontractors--partner-fleets)
+  - [11. Thầu Phụ & Nhà Cung Cấp 3PL (Subcontractors & Suppliers)](#11-thầu-phụ--nhà-cung-cấp-3pl-subcontractors--suppliers)
+  - [12. Khoản Mục Chi Phí Vận Tải (Expense Catalog)](#12-khoản-mục-chi-phí-vận-tải-expense-catalog)
+  - [13. Quy Cách Vỏ Container & Thùng Xe (Container Specifications)](#13-quy-cách-vỏ-container--thùng-xe-container-specifications)
+  - [14. Số Dư Ban Đầu Kế Toán (Opening Balances)](#14-số-dư-ban-đầu-kế-toán-opening-balances)
   - [12. Khoản Mục Chi Phí Vận Tải (Expense Catalog)](#12-khoản-mục-chi-phí-vận-tải-expense-catalog)
   - [13. Quy Cách Vỏ Container & Thùng Xe (Container Specifications)](#13-quy-cách-vỏ-container--thùng-xe-container-specifications)
 - [PHẦN III: HƯỚNG DẪN THAO TÁC NHẬP LIỆU CHI TIẾT](#phần-iii-hướng-dẫn-thao-tác-nhập-liệu-chi-tiết)
@@ -151,12 +154,12 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 
 ---
 
-# PHẦN II: HƯỚNG DẪN CÀI ĐẶT 13 DANH MỤC GỐC (MASTER DATA)
+# PHẦN II: HƯỚNG DẪN CÀI ĐẶT 14 DANH MỤC GỐC (MASTER DATA)
 
 ---
 
 ## 1. Khai Báo Hệ Thống / Hồ Sơ Doanh Nghiệp (Company Profile)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Hồ Sơ Doanh Nghiệp`** (hoặc mở modal qua Cài đặt Hệ thống).
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Khai Báo Ban Đầu`** ➔ Chọn tab **`Thông Tin Công Ty`** ➔ Bấm nút **`Sửa Thông Tin Công Ty`** (hoặc **`Hiệu Chỉnh Khai Báo Hệ Thống`**).
 - **Mục đích:** Thiết lập thông tin pháp nhân đơn vị vận tải xuất hiện trên báo giá, lệnh vận chuyển và phiếu thu chi.
 - **Các trường thông tin chi tiết:**
   * **Tên Công Ty (`*`):** Tên đầy đủ theo ĐKKD (Ví dụ: `CÔNG TY TNHH VẬN TẢI TRIỀN VÕ`).
@@ -172,7 +175,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 2. Phân Quyền & Vai Trò Hệ Thống (Roles & Permissions)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Phân Quyền & Vai Trò`** ➔ Bấm nút **`+ Thêm Nhóm Quyền`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Khai Báo Ban Đầu`** ➔ Chọn tab **`Vai Trò & Phân Quyền`** ➔ Cấu hình ma trận quyền và bấm nút **`Lưu`**.
 - **Mục đích:** Khởi tạo nhóm quyền chức vụ hoặc cấp tài khoản người dùng tương ứng với vị trí làm việc.
 - **Các trường thông tin chi tiết:**
   * **Mã Vai Trò (`*`):** Mã viết hoa không dấu (Ví dụ: `DIRECTOR`, `DISPATCHER`, `ACCOUNTANT`, `SALESMAN`, `MECHANIC`, `DRIVER`).
@@ -185,7 +188,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 3. Biểu Phí Lương Chuyến Tài Xế (Driver Trip Tariffs)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Biểu Phí Lương Tuyến`** ➔ Bấm nút **`+ Thêm Tuyến Lương Mới`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Tài Chính & Quản Trị`** ➔ Chọn tab **`Biểu Phí Lương Chuyến`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Cấu hình mức lương khoán trả cho bác tài theo từng cung đường và loại vỏ cont 20ft/40ft.
 - **Các trường thông tin chi tiết:**
   * **Tên Tuyến Đường Vận Tải (`*`):** Lộ trình chi tiết (Ví dụ: `Cảng Cát Lái ➔ KCN VSIP 1 (Bình Dương)`).
@@ -199,7 +202,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 4. Phụ Cấp Tuyến & Kiểm Hóa (Allowances & Inspection Tariffs)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Phụ Cấp & Kiểm Hóa`** ➔ Bấm nút **`+ Thêm Mức Phụ Cấp`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Tài Chính & Quản Trị`** ➔ Chọn tab **`Phụ Cấp & Kiểm Hóa`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Thiết lập các khoản bồi dưỡng ngoài giờ, phụ cấp lưu ca, nâng hạ khó và phí kiểm hóa hải quan.
 - **Các trường thông tin chi tiết:**
   * **Mã Phụ Cấp (`*`):** Mã viết tắt (Ví dụ: `KIEM_HOA_DO`, `LUU_CA_KHO`, `VE_SINH_CONT`, `CAI_CONG_DAP`).
@@ -212,7 +215,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 5. Cảng & Kho Bãi Địa Điểm (Locations / Seaports & Warehouses)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Địa Điểm`** ➔ Bấm nút **`+ Thêm Địa Điểm Mới`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Mạng Lưới & Địa Điểm`** ➔ Chọn tab **`Cảng & Kho Bãi`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Lưu danh bạ cảng biển, ICD, depot cấp/trả vỏ rỗng, kho đóng hàng và bãi đỗ xe công ty.
 - **Các trường thông tin chi tiết:**
   * **Mã Địa Điểm (`*`):** Mã viết hoa không dấu (Ví dụ: `CAT_LAI`, `VICT`, `ICD_TRANSIMEX`, `DEPOT_TANAMEXCO`, `KCN_VSIP1`).
@@ -227,7 +230,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 6. Biểu Cước Vận Chuyển Khách Hàng (Customer Freight Tariffs)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Biểu Cước Khách Hàng`** ➔ Bấm nút **`+ Thêm Tuyến Cước`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Khách Hàng & Đối Tác`** ➔ Chọn tab **`Biểu Cước Khách`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Thiết lập bảng giá cước chuẩn áp dụng cho từng đối tác khách hàng theo hợp đồng nguyên tắc.
 - **Các trường thông tin chi tiết:**
   * **Khách Hàng Áp Dụng (`*`):** Chọn tên doanh nghiệp khách hàng từ danh bạ.
@@ -242,7 +245,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 7. Khách Hàng Doanh Nghiệp (Customers CRM)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khách Hàng`** ➔ Bấm nút **`+ Thêm Khách Hàng`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Khách Hàng & Đối Tác`** ➔ Chọn tab **`Khách Hàng`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Quản lý hồ sơ đối tác chủ hàng, nhà máy xuất nhập khẩu và các công ty logistics giao dịch.
 - **Các trường thông tin chi tiết:**
   * **Mã Khách Hàng (`*`):** Mã hệ thống tự động hoặc thủ công viết hoa không dấu (Ví dụ: `KH001`, `SAMSUNG`, `VINFAST`, `THP_GROUP`).
@@ -263,7 +266,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 8. Hãng Tàu Biển (Shipping Lines)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Hãng Tàu`** ➔ Bấm nút **`+ Thêm Hãng Tàu Mới`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Mạng Lưới & Địa Điểm`** ➔ Chọn tab **`Hãng Tàu`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Danh mục các hãng vận tải container đường biển phát hành booking và vỏ cont.
 - **Các trường thông tin chi tiết:**
   * **Mã Hãng Tàu Chuẩn Quốc Tế (`*`):** Mã định danh SCAC 4 chữ cái (Ví dụ: `MAEU`, `ONE`, `COSCO`, `EVER`, `CMA`, `MSKU`, `SITC`).
@@ -276,7 +279,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 9. Đầu Kéo & Xe Tải (Tractors & Trucks)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Đầu Kéo & Xe Tải`** ➔ Bấm nút **`+ Thêm Xe Mới`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Phương Tiện & Thiết Bị`** ➔ Chọn tab **`Đầu Kéo & Xe`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Quản lý đội phương tiện đầu kéo container, xe tải thùng chở hàng thuộc đội xe nhà hoặc thuê ngoài.
 - **Các trường thông tin chi tiết:**
   * **Biển Số Xe (`*`):** Nhập biển số đúng định dạng (Ví dụ: `51C-123.45`, `50H-987.65`).
@@ -292,7 +295,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 10. Rơ-Moóc Vận Tải (Semi-Trailers)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Rơ-Moóc`** ➔ Bấm nút **`+ Thêm Rơ-Moóc Mới`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Phương Tiện & Thiết Bị`** ➔ Chọn tab **`Rơ-Moóc`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Quản lý danh mục rơ-moóc xương, moóc sàn, moóc cổ cò phục vụ chở container 20ft, 40ft, 45ft.
 - **Các trường thông tin chi tiết:**
   * **Biển Số Rơ-Moóc (`*`):** Biển số moóc (Ví dụ: `51R-098.76`, `50R-123.45`).
@@ -305,8 +308,8 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 
 ---
 
-## 11. Nhà Xe Thầu Phụ 3PL (Subcontractors / Partner Fleets)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Nhà Xe Thầu Phụ`** ➔ Bấm nút **`+ Thêm Thầu Phụ Mới`**.
+## 11. Thầu Phụ & Nhà Cung Cấp 3PL (Subcontractors & Suppliers)
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Khách Hàng & Đối Tác`** ➔ Chọn tab **`Thầu Phụ & Nhà Cung Cấp`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Quản lý danh bạ các công ty xe bạn, đối tác vận tải vệ tinh thuê ngoài khi đội xe nội bộ quá tải.
 - **Các trường thông tin chi tiết:**
   * **Mã Nhà Xe (`*`):** Mã viết tắt (Ví dụ: `XE_HOANG_LONG`, `3PL_MINH_TRI`, `THAU_TRUONG_HAI`).
@@ -321,7 +324,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 12. Khoản Mục Chi Phí Vận Tải (Expense Catalog)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Khoản Mục Chi Phí`** ➔ Bấm nút **`+ Thêm Khoản Mục Chi Phí`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Tài Chính & Quản Trị`** ➔ Chọn tab **`Khoản Mục Chi`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Danh mục các loại chi phí phát sinh trong hành trình chuyến xe phục vụ tính P&L và lập Debit Note chi hộ.
 - **Các trường thông tin chi tiết:**
   * **Mã Khoản Mục (`*`):** Mã viết hoa chuẩn hóa (Ví dụ: `LIFT_ON`, `LIFT_OFF`, `TOLL_FEE`, `CONTAINER_DEPOSIT`, `WEIGHING`, `POLICE_FEE`, `REPAIR_EXPENSE`).
@@ -334,7 +337,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
 ---
 
 ## 13. Quy Cách Vỏ Container & Thùng Xe (Container Specifications)
-- **Nơi thực hiện:** Vào menu **`Cài đặt & Danh mục`** ➔ Chọn tab **`Quy Cách Container`** ➔ Bấm nút **`+ Thêm Quy Cách Vỏ`**.
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Phương Tiện & Thiết Bị`** ➔ Chọn tab **`Quy Cách Cont & Xe`** ➔ Bấm nút **`Tạo mới`**.
 - **Mục đích:** Định nghĩa kích thước, thể tích CBM, trọng lượng vỏ và tải trọng chở tối đa của các loại container.
 - **Các trường thông tin chi tiết:**
   * **Mã Quy Cách ISO (`*`):** Mã chuẩn (Ví dụ: `20DC`, `40DC`, `40HC`, `45HC`, `20RF`, `40RF`, `FLAT_RACK`, `OPEN_TOP`).
@@ -344,6 +347,18 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
   * **Trọng Lượng Vỏ Không Tải Tare Weight (Tấn):** Cân nặng xác vỏ cont (Ví dụ: `40HC ~ 3.9 tấn`).
   * **Khối Lượng Hàng Chở Tối Đa Payload (Tấn):** Tải trọng an toàn không vượt quá mức cho phép trên đường bộ.
 - **Thao tác lưu:** Điền các thông số kỹ thuật ➔ Bấm nút **`Lưu`**.
+
+---
+
+## 14. Số Dư Ban Đầu Kế Toán (Opening Balances)
+- **Nơi thực hiện:** Vào menu **`Cài đặt`** ➔ **`Tài Chính & Quản Trị`** ➔ Chọn tab **`Số Dư Ban Đầu`** ➔ Bấm nút **`Khai Báo Số Dư Đầu Kỳ`** (hoặc **`Tạo mới`**).
+- **Mục đích:** Khai báo số dư tiền mặt tại két và số dư tài khoản ngân hàng tại thời điểm doanh nghiệp bắt đầu đưa phần mềm vào vận hành chính thức.
+- **Các trường thông tin chi tiết:**
+  * **Loại Quỹ / Tài Khoản (`*`):** Chọn `Tiền Mặt Tại Quỹ` hoặc `Tài Khoản Ngân Hàng Doanh Nghiệp`.
+  * **Số Dư Khởi Tạo (`*`) (VNĐ):** Nhập số dư thực tế theo sổ quỹ tiền mặt hoặc sao kê số dư tài khoản ngân hàng.
+  * **Ngày Khóa Sổ / Bắt Đầu Áp Dụng (`*`):** Ngày chốt số dư làm căn cứ tính toán lũy kế thu chi.
+  * **Ghi Chú Xác Nhận:** Số biên bản kiểm kê quỹ tiền mặt hoặc chứng từ xác nhận số dư tài khoản.
+- **Thao tác lưu:** Nhập chính xác số dư đối soát ➔ Bấm nút **`Lưu`**.
 
 ---
 

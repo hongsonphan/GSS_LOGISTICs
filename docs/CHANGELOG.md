@@ -2,6 +2,39 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.8.9] - 2026-10-21 (Chuẩn Hóa Đường Dẫn Thao Tác Phân Cấp 2 Tầng Cài Đặt Master Data Trong Help Center & User Guide)
+
+### 1. Chuẩn Hóa Toàn Diện Đường Dẫn Thao Tác 14 Danh Mục Cài Đặt:
+- **Cấu trúc điều hướng chuẩn 3 bước:** Chuyển đổi toàn bộ các câu hướng dẫn thao tác trong hệ thống Help Center (`templates/help.html`) và Sổ tay Hướng dẫn sử dụng (`docs/USER_GUIDE.md`) sang định dạng phân cấp 2 tầng rõ ràng:
+  `Vào menu Cài đặt ➔ [Nhóm cha] ➔ Chọn tab [Tab con] ➔ Bấm nút Tạo mới` (hoặc thao tác lưu tương ứng).
+- **Phủ sóng đầy đủ 5 Nhóm Cha (Master Data Groups) và 14 Tab Con:**
+  1. **Khai Báo Ban Đầu:**
+     * *Thông Tin Công Ty:* `Vào menu Cài đặt ➔ Khai Báo Ban Đầu ➔ Chọn tab Thông Tin Công Ty ➔ Bấm nút Hiệu Chỉnh Khai Báo Hệ Thống (hoặc Sửa Thông Tin Công Ty).`
+     * *Vai Trò & Phân Quyền:* `Vào menu Cài đặt ➔ Khai Báo Ban Đầu ➔ Chọn tab Vai Trò & Phân Quyền ➔ Cấu hình ma trận quyền và bấm nút Lưu.`
+  2. **Tài Chính & Quản Trị:**
+     * *Biểu Phí Lương Chuyến:* `Vào menu Cài đặt ➔ Tài Chính & Quản Trị ➔ Chọn tab Biểu Phí Lương Chuyến ➔ Bấm nút Tạo mới.`
+     * *Phụ Cấp & Kiểm Hóa:* `Vào menu Cài đặt ➔ Tài Chính & Quản Trị ➔ Chọn tab Phụ Cấp & Kiểm Hóa ➔ Bấm nút Tạo mới.`
+     * *Khoản Mục Chi:* `Vào menu Cài đặt ➔ Tài Chính & Quản Trị ➔ Chọn tab Khoản Mục Chi ➔ Bấm nút Tạo mới.`
+     * *Số Dư Ban Đầu:* `Vào menu Cài đặt ➔ Tài Chính & Quản Trị ➔ Chọn tab Số Dư Ban Đầu ➔ Bấm nút Khai Báo Số Dư Đầu Kỳ (hoặc Tạo mới).`
+  3. **Khách Hàng & Đối Tác:**
+     * *Khách Hàng:* `Vào menu Cài đặt ➔ Khách Hàng & Đối Tác ➔ Chọn tab Khách Hàng ➔ Bấm nút Tạo mới.`
+     * *Biểu Cước Khách:* `Vào menu Cài đặt ➔ Khách Hàng & Đối Tác ➔ Chọn tab Biểu Cước Khách ➔ Bấm nút Tạo mới.`
+     * *Thầu Phụ & Nhà Cung Cấp:* `Vào menu Cài đặt ➔ Khách Hàng & Đối Tác ➔ Chọn tab Thầu Phụ & Nhà Cung Cấp ➔ Bấm nút Tạo mới.`
+  4. **Mạng Lưới & Địa Điểm:**
+     * *Cảng & Kho Bãi:* `Vào menu Cài đặt ➔ Mạng Lưới & Địa Điểm ➔ Chọn tab Cảng & Kho Bãi ➔ Bấm nút Tạo mới.`
+     * *Hãng Tàu:* `Vào menu Cài đặt ➔ Mạng Lưới & Địa Điểm ➔ Chọn tab Hãng Tàu ➔ Bấm nút Tạo mới.`
+  5. **Phương Tiện & Thiết Bị:**
+     * *Đầu Kéo & Xe:* `Vào menu Cài đặt ➔ Phương Tiện & Thiết Bị ➔ Chọn tab Đầu Kéo & Xe ➔ Bấm nút Tạo mới.`
+     * *Rơ-Moóc:* `Vào menu Cài đặt ➔ Phương Tiện & Thiết Bị ➔ Chọn tab Rơ-Moóc ➔ Bấm nút Tạo mới.`
+     * *Quy Cách Cont & Xe:* `Vào menu Cài đặt ➔ Phương Tiện & Thiết Bị ➔ Chọn tab Quy Cách Cont & Xe ➔ Bấm nút Tạo mới.`
+- **Cập nhật đồng bộ toàn bộ các gợi ý thao tác nhanh (Inline Tips):** Tại các phân hệ Báo giá, Booking, Chi phí, Đội xe, Sổ quỹ, Quyết toán thầu phụ và Tờ khai hải quan, toàn bộ chỉ dẫn tạo nhanh khi thiếu Master Data đều được chuẩn hóa cấu trúc 2 tầng.
+
+### 2. Kiểm Thử Hệ Thống & Xác Thực Giao Diện:
+- Kiểm tra toàn bộ cú pháp JS và Django (`python manage.py check`): 0 issues identified.
+- Bộ kiểm thử tự động của dự án đạt **130/130 tests passed 100%** (`python manage.py test --keepdb`).
+- Kiểm thử hiển thị HTML thực tế trên route `/helps/`: 14/14 mục danh mục khớp 100% đường dẫn thao tác 2 tầng.
+- Chụp ảnh thị giác thực tế thành công: `183_help_center_trailers_breadcrumb.png`, `184_help_center_section_ii_overview.png`.
+
 ## [v3.8.8] - 2026-10-21 (Rà Soát & Đăng Ký Đầy Đủ 100% Các Bảng Model Vào Trang Admin Quản Trị Django)
 
 ### 1. Đăng Ký Toàn Diện 62/62 Models Toàn Hệ Thống Vào Django Admin:

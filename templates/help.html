@@ -342,15 +342,19 @@
                                 </a>
                                 <a href="#sec-md-subcontractors" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
                                     <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
-                                    <span class="truncate">11. Nhà Xe Thầu Phụ</span>
+                                    <span class="truncate">11. Thầu Phụ & NCC</span>
                                 </a>
                                 <a href="#sec-md-expenses" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
                                     <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
-                                    <span class="truncate">12. Khoản Chi</span>
+                                    <span class="truncate">12. Khoản Mục Chi</span>
                                 </a>
                                 <a href="#sec-md-containers" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
                                     <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
-                                    <span class="truncate">13. Quy Cách</span>
+                                    <span class="truncate">13. Quy Cách Cont & Xe</span>
+                                </a>
+                                <a href="#sec-md-opening-balance" class="nav-link flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-teal-800 transition-all font-semibold text-[13px]">
+                                    <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
+                                    <span class="truncate">14. Số Dư Ban Đầu</span>
                                 </a>
                             </div>
                         </div>
@@ -994,7 +998,7 @@
                         II. KHAI BÁO DANH MỤC
                     </h2>
                     <p class="text-sm text-slate-600 italic -mt-4 mb-6">
-                        Trước khi tiếp nhận đơn hàng hay phát lệnh điều xe, người dùng cần hoàn tất thiết lập 13 danh mục dưới đây trong phân hệ Cài đặt để hệ thống tự động hóa liên kết dữ liệu.
+                        Trước khi tiếp nhận đơn hàng hay phát lệnh điều xe, người dùng cần hoàn tất thiết lập 14 danh mục dưới đây trong phân hệ Cài đặt để hệ thống tự động hóa liên kết dữ liệu.
                     </p>
                 </div>
 
@@ -1201,6 +1205,22 @@
                             <li><strong>Mã Quy Cách (*):</strong> Ví dụ: <code>20GP</code>, <code>40HC</code>, <code>45HC</code>, <code>20RF</code>, <code>TRUCK-5T</code>.</li>
                             <li><strong>Tên Mô Tả (*):</strong> Cont 20 feet khô thường, Cont 40 feet cao, Cont 40 feet lạnh...</li>
                             <li><strong>Kích Thước Chuẩn:</strong> Dài x Rộng x Cao (mét) và Thể tích (CBM).</li>
+                        </ul>
+                        <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
+                    </div>
+                </section>
+
+                <!-- 14. SỐ DƯ BAN ĐẦU -->
+                <section id="sec-md-opening-balance" class="help-section scroll-mt-24 space-y-3 pb-6 border-b border-slate-200">
+                    <h3 class="text-base sm:text-lg font-black text-slate-900 font-heading">14. Số Dư Ban Đầu</h3>
+                    <div class="text-sm text-slate-700 space-y-2">
+                        <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ <strong>Tài Chính & Quản Trị</strong> ➔ Chọn tab <strong>Số Dư Ban Đầu</strong> ➔ Bấm nút <strong>Khai Báo Số Dư Đầu Kỳ</strong> (hoặc <strong>Tạo mới</strong>).</p>
+                        <p><strong>• Các trường bắt buộc:</strong></p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li><strong>Loại Quỹ / Tài Khoản (*):</strong> Tiền mặt tại quỹ hoặc Tài khoản ngân hàng công ty.</li>
+                            <li><strong>Số Dư Khởi Tạo (VNĐ) (*):</strong> Số dư thực tế tại ngày bắt đầu vận hành hệ thống.</li>
+                            <li><strong>Ngày Khóa Sổ / Áp Dụng (*):</strong> Ngày chốt số dư ban đầu kế toán.</li>
+                            <li><strong>Ghi Chú Xác Nhận:</strong> Biên bản đối soát tiền mặt hoặc số dư sao kê ngân hàng đi kèm.</li>
                         </ul>
                         <p><strong>• Hoàn tất:</strong> Bấm nút <strong>Lưu</strong>.</p>
                     </div>
@@ -1418,7 +1438,7 @@
                                             <td class="p-2.5">Chọn doanh nghiệp khách hàng nhận báo giá. Trường bắt buộc phải chọn để lưu báo giá.</td>
                                             <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
                                                 👉 <strong>Bấm nút [+ Thêm KH Mới]</strong> nằm ngay góc trên bên phải nhãn ô này. Popup tạo khách hàng sẽ mở ra ngay, nhập Tên + MST rồi bấm <em>Lưu</em>; khách hàng mới sẽ tự động được chọn vào ô mà không mất dữ liệu đang gõ!
-                                                <br><span class="text-[11px] text-slate-500 font-normal">(Hoặc vào Cài đặt ➔ Tab Khách Hàng ➔ Bấm Tạo mới</span>
+                                                <br><span class="text-[11px] text-slate-500 font-normal">(Hoặc vào <strong>Cài đặt</strong> ➔ <strong>Khách Hàng & Đối Tác</strong> ➔ Chọn tab <strong>Khách Hàng</strong> ➔ Bấm nút <strong>Tạo mới</strong>)</span>
                                             </td>
                                         </tr>
                                         <tr>
@@ -1456,7 +1476,7 @@
                                             <td class="p-2.5 font-bold text-slate-900">Loại Cont / Xe & Cự Ly (KM)</td>
                                             <td class="p-2.5 text-slate-600">Dropdown & Số km</td>
                                             <td class="p-2.5">Chọn loại cont (<code>40HC</code>, <code>20GP</code>, <code>45G1</code>, <code>Xe tải 15T</code>) và cự ly chạy ước tính.</td>
-                                            <td class="p-2.5 text-slate-600">Nếu thiếu quy cách xe: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Quy Cách</strong> để tạo mới.</td>
+                                            <td class="p-2.5 text-slate-600">Nếu thiếu quy cách xe: Vào <strong>Cài đặt</strong> ➔ <strong>Phương Tiện & Thiết Bị</strong> ➔ Chọn tab <strong>Quy Cách Cont & Xe</strong> ➔ Bấm nút <strong>Tạo mới</strong>.</td>
                                         </tr>
                                         <tr>
                                             <td class="p-2.5 font-bold text-slate-900">Đơn Giá Cước (VNĐ) <span class="text-rose-500 font-bold">(*)</span></td>
@@ -1687,7 +1707,7 @@
                                             <td class="p-2.5 font-bold text-slate-900">Loại Hình & Loại Cont <span class="text-rose-500 font-bold">(*)</span></td>
                                             <td class="p-2.5 text-slate-600">Danh sách chọn (Select)</td>
                                             <td class="p-2.5">Chọn Loại hình (<em>Nhập, Xuất, Nội địa</em>) và Quy cách cont (<code>40HC</code>, <code>20GP</code>, <code>45G1</code>, <code>2x20DC</code>, <code>Xe tải 15T</code>...).</td>
-                                            <td class="p-2.5 text-slate-600">Cần thêm quy cách: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Quy Cách</strong>.</td>
+                                            <td class="p-2.5 text-slate-600">Cần thêm quy cách: Vào <strong>Cài đặt</strong> ➔ <strong>Phương Tiện & Thiết Bị</strong> ➔ Chọn tab <strong>Quy Cách Cont & Xe</strong> ➔ Bấm nút <strong>Tạo mới</strong>.</td>
                                         </tr>
                                         <tr>
                                             <td class="p-2.5 font-bold text-slate-900">Số Booking, Số Cont & Số Seal</td>
@@ -1822,7 +1842,7 @@
                                                 - <code>OTHER</code>: Chi phí khác (Vá vỏ, lưu bãi, rửa cont).
                                             </td>
                                             <td class="p-2.5 text-slate-600">
-                                                👉 Nếu cần thêm khoản chi mới: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Khoản Chi</strong> ➔ Bấm <strong>Tạo mới</strong>.
+                                                👉 Nếu cần thêm khoản chi mới: Vào <strong>Cài đặt</strong> ➔ <strong>Tài Chính & Quản Trị</strong> ➔ Chọn tab <strong>Khoản Mục Chi</strong> ➔ Bấm nút <strong>Tạo mới</strong>.
                                             </td>
                                         </tr>
                                         <tr>
@@ -1892,7 +1912,7 @@
                     <div id="sec-input-vehicles" class="scroll-mt-24 space-y-3">
                         <h4 class="text-base font-bold text-slate-900 font-heading">4.1. Hướng Dẫn Chi Tiết Khai Báo Xe Đầu Kéo & Hạn Kiểm Định</h4>
                         <div class="text-sm text-slate-700 space-y-3">
-                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Tab <strong>Đầu Kéo & Xe</strong> ➔ Bấm nút <strong>Tạo mới</strong> (hoặc vào menu <strong>Xe & Bãi</strong> để quản lý toàn đội xe).</p>
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ <strong>Phương Tiện & Thiết Bị</strong> ➔ Chọn tab <strong>Đầu Kéo & Xe</strong> ➔ Bấm nút <strong>Tạo mới</strong> (hoặc vào menu <strong>Xe & Bãi</strong> để quản lý toàn đội xe).</p>
 
                             <div class="overflow-x-auto border border-slate-200 rounded-lg">
                                 <table class="w-full text-left text-xs erp-table border-collapse">
@@ -1956,7 +1976,7 @@
                     <div id="sec-input-trailers" class="scroll-mt-24 space-y-3 pt-2">
                         <h4 class="text-base font-bold text-slate-900 font-heading">4.2. Hướng Dẫn Chi Tiết Khai Báo Rơ-Moóc & Bảo Dưỡng</h4>
                         <div class="text-sm text-slate-700 space-y-3">
-                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ Tab <strong>Rơ-Moóc</strong> ➔ Bấm nút <strong>Tạo mới</strong> (hoặc vào menu <strong>Xe & Bãi</strong> để theo dõi rơ-moóc).</p>
+                            <p><strong>• Nơi thực hiện:</strong> Vào menu <strong>Cài đặt</strong> ➔ <strong>Phương Tiện & Thiết Bị</strong> ➔ Chọn tab <strong>Rơ-Moóc</strong> ➔ Bấm nút <strong>Tạo mới</strong> (hoặc vào menu <strong>Xe & Bãi</strong> để theo dõi rơ-moóc).</p>
                             
                             <div class="overflow-x-auto border border-slate-200 rounded-lg">
                                 <table class="w-full text-left text-xs erp-table border-collapse">
@@ -2543,7 +2563,7 @@
                         <h4 class="text-base font-bold text-slate-900 font-heading">6.5. Quyết Toán Công Nợ Xe Thầu Phụ 3PL</h4>
                         <div class="text-sm text-slate-700 space-y-2">
                             <p><strong>• Thao tác:</strong> Vào tab <strong>Xe Bạn (3PL)</strong> (hoặc <strong>Khoản Chi Hộ</strong>) ➔ Chọn nhà xe thầu phụ ➔ Tích chọn các chuyến xe đã hoàn tất POD ➔ Bấm nút <strong>+ Gom Nhóm Lập Debit Note</strong> (hoặc nút <strong>Xuất Bảng Kê Xe Bạn Excel</strong>).</p>
-                            <p><strong>• Hướng dẫn khi chưa có Nhà xe thầu phụ trong danh mục:</strong> Vào <strong>Cài đặt</strong> ➔ Tab <strong>Nhà Xe Thầu Phụ</strong> ➔ Bấm nút <strong>Tạo mới</strong>. Nhập Tên nhà xe, Người đại diện, Số điện thoại và Số tài khoản ngân hàng thụ hưởng rồi bấm <strong>Lưu</strong>.</p>
+                            <p><strong>• Hướng dẫn khi chưa có Nhà xe thầu phụ trong danh mục:</strong> Vào <strong>Cài đặt</strong> ➔ <strong>Khách Hàng & Đối Tác</strong> ➔ Chọn tab <strong>Thầu Phụ & Nhà Cung Cấp</strong> ➔ Bấm nút <strong>Tạo mới</strong>. Nhập Tên nhà xe, Người đại diện, Số điện thoại và Số tài khoản ngân hàng thụ hưởng rồi bấm <strong>Lưu</strong>.</p>
                         </div>
                     </div>
                 </section>
@@ -2583,7 +2603,7 @@
                                             <td class="p-2.5 text-slate-600">Select</td>
                                             <td class="p-2.5">Chọn doanh nghiệp chủ hàng đứng tên mở tờ khai.</td>
                                             <td class="p-2.5 text-teal-800 font-semibold bg-teal-50/50">
-                                                👉 Nếu chưa có trong danh sách: Vào <strong>Cài đặt</strong> ➔ Tab <strong>Khách Hàng</strong> ➔ Bấm <strong>Tạo mới</strong> để khai báo tên và mã số thuế.
+                                                👉 Nếu chưa có trong danh sách: Vào <strong>Cài đặt</strong> ➔ <strong>Khách Hàng & Đối Tác</strong> ➔ Chọn tab <strong>Khách Hàng</strong> ➔ Bấm nút <strong>Tạo mới</strong> để khai báo tên và mã số thuế.
                                             </td>
                                         </tr>
                                         <tr>
