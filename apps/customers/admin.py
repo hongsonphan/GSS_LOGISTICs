@@ -40,3 +40,16 @@ class BookingOrderAdmin(admin.ModelAdmin):
     list_filter = ('status', 'booking_type', 'created_at')
     search_fields = ('booking_code', 'customer__name', 'customer__code', 'booking_number', 'shipping_line')
     inlines = [BookingDocumentInline]
+
+@admin.register(QuotationItem)
+class QuotationItemAdmin(admin.ModelAdmin):
+    list_display = ('quotation', 'origin_zone', 'destination_zone', 'cargo_type', 'unit_price', 'expected_trips_monthly', 'is_deleted')
+    list_filter = ('cargo_type', 'is_deleted', 'created_at')
+    search_fields = ('quotation__quotation_code', 'origin_zone', 'destination_zone', 'route_description')
+
+@admin.register(BookingDocument)
+class BookingDocumentAdmin(admin.ModelAdmin):
+    list_display = ('booking', 'file_name', 'file_size', 'created_at', 'is_deleted')
+    list_filter = ('is_deleted', 'created_at')
+    search_fields = ('booking__booking_code', 'file_name')
+

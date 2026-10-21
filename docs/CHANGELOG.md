@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.8.8] - 2026-10-21 (Rà Soát & Đăng Ký Đầy Đủ 100% Các Bảng Model Vào Trang Admin Quản Trị Django)
+
+### 1. Đăng Ký Toàn Diện 62/62 Models Toàn Hệ Thống Vào Django Admin:
+- **Rà soát & phát hiện 27 Models chưa đăng ký Admin:**
+  * Phân hệ **Collaboration** (15 models): `PostCategory`, `CompanyPost`, `PostAttachment`, `PostComment`, `PostReadStatus`, `OfficeTask`, `TaskChecklist`, `TaskComment`, `TaskAttachment`, `TaskActivityLog`, `ChatRoom`, `ChatParticipant`, `ChatMessage`, `ChatAttachment`, `Notification`.
+  * Phân hệ **Core** (1 model): `TrackingEventLog`.
+  * Phân hệ **Documents** (1 model): `TripDocument`.
+  * Phân hệ **Exceptions** (1 model): `TripException`.
+  * Phân hệ **Customers** (2 models): `QuotationItem`, `BookingDocument`.
+  * Phân hệ **Master Data** (1 model): `OpeningBalance`.
+  * Phân hệ **Personnel** (6 models): `AttendanceCode`, `DailyAttendance`, `MonthlyAttendanceSummary`, `PayrollParameter`, `AllowanceGroup`, `AllowanceType`.
+- **Triển khai chuẩn ModelAdmin cho 100% các bảng:**
+  * Tạo mới `apps/collaboration/admin.py`, `core/admin.py`, `apps/documents/admin.py`, `apps/exceptions/admin.py`.
+  * Bổ sung đầy đủ vào `apps/customers/admin.py`, `apps/master_data/admin.py`, `apps/personnel/admin.py`.
+  * Thiết lập đầy đủ `list_display`, `list_filter`, `search_fields`, `inlines` (TabularInline cho các bảng con), `date_hierarchy` và `ordering` tối ưu cho nghiệp vụ quản trị dữ liệu vận tải và logistics.
+  * Tỷ lệ đăng ký Model trong Django Admin đạt **62/62 models (100%)**.
+
+### 2. Kiểm Thử Hệ Thống:
+- Django System Check (`python manage.py check`): 0 issues identified.
+- Bộ kiểm thử tự động của dự án đạt **129/129 tests passed 100%** (`python manage.py test --keepdb`).
+
 ## [v3.8.7] - 2026-10-21 (Đồng Bộ Tuyệt Đối Vị Trí Ô Lưới Dữ Liệu & Ô Tổng Cộng Footer Khớp Từng Pixel)
 
 ### 1. Khắc Phục Lệch Vị Trí Ô Hàng (tbody) Và Ô Chân Bảng (tfoot):

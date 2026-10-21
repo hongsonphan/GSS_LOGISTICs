@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     Location, ContainerType, ExpenseItem, DriverSalaryTariff,
-    DriverAllowanceCatalog, ShippingLine, Subcontractor, SubcontractorDriver, CompanyProfile
+    DriverAllowanceCatalog, ShippingLine, Subcontractor, SubcontractorDriver, CompanyProfile,
+    OpeningBalance
 )
 
 @admin.register(Location)
@@ -62,3 +63,11 @@ class SubcontractorDriverAdmin(admin.ModelAdmin):
 class CompanyProfileAdmin(admin.ModelAdmin):
     list_display = ('company_name', 'short_name', 'tax_code', 'phone', 'email', 'is_default')
     search_fields = ('company_name', 'short_name', 'tax_code')
+
+@admin.register(OpeningBalance)
+class OpeningBalanceAdmin(admin.ModelAdmin):
+    list_display = ('account_code', 'account_name', 'category', 'partner_type', 'entity_code', 'entity_name', 'opening_date', 'fiscal_year', 'debit_amount', 'credit_amount', 'is_deleted')
+    list_filter = ('fiscal_year', 'category', 'partner_type', 'is_deleted')
+    search_fields = ('account_code', 'account_name', 'entity_code', 'entity_name', 'bank_account_number')
+    date_hierarchy = 'opening_date'
+

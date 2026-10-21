@@ -2,7 +2,9 @@ from django.contrib import admin
 from .models import (
     Employee, EmployeeDependent, LaborContract, ContractAppendix,
     TaxBracket, SalaryDeductionRate, PayrollPolicyConfig,
-    PayrollPeriod, PayrollSlip
+    PayrollPeriod, PayrollSlip,
+    AttendanceCode, DailyAttendance, MonthlyAttendanceSummary,
+    PayrollParameter, AllowanceGroup, AllowanceType
 )
 
 @admin.register(Employee)
@@ -60,3 +62,50 @@ class PayrollSlipAdmin(admin.ModelAdmin):
     list_display = ('slip_code', 'period', 'employee', 'role', 'gross_income', 'net_salary', 'is_paid', 'payment_method')
     list_filter = ('is_paid', 'role', 'department', 'period')
     search_fields = ('slip_code', 'employee__code', 'employee__full_name')
+
+@admin.register(AttendanceCode)
+class AttendanceCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'work_weight', 'salary_rate', 'is_paid', 'color', 'order', 'is_active')
+    list_filter = ('is_paid', 'is_active')
+    search_fields = ('code', 'name')
+    ordering = ('order', 'code')
+
+@admin.register(DailyAttendance)
+class DailyAttendanceAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'work_date', 'code_symbol', 'attendance_code', 'work_hours', 'overtime_hours', 'is_deleted')
+    list_filter = ('work_date', 'code_symbol', 'is_deleted')
+    search_fields = ('employee__code', 'employee__full_name', 'code_symbol')
+    date_hierarchy = 'work_date'
+
+@admin.register(MonthlyAttendanceSummary)
+class MonthlyAttendanceSummaryAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'period', 'standard_days', 'worked_days', 'paid_leave_days', 'holiday_days', 'unpaid_leave_days', 'total_paid_days', 'overtime_hours', 'is_deleted')
+    list_filter = ('period', 'is_deleted')
+    search_fields = ('employee__code', 'employee__full_name', 'period__period_code')
+
+@admin.register(PayrollParameter)
+class PayrollParameterAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'value', 'unit', 'legal_basis', 'effective_date', 'expiry_date', 'is_active', 'order')
+    list_filter = ('is_active', 'effective_date')
+    search_fields = ('code', 'name', 'legal_basis')
+    ordering = ('order', 'code')
+
+class AllowanceTypeInline(admin.TabularInline):
+    model = AllowanceType
+    extra = 1
+
+@admin.register(AllowanceGroup)
+class AllowanceGroupAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'description', 'order', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('code', 'name')
+    ordering = ('order', 'code')
+    inlines = [AllowanceTypeInline]
+
+@admin.register(AllowanceType)
+class AllowanceTypeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'group', 'category', 'default_amount', 'is_insurance_applicable', 'is_taxable', 'is_active', 'order')
+    list_filter = ('category', 'group', 'is_insurance_applicable', 'is_taxable', 'is_active')
+    search_fields = ('code', 'name', 'group__name')
+    ordering = ('order', 'code')
+

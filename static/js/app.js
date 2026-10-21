@@ -23735,7 +23735,7 @@ function openMasterDataImportModal(tabKey) {
         if (catalog && VALID_IMPORT_CATALOGS.includes(catalog)) {
             select.value = catalog;
         } else {
-            select.value = 'locations';
+            select.value = 'customers';
         }
     }
 
