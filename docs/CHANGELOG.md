@@ -2,6 +2,16 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.8.7] - 2026-10-21 (Đồng Bộ Tuyệt Đối Vị Trí Ô Lưới Dữ Liệu & Ô Tổng Cộng Footer Khớp Từng Pixel)
+
+### 1. Khắc Phục Lệch Vị Trí Ô Hàng (tbody) Và Ô Chân Bảng (tfoot):
+- **Phát hiện nguyên nhân gốc rễ (Root Cause):**
+  * Trong CSS hệ thống `static/css/main.css`, header `th` và dữ liệu `tbody td` được cấu hình chuẩn mực `padding: 7px 12px` và `padding: 6px 12px` (khoảng đệm trái/phải cố định 12px).
+  * Trong khi đó, các ô dòng Tổng Cộng (`tfoot td`) chưa có quy tắc CSS chuẩn mực, dẫn tới bị nhận padding mặc định 0px từ CSS Reset hoặc bị gán class `p-2` (padding 8px). Điều này tạo ra độ chênh lệch 4px đến 12px làm cho số liệu tiền tệ căn phải (`text-right`) giữa dòng dữ liệu và dòng tổng cộng bị lệch ngang so với nhau.
+- **Giải pháp xử lý triệt để:**
+  * Bổ sung quy tắc CSS toàn cục trong `static/css/main.css`: áp dụng `.erp-table tfoot td`, `.bim-table tfoot td`, `table.erp-table tfoot td`, `div[id^="view-"] table tfoot td` với `padding: 6px 12px !important;` và `vertical-align: middle;`, đồng bộ 100% với `tbody td`.
+  * Chuẩn hóa toàn bộ các bảng Báo cáo BI (`applyReport11Filters`, `applyReport12Filters`, `applyReport13Filters`, `applyReport14Filters`) trong `static/js/app.js`: loại bỏ các class `p-2` xung đột, đồng bộ định dạng badge phân bổ chi phí và số liệu tiền tệ `tabular-nums`, đảm bảo số liệu trên và số liệu dưới thẳng hàng tăm tắp theo cùng một trục đứng.
+
 ## [v3.8.6] - 2026-10-21 (Khắc Phục Triệt Để Lỗi Báo Cáo KeyError 28 & Căn Chỉnh Khớp 100% Dòng Tổng Cột Bảng Dữ Liệu)
 
 ### 1. Khắc Phục Triệt Để Lỗi Báo Cáo Phân Tích (KeyError: 28):

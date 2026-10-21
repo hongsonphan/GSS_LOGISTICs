@@ -749,6 +749,32 @@ button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled
     vertical-align: middle;
 }
 
+/* Hàng chân bảng tổng cộng (Footer total row): chiều cao & padding đồng bộ 100% với tbody và thead */
+.erp-table tfoot td,
+.bim-table tfoot td,
+table.erp-table tfoot td,
+table.bim-table tfoot td,
+div[id^="view-"] table tfoot td,
+.erp-table tfoot th,
+.bim-table tfoot th,
+table.erp-table tfoot th,
+table.bim-table tfoot th {
+    padding: 6px 12px !important;
+    font-family: var(--font-body) !important;
+    font-size: 13px !important;
+    line-height: 1.4;
+    color: #0f172a;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+
+.erp-table tfoot tr,
+.bim-table tfoot tr,
+table.erp-table tfoot tr,
+table.bim-table tfoot tr {
+    height: 36px;
+}
+
 /* Hàng dữ liệu đa tầng có sub-text (Multi-line row): chiều cao chuẩn ~46px - 48px */
 .erp-table tbody tr.row-multiline td,
 .erp-table tbody td.cell-multiline,

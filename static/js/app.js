@@ -26102,19 +26102,19 @@ function applyReport11Filters() {
             diffText = `- ${formatMoneyVND(Math.abs(totalDiff))}`;
         }
         tfoot.innerHTML = `
-            <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
-                <td colspan="7" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Chuyến Tạm Ứng:</td>
-                <td class="text-right text-indigo-800 font-mono font-black p-2">${formatMoneyVND(totalAdv)}</td>
-                <td class="text-right text-rose-700 font-mono font-black p-2">${formatMoneyVND(totalExp)}</td>
-                <td class="text-right text-[11px] text-slate-700 p-2">
-                    <span>BOT: ${formatMoneyVND(totalBot)}</span> | 
-                    <span>Cảng: ${formatMoneyVND(totalPort)}</span>
-                    ${totalDep > 0 ? ` | <span>Cược: ${formatMoneyVND(totalDep)}</span>` : ''}
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="7" class="text-right uppercase">TỔNG CỘNG: ${list.length} Chuyến Tạm Ứng:</td>
+                <td class="text-right text-indigo-800 font-mono font-black tabular-nums">${formatMoneyVND(totalAdv)}</td>
+                <td class="text-right text-rose-700 font-mono font-black tabular-nums">${formatMoneyVND(totalExp)}</td>
+                <td class="text-right text-[11px] text-slate-700 tabular-nums">
+                    <span class="px-1.5 py-0.5 bg-slate-200/80 rounded font-bold">BOT: ${formatMoneyVND(totalBot)}</span>
+                    <span class="px-1.5 py-0.5 bg-slate-200/80 rounded font-bold ml-1">Cảng: ${formatMoneyVND(totalPort)}</span>
+                    ${totalDep > 0 ? `<span class="px-1.5 py-0.5 bg-amber-100 text-amber-900 rounded font-bold ml-1">Cược: ${formatMoneyVND(totalDep)}</span>` : ''}
                 </td>
-                <td class="text-right font-mono p-2 ${diffColor}">${diffText}</td>
-                <td colspan="2" class="text-center p-2"></td>
-                <td class="text-center font-bold text-teal-800 p-2">${totalDocs > 0 ? `<i class="ph-bold ph-receipt mr-0.5"></i>${totalDocs}` : '-'}</td>
-                <td class="p-2"></td>
+                <td class="text-right font-mono font-black text-xs tabular-nums ${diffColor}">${diffText}</td>
+                <td colspan="2" class="text-center"></td>
+                <td class="text-center font-bold text-teal-800">${totalDocs > 0 ? `<i class="ph-bold ph-receipt mr-0.5"></i>${totalDocs}` : '-'}</td>
+                <td></td>
             </tr>
         `;
     }
@@ -26278,14 +26278,14 @@ function applyReport12Filters() {
     const tfoot = document.getElementById('rep12-tfoot');
     if (tfoot) {
         tfoot.innerHTML = `
-            <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
-                <td colspan="8" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
-                <td class="text-right text-slate-900 font-mono font-black p-2">${formatMoneyVND(totalRev)}</td>
-                <td class="text-right text-rose-700 font-mono font-black p-2">${formatMoneyVND(totalExp)}</td>
-                <td class="text-right text-indigo-700 font-mono font-black p-2">${formatMoneyVND(totalReim)}</td>
-                <td class="text-right text-emerald-700 font-mono font-black bg-emerald-50/40 p-2">${formatMoneyVND(totalProfit)}</td>
-                <td class="text-center font-mono font-bold ${parseFloat(avgMargin) >= 20 ? 'text-emerald-700' : 'text-amber-700'} p-2">${avgMargin}%</td>
-                <td colspan="4" class="p-2"></td>
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="8" class="text-right uppercase">TỔNG CỘNG: ${list.length} Chuyến Vận Tải:</td>
+                <td class="text-right text-slate-900 font-mono font-black tabular-nums">${formatMoneyVND(totalRev)}</td>
+                <td class="text-right text-rose-700 font-mono font-black tabular-nums">${formatMoneyVND(totalExp)}</td>
+                <td class="text-right text-indigo-700 font-mono font-black tabular-nums">${formatMoneyVND(totalReim)}</td>
+                <td class="text-right text-emerald-700 font-mono font-black tabular-nums bg-emerald-50/40">${formatMoneyVND(totalProfit)}</td>
+                <td class="text-center font-mono font-bold tabular-nums ${parseFloat(avgMargin) >= 20 ? 'text-emerald-700' : 'text-amber-700'}">${avgMargin}%</td>
+                <td colspan="4"></td>
             </tr>
         `;
     }
@@ -26458,20 +26458,20 @@ function applyReport13Filters() {
     const tfoot = document.getElementById('rep13-tfoot');
     if (tfoot) {
         tfoot.innerHTML = `
-            <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
-                <td colspan="2" class="p-2 uppercase text-slate-900 font-heading">TỔNG CỘNG: ${list.length} Khách Hàng</td>
-                <td class="text-center font-bold font-mono text-slate-900 p-2">${totalTrips}</td>
-                <td class="text-center font-bold text-xs p-2"><span class="text-emerald-700" title="Đã đối soát">${totalReconciledTrips} Chốt</span> / <span class="text-amber-700" title="Chờ đối soát">${totalPendingTrips} Chờ</span></td>
-                <td class="text-right text-slate-900 font-mono font-bold p-2">${formatMoneyVND(totalFreight)}</td>
-                <td class="text-right text-slate-700 font-mono font-bold p-2">${formatMoneyVND(totalReim)}</td>
-                <td class="text-right text-slate-950 font-mono font-black p-2">${formatMoneyVND(totalReceivable)}</td>
-                <td class="text-right text-emerald-700 font-mono font-black p-2">${formatMoneyVND(totalCollected)}</td>
-                <td class="text-right text-indigo-700 font-mono font-black bg-indigo-50/50 p-2">${formatMoneyVND(totalBalance)}</td>
-                <td class="text-right text-emerald-700 font-mono font-bold p-2">${formatMoneyVND(totalCurrent)}</td>
-                <td class="text-right text-amber-700 font-mono font-bold p-2">${formatMoneyVND(total31)}</td>
-                <td class="text-right text-orange-700 font-mono font-bold p-2">${formatMoneyVND(total61)}</td>
-                <td class="text-right text-rose-700 font-mono font-black p-2">${formatMoneyVND(totalOver90)}</td>
-                <td class="p-2"></td>
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="2" class="uppercase text-slate-900 font-heading font-black">TỔNG CỘNG: ${list.length} Khách Hàng</td>
+                <td class="text-center font-bold font-mono text-slate-900 tabular-nums">${totalTrips}</td>
+                <td class="text-center font-bold text-xs"><span class="text-emerald-700" title="Đã đối soát">${totalReconciledTrips} Chốt</span> / <span class="text-amber-700" title="Chờ đối soát">${totalPendingTrips} Chờ</span></td>
+                <td class="text-right text-slate-900 font-mono font-bold tabular-nums">${formatMoneyVND(totalFreight)}</td>
+                <td class="text-right text-slate-700 font-mono font-bold tabular-nums">${formatMoneyVND(totalReim)}</td>
+                <td class="text-right text-slate-950 font-mono font-black tabular-nums">${formatMoneyVND(totalReceivable)}</td>
+                <td class="text-right text-emerald-700 font-mono font-black tabular-nums">${formatMoneyVND(totalCollected)}</td>
+                <td class="text-right text-indigo-700 font-mono font-black tabular-nums bg-indigo-50/50">${formatMoneyVND(totalBalance)}</td>
+                <td class="text-right text-emerald-700 font-mono font-bold tabular-nums">${formatMoneyVND(totalCurrent)}</td>
+                <td class="text-right text-amber-700 font-mono font-bold tabular-nums">${formatMoneyVND(total31)}</td>
+                <td class="text-right text-orange-700 font-mono font-bold tabular-nums">${formatMoneyVND(total61)}</td>
+                <td class="text-right text-rose-700 font-mono font-black tabular-nums">${formatMoneyVND(totalOver90)}</td>
+                <td></td>
             </tr>
         `;
     }
@@ -27078,13 +27078,13 @@ function applyReport14Filters() {
     const tfoot = document.getElementById('rep14-tfoot');
     if (tfoot) {
         tfoot.innerHTML = `
-            <tr class="bg-slate-100/90 font-bold border-t-2 border-slate-300">
-                <td colspan="3" class="text-right uppercase p-2">TỔNG CỘNG: ${list.length} Đơn Tồn:</td>
-                <td class="text-center font-bold text-rose-700 font-mono p-2">TB ${avgDays} ngày</td>
-                <td colspan="4" class="p-2"></td>
-                <td class="text-right text-slate-900 font-mono font-bold p-2">${formatMoneyVND(totalRev)}</td>
-                <td class="text-right text-rose-700 font-mono font-bold p-2">${formatMoneyVND(totalExp)}</td>
-                <td colspan="3" class="p-2"></td>
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <td colspan="3" class="text-right uppercase">TỔNG CỘNG: ${list.length} Đơn Tồn:</td>
+                <td class="text-center font-bold text-rose-700 font-mono tabular-nums">TB ${avgDays} ngày</td>
+                <td colspan="4"></td>
+                <td class="text-right text-slate-900 font-mono font-bold tabular-nums">${formatMoneyVND(totalRev)}</td>
+                <td class="text-right text-rose-700 font-mono font-bold tabular-nums">${formatMoneyVND(totalExp)}</td>
+                <td colspan="3"></td>
             </tr>
         `;
     }
