@@ -487,11 +487,14 @@ class DashboardBGDAPIView(APIView):
             abs_val = abs(val)
             prefix = '-' if val < 0 else ''
             if abs_val >= 1_000_000_000:
-                return f"{prefix}{abs_val / 1_000_000_000:.2f}B".rstrip('0').rstrip('.')
+                s = f"{abs_val / 1_000_000_000:.2f}".rstrip('0').rstrip('.')
+                return f"{prefix}{s}B"
             elif abs_val >= 1_000_000:
-                return f"{prefix}{abs_val / 1_000_000:.1f}M".rstrip('0').rstrip('.')
+                s = f"{abs_val / 1_000_000:.1f}".rstrip('0').rstrip('.')
+                return f"{prefix}{s}M"
             elif abs_val >= 1_000:
-                return f"{prefix}{abs_val / 1_000:.0f}K"
+                s = f"{abs_val / 1_000:.0f}"
+                return f"{prefix}{s}K"
             return f"{prefix}{abs_val} đ"
 
         # 9.1. Dữ liệu bổ sung cho Kế toán: Tạm ứng tài xế chưa hoàn

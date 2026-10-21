@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.8.1] - 2026-10-21 (Rà Soát Toàn Diện Hệ Thống & Loại Bỏ Số Liệu Quỹ Ảo Trên Dashboard)
+
+### 1. Triệt Tiêu Hoàn Toàn Số Liệu Giả Định / Hardcode Trên Dashboard (Anti-Hallucination):
+- **Phân tích nguyên nhân gốc rễ (Root Cause):**
+  * Tại `apps/dispatch/api_views.py`, các thẻ chỉ số KPI của `DIRECTOR` (Ban Giám Đốc) và `ACCOUNTING` (Kế toán) trước đây bị gán tĩnh các chuỗi mock "Quỹ TM: 150M | NH: 1.25B", "1.400.000.000 đ", "Tiền mặt: 150.000.000 đ | NH: 1.250.000.000 đ", "Kế hoạch chi tuần: 450.000.000 đ".
+  * Các trường fallback trong `static/js/app.js`, `static/js/modules/dashboard.js` và `templates/views/view_dashboard.html` cũng chứa fallback cứng 150000000 và 1250000000, làm cho số dư tiền mặt và ngân hàng hiển thị sai lệch thực tế.
+- **Giải pháp tính toán động 100% từ CSDL Kế toán:**
+  * **Quỹ Tiền mặt (Cash on Hand):** Lấy từ Số dư đầu kỳ TK 1111 (`OpeningBalance` loại `CASH_FUND`) cộng Tổng Thu tiền mặt trừ Tổng Chi tiền mặt từ Sổ quỹ (`CashTransaction`).
+  * **Tiền gửi Ngân hàng (Bank Balance):** Lấy từ Số dư đầu kỳ TK 1121 (`OpeningBalance` loại `BANK_ACCOUNT`) cộng Tổng Thu ngân hàng trừ Tổng Chi ngân hàng từ Sổ quỹ (`CashTransaction`).
+  * **Tổng Quỹ Khả dụng (Total Liquidity):** Tính tự động từ `cash_on_hand + bank_balance`.
+  * **Kế hoạch Chi tuần (Weekly Planned Expenses):** Tính tổng các nghĩa vụ thanh toán thực tế gồm chi phí chuyến xe đã được duyệt chưa quyết toán (`TripExpense status='APPROVED'`) và các khoản tạm ứng tài xế đang lưu hành (`DriverTripAdvance status='ADVANCED'`).
+  * **Định dạng tiền tệ ngắn gọn (`_format_short_money`):** Xử lý chính xác định dạng tiền tệ rút gọn theo chuẩn B/M/K (loại bỏ số 0 thập phân thừa như `40M`, `230M`, `-10.5M`, `0 đ`).
+- **Làm sạch các chỉ số phòng ban khác:**
+  * Xóa bỏ các giá trị mặc định ảo `or 10` tài xế, `or 18` nhân sự, tỷ lệ tờ khai hải quan mặc định `85, 12, 3`. Toàn bộ dữ liệu được tính trực tiếp từ số lượng thực tế trong CSDL.
+  * Tỷ lệ chốt hợp đồng báo giá tính động từ `Quotation status='APPROVED' / tổng báo giá`.
+- **Kiểm thử tự động & Bảo toàn hồi quy:**
+  * Bổ sung bộ kiểm thử `DashboardDynamicMetricsTestCase` trong `apps/dispatch/tests.py` kiểm tra cả 2 trường hợp: CSDL rỗng trả về `0 đ` (không ảo tưởng) và CSDL có phát sinh tính toán khớp chuẩn từng đồng.
+  * 121/121 automated tests passed (`python manage.py test --keepdb`).
+  * Kiểm thử cú pháp JavaScript đạt chuẩn 100% (`node -c static/js/app.js`).
+
 ## [v3.8.0] - 2026-10-21 (Tăng Kích Thước Số Liệu & Nâng Cấp Typography Trực Quan Biểu Đồ Dashboard)
 
 ### 1. Tối Ưu Hóa Kích Thước & Độ Tương Phản Số Liệu Biểu Đồ (Data Labels & Typography):

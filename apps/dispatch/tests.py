@@ -588,6 +588,12 @@ class DashboardDynamicMetricsTestCase(TestCase):
     def setUp(self):
         self.client = Client()
         self.user = User.objects.create_superuser(username="admin_dash", password="password123")
+        self.emp = Employee.objects.create(
+            user=self.user,
+            code="EMP_TEST",
+            full_name="Admin Test",
+            role=EmployeeRole.DIRECTOR
+        )
         self.client.force_login(self.user)
 
     def test_dashboard_empty_data_no_hallucinations(self):
@@ -662,7 +668,7 @@ class DashboardDynamicMetricsTestCase(TestCase):
             payment_method=PaymentMethod.CASH,
             amount=10000000,
             transaction_date=timezone.now().date(),
-            created_by=self.user
+            created_by=self.emp
         )
 
         # Phát sinh Thu ngân hàng: 30.000.000 đ -> Tồn quỹ NH = 230.000.000 đ
@@ -672,7 +678,7 @@ class DashboardDynamicMetricsTestCase(TestCase):
             payment_method=PaymentMethod.BANK,
             amount=30000000,
             transaction_date=timezone.now().date(),
-            created_by=self.user
+            created_by=self.emp
         )
 
         res = self.client.get('/api/dashboard/?period=7_days')
