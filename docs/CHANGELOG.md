@@ -2,6 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.3] - 2026-10-21 (Rút Gọn Nhãn Thầu Phụ Thành "Ghi Chú", Inline Edit Đội Xe & Danh Bạ Bác Tài)
+
+### 1. Chuẩn Hóa Nhãn Giao Diện Thầu Phụ:
+- **Đổi nhãn `Tuyến Thế Mạnh & Ghi Chú Đơn Giá` $\rightarrow$ `Ghi chú`:**
+  * Cập nhật nhãn trường nhập liệu trong modal thêm/sửa Thầu phụ (`static/js/app.js`, `static/js/modules/master_data.js`).
+  * Cập nhật tiêu đề cột bảng danh sách từ `Tuyến Thế Mạnh / Ghi Chú` thành `Ghi Chú`.
+  * Cập nhật header schema file Excel import/export thầu phụ (`apps/master_data/import_export_service.py`).
+  * Placeholder trường ghi chú tinh giản thành `Ghi chú thêm...`.
+
+### 2. Thao Tác Sửa/Xóa Đội Xe & Tài Xế Thầu Phụ (Inline Edit):
+- Đổi cột `Xóa` thành `Thao Tác` với bộ nút `[Sửa | Xóa]` cho 2 bảng Đội xe và Danh bạ bác tài trong modal Thầu phụ.
+- Hỗ trợ sửa trực tiếp trên bảng và cơ chế lưu toàn bộ khi bấm nút `[✓ Lưu]`.
+
 ## [v3.7.2] - 2026-10-21 (Phân Loại Đối Tác Thầu Phụ, Chuẩn Hóa DOM Scoped Bền Vững & Cụm 3 Nút Chi Phí Chuẩn Bàn Tay Tài Xế)
 
 ### 1. Phân Loại Đối Tác Chuẩn Hóa (`partner_type` trong `Subcontractor`):

@@ -394,7 +394,7 @@ CATALOG_REGISTRY = {
             {'key': 'bank_account_number', 'header': 'Số Tài Khoản Ngân Hàng', 'required': False, 'type': 'str', 'sample': '1903555888999'},
             {'key': 'bank_name', 'header': 'Tên Ngân Hàng Thụ Hưởng', 'required': False, 'type': 'str', 'sample': 'Techcombank Chi nhánh Sài Gòn'},
             {'key': 'bank_account_holder', 'header': 'Chủ Tài Khoản Ngân Hàng', 'required': False, 'type': 'str', 'sample': 'CTY TNHH VT HOANG NAM'},
-            {'key': 'notes', 'header': 'Tuyến Thế Mạnh / Chính Sách', 'required': False, 'type': 'str', 'sample': 'Thế mạnh tuyến Cái Mép - Bình Dương'},
+            {'key': 'notes', 'header': 'Ghi Chú', 'required': False, 'type': 'str', 'sample': 'Thế mạnh tuyến Cái Mép - Bình Dương'},
             {'key': 'is_active', 'header': 'Trạng Thái', 'required': False, 'type': 'bool', 'sample': 'Hoạt động'}
         ],
         'samples': [

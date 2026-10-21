@@ -190,7 +190,7 @@ class Subcontractor(TimeStampedModel, SoftDeleteModel):
     bank_account_number = models.CharField(max_length=50, blank=True, help_text="Số tài khoản ngân hàng")
     bank_name = models.CharField(max_length=100, blank=True, help_text="Tên ngân hàng thụ hưởng")
     bank_account_holder = models.CharField(max_length=150, blank=True, help_text="Tên chủ tài khoản")
-    notes = models.TextField(blank=True, help_text="Tuyến thế mạnh, chính sách công nợ")
+    notes = models.TextField(blank=True, help_text="Ghi chú")
     is_active = models.BooleanField(default=True, db_index=True)
 
     class Meta:

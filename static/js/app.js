@@ -21164,7 +21164,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Điều Hành & SĐT</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Thông Tin Tài Khoản Ngân Hàng</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tuyến Thế Mạnh / Ghi Chú</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
             </tr>
@@ -22281,9 +22281,9 @@ function injectMasterDataModalFields(data) {
             </div>
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
-                    <label class="block font-bold text-slate-700 text-xs truncate">Tuyến Thế Mạnh & Ghi Chú Đơn Giá</label>
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi chú</label>
                 </div>
-                <input type="text" id="mdf-sc-notes" value="${escapeHtml(d.notes || '')}" placeholder="VD: Chuyên tuyến Long An, 10 xe đầu kéo..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                <input type="text" id="mdf-sc-notes" value="${escapeHtml(d.notes || '')}" placeholder="Ghi chú thêm..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
             <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
