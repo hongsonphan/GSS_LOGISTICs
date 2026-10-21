@@ -2,6 +2,50 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.6] - 2026-10-21 (Mở Rộng Model Khách Hàng: 2 Email, Thông Tin Bank, Nhóm Khách & Quản Trị Công Nợ)
+
+### 1. Nâng Cấp Model Khách Hàng (`Customer` trong `apps/customers/models.py`):
+- **Bổ sung 2 Email riêng biệt:**
+  * `company_email`: Email chính thức của doanh nghiệp để tiếp nhận Hóa đơn điện tử (e-Invoice), Bảng kê đối soát công nợ (SOA) và chính sách cước phí.
+  * `contact_email`: Email của người phụ trách trực tiếp (Điều phối / XNK / Booking) để nhận thông báo điều xe, tiến độ cont và chứng từ giao nhận (EIR/POD).
+- **Bổ sung Chức danh người liên hệ:**
+  * `contact_title`: Chức vụ nhân sự đầu mối (VD: Trưởng phòng XNK, Điều phối viên...).
+- **Bổ sung Thông tin Tài khoản Ngân hàng (Bank Information):**
+  * `bank_account_number`: Số tài khoản ngân hàng.
+  * `bank_name`: Tên ngân hàng thụ hưởng.
+  * `bank_branch`: Chi nhánh ngân hàng.
+  * `bank_account_holder`: Tên chủ tài khoản in hoa.
+- **Bổ sung Phân nhóm Khách hàng (`customer_group`):**
+  * `COMMERCIAL_TRADING`: Thương mại / Xuất nhập khẩu (Trading/XNK)
+  * `FDI_ENTERPRISE`: Doanh nghiệp FDI / Nhà máy sản xuất
+  * `FORWARDER_LOGISTICS`: Đại lý Giao nhận / 3PL Forwarder
+  * `DOMESTIC_FACTORY`: Nhà máy / Doanh nghiệp Nội địa
+  * `WALK_IN_RETAIL`: Khách lẻ / Đơn chuyến vãng lai
+- **Bổ sung Quản trị Rủi ro & Kỳ hạn Công nợ (TMS / Billing):**
+  * `payment_term_days`: Kỳ hạn thanh toán chuẩn theo hợp đồng (ngày, mặc định 30 ngày).
+  * `credit_limit`: Hạn mức tín dụng / trần nợ tối đa (VNĐ, mặc định 0 = không giới hạn).
+- **Database Migration:**
+  * Đã tạo và áp dụng migration `0014_customer_bank_account_holder_and_more.py`.
+
+### 2. Đồng Bộ Backend API & Quản Trị Django Admin:
+- **`CustomerMasterListCreateAPIView` & `CustomerMasterDetailAPIView` (`apps/master_data/api_views.py`):**
+  * Hỗ trợ tìm kiếm theo cả email công ty, email liên hệ, số tài khoản ngân hàng.
+  * Hỗ trợ lọc theo `customer_group`.
+  * Trả về và nhận đầy đủ 10 trường mới trong cả method `GET`, `POST`, `PUT`.
+- **`CustomerAdmin` (`apps/customers/admin.py`):**
+  * Bổ sung hiển thị `customer_group`, `company_email`, `bank_name` trên danh sách admin.
+  * Thêm bộ lọc `customer_group` và tìm kiếm theo email / số tài khoản.
+- **Import/Export Service (`apps/master_data/import_export_service.py`):**
+  * Bổ sung 8 cột mới vào schema Excel import/export danh mục Khách hàng.
+
+### 3. Chuẩn Hóa Giao Diện & Form Nhập Liệu Master Data (`static/js/app.js` & `master_data.js`):
+- **Bảng Khách Hàng:**
+  * Bổ sung các cột: `Nhóm Khách`, `Email Công Ty`, `Email Liên Hệ`, `Số TK Bank`, `Tên Ngân Hàng`.
+  * Tích hợp click header sort trực tiếp, hiển thị plain text tinh gọn chuẩn UI/UX.
+  * Dropdown Bộ lọc phụ (Secondary Filter) hỗ trợ lọc nhanh theo từng Nhóm Khách Hàng.
+- **Modal Thêm / Sửa Khách Hàng:**
+  * Bố cục lưới thông minh phân cấp 4 khu vực: (1) Thông tin định danh & Nhóm, (2) Đầu mối liên hệ & 2 Email, (3) Thông tin Tài khoản Ngân hàng, (4) Chính sách công nợ & Ghi chú.
+
 ## [v3.7.5] - 2026-10-21 (Bổ Sung Cột STT & Tính Năng Sắp Xếp Trên Header Toàn Bộ Bảng Danh Mục)
 
 ### 1. Bổ Sung Cột STT (Số Thứ Tự) Cho 14 Bảng Danh Mục Master Data:

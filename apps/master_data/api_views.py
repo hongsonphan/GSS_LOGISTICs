@@ -100,21 +100,21 @@ class MasterDataFormOptionsAPIView(APIView):
             else:
                 warehouses.append(loc_dict)
 
-        # 3. Tài xế & Xe được gán
+        # 3. Tài xế Nội bộ TVL
         from apps.personnel.models import EmployeeRole
         drivers = []
         for drv in Employee.objects.filter(role=EmployeeRole.DRIVER).order_by('nickname', 'full_name'):
             veh = getattr(drv, 'assigned_vehicle', None)
             if not veh and hasattr(drv, 'vehicles'):
                 veh = drv.vehicles.first()
-            plate_info = f" - Xe: {veh.license_plate}" if veh else ""
             drivers.append({
                 'id': drv.id,
                 'code': drv.code,
                 'nickname': drv.nickname or drv.full_name,
                 'full_name': drv.full_name,
                 'phone': drv.phone_number,
-                'label': f"{drv.nickname or drv.full_name} ({drv.code}){plate_info}"
+                'default_vehicle_plate': veh.license_plate if veh else '',
+                'label': f"{drv.nickname or drv.full_name} ({drv.code})"
             })
 
         # 4. Quy cách container / Xe
@@ -129,16 +129,20 @@ class MasterDataFormOptionsAPIView(APIView):
             for ct in ContainerType.objects.all().order_by('category', 'code')
         ]
 
-        # 5. Danh sách Đầu Kéo & Rơ-mooc
+        # 5. Danh sách Đầu kéo/ Xe tải & Rơ-moóc
         vehicles = [
             {
                 'id': v.id,
                 'plate': v.license_plate,
+                'vehicle_type': v.get_vehicle_type_display(),
+                'vehicle_type_code': v.vehicle_type,
                 'ownership': v.get_ownership_type_display(),
                 'ownership_code': v.ownership_type,
+                'subcontractor_id': v.subcontractor_id,
+                'subcontractor_name': (v.subcontractor.short_name or v.subcontractor.name) if v.subcontractor else '',
                 'driver_id': v.current_driver_id,
                 'driver_name': (v.current_driver.nickname or v.current_driver.full_name) if v.current_driver else '',
-                'label': f"{v.license_plate} ({v.get_ownership_type_display()})"
+                'label': f"{v.license_plate} ({v.get_vehicle_type_display()})" if v.ownership_type == VehicleOwnership.OWNED else f"{v.license_plate} ({v.get_vehicle_type_display()} - {v.subcontractor.short_name if v.subcontractor else '3PL'})"
             }
             for v in Vehicle.objects.all().order_by('license_plate')
         ]
@@ -466,9 +470,21 @@ class ExpenseItemDetailAPIView(MasterDataBaseAPIView):
 class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
+        group_filter = request.GET.get('customer_group', '').strip()
         qs = Customer.objects.all()
         if q:
-            qs = qs.filter(Q(code__icontains=q) | Q(name__icontains=q) | Q(short_name__icontains=q) | Q(tax_code__icontains=q))
+            qs = qs.filter(
+                Q(code__icontains=q) | 
+                Q(name__icontains=q) | 
+                Q(short_name__icontains=q) | 
+                Q(tax_code__icontains=q) |
+                Q(company_email__icontains=q) |
+                Q(contact_person__icontains=q) |
+                Q(contact_email__icontains=q) |
+                Q(bank_account_number__icontains=q)
+            )
+        if group_filter:
+            qs = qs.filter(customer_group=group_filter)
 
         data = []
         for c in qs:
@@ -477,10 +493,21 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
                 'code': c.code,
                 'name': c.name,
                 'short_name': c.short_name,
+                'customer_group': c.customer_group or 'COMMERCIAL_TRADING',
+                'customer_group_label': c.get_customer_group_display() if hasattr(c, 'get_customer_group_display') else (c.customer_group or ''),
                 'tax_code': c.tax_code,
                 'address': c.address,
+                'company_email': c.company_email or '',
                 'contact_person': c.contact_person,
+                'contact_title': c.contact_title or '',
+                'contact_email': c.contact_email or '',
                 'phone': c.phone,
+                'bank_account_number': c.bank_account_number or '',
+                'bank_name': c.bank_name or '',
+                'bank_branch': c.bank_branch or '',
+                'bank_account_holder': c.bank_account_holder or '',
+                'payment_term_days': c.payment_term_days or 30,
+                'credit_limit': float(c.credit_limit) if c.credit_limit else 0,
                 'notes': c.notes,
                 'tariffs_count': c.tariffs.count(),
             })
@@ -503,15 +530,53 @@ class CustomerMasterListCreateAPIView(MasterDataBaseAPIView):
             code=code,
             name=name,
             short_name=short_name,
+            customer_group=data.get('customer_group', 'COMMERCIAL_TRADING') or 'COMMERCIAL_TRADING',
             tax_code=data.get('tax_code', '').strip(),
             address=data.get('address', '').strip(),
+            company_email=data.get('company_email', '').strip(),
             contact_person=data.get('contact_person', '').strip(),
+            contact_title=data.get('contact_title', '').strip(),
+            contact_email=data.get('contact_email', '').strip(),
             phone=data.get('phone', '').strip(),
+            bank_account_number=data.get('bank_account_number', '').strip(),
+            bank_name=data.get('bank_name', '').strip(),
+            bank_branch=data.get('bank_branch', '').strip(),
+            bank_account_holder=data.get('bank_account_holder', '').strip(),
+            payment_term_days=int(data.get('payment_term_days', 30) or 30),
+            credit_limit=float(data.get('credit_limit', 0) or 0),
             notes=data.get('notes', '').strip(),
         )
         return Response({'success': True, 'message': f'Đã thêm khách hàng [{cust.name}] thành công!', 'id': cust.id}, status=status.HTTP_201_CREATED)
 
 class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
+    def get(self, request, pk):
+        cust = Customer.objects.filter(id=pk).first()
+        if not cust:
+            return Response({'error': 'Không tìm thấy khách hàng!'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            'id': cust.id,
+            'code': cust.code,
+            'name': cust.name,
+            'short_name': cust.short_name,
+            'customer_group': cust.customer_group or 'COMMERCIAL_TRADING',
+            'customer_group_label': cust.get_customer_group_display() if hasattr(cust, 'get_customer_group_display') else (cust.customer_group or ''),
+            'tax_code': cust.tax_code,
+            'address': cust.address,
+            'company_email': cust.company_email or '',
+            'contact_person': cust.contact_person,
+            'contact_title': cust.contact_title or '',
+            'contact_email': cust.contact_email or '',
+            'phone': cust.phone,
+            'bank_account_number': cust.bank_account_number or '',
+            'bank_name': cust.bank_name or '',
+            'bank_branch': cust.bank_branch or '',
+            'bank_account_holder': cust.bank_account_holder or '',
+            'payment_term_days': cust.payment_term_days or 30,
+            'credit_limit': float(cust.credit_limit) if cust.credit_limit else 0,
+            'notes': cust.notes,
+            'tariffs_count': cust.tariffs.count(),
+        })
+
     def put(self, request, pk):
         cust = Customer.objects.filter(id=pk).first()
         if not cust:
@@ -519,10 +584,28 @@ class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
         data = request.data
         if 'name' in data: cust.name = data['name'].strip()
         if 'short_name' in data: cust.short_name = data['short_name'].strip()
+        if 'customer_group' in data: cust.customer_group = data['customer_group']
         if 'tax_code' in data: cust.tax_code = data['tax_code'].strip()
         if 'address' in data: cust.address = data['address'].strip()
+        if 'company_email' in data: cust.company_email = data['company_email'].strip()
         if 'contact_person' in data: cust.contact_person = data['contact_person'].strip()
+        if 'contact_title' in data: cust.contact_title = data['contact_title'].strip()
+        if 'contact_email' in data: cust.contact_email = data['contact_email'].strip()
         if 'phone' in data: cust.phone = data['phone'].strip()
+        if 'bank_account_number' in data: cust.bank_account_number = data['bank_account_number'].strip()
+        if 'bank_name' in data: cust.bank_name = data['bank_name'].strip()
+        if 'bank_branch' in data: cust.bank_branch = data['bank_branch'].strip()
+        if 'bank_account_holder' in data: cust.bank_account_holder = data['bank_account_holder'].strip()
+        if 'payment_term_days' in data:
+            try:
+                cust.payment_term_days = int(data['payment_term_days'] or 30)
+            except (ValueError, TypeError):
+                cust.payment_term_days = 30
+        if 'credit_limit' in data:
+            try:
+                cust.credit_limit = float(data['credit_limit'] or 0)
+            except (ValueError, TypeError):
+                cust.credit_limit = 0
         if 'notes' in data: cust.notes = data['notes'].strip()
         cust.save()
         return Response({'success': True, 'message': f'Đã cập nhật thông tin khách hàng [{cust.name}]!'})

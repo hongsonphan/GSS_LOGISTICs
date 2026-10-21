@@ -241,16 +241,25 @@ CATALOG_REGISTRY = {
             {'key': 'code', 'header': 'Mã Khách Hàng (*)', 'required': True, 'type': 'str', 'sample': 'KH_SAMVINA'},
             {'key': 'name', 'header': 'Tên Đầy Đủ Doanh Nghiệp (*)', 'required': True, 'type': 'str', 'sample': 'CÔNG TY TNHH SAMVINA LOGISTICS'},
             {'key': 'short_name', 'header': 'Tên Viết Tắt / Giao Dịch', 'required': False, 'type': 'str', 'sample': 'SAMVINA'},
+            {'key': 'customer_group', 'header': 'Nhóm Khách Hàng', 'required': False, 'type': 'str', 'sample': 'COMMERCIAL_TRADING'},
             {'key': 'tax_code', 'header': 'Mã Số Thuế', 'required': False, 'type': 'str', 'sample': '0315897645'},
             {'key': 'address', 'header': 'Địa Chỉ Trụ Sở (*)', 'required': True, 'type': 'str', 'sample': 'Tòa nhà Pearl Plaza, 561A Điện Biên Phủ, P. 25, Bình Thạnh, TP.HCM'},
+            {'key': 'company_email', 'header': 'Email Công Ty (HĐĐT/Công Nợ)', 'required': False, 'type': 'str', 'sample': 'ketoan@samvina.vn'},
             {'key': 'contact_person', 'header': 'Người Phụ Trách', 'required': False, 'type': 'str', 'sample': 'Nguyễn Văn Minh'},
+            {'key': 'contact_title', 'header': 'Chức Vụ Người Liên Hệ', 'required': False, 'type': 'str', 'sample': 'Trưởng phòng XNK'},
+            {'key': 'contact_email', 'header': 'Email Người Liên Hệ', 'required': False, 'type': 'str', 'sample': 'minh.nguyen@samvina.vn'},
             {'key': 'phone', 'header': 'Số Điện Thoại / Hotline', 'required': False, 'type': 'str', 'sample': '0909.123.456'},
+            {'key': 'bank_account_number', 'header': 'Số Tài Khoản Bank', 'required': False, 'type': 'str', 'sample': '0123456789'},
+            {'key': 'bank_name', 'header': 'Tên Ngân Hàng', 'required': False, 'type': 'str', 'sample': 'Vietcombank'},
+            {'key': 'bank_branch', 'header': 'Chi Nhánh Ngân Hàng', 'required': False, 'type': 'str', 'sample': 'CN Tân Bình, TP.HCM'},
+            {'key': 'payment_term_days', 'header': 'Kỳ Hạn Thanh Toán (Ngày)', 'required': False, 'type': 'int', 'sample': 30},
+            {'key': 'credit_limit', 'header': 'Hạn Mức Nợ (VNĐ)', 'required': False, 'type': 'int', 'sample': 100000000},
             {'key': 'notes', 'header': 'Ghi Chú Công Nợ / Hợp Đồng', 'required': False, 'type': 'str', 'sample': 'Hạn thanh toán 30 ngày từ ngày xuất hóa đơn'}
         ],
         'samples': [
-            ['KH_SAMVINA', 'CÔNG TY TNHH SAMVINA LOGISTICS', 'SAMVINA', '0315897645', 'Tòa nhà Pearl Plaza, 561A Điện Biên Phủ, P. 25, Bình Thạnh, TP.HCM', 'Nguyễn Văn Minh', '0909.123.456', 'Công nợ 30 ngày'],
-            ['KH_VICACO', 'CÔNG TY CỔ PHẦN VICACO CONTAINER', 'VICACO', '0304561234', '12 Nguyễn Huệ, P. Bến Nghé, Quận 1, TP.HCM', 'Trần Thị Thu', '0988.765.432', 'Hợp đồng FCL nguyên chuyến'],
-            ['KH_WCA_TTI', 'CÔNG TY TNHH TECHTRONIC INDUSTRIES VN (TTI)', 'TTI VIỆT NAM', '3702891234', 'KCN Đại Đăng, TP. Thủ Dầu Một, Bình Dương', 'Mr. David Lee', '0274.389.9999', 'Cần tài xế có thẻ an toàn']
+            ['KH_SAMVINA', 'CÔNG TY TNHH SAMVINA LOGISTICS', 'SAMVINA', 'COMMERCIAL_TRADING', '0315897645', 'Tòa nhà Pearl Plaza, 561A Điện Biên Phủ, P. 25, Bình Thạnh, TP.HCM', 'ketoan@samvina.vn', 'Nguyễn Văn Minh', 'Trưởng phòng XNK', 'minh.nguyen@samvina.vn', '0909.123.456', '0123456789', 'Vietcombank', 'CN Tân Bình', 30, 100000000, 'Công nợ 30 ngày'],
+            ['KH_VICACO', 'CÔNG TY CỔ PHẦN VICACO CONTAINER', 'VICACO', 'FORWARDER_LOGISTICS', '0304561234', '12 Nguyễn Huệ, P. Bến Nghé, Quận 1, TP.HCM', 'accountant@vicaco.vn', 'Trần Thị Thu', 'Điều phối viên', 'thu.tran@vicaco.vn', '0988.765.432', '9876543210', 'Techcombank', 'CN Sài Gòn', 45, 200000000, 'Hợp đồng FCL nguyên chuyến'],
+            ['KH_WCA_TTI', 'CÔNG TY TNHH TECHTRONIC INDUSTRIES VN (TTI)', 'TTI VIỆT NAM', 'FDI_ENTERPRISE', '3702891234', 'KCN Đại Đăng, TP. Thủ Dầu Một, Bình Dương', 'ap@tti-group.com', 'Mr. David Lee', 'Supply Chain Manager', 'david.lee@tti-group.com', '0274.389.9999', '1122334455', 'HSBC', 'CN TP.HCM', 60, 500000000, 'Cần tài xế có thẻ an toàn']
         ]
     },
 
