@@ -591,7 +591,7 @@
                     <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm 3PL
                   </button>
                 </div>
-                <select id="inp-subcontractor" onchange="onSubcontractorSelected(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full">
+                <select id="inp-subcontractor" onchange="onSubcontractorSelected(this.value, this)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full">
                   <option value="">-- Chọn Nhà Xe Thầu Phụ / 3PL --</option>
                 </select>
                 <div id="err-subcontractor" class="field-error-msg hidden"></div>
@@ -605,7 +605,7 @@
                   </label>
                 </div>
                 <div class="space-y-1">
-                  <select id="inp-sub-vehicle" onchange="onSubVehicleSelectChange(this.value)" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-900 text-xs w-full">
+                  <select id="inp-sub-vehicle" onchange="onSubVehicleSelectChange(this.value, this)" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-900 text-xs w-full">
                     <option value="">-- Chọn Xe Thuộc 3PL --</option>
                     <option value="CUSTOM">+ Nhập Biển Số Xe Khác...</option>
                   </select>
@@ -622,7 +622,7 @@
                   </label>
                 </div>
                 <div class="space-y-1">
-                  <select id="inp-sub-driver" onchange="onSubDriverSelectChange(this.value)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-900 text-xs w-full">
+                  <select id="inp-sub-driver" onchange="onSubDriverSelectChange(this.value, this)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-900 text-xs w-full">
                     <option value="">-- Chọn Tài Xế 3PL --</option>
                     <option value="CUSTOM">+ Nhập Tài Xế Mới...</option>
                   </select>

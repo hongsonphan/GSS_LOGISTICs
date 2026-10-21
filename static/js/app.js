@@ -7079,72 +7079,71 @@ function showSaleExistingBookingFile(fileUrl, fileName, docs = []) {
 }
 // --- 3.8. QUẢN LÝ CHẾ ĐỘ ĐỘI XE: XE NHÀ vs XE BẠN / 3PL (Phương Án 3: Quản Lý Theo Đối Tác) ---
 function setTripCarrierMode(mode) {
-    const btnOwned = document.getElementById('btn-fleet-owned');
-    const btnSub = document.getElementById('btn-fleet-subcontractor');
-    const inpMode = document.getElementById('inp-carrier-mode');
-    const secDirect = document.getElementById('section-direct-dispatch');
-    const secDropHook = document.getElementById('section-drop-hook-dispatch');
-    const secSub = document.getElementById('section-subcontractor-dispatch');
-    const dropHookToggleWrap = document.getElementById('wrapper-drop-hook-toggle');
-    const chkDropHook = document.getElementById('chk-drop-hook');
-
-    if (inpMode) inpMode.value = mode;
+    document.querySelectorAll('#inp-carrier-mode').forEach(el => el.value = mode);
 
     if (mode === 'SUBCONTRACTOR') {
-        if (btnOwned) {
-            btnOwned.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1';
-        }
-        if (btnSub) {
-            btnSub.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition-all bg-amber-500 text-white shadow-2xs flex items-center gap-1';
-        }
-        if (secDirect) secDirect.classList.add('hidden-view');
-        if (secDropHook) secDropHook.classList.add('hidden-view');
-        if (dropHookToggleWrap) dropHookToggleWrap.classList.add('hidden-view');
-        if (secSub) secSub.classList.remove('hidden-view');
+        document.querySelectorAll('#btn-fleet-owned').forEach(el => {
+            el.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1';
+        });
+        document.querySelectorAll('#btn-fleet-subcontractor').forEach(el => {
+            el.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition-all bg-amber-500 text-white shadow-2xs flex items-center gap-1';
+        });
+        document.querySelectorAll('#section-direct-dispatch').forEach(el => el.classList.add('hidden-view'));
+        document.querySelectorAll('#section-drop-hook-dispatch').forEach(el => el.classList.add('hidden-view'));
+        document.querySelectorAll('#wrapper-drop-hook-toggle').forEach(el => el.classList.add('hidden-view'));
+        document.querySelectorAll('#section-subcontractor-dispatch').forEach(el => el.classList.remove('hidden-view'));
 
         // Nạp danh sách Thầu phụ vào select nếu có cache
         if (masterDataFormOptionsCache && masterDataFormOptionsCache.subcontractors) {
-            const subSel = document.getElementById('inp-subcontractor');
-            if (subSel && subSel.options.length <= 1) {
-                masterDataFormOptionsCache.subcontractors.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.innerText = s.label || s.name;
-                    subSel.appendChild(opt);
-                });
-            }
+            document.querySelectorAll('#inp-subcontractor').forEach(subSel => {
+                if (subSel && subSel.options.length <= 1) {
+                    masterDataFormOptionsCache.subcontractors.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.innerText = s.label || s.name;
+                        subSel.appendChild(opt);
+                    });
+                }
+            });
         }
     } else {
-        if (btnOwned) {
-            btnOwned.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition-all bg-white text-teal-800 shadow-2xs flex items-center gap-1';
-        }
-        if (btnSub) {
-            btnSub.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1';
-        }
-        if (secSub) secSub.classList.add('hidden-view');
-        if (dropHookToggleWrap) dropHookToggleWrap.classList.remove('hidden-view');
+        document.querySelectorAll('#btn-fleet-owned').forEach(el => {
+            el.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition-all bg-white text-teal-800 shadow-2xs flex items-center gap-1';
+        });
+        document.querySelectorAll('#btn-fleet-subcontractor').forEach(el => {
+            el.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1';
+        });
+        document.querySelectorAll('#section-subcontractor-dispatch').forEach(el => el.classList.add('hidden-view'));
+        document.querySelectorAll('#wrapper-drop-hook-toggle').forEach(el => el.classList.remove('hidden-view'));
+
+        const chkDropHook = document.getElementById('chk-drop-hook');
         if (chkDropHook && chkDropHook.checked) {
-            if (secDropHook) secDropHook.classList.remove('hidden-view');
-            if (secDirect) secDirect.classList.add('hidden-view');
+            document.querySelectorAll('#section-drop-hook-dispatch').forEach(el => el.classList.remove('hidden-view'));
+            document.querySelectorAll('#section-direct-dispatch').forEach(el => el.classList.add('hidden-view'));
         } else {
-            if (secDirect) secDirect.classList.remove('hidden-view');
-            if (secDropHook) secDropHook.classList.add('hidden-view');
+            document.querySelectorAll('#section-direct-dispatch').forEach(el => el.classList.remove('hidden-view'));
+            document.querySelectorAll('#section-drop-hook-dispatch').forEach(el => el.classList.add('hidden-view'));
         }
     }
 }
 
-async function onSubcontractorSelected(subId) {
-    const vehSel = document.getElementById('inp-sub-vehicle');
-    const drvSel = document.getElementById('inp-sub-driver');
-    const customVehInp = document.getElementById('inp-sub-vehicle-custom');
-    const customDrvDiv = document.getElementById('div-sub-driver-custom');
+async function onSubcontractorSelected(subId, triggerEl = null) {
+    const context = triggerEl ? (triggerEl.closest('form') || triggerEl.closest('#modal-create-trip') || triggerEl.closest('#view-create-trip') || document) : document;
+    const vehSels = context.querySelectorAll('#inp-sub-vehicle');
+    const drvSels = context.querySelectorAll('#inp-sub-driver');
+    const customVehInps = context.querySelectorAll('#inp-sub-vehicle-custom');
+    const customDrvDivs = context.querySelectorAll('#div-sub-driver-custom');
 
-    if (customVehInp) customVehInp.classList.add('hidden-view');
-    if (customDrvDiv) customDrvDiv.classList.add('hidden-view');
+    customVehInps.forEach(el => el.classList.add('hidden-view'));
+    customDrvDivs.forEach(el => el.classList.add('hidden-view'));
 
     if (!subId) {
-        if (vehSel) vehSel.innerHTML = '<option value="">-- Chọn Xe Thuộc 3PL --</option><option value="CUSTOM">+ Nhập Biển Số Xe Khác...</option>';
-        if (drvSel) drvSel.innerHTML = '<option value="">-- Chọn Tài Xế 3PL --</option><option value="CUSTOM">+ Nhập Tài Xế Mới...</option>';
+        vehSels.forEach(vehSel => {
+            vehSel.innerHTML = '<option value="">-- Chọn Xe Thuộc 3PL --</option><option value="CUSTOM">+ Nhập Biển Số Xe Khác...</option>';
+        });
+        drvSels.forEach(drvSel => {
+            drvSel.innerHTML = '<option value="">-- Chọn Tài Xế 3PL --</option><option value="CUSTOM">+ Nhập Tài Xế Mới...</option>';
+        });
         return;
     }
 
@@ -7152,7 +7151,7 @@ async function onSubcontractorSelected(subId) {
         const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/fleet/`);
         if (res.ok) {
             const data = await res.json();
-            if (vehSel) {
+            vehSels.forEach(vehSel => {
                 vehSel.innerHTML = '<option value="">-- Chọn Xe Thuộc 3PL --</option>';
                 if (data.vehicles && data.vehicles.length > 0) {
                     data.vehicles.forEach(v => {
@@ -7166,9 +7165,9 @@ async function onSubcontractorSelected(subId) {
                 optCustom.value = 'CUSTOM';
                 optCustom.innerText = '+ Nhập Biển Số Xe Khác...';
                 vehSel.appendChild(optCustom);
-            }
+            });
 
-            if (drvSel) {
+            drvSels.forEach(drvSel => {
                 drvSel.innerHTML = '<option value="">-- Chọn Tài Xế 3PL --</option>';
                 if (data.drivers && data.drivers.length > 0) {
                     data.drivers.forEach(d => {
@@ -7184,42 +7183,51 @@ async function onSubcontractorSelected(subId) {
                 optCustom.value = 'CUSTOM';
                 optCustom.innerText = '+ Nhập Tài Xế Mới...';
                 drvSel.appendChild(optCustom);
-            }
+            });
         }
     } catch (e) {
         console.error('Lỗi tải danh bạ xe/tài 3PL:', e);
     }
 }
 
-function onSubVehicleSelectChange(val) {
-    const customInp = document.getElementById('inp-sub-vehicle-custom');
-    if (customInp) {
+function onSubVehicleSelectChange(val, triggerEl = null) {
+    const context = triggerEl ? (triggerEl.closest('form') || triggerEl.closest('#modal-create-trip') || triggerEl.closest('#view-create-trip') || document) : document;
+    const customInps = context.querySelectorAll('#inp-sub-vehicle-custom');
+    customInps.forEach(customInp => {
         if (val === 'CUSTOM') {
             customInp.classList.remove('hidden-view');
             customInp.focus();
         } else {
             customInp.classList.add('hidden-view');
         }
-    }
+    });
 }
 
-function onSubDriverSelectChange(val) {
-    const customDiv = document.getElementById('div-sub-driver-custom');
-    const phoneInp = document.getElementById('inp-sub-driver-phone');
-    const nameInp = document.getElementById('inp-sub-driver-name');
-    const drvSel = document.getElementById('inp-sub-driver');
+function onSubDriverSelectChange(val, triggerEl = null) {
+    const context = triggerEl ? (triggerEl.closest('form') || triggerEl.closest('#modal-create-trip') || triggerEl.closest('#view-create-trip') || document) : document;
+    const customDivs = context.querySelectorAll('#div-sub-driver-custom');
+    const phoneInps = context.querySelectorAll('#inp-sub-driver-phone');
+    const nameInps = context.querySelectorAll('#inp-sub-driver-name');
 
     if (val === 'CUSTOM') {
-        if (customDiv) customDiv.classList.remove('hidden-view');
-        if (nameInp) nameInp.focus();
+        customDivs.forEach(el => el.classList.remove('hidden-view'));
+        phoneInps.forEach(el => el.value = '');
+        nameInps.forEach(el => {
+            el.value = '';
+            el.focus();
+        });
     } else {
-        if (customDiv) customDiv.classList.add('hidden-view');
-        const selectedOpt = drvSel?.selectedOptions[0];
-        if (selectedOpt && selectedOpt.dataset.phone && phoneInp) {
-            phoneInp.value = selectedOpt.dataset.phone;
-        }
-        if (selectedOpt && selectedOpt.dataset.name && nameInp) {
-            nameInp.value = selectedOpt.dataset.name;
+        customDivs.forEach(el => el.classList.add('hidden-view'));
+        const drvSel = triggerEl || context.querySelector('#inp-sub-driver');
+        if (drvSel && drvSel.value) {
+            const selOpt = drvSel.selectedOptions[0];
+            const p = selOpt ? selOpt.dataset.phone : '';
+            const n = selOpt ? selOpt.dataset.name : '';
+            phoneInps.forEach(el => el.value = p || '');
+            nameInps.forEach(el => el.value = n || '');
+        } else {
+            phoneInps.forEach(el => el.value = '');
+            nameInps.forEach(el => el.value = '');
         }
     }
 }
@@ -14216,23 +14224,25 @@ function populateMasterDataDropdowns() {
     const { customers, locations, drivers, vehicles, shipping_lines, routes } = masterDataFormOptionsCache;
 
     function fillSelect(elId, items, placeholder, valueKey = 'name', textKey = 'label') {
-        const sel = document.getElementById(elId);
-        if (!sel) return;
-        const currentVal = sel.value;
-        sel.innerHTML = `<option value="">${placeholder}</option>`;
-        if (Array.isArray(items)) {
-            items.forEach(item => {
-                const val = typeof item === 'object' ? item[valueKey] : item;
-                const txt = typeof item === 'object' ? (item[textKey] || item.name || item.code) : item;
-                const opt = document.createElement('option');
-                opt.value = val;
-                opt.innerText = txt;
-                sel.appendChild(opt);
-            });
-        }
-        if (currentVal) {
-            setSelectValueCaseInsensitive(sel, currentVal);
-        }
+        const elements = document.querySelectorAll('#' + elId);
+        if (!elements.length) return;
+        elements.forEach(sel => {
+            const currentVal = sel.value;
+            sel.innerHTML = `<option value="">${placeholder}</option>`;
+            if (Array.isArray(items)) {
+                items.forEach(item => {
+                    const val = typeof item === 'object' ? item[valueKey] : item;
+                    const txt = typeof item === 'object' ? (item[textKey] || item.name || item.code) : item;
+                    const opt = document.createElement('option');
+                    opt.value = val;
+                    opt.innerText = txt;
+                    sel.appendChild(opt);
+                });
+            }
+            if (currentVal) {
+                setSelectValueCaseInsensitive(sel, currentVal);
+            }
+        });
     }
 
     // Modal Điều Vận (modal-create-trip)

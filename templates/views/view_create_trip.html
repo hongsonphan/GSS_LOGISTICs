@@ -502,18 +502,127 @@
                 <!-- Section 3: Phân công & Nghiệp vụ Cắt Kéo (Drop & Hook) -->
                 <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
                     <div class="flex items-center justify-between pb-2 border-b border-slate-100 flex-wrap gap-2">
-                        <h4 class="font-bold text-slate-800 flex items-center font-heading text-xs uppercase tracking-wider mb-0">
-                            <i class="ph-bold ph-users text-teal-600 mr-2 text-base"></i> 3. Phân Công Tài Xế & Cấu Hình Chặng
-                        </h4>
-                        
-                        <!-- Toggle Cắt Kéo -->
-                        <label class="inline-flex items-center cursor-pointer select-none">
-                            <input type="checkbox" id="chk-drop-hook" onchange="toggleDropHookMode(this.checked)" class="sr-only peer">
-                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600 relative"></div>
-                            <span class="ml-2 text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
-                                <i class="ph-bold ph-arrows-split text-amber-600"></i> Chế độ Cắt Kéo / Cắt Mooc (2 Tài)
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-bold text-slate-800 flex items-center font-heading text-xs uppercase tracking-wider mb-0">
+                                <i class="ph-bold ph-users text-teal-600 mr-2 text-base"></i> 3. Phân Công Tài Xế & Cấu Hình Chặng
+                            </h4>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <!-- Switch Chế độ Đội xe: Xe Nhà vs Xe Bạn 3PL -->
+                            <div class="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+                                <button type="button" id="btn-fleet-owned" onclick="setTripCarrierMode('OWNED')"
+                                    class="px-2.5 py-1 rounded-md text-[11px] font-bold transition-all bg-white text-teal-800 shadow-2xs flex items-center gap-1">
+                                    <i class="ph-bold ph-truck text-teal-600"></i> Xe Nhà (TVL)
+                                </button>
+                                <button type="button" id="btn-fleet-subcontractor" onclick="setTripCarrierMode('SUBCONTRACTOR')"
+                                    class="px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1">
+                                    <i class="ph-bold ph-handshake text-amber-600"></i> Xe Bạn / 3PL
+                                </button>
+                            </div>
+                            <input type="hidden" id="inp-carrier-mode" value="OWNED">
+
+                            <!-- Toggle Cắt Kéo (Chỉ khả dụng khi chạy xe nhà) -->
+                            <div id="wrapper-drop-hook-toggle">
+                                <label class="inline-flex items-center cursor-pointer select-none">
+                                    <input type="checkbox" id="chk-drop-hook" onchange="toggleDropHookMode(this.checked)" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600 relative"></div>
+                                    <span class="ml-2 text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                                        <i class="ph-bold ph-arrows-split text-amber-600"></i> Cắt Kéo (2 Tài)
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Khối Đối Tác Vận Tải 3PL / Xe Bạn (Phương án 3: Quản lý theo Đối tác) -->
+                    <div id="section-subcontractor-dispatch" class="hidden-view p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2.5 animate-fade-in">
+                        <div class="flex items-center justify-between border-b border-amber-200/80 pb-1 flex-wrap gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-amber-950 flex items-center gap-1.5 font-heading">
+                                <i class="ph-bold ph-handshake text-amber-700 text-sm"></i> Thông Tin Đối Tác Vận Tải 3PL / Thầu Phụ
                             </span>
-                        </label>
+                            <span class="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-full border border-amber-200">
+                                Tự động lọc xe & tài xế theo nhà xe
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                            <!-- 1. Chọn Đối tác 3PL -->
+                            <div class="md:col-span-5">
+                                <div class="flex items-center justify-between h-5 mb-1">
+                                    <label class="block font-bold text-amber-950 text-xs truncate" for="inp-subcontractor">
+                                        Nhà Xe / Đối Tác 3PL <span class="text-rose-500">*</span>
+                                    </label>
+                                    <button type="button" onclick="openMasterDataModalQuick('subcontractors', 'inp-subcontractor')"
+                                        class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-300 flex items-center gap-0.5">
+                                        <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm 3PL
+                                    </button>
+                                </div>
+                                <select id="inp-subcontractor" onchange="onSubcontractorSelected(this.value, this)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full rounded-lg">
+                                    <option value="">-- Chọn Nhà Xe Thầu Phụ / 3PL --</option>
+                                </select>
+                                <div id="err-subcontractor" class="field-error-msg hidden"></div>
+                            </div>
+
+                            <!-- 2. Biển số xe 3PL -->
+                            <div class="md:col-span-3">
+                                <div class="flex items-center justify-between h-5 mb-1">
+                                    <label class="block font-bold text-amber-950 text-xs truncate" for="inp-sub-vehicle">
+                                        Biển Số Xe 3PL <span class="text-rose-500">*</span>
+                                    </label>
+                                </div>
+                                <div class="space-y-1">
+                                    <select id="inp-sub-vehicle" onchange="onSubVehicleSelectChange(this.value, this)" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-900 text-xs w-full rounded-lg">
+                                        <option value="">-- Chọn Xe Thuộc 3PL --</option>
+                                        <option value="CUSTOM">+ Nhập Biển Số Xe Khác...</option>
+                                    </select>
+                                    <input type="text" id="inp-sub-vehicle-custom" placeholder="VD: 51C-123.45" class="hidden-view form-input h-8 px-2 py-1 uppercase font-mono font-bold text-xs w-full border-amber-300 rounded-lg">
+                                </div>
+                                <div id="err-sub-vehicle" class="field-error-msg hidden"></div>
+                            </div>
+
+                            <!-- 3. Bác tài 3PL -->
+                            <div class="md:col-span-4">
+                                <div class="flex items-center justify-between h-5 mb-1">
+                                    <label class="block font-bold text-amber-950 text-xs truncate" for="inp-sub-driver">
+                                        Bác Tài 3PL <span class="text-rose-500">*</span>
+                                    </label>
+                                </div>
+                                <div class="space-y-1">
+                                    <select id="inp-sub-driver" onchange="onSubDriverSelectChange(this.value, this)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-900 text-xs w-full rounded-lg">
+                                        <option value="">-- Chọn Tài Xế 3PL --</option>
+                                        <option value="CUSTOM">+ Nhập Tài Xế Mới...</option>
+                                    </select>
+                                    <div id="div-sub-driver-custom" class="hidden-view grid grid-cols-2 gap-1.5 pt-0.5">
+                                        <input type="text" id="inp-sub-driver-name" placeholder="Họ tên tài xế" class="form-input h-8 px-2 py-1 text-xs font-bold border-amber-300 rounded-lg">
+                                        <input type="tel" id="inp-sub-driver-phone" placeholder="Số điện thoại" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 rounded-lg">
+                                    </div>
+                                </div>
+                                <div id="err-sub-driver" class="field-error-msg hidden"></div>
+                            </div>
+                        </div>
+
+                        <!-- Dòng 2: Cước khoán trả 3PL & Tạm ứng dọc đường -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 border-t border-amber-200/60">
+                            <div>
+                                <label class="block font-bold text-amber-950 text-xs mb-1" for="inp-sub-cost">
+                                    Giá Cước Khoán Trả 3PL (VNĐ) <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" id="inp-sub-cost" placeholder="VD: 3.500.000" oninput="formatCurrencyInput(this)" class="form-input h-8.5 px-2 py-1 font-bold text-amber-900 text-xs w-full font-mono rounded-lg">
+                                <div id="err-sub-cost" class="field-error-msg hidden"></div>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 text-xs mb-1" for="inp-sub-advance">
+                                    Tạm Ứng Dọc Đường (Nếu có)
+                                </label>
+                                <input type="text" id="inp-sub-advance" placeholder="VD: 500.000" oninput="formatCurrencyInput(this)" class="form-input h-8.5 px-2 py-1 text-slate-800 text-xs w-full font-mono rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 text-xs mb-1" for="inp-sub-notes">
+                                    Ghi Chú Thỏa Thuận Cước 3PL
+                                </label>
+                                <input type="text" id="inp-sub-notes" placeholder="VD: Cước đã bao gồm phí nâng hạ cont..." class="form-input h-8.5 px-2 py-1 text-xs text-slate-800 w-full rounded-lg">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
