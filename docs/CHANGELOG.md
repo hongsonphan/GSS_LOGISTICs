@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.7] - 2026-10-21 (Chuẩn Hóa Bảo Mật URL HashID Chống IDOR Toàn Ứng Dụng: Mã Hóa HashID Bản Tin & Công Việc, Tự Động Redirect 301 Từ URL Cũ, Đồng Bộ Chuông Thông Báo & Deep-Link)
+
+### 1. Chuẩn Hóa Bảo Mật URL Bằng HashID Chống Quét IDOR:
+- **Bộ Mã Hóa HashID Chuyên Dụng (`core/security.py`):**
+  * Triển khai singleton `_NEWS_HASHIDS` với bảng mã an toàn `abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789`, độ dài tối thiểu 8 ký tự, loại bỏ các ký tự dễ nhầm lẫn (`l`, `1`, `I`, `0`, `O`).
+  * Cung cấp các hàm chuẩn hóa: `get_news_hashid()`, `decode_news_hashid()`, `get_task_hashid()`, `decode_task_hashid()`.
+  * Thuộc tính động `hashid` trên model `CompanyPost` (`apps/collaboration/models/news.py`) và `OfficeTask` (`apps/collaboration/models/tasks.py`).
+  * Bổ sung trường `hashid` trong serializers REST API: `CompanyPostListSerializer`, `CompanyPostDetailSerializer`, `OfficeTaskListSerializer`, `OfficeTaskDetailSerializer`.
+
+### 2. Tự Động Chuyển Hướng Vĩnh Viễn (HTTP 301 Permanent Redirect) Từ URL Số Cũ:
+- **Bảo Vệ URL Bản Tin (`apps/dispatch/views.py` - `news_detail_page_view`):**
+  * Phân giải linh hoạt cả `hashid` và `pk` số nguyên cũ để đảm bảo tính tương thích ngược tuyệt đối.
+  * Khi người dùng hoặc liên kết ngoài truy cập vào URL cũ dạng ID số (`https://logistics.bim.info.vn/news/2/`), hệ thống tự động trả về `HTTP 301 Moved Permanently` chuyển hướng trực tiếp sang URL bảo mật chuẩn HashID (`https://logistics.bim.info.vn/news/oBYJLe4r/`).
+  * Triệt tiêu hoàn toàn nguy cơ quét vét IDOR bài viết từ các tác nhân bên ngoài.
+
+### 3. Đồng Bộ Toàn Diện Trên Giao Diện & Hệ Thống Chuông Thông Báo:
+- **Chuông Thông Báo (Notifications API):**
+  * Tự động sinh link an toàn dạng `/news/{post.hashid}/` và `/tasks/#task-{task.hashid}` ngay từ tầng phát sinh thông báo sự kiện (`CompanyPost.save`, `OfficeTask.save`, yêu cầu gia hạn).
+- **Trang Chi Tiết Bản Tin (`templates/news_detail.html`):**
+  * Cập nhật URL chia sẻ (Share URL) và Meta Tags sử dụng `post_hashid`.
+  * Nút 'Sao chép liên kết' sao chép chính xác đường link `/news/<hashid>/`.
+- **Giao Diện SPA (`static/js/app.js` & `static/js/collaboration.js`):**
+  * Đồng bộ `openNewsDetailModal(post.hashid || post.id)` và `openTaskDetailDrawer(task.hashid || task.id)`.
+  * Hàm `resolveInitialRoute` tự động nhận diện và mở chính xác drawer/modal khi truy cập deep-link HashID từ thanh địa chỉ trình duyệt.
+
+### 4. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
+- **Kiểm tra Cú pháp JS:** `node -c static/js/app.js` & `node -c static/js/collaboration.js` -> 100% Passed.
+- **Bộ Kiểm Thử Tự Động:** Toàn bộ 110 Unit Tests của dự án (`python manage.py test --keepdb`) -> 100% Passed (110/110 passed, 0 failures, 0 errors).
+- **Kiểm thử An ninh Tự động (`apps/collaboration/tests.py`):** Kiểm chứng thành công mã phản hồi HTTP 301 và HTTP 200 cho cả URL cũ và URL HashID mới.
+
+
 ## [v3.6.6] - 2026-10-21 (Khắc Phục Lỗi NameError CompanyProfile Tại /news/<id>/, Tăng Cường Bảo Mật URL Toàn Ứng Dụng, Phân Quyền Phòng Ban & Trang 403 Chuẩn ERP)
 
 ### 1. Khắc Phục Triệt Để Lỗi 500 NameError Tại Trang Bản Tin (/news/<pk>/):
