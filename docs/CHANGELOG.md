@@ -2,6 +2,18 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.9] - 2026-10-21 (Vá Lỗi Lệch Cấu Trúc DOM & Tràn Layout Toàn Bộ Giao Diện Ứng Dụng)
+
+### 1. Khắc Phục Lỗi Layout Lệch Sang Phải & Khoảng Trắng DOM (Layout Shift & Sidebar Offset Fix):
+- **Phân Tích Nguyên Nhân Gốc Rễ (Root Cause):**
+  * Trong bản cập nhật tùy biến biểu đồ trước đó, một thẻ đóng `</div>` bị lặp thừa ở khối tùy chọn số liệu của modal tùy biến trong `templates/views/view_dashboard.html`.
+  * Do cơ chế nạp view dạng Single Page View (tất cả các template `view_dashboard.html`, `view_dispatch.html`, `view_personnel.html`... đều nằm trong container `<main id="main-views">` của `templates/base.html`), thẻ `</div>` thừa này đã đóng sớm container chính của trang.
+  * Hậu quả là toàn bộ các phân hệ phía sau (Nhân sự, Điều vận, Quản lý xe, Danh mục...) bị rớt ra ngoài `<main>`, trở thành phần tử con trực tiếp của thẻ cha `body` dạng Flexbox Row (`class="flex h-screen"`), gây hiện tượng nội dung bị dạt lệch 50% sang phải, thanh điều hướng và header bị co ép biến dạng.
+- **Giải Pháp Xử Lý & Xác Thực Triệt Để:**
+  * Loại bỏ chính xác thẻ `</div>` thừa trong `templates/views/view_dashboard.html`, sắp xếp lại khối cấu hình switch hiển thị số liệu vào đúng cấu trúc cấp cha `space-y-3.5`.
+  * Rà soát tự động toàn bộ 100% các file HTML template trong dự án (`templates/`): xác nhận độ cân bằng thẻ mở `<div` và thẻ đóng `</div>` đạt 100% (diff = 0).
+  * Bộ kiểm thử hồi quy tự động đạt tuyệt đối 119/119 tests passed.
+
 ## [v3.7.8] - 2026-10-21 (Định Dạng Phân Cách Phần Ngàn Cho Biểu Đồ, Tùy Biến Bật/Tắt Số Liệu & Tên Viết Tắt)
 
 ### 1. Chuẩn Hóa Định Dạng Phân Cách Phần Ngàn Trên Toàn Bộ Biểu Đồ (Number Formatting):
