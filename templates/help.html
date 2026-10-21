@@ -372,7 +372,7 @@
                                 <!-- Quy Chuẩn Thao Tác Bảng: Chuẩn 2 Nút Xem & In -->
                                 <a href="#sec-action-standard" class="nav-link flex items-center gap-2 px-3 py-1.5 rounded-lg text-amber-900 bg-amber-50 hover:bg-amber-100/80 transition-all font-bold text-[13px] border border-amber-200">
                                     <i class="ph-bold ph-lightning text-amber-600 shrink-0 text-xs"></i>
-                                    <span class="truncate">⭐ Chuẩn 2 Nút [Xem & In] (No Modal)</span>
+                                    <span class="truncate">⭐ Hướng Dẫn Thao Tác Bảng Dữ Liệu</span>
                                 </a>
 
                                 <!-- Con 3.1: Dashboard Tổng quan -->
@@ -538,7 +538,7 @@
                                             9.3. Bảng theo dõi (Kanban 4 cột & List)
                                         </a>
                                         <a href="#sec-input-tasks-drawer" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
-                                            9.4. Mở Task đã giao (Modal 4 nút chuẩn)
+                                            9.4. Xem & Xử lý công việc (Bộ 4 nút thao tác)
                                         </a>
                                         <a href="#sec-input-tasks-staff-badge" class="nav-link block px-2.5 py-1 rounded-lg text-slate-600 hover:text-teal-800 text-[12.5px] truncate">
                                             9.5. Chuẩn 3 Icon Nhân sự (Họ tên thật)
@@ -939,7 +939,7 @@
                             <li><strong>Mã Nhiệm Vụ Chuẩn 3 Chữ Số:</strong> Quy ước định danh gọn gàng <code>TSK.YYYYMM.XXX</code> (Ví dụ: <code>TSK.202610.001</code>, <code>TSK.202610.022</code>) sử dụng 3 chữ số thứ tự trong tháng, giúp nhận diện nhanh và chuyên nghiệp.</li>
                             <li><strong>Giao Việc Thông Minh (Bố Cục 4 Ô & Nút Chọn Nhanh Hạn Chót):</strong> Bố trí hàng ngang khoa học: <code>Người giao việc</code> | <code>Phòng ban</code> | <code>Người phụ trách</code> | <code>Hạn hoàn thành</code> (mặc định là ngày mai <code>+1d</code>, kèm nút chọn nhanh <code>+1d</code>, <code>+3d</code>, <code>+7d</code>).</li>
                             <li><strong>Bảng Chọn Người Liên Quan Dạng List 3 Cột Mở Rộng:</strong> Hiển thị danh sách nhân sự theo cấu trúc bảng 3 cột <code>Phòng ban | Họ và tên nhân sự | Chức vụ</code>, tích hợp nút <strong>"Xong"</strong> ngay trên đầu và cuối bảng giúp chọn nhiều người cực nhanh không cần cuộn sâu.</li>
-                            <li><strong>Mở Việc Đã Giao Bằng Hộp Thoại Trung Tâm & Bộ 4 Nút Chuẩn:</strong> Bấm vào bất kỳ công việc nào sẽ mở Centered Modal rộng rãi với đầy đủ 4 nút thao tác <strong>[Xóa - In - Sửa - Lưu]</strong>, Checklist tự động tính % tiến độ, đính kèm tệp và bình luận trao đổi.</li>
+                            <li><strong>Xem & Xử Lý Việc Đã Giao Với Bộ 4 Nút Thao Tác:</strong> Bấm vào bất kỳ công việc nào để mở cửa sổ chi tiết với đầy đủ 4 nút thao tác <strong>[Xóa - In - Sửa - Lưu]</strong>, danh sách việc con (Checklist) tự động tính % tiến độ, đính kèm tệp và trao đổi bình luận.</li>
                             <li><strong>Chuẩn 3 Icon Nhân Sự Chân Thẻ (Hiển Thị Họ Tên Thật):</strong> Chân mỗi thẻ nhiệm vụ hiển thị trực tiếp <strong>Họ và tên thật</strong> của <code>Người giao việc</code> và <code>Người phụ trách</code> (thay vì để tên chức vụ), cùng số lượng <code>Người theo dõi</code>.</li>
                         </ul>
                     </div>
@@ -1235,118 +1235,132 @@
                         III. HƯỚNG DẪN NHẬP LIỆU
                     </h2>
 
-                    <!-- NGUYÊN TẮC PHÂN QUYỀN & QUY TRÌNH PHỐI HỢP LIÊN PHÒNG BAN -->
-                    <div class="mb-8 p-4 sm:p-5 bg-gradient-to-r from-teal-50/80 via-slate-50 to-amber-50/60 border-l-4 border-teal-600 rounded-r-xl border-y border-r border-slate-200/80 space-y-3">
+                    <!-- HƯỚNG DẪN PHỐI HỢP XỬ LÝ KHI THIẾU DỮ LIỆU NHẬP LIỆU -->
+                    <div class="mb-8 p-4 sm:p-5 bg-gradient-to-r from-teal-50/80 via-slate-50 to-blue-50/60 border-l-4 border-teal-600 rounded-r-xl border-y border-r border-slate-200/80 space-y-3">
                         <div class="flex items-center gap-2 text-teal-900 font-black text-sm uppercase tracking-wide">
-                            <i class="ph-bold ph-shield-check text-teal-600 text-lg"></i>
-                            <span>Nguyên Tắc Phân Quyền & Quy Trình Phối Hợp Liên Phòng Ban Khi Thiếu Dữ Liệu (SOP)</span>
+                            <i class="ph-bold ph-info text-teal-600 text-lg"></i>
+                            <span>Hướng Dẫn Phối Hợp Xử Lý Khi Thiếu Dữ Liệu Trong Danh Mục</span>
                         </div>
                         <p class="text-xs text-slate-700 leading-relaxed">
-                            Hệ thống <strong>BIM Logistics ERP</strong> vận hành theo cơ chế phân quyền chức năng nghiêm ngặt (Role-Based Access Control) nhằm bảo đảm tính toàn vẹn dữ liệu, an toàn tài chính và chứng từ pháp lý. Mỗi danh mục gốc (Master Data) chỉ do đúng một phòng ban nghiệp vụ chuyên trách khởi tạo và quản lý:
+                            Để bảo đảm tính chính xác của dữ liệu vận tải và chứng từ kế toán, mỗi danh mục trên hệ thống được phân công cho từng bộ phận chuyên trách khởi tạo. Trong quá trình lập đơn hàng, phát lệnh điều xe hay hạch toán chi phí, nếu bạn không tìm thấy dữ liệu cần chọn (như tên Tài xế, Biển số xe, Khách hàng...), vui lòng liên hệ bộ phận phụ trách tương ứng theo hướng dẫn dưới đây để được hỗ trợ khai báo kịp thời:
                         </p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-xs">
                             <div class="p-3 bg-white border border-teal-200/80 rounded-lg shadow-sm space-y-1.5">
                                 <div class="font-bold text-teal-950 flex items-center gap-1.5">
                                     <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
-                                    <span>1. Phân hệ Hành chính - Nhân sự (HR):</span>
+                                    <span>1. Khi thiếu thông tin Tài xế / Nhân sự:</span>
                                 </div>
                                 <p class="text-[11.5px] text-slate-600 leading-relaxed">
-                                    • <strong>Dữ liệu phụ trách:</strong> Hồ sơ Nhân viên, Tài xế, Bằng lái xe, Số điện thoại, Hạn khám sức khỏe.<br>
-                                    • <strong>Nguyên tắc vận hành:</strong> Bộ phận Điều vận và Kế toán <em>KHÔNG ĐƯỢC PHÉP</em> tự ý tạo tài xế trên màn hình điều vận. Trường hợp ô chọn Tài xế chưa có tên người cần phân công ➔ <strong>Liên hệ ngay phòng Nhân sự</strong> để họ tạo mới hồ sơ nhân viên lái xe tại phân hệ Nhân sự.
+                                    • <strong>Bộ phận hỗ trợ:</strong> Phòng Hành chính - Nhân sự (HR).<br>
+                                    • <strong>Cách xử lý:</strong> Báo cho phòng Nhân sự để tạo mới hồ sơ tài xế (họ tên, số điện thoại, giấy phép lái xe). Sau khi nhân sự lưu thông tin, tên tài xế sẽ lập tức xuất hiện trong danh sách điều xe để bạn chọn điều động.
                                 </p>
                             </div>
                             <div class="p-3 bg-white border border-blue-200/80 rounded-lg shadow-sm space-y-1.5">
                                 <div class="font-bold text-blue-950 flex items-center gap-1.5">
                                     <span class="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
-                                    <span>2. Phân hệ Quản lý Đội xe (Fleet):</span>
+                                    <span>2. Khi thiếu Đầu kéo, Xe tải hoặc Rơ-moóc:</span>
                                 </div>
                                 <p class="text-[11.5px] text-slate-600 leading-relaxed">
-                                    • <strong>Dữ liệu phụ trách:</strong> Xe đầu kéo, Rơ-moóc, Thiết bị giám sát GPS, Hạn đăng kiểm, Bảo hiểm TNDS, Định mức tiêu hao nhiên liệu.<br>
-                                    • <strong>Nguyên tắc:</strong> Nếu thiếu biển số xe hoặc rơ-moóc trong danh sách điều động ➔ <strong>Liên hệ Quản lý Đội xe</strong> để cập nhật dữ liệu phương tiện.
+                                    • <strong>Bộ phận hỗ trợ:</strong> Ban Quản lý Đội xe (Fleet).<br>
+                                    • <strong>Cách xử lý:</strong> Báo cho bộ phận Đội xe để kiểm tra và khai báo phương tiện vào hệ thống (biển số xe, chủng loại, hạn kiểm định đăng kiểm) để đưa xe vào trạng thái sẵn sàng nhận chuyến.
                                 </p>
                             </div>
                             <div class="p-3 bg-white border border-amber-200/80 rounded-lg shadow-sm space-y-1.5">
                                 <div class="font-bold text-amber-950 flex items-center gap-1.5">
                                     <span class="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
-                                    <span>3. Phân hệ Kinh doanh & Khách hàng (Sale/CRM):</span>
+                                    <span>3. Khi thiếu Khách hàng, Bảng cước hoặc Hãng tàu:</span>
                                 </div>
                                 <p class="text-[11.5px] text-slate-600 leading-relaxed">
-                                    • <strong>Dữ liệu phụ trách:</strong> Danh mục Khách hàng, Hợp đồng nguyên tắc, Biểu phí tuyến đường (Tariff), Hãng tàu biển.<br>
-                                    • <strong>Nguyên tắc:</strong> Nhân viên điều vận nếu không có quyền tạo khách hàng mới ➔ <strong>Liên hệ phòng Kinh doanh (Sale)</strong> để khai báo khách hàng và cập nhật biểu cước hợp đồng.
+                                    • <strong>Bộ phận hỗ trợ:</strong> Phòng Kinh doanh & CSKH (Sale).<br>
+                                    • <strong>Cách xử lý:</strong> Báo cho nhân viên Kinh doanh phụ trách hợp đồng để khai báo thông tin khách hàng mới (tên công ty, MST) và thiết lập biểu cước tuyến đường theo thỏa thuận thương mại.
                                 </p>
                             </div>
                             <div class="p-3 bg-white border border-rose-200/80 rounded-lg shadow-sm space-y-1.5">
                                 <div class="font-bold text-rose-950 flex items-center gap-1.5">
                                     <span class="w-2 h-2 rounded-full bg-rose-600 shrink-0"></span>
-                                    <span>4. Phân hệ Tài chính - Kế toán & Admin:</span>
+                                    <span>4. Khi cần thêm Khoản chi mới hoặc bị khóa quyền truy cập:</span>
                                 </div>
                                 <p class="text-[11.5px] text-slate-600 leading-relaxed">
-                                    • <strong>Dữ liệu phụ trách:</strong> Tài khoản ngân hàng, Loại chi phí chuyến, Nhà xe thầu phụ (Subcontractor), Sổ quỹ tiền mặt.<br>
-                                    • <strong>Quy định chuyển cấp (Escalation):</strong> Khi người dùng không vào được phân hệ hoặc bị thông báo <em>"Bạn không có quyền truy cập chức năng này"</em> ➔ <strong>Liên hệ ngay Quản trị viên hệ thống (Admin) hoặc Trưởng phòng phụ trách</strong> để được cấp quyền hoặc hỗ trợ nhập liệu.
+                                    • <strong>Bộ phận hỗ trợ:</strong> Phòng Tài chính - Kế toán & Quản trị hệ thống (Admin).<br>
+                                    • <strong>Cách xử lý:</strong> Liên hệ Kế toán để bổ sung danh mục khoản mục chi phí / nhà xe thầu phụ. Nếu màn hình hiển thị thông báo <em>"Bạn không có quyền truy cập chức năng này"</em>, hãy báo Quản trị viên (Admin) để được cấp quyền theo vị trí công việc.
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ⭐ QUY CHUẨN THAO TÁC BẢNG DỮ LIỆU: CHUẨN 2 NÚT XEM & IN (KHÔNG DÙNG MODAL) -->
-                <section id="sec-action-standard" class="help-section scroll-mt-24 space-y-4 p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-white to-teal-50/50 border-2 border-amber-300 shadow-sm">
+                <!-- ⭐ HƯỚNG DẪN THAO TÁC TRÊN BẢNG DỮ LIỆU & MÀN HÌNH CHI TIẾT -->
+                <section id="sec-action-standard" class="help-section scroll-mt-24 space-y-4 p-5 rounded-2xl bg-gradient-to-br from-teal-50/70 via-white to-amber-50/50 border-2 border-teal-300 shadow-sm">
                     <div class="flex items-center gap-3">
-                        <span class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500 text-white shadow-sm shrink-0">
-                            <i class="ph-bold ph-lightning text-xl"></i>
+                        <span class="flex items-center justify-center w-10 h-10 rounded-xl bg-teal-600 text-white shadow-sm shrink-0">
+                            <i class="ph-bold ph-table text-xl"></i>
                         </span>
                         <div>
-                            <span class="text-[11px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">Quy Chuẩn Trải Nghiệm Người Dùng (UI/UX Standard)</span>
-                            <h3 class="text-base sm:text-lg font-black text-slate-900 font-heading mt-0.5">Quy Chuẩn Thao Tác Bảng Dữ Liệu: 2 Nút [Xem] & [In] — Trang Chi Tiết Không Modal</h3>
+                            <span class="text-[11px] font-black uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full border border-teal-300">Hướng Dẫn Thao Tác Cơ Bản</span>
+                            <h3 class="text-base sm:text-lg font-black text-slate-900 font-heading mt-0.5">Hướng Dẫn Thao Tác Trên Bảng Dữ Liệu & Màn Hình Chi Tiết</h3>
                         </div>
                     </div>
 
                     <div class="text-xs sm:text-sm text-slate-700 space-y-3 leading-relaxed">
                         <p>
-                            Để đảm bảo tính nhất quán, chuyên nghiệp và tối ưu hóa không gian làm việc trên máy tính cũng như máy tính bảng hiện trường, toàn bộ hệ thống BIM Logistics tuân thủ nghiêm ngặt 2 nguyên tắc thao tác cốt lõi:
+                            Trên tất cả các bảng dữ liệu của hệ thống (Danh sách Đơn hàng, Lệnh điều xe, Chuyến xe, Khách hàng, Tạm ứng, Nhân sự...), các nút chức năng được bố trí đồng bộ giúp bạn tra cứu, cập nhật thông tin và in ấn chứng từ một cách nhanh chóng, thuận tiện:
                         </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
-                            <!-- Khối 1: Cột Thao Tác Chuẩn 2 Nút -->
-                            <div class="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2">
+                            <!-- Khối 1: Thao tác nhanh trên bảng danh sách -->
+                            <div class="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2.5">
                                 <div class="font-bold text-slate-900 flex items-center gap-2">
                                     <span class="w-2.5 h-2.5 rounded-full bg-teal-600 shrink-0"></span>
-                                    <span>1. Cột Thao Tác Luôn Là 2 Nút: [Xem] & [In]</span>
+                                    <span>1. Thao tác trên bảng danh sách (Cột Thao tác):</span>
                                 </div>
                                 <p class="text-xs text-slate-600 leading-normal">
-                                    Trên mọi bảng danh sách (Khách hàng, Lệnh điều xe, Chuyến xe, Tạm ứng, Nhân sự, Hợp đồng, Bảng lương), cột Thao Tác chỉ có 2 nút bấm:
+                                    Tại mỗi dòng dữ liệu trên bảng, cột Thao Tác cung cấp 2 nút bấm thao tác nhanh:
                                 </p>
-                                <div class="flex items-center gap-3 pt-1">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-teal-800 bg-teal-100 border border-teal-300">
-                                        <i class="ph-bold ph-eye"></i> Xem
-                                    </span>
-                                    <span class="text-xs text-slate-500">Mở toàn màn hình xem & sửa chi tiết.</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-slate-800 bg-slate-100 border border-slate-300">
-                                        <i class="ph-bold ph-printer"></i> In
-                                    </span>
-                                    <span class="text-xs text-slate-500">Mở tài liệu chuẩn in A4/A5 ngay lập tức.</span>
+                                <div class="space-y-2 pt-0.5">
+                                    <div class="flex items-start gap-2.5">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-teal-800 bg-teal-100 border border-teal-300 shrink-0">
+                                            <i class="ph-bold ph-eye"></i> Xem
+                                        </span>
+                                        <span class="text-xs text-slate-600 pt-0.5">Bấm vào để mở màn hình xem đầy đủ thông tin chi tiết của bản ghi, xem các tab nghiệp vụ liên quan, tiến độ thực hiện và lịch sử chỉnh sửa.</span>
+                                    </div>
+                                    <div class="flex items-start gap-2.5">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-slate-800 bg-slate-100 border border-slate-300 shrink-0">
+                                            <i class="ph-bold ph-printer"></i> In
+                                        </span>
+                                        <span class="text-xs text-slate-600 pt-0.5">Bấm vào để mở ngay cửa sổ xem trước và in chứng từ (Vận đơn BOL, Phiếu thu/chi, Báo giá, Phiếu tạm ứng...) theo khổ A4 hoặc A5 chuẩn mực để ký nhận hoặc lưu trữ.</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Khối 2: Dedicated Full-Page View -->
-                            <div class="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2">
+                            <!-- Khối 2: Các nút chức năng trên màn hình chi tiết -->
+                            <div class="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2.5">
                                 <div class="font-bold text-slate-900 flex items-center gap-2">
                                     <span class="w-2.5 h-2.5 rounded-full bg-amber-600 shrink-0"></span>
-                                    <span>2. Mở Trang Toàn Màn Hình (Tuyệt Đối Không Dùng Modal)</span>
+                                    <span>2. Các nút chức năng trên màn hình chi tiết:</span>
                                 </div>
                                 <p class="text-xs text-slate-600 leading-normal">
-                                    Khi bấm nút <strong>[Xem]</strong>, hệ thống chuyển sang trang giao diện phẳng chuyên biệt (Dedicated Detail View), không dùng popup modal chật hẹp.
+                                    Khi bạn bấm nút <strong>[Xem]</strong> để vào màn hình chi tiết, thanh công cụ phía trên cung cấp đầy đủ các tác vụ nghiệp vụ:
                                 </p>
-                                <div class="pt-1 text-xs text-slate-700 space-y-1">
-                                    <div class="font-bold text-slate-800">Cụm nút công cụ trên trang chi tiết:</div>
+                                <div class="pt-1 text-xs text-slate-700 space-y-1.5">
                                     <div class="flex flex-wrap items-center gap-2 pt-0.5">
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 text-[11px] font-semibold text-slate-700 bg-slate-50"><i class="ph-bold ph-arrow-left"></i> Quay lại</span>
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-amber-400 text-[11px] font-semibold text-amber-800 bg-amber-50"><i class="ph-bold ph-pencil-simple"></i> Sửa</span>
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-teal-400 text-[11px] font-semibold text-teal-800 bg-teal-50"><i class="ph-bold ph-check-circle"></i> Lưu</span>
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-400 text-[11px] font-semibold text-slate-800 bg-slate-50"><i class="ph-bold ph-printer"></i> In</span>
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-rose-300 text-[11px] font-semibold text-rose-700 bg-rose-50"><i class="ph-bold ph-trash"></i> Xóa</span>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 bg-slate-50"><i class="ph-bold ph-arrow-left"></i> Quay lại</span>
+                                        <span class="text-[11.5px] text-slate-500">Trở về bảng danh sách dữ liệu trước đó, vẫn giữ nguyên bộ lọc đang chọn.</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-400 text-xs font-semibold text-amber-800 bg-amber-50"><i class="ph-bold ph-pencil-simple"></i> Sửa</span>
+                                        <span class="text-[11.5px] text-slate-500">Mở khóa các ô thông tin để bạn cập nhật hoặc bổ sung nội dung mới.</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-teal-400 text-xs font-semibold text-teal-800 bg-teal-50"><i class="ph-bold ph-check-circle"></i> Lưu</span>
+                                        <span class="text-[11.5px] text-slate-500">Lưu lại toàn bộ nội dung vừa chỉnh sửa vào cơ sở dữ liệu hệ thống.</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-400 text-xs font-semibold text-slate-800 bg-slate-50"><i class="ph-bold ph-printer"></i> In</span>
+                                        <span class="text-[11.5px] text-slate-500">In trực tiếp biểu mẫu tài liệu chuẩn từ màn hình chi tiết.</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-300 text-xs font-semibold text-rose-700 bg-rose-50"><i class="ph-bold ph-trash"></i> Xóa</span>
+                                        <span class="text-[11.5px] text-slate-500">Xóa bản ghi (chỉ xóa được khi bạn có quyền và dữ liệu chưa có phát sinh ràng buộc).</span>
                                     </div>
                                 </div>
                             </div>
@@ -2730,7 +2744,7 @@
                             9.1. Khởi Tạo Giao Việc Mới (Bố Cục 4 Ô Chuẩn, Mã 3 Số TSK & Chọn Nhanh Hạn Chót +1d/+3d/+7d)
                         </h4>
                         <p class="text-sm text-slate-700 leading-relaxed">
-                            Truy cập menu <strong>Giao Việc</strong> (đường dẫn <code>/tasks/</code>) hoặc từ nút <strong>Bảng việc</strong> trên Dashboard, bấm nút <strong class="text-teal-800">+ Giao Việc Mới</strong> ở góc trên bên phải. Hệ thống mở <strong>Hộp thoại trung tâm (Centered Modal)</strong> rộng thoáng với nền làm mờ sâu:
+                            Truy cập menu <strong>Giao Việc</strong> (đường dẫn <code>/tasks/</code>) hoặc từ nút <strong>Bảng việc</strong> trên Dashboard, bấm nút <strong class="text-teal-800">+ Giao Việc Mới</strong> ở góc trên bên phải. Hệ thống mở cửa sổ tạo công việc mới với các thông tin rõ ràng và tiện lợi:
                         </p>
 
                         <div class="overflow-x-auto border border-slate-200 rounded-lg">
@@ -2855,10 +2869,10 @@
                     <div id="sec-input-tasks-drawer" class="space-y-3 pt-4 border-t border-slate-100">
                         <h4 class="text-base font-bold text-teal-900 flex items-center gap-2">
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
-                            9.4. Mở Công Việc Đã Giao: Hộp Thoại Trung Tâm & Bộ 4 Nút Chuẩn [Xóa - In - Sửa - Lưu]
+                            9.4. Xem & Xử Lý Công Việc Đã Giao: Cửa Sổ Chi Tiết & Bộ 4 Nút Thao Tác [Xóa - In - Sửa - Lưu]
                         </h4>
                         <p class="text-sm text-slate-700 leading-relaxed">
-                            Khi bấm vào bất kỳ công việc nào đã giao (trên bảng Kanban, bảng Danh sách hoặc Widget Dashboard), hệ thống mở <strong>Hộp thoại chi tiết căn giữa màn hình (Centered Modal)</strong> đồng bộ chuẩn giao diện toàn hệ thống:
+                            Khi bấm vào bất kỳ công việc nào đã giao (trên bảng Kanban, bảng Danh sách hoặc Widget Dashboard), hệ thống mở cửa sổ chi tiết công việc với đầy đủ thông tin và các nút thao tác:
                         </p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs pt-1">
                             <div class="p-3 bg-rose-50/70 border border-rose-200 rounded-xl space-y-1">
@@ -3158,7 +3172,7 @@
                         </p>
                         <ul class="list-disc pl-6 text-sm text-slate-700 space-y-1.5">
                             <li><strong>Tự Động Gom Nhóm Mọi Sự Kiện:</strong> Nhận thông báo ngay khi bạn được <em>Giao nhiệm vụ mới</em>, được thêm làm <em>Người theo dõi công việc</em>, có người <em>Bình luận vào nhiệm vụ</em>, được <em>@Mention trong Chat</em>, hoặc khi có <em>Bản tin công ty mới / Khẩn cấp</em>.</li>
-                            <li><strong>Điều Hướng 1 Chạm Thông Minh:</strong> Bấm trực tiếp vào bất kỳ dòng thông báo nào trong danh sách xổ xuống để hệ thống tự động mở ngay <strong>Modal Chi Tiết Công Việc</strong>, <strong>Trang Đọc Bản Tin</strong> hoặc <strong>Kênh Chat</strong> tương ứng.</li>
+                            <li><strong>Điều Hướng 1 Chạm Thông Minh:</strong> Bấm trực tiếp vào bất kỳ dòng thông báo nào trong danh sách xổ xuống để hệ thống tự động mở ngay <strong>Chi Tiết Công Việc</strong>, <strong>Bản Tin</strong> hoặc <strong>Kênh Chat</strong> tương ứng.</li>
                             <li><strong>Đánh Dấu Đã Đọc Tất Cả:</strong> Bấm nút <span class="text-teal-700 font-bold">Đánh dấu đã đọc tất cả</span> ở góc trên hộp chuông báo để xóa nhanh chấm đỏ thông báo sau khi đã nắm bắt thông tin.</li>
                         </ul>
                     </div>
@@ -3275,7 +3289,7 @@
                             12.3. Xem Trước Trực Tiếp (Live Preview), Bảng Tỷ Trọng (%) & Áp Dụng Lên Dashboard
                         </h4>
                         <ul class="list-disc pl-6 text-sm text-slate-700 space-y-1.5">
-                            <li><strong>Xem Trước Biểu Đồ Trực Tiếp (Live Preview):</strong> Ngay khi bạn thay đổi bất kỳ thông số nào ở cột bên trái (hoặc bấm nút <span class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs font-bold"><i class="ph-bold ph-eye"></i> Xem trước</span>), khung bên phải của Modal sẽ lập tức vẽ biểu đồ mẫu kèm các thẻ tóm tắt <strong>Tổng Giá Trị</strong> và <strong>Số Nhóm Dữ Liệu</strong>.</li>
+                            <li><strong>Xem Trước Biểu Đồ Trực Tiếp (Live Preview):</strong> Ngay khi bạn thay đổi bất kỳ thông số nào ở cột bên trái (hoặc bấm nút <span class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs font-bold"><i class="ph-bold ph-eye"></i> Xem trước</span>), khung bên phải của cửa sổ cấu hình sẽ lập tức vẽ biểu đồ mẫu kèm các thẻ tóm tắt <strong>Tổng Giá Trị</strong> và <strong>Số Nhóm Dữ Liệu</strong>.</li>
                             <li><strong>Bảng Chi Tiết Phân Bổ &amp; Tỷ Trọng (%):</strong> Phía dưới khung Xem trước hiển thị bảng số liệu chi tiết từng nhóm gồm 4 cột: <code># (Thứ hạng)</code>, <code>Nhóm</code>, <code>Giá trị tuyệt đối</code> và <code>Tỷ trọng (%)</code> giúp bạn kiểm tra độ chính xác của số liệu trước khi đưa ra ngoài.</li>
                             <li><strong>Áp Dụng &amp; Tự Động Lưu Cấu Hình:</strong> Bấm nút <span class="px-2 py-0.5 bg-teal-600 text-white rounded text-xs font-bold"><i class="ph-bold ph-check"></i> Áp dụng lên Dashboard</span> để cập nhật biểu đồ ra màn hình chính. Cấu hình biểu đồ tùy biến của bạn được tự động lưu trữ trên trình duyệt (<code>localStorage</code>) — trong các lần đăng nhập tiếp theo, Dashboard sẽ tự động hiển thị đúng biểu đồ phân tích mà bạn đã thiết lập.</li>
                         </ul>

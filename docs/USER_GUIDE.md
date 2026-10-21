@@ -56,7 +56,7 @@
   - [7. Phân Hệ Quản Trị Nhân Sự, Hợp Đồng Lao Động & Người Phụ Thuộc (HR Management)](#7-phân-hệ-quản-trị-nhân-sự-hợp-đồng-lao-động--người-phụ-thuộc-hr-management)
   - [8. Phân Hệ Chấm Công & Quản Lý Nghỉ Phép (Monthly Attendance)](#8-phân-hệ-chấm-công--quản-lý-nghỉ-phép-monthly-attendance)
   - [9. Phân Hệ Tính Lương Logistics Hai Động Cơ (Hybrid Payroll) & Chi Trả Sổ Quỹ](#9-phân-hệ-tính-lương-logistics-hai-động-cơ-hybrid-payroll--chi-trả-sổ-quỹ)
-  - [10. Quy Chuẩn Thao Tác Bảng Dữ Liệu: Chuẩn 2 Nút Xem & In (Không Dùng Modal)](#10-quy-chuẩn-thao-tác-bảng-dữ-liệu-chuẩn-2-nút-xem--in-không-dùng-modal)
+  - [10. Hướng Dẫn Thao Tác Bảng Dữ Liệu & Màn Hình Chi Tiết](#10-hướng-dẫn-thao-tác-bảng-dữ-liệu--màn-hình-chi-tiết)
 
 ---
 
@@ -257,7 +257,7 @@ Trang bị 14 báo cáo đa chiều theo 4 nhóm chủ đề:
   * **Số Biểu Cước Đang Áp Dụng:** Số lượng tuyến cước liên kết với khách hàng.
   * **Ghi Chú:** Các yêu cầu giao nhận đặc thù.
 - **Tính năng Tùy Biến Cột (Universal Column Manager):**
-  * Bấm nút **`Cột`** trên thanh công cụ để mở Modal **"Tùy Chỉnh Cột Hiển Thị (9/9)"**.
+  * Bấm nút **`Cột`** trên thanh công cụ để mở bảng **"Tùy Chỉnh Cột Hiển Thị (9/9)"**.
   * Dễ dàng **Ẩn/Hiện** bất kỳ cột nào bằng Checkbox (cột *Tên Viết Tắt*, *Địa Chỉ*, *Ghi Chú*...).
   * **Thay đổi thứ tự cột:** Bấm mũi tên Lên/Xuống hoặc dùng chuột **Kéo & Thả (Drag & Drop)** để xếp thứ tự cột theo ý muốn.
   * **Khôi phục mặc định:** Bấm nút **"Khôi Phục Mặc Định"** để đưa cấu hình về chuẩn 9 cột ban đầu bất cứ lúc nào.
@@ -685,21 +685,20 @@ $$\textbf{THỰC LĨNH CHUYỂN KHOẢN (NET)} = \text{Gross} - \text{Bảo Hi�
 
 ---
 
-## 10. Quy Chuẩn Thao Tác Bảng Dữ Liệu: Chuẩn 2 Nút Xem & In (Không Dùng Modal)
+## 10. Hướng Dẫn Thao Tác Bảng Dữ Liệu & Màn Hình Chi Tiết
 
-Để mang lại trải nghiệm chuyên nghiệp, mượt mà và trực quan nhất cho người sử dụng trên máy tính cũng như máy tính bảng, toàn bộ hệ thống BIM Logistics Platform được chuẩn hóa theo quy ước giao diện đồng bộ:
+Trên tất cả các bảng dữ liệu vận hành của hệ thống (Khách hàng, Lệnh điều xe, Chuyến xe, Tạm ứng, Nhân sự, Hợp đồng, Bảng lương...), các nút chức năng được thiết kế đồng bộ giúp bạn dễ dàng theo dõi, chỉnh sửa và in ấn chứng từ:
 
-### 10.1. Cột Thao Tác Chuẩn 2 Nút Bấm
-Trên mọi bảng danh mục và bảng dữ liệu vận hành (Khách hàng, Lệnh điều xe, Chuyến xe, Tạm ứng, Nhân sự, Hợp đồng, Bảng lương), cột **`Thao tác`** luôn bao gồm đúng **2 nút bấm trực quan**:
-1. 👁️ **Nút `Xem` (Nút màu xanh lam hoặc xám viền):** Icon `fas fa-eye`. Bấm vào để điều hướng trực tiếp sang trang Chi tiết nghiệp vụ toàn màn hình.
-2. 🖨️ **Nút `In` (Nút màu xanh lục/teal):** Icon `fas fa-print`. Bấm vào để mở bản in văn bản phẳng chuẩn A4/A5 (In Báo giá, Lệnh điều xe, Phiếu tạm ứng, Phiếu thu/chi, Phiếu lương).
+### 10.1. Thao Tác Nhanh Trên Bảng Danh Sách: Nút [Xem] & Nút [In]
+Tại mỗi dòng dữ liệu trên bảng, cột **`Thao tác`** cung cấp 2 nút bấm trực quan:
+1. 👁️ **Nút `Xem`:** Bấm vào để mở màn hình chi tiết toàn diện của bản ghi. Màn hình chi tiết hiển thị đầy đủ mọi trường thông tin, các chứng từ liên quan, lịch sử hành trình và tiến độ xử lý giúp bạn nắm bắt trọn vẹn nghiệp vụ.
+2. 🖨️ **Nút `In`:** Bấm vào để mở ngay cửa sổ xem trước và in tài liệu (Báo giá, Lệnh điều xe, Phiếu tạm ứng, Phiếu thu/chi, Phiếu lương) theo mẫu chuẩn A4/A5 để ký duyệt hoặc bàn giao.
 
-### 10.2. Trang Chi Tiết Chuyên Biệt (Dedicated Full-Page View — Tuyệt Đối Không Dùng Modal)
-- **Loại bỏ Modal Popup:** Không sử dụng các khung popup nhỏ (modal) để xem hay chỉnh sửa thông tin phức tạp vì dễ gây tràn màn hình, che khuất dữ liệu và khó thao tác trên thiết bị di động.
-- **Thanh Công Cụ Đồng Bộ Trên Cùng (Standard Top Action Bar):**
-  Khi bấm **`Xem`**, hệ thống chuyển sang trang giao diện chi tiết phẳng với thanh công cụ phía trên gồm đầy đủ các hành động nghiệp vụ:
-  * ⬅️ **Nút `Quay lại` (`fas fa-arrow-left`):** Trở về bảng danh sách dữ liệu trước đó, giữ nguyên trạng thái tìm kiếm và bộ lọc đã chọn.
-  * 💾 **Nút `Lưu Thay Đổi` (`fas fa-save`):** Lưu các thông tin sau khi chỉnh sửa dữ liệu trên biểu mẫu.
-  * 🖨️ **Nút `In Chứng Từ` (`fas fa-print`):** In trực tiếp biểu mẫu tài liệu từ trang chi tiết.
-  * 🗑️ **Nút `Xóa Mềm` (`fas fa-trash`):** Thực hiện xóa mềm an toàn (`is_deleted=True`), bảo toàn lịch sử truy vết pháp lý và audit log của doanh nghiệp.
+### 10.2. Thao Tác Trên Màn Hình Chi Tiết
+Khi bạn bấm nút **`Xem`** để vào màn hình chi tiết, thanh công cụ phía trên cung cấp các nút thao tác nghiệp vụ:
+* ⬅️ **Nút `Quay lại`:** Trở về bảng danh sách dữ liệu trước đó, vẫn giữ nguyên từ khóa tìm kiếm và bộ lọc đang áp dụng.
+* ✏️ **Nút `Sửa`:** Mở khóa các ô nhập liệu trên biểu mẫu để bạn cập nhật hoặc bổ sung thông tin.
+* 💾 **Nút `Lưu`:** Lưu lại các nội dung vừa chỉnh sửa vào cơ sở dữ liệu hệ thống.
+* 🖨️ **Nút `In`:** In trực tiếp tài liệu hoặc văn bản từ màn hình chi tiết.
+* 🗑️ **Nút `Xóa`:** Xóa bản ghi (chỉ thực hiện được khi bạn có quyền hạn và dữ liệu chưa phát sinh các giao dịch ràng buộc liên quan nhằm đảm bảo an toàn dữ liệu).
 

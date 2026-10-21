@@ -173,6 +173,12 @@ class Subcontractor(TimeStampedModel, SoftDeleteModel):
     Danh mục Nhà Xe Thầu Phụ / Đối Tác Vận Tải 3PL (Xe Bạn), Gara và Nhà Cung Cấp.
     Quản lý thông tin nhà xe, người điều hành và tài khoản ngân hàng phục vụ đối soát cước.
     """
+    PREFIX_MAP = {
+        PartnerType.CARRIER: '3PL',
+        PartnerType.GARAGE: 'GAR',
+        PartnerType.SUPPLIER: 'SPL',
+    }
+
     partner_type = models.CharField(
         max_length=20,
         choices=PartnerType.choices,
@@ -180,7 +186,7 @@ class Subcontractor(TimeStampedModel, SoftDeleteModel):
         db_index=True,
         help_text="Phân loại đối tác: Nhà xe 3PL, Gara sửa chữa, hoặc Nhà cung cấp khác"
     )
-    code = models.CharField(max_length=50, unique=True, db_index=True) # NX_HOANGNAM, NX_MINHTHU...
+    code = models.CharField(max_length=50, unique=True, db_index=True) # 3PL001, GAR001, SPL001...
     short_name = models.CharField(max_length=100, blank=True, help_text="Tên viết tắt của nhà xe để hiển thị ngắn gọn khi điều xe")
     name = models.CharField(max_length=200) # Công ty TNHH Vận tải Hoàng Nam...
     tax_code = models.CharField(max_length=30, blank=True)
@@ -201,6 +207,42 @@ class Subcontractor(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+
+    @classmethod
+    def generate_next_code(cls, partner_type=None):
+        """
+        Quy tắc sinh mã tự động cho Nhà cung cấp / Đối tác:
+        - 3PL (CARRIER) -> 3PL[STT] (VD: 3PL001, 3PL002...)
+        - Gara sửa chữa (GARAGE) -> GAR[STT] (VD: GAR001, GAR002...)
+        - Nhà cung cấp (SUPPLIER) -> SPL[STT] (VD: SPL001, SPL002...)
+        """
+        import re
+        if not partner_type or partner_type not in cls.PREFIX_MAP:
+            partner_type = PartnerType.CARRIER
+            
+        prefix = cls.PREFIX_MAP.get(partner_type, '3PL')
+        # Quét tất cả bản ghi (kể cả đã soft delete) để không vi phạm ràng buộc Unique
+        codes = cls.all_objects.filter(code__startswith=prefix).values_list('code', flat=True)
+        max_num = 0
+        pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+        for c in codes:
+            match = pattern.match(c or '')
+            if match:
+                try:
+                    num = int(match.group(1))
+                    if num > max_num:
+                        max_num = num
+                except ValueError:
+                    pass
+        next_num = max_num + 1
+        return f"{prefix}{next_num:03d}"
+
+    def save(self, *args, **kwargs):
+        if not self.code or not str(self.code).strip():
+            self.code = self.generate_next_code(self.partner_type)
+        if not self.short_name or not str(self.short_name).strip():
+            self.short_name = self.code
+        super().save(*args, **kwargs)
 
 class SubcontractorDriver(TimeStampedModel, SoftDeleteModel):
     """

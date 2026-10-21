@@ -799,3 +799,77 @@ class ReferentialDeletionLocksTestCase(TestCase):
         self.assertFalse(c_restored.is_deleted)
         self.assertEqual(c_restored.name, 'CÔNG TY KH001 ĐÃ HỒI PHỤC')
         self.assertTrue(Customer.objects.filter(code='KH002').exists())
+
+
+    def test_subcontractor_auto_code_generation_rules(self):
+        from apps.master_data.models import Subcontractor, PartnerType
+
+        # 1. Test generate_next_code cho từng loại
+        code_3pl = Subcontractor.generate_next_code(PartnerType.CARRIER)
+        self.assertTrue(code_3pl.startswith('3PL'))
+        self.assertEqual(len(code_3pl), 6) # e.g. 3PL001
+
+        code_gar = Subcontractor.generate_next_code(PartnerType.GARAGE)
+        self.assertTrue(code_gar.startswith('GAR'))
+        self.assertEqual(len(code_gar), 6) # e.g. GAR001
+
+        code_spl = Subcontractor.generate_next_code(PartnerType.SUPPLIER)
+        self.assertTrue(code_spl.startswith('SPL'))
+        self.assertEqual(len(code_spl), 6) # e.g. SPL001
+
+        # 2. Tạo đối tác không truyền code -> tự sinh code
+        sub1 = Subcontractor.objects.create(
+            partner_type=PartnerType.CARRIER,
+            name='Nhà xe Test 3PL 1',
+            phone='0909000111'
+        )
+        self.assertEqual(sub1.code, code_3pl)
+
+        # Tạo đối tác 3PL thứ 2 -> code tăng STT
+        sub2 = Subcontractor.objects.create(
+            partner_type=PartnerType.CARRIER,
+            name='Nhà xe Test 3PL 2',
+            phone='0909000222'
+        )
+        expected_stt2 = int(sub1.code.replace('3PL', '')) + 1
+        self.assertEqual(sub2.code, f"3PL{expected_stt2:03d}")
+
+        # Xóa mềm sub2 (soft delete) -> mã tiếp theo vẫn không trùng
+        sub2.is_deleted = True
+        sub2.save()
+        next_3pl = Subcontractor.generate_next_code(PartnerType.CARRIER)
+        self.assertEqual(next_3pl, f"3PL{expected_stt2 + 1:03d}")
+
+    def test_subcontractor_next_code_api_and_creation(self):
+        from apps.master_data.models import Subcontractor, PartnerType
+
+        # 1. API GET next-code
+        res_carrier = self.client.get('/api/master-data/subcontractors/next-code/?partner_type=CARRIER')
+        self.assertEqual(res_carrier.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_carrier.data['code'].startswith('3PL'))
+
+        res_garage = self.client.get('/api/master-data/subcontractors/next-code/?partner_type=GARAGE')
+        self.assertEqual(res_garage.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_garage.data['code'].startswith('GAR'))
+
+        res_supplier = self.client.get('/api/master-data/subcontractors/next-code/?partner_type=SUPPLIER')
+        self.assertEqual(res_supplier.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_supplier.data['code'].startswith('SPL'))
+
+        # 2. API POST tạo Garage không truyền code -> tự sinh GARxxx
+        res_create_gar = self.client.post('/api/master-data/subcontractors/', {
+            'partner_type': PartnerType.GARAGE,
+            'name': 'Gara Ô Tô Thống Nhất',
+            'phone': '0988777666'
+        }, format='json')
+        self.assertEqual(res_create_gar.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(res_create_gar.data['data']['code'].startswith('GAR'))
+
+        # 3. API POST tạo NCC không truyền code -> tự sinh SPLxxx
+        res_create_spl = self.client.post('/api/master-data/subcontractors/', {
+            'partner_type': PartnerType.SUPPLIER,
+            'name': 'Cửa Hàng Lốp Bridgestone',
+            'phone': '0911222333'
+        }, format='json')
+        self.assertEqual(res_create_spl.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(res_create_spl.data['data']['code'].startswith('SPL'))

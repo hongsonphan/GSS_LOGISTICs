@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.9.0] - 2026-10-21 (Thêm Quy Tắc Tự Động Sinh Mã Nhà Cung Cấp / Đối Tác Theo Phân Loại: 3PL, Garage, NCC)
+
+### 1. Chuẩn Hóa Bảng Mã Định Danh Đối Tác & Nhà Cung Cấp:
+- **Thiết lập quy tắc sinh mã tự động:** Khi thêm mới Đối tác / Nhà cung cấp, hệ thống tự động sinh mã định danh chuẩn hóa theo từng nhóm phân loại:
+  * **Nhà xe vận tải 3PL (CARRIER):** Mã định dạng 3PL[STT] (VD: 3PL001, 3PL002...).
+  * **Gara sửa chữa / bảo dưỡng (GARAGE):** Mã định dạng GAR[STT] (VD: GAR001, GAR002...).
+  * **Nhà cung cấp vật tư / dịch vụ khác (SUPPLIER):** Mã định dạng SPL[STT] (VD: SPL001, SPL002...).
+- **Cơ chế chống va chạm mã (Collision-Proof) & Bảo toàn Soft-Delete:** Quét qua toàn bộ bản ghi (Subcontractor.all_objects) bao gồm cả các bản ghi đã xóa mềm để tính max(STT) + 1, đảm bảo tuyệt đối không phát sinh lỗi trùng Unique Key trong cơ sở dữ liệu.
+
+### 2. Giao Diện & Trải Nghiệm Người Dùng (UI/UX Dynamics):
+- **API Gợi ý mã kế tiếp (/api/master-data/subcontractors/next-code/):** Hỗ trợ tra cứu nhanh mã tiếp theo theo phân loại partner_type.
+- **Dynamic Auto-Fill khi đổi loại đối tác:** Trong modal Khai báo Danh mục Master Data, khi người dùng thay đổi lựa chọn Loại đối tác (mdf-sc-partner-type), hệ thống tự động gọi API và điền sẵn mã gợi ý tương ứng mà không cần gõ tay.
+- **Tôn trọng mã tùy chỉnh:** Nếu người dùng chủ động gõ mã riêng (ví dụ mã pháp nhân hoặc mã đối tác theo hợp đồng cũ), hệ thống bảo lưu và không ghi đè.
+
+### 3. Đồng Bộ Dịch Vụ Xuất/Nhập Excel & Dữ Liệu Mẫu:
+- Cập nhật mẫu template Excel Mau_Nhap_Doi_Tac_Nha_Cung_Cap.xlsx với 3 dòng dữ liệu mẫu đại diện cho 3 nhóm đối tác (3PL001, GAR001, SPL001).
+- Bổ sung cơ chế tự động sinh mã chuẩn nếu trong file Excel người dùng để trống cột mã đối tác.
+
+---
+
 ## [v3.8.9] - 2026-10-21 (Chuẩn Hóa Đường Dẫn Thao Tác Phân Cấp 2 Tầng Cài Đặt Master Data Trong Help Center & User Guide)
 
 ### 1. Chuẩn Hóa Toàn Diện Đường Dẫn Thao Tác 14 Danh Mục Cài Đặt:
@@ -29,11 +49,21 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
      * *Quy Cách Cont & Xe:* `Vào menu Cài đặt ➔ Phương Tiện & Thiết Bị ➔ Chọn tab Quy Cách Cont & Xe ➔ Bấm nút Tạo mới.`
 - **Cập nhật đồng bộ toàn bộ các gợi ý thao tác nhanh (Inline Tips):** Tại các phân hệ Báo giá, Booking, Chi phí, Đội xe, Sổ quỹ, Quyết toán thầu phụ và Tờ khai hải quan, toàn bộ chỉ dẫn tạo nhanh khi thiếu Master Data đều được chuẩn hóa cấu trúc 2 tầng.
 
-### 2. Kiểm Thử Hệ Thống & Xác Thực Giao Diện:
+### 2. Chuẩn Hóa Toàn Diện Văn Phong Hướng Dẫn Đến Người Dùng Cuối (End-User Centric):
+- **Khắc phục triệt để các khối văn bản mang tính kỹ thuật / lập trình viên:**
+  * **Khối SOP Phân quyền ➔ "Hướng Dẫn Phối Hợp Xử Lý Khi Thiếu Dữ Liệu Trong Danh Mục":** Thay thế các câu văn cấm đoán, thuật ngữ kiến trúc như *Role-Based Access Control*, *SOP*, *Escalation* bằng 4 hướng dẫn phối hợp nghiệp vụ nhẹ nhàng, rõ ràng: thiếu tài xế (liên hệ phòng Nhân sự), thiếu xe/moóc (liên hệ Quản lý Đội xe), thiếu khách/cước (liên hệ Kinh doanh), thiếu khoản chi/phân quyền (liên hệ Kế toán & Admin).
+  * **Khối UI/UX Standard ➔ "Hướng Dẫn Thao Tác Trên Bảng Dữ Liệu & Màn Hình Chi Tiết":** Loại bỏ các khái niệm lập trình nội bộ (*UI/UX Standard*, *Trang chi tiết không modal*, *Tuyệt đối không dùng modal*, *Dedicated Detail View*) khỏi tài liệu hướng dẫn người dùng cuối. Thay vào đó, giải thích tường minh công dụng thực tế của 2 nút nhanh trên bảng `[Xem]` & `[In]`, cùng bộ công cụ thao tác trên màn hình chi tiết `[Quay lại]`, `[Sửa]`, `[Lưu]`, `[In]`, `[Xóa]`.
+  * **Rà soát & làm sạch toàn bộ các thuật ngữ modal/popup:** Tinh chỉnh tiêu đề và mô tả trong phân hệ Giao việc (`/tasks/`) và Thông báo từ các từ ngữ kỹ thuật sang hướng dẫn thân thiện với người dùng cuối.
+
+### 3. Kiểm Thử Hệ Thống & Xác Thực Thị Giác:
 - Kiểm tra toàn bộ cú pháp JS và Django (`python manage.py check`): 0 issues identified.
 - Bộ kiểm thử tự động của dự án đạt **130/130 tests passed 100%** (`python manage.py test --keepdb`).
 - Kiểm thử hiển thị HTML thực tế trên route `/helps/`: 14/14 mục danh mục khớp 100% đường dẫn thao tác 2 tầng.
-- Chụp ảnh thị giác thực tế thành công: `183_help_center_trailers_breadcrumb.png`, `184_help_center_section_ii_overview.png`.
+- Chụp ảnh thị giác thực tế thành công:
+  * `183_help_center_trailers_breadcrumb.png`: Mục 10. Rơ-Moóc, Đầu Kéo & Xe, Thầu Phụ & NCC.
+  * `184_help_center_section_ii_overview.png`: Tổng quan 14 danh mục Master Data.
+  * `185_help_center_enduser_guide_section_iii.png`: Giao diện khối hướng dẫn phối hợp xử lý thiếu dữ liệu.
+  * `186_help_center_enduser_box2_buttons.png`: Giao diện khối hướng dẫn thao tác bảng dữ liệu & màn hình chi tiết.
 
 ## [v3.8.8] - 2026-10-21 (Rà Soát & Đăng Ký Đầy Đủ 100% Các Bảng Model Vào Trang Admin Quản Trị Django)
 

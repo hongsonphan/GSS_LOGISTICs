@@ -1273,6 +1273,21 @@ class TrailerMasterDetailAPIView(MasterDataBaseAPIView):
 # ==============================================================================
 # 11. DANH MỤC NHÀ XE THẦU PHỤ / ĐỐI TÁC VẬN TẢI (SUBCONTRACTORS)
 # ==============================================================================
+class SubcontractorNextCodeAPIView(MasterDataBaseAPIView):
+    """
+    API gợi ý mã kế tiếp cho Đối tác / Thầu phụ theo bảng mã quy định:
+    - 3PL (CARRIER) -> 3PL[STT] (VD: 3PL001, 3PL002...)
+    - Gara sửa chữa (GARAGE) -> GAR[STT] (VD: GAR001, GAR002...)
+    - Nhà cung cấp (SUPPLIER) -> SPL[STT] (VD: SPL001, SPL002...)
+    """
+    def get(self, request):
+        from apps.master_data.models import PartnerType
+        partner_type = request.GET.get('partner_type', PartnerType.CARRIER)
+        if partner_type not in [PartnerType.CARRIER, PartnerType.GARAGE, PartnerType.SUPPLIER]:
+            partner_type = PartnerType.CARRIER
+        next_code = Subcontractor.generate_next_code(partner_type)
+        return Response({'code': next_code, 'partner_type': partner_type})
+
 class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
     def get(self, request):
         q = request.GET.get('q', '').strip()
@@ -1316,23 +1331,23 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
         name = data.get('name', '').strip()
         short_name = data.get('short_name', '').strip()
         if not name:
-            return Response({'error': 'Tên nhà xe không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Tên nhà xe / đối tác không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
 
+        from apps.master_data.models import PartnerType
+        partner_type = data.get('partner_type', PartnerType.CARRIER)
+        if partner_type not in [PartnerType.CARRIER, PartnerType.GARAGE, PartnerType.SUPPLIER]:
+            partner_type = PartnerType.CARRIER
+
+        # Nếu không truyền mã, tự động sinh mã theo quy tắc: 3PL[STT], GAR[STT], SPL[STT]
         if not code:
-            import unidecode
-            clean = unidecode.unidecode(name).upper().replace(' ', '_')
-            import re
-            clean = re.sub(r'[^A-Z0-9_]', '', clean)[:15]
-            code = f"NX_{clean}"
+            code = Subcontractor.generate_next_code(partner_type)
 
         if not short_name:
             short_name = code
 
-        if Subcontractor.objects.filter(code=code).exists():
-            return Response({'error': f'Mã nhà xe [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
+        if Subcontractor.all_objects.filter(code=code).exists():
+            return Response({'error': f'Mã đối tác [{code}] đã tồn tại trong hệ thống!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        from apps.master_data.models import PartnerType
-        partner_type = data.get('partner_type', PartnerType.CARRIER)
         sc = Subcontractor.objects.create(
             partner_type=partner_type,
             code=code,

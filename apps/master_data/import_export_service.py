@@ -388,16 +388,16 @@ CATALOG_REGISTRY = {
     },
 
     'subcontractors': {
-        'title': 'DANH MỤC NHÀ XE THẦU PHỤ / XE BẠN 3PL',
-        'sheet_name': 'NhaXe_ThauPhu',
-        'filename': 'Mau_Nhap_Nha_Xe_Thau_Phu.xlsx',
+        'title': 'DANH MỤC ĐỐI TÁC / NHÀ XE THẦU PHỤ & NHÀ CUNG CẤP',
+        'sheet_name': 'DoiTac_NhaCungCap',
+        'filename': 'Mau_Nhap_Doi_Tac_Nha_Cung_Cap.xlsx',
         'model': Subcontractor,
         'unique_fields': ['code'],
         'columns': [
             {'key': 'partner_type', 'header': 'Loại Đối Tác (CARRIER/GARAGE/SUPPLIER)', 'required': False, 'type': 'str', 'sample': 'CARRIER'},
-            {'key': 'code', 'header': 'Mã Nhà Xe (*)', 'required': True, 'type': 'str', 'sample': 'THAU_PHU_HOANG_NAM'},
+            {'key': 'code', 'header': 'Mã Đối Tác (*: 3PL[STT], GAR[STT], SPL[STT])', 'required': False, 'type': 'str', 'sample': '3PL001'},
             {'key': 'short_name', 'header': 'Tên Viết Tắt', 'required': False, 'type': 'str', 'sample': 'HOANGNAM'},
-            {'key': 'name', 'header': 'Tên Đơn Vị Vận Tải (*)', 'required': True, 'type': 'str', 'sample': 'Công Ty TNHH Vận Tải Hoàng Nam'},
+            {'key': 'name', 'header': 'Tên Doanh Nghiệp / Đơn Vị (*)', 'required': True, 'type': 'str', 'sample': 'Công Ty TNHH Vận Tải Hoàng Nam'},
             {'key': 'tax_code', 'header': 'Mã Số Thuế', 'required': False, 'type': 'str', 'sample': '0316789123'},
             {'key': 'contact_person', 'header': 'Người Điều Xe / Phụ Trách', 'required': False, 'type': 'str', 'sample': 'Nguyễn Hoàng Nam'},
             {'key': 'phone', 'header': 'Số Điện Thoại Điều Xe (*)', 'required': True, 'type': 'str', 'sample': '0908.555.777'},
@@ -406,12 +406,13 @@ CATALOG_REGISTRY = {
             {'key': 'bank_account_number', 'header': 'Số Tài Khoản Ngân Hàng', 'required': False, 'type': 'str', 'sample': '1903555888999'},
             {'key': 'bank_name', 'header': 'Tên Ngân Hàng Thụ Hưởng', 'required': False, 'type': 'str', 'sample': 'Techcombank Chi nhánh Sài Gòn'},
             {'key': 'bank_account_holder', 'header': 'Chủ Tài Khoản Ngân Hàng', 'required': False, 'type': 'str', 'sample': 'CTY TNHH VT HOANG NAM'},
-            {'key': 'notes', 'header': 'Ghi Chú', 'required': False, 'type': 'str', 'sample': 'Thế mạnh tuyến Cái Mép - Bình Dương'},
+            {'key': 'notes', 'header': 'Ghi Chú', 'required': False, 'type': 'str', 'sample': 'Nhà xe vận tải 3PL tuyến Cái Mép - Bình Dương'},
             {'key': 'is_active', 'header': 'Trạng Thái', 'required': False, 'type': 'bool', 'sample': 'Hoạt động'}
         ],
         'samples': [
-            ['THAU_PHU_HOANG_NAM', 'Công Ty TNHH Vận Tải Hoàng Nam', '0316789123', 'Nguyễn Hoàng Nam', '0908.555.777', 'Số 45 QL1A, Linh Trung, Thủ Đức', '1903555888999', 'Techcombank', 'CTY TNHH VT HOANG NAM', 'Thế mạnh Cái Mép - Bình Dương, đội xe 15 đầu kéo', 'Hoạt động'],
-            ['THAU_PHU_MINH_THU', 'Vận Tải Minh Thư Container', '0317890456', 'Trần Minh Thư', '0918.222.333', 'KCN Sóng Thần 2, Dĩ An, Bình Dương', '0441000123456', 'Vietcombank', 'TRAN MINH THU', 'Thế mạnh chạy tuyến Tây Ninh - Cát Lái', 'Hoạt động']
+            ['CARRIER', '3PL001', 'HOANGNAM', 'Công Ty TNHH Vận Tải Hoàng Nam', '0316789123', 'Nguyễn Hoàng Nam', '0908.555.777', 'Số 45 QL1A, Linh Trung, Thủ Đức', 'Bãi xe Suối Tiên, Thủ Đức', '1903555888999', 'Techcombank', 'CTY TNHH VT HOANG NAM', 'Nhà xe vận tải 3PL tuyến Cái Mép - Bình Dương', 'Hoạt động'],
+            ['GARAGE', 'GAR001', 'AUTOFAST', 'Gara Sửa Chữa & Bảo Dưỡng Auto Fast', '0317890456', 'Trần Minh Thư', '0918.222.333', 'KCN Sóng Thần 2, Dĩ An, Bình Dương', 'Trạm dịch vụ KCN Sóng Thần', '0441000123456', 'Vietcombank', 'GARA AUTO FAST', 'Gara sửa chữa máy gầm, điện lạnh đầu kéo', 'Hoạt động'],
+            ['SUPPLIER', 'SPL001', 'MINHPHAT', 'Công Ty Cung Cấp Vỏ Xe & Phụ Tùng Minh Phát', '0319888777', 'Lê Minh Phát', '0933.888.999', '120 Xa Lộ Hà Nội, TP. Thủ Đức', '', '0071000999888', 'MB Bank', 'CTY PHU TUNG MINH PHAT', 'Nhà cung cấp lốp xe Bridgestone, dầu nhớt Castrol', 'Hoạt động']
         ]
     },
 
@@ -928,6 +929,12 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
                     # Các model có unique field 'code' hoặc 'license_plate' (Customer, Location, ExpenseItem, ContainerType, ShippingLine, Subcontractor, Trailer, Allowance)
                     model_mgr = getattr(model, 'all_objects', model.objects)
                     unique_field = config['unique_fields'][0]
+                    # Nếu là đối tác / thầu phụ mà chưa có mã, tự sinh theo phân loại
+                    if catalog_key == 'subcontractors':
+                        if not row_data.get('code'):
+                            row_data['code'] = Subcontractor.generate_next_code(row_data.get('partner_type'))
+                        if not row_data.get('short_name'):
+                            row_data['short_name'] = row_data.get('code')
                     unique_val = row_data.get(unique_field)
                     existing = model_mgr.filter(**{f"{unique_field}__iexact": unique_val}).first()
                     row_data['is_deleted'] = False
