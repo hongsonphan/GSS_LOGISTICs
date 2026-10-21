@@ -57,6 +57,23 @@
   - [8. Phân Hệ Chấm Công & Quản Lý Nghỉ Phép (Monthly Attendance)](#8-phân-hệ-chấm-công--quản-lý-nghỉ-phép-monthly-attendance)
   - [9. Phân Hệ Tính Lương Logistics Hai Động Cơ (Hybrid Payroll) & Chi Trả Sổ Quỹ](#9-phân-hệ-tính-lương-logistics-hai-động-cơ-hybrid-payroll--chi-trả-sổ-quỹ)
   - [10. Hướng Dẫn Thao Tác Bảng Dữ Liệu & Màn Hình Chi Tiết](#10-hướng-dẫn-thao-tác-bảng-dữ-liệu--màn-hình-chi-tiết)
+  - [11. Bảng Theo Dõi Task & Quản Lý Giao Việc Văn Phòng (Office Tasks)](#11-bảng-theo-dõi-task--quản-lý-giao-việc-văn-phòng-office-tasks)
+  - [12. Bảng Thông Báo & Bản Tin Nội Bộ (Đính Kèm & Xem Trước)](#12-bảng-thông-báo--bản-tin-nội-bộ-đính-kèm--xem-trước)
+  - [13. Tính Năng Chat Trực Tiếp (Floating Chat) & Chuông Thông Báo](#13-tính-năng-chat-trực-tiếp-floating-chat--chuông-thông-báo)
+  - [14. Cổng Thông Tin Dành Cho Bác Tài (Driver Mobile Portal)](#14-cổng-thông-tin-dành-cho-bác-tài-driver-mobile-portal)
+  - [15. Cổng Tra Cứu Hành Trình Đơn Hàng Công Khai (Public Tracking Portal)](#15-cổng-tra-cứu-hành-trình-đơn-hàng-công-khai-public-tracking-portal)
+  - [16. Biểu Đồ Tùy Biến (Dashboard Pivot Chart Builder)](#16-biểu-đồ-tùy-biến-dashboard-pivot-chart-builder)
+- [PHẦN IV: HỎI ĐÁP & XỬ LÝ SỰ CỐ THƯỜNG GẶP (Q&A / TROUBLESHOOTING)](#phần-iv-hỏi-đáp--xử-lý-sự-cố-thường-gặp-qa--troubleshooting)
+  - [Q1. Ô Xe/Tài xế bị trống khi tạo lệnh điều xe](#q1-khi-tạo-lệnh-điều-xe-mới-tại-sao-ô-đầu-kéo-xe-tải-hoặc-ô-tài-xế-bị-trống-không-chọn-được)
+  - [Q2. Phân biệt 3 nút: Chi phí TVL, TVL chi hộ, 3PL chi hộ](#q2-phân-biệt-và-sử-dụng-đúng-3-nút-phân-loại-chi-phí-chi-phí-tvl-tvl-chi-hộ-và-3pl-chi-hộ)
+  - [Q3. Điểm khóa xóa dữ liệu đã phát sinh](#q3-tại-sao-khi-bấm-nút-xóa-khách-hàng--xe-tải--khoản-mục-chi-thì-hệ-thống-cảnh-báo-đỏ-và-không-cho-xóa)
+  - [Q4. In Báo giá, Lệnh xe, Phiếu thu chi chuẩn A4/A5](#q4-làm-thế-nào-để-in-báo-giá-lệnh-điều-xe-phiếu-thuchi-ra-giấy-a4a5-sạch-đẹp-chuẩn-lề)
+  - [Q5. Xử lý mất vé BOT hoặc quên chụp POD](#q5-xử-lý-thế-nào-khi-tài-xế-làm-mất-vé-cầu-đường-bot-hoặc-quên-chụp-ảnh-biên-bản-giao-nhận-pod)
+  - [Q6. Ẩn/hiện & đổi thứ tự cột trên bảng dữ liệu](#q6-tôi-muốn-ẩnhiện-hoặc-kéo-thả-đổi-vị-trí-cột-trên-bảng-dữ-liệu-thì-làm-thế-nào)
+  - [Q7. Nhập hàng loạt từ Excel không trùng mã](#q7-nhập-hàng-loạt-danh-mục-từ-file-excel-như-thế-nào-để-không-bị-lỗi-trùng-mã-hoặc-sai-định-dạng)
+  - [Q8. Cách tính lương chuyến & thưởng dầu](#q8-lương-chuyến-và-thưởngphạt-dầu-của-bác-tài-được-hệ-thống-tự-động-tính-toán-dựa-trên-những-yếu-tố-nào)
+  - [Q9. Khi nào dùng Chat nội bộ và khi nào dùng Giao việc (Tasks)?](#q9-khi-nào-nên-dùng-khung-chat-nội-bộ-và-khi-nào-nên-dùng-chức-năng-giao-việc-tasks)
+  - [Q10. Xử lý khi báo không có quyền truy cập chức năng](#q10-xử-lý-thế-nào-khi-màn-hình-hiển-thị-thông-báo-bạn-không-có-quyền-truy-cập-chức-năng-này)
 
 ---
 
@@ -702,3 +719,149 @@ Khi bạn bấm nút **`Xem`** để vào màn hình chi tiết, thanh công c�
 * 🖨️ **Nút `In`:** In trực tiếp tài liệu hoặc văn bản từ màn hình chi tiết.
 * 🗑️ **Nút `Xóa`:** Xóa bản ghi (chỉ thực hiện được khi bạn có quyền hạn và dữ liệu chưa phát sinh các giao dịch ràng buộc liên quan nhằm đảm bảo an toàn dữ liệu).
 
+
+
+---
+
+## 11. Bảng Theo Dõi Task & Quản Lý Giao Việc Văn Phòng (Office Tasks)
+
+Hệ thống cung cấp không gian làm việc số tích hợp giúp các phòng ban (Điều vận, CSKH, Kế toán, Kỹ thuật bãi) giao việc và kiểm soát tiến độ không bị trôi việc:
+- **Tạo Task Mới:** Nhập tiêu đề, phân loại ưu tiên (Khẩn cấp, Cao, Trung bình, Thấp), hạn chót (Due date).
+- **Phân bổ nhân sự:** Chọn 1 người chịu trách nhiệm chính (**Assignee**) và nhiều người theo dõi (**Followers**). Khi có bình luận mới hoặc thay đổi trạng thái, tất cả thành viên theo dõi đều nhận thông báo chuông tức thời.
+- **Xem Dạng Bảng Kanban Trực Quan:** Kéo thả thẻ công việc giữa 4 cột trạng thái: `Mới tiếp nhận` ➔ `Đang thực hiện` ➔ `Chờ nghiệm thu / Review` ➔ `Hoàn thành`.
+- **Checklist Công Việc Con:** Tạo danh sách các đầu việc con cần hoàn thành trước khi chốt nghiệm thu task.
+
+---
+
+## 12. Bảng Thông Báo & Bản Tin Nội Bộ (Đính Kèm & Xem Trước)
+
+Kênh truyền thông chính thức của ban lãnh đạo tới toàn thể cán bộ nhân viên:
+- **Đăng Bản Tin:** Ban Giám Đốc hoặc Hành chính nhân sự đăng thông báo kèm mức độ ưu tiên (Thông báo chung, Khẩn cấp, Quy định nội bộ).
+- **Hỗ Trợ Đính Kèm Đa Định Dạng:** Đính kèm file PDF, Word, Excel, hình ảnh chứng từ.
+- **Xem Trước Tài Liệu Trực Tiếp (Document Previewer):** Người đọc chỉ cần bấm vào tệp đính kèm để xem trước tài liệu trực tiếp trên trình duyệt mà không cần tải về máy tính.
+- **Ghi Nhận Lượt Đọc (Read Tracking):** Hệ thống tự động ghi nhận nhân viên nào đã đọc thông báo, thời gian đọc giúp quản lý nắm bắt độ lan tỏa của chính sách.
+
+---
+
+## 13. Tính Năng Chat Trực Tiếp (Floating Chat) & Chuông Thông Báo
+
+- **Cửa Sổ Chat Nổi (Floating Chat Bubble):** Xuất hiện ở góc dưới bên phải mọi màn hình làm việc, cho phép nhắn tin tức thời giữa các cá nhân hoặc theo nhóm điều phối mà không làm gián đoạn công việc đang làm dở.
+- **Gửi Tệp & Ảnh Hiện Trường:** Hỗ trợ gửi ảnh tình trạng kẹt cảng, ảnh seal, vị trí kho nhanh chóng.
+- **Trạng Thái Hoạt Động (Online/Offline):** Chấm xanh báo hiệu đồng nghiệp đang trực tuyến sẵn sàng phản hồi.
+- **Chuông Thông Báo Thông Minh:** Tự động reo chuông và hiển thị badge đỏ khi có Lệnh điều xe mới, Báo giá được duyệt, Khoản chi được duyệt hoặc có tin nhắn mới gửi đến bạn.
+
+---
+
+## 14. Cổng Thông Tin Dành Cho Bác Tài (Driver Mobile Portal)
+
+Thiết kế chuyên biệt cho điện thoại thông minh, không cần cài app, chạy mượt trên trình duyệt điện thoại:
+1. **Truy Cập Nhanh:** Mở link chuyến xe nhận qua tin nhắn Zalo/SMS hoặc quét mã QR trên Lệnh điều xe giấy.
+2. **Cập Nhật 6 Mốc Hành Trình Bằng 1 Chạm:**
+   - *Mốc 1:* Nhận lệnh & Xuất bến
+   - *Mốc 2:* Đến cảng / Kho lấy rỗng
+   - *Mốc 3:* Đã lấy rỗng & Gắn Seal (Nhập số Seal, số Cont)
+   - *Mốc 4:* Đang vận chuyển (In Transit)
+   - *Mốc 5:* Đã đến điểm giao nhận
+   - *Mốc 6:* Đã giao xong & Ký nhận POD
+3. **Chụp Ảnh Biên Bản Giao Nhận (POD) & Phiếu Nâng Hạ (EIR):** Chụp trực tiếp từ camera điện thoại, ảnh tự nén dung lượng nhẹ gửi về trung tâm trong < 2 giây.
+4. **Kê Khai Chi Phí Phát Sinh Với 3 Nút Bấm:**
+   - 🟢 **`Chi phí TVL`:** Khoản công ty chịu (BOT, cân xe, dầu, sửa lốp).
+   - 🟡 **`TVL chi hộ`:** Khoản công ty ứng trước cho khách hàng (Phí nâng hạ hãng tàu, cược cont, rửa cont).
+   - 🔴 **`3PL chi hộ`:** Khoản tài xế xe bạn (thầu phụ) tự chi trước để cấn trừ tiền cước.
+
+---
+
+## 15. Cổng Tra Cứu Hành Trình Đơn Hàng Công Khai (Public Tracking Portal)
+
+Dành cho Khách hàng và Chủ hàng theo dõi tiến độ đơn hàng 24/7 không cần tài khoản đăng nhập:
+1. **Truy Cập:** Vào đường dẫn công khai `/tracking/` hoặc quét mã QR in trên Báo giá/Hợp đồng.
+2. **Tra Cứu:** Nhập Mã đơn hàng (VD: `SO-202610-001`), Mã chuyến xe hoặc Số Container / Seal ➔ Bấm `[Tra cứu hành trình]`.
+3. **Thông Tin Hiển Thị:**
+   - Thanh tiến trình 6 mốc vận chuyển thời gian thực.
+   - Nơi lấy hàng, nơi giao hàng, số hiệu phương tiện.
+   - Xem trước ảnh biên bản giao nhận có chữ ký (POD Preview) sau khi giao xong.
+   - **Bảo mật tuyệt đối:** Ẩn toàn bộ chi phí nội bộ, cước mua thầu phụ và thông tin cá nhân tài xế.
+
+---
+
+## 16. Biểu Đồ Tùy Biến (Dashboard Pivot Chart Builder)
+
+Công cụ phân tích dữ liệu trực quan cho Ban Giám Đốc và Trưởng phòng ban:
+- **5 Bước Cấu Hình:** Chọn nguồn dữ liệu ➔ Chọn loại biểu đồ (Cột, Đường, Tròn, Miền) ➔ Chọn trục phân nhóm (Khách hàng, Lái xe, Tuyến đường...) ➔ Chọn chỉ số đo lường (Doanh thu, Lợi nhuận gộp, Số chuyến) ➔ Chọn khoảng thời gian.
+- **Xem Trước Trực Tiếp (Live Preview):** Hệ thống vẽ biểu đồ ngay khi bạn chọn thông số, kèm bảng tỷ trọng phân bổ (%).
+- **Áp Dụng Lên Dashboard:** Tự động lưu cấu hình theo tài khoản người dùng và duy trì trên Dashboard màn hình chính.
+
+---
+
+# PHẦN IV: HỎI ĐÁP & XỬ LÝ SỰ CỐ THƯỜNG GẶP (Q&A / TROUBLESHOOTING)
+
+### Q1. Khi tạo Lệnh điều xe mới, tại sao ô "Đầu kéo/ Xe tải" hoặc ô "Tài xế" bị trống không chọn được?
+- **Nguyên nhân:** Hệ thống áp dụng cơ chế lọc thông minh 2 trường độc lập:
+  * Nếu chọn `Xe nhà TVL`: Dropdown chỉ hiển thị xe thuộc sở hữu công ty và tài xế nội bộ đang có trạng thái `Sẵn sàng` (chưa bận chuyến khác).
+  * Nếu chọn `Xe thuê ngoài (3PL)`: Dropdown chỉ hiển thị phương tiện và tài xế đã được khai báo thuộc đơn vị thầu phụ đó.
+- **Cách xử lý:** Kiểm tra lại ô Nguồn phương tiện. Nếu xe hoặc tài xế mới chưa có tên, vào menu `Cài đặt ➔ Phương tiện & Thiết bị` hoặc `Nhân sự` để khai báo bổ sung.
+
+---
+
+### Q2. Phân biệt và sử dụng đúng 3 nút phân loại chi phí: "Chi phí TVL", "TVL chi hộ" và "3PL chi hộ"?
+| Nút Phân Loại | Bản Chất Dòng Tiền | Hạch Toán Kế Toán | Ví Dụ Thực Tế |
+|---|---|---|---|
+| **Chi phí TVL** | Công ty chịu 100% | Tính vào Giá vốn chuyến xe (COGS) | Vé cầu đường BOT, Cân xe, Dầu máy |
+| **TVL chi hộ** | Công ty ứng trước thay khách hàng | Xuất Debit Note thu lại 100% từ khách hàng | Phí cược cont, nâng hạ cảng, rửa cont |
+| **3PL chi hộ** | Tài xế xe bạn (thầu phụ) tự chi | Cấn trừ vào công nợ chuyến xe của thầu phụ | Thầu phụ tự chi phí bốc xếp, lưu ca |
+
+---
+
+### Q3. Tại sao khi bấm nút [Xóa] Khách hàng / Xe tải / Khoản mục chi thì hệ thống cảnh báo đỏ và không cho xóa?
+- **Cơ chế khóa bảo toàn dữ liệu (Audit Trail Protection):** Khi một danh mục đã từng phát sinh ít nhất 1 chứng từ (Báo giá, Booking, Chuyến xe, Phiếu thu/chi), hệ thống **khóa cứng quyền xóa** để bảo vệ tính toàn vẹn của sổ sách kế toán và hồ sơ pháp lý.
+- **Hướng xử lý chuẩn:** Bấm nút **[Sửa]** và chuyển trạng thái đối tượng sang `Ngừng hoạt động (Inactive)`. Đối tượng sẽ biến mất khỏi các dropdown chọn mới nhưng toàn bộ dữ liệu lịch sử vẫn được bảo toàn.
+
+---
+
+### Q4. Làm thế nào để in Báo giá, Lệnh điều xe, Phiếu thu/chi ra giấy A4/A5 sạch đẹp, chuẩn lề?
+Khi bấm nút **[In]**, kiểm tra 4 thông số trong hộp thoại in của trình duyệt (Chrome/Edge):
+1. **Khổ giấy:** Chọn `A4` (cho Báo giá, Lệnh xe, Phiếu lương) hoặc `A5` (cho Phiếu thu/chi).
+2. **Hướng giấy:** Chọn `Portrait (Dọc)` cho văn bản; chọn `Landscape (Ngang)` cho bảng báo cáo nhiều cột.
+3. **Lề (Margins):** Chọn `Default` hoặc `Custom` 10mm.
+4. **Đồ họa nền (Background graphics) - BẮT BUỘC:** Tích chọn ô này để in đầy đủ màu logo, viền bảng và các badge trạng thái.
+
+---
+
+### Q5. Xử lý thế nào khi tài xế làm mất vé cầu đường (BOT) hoặc quên chụp ảnh biên bản giao nhận POD?
+- **Vé BOT mất:** Điều phối viên tra cứu báo cáo GPS và trích xuất hóa đơn điện tử từ tài khoản giao thông (VETC / ePass) nộp làm chứng từ thay thế cho Kế toán.
+- **POD quên chụp:** Liên hệ ngay thủ kho bên nhận xin chụp lại biên bản gửi qua Zalo/Email, sau đó mở màn hình chi tiết chuyến xe trên máy tính bấm nút **[Tải ảnh POD bổ sung]**.
+
+---
+
+### Q6. Tôi muốn ẩn/hiện hoặc kéo thả đổi vị trí cột trên bảng dữ liệu thì làm thế nào?
+1. Bấm nút **[Cột]** ở góc trên bên phải bảng dữ liệu.
+2. Bỏ dấu tích ở các cột không cần theo dõi.
+3. Kéo thả biểu tượng `⋮⋮` để đổi thứ tự cột theo ý muốn.
+4. Bấm **[Lưu cấu hình]**. Trình duyệt sẽ ghi nhớ cấu hình riêng cho tài khoản của bạn.
+
+---
+
+### Q7. Nhập hàng loạt danh mục từ file Excel như thế nào để không bị lỗi trùng mã hoặc sai định dạng?
+1. Vào menu `Cài đặt ➔ Danh mục cần nhập` ➔ Bấm **[Nhập Excel]**.
+2. Bấm **[Tải file mẫu Excel (.xlsx)]** để lấy cấu trúc chuẩn.
+3. Điền dữ liệu: Ngày tháng định dạng `YYYY-MM-DD`, số điện thoại để dạng Text, Mã số không trùng lặp.
+4. Tải file lên và kiểm tra bảng Xem trước (Preview). Nếu không có dòng đỏ thì bấm **[Xác nhận nhập dữ liệu]**.
+
+---
+
+### Q8. Lương chuyến và thưởng/phạt dầu của Bác tài được hệ thống tự động tính toán dựa trên những yếu tố nào?
+- **Lương chuyến:** = [Lương khoán tuyến theo Biểu phí] + [Phụ cấp kiểm hóa/hạ cont] + [Lưu ca nếu có].
+- **Định mức dầu tiêu chuẩn:** = [Số km vận hành GPS] × [Định mức xe (lít/100km)].
+- **Thưởng/Phạt dầu:** = ([Định mức tiêu chuẩn] - [Lít dầu thực đổ]) × [Đơn giá dầu]. Tiết kiệm được thưởng cộng vào lương; hao hụt vượt định mức bị trừ vào lương.
+
+---
+
+### Q9. Khi nào nên dùng khung "Chat Nội Bộ" và khi nào nên dùng chức năng "Giao Việc" (Tasks)?
+- Dùng **Chat Nội Bộ** khi: Trao đổi nhanh, thông báo kẹt cảng, gửi ảnh tức thời, thảo luận việc tức thì.
+- Dùng **Giao Việc (Tasks)** khi: Công việc có người phụ trách (Assignee), người theo dõi (Followers), hạn chót hoàn thành (Due date) và checklist công việc con cần nghiệm thu.
+
+---
+
+### Q10. Xử lý thế nào khi màn hình hiển thị thông báo "Bạn không có quyền truy cập chức năng này"?
+- **Nguyên nhân:** Tài khoản của bạn thuộc vai trò (Role) không được cấp quyền cho tính năng này.
+- **Cách xử lý:** Liên hệ Quản trị viên hệ thống (Admin) hoặc Trưởng bộ phận. Admin truy cập `Cài đặt ➔ Vai trò & Phân quyền` để kích hoạt thêm quyền cho chức danh của bạn chỉ trong 30 giây.

@@ -2,6 +2,51 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.9.5] - 2026-10-21 (Rà Soát & Biên Soạn Chuẩn Hướng Dẫn Sử Dụng Người Dùng Cuối, Cổng Tài Xế Mobile, Tra Cứu Công Khai & Bộ Q&A 10 Tình Huống)
+
+### 1. Trung Tâm Trợ Giúp Tương Tác & Tài Liệu Sổ Tay Người Dùng (`templates/help.html` & `docs/USER_GUIDE.md`):
+- **Biên Soạn Chuẩn End-User Centric:**
+  * Rà soát loại bỏ hoàn toàn các thuật ngữ dev/kỹ thuật (`REST API`, `Payload`, `Endpoint`, `Database Schema`, `Foreign Key`...), thay thế bằng cẩm nang thao tác trực quan, bảng biểu, ảnh chụp nút bấm thực tế và luồng xử lý A-B-C dễ hiểu cho nhân viên văn phòng và tài xế.
+  * Chuẩn hóa đường dẫn 14 danh mục Master Data theo cú pháp 2 tầng: `Vào menu Cài đặt ➔ [Nhóm cha] ➔ Chọn tab [Tab con] ➔ Bấm nút Tạo mới`.
+  * Viết lại Khối SOP Phối hợp xử lý thiếu danh mục và Khối Hướng dẫn thao tác bảng dữ liệu (chuẩn 2 nút `[Xem]` & `[In]` cùng thanh công cụ chi tiết).
+
+- **Bổ Sung Tính Năng Cổng Thông Tin Dành Cho Bác Tài (Driver Mobile Portal):**
+  * Hướng dẫn tài xế mở link trên smartphone Android/iOS qua trình duyệt web, không cần cài app, chạy mượt trên mạng 3G/4G chập chờn.
+  * Thao tác 2 chạm cập nhật 6 mốc vận chuyển thời gian thực (Timestamp).
+  * Chụp ảnh biên bản giao nhận có chữ ký (POD) & phiếu nâng hạ (EIR) nén ảnh tự động < 200KB gửi về trung tâm trong < 2 giây.
+  * Kê khai chi phí phát sinh với 3 nút bấm to rõ: `Chi phí TVL` (Cty chịu), `TVL chi hộ` (Thu lại từ khách), `3PL chi hộ` (Cấn trừ xe bạn).
+
+- **Bổ Sung Tính Năng Tra Cứu Hành Trình Đơn Hàng Công Khai (Public Tracking Portal):**
+  * Dành cho Khách hàng & Chủ hàng tự tra cứu tiến độ 24/7 tại `/tracking/` không cần đăng nhập tài khoản.
+  * Tra cứu theo Mã đơn hàng, Mã chuyến xe hoặc Số Container / Số Seal.
+  * Thanh tiến trình 6 mốc trực quan kèm xem trước ảnh POD có ký nhận; cơ chế che mờ tự động bảo mật 100% chi phí nội bộ và thông tin cá nhân của lái xe.
+
+- **Bổ Sung Phần IV: Hỏi Đáp & Xử Lý Sự Cố Thường Gặp (Q&A / Troubleshooting):**
+  * Tuyển tập 10 câu hỏi nghiệp vụ sát thực tế nhất từ hiện trường và văn phòng:
+    1. *Q1: Khắc phục ô Xe tải / Tài xế bị trống khi tạo lệnh điều xe (Cơ chế lọc thông minh theo nguồn xe TVL vs 3PL).*
+    2. *Q2: Phân biệt bản chất kế toán và luồng tiền của 3 nút chi phí: "Chi phí TVL", "TVL chi hộ", "3PL chi hộ".*
+    3. *Q3: Cơ chế khóa bảo toàn dữ liệu (Audit Trail) khi xóa Khách hàng/Xe đã phát sinh chứng từ & hướng xử lý chuyển Inactive.*
+    4. *Q4: Hướng dẫn cài đặt hộp thoại In chuẩn A4/A5 sạch đẹp, căn lề và bật Background Graphics.*
+    5. *Q5: Quy trình xử lý ngoại lệ khi tài xế làm mất vé BOT (sao kê VETC/ePass) hoặc quên chụp ảnh POD.*
+    6. *Q6: Hướng dẫn ẩn/hiện và kéo thả đổi thứ tự cột trên bảng dữ liệu bằng Universal Column Manager.*
+    7. *Q7: Quy trình nhập hàng loạt từ Excel 4 bước không trùng mã và kiểm tra bảng xem trước Preview.*
+    8. *Q8: Cơ chế tính lương chuyến và thưởng/phạt dầu theo km định vị GPS (Động cơ Hybrid Payroll).*
+    9. *Q9: Phân định rõ ràng mục đích sử dụng giữa "Chat Nội Bộ" (trao đổi tức thời) và "Giao Việc" (Office Tasks).*
+    10. *Q10: Xử lý thông báo "Bạn không có quyền truy cập chức năng này" qua phân quyền vai trò RBAC.*
+
+- **Nâng Cấp Cây Thư Mục Mục Lục (Sidebar Navigation):**
+  * Bổ sung Mục 13, 14 và Nhóm Cấp cha 4 Q&A vào cây menu sidebar bên trái.
+  * Tính năng tìm kiếm nhanh, đóng/mở nhóm mượt mà và hiệu ứng flash highlight khi nhấp bookmark định vị chính xác vị trí.
+
+### 2. Kiểm Thử Hệ Thống & Đảm Bảo Không Lỗi Hồi Quy (Zero-Regression):
+- Cú pháp Frontend JS: `node -c static/js/app.js` & `node -c static/js/column_manager.js` chuẩn 100%.
+- Kiểm tra tính toàn vẹn hệ thống: `python manage.py check` xác nhận 0 issues.
+- Bộ kiểm thử tự động toàn diện: `python manage.py test --keepdb` đạt **135/135 tests passed 100%**.
+- Kiểm thử thị giác Playwright: Chụp ảnh thực tế xác thực giao diện:
+  * `187_help_center_driver_portal_and_tracking.png` (Giao diện Driver Portal & Public Tracking).
+  * `188_help_center_section_iv_qa_troubleshooting.png` (Giao diện Section IV Q&A).
+  * `189_help_center_sidebar_qa_tree.png` (Cây mục lục Sidebar hiển thị nhóm Q&A).
+
 ## [v3.9.1] - 2026-10-21 (Thêm Tính Năng Xuất Mẫu & Nhập Danh Sách Nhân Sự & Tài Xế Từ File Excel)
 
 ### 1. Phân Hệ Quản Lý Nhân Sự — Excel Import & Export Service (`apps/personnel/import_export_service.py`):
