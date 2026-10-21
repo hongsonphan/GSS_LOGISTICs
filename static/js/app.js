@@ -18636,6 +18636,8 @@ async function loadMasterData() {
 function switchMasterDataTab(tabKey) {
     currentMasterDataTab = tabKey;
     masterDataPagination.currentPage = 1;
+    masterDataSortColumn = null;
+    masterDataSortDirection = 'asc';
 
     // 1. Đồng bộ Nhóm cha (Master Data Group) nếu chưa trùng
     const expectedGroup = getMasterDataGroupForTab(tabKey);
@@ -20539,6 +20541,41 @@ function filterMasterDataTable() {
         return matchesQuery && matchesSub;
     });
 
+    // Sắp xếp dữ liệu (Client-side Sorting trên đầu cột)
+    if (masterDataSortColumn) {
+        filtered.sort((a, b) => {
+            if (masterDataSortColumn === '__stt' || masterDataSortColumn === 'id') {
+                const idA = a.id || 0;
+                const idB = b.id || 0;
+                return masterDataSortDirection === 'asc' ? idA - idB : idB - idA;
+            }
+            let valA = a[masterDataSortColumn];
+            let valB = b[masterDataSortColumn];
+
+            if (valA === null || valA === undefined) valA = '';
+            if (valB === null || valB === undefined) valB = '';
+
+            if (typeof valA === 'boolean' || typeof valB === 'boolean') {
+                const bA = valA ? 1 : 0;
+                const bB = valB ? 1 : 0;
+                return masterDataSortDirection === 'asc' ? bA - bB : bB - bA;
+            }
+
+            const numA = parseFloat(valA);
+            const numB = parseFloat(valB);
+            const isNumA = !isNaN(numA) && isFinite(valA) && String(valA).trim() !== '';
+            const isNumB = !isNaN(numB) && isFinite(valB) && String(valB).trim() !== '';
+            if (isNumA && isNumB) {
+                return masterDataSortDirection === 'asc' ? numA - numB : numB - numA;
+            }
+
+            const strA = String(valA);
+            const strB = String(valB);
+            const cmp = strA.localeCompare(strB, 'vi', { numeric: true, sensitivity: 'base' });
+            return masterDataSortDirection === 'asc' ? cmp : -cmp;
+        });
+    }
+
     masterDataPagination.filteredItems = filtered;
     masterDataPagination.currentPage = 1;
     renderMasterDataPagedView();
@@ -20672,34 +20709,102 @@ function renderMasterDataPagination(startIdx, endIdx, total, totalPages, current
     controls.innerHTML = html;
 }
 
+// ==============================================================================
+// MASTER DATA SORTING & STT HELPERS
+// ==============================================================================
+let masterDataSortColumn = null;
+let masterDataSortDirection = 'asc';
+
+function toggleMasterDataSort(colKey) {
+    if (masterDataSortColumn === colKey) {
+        masterDataSortDirection = (masterDataSortDirection === 'asc') ? 'desc' : 'asc';
+    } else {
+        masterDataSortColumn = colKey;
+        masterDataSortDirection = 'asc';
+    }
+    filterMasterDataTable();
+}
+window.toggleMasterDataSort = toggleMasterDataSort;
+
+function renderMdTh(fieldKey, label, align = 'left', extraClass = '', locked = false) {
+    const isSorted = (masterDataSortColumn === fieldKey);
+    let iconHtml = '';
+    if (isSorted) {
+        iconHtml = masterDataSortDirection === 'asc'
+            ? '<i class="ph-bold ph-arrow-up text-teal-700 text-xs shrink-0"></i>'
+            : '<i class="ph-bold ph-arrow-down text-teal-700 text-xs shrink-0"></i>';
+    } else {
+        iconHtml = '<i class="ph-bold ph-arrows-down-up text-slate-400 text-xs shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"></i>';
+    }
+
+    let alignClass = 'justify-between text-left';
+    if (align === 'center') alignClass = 'justify-center text-center';
+    else if (align === 'right') alignClass = 'justify-end text-right';
+
+    const colKeyAttr = fieldKey ? `data-col-key="${fieldKey}"` : '';
+    const colNameAttr = label ? `data-col-name="${label}"` : '';
+    const lockedAttr = locked ? 'data-col-locked="true"' : '';
+
+    return `<th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none cursor-pointer hover:bg-slate-200/80 transition-colors group ${extraClass}" onclick="toggleMasterDataSort('${fieldKey}')" title="Bấm để sắp xếp theo ${label}" ${colKeyAttr} ${colNameAttr} ${lockedAttr}><div class="flex items-center ${alignClass} gap-1"><span class="truncate">${label}</span>${iconHtml}</div></th>`;
+}
+window.renderMdTh = renderMdTh;
+
+function renderMdSttTh() {
+    const isSorted = (masterDataSortColumn === '__stt');
+    const iconHtml = isSorted
+        ? (masterDataSortDirection === 'asc'
+            ? '<i class="ph-bold ph-arrow-up text-teal-700 text-xs shrink-0"></i>'
+            : '<i class="ph-bold ph-arrow-down text-teal-700 text-xs shrink-0"></i>')
+        : '<i class="ph-bold ph-arrows-down-up text-slate-400 text-xs shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"></i>';
+
+    return `<th class="py-2 px-2 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none cursor-pointer hover:bg-slate-200/80 transition-colors w-12 group" onclick="toggleMasterDataSort('__stt')" title="Sắp xếp theo STT" data-col-key="stt" data-col-name="STT" data-col-locked="true"><div class="flex items-center justify-center gap-1"><span>STT</span>${iconHtml}</div></th>`;
+}
+window.renderMdSttTh = renderMdSttTh;
+
+function renderMdActionTh() {
+    return `<th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none" data-col-key="thao_tac" data-col-name="Thao Tác" data-col-locked="true">Thao Tác</th>`;
+}
+window.renderMdActionTh = renderMdActionTh;
+
+function renderMdSttTd(stt) {
+    return `<td class="py-2 px-2 text-[12px] font-mono font-semibold text-slate-600 text-center border-r border-slate-200 bg-slate-50/40" data-col-key="stt">${stt}</td>`;
+}
+window.renderMdSttTd = renderMdSttTd;
+
 function renderMasterDataTable(items, total = items.length) {
     const tableHead = document.getElementById('md-table-head');
     const tableBody = document.getElementById('md-table-body');
     if (!tableHead || !tableBody) return;
 
     if (total === 0 || items.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy bản ghi nào phù hợp.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="15" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy bản ghi nào phù hợp.</td></tr>`;
         return;
     }
+
+    const baseIndex = ((masterDataPagination.currentPage || 1) - 1) * (masterDataPagination.pageSize || 20);
 
     // 0. KHAI BÁO CÔNG TY (HỒ SƠ DOANH NGHIỆP)
     if (currentMasterDataTab === 'company') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Doanh Nghiệp (Pháp Nhân)</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Viết Tắt</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hotline / SĐT</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Email Liên Hệ</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Trụ Sở Chính</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Đại Diện Pháp Luật</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tài Khoản Ngân Hàng</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">VAT / Giá Dầu</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('company_name', 'Tên Doanh Nghiệp (Pháp Nhân)')}
+                ${renderMdTh('short_name', 'Tên Viết Tắt')}
+                ${renderMdTh('tax_code', 'Mã Số Thuế')}
+                ${renderMdTh('phone', 'Hotline / SĐT')}
+                ${renderMdTh('email', 'Email Liên Hệ')}
+                ${renderMdTh('address', 'Địa Chỉ Trụ Sở Chính')}
+                ${renderMdTh('representative_name', 'Đại Diện Pháp Luật')}
+                ${renderMdTh('bank_account_number', 'Tài Khoản Ngân Hàng')}
+                ${renderMdTh('default_vat_rate', 'VAT / Giá Dầu', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2.5 px-3 text-[13px] font-bold text-teal-950 border-r border-slate-200">${escapeHtml(item.company_name || 'CÔNG TY TNHH VẬN TẢI TRIỀN VÕ')}</td>
                 <td class="py-2.5 px-3 text-[12px] font-bold text-teal-700 border-r border-slate-200">${escapeHtml(item.short_name || 'TRIỀN VÕ LOGISTICS')}</td>
                 <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-slate-800 border-r border-slate-200">${escapeHtml(item.tax_code || '—')}</td>
@@ -20716,23 +20821,28 @@ function renderMasterDataTable(items, total = items.length) {
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 0.1 VAI TRÒ & PHÂN QUYỀN
     else if (currentMasterDataTab === 'roles_permissions') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Vai Trò</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Vai Trò / Nhóm Quyền</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mô Tả Chức Năng Nghiệp Vụ</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Số Nhân Sự</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Phạm Vi Quyền</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã Vai Trò')}
+                ${renderMdTh('name', 'Tên Vai Trò / Nhóm Quyền')}
+                ${renderMdTh('description', 'Mô Tả Chức Năng Nghiệp Vụ')}
+                ${renderMdTh('user_count', 'Số Nhân Sự', 'center')}
+                ${renderMdTh('permission_count', 'Phạm Vi Quyền', 'center')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-teal-800 border-r border-slate-200">${escapeHtml(item.code || String(item.id))}</td>
                 <td class="py-2.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name)}</td>
                 <td class="py-2.5 px-3 text-[12px] text-slate-600 border-r border-slate-200">${escapeHtml(item.description || 'Quản lý phân quyền theo nhóm nghiệp vụ')}</td>
@@ -20750,24 +20860,29 @@ function renderMasterDataTable(items, total = items.length) {
                     </a>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 0.2 SỐ DƯ ĐẦU KỲ KẾ TOÁN
     else if (currentMasterDataTab === 'opening_balance') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tài Khoản Kế Toán</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đối Tượng / Quỹ</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Đối Tượng</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ngày Chốt</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Dư Nợ Đầu Kỳ (VNĐ)</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Dư Có Đầu Kỳ (VNĐ)</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
-                <th class="py-2.5 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('account_code', 'Tài Khoản Kế Toán')}
+                ${renderMdTh('entity_name', 'Tên Đối Tượng / Quỹ')}
+                ${renderMdTh('entity_code', 'Mã Đối Tượng')}
+                ${renderMdTh('opening_date', 'Ngày Chốt', 'center')}
+                ${renderMdTh('debit_amount', 'Dư Nợ Đầu Kỳ (VNĐ)', 'right')}
+                ${renderMdTh('credit_amount', 'Dư Có Đầu Kỳ (VNĐ)', 'right')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2.5 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">
                     <span class="text-teal-800 font-black">${escapeHtml(item.account_code || '')}</span> - ${escapeHtml(item.account_name || '')}
                 </td>
@@ -20784,24 +20899,29 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 1. BIỂU PHÍ LƯƠNG CHUYẾN
     else if (currentMasterDataTab === 'driver_tariffs') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Khu Vực Kho</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Tuyến / KCN / Nhà Máy</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trục Lấy / Hạ Cont Chuẩn</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Cự Ly</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Lương Chuyến</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú Nghiệp Vụ</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('area_group', 'Khu Vực Kho')}
+                ${renderMdTh('route_name', 'Tên Tuyến / KCN / Nhà Máy')}
+                ${renderMdTh('pickup_drop_area', 'Trục Lấy / Hạ Cont Chuẩn')}
+                ${renderMdTh('estimated_km', 'Cự Ly', 'center')}
+                ${renderMdTh('salary_rate', 'Lương Chuyến', 'right')}
+                ${renderMdTh('notes', 'Ghi Chú Nghiệp Vụ')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[13px] font-semibold text-slate-800 border-r border-slate-200">${item.area_group}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.route_name}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200">${item.pickup_drop_area || '—'}</td>
@@ -20821,23 +20941,28 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 2. PHỤ CẤP CẢNG XA & KIỂM HÓA
     else if (currentMasterDataTab === 'allowances') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Phụ Cấp / Tác Nghiệp</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Phân Loại</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mức Phụ Cấp</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Điều Kiện Áp Dụng</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã')}
+                ${renderMdTh('name', 'Tên Phụ Cấp / Tác Nghiệp')}
+                ${renderMdTh('category', 'Phân Loại')}
+                ${renderMdTh('amount', 'Mức Phụ Cấp', 'right')}
+                ${renderMdTh('notes', 'Điều Kiện Áp Dụng')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-700 font-medium border-r border-slate-200">${item.category_label || item.category}</td>
@@ -20853,25 +20978,30 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 3. ĐỊA ĐIỂM / CẢNG / KHO BÃI
     else if (currentMasterDataTab === 'locations') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Điểm</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Địa Điểm / Cảng / Kho</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Phân Loại</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tỉnh / Thành</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Chi Tiết</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Liên Hệ & SĐT</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã Điểm')}
+                ${renderMdTh('name', 'Tên Địa Điểm / Cảng / Kho')}
+                ${renderMdTh('location_type', 'Phân Loại')}
+                ${renderMdTh('province', 'Tỉnh / Thành')}
+                ${renderMdTh('address', 'Địa Chỉ Chi Tiết')}
+                ${renderMdTh('contact_person', 'Người Liên Hệ & SĐT')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-700 border-r border-slate-200">${item.location_type_label || item.location_type}</td>
@@ -20889,27 +21019,32 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 4. BIỂU CƯỚC KHÁCH HÀNG
     else if (currentMasterDataTab === 'tariffs') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Khách Hàng</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Khu Vực Tuyến</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Quy Cách</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Nơi Lấy Cont</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Kho Giao Nhận</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Nơi Hạ Cont</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Cự Ly</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Đơn Giá Cước</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Định Mức Lương</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Định Mức BOT</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('customer_name', 'Khách Hàng')}
+                ${renderMdTh('destination_zone', 'Khu Vực Tuyến')}
+                ${renderMdTh('container_size', 'Quy Cách')}
+                ${renderMdTh('pickup_location', 'Nơi Lấy Cont')}
+                ${renderMdTh('delivery_location', 'Kho Giao Nhận')}
+                ${renderMdTh('dropoff_location', 'Nơi Hạ Cont')}
+                ${renderMdTh('estimated_km', 'Cự Ly', 'center')}
+                ${renderMdTh('freight_price', 'Đơn Giá Cước', 'right')}
+                ${renderMdTh('driver_trip_pay', 'Định Mức Lương', 'right')}
+                ${renderMdTh('toll_standard_fee', 'Định Mức BOT', 'right')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.customer_name}</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">
                     ${item.origin_zone || 'Cát Lái'} ➔ ${item.destination_zone || 'Kho Khách'}
@@ -20931,35 +21066,40 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 5. KHÁCH HÀNG
     else if (currentMasterDataTab === 'customers') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_code" data-col-name="Mã Khách">Mã Khách</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_short_name" data-col-name="Tên Viết Tắt">Tên Viết Tắt</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_name" data-col-name="Tên Khách Hàng / Doanh Nghiệp">Tên Khách Hàng / Doanh Nghiệp</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_tax_code" data-col-name="Mã Số Thuế">Mã Số Thuế</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_address" data-col-name="Địa Chỉ">Địa Chỉ</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_contact" data-col-name="Người Liên Hệ / SĐT">Người Liên Hệ / SĐT</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_tariffs_count" data-col-name="Số Biểu Cước">Số Biểu Cước</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none" data-col-key="customer_notes" data-col-name="Ghi Chú">Ghi Chú</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none" data-col-key="thao_tac" data-col-name="Thao Tác" data-col-locked="true">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã Khách')}
+                ${renderMdTh('short_name', 'Tên Viết Tắt')}
+                ${renderMdTh('name', 'Tên Khách Hàng / Doanh Nghiệp')}
+                ${renderMdTh('tax_code', 'Mã Số Thuế')}
+                ${renderMdTh('address', 'Địa Chỉ')}
+                ${renderMdTh('contact_person', 'Người Liên Hệ / SĐT')}
+                ${renderMdTh('tariffs_count', 'Số Biểu Cước', 'center')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
-                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200" data-col-key="customer_code">${escapeHtml(item.code || '')}</td>
-                <td class="py-2 px-3 text-[12px] font-bold text-slate-800 border-r border-slate-200" data-col-key="customer_short_name">${escapeHtml(item.short_name || '—')}</td>
-                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200" data-col-key="customer_name">
+                ${renderMdSttTd(stt)}
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200" data-col-key="code">${escapeHtml(item.code || '')}</td>
+                <td class="py-2 px-3 text-[12px] font-bold text-slate-800 border-r border-slate-200" data-col-key="short_name">${escapeHtml(item.short_name || '—')}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200" data-col-key="name">
                     <span>${escapeHtml(item.name || '—')}</span>
                 </td>
-                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200" data-col-key="customer_tax_code">${escapeHtml(item.tax_code || '—')}</td>
-                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200" data-col-key="customer_address" title="${escapeHtml(item.address || '')}">${escapeHtml(item.address || '—')}</td>
-                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200" data-col-key="customer_contact">${item.contact_person ? `${escapeHtml(item.contact_person)} (${escapeHtml(item.phone || '')})` : escapeHtml(item.phone || '—')}</td>
-                <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold text-[12px] text-slate-800" data-col-key="customer_tariffs_count">${item.tariffs_count || 0} tuyến</td>
-                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200" data-col-key="customer_notes" title="${escapeHtml(item.notes || '')}">${escapeHtml(item.notes || '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200" data-col-key="tax_code">${escapeHtml(item.tax_code || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-600 max-w-xs truncate border-r border-slate-200" data-col-key="address" title="${escapeHtml(item.address || '')}">${escapeHtml(item.address || '—')}</td>
+                <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200" data-col-key="contact_person">${item.contact_person ? `${escapeHtml(item.contact_person)} (${escapeHtml(item.phone || '')})` : escapeHtml(item.phone || '—')}</td>
+                <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold text-[12px] text-slate-800" data-col-key="tariffs_count">${item.tariffs_count || 0} tuyến</td>
+                <td class="py-2 px-3 text-[12px] text-slate-500 border-r border-slate-200" data-col-key="notes" title="${escapeHtml(item.notes || '')}">${escapeHtml(item.notes || '—')}</td>
                 <td class="py-2 px-3 text-center" data-col-key="thao_tac">
                     <div class="flex items-center justify-center space-x-1">
                         <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
@@ -20967,24 +21107,29 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 6. KHOẢN MỤC CHI PHÍ
     else if (currentMasterDataTab === 'expenses') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Khoản Chi</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Khoản Mục</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Nhóm Chi Phí</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Định Mức Tiền</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Yêu Cầu HĐĐT</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã Khoản Chi')}
+                ${renderMdTh('name', 'Tên Khoản Mục')}
+                ${renderMdTh('group_type', 'Nhóm Chi Phí')}
+                ${renderMdTh('default_amount', 'Định Mức Tiền', 'right')}
+                ${renderMdTh('requires_invoice', 'Yêu Cầu HĐĐT', 'center')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-700 font-medium border-r border-slate-200">${item.group_type_label || item.group_type}</td>
@@ -21003,24 +21148,29 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 7. QUY CÁCH CONT & XE
     else if (currentMasterDataTab === 'containers') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Quy Cách</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Quy Cách / Loại Thùng</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Phân Loại</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hệ Số TEU</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tải Trọng (kg)</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Thể Tích (CBM)</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã Quy Cách')}
+                ${renderMdTh('name', 'Tên Quy Cách / Loại Thùng')}
+                ${renderMdTh('category', 'Phân Loại')}
+                ${renderMdTh('teu_factor', 'Hệ Số TEU', 'center')}
+                ${renderMdTh('max_payload_kg', 'Tải Trọng (kg)', 'right')}
+                ${renderMdTh('cbm_capacity', 'Thể Tích (CBM)', 'right')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-700 font-medium border-r border-slate-200">${item.category_label || item.category}</td>
@@ -21037,26 +21187,31 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 8. ĐỘI XE & PHƯƠNG TIỆN
     else if (currentMasterDataTab === 'vehicles') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Biển Số Xe</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Loại Phương Tiện</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Nguồn Sở Hữu</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hãng SX</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tải Trọng</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tài Xế Mặc Định</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hạn Đăng Kiểm</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hạn Bảo Hiểm</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('license_plate', 'Biển Số Xe')}
+                ${renderMdTh('vehicle_type', 'Loại Phương Tiện')}
+                ${renderMdTh('ownership_type', 'Nguồn Sở Hữu')}
+                ${renderMdTh('brand', 'Hãng SX')}
+                ${renderMdTh('payload_capacity_kg', 'Tải Trọng', 'right')}
+                ${renderMdTh('driver_name', 'Tài Xế Mặc Định')}
+                ${renderMdTh('registration_expiry', 'Hạn Đăng Kiểm', 'center')}
+                ${renderMdTh('insurance_expiry', 'Hạn Bảo Hiểm', 'center')}
+                ${renderMdTh('status', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[13px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.license_plate}</td>
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.vehicle_type_label || item.vehicle_type}</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">
@@ -21068,7 +21223,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.driver_name || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
-                <td class="py-2 px-3 text-[12px] text-center font-mono text-slate-700 border-r border-slate-200">${item.insurance_expiry || '—'}</td>
+                <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.insurance_expiry || '—'}</td>
                 <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold text-slate-800">
                     ${item.status === 'IDLE' ? 'Nằm bãi' : (item.status === 'ACTIVE' ? 'Đang chạy' : (item.status === 'MAINTENANCE' ? 'Bảo trì' : item.status_label || item.status))}
                 </td>
@@ -21079,23 +21234,28 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 9. RƠ-MOÓC CONTAINER
     else if (currentMasterDataTab === 'trailers') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Biển Số Moóc</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Quy Cách / Loại Moóc</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hãng Sản Xuất</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-right sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tải Trọng</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hạn Đăng Kiểm</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('license_plate', 'Biển Số Moóc')}
+                ${renderMdTh('trailer_type', 'Quy Cách / Loại Moóc')}
+                ${renderMdTh('brand', 'Hãng Sản Xuất')}
+                ${renderMdTh('payload_capacity_kg', 'Tải Trọng', 'right')}
+                ${renderMdTh('registration_expiry', 'Hạn Đăng Kiểm', 'center')}
+                ${renderMdTh('status', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[13px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.license_plate}</td>
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.trailer_type}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
@@ -21111,25 +21271,30 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 10. HÃNG TÀU (SHIPPING LINES)
     else if (currentMasterDataTab === 'shipping_lines') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Hãng Tàu</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đầy Đủ Hãng Vận Chuyển</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Hotline / CSKH</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Email & Cổng Web</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Free DEM</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Free DET</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã Hãng Tàu')}
+                ${renderMdTh('name', 'Tên Đầy Đủ Hãng Vận Chuyển')}
+                ${renderMdTh('contact_phone', 'Hotline / CSKH')}
+                ${renderMdTh('contact_email', 'Email & Cổng Web')}
+                ${renderMdTh('free_dem_days', 'Free DEM', 'center')}
+                ${renderMdTh('free_det_days', 'Free DET', 'center')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${item.name}</td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.contact_phone || '—'}</td>
@@ -21150,28 +21315,33 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     // 11. NHÀ XE THẦU PHỤ / XE BẠN 3PL
     else if (currentMasterDataTab === 'subcontractors') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Đối Tác</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Loại Đối Tác</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Viết Tắt</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đơn Vị / Đối Tác</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Công Ty</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Kho / Bãi</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Điều Hành & SĐT</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Thông Tin Tài Khoản Ngân Hàng</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Ghi Chú</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Trạng Thái</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider text-center sticky top-0 bg-slate-100 z-10 border-b border-slate-300 select-none">Thao Tác</th>
+                ${renderMdSttTh()}
+                ${renderMdTh('code', 'Mã Đối Tác')}
+                ${renderMdTh('partner_type', 'Loại Đối Tác')}
+                ${renderMdTh('short_name', 'Tên Viết Tắt')}
+                ${renderMdTh('name', 'Tên Đơn Vị / Đối Tác')}
+                ${renderMdTh('address', 'Địa Chỉ Công Ty')}
+                ${renderMdTh('yard_address', 'Địa Chỉ Kho / Bãi')}
+                ${renderMdTh('tax_code', 'Mã Số Thuế')}
+                ${renderMdTh('contact_person', 'Người Điều Hành & SĐT')}
+                ${renderMdTh('bank_account_number', 'Thông Tin Tài Khoản Ngân Hàng')}
+                ${renderMdTh('notes', 'Ghi Chú')}
+                ${renderMdTh('is_active', 'Trạng Thái', 'center')}
+                ${renderMdActionTh()}
             </tr>
         `;
-        tableBody.innerHTML = items.map(item => `
+        tableBody.innerHTML = items.map((item, idx) => {
+            const stt = baseIndex + idx + 1;
+            return `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                ${renderMdSttTd(stt)}
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
                 <td class="py-2 px-3 text-[12px] border-r border-slate-200 font-semibold text-slate-800">
                     ${item.partner_type === 'GARAGE' ? 'Gara bảo dưỡng' : (item.partner_type === 'SUPPLIER' ? 'Nhà cung cấp' : 'Nhà xe 3PL')}
@@ -21217,7 +21387,8 @@ function renderMasterDataTable(items, total = items.length) {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
 
     // Tự động đồng bộ với Universal Table Column Manager nếu có
@@ -21225,6 +21396,8 @@ function renderMasterDataTable(items, total = items.length) {
         window.BimTableColumnManager.instances['md-main-table'].refreshColumnsFromDOM();
     }
 }
+
+
 
 // Open Create Modal with Dynamic Form Fields
 async function openCreateMasterDataModal() {

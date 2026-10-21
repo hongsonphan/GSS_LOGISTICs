@@ -2,6 +2,41 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.5] - 2026-10-21 (Bổ Sung Cột STT & Tính Năng Sắp Xếp Trên Header Toàn Bộ Bảng Danh Mục)
+
+### 1. Bổ Sung Cột STT (Số Thứ Tự) Cho 14 Bảng Danh Mục Master Data:
+- Tự động đánh số thứ tự liên tục theo phân trang hiện hành: `stt = (currentPage - 1) * pageSize + idx + 1`.
+- Cố định cột STT ở vị trí đầu tiên (`data-col-key="stt" data-col-name="STT" data-col-locked="true"`), bảo đảm tích hợp mượt mà với `BimTableColumnManager` (không bị người dùng ẩn nhầm).
+- Căn giữa trực quan, font monospace nhẹ nhàng chuẩn UI/UX logistics.
+- Áp dụng trên toàn bộ 14 phân hệ danh mục:
+  * `company` (Thông tin công ty)
+  * `roles_permissions` (Vai trò & Phân quyền)
+  * `opening_balance` (Số dư ban đầu)
+  * `driver_tariffs` (Biểu phí lương chuyến)
+  * `allowances` (Phụ cấp & Kiểm hóa)
+  * `locations` (Cảng & Kho bãi)
+  * `tariffs` (Bảng giá cước vận tải)
+  * `customers` (Khách hàng)
+  * `expenses` (Khoản mục chi phí)
+  * `containers` (Loại Container & Quy cách)
+  * `vehicles` (Đầu kéo & Xe tải)
+  * `trailers` (Rơ-moóc)
+  * `shipping_lines` (Hãng tàu)
+  * `subcontractors` (Khách hàng & Đối tác: Thầu phụ, Gara, Nhà cung cấp)
+
+### 2. Sắp Xếp Trực Tiếp Khi Nhấp Tiêu Đề Cột (Client-side Header Sorting):
+- Header các cột hỗ trợ click để toggle sắp xếp: **Tăng dần (ASC)** $\rightarrow$ **Giảm dần (DESC)**.
+- Hiển thị icon trạng thái sắp xếp trực quan:
+  * Trạng thái mặc định: Icon `ph-arrows-down-up` mờ nhẹ (`opacity-40 hover:opacity-100`).
+  * Trạng thái tăng dần (ASC): Icon `ph-arrow-up text-teal-600 font-bold`.
+  * Trạng thái giảm dần (DESC): Icon `ph-arrow-down text-teal-600 font-bold`.
+- Hỗ trợ thông minh cho các kiểu dữ liệu:
+  * Cột STT: Sắp xếp theo số thứ tự hiển thị.
+  * Số và tiền tệ: Sắp xếp giá trị số thực tế (Numeric comparison).
+  * Chuỗi văn bản: Sắp xếp theo bảng chữ cái tiếng Việt có dấu (`localeCompare('vi')`).
+  * Boolean / Trạng thái: Sắp xếp giá trị logic.
+- Tự động reset trạng thái sort khi chuyển qua tab danh mục khác (`switchMasterDataTab`).
+
 ## [v3.7.4] - 2026-10-21 (Hiển Thị Plain Text Đối Tác, Tách Riêng 2 Cột Địa Chỉ & Fix Lưu Loại Đối Tác)
 
 ### 1. Hiển Thị Plain Text Tinh Gọn (Không Bọc Badge):
