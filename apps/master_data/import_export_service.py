@@ -705,10 +705,11 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
     skipped_count = 0
     errors = []
 
-    # Map cache để tra cứu nhanh khi import
+    # Map cache để tra cứu nhanh khi import (tra cứu trên all_objects để không bỏ sót bản ghi đã soft-deleted)
     customers_map = {}
     if catalog_key == 'tariffs':
-        for c in Customer.objects.all():
+        cust_mgr = getattr(Customer, 'all_objects', Customer.objects)
+        for c in cust_mgr.all():
             customers_map[c.code.strip().upper()] = c
             customers_map[c.name.strip().upper()] = c
             if c.short_name:
@@ -716,82 +717,99 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
 
     subcontractors_map = {}
     if catalog_key == 'vehicles':
-        for s in Subcontractor.objects.all():
+        sub_mgr = getattr(Subcontractor, 'all_objects', Subcontractor.objects)
+        for s in sub_mgr.all():
             subcontractors_map[s.code.strip().upper()] = s
             subcontractors_map[s.name.strip().upper()] = s
 
     # Bắt đầu duyệt dữ liệu từ dòng sau header
     rows_data = list(ws.iter_rows(values_only=True))[header_row_idx:]
 
-    with transaction.atomic():
-        for row_offset, row in enumerate(rows_data, start=header_row_idx + 1):
-            # Bỏ qua dòng trống hoàn toàn
-            if not any(row):
-                continue
+    for row_offset, row in enumerate(rows_data, start=header_row_idx + 1):
+        # Bỏ qua dòng trống hoàn toàn
+        if not any(row):
+            continue
 
-            # Bỏ qua dòng mẫu nếu người dùng chưa xóa
-            first_val = str(row[0] or '').strip()
-            if first_val in ['Lưu ý:', 'STT', 'Dòng mẫu']:
-                continue
+        # Bỏ qua dòng mẫu nếu người dùng chưa xóa
+        first_val = str(row[0] or '').strip()
+        if first_val in ['Lưu ý:', 'STT', 'Dòng mẫu']:
+            continue
 
-            row_data = {}
-            row_errors = []
+        row_data = {}
+        row_errors = []
 
-            for c_idx, col_cfg in col_mapping.items():
-                if c_idx >= len(row):
-                    val = None
-                else:
-                    val = row[c_idx]
+        for c_idx, col_cfg in col_mapping.items():
+            if c_idx >= len(row):
+                val = None
+            else:
+                val = row[c_idx]
 
-                key = col_cfg['key']
-                col_type = col_cfg['type']
-                is_req = col_cfg.get('required', False)
+            key = col_cfg['key']
+            col_type = col_cfg['type']
+            is_req = col_cfg.get('required', False)
 
-                # Parse theo kiểu dữ liệu
-                if col_type == 'str':
-                    parsed = parse_str(val)
-                elif col_type == 'int':
-                    parsed = parse_int(val)
-                elif col_type == 'decimal':
-                    parsed = parse_decimal(val)
-                elif col_type == 'bool':
-                    parsed = parse_bool(val, default=True)
-                elif col_type == 'date':
-                    parsed = parse_date(val)
-                elif col_type == 'choice':
-                    raw_str = parse_str(val)
-                    choices_dict = col_cfg.get('choices', {})
-                    # Tìm exact hoặc case-insensitive
-                    parsed = choices_dict.get(raw_str)
-                    if not parsed:
-                        for k_c, v_c in choices_dict.items():
-                            if k_c.lower() == raw_str.lower():
-                                parsed = v_c
-                                break
-                    if not parsed and is_req and raw_str:
-                        # Fallback default value from first choice
-                        parsed = list(choices_dict.values())[0]
-                else:
-                    parsed = val
+            # Parse theo kiểu dữ liệu
+            if col_type == 'str':
+                parsed = parse_str(val)
+            elif col_type == 'int':
+                parsed = parse_int(val)
+            elif col_type == 'decimal':
+                parsed = parse_decimal(val)
+            elif col_type == 'bool':
+                parsed = parse_bool(val, default=True)
+            elif col_type == 'date':
+                parsed = parse_date(val)
+            elif col_type == 'choice':
+                raw_str = parse_str(val)
+                choices_dict = col_cfg.get('choices', {})
+                # Tìm exact hoặc case-insensitive
+                parsed = choices_dict.get(raw_str)
+                if not parsed:
+                    for k_c, v_c in choices_dict.items():
+                        if k_c.lower() == raw_str.lower():
+                            parsed = v_c
+                            break
+                if not parsed and is_req and raw_str:
+                    # Fallback default value from first choice
+                    parsed = list(choices_dict.values())[0]
+            else:
+                parsed = val
 
-                if is_req and (parsed is None or parsed == ''):
-                    row_errors.append(f"Thiếu thông tin bắt buộc: '{col_cfg['header']}'")
+            if is_req and (parsed is None or parsed == ''):
+                row_errors.append(f"Thiếu thông tin bắt buộc: '{col_cfg['header']}'")
 
-                row_data[key] = parsed
+            row_data[key] = parsed
 
-            # Kiểm tra lỗi của dòng
-            if row_errors:
-                errors.append(f"Dòng {row_offset}: {', '.join(row_errors)}")
-                continue
+        # Kiểm tra lỗi của dòng
+        if row_errors:
+            errors.append(f"Dòng {row_offset}: {', '.join(row_errors)}")
+            continue
 
-            # Bỏ qua nếu dòng mẫu trùng với sample đầu tiên và không có thay đổi
-            sample_first = config.get('samples', [[]])[0]
-            if sample_first and len(sample_first) > 0 and str(sample_first[0]).strip().upper() == str(row_data.get(columns[0]['key'], '')).strip().upper():
-                # Dòng mẫu, bỏ qua an toàn
-                skipped_count += 1
-                continue
+        # Tự động nhận diện và bỏ qua các dòng mẫu chưa được xóa/sửa từ file template
+        is_unmodified_sample = False
+        for s_row in config.get('samples', []):
+            if s_row and len(s_row) > 0:
+                s_code = str(s_row[0]).strip().upper()
+                cur_code = str(row_data.get(columns[0]['key'], '')).strip().upper()
+                if s_code == cur_code:
+                    # Nếu trường thứ 2 (thường là Tên) cũng trùng khớp hoàn toàn -> là dòng mẫu
+                    if len(s_row) > 1 and len(columns) > 1:
+                        s_name = str(s_row[1]).strip().upper()
+                        cur_name = str(row_data.get(columns[1]['key'], '')).strip().upper()
+                        if s_name == cur_name:
+                            is_unmodified_sample = True
+                            break
+                    else:
+                        is_unmodified_sample = True
+                        break
 
-            try:
+        if is_unmodified_sample:
+            skipped_count += 1
+            continue
+
+        # Xử lý từng dòng trong transaction savepoint riêng biệt để lỗi dòng này không ảnh hưởng đến dòng khác (Defensive PostgreSQL)
+        try:
+            with transaction.atomic():
                 # Xử lý theo từng loại danh mục
                 if catalog_key == 'tariffs':
                     cust_code = parse_str(row_data.get('customer_code', '')).upper()
@@ -806,7 +824,8 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
                         'delivery_location': row_data.get('delivery_location'),
                         'container_size': row_data.get('container_size', '40HC')
                     }
-                    existing = RouteTariff.objects.filter(**lookup_kwargs).first()
+                    tariff_mgr = getattr(RouteTariff, 'all_objects', RouteTariff.objects)
+                    existing = tariff_mgr.filter(**lookup_kwargs).first()
                     fields_to_set = {
                         'origin_zone': row_data.get('origin_zone', ''),
                         'destination_zone': row_data.get('destination_zone', ''),
@@ -815,7 +834,8 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
                         'driver_trip_pay': row_data.get('driver_trip_pay', Decimal('500000')),
                         'toll_standard_fee': row_data.get('toll_standard_fee', Decimal('0')),
                         'estimated_km': row_data.get('estimated_km', 0),
-                        'is_deleted': False
+                        'is_deleted': False,
+                        'deleted_at': None
                     }
                     if existing:
                         if update_existing:
@@ -837,8 +857,10 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
                         row_data['ownership_type'] = VehicleOwnership.SUBCONTRACTOR
 
                     plate = row_data.get('license_plate', '').strip()
-                    existing = Vehicle.objects.filter(license_plate__iexact=plate).first()
+                    veh_mgr = getattr(Vehicle, 'all_objects', Vehicle.objects)
+                    existing = veh_mgr.filter(license_plate__iexact=plate).first()
                     row_data['is_deleted'] = False
+                    row_data['deleted_at'] = None
                     if existing:
                         if update_existing:
                             for f_k, f_v in row_data.items():
@@ -854,8 +876,10 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
                 elif catalog_key == 'driver_tariffs':
                     area = row_data.get('area_group')
                     route = row_data.get('route_name')
-                    existing = DriverSalaryTariff.objects.filter(area_group=area, route_name=route).first()
+                    dt_mgr = getattr(DriverSalaryTariff, 'all_objects', DriverSalaryTariff.objects)
+                    existing = dt_mgr.filter(area_group=area, route_name=route).first()
                     row_data['is_deleted'] = False
+                    row_data['deleted_at'] = None
                     if existing:
                         if update_existing:
                             for f_k, f_v in row_data.items():
@@ -872,12 +896,14 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
                     acc = row_data.get('account_code', '1111')
                     ent = row_data.get('entity_name', '')
                     op_date = row_data.get('opening_date') or timezone.now().date()
-                    existing = OpeningBalance.objects.filter(account_code=acc, entity_name=ent, opening_date=op_date).first()
+                    ob_mgr = getattr(OpeningBalance, 'all_objects', OpeningBalance.objects)
+                    existing = ob_mgr.filter(account_code=acc, entity_name=ent, opening_date=op_date).first()
                     
                     # Tự động gán category & account_name
                     if not row_data.get('account_name'):
                         row_data['account_name'] = ACCOUNT_NAME_MAP.get(acc, 'Tài khoản kế toán')
                     row_data['is_deleted'] = False
+                    row_data['deleted_at'] = None
                     
                     deb = row_data.get('debit_amount', Decimal('0'))
                     crd = row_data.get('credit_amount', Decimal('0'))
@@ -899,11 +925,13 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
                         created_count += 1
 
                 else:
-                    # Các model có unique field 'code' hoặc 'license_plate'
+                    # Các model có unique field 'code' hoặc 'license_plate' (Customer, Location, ExpenseItem, ContainerType, ShippingLine, Subcontractor, Trailer, Allowance)
+                    model_mgr = getattr(model, 'all_objects', model.objects)
                     unique_field = config['unique_fields'][0]
                     unique_val = row_data.get(unique_field)
-                    existing = model.objects.filter(**{f"{unique_field}__iexact": unique_val}).first()
+                    existing = model_mgr.filter(**{f"{unique_field}__iexact": unique_val}).first()
                     row_data['is_deleted'] = False
+                    row_data['deleted_at'] = None
                     if existing:
                         if update_existing:
                             for f_k, f_v in row_data.items():
@@ -916,8 +944,8 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
                         model.objects.create(**row_data)
                         created_count += 1
 
-            except Exception as e:
-                errors.append(f"Dòng {row_offset}: Lỗi lưu dữ liệu: {str(e)}")
+        except Exception as e:
+            errors.append(f"Dòng {row_offset}: Lỗi lưu dữ liệu: {str(e)}")
 
     total_success = created_count + updated_count
     msg = f"Đã nhập thành công {total_success} bản ghi ({created_count} tạo mới, {updated_count} cập nhật)."

@@ -749,3 +749,53 @@ class ReferentialDeletionLocksTestCase(TestCase):
         emp.refresh_from_db()
         self.assertFalse(emp.is_deleted)
 
+    def test_import_soft_deleted_customer_and_savepoint_isolation(self):
+        import io
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.customers.models import Customer
+        from apps.master_data.import_export_service import generate_catalog_template
+
+        # 1. Tạo customer KH001 rồi xóa mềm (is_deleted=True)
+        c = Customer.all_objects.filter(code='KH001').first()
+        if not c:
+            c = Customer.objects.create(code='KH001', name='Khách hàng Cũ KH001', address='Địa chỉ cũ')
+        c.is_deleted = True
+        c.save()
+
+        # 2. Tạo file Excel nhập chứa KH001 và KH002
+        wb, _ = generate_catalog_template('customers')
+        ws = wb.active
+        # Dòng lỗi (thiếu tên bắt buộc)
+        ws.append(['KH_ERROR', '', 'LỖI', 'COMMERCIAL_TRADING', '', '', '', '', '', '', '', '', '', '', 30, 0, ''])
+        # Dòng KH001 (khôi phục & cập nhật)
+        ws.append(['KH001', 'CÔNG TY KH001 ĐÃ HỒI PHỤC', 'KH001', 'COMMERCIAL_TRADING', '0310001111', '123 Đường Mới', '', '', '', '', '', '', '', '', 30, 0, 'Hồi phục'])
+        # Dòng KH002 (tạo mới)
+        ws.append(['KH002', 'CÔNG TY KH002 MỚI', 'KH002', 'COMMERCIAL_TRADING', '0310002222', '456 Đường Mới', '', '', '', '', '', '', '', '', 30, 0, 'Tạo mới'])
+
+        out = io.BytesIO()
+        wb.save(out)
+        out.seek(0)
+
+        uploaded = SimpleUploadedFile(
+            'customers_test_upsert.xlsx',
+            out.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        res = self.client.post('/api/master-data/import/', {
+            'catalog': 'customers',
+            'file': uploaded,
+            'update_existing': 'true'
+        }, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # KH001 được cập nhật/khôi phục, KH002 được tạo mới, KH_ERROR bị lỗi nhưng không làm sập transaction
+        self.assertEqual(res.data.get('updated_count'), 1)
+        self.assertEqual(res.data.get('created_count'), 1)
+        self.assertEqual(res.data.get('error_count'), 1)
+
+        # Kiểm tra database: KH001 đã được khôi phục is_deleted=False
+        c_restored = Customer.objects.get(code='KH001')
+        self.assertFalse(c_restored.is_deleted)
+        self.assertEqual(c_restored.name, 'CÔNG TY KH001 ĐÃ HỒI PHỤC')
+        self.assertTrue(Customer.objects.filter(code='KH002').exists())
