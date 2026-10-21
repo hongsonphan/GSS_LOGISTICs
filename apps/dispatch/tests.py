@@ -724,3 +724,358 @@ class DashboardDynamicMetricsTestCase(TestCase):
         container_data = sales_trend[1]['data']
         self.assertIsInstance(container_data, list)
         self.assertEqual(len(container_data), 2)
+
+
+class EndToEndLogisticsWorkflowSimulationTestCase(TestCase):
+    """
+    KIỂM THỬ GIẢ LẬP TOÀN BỘ CHU TRÌNH VẬN TẢI LOGISTICS (END-TO-END WORKFLOW SIMULATION)
+    Từ Báo giá -> Biểu cước -> Đơn hàng Booking -> Điều độ phát lệnh -> Vận hành 8 mốc
+    -> Chi phí & Tạm ứng -> Quyết toán chuyến xe -> Xóa / Hủy phiếu điều độ.
+    """
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_superuser(username='admin_sim', email='admin@trienvo.vn', password='password123')
+        self.client.force_login(self.user)
+
+        # 1. Nhân sự
+        self.driver = Employee.objects.create(
+            code='TX_SIM_01',
+            full_name='Nguyễn Văn Lái Xe',
+            phone_number='0909123456',
+            role=EmployeeRole.DRIVER
+        )
+        self.dispatcher = Employee.objects.create(
+            code='DD_SIM_01',
+            full_name='Trần Điều Độ',
+            phone_number='0909654321',
+            role=EmployeeRole.DISPATCHER
+        )
+
+        # 2. Phương tiện
+        self.vehicle = Vehicle.objects.create(
+            license_plate='51C-888.99',
+            vehicle_type=VehicleType.TRACTOR,
+            registration_expiry=timezone.now().date(),
+            insurance_expiry=timezone.now().date()
+        )
+
+        # 3. Khách hàng
+        self.customer = Customer.objects.create(
+            code='KH_PHATDAT',
+            name='CÔNG TY TNHH XNK PHÁT ĐẠT',
+            short_name='PHÁT ĐẠT',
+            tax_code='0312345678',
+            payment_term_days=30
+        )
+
+    def test_full_logistics_lifecycle_simulation(self):
+        from apps.customers.models import Quotation, QuotationItem, RouteTariff, BookingOrder, BookingStatus
+        from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus, DriverTripAdvance
+        from apps.documents.models import TripDocument
+        from core.workflows import transition_trip, can_transition
+
+        # =========================================================================
+        # BƯỚC 1: BÁO GIÁ & PHỄU BÁN HÀNG (CRM / SALES)
+        # =========================================================================
+        quote = Quotation.objects.create(
+            quotation_code='BG-SIM-2026-001',
+            customer=self.customer,
+            origin_zone='Cát Lái',
+            destination_zone='Bình Dương',
+            estimated_km=40,
+            route_description='Cảng Cát Lái ➔ KCN Sóng Thần 1, Dĩ An, Bình Dương',
+            unit_price=4500000,
+            expected_trips_monthly=20,
+            status='PENDING_APPROVAL'
+        )
+        quote_item = QuotationItem.objects.create(
+            quotation=quote,
+            route_description=quote.route_description,
+            origin_zone=quote.origin_zone,
+            destination_zone=quote.destination_zone,
+            cargo_type='Cont 40HC',
+            estimated_km=40,
+            unit_price=4500000,
+            expected_trips_monthly=20
+        )
+        # Ban Giám Đốc duyệt báo giá
+        quote.status = 'APPROVED'
+        quote.save(update_fields=['status'])
+        self.assertEqual(quote.status, 'APPROVED')
+        self.assertEqual(quote.expected_revenue, 4500000 * 20)
+
+        # =========================================================================
+        # BƯỚC 2: BIỂU CƯỚC VẬN TẢI THEO HỢP ĐỒNG KHÁCH HÀNG (ROUTE TARIFF)
+        # =========================================================================
+        tariff = RouteTariff.objects.create(
+            customer=self.customer,
+            pickup_location='CẢNG CÁT LÁI',
+            delivery_location='KHO NHÀ MÁY SÓNG THẦN 1',
+            dropoff_location='BÃI RỖNG ĐỒNG NAI',
+            container_size='40HC',
+            freight_price=4500000,
+            driver_trip_pay=550000,
+            toll_standard_fee=280000
+        )
+        self.assertEqual(tariff.freight_price, 4500000)
+        self.assertEqual(tariff.driver_trip_pay, 550000)
+
+        # =========================================================================
+        # BƯỚC 3: TIẾP NHẬN ĐƠN HÀNG BOOKING (BOOKING ORDER)
+        # =========================================================================
+        booking = BookingOrder.objects.create(
+            booking_code='BK-SIM-2026-01',
+            customer=self.customer,
+            booking_type='IMPORT_FCL',
+            booking_number='COSCO_BKG_88899',
+            shipping_line='COSCO',
+            container_size='40HC',
+            total_containers=2,
+            dispatched_containers=0,
+            pickup_location=tariff.pickup_location,
+            delivery_location=tariff.delivery_location,
+            dropoff_location=tariff.dropoff_location,
+            status=BookingStatus.PENDING_DISPATCH
+        )
+        self.assertEqual(booking.status, BookingStatus.PENDING_DISPATCH)
+        self.assertEqual(booking.dispatched_containers, 0)
+
+        # =========================================================================
+        # BƯỚC 4: LẬP PHIẾU ĐIỀU ĐỘ / PHÁT LỆNH ĐIỀU XE (DISPATCH TRIP)
+        # =========================================================================
+        trip1 = DispatchTrip.objects.create(
+            trip_code='TVL-E2E-SIM-001',
+            customer=self.customer,
+            booking_order=booking,
+            vehicle=self.vehicle,
+            driver=self.driver,
+            dispatcher=self.dispatcher,
+            container_type='40HC',
+            pickup_location=tariff.pickup_location,
+            warehouse_location=tariff.delivery_location,
+            dropoff_location=tariff.dropoff_location,
+            status=TripStatus.DISPATCHED,
+            dispatched_at=timezone.now(),
+            driver_allowance=tariff.driver_trip_pay
+        )
+        # Tăng số lượng đã phát lệnh cho Booking
+        booking.dispatched_containers += 1
+        booking.status = BookingStatus.PARTIALLY_DISPATCHED
+        booking.save()
+
+        self.assertEqual(trip1.status, TripStatus.DISPATCHED)
+        self.assertEqual(booking.dispatched_containers, 1)
+        self.assertEqual(booking.status, BookingStatus.PARTIALLY_DISPATCHED)
+
+        # =========================================================================
+        # BƯỚC 5: VẬN HÀNH STATE MACHINE QUA 8 MỐC TIẾN ĐỘ THỰC TẾ
+        # =========================================================================
+        # Mốc 1: Tài xế nhận chuyến
+        trip1.status = TripStatus.ACCEPTED
+        trip1.accepted_at = timezone.now()
+        trip1.save()
+
+        # Mốc 2: Lấy cont tại cảng, cập nhật thông tin vỏ cont & seal
+        trip1.status = TripStatus.CONTAINER_PICKED
+        trip1.container_number = 'COSU9876543'
+        trip1.seal_number = 'COS_SEAL_123'
+        trip1.container_picked_at = timezone.now()
+        trip1.save()
+
+        # Mốc 3: Lăn bánh di chuyển
+        trip1.status = TripStatus.IN_TRANSIT
+        trip1.departed_at = timezone.now()
+        trip1.save()
+
+        # Mốc 4: Đến kho khách hàng
+        trip1.status = TripStatus.AT_WAREHOUSE
+        trip1.arrived_warehouse_at = timezone.now()
+        trip1.save()
+
+        # Mốc 5: Bốc dỡ hàng tại dock
+        trip1.status = TripStatus.UNLOADING
+        trip1.start_unloading_at = timezone.now()
+        trip1.save()
+
+        # Mốc 6: Giao hàng thành công, ký biên bản POD
+        trip1.status = TripStatus.DELIVERED
+        trip1.delivered_at = timezone.now()
+        trip1.save()
+
+        # Tải chứng từ ảnh POD
+        doc_pod = TripDocument.objects.create(
+            trip=trip1,
+            document_type='DELIVERY_POD',
+            title='Biên bản giao hàng có ký nhận (POD)',
+            is_verified=True
+        )
+
+        # Mốc 7: Hạ vỏ cont tại bãi rỗng
+        trip1.status = TripStatus.RETURNING_EMPTY
+        trip1.returning_empty_at = timezone.now()
+        trip1.save()
+
+        # Tải chứng từ phiếu hạ bãi EIR
+        doc_eir = TripDocument.objects.create(
+            trip=trip1,
+            document_type='EIR_RECEIPT',
+            title='Phiếu nâng hạ hạ bãi rỗng (EIR)',
+            is_verified=True
+        )
+
+        # Mốc 8: Hoàn tất chuyến xe
+        trip1.status = TripStatus.COMPLETED
+        trip1.completed_at = timezone.now()
+        trip1.save()
+
+        self.assertEqual(trip1.status, TripStatus.COMPLETED)
+        self.assertEqual(trip1.documents.filter(is_deleted=False).count(), 2)
+
+        # =========================================================================
+        # BƯỚC 6: TẠM ỨNG & KÊ KHAI CHI PHÍ CHUYẾN XE (TRIP EXPENSES)
+        # =========================================================================
+        # 1. Cấp tạm ứng cho tài xế trước chuyến: 1,000,000 đ
+        advance = DriverTripAdvance.objects.create(
+            code='TUTX-SIM-001',
+            trip=trip1,
+            driver=self.driver,
+            amount=1000000,
+            advance_date=timezone.now().date(),
+            purpose='Tạm ứng cầu đường BOT và phí nâng hạ cảng'
+        )
+        self.assertEqual(advance.amount, 1000000)
+
+        # Khoản 1: Vé cầu đường (TVL chịu)
+        exp1 = TripExpense.objects.create(
+            trip=trip1,
+            driver=self.driver,
+            vehicle=self.vehicle,
+            category=ExpenseCategory.TOLL_FEE,
+            expense_payer_type='TVL_COST',
+            is_on_behalf_of_customer=False,
+            amount=280000,
+            status=ApprovalStatus.APPROVED,
+            approved_by=self.dispatcher,
+            notes='Vé BOT Cầu Bình Triệu & Sóng Thần'
+        )
+
+        # Khoản 2: Phí nâng hạ cont (TVL chi hộ khách hàng -> thu lại từ khách)
+        exp2 = TripExpense.objects.create(
+            trip=trip1,
+            driver=self.driver,
+            vehicle=self.vehicle,
+            category=ExpenseCategory.LIFT_ON,
+            expense_payer_type='TVL_BEHALF',
+            is_on_behalf_of_customer=True,
+            amount=520000,
+            status=ApprovalStatus.APPROVED,
+            approved_by=self.dispatcher,
+            notes='Phí nâng cont rỗng tại Cát Lái (Hãng tàu COSCO)'
+        )
+
+        # Khoản 3: Bồi dưỡng kho (TVL chịu)
+        exp3 = TripExpense.objects.create(
+            trip=trip1,
+            driver=self.driver,
+            vehicle=self.vehicle,
+            category=ExpenseCategory.LABOR_STEVEDORING,
+            expense_payer_type='TVL_COST',
+            is_on_behalf_of_customer=False,
+            amount=150000,
+            status=ApprovalStatus.APPROVED,
+            approved_by=self.dispatcher,
+            notes='Bồi dưỡng công nhân dỡ hàng dock kho Sóng Thần'
+        )
+
+        self.assertEqual(trip1.expenses.filter(is_deleted=False).count(), 3)
+
+        # =========================================================================
+        # BƯỚC 7: QUYẾT TOÁN CHUYẾN XE (TRIP SETTLEMENT & RECONCILIATION)
+        # =========================================================================
+        res_settle = self.client.post(f'/api/trips/{trip1.trip_code}/settle-expenses/')
+        self.assertEqual(res_settle.status_code, 200)
+        self.assertTrue(res_settle.json().get('success'))
+
+        trip1.refresh_from_db()
+        self.assertTrue(trip1.is_expenses_settled)
+
+        # Kiểm tra hạch toán tài chính chuyến xe
+        freight_rev = tariff.freight_price # 4,500,000 đ
+        customer_behalf = 520000 # Thu lại từ khách
+        total_customer_receivable = freight_rev + customer_behalf # 5,020,000 đ
+        tvl_cost = 280000 + 150000 # 430,000 đ
+        driver_wage = tariff.driver_trip_pay # 550,000 đ
+        
+        # Lợi nhuận ròng / Lãi gộp chuyến xe
+        gross_profit = freight_rev - tvl_cost - driver_wage
+        self.assertEqual(gross_profit, 4500000 - 430000 - 550000) # 3,520,000 đ
+
+        # Đối soát tạm ứng tài xế:
+        driver_actual_spent = 280000 + 520000 + 150000 # 950,000 đ
+        driver_refund = advance.amount - driver_actual_spent # 50,000 đ tài xế hoàn lại
+        self.assertEqual(driver_refund, 50000)
+
+        # =========================================================================
+        # BƯỚC 8: KIỂM THỬ TÍNH NĂNG XÓA PHIẾU ĐIỀU ĐỘ (DELETE TRIP DISPATCH)
+        # =========================================================================
+        # 1. Thử xóa chuyến 1 đã chốt sổ chi phí -> BỊ CHẶN AN TOÀN (HTTP 403)
+        res_del_settled = self.client.delete(f'/api/trips/{trip1.trip_code}/')
+        self.assertEqual(res_del_settled.status_code, 403)
+        self.assertIn('chốt sổ', res_del_settled.json().get('error', ''))
+
+        # 2. Tạo tiếp Phiếu điều độ Cont 2 cho Booking Order
+        trip2 = DispatchTrip.objects.create(
+            trip_code='TVL-E2E-SIM-002',
+            customer=self.customer,
+            booking_order=booking,
+            vehicle=self.vehicle,
+            driver=self.driver,
+            dispatcher=self.dispatcher,
+            container_type='40HC',
+            pickup_location=tariff.pickup_location,
+            warehouse_location=tariff.delivery_location,
+            dropoff_location=tariff.dropoff_location,
+            status=TripStatus.DISPATCHED,
+            dispatched_at=timezone.now()
+        )
+        booking.dispatched_containers = 2
+        booking.status = BookingStatus.COMPLETED
+        booking.save()
+
+        self.assertEqual(booking.status, BookingStatus.COMPLETED)
+        self.assertEqual(booking.dispatched_containers, 2)
+
+        # Thêm 1 chi phí nháp cho chuyến 2
+        exp_temp = TripExpense.objects.create(
+            trip=trip2,
+            driver=self.driver,
+            vehicle=self.vehicle,
+            category=ExpenseCategory.TOLL_FEE,
+            expense_payer_type='TVL_COST',
+            amount=100000,
+            status=ApprovalStatus.PENDING,
+            notes='Chi phí nháp'
+        )
+
+        # Xóa / Hủy phiếu điều độ chuyến 2 (chưa quyết toán, có cờ cascade=true)
+        res_del_trip2 = self.client.delete(
+            f'/api/trips/{trip2.trip_code}/',
+            data=json.dumps({'reason': 'Khách hàng dời lịch xuất hàng cont 2 sang tuần sau', 'cascade': True}),
+            content_type='application/json'
+        )
+        self.assertEqual(res_del_trip2.status_code, 200)
+        self.assertTrue(res_del_trip2.json().get('success'))
+
+        # Kiểm tra chuyến 2 đã bị xóa mềm và chuyển trạng thái CANCELLED
+        trip2.refresh_from_db()
+        self.assertTrue(trip2.is_deleted)
+        self.assertEqual(trip2.status, TripStatus.CANCELLED)
+
+        # Kiểm tra chi phí nháp của chuyến 2 được đồng bộ xóa mềm
+        exp_temp.refresh_from_db()
+        self.assertTrue(exp_temp.is_deleted)
+
+        # Kiểm tra Booking Order được tự động hoàn lại số lượng container đã phát lệnh
+        booking.refresh_from_db()
+        self.assertEqual(booking.dispatched_containers, 1)
+        self.assertEqual(booking.status, BookingStatus.PARTIALLY_DISPATCHED)

@@ -3904,7 +3904,7 @@ function renderDispatchTable(trips) {
     if (!trips || trips.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="text-center py-12 text-slate-400">
+                <td colspan="10" class="text-center py-12 text-slate-400">
                     <div class="flex flex-col items-center justify-center">
                         <i class="ph ph-magnifying-glass text-4xl mb-2 text-slate-300"></i>
                         <p class="font-medium text-sm text-slate-500">Không tìm thấy chuyến xe nào phù hợp với bộ lọc</p>
@@ -4068,7 +4068,7 @@ function renderDispatchTable(trips) {
                     <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                 </div>
             </td>
-            <td class="px-3 py-2 text-center whitespace-nowrap">
+            <td class="px-3 py-2 text-center whitespace-nowrap border-r border-slate-200/70">
                 <span class="text-xs ${statusCls}">
                     ${escapeHtml(trip.status_label)}
                 </span>
@@ -4094,6 +4094,22 @@ function renderDispatchTable(trips) {
                     </div>
                 ` : ''}
             </td>
+            <td class="px-2.5 py-2 text-center whitespace-nowrap">
+                <div class="inline-flex items-center gap-1.5 justify-center">
+                    <button type="button" onclick="event.stopPropagation(); viewTripDetail('${tripIdentifier}')" 
+                        class="px-2 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        title="Xem chi tiết phiếu điều độ ${trip.id}">
+                        <i class="ph-bold ph-eye"></i>
+                        <span>Xem</span>
+                    </button>
+                    <button type="button" onclick="event.stopPropagation(); deleteOrCancelTrip('${tripIdentifier}')" 
+                        class="px-2 py-1 bg-transparent hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-300 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        title="Xóa phiếu điều độ ${trip.id}">
+                        <i class="ph-bold ph-trash"></i>
+                        <span>Xóa</span>
+                    </button>
+                </div>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -4105,6 +4121,7 @@ function renderDispatchTable(trips) {
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `<span class="text-teal-800 font-extrabold">${trips.length}</span> chuyến xe hiển thị`, colspan: 7, class: 'text-slate-700' },
                 { html: `<span class="text-rose-600 font-mono font-black tabular-nums">${new Intl.NumberFormat('vi-VN').format(totalDispatchExpenses)} đ</span>`, align: 'left' },
+                { text: '', align: 'center' },
                 { text: '', align: 'center' }
             ]
         });
@@ -6096,36 +6113,52 @@ async function submitEditTripForm() {
 window.submitEditTripForm = submitEditTripForm;
 
 async function deleteOrCancelTrip(tripCode = null) {
-    const code = tripCode || (window.currentTripDetail ? window.currentTripDetail.id : null);
+    const code = tripCode || (window.currentTripDetail ? (window.currentTripDetail.id || window.currentTripDetail.trip_code) : null);
     if (!code) {
-        showToast('warning', 'Không tìm thấy chuyến xe cần xóa');
+        showToast('warning', 'Không xác định được mã phiếu điều độ cần xóa!');
         return;
     }
 
-    const reason = prompt(`XÁC NHẬN HỦY / XÓA CHUYẾN XE ${code}\n\nNhập lý do hủy chuyến (để lưu vết nhật ký điều độ):`, 'Điều độ hủy hoặc dời lịch');
-    if (reason === null) return; // Người dùng bấm Hủy
+    const confirmed = await showConfirmModal({
+        title: 'Xác Nhận Xóa Phiếu Điều Độ',
+        message: `Bạn có chắc chắn muốn xóa / hủy phiếu điều độ "${code}" không?\n\n• Trạng thái chuyến sẽ chuyển sang Đã Hủy (Soft-Delete an toàn bảo toàn Audit Trail).\n• Hạn mức container sẽ tự động hoàn lại cho đơn hàng Booking liên quan.\n• Các chứng từ chi phí và hình ảnh chưa chốt sổ sẽ được đồng bộ dọn dẹp an toàn.`,
+        confirmText: 'Xác Nhận Xóa Phiếu',
+        cancelText: 'Hủy Bỏ',
+        type: 'danger',
+        icon: 'ph-bold ph-trash text-2xl'
+    });
+    if (!confirmed) return;
 
     try {
         const res = await fetchWithAuth(`/api/trips/${code}/`, {
             method: 'DELETE',
-            body: JSON.stringify({ reason: reason.trim() || 'Điều độ viên hủy chuyến' })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                reason: 'Điều độ viên hủy/xóa phiếu điều độ',
+                cascade: true 
+            })
         });
         const data = await res.json();
-        if (res.ok && data.success) {
-            closeModal('modal-edit-trip');
-            showToast('success', data.message || `Đã hủy chuyến ${code} thành công!`, 'Hủy Chuyến Thành Công');
-            if (typeof backToTrips === 'function') {
-                backToTrips();
+        if (res.ok && (data.success || res.status === 204)) {
+            if (typeof closeModal === 'function') {
+                try { closeModal('modal-edit-trip'); } catch(e) {}
+            }
+            showToast('success', data.message || `Đã xóa phiếu điều độ ${code} thành công!`, 'Xóa Phiếu Thành Công');
+            
+            // Nếu đang xem chi tiết của phiếu bị xóa -> Quay về danh sách điều vận
+            const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+            if (currentActiveView && currentActiveView.id === 'view-trip-detail') {
+                if (typeof backToTrips === 'function') backToTrips();
             }
             if (typeof loadTripsData === 'function') {
-                loadTripsData();
+                await loadTripsData();
             }
         } else {
-            showToast('danger', data.error || data.message || 'Không thể hủy chuyến xe');
+            showToast('danger', data.error || data.message || 'Không thể xóa phiếu điều độ này!');
         }
     } catch (err) {
         console.error('Error deleting trip:', err);
-        showToast('danger', 'Lỗi kết nối máy chủ');
+        showToast('danger', 'Lỗi kết nối máy chủ khi thực hiện xóa phiếu điều độ!');
     }
 }
 window.deleteOrCancelTrip = deleteOrCancelTrip;

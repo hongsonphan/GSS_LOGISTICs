@@ -3383,26 +3383,35 @@ class TripDetailAPIView(APIView):
         return self.patch(request, trip_code)
 
     def delete(self, request, trip_code):
-        """API Hủy / Xóa mềm chuyến xe (Hỗ trợ hoàn lại hạn mức container cho Booking Order)."""
+        """API Hủy / Xóa mềm chuyến xe (Hỗ trợ hoàn lại hạn mức container cho Booking Order và dọn dẹp chi phí liên quan)."""
         trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
         if trip.is_expenses_settled:
-            return Response({'error': 'Chuyến xe đã được Kế toán chốt sổ chi phí, không thể xóa/hủy!'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Chuyến xe đã được Kế toán chốt sổ chi phí quyết toán, không thể xóa/hủy!'}, status=status.HTTP_403_FORBIDDEN)
 
-        # Kiểm tra phát sinh chi phí hoặc tạm ứng trước khi xóa
-        exp_count = trip.expenses.filter(is_deleted=False).count()
+        # Kiểm tra tạm ứng tài xế
+        adv_active = DriverTripAdvance.objects.filter(trip=trip, is_deleted=False)
+        if adv_active.exists():
+            adv_count = adv_active.count()
+            return Response({
+                'error': f"Chuyến xe [{trip.trip_code}] đã phát sinh {adv_count} phiếu tạm ứng tài xế. Vui lòng hoàn ứng/hủy tạm ứng trước khi xóa chuyến xe!"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Kiểm tra chi phí phát sinh
+        active_expenses = trip.expenses.filter(is_deleted=False)
+        exp_count = active_expenses.count()
+        cascade_delete = request.data.get('cascade') or request.GET.get('cascade') or request.data.get('force')
         if exp_count > 0:
-            return Response({
-                'error': f"Chuyến xe [{trip.trip_code}] đã phát sinh {exp_count} chứng từ chi phí. Vui lòng kiểm tra và xóa các chứng từ chi phí trước khi xóa/hủy chuyến xe!"
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        adv_count = DriverTripAdvance.objects.filter(trip=trip, is_deleted=False).count()
-        if adv_count > 0:
-            return Response({
-                'error': f"Chuyến xe [{trip.trip_code}] đã phát sinh {adv_count} phiếu tạm ứng tài xế. Vui lòng hoàn ứng/xử lý tạm ứng trước khi xóa chuyến xe!"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            if str(cascade_delete).lower() in ['true', '1', 'yes']:
+                active_expenses.update(is_deleted=True, updated_at=timezone.now())
+            else:
+                return Response({
+                    'error': f"Chuyến xe [{trip.trip_code}] đã phát sinh {exp_count} chứng từ chi phí. Vui lòng xác nhận xóa kèm chi phí hoặc xử lý chứng từ chi phí trước khi xóa chuyến!",
+                    'requires_cascade': True,
+                    'expense_count': exp_count
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         # Hoàn lại số lượng cont đã phát lệnh cho Booking nếu có
         if trip.booking_order and trip.booking_order.dispatched_containers > 0:
@@ -3418,6 +3427,9 @@ class TripDetailAPIView(APIView):
         trip.is_deleted = True
         trip.status = TripStatus.CANCELLED
         trip.save(update_fields=['is_deleted', 'status', 'updated_at'])
+
+        # Đồng bộ xóa mềm chứng từ hình ảnh đính kèm (EIR, POD...)
+        trip.documents.filter(is_deleted=False).update(is_deleted=True)
 
         from core.models import TrackingEventLog
         actor = (getattr(request.user, 'employee', None) if request.user and request.user.is_authenticated else None) or trip.dispatcher

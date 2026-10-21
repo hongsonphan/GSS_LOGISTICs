@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.9.8] - 2026-10-22 (Bổ Sung Tính Năng Xóa Phiếu Điều Độ Chuẩn BIM & Giả Lập Toàn Bộ Chu Trình Từ Báo Giá Đến Quyết Toán)
+
+### 1. Bổ Sung & Chuẩn Hóa Tính Năng Xóa Phiếu Điều Độ (Delete Dispatch Trip):
+- **Giao Diện Trực Quan — Top Header Chi Tiết Chuyến (`view_trip_detail.html`):**
+  * Bổ sung nút bấm `[Xóa Phiếu]` (màu đỏ rose, icon thùng rác) nổi bật trên thanh công cụ đầu trang cạnh nút `[Sửa]`.
+- **Giao Diện Thao Tác Nhanh — Bảng Danh Sách Điều Vận (`view_dispatch.html` & `static/js/app.js`):**
+  * Thêm cột "Thao Tác" vào cuối bảng với bộ đôi nút bấm 2 chạm `[Xem]` (mở chi tiết) và `[Xóa]` (xóa nhanh phiếu điều độ).
+- **Trải Nghiệm Xác Nhận Chuyên Nghiệp:**
+  * Thay thế hộp thoại `prompt` bằng modal xác nhận chuẩn BIM `showConfirmModal` với cảnh báo an toàn, giải thích rõ các tác động nghiệp vụ (hoàn container về đơn hàng, dọn dẹp chi phí chưa chốt sổ).
+- **Bảo Vệ Tính Toàn Vẹn & Kế Toán Ở Backend (`apps/dispatch/api_views.py`):**
+  * Chặn tuyệt đối hành vi xóa phiếu nếu chuyến xe đã được Kế toán chốt sổ quyết toán (`is_expenses_settled = True` -> trả về `HTTP 403 Forbidden`).
+  * Tự động hoàn lại số lượng container đã phát lệnh (`dispatched_containers -= 1`) cho đơn hàng Booking Order liên quan, phục hồi trạng thái Booking tương ứng (`PARTIALLY_DISPATCHED` hoặc `PENDING_DISPATCH`).
+  * Hỗ trợ cờ xóa mềm đồng bộ (Cascade Soft-delete) an toàn cho các chứng từ chi phí và hình ảnh đính kèm chưa chốt sổ.
+  * Tự động ghi nhận nhật ký hành trình bất biến `TrackingEventLog` với lý do hủy phiếu của điều phối viên.
+
+### 2. Rà Soát & Chạy Giả Lập Chu Trình Vận Tải Toàn Diện (End-to-End Simulation):
+- **Xây Dựng Test Suite Tự Động Khép Kín (`apps/dispatch/tests.py` - `EndToEndLogisticsWorkflowSimulationTestCase`):**
+  1. *Khách hàng & Báo giá (CRM/Sales):* Tạo Báo giá `BG-SIM-2026-001` (4,500,000 đ/chuyến) -> Giám đốc duyệt `APPROVED`.
+  2. *Biểu cước (Tariff):* Thiết lập biểu cước `RouteTariff` (Cước: 4,500,000 đ; Lương tài xế: 550,000 đ; Định mức BOT: 280,000 đ).
+  3. *Đơn hàng (Booking):* Tiếp nhận Booking `BK-SIM-2026-01` (2 cont 40HC, `IMPORT_FCL`).
+  4. *Điều độ (Dispatch):* Phát lệnh điều xe cont 1 (`TVL-E2E-SIM-001`), gán đầu kéo, rơ-mooc, tài xế -> Booking chuyển `PARTIALLY_DISPATCHED`.
+  5. *Vận hành State Machine 8 mốc:* Chuyển tuần tự qua các mốc `ACCEPTED` -> `CONTAINER_PICKED` (gán cont/seal) -> `IN_TRANSIT` -> `AT_WAREHOUSE` -> `UNLOADING` -> `DELIVERED` (tải ảnh POD) -> `RETURNING_EMPTY` (tải phiếu EIR) -> `COMPLETED`.
+  6. *Chi phí & Tạm ứng:* Cấp tạm ứng 1,000,000 đ cho tài xế; kê khai 3 chi phí (BOT: 280,000 đ - TVL; Nâng cont: 520,000 đ - Khách chi hộ; Bồi dưỡng: 150,000 đ - TVL) -> Duyệt `APPROVED`.
+  7. *Quyết toán (Settlement):* Chốt sổ `settle-expenses` -> Kiểm tra lãi gộp (3,520,000 đ) và đối soát hoàn ứng tài xế (thừa 50,000 đ hoàn lại quỹ).
+  8. *Kiểm thử Xóa Phiếu Điều Độ:* Chặn xóa phiếu đã quyết toán (HTTP 403); Tạo và xóa thành công phiếu cont 2 (`TVL-E2E-SIM-002`), hoàn container về booking chuẩn xác.
+
+---
+
+
 ## [v3.9.7] - 2026-10-21 (Cập Nhật Chuẩn Hóa Cơ Cấu Tổ Chức: 5 Phòng Ban & 13 Vị Trí Chức Danh Theo Sơ Đồ Doanh Nghiệp)
 
 ### 1. Chuẩn Hóa Danh Mục Phòng Ban (5 Phòng Ban + Ban Giám Đốc):
