@@ -220,6 +220,10 @@ class DashboardBGDAPIView(APIView):
         chart_revenue = []
         chart_expense = []
         chart_profit = []
+        chart_trips_total = []
+        chart_trips_completed = []
+        chart_bookings_containers = []
+        chart_advances = []
 
         if period == 'today':
             day_trips = DispatchTrip.objects.filter(
@@ -240,6 +244,18 @@ class DashboardBGDAPIView(APIView):
             chart_revenue = [yest_rev, day_rev]
             chart_expense = [yest_exp, day_exp]
             chart_profit = [yest_rev - yest_exp, day_rev - day_exp]
+            chart_trips_total = [yest_trips.count(), day_trips.count()]
+            chart_trips_completed = [yest_trips.filter(status=TripStatus.DELIVERED).count(), day_trips.filter(status=TripStatus.DELIVERED).count()]
+            y_bk = BookingOrder.objects.filter(created_at__date=yesterday, is_deleted=False)
+            d_bk = BookingOrder.objects.filter(created_at__date=today, is_deleted=False)
+            chart_bookings_containers = [
+                int(y_bk.aggregate(t=Sum('total_containers'))['t'] or y_bk.count()),
+                int(d_bk.aggregate(t=Sum('total_containers'))['t'] or d_bk.count())
+            ]
+            chart_advances = [
+                int(DriverTripAdvance.objects.filter(advance_date=yesterday, is_deleted=False).aggregate(t=Sum('amount'))['t'] or 0),
+                int(DriverTripAdvance.objects.filter(advance_date=today, is_deleted=False).aggregate(t=Sum('amount'))['t'] or 0)
+            ]
             avg_rev = agg_revenue
             avg_exp = agg_expense
             rev_label = "Doanh Thu (Hôm nay)"
@@ -263,11 +279,20 @@ class DashboardBGDAPIView(APIView):
                     chart_revenue.append(m_rev)
                     chart_expense.append(m_exp)
                     chart_profit.append(m_rev - m_exp)
+                    chart_trips_total.append(m_trips.count())
+                    chart_trips_completed.append(m_trips.filter(status=TripStatus.DELIVERED).count())
+                    m_bk = BookingOrder.objects.filter(created_at__year=today.year, created_at__month=m, is_deleted=False)
+                    chart_bookings_containers.append(int(m_bk.aggregate(t=Sum('total_containers'))['t'] or m_bk.count()))
+                    chart_advances.append(int(DriverTripAdvance.objects.filter(advance_date__year=today.year, advance_date__month=m, is_deleted=False).aggregate(t=Sum('amount'))['t'] or 0))
                     active_m_count += 1
                 else:
                     chart_revenue.append(0)
                     chart_expense.append(0)
                     chart_profit.append(0)
+                    chart_trips_total.append(0)
+                    chart_trips_completed.append(0)
+                    chart_bookings_containers.append(0)
+                    chart_advances.append(0)
             
             months_count = max(active_m_count, 1)
             avg_rev = round(agg_revenue / months_count)
@@ -291,6 +316,11 @@ class DashboardBGDAPIView(APIView):
                 chart_revenue.append(d_rev)
                 chart_expense.append(d_exp)
                 chart_profit.append(d_rev - d_exp)
+                chart_trips_total.append(d_trips.count())
+                chart_trips_completed.append(d_trips.filter(status=TripStatus.DELIVERED).count())
+                d_bk = BookingOrder.objects.filter(created_at__date=cur_date, is_deleted=False)
+                chart_bookings_containers.append(int(d_bk.aggregate(t=Sum('total_containers'))['t'] or d_bk.count()))
+                chart_advances.append(int(DriverTripAdvance.objects.filter(advance_date=cur_date, is_deleted=False).aggregate(t=Sum('amount'))['t'] or 0))
                 cur_date += datetime.timedelta(days=1)
             
             days_count = max(total_days, 1)
@@ -323,6 +353,11 @@ class DashboardBGDAPIView(APIView):
                 chart_revenue.append(w_rev)
                 chart_expense.append(w_exp)
                 chart_profit.append(w_rev - w_exp)
+                chart_trips_total.append(w_trips.count())
+                chart_trips_completed.append(w_trips.filter(status=TripStatus.DELIVERED).count())
+                w_bk = BookingOrder.objects.filter(created_at__date__range=[cur_date, w_end], is_deleted=False)
+                chart_bookings_containers.append(int(w_bk.aggregate(t=Sum('total_containers'))['t'] or w_bk.count()))
+                chart_advances.append(int(DriverTripAdvance.objects.filter(advance_date__range=[cur_date, w_end], is_deleted=False).aggregate(t=Sum('amount'))['t'] or 0))
                 
                 cur_date = w_end + datetime.timedelta(days=1)
             
@@ -361,6 +396,11 @@ class DashboardBGDAPIView(APIView):
                 chart_revenue.append(m_rev)
                 chart_expense.append(m_exp)
                 chart_profit.append(m_rev - m_exp)
+                chart_trips_total.append(m_trips.count())
+                chart_trips_completed.append(m_trips.filter(status=TripStatus.DELIVERED).count())
+                m_bk = BookingOrder.objects.filter(created_at__year=y, created_at__month=m, is_deleted=False)
+                chart_bookings_containers.append(int(m_bk.aggregate(t=Sum('total_containers'))['t'] or m_bk.count()))
+                chart_advances.append(int(DriverTripAdvance.objects.filter(advance_date__year=y, advance_date__month=m, is_deleted=False).aggregate(t=Sum('amount'))['t'] or 0))
             
             months_count = max(len(month_slots), 1)
             avg_rev = round(agg_revenue / months_count)
@@ -1034,6 +1074,107 @@ class DashboardBGDAPIView(APIView):
                 'department_label': task.get_department_display()
             })
 
+        # --- TÍNH TOÁN DỮ LIỆU THẬT 100% CHO CÁC BIỂU ĐỒ PHÂN BỔ (DONUT & SPECIALIZED CHARTS) ---
+
+        # 1. Kế toán: Cơ cấu chi phí thực tế từ TripExpense
+        real_exp_groups = list(TripExpense.objects.filter(is_deleted=False).values('category').annotate(cat_total=Sum('amount')).order_by('-cat_total')[:4])
+        total_real_exp = sum(float(g['cat_total']) for g in real_exp_groups)
+        CATEGORY_DICT = dict(ExpenseCategory.choices)
+        if total_real_exp > 0:
+            exp_labels = [CATEGORY_DICT.get(g['category'], g['category']) for g in real_exp_groups]
+            exp_data = [round(float(g['cat_total']) / total_real_exp * 100, 1) for g in real_exp_groups]
+            palette = ['#f59e0b', '#3b82f6', '#0d9488', '#8b5cf6']
+            color_classes = ['amber', 'blue', 'teal', 'purple']
+            exp_colors = palette[:len(real_exp_groups)]
+            exp_center_val = f"{exp_data[0]}%"
+            exp_center_lbl = exp_labels[0][:10]
+            exp_items = [
+                {
+                    'name': f"{exp_labels[i]}",
+                    'val': f"{exp_data[i]}% (~{int(real_exp_groups[i]['cat_total']):,} đ)".replace(',', '.'),
+                    'color': f"bg-{color_classes[i % len(color_classes)]}-500"
+                }
+                for i in range(len(real_exp_groups))
+            ]
+        else:
+            exp_labels = ['Chưa có phát sinh']
+            exp_data = [100]
+            exp_colors = ['#cbd5e1']
+            exp_center_val = '0 đ'
+            exp_center_lbl = 'Không có'
+            exp_items = [{'name': 'Chưa có khoản mục chi phí thực tế', 'val': '0 đ', 'color': 'bg-slate-400'}]
+
+        # 2. Điều vận: Lộ trình và Sự cố thực tế
+        running_trips = DispatchTrip.objects.filter(status__in=[TripStatus.IN_TRANSIT, TripStatus.RETURNING_EMPTY], is_deleted=False).count()
+        depot_trips = DispatchTrip.objects.filter(status__in=[TripStatus.DISPATCHED, TripStatus.ACCEPTED, TripStatus.CONTAINER_PICKED], is_deleted=False).count()
+        warehouse_trips = DispatchTrip.objects.filter(status__in=[TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING], is_deleted=False).count()
+
+        total_exceptions = TripException.objects.filter(is_deleted=False).count()
+        safe_trips = max(0, total_trips - total_exceptions)
+        traffic_issues = TripException.objects.filter(exception_type__in=[ExceptionType.PORT_CONGESTION, ExceptionType.WAREHOUSE_DELAY, ExceptionType.TRAFFIC_ACCIDENT, ExceptionType.VEHICLE_BREAKDOWN], is_deleted=False).count()
+        osd_issues = TripException.objects.filter(exception_type=ExceptionType.DAMAGED_CONTAINER, is_deleted=False).count()
+
+        # 3. Kinh doanh: Cơ cấu loại vỏ container và nhóm ngành hàng thực tế
+        cont_groups = list(BookingOrder.objects.filter(is_deleted=False).values('container_size').annotate(total=Sum('total_containers')).order_by('-total')[:3])
+        if not cont_groups:
+            cont_groups = list(DispatchTrip.objects.filter(is_deleted=False).exclude(container_type='').values('container_type').annotate(total=Count('id')).order_by('-total')[:3])
+        total_cont_sum = sum(int(c.get('total') or 0) for c in cont_groups)
+        if total_cont_sum > 0:
+            sales_opt1_labels = [c.get('container_size') or c.get('container_type') or 'Khác' for c in cont_groups]
+            sales_opt1_data = [round(int(c.get('total') or 0) / total_cont_sum * 100, 1) for c in cont_groups]
+            sales_opt1_colors = ['#3b82f6', '#0d9488', '#f59e0b'][:len(cont_groups)]
+            sales_opt1_center_val = f"{sales_opt1_data[0]}%"
+            sales_opt1_center_lbl = sales_opt1_labels[0]
+            color_classes = ['blue', 'teal', 'amber']
+            sales_opt1_items = [
+                {'name': f"{sales_opt1_labels[i]}", 'val': f"{sales_opt1_data[i]}% ({int(cont_groups[i]['total'])} cont)", 'color': f"bg-{color_classes[i % len(color_classes)]}-500"}
+                for i in range(len(cont_groups))
+            ]
+        else:
+            sales_opt1_labels = ['Chưa có dữ liệu']
+            sales_opt1_data = [100]
+            sales_opt1_colors = ['#cbd5e1']
+            sales_opt1_center_val = '0'
+            sales_opt1_center_lbl = 'Không có'
+            sales_opt1_items = [{'name': 'Chưa phát sinh đơn booking cont', 'val': '0 cont', 'color': 'bg-slate-400'}]
+
+        commodity_groups = list(BookingOrder.objects.filter(is_deleted=False).exclude(commodity='').values('commodity').annotate(c=Count('id')).order_by('-c')[:3])
+        total_comm_sum = sum(int(cg['c']) for cg in commodity_groups)
+        if total_comm_sum > 0:
+            sales_opt2_labels = [cg['commodity'][:25] for cg in commodity_groups]
+            sales_opt2_data = [round(int(cg['c']) / total_comm_sum * 100, 1) for cg in commodity_groups]
+            sales_opt2_colors = ['#10b981', '#3b82f6', '#8b5cf6'][:len(commodity_groups)]
+            sales_opt2_center_val = f"{sales_opt2_data[0]}%"
+            sales_opt2_center_lbl = sales_opt2_labels[0][:10]
+            color_classes = ['emerald', 'blue', 'purple']
+            sales_opt2_items = [
+                {'name': f"{sales_opt2_labels[i]}", 'val': f"{sales_opt2_data[i]}% ({commodity_groups[i]['c']} đơn)", 'color': f"bg-{color_classes[i % len(color_classes)]}-500"}
+                for i in range(len(commodity_groups))
+            ]
+        else:
+            sales_opt2_labels = ['Chưa có ngành hàng']
+            sales_opt2_data = [100]
+            sales_opt2_colors = ['#cbd5e1']
+            sales_opt2_center_val = '0'
+            sales_opt2_center_lbl = 'Không có'
+            sales_opt2_items = [{'name': 'Chưa khai báo mặt hàng cụ thể', 'val': '0 đơn', 'color': 'bg-slate-400'}]
+
+        # 4. Đội xe: Hiện trạng kỹ thuật & Đăng kiểm thực tế
+        v_active = Vehicle.objects.filter(status=VehicleStatus.ACTIVE, is_deleted=False).count()
+        v_idle = Vehicle.objects.filter(status=VehicleStatus.IDLE, is_deleted=False).count()
+        v_maint = Vehicle.objects.filter(status=VehicleStatus.MAINTENANCE, is_deleted=False).count()
+        valid_reg = Vehicle.objects.filter(registration_expiry__gt=today + datetime.timedelta(days=30), is_deleted=False).count()
+        warning_reg = Vehicle.objects.filter(registration_expiry__gte=today, registration_expiry__lte=today + datetime.timedelta(days=30), is_deleted=False).count()
+        expired_reg = Vehicle.objects.filter(registration_expiry__lt=today, is_deleted=False).count()
+
+        # 5. Nhân sự: Định biên và GPLX thực tế
+        drivers_cnt = Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True, is_deleted=False).count()
+        field_cnt = Employee.objects.filter(role__in=[EmployeeRole.DISPATCHER, EmployeeRole.MECHANIC], is_active=True, is_deleted=False).count()
+        office_cnt = Employee.objects.filter(is_active=True, is_deleted=False).exclude(role__in=[EmployeeRole.DRIVER, EmployeeRole.DISPATCHER, EmployeeRole.MECHANIC]).count()
+        valid_lic = Employee.objects.filter(role=EmployeeRole.DRIVER, license_expiry__gt=today + datetime.timedelta(days=30), is_active=True, is_deleted=False).count()
+        expiring_lic = Employee.objects.filter(role=EmployeeRole.DRIVER, license_expiry__gte=today, license_expiry__lte=today + datetime.timedelta(days=30), is_active=True, is_deleted=False).count()
+        expired_lic = Employee.objects.filter(role=EmployeeRole.DRIVER, license_expiry__lt=today, is_active=True, is_deleted=False).count()
+
         # --- 12. HỆ THỐNG BIỂU ĐỒ PHÂN TÍCH CHUYÊN BIỆT THEO TỪNG VAI TRÒ (ROLE-BASED CHARTS) ---
         role_charts = {
             'DIRECTOR': {
@@ -1121,7 +1262,7 @@ class DashboardBGDAPIView(APIView):
                         {
                             'label': 'Tạm Ứng Giải Ngân',
                             'type': 'bar',
-                            'data': [round(exp * 0.7) for exp in chart_expense],
+                            'data': chart_advances,
                             'backgroundColor': 'rgba(59, 130, 246, 0.75)',
                             'order': 3
                         },
@@ -1147,17 +1288,12 @@ class DashboardBGDAPIView(APIView):
                     'btn1': 'Khoản Mục',
                     'btn2': 'Quyết Toán',
                     'opt1': {
-                        'labels': ['Nhiên liệu Dầu DO', 'Vé Cầu đường BOT', 'Nâng hạ & Bến bãi', 'Chi phí khác & Lưu ca'],
-                        'data': [55, 25, 12, 8],
-                        'colors': ['#f59e0b', '#3b82f6', '#0d9488', '#8b5cf6'],
-                        'center_val': '55%',
-                        'center_lbl': 'Dầu DO',
-                        'items': [
-                            {'name': 'Nhiên liệu Dầu DO (Khoản lớn nhất)', 'val': '55.0% tổng chi', 'color': 'bg-amber-500'},
-                            {'name': 'Vé Cầu đường BOT & Cao tốc', 'val': '25.0% tổng chi', 'color': 'bg-blue-500'},
-                            {'name': 'Phí Nâng hạ & Bốc dỡ cảng', 'val': '12.0% tổng chi', 'color': 'bg-teal-500'},
-                            {'name': 'Chi phí phát sinh & Lưu ca', 'val': '8.0% tổng chi', 'color': 'bg-purple-500'}
-                        ]
+                        'labels': exp_labels,
+                        'data': exp_data,
+                        'colors': exp_colors,
+                        'center_val': exp_center_val,
+                        'center_lbl': exp_center_lbl,
+                        'items': exp_items
                     },
                     'opt2': {
                         'labels': ['Đã chốt quyết toán', 'Chờ duyệt hóa đơn dầu/BOT', 'Chưa nộp chứng từ'],
@@ -1183,14 +1319,14 @@ class DashboardBGDAPIView(APIView):
                         {
                             'label': 'Tổng Lệnh Điều Xe',
                             'type': 'bar',
-                            'data': [max(1, round(rev / 4000000)) if rev > 0 else 0 for rev in chart_revenue],
+                            'data': chart_trips_total,
                             'backgroundColor': 'rgba(13, 148, 136, 0.85)',
                             'order': 2
                         },
                         {
                             'label': 'Chuyến Hoàn Tất',
                             'type': 'bar',
-                            'data': [max(0, round(rev / 4000000) - 1) if rev > 0 else 0 for rev in chart_revenue],
+                            'data': chart_trips_completed,
                             'backgroundColor': 'rgba(16, 185, 129, 0.75)',
                             'order': 3
                         },
@@ -1217,26 +1353,26 @@ class DashboardBGDAPIView(APIView):
                     'btn2': 'Sự Cố OS&D',
                     'opt1': {
                         'labels': ['Đang lăn bánh trên đường', 'Lấy/Trả rỗng tại Depot', 'Đang đóng hàng tại Kho'],
-                        'data': [today_active_trips, max(1, pending_bookings), max(0, total_trips - today_active_trips - completed_trips)],
+                        'data': [running_trips, depot_trips, warehouse_trips],
                         'colors': ['#0d9488', '#3b82f6', '#f59e0b'],
-                        'center_val': f"{today_active_trips}",
+                        'center_val': f"{running_trips}",
                         'center_lbl': 'Lăn Bánh',
                         'items': [
-                            {'name': 'Đang vận hành trên tuyến FTL', 'val': f"{today_active_trips} chuyến", 'color': 'bg-teal-500'},
-                            {'name': 'Lấy/Trả rỗng tại Cảng/Depot', 'val': f"{max(1, pending_bookings)} chuyến", 'color': 'bg-blue-500'},
-                            {'name': 'Đang đóng hàng tại Kho/KCN', 'val': f"{max(0, total_trips - today_active_trips - completed_trips)} chuyến", 'color': 'bg-amber-500'}
+                            {'name': 'Đang vận hành trên tuyến FTL', 'val': f"{running_trips} chuyến", 'color': 'bg-teal-500'},
+                            {'name': 'Lấy/Trả rỗng tại Cảng/Depot', 'val': f"{depot_trips} chuyến", 'color': 'bg-blue-500'},
+                            {'name': 'Đang đóng hàng tại Kho/KCN', 'val': f"{warehouse_trips} chuyến", 'color': 'bg-amber-500'}
                         ]
                     },
                     'opt2': {
-                        'labels': ['Hành trình an toàn', 'Chậm trễ/Kẹt phà cảng', 'Hư hỏng/Thiếu hàng (OS&D)'],
-                        'data': [max(1, total_trips - 1), 1, 0],
+                        'labels': ['Hành trình an toàn', 'Chậm trễ/Kẹt cảng đường bộ', 'Hư hỏng cont (OS&D)'],
+                        'data': [safe_trips, traffic_issues, osd_issues],
                         'colors': ['#10b981', '#f59e0b', '#f43f5e'],
-                        'center_val': '100%',
+                        'center_val': f"{round(safe_trips / max(total_trips, 1) * 100, 1)}%",
                         'center_lbl': 'An Toàn',
                         'items': [
-                            {'name': 'Hành trình an toàn, đúng lộ trình', 'val': f"{max(1, total_trips - 1)} chuyến", 'color': 'bg-emerald-500'},
-                            {'name': 'Cảnh báo kẹt xe, trễ giờ cảng', 'val': '1 sự cố', 'color': 'bg-amber-500'},
-                            {'name': 'Hàng hư hỏng/thiếu hụt (OS&D)', 'val': '0 vụ việc', 'color': 'bg-rose-500'}
+                            {'name': 'Hành trình an toàn, đúng lộ trình', 'val': f"{safe_trips} chuyến", 'color': 'bg-emerald-500'},
+                            {'name': 'Cảnh báo kẹt xe, trễ giờ cảng/kho', 'val': f"{traffic_issues} sự cố", 'color': 'bg-amber-500'},
+                            {'name': 'Hàng hư hỏng/thiếu hụt (OS&D)', 'val': f"{osd_issues} vụ việc", 'color': 'bg-rose-500'}
                         ]
                     }
                 }
@@ -1258,7 +1394,7 @@ class DashboardBGDAPIView(APIView):
                         {
                             'label': 'Sản Lượng (TEU / Cont)',
                             'type': 'bar',
-                            'data': [round(rev / 3000000) for rev in chart_revenue],
+                            'data': chart_bookings_containers,
                             'backgroundColor': 'rgba(99, 102, 241, 0.75)',
                             'order': 3
                         },
@@ -1284,28 +1420,20 @@ class DashboardBGDAPIView(APIView):
                     'btn1': 'Loại Cont',
                     'btn2': 'Ngành Hàng',
                     'opt1': {
-                        'labels': ['Container 40 Feet (40HC)', 'Container 20 Feet (20DC)', 'Container Lạnh & Rời'],
-                        'data': [60, 32, 8],
-                        'colors': ['#3b82f6', '#0d9488', '#f59e0b'],
-                        'center_val': '60%',
-                        'center_lbl': 'Cont 40HC',
-                        'items': [
-                            {'name': 'Container 40HC (Hàng nhẹ/cồng kềnh)', 'val': '60.0% sản lượng', 'color': 'bg-blue-500'},
-                            {'name': 'Container 20DC (Hàng nặng/nông sản)', 'val': '32.0% sản lượng', 'color': 'bg-teal-500'},
-                            {'name': 'Cont Lạnh (Reefer) & Hàng Rời', 'val': '8.0% sản lượng', 'color': 'bg-amber-500'}
-                        ]
+                        'labels': sales_opt1_labels,
+                        'data': sales_opt1_data,
+                        'colors': sales_opt1_colors,
+                        'center_val': sales_opt1_center_val,
+                        'center_lbl': sales_opt1_center_lbl,
+                        'items': sales_opt1_items
                     },
                     'opt2': {
-                        'labels': ['FMCG & Hàng Tiêu Dùng', 'Nông Thủy Sản Xuất Khẩu', 'Điện Tử & May Mặc'],
-                        'data': [48, 34, 18],
-                        'colors': ['#10b981', '#3b82f6', '#8b5cf6'],
-                        'center_val': '48%',
-                        'center_lbl': 'FMCG',
-                        'items': [
-                            {'name': 'Hàng tiêu dùng nhanh & Siêu thị (FMCG)', 'val': '48.0% tỷ trọng', 'color': 'bg-emerald-500'},
-                            {'name': 'Nông thủy sản xuất nhập khẩu', 'val': '34.0% tỷ trọng', 'color': 'bg-blue-500'},
-                            {'name': 'Linh kiện điện tử & Dệt may', 'val': '18.0% tỷ trọng', 'color': 'bg-purple-500'}
-                        ]
+                        'labels': sales_opt2_labels,
+                        'data': sales_opt2_data,
+                        'colors': sales_opt2_colors,
+                        'center_val': sales_opt2_center_val,
+                        'center_lbl': sales_opt2_center_lbl,
+                        'items': sales_opt2_items
                     }
                 }
             },
@@ -1352,27 +1480,27 @@ class DashboardBGDAPIView(APIView):
                     'btn1': 'Kỹ Thuật',
                     'btn2': 'Đăng Kiểm',
                     'opt1': {
-                        'labels': ['Đủ điều kiện lăn bánh', 'Bảo dưỡng định kỳ nhẹ', 'Đang sửa chữa xưởng'],
-                        'data': [vehicles_active + vehicles_idle, max(1, vehicles_maint), max(0, vehicles_maint - 1)],
-                        'colors': ['#10b981', '#f59e0b', '#f43f5e'],
-                        'center_val': f"{round(((vehicles_active + vehicles_idle)/max(total_vehicles, 1)*100), 1)}%",
-                        'center_lbl': 'Sẵn Sàng',
+                        'labels': ['Đang chạy (Active)', 'Chờ bãi (Idle)', 'Bảo trì (Maintenance)'],
+                        'data': [v_active, v_idle, v_maint],
+                        'colors': ['#10b981', '#0d9488', '#f43f5e'],
+                        'center_val': f"{round((v_active / max(total_vehicles, 1)) * 100, 1)}%",
+                        'center_lbl': 'Đang Chạy',
                         'items': [
-                            {'name': 'Đủ điều kiện an toàn vận hành', 'val': f"{vehicles_active + vehicles_idle} xe", 'color': 'bg-emerald-500'},
-                            {'name': 'Cần thay nhớt, kiểm tra lốp', 'val': f"{max(1, vehicles_maint)} xe", 'color': 'bg-amber-500'},
-                            {'name': 'Đang đại tu trong xưởng cơ khí', 'val': f"{max(0, vehicles_maint - 1)} xe", 'color': 'bg-rose-500'}
+                            {'name': 'Đủ điều kiện an toàn vận hành', 'val': f"{v_active} xe", 'color': 'bg-emerald-500'},
+                            {'name': 'Sẵn sàng tại bãi chờ lệnh', 'val': f"{v_idle} xe", 'color': 'bg-teal-500'},
+                            {'name': 'Đang bảo dưỡng định kỳ/sửa chữa', 'val': f"{v_maint} xe", 'color': 'bg-rose-500'}
                         ]
                     },
                     'opt2': {
                         'labels': ['Hạn an toàn (>30 ngày)', 'Sắp hết hạn (<30 ngày)', 'Quá hạn kiểm định'],
-                        'data': [max(0, total_vehicles - warning_reg_count), warning_reg_count, 0],
+                        'data': [valid_reg, warning_reg, expired_reg],
                         'colors': ['#10b981', '#f59e0b', '#f43f5e'],
-                        'center_val': "100%" if warning_reg_count == 0 else f"{round((max(0, total_vehicles - warning_reg_count)/max(total_vehicles, 1))*100, 1)}%",
+                        'center_val': f"{round((valid_reg / max(total_vehicles, 1)) * 100, 1)}%",
                         'center_lbl': 'Hợp Lệ',
                         'items': [
-                            {'name': 'Đăng kiểm & bảo hiểm còn hạn', 'val': f"{max(0, total_vehicles - warning_reg_count)} xe", 'color': 'bg-emerald-500'},
-                            {'name': 'Cần đưa đi trạm xét xe 30 ngày', 'val': f"{warning_reg_count} xe", 'color': 'bg-amber-500'},
-                            {'name': 'Quá hạn kiểm định', 'val': '0 xe', 'color': 'bg-rose-500'}
+                            {'name': 'Đăng kiểm & bảo hiểm còn hạn', 'val': f"{valid_reg} xe", 'color': 'bg-emerald-500'},
+                            {'name': 'Cần đưa đi trạm xét xe 30 ngày', 'val': f"{warning_reg} xe", 'color': 'bg-amber-500'},
+                            {'name': 'Quá hạn kiểm định', 'val': f"{expired_reg} xe", 'color': 'bg-rose-500'}
                         ]
                     }
                 }
@@ -1420,27 +1548,27 @@ class DashboardBGDAPIView(APIView):
                     'btn1': 'Định Biên',
                     'btn2': 'GPLX FC/C',
                     'opt1': {
-                        'labels': ['Đội ngũ Tài xế Container', 'Điều Vận & Hiện Trường', 'Khối Văn Phòng'],
-                        'data': [total_drivers, max(2, total_employees - total_drivers - 4), 4],
+                        'labels': ['Đội ngũ Tài xế Container', 'Điều Vận & Kỹ Thuật Bãi', 'Khối Văn Phòng'],
+                        'data': [drivers_cnt, field_cnt, office_cnt],
                         'colors': ['#0d9488', '#3b82f6', '#8b5cf6'],
-                        'center_val': f"{round((total_drivers / max(total_employees, 1)) * 100, 1)}%",
+                        'center_val': f"{round((drivers_cnt / max(total_employees, 1)) * 100, 1)}%",
                         'center_lbl': 'Tài Xế',
                         'items': [
-                            {'name': 'Lực lượng lái xe container/tải nặng', 'val': f"{total_drivers} nhân sự", 'color': 'bg-teal-500'},
-                            {'name': 'Điều độ bãi xe, thủ kho, hiện trường', 'val': f"{max(2, total_employees - total_drivers - 4)} nhân sự", 'color': 'bg-blue-500'},
-                            {'name': 'Kế toán, Kinh doanh, Ban Giám Đốc', 'val': '4 nhân sự', 'color': 'bg-purple-500'}
+                            {'name': 'Lực lượng lái xe container/tải nặng', 'val': f"{drivers_cnt} nhân sự", 'color': 'bg-teal-500'},
+                            {'name': 'Điều độ bãi xe & kỹ thuật viên', 'val': f"{field_cnt} nhân sự", 'color': 'bg-blue-500'},
+                            {'name': 'Kế toán, Kinh doanh, Ban Giám Đốc', 'val': f"{office_cnt} nhân sự", 'color': 'bg-purple-500'}
                         ]
                     },
                     'opt2': {
-                        'labels': ['Bằng lái còn hạn an toàn', 'Cần đổi bằng 30 ngày', 'Khám sức khỏe đủ chuẩn'],
-                        'data': [max(0, total_drivers - expiring_licenses_count), expiring_licenses_count, 0],
-                        'colors': ['#10b981', '#f59e0b', '#0d9488'],
-                        'center_val': "100%" if expiring_licenses_count == 0 else f"{round((max(0, total_drivers - expiring_licenses_count)/max(total_drivers, 1))*100, 1)}%",
+                        'labels': ['Bằng lái còn hạn an toàn', 'Cần đổi bằng 30 ngày', 'Quá hạn giấy phép'],
+                        'data': [valid_lic, expiring_lic, expired_lic],
+                        'colors': ['#10b981', '#f59e0b', '#f43f5e'],
+                        'center_val': f"{round((valid_lic / max(drivers_cnt, 1)) * 100, 1)}%" if drivers_cnt > 0 else "100%",
                         'center_lbl': 'Đạt Chuẩn',
                         'items': [
-                            {'name': 'Bằng lái FC/C còn hạn an toàn', 'val': f"{max(0, total_drivers - expiring_licenses_count)} hồ sơ", 'color': 'bg-emerald-500'},
-                            {'name': 'Cần gia hạn đổi bằng 30 ngày', 'val': f"{expiring_licenses_count} hồ sơ", 'color': 'bg-amber-500'},
-                            {'name': 'Đã khám sức khỏe định kỳ', 'val': f"{total_drivers} hồ sơ", 'color': 'bg-teal-500'}
+                            {'name': 'Bằng lái FC/C còn hạn an toàn', 'val': f"{valid_lic} hồ sơ", 'color': 'bg-emerald-500'},
+                            {'name': 'Cần gia hạn đổi bằng 30 ngày', 'val': f"{expiring_lic} hồ sơ", 'color': 'bg-amber-500'},
+                            {'name': 'Quá hạn giấy phép lái xe', 'val': f"{expired_lic} hồ sơ", 'color': 'bg-rose-500'}
                         ]
                     }
                 }
@@ -2375,8 +2503,14 @@ class TripListCreateAPIView(APIView):
             if not customer and customer_name:
                 customer = resolve_customer(customer_name)
 
+        if not customer and customer_name:
+            import random
+            rand_suffix = ''.join(random.choices('0123456789', k=4))
+            code_cand = f"KH_{timezone.now().strftime('%m%d')}_{rand_suffix}"
+            customer = Customer.objects.create(name=customer_name, code=code_cand)
+
         if not customer:
-            return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Vui lòng chọn hoặc nhập tên khách hàng hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
 
         parse_bool = lambda v: v is True or str(v).strip().lower() in ('true', '1', 'yes')
 
@@ -3264,7 +3398,6 @@ class TripDetailAPIView(APIView):
                 'error': f"Chuyến xe [{trip.trip_code}] đã phát sinh {exp_count} chứng từ chi phí. Vui lòng kiểm tra và xóa các chứng từ chi phí trước khi xóa/hủy chuyến xe!"
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        from apps.billing.models import DriverTripAdvance
         adv_count = DriverTripAdvance.objects.filter(trip=trip, is_deleted=False).count()
         if adv_count > 0:
             return Response({

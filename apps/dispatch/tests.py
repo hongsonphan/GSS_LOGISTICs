@@ -701,3 +701,26 @@ class DashboardDynamicMetricsTestCase(TestCase):
         liq_card = acct_cards.get('acct_liquidity')
         self.assertEqual(liq_card['metric_value'], "270.000.000 đ")
         self.assertIn("Tiền mặt: <strong>40.000.000 đ</strong> | NH: <strong>230.000.000 đ</strong>", liq_card['line_1'])
+
+    def test_role_charts_are_real_without_mock_fallbacks(self):
+        """Kiểm tra toàn bộ role_charts không còn chứa số liệu mockup hay chia nhẩm doanh thu."""
+        res = self.client.get('/api/dashboard/?period=today')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        role_charts = data.get('role_charts', {})
+
+        # 1. Kế toán: Donut opt1 không dùng số cứng [55, 25, 12, 8]
+        acct_donut = role_charts['ACCOUNTING']['donut']['opt1']
+        self.assertNotEqual(acct_donut['data'], [55, 25, 12, 8])
+
+        # 2. Điều vận: Trend data là danh sách số nguyên thực tế
+        disp_trend = role_charts['DISPATCH']['trend']['datasets']
+        total_trips_data = disp_trend[0]['data']
+        self.assertIsInstance(total_trips_data, list)
+        self.assertEqual(len(total_trips_data), 2) # Hôm qua, Hôm nay
+
+        # 3. Kinh doanh: Trend data sản lượng là danh sách số thực tế
+        sales_trend = role_charts['SALES']['trend']['datasets']
+        container_data = sales_trend[1]['data']
+        self.assertIsInstance(container_data, list)
+        self.assertEqual(len(container_data), 2)

@@ -2,6 +2,41 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.8.5] - 2026-10-21 (Triệt Tiêu Hoàn Toàn Số Liệu Mockup & Thiết Lập Ràng Buộc Khóa Xóa Bảo Toàn Toàn Vẹn Dữ Liệu)
+
+### 1. Triệt Tiêu Số Liệu Giả Lập & Mockup Trên Toàn Hệ Thống:
+- **Chuẩn hóa Model & Defaults:**
+  * Điều chỉnh selling_freight_price trong Model BookingOrder (apps/customers/models.py) từ default=4000000 thành default=0 (Migration 0015_alter_bookingorder_selling_freight_price).
+  * Loại bỏ hoàn toàn các giá trị fallback 3800000 và 4000000 trên các form tạo mới/chỉnh sửa Báo giá, Booking và Tuyến cước trong static/js/app.js và static/js/modules/sales.js.
+  * Loại bỏ fallback revenue = 4000000 khi tạo chuyến xe trong DispatchTripListCreateAPIView và rev = 3800000.0 trong TripSettlementAPIView, đảm bảo số liệu doanh thu phản ánh 100% CSDL.
+  * Hỗ trợ tự động tạo Khách hàng khi điều độ nhập trực tiếp tên khách mới, tuyệt đối không gán ngầm sang khách đầu tiên trong danh mục.
+- **Biểu đồ Dashboard Thời Gian Thực 100% CSDL (DashboardBGDAPIView):**
+  * Thay thế toàn bộ logic ước tính sản lượng rev / 4000000 và rev / 3000000 bằng số liệu đếm thực tế: chart_trips_total, chart_trips_completed, chart_bookings_containers, chart_advances theo đúng phân kỳ (Hôm nay, 7 ngày, Tháng này, Quý này, Năm nay).
+  * Chuyển đổi toàn bộ 6 biểu đồ Donut phân tích theo vai trò (BGD, Kế toán, Điều vận, Kinh doanh, Đội xe, Nhân sự) sang tính toán động 100% từ CSDL thực tế:
+    - Kế toán: Cơ cấu chi phí chuyến xe thực tế từ TripExpense (không còn dữ liệu cố định 55%, 25%, 12%, 8%).
+    - Điều vận: Phân rã lộ trình thực tế và sự cố vận tải từ TripException.
+    - Kinh doanh: Phân bổ quy cách container và nhóm ngành hàng thực tế từ BookingOrder.
+    - Đội xe: Hiện trạng kỹ thuật xe và hạn đăng kiểm định kỳ từ Vehicle.
+    - Nhân sự: Cơ cấu định biên nhân sự và hạn giấy phép lái xe từ Employee.
+
+### 2. Thiết Lập Hệ Thống Khóa Xóa Bảo Toàn Toàn Vẹn Dữ Liệu (Referential Deletion Locks):
+- **Khách hàng (Customer):** Ngăn chặn xóa khi đã phát sinh đơn Booking, Báo giá, Chuyến xe hoặc Biểu cước tuyến đường. Trả về HTTP 400 kèm chi tiết số lượng phát sinh liên quan.
+- **Phương tiện (Vehicle):** Ngăn chặn xóa khi đã phát sinh Chuyến xe hoặc Chứng từ chi phí chuyến.
+- **Đối tác 3PL (Subcontractor):** Ngăn chặn xóa khi còn xe bạn, tài xế thầu phụ hoặc chuyến xe điều vận liên kết.
+- **Tài xế thầu phụ (SubcontractorDriver):** Ngăn chặn xóa khi đã phát sinh chuyến xe vận chuyển thực tế.
+- **Khoản chi (ExpenseItem):** Ngăn chặn xóa khi đang được sử dụng trong chứng từ chi phí chuyến xe.
+- **Biểu cước (RouteTariff):** Ngăn chặn xóa khi đang được áp dụng cho chuyến xe hoặc đơn hàng booking khớp tuyến.
+- **Địa điểm (Location):** Ngăn chặn xóa khi đang liên kết với đơn hàng booking hoặc chuyến xe.
+- **Nhân sự (Employee):** Ngăn chặn xóa khi đã phát sinh chuyến xe (tài xế, tài xế hạ, điều độ), phiếu tạm ứng hoặc chứng từ chi phí.
+- **Đơn hàng (BookingOrder):** Ngăn chặn xóa khi đã phát lệnh điều động chuyến xe thực tế.
+- **Chuyến xe (DispatchTrip):** Ngăn chặn xóa khi đã phát sinh chứng từ chi phí hoặc phiếu tạm ứng tài xế chưa hoàn ứng.
+
+### 3. Kiểm Thử Hệ Thống & Xác Thực Zero-Regression:
+- Xây dựng bộ kiểm thử mới ReferentialDeletionLocksTestCase (apps/master_data/tests.py) gồm 7 kịch bản kiểm thử khóa xóa toàn diện đạt 100% PASS.
+- Bổ sung kiểm thử test_role_charts_are_real_without_mock_fallbacks trong DashboardDynamicMetricsTestCase (apps/dispatch/tests.py) đạt 100% PASS.
+- Toàn bộ bộ kiểm thử tự động của dự án đạt **129/129 tests passed 100%**.
+- Kiểm tra cú pháp JavaScript trên toàn bộ các tệp frontend đạt 100% không lỗi (node -c static/js/app.js, column_manager.js, sales.js, master_data.js, dashboard.js).
+
 ## [v3.8.4] - 2026-10-21 (Bổ Sung Toàn Diện Dòng Total Chân Bảng, STT, Sort & Search Toàn Bộ Phân Hệ)
 
 ### 1. Chuẩn Hóa Universal Table Sorter & Sticky Footer (Kiến Trúc Nền Tảng):

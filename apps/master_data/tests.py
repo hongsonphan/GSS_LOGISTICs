@@ -11,6 +11,7 @@ from apps.master_data.models import (
 class MasterDataAPITestCase(TestCase):
     def setUp(self):
         from django.contrib.auth.models import User
+        from apps.customers.models import Customer, BookingOrder
         self.client = APIClient()
         self.admin_user = User.objects.create_superuser(username='master_admin', email='admin@test.com', password='password123')
         self.client.force_authenticate(user=self.admin_user)
@@ -545,3 +546,206 @@ class OpeningBalanceAPITestCase(TestCase):
 
         self.assertEqual(res_t.status_code, status.HTTP_200_OK)
         self.assertTrue(RouteTariff.objects.filter(customer__code='KH_IMPORT_TEST', container_size='40HC').exists())
+
+
+class ReferentialDeletionLocksTestCase(TestCase):
+    """Bộ kiểm thử kiểm tra tính toàn vẹn dữ liệu: Khóa xóa Master Data & Giao dịch khi đã có phát sinh liên quan."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from apps.customers.models import Customer, BookingOrder
+        self.client = APIClient()
+        self.admin_user = User.objects.create_superuser(username='del_admin', email='del_admin@test.com', password='password123')
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.customer = Customer.objects.create(
+            code='KH_LOCK_TEST',
+            name='Công Ty Test Khóa Xóa',
+            short_name='TestLock'
+        )
+
+    def test_customer_delete_locked_when_has_booking(self):
+        from apps.customers.models import BookingOrder
+        # 1. Tạo booking cho khách hàng
+        booking = BookingOrder.objects.create(
+            booking_code='BK-LOCK-001',
+            customer=self.customer,
+            pickup_location='Cảng Cát Lái',
+            delivery_location='KCN Sóng Thần'
+        )
+
+        # 2. Gửi request xóa khách hàng -> Bị chặn (400 Bad Request)
+        res = self.client.delete(f'/api/master-data/customers/{self.customer.id}/')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Không thể xóa khách hàng', res.data.get('error', ''))
+        self.assertIn('đơn hàng Booking', res.data.get('error', ''))
+
+        # Khách hàng vẫn còn trong hệ thống
+        self.customer.refresh_from_db()
+        self.assertFalse(self.customer.is_deleted)
+
+        # 3. Khi xóa booking trước -> Xóa khách hàng thành công
+        booking.delete()
+        res_ok = self.client.delete(f'/api/master-data/customers/{self.customer.id}/')
+        self.assertEqual(res_ok.status_code, status.HTTP_200_OK)
+        self.customer.refresh_from_db()
+        self.assertTrue(self.customer.is_deleted)
+
+    def test_vehicle_delete_locked_when_has_trip(self):
+        from apps.fleet.models import Vehicle, VehicleType, VehicleOwnership
+        from apps.dispatch.models import DispatchTrip
+        veh = Vehicle.objects.create(
+            license_plate='51C-LOCK99',
+            vehicle_type=VehicleType.TRACTOR,
+            ownership_type=VehicleOwnership.OWNED
+        )
+        trip = DispatchTrip.objects.create(
+            trip_code='TRIP-LOCK-001',
+            customer=self.customer,
+            vehicle=veh
+        )
+
+        # Gửi request xóa xe -> Bị chặn
+        res = self.client.delete(f'/api/master-data/vehicles/{veh.id}/')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Không thể xóa phương tiện', res.data.get('error', ''))
+        veh.refresh_from_db()
+        self.assertFalse(veh.is_deleted)
+
+    def test_subcontractor_delete_locked_when_has_driver(self):
+        from apps.master_data.models import Subcontractor, SubcontractorDriver
+        sc = Subcontractor.objects.create(
+            code='SC_LOCK_TEST',
+            name='Nhà Xe Đối Tác Khóa Xóa',
+            short_name='NX Lock'
+        )
+        SubcontractorDriver.objects.create(
+            subcontractor=sc,
+            full_name='Tài Xế Bạn Test',
+            phone='0909999888'
+        )
+
+        # Gửi request xóa đối tác -> Bị chặn
+        res = self.client.delete(f'/api/master-data/subcontractors/{sc.id}/')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Không thể xóa đối tác', res.data.get('error', ''))
+        sc.refresh_from_db()
+        self.assertFalse(sc.is_deleted)
+
+    def test_expense_item_delete_locked_when_has_expenses(self):
+        from apps.master_data.models import ExpenseItem
+        from apps.billing.models import TripExpense, ExpenseCategory
+        from apps.dispatch.models import DispatchTrip
+        from apps.fleet.models import Vehicle, VehicleType, VehicleOwnership
+        veh = Vehicle.objects.create(
+            license_plate='51C-LOCK88',
+            vehicle_type=VehicleType.TRACTOR,
+            ownership_type=VehicleOwnership.OWNED
+        )
+        item = ExpenseItem.objects.create(
+            code='EXP_LOCK_TEST',
+            name='Phí Nâng Kiểm Hóa Test'
+        )
+        trip = DispatchTrip.objects.create(
+            trip_code='TRIP-LOCK-002',
+            customer=self.customer,
+            vehicle=veh
+        )
+        TripExpense.objects.create(
+            trip=trip,
+            expense_item=item,
+            amount=500000,
+            category=ExpenseCategory.LIFT_ON
+        )
+
+        # Gửi request xóa khoản chi -> Bị chặn
+        res = self.client.delete(f'/api/master-data/expense-items/{item.id}/')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Không thể xóa khoản chi', res.data.get('error', ''))
+        item.refresh_from_db()
+        self.assertFalse(item.is_deleted)
+
+    def test_booking_delete_locked_when_has_trip(self):
+        from apps.customers.models import BookingOrder
+        from apps.dispatch.models import DispatchTrip
+        from apps.fleet.models import Vehicle, VehicleType, VehicleOwnership
+        veh = Vehicle.objects.create(
+            license_plate='51C-LOCK77',
+            vehicle_type=VehicleType.TRACTOR,
+            ownership_type=VehicleOwnership.OWNED
+        )
+        booking = BookingOrder.objects.create(
+            booking_code='BK-LOCK-002',
+            customer=self.customer,
+            pickup_location='Cát Lái',
+            delivery_location='KCN Sóng Thần'
+        )
+        DispatchTrip.objects.create(
+            trip_code='TRIP-LOCK-003',
+            customer=self.customer,
+            booking_order=booking,
+            vehicle=veh
+        )
+
+        # Xóa booking -> Bị chặn
+        res = self.client.delete(f'/api/bookings/{booking.id}/')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Không thể xóa đơn Booking', res.data.get('error', ''))
+        booking.refresh_from_db()
+        self.assertFalse(booking.is_deleted)
+
+    def test_trip_delete_locked_when_has_expenses(self):
+        from apps.dispatch.models import DispatchTrip
+        from apps.billing.models import TripExpense, ExpenseCategory
+        from apps.fleet.models import Vehicle, VehicleType, VehicleOwnership
+        veh = Vehicle.objects.create(
+            license_plate='51C-LOCK66',
+            vehicle_type=VehicleType.TRACTOR,
+            ownership_type=VehicleOwnership.OWNED
+        )
+        trip = DispatchTrip.objects.create(
+            trip_code='TRIP-LOCK-004',
+            customer=self.customer,
+            vehicle=veh
+        )
+        TripExpense.objects.create(
+            trip=trip,
+            amount=300000,
+            category=ExpenseCategory.TOLL_FEE
+        )
+
+        # Xóa trip -> Bị chặn
+        res = self.client.delete(f'/api/trips/{trip.trip_code}/')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('đã phát sinh', res.data.get('error', ''))
+        trip.refresh_from_db()
+        self.assertFalse(trip.is_deleted)
+
+    def test_employee_delete_locked_when_has_trip(self):
+        from apps.personnel.models import Employee, EmployeeRole
+        from apps.dispatch.models import DispatchTrip
+        from apps.fleet.models import Vehicle, VehicleType, VehicleOwnership
+        emp = Employee.objects.create(
+            code='TX_LOCK_TEST',
+            full_name='Tài Xế Khóa Xóa Test',
+            role=EmployeeRole.DRIVER
+        )
+        veh = Vehicle.objects.create(
+            license_plate='51C-LOCK55',
+            vehicle_type=VehicleType.TRACTOR,
+            ownership_type=VehicleOwnership.OWNED
+        )
+        trip = DispatchTrip.objects.create(
+            trip_code='TRIP-LOCK-005',
+            customer=self.customer,
+            vehicle=veh,
+            driver=emp
+        )
+
+        # Xóa nhân viên -> Bị chặn (400 Bad Request)
+        res = self.client.delete(f'/api/personnel/employees/{emp.id}/')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Không thể xóa nhân sự', res.data.get('error', ''))
+        emp.refresh_from_db()
+        self.assertFalse(emp.is_deleted)
+

@@ -148,7 +148,7 @@ class EmployeeDetailAPIView(APIView):
 
         reasons = []
         t_count = DispatchTrip.objects.filter(
-            Q(driver=employee) | Q(second_driver=employee) | Q(dispatcher=employee),
+            Q(driver=employee) | Q(dropoff_driver=employee) | Q(dispatcher=employee),
             is_deleted=False
         ).count()
         if t_count > 0:
