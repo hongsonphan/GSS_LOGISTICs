@@ -2242,7 +2242,7 @@ async function openModalEditTrip(tripCode = null) {
         const vehSel = document.getElementById('edit-inp-vehicle');
         if (vehSel && Array.isArray(vehicles)) {
             const curVal = vehSel.value;
-            vehSel.innerHTML = '<option value="">-- Chọn Đầu Kéo --</option>' +
+            vehSel.innerHTML = '<option value="">-- Chọn Đầu kéo/ Xe tải --</option>' +
                 vehicles.map(v => `<option value="${v.id}">${escapeHtml(v.label || v.plate)}</option>`).join('');
             if (curVal) vehSel.value = curVal;
         }

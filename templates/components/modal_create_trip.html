@@ -597,16 +597,16 @@
                 <div id="err-subcontractor" class="field-error-msg hidden"></div>
               </div>
 
-              <!-- 2. Biển số xe 3PL -->
+              <!-- 2. Đầu kéo/ Xe tải 3PL -->
               <div class="md:col-span-3">
                 <div class="flex items-center justify-between h-5 mb-1">
                   <label class="block font-bold text-amber-950 text-xs truncate" for="inp-sub-vehicle">
-                    Biển Số Xe 3PL <span class="text-rose-500">*</span>
+                    Đầu kéo/ Xe tải 3PL <span class="text-rose-500">*</span>
                   </label>
                 </div>
                 <div class="space-y-1">
                   <select id="inp-sub-vehicle" onchange="onSubVehicleSelectChange(this.value, this)" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-900 text-xs w-full">
-                    <option value="">-- Chọn Xe Thuộc 3PL --</option>
+                    <option value="">-- Chọn Đầu kéo/ Xe tải 3PL --</option>
                     <option value="CUSTOM">+ Nhập Biển Số Xe Khác...</option>
                   </select>
                   <input type="text" id="inp-sub-vehicle-custom" placeholder="VD: 51C-123.45" class="hidden-view form-input h-8 px-2 py-1 uppercase font-mono font-bold text-xs w-full border-amber-300">
@@ -660,9 +660,9 @@
           </div>
 
           <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
-          <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
-          <div id="section-direct-dispatch" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            <div>
+          <div id="section-direct-dispatch" class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+            <!-- 1. Bác tài nhận lệnh -->
+            <div class="md:col-span-4">
               <div class="flex items-center justify-between h-5 mb-1">
                 <label class="block font-bold text-slate-700 text-xs truncate" for="inp-driver">
                   Tài xế nhận lệnh (Toàn trình) <span class="text-rose-500">*</span>
@@ -671,15 +671,36 @@
                   <i class="ph-bold ph-identification-badge text-teal-600"></i> Nạp từ Nhân sự
                 </span>
               </div>
-              <select id="inp-driver" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full">
+              <select id="inp-driver" onchange="onDriverChange(this.value, this)" class="form-select h-8.5 px-2 py-1 font-bold text-slate-800 text-xs w-full">
                 <option value="">-- Chọn tài xế điều động --</option>
               </select>
               <p class="mt-1 text-[10px] text-slate-500 italic flex items-center gap-1">
-                <i class="ph ph-info text-amber-600"></i> Nếu chưa có tên tài xế, vui lòng liên hệ phòng Nhân sự để bổ sung hồ sơ.
+                <i class="ph ph-info text-amber-600"></i> Nếu chưa có tên tài xế, liên hệ Nhân sự.
               </p>
               <div id="err-driver" class="field-error-msg hidden"></div>
             </div>
-            <div>
+
+            <!-- 2. Đầu kéo/ Xe tải TVL -->
+            <div class="md:col-span-4">
+              <div class="flex items-center justify-between h-5 mb-1">
+                <label class="block font-bold text-slate-700 text-xs truncate" for="inp-vehicle">
+                  Đầu kéo/ Xe tải TVL <span class="text-rose-500">*</span>
+                </label>
+                <span class="text-[10px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 flex items-center gap-1">
+                  <i class="ph-bold ph-truck text-teal-600"></i> Đội xe TVL
+                </span>
+              </div>
+              <select id="inp-vehicle" onchange="onVehicleChange(this.value, this)" class="form-select h-8.5 px-2 py-1 font-mono font-bold text-slate-800 text-xs w-full">
+                <option value="">-- Chọn Đầu kéo/ Xe tải TVL --</option>
+              </select>
+              <p class="mt-1 text-[10px] text-slate-500 italic flex items-center gap-1">
+                <i class="ph ph-check-circle text-teal-600"></i> Chỉ load xe nội bộ TVL.
+              </p>
+              <div id="err-vehicle" class="field-error-msg hidden"></div>
+            </div>
+
+            <!-- 3. Ghi chú điều độ -->
+            <div class="md:col-span-4">
               <div class="flex items-center justify-between h-5 mb-1">
                 <label class="block font-bold text-slate-700 text-xs truncate" for="inp-notes">Ghi chú phí Công ty chịu / Lưu ý Điều độ</label>
               </div>
@@ -718,7 +739,7 @@
                   </div>
                   <div>
                     <div class="flex items-center justify-between mb-0.5 h-4">
-                      <label class="form-label text-teal-950 text-[11px] font-bold truncate" for="inp-vehicle-leg1">Đầu Kéo Lấy Cont</label>
+                      <label class="form-label text-teal-950 text-[11px] font-bold truncate" for="inp-vehicle-leg1">Đầu kéo/ Xe tải Lấy Cont <span class="text-rose-500">*</span></label>
                     </div>
                     <select id="inp-vehicle-leg1" class="form-select h-8 px-2 py-0.5 font-semibold text-slate-800 text-xs w-full rounded-md">
                       <option value="">-- Tự động theo tài xế --</option>
@@ -749,7 +770,7 @@
                   </div>
                   <div>
                     <div class="flex items-center justify-between mb-0.5 h-4">
-                      <label class="form-label text-indigo-950 text-[11px] font-bold truncate" for="inp-dropoff-vehicle">Đầu Kéo Hạ Cont</label>
+                      <label class="form-label text-indigo-950 text-[11px] font-bold truncate" for="inp-dropoff-vehicle">Đầu kéo/ Xe tải Hạ Cont <span class="text-rose-500">*</span></label>
                     </div>
                     <select id="inp-dropoff-vehicle" class="form-select h-8 px-2 py-0.5 font-semibold text-slate-800 text-xs w-full rounded-md">
                       <option value="">-- Tự động theo tài xế --</option>
