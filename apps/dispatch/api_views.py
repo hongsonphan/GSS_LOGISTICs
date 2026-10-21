@@ -195,7 +195,7 @@ class DashboardBGDAPIView(APIView):
 
         # 3. Đội xe & Khả dụng tài sản (Fleet Utilization) theo kỳ
         period_vehicle_ids = list(trips_period.exclude(vehicle__isnull=True).values_list('vehicle_id', flat=True).distinct())
-        total_vehicles = Vehicle.objects.filter(is_deleted=False).count() or 8
+        total_vehicles = Vehicle.objects.filter(is_deleted=False).count()
         vehicles_active = len(period_vehicle_ids) if period_vehicle_ids else Vehicle.objects.filter(status=VehicleStatus.ACTIVE, is_deleted=False).count()
         vehicles_active = min(vehicles_active, total_vehicles)
         vehicles_maint = Vehicle.objects.filter(status=VehicleStatus.MAINTENANCE, is_deleted=False).count()
@@ -2352,13 +2352,18 @@ class TripListCreateAPIView(APIView):
         booking_order_id = data.get('booking_order_id')
         booking_order = None
         customer = None
-        revenue = 4000000
+        raw_rev = data.get('selling_freight_price') if data.get('selling_freight_price') is not None else data.get('revenue')
+        try:
+            revenue = float(str(raw_rev).replace('.', '').replace(',', '')) if raw_rev is not None and str(raw_rev).strip() else 0.0
+        except (ValueError, TypeError):
+            revenue = 0.0
 
         if booking_order_id and str(booking_order_id).strip() and str(booking_order_id).strip().isdigit():
             booking_order = BookingOrder.objects.filter(id=int(booking_order_id)).first()
             if booking_order:
                 customer = booking_order.customer
-                revenue = float(booking_order.selling_freight_price)
+                if revenue <= 0 and booking_order.selling_freight_price:
+                    revenue = float(booking_order.selling_freight_price)
             else:
                 customer_name = data.get('customer', '').strip()
                 customer = resolve_customer(customer_name)
@@ -2371,9 +2376,7 @@ class TripListCreateAPIView(APIView):
                 customer = resolve_customer(customer_name)
 
         if not customer:
-            customer = Customer.objects.first()
-            if not customer:
-                return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
 
         parse_bool = lambda v: v is True or str(v).strip().lower() in ('true', '1', 'yes')
 
@@ -3254,6 +3257,20 @@ class TripDetailAPIView(APIView):
         if trip.is_expenses_settled:
             return Response({'error': 'Chuyến xe đã được Kế toán chốt sổ chi phí, không thể xóa/hủy!'}, status=status.HTTP_403_FORBIDDEN)
 
+        # Kiểm tra phát sinh chi phí hoặc tạm ứng trước khi xóa
+        exp_count = trip.expenses.filter(is_deleted=False).count()
+        if exp_count > 0:
+            return Response({
+                'error': f"Chuyến xe [{trip.trip_code}] đã phát sinh {exp_count} chứng từ chi phí. Vui lòng kiểm tra và xóa các chứng từ chi phí trước khi xóa/hủy chuyến xe!"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.billing.models import DriverTripAdvance
+        adv_count = DriverTripAdvance.objects.filter(trip=trip, is_deleted=False).count()
+        if adv_count > 0:
+            return Response({
+                'error': f"Chuyến xe [{trip.trip_code}] đã phát sinh {adv_count} phiếu tạm ứng tài xế. Vui lòng hoàn ứng/xử lý tạm ứng trước khi xóa chuyến xe!"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         # Hoàn lại số lượng cont đã phát lệnh cho Booking nếu có
         if trip.booking_order and trip.booking_order.dispatched_containers > 0:
             trip.booking_order.dispatched_containers -= 1
@@ -4066,8 +4083,8 @@ class FleetAPIView(APIView):
                 'status_raw': v.status
             })
         return Response({
-            'total_tractors': Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR).count(),
-            'total_trailers': Trailer.objects.count() or 25,
+            'total_tractors': Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR, is_deleted=False).count(),
+            'total_trailers': Trailer.objects.filter(is_deleted=False).count(),
             'reg_warning_count': sum(1 for v in veh_list if v['is_reg_warning'] or v['is_reg_expired']),
             'ins_warning_count': sum(1 for v in veh_list if v['is_ins_warning'] or v['is_ins_expired']),
             'maint_warning_count': sum(1 for v in veh_list if v['is_maint_warning']),
@@ -4446,7 +4463,7 @@ class SalesAPIView(APIView):
                 loading_time=loading_time_str,
                 free_time_detention=int(data.get('free_time_detention') or 7),
                 free_time_demurrage=int(data.get('free_time_demurrage') or 7),
-                selling_freight_price=float(data.get('selling_freight_price') or 4000000),
+                selling_freight_price=float(data.get('selling_freight_price') or 0),
                 booking_file=uploaded_bk_file,
                 status=data.get('status', BookingStatus.PENDING_DISPATCH),
                 notes=data.get('notes', '')
@@ -4505,8 +4522,8 @@ class SalesAPIView(APIView):
                     items_list = items_raw
 
             first_route = data.get('route_description', '').strip()
-            first_unit_price = float(data.get('unit_price') or 4000000)
-            first_trips = int(data.get('monthly_trips') or data.get('expected_trips_monthly') or 10)
+            first_unit_price = float(data.get('unit_price') or 0)
+            first_trips = int(data.get('monthly_trips') or data.get('expected_trips_monthly') or 1)
             first_orig_zone = data.get('origin_zone', '').strip()
             first_dest_zone = data.get('destination_zone', '').strip()
             first_est_km = int(data.get('estimated_km') or 0)
@@ -4815,6 +4832,10 @@ class QuotationDetailAPIView(APIView):
         q = Quotation.objects.filter(pk=pk, is_deleted=False).first()
         if not q:
             return Response({'error': 'Không tìm thấy báo giá'}, status=status.HTTP_404_NOT_FOUND)
+        if q.status == 'APPROVED':
+            return Response({
+                'error': f"Báo giá [{q.quotation_code}] đã được phê duyệt chính thức (APPROVED). Vui lòng chuyển trạng thái sang TỪ CHỐI hoặc HẾT HẠN trước khi xóa."
+            }, status=status.HTTP_400_BAD_REQUEST)
         q.is_deleted = True
         q.save(update_fields=['is_deleted'])
         return Response({'success': True, 'message': f'Đã xóa báo giá {q.quotation_code}'})
@@ -5070,6 +5091,14 @@ class BookingOrderDetailAPIView(APIView):
         b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
         if not b:
             return Response({'error': 'Không tìm thấy đơn hàng / booking'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Kiểm tra toàn vẹn: Không cho phép xóa Booking đã phát sinh chuyến xe
+        t_count = DispatchTrip.objects.filter(booking_order=b, is_deleted=False).count()
+        if t_count > 0:
+            return Response({
+                'error': f"Không thể xóa đơn Booking [{b.booking_code}] vì đã điều động {t_count} chuyến xe thực tế! Vui lòng hủy hoặc xóa các chuyến xe liên quan trước khi xóa đơn hàng."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         b.is_deleted = True
         b.save(update_fields=['is_deleted'])
         return Response({
@@ -5450,7 +5479,7 @@ class AccountingAPIView(APIView):
             if rev <= 0 and t.booking_order and t.booking_order.selling_freight_price:
                 rev = float(t.booking_order.selling_freight_price)
             if rev <= 0:
-                rev = 3800000.0
+                rev = 0.0
 
             exp = float(t.cached_expense or 0)
             profit = rev - exp

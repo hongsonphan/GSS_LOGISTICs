@@ -322,6 +322,28 @@ class LocationDetailAPIView(MasterDataBaseAPIView):
         location = Location.objects.filter(id=pk).first()
         if not location:
             return Response({'error': 'Không tìm thấy địa điểm!'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.customers.models import BookingOrder
+        from apps.dispatch.models import DispatchTrip
+        b_count = BookingOrder.objects.filter(
+            Q(pickup_loc=location) | Q(delivery_loc=location) | Q(dropoff_loc=location),
+            is_deleted=False
+        ).count()
+        t_count = DispatchTrip.objects.filter(
+            Q(pickup_loc=location) | Q(warehouse_loc=location) | Q(dropoff_loc=location) |
+            Q(pickup_location__iexact=location.name) | Q(warehouse_location__iexact=location.name) | Q(dropoff_location__iexact=location.name),
+            is_deleted=False
+        ).count()
+        if b_count > 0 or t_count > 0:
+            reasons = []
+            if b_count > 0:
+                reasons.append(f"{b_count} đơn hàng Booking")
+            if t_count > 0:
+                reasons.append(f"{t_count} chuyến xe điều vận")
+            return Response({
+                'error': f"Không thể xóa địa điểm [{location.name}] vì đang được liên kết trong {', '.join(reasons)}! Vui lòng kiểm tra và xử lý các liên kết trước khi xóa."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         location.delete() # Soft delete
         return Response({'success': True, 'message': f'Đã xóa địa điểm [{location.name}].'})
 
@@ -461,6 +483,14 @@ class ExpenseItemDetailAPIView(MasterDataBaseAPIView):
         item = ExpenseItem.objects.filter(id=pk).first()
         if not item:
             return Response({'error': 'Không tìm thấy khoản chi!'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.billing.models import TripExpense
+        e_count = TripExpense.objects.filter(expense_item=item, is_deleted=False).count()
+        if e_count > 0:
+            return Response({
+                'error': f"Không thể xóa khoản chi [{item.name}] vì đang được sử dụng trong {e_count} chứng từ chi phí chuyến xe! Vui lòng xóa hoặc điều chỉnh các chứng từ trước."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         item.delete()
         return Response({'success': True, 'message': f'Đã xóa khoản chi [{item.name}].'})
 
@@ -614,6 +644,32 @@ class CustomerMasterDetailAPIView(MasterDataBaseAPIView):
         cust = Customer.objects.filter(id=pk).first()
         if not cust:
             return Response({'error': 'Không tìm thấy khách hàng!'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.customers.models import BookingOrder, Quotation, RouteTariff
+        from apps.dispatch.models import DispatchTrip
+
+        reasons = []
+        b_count = BookingOrder.objects.filter(customer=cust, is_deleted=False).count()
+        if b_count > 0:
+            reasons.append(f"{b_count} đơn hàng Booking")
+
+        q_count = Quotation.objects.filter(customer=cust, is_deleted=False).count()
+        if q_count > 0:
+            reasons.append(f"{q_count} báo giá")
+
+        t_count = DispatchTrip.objects.filter(customer=cust, is_deleted=False).count()
+        if t_count > 0:
+            reasons.append(f"{t_count} chuyến xe điều vận")
+
+        tar_count = RouteTariff.objects.filter(customer=cust, is_deleted=False).count()
+        if tar_count > 0:
+            reasons.append(f"{tar_count} biểu cước tuyến")
+
+        if reasons:
+            return Response({
+                'error': f"Không thể xóa khách hàng [{cust.name}] vì đã phát sinh dữ liệu liên quan ({', '.join(reasons)}). Vui lòng kiểm tra và xóa hoặc chuyển tiếp các phát sinh trước khi xóa khách hàng này!"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         cust.delete()
         return Response({'success': True, 'message': f'Đã xóa khách hàng [{cust.name}].'})
 
@@ -697,6 +753,34 @@ class TariffMasterDetailAPIView(MasterDataBaseAPIView):
         tariff = RouteTariff.objects.filter(id=pk).first()
         if not tariff:
             return Response({'error': 'Không tìm thấy biểu cước!'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.dispatch.models import DispatchTrip
+        from apps.customers.models import BookingOrder
+
+        reasons = []
+        t_count = DispatchTrip.objects.filter(
+            customer=tariff.customer,
+            pickup_location__iexact=tariff.pickup_location,
+            warehouse_location__iexact=tariff.delivery_location,
+            is_deleted=False
+        ).count()
+        if t_count > 0:
+            reasons.append(f"{t_count} chuyến xe khớp tuyến")
+
+        b_count = BookingOrder.objects.filter(
+            customer=tariff.customer,
+            pickup_location__iexact=tariff.pickup_location,
+            delivery_location__iexact=tariff.delivery_location,
+            is_deleted=False
+        ).count()
+        if b_count > 0:
+            reasons.append(f"{b_count} đơn booking khớp tuyến")
+
+        if reasons:
+            return Response({
+                'error': f"Không thể xóa biểu cước tuyến [{tariff.pickup_location} ➔ {tariff.delivery_location}] vì đang được áp dụng cho {', '.join(reasons)}! Vui lòng kiểm tra lại."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         tariff.delete()
         return Response({'success': True, 'message': 'Đã xóa biểu cước.'})
 
@@ -852,6 +936,24 @@ class VehicleMasterDetailAPIView(MasterDataBaseAPIView):
         veh = Vehicle.objects.filter(id=pk).first()
         if not veh:
             return Response({'error': 'Không tìm thấy xe!'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.dispatch.models import DispatchTrip
+        from apps.billing.models import TripExpense
+
+        reasons = []
+        t_count = DispatchTrip.objects.filter(vehicle=veh, is_deleted=False).count()
+        if t_count > 0:
+            reasons.append(f"{t_count} chuyến xe điều vận")
+
+        e_count = TripExpense.objects.filter(vehicle=veh, is_deleted=False).count()
+        if e_count > 0:
+            reasons.append(f"{e_count} chứng từ chi phí")
+
+        if reasons:
+            return Response({
+                'error': f"Không thể xóa phương tiện [{veh.license_plate}] vì đã phát sinh dữ liệu liên quan ({', '.join(reasons)}). Vui lòng xử lý các phát sinh trước khi xóa xe!"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         veh.delete()
         return Response({'success': True, 'message': f'Đã xóa xe [{veh.license_plate}].'})
 
@@ -1340,8 +1442,31 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
         sc = Subcontractor.objects.filter(id=pk).first()
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.dispatch.models import DispatchTrip
+        from apps.fleet.models import Vehicle
+        from apps.master_data.models import SubcontractorDriver
+
+        reasons = []
+        t_count = DispatchTrip.objects.filter(subcontractor=sc, is_deleted=False).count()
+        if t_count > 0:
+            reasons.append(f"{t_count} chuyến xe điều vận")
+
+        v_count = Vehicle.objects.filter(subcontractor=sc, is_deleted=False).count()
+        if v_count > 0:
+            reasons.append(f"{v_count} phương tiện xe bạn")
+
+        d_count = SubcontractorDriver.objects.filter(subcontractor=sc, is_deleted=False).count()
+        if d_count > 0:
+            reasons.append(f"{d_count} tài xế trực thuộc")
+
+        if reasons:
+            return Response({
+                'error': f"Không thể xóa đối tác [{sc.short_name or sc.name}] vì đang có dữ liệu liên kết ({', '.join(reasons)}). Vui lòng gỡ hoặc xóa các liên kết trước khi xóa đối tác!"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         sc.delete()
-        return Response({'success': True, 'message': f'Đã xóa nhà xe thầu phụ [{sc.name}].'})
+        return Response({'success': True, 'message': f'Đã xóa đối tác [{sc.name}].'})
 
 class SubcontractorFleetAPIView(MasterDataBaseAPIView):
     """
@@ -1636,6 +1761,13 @@ class SubcontractorDriverDetailAPIView(MasterDataBaseAPIView):
         driver = SubcontractorDriver.objects.filter(id=pk, is_deleted=False).first()
         if not driver:
             return Response({'error': 'Không tìm thấy tài xế thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.dispatch.models import DispatchTrip
+        t_count = DispatchTrip.objects.filter(subcontractor_driver=driver, is_deleted=False).count()
+        if t_count > 0:
+            return Response({
+                'error': f"Không thể xóa tài xế [{driver.full_name}] vì đã phát sinh {t_count} chuyến xe vận chuyển! Vui lòng kiểm tra lại."
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         driver.delete()
         return Response({'success': True, 'message': f'Đã xóa tài xế [{driver.full_name}].'})

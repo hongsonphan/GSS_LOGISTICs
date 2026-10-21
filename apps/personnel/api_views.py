@@ -141,6 +141,32 @@ class EmployeeDetailAPIView(APIView):
 
     def delete(self, request, pk):
         employee = self.get_object(pk)
+
+        from apps.dispatch.models import DispatchTrip
+        from apps.billing.models import DriverTripAdvance, TripExpense
+        from django.db.models import Q
+
+        reasons = []
+        t_count = DispatchTrip.objects.filter(
+            Q(driver=employee) | Q(second_driver=employee) | Q(dispatcher=employee),
+            is_deleted=False
+        ).count()
+        if t_count > 0:
+            reasons.append(f"{t_count} chuyến xe điều vận")
+
+        a_count = DriverTripAdvance.objects.filter(driver=employee, is_deleted=False).count()
+        if a_count > 0:
+            reasons.append(f"{a_count} phiếu tạm ứng tài xế")
+
+        e_count = TripExpense.objects.filter(driver=employee, is_deleted=False).count()
+        if e_count > 0:
+            reasons.append(f"{e_count} chứng từ chi phí")
+
+        if reasons:
+            return Response({
+                'error': f"Không thể xóa nhân sự '{employee.full_name}' ({employee.code}) vì đã phát sinh dữ liệu liên quan ({', '.join(reasons)}). Vui lòng xử lý các phát sinh trước khi xóa nhân sự này!"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         employee.is_active = False
         employee.is_deleted = True
         employee.save(update_fields=['is_active', 'is_deleted'])

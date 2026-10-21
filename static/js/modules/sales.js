@@ -33,7 +33,7 @@ function addQuotationRouteRow(data = {}) {
     const routeDesc = data.route_description || data.route || '';
     const cargoType = data.cargo_type || document.getElementById('quote-cargo-type')?.value || 'Cont 40HC';
     const estKm = data.estimated_km !== undefined ? data.estimated_km : 30;
-    const unitPrice = data.unit_price !== undefined ? data.unit_price : 3800000;
+    const unitPrice = data.unit_price !== undefined ? data.unit_price : 0;
     const trips = data.expected_trips_monthly !== undefined ? data.expected_trips_monthly : (data.monthly_trips || 20);
     const lineTotal = Number(unitPrice) * Number(trips);
 
@@ -96,7 +96,7 @@ function removeQuotationRouteRow(button) {
     if (tr) tr.remove();
 
     if (tbody.children.length === 0) {
-        addQuotationRouteRow({ route_description: '', unit_price: 3800000, expected_trips_monthly: 10 });
+        addQuotationRouteRow({ route_description: '', unit_price: 0, expected_trips_monthly: 0 });
     } else {
         Array.from(tbody.children).forEach((row, idx) => {
             const sttEl = row.querySelector('.row-stt');
@@ -248,8 +248,8 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
             route_description: 'CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG',
             cargo_type: 'Cont 40HC',
             estimated_km: 30,
-            unit_price: 3800000,
-            expected_trips_monthly: 20
+            unit_price: 0,
+            expected_trips_monthly: 0
         });
     } else {
         if (idInput) idInput.value = quoteId;
@@ -305,7 +305,7 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
                     route_description: q.route_description,
                     cargo_type: q.cargo_type || 'Cont 40HC',
                     estimated_km: q.estimated_km || 30,
-                    unit_price: q.unit_price || 3800000,
+                    unit_price: q.unit_price || 0,
                     expected_trips_monthly: q.expected_trips_monthly || 10
                 });
             }
@@ -484,7 +484,7 @@ function addFullpageQuotationRouteRow(data = {}) {
     const routeDesc = data.route_description || data.route || '';
     const cargoType = data.cargo_type || document.getElementById('fullpage-quote-cargo-type')?.value || 'Cont 40HC';
     const estKm = data.estimated_km !== undefined ? data.estimated_km : 30;
-    const unitPrice = data.unit_price !== undefined ? data.unit_price : 3800000;
+    const unitPrice = data.unit_price !== undefined ? data.unit_price : 0;
     const trips = data.expected_trips_monthly !== undefined ? data.expected_trips_monthly : (data.monthly_trips || 20);
     const lineTotal = Number(unitPrice) * Number(trips);
 
@@ -547,7 +547,7 @@ function removeFullpageQuotationRouteRow(button) {
     if (tr) tr.remove();
 
     if (tbody.children.length === 0) {
-        addFullpageQuotationRouteRow({ route_description: '', unit_price: 3800000, expected_trips_monthly: 10 });
+        addFullpageQuotationRouteRow({ route_description: '', unit_price: 0, expected_trips_monthly: 0 });
     } else {
         Array.from(tbody.children).forEach((row, idx) => {
             const sttEl = row.querySelector('.fullpage-row-stt');
@@ -691,8 +691,8 @@ async function openCreateQuotationPage(updateHistory = true) {
         route_description: 'CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG',
         cargo_type: 'Cont 40HC',
         estimated_km: 30,
-        unit_price: 3800000,
-        expected_trips_monthly: 10
+        unit_price: 0,
+        expected_trips_monthly: 0
     });
 
     initAllNumberInputs();
@@ -811,7 +811,7 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
                 route_description: q.route_description,
                 cargo_type: q.cargo_type || 'Cont 40HC',
                 estimated_km: q.estimated_km || 30,
-                unit_price: q.unit_price || 3800000,
+                unit_price: q.unit_price || 0,
                 expected_trips_monthly: q.expected_trips_monthly || 10
             });
         }
@@ -1558,7 +1558,7 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
         const demInput = document.getElementById('booking-dem');
         if (demInput) demInput.value = formatNumberVN(7);
         const priceInput = document.getElementById('booking-price');
-        if (priceInput) priceInput.value = formatNumberVN(4000000);
+        if (priceInput) priceInput.value = '';
         clearSaleBookingFileSelection();
         onBookingTypeChange();
     } else {
@@ -1613,7 +1613,7 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
             const demEl = document.getElementById('booking-dem');
             if (demEl) demEl.value = formatNumberVN(b.free_time_demurrage ?? 7);
             const priceEl = document.getElementById('booking-price');
-            if (priceEl) priceEl.value = formatNumberVN(b.selling_freight_price || b.freight_price || 4000000);
+            if (priceEl) priceEl.value = (b.selling_freight_price || b.freight_price) ? formatNumberVN(b.selling_freight_price || b.freight_price) : '';
             const statusEl = document.getElementById('booking-status');
             if (statusEl) statusEl.value = b.status || 'PENDING_DISPATCH';
             const notesEl = document.getElementById('booking-notes');
@@ -2111,7 +2111,7 @@ async function openCreateBookingPage(updateHistory = true) {
     const demInput = document.getElementById('fullpage-booking-dem');
     if (demInput) demInput.value = formatNumberVN(7);
     const priceInput = document.getElementById('fullpage-booking-price');
-    if (priceInput) priceInput.value = formatNumberVN(4000000);
+    if (priceInput) priceInput.value = '';
 
     clearFullpageBookingFileSelection();
     onFullpageBookingTypeChange();
@@ -2237,7 +2237,7 @@ async function viewBookingDetail(bookingId, updateHistory = true) {
         const demEl = document.getElementById('fullpage-booking-dem');
         if (demEl) demEl.value = formatNumberVN(b.free_time_demurrage || 7);
         const priceEl = document.getElementById('fullpage-booking-price');
-        if (priceEl) priceEl.value = formatNumberVN(b.selling_freight_price || 4000000);
+        if (priceEl) priceEl.value = b.selling_freight_price ? formatNumberVN(b.selling_freight_price) : '';
         const statusEl = document.getElementById('fullpage-booking-status');
         if (statusEl) statusEl.value = b.status || 'PENDING_DISPATCH';
         const notesEl = document.getElementById('fullpage-booking-notes');

@@ -2,6 +2,50 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.8.4] - 2026-10-21 (Bổ Sung Toàn Diện Dòng Total Chân Bảng, STT, Sort & Search Toàn Bộ Phân Hệ)
+
+### 1. Chuẩn Hóa Universal Table Sorter & Sticky Footer (Kiến Trúc Nền Tảng):
+- **Universal Table Sorter (BimTableSorter trong static/js/column_manager.js):**
+  * Tự động nhận diện và gắn tính năng click sắp xếp (Sort) cho các thẻ <th> của tất cả các bảng dữ liệu trong hệ thống (dispatch-trips-table, sales-quotations-table, sales-bookings-table, ccounting-*-table, settlement-trips-table, leet-vehicles-table, customs-declarations-table, employees-table, contracts-table, ttendance-table, payroll-slips-table, md-main-table).
+  * Tự động nhận diện thông minh 3 kiểu dữ liệu: Số/Tiền tệ VNĐ (loại bỏ ký tự đ, %, dấu chấm phân cách ngàn), Ngày tháng (DD/MM/YYYY, YYYY-MM-DD) và Chuỗi văn bản Tiếng Việt có dấu (localeCompare('vi')).
+  * Tự động đánh lại cột STT (1, 2, 3...) chuẩn xác sau mỗi lần sắp xếp.
+- **Universal Table Footer (BimTableFooter trong static/js/column_manager.js):**
+  * Cung cấp cơ chế render dòng TỔNG CỘNG (<tfoot>) sticky cố định ở chân bảng với styling chuẩn BIM (g-slate-100/95 border-t-2 border-slate-300 font-bold text-xs sticky bottom-0 z-10).
+  * Miễn nhiễm hoàn toàn với tính năng ẩn/hiện cột (BimTableColumnManager) nhờ thẻ 	r.no-col-reorder.
+
+### 2. Triển Khai Dòng Total & Search Cho Từng Phân Hệ Cụ Thể:
+- **Phân hệ Điều vận (Dispatch):**
+  * Dòng Total chân bảng hiển thị tổng số chuyến xe hiển thị và tổng chi phí chuyến (	otalDispatchExpenses).
+- **Phân hệ Bán hàng & Booking (Sales):**
+  * Bảng Báo giá CRM (sales-quotations-table): Dòng Total hiển thị tổng số bản báo giá, tổng sản lượng chuyến dự kiến và tổng doanh thu kế hoạch.
+  * Bảng Đơn hàng Booking (sales-bookings-table): Dòng Total hiển thị tổng số đơn hàng booking và tổng cước thỏa thuận.
+- **Phân hệ Kế toán (Accounting - 7 Phân hệ con):**
+  * Sổ quỹ (ccounting-cashbook-table): Dòng Total hiển thị Tổng Thu, Tổng Chi và Số dư ròng chênh lệch Thu - Chi.
+  * Tạm ứng chuyến (ccounting-advances-table): Dòng Total hiển thị Tổng tiền cty tạm ứng, Tổng thực chi kê khai và Chênh lệch đối soát.
+  * Quỹ điều vận (ccounting-fund-table): Bổ sung ô tìm kiếm nhanh #fund-search và dòng Total hiển thị Tổng cty cấp, Đã cấp TX, Đã hoàn về quỹ và Số dư quỹ khả dụng.
+  * Đối soát P&L (ccounting-pnl-table): Dòng Total hiển thị Tổng Doanh thu, Tổng Chi phí thực tế và Tổng Lợi nhuận gộp.
+  * Chi hộ (ccounting-reimburse-table): Dòng Total hiển thị Tổng tiền chi hộ, Số tiền đã thu hồi và Số tiền còn chờ thu.
+  * Xe bạn / Thầu phụ (ccounting-subcon-table): Dòng Total hiển thị Cước thu khách, Cước trả xe bạn, Chênh lệch (biên lợi nhuận), Đã tạm ứng và Còn phải trả.
+  * Vé cầu đường BOT (ccounting-bot-table): Bổ sung ô tìm kiếm nhanh #bot-search và dòng Total hiển thị Tổng số vé, Thực chi BOT, Định mức tuyến và Mức chênh lệch.
+- **Phân hệ Quyết toán (Settlement):**
+  * Bảng Quyết toán gom (settlement-trips-table): Dòng Total hiển thị Tổng số chuyến gom, Tổng tiền tạm ứng, Tổng thực chi và Chênh lệch gom.
+- **Phân hệ Xe & Bãi (Fleet):**
+  * Bảng Đội xe (leet-vehicles-table): Dòng Total hiển thị Tổng số xe, số xe đang hoạt động và số xe đang bảo dưỡng/dừng.
+- **Phân hệ Hải quan (Customs):**
+  * Bảng Tờ khai điện tử (customs-declarations-table): Dòng Total hiển thị Tổng số tờ khai, Tổng thuế XNK phát sinh và Tổng chi hộ kiểm hóa.
+- **Phân hệ Nhân sự (HR):**
+  * Bổ sung 3 ô tìm kiếm nhanh: #contract-search-input (Hợp đồng), #attendance-search-input (Chấm công), #payroll-search-input (Bảng lương).
+  * Bổ sung dòng Total cho Nhân viên (employees-table), Hợp đồng (contracts-table), Chấm công (ttendance-table), Bảng lương (payroll-slips-table).
+- **Phân hệ Danh mục (Master Data):**
+  * Bảng Danh mục cài đặt (md-main-table): Bổ sung dòng Total tfoot hiển thị tổng số bản ghi danh mục.
+
+### 3. Sửa Lỗi Truy Vấn Ràng Buộc Khóa Ngoại Master Data & Bảo Toàn Zero-Regression:
+- Khắc phục lỗi FieldError: Cannot resolve keyword 'delivery_location' khi xóa địa điểm (Location) trong pps/master_data/api_views.py.
+- Khắc phục lỗi import RouteTariff từ pps.customers.models khi xóa khách hàng (Customer).
+- Toàn bộ bộ kiểm thử tự động 121/121 tests passed (python manage.py test --keepdb).
+- Cú pháp JS hợp lệ 100% (
+ode -c static/js/app.js; node -c static/js/column_manager.js).
+
 ## [v3.8.1] - 2026-10-21 (Rà Soát Toàn Diện Hệ Thống & Loại Bỏ Số Liệu Quỹ Ảo Trên Dashboard)
 
 ### 1. Triệt Tiêu Hoàn Toàn Số Liệu Giả Định / Hardcode Trên Dashboard (Anti-Hallucination):

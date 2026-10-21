@@ -287,7 +287,7 @@ class BookingOrder(TimeStampedModel, SoftDeleteModel):
     free_time_demurrage = models.IntegerField(default=7, help_text="Số ngày miễn phí lưu bãi (DEM)")
 
     # Thương mại
-    selling_freight_price = models.DecimalField(max_digits=12, decimal_places=0, default=4000000, help_text="Đơn giá cước thỏa thuận với khách (VNĐ)")
+    selling_freight_price = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="Đơn giá cước thỏa thuận với khách (VNĐ)")
     booking_file = models.FileField(
         upload_to='booking_files/%Y/%m/', 
         null=True, 

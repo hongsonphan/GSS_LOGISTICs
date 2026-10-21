@@ -97,6 +97,7 @@
                 if (tbl.querySelector('thead th') && !tbl.hasAttribute('data-no-col-manager')) {
                     BimTableColumnManager.register(tbl.id);
                 }
+                BimTableSorter.initTable(tbl);
             });
         }
     };
@@ -633,6 +634,191 @@
         BimTableColumnManager.close();
     };
 
+
+    // =========================================================================
+    // BIM LOGISTICS — UNIVERSAL CLIENT-SIDE TABLE SORTER (SẮP XẾP BẢNG TOÀN CỤC)
+    // =========================================================================
+    const BimTableSorter = {
+        sortStates: {},
+
+        initTable: function(table) {
+            if (!table) return;
+            const thead = table.querySelector('thead');
+            if (!thead) return;
+
+            const headers = thead.querySelectorAll('th');
+            headers.forEach((th, idx) => {
+                const text = th.innerText.trim().toLowerCase();
+                if (th.hasAttribute('data-no-sort') || text === 'thao tác' || text === '' || th.querySelector('input[type="checkbox"]')) {
+                    return;
+                }
+
+                if (!th.classList.contains('cursor-pointer')) {
+                    th.classList.add('cursor-pointer', 'select-none', 'hover:bg-slate-100', 'transition-colors');
+                }
+
+                let icon = th.querySelector('.sort-indicator-icon');
+                if (!icon && !th.querySelector('i[class*="ph-arrows"], i[class*="ph-caret"]')) {
+                    const iconEl = document.createElement('i');
+                    iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs ml-1 inline-block sort-indicator-icon';
+                    th.appendChild(iconEl);
+                }
+
+                if (!th.hasAttribute('data-sort-bound')) {
+                    th.setAttribute('data-sort-bound', 'true');
+                    th.addEventListener('click', function(e) {
+                        if (e.target.closest('button, a, input, select')) return;
+                        if (th.hasAttribute('onclick') && th.getAttribute('onclick').includes('toggle')) {
+                            return;
+                        }
+                        BimTableSorter.toggleSort(table, idx);
+                    });
+                }
+            });
+        },
+
+        toggleSort: function(table, colIdx) {
+            const tableId = table.id || ('table_' + Math.random().toString(36).substr(2, 9));
+            const curState = this.sortStates[tableId] || { colIndex: -1, isAsc: true };
+            const isAsc = (curState.colIndex === colIdx) ? !curState.isAsc : true;
+            this.sortStates[tableId] = { colIndex: colIdx, isAsc: isAsc };
+
+            this.sortTable(table, colIdx, isAsc);
+        },
+
+        sortTable: function(table, colIdx, isAsc) {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            if (rows.length <= 1) return;
+            if (rows.length === 1 && rows[0].querySelector('td[colspan]')) return;
+
+            const thead = table.querySelector('thead');
+            if (thead) {
+                const headers = thead.querySelectorAll('th');
+                headers.forEach((th, idx) => {
+                    const icon = th.querySelector('.sort-indicator-icon') || th.querySelector('i[id*="sort-icon"]');
+                    if (icon) {
+                        if (idx === colIdx) {
+                            icon.className = isAsc ? 'ph-bold ph-caret-up text-teal-700 text-xs ml-1 inline-block' : 'ph-bold ph-caret-down text-teal-700 text-xs ml-1 inline-block';
+                        } else {
+                            icon.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs ml-1 inline-block sort-indicator-icon';
+                        }
+                    }
+                });
+            }
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.children[colIdx];
+                const cellB = rowB.children[colIdx];
+                if (!cellA || !cellB) return 0;
+
+                const textA = (cellA.innerText || cellA.textContent || '').trim();
+                const textB = (cellB.innerText || cellB.textContent || '').trim();
+
+                const numA = this.parseNumeric(textA);
+                const numB = this.parseNumeric(textB);
+                if (numA !== null && numB !== null) {
+                    return isAsc ? numA - numB : numB - numA;
+                }
+
+                const dateA = this.parseDate(textA);
+                const dateB = this.parseDate(textB);
+                if (dateA !== null && dateB !== null) {
+                    return isAsc ? dateA - dateB : dateB - dateA;
+                }
+
+                return isAsc ? textA.localeCompare(textB, 'vi') : textB.localeCompare(textA, 'vi');
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            this.reindexSTT(table);
+        },
+
+        parseNumeric: function(str) {
+            if (!str) return null;
+            const cleaned = str.replace(/[đvn₫%\s]/gi, '').replace(/\./g, '').replace(',', '.');
+            if (/^-?\d+(\.\d+)?$/.test(cleaned)) {
+                return parseFloat(cleaned);
+            }
+            return null;
+        },
+
+        parseDate: function(str) {
+            if (!str) return null;
+            const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+            if (dmy) {
+                return new Date(parseInt(dmy[3]), parseInt(dmy[2]) - 1, parseInt(dmy[1])).getTime();
+            }
+            const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+            if (ymd) {
+                return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3])).getTime();
+            }
+            return null;
+        },
+
+        reindexSTT: function(table) {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((row, idx) => {
+                const firstCell = row.children[0];
+                if (firstCell && (firstCell.classList.contains('font-mono') || /^\d+$/.test(firstCell.innerText.trim()))) {
+                    firstCell.innerText = String(idx + 1);
+                }
+            });
+        },
+
+        autoInit: function() {
+            const tables = document.querySelectorAll('table.erp-table, table[id]');
+            tables.forEach(tbl => BimTableSorter.initTable(tbl));
+        }
+    };
+
+    // =========================================================================
+    // BIM LOGISTICS — UNIVERSAL TABLE FOOTER TOTALS (DÒNG TỔNG CỘNG BẢNG DỮ LIỆU)
+    // =========================================================================
+    const BimTableFooter = {
+        render: function(tableId, config) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            let tfoot = table.querySelector('tfoot');
+            if (!tfoot) {
+                tfoot = document.createElement('tfoot');
+                table.appendChild(tfoot);
+            }
+            tfoot.className = 'bg-slate-100/95 border-t-2 border-slate-300 font-bold text-slate-800 text-xs shadow-2xs sticky bottom-0 z-10';
+
+            const thead = table.querySelector('thead');
+            const colCount = thead ? thead.querySelectorAll('th').length : (config.cells ? config.cells.length : 10);
+
+            let trHtml = '<tr class="no-col-reorder border-b border-slate-300/80 bg-slate-100 hover:bg-slate-200/60 transition-colors">';
+            
+            if (Array.isArray(config.cells)) {
+                config.cells.forEach(cell => {
+                    const colspan = cell.colspan ? `colspan="${cell.colspan}"` : '';
+                    const align = cell.align ? `text-${cell.align}` : 'text-left';
+                    const cls = cell.class || '';
+                    trHtml += `<td ${colspan} class="px-3 py-2.5 ${align} ${cls} font-heading font-bold">${cell.html || cell.text || ''}</td>`;
+                });
+            } else {
+                trHtml += `<td class="px-3 py-2.5 text-center font-black text-slate-900 font-heading">TỔNG</td>`;
+                trHtml += `<td colspan="${colCount - 1}" class="px-3 py-2.5 text-slate-700 font-bold">${config.summary || ''}</td>`;
+            }
+            trHtml += '</tr>';
+
+            tfoot.innerHTML = trHtml;
+            if (window.BimTableSorter) {
+                window.BimTableSorter.initTable(table);
+            }
+        }
+    };
+
+    // Export module
+    window.BimTableSorter = BimTableSorter;
+    window.BimTableFooter = BimTableFooter;
     // Export module
     window.BimTableColumnManager = BimTableColumnManager;
 
