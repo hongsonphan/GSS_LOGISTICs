@@ -186,7 +186,8 @@ class Subcontractor(TimeStampedModel, SoftDeleteModel):
     tax_code = models.CharField(max_length=30, blank=True)
     contact_person = models.CharField(max_length=100, blank=True) # Người phụ trách điều xe
     phone = models.CharField(max_length=50, blank=True)
-    address = models.CharField(max_length=255, blank=True)
+    address = models.CharField(max_length=255, blank=True, help_text="Địa chỉ công ty")
+    yard_address = models.CharField(max_length=255, blank=True, help_text="Địa chỉ kho / bãi xe")
     bank_account_number = models.CharField(max_length=50, blank=True, help_text="Số tài khoản ngân hàng")
     bank_name = models.CharField(max_length=100, blank=True, help_text="Tên ngân hàng thụ hưởng")
     bank_account_holder = models.CharField(max_length=150, blank=True, help_text="Tên chủ tài khoản")

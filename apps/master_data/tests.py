@@ -171,14 +171,27 @@ class MasterDataAPITestCase(TestCase):
         self.assertEqual(create_res.status_code, status.HTTP_201_CREATED)
         sc_id = create_res.data['id']
 
-        # Update
+        # Update partner_type to SUPPLIER and set yard_address
         update_res = self.client.put(f'/api/master-data/subcontractors/{sc_id}/', {
             'phone': '0909.999.888',
+            'partner_type': 'SUPPLIER',
+            'address': '123 Nguyễn Văn Cừ, Q5',
+            'yard_address': 'Bãi xe KCN Cát Lái, P. Thạnh Mỹ Lợi, TP Thủ Đức',
             'notes': 'Cập nhật tuyến Vũng Tàu'
         }, format='json')
         self.assertEqual(update_res.status_code, status.HTTP_200_OK)
         sc = Subcontractor.objects.get(id=sc_id)
         self.assertEqual(sc.phone, '0909.999.888')
+        self.assertEqual(sc.partner_type, 'SUPPLIER')
+        self.assertEqual(sc.yard_address, 'Bãi xe KCN Cát Lái, P. Thạnh Mỹ Lợi, TP Thủ Đức')
+
+        # List verify partner_type and yard_address
+        list_res = self.client.get('/api/master-data/subcontractors/')
+        self.assertEqual(list_res.status_code, status.HTTP_200_OK)
+        item = next((x for x in list_res.data['results'] if x['id'] == sc_id), None)
+        self.assertIsNotNone(item)
+        self.assertEqual(item['partner_type'], 'SUPPLIER')
+        self.assertEqual(item['yard_address'], 'Bãi xe KCN Cát Lái, P. Thạnh Mỹ Lợi, TP Thủ Đức')
 
         # Delete (soft delete)
         del_res = self.client.delete(f'/api/master-data/subcontractors/{sc_id}/')

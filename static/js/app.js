@@ -21161,6 +21161,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Viết Tắt</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đơn Vị / Đối Tác</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Công Ty</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Kho / Bãi</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Điều Hành & SĐT</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Thông Tin Tài Khoản Ngân Hàng</th>
@@ -21172,23 +21173,11 @@ function renderMasterDataTable(items, total = items.length) {
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
-                <td class="py-2 px-3 text-[12px] border-r border-slate-200 font-heading">
-                    ${item.partner_type === 'GARAGE' ? `
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-900 border border-amber-300 font-bold">
-                            <i class="ph-bold ph-wrench text-amber-700"></i> Gara bảo dưỡng
-                        </span>
-                    ` : (item.partner_type === 'SUPPLIER' ? `
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-indigo-50 text-indigo-900 border border-indigo-300 font-bold">
-                            <i class="ph-bold ph-package text-indigo-700"></i> Nhà cung cấp
-                        </span>
-                    ` : `
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-teal-50 text-teal-900 border border-teal-300 font-bold">
-                            <i class="ph-bold ph-truck text-teal-700"></i> Nhà xe 3PL
-                        </span>
-                    `)}
+                <td class="py-2 px-3 text-[12px] border-r border-slate-200 font-semibold text-slate-800">
+                    ${item.partner_type === 'GARAGE' ? 'Gara bảo dưỡng' : (item.partner_type === 'SUPPLIER' ? 'Nhà cung cấp' : 'Nhà xe 3PL')}
                 </td>
-                <td class="py-2 px-3 text-[12px] font-bold text-amber-900 border-r border-slate-200">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-900 border border-amber-200 font-mono font-bold">${escapeHtml(item.short_name || item.code)}</span>
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">
+                    ${escapeHtml(item.short_name || item.code)}
                 </td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
                     <div class="flex items-center justify-between gap-2">
@@ -21202,6 +21191,9 @@ function renderMasterDataTable(items, total = items.length) {
                 </td>
                 <td class="py-2 px-3 text-[12px] text-slate-700 max-w-xs border-r border-slate-200">
                     <div class="truncate" title="${escapeHtml(item.address || '')}">${item.address ? escapeHtml(item.address) : '<span class="text-slate-400 italic">Chưa cập nhật</span>'}</div>
+                </td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 max-w-xs border-r border-slate-200">
+                    <div class="truncate" title="${escapeHtml(item.yard_address || '')}">${item.yard_address ? escapeHtml(item.yard_address) : '<span class="text-slate-400 italic">Chưa cập nhật</span>'}</div>
                 </td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">
@@ -22253,11 +22245,19 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-sc-phone" value="${escapeHtml(d.phone || '')}" placeholder="SĐT liên hệ gấp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 w-full" required>
                 </div>
             </div>
-            <div>
-                <div class="flex items-center justify-between h-5 mb-1">
-                    <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Bãi Xe / Văn Phòng</label>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Công Ty</label>
+                    </div>
+                    <input type="text" id="mdf-sc-address" value="${escapeHtml(d.address || '')}" placeholder="Trụ sở, số nhà, đường, quận/huyện..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
-                <input type="text" id="mdf-sc-address" value="${escapeHtml(d.address || '')}" placeholder="Địa chỉ..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Kho / Bãi Xe</label>
+                    </div>
+                    <input type="text" id="mdf-sc-yard-address" value="${escapeHtml(d.yard_address || '')}" placeholder="Vị trí bãi xe, kho tập kết hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-4">
@@ -22669,6 +22669,7 @@ async function submitMasterDataForm(e) {
             contact_person: document.getElementById('mdf-sc-person').value,
             phone: document.getElementById('mdf-sc-phone').value,
             address: document.getElementById('mdf-sc-address').value,
+            yard_address: document.getElementById('mdf-sc-yard-address')?.value || '',
             bank_account_number: document.getElementById('mdf-sc-acc').value,
             bank_name: document.getElementById('mdf-sc-bank').value,
             bank_account_holder: document.getElementById('mdf-sc-holder').value,

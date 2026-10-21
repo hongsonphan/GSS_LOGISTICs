@@ -1,3 +1,12 @@
+function toggleSubcontractorTypePanels(typeVal) {
+    const isCarrier = (typeVal === 'CARRIER');
+    const vehSec = document.getElementById('section-subcontractor-vehicles-mgmt');
+    const drvSec = document.getElementById('section-subcontractor-drivers-mgmt');
+    if (vehSec) vehSec.style.display = isCarrier ? 'block' : 'none';
+    if (drvSec) drvSec.style.display = isCarrier ? 'block' : 'none';
+}
+window.toggleSubcontractorTypePanels = toggleSubcontractorTypePanels;
+
 /**
  * BIM LOGISTICS — MODULE CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA)
  */
@@ -1125,8 +1134,12 @@ function renderMasterDataTable(items, total = items.length) {
     else if (currentMasterDataTab === 'subcontractors') {
         tableHead.innerHTML = `
             <tr>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Nhà Xe</th>
-                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đơn Vị / Đối Tác Vận Tải</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Đối Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Loại Đối Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Viết Tắt</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Tên Đơn Vị / Đối Tác</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Công Ty</th>
+                <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Địa Chỉ Kho / Bãi</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Mã Số Thuế</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Người Điều Hành & SĐT</th>
                 <th class="py-2 px-3 text-[12px] font-bold text-slate-700 uppercase tracking-wider sticky top-0 bg-slate-100 z-10 border-b border-slate-300 border-r border-slate-200 select-none">Thông Tin Tài Khoản Ngân Hàng</th>
@@ -1138,9 +1151,20 @@ function renderMasterDataTable(items, total = items.length) {
         tableBody.innerHTML = items.map(item => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-slate-200">
                 <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.code}</td>
+                <td class="py-2 px-3 text-[12px] border-r border-slate-200 font-semibold text-slate-800">
+                    ${item.partner_type === 'GARAGE' ? 'Gara bảo dưỡng' : (item.partner_type === 'SUPPLIER' ? 'Nhà cung cấp' : 'Nhà xe 3PL')}
+                </td>
+                <td class="py-2 px-3 text-[12px] font-mono font-bold text-slate-900 border-r border-slate-200">
+                    ${escapeHtml(item.short_name || item.code)}
+                </td>
                 <td class="py-2 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">
                     <div>${item.name}</div>
-                    ${item.address ? `<div class="text-[11px] text-slate-500 font-normal truncate max-w-xs">${item.address}</div>` : ''}
+                </td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 max-w-xs border-r border-slate-200">
+                    <div class="truncate" title="${escapeHtml(item.address || '')}">${item.address ? escapeHtml(item.address) : '<span class="text-slate-400 italic">Chưa cập nhật</span>'}</div>
+                </td>
+                <td class="py-2 px-3 text-[12px] text-slate-700 max-w-xs border-r border-slate-200">
+                    <div class="truncate" title="${escapeHtml(item.yard_address || '')}">${item.yard_address ? escapeHtml(item.yard_address) : '<span class="text-slate-400 italic">Chưa cập nhật</span>'}</div>
                 </td>
                 <td class="py-2 px-3 text-[12px] font-mono text-slate-700 border-r border-slate-200">${item.tax_code || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-800 border-r border-slate-200">
@@ -2113,26 +2137,46 @@ function injectMasterDataModalFields(data) {
             </div>
         `;
     } else if (currentMasterDataTab === 'subcontractors') {
+        const contactVal = (d.contact_person && d.contact_person !== 'null') ? d.contact_person : '';
+        const partnerTypeVal = d.partner_type || 'CARRIER';
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
-                <div class="md:col-span-6">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-teal-900 text-xs truncate">Loại Đối Tác <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-sc-partner-type" onchange="toggleSubcontractorTypePanels(this.value)" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-teal-950 border-teal-300 bg-teal-50/40 w-full rounded">
+                        <option value="CARRIER" ${partnerTypeVal === 'CARRIER' ? 'selected' : ''}>🏢 Nhà xe vận tải (3PL)</option>
+                        <option value="GARAGE" ${partnerTypeVal === 'GARAGE' ? 'selected' : ''}>🔧 Gara sửa chữa / Bảo dưỡng</option>
+                        <option value="SUPPLIER" ${partnerTypeVal === 'SUPPLIER' ? 'selected' : ''}>📦 Nhà cung cấp vật tư / Dịch vụ</option>
+                    </select>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-amber-900 text-xs truncate">Tên Viết Tắt <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-sc-short-name" value="${escapeHtml(d.short_name || d.code || '')}" placeholder="VD: 3S, HOANGNAM..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold text-amber-950 border-amber-300 w-full" required>
+                </div>
+                <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe</label>
                     </div>
-                    <input type="text" id="mdf-sc-code" value="${d.code || ''}" placeholder="Tự sinh nếu để trống (NX_...)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh nếu để trống (NX_...)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
                 </div>
-                <div class="md:col-span-6">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Doanh Nghiệp / Đơn Vị <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-sc-name" value="${escapeHtml(d.name || '')}" placeholder="VD: CÔNG TY TNHH 3S LOGISTICS..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
+                </div>
+                <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Mã Số Thuế (MST)</label>
                     </div>
-                    <input type="text" id="mdf-sc-tax" value="${d.tax_code || ''}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-tax" value="${escapeHtml(d.tax_code || '')}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
                 </div>
-            </div>
-            <div>
-                <div class="flex items-center justify-between h-5 mb-1">
-                    <label class="block font-bold text-slate-700 text-xs truncate">Tên Nhà Xe / Đơn Vị Vận Tải 3PL <span class="text-rose-500">*</span></label>
-                </div>
-                <input type="text" id="mdf-sc-name" value="${d.name || ''}" placeholder="VD: Công ty TNHH Vận tải Hoàng Nam..." class="form-input h-8.5 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full" required>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
@@ -2148,11 +2192,19 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-sc-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ gấp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 w-full" required>
                 </div>
             </div>
-            <div>
-                <div class="flex items-center justify-between h-5 mb-1">
-                    <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Bãi Xe / Văn Phòng</label>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Công Ty</label>
+                    </div>
+                    <input type="text" id="mdf-sc-address" value="${d.address || ''}" placeholder="Trụ sở, số nhà, đường, quận/huyện..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
-                <input type="text" id="mdf-sc-address" value="${d.address || ''}" placeholder="Địa chỉ..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Kho / Bãi Xe</label>
+                    </div>
+                    <input type="text" id="mdf-sc-yard-address" value="${d.yard_address || ''}" placeholder="Vị trí bãi xe, kho tập kết hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-4">
@@ -2354,12 +2406,15 @@ async function submitMasterDataForm(e) {
         };
     } else if (tabKey === 'subcontractors') {
         payload = {
+            partner_type: document.getElementById('mdf-sc-partner-type')?.value || 'CARRIER',
             code: document.getElementById('mdf-sc-code').value,
+            short_name: document.getElementById('mdf-sc-short-name')?.value || '', 
             tax_code: document.getElementById('mdf-sc-tax').value,
             name: document.getElementById('mdf-sc-name').value,
             contact_person: document.getElementById('mdf-sc-person').value,
             phone: document.getElementById('mdf-sc-phone').value,
             address: document.getElementById('mdf-sc-address').value,
+            yard_address: document.getElementById('mdf-sc-yard-address')?.value || '',
             bank_account_number: document.getElementById('mdf-sc-acc').value,
             bank_name: document.getElementById('mdf-sc-bank').value,
             bank_account_holder: document.getElementById('mdf-sc-holder').value,

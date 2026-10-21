@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.4] - 2026-10-21 (Hiển Thị Plain Text Đối Tác, Tách Riêng 2 Cột Địa Chỉ & Fix Lưu Loại Đối Tác)
+
+### 1. Hiển Thị Plain Text Tinh Gọn (Không Bọc Badge):
+- **Cột Loại Đối Tác:** Hiển thị trực tiếp dạng văn bản thuần `text-slate-800 font-semibold`: `Nhà xe 3PL`, `Gara bảo dưỡng`, `Nhà cung cấp` (loại bỏ các thẻ badge bo tròn viền màu).
+- **Cột Tên Viết Tắt:** Hiển thị dạng text đơn giản `font-mono font-bold text-slate-900` (loại bỏ pill badge màu vàng).
+
+### 2. Tách Riêng 2 Cột Địa Chỉ (Địa Chỉ Công Ty & Địa Chỉ Kho / Bãi):
+- **Model `Subcontractor` (`apps/master_data/models.py`):**
+  * Bổ sung trường `yard_address = models.CharField(max_length=255, blank=True, help_text="Địa chỉ kho / bãi xe")`.
+  * Đã tạo và áp dụng migration `0013_subcontractor_yard_address_and_more`.
+- **Giao Diện Master Data Bảng & Modal (`static/js/app.js` & `static/js/modules/master_data.js`):**
+  * Bảng danh sách tách làm 2 cột riêng biệt: **`Địa Chỉ Công Ty`** (`address`) và **`Địa Chỉ Kho / Bãi`** (`yard_address`).
+  * Modal chỉnh sửa chia làm 2 ô input riêng: `#mdf-sc-address` và `#mdf-sc-yard-address`.
+  * Template Excel Import/Export bổ sung cột `yard_address` vào schema.
+
+### 3. Sửa Lỗi Lưu Loại Đối Tác (Fix Partner Type Persistence):
+- **Khắc phục lỗi không ăn khi đổi loại đối tác sang "Nhà cung cấp":**
+  * `SubcontractorListCreateAPIView.get`: Bổ sung `'partner_type'` và `'yard_address'` vào JSON response trả về frontend.
+  * `SubcontractorDetailAPIView`: Thêm method `get` và đảm bảo `put` nhận, lưu `partner_type` và `yard_address`.
+  * Frontend: Lấy chính xác `partner_type` và `yard_address` khi build payload lưu, tự động cập nhật cache và hiển thị đúng loại đối tác ngay sau khi lưu.
+
 ## [v3.7.3] - 2026-10-21 (Rút Gọn Nhãn Thầu Phụ Thành "Ghi Chú", Inline Edit Đội Xe & Danh Bạ Bác Tài)
 
 ### 1. Chuẩn Hóa Nhãn Giao Diện Thầu Phụ:

@@ -1108,6 +1108,7 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
         for sc in qs:
             data.append({
                 'id': sc.id,
+                'partner_type': sc.partner_type,
                 'code': sc.code,
                 'short_name': sc.short_name or sc.code,
                 'name': sc.name,
@@ -1115,6 +1116,7 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
                 'contact_person': sc.contact_person,
                 'phone': sc.phone,
                 'address': sc.address,
+                'yard_address': getattr(sc, 'yard_address', '') or '',
                 'bank_account_number': sc.bank_account_number,
                 'bank_name': sc.bank_name,
                 'bank_account_holder': sc.bank_account_holder,
@@ -1155,6 +1157,7 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
             contact_person=data.get('contact_person', '').strip(),
             phone=data.get('phone', '').strip(),
             address=data.get('address', '').strip(),
+            yard_address=data.get('yard_address', '').strip(),
             bank_account_number=data.get('bank_account_number', '').strip(),
             bank_name=data.get('bank_name', '').strip(),
             bank_account_holder=data.get('bank_account_holder', '').strip(),
@@ -1163,24 +1166,64 @@ class SubcontractorListCreateAPIView(MasterDataBaseAPIView):
         )
         return Response({
             'success': True,
-            'message': f'Đã thêm nhà xe thầu phụ [{sc.name}] thành công!',
-            'id': sc.id
+            'message': f'Đã thêm đối tác [{sc.name}] thành công!',
+            'id': sc.id,
+            'data': {
+                'id': sc.id,
+                'partner_type': sc.partner_type,
+                'code': sc.code,
+                'short_name': sc.short_name,
+                'name': sc.name,
+                'tax_code': sc.tax_code,
+                'contact_person': sc.contact_person,
+                'phone': sc.phone,
+                'address': sc.address,
+                'yard_address': sc.yard_address,
+                'bank_account_number': sc.bank_account_number,
+                'bank_name': sc.bank_name,
+                'bank_account_holder': sc.bank_account_holder,
+                'notes': sc.notes,
+                'is_active': sc.is_active,
+            }
         }, status=status.HTTP_201_CREATED)
 
 class SubcontractorDetailAPIView(MasterDataBaseAPIView):
+    def get(self, request, pk):
+        sc = Subcontractor.objects.filter(id=pk).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy đối tác!'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            'id': sc.id,
+            'partner_type': sc.partner_type,
+            'code': sc.code,
+            'short_name': sc.short_name or sc.code,
+            'name': sc.name,
+            'tax_code': sc.tax_code,
+            'contact_person': sc.contact_person,
+            'phone': sc.phone,
+            'address': sc.address,
+            'yard_address': getattr(sc, 'yard_address', '') or '',
+            'bank_account_number': sc.bank_account_number,
+            'bank_name': sc.bank_name,
+            'bank_account_holder': sc.bank_account_holder,
+            'notes': sc.notes,
+            'is_active': sc.is_active,
+        })
+
     def put(self, request, pk):
         sc = Subcontractor.objects.filter(id=pk).first()
         if not sc:
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data
-        if 'partner_type' in data: sc.partner_type = data['partner_type'].strip()
+        if 'partner_type' in data and data['partner_type']: sc.partner_type = str(data['partner_type']).strip()
         if 'name' in data: sc.name = data['name'].strip()
         if 'short_name' in data: sc.short_name = data['short_name'].strip()
         if 'tax_code' in data: sc.tax_code = data['tax_code'].strip()
         if 'contact_person' in data: sc.contact_person = data['contact_person'].strip()
         if 'phone' in data: sc.phone = data['phone'].strip()
         if 'address' in data: sc.address = data['address'].strip()
+        if 'yard_address' in data: sc.yard_address = data['yard_address'].strip()
         if 'bank_account_number' in data: sc.bank_account_number = data['bank_account_number'].strip()
         if 'bank_name' in data: sc.bank_name = data['bank_name'].strip()
         if 'bank_account_holder' in data: sc.bank_account_holder = data['bank_account_holder'].strip()
@@ -1188,7 +1231,27 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
         if 'is_active' in data: sc.is_active = bool(data['is_active'])
         sc.save()
 
-        return Response({'success': True, 'message': f'Đã cập nhật nhà xe thầu phụ [{sc.name}] thành công!'})
+        return Response({
+            'success': True,
+            'message': f'Đã cập nhật đối tác [{sc.name}] thành công!',
+            'data': {
+                'id': sc.id,
+                'partner_type': sc.partner_type,
+                'code': sc.code,
+                'short_name': sc.short_name,
+                'name': sc.name,
+                'tax_code': sc.tax_code,
+                'contact_person': sc.contact_person,
+                'phone': sc.phone,
+                'address': sc.address,
+                'yard_address': sc.yard_address,
+                'bank_account_number': sc.bank_account_number,
+                'bank_name': sc.bank_name,
+                'bank_account_holder': sc.bank_account_holder,
+                'notes': sc.notes,
+                'is_active': sc.is_active,
+            }
+        })
 
     def delete(self, request, pk):
         sc = Subcontractor.objects.filter(id=pk).first()
