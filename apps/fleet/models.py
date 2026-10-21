@@ -22,9 +22,17 @@ class Vehicle(TimeStampedModel, SoftDeleteModel):
     license_plate = models.CharField(max_length=20, unique=True, db_index=True) # 51C-123.45, 61C-393.29...
     vehicle_type = models.CharField(max_length=20, choices=VehicleType.choices, default=VehicleType.TRACTOR)
     ownership_type = models.CharField(max_length=20, choices=VehicleOwnership.choices, default=VehicleOwnership.OWNED, help_text="Xe nhà hay Xe bạn/3PL")
+    subcontractor = models.ForeignKey(
+        'master_data.Subcontractor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='vehicles',
+        help_text="Nhà xe / Đơn vị 3PL sở hữu nếu là xe ngoài (SUBCONTRACTOR)"
+    )
     brand = models.CharField(max_length=50, blank=True) # Freightliner, Hyundai, Hino...
     payload_capacity_kg = models.IntegerField(default=30000, help_text="Tải trọng cho phép (kg)")
-    registration_expiry = models.DateField(help_text="Hạn đăng kiểm định kỳ")
+    registration_expiry = models.DateField(null=True, blank=True, help_text="Hạn đăng kiểm định kỳ")
     insurance_expiry = models.DateField(null=True, blank=True, help_text="Hạn bảo hiểm TNDS")
     status = models.CharField(max_length=20, choices=VehicleStatus.choices, default=VehicleStatus.IDLE)
     

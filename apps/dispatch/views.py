@@ -343,6 +343,9 @@ def driver_portal_view(request, trip_hash):
         'trip': trip,
         'trip_hash': trip.driver_hashid,
         'driver': trip.driver,
+        'assigned_driver_name': trip.assigned_driver_name,
+        'assigned_driver_phone': trip.assigned_driver_phone,
+        'carrier_name': trip.carrier_name,
         'vehicle': trip.vehicle,
         'trailer': trip.trailer,
         'dispatcher_name': dispatcher_name,
@@ -416,6 +419,9 @@ def public_tracking_view(request, trip_hash):
         'destination_warehouse': destination_wh,
         'customer_milestones': customer_milestones,
         'documents': public_documents,
+        'assigned_driver_name': trip.assigned_driver_name,
+        'assigned_driver_phone': trip.assigned_driver_phone,
+        'carrier_name': trip.carrier_name,
         'share_url': request.build_absolute_uri(),
     }
     return render(request, 'public_tracking.html', context)

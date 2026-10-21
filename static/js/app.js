@@ -7077,6 +7077,153 @@ function showSaleExistingBookingFile(fileUrl, fileName, docs = []) {
     }
     renderSaleBookingFilesList();
 }
+// --- 3.8. QUẢN LÝ CHẾ ĐỘ ĐỘI XE: XE NHÀ vs XE BẠN / 3PL (Phương Án 3: Quản Lý Theo Đối Tác) ---
+function setTripCarrierMode(mode) {
+    const btnOwned = document.getElementById('btn-fleet-owned');
+    const btnSub = document.getElementById('btn-fleet-subcontractor');
+    const inpMode = document.getElementById('inp-carrier-mode');
+    const secDirect = document.getElementById('section-direct-dispatch');
+    const secDropHook = document.getElementById('section-drop-hook-dispatch');
+    const secSub = document.getElementById('section-subcontractor-dispatch');
+    const dropHookToggleWrap = document.getElementById('wrapper-drop-hook-toggle');
+    const chkDropHook = document.getElementById('chk-drop-hook');
+
+    if (inpMode) inpMode.value = mode;
+
+    if (mode === 'SUBCONTRACTOR') {
+        if (btnOwned) {
+            btnOwned.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1';
+        }
+        if (btnSub) {
+            btnSub.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition-all bg-amber-500 text-white shadow-2xs flex items-center gap-1';
+        }
+        if (secDirect) secDirect.classList.add('hidden-view');
+        if (secDropHook) secDropHook.classList.add('hidden-view');
+        if (dropHookToggleWrap) dropHookToggleWrap.classList.add('hidden-view');
+        if (secSub) secSub.classList.remove('hidden-view');
+
+        // Nạp danh sách Thầu phụ vào select nếu có cache
+        if (masterDataFormOptionsCache && masterDataFormOptionsCache.subcontractors) {
+            const subSel = document.getElementById('inp-subcontractor');
+            if (subSel && subSel.options.length <= 1) {
+                masterDataFormOptionsCache.subcontractors.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.innerText = s.label || s.name;
+                    subSel.appendChild(opt);
+                });
+            }
+        }
+    } else {
+        if (btnOwned) {
+            btnOwned.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition-all bg-white text-teal-800 shadow-2xs flex items-center gap-1';
+        }
+        if (btnSub) {
+            btnSub.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1';
+        }
+        if (secSub) secSub.classList.add('hidden-view');
+        if (dropHookToggleWrap) dropHookToggleWrap.classList.remove('hidden-view');
+        if (chkDropHook && chkDropHook.checked) {
+            if (secDropHook) secDropHook.classList.remove('hidden-view');
+            if (secDirect) secDirect.classList.add('hidden-view');
+        } else {
+            if (secDirect) secDirect.classList.remove('hidden-view');
+            if (secDropHook) secDropHook.classList.add('hidden-view');
+        }
+    }
+}
+
+async function onSubcontractorSelected(subId) {
+    const vehSel = document.getElementById('inp-sub-vehicle');
+    const drvSel = document.getElementById('inp-sub-driver');
+    const customVehInp = document.getElementById('inp-sub-vehicle-custom');
+    const customDrvDiv = document.getElementById('div-sub-driver-custom');
+
+    if (customVehInp) customVehInp.classList.add('hidden-view');
+    if (customDrvDiv) customDrvDiv.classList.add('hidden-view');
+
+    if (!subId) {
+        if (vehSel) vehSel.innerHTML = '<option value="">-- Chọn Xe Thuộc 3PL --</option><option value="CUSTOM">+ Nhập Biển Số Xe Khác...</option>';
+        if (drvSel) drvSel.innerHTML = '<option value="">-- Chọn Tài Xế 3PL --</option><option value="CUSTOM">+ Nhập Tài Xế Mới...</option>';
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/fleet/`);
+        if (res.ok) {
+            const data = await res.json();
+            if (vehSel) {
+                vehSel.innerHTML = '<option value="">-- Chọn Xe Thuộc 3PL --</option>';
+                if (data.vehicles && data.vehicles.length > 0) {
+                    data.vehicles.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v.license_plate;
+                        opt.innerText = `${v.license_plate} (${v.vehicle_type || 'Đầu kéo'})`;
+                        vehSel.appendChild(opt);
+                    });
+                }
+                const optCustom = document.createElement('option');
+                optCustom.value = 'CUSTOM';
+                optCustom.innerText = '+ Nhập Biển Số Xe Khác...';
+                vehSel.appendChild(optCustom);
+            }
+
+            if (drvSel) {
+                drvSel.innerHTML = '<option value="">-- Chọn Tài Xế 3PL --</option>';
+                if (data.drivers && data.drivers.length > 0) {
+                    data.drivers.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.innerText = `${d.full_name} (${d.phone || 'Không SĐT'})`;
+                        opt.dataset.phone = d.phone || '';
+                        opt.dataset.name = d.full_name;
+                        drvSel.appendChild(opt);
+                    });
+                }
+                const optCustom = document.createElement('option');
+                optCustom.value = 'CUSTOM';
+                optCustom.innerText = '+ Nhập Tài Xế Mới...';
+                drvSel.appendChild(optCustom);
+            }
+        }
+    } catch (e) {
+        console.error('Lỗi tải danh bạ xe/tài 3PL:', e);
+    }
+}
+
+function onSubVehicleSelectChange(val) {
+    const customInp = document.getElementById('inp-sub-vehicle-custom');
+    if (customInp) {
+        if (val === 'CUSTOM') {
+            customInp.classList.remove('hidden-view');
+            customInp.focus();
+        } else {
+            customInp.classList.add('hidden-view');
+        }
+    }
+}
+
+function onSubDriverSelectChange(val) {
+    const customDiv = document.getElementById('div-sub-driver-custom');
+    const phoneInp = document.getElementById('inp-sub-driver-phone');
+    const nameInp = document.getElementById('inp-sub-driver-name');
+    const drvSel = document.getElementById('inp-sub-driver');
+
+    if (val === 'CUSTOM') {
+        if (customDiv) customDiv.classList.remove('hidden-view');
+        if (nameInp) nameInp.focus();
+    } else {
+        if (customDiv) customDiv.classList.add('hidden-view');
+        const selectedOpt = drvSel?.selectedOptions[0];
+        if (selectedOpt && selectedOpt.dataset.phone && phoneInp) {
+            phoneInp.value = selectedOpt.dataset.phone;
+        }
+        if (selectedOpt && selectedOpt.dataset.name && nameInp) {
+            nameInp.value = selectedOpt.dataset.name;
+        }
+    }
+}
+
 // --- 4. TẠO LỆNH ĐIỀU ĐỘNG VỚI DEFENSIVE VALIDATION (Bim_ERP Standard) ---
 async function submitNewTrip() {
     const is_split_trip = document.getElementById('chk-drop-hook')?.checked || false;
@@ -7088,11 +7235,63 @@ async function submitNewTrip() {
         { id: 'inp-warehouse', errId: 'err-warehouse', label: 'Nơi đóng/trả hàng' }
     ];
 
-    if (is_split_trip) {
-        requiredFields.push({ id: 'inp-driver-leg1', errId: 'err-driver-leg1', label: 'Tài xế lấy cont (Chặng 1)' });
-        requiredFields.push({ id: 'inp-dropoff-driver', errId: 'err-dropoff-driver', label: 'Tài xế hạ cont (Chặng 2)' });
+    const carrier_mode = document.getElementById('inp-carrier-mode')?.value || 'OWNED';
+    let subcontractor_id = null;
+    let subcontractor_driver_id = null;
+    let subcontractor_driver_name = '';
+    let subcontractor_driver_phone = '';
+    let subcontractor_cost = 0;
+    let subcontractor_advance = 0;
+
+    if (carrier_mode === 'SUBCONTRACTOR') {
+        requiredFields.push({ id: 'inp-subcontractor', errId: 'err-subcontractor', label: 'Nhà xe / 3PL' });
+        requiredFields.push({ id: 'inp-sub-cost', errId: 'err-sub-cost', label: 'Giá cước khoán 3PL' });
+
+        const subVehSel = document.getElementById('inp-sub-vehicle');
+        const subVehCustom = document.getElementById('inp-sub-vehicle-custom');
+        const subDrvSel = document.getElementById('inp-sub-driver');
+        const subDrvName = document.getElementById('inp-sub-driver-name');
+        const subDrvPhone = document.getElementById('inp-sub-driver-phone');
+
+        subcontractor_id = document.getElementById('inp-subcontractor')?.value || '';
+
+        if (subVehSel && subVehSel.value === 'CUSTOM') {
+            vehicle = subVehCustom ? subVehCustom.value.trim() : '';
+            if (!vehicle) {
+                requiredFields.push({ id: 'inp-sub-vehicle-custom', errId: 'err-sub-vehicle', label: 'Biển số xe 3PL' });
+            }
+        } else if (subVehSel && subVehSel.value) {
+            vehicle = subVehSel.value.trim();
+        } else {
+            requiredFields.push({ id: 'inp-sub-vehicle', errId: 'err-sub-vehicle', label: 'Biển số xe 3PL' });
+        }
+
+        if (subDrvSel && subDrvSel.value === 'CUSTOM') {
+            subcontractor_driver_name = subDrvName ? subDrvName.value.trim() : '';
+            subcontractor_driver_phone = subDrvPhone ? subDrvPhone.value.trim() : '';
+            if (!subcontractor_driver_name) {
+                requiredFields.push({ id: 'inp-sub-driver-name', errId: 'err-sub-driver', label: 'Tên tài xế 3PL' });
+            }
+        } else if (subDrvSel && subDrvSel.value) {
+            subcontractor_driver_id = parseInt(subDrvSel.value);
+            const selOpt = subDrvSel.selectedOptions[0];
+            subcontractor_driver_name = selOpt ? selOpt.dataset.name : '';
+            subcontractor_driver_phone = selOpt ? selOpt.dataset.phone : '';
+        } else {
+            requiredFields.push({ id: 'inp-sub-driver', errId: 'err-sub-driver', label: 'Tài xế 3PL' });
+        }
+
+        const rawCost = document.getElementById('inp-sub-cost')?.value || '0';
+        subcontractor_cost = parseFloat(rawCost.replace(/\./g, '').replace(/,/g, '')) || 0;
+        const rawAdv = document.getElementById('inp-sub-advance')?.value || '0';
+        subcontractor_advance = parseFloat(rawAdv.replace(/\./g, '').replace(/,/g, '')) || 0;
     } else {
-        requiredFields.push({ id: 'inp-driver', errId: 'err-driver', label: 'Tài xế nhận lệnh' });
+        if (is_split_trip) {
+            requiredFields.push({ id: 'inp-driver-leg1', errId: 'err-driver-leg1', label: 'Tài xế lấy cont (Chặng 1)' });
+            requiredFields.push({ id: 'inp-dropoff-driver', errId: 'err-dropoff-driver', label: 'Tài xế hạ cont (Chặng 2)' });
+        } else {
+            requiredFields.push({ id: 'inp-driver', errId: 'err-driver', label: 'Tài xế nhận lệnh' });
+        }
     }
 
     let hasError = false;
@@ -7248,6 +7447,12 @@ async function submitNewTrip() {
         formData.append('dem_expiry_date', dem_expiry_date);
         formData.append('container_condition', container_condition);
         formData.append('damage_description', damage_description);
+        if (subcontractor_id) formData.append('subcontractor_id', subcontractor_id);
+        if (subcontractor_driver_id) formData.append('subcontractor_driver_id', subcontractor_driver_id);
+        if (subcontractor_driver_name) formData.append('subcontractor_driver_name', subcontractor_driver_name);
+        if (subcontractor_driver_phone) formData.append('subcontractor_driver_phone', subcontractor_driver_phone);
+        if (subcontractor_cost) formData.append('subcontractor_cost', subcontractor_cost);
+        if (subcontractor_advance) formData.append('subcontractor_advance', subcontractor_advance);
 
         const fileInput = document.getElementById('inp-booking-file');
         if (tripBookingFilesList && tripBookingFilesList.length > 0) {
@@ -14032,6 +14237,7 @@ function populateMasterDataDropdowns() {
 
     // Modal Điều Vận (modal-create-trip)
     fillSelect('inp-customer', customers, '-- Chọn Khách Hàng Trong Danh Mục --', 'name', 'label');
+    fillSelect('inp-subcontractor', masterDataFormOptionsCache?.subcontractors, '-- Chọn Nhà Xe Thầu Phụ / 3PL --', 'id', 'label');
     fillSelect('inp-pickup', locations?.pickup_options, '-- Chọn Cảng / Depot Lấy --', 'name', 'label');
     fillSelect('inp-warehouse', locations?.warehouse_options, '-- Chọn Kho Khách Hàng --', 'name', 'label');
     fillSelect('inp-dropoff', locations?.dropoff_options, '-- Chọn Nơi Hạ Cont --', 'name', 'label');

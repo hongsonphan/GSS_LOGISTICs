@@ -78,11 +78,20 @@
             <i class="ph-bold ph-steering-wheel"></i>
           </div>
           <div>
-            <div class="text-[11px] text-slate-500 font-medium">Bác tài nhận lệnh:</div>
-            <div class="text-sm sm:text-base font-black text-slate-900 leading-tight">
-              {{ driver.full_name }} {% if driver.nickname %}<span class="text-xs font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">({{ driver.nickname }})</span>{% endif %}
+            <div class="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+              <span>Bác tài nhận lệnh:</span>
+              {% if trip.subcontractor %}
+                <span class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">{{ trip.carrier_name }}</span>
+              {% endif %}
             </div>
-            <div class="text-xs text-slate-500 font-mono mt-0.5">{{ driver.phone_number }}</div>
+            <div class="text-sm sm:text-base font-black text-slate-900 leading-tight">
+              {% if driver %}
+                {{ driver.full_name }} {% if driver.nickname %}<span class="text-xs font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">({{ driver.nickname }})</span>{% endif %}
+              {% else %}
+                {{ trip.assigned_driver_name }}
+              {% endif %}
+            </div>
+            <div class="text-xs text-slate-500 font-mono mt-0.5">{{ trip.assigned_driver_phone }}</div>
           </div>
         </div>
         <div class="text-right">

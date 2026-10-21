@@ -10,7 +10,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from apps.dispatch.models import DispatchTrip, TripTimelineItem, ShipmentType, TripStatus
 from apps.dispatch.timeline_service import sync_trip_10_step_timeline, build_10_step_timeline_spec, get_derived_7_milestones
-from apps.fleet.models import Vehicle, Trailer, VehicleStatus, VehicleType
+from apps.fleet.models import Vehicle, Trailer, VehicleStatus, VehicleType, VehicleOwnership
 from apps.personnel.models import Employee, Department, EmployeeRole
 from apps.customers.models import Customer, Quotation, QuotationItem, RouteTariff, BookingOrder, BookingStatus, BookingDocument
 from apps.billing.models import TripExpense, ExpenseCategory, ApprovalStatus, DriverTripAdvance
@@ -2314,18 +2314,83 @@ class TripListCreateAPIView(APIView):
             if not customer:
                 return Response({'error': 'Vui lòng chọn khách hàng hợp lệ đã khai báo trong Danh Mục!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        driver_nickname = data.get('driver', '').strip()
-        driver = Employee.objects.filter(nickname__iexact=driver_nickname).first() or \
-                 Employee.objects.filter(full_name__icontains=driver_nickname).first() or \
-                 Employee.objects.filter(role=EmployeeRole.DRIVER).first()
+        parse_bool = lambda v: v is True or str(v).strip().lower() in ('true', '1', 'yes')
+
+        # Xử lý thông tin Thầu phụ / Xe bạn 3PL (Phương án 3: Quản lý theo Đối tác)
+        subcontractor = None
+        subcontractor_id = data.get('subcontractor_id') or data.get('subcontractor')
+        if subcontractor_id and str(subcontractor_id).isdigit():
+            from apps.master_data.models import Subcontractor
+            subcontractor = Subcontractor.objects.filter(id=int(subcontractor_id), is_deleted=False).first()
 
         vehicle_plate = (data.get('vehicle') or '').strip()
         vehicle = None
         if vehicle_plate:
             vehicle = Vehicle.objects.filter(license_plate__iexact=vehicle_plate).first() or \
                       Vehicle.objects.filter(license_plate__icontains=vehicle_plate).first()
+            if not vehicle and subcontractor:
+                # Tự động tạo bản ghi xe ngoài nếu đối tác 3PL điều xe mới
+                vehicle = Vehicle.objects.create(
+                    license_plate=vehicle_plate.upper(),
+                    ownership_type=VehicleOwnership.SUBCONTRACTOR,
+                    subcontractor=subcontractor
+                )
+            elif vehicle and subcontractor and not vehicle.subcontractor:
+                vehicle.subcontractor = subcontractor
+                vehicle.save(update_fields=['subcontractor'])
+
+        if vehicle and getattr(vehicle, 'subcontractor', None) and not subcontractor:
+            subcontractor = vehicle.subcontractor
+
+        is_subcontractor_trip = bool(subcontractor or (vehicle and vehicle.ownership_type == VehicleOwnership.SUBCONTRACTOR))
+
+        subcontractor_driver = None
+        subcontractor_driver_name = str(data.get('subcontractor_driver_name') or '').strip()
+        subcontractor_driver_phone = str(data.get('subcontractor_driver_phone') or '').strip()
+        subcontractor_driver_id = data.get('subcontractor_driver_id')
+
+        if subcontractor_driver_id and str(subcontractor_driver_id).isdigit():
+            from apps.master_data.models import SubcontractorDriver
+            subcontractor_driver = SubcontractorDriver.objects.filter(id=int(subcontractor_driver_id), is_deleted=False).first()
+            if subcontractor_driver:
+                if not subcontractor:
+                    subcontractor = subcontractor_driver.subcontractor
+                subcontractor_driver_name = subcontractor_driver.full_name
+                subcontractor_driver_phone = subcontractor_driver.phone
+
+        driver_input = data.get('driver', '').strip()
+        if is_subcontractor_trip:
+            driver = None
+            if not subcontractor_driver_name and driver_input:
+                subcontractor_driver_name = driver_input
+            if not subcontractor_driver_phone and data.get('driver_phone'):
+                subcontractor_driver_phone = str(data.get('driver_phone')).strip()
+
+            if subcontractor and not subcontractor_driver and subcontractor_driver_name:
+                from apps.master_data.models import SubcontractorDriver
+                subcontractor_driver = SubcontractorDriver.objects.filter(
+                    subcontractor=subcontractor,
+                    full_name__iexact=subcontractor_driver_name,
+                    is_deleted=False
+                ).first()
+                if not subcontractor_driver and parse_bool(data.get('save_subcontractor_driver', True)):
+                    subcontractor_driver = SubcontractorDriver.objects.create(
+                        subcontractor=subcontractor,
+                        full_name=subcontractor_driver_name,
+                        phone=subcontractor_driver_phone,
+                        notes="Tự động lưu từ Lệnh điều xe"
+                    )
+        else:
+            driver = Employee.objects.filter(nickname__iexact=driver_input).first() or \
+                     Employee.objects.filter(full_name__icontains=driver_input).first() or \
+                     Employee.objects.filter(role=EmployeeRole.DRIVER).first()
+
         if not vehicle:
-            vehicle = Vehicle.objects.filter(current_driver=driver).first() or Vehicle.objects.first()
+            if driver:
+                vehicle = Vehicle.objects.filter(current_driver=driver).first() or Vehicle.objects.first()
+            else:
+                vehicle = Vehicle.objects.first()
+
         dispatcher = Employee.objects.filter(role=EmployeeRole.DISPATCHER).first()
 
         # Xử lý cấu hình Chặng & Nghiệp vụ Cắt Kéo (Drop & Hook)
@@ -2416,6 +2481,12 @@ class TripListCreateAPIView(APIView):
             booking_order=booking_order,
             vehicle=vehicle,
             driver=driver,
+            subcontractor=subcontractor,
+            subcontractor_driver=subcontractor_driver,
+            subcontractor_driver_name=subcontractor_driver_name,
+            subcontractor_driver_phone=subcontractor_driver_phone,
+            subcontractor_cost=float(data.get('subcontractor_cost') or 0),
+            subcontractor_advance=float(data.get('subcontractor_advance') or 0),
             dispatcher=dispatcher,
             is_split_trip=is_split_trip,
             dropoff_driver=dropoff_driver,
@@ -2514,8 +2585,12 @@ class TripListCreateAPIView(APIView):
             'id': trip.trip_code,
             'hashid': trip.hashid,
             'driver_hashid': trip.driver_hashid,
-            'driver_name': (trip.driver.nickname or trip.driver.full_name) if trip.driver else '',
-            'driver_phone': trip.driver.phone_number if trip.driver else '',
+            'driver_name': trip.assigned_driver_name,
+            'driver_phone': trip.assigned_driver_phone,
+            'subcontractor_id': trip.subcontractor_id,
+            'subcontractor_name': trip.subcontractor.name if trip.subcontractor else '',
+            'subcontractor_driver_id': trip.subcontractor_driver_id,
+            'carrier_name': trip.carrier_name,
             'vehicle': trip.vehicle.license_plate if trip.vehicle else '-',
             'trailer': trip.trailer.license_plate if trip.trailer else '-',
             'container': trip.container_number or 'CHƯA CÓ CONT',
@@ -2688,8 +2763,9 @@ class TripDetailAPIView(APIView):
         ]
 
         customer_name = trip.customer.name if trip.customer else 'Khách Hàng Chung'
-        driver_name = (trip.driver.nickname or trip.driver.full_name) if trip.driver else 'Chưa gán tài xế'
-        driver_phone = trip.driver.phone_number if trip.driver else ''
+        driver_name = trip.assigned_driver_name
+        driver_phone = trip.assigned_driver_phone
+        carrier_name = trip.carrier_name
         vehicle_plate = trip.vehicle.license_plate if trip.vehicle else 'Chưa gán xe'
         trailer_plate = trip.trailer.license_plate if trip.trailer else '-'
         vehicle_ownership = trip.vehicle.get_ownership_type_display() if trip.vehicle else 'Xe Nhà'
@@ -2759,6 +2835,15 @@ class TripDetailAPIView(APIView):
             'driver': driver_name,
             'driver_id': trip.driver_id,
             'driver_phone': driver_phone,
+            'subcontractor_id': trip.subcontractor_id,
+            'subcontractor_name': trip.subcontractor.name if trip.subcontractor else '',
+            'subcontractor_driver_id': trip.subcontractor_driver_id,
+            'subcontractor_driver_name': trip.subcontractor_driver.full_name if trip.subcontractor_driver else (trip.subcontractor_driver_name or ''),
+            'subcontractor_driver_phone': trip.subcontractor_driver.phone if trip.subcontractor_driver else (trip.subcontractor_driver_phone or ''),
+            'carrier_name': carrier_name,
+            'subcontractor_cost': float(trip.subcontractor_cost),
+            'subcontractor_advance': float(trip.subcontractor_advance),
+            'subcontractor_settlement_status': trip.subcontractor_settlement_status,
             'vehicle': vehicle_plate,
             'vehicle_id': trip.vehicle_id,
             'trailer': trailer_plate,
@@ -2949,6 +3034,42 @@ class TripDetailAPIView(APIView):
             note_val = str(data.get('notes') or data.get('special_notes') or data.get('cargo_notes') or '').strip()
             trip.special_notes = note_val
             trip.cargo_notes = note_val
+        if 'subcontractor_id' in data:
+            sub_id = data.get('subcontractor_id')
+            if sub_id:
+                from apps.master_data.models import Subcontractor
+                trip.subcontractor = Subcontractor.objects.filter(id=sub_id).first()
+                if trip.subcontractor:
+                    trip.driver = None  # Xóa driver nội bộ khi đã gán thầu phụ
+            else:
+                trip.subcontractor = None
+
+        if 'subcontractor_driver_id' in data:
+            drv_id = data.get('subcontractor_driver_id')
+            if drv_id:
+                from apps.master_data.models import SubcontractorDriver
+                trip.subcontractor_driver = SubcontractorDriver.objects.filter(id=drv_id).first()
+                if trip.subcontractor_driver:
+                    trip.subcontractor_driver_name = trip.subcontractor_driver.full_name
+                    trip.subcontractor_driver_phone = trip.subcontractor_driver.phone
+            else:
+                trip.subcontractor_driver = None
+
+        if 'subcontractor_driver_name' in data:
+            trip.subcontractor_driver_name = str(data['subcontractor_driver_name']).strip()
+        if 'subcontractor_driver_phone' in data:
+            trip.subcontractor_driver_phone = str(data['subcontractor_driver_phone']).strip()
+        if 'subcontractor_cost' in data:
+            try:
+                trip.subcontractor_cost = float(data['subcontractor_cost'])
+            except (ValueError, TypeError):
+                pass
+        if 'subcontractor_advance' in data:
+            try:
+                trip.subcontractor_advance = float(data['subcontractor_advance'])
+            except (ValueError, TypeError):
+                pass
+
         if 'vgm_weight' in data:
             trip.vgm_weight = str(data['vgm_weight']).strip()
         if 'container_condition' in data:

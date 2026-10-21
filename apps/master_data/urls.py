@@ -13,6 +13,7 @@ from apps.master_data.api_views import (
     ShippingLineListCreateAPIView, ShippingLineDetailAPIView,
     TrailerMasterListCreateAPIView, TrailerMasterDetailAPIView,
     SubcontractorListCreateAPIView, SubcontractorDetailAPIView,
+    SubcontractorFleetAPIView, SubcontractorDriverListCreateAPIView, SubcontractorDriverDetailAPIView,
     CompanyProfileAPIView,
     OpeningBalanceListCreateAPIView, OpeningBalanceDetailAPIView,
 )
@@ -71,4 +72,7 @@ urlpatterns = [
     # 11. Nhà Xe Thầu Phụ / 3PL
     path('subcontractors/', SubcontractorListCreateAPIView.as_view(), name='master-subcontractors'),
     path('subcontractors/<int:pk>/', SubcontractorDetailAPIView.as_view(), name='master-subcontractor-detail'),
+    path('subcontractors/<int:pk>/fleet/', SubcontractorFleetAPIView.as_view(), name='master-subcontractor-fleet'),
+    path('subcontractors/<int:pk>/drivers/', SubcontractorDriverListCreateAPIView.as_view(), name='master-subcontractor-drivers'),
+    path('subcontractor-drivers/<int:pk>/', SubcontractorDriverDetailAPIView.as_view(), name='master-subcontractor-driver-detail'),
 ]

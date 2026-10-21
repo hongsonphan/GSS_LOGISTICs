@@ -13,7 +13,7 @@ from apps.master_data.models import (
     ContainerType, ContainerCategory,
     ExpenseItem, ExpenseCategoryGroup,
     DriverSalaryTariff, DriverAllowanceCatalog, AllowanceCategory,
-    ShippingLine, Subcontractor, CompanyProfile,
+    ShippingLine, Subcontractor, SubcontractorDriver, CompanyProfile,
     OpeningBalance, OpeningBalanceCategory,
     ACCOUNT_CHART_CHOICES, ACCOUNT_NAME_MAP
 )
@@ -1159,6 +1159,162 @@ class SubcontractorDetailAPIView(MasterDataBaseAPIView):
             return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
         sc.delete()
         return Response({'success': True, 'message': f'Đã xóa nhà xe thầu phụ [{sc.name}].'})
+
+class SubcontractorFleetAPIView(MasterDataBaseAPIView):
+    """
+    API Lấy danh sách Toàn bộ Đội xe & Tài xế trực thuộc một Đối tác 3PL / Nhà xe Thầu phụ.
+    Dành cho màn hình Điều Vận: Khi chọn 1 Đối tác 3PL, tự động tải xe và tài xế của đối tác đó.
+    """
+    def get(self, request, pk):
+        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        vehicles = Vehicle.objects.filter(
+            Q(subcontractor=sc) | Q(ownership_type=VehicleOwnership.SUBCONTRACTOR),
+            is_deleted=False
+        ).order_by('license_plate')
+
+        drivers = SubcontractorDriver.objects.filter(
+            subcontractor=sc,
+            is_deleted=False,
+            is_active=True
+        ).order_by('full_name')
+
+        return Response({
+            'success': True,
+            'subcontractor': {
+                'id': sc.id,
+                'code': sc.code,
+                'name': sc.name,
+                'phone': sc.phone,
+                'contact_person': sc.contact_person,
+                'tax_code': sc.tax_code,
+            },
+            'vehicles': [
+                {
+                    'id': v.id,
+                    'license_plate': v.license_plate,
+                    'vehicle_type': v.get_vehicle_type_display(),
+                    'vehicle_type_code': v.vehicle_type,
+                    'payload_capacity_kg': v.payload_capacity_kg,
+                    'brand': v.brand,
+                    'status': v.status,
+                }
+                for v in vehicles
+            ],
+            'drivers': [
+                {
+                    'id': d.id,
+                    'full_name': d.full_name,
+                    'phone': d.phone,
+                    'license_number': d.license_number,
+                    'notes': d.notes,
+                }
+                for d in drivers
+            ]
+        })
+
+class SubcontractorDriverListCreateAPIView(MasterDataBaseAPIView):
+    """
+    API Danh sách & Thêm mới Tài xế trực thuộc một Đơn vị 3PL / Nhà xe Thầu phụ.
+    """
+    def get(self, request, pk):
+        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        drivers = SubcontractorDriver.objects.filter(subcontractor=sc, is_deleted=False).order_by('full_name')
+        return Response({
+            'results': [
+                {
+                    'id': d.id,
+                    'subcontractor_id': sc.id,
+                    'subcontractor_name': sc.name,
+                    'full_name': d.full_name,
+                    'phone': d.phone,
+                    'license_number': d.license_number,
+                    'notes': d.notes,
+                    'is_active': d.is_active,
+                    'created_at': d.created_at.strftime('%d/%m/%Y') if d.created_at else ''
+                }
+                for d in drivers
+            ],
+            'total': len(drivers)
+        })
+
+    def post(self, request, pk):
+        sc = Subcontractor.objects.filter(id=pk, is_deleted=False).first()
+        if not sc:
+            return Response({'error': 'Không tìm thấy nhà xe thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        full_name = data.get('full_name', '').strip()
+        phone = data.get('phone', '').strip()
+        if not full_name:
+            return Response({'error': 'Họ tên tài xế không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        driver = SubcontractorDriver.objects.create(
+            subcontractor=sc,
+            full_name=full_name,
+            phone=phone,
+            license_number=data.get('license_number', '').strip(),
+            notes=data.get('notes', '').strip(),
+            is_active=bool(data.get('is_active', True))
+        )
+
+        return Response({
+            'success': True,
+            'message': f'Đã thêm tài xế [{driver.full_name}] cho nhà xe {sc.name}!',
+            'driver': {
+                'id': driver.id,
+                'full_name': driver.full_name,
+                'phone': driver.phone,
+                'license_number': driver.license_number
+            }
+        }, status=status.HTTP_201_CREATED)
+
+class SubcontractorDriverDetailAPIView(MasterDataBaseAPIView):
+    """
+    API Sửa / Xóa Tài xế Thầu phụ.
+    """
+    def put(self, request, pk):
+        driver = SubcontractorDriver.objects.filter(id=pk, is_deleted=False).first()
+        if not driver:
+            return Response({'error': 'Không tìm thấy tài xế thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if 'full_name' in data and data['full_name'].strip():
+            driver.full_name = data['full_name'].strip()
+        if 'phone' in data:
+            driver.phone = data['phone'].strip()
+        if 'license_number' in data:
+            driver.license_number = data['license_number'].strip()
+        if 'notes' in data:
+            driver.notes = data['notes'].strip()
+        if 'is_active' in data:
+            driver.is_active = bool(data['is_active'])
+
+        driver.save()
+        return Response({
+            'success': True,
+            'message': f'Đã cập nhật thông tin tài xế [{driver.full_name}]!',
+            'driver': {
+                'id': driver.id,
+                'full_name': driver.full_name,
+                'phone': driver.phone,
+                'license_number': driver.license_number,
+                'is_active': driver.is_active
+            }
+        })
+
+    def delete(self, request, pk):
+        driver = SubcontractorDriver.objects.filter(id=pk, is_deleted=False).first()
+        if not driver:
+            return Response({'error': 'Không tìm thấy tài xế thầu phụ!'}, status=status.HTTP_404_NOT_FOUND)
+
+        driver.delete()
+        return Response({'success': True, 'message': f'Đã xóa tài xế [{driver.full_name}].'})
 
 # ==============================================================================
 # 12. KHAI BÁO THÔNG TIN CÔNG TY & HỆ THỐNG (COMPANY PROFILE & SYSTEM SETTINGS)

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Location, ContainerType, ExpenseItem, DriverSalaryTariff,
-    DriverAllowanceCatalog, ShippingLine, Subcontractor, CompanyProfile
+    DriverAllowanceCatalog, ShippingLine, Subcontractor, SubcontractorDriver, CompanyProfile
 )
 
 @admin.register(Location)
@@ -40,11 +40,23 @@ class ShippingLineAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'is_deleted')
     search_fields = ('code', 'name', 'contact_phone', 'website')
 
+class SubcontractorDriverInline(admin.TabularInline):
+    model = SubcontractorDriver
+    extra = 1
+    fields = ('full_name', 'phone', 'license_number', 'is_active', 'notes')
+
 @admin.register(Subcontractor)
 class SubcontractorAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'tax_code', 'contact_person', 'phone', 'is_active')
     list_filter = ('is_active', 'is_deleted')
     search_fields = ('code', 'name', 'tax_code', 'contact_person', 'phone')
+    inlines = [SubcontractorDriverInline]
+
+@admin.register(SubcontractorDriver)
+class SubcontractorDriverAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'phone', 'subcontractor', 'license_number', 'is_active')
+    list_filter = ('subcontractor', 'is_active', 'is_deleted')
+    search_fields = ('full_name', 'phone', 'license_number', 'subcontractor__name')
 
 @admin.register(CompanyProfile)
 class CompanyProfileAdmin(admin.ModelAdmin):

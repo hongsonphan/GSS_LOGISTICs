@@ -600,11 +600,15 @@ class SubcontractorSettlementsAPIView(APIView):
         to_date = request.GET.get('to_date')
         search = request.GET.get('search', '').strip()
 
-        # Chỉ lấy các chuyến xe do Thầu phụ / Xe bạn chạy (ownership_type == 'SUBCONTRACTOR')
+        # Lấy các chuyến xe do Thầu phụ / Xe bạn 3PL đảm nhận
         qs = DispatchTrip.objects.filter(
-            is_deleted=False,
-            vehicle__ownership_type=VehicleOwnership.SUBCONTRACTOR
+            is_deleted=False
+        ).filter(
+            Q(subcontractor__isnull=False) |
+            Q(vehicle__ownership_type=VehicleOwnership.SUBCONTRACTOR)
         ).select_related(
+            'subcontractor',
+            'subcontractor_driver',
             'vehicle',
             'driver',
             'customer',
@@ -642,8 +646,10 @@ class SubcontractorSettlementsAPIView(APIView):
 
         # Tính toán KPIs
         all_sub_trips = DispatchTrip.objects.filter(
-            is_deleted=False,
-            vehicle__ownership_type=VehicleOwnership.SUBCONTRACTOR
+            is_deleted=False
+        ).filter(
+            Q(subcontractor__isnull=False) |
+            Q(vehicle__ownership_type=VehicleOwnership.SUBCONTRACTOR)
         )
         total_trips = all_sub_trips.count()
         total_cost = all_sub_trips.aggregate(total=Sum('subcontractor_cost'))['total'] or Decimal(0)
@@ -651,34 +657,56 @@ class SubcontractorSettlementsAPIView(APIView):
         total_remaining = total_cost - total_advance
         settled_count = all_sub_trips.filter(subcontractor_settlement_status='SETTLED').count()
 
-        # Tổng hợp theo Đầu Xe Bạn
+        # Tổng hợp theo Đối Tác 3PL / Nhà Xe Thầu Phụ (Phương án 3)
         by_partner = {}
         items = []
 
         for trip in qs:
+            sub = trip.subcontractor or (trip.vehicle.subcontractor if (trip.vehicle and getattr(trip.vehicle, 'subcontractor', None)) else None)
             plate = trip.vehicle.license_plate if trip.vehicle else 'Xe ngoài chưa gán'
             c_cost = int(trip.subcontractor_cost)
             c_adv = int(trip.subcontractor_advance)
             rem = max(0, c_cost - c_adv)
 
-            if plate not in by_partner:
-                by_partner[plate] = {
+            if sub:
+                partner_key = f"sub_{sub.id}"
+                partner_name = sub.name
+                partner_code = sub.code
+                partner_phone = sub.phone or (sub.contact_person or '')
+            else:
+                partner_key = f"plate_{plate}"
+                partner_name = f"Nhà xe: {plate}"
+                partner_code = plate
+                partner_phone = '-'
+
+            if partner_key not in by_partner:
+                by_partner[partner_key] = {
+                    'partner_key': partner_key,
+                    'subcontractor_id': sub.id if sub else None,
+                    'subcontractor_name': partner_name,
+                    'partner_name': partner_name,
+                    'partner_code': partner_code,
+                    'partner_phone': partner_phone,
                     'license_plate': plate,
                     'trips_count': 0,
                     'total_cost': 0,
                     'total_advance': 0,
                     'remaining_payable': 0
                 }
-            by_partner[plate]['trips_count'] += 1
-            by_partner[plate]['total_cost'] += c_cost
-            by_partner[plate]['total_advance'] += c_adv
-            by_partner[plate]['remaining_payable'] += rem
+            by_partner[partner_key]['trips_count'] += 1
+            by_partner[partner_key]['total_cost'] += c_cost
+            by_partner[partner_key]['total_advance'] += c_adv
+            by_partner[partner_key]['remaining_payable'] += rem
 
             items.append({
                 'trip_id': trip.id,
                 'trip_code': trip.trip_code,
+                'subcontractor_id': sub.id if sub else None,
+                'subcontractor_name': partner_name,
+                'carrier_name': trip.carrier_name,
                 'vehicle_plate': plate,
-                'driver_name': (trip.driver.nickname or trip.driver.full_name) if trip.driver else 'Tài xế xe bạn',
+                'driver_name': trip.assigned_driver_name,
+                'driver_phone': trip.assigned_driver_phone,
                 'customer_name': trip.customer.name if trip.customer else '',
                 'route_name': f"{trip.pickup_location or ''} ➔ {trip.warehouse_location or ''}",
                 'container_number': trip.container_number or '',

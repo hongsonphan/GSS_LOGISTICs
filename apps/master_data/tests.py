@@ -318,3 +318,58 @@ class OpeningBalanceAPITestCase(TestCase):
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertTrue(del_res.data.get('success'))
 
+
+    def test_subcontractor_3pl_drivers_and_fleet(self):
+        """Kiểm thử nghiệp vụ Quản lý Đối tác 3PL (Phương án 3): 1 Đối tác có 3 xe và 3 tài xế."""
+        from apps.master_data.models import Subcontractor, SubcontractorDriver
+        from apps.fleet.models import Vehicle, VehicleOwnership, VehicleType
+
+        # 1. Tạo Đối tác 3PL: Công ty Vận tải An Phú
+        sub = Subcontractor.objects.create(
+            code='NX_ANPHU',
+            name='Công ty Vận tải An Phú (3PL)',
+            phone='0909111222',
+            contact_person='Anh Phú',
+            tax_code='0312999888'
+        )
+
+        # 2. Tạo 3 Xe của An Phú
+        v1 = Vehicle.objects.create(license_plate='51C-111.11', vehicle_type=VehicleType.TRACTOR, ownership_type=VehicleOwnership.SUBCONTRACTOR, subcontractor=sub)
+        v2 = Vehicle.objects.create(license_plate='51C-222.22', vehicle_type=VehicleType.TRACTOR, ownership_type=VehicleOwnership.SUBCONTRACTOR, subcontractor=sub)
+        v3 = Vehicle.objects.create(license_plate='51C-333.33', vehicle_type=VehicleType.TRACTOR, ownership_type=VehicleOwnership.SUBCONTRACTOR, subcontractor=sub)
+
+        # 3. Tạo 3 Tài xế của An Phú
+        d1 = SubcontractorDriver.objects.create(subcontractor=sub, full_name='Nguyễn Văn A', phone='0901111001', license_number='FC-111')
+        d2 = SubcontractorDriver.objects.create(subcontractor=sub, full_name='Lê Văn B', phone='0901111002', license_number='FC-222')
+        d3 = SubcontractorDriver.objects.create(subcontractor=sub, full_name='Trần Văn C', phone='0901111003', license_number='FC-333')
+
+        # 4. Kiểm tra API Fleet của Subcontractor (/api/master-data/subcontractors/<id>/fleet/)
+        fleet_res = self.client.get(f'/api/master-data/subcontractors/{sub.id}/fleet/')
+        self.assertEqual(fleet_res.status_code, status.HTTP_200_OK)
+        self.assertTrue(fleet_res.data.get('success'))
+        self.assertEqual(len(fleet_res.data['vehicles']), 3)
+        self.assertEqual(len(fleet_res.data['drivers']), 3)
+
+        plates = [v['license_plate'] for v in fleet_res.data['vehicles']]
+        self.assertIn('51C-111.11', plates)
+        self.assertIn('51C-222.22', plates)
+        self.assertIn('51C-333.33', plates)
+
+        driver_names = [d['full_name'] for d in fleet_res.data['drivers']]
+        self.assertIn('Nguyễn Văn A', driver_names)
+        self.assertIn('Lê Văn B', driver_names)
+        self.assertIn('Trần Văn C', driver_names)
+
+        # 5. Kiểm tra API Drivers list & create (/api/master-data/subcontractors/<id>/drivers/)
+        drv_res = self.client.get(f'/api/master-data/subcontractors/{sub.id}/drivers/')
+        self.assertEqual(drv_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(drv_res.data['total'], 3)
+
+        # Thêm tài xế thứ 4 cho An Phú qua API
+        add_drv = self.client.post(f'/api/master-data/subcontractors/{sub.id}/drivers/', {
+            'full_name': 'Hoàng Văn D',
+            'phone': '0901111004',
+            'license_number': 'FC-444'
+        }, format='json')
+        self.assertEqual(add_drv.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(SubcontractorDriver.objects.filter(subcontractor=sub).count(), 4)

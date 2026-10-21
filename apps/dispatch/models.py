@@ -40,7 +40,25 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
     # Tài nguyên điều động
     vehicle = models.ForeignKey('fleet.Vehicle', on_delete=models.PROTECT, related_name='trips')
     trailer = models.ForeignKey('fleet.Trailer', on_delete=models.PROTECT, null=True, blank=True, related_name='trips')
-    driver = models.ForeignKey('personnel.Employee', on_delete=models.PROTECT, related_name='trips')
+    driver = models.ForeignKey('personnel.Employee', on_delete=models.PROTECT, null=True, blank=True, related_name='trips', help_text="Tài xế xe nhà (nội bộ)")
+    subcontractor = models.ForeignKey(
+        'master_data.Subcontractor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='trips',
+        help_text="Đơn vị 3PL / Nhà xe thầu phụ đảm nhận chuyến"
+    )
+    subcontractor_driver = models.ForeignKey(
+        'master_data.SubcontractorDriver',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='trips',
+        help_text="Tài xế thầu phụ được gán từ danh bạ 3PL"
+    )
+    subcontractor_driver_name = models.CharField(max_length=100, blank=True, help_text="Họ tên tài xế ngoài (lưu dự phòng / nhập nhanh)")
+    subcontractor_driver_phone = models.CharField(max_length=20, blank=True, help_text="SĐT tài xế ngoài")
     dispatcher = models.ForeignKey('personnel.Employee', on_delete=models.PROTECT, null=True, blank=True, related_name='dispatched_trips')
 
     # Thông tin Vận đơn & Vỏ Container
@@ -401,6 +419,35 @@ class DispatchTrip(TimeStampedModel, SoftDeleteModel):
             return self.driver_token
         from core.security import get_driver_hashid
         return get_driver_hashid(self.id)
+
+    @property
+    def assigned_driver_name(self):
+        """Họ tên tài xế phụ trách (Hỗ trợ cả Tài xế xe nhà lẫn Tài xế thầu phụ 3PL)."""
+        if self.driver:
+            return self.driver.nickname or self.driver.full_name
+        if self.subcontractor_driver:
+            return self.subcontractor_driver.full_name
+        return self.subcontractor_driver_name or "Tài xế xe bạn"
+
+    @property
+    def assigned_driver_phone(self):
+        """Số điện thoại tài xế nhận lệnh."""
+        if self.driver:
+            return self.driver.phone_number
+        if self.subcontractor_driver:
+            return self.subcontractor_driver.phone
+        return self.subcontractor_driver_phone or ""
+
+    @property
+    def carrier_name(self):
+        """Đơn vị vận chuyển (Tên nhà xe 3PL hoặc Đội xe nội bộ)."""
+        if self.subcontractor:
+            return self.subcontractor.name
+        if self.vehicle and getattr(self.vehicle, 'subcontractor', None):
+            return self.vehicle.subcontractor.name
+        if self.vehicle and self.vehicle.ownership_type == 'SUBCONTRACTOR':
+            return "Đơn vị 3PL ngoài"
+        return "Đội xe nội bộ TVL"
 
     @property
     def tracking_hashid(self):

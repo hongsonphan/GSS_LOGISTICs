@@ -188,6 +188,32 @@ class Subcontractor(TimeStampedModel, SoftDeleteModel):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
+class SubcontractorDriver(TimeStampedModel, SoftDeleteModel):
+    """
+    Danh mục Tài xế thuộc Đơn vị 3PL / Nhà xe Thầu phụ (Xe Bạn).
+    Quản lý danh sách tài xế của đối tác, số điện thoại để gửi lệnh điều xe và theo dõi hành trình.
+    """
+    subcontractor = models.ForeignKey(
+        Subcontractor,
+        on_delete=models.CASCADE,
+        related_name='drivers',
+        help_text="Nhà xe / Đơn vị 3PL quản lý"
+    )
+    full_name = models.CharField(max_length=100, db_index=True, help_text="Họ và tên tài xế")
+    phone = models.CharField(max_length=20, db_index=True, help_text="Số điện thoại liên hệ / Zalo nhận lệnh")
+    license_number = models.CharField(max_length=50, blank=True, help_text="Số giấy phép lái xe (GPLX)")
+    is_active = models.BooleanField(default=True, db_index=True)
+    notes = models.TextField(blank=True, help_text="Ghi chú về tài xế (kinh nghiệm, xe hay lái...)")
+
+    class Meta:
+        ordering = ['subcontractor', 'full_name']
+        verbose_name = 'Tài xế Thầu phụ'
+        verbose_name_plural = 'Danh mục Tài xế Thầu phụ'
+
+    def __str__(self):
+        return f"{self.full_name} ({self.phone}) - {self.subcontractor.name}"
+
+
 class CompanyProfile(TimeStampedModel, SoftDeleteModel):
     """
     Khai báo Thông tin Công ty & Tham số Hệ thống Cài đặt Tổng thể (System Settings).

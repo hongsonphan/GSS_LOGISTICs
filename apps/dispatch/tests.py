@@ -448,3 +448,132 @@ class BookingDocumentNamingTestCase(TestCase):
 
 
 
+
+
+class Subcontractor3PLDispatchTestCase(TestCase):
+    """Kiểm thử toàn diện luồng điều vận Xe bạn / Đối tác 3PL (Phương án 3)."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from apps.customers.models import Customer
+        from apps.master_data.models import Subcontractor, SubcontractorDriver
+        from apps.fleet.models import Vehicle, VehicleOwnership, VehicleType
+
+        self.client = Client()
+        self.user = User.objects.create_superuser(username="admin_sub_test", password="password123")
+        self.client.force_login(self.user)
+
+        self.customer = Customer.objects.create(code="CUST_3PL", name="Khách Hàng Hợp Đồng 3PL")
+
+        # 1. Khai báo Đối tác 3PL: Công ty Vận tải An Phú
+        self.subcontractor = Subcontractor.objects.create(
+            code="NX_ANPHU",
+            name="Công ty Vận tải An Phú",
+            phone="0909888999",
+            contact_person="Anh Phú Điều Vận",
+            tax_code="0312555666"
+        )
+
+        # 2. Khai báo 3 Xe của An Phú
+        self.veh1 = Vehicle.objects.create(license_plate="51C-111.11", vehicle_type=VehicleType.TRACTOR, ownership_type=VehicleOwnership.SUBCONTRACTOR, subcontractor=self.subcontractor)
+        self.veh2 = Vehicle.objects.create(license_plate="51C-222.22", vehicle_type=VehicleType.TRACTOR, ownership_type=VehicleOwnership.SUBCONTRACTOR, subcontractor=self.subcontractor)
+        self.veh3 = Vehicle.objects.create(license_plate="51C-333.33", vehicle_type=VehicleType.TRACTOR, ownership_type=VehicleOwnership.SUBCONTRACTOR, subcontractor=self.subcontractor)
+
+        # 3. Khai báo 3 Tài xế của An Phú
+        self.drv1 = SubcontractorDriver.objects.create(subcontractor=self.subcontractor, full_name="Nguyễn Văn A", phone="0901111001")
+        self.drv2 = SubcontractorDriver.objects.create(subcontractor=self.subcontractor, full_name="Lê Văn B", phone="0901111002")
+        self.drv3 = SubcontractorDriver.objects.create(subcontractor=self.subcontractor, full_name="Trần Văn C", phone="0901111003")
+
+    def test_dispatch_subcontractor_trip_and_driver_portal(self):
+        # 1. Tạo chuyến xe gán cho 3PL An Phú (Xe 1 + Tài 1)
+        res = self.client.post('/api/trips/', {
+            'customer': self.customer.name,
+            'subcontractor_id': self.subcontractor.id,
+            'vehicle': '51C-111.11',
+            'subcontractor_driver_id': self.drv1.id,
+            'subcontractor_cost': 3500000,
+            'subcontractor_advance': 500000,
+            'pickup': 'CẢNG CÁT LÁI',
+            'warehouse': 'KHO AN PHÚ ĐÔNG',
+            'dropoff': 'BÃI TÂN CẢNG'
+        }, format='json')
+
+        self.assertEqual(res.status_code, 201)
+        data = res.json()
+        self.assertTrue(data['success'])
+        trip_code = data['trip_code']
+
+        # 2. Kiểm tra bản ghi trong Database
+        from apps.dispatch.models import DispatchTrip
+        trip = DispatchTrip.objects.get(trip_code=trip_code)
+
+        # Khẳng định: driver nội bộ là None -> không ô nhiễm bảng lương nhân sự!
+        self.assertIsNone(trip.driver)
+        self.assertEqual(trip.subcontractor, self.subcontractor)
+        self.assertEqual(trip.subcontractor_driver, self.drv1)
+        self.assertEqual(trip.assigned_driver_name, "Nguyễn Văn A")
+        self.assertEqual(trip.assigned_driver_phone, "0901111001")
+        self.assertEqual(trip.carrier_name, "Công ty Vận tải An Phú")
+        self.assertEqual(float(trip.subcontractor_cost), 3500000.0)
+        self.assertEqual(float(trip.subcontractor_advance), 500000.0)
+
+        # 3. Kiểm tra Cổng Tài Xế (Driver Portal)
+        res_portal = self.client.get(f'/driver/{trip.driver_token}/')
+        self.assertEqual(res_portal.status_code, 200)
+        self.assertContains(res_portal, "Nguyễn Văn A")
+        self.assertContains(res_portal, "0901111001")
+        self.assertContains(res_portal, "Công ty Vận tải An Phú")
+
+        # 4. Kiểm tra API Chi tiết chuyến xe (Trip Detail)
+        res_detail = self.client.get(f'/api/trips/{trip.trip_code}/')
+        self.assertEqual(res_detail.status_code, 200)
+        detail_data = res_detail.json()
+        self.assertEqual(detail_data['subcontractor_id'], self.subcontractor.id)
+        self.assertEqual(detail_data['subcontractor_name'], "Công ty Vận tải An Phú")
+        self.assertEqual(detail_data['subcontractor_driver_name'], "Nguyễn Văn A")
+        self.assertEqual(detail_data['subcontractor_driver_phone'], "0901111001")
+        self.assertEqual(detail_data['carrier_name'], "Công ty Vận tải An Phú")
+        self.assertEqual(detail_data['subcontractor_cost'], 3500000.0)
+
+        # 5. Kiểm tra Báo cáo Công nợ Thầu Phụ (Subcontractor Payables API)
+        res_payables = self.client.get('/api/accounting/subcontractor-settlements/')
+        self.assertEqual(res_payables.status_code, 200)
+        pay_data = res_payables.json()
+        sub_keys = [p['partner_key'] for p in pay_data['by_partner']]
+        self.assertIn(f'sub_{self.subcontractor.id}', sub_keys)
+        sub_stat = next(p for p in pay_data['by_partner'] if p['partner_key'] == f'sub_{self.subcontractor.id}')
+        self.assertEqual(sub_stat['subcontractor_name'], "Công ty Vận tải An Phú")
+        self.assertEqual(sub_stat['total_cost'], 3500000)
+        self.assertEqual(sub_stat['total_advance'], 500000)
+        self.assertEqual(sub_stat['remaining_payable'], 3000000)
+
+    def test_on_the_fly_driver_creation(self):
+        """Kiểm thử tạo nhanh tài xế ngoài trên form điều xe khi 3PL điều tài xế mới tinh."""
+        from apps.master_data.models import SubcontractorDriver
+        from apps.dispatch.models import DispatchTrip
+
+        res = self.client.post('/api/trips/', {
+            'customer': self.customer.name,
+            'subcontractor_id': self.subcontractor.id,
+            'vehicle': '51C-999.99', # Xe mới chưa có trong danh mục
+            'driver': 'Tài Xế Mới Hùng',
+            'driver_phone': '0988776655',
+            'subcontractor_cost': 4000000,
+            'pickup': 'CẢNG SPITC',
+            'warehouse': 'KHO TÂN TẠO',
+            'dropoff': 'HẠ BÃI CÁT LÁI'
+        }, format='json')
+
+        self.assertEqual(res.status_code, 201)
+        trip_code = res.json()['trip_code']
+
+        trip = DispatchTrip.objects.get(trip_code=trip_code)
+        self.assertEqual(trip.subcontractor, self.subcontractor)
+        self.assertEqual(trip.assigned_driver_name, "Tài Xế Mới Hùng")
+        self.assertEqual(trip.assigned_driver_phone, "0988776655")
+
+        # Tự động lưu tài xế mới vào danh bạ của An Phú
+        saved_driver = SubcontractorDriver.objects.filter(subcontractor=self.subcontractor, full_name="Tài Xế Mới Hùng").first()
+        self.assertIsNotNone(saved_driver)
+        self.assertEqual(saved_driver.phone, "0988776655")
+        self.assertEqual(trip.subcontractor_driver, saved_driver)

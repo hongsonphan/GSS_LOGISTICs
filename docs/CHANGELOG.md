@@ -2,6 +2,46 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.6.8] - 2026-10-21 (Triển Khai Quản Lý Tập Trung Xe & Tài Xế Đối Tác 3PL Làm Trọng Tâm: Model SubcontractorDriver, Cách Ly Bảng Lương Nhân Sự, Gom Nhóm Công Nợ Theo Pháp Nhân & Điều Xe Động On-The-Fly)
+
+### 1. Kiến Trúc Quản Lý Tập Trung Theo Pháp Nhân Đối Tác 3PL (Thầu Phụ):
+- **Tách Biệt Hoàn Toàn Khỏi Nhân Sự Nội Bộ (`personnel.Employee`):**
+  * Giải quyết dứt điểm bài toán quản lý xe ngoài và tài xế ngoài mà không làm ô nhiễm bảng lương, sổ chấm công, hợp đồng lao động và BHXH nội bộ của công ty.
+  * Tạo mới model `SubcontractorDriver` (`apps/master_data/models.py`) trực thuộc `Subcontractor` với các thông tin: `full_name`, `phone`, `license_number`, `is_active`, `notes`.
+  * Bổ sung quan hệ `subcontractor` trên model `Vehicle` (`apps/fleet/models.py`), cho phép quản lý đội xe của thầu phụ và hỗ trợ ngày đăng kiểm linh hoạt (`registration_expiry` nullable).
+- **Mở Rộng Model Hạt Nhân `DispatchTrip` (`apps/dispatch/models.py`):**
+  * Cho phép trường `driver` (nhân sự nội bộ) nhận giá trị `None` khi điều xe 3PL.
+  * Bổ sung các trường chuyên biệt: `subcontractor`, `subcontractor_driver`, `subcontractor_driver_name`, `subcontractor_driver_phone`.
+  * Bổ sung các dynamic properties: `assigned_driver_name`, `assigned_driver_phone`, `carrier_name` đảm bảo tính trong suốt trên toàn bộ hệ thống.
+
+### 2. Quản Lý Đối Soát & Công Nợ Thầu Phụ Theo Pháp Nhân Doanh Nghiệp:
+- **Tập Hợp Công Nợ Chuẩn Mực Kế Toán (`apps/billing/finance_reports_api.py`):**
+  * Nâng cấp API `/api/accounting/subcontractor-settlements/` gom nhóm công nợ theo pháp nhân Đối tác 3PL (`by_partner`) thay vì gom theo biển số xe rời rạc.
+  * Thống kê tự động: Tổng cước thầu phụ (`total_cost`), Tổng tạm ứng đã cấp (`total_advance`), Công nợ còn lại phải thanh toán (`remaining_payable`) và danh sách toàn bộ chuyến xe liên quan.
+
+### 3. Phòng Thủ Tuyệt Đối Bảng Lương Nhân Sự Nội Bộ (Defensive Payroll):
+- **Cách Ly Chuyến Xe Ngoài Khỏi Lương Chuyến (`apps/personnel/api_views.py`):**
+  * Bổ sung điều kiện lọc `.filter(subcontractor__isnull=True)` tại bộ tính lương chuyến tài xế chính (`trips_main`) và tài xế cắt kéo (`trips_dropoff`).
+  * Ngăn chặn 100% rủi ro tính nhầm cước xe bạn / xe 3PL vào bảng lương của tài xế công ty.
+
+### 4. Hệ Thống API Master Data & Điều Xe Động (On-The-Fly):
+- **REST APIs Quản Lý Đội Xe & Tài Xế Thầu Phụ:**
+  * Endpoint `/api/master-data/subcontractors/<id>/fleet/`: truy xuất nhanh danh sách xe và tài xế được gán cho đối tác.
+  * Endpoints CRUD tài xế 3PL: `/api/master-data/subcontractors/<id>/drivers/` và `/api/master-data/subcontractor-drivers/<id>/`.
+  * Cơ chế tự động nhận diện và tạo nhanh (on-the-fly) tài xế mới hoặc xe mới ngay trên modal điều xe, tự động liên kết vào danh bạ của đối tác cho các lần điều vận sau.
+
+### 5. Giao Diện Điều Vận SPA & Cổng Thông Tin Tài Xế (Driver Portal):
+- **Modal Điều Xe Thông Minh (`templates/components/modal_create_trip.html` & `static/js/app.js`):**
+  * Bổ sung switch chọn chế độ: "Xe Nhà (TVL)" vs "Xe Bạn / 3PL".
+  * Khi chọn đối tác 3PL, dropdown xe và tài xế tự động nạp dữ liệu của đối tác đó kèm khả năng nhập xe khác hoặc tài xế mới tức thì.
+- **Cổng Tài Xế Trực Tuyến (`templates/driver_portal.html` & `apps/dispatch/views.py`):**
+  * Hiển thị chuẩn xác tên đơn vị vận chuyển (`carrier_name`), tài xế và số điện thoại liên hệ cho cả xe nội bộ và tài xế xe ngoài.
+
+### 6. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
+- **Kiểm tra Cú pháp JS:** `node -c static/js/app.js` & `node -c static/js/column_manager.js` -> 100% Passed.
+- **Bộ Kiểm Thử Tự Động Toàn Hệ Thống:** Toàn bộ 113 Unit Tests (`python manage.py test --keepdb`) -> 100% Passed (113/113 passed, 0 failures, 0 errors).
+
+
 ## [v3.6.7] - 2026-10-21 (Chuẩn Hóa Bảo Mật URL HashID Chống IDOR Toàn Ứng Dụng: Mã Hóa HashID Bản Tin & Công Việc, Tự Động Redirect 301 Từ URL Cũ, Đồng Bộ Chuông Thông Báo & Deep-Link)
 
 ### 1. Chuẩn Hóa Bảo Mật URL Bằng HashID Chống Quét IDOR:

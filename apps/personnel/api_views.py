@@ -952,6 +952,7 @@ class PayrollCalculateAPIView(APIView):
                 # 4. Cấu phần B: LƯƠNG SẢN PHẨM CHUYẾN XE (Logistics Trip Piecework - Dành cho tài xế)
                 trips_main = DispatchTrip.objects.filter(
                     driver=emp,
+                    subcontractor__isnull=True,
                     is_deleted=False
                 ).exclude(status=TripStatus.CANCELLED).filter(
                     Q(loading_date__gte=from_d, loading_date__lte=to_d) |
@@ -964,6 +965,7 @@ class PayrollCalculateAPIView(APIView):
                 # Chuyến cắt kéo / hạ cont (dropoff_driver)
                 trips_dropoff = DispatchTrip.objects.filter(
                     dropoff_driver=emp,
+                    subcontractor__isnull=True,
                     is_deleted=False
                 ).exclude(status=TripStatus.CANCELLED).filter(
                     Q(loading_date__gte=from_d, loading_date__lte=to_d) |

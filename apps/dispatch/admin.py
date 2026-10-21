@@ -8,9 +8,9 @@ class TripTimelineItemInline(admin.TabularInline):
 
 @admin.register(DispatchTrip)
 class DispatchTripAdmin(admin.ModelAdmin):
-    list_display = ('trip_code', 'shipment_type', 'customer', 'vehicle', 'driver', 'status', 'created_at')
-    list_filter = ('status', 'shipment_type', 'is_twin_container', 'created_at')
-    search_fields = ('trip_code', 'container_number', 'container_number_2', 'booking_or_bill', 'customer__name', 'driver__full_name')
+    list_display = ('trip_code', 'shipment_type', 'customer', 'vehicle', 'driver', 'subcontractor', 'subcontractor_driver', 'status', 'created_at')
+    list_filter = ('status', 'shipment_type', 'subcontractor', 'is_twin_container', 'created_at')
+    search_fields = ('trip_code', 'container_number', 'container_number_2', 'booking_or_bill', 'customer__name', 'driver__full_name', 'subcontractor__name', 'subcontractor_driver__full_name', 'subcontractor_driver_name')
     date_hierarchy = 'created_at'
     inlines = [TripTimelineItemInline]
 
