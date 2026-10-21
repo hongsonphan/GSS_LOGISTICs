@@ -1227,15 +1227,27 @@ async function openTaskDetailDrawer(taskId) {
         if (extForm) extForm.classList.add('hidden');
 
         const myUserId = window.CURRENT_USER?.id;
-        const isSuper = Boolean(window.CURRENT_USER?.is_superuser);
-        const isReporter = Boolean((myUserId && (t.reporter === myUserId || t.reporter_info?.id === myUserId)) || isSuper);
-        // QUY TẮC BẢO MẬT: CHỈ Người phụ trách công việc mới có quyền yêu cầu gia hạn
-        const isAssignee = Boolean(myUserId && (t.assignee === myUserId || t.assignee_info?.id === myUserId));
+        const isSuper = Boolean(
+            window.CURRENT_USER?.is_superuser || 
+            window.CURRENT_USER?.is_staff || 
+            (window.CURRENT_USER?.hierarchy_level >= 100) || 
+            window.CURRENT_USER?.role === 'DIRECTOR'
+        );
+        // Người giao việc: người tạo task HOẶC Admin/Ban Giám Đốc quản trị
+        const isReporter = Boolean(
+            (myUserId && (String(t.reporter) === String(myUserId) || String(t.reporter_info?.id) === String(myUserId))) || 
+            isSuper
+        );
+        // Người phụ trách: đúng người được giao task
+        const isAssignee = Boolean(myUserId && (String(t.assignee) === String(myUserId) || String(t.assignee_info?.id) === String(myUserId)));
         const isCompleted = ['DONE', 'CANCELLED'].includes(t.status);
 
         // Ẩn form từ chối khi mở lại Drawer
         const rejectBox = document.getElementById('ext-reject-reason-box');
-        if (rejectBox) rejectBox.classList.add('hidden');
+        if (rejectBox) {
+            rejectBox.classList.add('hidden');
+            rejectBox.style.display = 'none';
+        }
 
         // Khối hiển thị lịch sử / kết quả gia hạn trước đó
         const extHist = document.getElementById('task-drawer-extension-history');
@@ -1243,6 +1255,7 @@ async function openTaskDetailDrawer(taskId) {
         if (t.extension_status === 'PENDING') {
             if (extBanner) {
                 extBanner.classList.remove('hidden');
+                extBanner.style.display = 'block';
                 const oldDueEl = document.getElementById('ext-banner-old-due');
                 if (oldDueEl) oldDueEl.textContent = t.due_date ? formatDateDMY(t.due_date) : 'Không có';
                 const newDueEl = document.getElementById('ext-banner-new-due');
@@ -1254,14 +1267,22 @@ async function openTaskDetailDrawer(taskId) {
                 const atEl = document.getElementById('ext-banner-at');
                 if (atEl) atEl.textContent = t.extension_requested_at ? formatDateTimeDMY(t.extension_requested_at) : '';
             }
-            if (btnOpenExt) btnOpenExt.classList.add('hidden');
-            if (extHist) extHist.classList.add('hidden');
+            if (btnOpenExt) {
+                btnOpenExt.classList.add('hidden');
+                btnOpenExt.style.display = 'none';
+            }
+            if (extHist) {
+                extHist.classList.add('hidden');
+                extHist.style.display = 'none';
+            }
 
             if (extActionsReporter) {
+                extActionsReporter.style.display = isReporter ? 'flex' : 'none';
                 if (isReporter) extActionsReporter.classList.remove('hidden');
                 else extActionsReporter.classList.add('hidden');
             }
             if (extActionsAssignee) {
+                extActionsAssignee.style.display = (isAssignee && !isReporter) ? 'block' : 'none';
                 if (isAssignee && !isReporter) extActionsAssignee.classList.remove('hidden');
                 else extActionsAssignee.classList.add('hidden');
             }
@@ -3079,8 +3100,9 @@ let currentNotificationsList = [];
 
 function initBellNotifications() {
     checkNotificationUnreadCount();
-    // Định kỳ kiểm tra thông báo chuông mỗi 30s
-    setInterval(checkNotificationUnreadCount, 30000);
+    // Định kỳ kiểm tra thông báo chuông mỗi 15s
+    if (window.bellNotifTimer) clearInterval(window.bellNotifTimer);
+    window.bellNotifTimer = setInterval(checkNotificationUnreadCount, 15000);
 
     // Đóng dropdown khi click ra ngoài
     document.addEventListener('click', function(e) {
@@ -3328,11 +3350,18 @@ async function markAllNotificationsAsRead() {
 }
 
 
-// Khởi chạy module Collaboration khi DOM sẵn sàng
-document.addEventListener('DOMContentLoaded', function() {
+// Khởi chạy module Collaboration an toàn (kể cả khi DOM đã tải xong)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        initCollaborationChat();
+        initBellNotifications();
+    });
+} else {
     initCollaborationChat();
     initBellNotifications();
-});
+}
+window.initBellNotifications = initBellNotifications;
+window.checkNotificationUnreadCount = checkNotificationUnreadCount;
 
 
 // ==========================================
@@ -3412,6 +3441,7 @@ async function submitTaskExtensionRequest() {
             closeRequestExtensionInline();
             await openTaskDetailDrawer(currentViewingTaskId);
             if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof checkNotificationUnreadCount === 'function') checkNotificationUnreadCount();
             if (typeof loadDashboardData === 'function') loadDashboardData();
         } else {
             showToast(json.message || 'Không thể gửi đề xuất gia hạn.', 'error');
@@ -3428,6 +3458,7 @@ function toggleRejectExtensionBox(show) {
     if (!box) return;
     if (show) {
         box.classList.remove('hidden');
+        box.style.display = 'block';
         const input = document.getElementById('ext-reject-reason-input');
         if (input) {
             input.value = '';
@@ -3435,6 +3466,7 @@ function toggleRejectExtensionBox(show) {
         }
     } else {
         box.classList.add('hidden');
+        box.style.display = 'none';
     }
 }
 window.toggleRejectExtensionBox = toggleRejectExtensionBox;
@@ -3476,6 +3508,7 @@ async function reviewTaskExtension(action, directNote = '') {
             showToast(json.message || 'Đã cập nhật trạng thái gia hạn!', 'success');
             await openTaskDetailDrawer(currentViewingTaskId);
             if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof checkNotificationUnreadCount === 'function') checkNotificationUnreadCount();
             if (typeof loadDashboardData === 'function') loadDashboardData();
         } else {
             showToast(json.message || 'Thao tác không thành công.', 'error');
@@ -3503,6 +3536,7 @@ async function cancelTaskExtension() {
             showToast(json.message || 'Đã thu hồi đề xuất gia hạn.', 'info');
             await openTaskDetailDrawer(currentViewingTaskId);
             if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof checkNotificationUnreadCount === 'function') checkNotificationUnreadCount();
             if (typeof loadDashboardData === 'function') loadDashboardData();
         } else {
             showToast(json.message || 'Thao tác không thành công.', 'error');

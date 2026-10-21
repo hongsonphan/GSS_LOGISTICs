@@ -682,7 +682,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
             )
 
             # Gửi Notification lên chuông Người giao việc
-            if task.reporter and task.reporter_id != user.id:
+            if task.reporter:
                 emp_name = current_emp.full_name if current_emp else user.username
                 Notification.objects.create(
                     recipient=task.reporter,
@@ -736,7 +736,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
             )
 
             # Gửi Notification lên chuông Người phụ trách
-            if task.assignee and task.assignee_id != user.id:
+            if task.assignee:
                 reviewer_name = current_emp.full_name if current_emp else user.username
                 Notification.objects.create(
                     recipient=task.assignee,
@@ -790,7 +790,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
             )
 
             # Gửi Notification lên chuông Người phụ trách
-            if task.assignee and task.assignee_id != user.id:
+            if task.assignee:
                 reviewer_name = current_emp.full_name if current_emp else user.username
                 Notification.objects.create(
                     recipient=task.assignee,
@@ -828,7 +828,7 @@ class OfficeTaskExtensionAPIView(views.APIView):
             )
 
             # Gửi Notification lên chuông Người giao việc nếu có
-            if task.reporter and task.reporter_id != user.id:
+            if task.reporter:
                 emp_name = current_emp.full_name if current_emp else user.username
                 Notification.objects.create(
                     recipient=task.reporter,
