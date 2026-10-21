@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.7] - 2026-10-21 (Tách Biệt Độc Lập 2 Trường Tài Xế & "Đầu kéo/ Xe tải" và Chuẩn Hóa Lọc Theo Xe Nhà TVL vs Xe Bạn 3PL)
+
+### 1. Nghiệp Vụ Vận Tải Thực Tế (Logistics Domain & Fleet Flexibility):
+- **Xóa bỏ ép buộc 1-1 giữa Tài xế & Xe:** Trong thực tế điều vận, 1 tài xế có thể lái nhiều xe (khi xe bảo trì/sửa chữa hoặc chạy luân chuyển theo cự ly) và 1 xe có thể có nhiều tài xế thay phiên lái (chạy ca ngày/đêm, cặp tài đường dài).
+- **Tách biệt hoàn toàn thành 2 trường độc lập trên Form Điều Vận:**
+  * Trường 1: **Tài xế nhận lệnh (Toàn trình)**
+  * Trường 2: **Đầu kéo/ Xe tải TVL** (thay thế cho việc ngầm định gán xe trước đây)
+- **Chuẩn hóa thuật ngữ thống nhất: "Đầu kéo/ Xe tải"**: Bao quát toàn bộ năng lực phương tiện của TVL (cả Đầu kéo container và Xe tải thùng 10T/2T/Van), tránh cách gọi hạn hẹp trước đây.
+
+### 2. Quy Chuẩn Lọc Dữ Liệu Chặt Chẽ (Zero Cross-Fleet Leakage):
+- **Khi chọn "Xe Nhà (TVL)":**
+  * Dropdown `#inp-driver`: CHỈ load danh sách Tài xế NỘI BỘ TVL (`Employee` có `role == DRIVER`). Nhãn hiển thị trực quan: `[Tên/Biệt danh] ([Mã nhân sự])`.
+  * Dropdown `#inp-vehicle`: CHỈ load danh sách Đầu kéo/ Xe tải NỘI BỘ TVL (`Vehicle` có `ownership_type == 'OWNED'`). Tuyệt đối không lẫn xe của đối tác 3PL.
+  * Hiển thị kèm loại phương tiện trong dropdown: `51C-123.45 (Đầu kéo Container)`, `50E-112.34 (Xe tải 10 Tấn)`, `50E-095.78 (Xe tải 2 Tấn)`.
+  * **Cơ chế gợi ý thông minh 2 chiều (Smart Autofill, không ép buộc):** Chọn tài xế tự động gợi ý xe thường lái nếu ô xe đang trống; chọn xe tự động gợi ý tài xế thường lái nếu ô tài đang trống; điều độ có toàn quyền đổi sang bất kỳ xe/tài TVL nào khác.
+- **Khi chọn "Xe Bạn / 3PL":**
+  * Dropdown `#inp-subcontractor`: Chỉ load đối tác là Nhà xe vận tải (`partner_type == 'CARRIER'`).
+  * Dropdown `#inp-sub-vehicle`: CHỈ load các xe thuộc đúng Nhà xe 3PL đã chọn (`subcontractor == selected_sub` và `ownership_type == 'SUBCONTRACTOR'`) + tùy chọn `+ Nhập Biển Số Xe Khác...`.
+  * Dropdown `#inp-sub-driver`: CHỈ load các tài xế thuộc đúng Nhà xe 3PL đã chọn (`subcontractor == selected_sub`) + tùy chọn `+ Nhập Tài Xế Mới...`.
+  * Xe và Tài xế 3PL hoàn toàn độc lập, không ép buộc 1-1.
+- **Khi chọn "Cắt Kéo (Drop & Hook)":**
+  * Chặng 1 & Chặng 2: Đồng bộ nhãn **"Đầu kéo/ Xe tải Lấy Cont"** và **"Đầu kéo/ Xe tải Hạ Cont"**, CHỈ nạp xe và tài nội bộ TVL.
+
+### 3. Đồng Bộ Toàn Bộ Giao Diện & Backend:
+- `templates/views/view_create_trip.html` & `templates/components/modal_create_trip.html`: Bố trí layout 12 cột cân đối (Tài xế 4 cột, Đầu kéo/ Xe tải 4 cột, Ghi chú 4 cột).
+- `templates/components/modal_edit_trip.html`: Đổi nhãn `Đầu Kéo` thành `Đầu kéo/ Xe tải`.
+- `templates/views/view_trip_detail.html`: Đổi tiêu đề cột bảng kê và modal chi phí sang `Tài xế & Đầu kéo/ Xe tải`.
+- `apps/master_data/api_views.py`: `MasterDataFormOptionsAPIView` chuẩn hóa nhãn tài xế độc lập, bổ sung `default_vehicle_plate` và format `label` xe kèm loại phương tiện.
+- `static/js/app.js`: Tích hợp hàm `onDriverChange`, `onVehicleChange`, lọc `ownedVehicles` cho xe nhà và cập nhật validation bắt buộc cả Tài xế & Đầu kéo/ Xe tải.
+
 ## [v3.7.6] - 2026-10-21 (Mở Rộng Model Khách Hàng: 2 Email, Thông Tin Bank, Nhóm Khách & Quản Trị Công Nợ)
 
 ### 1. Nâng Cấp Model Khách Hàng (`Customer` trong `apps/customers/models.py`):
