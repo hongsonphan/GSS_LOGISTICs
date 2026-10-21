@@ -300,6 +300,95 @@ function renderDashboardPnlTable(trips) {
     });
 }
 
+// =========================================================================
+// CUSTOM CHART DATA LABELS PLUGIN & HELPER (HIỂN THỊ SỐ LIỆU TRÊN CỘT / LINE)
+// =========================================================================
+const chartDataLabelsPlugin = {
+    id: 'customDataLabels',
+    afterDatasetsDraw(chart, args, pluginOptions) {
+        if (!pluginOptions || !pluginOptions.display) return;
+        if (chart.config.type === 'doughnut' || chart.config.type === 'pie') return;
+
+        const { ctx, data } = chart;
+        ctx.save();
+        ctx.font = 'bold 9.5px "Inter", sans-serif';
+
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
+            const meta = chart.getDatasetMeta(datasetIndex);
+            if (!meta || meta.hidden) return;
+
+            meta.data.forEach((element, index) => {
+                const val = dataset.data[index];
+                if (val === null || val === undefined || val === 0) return;
+
+                let text = '';
+                if (dataset.label && dataset.label.includes('%')) {
+                    text = `${val}%`;
+                } else if (typeof val === 'number') {
+                    if (val >= 1000000) {
+                        text = (val / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tr';
+                    } else if (val >= 1000) {
+                        text = new Intl.NumberFormat('vi-VN').format(val);
+                    } else {
+                        text = String(val);
+                    }
+                } else {
+                    text = String(val);
+                }
+
+                const pos = element.tooltipPosition();
+                const isHorizontal = chart.config.options?.indexAxis === 'y';
+
+                if (isHorizontal) {
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#0f766e';
+                    ctx.fillText(text, pos.x + 5, pos.y);
+                } else {
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = (dataset.type === 'line' || dataset.borderColor) ? (dataset.borderColor || '#059669') : '#0f766e';
+                    ctx.fillText(text, pos.x, pos.y - 4);
+                }
+            });
+        });
+        ctx.restore();
+    }
+};
+
+function toggleDashboardChartDataLabels(slot = 1) {
+    const key = 'bim_chart_datalabels_' + slot;
+    const currentState = localStorage.getItem(key) === 'true';
+    const newState = !currentState;
+    localStorage.setItem(key, String(newState));
+
+    updateDataLabelsButtonState(slot, newState);
+
+    const targetChart = (slot === 1) ? bgdRevenueChart : bgdDonutChart;
+    if (targetChart && targetChart.options && targetChart.options.plugins) {
+        if (!targetChart.options.plugins.customDataLabels) targetChart.options.plugins.customDataLabels = {};
+        targetChart.options.plugins.customDataLabels.display = newState;
+        targetChart.update();
+    }
+}
+window.toggleDashboardChartDataLabels = toggleDashboardChartDataLabels;
+
+function updateDataLabelsButtonState(slot, isActive) {
+    const btn = document.getElementById('btn-toggle-datalabels-' + slot);
+    const txt = document.getElementById('text-toggle-datalabels-' + slot);
+    if (!btn) return;
+    if (isActive) {
+        btn.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+        btn.classList.add('bg-teal-600', 'text-white', 'border-teal-700', 'shadow-xs');
+        if (txt) txt.innerText = 'Số liệu: Bật';
+    } else {
+        btn.classList.remove('bg-teal-600', 'text-white', 'border-teal-700', 'shadow-xs');
+        btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
+        if (txt) txt.innerText = 'Số liệu';
+    }
+}
+window.updateDataLabelsButtonState = updateDataLabelsButtonState;
+
 // Biểu đồ Cột & Đường Doanh thu, Chi phí, Lợi nhuận gộp
 function renderBgdRevenueChart(trendData) {
     const ctx = document.getElementById('bgd-revenue-trend-chart');
@@ -307,9 +396,13 @@ function renderBgdRevenueChart(trendData) {
     if (bgdRevenueChart) {
         bgdRevenueChart.destroy();
     }
+
+    const isDataLabelsOn = localStorage.getItem('bim_chart_datalabels_1') === 'true';
+    updateDataLabelsButtonState(1, isDataLabelsOn);
     
     bgdRevenueChart = new Chart(ctx, {
         type: 'bar',
+        plugins: [chartDataLabelsPlugin],
         data: {
             labels: trendData.labels,
             datasets: [
@@ -361,6 +454,7 @@ function renderBgdRevenueChart(trendData) {
             },
             plugins: {
                 legend: { display: false },
+                customDataLabels: { display: isDataLabelsOn },
                 tooltip: {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#ffffff',

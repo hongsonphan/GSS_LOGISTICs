@@ -2319,8 +2319,108 @@ function renderRoleCharts(role) {
     if (!hasCustom2) {
         renderRoleDonut(role, currentDonutOption);
     }
+    updateDataLabelsButtonState(2, localStorage.getItem('bim_chart_datalabels_2') === 'true');
 }
 window.renderRoleCharts = renderRoleCharts;
+
+// =========================================================================
+// CUSTOM CHART DATA LABELS PLUGIN & HELPER (HIỂN THỊ SỐ LIỆU TRÊN CỘT / LINE)
+// =========================================================================
+const chartDataLabelsPlugin = {
+    id: 'customDataLabels',
+    afterDatasetsDraw(chart, args, pluginOptions) {
+        if (!pluginOptions || !pluginOptions.display) return;
+        if (chart.config.type === 'doughnut' || chart.config.type === 'pie') return;
+
+        const { ctx, data } = chart;
+        ctx.save();
+        ctx.font = 'bold 9.5px "Inter", sans-serif';
+
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
+            const meta = chart.getDatasetMeta(datasetIndex);
+            if (!meta || meta.hidden) return;
+
+            meta.data.forEach((element, index) => {
+                const val = dataset.data[index];
+                if (val === null || val === undefined || val === 0) return;
+
+                let text = '';
+                if (dataset.label && dataset.label.includes('%')) {
+                    text = `${val}%`;
+                } else if (typeof val === 'number') {
+                    if (val >= 1000000) {
+                        text = (val / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tr';
+                    } else if (val >= 1000) {
+                        text = new Intl.NumberFormat('vi-VN').format(val);
+                    } else {
+                        text = String(val);
+                    }
+                } else {
+                    text = String(val);
+                }
+
+                const pos = element.tooltipPosition();
+                const isHorizontal = chart.config.options?.indexAxis === 'y';
+
+                if (isHorizontal) {
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#0f766e';
+                    ctx.fillText(text, pos.x + 5, pos.y);
+                } else {
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = (dataset.type === 'line' || dataset.borderColor) ? (dataset.borderColor || '#059669') : '#0f766e';
+                    ctx.fillText(text, pos.x, pos.y - 4);
+                }
+            });
+        });
+        ctx.restore();
+    }
+};
+
+function toggleDashboardChartDataLabels(slot = 1) {
+    const key = 'bim_chart_datalabels_' + slot;
+    const currentState = localStorage.getItem(key) === 'true';
+    const newState = !currentState;
+    localStorage.setItem(key, String(newState));
+
+    updateDataLabelsButtonState(slot, newState);
+
+    const targetChart = (slot === 1) ? bgdRevenueChart : bgdDonutChart;
+    if (targetChart && targetChart.options && targetChart.options.plugins) {
+        if (!targetChart.options.plugins.customDataLabels) targetChart.options.plugins.customDataLabels = {};
+        targetChart.options.plugins.customDataLabels.display = newState;
+        targetChart.update();
+    }
+}
+window.toggleDashboardChartDataLabels = toggleDashboardChartDataLabels;
+
+function updateDataLabelsButtonState(slot, isActive) {
+    const btn = document.getElementById('btn-toggle-datalabels-' + slot);
+    const txt = document.getElementById('text-toggle-datalabels-' + slot);
+    if (!btn) return;
+    if (isActive) {
+        btn.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+        btn.classList.add('bg-teal-600', 'text-white', 'border-teal-700', 'shadow-xs');
+        if (txt) txt.innerText = 'Số liệu: Bật';
+    } else {
+        btn.classList.remove('bg-teal-600', 'text-white', 'border-teal-700', 'shadow-xs');
+        btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
+        if (txt) txt.innerText = 'Số liệu';
+    }
+}
+window.updateDataLabelsButtonState = updateDataLabelsButtonState;
+
+function onPivotDataLabelsToggle() {
+    const isChecked = document.getElementById('pivot-toggle-data-labels')?.checked ?? false;
+    if (pivotPreviewChart && pivotPreviewChart.options && pivotPreviewChart.options.plugins) {
+        if (!pivotPreviewChart.options.plugins.customDataLabels) pivotPreviewChart.options.plugins.customDataLabels = {};
+        pivotPreviewChart.options.plugins.customDataLabels.display = isChecked;
+        pivotPreviewChart.update();
+    }
+}
+window.onPivotDataLabelsToggle = onPivotDataLabelsToggle;
 
 function renderBgdTrendChart(trend) {
     const ctx = document.getElementById('bgd-revenue-trend-chart');
@@ -2331,8 +2431,12 @@ function renderBgdTrendChart(trend) {
 
     const isCurrency = trend.type === 'currency';
 
+    const isDataLabelsOn = localStorage.getItem('bim_chart_datalabels_1') === 'true';
+    updateDataLabelsButtonState(1, isDataLabelsOn);
+
     bgdRevenueChart = new Chart(ctx, {
         type: 'bar',
+        plugins: [chartDataLabelsPlugin],
         data: {
             labels: trend.labels,
             datasets: trend.datasets.map(ds => {
@@ -2384,15 +2488,20 @@ function renderBgdTrendChart(trend) {
                     callbacks: {
                         label: function(context) {
                             const val = context.raw;
-                            if (context.dataset.type === 'line' && (context.dataset.label.includes('%') || !isCurrency)) {
-                                return `${context.dataset.label}: ${val}%`;
+                            const ds = context.dataset;
+                            if (ds.label && ds.label.includes('%')) {
+                                return `${ds.label}: ${val}%`;
                             }
-                            if (isCurrency && context.dataset.type === 'bar') {
-                                return `${context.dataset.label}: ${new Intl.NumberFormat('vi-VN').format(val)} đ`;
+                            if (typeof val === 'number') {
+                                const formatted = new Intl.NumberFormat('vi-VN').format(val);
+                                return isCurrency ? `${ds.label}: ${formatted} đ` : `${ds.label}: ${formatted}`;
                             }
-                            return `${context.dataset.label}: ${val}`;
+                            return `${ds.label}: ${val}`;
                         }
                     }
+                },
+                customDataLabels: {
+                    display: isDataLabelsOn
                 }
             },
             scales: {
@@ -2537,7 +2646,8 @@ const PIVOT_ENTITY_FIELDS = {
     trips: {
         name: 'Chuyến xe & Vận chuyển',
         groups: [
-            { val: 'customer', label: 'Khách hàng' },
+            { val: 'customer', label: 'Khách hàng (Tên viết tắt)' },
+            { val: 'subcontractor', label: 'Thầu phụ / Nhà xe' },
             { val: 'driver', label: 'Tài xế' },
             { val: 'vehicle', label: 'Đầu kéo / Xe' },
             { val: 'route', label: 'Tuyến đường vận chuyển' },
@@ -2703,6 +2813,11 @@ function openChartCustomizer(slot = 1) {
         setCustomizerDefaultsForSlot(currentCustomizingSlot);
     }
 
+    const toggleLabelsEl = document.getElementById('pivot-toggle-data-labels');
+    if (toggleLabelsEl) {
+        toggleLabelsEl.checked = localStorage.getItem('bim_chart_datalabels_' + currentCustomizingSlot) === 'true';
+    }
+
     fetchAndRenderPivotPreview();
 }
 window.openChartCustomizer = openChartCustomizer;
@@ -2862,8 +2977,14 @@ function renderPivotChartCanvas(canvasId, pivotRes, isPreview = false, isSlot2 =
         pointRadius: actualType === 'line' ? 4 : 0
     };
 
+    const slotNum = isSlot2 ? 2 : (currentCustomizingSlot || 1);
+    const isLabelsActive = isPreview 
+        ? (document.getElementById('pivot-toggle-data-labels')?.checked ?? false)
+        : (localStorage.getItem('bim_chart_datalabels_' + (isSlot2 ? 2 : (canvasId === 'bgd-donut-chart' ? 2 : 1))) === 'true');
+
     const config = {
         type: actualType,
+        plugins: [chartDataLabelsPlugin],
         data: {
             labels: pivotRes.labels,
             datasets: [dataset]
@@ -2887,12 +3008,16 @@ function renderPivotChartCanvas(canvasId, pivotRes, isPreview = false, isSlot2 =
                     callbacks: {
                         label: function(context) {
                             const val = context.raw;
-                            if (isCurrency) {
-                                return ` Giá trị: ${new Intl.NumberFormat('vi-VN').format(val)} đ`;
+                            if (typeof val === 'number') {
+                                const formatted = new Intl.NumberFormat('vi-VN').format(val);
+                                return isCurrency ? ` ${context.dataset.label || 'Giá trị'}: ${formatted} đ` : ` ${context.dataset.label || 'Giá trị'}: ${formatted} ${pivotRes.unit || ''}`;
                             }
-                            return ` Giá trị: ${val} ${pivotRes.unit || ''}`;
+                            return ` ${context.dataset.label || 'Giá trị'}: ${val} ${pivotRes.unit || ''}`;
                         }
                     }
+                },
+                customDataLabels: {
+                    display: isLabelsActive
                 }
             }
         }
@@ -3005,10 +3130,15 @@ function applyPivotChartToDashboard() {
 
     const slot = currentCustomizingSlot || 1;
 
+    const showLabels = document.getElementById('pivot-toggle-data-labels')?.checked ?? false;
+    localStorage.setItem('bim_chart_datalabels_' + slot, String(showLabels));
+    updateDataLabelsButtonState(slot, showLabels);
+
     // Lưu cấu hình vào localStorage theo slot
     localStorage.setItem('bim_custom_chart_' + slot, JSON.stringify({
         config: currentConfig,
-        data: currentPivotResultCache
+        data: currentPivotResultCache,
+        show_data_labels: showLabels
     }));
 
     // Render trực tiếp lên Slot tương ứng

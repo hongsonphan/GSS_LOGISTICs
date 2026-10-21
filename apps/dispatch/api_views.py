@@ -1614,11 +1614,18 @@ class DashboardPivotChartAPIView(APIView):
                     label = f"{p[:15]} ➔ {w[:15]}" if p and w else (p or w or 'Tuyến nội bộ')
                     raw_data.append({'label': label, 'val': float(item['metric_val'] or 0)})
 
+            elif group_by == 'subcontractor':
+                dim_name = "Thầu phụ / Nhà xe"
+                grouped = qs.values('subcontractor__short_name', 'subcontractor__name', 'subcontractor__code').annotate(metric_val=agg_func)
+                for item in grouped:
+                    sname = (item.get('subcontractor__short_name') or '').strip() or item.get('subcontractor__name') or item.get('subcontractor__code') or 'Đội xe nội bộ'
+                    raw_data.append({'label': sname, 'val': float(item['metric_val'] or 0)})
+
             else: # default: customer
                 dim_name = "Khách hàng"
-                grouped = qs.values('customer__name', 'customer__code').annotate(metric_val=agg_func)
+                grouped = qs.values('customer__short_name', 'customer__name', 'customer__code').annotate(metric_val=agg_func)
                 for item in grouped:
-                    cname = item.get('customer__name') or item.get('customer__code') or 'Khách vãng lai'
+                    cname = (item.get('customer__short_name') or '').strip() or item.get('customer__name') or item.get('customer__code') or 'Khách vãng lai'
                     raw_data.append({'label': cname, 'val': float(item['metric_val'] or 0)})
 
             title = f"{agg_label} {metric_name} theo {dim_name} ({period_label})"
@@ -1726,9 +1733,9 @@ class DashboardPivotChartAPIView(APIView):
 
             else: # Default customer
                 dim_name = "Khách hàng"
-                grouped = qs.values('customer__name', 'customer__code').annotate(metric_val=agg_func)
+                grouped = qs.values('customer__short_name', 'customer__name', 'customer__code').annotate(metric_val=agg_func)
                 for item in grouped:
-                    cname = item.get('customer__name') or item.get('customer__code') or 'Khách vãng lai'
+                    cname = (item.get('customer__short_name') or '').strip() or item.get('customer__name') or item.get('customer__code') or 'Khách vãng lai'
                     raw_data.append({'label': cname, 'val': float(item['metric_val'] or 0)})
 
             title = f"{agg_label} {metric_name} theo {dim_name} ({period_label})"
@@ -1808,9 +1815,9 @@ class DashboardPivotChartAPIView(APIView):
                     raw_data.append({'label': method_dict.get(pm, pm or 'Tiêu chuẩn'), 'val': float(item['metric_val'] or 0)})
             else: # customer
                 dim_name = "Khách hàng"
-                grouped = qs.values('customer__name', 'customer__code').annotate(metric_val=agg_func)
+                grouped = qs.values('customer__short_name', 'customer__name', 'customer__code').annotate(metric_val=agg_func)
                 for item in grouped:
-                    cname = item.get('customer__name') or item.get('customer__code') or 'Khách hàng'
+                    cname = (item.get('customer__short_name') or '').strip() or item.get('customer__name') or item.get('customer__code') or 'Khách hàng'
                     raw_data.append({'label': cname, 'val': float(item['metric_val'] or 0)})
 
             title = f"{agg_label} {metric_name} theo {dim_name} ({period_label})"

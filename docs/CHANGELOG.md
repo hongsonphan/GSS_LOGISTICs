@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v3.7.8] - 2026-10-21 (Định Dạng Phân Cách Phần Ngàn Cho Biểu Đồ, Tùy Biến Bật/Tắt Số Liệu & Tên Viết Tắt)
+
+### 1. Chuẩn Hóa Định Dạng Phân Cách Phần Ngàn Trên Toàn Bộ Biểu Đồ (Number Formatting):
+- **Tooltip Biểu đồ Xu hướng (
+enderBgdTrendChart):**
+  * Khắc phục triệt để lỗi hiển thị số thô không có dấu phân cách hàng ngàn (VD: Lợi Nhuận Gộp: 6500000 -> Lợi Nhuận Gộp: 6.500.000 đ).
+  * Mọi dataset (Cột Doanh thu, Cột Chi phí, Đường Lợi nhuận) đều được định dạng tiền tệ Việt Nam 
+ew Intl.NumberFormat('vi-VN').format(val) + ' đ'.
+- **Tooltip Biểu đồ Tùy Biến Pivot & Preview (
+enderPivotChartCanvas):**
+  * Định dạng số có dấu phân cách phần ngàn đầy đủ cho tất cả các loại chỉ số đo lường.
+
+### 2. Tính Năng Hiển Thị Số Liệu Trên Cột / Đường (Data Labels) & Tùy Biến Bật/Tắt:
+- **Tích hợp Plugin Data Labels chuyên dụng (chartDataLabelsPlugin):**
+  * Tự động tính toán vị trí hiển thị số liệu trực tiếp trên đỉnh cột đứng (Bar), bên cạnh cột ngang (Horizontal Bar), hoặc trên các điểm mốc (Line).
+  * Định dạng số thông minh: Số tiền lớn >= 1.000.000 rút gọn tinh tế (VD: 6,5 tr), số nhỏ hơn có dấu phân cách phần ngàn chuẩn (VD: 425.000), tỷ lệ phần trăm (VD: 87.3%).
+- **Nút Bật/Tắt Nhanh Trên Dashboard:**
+  * Bổ sung nút **[Số liệu]** tại góc trên bên phải của cả Card Biểu Đồ 1 và Card Biểu Đồ 2 (#btn-toggle-datalabels-1, #btn-toggle-datalabels-2).
+  * Hỗ trợ toggle tức thời với 1 click, tự động đổi màu trạng thái (Xanh Teal khi Bật, Xám khi Tắt).
+- **Tích Hợp Trong Modal Tùy Biến Biểu Đồ (modal-pivot-chart-builder):**
+  * Thêm switch checkbox **'Hiển thị số liệu trên cột / điểm'** (#pivot-toggle-data-labels).
+  * Xem trước trực tiếp trên Canvas Preview và tự động lưu cấu hình theo từng Slot vào trình duyệt (localStorage).
+
+### 3. Ưu Tiên Hiển Thị Tên Viết Tắt Ngắn Gọn Trên Trục X & Bảng Chi Tiết:
+- **Nâng cấp API Phân Tích Đa Chiều (DashboardPivotChartAPIView):**
+  * Khi nhóm theo Khách Hàng (customer): Ưu tiên lấy **Tên viết tắt (customer__short_name)** nếu có; nếu chưa có mới fallback về tên đầy đủ hoặc mã khách hàng.
+  * Khi nhóm theo Thầu phụ / Đối tác (subcontractor): Ưu tiên lấy **subcontractor__short_name**.
+  * Bổ sung nhóm phân tích mới subcontractor (Thầu phụ / Nhà xe) vào bộ lọc Pivot Trips.
+- **Dữ Liệu Khách Hàng:**
+  * Đã đồng bộ short_name cho các khách hàng (SAMSUNG, VIỆT THẮNG, VJS, Á CHÂU, NHỰA DUY TÂN, CÁT ĐẰNG, HC BIÊN HÒA...) giúp biểu đồ hiển thị ngắn gọn, trục X không bị tràn chữ hay xiên chéo.
+
 ## [v3.7.7] - 2026-10-21 (Tách Biệt Độc Lập 2 Trường Tài Xế & "Đầu kéo/ Xe tải" và Chuẩn Hóa Lọc Theo Xe Nhà TVL vs Xe Bạn 3PL)
 
 ### 1. Nghiệp Vụ Vận Tải Thực Tế (Logistics Domain & Fleet Flexibility):
