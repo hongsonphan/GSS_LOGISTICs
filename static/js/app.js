@@ -20619,6 +20619,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2.5 px-3 text-[12px] text-slate-500 max-w-xs truncate border-r border-slate-200">${escapeHtml(item.notes || '—')}</td>
                 <td class="py-2.5 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
+                        <button onclick="openSubcontractorFleetModal(${item.id})" class="p-1 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded transition-colors cursor-pointer" title="Danh bạ Tài xế 3PL"><i class="ph-bold ph-steering-wheel text-sm"></i></button>
                         <button onclick="openEditMasterDataModal(${item.id})" class="p-1 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="Chỉnh sửa"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                         <button onclick="deleteOpeningBalanceItem(${item.id}, '${escapeHtml(item.entity_name || '')}')" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa"><i class="ph-bold ph-trash text-sm"></i></button>
                     </div>
@@ -22061,7 +22062,60 @@ function injectMasterDataModalFields(data) {
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hợp tác</label>
             </div>
+
+            ${d.id ? `
+            <div class="mt-4 pt-3 border-t border-slate-200" id="section-subcontractor-drivers-mgmt">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block font-bold text-amber-950 text-xs flex items-center gap-1.5 font-heading uppercase tracking-wider">
+                        <i class="ph-bold ph-steering-wheel text-amber-700 text-sm"></i> Danh Bạ Tài Xế Thuộc Nhà Xe (3PL)
+                    </label>
+                    <button type="button" onclick="showAddSubDriverInline()" class="px-2.5 py-1 text-[11px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-md flex items-center gap-1 cursor-pointer transition-colors">
+                        <i class="ph-bold ph-plus text-[10px]"></i> Thêm Bác Tài Mới
+                    </button>
+                </div>
+
+                <!-- Form Thêm Nhanh Tài Xế 3PL Inline -->
+                <div id="sub-driver-add-row" class="hidden-view p-2.5 bg-amber-50/90 border border-amber-300 rounded-xl mb-2.5 space-y-2">
+                    <div class="text-[11px] font-bold text-amber-900 uppercase">Khai Báo Bác Tài Mới Trực Thuộc Nhà Xe</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <div class="sm:col-span-5">
+                            <input type="text" id="new-subdrv-name" placeholder="Họ và tên tài xế *" class="form-input h-8 px-2 py-1 text-xs font-bold text-slate-800 border-amber-300 w-full rounded">
+                        </div>
+                        <div class="sm:col-span-4">
+                            <input type="tel" id="new-subdrv-phone" placeholder="Số điện thoại *" class="form-input h-8 px-2 py-1 text-xs font-mono font-bold text-teal-800 border-amber-300 w-full rounded">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <input type="text" id="new-subdrv-license" placeholder="Số GPLX (Tùy chọn)" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 w-full rounded">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-1">
+                        <button type="button" onclick="hideAddSubDriverInline()" class="px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-200 rounded font-semibold cursor-pointer">Hủy</button>
+                        <button type="button" onclick="saveNewSubDriverInline(${d.id})" class="px-3.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold shadow-xs cursor-pointer">Lưu Bác Tài</button>
+                    </div>
+                </div>
+
+                <!-- Bảng Danh Sách Tài Xế Thuộc Nhà Xe -->
+                <div class="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto bg-white shadow-2xs">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold sticky top-0">
+                            <tr>
+                                <th class="py-2 px-3">Họ & Tên Tài Xế</th>
+                                <th class="py-2 px-3">Số Điện Thoại</th>
+                                <th class="py-2 px-3">Số GPLX</th>
+                                <th class="py-2 px-2.5 text-center w-16">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sub-drivers-tbody" class="divide-y divide-slate-100">
+                            <tr><td colspan="4" class="text-center py-3 text-slate-400"><i class="ph ph-spinner animate-spin mr-1"></i> Đang tải danh sách...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            ` : ''}
         `;
+        if (d.id) {
+            setTimeout(() => loadSubcontractorDriversInModal(d.id), 50);
+        }
     } else if (currentMasterDataTab === 'opening_balance') {
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -29420,3 +29474,124 @@ window.backToPayroll = typeof backToPayroll !== 'undefined' ? backToPayroll : un
 window.renderRoleCharts = typeof renderRoleCharts !== 'undefined' ? renderRoleCharts : undefined;
 window.switchRoleDonutOption = typeof switchRoleDonutOption !== 'undefined' ? switchRoleDonutOption : undefined;
 
+
+
+// =========================================================================
+// QUẢN LÝ DANH BẠ TÀI XẾ 3PL TRỰC THUỘC ĐỐI TÁC (PHƯƠNG ÁN 3)
+// =========================================================================
+async function loadSubcontractorDriversInModal(subId) {
+    const tbody = document.getElementById('sub-drivers-tbody');
+    if (!tbody) return;
+    try {
+        const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/drivers/`);
+        if (!res.ok) throw new Error('Không thể tải danh sách tài xế 3PL');
+        const data = await res.json();
+        const drivers = data.results || [];
+        if (drivers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-slate-400 italic">Chưa có tài xế nào được khai báo cho nhà xe này. Bấm "Thêm Bác Tài Mới" ở trên.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = drivers.map(drv => `
+            <tr class="hover:bg-amber-50/50 transition-colors">
+                <td class="py-2 px-3 font-bold text-slate-900">${escapeHtml(drv.full_name)}</td>
+                <td class="py-2 px-3 font-mono font-bold text-teal-800">${escapeHtml(drv.phone || '—')}</td>
+                <td class="py-2 px-3 font-mono text-slate-600">${escapeHtml(drv.license_number || '—')}</td>
+                <td class="py-2 px-2.5 text-center">
+                    <button type="button" onclick="deleteSubDriverInline(${drv.id}, ${subId})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer" title="Xóa tài xế">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3 text-rose-500">Lỗi: ${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+function showAddSubDriverInline() {
+    const row = document.getElementById('sub-driver-add-row');
+    if (row) {
+        row.classList.remove('hidden-view');
+        const nameInp = document.getElementById('new-subdrv-name');
+        if (nameInp) nameInp.focus();
+    }
+}
+
+function hideAddSubDriverInline() {
+    const row = document.getElementById('sub-driver-add-row');
+    if (row) row.classList.add('hidden-view');
+}
+
+async function saveNewSubDriverInline(subId) {
+    const nameInp = document.getElementById('new-subdrv-name');
+    const phoneInp = document.getElementById('new-subdrv-phone');
+    const licInp = document.getElementById('new-subdrv-license');
+
+    const full_name = nameInp ? nameInp.value.trim() : '';
+    const phone = phoneInp ? phoneInp.value.trim() : '';
+    const license_number = licInp ? licInp.value.trim() : '';
+
+    if (!full_name) {
+        showToast('warning', 'Vui lòng nhập Họ và tên tài xế!');
+        if (nameInp) nameInp.focus();
+        return;
+    }
+    if (!phone) {
+        showToast('warning', 'Vui lòng nhập Số điện thoại tài xế!');
+        if (phoneInp) phoneInp.focus();
+        return;
+    }
+
+    try {
+        const res = await fetchWithAuth(`/api/master-data/subcontractors/${subId}/drivers/`, {
+            method: 'POST',
+            body: JSON.stringify({ full_name, phone, license_number, is_active: true })
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+            showToast('success', `Đã thêm tài xế [${full_name}] vào danh bạ đối tác!`);
+            if (nameInp) nameInp.value = '';
+            if (phoneInp) phoneInp.value = '';
+            if (licInp) licInp.value = '';
+            hideAddSubDriverInline();
+            loadSubcontractorDriversInModal(subId);
+            // Cập nhật lại cache master data để màn hình điều vận có tài xế mới ngay lập tức
+            if (typeof loadMasterDataFormOptions === 'function') {
+                loadMasterDataFormOptions();
+            }
+        } else {
+            showToast('danger', result.error || 'Không thể lưu tài xế!');
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi kết nối máy chủ khi lưu tài xế!');
+    }
+}
+
+async function deleteSubDriverInline(driverId, subId) {
+    if (!confirm('Bạn có chắc chắn muốn xóa tài xế này khỏi danh bạ nhà xe?')) return;
+    try {
+        const res = await fetchWithAuth(`/api/master-data/subcontractor-drivers/${driverId}/`, {
+            method: 'DELETE'
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+            showToast('success', result.message || 'Đã xóa tài xế thành công!');
+            loadSubcontractorDriversInModal(subId);
+            if (typeof loadMasterDataFormOptions === 'function') {
+                loadMasterDataFormOptions();
+            }
+        } else {
+            showToast('danger', result.error || 'Không thể xóa tài xế!');
+        }
+    } catch (e) {
+        showToast('danger', 'Lỗi kết nối máy chủ!');
+    }
+}
+
+async function openSubcontractorFleetModal(subId) {
+    await openEditMasterDataModal(subId);
+    setTimeout(() => {
+        const sec = document.getElementById('section-subcontractor-drivers-mgmt');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+}
