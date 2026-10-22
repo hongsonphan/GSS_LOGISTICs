@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.3] - 2026-10-22 (Chuẩn Hóa Droplist Loại Rơ-Moóc Native & Tải Trọng Đăng Kiểm Kép)
+
+### 1. Chuẩn Hóa Droplist Loại Rơ-Moóc (Master Data Fleet):
+- **Thay thế `<input list="datalist">` bằng `<select>` Droplist chuẩn:** Khắc phục triệt để tình trạng thẻ datalist không tự động xổ danh sách khi click trên trình duyệt (do giá trị text cũ đã có sẵn).
+- **12 Phân Loại Rơ-Moóc Chuẩn Logistics Việt Nam:**
+  * Moóc Xương 40ft (3 Trục), Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC), Moóc Xương 20ft (3 Trục), Moóc Sàn 40ft, Moóc Sàn 45ft, Moóc Lùn / Chuyên Dụng, Moóc Ben (Tự đổ), Moóc Bồn (Xitéc), Moóc Rút (Siêu trường siêu trọng), Moóc Lồng / Khung mui, Moóc Xương 45ft, Moóc Xương 2 Trục.
+- **Tùy chọn Nhập Tay Linh Hoạt (`__OTHER__`):**
+  * Hỗ trợ tùy chọn `➕ Loại khác (Tự nhập tay)...`. Khi được chọn, giao diện tự động mở rộng ô text input tùy biến viền nét đứt màu ngọc bích (teal) để nhập chủng loại moóc chuyên biệt hoặc đặc thù.
+- **Cơ chế Ánh xạ Dữ Liệu Thông Minh (Case-insensitive & Legacy Code Mapping):**
+  * Tự động so sánh không phân biệt chữ hoa/chữ thường (ví dụ: `Moóc xương 40ft (3 trục)` khớp 100% với `Moóc Xương 40ft (3 Trục)`).
+  * Hỗ trợ ánh xạ các mã danh mục cũ (`MOOC_XUONG_40`, `MOOC_CO_CO_40`...) về tên hiển thị chuẩn tiếng Việt.
+- **Kiểm Thử & Đồng Bộ:**
+  * Toàn bộ 144/144 Unit Tests backend và frontend syntax passed 100%.
+  * Đã push lên GitHub `origin master` (commit `3ddfe4e`) và deploy lên VPS Production `https://logistics.bim.info.vn`.
+  * Kiểm thử thị giác thực tế trên VPS bằng Playwright thành công tuyệt đối (Artifacts #195, #196, #197).
+
 ## [v4.0.2] - 2026-10-22 (Rà Soát Giả Lập Vai Trò 5 Người Dùng, Khắc Phục Màn Hình Trắng Báo Cáo & Cơ Cấu Ma Trận Phân Quyền CRUD)
 
 ### 1. Khắc Phục Triệt Để Lỗi Màn Hình Trắng Báo Cáo & Toast Kế Toán:
