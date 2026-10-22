@@ -6,6 +6,25 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.2] - 2026-10-22 (Chuẩn Hóa Thẻ KPI Điều Vận Đồng Bộ & Nâng Cấp Nút Chọn Kỳ Chuẩn SaaS)
+
+### 1. Tái Cấu Trúc Toàn Diện Thẻ KPI Điều Vận & Hải Quan (Đồng bộ theo Hình 2):
+- **Bố cục thẻ KPI (`view_dispatch.html` & `view_customs.html`):**
+  * Áp dụng đường viền màu định danh bên trái (`border-l-4`): Indigo (Tổng chuyến), Teal (Đang chạy), Amber (Chờ duyệt chi phí), Rose (Cảnh báo cắt máng).
+  * Hàng trên cùng: Tiêu đề in hoa (`uppercase tracking-wider font-heading`) kết hợp huy hiệu trạng thái/loại hình (`pill badge` có icon) tại góc phải.
+  * Số liệu trung tâm: Kiểu chữ lớn `text-3xl font-black tabular-nums` rõ ràng, uy lực.
+  * Hàng ghi chú dưới: Cỡ chữ nhỏ kèm icon tương ứng (`Kỳ điều độ hiện tại`, `Xe đang trên lộ trình`, `Khoản kê cần xác nhận`, `Chuyến cần ưu tiên hạ`).
+  * Loại bỏ hoàn toàn khối icon hộp vuông `w-11 h-11` cũ ở bên phải, tạo bố cục rộng rãi, sang trọng đồng nhất 100% với màn hình Sale & Booking.
+
+### 2. Chuẩn Hóa Nút Chọn Kỳ (Period Selector) Thống Nhất Giữa Các Phân Hệ:
+- **Chuẩn hóa giao diện bộ chọn kỳ:**
+  * Tích hợp icon lịch `ph-bold ph-calendar-check text-teal-600` bên trái và mũi tên caret `ph ph-caret-down text-slate-400` bên phải.
+  * Chuẩn hóa kích thước, độ bo góc (`rounded-xl`), font chữ (`text-xs font-bold font-heading`), đổ bóng nhẹ `shadow-2xs` và hiệu ứng hover viền `hover:border-teal-500`.
+  * Đồng bộ định dạng tên tùy chọn trên tất cả màn hình: `Kỳ: Hôm Nay`, `Kỳ: 10 Ngày Qua`, `Kỳ: Tháng Này`, `Kỳ: Quý Này`, `Kỳ: Năm Nay`, `Kỳ: Tất Cả`.
+  * Áp dụng đồng loạt trên: **Điều Vận (`view_dispatch.html`)**, **Kinh Doanh - Báo Giá & Booking (`view_sales.html`)**, **Dịch Vụ Hải Quan (`view_customs.html`)**, và **Sổ Quỹ Tiền Mặt (`view_accounting.html`)**.
+
+---
+
 ## [v4.1.1] - 2026-10-22 (Đồng Bộ Quản Lý Công Việc & Bộ Lọc 4 Chiều: Tất Cả | Đã Giao | Được Giao | Liên Quan)
 
 ### 1. Đồng Bộ Hóa Nhãn Điều Hướng Widget Quản Lý Công Việc (`view_dashboard.html`):

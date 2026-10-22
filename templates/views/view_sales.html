@@ -121,17 +121,21 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2 flex-wrap gap-1.5">
-                <!-- Dropdown Bộ chọn Kỳ Báo Giá -->
-                <select id="quote-filter-period" onchange="loadSalesData()" 
-                    class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 shadow-2xs cursor-pointer"
-                    title="Chọn kỳ hiển thị Báo giá & Tuyến cước">
-                    <option value="this_month">Kỳ: Tháng Này</option>
-                    <option value="today">Kỳ: Hôm Nay</option>
-                    <option value="10_days">Kỳ: 10 Ngày Qua</option>
-                    <option value="this_quarter">Kỳ: Quý Này</option>
-                    <option value="this_year">Kỳ: Năm Nay</option>
-                    <option value="all">Kỳ: Tất Cả</option>
-                </select>
+                <!-- Dropdown Bộ chọn Kỳ Báo Giá (Chuẩn đẹp SaaS) -->
+                <div class="relative inline-flex items-center shrink-0">
+                    <i class="ph-bold ph-calendar-check absolute left-2.5 text-teal-600 text-sm pointer-events-none"></i>
+                    <select id="quote-filter-period" onchange="loadSalesData()" 
+                        class="pl-8 pr-7 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all"
+                        title="Chọn kỳ hiển thị Báo giá & Tuyến cước">
+                        <option value="today">Kỳ: Hôm Nay</option>
+                        <option value="10_days">Kỳ: 10 Ngày Qua</option>
+                        <option value="this_month" selected>Kỳ: Tháng Này</option>
+                        <option value="this_quarter">Kỳ: Quý Này</option>
+                        <option value="this_year">Kỳ: Năm Nay</option>
+                        <option value="all">Kỳ: Tất Cả</option>
+                    </select>
+                    <i class="ph ph-caret-down absolute right-2 text-slate-400 text-xs pointer-events-none"></i>
+                </div>
                 <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full font-heading flex items-center gap-1">
                     <i class="ph-bold ph-user-circle"></i> Sales / NVKD
                 </span>
@@ -351,17 +355,21 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2 flex-wrap gap-1.5">
-                <!-- Dropdown Bộ chọn Kỳ Booking -->
-                <select id="booking-filter-period" onchange="loadSalesData()" 
-                    class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 shadow-2xs cursor-pointer"
-                    title="Chọn kỳ hiển thị Đơn hàng / Booking">
-                    <option value="this_month">Kỳ: Tháng Này</option>
-                    <option value="today">Kỳ: Hôm Nay</option>
-                    <option value="10_days">Kỳ: 10 Ngày Qua</option>
-                    <option value="this_quarter">Kỳ: Quý Này</option>
-                    <option value="this_year">Kỳ: Năm Nay</option>
-                    <option value="all">Kỳ: Tất Cả</option>
-                </select>
+                <!-- Dropdown Bộ chọn Kỳ Booking (Chuẩn đẹp SaaS) -->
+                <div class="relative inline-flex items-center shrink-0">
+                    <i class="ph-bold ph-calendar-check absolute left-2.5 text-teal-600 text-sm pointer-events-none"></i>
+                    <select id="booking-filter-period" onchange="loadSalesData()" 
+                        class="pl-8 pr-7 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all"
+                        title="Chọn kỳ hiển thị Đơn hàng / Booking">
+                        <option value="today">Kỳ: Hôm Nay</option>
+                        <option value="10_days">Kỳ: 10 Ngày Qua</option>
+                        <option value="this_month" selected>Kỳ: Tháng Này</option>
+                        <option value="this_quarter">Kỳ: Quý Này</option>
+                        <option value="this_year">Kỳ: Năm Nay</option>
+                        <option value="all">Kỳ: Tất Cả</option>
+                    </select>
+                    <i class="ph ph-caret-down absolute right-2 text-slate-400 text-xs pointer-events-none"></i>
+                </div>
                 <span class="text-xs font-bold text-teal-800 bg-teal-100 px-3 py-1 rounded-full border border-teal-200 font-heading flex items-center gap-1">
                     <i class="ph-bold ph-headset"></i> Sale Admin / CS
                 </span>

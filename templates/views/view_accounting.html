@@ -262,26 +262,19 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 pt-1 text-xs">
 
-                    <div>
-
+                    <div class="relative inline-flex items-center w-full shrink-0">
+                        <i class="ph-bold ph-calendar-check absolute left-2.5 text-teal-600 text-sm pointer-events-none"></i>
                         <select id="cash-filter-period" onchange="loadCashBookData()"
-
-                            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500">
-
-                            <option value="this_month">Kỳ: Tháng Này</option>
-
+                            class="w-full pl-8 pr-7 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all"
+                            title="Chọn kỳ sổ quỹ tiền mặt">
                             <option value="today">Kỳ: Hôm Nay</option>
-
                             <option value="10_days">Kỳ: 10 Ngày Qua</option>
-
+                            <option value="this_month" selected>Kỳ: Tháng Này</option>
                             <option value="this_quarter">Kỳ: Quý Này</option>
-
                             <option value="this_year">Kỳ: Năm Nay</option>
-
-                            <option value="all">Kỳ: Tất Cả Thời Gian</option>
-
+                            <option value="all">Kỳ: Tất Cả</option>
                         </select>
-
+                        <i class="ph ph-caret-down absolute right-2 text-slate-400 text-xs pointer-events-none"></i>
                     </div>
 
                     <div>

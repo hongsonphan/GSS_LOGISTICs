@@ -2,54 +2,62 @@
 <div id="view-hai-quan" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
 
 
-    <!-- 4 KPI Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    <!-- 4 KPI Cards (Thiết kế đồng bộ chuẩn thẻ như Hình 2) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-5">
         <!-- Tổng Tờ Khai -->
-        <div class="bg-white p-4 rounded-2xl border-l-4 border-l-teal-600 shadow-2xs border border-slate-200 flex items-center justify-between">
-            <div>
-                <p class="text-[12px] font-bold uppercase tracking-wider text-slate-500">Tổng Số Tờ Khai</p>
-                <p id="customs-kpi-total" class="text-2xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1">0</p>
-                <p id="customs-kpi-rate" class="text-[11px] font-bold text-teal-600 mt-0.5">Tỷ lệ thông quan: 0%</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Tổng Số Tờ Khai</span>
+                <span class="text-xs font-black text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                    <i class="ph-bold ph-files"></i> VNACCS
+                </span>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-teal-50 flex items-center justify-center text-teal-700">
-                <i class="ph-bold ph-files text-xl"></i>
-            </div>
+            <p id="customs-kpi-total" class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1">0</p>
+            <p id="customs-kpi-rate" class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
+                <i class="ph-bold ph-check-circle text-teal-600 text-xs"></i> Tỷ lệ thông quan: 0%
+            </p>
         </div>
 
         <!-- Luồng Xanh (1) -->
-        <div class="bg-white p-4 rounded-2xl border-l-4 border-l-emerald-500 shadow-2xs border border-slate-200 flex items-center justify-between">
-            <div>
-                <p class="text-[12px] font-bold uppercase tracking-wider text-slate-500">Luồng Xanh (Tự Động)</p>
-                <p id="customs-kpi-green" class="text-2xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1">0</p>
-                <p class="text-[11px] font-medium text-emerald-700 mt-0.5">Thông quan tức thì</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-500 hover:shadow-sm transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Luồng Xanh (Tự Động)</span>
+                <span class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                    <i class="ph-bold ph-check"></i> Luồng 1
+                </span>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <i class="ph-bold ph-check-circle text-xl"></i>
-            </div>
+            <p id="customs-kpi-green" class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1">0</p>
+            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
+                <i class="ph-bold ph-check-circle text-emerald-600 text-xs"></i> Thông quan tức thì
+            </p>
         </div>
 
         <!-- Luồng Vàng (2) -->
-        <div class="bg-white p-4 rounded-2xl border-l-4 border-l-amber-500 shadow-2xs border border-slate-200 flex items-center justify-between">
-            <div>
-                <p class="text-[12px] font-bold uppercase tracking-wider text-slate-500">Luồng Vàng (Xét Hồ Sơ)</p>
-                <p id="customs-kpi-yellow" class="text-2xl font-black text-amber-600 tabular-nums font-heading tracking-tight mt-1">0</p>
-                <p class="text-[11px] font-medium text-amber-700 mt-0.5">Kiểm tra C/O, HĐ, B/L</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Luồng Vàng (Xét Hồ Sơ)</span>
+                <span class="text-xs font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                    <i class="ph-bold ph-file-text"></i> Luồng 2
+                </span>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-                <i class="ph-bold ph-warning-circle text-xl"></i>
-            </div>
+            <p id="customs-kpi-yellow" class="text-3xl font-black text-amber-600 tabular-nums font-heading tracking-tight mt-1">0</p>
+            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
+                <i class="ph-bold ph-warning-circle text-amber-600 text-xs"></i> Kiểm tra C/O, HĐ, B/L
+            </p>
         </div>
 
         <!-- Luồng Đỏ (3) -->
-        <div class="bg-white p-4 rounded-2xl border-l-4 border-l-rose-500 shadow-2xs border border-slate-200 flex items-center justify-between">
-            <div>
-                <p class="text-[12px] font-bold uppercase tracking-wider text-slate-500">Luồng Đỏ (Kiểm Hóa)</p>
-                <p id="customs-kpi-red" class="text-2xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1">0</p>
-                <p class="text-[11px] font-medium text-rose-700 mt-0.5">Soi chiếu / Mở cont kiểm tra</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Luồng Đỏ (Kiểm Hóa)</span>
+                <span class="text-xs font-black text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                    <i class="ph-bold ph-magnifying-glass"></i> Luồng 3
+                </span>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
-                <i class="ph-bold ph-magnifying-glass text-xl"></i>
-            </div>
+            <p id="customs-kpi-red" class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1">0</p>
+            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
+                <i class="ph-bold ph-siren text-rose-600 text-xs"></i> Soi chiếu / Mở cont kiểm tra
+            </p>
         </div>
     </div>
 
@@ -98,15 +106,21 @@
         </div>
 
         <div class="flex items-center space-x-2 flex-wrap gap-1.5">
-            <!-- Dropdown chọn kỳ hải quan -->
-            <select id="customs-filter-period" onchange="fetchCustomsDeclarations()" class="app-form-control text-xs w-auto font-medium shadow-2xs cursor-pointer">
-                <option value="this_month">Kỳ: Tháng Này</option>
-                <option value="today">Kỳ: Hôm Nay</option>
-                <option value="10_days">Kỳ: 10 Ngày Qua</option>
-                <option value="this_quarter">Kỳ: Quý Này</option>
-                <option value="this_year">Kỳ: Năm Nay</option>
-                <option value="all">Kỳ: Tất Cả</option>
-            </select>
+            <!-- Dropdown chọn kỳ hải quan (Chuẩn đẹp SaaS) -->
+            <div class="relative inline-flex items-center shrink-0">
+                <i class="ph-bold ph-calendar-check absolute left-2.5 text-teal-600 text-sm pointer-events-none"></i>
+                <select id="customs-filter-period" onchange="fetchCustomsDeclarations()" 
+                    class="pl-8 pr-7 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all"
+                    title="Chọn kỳ tờ khai hải quan">
+                    <option value="today">Kỳ: Hôm Nay</option>
+                    <option value="10_days">Kỳ: 10 Ngày Qua</option>
+                    <option value="this_month" selected>Kỳ: Tháng Này</option>
+                    <option value="this_quarter">Kỳ: Quý Này</option>
+                    <option value="this_year">Kỳ: Năm Nay</option>
+                    <option value="all">Kỳ: Tất Cả</option>
+                </select>
+                <i class="ph ph-caret-down absolute right-2 text-slate-400 text-xs pointer-events-none"></i>
+            </div>
             <!-- Nút Tùy Chỉnh Cột Hải Quan -->
             <button type="button" onclick="openColumnCustomizer('customs-declarations-table')" 
                 class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
