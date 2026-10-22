@@ -8,7 +8,7 @@
         <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                 <i class="ph-bold ph-chart-line-up text-indigo-600 text-sm"></i>
-                Tình Trạng Kinh Doanh & Hiệu Suất Tăng Trưởng (So Với Tuần / Tháng)
+                Tổng Hợp Chỉ Số Kinh Doanh & Kế Hoạch Vận Chuyển
             </h3>
             <div class="flex items-center gap-2">
                 <button onclick="loadSalesData()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Làm mới dữ liệu">
@@ -23,8 +23,8 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Kế Hoạch</span>
-                    <span id="sales-trend-revenue" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                        <i class="ph-bold ph-trend-up"></i> +14.8%
+                    <span id="sales-trend-revenue" class="text-xs font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-shield-check"></i> Hợp Đồng Đã Ký
                     </span>
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-revenue">429.500.000 đ</p>
@@ -37,8 +37,8 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Đơn Hàng Booking</span>
-                    <span id="sales-trend-bookings" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                        <i class="ph-bold ph-trend-up"></i> +33.3%
+                    <span id="sales-trend-bookings" class="text-xs font-bold text-teal-800 bg-teal-100/70 border border-teal-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-truck"></i> Tiếp Nhận
                     </span>
                 </div>
                 <p class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-bookings">8 Đơn hàng</p>
@@ -51,8 +51,8 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Sản Lượng Container</span>
-                    <span id="sales-trend-containers" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                        <i class="ph-bold ph-trend-up"></i> +25.0%
+                    <span id="sales-trend-containers" class="text-xs font-bold text-amber-800 bg-amber-100/70 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-package"></i> Kế Hoạch Cont
                     </span>
                 </div>
                 <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-containers">20 Cont</p>
@@ -65,8 +65,8 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Chốt Tuyến (Win Rate)</span>
-                    <span id="sales-trend-winrate" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                        <i class="ph-bold ph-trend-up"></i> +12.5%
+                    <span id="sales-trend-winrate" class="text-xs font-bold text-indigo-800 bg-indigo-100/70 border border-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-handshake"></i> Tỷ Lệ Ký HĐ
                     </span>
                 </div>
                 <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-winrate">50.0%</p>

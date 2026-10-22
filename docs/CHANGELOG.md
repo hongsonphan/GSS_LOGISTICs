@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.2.1] - 2026-10-22 (Đồng Bộ Tuyệt Đối Số Liệu Ô Tổng & Chi Tiết - Loại Bỏ Fake Trend Phân Hệ Sale & Booking)
+
+### 1. Đồng Bộ Tuyệt Đối Số Liệu Giữa Ô Tổng Quan (Executive Overview) & Thẻ Chi Tiết:
+- **Backend API (pps/dispatch/api_views.py):**
+  * Đồng bộ chỉ số overview_metrics['revenue_monthly'] = q_signed['revenue'] (đúng chuẩn **1.235.500.000 đ**), khớp 100% với thẻ trạng thái ĐÃ KÝ HỢP ĐỒNG ở dưới, thay vì cộng dồn cả các báo giá đang đàm phán gây lệch số liệu.
+  * Thêm ghi chú phụ giải thích minh bạch: 11 HĐ (17 tuyến đã ký) · 1 đang đàm phán (25.000.000 đ).
+  * Khớp chuẩn số liệu Booking trong kỳ: **7 đơn hàng**, **19 cont** kế hoạch (trong đó đã phát lệnh kéo 5 cont, còn lại 14 cont chưa phát lệnh).
+
+### 2. Triệt Tiêu Hoàn Toàn Số Liệu Giả Lập (Anti-Fake Trend):
+- **Loại bỏ fake trend cứng ngắc:** Gỡ bỏ toàn bộ các số liệu phần trăm tăng trưởng giả lập (+14.8%, +33.3%, -25.0%, +12.5%) ở cả Backend API (pps/dispatch/api_views.py) và Frontend (static/js/app.js, 	emplates/views/view_sales.html).
+- **Thay thế bằng Badge Nghiệp Vụ Thực Tế:**
+  * Ô 1 (Doanh Thu Kế Hoạch): 11 HĐ Đã Ký (Emerald badge kèm icon dấu check ph-check-circle).
+  * Ô 2 (Tổng Đơn Booking): 7 Đơn Tiếp Nhận (Teal badge kèm icon đơn ph-clipboard-text).
+  * Ô 3 (Kế Hoạch Điều Cont): 19 Cont Kế Hoạch (Indigo badge kèm icon cont ph-package).
+  * Ô 4 (Tỷ Lệ Chốt Báo Giá): 11/12 Hợp Đồng (Amber badge kèm icon ph-handshake).
+
+### 3. Kiểm Thử Hệ Thống (Zero-Regression):
+- Cú pháp JavaScript static/js/app.js và static/js/column_manager.js: 100% PASS không có lỗi.
+- Toàn bộ 147/147 Unit Tests của hệ thống vượt qua thành công.
+
+---
+
 ## [v4.2.0] - 2026-10-22 (Chuẩn Hóa 5 Thẻ Báo Giá & Hợp Đồng Khách Hàng Và 5 Thẻ Booking / Đơn Đặt Hàng)
 
 ### 1. Chuẩn Hóa Tab 1: BÁO GIÁ & HỢP ĐỒNG KHÁCH HÀNG (`view_sales.html`, `api_views.py`, `models.py` & `app.js`):

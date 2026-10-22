@@ -14856,28 +14856,28 @@ async function loadSalesData() {
             const revEl = document.getElementById('sales-overview-revenue');
             if (revEl) revEl.innerText = new Intl.NumberFormat('vi-VN').format(ov.revenue_monthly) + ' đ';
             const revTrendEl = document.getElementById('sales-trend-revenue');
-            if (revTrendEl) revTrendEl.innerHTML = `<i class="ph-bold ph-trend-up"></i> ${ov.revenue_trend}`;
+            if (revTrendEl) revTrendEl.innerHTML = `<i class="ph-bold ph-shield-check"></i> ${ov.revenue_trend}`;
             const revNoteEl = document.getElementById('sales-note-revenue');
             if (revNoteEl) revNoteEl.innerHTML = `<i class="ph-bold ph-check-circle text-emerald-600 text-xs"></i> ${ov.revenue_note}`;
 
             const bkEl = document.getElementById('sales-overview-bookings');
             if (bkEl) bkEl.innerText = `${new Intl.NumberFormat('vi-VN').format(ov.total_bookings || 0)} Đơn hàng`;
             const bkTrendEl = document.getElementById('sales-trend-bookings');
-            if (bkTrendEl) bkTrendEl.innerHTML = `<i class="ph-bold ph-trend-up"></i> ${ov.booking_trend}`;
+            if (bkTrendEl) bkTrendEl.innerHTML = `<i class="ph-bold ph-truck"></i> ${ov.booking_trend}`;
             const bkNoteEl = document.getElementById('sales-note-bookings');
             if (bkNoteEl) bkNoteEl.innerHTML = `<i class="ph-bold ph-truck text-teal-600 text-xs"></i> ${ov.booking_note}`;
 
             const contEl = document.getElementById('sales-overview-containers');
             if (contEl) contEl.innerText = `${new Intl.NumberFormat('vi-VN').format(ov.total_containers || 0)} Cont`;
             const contTrendEl = document.getElementById('sales-trend-containers');
-            if (contTrendEl) contTrendEl.innerHTML = `<i class="ph-bold ph-trend-up"></i> ${ov.container_trend}`;
+            if (contTrendEl) contTrendEl.innerHTML = `<i class="ph-bold ph-package"></i> ${ov.container_trend}`;
             const contNoteEl = document.getElementById('sales-note-containers');
             if (contNoteEl) contNoteEl.innerHTML = `<i class="ph-bold ph-package text-amber-600 text-xs"></i> ${ov.container_note}`;
 
             const winEl = document.getElementById('sales-overview-winrate');
             if (winEl) winEl.innerText = `${ov.win_rate}%`;
             const winTrendEl = document.getElementById('sales-trend-winrate');
-            if (winTrendEl) winTrendEl.innerHTML = `<i class="ph-bold ph-trend-up"></i> ${ov.win_rate_trend}`;
+            if (winTrendEl) winTrendEl.innerHTML = `<i class="ph-bold ph-handshake"></i> ${ov.win_rate_trend}`;
             const winNoteEl = document.getElementById('sales-note-winrate');
             if (winNoteEl) winNoteEl.innerHTML = `<i class="ph-bold ph-chats-circle text-indigo-600 text-xs"></i> ${ov.win_rate_note}`;
         }
@@ -14909,7 +14909,7 @@ async function loadSalesData() {
                 const sRev = document.getElementById('stat-quote-signed-rev');
                 if (sRev) sRev.innerText = fmtMoney(qSigned.revenue);
                 const sRoutes = document.getElementById('stat-quote-signed-routes');
-                if (sRoutes) sRoutes.innerText = `${fmtNum(qSigned.routes)} Tuyến`;
+                if (sRoutes) sRoutes.innerText = `${fmtNum(qSigned.routes)} Tuyến (${fmtNum(qSigned.count)} HĐ)`;
 
                 // Thẻ 2: CHỜ KÝ HỢP ĐỒNG
                 const pMain = document.getElementById('stat-quote-pending-main');
@@ -14925,7 +14925,7 @@ async function loadSalesData() {
                 const nRev = document.getElementById('stat-quote-negotiating-rev');
                 if (nRev) nRev.innerText = fmtMoney(qNeg.revenue);
                 const nRoutes = document.getElementById('stat-quote-negotiating-routes');
-                if (nRoutes) nRoutes.innerText = `${fmtNum(qNeg.routes)} Tuyến`;
+                if (nRoutes) nRoutes.innerText = `${fmtNum(qNeg.routes)} Tuyến (${fmtNum(qNeg.count)} HĐ)`;
 
                 // Thẻ 4: ĐÃ GỬI BÁO GIÁ
                 const sentMain = document.getElementById('stat-quote-sent-main');

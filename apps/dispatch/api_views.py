@@ -4591,31 +4591,6 @@ class SalesAPIView(APIView):
         total_quotes = len(q_results)
         win_rate = round((approved_count / total_quotes * 100), 1) if total_quotes > 0 else 0
 
-        # Cụm chỉ số tăng trưởng kinh doanh so với tuần / tháng trước
-        overview_metrics = {
-            'revenue_monthly': total_monthly_expected_revenue,
-            'revenue_trend': '+14.8%',
-            'revenue_trend_direction': 'up',
-            'revenue_note': f"{approved_count} tuyến cước đã duyệt ký kết",
-
-            'total_bookings': bookings.count(),
-            'booking_trend': '+33.3%',
-            'booking_trend_direction': 'up',
-            'booking_note': f"{bookings.filter(status=BookingStatus.PENDING_DISPATCH).count()} Chờ điều · {bookings.filter(status=BookingStatus.PARTIALLY_DISPATCHED).count()} Đang chạy",
-
-            'total_containers': total_containers_sum,
-            'dispatched_containers': dispatched_containers_sum,
-            'remaining_containers': remaining_containers_sum,
-            'container_trend': '+25.0%',
-            'container_trend_direction': 'up',
-            'container_note': f"Đã kéo: {dispatched_containers_sum} · Còn lại: {remaining_containers_sum} cont",
-
-            'win_rate': win_rate,
-            'win_rate_trend': '+12.5%',
-            'win_rate_trend_direction': 'up',
-            'win_rate_note': f"{negotiating_count} đang đàm phán · {pending_approval_count} chờ duyệt"
-        }
-
         # 1. Thống kê 5 nhóm BÁO GIÁ & HỢP ĐỒNG KHÁCH HÀNG:
         # [ĐÃ KÝ HỢP ĐỒNG | CHỜ KÝ HỢP ĐỒNG | ĐANG ĐÀM PHÁN | ĐÃ GỬI BÁO GIÁ | TỪ CHỐI]
         def calc_quote_group(qs_group):
@@ -4628,6 +4603,32 @@ class SalesAPIView(APIView):
         q_negotiating = calc_quote_group(quotations.filter(status='NEGOTIATING'))
         q_sent = calc_quote_group(quotations.filter(status='SENT'))
         q_rejected = calc_quote_group(quotations.filter(status__in=['REJECTED', 'EXPIRED']))
+
+        # Cụm chỉ số tổng hợp kinh doanh thực tế (Khớp 100% với thẻ chi tiết, không fake số liệu)
+        overview_metrics = {
+            'revenue_monthly': q_signed['revenue'], # Doanh thu kế hoạch thực tế từ các HĐ đã ký
+            'revenue_total_pipeline': total_monthly_expected_revenue, # Tổng toàn phễu
+            'revenue_trend': f"{approved_count} HĐ Đã Ký",
+            'revenue_trend_direction': 'neutral',
+            'revenue_note': f"{approved_count} HĐ ({q_signed['routes']} tuyến đã ký)" + (f" · {q_negotiating['count']} đang đàm phán" if q_negotiating['count'] > 0 else ""),
+
+            'total_bookings': bookings.count(),
+            'booking_trend': f"{bookings.count()} Đơn Tiếp Nhận",
+            'booking_trend_direction': 'neutral',
+            'booking_note': f"{bookings.filter(status=BookingStatus.PENDING_DISPATCH).count()} Chờ điều · {bookings.filter(status=BookingStatus.PARTIALLY_DISPATCHED).count()} Đang chạy",
+
+            'total_containers': total_containers_sum,
+            'dispatched_containers': dispatched_containers_sum,
+            'remaining_containers': remaining_containers_sum,
+            'container_trend': f"{total_containers_sum} Cont Kế Hoạch",
+            'container_trend_direction': 'neutral',
+            'container_note': f"Đã kéo: {dispatched_containers_sum} · Còn lại: {remaining_containers_sum} cont",
+
+            'win_rate': win_rate,
+            'win_rate_trend': f"{approved_count}/{total_quotes} Hợp Đồng",
+            'win_rate_trend_direction': 'neutral',
+            'win_rate_note': f"{negotiating_count} đang đàm phán" + (f" · {pending_approval_count} chờ duyệt" if pending_approval_count > 0 else "")
+        }
 
         # 2. Thống kê 5 nhóm BOOKING / ĐƠN ĐẶT HÀNG:
         # [CHỜ ĐIỀU XE | ĐANG ĐIỀU XE | ĐƠN GẤP | CHẠY CẮT KÉO | ĐÃ HOÀN TẤT]
