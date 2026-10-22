@@ -2,6 +2,39 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.8] - 2026-10-23 (Loại Bỏ Triệt Để Badge, Icon Tay Lái & Chuẩn Hóa Nút Thao Tác Theo Chuẩn Nút In)
+
+### 1. Loại Bỏ Triệt Để Badge Trong Hiệu Suất Đội Xe, Gom Chuyến & Công Nợ:
+- **Báo cáo 1 (Hiệu suất đội xe):** Cột `BIÊN LN (%)` loại bỏ nền badge bo tròn (`bg-emerald-100`, `bg-teal-100`, `bg-amber-100`), chuyển sang text thuần đậm nét `text-xs font-bold ${marginColor} tabular-nums`.
+- **Báo cáo 11 (Tạm ứng & chi phí lái xe):**
+  * Cột Bác tài: Bỏ icon vô lăng tay lái (`ph-steering-wheel`).
+  * Cột Nguồn tạm ứng: Bỏ khung badge viền (`bg-slate-100`), chuyển sang text chuẩn.
+  * Cột Chi phí thực tế (BOT, Cảng, Cược): Bỏ các khung badge nền xám, chuyển sang text inline trực quan.
+  * Cột Chênh lệch: Bỏ `p-2 rounded` trên ô.
+- **Báo cáo 12 (Tồn đọng gom chuyến):**
+  * Cột Xe kéo: Bỏ khung badge `Xe Nhà` / `Xe Bạn`, chuyển sang text in hoa tinh tế.
+  * Cột Tài xế: Bỏ icon tay lái (`ph-steering-wheel`).
+- **Báo cáo 14 (Chậm quyết toán / Tồn đọng):**
+  * Cột Tài xế: Bỏ icon tay lái (`ph-steering-wheel`).
+- **Báo cáo 13 & Bảng kê SOA (Công nợ phải thu):**
+  * Bảng tổng hợp: Cột `ĐÃ CHỐT / CHỜ CHỐT` loại bỏ badge pill màu nền (`bg-emerald-50`, `bg-amber-50`), chuyển sang text thuần chuẩn: `${recCount} Chốt / ${pendCount} Chờ`.
+  * Bảng kê chi tiết từng chuyến (SOA Full Trips):
+    + Cột 1 `1. Hoàn Thành Chuyến`: Chuyển badge `✓ Xong Nội Bộ` sang text thuần in hoa `text-xs font-bold text-emerald-700`.
+    + Cột 2 & 3 `2. Quyết Toán Tài Xế / 3. Thầu Phụ`: Chuyển badge sang text thuần in hoa `text-xs font-bold`.
+    + Cột 4 `4. Quyết Toán Với Khách Hàng`: Chuyển badge sang text thuần in hoa `✓ ĐÃ TÍNH NỢ (AR)` / `⏳ CHƯA TÍNH NỢ`.
+- **Phân hệ Quyết toán gom chuyến (`renderSettlementTable`):**
+  * Cột Xe: Bỏ khung badge nền xanh trên biển số xe, chuyển sang text font-mono bold.
+
+### 2. Chuẩn Hóa Nút Thao Tác Giống Chuẩn Nút In:
+- **Nút "Chốt Quyết Toán" / "Mở lại" (Bảng kê chi tiết công nợ):** Chuyển từ nút màu đặc khối (`bg-emerald-600 text-white`) sang nút viền chuẩn (outline button) đồng bộ như nút In:
+  * Trạng thái Chờ: `bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold flex items-center gap-1` kèm icon `ph-check-circle`.
+  * Trạng thái Đã chốt (Mở lại): `bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold flex items-center gap-1` kèm icon `ph-arrow-counter-clockwise`.
+- **Nút "Chi tiết" (Lưới gom chuyến):** Chuẩn hóa thành nút viền `bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1` kèm icon `ph-eye`.
+
+### 3. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/modules/reports.js`, `node -c static/js/column_manager.js`.
+- Toàn bộ bộ kiểm thử tự động Django `python manage.py test --keepdb` đạt **147/147 tests PASSED**.
+
 ## [v4.3.7] - 2026-10-22 (Rà Soát Toàn Bộ Bảng Báo Cáo & Các Phân Hệ: Loại Bỏ Hết Badge Trạng Thái Sang Text Thuần)
 
 ### 1. Chuẩn Hóa Toàn Diện Hệ Thống Báo Cáo (Reports 1 ➔ 14):

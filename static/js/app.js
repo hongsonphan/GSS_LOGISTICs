@@ -18139,7 +18139,7 @@ function renderSettlementTable(data) {
                     </td>
                     <td class="py-2.5 px-3">
                         <div class="font-bold text-slate-800">${escapeHtml(t.driver_name)}</div>
-                        <div class="text-[11px] font-mono font-bold text-teal-800 bg-teal-50 px-1.5 py-0.2 rounded inline-block border border-teal-200">${escapeHtml(t.license_plate)}</div>
+                        <div class="text-[11px] font-mono font-bold text-teal-800">${escapeHtml(t.license_plate)}</div>
                     </td>
                     <td class="py-2.5 px-3 font-mono text-xs">
                         <div class="font-bold text-slate-800">${escapeHtml(t.container_number)}</div>
@@ -26479,8 +26479,8 @@ function applyReport1Filters() {
             : `<span class="text-xs font-semibold text-slate-600 uppercase">Xe Bạn / 3PL</span>`;
         
         const profitColor = item.profit >= 0 ? 'text-emerald-700' : 'text-rose-600';
-        const marginColor = item.margin_percent >= 20 ? 'bg-emerald-100 text-emerald-800' :
-                            (item.margin_percent >= 10 ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800');
+        const marginColor = item.margin_percent >= 20 ? 'text-emerald-700' :
+                            (item.margin_percent >= 10 ? 'text-teal-700' : 'text-amber-700');
 
         const revDisplay = formatMoneyVND(item.revenue);
         const expDisplay = formatMoneyVND(item.expense);
@@ -26499,7 +26499,7 @@ function applyReport1Filters() {
                 <td class="text-right font-medium text-rose-600 text-xs tabular-nums">${expDisplay}</td>
                 <td class="text-right font-black ${profitColor} text-xs tabular-nums">${profitDisplay}</td>
                 <td class="text-center">
-                    <span class="px-2 py-0.5 rounded-md text-[11px] font-black ${marginColor} tabular-nums">
+                    <span class="text-xs font-bold ${marginColor} tabular-nums">
                         ${marginDisplay}
                     </span>
                 </td>
@@ -27793,24 +27793,23 @@ function applyReport11Filters() {
                 <td class="font-bold text-slate-800 text-xs">${escapeHtml(item.customer_name)}</td>
                 <td class="text-xs text-slate-600 max-w-[180px] truncate" title="${escapeHtml(item.route)}">${escapeHtml(item.route)}</td>
                 <td class="text-xs">
-                    <div class="font-bold text-slate-900 flex items-center gap-1">
-                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
+                    <div class="font-bold text-slate-900">
                         <span>${escapeHtml(item.driver_name)}</span>
                     </div>
                     <div class="text-[10px] font-mono font-bold text-teal-800 mt-0.5">${escapeHtml(item.license_plate)}</div>
                 </td>
                 <td class="text-center text-xs font-mono text-slate-600">${escapeHtml(item.advance_date)}</td>
                 <td class="text-xs text-slate-600">
-                    <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">${escapeHtml(item.advance_source)}</span>
+                    <span class="text-xs text-slate-700 font-medium">${escapeHtml(item.advance_source)}</span>
                 </td>
                 <td class="text-right text-xs font-bold text-indigo-800 tabular-nums">${formatMoneyVND(item.advance_amount)}</td>
                 <td class="text-right text-xs font-bold text-rose-700 tabular-nums">${formatMoneyVND(item.actual_expenses)}</td>
                 <td class="text-right text-[11px] text-slate-600 tabular-nums">
-                    <span title="Vé cầu đường BOT" class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-medium">BOT: ${formatMoneyVND(item.bot_expense)}</span>
-                    <span title="Nâng / hạ bãi cảng" class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-medium ml-1">Cảng: ${formatMoneyVND(item.port_lift_expense)}</span>
-                    ${item.deposit_expense > 0 ? `<span title="Cược vỏ cont" class="px-1.5 py-0.5 bg-amber-50 rounded text-amber-800 font-medium ml-1">Cược: ${formatMoneyVND(item.deposit_expense)}</span>` : ''}
+                    <span title="Vé cầu đường BOT" class="text-slate-700 font-medium">BOT: ${formatMoneyVND(item.bot_expense)}</span>
+                    <span title="Nâng / hạ bãi cảng" class="text-slate-700 font-medium ml-1">· Cảng: ${formatMoneyVND(item.port_lift_expense)}</span>
+                    ${item.deposit_expense > 0 ? `<span title="Cược vỏ cont" class="text-amber-800 font-medium ml-1">· Cược: ${formatMoneyVND(item.deposit_expense)}</span>` : ''}
                 </td>
-                <td class="text-right text-xs tabular-nums ${diffColor} p-2 rounded">${diffText}</td>
+                <td class="text-right text-xs font-bold tabular-nums ${diffColor}">${diffText}</td>
                 <td class="text-center text-xs">${actionBadge}</td>
                 <td class="text-center text-xs">${statusBadge}</td>
                 <td class="text-center text-xs font-bold tabular-nums">
@@ -27953,8 +27952,8 @@ function applyReport12Filters() {
             : '<span class="text-xs font-bold text-rose-700 uppercase inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i> Thiếu POD</span>';
 
         const ownershipBadge = item.vehicle_ownership === 'OWNED'
-            ? '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-50 text-teal-800">Xe Nhà</span>'
-            : '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-800">Xe Bạn (3PL)</span>';
+            ? '<span class="text-[10px] font-bold text-teal-700 uppercase">Xe Nhà</span>'
+            : '<span class="text-[10px] font-bold text-slate-600 uppercase">Xe Bạn</span>';
 
         return `
             <tr class="hover:bg-slate-50 transition-colors ${item.is_carry_over ? 'bg-amber-50/20' : ''}">
@@ -27979,8 +27978,7 @@ function applyReport12Filters() {
                     ${item.dropoff_vehicle_plate ? `<div class="text-[10px] font-mono text-slate-500">Hạ: ${escapeHtml(item.dropoff_vehicle_plate)}</div>` : ''}
                 </td>
                 <td class="text-xs">
-                    <div class="font-bold text-slate-900 flex items-center gap-1">
-                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
+                    <div class="font-bold text-slate-900">
                         <span>${escapeHtml(item.driver_name)}</span>
                     </div>
                     ${item.dropoff_driver_name ? `<div class="text-[10px] text-slate-500">TX Hạ: ${escapeHtml(item.dropoff_driver_name)}</div>` : ''}
@@ -28140,9 +28138,9 @@ function applyReport13Filters() {
                 </td>
                 <td class="text-center font-bold text-xs tabular-nums text-slate-800">${item.trips_count}</td>
                 <td class="text-center text-xs tabular-nums">
-                    <span class="px-2 py-0.5 rounded font-bold text-[11px] ${recCount > 0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-slate-400'}" title="Đã chốt đối soát SOA">${recCount} Chốt</span>
-                    <span class="text-slate-400">/</span>
-                    <span class="px-2 py-0.5 rounded font-bold text-[11px] ${pendCount > 0 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'text-slate-400'}" title="Chờ đối soát">${pendCount} Chờ</span>
+                    <span class="font-bold text-xs ${recCount > 0 ? 'text-emerald-700' : 'text-slate-400'}" title="Đã chốt đối soát SOA">${recCount} Chốt</span>
+                    <span class="text-slate-400"> / </span>
+                    <span class="font-bold text-xs ${pendCount > 0 ? 'text-amber-700' : 'text-slate-400'}" title="Chờ đối soát">${pendCount} Chờ</span>
                 </td>
                 <td class="text-right text-xs text-slate-800 tabular-nums">${freightDisp}</td>
                 <td class="text-right text-xs text-slate-600 tabular-nums">${reimDisp}</td>
@@ -28293,7 +28291,7 @@ function renderSoaTripRows() {
                 
                 <!-- 1. Hoàn Thành Chuyến (Xong nội bộ) -->
                 <td class="text-center py-3">
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    <span class="text-xs font-bold text-emerald-700 uppercase">
                         ✓ Xong Nội Bộ
                     </span>
                     <span class="block text-[10px] mt-0.5 font-bold ${t.has_pod ? 'text-emerald-700' : 'text-rose-600'}">
@@ -28304,7 +28302,7 @@ function renderSoaTripRows() {
                 <!-- 2. Quyết Toán Tài Xế (Xe nhà) -->
                 <td class="text-center py-3">
                     ${isSub ? '<span class="text-slate-400 italic text-[11px]">— Xe thầu phụ</span>' : `
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${isDrvSettled ? 'bg-teal-100 text-teal-800 border border-teal-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}">
+                        <span class="text-xs font-bold uppercase ${isDrvSettled ? 'text-teal-700' : 'text-amber-700'}">
                             ${isDrvSettled ? '✓ Đã Quyết Toán' : '⏳ Chờ Quyết Toán'}
                         </span>
                     `}
@@ -28313,7 +28311,7 @@ function renderSoaTripRows() {
                 <!-- 3. Quyết Toán Thầu Phụ (Xe bạn) -->
                 <td class="text-center py-3">
                     ${!isSub ? '<span class="text-slate-400 italic text-[11px]">— Xe nhà</span>' : `
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${isSubSettled ? 'bg-teal-100 text-teal-800 border border-teal-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}">
+                        <span class="text-xs font-bold uppercase ${isSubSettled ? 'text-teal-700' : 'text-amber-700'}">
                             ${isSubSettled ? '✓ Đã Quyết Toán' : '⏳ Chờ Quyết Toán'}
                         </span>
                     `}
@@ -28321,7 +28319,7 @@ function renderSoaTripRows() {
 
                 <!-- 4. Quyết Toán Với Khách Hàng (Mới tính nợ) -->
                 <td class="text-center py-3">
-                    <span class="px-2.5 py-1 rounded-md text-[10px] font-black ${isCustSettled ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs' : 'bg-amber-50 text-amber-800 border border-amber-200'}">
+                    <span class="text-xs font-bold uppercase ${isCustSettled ? 'text-emerald-700' : 'text-amber-700'}">
                         ${isCustSettled ? '✓ ĐÃ TÍNH NỢ (AR)' : '⏳ CHƯA TÍNH NỢ'}
                     </span>
                 </td>
@@ -28338,10 +28336,13 @@ function renderSoaTripRows() {
 
                 <!-- Thao tác -->
                 <td class="text-center py-3">
-                    <button type="button" onclick="promptSettleTrip(${t.trip_id}, ${isCustSettled})" 
-                        class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shadow-2xs ${isCustSettled ? 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}">
-                        ${isCustSettled ? 'Mở lại' : 'Chốt Quyết Toán'}
-                    </button>
+                    <div class="flex items-center justify-center">
+                        <button type="button" onclick="promptSettleTrip(${t.trip_id}, ${isCustSettled})" 
+                            class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all border flex items-center gap-1 shadow-2xs ${isCustSettled ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'}" title="${isCustSettled ? 'Mở lại trạng thái quyết toán' : 'Chốt quyết toán công nợ chuyến này'}">
+                            <i class="ph-bold ${isCustSettled ? 'ph-arrow-counter-clockwise' : 'ph-check-circle'} text-xs"></i>
+                            <span>${isCustSettled ? 'Mở lại' : 'Chốt Quyết Toán'}</span>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -28766,8 +28767,7 @@ function applyReport14Filters() {
                     <div class="text-[10px] text-slate-500">${escapeHtml(item.ownership_label)}</div>
                 </td>
                 <td class="text-xs font-bold text-slate-800">
-                    <div class="flex items-center gap-1">
-                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
+                    <div>
                         <span>${escapeHtml(item.driver_name)}</span>
                     </div>
                 </td>

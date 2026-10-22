@@ -428,8 +428,8 @@ function applyReport1Filters() {
             : `<span class="text-xs font-semibold text-slate-600 uppercase">Xe Bạn / 3PL</span>`;
         
         const profitColor = item.profit >= 0 ? 'text-emerald-700' : 'text-rose-600';
-        const marginColor = item.margin_percent >= 20 ? 'bg-emerald-100 text-emerald-800' :
-                            (item.margin_percent >= 10 ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800');
+        const marginColor = item.margin_percent >= 20 ? 'text-emerald-700' :
+                            (item.margin_percent >= 10 ? 'text-teal-700' : 'text-amber-700');
 
         const revDisplay = canViewFinance ? formatMoneyVND(item.revenue) : '***';
         const expDisplay = canViewFinance ? formatMoneyVND(item.expense) : '***';
@@ -447,7 +447,7 @@ function applyReport1Filters() {
                 <td class="text-right font-medium text-rose-600 text-xs tabular-nums">${expDisplay}</td>
                 <td class="text-right font-black ${profitColor} text-xs tabular-nums">${profitDisplay}</td>
                 <td class="text-center">
-                    <span class="px-2 py-0.5 rounded-md text-[11px] font-black ${marginColor} tabular-nums">
+                    <span class="text-xs font-bold ${marginColor} tabular-nums">
                         ${marginDisplay}
                     </span>
                 </td>
@@ -1739,24 +1739,23 @@ function applyReport11Filters() {
                 <td class="font-bold text-slate-800 text-xs">${escapeHtml(item.customer_name)}</td>
                 <td class="text-xs text-slate-600 max-w-[180px] truncate" title="${escapeHtml(item.route)}">${escapeHtml(item.route)}</td>
                 <td class="text-xs">
-                    <div class="font-bold text-slate-900 flex items-center gap-1">
-                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
+                    <div class="font-bold text-slate-900">
                         <span>${escapeHtml(item.driver_name)}</span>
                     </div>
                     <div class="text-[10px] font-mono font-bold text-teal-800 mt-0.5">${escapeHtml(item.license_plate)}</div>
                 </td>
                 <td class="text-center text-xs font-mono text-slate-600">${escapeHtml(item.advance_date)}</td>
                 <td class="text-xs text-slate-600">
-                    <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">${escapeHtml(item.advance_source)}</span>
+                    <span class="text-xs text-slate-700 font-medium">${escapeHtml(item.advance_source)}</span>
                 </td>
                 <td class="text-right text-xs font-bold text-indigo-800 tabular-nums">${formatMoneyVND(item.advance_amount)}</td>
                 <td class="text-right text-xs font-bold text-rose-700 tabular-nums">${formatMoneyVND(item.actual_expenses)}</td>
                 <td class="text-right text-[11px] text-slate-600 tabular-nums">
-                    <span title="Vé cầu đường BOT" class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-medium">BOT: ${formatMoneyVND(item.bot_expense)}</span>
-                    <span title="Nâng / hạ bãi cảng" class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-medium ml-1">Cảng: ${formatMoneyVND(item.port_lift_expense)}</span>
-                    ${item.deposit_expense > 0 ? `<span title="Cược vỏ cont" class="px-1.5 py-0.5 bg-amber-50 rounded text-amber-800 font-medium ml-1">Cược: ${formatMoneyVND(item.deposit_expense)}</span>` : ''}
+                    <span title="Vé cầu đường BOT" class="text-slate-700 font-medium">BOT: ${formatMoneyVND(item.bot_expense)}</span>
+                    <span title="Nâng / hạ bãi cảng" class="text-slate-700 font-medium ml-1">· Cảng: ${formatMoneyVND(item.port_lift_expense)}</span>
+                    ${item.deposit_expense > 0 ? `<span title="Cược vỏ cont" class="text-amber-800 font-medium ml-1">· Cược: ${formatMoneyVND(item.deposit_expense)}</span>` : ''}
                 </td>
-                <td class="text-right text-xs tabular-nums ${diffColor} p-2 rounded">${diffText}</td>
+                <td class="text-right text-xs font-bold tabular-nums ${diffColor}">${diffText}</td>
                 <td class="text-center text-xs">${actionBadge}</td>
                 <td class="text-center text-xs">${statusBadge}</td>
                 <td class="text-center text-xs font-bold tabular-nums">
@@ -1902,8 +1901,8 @@ function applyReport12Filters() {
             : '<span class="text-xs font-bold text-rose-700 uppercase inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i> Thiếu POD</span>';
 
         const ownershipBadge = item.vehicle_ownership === 'OWNED'
-            ? '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-50 text-teal-800">Xe Nhà</span>'
-            : '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-800">Xe Bạn (3PL)</span>';
+            ? '<span class="text-[10px] font-bold text-teal-700 uppercase">Xe Nhà</span>'
+            : '<span class="text-[10px] font-bold text-slate-600 uppercase">Xe Bạn</span>';
 
         return `
             <tr class="hover:bg-slate-50 transition-colors ${item.is_carry_over ? 'bg-amber-50/20' : ''}">
@@ -1927,8 +1926,7 @@ function applyReport12Filters() {
                     ${item.dropoff_vehicle_plate ? `<div class="text-[10px] font-mono text-slate-500">Hạ: ${escapeHtml(item.dropoff_vehicle_plate)}</div>` : ''}
                 </td>
                 <td class="text-xs">
-                    <div class="font-bold text-slate-900 flex items-center gap-1">
-                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
+                    <div class="font-bold text-slate-900">
                         <span>${escapeHtml(item.driver_name)}</span>
                     </div>
                     ${item.dropoff_driver_name ? `<div class="text-[10px] text-slate-500">TX Hạ: ${escapeHtml(item.dropoff_driver_name)}</div>` : ''}
@@ -2482,8 +2480,7 @@ function applyReport14Filters() {
                     <div class="text-[10px] text-slate-500">${escapeHtml(item.ownership_label)}</div>
                 </td>
                 <td class="text-xs font-bold text-slate-800">
-                    <div class="flex items-center gap-1">
-                        <i class="ph-bold ph-steering-wheel text-slate-500"></i>
+                    <div>
                         <span>${escapeHtml(item.driver_name)}</span>
                     </div>
                 </td>
