@@ -2,62 +2,138 @@
 <div id="view-dieu-van" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
 
 
-    <!-- KPI Cards for Dispatch (Thiết kế đồng bộ chuẩn thẻ như Hình 2) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-        <!-- Metric 1: Tổng Chuyến (Tháng) -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Tổng chuyến (Tháng)</span>
-                <span id="dispatch-badge-total" class="text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <i class="ph-bold ph-truck"></i> FTL / LTL
-                </span>
+    <!-- BỘ 5 THẺ VẬN HÀNH CHIẾN LƯỢC TRANG ĐIỀU VẬN (TMS DISPATCH PIPELINE) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-6">
+        <!-- Thẻ 1: TỔNG KẾ HOẠCH ĐIỀU ĐỘ (Indigo) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">TỔNG ĐIỀU ĐỘ</span>
+                    <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-truck"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-total-trips">0</span> <span class="text-xs font-bold text-slate-400">chuyến</span>
+                </p>
+                <!-- Tương thích ngược -->
+                <span id="stat-total-trips" class="hidden">0</span>
             </div>
-            <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-total-trips">0</p>
-            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
-                <i class="ph-bold ph-calendar text-indigo-600 text-xs"></i> Kỳ điều độ hiện tại
-            </p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">KẾ HOẠCH:</span>
+                    <strong class="text-indigo-700 font-black font-heading text-[11.5px]" id="dispatch-plan-line1">-- Chuyến · -- Cont</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">ĐỘI XE:</span>
+                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="dispatch-plan-line2">-- Xe Nhà · -- Thầu Phụ</strong>
+                </div>
+            </div>
         </div>
 
-        <!-- Metric 2: Đang Chạy Hôm Nay -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Đang chạy hôm nay</span>
-                <span id="dispatch-badge-transit" class="text-xs font-black text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <i class="ph-bold ph-navigation-arrow"></i> Trên tuyến
-                </span>
+        <!-- Thẻ 2: CHỜ TÀI XẾ NHẬN LỆNH (Amber) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CHỜ NHẬN LỆNH</span>
+                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-clock-countdown"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-amber-800 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-pending-trips">0</span> <span class="text-xs font-bold text-amber-400">chuyến</span>
+                </p>
             </div>
-            <p class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1" id="stat-transit">0</p>
-            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
-                <i class="ph-bold ph-clock text-teal-600 text-xs"></i> Xe đang trên lộ trình
-            </p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">ĐÃ PHÁT LỆNH:</span>
+                    <strong class="text-slate-800 font-black font-heading text-[11.5px]" id="dispatch-pending-line1">-- Chuyến</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">CẢNH BÁO SLA:</span>
+                    <strong class="text-amber-700 font-black font-heading text-[11px]" id="dispatch-pending-line2">-- Quá hạn / Từ chối</strong>
+                </div>
+            </div>
         </div>
 
-        <!-- Metric 3: Chờ Duyệt Chi Phí -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Chờ duyệt chi phí</span>
-                <span id="dispatch-badge-pending-exp" class="text-xs font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <i class="ph-bold ph-receipt"></i> Cần duyệt
-                </span>
+        <!-- Thẻ 3: ĐANG LĂN BÁNH TRÊN ĐƯỜNG (Teal) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐANG TRÊN TUYẾN</span>
+                    <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-navigation-arrow"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-transit-trips">0</span> <span class="text-xs font-bold text-teal-400">chuyến</span>
+                </p>
+                <!-- Tương thích ngược -->
+                <span id="stat-transit" class="hidden">0</span>
             </div>
-            <p class="text-3xl font-black text-amber-800 tabular-nums font-heading tracking-tight mt-1" id="stat-pending-expenses">0</p>
-            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
-                <i class="ph-bold ph-warning-circle text-amber-600 text-xs"></i> Khoản kê cần xác nhận
-            </p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">ĐANG CHỞ HÀNG:</span>
+                    <strong class="text-teal-700 font-black font-heading text-[11.5px]" id="dispatch-transit-line1">-- Chuyến</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">CẮT KÉO / RỖNG:</span>
+                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="dispatch-transit-line2">-- Chuyến</strong>
+                </div>
+            </div>
         </div>
 
-        <!-- Metric 4: Cảnh Báo Cắt Máng -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Cảnh báo Cắt Máng</span>
-                <span id="dispatch-badge-cutoff" class="text-xs font-black text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <i class="ph-bold ph-siren"></i> Cắt máng
-                </span>
+        <!-- Thẻ 4: CẢNH BÁO RỦI RO (CẮT MÁNG / LƯU CA) (Rose) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CẢNH BÁO RỦI RO</span>
+                    <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-siren"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-rose-700 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-risk-trips">0</span> <span class="text-xs font-bold text-rose-400">cảnh báo</span>
+                </p>
+                <!-- Tương thích ngược -->
+                <span id="stat-cutoff-warning" class="hidden">0</span>
+                <span id="stat-pending-expenses" class="hidden">0</span>
             </div>
-            <p class="text-3xl font-black text-rose-700 tabular-nums font-heading tracking-tight mt-1" id="stat-cutoff-warning">0</p>
-            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
-                <i class="ph-bold ph-alarm text-rose-600 text-xs"></i> Chuyến cần ưu tiên hạ
-            </p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">GẦN CẮT MÁNG:</span>
+                    <strong class="text-rose-700 font-black font-heading text-[11.5px]" id="dispatch-risk-line1">-- Chuyến</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">HẠN RỖNG / KHO:</span>
+                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="dispatch-risk-line2">-- Chuyến</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thẻ 5: ĐÃ GIAO HÀNG & THU HỒI POD (Emerald) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐÃ GIAO & THU POD</span>
+                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-check-circle"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-delivered-trips">0</span> <span class="text-xs font-bold text-emerald-400">chuyến</span>
+                </p>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">ĐÃ CÓ POD:</span>
+                    <strong class="text-emerald-700 font-black font-heading text-[11.5px]" id="dispatch-delivered-line1">-- Chuyến</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">CHỜ THU HỒI:</span>
+                    <strong class="text-amber-600 font-black font-heading text-[11px]" id="dispatch-delivered-line2">-- Chuyến</strong>
+                </div>
+            </div>
         </div>
     </div>
 

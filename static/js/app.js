@@ -4207,13 +4207,68 @@ async function loadTripsData() {
         if (!res.ok) throw new Error('Lỗi tải danh sách chuyến');
         const data = await res.json();
 
-        // Cập nhật stats
-        const totalTripsEl = document.getElementById('stat-total-trips');
-        if (totalTripsEl) totalTripsEl.innerText = new Intl.NumberFormat('vi-VN').format(data.stats.total_trips_monthly || 0);
-        const transitEl = document.getElementById('stat-transit');
-        if (transitEl) transitEl.innerText = new Intl.NumberFormat('vi-VN').format(data.stats.transit_count || 0);
-        const pendExpEl = document.getElementById('stat-pending-expenses');
-        if (pendExpEl) pendExpEl.innerText = new Intl.NumberFormat('vi-VN').format(data.stats.pending_expenses_count || 0);
+        // Cập nhật 5 Thẻ Vận Hành Chiến Lược Trang Điều Vận (TMS Dispatch Pipeline)
+        const stats = data.stats || {};
+        const fmtNum = (n) => new Intl.NumberFormat('vi-VN').format(n || 0);
+
+        // Thẻ 1: Tổng kế hoạch điều độ
+        const plan = stats.card_plan || {};
+        const totalTripsVal = plan.total_trips !== undefined ? plan.total_trips : (stats.total_trips_monthly || 0);
+        const elTotalTrips = document.getElementById('dispatch-stat-total-trips') || document.getElementById('stat-total-trips');
+        if (elTotalTrips) elTotalTrips.innerText = fmtNum(totalTripsVal);
+        const elTotalTripsLegacy = document.getElementById('stat-total-trips');
+        if (elTotalTripsLegacy && elTotalTripsLegacy !== elTotalTrips) elTotalTripsLegacy.innerText = fmtNum(totalTripsVal);
+
+        const elPlanL1 = document.getElementById('dispatch-plan-line1');
+        if (elPlanL1) elPlanL1.innerText = plan.line_1 || `${fmtNum(totalTripsVal)} Chuyến · ${fmtNum(plan.total_containers || totalTripsVal)} Cont`;
+        const elPlanL2 = document.getElementById('dispatch-plan-line2');
+        if (elPlanL2) elPlanL2.innerText = plan.line_2 || `${fmtNum(plan.owned_vehicles || 0)} Xe Nhà · ${fmtNum(plan.subcontractor_vehicles || 0)} Thầu Phụ`;
+
+        // Thẻ 2: Chờ nhận lệnh & xuất bãi
+        const pending = stats.card_pending || {};
+        const elPendingTrips = document.getElementById('dispatch-stat-pending-trips');
+        if (elPendingTrips) elPendingTrips.innerText = fmtNum(pending.pending_count || 0);
+        const elPendingL1 = document.getElementById('dispatch-pending-line1');
+        if (elPendingL1) elPendingL1.innerText = pending.line_1 || `ĐÃ PHÁT LỆNH: ${fmtNum(pending.pending_count || 0)} Chuyến`;
+        const elPendingL2 = document.getElementById('dispatch-pending-line2');
+        if (elPendingL2) elPendingL2.innerText = pending.line_2 || `CẢNH BÁO SLA: ${fmtNum(pending.sla_warning_count || 0)} Quá hạn / Từ chối`;
+
+        // Thẻ 3: Đang lăn bánh trên đường
+        const transit = stats.card_transit || {};
+        const transitVal = transit.transit_count !== undefined ? transit.transit_count : (stats.transit_count || 0);
+        const elTransitTrips = document.getElementById('dispatch-stat-transit-trips') || document.getElementById('stat-transit');
+        if (elTransitTrips) elTransitTrips.innerText = fmtNum(transitVal);
+        const elTransitTripsLegacy = document.getElementById('stat-transit');
+        if (elTransitTripsLegacy && elTransitTripsLegacy !== elTransitTrips) elTransitTripsLegacy.innerText = fmtNum(transitVal);
+
+        const elTransitL1 = document.getElementById('dispatch-transit-line1');
+        if (elTransitL1) elTransitL1.innerText = transit.line_1 || `ĐANG CHỞ HÀNG: ${fmtNum(transit.carrying_cargo_count || transitVal)} Chuyến`;
+        const elTransitL2 = document.getElementById('dispatch-transit-line2');
+        if (elTransitL2) elTransitL2.innerText = transit.line_2 || `CẮT KÉO / RỖNG: ${fmtNum(transit.returning_or_split_count || 0)} Chuyến`;
+
+        // Thẻ 4: Cảnh báo rủi ro (Cắt máng / Lưu ca)
+        const risk = stats.card_risk || {};
+        const riskVal = risk.risk_count !== undefined ? risk.risk_count : (stats.cutoff_warning_count || 0);
+        const elRiskTrips = document.getElementById('dispatch-stat-risk-trips');
+        if (elRiskTrips) elRiskTrips.innerText = fmtNum(riskVal);
+        const elCutoffLegacy = document.getElementById('stat-cutoff-warning');
+        if (elCutoffLegacy) elCutoffLegacy.innerText = fmtNum(risk.cutoff_count || stats.cutoff_warning_count || 0);
+        const elPendExpLegacy = document.getElementById('stat-pending-expenses');
+        if (elPendExpLegacy) elPendExpLegacy.innerText = fmtNum(stats.pending_expenses_count || 0);
+
+        const elRiskL1 = document.getElementById('dispatch-risk-line1');
+        if (elRiskL1) elRiskL1.innerText = risk.line_1 || `GẦN CẮT MÁNG: ${fmtNum(risk.cutoff_count || 0)} Chuyến`;
+        const elRiskL2 = document.getElementById('dispatch-risk-line2');
+        if (elRiskL2) elRiskL2.innerText = risk.line_2 || `HẠN RỖNG / KHO: ${fmtNum(risk.detention_count || 0)} Chuyến`;
+
+        // Thẻ 5: Đã giao hàng & thu hồi POD
+        const delivered = stats.card_delivered || {};
+        const elDeliveredTrips = document.getElementById('dispatch-stat-delivered-trips');
+        if (elDeliveredTrips) elDeliveredTrips.innerText = fmtNum(delivered.delivered_count || 0);
+        const elDeliveredL1 = document.getElementById('dispatch-delivered-line1');
+        if (elDeliveredL1) elDeliveredL1.innerText = delivered.line_1 || `ĐÃ CÓ POD: ${fmtNum(delivered.pod_completed_count || 0)} Chuyến`;
+        const elDeliveredL2 = document.getElementById('dispatch-delivered-line2');
+        if (elDeliveredL2) elDeliveredL2.innerText = delivered.line_2 || `CHỜ THU HỒI: ${fmtNum(delivered.pod_pending_count || 0)} Chuyến`;
 
         rawDispatchTrips = data.trips || [];
         populateDispatchFilterDropdowns(rawDispatchTrips);

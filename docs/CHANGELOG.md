@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.2.2] - 2026-10-22 (Chuẩn Hóa Bộ 5 Thẻ Vận Hành Chiến Lược Trang Điều Vận - TMS Dispatch Pipeline)
+
+### 1. Nâng Cấp Giao Diện & Kiến Trúc Bộ 5 Thẻ Vận Hành Trang Điều Vận (iew_dispatch.html & pp.js):
+- **Đồng bộ bố cục 5 cột (5-Grid Layout):** Chuyển từ 4 ô cũ sang 5 Thẻ Vận Hành Chiến Lược ngang hàng, bám sát toàn bộ Chu trình Vòng đời Điều Vận (Dispatch Pipeline):
+  1. **Thẻ 1 - TỔNG ĐIỀU ĐỘ (Indigo - order-l-indigo-600):** Tổng chuyến, phân tách số cont và số chuyến thực hiện bởi Xe Nhà vs Thầu Phụ.
+  2. **Thẻ 2 - CHỜ NHẬN LỆNH (Amber - order-l-amber-500):** Chuyến xe đã phát lệnh, cảnh báo SLA tài xế quá 30 phút chưa nhận lệnh hoặc bấm từ chối chuyến.
+  3. **Thẻ 3 - ĐANG TRÊN TUYẾN (Teal - order-l-teal-600):** Xe đang chở hàng trên đường, xe đang bốc dỡ tại dock kho hoặc chạy cắt kéo / trả vỏ rỗng.
+  4. **Thẻ 4 - CẢNH BÁO RỦI RO (Rose - order-l-rose-500):** Chuyến có nguy cơ trễ Cắt máng (Closing Time < 6h), sắp hết hạn Free DEM/DET hoặc lưu ca tại kho (>4h).
+  5. **Thẻ 5 - ĐÃ GIAO & THU POD (Emerald - order-l-emerald-600):** Chuyến đã giao hàng thành công, phân tách số chuyến đã nộp POD gốc và số chuyến đang chờ thu hồi POD.
+
+### 2. Tối Ưu Hóa Backend API Điều Vận (pps/dispatch/api_views.py):
+- **Bộ lọc linh hoạt theo Kỳ:** API TripListCreateAPIView tính toán độc lập 5 thẻ dựa trên khung thời gian được chọn (rom_date, 	o_date), không bị việc lọc bảng làm sai lệch tổng thể.
+- **Bảo toàn tương thích ngược 100%:** Giữ nguyên các key thống kê cũ (	otal_trips_monthly, 	ransit_count, pending_expenses_count, cutoff_warning_count) để bảo đảm Zero-Regression.
+
+### 3. Kiểm Thử Hệ Thống (Zero-Regression):
+- Cú pháp JavaScript static/js/app.js, static/js/modules/dispatch.js và static/js/column_manager.js: 100% PASS (0 syntax errors).
+- Toàn bộ 147/147 Unit Tests của hệ thống vượt qua thành công.
+
+---
+
 ## [v4.2.1] - 2026-10-22 (Đồng Bộ Tuyệt Đối Số Liệu Ô Tổng & Chi Tiết - Loại Bỏ Fake Trend Phân Hệ Sale & Booking)
 
 ### 1. Đồng Bộ Tuyệt Đối Số Liệu Giữa Ô Tổng Quan (Executive Overview) & Thẻ Chi Tiết:

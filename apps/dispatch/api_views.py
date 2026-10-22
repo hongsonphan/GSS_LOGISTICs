@@ -2479,17 +2479,129 @@ class TripListCreateAPIView(APIView):
                 'customs_info': customs_info,
             })
 
-        active_count = DispatchTrip.objects.filter(
-            status__in=['ACCEPTED', 'CONTAINER_PICKED', 'IN_TRANSIT', 'AT_WAREHOUSE', 'UNLOADING', 'RETURNING_EMPTY']
-        ).count()
+        # =========================================================================
+        # TÍNH TOÁN BỘ 5 THẺ VẬN HÀNH CHIẾN LƯỢC TRANG ĐIỀU VẬN (DISPATCH PIPELINE)
+        # =========================================================================
+        # 1. Tập hợp các chuyến xe theo Kỳ đang chọn (không bị bộ lọc cột làm sai lệch tổng thể)
+        period_trips_qs = DispatchTrip.objects.filter(is_deleted=False)
+        if from_date:
+            try:
+                fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
+                period_trips_qs = period_trips_qs.filter(Q(loading_date__gte=fd) | Q(loading_date__isnull=True, created_at__date__gte=fd))
+            except Exception:
+                pass
+        if to_date:
+            try:
+                td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
+                period_trips_qs = period_trips_qs.filter(Q(loading_date__lte=td) | Q(loading_date__isnull=True, created_at__date__lte=td))
+            except Exception:
+                pass
+
+        # THẺ 1: TỔNG KẾ HOẠCH ĐIỀU ĐỘ
+        total_plan_trips = period_trips_qs.count()
+        total_plan_containers = sum(2 if t.is_twin_container else 1 for t in period_trips_qs)
+        owned_vehicles_count = period_trips_qs.filter(vehicle__ownership_type='OWNED').count()
+        subcontractor_count = period_trips_qs.filter(Q(vehicle__ownership_type='SUBCONTRACTOR') | Q(subcontractor__isnull=False)).count()
+
+        # THẺ 2: CHỜ TÀI XẾ NHẬN LỆNH & XUẤT BÃI
+        pending_acceptance_qs = period_trips_qs.filter(status__in=[TripStatus.DRAFT, TripStatus.DISPATCHED])
+        pending_acceptance_count = pending_acceptance_qs.count()
+        sla_warning_count = 0
+        for pt in pending_acceptance_qs:
+            if pt.declined_at:
+                sla_warning_count += 1
+            elif pt.status == TripStatus.DISPATCHED:
+                pt_time = pt.dispatched_at or pt.created_at
+                diff_m = int((now_dt - pt_time).total_seconds() // 60)
+                if diff_m >= 30:
+                    sla_warning_count += 1
+
+        # THẺ 3: ĐANG LĂN BÁNH TRÊN ĐƯỜNG
+        transit_qs = period_trips_qs.filter(status__in=[
+            TripStatus.ACCEPTED, TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT,
+            TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.RETURNING_EMPTY
+        ])
+        transit_total_count = transit_qs.count()
+        carrying_cargo_count = transit_qs.filter(status__in=[
+            TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT,
+            TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING
+        ]).count()
+        returning_or_split_count = transit_qs.filter(
+            Q(status=TripStatus.RETURNING_EMPTY) | Q(is_split_trip=True)
+        ).distinct().count()
+
+        # THẺ 4: CẢNH BÁO RỦI RO (CẮT MÁNG & LƯU CA)
+        cutoff_risk_count = 0
+        detention_risk_count = 0
+        risk_trip_ids = set()
+        for rt in period_trips_qs.exclude(status__in=[TripStatus.COMPLETED, TripStatus.CANCELLED]):
+            # Rủi ro Cắt Máng: Hàng xuất có giờ closing time
+            if rt.shipment_type in ['EXPORT', 'EXP'] and rt.cutoff_time:
+                cutoff_risk_count += 1
+                risk_trip_ids.add(rt.id)
+            # Rủi ro Hạn DEM/DET hoặc Lưu ca kho
+            det_info = calculate_dem_det_status(rt)
+            if det_info.get('is_overdue') or det_info.get('status') in ['OVERDUE', 'TODAY', 'WARNING'] or rt.is_overnight_detention or rt.status in [TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING]:
+                detention_risk_count += 1
+                risk_trip_ids.add(rt.id)
+
+        risk_total_count = len(risk_trip_ids)
+
+        # THẺ 5: ĐÃ GIAO HÀNG & THU HỒI POD
+        delivered_qs = period_trips_qs.filter(status__in=[TripStatus.DELIVERED, TripStatus.COMPLETED])
+        delivered_total_count = delivered_qs.count()
+        pod_completed_count = 0
+        for dt in delivered_qs:
+            has_pod = dt.documents.filter(document_type='POD', is_deleted=False).exists() or dt.status == TripStatus.COMPLETED
+            if has_pod:
+                pod_completed_count += 1
+        pod_pending_count = max(0, delivered_total_count - pod_completed_count)
+
         pending_expenses_count = TripExpense.objects.filter(status='PENDING').count()
 
         return Response({
             'stats': {
-                'total_trips_monthly': DispatchTrip.objects.filter(is_deleted=False).count(),
-                'transit_count': active_count,
+                # Tương thích ngược hệ thống cũ
+                'total_trips_monthly': total_plan_trips,
+                'transit_count': transit_total_count,
                 'pending_expenses_count': pending_expenses_count,
-                'cutoff_warning_count': 0,
+                'cutoff_warning_count': cutoff_risk_count,
+                # Chuẩn 5 Thẻ Vận Hành Chiến Lược (TMS Dispatch Pipeline)
+                'card_plan': {
+                    'total_trips': total_plan_trips,
+                    'total_containers': total_plan_containers,
+                    'owned_vehicles': owned_vehicles_count,
+                    'subcontractor_vehicles': subcontractor_count,
+                    'line_1': f"KẾ HOẠCH: {total_plan_trips} Chuyến · {total_plan_containers} Cont",
+                    'line_2': f"XE NHÀ: {owned_vehicles_count} · THẦU PHỤ: {subcontractor_count}"
+                },
+                'card_pending': {
+                    'pending_count': pending_acceptance_count,
+                    'sla_warning_count': sla_warning_count,
+                    'line_1': f"ĐÃ PHÁT LỆNH: {pending_acceptance_count} Chuyến",
+                    'line_2': f"CẢNH BÁO SLA: {sla_warning_count} Quá hạn / Từ chối"
+                },
+                'card_transit': {
+                    'transit_count': transit_total_count,
+                    'carrying_cargo_count': carrying_cargo_count,
+                    'returning_or_split_count': returning_or_split_count,
+                    'line_1': f"ĐANG CHỞ HÀNG: {carrying_cargo_count} Chuyến",
+                    'line_2': f"CẮT KÉO / RỖNG: {returning_or_split_count} Chuyến"
+                },
+                'card_risk': {
+                    'risk_count': risk_total_count,
+                    'cutoff_count': cutoff_risk_count,
+                    'detention_count': detention_risk_count,
+                    'line_1': f"GẦN CẮT MÁNG: {cutoff_risk_count} Chuyến",
+                    'line_2': f"HẠN RỖNG / KHO: {detention_risk_count} Chuyến"
+                },
+                'card_delivered': {
+                    'delivered_count': delivered_total_count,
+                    'pod_completed_count': pod_completed_count,
+                    'pod_pending_count': pod_pending_count,
+                    'line_1': f"ĐÃ CÓ POD: {pod_completed_count} Chuyến",
+                    'line_2': f"CHỜ THU HỒI: {pod_pending_count} Chuyến"
+                }
             },
             'trips': trips_list
         })
