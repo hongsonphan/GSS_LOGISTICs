@@ -1,4 +1,39 @@
+// Global Debounce Utility (Supports inline: oninput="debounce(fn, wait)()")
+const _debounceNamedTimers = {};
+function debounce(func, wait = 300) {
+    return function(...args) {
+        const key = func.name || func.toString();
+        if (_debounceNamedTimers[key]) {
+            clearTimeout(_debounceNamedTimers[key]);
+        }
+        _debounceNamedTimers[key] = setTimeout(() => {
+            try {
+                func.apply(this, args);
+            } catch (err) {
+                console.error('[Debounce Execution Error]', err);
+            }
+            delete _debounceNamedTimers[key];
+        }, wait);
+    };
+}
+window.debounce = debounce;
+
+// Global Currency Formatter for Inputs
+function formatCurrencyInput(el) {
+    if (!el) return;
+    const rawVal = String(el.value).replace(/\D/g, '');
+    if (!rawVal) {
+        el.value = '';
+        return;
+    }
+    const num = parseInt(rawVal, 10);
+    el.value = new Intl.NumberFormat('vi-VN').format(num);
+}
+window.formatCurrencyInput = formatCurrencyInput;
+
 async function toggleSubcontractorTypePanels(typeVal) {
+
+
     const isCarrier = (typeVal === 'CARRIER');
     const vehSec = document.getElementById('section-subcontractor-vehicles-mgmt');
     const drvSec = document.getElementById('section-subcontractor-drivers-mgmt');
@@ -17668,6 +17703,132 @@ function populateAdvanceModalOptions(data) {
 }
 
 // -------------------------------------------------------------
+// -------------------------------------------------------------
+// MODAL TẠO QUỸ TẠM ỨNG ĐIỀU VẬN (COMPANY ➔ DISPATCHER)
+// -------------------------------------------------------------
+function openDispatcherFundModal() {
+    const modal = document.getElementById('modal-dispatcher-fund');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const dateInp = document.getElementById('fund-inp-date');
+    if (dateInp) dateInp.value = new Date().toISOString().slice(0, 10);
+
+    const amountInp = document.getElementById('fund-inp-amount');
+    if (amountInp) amountInp.value = '20.000.000';
+}
+window.openDispatcherFundModal = openDispatcherFundModal;
+
+function closeDispatcherFundModal() {
+    const modal = document.getElementById('modal-dispatcher-fund');
+    if (!modal) return;
+    modal.classList.add('hidden');
+}
+window.closeDispatcherFundModal = closeDispatcherFundModal;
+
+async function submitDispatcherFundForm(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    const dispatcherId = document.getElementById('fund-inp-dispatcher')?.value;
+    const amountStr = document.getElementById('fund-inp-amount')?.value;
+    const fundDate = document.getElementById('fund-inp-date')?.value;
+    const notes = document.getElementById('fund-inp-notes')?.value;
+
+    const payload = {
+        dispatcher_id: dispatcherId,
+        amount: amountStr,
+        fund_date: fundDate,
+        notes: notes
+    };
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/dispatcher-funds/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || 'Cấp quỹ điều vận thành công', 'Cấp Quỹ Thành Công');
+            closeDispatcherFundModal();
+            if (typeof loadAccountingAdvancesData === 'function') loadAccountingAdvancesData();
+        } else {
+            showToast('danger', data.error || 'Không thể cấp quỹ điều vận');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+window.submitDispatcherFundForm = submitDispatcherFundForm;
+
+// previousActiveTab is already declared globally at line 915
+
+function returnFromSettlementView() {
+    if (typeof previousActiveTab !== 'undefined' && previousActiveTab && previousActiveTab !== 'quyet-toan') {
+        if (typeof switchTab === 'function') switchTab(previousActiveTab, true);
+    } else {
+        if (typeof switchTab === 'function') switchTab('dieu-van', true);
+    }
+}
+window.returnFromSettlementView = returnFromSettlementView;
+
+function openBatchSettlementModal(prefilledDriverId = null, prefilledVehicleId = null) {
+    const currentActiveView = document.querySelector('.view:not(.hidden-view)');
+    if (currentActiveView && currentActiveView.id !== 'view-quyet-toan') {
+        previousActiveTab = currentActiveView.id.replace('view-', '');
+    }
+    // Chuyển trực tiếp sang Trang Quyết Toán Gom Chuyến chuyên dụng
+    if (typeof switchTab === 'function') {
+        switchTab('quyet-toan');
+    }
+    if (prefilledDriverId) {
+        const groupBy = document.getElementById('settle-group-by');
+        if (groupBy) {
+            groupBy.value = 'driver';
+            if (typeof onSettlementGroupByChange === 'function') onSettlementGroupByChange();
+            setTimeout(() => {
+                const targetSelect = document.getElementById('settle-target-select');
+                if (targetSelect) {
+                    targetSelect.value = prefilledDriverId;
+                    if (typeof loadSettlementData === 'function') loadSettlementData();
+                }
+            }, 100);
+        }
+    } else if (prefilledVehicleId) {
+        const groupBy = document.getElementById('settle-group-by');
+        if (groupBy) {
+            groupBy.value = 'vehicle';
+            if (typeof onSettlementGroupByChange === 'function') onSettlementGroupByChange();
+            setTimeout(() => {
+                const targetSelect = document.getElementById('settle-target-select');
+                if (targetSelect) {
+                    targetSelect.value = prefilledVehicleId;
+                    if (typeof loadSettlementData === 'function') loadSettlementData();
+                }
+            }, 100);
+        }
+    }
+}
+window.openBatchSettlementModal = openBatchSettlementModal;
+
+function closeBatchSettlementModal() {
+    const modal = document.getElementById('modal-batch-driver-settlement');
+    if (modal) modal.classList.add('hidden');
+}
+window.closeBatchSettlementModal = closeBatchSettlementModal;
+
+window.loadBatchSettlementPreview = function() {
+    if (typeof loadSettlementData === 'function') return loadSettlementData.apply(this, arguments);
+};
+window.onBatchGroupByChange = function() {
+    if (typeof onSettlementGroupByChange === 'function') return onSettlementGroupByChange.apply(this, arguments);
+};
+window.toggleSelectAllBatchTrips = function() {
+    if (typeof toggleMasterSettlementCheckbox === 'function') return toggleMasterSettlementCheckbox.apply(this, arguments);
+};
+window.executeBatchSettlementSubmit = function() {
+    if (typeof executePageSettlementSubmit === 'function') return executePageSettlementSubmit.apply(this, arguments);
+};
+
 // PHÂN HỆ QUYẾT TOÁN GOM CHUYẾN (DRIVER SETTLEMENTS VIEW)
 // -------------------------------------------------------------
 let pageSettlementData = null;

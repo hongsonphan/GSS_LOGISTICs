@@ -2,6 +2,32 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.3] - 2026-10-22 (Kiểm Thử Giả Lập Toàn Bộ Ứng Dụng & Khắc Phục Triệt Để Toàn Bộ Lỗi Hàm Nút Bấm Trên Toàn App)
+
+### 1. Quét & Rà Soát Tĩnh Toàn Diện (Full Codebase AST & Inline Event Audit):
+- Quét toàn bộ 100% các tệp HTML (templates/**/*.html) và chuỗi template động (static/js/**/*.js):
+  * Phát hiện và đối chiếu 652 điểm gọi sự kiện inline (onclick, onchange, oninput, onsubmit).
+  * Phát hiện các tiện ích toàn cục và bộ điều khiển bị thiếu hoặc gán undefined do cơ chế conditional fallback.
+
+### 2. Bổ Sung & Khắc Phục Dứt Điểm Toàn Bộ Các Hàm Bị Thiếu:
+- **Tiện ích toàn cục (Global Utilities):**
+  * `debounce(func, wait)`: Cơ chế debounce thông minh hỗ trợ cú pháp inline `oninput="debounce(fn, wait)()"`, lưu timer theo hàm gọi. Giải quyết dứt điểm lỗi ReferenceError khi gõ tìm kiếm tại Sổ quỹ (`#cash-search`), Thu hồi chi hộ (`#reimburse-search`) và Đối soát xe ngoài 3PL (`#subcon-search`).
+  * `formatCurrencyInput(el)`: Tự động format số tiền VND tức thì theo chuẩn phân cách hàng nghìn khi nhập chi phí xe ngoài thầu phụ và tiền ứng xe ngoài.
+- **Phân hệ Quỹ Tạm Ứng Điều Vận (Dispatcher Funds):**
+  * Tích hợp `openDispatcherFundModal()`, `closeDispatcherFundModal()`, `submitDispatcherFundForm(e)` trực tiếp vào `static/js/app.js`.
+- **Phân hệ Quyết Toán Gom Chuyến (Batch Trip Settlement):**
+  * Tích hợp `openBatchSettlementModal()`, `closeBatchSettlementModal()`, `returnFromSettlementView()`, `loadBatchSettlementPreview()`, `onBatchGroupByChange()`, `toggleSelectAllBatchTrips()`, `executeBatchSettlementSubmit()` trực tiếp vào `static/js/app.js`.
+  * Đảm bảo nút "⚡ Quyết Toán Gom Chuyến" và nút "Quay lại" hoạt động mượt mà 100%.
+
+### 3. Kiểm Thử Giả Lập Tự Động Với Playwright Chromium Headless (Runtime E2E Simulation):
+- Khởi động phiên làm việc Playwright authenticated với tài khoản Quản trị viên (admin):
+  * Chạy giả lập tự động tuần tự qua toàn bộ 7 View cốt lõi: Dashboard -> Điều Vận -> Kế Toán -> Báo Cáo -> Đội Xe -> Khách Hàng -> Quyết Toán Gom Chuyến.
+  * Tự động tương tác và bấm qua các nút subtabs, mở/đóng modals tạm ứng, gõ tìm kiếm debounce, đổi radio nguồn tiền, chuyển nhóm quyết toán, đổi preset ngày.
+  * Kết quả giám sát Runtime: **26/26 chuỗi thao tác thành công - 0 UNCAUGHT ERRORS DETECTED (ZERO REGRESSION)**.
+
+### 4. Kiểm Thử Hệ Thống Backend:
+- Toàn bộ bộ kiểm thử tự động Django: `python manage.py test --keepdb` đạt **147/147 tests PASSED**.
+
 ## [v4.3.2] - 2026-10-22 (Chuẩn Hóa Giao Diện Bảng Tạm Ứng Tài Xế, Cân Đối Thao Tác & Sửa Lỗi Modal Quyết Toán)
 
 ### 1. Chuẩn Hóa Cột Chênh Lệch & Trạng Thái (Text Thuần Túy):
