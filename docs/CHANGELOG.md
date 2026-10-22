@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.7] - 2026-10-22 (Tích Hợp Universal Searchable Combobox & Tải Toàn Bộ Tài Khoản Vào Chat Nội Bộ)
+
+### 1. Tích Hợp Universal Searchable Combobox Cho Ô Chọn Đồng Nghiệp Nhắn Tin (`templates/components/chat_bubble.html` & `static/js/collaboration.js`):
+- **Bối cảnh & Yêu cầu:** Dropdown "CHỌN ĐỒNG NGHIỆP ĐỂ NHẮN TIN" trong cửa sổ Chat Nổi trước đây là thẻ `<select>` truyền thống, có dòng placeholder chiếm chỗ, không hỗ trợ gõ từ khóa và khó tìm kiếm khi danh bạ nhân sự đông.
+- **Nâng cấp UX/UI Hiện Đại ("có search như lúc nãy"):**
+  * Tự động khởi tạo `makeSearchableSelect` khi mở dropdown "Nhắn tin mới".
+  * **Kính lúp & thanh tìm kiếm dòng đầu:** Cố định ở dòng 1 của menu xổ xuống với icon kính lúp (`ph-magnifying-glass`), hỗ trợ gõ tìm kiếm tiếng Việt không dấu.
+  * **Gõ Free-Text trực tiếp:** Người dùng có thể gõ trực tiếp tên đồng nghiệp, tên phòng ban hoặc chức vụ vào ô chính để mở dropdown và lọc thời gian thực.
+  * **Loại bỏ hoàn toàn dòng placeholder thừa:** Không còn dòng `-- Chọn đồng nghiệp văn phòng --` trong menu xổ xuống, mở ra thấy ngay danh sách nhân sự thực tế.
+  * **Thao tác 1 chạm:** Chọn hoặc nhấn Enter lập tức mở phòng chat 1-1 riêng (`startDirectChat`), tự động đóng dropdown và reset ô chọn về trạng thái sạch sẽ cho lần dùng kế tiếp.
+  * Bổ sung nút đóng `×` nhanh trên thanh tiêu đề dropdown để tắt nhanh khi đổi ý.
+
+### 2. Tải Toàn Diện & Đầy Đủ 100% Tài Khoản Được Cấp Trong Hệ Thống (`apps/dispatch/views.py` & `OfficeTaskDirectoryAPIView`):
+- Thay vì chỉ lọc qua quan hệ `Employee.objects.filter(user__isnull=False)`, hệ thống duyệt qua toàn bộ `User.objects.filter(is_active=True).select_related('employee')`.
+- Đảm bảo tất cả các tài khoản nhân sự được cấp quyền đăng nhập (kể cả Ban Giám Đốc, IT Quản trị, hay nhân viên mới thêm) đều xuất hiện đầy đủ trong danh bạ văn phòng và danh sách đồng nghiệp để nhắn tin, không bao giờ bị sót.
+- Chuẩn hóa hàm `ensureOfficeDirectoryLoaded()` trong `static/js/collaboration.js` đảm bảo luôn trả về mảng danh bạ hợp lệ và loại bỏ hàm khai báo trùng lặp.
+
+---
+
 ## [v4.1.6] - 2026-10-22 (Đồng Bộ Dữ Liệu Bản Tin Đa Phòng Ban Cho Ban Giám Đốc & Chuẩn Hóa Thẻ Tin Tinh Gọn Theo Hình 3 & 4)
 
 ### 1. Khắc Phục Lỗi Lọc Mất Tin Tức Phân Hệ Bản Tin (apps/collaboration/api_views/news_api.py):
