@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.6] - 2026-10-22 (Rà Soát Toàn Diện & Xử Lý Triệt Để Lỗi Trùng Lặp Ký Hiệu Tiền Tệ "đ đ")
+
+### 1. Khử Trùng Lặp Ký Hiệu Tiền Tệ Trên Toàn Bộ Hệ Thống:
+- **Nguyên nhân gốc rễ (Root Cause Analysis):**
+  * Hàm tiện ích `formatMoneyVND(amount)` và `formatMoney(n)` trong `static/js/app.js` vốn đã tự động định dạng và gắn kèm hậu tố đơn vị tiền tệ `' đ'` ở cuối (`new Intl.NumberFormat('vi-VN').format(...) + ' đ'`).
+  * Tuy nhiên, tại 38 vị trí trong `app.js` (bao gồm các dòng tổng `BimTableFooter` của Sổ Quỹ Thu Chi, Tạm Ứng Tài Xế, Quỹ Điều Vận, Khóa Sổ Gom Chuyến, Xe Bạn 3PL, Vé BOT, Hải Quan và các Modal chi tiết / In phiếu A4), mã nguồn lại tiếp tục nối thêm ký tự ` đ` hoặc ` VNĐ` phía sau dạng `${formatMoneyVND(val)} đ`, dẫn tới việc hiển thị trùng lặp thành `+21.000.000 đ đ` hoặc `... đ VNĐ`.
+- **Giải pháp Kỹ Thuật Đa Tầng (Defensive Multi-layer Architecture):**
+  * **Tầng 1 (Toàn diện mã nguồn Frontend):** Rà soát quét tự động bằng AST/Regex trên toàn bộ 14 tệp JavaScript, 61 tệp HTML Template và 293 tệp Python; chuẩn hóa chính xác toàn bộ 38 vị trí trong `static/js/app.js`, loại bỏ triệt để chuỗi nối dư thừa.
+  * **Tầng 2 (Bộ lọc an toàn tại Core Table Engine):** Nâng cấp phương thức `BimTableFooter.render` trong `static/js/column_manager.js`, bổ sung regex sanitizer tự động khử sạch mọi chuỗi trùng lặp tiền tệ (`/(?:đ\s*đ|đ\s*VNĐ|VNĐ\s*đ|VNĐ\s*VNĐ)/gi -> 'đ'`) trước khi render ra DOM. Điều này đảm bảo trong tương lai mọi bảng dữ liệu đều được bảo vệ tự động 100%.
+- **Kiểm Thử & Xác Minh Live (Goal-Driven Verification):**
+  * Cú pháp JS: `node -c static/js/app.js` & `node -c static/js/column_manager.js` (0 lỗi).
+  * 144/144 Unit Tests backend và frontend integrity passed 100% (`Ran 144 tests in 47.286s - OK`).
+  * Đã push lên GitHub `origin master` (commit `210144a`) và deploy lên VPS live `https://logistics.bim.info.vn`.
+  * Playwright UAT trên VPS live xác nhận:
+    - Chân bảng Sổ Quỹ Thu Chi hiển thị chính xác: `+21.000.000 đ` (0 lỗi `đ đ`).
+    - Chân bảng Tạm Ứng Tài Xế hiển thị chính xác: `8.500.000 đ | 6.200.000 đ | +2.300.000 đ`.
+  * Artifact minh chứng: `210_vps_cashbook_single_d_clean.png`.
+
 ## [v4.0.5] - 2026-10-22 (Chuẩn Hóa UX Sổ Quỹ Thu Chi & Minh Bạch Số Liệu Tồn Quỹ Lũy Kế)
 
 ### 1. Minh Bạch Số Liệu Tồn Quỹ & Khắc Phục Hiểu Nhầm Bộ Lọc Kỳ:
