@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.5] - 2026-10-22 (Bổ Sung Toàn Diện Phân Hệ Quản Lý Rơ-Moóc Container & Cơ Cấu Tab Điều Hướng Đội Xe)
+
+### 1. Cơ Cấu Tab Chuyển Đổi Phương Tiện Chuyên Nghiệp (`templates/views/view_fleet.html`):
+- **Bối cảnh & Yêu cầu:** Phân hệ "Xe & Bãi" trước đây chỉ có bảng hiển thị phương tiện Đầu Kéo & Xe Tải, trong khi thẻ KPI ghi nhận tới 35 Rơ-moóc nhưng không có tab để quản lý, theo dõi danh mục Rơ-moóc container.
+- **Thanh Tab Điều Hướng Hai Chiều:**
+  * **Tab 1 - Đầu Kéo & Xe Tải:** Kèm huy hiệu đếm số lượng xe thực tế, bảng giám sát kỹ thuật, hạn đăng kiểm và lịch bảo dưỡng định kỳ.
+  * **Tab 2 - Rơ-Moóc Container:** Bổ sung giao diện chuyên biệt giám sát 35 rơ-moóc container với đầy đủ quy cách/loại moóc (Moóc xương 40ft, Moóc cổ cò, Moóc sàn, Moóc xương 20ft...), hãng sản xuất (CIMC, Tân Thanh, Doosung...), tải trọng thiết kế/cho phép (kg), hạn đăng kiểm định kỳ và trạng thái vận hành (Nằm bãi / Đang kéo / Bảo trì).
+  * **Tương tác KPI thông minh:** Bấm vào thẻ "Tổng Đầu kéo" tự động chuyển sang tab Đầu Kéo; bấm vào thẻ "Tổng Rơ-moóc" tự động chuyển sang tab Rơ-Moóc; bấm vào "Cảnh báo Đăng kiểm" hoặc "Đến hạn Bảo trì" tự động lọc phương tiện có nguy cơ quá hạn.
+  * **Tác vụ nhanh (Quick Actions):** Nút "Xuất Excel" xuất danh sách chi tiết theo tab đang xem (UTF-8 BOM hỗ trợ tiếng Việt có dấu); nút "Tạo mới" linh hoạt mở form tạo Đầu Kéo hoặc Rơ-Moóc tương ứng.
+
+### 2. Mở Rộng Backend API Đội Xe (`apps/dispatch/api_views.py` - `FleetAPIView`):
+- Bổ sung danh sách `trailers` đầy đủ vào response của `/api/fleet/` với các thông số: `id`, `plate`, `type`, `brand`, `payload_display`, `payload_capacity_kg`, `design_payload_kg`, `reg_expiry`, `reg_days_left`, `is_reg_expired`, `is_reg_warning`, `status`, `status_raw`.
+- Mở rộng thuật toán cảnh báo đăng kiểm (`reg_warning_count`): Tính toán tổng hợp hạn đăng kiểm của cả đầu kéo xe tải và rơ-moóc container (cảnh báo <= 15 ngày hoặc quá hạn).
+
+### 3. Chuẩn Hóa Frontend Logic & Quản Trị Cột (`static/js/app.js` & `static/js/modules/fleet.js`):
+- **Hệ thống lọc thông minh cho Rơ-Moóc:** Lọc tự động theo Loại moóc (unique values), Lọc theo Trạng thái (Nằm bãi, Đang kéo, Bảo trì, Cảnh báo đăng kiểm), Tìm kiếm đa năng theo biển số, thương hiệu, loại moóc.
+- **Tùy chỉnh cột động (`column_manager.js`):** Tích hợp `fleet-trailers-table` vào trình tùy biến ẩn/hiện cột với khả năng lưu cấu hình preferences cá nhân hóa.
+- **Đồng bộ hóa Master Data 2 chiều:** Cho phép chỉnh sửa trực tiếp thông tin đầu kéo và rơ-moóc qua nút thao tác trên từng dòng, tự động reload lại bảng Xe & Bãi ngay khi lưu dữ liệu.
+
+---
+
 ## [v4.1.4] - 2026-10-22 (Cơ Cấu Toàn Diện Dropdown Tìm Kiếm Trực Tiếp: Kính Lúp Dòng Đầu & Gõ Free-Text Trong Ô)
 
 ### 1. Chuẩn Hóa Kiến Trúc Dropdown Tìm Kiếm Hai Chiều (Universal Searchable Combobox):
