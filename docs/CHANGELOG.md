@@ -2,6 +2,20 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.10] - 2026-10-22 (Loại Bỏ Badge Viền Hộp Khỏi Dropdown Đồng Nghiệp & Chuẩn Hóa [Tên] | [Phòng Ban])
+
+### 1. Trình Bày Phẳng Liền Mạch [Tên] | [Phòng Ban] Không Bọc Badge (`static/js/app.js` & `static/js/collaboration.js`):
+- **Bối cảnh & Yêu cầu:** Người dùng phản hồi không thích việc gán các badge viền màu xanh đóng hộp (`border border-teal-200/80 bg-teal-50`) ở góc phải cho từng đồng nghiệp trong danh bạ chọn người nhắn tin, và yêu cầu trình bày trực tiếp theo định dạng: `[Tên] | [Phòng Ban]` mà không cần bọc badge.
+- **Triển khai kỹ thuật tinh gọn:**
+  * **Chuẩn hóa chuỗi hiển thị (`static/js/collaboration.js`):** Trong hàm `toggleChatDirectoryDropdown()`, các option của đồng nghiệp được định dạng chính xác thành `${u.full_name} | ${dept}` (ví dụ: `Trần Điều Độ | Phòng Điều Vận`, `Trần Thị Kế Toán | Kế Toán Tài Chính`).
+  * **Hỗ trợ định dạng thanh lịch không badge (`static/js/app.js`):**
+    - Mặc định loại bỏ hoàn toàn các thẻ badge viền hộp chữ nhật khỏi danh sách thả xuống (chỉ hiển thị nếu cấu hình rõ `customOptions.showBadge === true`).
+    - Khi một mục có định dạng ` | `, tự động render phân cấp trực quan: Tên (`font-medium text-slate-800`), ký tự phân cách thanh mảnh (`text-slate-300 font-light mx-1.5`), và Phòng ban (`text-slate-500 font-normal text-xs`).
+    - Hỗ trợ đánh dấu từ khóa tìm kiếm (`<mark>`) song song trên cả hai vế Tên và Phòng Ban.
+- **Hiệu quả:** Giao diện danh bạ nhắn tin hiển thị thoáng đãng, tinh tế, đúng chuẩn văn bản tự nhiên, không bị rối mắt bởi các khối khung badge dày đặc.
+
+---
+
 ## [v4.1.9] - 2026-10-22 (Nâng Cấp Bộ Thẻ KPI Đầu Trang Dashboard Thành 5 Ô Chiến Lược)
 
 ### 1. Phân Tách Rõ Ràng Số Liệu Thực Hiện vs. Kế Hoạch Kinh Doanh (`apps/dispatch/api_views.py`):

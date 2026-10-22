@@ -15739,30 +15739,50 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
             itemEl.setAttribute('data-index', idx);
             itemEl.setAttribute('data-value', opt.value);
 
-            // Tách badge nếu có format e.g. "CẢNG CÁT LÁI (CẢNG BIỂN)" hoặc "[KH001] TÊN"
+            // Trình bày định dạng phẳng không gán badge: [Tên] | [Phòng Ban] hoặc Text chuẩn
             let mainLabel = opt.text;
             let tagBadge = '';
-            const matchTag = opt.text.match(/^(.*?)\s*(\([^\)]+\)|\[[^\]]+\])$/);
-            if (matchTag && !opt.isPlaceholder) {
-                mainLabel = matchTag[1].trim();
-                const tagContent = matchTag[2].slice(1, -1).trim();
-                tagBadge = `<span class="text-[9.5px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200/80 ml-2 shrink-0">${escapeHtml(tagContent)}</span>`;
+            if (customOptions.showBadge && !opt.isPlaceholder) {
+                const matchTag = opt.text.match(/^(.*?)\s*(\([^\)]+\)|\[[^\]]+\])$/);
+                if (matchTag) {
+                    mainLabel = matchTag[1].trim();
+                    const tagContent = matchTag[2].slice(1, -1).trim();
+                    tagBadge = `<span class="text-[9.5px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200/80 ml-2 shrink-0">${escapeHtml(tagContent)}</span>`;
+                }
             }
 
-            // Highlight từ khóa khớp
-            let highlightedLabel = escapeHtml(mainLabel);
-            if (terms.length > 0 && !opt.isPlaceholder) {
-                terms.forEach(term => {
-                    if (!term) return;
-                    const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const regex = new RegExp(`(${safeTerm})`, 'gi');
-                    highlightedLabel = highlightedLabel.replace(regex, '<mark class="bg-amber-100 text-teal-950 font-bold px-0.5 rounded">$1</mark>');
-                });
+            let contentHtml = '';
+            if (mainLabel.includes(' | ') && !opt.isPlaceholder) {
+                const parts = mainLabel.split(' | ');
+                let leftPart = escapeHtml(parts[0].trim());
+                let rightPart = escapeHtml(parts.slice(1).join(' | ').trim());
+
+                if (terms.length > 0) {
+                    terms.forEach(term => {
+                        if (!term) return;
+                        const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const regex = new RegExp(`(${safeTerm})`, 'gi');
+                        leftPart = leftPart.replace(regex, '<mark class="bg-amber-100 text-teal-950 font-bold px-0.5 rounded">$1</mark>');
+                        rightPart = rightPart.replace(regex, '<mark class="bg-amber-100 text-teal-950 font-bold px-0.5 rounded">$1</mark>');
+                    });
+                }
+                contentHtml = `<span class="font-medium text-slate-800">${leftPart}</span><span class="text-slate-300 font-light mx-1.5">|</span><span class="text-slate-500 font-normal text-xs">${rightPart}</span>`;
+            } else {
+                let highlightedLabel = escapeHtml(mainLabel);
+                if (terms.length > 0 && !opt.isPlaceholder) {
+                    terms.forEach(term => {
+                        if (!term) return;
+                        const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const regex = new RegExp(`(${safeTerm})`, 'gi');
+                        highlightedLabel = highlightedLabel.replace(regex, '<mark class="bg-amber-100 text-teal-950 font-bold px-0.5 rounded">$1</mark>');
+                    });
+                }
+                contentHtml = `<span class="truncate ${opt.isPlaceholder ? 'italic text-slate-400 font-normal' : ''}">${highlightedLabel}</span>`;
             }
 
             itemEl.innerHTML = `
                 <div class="flex items-center justify-between w-full min-w-0 pr-1">
-                    <span class="truncate ${opt.isPlaceholder ? 'italic text-slate-400 font-normal' : ''}">${highlightedLabel}</span>
+                    <div class="min-w-0 truncate">${contentHtml}</div>
                     ${tagBadge}
                 </div>
                 ${isSelected ? '<i class="ph-bold ph-check text-teal-600 text-xs shrink-0 ml-1"></i>' : ''}
