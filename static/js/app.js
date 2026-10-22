@@ -15553,13 +15553,15 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
 
     // Biểu tượng kính lúp cố định ở ô tìm kiếm chính
     const searchIcon = document.createElement('i');
-    searchIcon.className = 'ph-bold ph-magnifying-glass absolute left-2.5 text-teal-600 text-xs pointer-events-none z-10';
+    searchIcon.className = 'ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-teal-600 text-xs pointer-events-none z-10';
 
     const mainInput = document.createElement('input');
     mainInput.type = 'text';
     mainInput.autocomplete = 'off';
     mainInput.spellcheck = false;
-    mainInput.className = `bim-combobox-main-input form-input ${baseHeight} ${baseFontSize} ${fontWeight} ${textColor} ${isUppercase ? 'uppercase' : ''} ${rounded} w-full pl-8 pr-14 py-1 bg-white border border-slate-300 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-600 shadow-2xs transition-all cursor-text`;
+    mainInput.className = `bim-combobox-main-input form-input ${baseHeight} ${baseFontSize} ${fontWeight} ${textColor} ${isUppercase ? 'uppercase' : ''} ${rounded} w-full py-1 bg-white border border-slate-300 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-600 shadow-2xs transition-all cursor-text`;
+    mainInput.style.paddingLeft = '38px';
+    mainInput.style.paddingRight = '56px';
     mainInput.setAttribute('role', 'combobox');
     mainInput.setAttribute('aria-expanded', 'false');
 

@@ -2,6 +2,19 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.8] - 2026-10-22 (Tinh Chỉnh Khoảng Đệm Tránh Chữ Đè Icon Kính Lúp Trong Universal Combobox)
+
+### 1. Khắc Phục Lỗi Chữ Đè Lên Icon Kính Lúp (`static/css/main.css` & `static/js/app.js`):
+- **Bối cảnh & Nguyên nhân:** Sau khi loại bỏ ô tìm kiếm lặp thứ hai và đưa icon kính lúp (`🔍`) trực tiếp vào ô input chính (`.bim-combobox-main-input`), người dùng phản ánh chữ gõ vào (ví dụ `toán`) bị dính đè trực tiếp lên biểu tượng kính lúp. Nguyên nhân do class `.form-input` trong hệ thống có rule `padding: 5px 10px !important;` đã ghi đè khoảng đệm Tailwind `pl-8`, ép lề trái của text về sát tọa độ `left: 10px` của icon kính lúp.
+- **Giải pháp UX/UI chuẩn mực:**
+  * **Cập nhật CSS độ ưu tiên cao (`static/css/main.css`):** Bổ sung rule chuyên biệt `.bim-combobox-main-input { padding-left: 38px !important; padding-right: 56px !important; }` để triệt tiêu việc bị `.form-input` ghi đè, tạo khoảng cách đệm an toàn và thoáng đãng 38px cho lề trái (cách icon kính lúp ~14px) và 56px cho lề phải (chứa nút Xóa `×` và mũi tên `caret-down`).
+  * **Căn giữa icon theo chiều dọc & Thiết lập inline style phòng thủ (`static/js/app.js`):**
+    - Căn giữa icon kính lúp bằng `top-1/2 -translate-y-1/2 absolute left-3`, giúp biểu tượng luôn nằm chính giữa chiều cao của ô bất kể chiều cao thay đổi.
+    - Thiết lập trực tiếp `mainInput.style.paddingLeft = '38px'` và `mainInput.style.paddingRight = '56px'` trên DOM element để đảm bảo hiển thị đồng nhất 100% trên mọi trình duyệt.
+- **Kết quả nghiệm thu:** Chữ gõ vào hiển thị cách đều, thoáng đãng, tuyệt đối không bị đè lên icon kính lúp; trải nghiệm tìm kiếm mượt mà, chuyên nghiệp.
+
+---
+
 ## [v4.1.7] - 2026-10-22 (Tích Hợp Universal Searchable Combobox & Tải Toàn Bộ Tài Khoản Vào Chat Nội Bộ)
 
 ### 1. Tích Hợp Universal Searchable Combobox Cho Ô Chọn Đồng Nghiệp Nhắn Tin (`templates/components/chat_bubble.html` & `static/js/collaboration.js`):

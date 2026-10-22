@@ -1520,3 +1520,8 @@ input[list="list-times-24h"]::-webkit-list-button {
     user-select: none;
     -webkit-user-select: none;
 }
+
+.bim-combobox-main-input {
+    padding-left: 38px !important;
+    padding-right: 56px !important;
+}
