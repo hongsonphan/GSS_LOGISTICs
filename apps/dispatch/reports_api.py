@@ -1450,11 +1450,9 @@ class ReportsAPIView(APIView):
                 return True
             return False
 
-        # Định nghĩa các nhóm vai trò mặc định cho từng báo cáo:
-        # Báo cáo Tài chính P&L, Cước, Thầu phụ, Lương, Quỹ: DIRECTOR, ACCOUNTANT
-        finance_roles = [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT]
-        # Báo cáo Vận hành (DEM/DET, OTP, Tuyến, Hạ bãi, Sự cố): DIRECTOR, ACCOUNTANT, DISPATCHER
-        ops_roles = [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT, EmployeeRole.DISPATCHER]
+        # Định nghĩa các nhóm vai trò mặc định cho từng báo cáo theo ma trận phân quyền chuẩn:
+        finance_roles = [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT, EmployeeRole.LEAD_ADMIN_ACC]
+        ops_roles = [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT, EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.DISPATCH_ASST]
 
         can_pnl = check_report_perm('view_report_pnl', finance_roles)
         can_dem_det = check_report_perm('view_report_dem_det', ops_roles)

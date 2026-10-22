@@ -172,6 +172,14 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
     contact_email = models.CharField(max_length=100, blank=True, default='', help_text="Email liên hệ khách hàng")
     cargo_type = models.CharField(max_length=150, blank=True, default='Hàng tổng hợp / Container', help_text="Loại hàng hóa / Quy cách xe cont")
     valid_until = models.DateField(null=True, blank=True, help_text="Hiệu lực báo giá đến ngày")
+    created_by = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_quotations',
+        help_text="Nhân viên kinh doanh lập báo giá"
+    )
 
     def save(self, *args, **kwargs):
         if self.estimated_km and self.estimated_km > 0:
@@ -296,6 +304,14 @@ class BookingOrder(TimeStampedModel, SoftDeleteModel):
     )
     status = models.CharField(max_length=30, choices=BookingStatus.choices, default=BookingStatus.PENDING_DISPATCH)
     notes = models.TextField(blank=True, help_text="Yêu cầu đặc biệt của khách hàng")
+    created_by = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_bookings',
+        help_text="Nhân viên tiếp nhận và lập đơn booking"
+    )
 
     @property
     def remaining_containers(self):

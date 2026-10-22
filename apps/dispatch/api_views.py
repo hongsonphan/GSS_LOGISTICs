@@ -19,6 +19,7 @@ from apps.documents.models import TripDocument, DocumentType
 from django.core.exceptions import ValidationError, ValidationError as DjangoValidationError
 from core.workflows import transition_trip, STATUS_LABELS
 from core.permissions import (
+    check_can_edit_or_delete,
     IsAdminOrDirector,
     IsDispatcher,
     IsAccountant,
@@ -2496,6 +2497,16 @@ class TripListCreateAPIView(APIView):
                 customer_name = data.get('customer', '').strip()
                 customer = resolve_customer(customer_name)
         else:
+            bk_val = data.get('booking') or data.get('booking_number') or data.get('booking_code')
+            if bk_val and str(bk_val).strip():
+                booking_order = (
+                    BookingOrder.objects.filter(booking_number__iexact=str(bk_val).strip(), is_deleted=False).first() or
+                    BookingOrder.objects.filter(booking_code__iexact=str(bk_val).strip(), is_deleted=False).first()
+                )
+                if booking_order:
+                    customer = booking_order.customer
+                    if revenue <= 0 and booking_order.selling_freight_price:
+                        revenue = float(booking_order.selling_freight_price)
             customer_id = data.get('customer_id')
             customer_name = data.get('customer', '').strip()
             if customer_id:
@@ -2589,7 +2600,10 @@ class TripListCreateAPIView(APIView):
             else:
                 vehicle = Vehicle.objects.first()
 
-        dispatcher = Employee.objects.filter(role=EmployeeRole.DISPATCHER).first()
+        curr_emp = getattr(request.user, 'employee', None)
+        dispatcher = curr_emp if (curr_emp and curr_emp.role in [EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.DIRECTOR]) else (
+            Employee.objects.filter(role__in=[EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH]).first() or curr_emp
+        )
 
         # Xử lý cấu hình Chặng & Nghiệp vụ Cắt Kéo (Drop & Hook)
         parse_bool = lambda v: v is True or str(v).strip().lower() in ('true', '1', 'yes')
@@ -3121,7 +3135,15 @@ class TripDetailAPIView(APIView):
                 'expense': total_actual_expense,
                 'profit': profit,
                 'margin_percent': margin_percent,
-            }
+            },
+            'can_edit': check_can_edit_or_delete(request.user, trip, owner_field='dispatcher', action='edit')[0],
+            'can_delete': (
+                check_can_edit_or_delete(request.user, trip, owner_field='dispatcher', action='edit')[0]
+                and not trip.is_expenses_settled
+                and not getattr(trip, 'is_customer_settled', False)
+                and not DriverTripAdvance.objects.filter(trip=trip, is_deleted=False).exists()
+            ),
+            'creator_name': (trip.dispatcher.nickname or trip.dispatcher.full_name) if trip.dispatcher else ''
         })
 
     def patch(self, request, trip_code):
@@ -3129,6 +3151,13 @@ class TripDetailAPIView(APIView):
         trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Cho phép xác thực qua Driver Capability Token trên Mobile Driver Portal
+        is_driver_token = bool(trip.driver_token and (trip.driver_token == trip_code or request.headers.get('X-Trip-Hash') == trip.driver_token))
+        if not is_driver_token:
+            can_edit, edit_msg = check_can_edit_or_delete(request.user, trip, owner_field='dispatcher', action='edit')
+            if not can_edit:
+                return Response({'error': edit_msg}, status=status.HTTP_403_FORBIDDEN)
 
         data = request.data
         if 'dropoff_appointment_time' in data:
@@ -3387,6 +3416,10 @@ class TripDetailAPIView(APIView):
         trip = get_trip_by_code_or_hash(trip_code)
         if not trip:
             return Response({'error': 'Không tìm thấy chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        can_delete, del_msg = check_can_edit_or_delete(request.user, trip, owner_field='dispatcher', action='delete')
+        if not can_delete:
+            return Response({'error': del_msg}, status=status.HTTP_403_FORBIDDEN)
 
         if trip.is_expenses_settled:
             return Response({'error': 'Chuyến xe đã được Kế toán chốt sổ chi phí quyết toán, không thể xóa/hủy!'}, status=status.HTTP_403_FORBIDDEN)
@@ -4584,9 +4617,11 @@ class SalesAPIView(APIView):
             if loading_time_str.upper() in ['8H', '8']:
                 loading_time_str = '08:00'
 
+            curr_emp = getattr(request.user, 'employee', None)
             booking = BookingOrder.objects.create(
                 booking_code=booking_code,
                 customer=customer,
+                created_by=curr_emp,
                 booking_type=data.get('booking_type', 'EXPORT_FCL'),
                 booking_number=data.get('booking_number', '').strip().upper(),
                 shipping_line=data.get('shipping_line', '').strip().upper(),
@@ -4691,9 +4726,11 @@ class SalesAPIView(APIView):
             fuel_surcharge_formula = data.get('fuel_surcharge_formula', '').strip() or f"Mỗi khi giá dầu DO 0.05S Petrolimex thay đổi {int(fuel_step_vnd):,} đ/lít so với giá cơ sở ({int(base_fuel_price):,} đ), đơn giá cước vận chuyển sẽ điều chỉnh tăng/giảm tương ứng {fuel_ratio_percent}%."
 
             with transaction.atomic():
+                curr_emp = getattr(request.user, 'employee', None)
                 quotation = Quotation.objects.create(
                     quotation_code=q_code,
                     customer=customer,
+                    created_by=curr_emp,
                     pricing_method=pricing_method,
                     base_fuel_price=base_fuel_price,
                     fuel_step_vnd=fuel_step_vnd,
@@ -4823,13 +4860,22 @@ class QuotationDetailAPIView(APIView):
             'cargo_type': q.cargo_type or 'Hàng tổng hợp / Container',
             'valid_until': q.valid_until.strftime('%Y-%m-%d') if q.valid_until else '',
             'created_at': q.created_at.strftime('%d/%m/%Y') if q.created_at else '',
-            'created_at_iso': q.created_at.strftime('%Y-%m-%d') if q.created_at else ''
+            'created_at_iso': q.created_at.strftime('%Y-%m-%d') if q.created_at else '',
+            'can_edit': check_can_edit_or_delete(request.user, q, owner_field='created_by', action='edit')[0],
+            'can_delete': (
+                check_can_edit_or_delete(request.user, q, owner_field='created_by', action='edit')[0]
+                and q.status != 'APPROVED'
+            ),
+            'creator_name': (q.created_by.nickname or q.created_by.full_name) if q.created_by else ''
         })
 
     def put(self, request, pk):
         q = Quotation.objects.filter(pk=pk, is_deleted=False).first()
         if not q:
             return Response({'error': 'Không tìm thấy báo giá'}, status=status.HTTP_404_NOT_FOUND)
+        can_edit, edit_msg = check_can_edit_or_delete(request.user, q, owner_field='created_by', action='edit')
+        if not can_edit:
+            return Response({'error': edit_msg}, status=status.HTTP_403_FORBIDDEN)
         data = request.data
         customer_name = data.get('customer', '').strip()
         if customer_name:
@@ -4977,6 +5023,9 @@ class QuotationDetailAPIView(APIView):
         q = Quotation.objects.filter(pk=pk, is_deleted=False).first()
         if not q:
             return Response({'error': 'Không tìm thấy báo giá'}, status=status.HTTP_404_NOT_FOUND)
+        can_del, del_msg = check_can_edit_or_delete(request.user, q, owner_field='created_by', action='delete')
+        if not can_del:
+            return Response({'error': del_msg}, status=status.HTTP_403_FORBIDDEN)
         if q.status == 'APPROVED':
             return Response({
                 'error': f"Báo giá [{q.quotation_code}] đã được phê duyệt chính thức (APPROVED). Vui lòng chuyển trạng thái sang TỪ CHỐI hoặc HẾT HẠN trước khi xóa."
@@ -5132,13 +5181,22 @@ class BookingOrderDetailAPIView(APIView):
             'booking_file_name': get_clean_booking_doc_name(b.booking_file.name, b.booking_code) if b.booking_file else '',
             'documents': docs_data,
             'documents_count': len(docs_data),
-            'notes': b.notes
+            'notes': b.notes,
+            'can_edit': check_can_edit_or_delete(request.user, b, owner_field='created_by', action='edit')[0],
+            'can_delete': (
+                check_can_edit_or_delete(request.user, b, owner_field='created_by', action='edit')[0]
+                and not DispatchTrip.objects.filter(booking_order=b, is_deleted=False).exists()
+            ),
+            'creator_name': (b.created_by.nickname or b.created_by.full_name) if b.created_by else ''
         })
 
     def put(self, request, pk):
         b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
         if not b:
             return Response({'error': 'Không tìm thấy đơn hàng / booking'}, status=status.HTTP_404_NOT_FOUND)
+        can_edit, edit_msg = check_can_edit_or_delete(request.user, b, owner_field='created_by', action='edit')
+        if not can_edit:
+            return Response({'error': edit_msg}, status=status.HTTP_403_FORBIDDEN)
         data = request.data
 
         # Hỗ trợ đa tệp đính kèm (Multi-files: booking_files[])
@@ -5236,6 +5294,9 @@ class BookingOrderDetailAPIView(APIView):
         b = BookingOrder.objects.filter(pk=pk, is_deleted=False).first()
         if not b:
             return Response({'error': 'Không tìm thấy đơn hàng / booking'}, status=status.HTTP_404_NOT_FOUND)
+        can_del, del_msg = check_can_edit_or_delete(request.user, b, owner_field='created_by', action='delete')
+        if not can_del:
+            return Response({'error': del_msg}, status=status.HTTP_403_FORBIDDEN)
 
         # Kiểm tra toàn vẹn: Không cho phép xóa Booking đã phát sinh chuyến xe
         t_count = DispatchTrip.objects.filter(booking_order=b, is_deleted=False).count()

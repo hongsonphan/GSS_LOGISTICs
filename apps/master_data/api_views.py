@@ -26,7 +26,7 @@ from apps.master_data.models import (
     ACCOUNT_CHART_CHOICES, ACCOUNT_NAME_MAP
 )
 from apps.customers.models import Customer, RouteTariff
-from apps.fleet.models import Vehicle, Trailer, VehicleType, VehicleOwnership, VehicleStatus
+from apps.fleet.models import Vehicle, Trailer, VehicleType, VehicleOwnership, VehicleStatus, parse_payload_input
 from apps.personnel.models import Employee
 
 class MasterDataSummaryAPIView(APIView):
@@ -808,6 +808,8 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
                 'ownership_type_label': v.get_ownership_type_display(),
                 'brand': v.brand,
                 'payload_capacity_kg': v.payload_capacity_kg,
+                'design_payload_kg': v.design_payload_kg,
+                'payload_display': v.display_payload,
                 'registration_expiry': v.registration_expiry.strftime('%d/%m/%Y') if v.registration_expiry else '-',
                 'insurance_expiry': v.insurance_expiry.strftime('%d/%m/%Y') if v.insurance_expiry else '-',
                 'next_maintenance_date': v.next_maintenance_date.strftime('%d/%m/%Y') if v.next_maintenance_date else '-',
@@ -868,13 +870,16 @@ class VehicleMasterListCreateAPIView(MasterDataBaseAPIView):
         subcontractor = Subcontractor.objects.filter(id=subcontractor_id).first() if subcontractor_id else None
         ownership = data.get('ownership_type', VehicleOwnership.OWNED)
 
+        v_cap, v_design, v_disp = parse_payload_input(data.get('payload_capacity_kg', 30000))
         veh = Vehicle.objects.create(
             license_plate=plate,
             vehicle_type=data.get('vehicle_type', VehicleType.TRACTOR),
             ownership_type=ownership,
             subcontractor=subcontractor if ownership == VehicleOwnership.SUBCONTRACTOR else None,
             brand=data.get('brand', 'Freightliner').strip(),
-            payload_capacity_kg=int(data.get('payload_capacity_kg', 30000)),
+            payload_capacity_kg=v_cap,
+            design_payload_kg=v_design,
+            payload_display=v_disp,
             registration_expiry=reg_expiry,
             insurance_expiry=ins_expiry,
             next_maintenance_date=maint_date,
@@ -892,7 +897,11 @@ class VehicleMasterDetailAPIView(MasterDataBaseAPIView):
         if 'brand' in data: veh.brand = data['brand'].strip()
         if 'vehicle_type' in data: veh.vehicle_type = data['vehicle_type']
         if 'ownership_type' in data: veh.ownership_type = data['ownership_type']
-        if 'payload_capacity_kg' in data: veh.payload_capacity_kg = int(data['payload_capacity_kg'])
+        if 'payload_capacity_kg' in data:
+            v_cap, v_design, v_disp = parse_payload_input(data['payload_capacity_kg'])
+            veh.payload_capacity_kg = v_cap
+            veh.design_payload_kg = v_design
+            veh.payload_display = v_disp
         if 'status' in data: veh.status = data['status']
         if 'current_driver_id' in data:
             d_id = data['current_driver_id']
@@ -1197,6 +1206,8 @@ class TrailerMasterListCreateAPIView(MasterDataBaseAPIView):
                 'trailer_type': tr.trailer_type,
                 'brand': tr.brand,
                 'payload_capacity_kg': tr.payload_capacity_kg,
+                'design_payload_kg': tr.design_payload_kg,
+                'payload_display': tr.display_payload,
                 'registration_expiry': tr.registration_expiry.strftime('%d/%m/%Y') if tr.registration_expiry else '-',
                 'status': tr.status,
                 'is_registration_warning': tr.is_registration_warning,
@@ -1223,11 +1234,14 @@ class TrailerMasterListCreateAPIView(MasterDataBaseAPIView):
             except ValueError:
                 reg_expiry = None
 
+        cap, design, disp = parse_payload_input(data.get('payload_capacity_kg', 32000))
         tr = Trailer.objects.create(
             license_plate=plate,
-            trailer_type=data.get('trailer_type', 'MOOC_XUONG_40').strip(),
+            trailer_type=data.get('trailer_type', 'Moóc Xương 40ft (3 Trục)').strip(),
             brand=data.get('brand', '').strip(),
-            payload_capacity_kg=int(data.get('payload_capacity_kg', 32000)),
+            payload_capacity_kg=cap,
+            design_payload_kg=design,
+            payload_display=disp,
             registration_expiry=reg_expiry,
             status=data.get('status', 'IDLE').strip(),
         )
@@ -1246,7 +1260,11 @@ class TrailerMasterDetailAPIView(MasterDataBaseAPIView):
         data = request.data
         if 'trailer_type' in data: tr.trailer_type = data['trailer_type'].strip()
         if 'brand' in data: tr.brand = data['brand'].strip()
-        if 'payload_capacity_kg' in data: tr.payload_capacity_kg = int(data['payload_capacity_kg'])
+        if 'payload_capacity_kg' in data:
+            cap, design, disp = parse_payload_input(data['payload_capacity_kg'])
+            tr.payload_capacity_kg = cap
+            tr.design_payload_kg = design
+            tr.payload_display = disp
         if 'status' in data: tr.status = data['status'].strip()
         if 'registration_expiry' in data:
             reg_expiry = data['registration_expiry']
@@ -1522,6 +1540,8 @@ class SubcontractorFleetAPIView(MasterDataBaseAPIView):
                     'vehicle_type': v.get_vehicle_type_display(),
                     'vehicle_type_code': v.vehicle_type,
                     'payload_capacity_kg': v.payload_capacity_kg,
+                    'design_payload_kg': v.design_payload_kg,
+                    'payload_display': v.display_payload,
                     'brand': v.brand,
                     'status': v.status,
                 }
@@ -1557,6 +1577,8 @@ class SubcontractorVehicleListCreateAPIView(MasterDataBaseAPIView):
                     'vehicle_type_code': v.vehicle_type,
                     'brand': v.brand,
                     'payload_capacity_kg': v.payload_capacity_kg,
+                    'design_payload_kg': v.design_payload_kg,
+                    'payload_display': v.display_payload,
                     'status': v.status,
                     'status_label': v.get_status_display(),
                 }
@@ -1574,12 +1596,7 @@ class SubcontractorVehicleListCreateAPIView(MasterDataBaseAPIView):
         if not plate:
             return Response({'error': 'Biển số xe không được để trống!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        payload = 30000
-        if 'payload_capacity_kg' in data and data['payload_capacity_kg']:
-            try:
-                payload = int(str(data['payload_capacity_kg']).replace('.', '').replace(',', ''))
-            except ValueError:
-                payload = 30000
+        s_cap, s_design, s_disp = parse_payload_input(data.get('payload_capacity_kg', 30000))
 
         veh = Vehicle.objects.filter(license_plate=plate).first()
         if veh:
@@ -1587,8 +1604,10 @@ class SubcontractorVehicleListCreateAPIView(MasterDataBaseAPIView):
             veh.ownership_type = VehicleOwnership.SUBCONTRACTOR
             if 'vehicle_type' in data and data['vehicle_type']:
                 veh.vehicle_type = data['vehicle_type']
-            if payload:
-                veh.payload_capacity_kg = payload
+            if s_cap:
+                veh.payload_capacity_kg = s_cap
+                veh.design_payload_kg = s_design
+                veh.payload_display = s_disp
             if 'brand' in data and data['brand']:
                 veh.brand = data['brand'].strip()
             veh.is_deleted = False
@@ -1601,7 +1620,9 @@ class SubcontractorVehicleListCreateAPIView(MasterDataBaseAPIView):
                 ownership_type=VehicleOwnership.SUBCONTRACTOR,
                 subcontractor=sc,
                 brand=data.get('brand', '').strip(),
-                payload_capacity_kg=payload,
+                payload_capacity_kg=s_cap,
+                design_payload_kg=s_design,
+                payload_display=s_disp,
                 status=VehicleStatus.IDLE,
             )
             msg = f'Đã thêm xe [{veh.license_plate}] vào đội xe của {sc.short_name or sc.name}!'
@@ -1645,10 +1666,11 @@ class SubcontractorVehicleDetailAPIView(MasterDataBaseAPIView):
             veh.brand = data['brand'].strip()
 
         if 'payload_capacity_kg' in data and data['payload_capacity_kg']:
-            try:
-                veh.payload_capacity_kg = int(str(data['payload_capacity_kg']).replace('.', '').replace(',', ''))
-            except (ValueError, TypeError):
-                pass
+            s_cap, s_design, s_disp = parse_payload_input(data['payload_capacity_kg'])
+            if s_cap:
+                veh.payload_capacity_kg = s_cap
+                veh.design_payload_kg = s_design
+                veh.payload_display = s_disp
 
         veh.save()
         return Response({

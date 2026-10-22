@@ -2,6 +2,43 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.2] - 2026-10-22 (Rà Soát Giả Lập Vai Trò 5 Người Dùng, Khắc Phục Màn Hình Trắng Báo Cáo & Cơ Cấu Ma Trận Phân Quyền CRUD)
+
+### 1. Khắc Phục Triệt Để Lỗi Màn Hình Trắng Báo Cáo & Toast Kế Toán:
+- **Nguyên nhân cốt lõi:**
+  * Người dùng thuộc Phòng Kinh Doanh (sales) hoặc Nhân Sự (
+hansu) khi vào hệ thống bị chặn HTTP 403 tại API /api/reports/ do CanViewOperationalReports chỉ cho phép Ban Giám Đốc, Kế Toán và Điều Vận. Việc API trả về 403 khiến hàm loadReportsData() quăng ngoại lệ 	hrow new Error(), làm toàn bộ giao diện Báo cáo không render được dẫn tới màn hình trắng.
+  * Khi người dùng chuyển tab qua lại giữa Kế toán và Báo cáo, hàm loadAccountingAdvancesData() gọi /api/accounting/advances/ bị 403 và quăng Toast lỗi đỏ: *'[Lỗi Kế Toán] Không thể kết nối máy chủ để tải dữ liệu tạm ứng'*.
+- **Giải pháp xử lý:**
+  * **Backend API (pps/dispatch/reports_api.py & core/permissions.py):** Mở quyền truy cập an toàn cho mọi nhân viên văn phòng chính thức gọi /api/reports/. Dữ liệu nhạy cảm (Doanh thu P&L tổng, Lợi nhuận gộp) được bảo mật bằng cơ chế **Field-level Authorization**: ẩn hoàn toàn đối với tài khoản không có quyền tài chính.
+  * **Frontend Resilient Loading (static/js/app.js):**
+    - Cập nhật hàm canAccessReport() kiểm tra thẩm quyền linh hoạt theo chuyên môn từng phòng ban: Điều Vận xem Báo cáo Vận hành (DEM/DET cont, OTP, Sự cố, Chi phí tuyến, Tạm ứng, Quỹ, Backlog); Kinh Doanh xem Báo cáo Doanh thu khách & TEU, Chi phí tuyến và OTP; Nhân Sự xem Báo cáo Lương & Năng suất tài xế, OTP; Ban Giám Đốc và Kế Toán xem toàn bộ 14 Báo cáo.
+    - Bọc an toàn 14 khối render 
+enderReport1 đến 
+enderReport14 trong từng khối 	ry...catch riêng biệt; tự động chuyển sang nhóm báo cáo hợp lệ đầu tiên mà người dùng được phép xem, loại bỏ hoàn toàn lỗi màn hình trắng.
+    - Cập nhật loadAccountingAdvancesData() bắt lỗi 403 âm thầm, không bắn toast lỗi máy chủ gây hiểu lầm.
+
+### 2. Cơ Cấu Ma Trận Phân Quyền CRUD Chuẩn Doanh Nghiệp (Ownership & Hierarchy Access Control):
+- **Nguyên tắc quản trị cốt lõi:**
+  * **Người tạo (Owner):** Được Xem, Sửa, Xóa (với điều kiện bắt buộc: **Chỉ xóa theo nguyên tắc chưa phát sinh mới được xóa**).
+  * **Không phải người tạo:** Nếu có thẩm quyền chuyên môn liên quan thì **CHỈ ĐƯỢC XEM (Read-only)**, tuyệt đối không được Sửa hoặc Xóa trừ cấp quản lý cao hơn (Ban Giám Đốc hoặc Trưởng bộ phận phụ trách).
+- **Quy tắc kiểm tra ràng buộc phát sinh trước khi xóa (Zero-Delete on Active Data):**
+  1. **Chuyến xe (DispatchTrip):** Chỉ người điều vận tạo lệnh hoặc Ban Giám Đốc mới được xóa; chặn xóa tuyệt đối khi Kế toán đã chốt sổ chi phí (is_expenses_settled=True), đã chốt quyết toán khách hàng (is_customer_settled=True), hoặc đã phát sinh phiếu tạm ứng tài xế hoạt động.
+  2. **Báo giá (Quotation):** Chỉ nhân viên Sales tạo báo giá hoặc Ban Giám Đốc mới được xóa; chặn xóa khi báo giá đã được duyệt chính thức (status='APPROVED') hoặc khách hàng đã phát sinh Đơn đặt hàng Booking.
+  3. **Đơn hàng Booking (BookingOrder):** Chỉ nhân viên Sales tạo đơn hoặc Ban Giám Đốc mới được xóa; chặn xóa khi đã phát sinh Chuyến xe điều động thực tế.
+  4. **Tạm ứng tài xế (DriverTripAdvance):** Chỉ người lập phiếu hoặc Ban Giám Đốc mới được xóa; chặn xóa khi đã hoàn ứng chốt sổ (SETTLED) hoặc đã có phát sinh chi phí thực tế.
+  5. **Quỹ điều vận (DispatcherAdvanceFund):** Chỉ điều vận viên lập đề xuất hoặc Ban Giám Đốc mới được xóa; chặn xóa khi quỹ đã được kế toán duyệt chi hoặc đã giải ngân cho các chuyến xe.
+  6. **Sổ quỹ tiền mặt (CashTransaction):** Chỉ kế toán lập phiếu hoặc Ban Giám Đốc mới được xóa; các phiếu tự động sinh từ chốt quyết toán chuyến không được xóa độc lập.
+- **Tự động liên kết Booking khi phát lệnh điều xe:** Khi Điều Vận nhập số booking hoặc mã booking, hệ thống tự động phân giải và liên kết trực tiếp chuyến xe với BookingOrder.
+
+### 3. Chuẩn Hóa Hồ Sơ & Vai Trò Tài Khoản 
+hansu:
+- Cập nhật vai trò nhân sự 
+hansu từ chức danh kế toán cũ thành chuẩn vị trí **Phòng Hành Chính & Kế Toán (STAFF_ADMIN_ACC - Hành chính nhân sự)** theo đúng sơ đồ tổ chức công ty.
+- Cấp quyền xem Báo cáo Lương chuyến & Năng suất tài xế (iew_report_driver_salary) và Đúng giờ (iew_report_otp) cho nhóm Quản Lý Nhân Sự.
+
+---
+
 ## [v4.0.1] - 2026-10-22 (Kiểm Tra & Chuẩn Hóa Ma Trận Tài Khoản Đăng Nhập, Kích Hoạt Active và Xóa Phần Tài Xế)
 
 ### 1. Xóa Bỏ Tài Khoản Đăng Nhập Của Tài Xế (Bảo Toàn 100% Hồ Sơ Nhân Sự Hiện Trường):

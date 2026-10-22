@@ -15887,7 +15887,13 @@ function switchAccountingSubTab(subtabId) {
 async function loadAccountingAdvancesData() {
     try {
         const res = await fetchWithAuth('/api/accounting/advances/');
-        if (!res.ok) throw new Error('Không thể tải dữ liệu tạm ứng hoàn ứng');
+        if (!res.ok) {
+            if (res.status === 403) {
+                console.warn('[Kế Toán] Tài khoản không thuộc phân quyền quản trị Tạm ứng quỹ.');
+                return;
+            }
+            throw new Error('Không thể tải dữ liệu tạm ứng hoàn ứng (HTTP ' + res.status + ')');
+        }
         const data = await res.json();
         accountingAdvancesData = data;
 
@@ -21352,7 +21358,7 @@ function renderMasterDataTable(items, total = items.length) {
                         : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe Nhà (TVL)'}</span>`}
                 </td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
-                <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${item.payload_display ? `${item.payload_display} kg` : (item.payload_capacity_kg ? `${formatNumberVN(item.payload_capacity_kg)} kg` : '—')}</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.driver_name || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.insurance_expiry || '—'}</td>
@@ -21391,7 +21397,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2 px-3 text-[13px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.license_plate}</td>
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.trailer_type}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
-                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${item.payload_display ? `${item.payload_display} kg` : (item.payload_capacity_kg ? `${formatNumberVN(item.payload_capacity_kg)} kg` : '—')}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
                 <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold text-slate-800">
                     ${item.status === 'IDLE' ? 'Nằm bãi' : (item.status === 'ACTIVE' ? 'Đang kéo' : item.status)}
@@ -22418,9 +22424,9 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng Cho Phép (kg)</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng TK / Cho Phép (kg)</label>
                     </div>
-                    <input type="text" id="mdf-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right input-number-vn w-full" placeholder="VD: 30.000">
+                    <input type="text" id="mdf-payload" value="${d.payload_display || (d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000/27.360')}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right w-full" placeholder="VD: 30000/27360 hoặc 30000">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -22468,13 +22474,21 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Loại Rơ-Moóc <span class="text-rose-500">*</span></label>
                     </div>
-                    <select id="mdf-trailer-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
-                        <option value="MOOC_XUONG_40" ${d.trailer_type === 'MOOC_XUONG_40' ? 'selected' : ''}>Moóc Xương 40ft (3 Trục)</option>
-                        <option value="MOOC_CO_CO_40" ${d.trailer_type === 'MOOC_CO_CO_40' ? 'selected' : ''}>Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)</option>
-                        <option value="MOOC_XUONG_20" ${d.trailer_type === 'MOOC_XUONG_20' ? 'selected' : ''}>Moóc Xương 20ft (3 Trục)</option>
-                        <option value="MOOC_SAN_45" ${d.trailer_type === 'MOOC_SAN_45' ? 'selected' : ''}>Moóc Sàn 45ft</option>
-                        <option value="MOOC_LUN" ${d.trailer_type === 'MOOC_LUN' ? 'selected' : ''}>Moóc Lùn / Chuyên Dụng</option>
-                    </select>
+                    <input type="text" id="mdf-trailer-type" list="mdf-trailer-type-datalist" value="${escapeHtml(d.trailer_type || 'Moóc Xương 40ft (3 Trục)')}" placeholder="Chọn hoặc tự gõ loại moóc..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                    <datalist id="mdf-trailer-type-datalist">
+                        <option value="Moóc Xương 40ft (3 Trục)">
+                        <option value="Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)">
+                        <option value="Moóc Xương 20ft (3 Trục)">
+                        <option value="Moóc Sàn 40ft">
+                        <option value="Moóc Sàn 45ft">
+                        <option value="Moóc Lùn / Chuyên Dụng">
+                        <option value="Moóc Ben (Tự đổ)">
+                        <option value="Moóc Bồn (Xitéc)">
+                        <option value="Moóc Rút (Siêu trường siêu trọng)">
+                        <option value="Moóc Lồng / Khung mui">
+                        <option value="Moóc Xương 45ft">
+                        <option value="Moóc Xương 2 Trục">
+                    </datalist>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -22486,9 +22500,9 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng Thiết Kế (kg)</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng TK / Cho Phép (kg)</label>
                     </div>
-                    <input type="text" id="mdf-trailer-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '32.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right input-number-vn w-full" placeholder="VD: 32.000">
+                    <input type="text" id="mdf-trailer-payload" value="${d.payload_display || (d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000/27.360')}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right w-full" placeholder="VD: 30000/27360 hoặc 32000">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -22701,7 +22715,7 @@ function injectMasterDataModalFields(data) {
                             </select>
                         </div>
                         <div class="sm:col-span-2">
-                            <input type="text" id="new-subveh-payload" placeholder="Tải trọng (kg)" value="30.000" class="form-input h-8 px-2 py-1 text-xs font-mono text-right border-amber-300 w-full rounded input-number-vn">
+                            <input type="text" id="new-subveh-payload" placeholder="VD: 30000/27360" value="30.000/27.360" class="form-input h-8 px-2 py-1 text-xs font-mono text-right border-amber-300 w-full rounded">
                         </div>
                         <div class="sm:col-span-3">
                             <input type="text" id="new-subveh-brand" placeholder="Hãng/Dòng xe (Hino...)" class="form-input h-8 px-2 py-1 text-xs border-amber-300 w-full rounded">
@@ -23024,7 +23038,7 @@ async function submitMasterDataForm(e) {
             subcontractor_id: (document.getElementById('mdf-ownership').value === 'SUBCONTRACTOR' && subIdVal) ? parseInt(subIdVal) : null,
             vehicle_type: document.getElementById('mdf-vehicle-type').value,
             brand: document.getElementById('mdf-brand').value,
-            payload_capacity_kg: parseNumberVN(document.getElementById('mdf-payload').value) || 0,
+            payload_capacity_kg: document.getElementById('mdf-payload').value.trim(),
             current_driver_id: document.getElementById('mdf-driver-id')?.value ? parseInt(document.getElementById('mdf-driver-id').value) : null,
             registration_expiry: document.getElementById('mdf-reg-expiry')?.value || null,
             insurance_expiry: document.getElementById('mdf-ins-expiry')?.value || null,
@@ -23033,10 +23047,10 @@ async function submitMasterDataForm(e) {
         };
     } else if (tabKey === 'trailers') {
         payload = {
-            license_plate: document.getElementById('mdf-trailer-plate').value,
-            trailer_type: document.getElementById('mdf-trailer-type').value,
-            brand: document.getElementById('mdf-trailer-brand').value,
-            payload_capacity_kg: parseNumberVN(document.getElementById('mdf-trailer-payload').value) || 0,
+            license_plate: document.getElementById('mdf-trailer-plate').value.trim().toUpperCase(),
+            trailer_type: document.getElementById('mdf-trailer-type').value.trim(),
+            brand: document.getElementById('mdf-trailer-brand').value.trim(),
+            payload_capacity_kg: document.getElementById('mdf-trailer-payload').value.trim(),
             registration_expiry: document.getElementById('mdf-trailer-expiry').value || null,
             status: document.getElementById('mdf-trailer-status').value
         };
@@ -23947,9 +23961,37 @@ const REPORT_PERMISSION_MAPPING = {
 function canAccessReport(reportId) {
     if (!window.CURRENT_USER) return false;
     if (window.CURRENT_USER.is_superuser) return true;
+    const role = window.CURRENT_USER.role || '';
+    const dept = window.CURRENT_USER.department || '';
+
+    // Ban Giám Đốc và Kế Toán có toàn quyền xem tất cả 14 Báo Cáo
+    if (role === 'DIRECTOR' || role === 'ACCOUNTANT' || role === 'LEAD_ADMIN_ACC' || dept === 'ACCOUNTING' || dept === 'MANAGEMENT') {
+        return true;
+    }
+
+    // Kiểm tra Django permission tường minh nếu có
     const perm = REPORT_PERMISSION_MAPPING[reportId];
-    if (!perm) return true;
-    return typeof window.hasUserPermission === 'function' ? window.hasUserPermission(perm) : false;
+    if (perm && typeof window.hasUserPermission === 'function' && window.hasUserPermission(perm)) {
+        return true;
+    }
+
+    // Phân quyền theo ma trận chuyên môn phòng ban:
+    // 1. Điều Vận (DISPATCH): Báo cáo Vận hành 1, 2, 3, 4, 5, 6, 10, 11, 12, 14
+    if (role === 'DISPATCHER' || role === 'LEAD_DISPATCH' || role === 'DISPATCH_ASST' || dept === 'DISPATCH') {
+        return ['report-1', 'report-2', 'report-3', 'report-4', 'report-5', 'report-6', 'report-10', 'report-11', 'report-12', 'report-14'].includes(reportId);
+    }
+
+    // 2. Kinh Doanh (SALES): Báo cáo 7 (Doanh thu khách & TEU), Báo cáo 4 (Chi phí tuyến), Báo cáo 3 (Đúng giờ OTP), Báo cáo 13 (Công nợ AR)
+    if (role === 'SALESMAN' || role === 'LEAD_SALES' || role === 'CSKH' || dept === 'SALES') {
+        return ['report-7', 'report-4', 'report-3', 'report-13'].includes(reportId);
+    }
+
+    // 3. Nhân Sự (HR): Báo cáo 9 (Lương chuyến & Năng suất tài xế), Báo cáo 3 (Đúng giờ OTP), Báo cáo 6 (Sự cố)
+    if (role === 'STAFF_ADMIN_ACC' || dept === 'HR') {
+        return ['report-9', 'report-3', 'report-6'].includes(reportId);
+    }
+
+    return false;
 }
 
 function initReportPermissions() {
@@ -24258,47 +24300,21 @@ async function loadReportsData() {
                 : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
         }
 
-        // Render Báo cáo 1
-        renderReport1(data);
-
-        // Render Báo cáo 2
-        renderReport2(data);
-
-        // Render Báo cáo 3
-        renderReport3(data);
-
-        // Render Báo cáo 4
-        renderReport4(data);
-
-        // Render Báo cáo 5
-        renderReport5(data);
-
-        // Render Báo cáo 6
-        renderReport6(data);
-
-        // Render Báo cáo 7: Phân Tích Doanh Thu Khách & TEU
-        renderReport7(data);
-
-        // Render Báo cáo 8: Quyết Toán Xe Thầu Phụ 3PL
-        renderReport8(data);
-
-        // Render Báo cáo 9: Bảng Lương Chuyến & Năng Suất Tài Xế
-        renderReport9(data);
-
-        // Render Báo cáo 10: Quỹ Tạm Ứng Điều Vận (Kế Toán Quản Lý)
-        renderReport10(data);
-
-        // Render Báo cáo 11: Tạm Ứng & Chi Phí Phát Sinh Tài Xế (Điều Vận Quản Lý)
-        renderReport11(data);
-
-        // Render Báo cáo 12: Quyết Toán Chuyến Xe & Backlog Chuyển Kỳ
-        renderReport12(data);
-
-        // Render Báo cáo 13: Báo Cáo Theo Dõi Công Nợ Phải Thu (AR)
-        renderReport13(data);
-
-        // Render Báo cáo 14: Báo Cáo Tuổi Đơn Tồn Đọng Chưa Quyết Toán
-        renderReport14(data);
+        // Render an toàn 14 Báo Cáo chuyên sâu (Zero-crash Architecture)
+        try { if (canAccessReport('report-1')) renderReport1(data); } catch (e1) { console.warn('Lỗi render BC1:', e1); }
+        try { if (canAccessReport('report-2')) renderReport2(data); } catch (e2) { console.warn('Lỗi render BC2:', e2); }
+        try { if (canAccessReport('report-3')) renderReport3(data); } catch (e3) { console.warn('Lỗi render BC3:', e3); }
+        try { if (canAccessReport('report-4')) renderReport4(data); } catch (e4) { console.warn('Lỗi render BC4:', e4); }
+        try { if (canAccessReport('report-5')) renderReport5(data); } catch (e5) { console.warn('Lỗi render BC5:', e5); }
+        try { if (canAccessReport('report-6')) renderReport6(data); } catch (e6) { console.warn('Lỗi render BC6:', e6); }
+        try { if (canAccessReport('report-7')) renderReport7(data); } catch (e7) { console.warn('Lỗi render BC7:', e7); }
+        try { if (canAccessReport('report-8')) renderReport8(data); } catch (e8) { console.warn('Lỗi render BC8:', e8); }
+        try { if (canAccessReport('report-9')) renderReport9(data); } catch (e9) { console.warn('Lỗi render BC9:', e9); }
+        try { if (canAccessReport('report-10')) renderReport10(data); } catch (e10) { console.warn('Lỗi render BC10:', e10); }
+        try { if (canAccessReport('report-11')) renderReport11(data); } catch (e11) { console.warn('Lỗi render BC11:', e11); }
+        try { if (canAccessReport('report-12')) renderReport12(data); } catch (e12) { console.warn('Lỗi render BC12:', e12); }
+        try { if (canAccessReport('report-13')) renderReport13(data); } catch (e13) { console.warn('Lỗi render BC13:', e13); }
+        try { if (canAccessReport('report-14')) renderReport14(data); } catch (e14) { console.warn('Lỗi render BC14:', e14); }
 
     } catch (err) {
         console.error('Lỗi khi tải dữ liệu báo cáo TMS:', err);
@@ -30699,7 +30715,7 @@ function renderSubcontractorVehiclesTable(subId) {
                         </select>
                     </td>
                     <td class="py-1 px-2">
-                        <input type="text" id="edit-subveh-payload-${v.id}" value="${v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) : '30.000'}" class="form-input h-7.5 px-2 py-0.5 text-xs font-mono text-right w-full rounded border-teal-500 bg-white shadow-2xs input-number-vn" placeholder="Tải trọng">
+                        <input type="text" id="edit-subveh-payload-${v.id}" value="${v.payload_display || (v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) : '30.000/27.360')}" class="form-input h-7.5 px-2 py-0.5 text-xs font-mono text-right w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="VD: 30000/27360">
                     </td>
                     <td class="py-1 px-2">
                         <input type="text" id="edit-subveh-brand-${v.id}" value="${escapeHtml(v.brand || '')}" class="form-input h-7.5 px-2 py-0.5 text-xs w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="Hãng / Dòng xe">
@@ -30721,7 +30737,7 @@ function renderSubcontractorVehiclesTable(subId) {
             <tr id="subveh-row-${v.id}" class="hover:bg-amber-50/50 transition-colors border-b border-slate-100">
                 <td class="py-2 px-3 font-mono font-bold text-slate-900">${escapeHtml(v.license_plate)}</td>
                 <td class="py-2 px-3 font-medium text-slate-800">${escapeHtml(v.vehicle_type || '—')}</td>
-                <td class="py-2 px-3 font-mono text-slate-700 text-right">${v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) + ' kg' : '—'}</td>
+                <td class="py-2 px-3 font-mono text-slate-700 text-right">${v.payload_display ? `${v.payload_display} kg` : (v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) + ' kg' : '—')}</td>
                 <td class="py-2 px-3 text-slate-600">${escapeHtml(v.brand || '—')}</td>
                 <td class="py-2 px-2.5 text-center whitespace-nowrap">
                     <div class="flex items-center justify-center gap-1.5">

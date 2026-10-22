@@ -16,7 +16,7 @@ from apps.master_data.models import (
     ACCOUNT_NAME_MAP
 )
 from apps.customers.models import Customer, RouteTariff
-from apps.fleet.models import Vehicle, Trailer, VehicleType, VehicleOwnership, VehicleStatus
+from apps.fleet.models import Vehicle, Trailer, VehicleType, VehicleOwnership, VehicleStatus, parse_payload_input
 
 
 # --- HELPER PARSING FUNCTIONS ---
@@ -750,7 +750,12 @@ def process_catalog_import(catalog_key, file_obj, update_existing=True, user=Non
             is_req = col_cfg.get('required', False)
 
             # Parse theo kiểu dữ liệu
-            if col_type == 'str':
+            if key == 'payload_capacity_kg':
+                cap, design, disp = parse_payload_input(val)
+                parsed = cap
+                row_data['design_payload_kg'] = design
+                row_data['payload_display'] = disp
+            elif col_type == 'str':
                 parsed = parse_str(val)
             elif col_type == 'int':
                 parsed = parse_int(val)

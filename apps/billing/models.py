@@ -411,6 +411,14 @@ class DriverTripAdvance(TimeStampedModel, SoftDeleteModel):
     )
     settlement_notes = models.TextField(blank=True, help_text="Ghi chú đối soát hoàn ứng")
     notes = models.TextField(blank=True, help_text="Ghi chú khi cấp tạm ứng")
+    created_by = models.ForeignKey(
+        'personnel.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_driver_advances',
+        help_text="Nhân sự lập phiếu tạm ứng (Điều vận / Kế toán)"
+    )
 
     class Meta:
         ordering = ['-advance_date', '-created_at']

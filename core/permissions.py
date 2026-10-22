@@ -22,8 +22,9 @@ class IsAdminOrDirector(permissions.BasePermission):
 
 class IsDispatcher(permissions.BasePermission):
     """
-    Quyền truy cập dành cho Điều phối viên & Ban Giám Đốc (Tạo lệnh điều động, gán xe, duyệt chi phí).
-    Kiểm tra quyền dispatch.view_dispatchtrip hoặc role DISPATCHER / DIRECTOR.
+    Quyền truy cập dành cho Điều phối viên & Ban Giám Đốc:
+    - Đọc (SAFE_METHODS: GET, HEAD, OPTIONS): Mọi nhân viên văn phòng (Điều phối, Kế toán, Kinh doanh, Nhân sự, Giám đốc).
+    - Ghi (POST, PUT, PATCH, DELETE): Chỉ Điều phối viên & Ban Giám Đốc.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -33,8 +34,15 @@ class IsDispatcher(permissions.BasePermission):
         if request.user.has_perm('dispatch.view_dispatchtrip') or request.user.has_perm('dispatch.change_dispatchtrip'):
             return True
         employee = getattr(request.user, 'employee', None)
+        if not employee:
+            return bool(request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc', 'Kế Toán Cước', 'Kinh Doanh (Sales)']).exists())
+        if employee.role == EmployeeRole.DRIVER:
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
         return bool(
-            (employee and employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.DIRECTOR]) or
+            employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.DIRECTOR] or
+            employee.department == Department.DISPATCH or
             request.user.groups.filter(name__in=['Điều Phối Viên', 'Ban Giám Đốc']).exists()
         )
 
@@ -186,19 +194,33 @@ class CanViewFinancialReports(permissions.BasePermission):
 class CanViewOperationalReports(permissions.BasePermission):
     """
     Quyền xem Báo cáo Quản trị Vận hành & Thống kê TMS:
-    Cho phép Điều phối (DISPATCHER), Kế toán (ACCOUNTANT), Ban Giám Đốc (DIRECTOR) hoặc có quyền view_operational_report.
-    Từ chối Tài xế (DRIVER) và Thợ máy (MECHANIC).
+    - Cho phép nếu có quyền reports.view_operational_report, view_financial_report hoặc bất kỳ quyền xem báo cáo cụ thể nào.
+    - Fallback theo vai trò: Ban Giám Đốc, Kế toán, Điều vận.
+    - Nhân viên Kinh doanh hoặc Nhân sự chỉ được xem nếu được cấp quyền báo cáo cụ thể tương ứng.
+    - Từ chối Tài xế (DRIVER) và Thợ máy (MECHANIC).
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         if request.user.is_superuser:
             return True
-        if request.user.has_perm('reports.view_operational_report') or request.user.has_perm('reports.view_financial_report'):
-            return True
         employee = getattr(request.user, 'employee', None)
+        if employee and employee.role in [EmployeeRole.DRIVER, EmployeeRole.MECHANIC]:
+            return False
+
+        # Kiểm tra permission cụ thể
+        if (request.user.has_perm('reports.view_operational_report') or
+            request.user.has_perm('reports.view_financial_report') or
+            any(p.startswith('reports.view_report_') for p in request.user.get_all_permissions())):
+            return True
+
+        # Fallback theo vai trò chuyên môn vận hành / tài chính
         return bool(
-            (employee and employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.ACCOUNTANT, EmployeeRole.DIRECTOR]) or
+            (employee and employee.role in [
+                EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH,
+                EmployeeRole.ACCOUNTANT, EmployeeRole.LEAD_ADMIN_ACC, EmployeeRole.STAFF_ADMIN_ACC,
+                EmployeeRole.DIRECTOR
+            ]) or
             request.user.groups.filter(name__in=['Điều Phối Viên', 'Kế Toán Cước', 'Ban Giám Đốc']).exists()
         )
 
@@ -293,3 +315,76 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
                 return True
 
         return False
+
+
+def check_can_edit_or_delete(user, obj, owner_field='created_by', action='edit'):
+    """
+    Kiểm tra quyền Sửa/Xóa theo nguyên tắc BIM Logistics:
+    1. Ban Giám Đốc (DIRECTOR) hoặc Quản trị viên (superuser): Toàn quyền.
+    2. Người tạo (Owner): Được quyền Xem, Sửa, Xóa (với điều kiện chưa phát sinh ràng buộc nghiệp vụ khi Xóa).
+    3. Trưởng bộ phận (is_department_head): Được quyền sửa/xóa đối với phiếu của nhân viên trong bộ phận.
+    4. Nếu đối tượng chưa có owner (dữ liệu cũ/khởi tạo ban đầu): Cho phép nhân sự phòng ban chuyên môn thao tác.
+    5. Cấp chuyên môn nghiệp vụ:
+       - Tài xế được cập nhật mốc/cont trên chuyến xe được phân công cho mình (khi sửa, không được xóa).
+       - Kế toán được đối soát, chốt duyệt các phiếu tài chính/tạm ứng.
+       - Điều vận được cập nhật các chuyến xe của đội xe.
+    6. Người khác không phải người tạo và không phải cấp cao hơn: Chỉ được Xem, không được Sửa/Xóa.
+    """
+    if not user or not user.is_authenticated:
+        return False, "Yêu cầu đăng nhập để thực hiện thao tác."
+    if user.is_superuser:
+        return True, ""
+    employee = getattr(user, 'employee', None)
+    if not employee:
+        return False, "Tài khoản chưa được gán hồ sơ nhân viên nội bộ."
+    if employee.role == EmployeeRole.DIRECTOR:
+        return True, ""
+
+    # Lấy đối tượng người tạo
+    owner = getattr(obj, owner_field, None)
+
+    # 1. Nếu chính là người tạo: Toàn quyền thao tác
+    if owner and owner == employee:
+        return True, ""
+
+    # 2. Trưởng bộ phận cùng phòng ban quản lý nhân viên tạo phiếu
+    if getattr(employee, 'is_department_head', False):
+        if owner and getattr(owner, 'department', None) == employee.department:
+            return True, ""
+        elif not owner and getattr(obj, 'department', None) == employee.department:
+            return True, ""
+
+    # 3. Trường hợp đối tượng chưa có owner (phiếu cũ hoặc test seed)
+    if not owner:
+        # Nếu là Chuyến xe: Điều vận hoặc Kế toán được thao tác
+        if hasattr(obj, 'trip_code'):
+            if employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.ACCOUNTANT]:
+                return True, ""
+        # Nếu là Báo giá / Booking: Sales được thao tác
+        elif hasattr(obj, 'quotation_code') or hasattr(obj, 'booking_code'):
+            if employee.role in [EmployeeRole.SALESMAN, EmployeeRole.LEAD_SALES]:
+                return True, ""
+        # Nếu là Tạm ứng / Sổ quỹ: Kế toán hoặc Điều vận được thao tác
+        elif hasattr(obj, 'dispatcher_fund') or hasattr(obj, 'total_disbursed') or hasattr(obj, 'transaction_type'):
+            if employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.LEAD_ADMIN_ACC, EmployeeRole.STAFF_ADMIN_ACC, EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH]:
+                return True, ""
+
+    # 4. Khi SỬA (action == 'edit'): Cho phép thẩm quyền chức năng cụ thể
+    if action == 'edit':
+        # Tài xế được cập nhật chuyến xe của mình
+        if hasattr(obj, 'driver') and getattr(obj, 'driver') == employee:
+            return True, ""
+        # Kế toán được đối soát chốt sổ tạm ứng & chi phí
+        if employee.role in [EmployeeRole.ACCOUNTANT, EmployeeRole.LEAD_ADMIN_ACC]:
+            if hasattr(obj, 'dispatcher_fund') or hasattr(obj, 'total_disbursed') or hasattr(obj, 'is_expenses_settled'):
+                return True, ""
+        # Điều vận được cập nhật thông tin chuyến xe
+        if employee.role in [EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH] and hasattr(obj, 'trip_code'):
+            return True, ""
+
+    # 5. Khi XÓA (action == 'delete'):
+    # TUYỆT ĐỐI chỉ Người tạo hoặc Ban Giám Đốc/Trưởng phòng mới được xóa!
+    if action == 'delete':
+        return False, "Chỉ người tạo phiếu này hoặc Ban Giám Đốc mới có quyền xóa!"
+
+    return False, "Bạn không phải người tạo phiếu này và không có thẩm quyền cấp cao hơn để sửa/xóa!"

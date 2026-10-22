@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 
 from core.security import GracefulJWTAuthentication
-from core.permissions import IsAccountant, IsDispatcherOrAccountant
+from core.permissions import check_can_edit_or_delete, IsAccountant, IsDispatcherOrAccountant
 from apps.billing.models import (
     TripExpense,
     ReimbursementStatus,
@@ -465,6 +465,10 @@ class CashBookDetailAPIView(APIView):
         except CashTransaction.DoesNotExist:
             return Response({'error': 'Không tìm thấy phiếu thu/chi tương ứng'}, status=status.HTTP_404_NOT_FOUND)
 
+        can_edit, edit_msg = check_can_edit_or_delete(request.user, t, owner_field='created_by', action='edit')
+        if not can_edit:
+            return Response({'error': edit_msg}, status=status.HTTP_403_FORBIDDEN)
+
         return Response({
             'success': True,
             'transaction': {
@@ -490,7 +494,13 @@ class CashBookDetailAPIView(APIView):
                 'bank_account': t.bank_account,
                 'created_by': (t.created_by.nickname or t.created_by.full_name) if t.created_by else '',
                 'notes': t.notes,
-                'created_at': t.created_at.strftime('%d/%m/%Y %H:%M') if t.created_at else ''
+                'created_at': t.created_at.strftime('%d/%m/%Y %H:%M') if t.created_at else '',
+                'can_edit': check_can_edit_or_delete(request.user, t, owner_field='created_by')[0],
+                'can_delete': (
+                    check_can_edit_or_delete(request.user, t, owner_field='created_by')[0]
+                    and not (t.ref_code and str(t.ref_code).startswith('DV.'))
+                ),
+                'creator_name': (t.created_by.nickname or t.created_by.full_name) if t.created_by else ''
             }
         }, status=status.HTTP_200_OK)
 
@@ -573,6 +583,10 @@ class CashBookDetailAPIView(APIView):
                 t = CashTransaction.objects.get(code=pk, is_deleted=False)
         except CashTransaction.DoesNotExist:
             return Response({'error': 'Không tìm thấy phiếu thu/chi tương ứng'}, status=status.HTTP_404_NOT_FOUND)
+
+        can_del, del_msg = check_can_edit_or_delete(request.user, t, owner_field='created_by', action='delete')
+        if not can_del:
+            return Response({'error': del_msg}, status=status.HTTP_403_FORBIDDEN)
 
         code = t.code
         t_type_display = t.get_transaction_type_display()

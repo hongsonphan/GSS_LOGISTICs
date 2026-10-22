@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 
 from core.security import GracefulJWTAuthentication
-from core.permissions import IsAccountant, IsDispatcher, IsDispatcherOrAccountant
+from core.permissions import check_can_edit_or_delete, IsAccountant, IsDispatcher, IsDispatcherOrAccountant
 from apps.billing.models import (
     DispatcherAdvanceFund,
     DriverTripAdvance,
@@ -381,6 +381,7 @@ class DriverAdvanceCreateAPIView(APIView):
                 if fund.remaining_balance < amount:
                     return Response({'error': f'Số dư Quỹ Điều Vận ({fund.code}) chỉ còn {fund.remaining_balance:,} đ, không đủ để tạm ứng {amount:,} đ'}, status=status.HTTP_400_BAD_REQUEST)
 
+            curr_emp = getattr(request.user, 'employee', None)
             advance = DriverTripAdvance.objects.create(
                 code=code,
                 trip=trip,
@@ -391,6 +392,7 @@ class DriverAdvanceCreateAPIView(APIView):
                 advance_date=advance_date,
                 purpose=purpose,
                 status=DriverAdvanceStatus.ADVANCED,
+                created_by=curr_emp,
                 notes=notes
             )
 
@@ -600,6 +602,15 @@ class DriverAdvanceDetailAPIView(APIView):
             'settled_by': advance.settled_by.full_name if advance.settled_by else '',
             'notes': advance.notes or '',
             'settlement_notes': advance.settlement_notes or '',
+            'can_edit': check_can_edit_or_delete(request.user, advance, owner_field='created_by', action='edit')[0],
+            'can_delete': (
+                check_can_edit_or_delete(request.user, advance, owner_field='created_by', action='edit')[0]
+                and advance.status != DriverAdvanceStatus.SETTLED
+                and int(advance.actual_spent or 0) == 0
+                and int(advance.refund_amount or 0) == 0
+                and int(advance.reimburse_amount or 0) == 0
+            ),
+            'creator_name': (advance.created_by.nickname or advance.created_by.full_name) if advance.created_by else ''
         }
         return Response({'success': True, 'advance': data})
 
@@ -614,6 +625,10 @@ class DriverAdvanceDetailAPIView(APIView):
             advance = DriverTripAdvance.objects.select_for_update().filter(id=pk, is_deleted=False).first()
             if not advance:
                 return Response({'error': 'Không tìm thấy phiếu tạm ứng chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+            can_edit, edit_msg = check_can_edit_or_delete(request.user, advance, owner_field='created_by', action='edit')
+            if not can_edit:
+                return Response({'error': edit_msg}, status=status.HTTP_403_FORBIDDEN)
 
             purpose = request.data.get('purpose')
             notes = request.data.get('notes')
@@ -682,6 +697,10 @@ class DriverAdvanceDetailAPIView(APIView):
             if not advance:
                 return Response({'error': 'Không tìm thấy phiếu tạm ứng chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
 
+            can_del, del_msg = check_can_edit_or_delete(request.user, advance, owner_field='created_by', action='delete')
+            if not can_del:
+                return Response({'error': del_msg}, status=status.HTTP_403_FORBIDDEN)
+
             if advance.status == DriverAdvanceStatus.SETTLED:
                 return Response({
                     'error': 'Không thể xóa phiếu tạm ứng đã quyết toán hoàn ứng chốt sổ!'
@@ -740,6 +759,14 @@ class DispatcherFundDetailAPIView(APIView):
             'notes': fund.notes or '',
             'settlement_notes': fund.settlement_notes or '',
             'active_trip_advances_count': fund.trip_advances.filter(is_deleted=False).count(),
+            'can_edit': check_can_edit_or_delete(request.user, fund, owner_field='dispatcher')[0],
+            'can_delete': (
+                check_can_edit_or_delete(request.user, fund, owner_field='dispatcher')[0]
+                and fund.status == FundStatus.PENDING
+                and fund.total_disbursed == 0
+                and not fund.trip_advances.filter(is_deleted=False).exists()
+            ),
+            'creator_name': (fund.dispatcher.nickname or fund.dispatcher.full_name) if fund.dispatcher else ''
         }
         return Response({'success': True, 'fund': data})
 
