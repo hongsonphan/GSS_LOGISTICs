@@ -22462,6 +22462,52 @@ function injectMasterDataModalFields(data) {
             </div>
         `;
     } else if (currentMasterDataTab === 'trailers') {
+        const standardTrailerTypes = [
+            'Moóc Xương 40ft (3 Trục)',
+            'Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)',
+            'Moóc Xương 20ft (3 Trục)',
+            'Moóc Sàn 40ft',
+            'Moóc Sàn 45ft',
+            'Moóc Lùn / Chuyên Dụng',
+            'Moóc Ben (Tự đổ)',
+            'Moóc Bồn (Xitéc)',
+            'Moóc Rút (Siêu trường siêu trọng)',
+            'Moóc Lồng / Khung mui',
+            'Moóc Xương 45ft',
+            'Moóc Xương 2 Trục'
+        ];
+        const legacyTrailerMap = {
+            'mooc_xuong_40': 'Moóc Xương 40ft (3 Trục)',
+            'mooc_co_co_40': 'Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)',
+            'mooc_xuong_20': 'Moóc Xương 20ft (3 Trục)',
+            'mooc_san_40': 'Moóc Sàn 40ft',
+            'mooc_san_45': 'Moóc Sàn 45ft',
+            'mooc_lun': 'Moóc Lùn / Chuyên Dụng',
+            'mooc_ben': 'Moóc Ben (Tự đổ)',
+            'mooc_bon': 'Moóc Bồn (Xitéc)',
+            'mooc_rut': 'Moóc Rút (Siêu trường siêu trọng)',
+            'mooc_long': 'Moóc Lồng / Khung mui',
+            'mooc_xuong_45': 'Moóc Xương 45ft',
+            'mooc_xuong_2_truc': 'Moóc Xương 2 Trục'
+        };
+
+        const currentType = (d.trailer_type || '').trim();
+        let selectedTrailerType = 'Moóc Xương 40ft (3 Trục)';
+        let isCustomTrailerType = false;
+
+        if (currentType) {
+            const lowerCurrent = currentType.toLowerCase();
+            const matchedStd = standardTrailerTypes.find(t => t.toLowerCase() === lowerCurrent);
+            if (matchedStd) {
+                selectedTrailerType = matchedStd;
+            } else if (legacyTrailerMap[lowerCurrent]) {
+                selectedTrailerType = legacyTrailerMap[lowerCurrent];
+            } else {
+                selectedTrailerType = '__OTHER__';
+                isCustomTrailerType = true;
+            }
+        }
+
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
@@ -22474,21 +22520,13 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Loại Rơ-Moóc <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-trailer-type" list="mdf-trailer-type-datalist" value="${escapeHtml(d.trailer_type || 'Moóc Xương 40ft (3 Trục)')}" placeholder="Chọn hoặc tự gõ loại moóc..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
-                    <datalist id="mdf-trailer-type-datalist">
-                        <option value="Moóc Xương 40ft (3 Trục)">
-                        <option value="Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)">
-                        <option value="Moóc Xương 20ft (3 Trục)">
-                        <option value="Moóc Sàn 40ft">
-                        <option value="Moóc Sàn 45ft">
-                        <option value="Moóc Lùn / Chuyên Dụng">
-                        <option value="Moóc Ben (Tự đổ)">
-                        <option value="Moóc Bồn (Xitéc)">
-                        <option value="Moóc Rút (Siêu trường siêu trọng)">
-                        <option value="Moóc Lồng / Khung mui">
-                        <option value="Moóc Xương 45ft">
-                        <option value="Moóc Xương 2 Trục">
-                    </datalist>
+                    <select id="mdf-trailer-type" onchange="toggleCustomTrailerType(this)" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                        ${standardTrailerTypes.map(t => `<option value="${escapeHtml(t)}" ${selectedTrailerType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+                        <option value="__OTHER__" ${isCustomTrailerType ? 'selected' : ''}>➕ Loại khác (Tự nhập tay)...</option>
+                    </select>
+                    <div id="mdf-trailer-type-custom-wrap" class="mt-1.5 ${isCustomTrailerType ? '' : 'hidden'}">
+                        <input type="text" id="mdf-trailer-type-custom" value="${isCustomTrailerType ? escapeHtml(currentType) : ''}" placeholder="Nhập tên loại moóc đặc thù..." class="form-input h-8 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full border-dashed border-teal-500 bg-teal-50/30">
+                    </div>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -23046,9 +23084,17 @@ async function submitMasterDataForm(e) {
             status: document.getElementById('mdf-vehicle-status')?.value || 'IDLE'
         };
     } else if (tabKey === 'trailers') {
+        const selTrailerType = document.getElementById('mdf-trailer-type')?.value || '';
+        const customTrailerType = document.getElementById('mdf-trailer-type-custom')?.value?.trim() || '';
+        const finalTrailerType = (selTrailerType === '__OTHER__') ? (customTrailerType || 'Loại moóc khác') : selTrailerType;
+        if (selTrailerType === '__OTHER__' && !customTrailerType) {
+            showToast('warning', 'Vui lòng nhập tên loại rơ-moóc cụ thể!');
+            document.getElementById('mdf-trailer-type-custom')?.focus();
+            return;
+        }
         payload = {
             license_plate: document.getElementById('mdf-trailer-plate').value.trim().toUpperCase(),
-            trailer_type: document.getElementById('mdf-trailer-type').value.trim(),
+            trailer_type: finalTrailerType,
             brand: document.getElementById('mdf-trailer-brand').value.trim(),
             payload_capacity_kg: document.getElementById('mdf-trailer-payload').value.trim(),
             registration_expiry: document.getElementById('mdf-trailer-expiry').value || null,
@@ -30855,6 +30901,18 @@ function toggleVehicleSubcontractorField(val) {
     }
 }
 
+function toggleCustomTrailerType(el) {
+    const wrap = document.getElementById('mdf-trailer-type-custom-wrap');
+    const customInput = document.getElementById('mdf-trailer-type-custom');
+    if (!wrap) return;
+    if (el && el.value === '__OTHER__') {
+        wrap.classList.remove('hidden');
+        if (customInput) customInput.focus();
+    } else {
+        wrap.classList.add('hidden');
+    }
+}
+
 // --- 2. Quản lý Tài xế Thuộc Nhà Xe (3PL) ---
 async function loadSubcontractorDriversInModal(subId) {
     const tbody = document.getElementById('sub-drivers-tbody');
@@ -31134,6 +31192,7 @@ window.hideAddSubVehicleInline = typeof hideAddSubVehicleInline !== 'undefined' 
 window.saveNewSubVehicleInline = typeof saveNewSubVehicleInline !== 'undefined' ? saveNewSubVehicleInline : undefined;
 window.deleteSubVehicleInline = typeof deleteSubVehicleInline !== 'undefined' ? deleteSubVehicleInline : undefined;
 window.toggleVehicleSubcontractorField = typeof toggleVehicleSubcontractorField !== 'undefined' ? toggleVehicleSubcontractorField : undefined;
+window.toggleCustomTrailerType = typeof toggleCustomTrailerType !== 'undefined' ? toggleCustomTrailerType : undefined;
 window.loadSubcontractorDriversInModal = typeof loadSubcontractorDriversInModal !== 'undefined' ? loadSubcontractorDriversInModal : undefined;
 window.renderSubcontractorDriversTable = typeof renderSubcontractorDriversTable !== 'undefined' ? renderSubcontractorDriversTable : undefined;
 window.editSubDriverRow = typeof editSubDriverRow !== 'undefined' ? editSubDriverRow : undefined;
