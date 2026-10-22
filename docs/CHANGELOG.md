@@ -9,6 +9,7 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 - **Giải pháp UX/UI Hiện Đại (`static/js/app.js` & `static/css/main.css`):**
   * **Kính lúp & Thanh tìm kiếm dòng đầu tiên:** Khi mở dropdown, ngay trên dòng đầu tiên có thanh tìm kiếm cố định (sticky) với biểu tượng kính lúp (`ph-magnifying-glass`), placeholder gợi ý rõ ràng và tự động focus sẵn sàng gõ từ khóa.
   * **Gõ Free-Text trực tiếp trong ô ("trong ô đó luôn"):** Người dùng có thể gõ trực tiếp từ khóa vào ô hiển thị chính, danh sách dropdown sẽ tự động mở và lọc tức thì theo thời gian thực.
+  * **Loại bỏ hoàn toàn dòng placeholder thừa:** Đã loại bỏ triệt để các dòng placeholder dạng `-- Chọn Đầu kéo/ Xe tải TVL --`, `-- Chọn Cảng / Depot Lấy --`, v.v. khỏi danh sách kết quả xổ xuống. Khi người dùng mở dropdown, hệ thống hiển thị ngay các lựa chọn dữ liệu thực tế bên dưới thanh tìm kiếm kính lúp mà không còn dòng placeholder thừa.
   * **Bộ lọc thông minh không dấu:** Tự động chuẩn hóa tiếng Việt loại bỏ dấu (`removeVietnameseAccents`), cho phép gõ "cat lai" để tìm "CẢNG CÁT LÁI", "song than" để tìm "CHÂN THẬT SÓNG THẦN".
   * **Highlight từ khóa:** Tự động bôi vàng nổi bật các ký tự khớp từ khóa (`<mark class="bg-amber-100 font-bold">`).
   * **Tách Badge phân loại:** Tự động tách và gắn nhãn tag thẩm mỹ cho các phân loại ví dụ `(CẢNG BIỂN)`, `(KHO NGOẠI QUAN)`, `[Mã KH]` giúp giao diện trực quan và chuyên nghiệp.

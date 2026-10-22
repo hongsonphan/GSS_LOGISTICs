@@ -15321,7 +15321,8 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
         const terms = cleanQuery.split(/\s+/).filter(Boolean);
 
         visibleOptions = allOpts.filter(opt => {
-            if (opt.isPlaceholder && cleanQuery) return false;
+            // Loại bỏ hoàn toàn dòng placeholder (-- Chọn ... --) khỏi danh sách options
+            if (opt.isPlaceholder || !opt.value) return false;
             if (!terms.length) return true;
             const cleanText = removeVietnameseAccents(opt.text);
             const cleanVal = removeVietnameseAccents(opt.value);
