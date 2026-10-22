@@ -4369,22 +4369,30 @@ class SalesAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     permission_classes = [IsSalesOrDirector]
     def get(self, request):
-        from_date = request.GET.get('from_date') or request.GET.get('start_date')
-        to_date = request.GET.get('to_date') or request.GET.get('end_date')
+        # Tham số riêng biệt cho Báo giá (quote) và Đơn hàng (booking)
+        quote_from = request.GET.get('quote_from_date') or request.GET.get('from_date') or request.GET.get('start_date')
+        quote_to = request.GET.get('quote_to_date') or request.GET.get('to_date') or request.GET.get('end_date')
+        quote_period = request.GET.get('quote_period')
+
+        booking_from = request.GET.get('booking_from_date') or request.GET.get('from_date') or request.GET.get('start_date')
+        booking_to = request.GET.get('booking_to_date') or request.GET.get('to_date') or request.GET.get('end_date')
+        booking_period = request.GET.get('booking_period')
 
         quotations = Quotation.objects.filter(is_deleted=False).select_related('customer').prefetch_related('items').all()
-        if from_date:
-            try:
-                fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
-                quotations = quotations.filter(created_at__date__gte=fd)
-            except Exception:
-                pass
-        if to_date:
-            try:
-                td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
-                quotations = quotations.filter(created_at__date__lte=td)
-            except Exception:
-                pass
+        # Nếu chọn kỳ Tất Cả (all), không giới hạn ngày tạo để hiển thị trọn vẹn mọi hợp đồng tuyến
+        if quote_period != 'all':
+            if quote_from:
+                try:
+                    fd = datetime.datetime.strptime(quote_from.strip(), '%Y-%m-%d').date()
+                    quotations = quotations.filter(created_at__date__gte=fd)
+                except Exception:
+                    pass
+            if quote_to:
+                try:
+                    td = datetime.datetime.strptime(quote_to.strip(), '%Y-%m-%d').date()
+                    quotations = quotations.filter(created_at__date__lte=td)
+                except Exception:
+                    pass
 
         q_results = []
         total_monthly_expected_revenue = 0
@@ -4462,24 +4470,25 @@ class SalesAPIView(APIView):
         # 1. Trạng thái PENDING_DISPATCH (chờ điều) và PARTIALLY_DISPATCHED (đang điều) lên trước COMPLETED
         # 2. Ngày đóng hàng (loading_date) gần nhất lên trước
         bookings = BookingOrder.objects.filter(is_deleted=False).select_related('customer').prefetch_related('trips', 'trips__driver', 'trips__vehicle', 'trips__dropoff_driver', 'trips__dropoff_vehicle')
-        if from_date:
-            try:
-                fd = datetime.datetime.strptime(from_date.strip(), '%Y-%m-%d').date()
-                bookings = bookings.filter(
-                    Q(loading_date__gte=fd) | 
-                    Q(loading_date__isnull=True, created_at__date__gte=fd)
-                )
-            except Exception:
-                pass
-        if to_date:
-            try:
-                td = datetime.datetime.strptime(to_date.strip(), '%Y-%m-%d').date()
-                bookings = bookings.filter(
-                    Q(loading_date__lte=td) | 
-                    Q(loading_date__isnull=True, created_at__date__lte=td)
-                )
-            except Exception:
-                pass
+        if booking_period != 'all':
+            if booking_from:
+                try:
+                    fd = datetime.datetime.strptime(booking_from.strip(), '%Y-%m-%d').date()
+                    bookings = bookings.filter(
+                        Q(loading_date__gte=fd) | 
+                        Q(loading_date__isnull=True, created_at__date__gte=fd)
+                    )
+                except Exception:
+                    pass
+            if booking_to:
+                try:
+                    td = datetime.datetime.strptime(booking_to.strip(), '%Y-%m-%d').date()
+                    bookings = bookings.filter(
+                        Q(loading_date__lte=td) | 
+                        Q(loading_date__isnull=True, created_at__date__lte=td)
+                    )
+                except Exception:
+                    pass
 
         bookings = bookings.order_by(
             models.Case(

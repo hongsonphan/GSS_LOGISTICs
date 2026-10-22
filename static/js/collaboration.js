@@ -1,3 +1,17 @@
+function formatNewsDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    } catch (e) {
+        return dateStr;
+    }
+}
+
 /**
  * ==========================================================================
  * BIM LOGISTICS — COLLABORATION MODULE (NEWS, TASKS, IN-APP TEAM CHAT)
@@ -96,6 +110,8 @@ async function loadCompanyNews() {
     // Build URL params
     const params = new URLSearchParams();
     if (catFilter && catFilter.value) params.append('category_id', catFilter.value);
+    const deptFilter = document.getElementById('news-department-filter');
+    if (deptFilter && deptFilter.value) params.append('department', deptFilter.value);
     if (searchInput && searchInput.value.trim()) params.append('search', searchInput.value.trim());
 
     try {
@@ -144,100 +160,97 @@ async function loadCompanyNews() {
         }
 
         gridEl.innerHTML = json.data.map(p => {
-            // Xác định vạch viền định danh bên trái và icon theo mức độ ưu tiên
-            let borderAccent = 'border-l-teal-600';
-            let iconBoxClass = 'bg-teal-50 text-teal-700 border-teal-200';
-            let iconClass = 'ph-bold ph-newspaper';
-            let priorityBadge = '';
+            const urgentBadge = p.is_urgent ? `
+                <span class="inline-flex items-center text-[10px] font-black text-rose-700 bg-rose-100/90 px-1.5 py-0.5 rounded border border-rose-200 mr-1.5 shrink-0 gap-1">
+                    <i class="ph-bold ph-warning-circle text-[10.5px]"></i>Khẩn
+                </span>
+            ` : '';
 
-            if (p.is_urgent) {
-                borderAccent = 'border-l-rose-500 bg-rose-50/20';
-                iconBoxClass = 'bg-rose-100 text-rose-700 border-rose-200 shadow-xs';
-                iconClass = 'ph-bold ph-warning-octagon';
-                priorityBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200 shrink-0 flex items-center gap-1"><i class="ph-bold ph-warning-octagon text-[10px]"></i> Khẩn cấp</span>`;
-            } else if (p.is_pinned) {
-                borderAccent = 'border-l-amber-500 bg-amber-50/20';
-                iconBoxClass = 'bg-amber-100 text-amber-800 border-amber-200 shadow-xs';
-                iconClass = 'ph-bold ph-push-pin';
-                priorityBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200 shrink-0 flex items-center gap-1"><i class="ph-bold ph-push-pin text-[10px]"></i> Đã ghim</span>`;
-            }
+            const pinnedBadge = p.is_pinned ? `
+                <span class="inline-flex items-center text-[10px] font-black text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded border border-amber-200 mr-1.5 shrink-0 gap-1">
+                    <i class="ph-bold ph-push-pin text-[10.5px]"></i>Ghim
+                </span>
+            ` : '';
 
             const catName = p.category_info?.name || 'Thông báo chung';
             const catColor = p.category_info?.color || '#0d9488';
-            const catBadge = `<span class="text-xs font-bold px-2.5 py-0.5 rounded-full border shrink-0" style="background-color: ${catColor}15; border-color: ${catColor}35; color: ${catColor};">${escapeHtml(catName)}</span>`;
-            const deptDisplay = p.target_department === 'ALL' ? 'Toàn công ty' : (p.target_department || 'Nội bộ');
-            const summaryText = p.summary || '';
+            const catBadge = `
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 mr-1.5" style="background-color: ${catColor}15; border-color: ${catColor}40; color: ${catColor};">
+                    ${escapeHtml(catName)}
+                </span>
+            `;
+
+            const deptDisplay = p.target_department_display || (p.target_department === 'ALL' ? '' : p.target_department);
+            const deptBadge = (deptDisplay && p.target_department !== 'ALL') ? `
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200/80 mr-1.5 shrink-0">
+                    Phòng: ${escapeHtml(deptDisplay)}
+                </span>
+            ` : '';
+
+            let cardClasses = 'bg-white border-slate-200/90 hover:border-teal-400 hover:bg-teal-50/20 shadow-2xs hover:shadow-xs';
+            if (p.is_urgent) {
+                cardClasses = 'bg-rose-50/20 border-rose-200 hover:border-rose-400 shadow-2xs hover:shadow-xs';
+            } else if (p.is_pinned) {
+                cardClasses = 'bg-amber-50/25 border-amber-300 ring-1 ring-amber-200/60 hover:border-amber-400 shadow-2xs hover:shadow-xs';
+            }
+
+            const dateStr = formatNewsDate(p.published_at || p.created_at);
+            const authorName = p.author_name || 'Ban Giám Đốc';
 
             return `
                 <div onclick="openNewsDetailPage('${p.hashid || p.id}', event)" 
-                    class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs hover:border-teal-500 p-4 sm:p-5 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-start justify-between gap-4 group border-l-4 ${borderAccent}"
+                    class="p-3 sm:p-3.5 rounded-xl border ${cardClasses} transition-all cursor-pointer group flex flex-col justify-between space-y-1.5"
                     title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)">
                     
-                    <!-- Khối bên trái: Icon + Đoạn thông tin tương ứng -->
-                    <div class="flex items-start gap-3.5 min-w-0 flex-1">
-                        <!-- Icon nhận diện gọn gàng -->
-                        <div class="w-10 h-10 rounded-xl ${iconBoxClass} border flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                            <i class="${iconClass} text-xl"></i>
+                    <!-- Hàng 1: Badges bên trái + Ngày bên phải (Chuẩn Hình 3 & 4) -->
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center flex-wrap gap-y-1">
+                            ${urgentBadge}
+                            ${pinnedBadge}
+                            ${catBadge}
+                            ${deptBadge}
                         </div>
-
-                        <!-- Nội dung bản tin dạng đoạn -->
-                        <div class="min-w-0 flex-1 space-y-1">
-                            <!-- Dòng 1: Badges + Tác giả + Ngày đăng + Phòng ban -->
-                            <div class="flex items-center gap-2 flex-wrap text-xs">
-                                ${priorityBadge}
-                                ${catBadge}
-                                <span class="text-slate-300 font-normal">|</span>
-                                <span class="font-bold text-slate-700 flex items-center gap-1">
-                                    <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
-                                    ${escapeHtml(p.author_name || 'Ban Giám Đốc')}
-                                </span>
-                                <span class="text-slate-400 font-medium text-[11.5px]">• ${formatDateTime(p.created_at)}</span>
-                                <span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">Áp dụng: ${escapeHtml(deptDisplay)}</span>
-                            </div>
-
-                            <!-- Dòng 2: Tiêu đề bản tin to rõ nét -->
-                            <h4 class="text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors font-heading leading-snug pt-0.5">
-                                ${escapeHtml(p.title)}
-                            </h4>
-
-                            <!-- Dòng 3: Đoạn tóm tắt nội dung tương ứng -->
-                            ${summaryText ? `
-                                <p class="text-xs sm:text-[13px] text-slate-600 line-clamp-2 leading-relaxed font-normal">
-                                    ${escapeHtml(summaryText)}
-                                </p>
-                            ` : ''}
-
-                            <!-- Dòng 4: Tiện ích đính kèm + Lượt xem + Thảo luận -->
-                            <div class="flex items-center gap-4 text-xs text-slate-400 pt-1.5">
-                                <span class="flex items-center gap-1 font-medium" title="Lượt xem">
-                                    <i class="ph ph-eye text-teal-600 text-sm"></i> ${p.view_count || 0} lượt xem
-                                </span>
-                                <span class="flex items-center gap-1 font-medium" title="Ý kiến thảo luận">
-                                    <i class="ph ph-chat-centered-text text-teal-600 text-sm"></i> ${p.comments_count || 0} thảo luận
-                                </span>
-                                ${p.has_attachments || p.attachments_count > 0 ? `
-                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/70">
-                                        <i class="ph-bold ph-paperclip text-teal-600"></i> Có tệp đính kèm (${p.attachments_count || 1})
-                                    </span>
-                                ` : ''}
-                            </div>
-                        </div>
+                        <span class="text-[11px] font-medium text-slate-400 whitespace-nowrap shrink-0">${escapeHtml(dateStr)}</span>
                     </div>
 
-                    <!-- Khối bên phải: Nút Ghim & Nút Xem chi tiết -->
-                    <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                        ${canCreatePost ? `
-                            <button type="button" onclick="quickTogglePinNews(${p.id}, event)" 
-                                class="p-1.5 rounded-xl ${p.is_pinned ? 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-slate-200'} transition-colors shadow-2xs" 
-                                title="${p.is_pinned ? 'Bỏ ghim khỏi đầu trang' : 'Ghim bài lên đầu trang'}">
-                                <i class="ph-bold ph-push-pin text-sm"></i>
-                            </button>
-                        ` : ''}
-                        <button type="button" 
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 group-hover:bg-teal-700 text-slate-700 group-hover:text-white border border-slate-200 group-hover:border-teal-700 text-xs font-bold transition-all shadow-2xs shrink-0 cursor-pointer">
-                            <span>Xem chi tiết</span>
-                            <i class="ph-bold ph-arrow-right text-xs group-hover:translate-x-0.5 transition-transform"></i>
-                        </button>
+                    <!-- Hàng 2: Tiêu đề bản tin (Chuẩn Hình 3 & 4) -->
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-teal-800 transition-colors line-clamp-1 sm:line-clamp-2 font-heading leading-snug">
+                        ${escapeHtml(p.title)}
+                    </h4>
+
+                    <!-- Hàng 3: Tóm tắt nội dung (Chuẩn Hình 3 & 4) -->
+                    <p class="text-[11px] sm:text-xs text-slate-500 font-normal line-clamp-2 leading-relaxed">
+                        ${escapeHtml(p.summary || '')}
+                    </p>
+
+                    <!-- Hàng 4: Người đăng bên trái + Đọc tiếp > bên phải (Chuẩn Hình 3 & 4) -->
+                    <div class="flex items-center justify-between text-[10.5px] sm:text-[11px] text-slate-400 pt-1.5 border-t border-slate-100/90">
+                        <div class="flex items-center gap-3">
+                            <span>Người đăng: <strong class="text-slate-600 font-semibold">${escapeHtml(authorName)}</strong></span>
+                            ${p.attachments_count > 0 ? `
+                                <span class="inline-flex items-center text-teal-700 font-semibold gap-1 text-[10.5px]">
+                                    <i class="ph-bold ph-paperclip text-[11px]"></i>${p.attachments_count} tệp
+                                </span>
+                            ` : ''}
+                            ${p.view_count > 0 ? `
+                                <span class="inline-flex items-center text-slate-400 gap-1 text-[10.5px]">
+                                    <i class="ph ph-eye text-[11px]"></i>${p.view_count}
+                                </span>
+                            ` : ''}
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            ${canCreatePost ? `
+                                <button type="button" onclick="quickTogglePinNews(${p.id}, event)" 
+                                    class="p-1 rounded-md text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors" 
+                                    title="${p.is_pinned ? 'Bỏ ghim khỏi đầu trang' : 'Ghim bài lên đầu trang'}">
+                                    <i class="ph-${p.is_pinned ? 'fill text-amber-600' : 'bold'} ph-push-pin text-xs"></i>
+                                </button>
+                            ` : ''}
+                            <span class="text-teal-700 font-bold group-hover:underline flex items-center text-xs">
+                                Đọc tiếp <i class="ph ph-caret-right ml-0.5 text-xs"></i>
+                            </span>
+                        </div>
                     </div>
                 </div>
             `;

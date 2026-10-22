@@ -757,3 +757,69 @@ class CollaborationTestSuite(TestCase):
         self.assertEqual(res_del_by_reporter.status_code, 200)
         self.assertTrue(OfficeTask.all_objects.get(id=task.id).is_deleted)
 
+
+    def test_news_list_executive_department_visibility_and_filter(self):
+        """Kiểm thử Ban Giám Đốc xem được toàn bộ 4 bản tin của các phòng ban khác nhau, và nhân viên thường lọc theo đúng phòng ban."""
+        from apps.collaboration.models import CompanyPost
+
+        CompanyPost.objects.all().delete()
+
+        # Tạo 4 bản tin cho 4 phòng ban khác nhau:
+        p_all = CompanyPost.objects.create(
+            title="Quyết định toàn công ty",
+            content="Nội dung toàn cty",
+            author=self.director_user,
+            target_department='ALL',
+            is_published=True
+        )
+        p_acc = CompanyPost.objects.create(
+            title="Quy định tạm ứng kế toán",
+            content="Nội dung kế toán",
+            author=self.director_user,
+            target_department=Department.ACCOUNTING,
+            is_published=True
+        )
+        p_fleet = CompanyPost.objects.create(
+            title="Kiểm tra kỹ thuật đầu kéo",
+            content="Nội dung đội xe",
+            author=self.director_user,
+            target_department=Department.FLEET,
+            is_published=True
+        )
+        p_disp = CompanyPost.objects.create(
+            title="Lịch trực điều vận",
+            content="Nội dung điều vận",
+            author=self.director_user,
+            target_department=Department.DISPATCH,
+            is_published=True
+        )
+
+        # 1. Ban Giám Đốc truy cập -> PHẢI THẤY ĐỦ CẢ 4 BẢN TIN
+        self.client.force_login(self.director_user)
+        res_dir = self.client.get('/api/collaboration/news/posts/')
+        self.assertEqual(res_dir.status_code, 200)
+        dir_data = res_dir.json()['data']
+        self.assertEqual(len(dir_data), 4)
+        dir_titles = [x['title'] for x in dir_data]
+        self.assertIn("Quyết định toàn công ty", dir_titles)
+        self.assertIn("Quy định tạm ứng kế toán", dir_titles)
+        self.assertIn("Kiểm tra kỹ thuật đầu kéo", dir_titles)
+        self.assertIn("Lịch trực điều vận", dir_titles)
+
+        # 2. Ban Giám Đốc lọc theo phòng ban Kế toán
+        res_filter_acc = self.client.get(f'/api/collaboration/news/posts/?department={Department.ACCOUNTING}')
+        self.assertEqual(res_filter_acc.status_code, 200)
+        acc_data = res_filter_acc.json()['data']
+        self.assertEqual(len(acc_data), 1)
+        self.assertEqual(acc_data[0]['title'], "Quy định tạm ứng kế toán")
+
+        # 3. Nhân viên Điều vận (không phải quản lý cấp cao) truy cập
+        self.client.force_login(self.staff_dispatcher_user)
+        res_disp = self.client.get('/api/collaboration/news/posts/')
+        self.assertEqual(res_disp.status_code, 200)
+        disp_data = res_disp.json()['data']
+        disp_titles = [x['title'] for x in disp_data]
+        self.assertIn("Quyết định toàn công ty", disp_titles)
+        self.assertIn("Lịch trực điều vận", disp_titles)
+        self.assertNotIn("Quy định tạm ứng kế toán", disp_titles)
+        self.assertNotIn("Kiểm tra kỹ thuật đầu kéo", disp_titles)

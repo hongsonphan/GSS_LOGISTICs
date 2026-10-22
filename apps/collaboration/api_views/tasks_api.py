@@ -576,35 +576,53 @@ class OfficeTaskDirectoryAPIView(views.APIView):
     def get(self, request):
         departments = [{'code': choice[0], 'name': choice[1]} for choice in Department.choices]
         
-        # Chỉ lấy nhân viên có tài khoản đăng nhập (văn phòng / quản lý)
-        employees = Employee.objects.filter(
-            is_deleted=False,
-            user__isnull=False
-        ).select_related('user').order_by('department', 'full_name')
-
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
         current_emp = getattr(request.user, 'employee', None)
         is_super = request.user.is_superuser or (current_emp and current_emp.hierarchy_level >= 100)
+
+        # Lấy tất cả tài khoản User đang hoạt động được cấp trong hệ thống
+        active_users = User.objects.filter(is_active=True).select_related('employee').order_by('username')
 
         users_data = []
         assignable_users = []
 
-        for emp in employees:
+        for u in active_users:
+            emp = getattr(u, 'employee', None)
             can_assign = False
             if is_super:
                 can_assign = True
-            elif current_emp:
+            elif current_emp and emp:
                 can_assign = current_emp.can_assign_task_to(emp)
 
+            if emp:
+                full_name = emp.full_name
+                department = emp.department
+                department_name = emp.get_department_display()
+                role = emp.get_role_display()
+                emp_code = emp.code
+                h_level = emp.hierarchy_level
+                is_head = emp.is_department_head
+            else:
+                full_name = u.get_full_name() or u.username
+                department = 'BGD' if u.is_superuser else 'OFFICE'
+                department_name = 'Ban Giám Đốc' if u.is_superuser else 'Khối Văn Phòng'
+                role = 'Quản trị viên' if u.is_superuser else 'Nhân viên'
+                emp_code = u.username.upper()
+                h_level = 100 if u.is_superuser else 10
+                is_head = u.is_superuser
+
             item = {
-                'user_id': emp.user.id,
-                'username': emp.user.username,
-                'full_name': emp.full_name,
-                'employee_code': emp.code,
-                'department': emp.department,
-                'department_name': emp.get_department_display(),
-                'role': emp.get_role_display(),
-                'hierarchy_level': emp.hierarchy_level,
-                'is_department_head': emp.is_department_head,
+                'user_id': u.id,
+                'username': u.username,
+                'full_name': full_name,
+                'employee_code': emp_code,
+                'department': department,
+                'department_name': department_name,
+                'role': role,
+                'hierarchy_level': h_level,
+                'is_department_head': is_head,
                 'can_assign': can_assign
             }
             users_data.append(item)

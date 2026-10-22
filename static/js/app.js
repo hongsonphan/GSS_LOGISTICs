@@ -14385,7 +14385,10 @@ async function deleteBooking(bookingId) {
     }
 }
 
+let currentSalesSubTab = 'quotations';
+
 function switchSalesSubTab(tabName) {
+    currentSalesSubTab = tabName;
     const tabQuotesBtn = document.getElementById('tab-btn-quotations');
     const tabBookingsBtn = document.getElementById('tab-btn-bookings');
     const subtabQuotes = document.getElementById('subtab-sales-quotations');
@@ -14409,11 +14412,15 @@ function switchSalesSubTab(tabName) {
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-indigo-700">Nhân viên Kinh doanh (NVKD)</strong> — Khảo sát tuyến, chào giá, đàm phán hợp đồng';
         }
-        if (typeof applyQuoteFilters === 'function') {
-            applyQuoteFilters();
-        }
-        if (window.BimTableColumnManager) {
-            window.BimTableColumnManager.apply('sales-quotations-table');
+        if (!rawSalesQuotations || rawSalesQuotations.length === 0) {
+            loadSalesData();
+        } else {
+            if (typeof applyQuoteFilters === 'function') {
+                applyQuoteFilters();
+            }
+            if (window.BimTableColumnManager) {
+                window.BimTableColumnManager.apply('sales-quotations-table');
+            }
         }
     } else if (tabName === 'bookings') {
         if (subtabQuotes) subtabQuotes.classList.add('hidden');
@@ -14596,6 +14603,7 @@ function applyBookingFilters() {
 
     // Sắp xếp
     list.sort((a, b) => {
+        let valA, valB;
         if (bookingSortColumn === 'booking_code') {
             const cmp = (a.booking_code || '').toString().localeCompare((b.booking_code || '').toString(), 'vi', { numeric: true });
             return bookingSortDirection === 'asc' ? cmp : -cmp;
@@ -14609,20 +14617,20 @@ function applyBookingFilters() {
         }
 
         if (bookingSortColumn === 'price') {
-            valA = parseFloat(valA) || 0;
-            valB = parseFloat(valB) || 0;
+            valA = parseFloat(a.price) || 0;
+            valB = parseFloat(b.price) || 0;
             return bookingSortDirection === 'asc' ? valA - valB : valB - valA;
         }
 
         if (bookingSortColumn === 'progress_percent') {
-            valA = parseFloat(valA) || 0;
-            valB = parseFloat(valB) || 0;
+            valA = parseFloat(a.progress_percent) || 0;
+            valB = parseFloat(b.progress_percent) || 0;
             return bookingSortDirection === 'asc' ? valA - valB : valB - valA;
         }
 
         // Mặc định so sánh chuỗi / ngày giờ
-        valA = (valA || '').toString();
-        valB = (valB || '').toString();
+        valA = (a[bookingSortColumn] || '').toString();
+        valB = (b[bookingSortColumn] || '').toString();
         const cmp = valA.localeCompare(valB, 'vi');
         return bookingSortDirection === 'asc' ? cmp : -cmp;
     });
@@ -14805,13 +14813,33 @@ function renderBookingsTable(bookings) {
 
 async function loadSalesData() {
     try {
-        const period = (currentSalesSubTab === 'quotations' ? document.getElementById('quote-filter-period')?.value : document.getElementById('booking-filter-period')?.value) || 'this_month';
-        let url = '/api/sales/';
-        if (period !== 'all') {
-            const dateRange = getDateRangeForPeriod(period);
-            url += `?from_date=${dateRange.fromDate}&to_date=${dateRange.toDate}`;
+        const quotePeriod = document.getElementById('quote-filter-period')?.value || 'all';
+        const bookingPeriod = document.getElementById('booking-filter-period')?.value || 'this_month';
+
+        const params = new URLSearchParams();
+        params.append('quote_period', quotePeriod);
+        if (quotePeriod !== 'all') {
+            const qRange = getDateRangeForPeriod(quotePeriod);
+            params.append('quote_from_date', qRange.fromDate);
+            params.append('quote_to_date', qRange.toDate);
         }
-        const res = await fetchWithAuth(url);
+
+        params.append('booking_period', bookingPeriod);
+        if (bookingPeriod !== 'all') {
+            const bRange = getDateRangeForPeriod(bookingPeriod);
+            params.append('booking_from_date', bRange.fromDate);
+            params.append('booking_to_date', bRange.toDate);
+        }
+
+        // Tương thích ngược
+        const activePeriod = (currentSalesSubTab === 'quotations') ? quotePeriod : bookingPeriod;
+        if (activePeriod !== 'all') {
+            const actRange = getDateRangeForPeriod(activePeriod);
+            params.append('from_date', actRange.fromDate);
+            params.append('to_date', actRange.toDate);
+        }
+
+        const res = await fetchWithAuth(`/api/sales/?${params.toString()}`);
         if (!res.ok) throw new Error('Lỗi tải dữ liệu kinh doanh');
         const data = await res.json();
 

@@ -34,6 +34,18 @@
                 <option value="">Tất cả danh mục</option>
             </select>
 
+            <!-- Department Filter -->
+            <select id="news-department-filter" onchange="loadCompanyNews()" class="bg-slate-100 border-none rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:bg-white focus:ring-2 focus:ring-teal-500 transition-all outline-none cursor-pointer">
+                <option value="">Tất cả phòng ban</option>
+                <option value="ALL">Toàn công ty</option>
+                <option value="DISPATCH">Điều vận</option>
+                <option value="ACCOUNTING">Kế toán</option>
+                <option value="FLEET">Đội xe & Bãi</option>
+                <option value="SALES">Kinh doanh</option>
+                <option value="HR">Hành chính Nhân sự</option>
+                <option value="CUSTOMS">Hải quan</option>
+            </select>
+
             <!-- Refresh Button -->
             <button type="button" onclick="loadCompanyNews()" class="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors" title="Làm mới">
                 <i class="ph-bold ph-arrows-clockwise text-sm"></i>
@@ -53,7 +65,7 @@
         <div id="news-pinned-container" class="hidden"></div>
 
         <!-- News Post Feed -->
-        <div class="max-w-6xl mx-auto space-y-3.5">
+        <div class="max-w-5xl mx-auto space-y-3">
             <div class="flex items-center justify-between pb-1">
                 <h3 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 font-heading">
                     <i class="ph-bold ph-newspaper text-teal-600 text-base"></i>
@@ -61,7 +73,7 @@
                 </h3>
                 <span class="text-xs text-slate-400 font-medium hidden sm:inline">Bấm vào từng bản tin để xem toàn văn và tài liệu đính kèm</span>
             </div>
-            <div id="news-posts-grid" class="space-y-3">
+            <div id="news-posts-grid" class="space-y-2.5">
                 <!-- News Feed items injected here via JS -->
             </div>
         </div>

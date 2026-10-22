@@ -2527,7 +2527,10 @@ async function deleteBooking(bookingId) {
     }
 }
 
+let currentSalesSubTab = 'quotations';
+
 function switchSalesSubTab(tabName) {
+    currentSalesSubTab = tabName;
     const tabQuotesBtn = document.getElementById('tab-btn-quotations');
     const tabBookingsBtn = document.getElementById('tab-btn-bookings');
     const subtabQuotes = document.getElementById('subtab-sales-quotations');
@@ -2551,11 +2554,15 @@ function switchSalesSubTab(tabName) {
         if (roleHint) {
             roleHint.innerHTML = 'Phân quyền: <strong class="text-indigo-700">Nhân viên Kinh doanh (NVKD)</strong> — Khảo sát tuyến, chào giá, đàm phán hợp đồng';
         }
-        if (typeof applyQuoteFilters === 'function') {
-            applyQuoteFilters();
-        }
-        if (window.BimTableColumnManager) {
-            window.BimTableColumnManager.apply('sales-quotations-table');
+        if (!rawSalesQuotations || rawSalesQuotations.length === 0) {
+            loadSalesData();
+        } else {
+            if (typeof applyQuoteFilters === 'function') {
+                applyQuoteFilters();
+            }
+            if (window.BimTableColumnManager) {
+                window.BimTableColumnManager.apply('sales-quotations-table');
+            }
         }
     } else if (tabName === 'bookings') {
         if (subtabQuotes) subtabQuotes.classList.add('hidden');
@@ -2738,6 +2745,7 @@ function applyBookingFilters() {
 
     // Sắp xếp
     list.sort((a, b) => {
+        let valA, valB;
         if (bookingSortColumn === 'booking_code') {
             const cmp = (a.booking_code || '').toString().localeCompare((b.booking_code || '').toString(), 'vi', { numeric: true });
             return bookingSortDirection === 'asc' ? cmp : -cmp;
@@ -2751,20 +2759,20 @@ function applyBookingFilters() {
         }
 
         if (bookingSortColumn === 'price') {
-            valA = parseFloat(valA) || 0;
-            valB = parseFloat(valB) || 0;
+            valA = parseFloat(a.price) || 0;
+            valB = parseFloat(b.price) || 0;
             return bookingSortDirection === 'asc' ? valA - valB : valB - valA;
         }
 
         if (bookingSortColumn === 'progress_percent') {
-            valA = parseFloat(valA) || 0;
-            valB = parseFloat(valB) || 0;
+            valA = parseFloat(a.progress_percent) || 0;
+            valB = parseFloat(b.progress_percent) || 0;
             return bookingSortDirection === 'asc' ? valA - valB : valB - valA;
         }
 
         // Mặc định so sánh chuỗi / ngày giờ
-        valA = (valA || '').toString();
-        valB = (valB || '').toString();
+        valA = (a[bookingSortColumn] || '').toString();
+        valB = (b[bookingSortColumn] || '').toString();
         const cmp = valA.localeCompare(valB, 'vi');
         return bookingSortDirection === 'asc' ? cmp : -cmp;
     });

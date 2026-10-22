@@ -66,6 +66,7 @@ class CompanyPostListSerializer(serializers.ModelSerializer):
     comments_count = serializers.IntegerField(read_only=True)
     has_attachments = serializers.SerializerMethodField()
     attachments_count = serializers.SerializerMethodField()
+    target_department_display = serializers.CharField(source='get_target_department_display', read_only=True)
     is_read = serializers.SerializerMethodField()
 
     class Meta:
@@ -73,7 +74,7 @@ class CompanyPostListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'hashid', 'title', 'category', 'category_info', 'author_name',
             'summary', 'cover_image', 'is_pinned', 'is_urgent',
-            'target_department', 'published_at', 'view_count',
+            'target_department', 'target_department_display', 'published_at', 'view_count',
             'comments_count', 'has_attachments', 'attachments_count', 'is_read', 'created_at'
         ]
 

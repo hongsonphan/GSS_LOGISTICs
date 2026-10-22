@@ -2,6 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.6] - 2026-10-22 (Đồng Bộ Dữ Liệu Bản Tin Đa Phòng Ban Cho Ban Giám Đốc & Chuẩn Hóa Thẻ Tin Tinh Gọn Theo Hình 3 & 4)
+
+### 1. Khắc Phục Lỗi Lọc Mất Tin Tức Phân Hệ Bản Tin (apps/collaboration/api_views/news_api.py):
+- **Bối cảnh & Nguyên nhân:** Trong Django Admin có 4 bài viết đã xuất bản thuộc các phòng ban khác nhau (Toàn công ty, Kế toán, Đội xe, Điều vận). Tuy nhiên khi Ban Giám Đốc truy cập /news, API trước đây áp dụng cứng bộ lọc target_department=employee.department (vốn là MANAGEMENT), khiến 3 bài viết của Kế toán, Đội xe, Điều vận bị lọc mất, người dùng chỉ nhìn thấy duy nhất 1 tin tức.
+- **Xử lý đặc quyền quản trị (is_privileged):** Ban Giám Đốc (role=DIRECTOR, department=MANAGEMENT), Superuser và quản lý cấp cao (hierarchy_level >= 80) được phân quyền xem toàn bộ bài viết của tất cả các phòng ban.
+- **Bộ lọc phòng ban linh hoạt:** Bổ sung tham số ?department= tại API và dropdown chọn phòng ban trên thanh công cụ trang Bản tin (#news-department-filter) cho phép lọc theo phòng ban (Tất cả, Toàn công ty, Điều vận, Kế toán, Đội xe, Kinh doanh, Nhân sự, Hải quan).
+- **Serializers:** Bổ sung target_department_display vào CompanyPostListSerializer để trả về tên phòng ban thân thiện.
+
+### 2. Thiết Kế Thẻ Bản Tin Tinh Gọn, Đơn Giản & Liền Mạch Theo Chuẩn Hình 3 & 4 (static/js/collaboration.js & templates/views/view_news.html):
+- **Loại bỏ hoàn toàn các khối cồng kềnh:** Bỏ icon tròn to bản bên trái (w-10 h-10), bỏ vạch viền sọc dày border-l-4, bỏ cột nút xem chi tiết to bản bên phải.
+- **Đồng bộ hóa 100% theo giao diện thẻ thông báo trực quan (Hình 3 & 4):**
+  * **Hàng 1 (Badges & Ngày tháng):** Cụm huy hiệu tinh gọn [ ! Khẩn ] (rose-100), [ Ghim ] (amber-100), [ Danh mục ] (màu nhận diện) và [ Phòng ban ] nằm bên trái; ngày phát hành định dạng chuẩn DD/MM/YYYY (ví dụ 17/10/2026) nằm sát bên phải.
+  * **Hàng 2 (Tiêu đề):** Tiêu đề in đậm font heading (text-xs sm:text-sm font-bold text-slate-800 group-hover:text-teal-800), hiển thị tối ưu 1-2 dòng.
+  * **Hàng 3 (Tóm tắt nội dung):** Đoạn trích dẫn nội dung (text-[11px] sm:text-xs text-slate-500 font-normal line-clamp-2), văn phong rõ ràng, súc tích.
+  * **Hàng 4 (Chân thẻ):** Bên trái hiển thị thông tin tác giả Người đăng: Võ Triển (Giám Đốc) cùng số lượng tệp đính kèm và lượt xem; bên phải hiển thị nút Đọc tiếp > và nút ghim nhanh cho quản trị viên.
+- **Trải nghiệm thẻ card thanh lịch:** Viền mỏng border-slate-200/90 rounded-xl, hiệu ứng hover nhẹ hover:border-teal-400 hover:bg-teal-50/20, bấm vào bất kỳ vị trí nào trên thẻ đều mở trang toàn văn chi tiết trên Base layout.
+
+### 3. Kiểm Thử Toàn Diện & Đảm Bảo Zero-Regression:
+- Bổ sung Unit test tự động test_news_list_executive_department_visibility_and_filter xác nhận Ban Giám Đốc xem đủ 4/4 bản tin đa phòng ban và nhân viên thường lọc đúng phạm vi.
+- Kiểm thử JavaScript: node -c static/js/collaboration.js và node -c static/js/app.js đạt 0 lỗi cú pháp.
+- Kiểm thử hồi quy hệ thống: Chạy 145/145 unit tests đạt 100% PASSED (OK).
+
+---
+
 ## [v4.1.5] - 2026-10-22 (Bổ Sung Toàn Diện Phân Hệ Quản Lý Rơ-Moóc Container & Cơ Cấu Tab Điều Hướng Đội Xe)
 
 ### 1. Cơ Cấu Tab Chuyển Đổi Phương Tiện Chuyên Nghiệp (`templates/views/view_fleet.html`):

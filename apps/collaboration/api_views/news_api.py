@@ -6,7 +6,7 @@ from apps.collaboration.models import (
     PostCategory, CompanyPost, PostComment, PostReadStatus, PostAttachment,
     Notification, NotificationType
 )
-from apps.personnel.models import Employee
+from apps.personnel.models import Employee, EmployeeRole, Department
 from apps.collaboration.serializers import (
     PostCategorySerializer, CompanyPostListSerializer,
     CompanyPostDetailSerializer, PostCommentSerializer
@@ -62,11 +62,27 @@ class CompanyPostListCreateAPIView(views.APIView):
                 Q(content__icontains=search)
             )
 
-        # Lọc theo phòng ban đích của nhân viên hiện tại
-        employee = getattr(request.user, 'employee', None)
-        if employee:
-            user_dept = employee.department
-            qs = qs.filter(Q(target_department='ALL') | Q(target_department=user_dept))
+        # Phân quyền & lọc theo phòng ban đích
+        target_dept = request.GET.get('department')
+        user = request.user
+        employee = getattr(user, 'employee', None)
+        is_privileged = (
+            user.is_superuser or
+            (employee and (
+                getattr(employee, 'hierarchy_level', 0) >= 80 or
+                getattr(employee, 'role', '') == EmployeeRole.DIRECTOR or
+                getattr(employee, 'department', '') == Department.MANAGEMENT
+            ))
+        )
+
+        if target_dept and target_dept != 'ALL':
+            qs = qs.filter(target_department=target_dept)
+        elif not is_privileged:
+            user_dept = getattr(employee, 'department', None) if employee else None
+            if user_dept and user_dept != 'ALL':
+                qs = qs.filter(Q(target_department='ALL') | Q(target_department=user_dept) | Q(author=user))
+            else:
+                qs = qs.filter(Q(target_department='ALL') | Q(author=user))
 
         posts = qs.order_by('-is_pinned', '-is_urgent', '-created_at')[:50]
         serializer = CompanyPostListSerializer(posts, many=True, context={'request': request})
@@ -177,7 +193,11 @@ class CompanyPostDetailAPIView(views.APIView):
         is_privileged = (
             request.user.is_superuser or
             (post.author_id == request.user.id) or
-            (employee and employee.hierarchy_level >= 80)
+            (employee and (
+                getattr(employee, 'hierarchy_level', 0) >= 80 or
+                getattr(employee, 'role', '') == EmployeeRole.DIRECTOR or
+                getattr(employee, 'department', '') == Department.MANAGEMENT
+            ))
         )
 
         if not post.is_published and not is_privileged:
