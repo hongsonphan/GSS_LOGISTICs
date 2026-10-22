@@ -2,6 +2,55 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.0] - 2026-10-22 (Chuẩn Hóa Thao Tác CRUD Cho Các Phiếu Ở Phân Hệ Tài Chính & Kế Toán: Chuẩn 2 Nút Bảng Thao Tác & Bộ 4 Nút Sửa - Lưu - In - Xóa)
+
+### 1. Chuẩn Hóa Cột Thao Tác Tại Các Bảng Kế Toán (2 Nút Bấm Trực Quan Chuẩn BIM):
+- **Bảng Quản Lý Tạm Ứng & Đối Soát Hoàn Ứng Tài Xế (#accounting-advances-table):**
+  * Thay thế cột thao tác đơn điệu (chỉ có 1 nút hoặc text 'Đã chốt sổ') thành **chuẩn 2 nút thao tác**:
+    1. **Nút [Xem]** (viền teal thanh lịch, icon ph-eye): Bấm mở modal chi tiết phiếu tạm ứng hỗ trợ đầy đủ chế độ xem, sửa, lưu, in và xóa.
+    2. **Nút [Quyết Toán]** (màu emerald, icon ph-calculator, đối với phiếu đang tạm ứng) HOẶC **Nút [In]** (viền slate, icon ph-printer, đối với phiếu đã hoàn ứng).
+- **Bảng Quản Lý Quỹ Tạm Ứng Điều Vận (#accounting-dispatcher-funds-table):**
+  * Nâng cấp thành **chuẩn 2 nút thao tác**:
+    1. **Nút [Xem]** (viền indigo, icon ph-eye): Mở chi tiết Quỹ Điều Vận để kiểm soát dòng tiền, giải ngân, duyệt hoặc xóa.
+    2. **Nút [Duyệt Quỹ]** (nếu Chờ duyệt) / **Nút [Quyết Toán]** (nếu Đang lưu hành) / **Nút [In]** (nếu Đã hoàn ứng) / **Nút [Xóa]** (nếu Bị từ chối).
+- **Bảng Đối Soát & Quyết Toán Nhà Xe Thầu Phụ 3PL (#accounting-subcon-table):**
+  * Nâng cấp cột thao tác: Nút 1 [Sửa] thỏa thuận cước và Nút 2 [Quyết Toán] (hoặc [In Phiếu] nếu đã hoàn tất).
+
+### 2. Thiết Kế Bộ 4 Nút Hành Động Chuẩn BIM Khi Mở Chi Tiết Phiếu (Sửa - Lưu - In - Xóa):
+- **Modal Chi Tiết Phiếu Tạm Ứng Tài Xế (	emplates/components/modal_driver_advance.html):**
+  * Hỗ trợ 2 chế độ: **Tạo mới (Create)** và **Chi tiết (View/Edit)**.
+  * Hiển thị mã phiếu (TUTX-...), banner trạng thái (Đang tạm ứng / Đã hoàn ứng), khối tóm tắt quyết toán hoàn ứng (thực chi, tiền hoàn/bù, người chốt).
+  * Bộ 4 nút hành động ở chân trang:
+    1. **[Xóa Phiếu]** (màu đỏ rose, icon ph-trash): Soft-delete an toàn qua showConfirmModal, tự động hoàn trả số tiền tạm ứng vào Quỹ Điều Vận hoặc trừ khỏi chuyến xe (chặn xóa nếu đã chốt hoàn ứng).
+    2. **[In Phiếu]** (màu slate, icon ph-printer): Xuất bản in Phiếu Chi Tạm Ứng Chuyến Xe Mẫu 02-TT / C40-BB theo chuẩn Bộ Tài Chính A4 sắc nét, có bảng ký 5 bên.
+    3. **[Sửa]** (màu amber, icon ph-pencil-simple): Mở khóa các trường dữ liệu để hiệu chỉnh.
+    4. **[Lưu]** (màu teal, icon ph-check): Gọi API PUT cập nhật dữ liệu.
+- **Modal Chi Tiết Quỹ Điều Vận (	emplates/components/modal_dispatcher_fund.html):**
+  * Hiển thị đầy đủ số tiền cấp quỹ, số tiền đã giải ngân cho các chuyến xe, số tiền đã thu hồi và số dư khả dụng còn lại.
+  * Đầy đủ bộ 4 nút hành động: [Xóa Quỹ] (chỉ cho phép xóa khi chưa giải ngân), [In Phiếu], [Sửa], [Lưu], [Đóng].
+- **Modal Quyết Toán Xe Bạn Thầu Phụ 3PL (modal_subcontractor_settle.html):**
+  * Bổ sung nút [Hủy Quyết Toán] (hoàn tác về trạng thái chờ quyết toán), [In Phiếu Quyết Toán 3PL], [Sửa], [Lưu].
+- **Modal Đối Soát & Hoàn Ứng Tạm Ứng (modal_settle_advance.html):**
+  * Bổ sung nút [In Biên Bản Hoàn Ứng] A4 chuẩn kế toán xác nhận chênh lệch và chữ ký 3 bên.
+
+### 3. Backend RESTful APIs Cho Phiếu Kế Toán (pps/billing/advance_views.py):
+- GET /api/accounting/driver-advances/<id>/: Trả về chi tiết phiếu tạm ứng chuyến xe kèm thông tin chuyến, tài xế, quỹ điều vận và kết quả quyết toán.
+- PUT/PATCH /api/accounting/driver-advances/<id>/: Cập nhật số tiền, ngày ứng, mục đích, ghi chú; tự động đối chiếu số dư Quỹ Điều Vận và cập nhật chuyến xe.
+- DELETE /api/accounting/driver-advances/<id>/: Soft-delete phiếu tạm ứng, bảo vệ tính toàn vẹn (chặn xóa phiếu đã hoàn ứng).
+- GET /api/accounting/dispatcher-funds/<id>/: Chi tiết Quỹ Điều Vận.
+- PUT/PATCH /api/accounting/dispatcher-funds/<id>/: Cập nhật thông tin Quỹ Điều Vận.
+- DELETE /api/accounting/dispatcher-funds/<id>/: Soft-delete Quỹ Điều Vận (chặn xóa nếu quỹ đã phát sinh giải ngân cho các chuyến xe).
+- Bổ sung action unsettle cho SubcontractorSettlementsAPIView (pps/billing/finance_reports_api.py).
+
+### 4. Đảm Bảo Chất Lượng & Kiểm Thử Hồi Quy 100%:
+- Bổ sung test case 	est_accounting_driver_advance_and_fund_crud vào pps/billing/tests.py.
+- Toàn bộ 142/142 tests passing (python manage.py test --keepdb).
+- Đạt 100% chuẩn cú pháp JavaScript (
+ode -c static/js/app.js và 
+ode -c static/js/column_manager.js).
+
+---
+
 ## [v3.9.9] - 2026-10-22 (Khắc Phục Lỗi 404 Xem Chứng Từ Đính Kèm, Bổ Sung Bộ File PDF Mẫu EIR/POD A4 & Cơ Chế Safe Media Serve)
 
 ### 1. Khắc Phục Triệt Để Lỗi 404 Khi Xem Chứng Từ Đính Kèm:

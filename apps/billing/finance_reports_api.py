@@ -829,6 +829,16 @@ class SubcontractorSettlementsAPIView(APIView):
                 'settlement_code': pt_code
             }, status=status.HTTP_200_OK)
 
+        elif action == 'unsettle':
+            trip.subcontractor_settlement_status = 'PENDING'
+            trip.subcontractor_settled_at = None
+            trip.save(update_fields=['subcontractor_settlement_status', 'subcontractor_settled_at'])
+            return Response({
+                'success': True,
+                'message': f"Đã hoàn tác quyết toán chuyến xe bạn [{trip.trip_code}] về trạng thái chờ quyết toán!",
+                'trip_id': trip.id
+            }, status=status.HTTP_200_OK)
+
         return Response({'error': 'Hành động không hợp lệ!'}, status=status.HTTP_400_BAD_REQUEST)
 
 

@@ -366,3 +366,101 @@ class DriverBatchSettlementTests(TestCase):
         self.assertEqual(target_trip['subcontractor_advance'], 1000000)
         # Còn phải trả = 3,000,000 (cước) + 500,000 (hoàn chi hộ) - 1,000,000 (tạm ứng) = 2,500,000
         self.assertEqual(target_trip['remaining_payable'], 2500000)
+
+    def test_accounting_driver_advance_and_fund_crud(self):
+        """Kiểm thử toàn diện CRUD cho Phiếu Tạm Ứng Tài Xế và Quỹ Điều Vận."""
+        import uuid
+        from apps.billing.models import DriverTripAdvance, DispatcherAdvanceFund, FundStatus, DriverAdvanceStatus
+
+        self.client.force_authenticate(user=self.accountant_user)
+
+        unique_suffix = uuid.uuid4().hex[:6].upper()
+        # 1. Quỹ Điều Vận: GET, PUT, DELETE
+        fund = DispatcherAdvanceFund.objects.create(
+            code=f'QDV-TEST-{unique_suffix}',
+            dispatcher=self.driver_emp,
+            amount=10000000,
+            advance_date=datetime.date.today(),
+            purpose='Quỹ tạm ứng test',
+            status=FundStatus.PENDING
+        )
+
+        # 1.1 GET Quỹ
+        get_fund_res = self.client.get(f'/api/accounting/dispatcher-funds/{fund.id}/')
+        self.assertEqual(get_fund_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(get_fund_res.data['fund']['code'], f'QDV-TEST-{unique_suffix}')
+        self.assertEqual(get_fund_res.data['fund']['amount'], 10000000)
+
+        # 1.2 PUT Quỹ (sửa số tiền và ghi chú)
+        put_fund_res = self.client.put(f'/api/accounting/dispatcher-funds/{fund.id}/', data={
+            'amount': '15000000',
+            'notes': 'Cập nhật định mức quỹ lên 15tr'
+        }, format='json')
+        self.assertEqual(put_fund_res.status_code, status.HTTP_200_OK)
+        fund.refresh_from_db()
+        self.assertEqual(fund.amount, 15000000)
+        self.assertEqual(fund.notes, 'Cập nhật định mức quỹ lên 15tr')
+
+        # 1.3 DELETE Quỹ khi chưa giải ngân
+        del_fund_res = self.client.delete(f'/api/accounting/dispatcher-funds/{fund.id}/')
+        self.assertEqual(del_fund_res.status_code, status.HTTP_200_OK)
+        fund.refresh_from_db()
+        self.assertTrue(fund.is_deleted)
+
+        # 2. Phiếu Tạm Ứng Tài Xế: GET, PUT, DELETE
+        trip_test = DispatchTrip.objects.create(
+            trip_code=f'TRIP-ADV-{unique_suffix}',
+            customer=self.customer,
+            vehicle=self.vehicle,
+            driver=self.driver_emp,
+            status=TripStatus.IN_TRANSIT,
+            loading_date=datetime.date.today(),
+            driver_advance_amount=2000000,
+            advance_settlement_status='ADVANCED'
+        )
+        adv = DriverTripAdvance.objects.create(
+            code=f'TUTX-TEST-{unique_suffix}',
+            trip=trip_test,
+            driver=self.driver_emp,
+            amount=2000000,
+            advance_date=datetime.date.today(),
+            purpose='Chi cầu đường test',
+            status=DriverAdvanceStatus.ADVANCED
+        )
+
+        # 2.1 GET Phiếu tạm ứng
+        get_adv_res = self.client.get(f'/api/accounting/driver-advances/{adv.id}/')
+        self.assertEqual(get_adv_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(get_adv_res.data['advance']['code'], f'TUTX-TEST-{unique_suffix}')
+        self.assertEqual(get_adv_res.data['advance']['amount'], 2000000)
+
+        # 2.2 PUT Phiếu tạm ứng (sửa số tiền lên 2.500.000)
+        put_adv_res = self.client.put(f'/api/accounting/driver-advances/{adv.id}/', data={
+            'amount': '2500000',
+            'notes': 'Tài xế xin ứng thêm 500k chi phát sinh'
+        }, format='json')
+        self.assertEqual(put_adv_res.status_code, status.HTTP_200_OK)
+        adv.refresh_from_db()
+        self.assertEqual(adv.amount, 2500000)
+        trip_test.refresh_from_db()
+        self.assertEqual(trip_test.driver_advance_amount, 2500000)
+
+        # 2.3 DELETE Phiếu tạm ứng (Soft delete và hoàn tiền chuyến)
+        del_adv_res = self.client.delete(f'/api/accounting/driver-advances/{adv.id}/')
+        self.assertEqual(del_adv_res.status_code, status.HTTP_200_OK)
+        adv.refresh_from_db()
+        self.assertTrue(adv.is_deleted)
+        trip_test.refresh_from_db()
+        self.assertEqual(trip_test.driver_advance_amount, 0)
+        self.assertEqual(trip_test.advance_settlement_status, 'NONE')
+
+        # 3. Xe bạn Thầu phụ: Action 'unsettle' (Hoàn tác quyết toán)
+        self.trip1.subcontractor_settlement_status = 'SETTLED'
+        self.trip1.save()
+        unsettle_res = self.client.post('/api/accounting/subcontractor-settlements/', data={
+            'action': 'unsettle',
+            'trip_id': self.trip1.id
+        }, format='json')
+        self.assertEqual(unsettle_res.status_code, status.HTTP_200_OK)
+        self.trip1.refresh_from_db()
+        self.assertEqual(self.trip1.subcontractor_settlement_status, 'PENDING')

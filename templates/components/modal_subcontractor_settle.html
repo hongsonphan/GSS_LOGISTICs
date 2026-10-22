@@ -113,15 +113,41 @@
                     class="form-textarea p-2.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-slate-800 focus:ring-1 focus:ring-slate-700 w-full"></textarea>
             </div>
 
-            <!-- Buttons -->
-            <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2.5">
-                <button type="button" onclick="closeSubcontractorModal()" class="px-4 py-1.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
-                    Hủy Bỏ
-                </button>
-                <button type="submit" id="btn-save-subcon" class="px-5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
-                    <i class="ph-bold ph-check text-sm"></i>
-                    <span id="btn-save-subcon-label">Lưu</span>
-                </button>
+            <!-- Buttons (Chuẩn BIM: Xóa/Hoàn tác | In, Sửa, Lưu, Đóng) -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div>
+                    <button type="button" id="btn-subcon-unsettle" onclick="handleUnsettleSubcontractor()"
+                        class="hidden px-3.5 py-1.5 bg-transparent border border-rose-600 text-rose-700 hover:bg-rose-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Hủy quyết toán, chuyển về trạng thái chờ quyết toán">
+                        <i class="ph-bold ph-arrow-counter-clockwise text-sm"></i>
+                        <span>Hủy Quyết Toán</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button type="button" id="btn-subcon-print" onclick="printSubcontractorVoucher()"
+                        class="px-3.5 py-1.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="In phiếu đối soát cước xe bạn khổ A4">
+                        <i class="ph-bold ph-printer text-sm"></i>
+                        <span>In Phiếu</span>
+                    </button>
+
+                    <button type="button" id="btn-subcon-edit" onclick="enableSubcontractorEdit()"
+                        class="px-3.5 py-1.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Bật chế độ chỉnh sửa giá cước thỏa thuận & tạm ứng">
+                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        <span>Sửa</span>
+                    </button>
+
+                    <button type="submit" id="btn-save-subcon" class="px-5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="ph-bold ph-check text-sm"></i>
+                        <span id="btn-save-subcon-label">Lưu</span>
+                    </button>
+
+                    <button type="button" onclick="closeSubcontractorModal()" class="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
+                        Đóng
+                    </button>
+                </div>
             </div>
         </form>
     </div>

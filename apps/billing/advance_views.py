@@ -550,6 +550,281 @@ class DriverAdvanceSettleAPIView(APIView):
         })
 
 
+class DriverAdvanceDetailAPIView(APIView):
+    """API Chi Tiết, Cập Nhật & Xóa Mềm Phiếu Tạm Ứng Chuyến Của Tài Xế (CRUD Chuẩn BIM)."""
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsDispatcherOrAccountant]
+
+    def get(self, request, pk):
+        advance = DriverTripAdvance.objects.select_related(
+            'trip', 'trip__customer', 'trip__vehicle', 'driver', 'dispatcher_fund', 'settled_by'
+        ).filter(id=pk, is_deleted=False).first()
+        if not advance:
+            return Response({'error': 'Không tìm thấy phiếu tạm ứng chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+        trip = advance.trip
+        customer_name = ''
+        route_name = ''
+        license_plate = ''
+        if trip:
+            customer_name = (trip.customer.short_name or trip.customer.name) if trip.customer else ''
+            if getattr(trip, 'pickup_location', None) or getattr(trip, 'warehouse_location', None):
+                route_name = f"{trip.pickup_location or ''} -> {trip.warehouse_location or ''}".strip(' ->')
+            license_plate = trip.vehicle.license_plate if trip.vehicle else (trip.assigned_vehicle_plate or '')
+
+        data = {
+            'id': advance.id,
+            'code': advance.code,
+            'trip_id': advance.trip_id,
+            'trip_code': trip.trip_code if trip else '',
+            'customer_name': customer_name,
+            'route_name': route_name,
+            'license_plate': license_plate,
+            'driver_id': advance.driver_id,
+            'driver_name': advance.driver.full_name if advance.driver else '',
+            'driver_phone': (getattr(advance.driver, 'phone_number', '') or '') if advance.driver else '',
+            'dispatcher_fund_id': advance.dispatcher_fund_id,
+            'fund_code': advance.dispatcher_fund.code if advance.dispatcher_fund else '',
+            'advance_source': advance.advance_source,
+            'advance_source_label': advance.get_advance_source_display(),
+            'amount': int(advance.amount),
+            'advance_date': advance.advance_date.strftime('%Y-%m-%d') if advance.advance_date else '',
+            'purpose': advance.purpose or '',
+            'status': advance.status,
+            'status_label': advance.get_status_display(),
+            'actual_spent': int(advance.actual_spent or 0),
+            'refund_amount': int(advance.refund_amount or 0),
+            'reimburse_amount': int(advance.reimburse_amount or 0),
+            'settlement_diff_type': advance.settlement_diff_type,
+            'settled_at': advance.settled_at.strftime('%d/%m/%Y %H:%M') if advance.settled_at else '',
+            'settled_by': advance.settled_by.full_name if advance.settled_by else '',
+            'notes': advance.notes or '',
+            'settlement_notes': advance.settlement_notes or '',
+        }
+        return Response({'success': True, 'advance': data})
+
+    def put(self, request, pk):
+        return self._handle_update(request, pk)
+
+    def patch(self, request, pk):
+        return self._handle_update(request, pk)
+
+    def _handle_update(self, request, pk):
+        with transaction.atomic():
+            advance = DriverTripAdvance.objects.select_for_update().filter(id=pk, is_deleted=False).first()
+            if not advance:
+                return Response({'error': 'Không tìm thấy phiếu tạm ứng chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+            purpose = request.data.get('purpose')
+            notes = request.data.get('notes')
+            settlement_notes = request.data.get('settlement_notes')
+            advance_date_raw = request.data.get('advance_date')
+            amount_raw = request.data.get('amount')
+
+            if advance.status == DriverAdvanceStatus.SETTLED:
+                # Đã hoàn ứng chốt sổ -> chỉ cho phép hiệu chỉnh ghi chú
+                if notes is not None:
+                    advance.notes = str(notes).strip()
+                if settlement_notes is not None:
+                    advance.settlement_notes = str(settlement_notes).strip()
+                advance.save()
+                return Response({
+                    'success': True,
+                    'message': f'Đã cập nhật ghi chú phiếu tạm ứng {advance.code} thành công'
+                })
+
+            # Phiếu đang tạm ứng (ADVANCED) -> Cho phép cập nhật đầy đủ thông tin
+            if purpose is not None:
+                advance.purpose = str(purpose).strip()
+            if notes is not None:
+                advance.notes = str(notes).strip()
+            if advance_date_raw:
+                try:
+                    advance.advance_date = datetime.datetime.strptime(str(advance_date_raw).strip(), '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+
+            if amount_raw is not None:
+                try:
+                    new_amount = int(str(amount_raw).replace('.', '').replace(',', '').strip())
+                except (ValueError, TypeError):
+                    return Response({'error': 'Số tiền tạm ứng không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+
+                if new_amount <= 0:
+                    return Response({'error': 'Số tiền tạm ứng phải lớn hơn 0 đ'}, status=status.HTTP_400_BAD_REQUEST)
+
+                delta = new_amount - int(advance.amount)
+                if delta != 0:
+                    # Nếu trích từ Quỹ điều vận, kiểm tra số dư quỹ nếu tăng tiền
+                    if advance.advance_source == AdvanceSourceType.DISPATCHER_FUND and advance.dispatcher_fund:
+                        fund = DispatcherAdvanceFund.objects.select_for_update().filter(id=advance.dispatcher_fund_id).first()
+                        if fund and delta > 0 and fund.remaining_balance < delta:
+                            return Response({
+                                'error': f'Quỹ Điều Vận {fund.code} chỉ còn dư {fund.remaining_balance:,} đ, không đủ để tăng thêm {delta:,} đ'
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                    advance.amount = new_amount
+                    if advance.trip:
+                        advance.trip.driver_advance_amount = max(0, (advance.trip.driver_advance_amount or 0) + delta)
+                        advance.trip.save(update_fields=['driver_advance_amount'])
+
+            advance.save()
+
+        return Response({
+            'success': True,
+            'message': f'Đã cập nhật phiếu tạm ứng {advance.code} thành công!',
+            'advance_id': advance.id
+        })
+
+    def delete(self, request, pk):
+        with transaction.atomic():
+            advance = DriverTripAdvance.objects.select_for_update().filter(id=pk, is_deleted=False).first()
+            if not advance:
+                return Response({'error': 'Không tìm thấy phiếu tạm ứng chuyến xe'}, status=status.HTTP_404_NOT_FOUND)
+
+            if advance.status == DriverAdvanceStatus.SETTLED:
+                return Response({
+                    'error': 'Không thể xóa phiếu tạm ứng đã quyết toán hoàn ứng chốt sổ!'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Thu hồi số tiền tạm ứng khỏi chuyến xe
+            trip = advance.trip
+            if trip:
+                trip.driver_advance_amount = max(0, (trip.driver_advance_amount or 0) - advance.amount)
+                # Kiểm tra xem còn phiếu tạm ứng nào khác không
+                other_advances = trip.driver_advances.filter(is_deleted=False).exclude(id=advance.id)
+                if not other_advances.exists():
+                    trip.advance_settlement_status = 'NONE'
+                trip.save(update_fields=['driver_advance_amount', 'advance_settlement_status'])
+
+            # Soft Delete
+            advance.is_deleted = True
+            advance.save(update_fields=['is_deleted'])
+
+        return Response({
+            'success': True,
+            'message': f'Đã xóa phiếu tạm ứng {advance.code} thành công!'
+        })
+
+
+class DispatcherFundDetailAPIView(APIView):
+    """API Chi Tiết, Cập Nhật & Xóa Mềm Quỹ Điều Vận (CRUD Chuẩn BIM)."""
+    authentication_classes = [GracefulJWTAuthentication, SessionAuthentication]
+    permission_classes = [IsDispatcherOrAccountant]
+
+    def get(self, request, pk):
+        fund = DispatcherAdvanceFund.objects.select_related(
+            'dispatcher', 'approved_by', 'settled_by'
+        ).filter(id=pk, is_deleted=False).first()
+        if not fund:
+            return Response({'error': 'Không tìm thấy Quỹ Điều Vận'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = {
+            'id': fund.id,
+            'code': fund.code,
+            'dispatcher_id': fund.dispatcher_id,
+            'dispatcher_name': fund.dispatcher.full_name if fund.dispatcher else '',
+            'dispatcher_phone': (getattr(fund.dispatcher, 'phone_number', '') or '') if fund.dispatcher else '',
+            'amount': int(fund.amount),
+            'advance_date': fund.advance_date.strftime('%Y-%m-%d') if fund.advance_date else '',
+            'purpose': fund.purpose or '',
+            'status': fund.status,
+            'status_label': fund.get_status_display(),
+            'disbursed_amount': int(fund.total_disbursed),
+            'settled_amount': int(fund.total_settled_spent),
+            'remaining_balance': int(fund.remaining_balance),
+            'approved_by': fund.approved_by.full_name if fund.approved_by else '',
+            'approved_at': fund.approved_at.strftime('%d/%m/%Y %H:%M') if fund.approved_at else '',
+            'settled_by': fund.settled_by.full_name if fund.settled_by else '',
+            'settled_at': fund.settled_at.strftime('%d/%m/%Y %H:%M') if fund.settled_at else '',
+            'notes': fund.notes or '',
+            'settlement_notes': fund.settlement_notes or '',
+            'active_trip_advances_count': fund.trip_advances.filter(is_deleted=False).count(),
+        }
+        return Response({'success': True, 'fund': data})
+
+    def put(self, request, pk):
+        return self._handle_update(request, pk)
+
+    def patch(self, request, pk):
+        return self._handle_update(request, pk)
+
+    def _handle_update(self, request, pk):
+        with transaction.atomic():
+            fund = DispatcherAdvanceFund.objects.select_for_update().filter(id=pk, is_deleted=False).first()
+            if not fund:
+                return Response({'error': 'Không tìm thấy Quỹ Điều Vận'}, status=status.HTTP_404_NOT_FOUND)
+
+            purpose = request.data.get('purpose')
+            notes = request.data.get('notes')
+            advance_date_raw = request.data.get('advance_date')
+            amount_raw = request.data.get('amount')
+
+            if fund.status == FundStatus.SETTLED:
+                if notes is not None:
+                    fund.notes = str(notes).strip()
+                fund.save()
+                return Response({
+                    'success': True,
+                    'message': f'Đã cập nhật ghi chú Quỹ Điều Vận {fund.code} thành công'
+                })
+
+            if purpose is not None:
+                fund.purpose = str(purpose).strip()
+            if notes is not None:
+                fund.notes = str(notes).strip()
+            if advance_date_raw:
+                try:
+                    fund.advance_date = datetime.datetime.strptime(str(advance_date_raw).strip(), '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+
+            if amount_raw is not None:
+                try:
+                    new_amount = int(str(amount_raw).replace('.', '').replace(',', '').strip())
+                except (ValueError, TypeError):
+                    return Response({'error': 'Số tiền cấp quỹ không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+
+                if new_amount <= 0:
+                    return Response({'error': 'Số tiền cấp quỹ phải lớn hơn 0 đ'}, status=status.HTTP_400_BAD_REQUEST)
+
+                if fund.total_disbursed > 0 and new_amount < fund.total_disbursed:
+                    return Response({
+                        'error': f'Số tiền quỹ mới ({new_amount:,} đ) không được nhỏ hơn số tiền đã giải ngân cho các chuyến ({fund.total_disbursed:,} đ)'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                fund.amount = new_amount
+
+            fund.save()
+
+        return Response({
+            'success': True,
+            'message': f'Đã cập nhật thông tin Quỹ Điều Vận {fund.code} thành công!',
+            'fund_id': fund.id
+        })
+
+    def delete(self, request, pk):
+        with transaction.atomic():
+            fund = DispatcherAdvanceFund.objects.select_for_update().filter(id=pk, is_deleted=False).first()
+            if not fund:
+                return Response({'error': 'Không tìm thấy Quỹ Điều Vận'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Kiểm tra nếu quỹ đã giải ngân hoặc có chuyến đang dùng
+            active_advances = fund.trip_advances.filter(is_deleted=False)
+            if active_advances.exists() or fund.total_disbursed > 0:
+                return Response({
+                    'error': f'Không thể xóa Quỹ Điều Vận {fund.code} vì đang có {active_advances.count()} phiếu tạm ứng chuyến xe liên kết!'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            fund.is_deleted = True
+            fund.save(update_fields=['is_deleted'])
+
+        return Response({
+            'success': True,
+            'message': f'Đã xóa Quỹ Điều Vận {fund.code} thành công!'
+        })
+
+
 class DriverBatchSettlementQueryAPIView(APIView):
     """
     API Truy vấn & Gom Chuyến Quyết Toán Chi Phí Tài Xế theo Đợt:

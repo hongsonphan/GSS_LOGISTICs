@@ -1,6 +1,6 @@
-<!-- MODAL TẠO YÊU CẦU TẠM ỨNG QUỸ TỪ CTY CHO ĐIỀU VẬN (DISPATCHER ADVANCE FUND) -->
+<!-- MODAL TẠO & CHI TIẾT TẠM ỨNG QUỸ ĐIỀU VẬN (DISPATCHER ADVANCE FUND - CRUD CHUẨN) -->
 <div id="modal-dispatcher-fund" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden transform transition-all">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden transform transition-all">
         <!-- Modal Header -->
         <div class="px-6 py-4 bg-indigo-800 text-white flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
@@ -8,17 +8,32 @@
                     <i class="ph-bold ph-wallet text-xl"></i>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold font-heading">Tạo Quỹ Tạm Ứng Cho Điều Vận</h3>
-                    <p class="text-xs text-indigo-200 font-medium">Công ty xuất quỹ tạm ứng cho bộ phận Điều phối Đội xe</p>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-base font-bold font-heading" id="fund-modal-title">Tạo Quỹ Tạm Ứng Cho Điều Vận</h3>
+                        <span id="fund-modal-badge" class="hidden px-2 py-0.5 rounded-md text-[11px] font-black bg-indigo-900/90 text-indigo-200 font-mono border border-indigo-600/60"></span>
+                    </div>
+                    <p class="text-xs text-indigo-200 font-medium" id="fund-modal-subtitle">Công ty xuất quỹ tạm ứng cho bộ phận Điều phối Đội xe</p>
                 </div>
             </div>
-            <button onclick="closeDispatcherFundModal()" class="w-8 h-8 rounded-full bg-indigo-700/50 hover:bg-indigo-700 text-white flex items-center justify-center transition-colors">
+            <button onclick="closeDispatcherFundModal()" class="w-8 h-8 rounded-full bg-indigo-700/50 hover:bg-indigo-700 text-white flex items-center justify-center transition-colors cursor-pointer">
                 <i class="ph-bold ph-x text-sm"></i>
             </button>
         </div>
 
         <!-- Form Body -->
         <form id="form-dispatcher-fund" onsubmit="submitDispatcherFundForm(event)" class="p-5 md:p-6 space-y-3.5 text-xs font-medium text-slate-700">
+            <input type="hidden" id="fund-edit-id" value="" />
+            <input type="hidden" id="fund-mode" value="create" />
+
+            <!-- Banner trạng thái khi xem chi tiết quỹ -->
+            <div id="fund-detail-banner" class="hidden p-3 rounded-xl border flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                    <i class="ph-bold ph-info text-base" id="fund-banner-icon"></i>
+                    <span class="font-bold" id="fund-banner-text">Trạng thái quỹ</span>
+                </div>
+                <span id="fund-banner-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-black"></span>
+            </div>
+
             <!-- Nhân viên Điều vận nhận quỹ -->
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
@@ -56,6 +71,28 @@
                 </div>
             </div>
 
+            <!-- Khối Tóm Tắt Dòng Tiền Quỹ (Hiện khi xem chi tiết) -->
+            <div id="fund-box-money-stats" class="hidden p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2 text-xs">
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                        <span class="block text-[11px] text-slate-500 font-semibold">Đã cấp các chuyến:</span>
+                        <span class="font-bold text-amber-700 tabular-nums font-mono text-xs" id="fund-display-disbursed">0 đ</span>
+                    </div>
+                    <div>
+                        <span class="block text-[11px] text-slate-500 font-semibold">Đã thu hồi hoàn ứng:</span>
+                        <span class="font-bold text-emerald-700 tabular-nums font-mono text-xs" id="fund-display-settled">0 đ</span>
+                    </div>
+                    <div>
+                        <span class="block text-[11px] text-slate-500 font-semibold">Số dư còn lại:</span>
+                        <span class="font-black text-indigo-900 tabular-nums font-mono text-sm" id="fund-display-remaining">0 đ</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-indigo-800 pt-1.5 border-t border-indigo-200/60">
+                    <span>Người duyệt: <strong id="fund-display-approved-by">--</strong></span>
+                    <span id="fund-display-approved-at">--</span>
+                </div>
+            </div>
+
             <!-- Mục đích quỹ -->
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
@@ -74,8 +111,8 @@
                     class="form-textarea p-2.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 w-full"></textarea>
             </div>
 
-            <!-- Footer Buttons -->
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+            <!-- Footer Buttons 1: Khi Tạo Mới Phiếu -->
+            <div id="fund-footer-create" class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
                 <button type="button" onclick="closeDispatcherFundModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
                     Hủy Bỏ
                 </button>
@@ -83,6 +120,48 @@
                     <i class="ph-bold ph-check text-sm"></i>
                     <span>Tạo Phiếu Tạm Ứng Quỹ</span>
                 </button>
+            </div>
+
+            <!-- Footer Buttons 2: Khi Xem / Sửa Quỹ (Chuẩn 4 nút BIM: Xóa | In, Sửa, Lưu, Đóng) -->
+            <div id="fund-footer-detail" class="hidden pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <!-- Nút Xóa (bên trái) -->
+                <div>
+                    <button type="button" id="btn-fund-delete" onclick="confirmDeleteDispatcherFund()"
+                        class="px-3.5 py-1.5 bg-transparent border border-rose-600 text-rose-700 hover:bg-rose-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Xóa quỹ tạm ứng khỏi hệ thống (nếu chưa giải ngân)">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                        <span>Xóa Quỹ</span>
+                    </button>
+                </div>
+
+                <!-- Cụm nút In, Sửa, Lưu, Đóng (bên phải) -->
+                <div class="flex items-center space-x-2">
+                    <button type="button" id="btn-fund-print" onclick="printCurrentDispatcherFund()"
+                        class="px-3.5 py-1.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="In phiếu chi cấp quỹ khổ A4/A5 (Mẫu kế toán)">
+                        <i class="ph-bold ph-printer text-sm"></i>
+                        <span>In Phiếu</span>
+                    </button>
+
+                    <button type="button" id="btn-fund-edit" onclick="enableDispatcherFundEdit()"
+                        class="px-3.5 py-1.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Bật chế độ chỉnh sửa thông tin quỹ">
+                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        <span>Sửa</span>
+                    </button>
+
+                    <button type="button" id="btn-fund-save" onclick="saveDispatcherFundUpdate()"
+                        class="hidden px-4 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Lưu lại các thông tin vừa chỉnh sửa">
+                        <i class="ph-bold ph-check text-sm"></i>
+                        <span>Lưu</span>
+                    </button>
+
+                    <button type="button" onclick="closeDispatcherFundModal()"
+                        class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
+                        Đóng
+                    </button>
+                </div>
             </div>
         </form>
     </div>

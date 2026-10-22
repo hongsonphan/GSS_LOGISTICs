@@ -77,15 +77,25 @@
                     class="form-textarea p-2.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 w-full"></textarea>
             </div>
 
-            <!-- Footer Buttons -->
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
-                <button type="button" onclick="closeSettleAdvanceModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
-                    Đóng
-                </button>
-                <button type="submit" id="btn-submit-settle-advance" class="px-5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
-                    <i class="ph-bold ph-check-circle text-base"></i>
-                    <span>Xác Nhận Quyết Toán Hoàn Ứng</span>
-                </button>
+            <!-- Footer Buttons (Chuẩn BIM: In Biên Bản, Xác Nhận Quyết Toán, Đóng) -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div>
+                    <button type="button" id="btn-print-settle-adv" onclick="printSettlementAdvanceVoucher()"
+                        class="px-3.5 py-1.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="In Biên bản đối soát & hoàn ứng chuyến xe khổ A4">
+                        <i class="ph-bold ph-printer text-sm"></i>
+                        <span>In Biên Bản Hoàn Ứng</span>
+                    </button>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="closeSettleAdvanceModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
+                        Đóng
+                    </button>
+                    <button type="submit" id="btn-submit-settle-advance" class="px-5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="ph-bold ph-check-circle text-base"></i>
+                        <span>Xác Nhận Quyết Toán Hoàn Ứng</span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>

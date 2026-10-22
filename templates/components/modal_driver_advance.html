@@ -1,6 +1,6 @@
-<!-- MODAL CẤP TẠM ỨNG CHUYẾN CHO TÀI XẾ (BIM ADVANCE DISPATCH) -->
+<!-- MODAL CẤP & CHI TIẾT TẠM ỨNG CHUYẾN CHO TÀI XẾ (BIM ADVANCE DISPATCH - CRUD CHUẨN) -->
 <div id="modal-driver-advance" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden transform transition-all">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden transform transition-all">
         <!-- Modal Header -->
         <div class="px-6 py-4 bg-teal-800 text-white flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
@@ -8,22 +8,37 @@
                     <i class="ph-bold ph-hand-coins text-xl"></i>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold font-heading">Cấp Tạm Ứng Chuyến Cho Tài Xế</h3>
-                    <p class="text-xs text-teal-200 font-medium">Trích Quỹ Điều Vận hoặc Công ty chuyển khoản trực tiếp</p>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-base font-bold font-heading" id="adv-modal-title">Cấp Tạm Ứng Chuyến Cho Tài Xế</h3>
+                        <span id="adv-modal-badge" class="hidden px-2 py-0.5 rounded-md text-[11px] font-black bg-teal-900/90 text-teal-200 font-mono border border-teal-600/60"></span>
+                    </div>
+                    <p class="text-xs text-teal-200 font-medium" id="adv-modal-subtitle">Trích Quỹ Điều Vận hoặc Công ty chuyển khoản trực tiếp</p>
                 </div>
             </div>
-            <button onclick="closeDriverAdvanceModal()" class="w-8 h-8 rounded-full bg-teal-700/50 hover:bg-teal-700 text-white flex items-center justify-center transition-colors">
+            <button onclick="closeDriverAdvanceModal()" class="w-8 h-8 rounded-full bg-teal-700/50 hover:bg-teal-700 text-white flex items-center justify-center transition-colors cursor-pointer">
                 <i class="ph-bold ph-x text-sm"></i>
             </button>
         </div>
 
         <!-- Modal Form -->
         <form id="form-driver-advance" onsubmit="submitDriverAdvanceForm(event)" class="p-5 md:p-6 space-y-3.5 text-xs font-medium text-slate-700">
+            <input type="hidden" id="adv-edit-id" value="" />
+            <input type="hidden" id="adv-mode" value="create" />
+
+            <!-- Banner trạng thái khi xem chi tiết phiếu -->
+            <div id="adv-detail-banner" class="hidden p-3 rounded-xl border flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                    <i class="ph-bold ph-info text-base" id="adv-banner-icon"></i>
+                    <span class="font-bold" id="adv-banner-text">Trạng thái phiếu</span>
+                </div>
+                <span id="adv-banner-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-black"></span>
+            </div>
+
             <!-- Chọn Chuyến xe -->
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
                     <label class="block font-bold text-slate-800 text-xs truncate">
-                        Chọn Chuyến Xe Vận Chuyển <span class="text-rose-600">*</span>
+                        Chuyến Xe Vận Chuyển <span class="text-rose-600">*</span>
                     </label>
                 </div>
                 <select id="adv-inp-trip" onchange="onAdvanceTripChange()" required
@@ -71,7 +86,7 @@
             </div>
 
             <!-- Nguồn tiền tạm ứng -->
-            <div>
+            <div id="adv-box-source-container">
                 <div class="flex items-center justify-between h-5 mb-1">
                     <label class="block font-bold text-slate-800 text-xs truncate">
                         Nguồn Tiền Tạm Ứng <span class="text-rose-600">*</span>
@@ -79,11 +94,11 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <label class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-teal-50/50">
-                        <input type="radio" name="adv_source" value="DISPATCHER_FUND" checked onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
+                        <input type="radio" name="adv_source" id="adv-src-fund" value="DISPATCHER_FUND" checked onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
                         <span class="font-bold text-slate-800 text-xs">Trích Quỹ Điều Vận</span>
                     </label>
                     <label class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-teal-50/50">
-                        <input type="radio" name="adv_source" value="COMPANY_DIRECT" onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
+                        <input type="radio" name="adv_source" id="adv-src-direct" value="COMPANY_DIRECT" onchange="toggleAdvanceSourceType()" class="text-teal-600 focus:ring-teal-500" />
                         <span class="font-bold text-slate-800 text-xs">Cty Chi Trực Tiếp</span>
                     </label>
                 </div>
@@ -107,6 +122,22 @@
                     class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full" />
             </div>
 
+            <!-- Khối Tóm Tắt Quyết Toán (Chỉ hiển thị khi xem phiếu đã quyết toán) -->
+            <div id="adv-box-settlement-summary" class="hidden p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1.5 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-emerald-900">Chi phí thực tế tài xế đã chi:</span>
+                    <span class="font-black text-slate-900 tabular-nums font-mono text-sm" id="adv-display-actual-spent">0 đ</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-emerald-900" id="adv-display-diff-label">Chênh lệch hoàn ứng:</span>
+                    <span class="font-black tabular-nums font-mono text-sm" id="adv-display-diff-val">0 đ</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-emerald-800 pt-1 border-t border-emerald-200/60">
+                    <span>Quyết toán bởi: <strong id="adv-display-settled-by">--</strong></span>
+                    <span id="adv-display-settled-at">--</span>
+                </div>
+            </div>
+
             <!-- Ghi chú thêm -->
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
@@ -116,8 +147,8 @@
                     class="form-textarea p-2.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500 w-full"></textarea>
             </div>
 
-            <!-- Footer Buttons -->
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+            <!-- Footer Buttons 1: Khi Tạo Mới Phiếu -->
+            <div id="adv-footer-create" class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
                 <button type="button" onclick="closeDriverAdvanceModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
                     Hủy Bỏ
                 </button>
@@ -125,6 +156,48 @@
                     <i class="ph-bold ph-check text-sm"></i>
                     <span>Xác Nhận Cấp Tạm Ứng</span>
                 </button>
+            </div>
+
+            <!-- Footer Buttons 2: Khi Xem / Sửa Phiếu (Chuẩn 4 nút BIM: Xóa | In, Sửa, Lưu, Đóng) -->
+            <div id="adv-footer-detail" class="hidden pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <!-- Nút Xóa (bên trái) -->
+                <div>
+                    <button type="button" id="btn-adv-delete" onclick="confirmDeleteDriverAdvance()"
+                        class="px-3.5 py-1.5 bg-transparent border border-rose-600 text-rose-700 hover:bg-rose-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Xóa phiếu tạm ứng khỏi hệ thống (Soft-delete an toàn)">
+                        <i class="ph-bold ph-trash text-sm"></i>
+                        <span>Xóa Phiếu</span>
+                    </button>
+                </div>
+
+                <!-- Cụm nút In, Sửa, Lưu, Đóng (bên phải) -->
+                <div class="flex items-center space-x-2">
+                    <button type="button" id="btn-adv-print" onclick="printCurrentDriverAdvance()"
+                        class="px-3.5 py-1.5 bg-transparent border border-slate-700 text-slate-700 hover:bg-slate-800 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="In phiếu chi tạm ứng khổ A4/A5 (Mẫu kế toán)">
+                        <i class="ph-bold ph-printer text-sm"></i>
+                        <span>In Phiếu</span>
+                    </button>
+
+                    <button type="button" id="btn-adv-edit" onclick="enableDriverAdvanceEdit()"
+                        class="px-3.5 py-1.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Bật chế độ chỉnh sửa thông tin phiếu">
+                        <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        <span>Sửa</span>
+                    </button>
+
+                    <button type="button" id="btn-adv-save" onclick="saveDriverAdvanceUpdate()"
+                        class="hidden px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Lưu lại các thông tin vừa chỉnh sửa">
+                        <i class="ph-bold ph-check text-sm"></i>
+                        <span>Lưu</span>
+                    </button>
+
+                    <button type="button" onclick="closeDriverAdvanceModal()"
+                        class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold font-heading transition-colors cursor-pointer">
+                        Đóng
+                    </button>
+                </div>
             </div>
         </form>
     </div>
