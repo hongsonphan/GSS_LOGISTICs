@@ -398,7 +398,23 @@
                     </div>
                 </div>
 
-                <div class="flex items-center space-x-1.5 shrink-0">
+                <div class="flex items-center space-x-1.5 shrink-0 flex-wrap gap-y-1">
+                    <!-- Scope Filter Pills: Tất cả | Đã giao | Được giao | Liên quan -->
+                    <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+                        <button id="btn-dash-scope-all" type="button" onclick="setDashboardTaskScope('all')" class="px-2 py-0.5 rounded bg-white text-indigo-800 shadow-2xs flex items-center gap-1 transition-all" title="Xem tất cả công việc">
+                            <span class="text-[11px] font-heading font-bold">Tất cả</span>
+                        </button>
+                        <button id="btn-dash-scope-assigned-by-me" type="button" onclick="setDashboardTaskScope('assigned_by_me')" class="px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all" title="Công việc do bạn giao">
+                            <span class="text-[11px] font-heading font-bold">Đã giao</span>
+                        </button>
+                        <button id="btn-dash-scope-assigned-to-me" type="button" onclick="setDashboardTaskScope('assigned_to_me')" class="px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all" title="Công việc được phân công cho bạn">
+                            <span class="text-[11px] font-heading font-bold">Được giao</span>
+                        </button>
+                        <button id="btn-dash-scope-related" type="button" onclick="setDashboardTaskScope('related')" class="px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all" title="Công việc bạn tham gia theo dõi/liên quan">
+                            <span class="text-[11px] font-heading font-bold">Liên quan</span>
+                        </button>
+                    </div>
+
                     <!-- Nút chuyển đổi giao diện: Danh Sách vs. Kanban -->
                     <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
                         <button id="btn-task-view-list" type="button" onclick="setDashboardTaskViewMode('list')" class="px-2 py-0.5 rounded bg-white text-indigo-800 shadow-2xs flex items-center gap-1 transition-all" title="Xem theo kiểu danh sách chi tiết">
@@ -411,9 +427,9 @@
                         </button>
                     </div>
 
-                    <!-- Nút Bảng việc điều hướng phân hệ -->
-                    <button onclick="switchTab('giao-viec')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold font-heading border border-indigo-200/60 transition-colors flex items-center space-x-1" title="Chuyển sang phân hệ Quản lý công việc">
-                        <span>Bảng việc</span>
+                    <!-- Nút Xem tất cả điều hướng phân hệ (đồng bộ chuẩn với Bản tin & Thông báo) -->
+                    <button onclick="goToTasksFromDashboard()" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold font-heading border border-indigo-200/60 transition-colors flex items-center space-x-1" title="Chuyển sang phân hệ Quản lý công việc">
+                        <span>Xem tất cả</span>
                         <i class="ph ph-arrow-right font-bold text-[11px]"></i>
                     </button>
                 </div>

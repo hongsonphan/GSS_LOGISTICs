@@ -1592,6 +1592,36 @@ function renderDashboardNews(announcements) {
 
 let cachedDashboardTasks = [];
 let currentDashboardTaskViewMode = localStorage.getItem('bim_dashboard_task_view_mode') || 'list';
+let currentDashboardTaskScope = localStorage.getItem('bim_dashboard_task_scope') || 'all';
+
+function setDashboardTaskScope(scope) {
+    currentDashboardTaskScope = scope;
+    localStorage.setItem('bim_dashboard_task_scope', scope);
+
+    const scopes = ['all', 'assigned_by_me', 'assigned_to_me', 'related'];
+    scopes.forEach(s => {
+        const btnId = `btn-dash-scope-${s.replace(/_/g, '-')}`;
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            if (s === scope) {
+                btn.className = 'px-2 py-0.5 rounded bg-white text-indigo-800 shadow-2xs flex items-center gap-1 transition-all';
+            } else {
+                btn.className = 'px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all';
+            }
+        }
+    });
+
+    renderDashboardTasksView();
+}
+window.setDashboardTaskScope = setDashboardTaskScope;
+
+function goToTasksFromDashboard() {
+    if (typeof currentDashboardTaskScope !== 'undefined' && typeof setTaskScope === 'function') {
+        setTaskScope(currentDashboardTaskScope);
+    }
+    switchTab('giao-viec');
+}
+window.goToTasksFromDashboard = goToTasksFromDashboard;
 
 function setDashboardTaskViewMode(mode) {
     currentDashboardTaskViewMode = mode;
@@ -1638,10 +1668,20 @@ window.cleanPersonName = cleanPersonName;
 
 function renderDashboardTasks(tasks) {
     cachedDashboardTasks = Array.isArray(tasks) ? tasks : [];
-    const badgeEl = document.getElementById('dash-tasks-badge');
-    if (badgeEl) {
-        badgeEl.innerText = `${cachedDashboardTasks.length} việc`;
-    }
+
+    // Đồng bộ nút scope active theo local storage
+    const scopes = ['all', 'assigned_by_me', 'assigned_to_me', 'related'];
+    scopes.forEach(s => {
+        const btnId = `btn-dash-scope-${s.replace(/_/g, '-')}`;
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            if (s === currentDashboardTaskScope) {
+                btn.className = 'px-2 py-0.5 rounded bg-white text-indigo-800 shadow-2xs flex items-center gap-1 transition-all';
+            } else {
+                btn.className = 'px-2 py-0.5 rounded text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all';
+            }
+        }
+    });
 
     // Đồng bộ nút view active theo local storage
     const btnList = document.getElementById('btn-task-view-list');
@@ -1719,13 +1759,35 @@ function renderDashboardTasksView() {
     const kanbanEl = document.getElementById('dashboard-tasks-kanban');
     if (!listEl || !kanbanEl) return;
 
-    if (cachedDashboardTasks.length === 0) {
+    const myUserId = window.CURRENT_USER?.id ? Number(window.CURRENT_USER.id) : null;
+
+    // Lọc theo scope đã chọn (Tất cả | Đã giao | Được giao | Liên quan)
+    let filteredTasks = cachedDashboardTasks;
+    if (currentDashboardTaskScope === 'assigned_by_me') {
+        filteredTasks = cachedDashboardTasks.filter(t => t.is_reporter || (myUserId && Number(t.reporter_id) === myUserId));
+    } else if (currentDashboardTaskScope === 'assigned_to_me') {
+        filteredTasks = cachedDashboardTasks.filter(t => t.is_assignee || (myUserId && Number(t.assignee_id) === myUserId));
+    } else if (currentDashboardTaskScope === 'related') {
+        filteredTasks = cachedDashboardTasks.filter(t => t.is_follower || (myUserId && Array.isArray(t.follower_ids) && t.follower_ids.map(Number).includes(myUserId)));
+    }
+
+    const badgeEl = document.getElementById('dash-tasks-badge');
+    if (badgeEl) {
+        badgeEl.innerText = `${filteredTasks.length} việc`;
+    }
+
+    if (filteredTasks.length === 0) {
         listEl.classList.remove('hidden');
         kanbanEl.classList.add('hidden');
+        let emptyMsg = 'Tuyệt vời! Hiện tại bạn không có công việc tồn đọng cần xử lý.';
+        if (currentDashboardTaskScope === 'assigned_by_me') emptyMsg = 'Bạn chưa giao công việc nào đang chờ xử lý.';
+        else if (currentDashboardTaskScope === 'assigned_to_me') emptyMsg = 'Hiện tại bạn không có công việc được giao cần xử lý.';
+        else if (currentDashboardTaskScope === 'related') emptyMsg = 'Không có công việc liên quan nào đang chờ xử lý.';
+
         listEl.innerHTML = `
             <div class="text-center py-8 text-slate-400 text-xs">
                 <i class="ph-bold ph-check-circle text-2xl mb-1 text-emerald-400 block"></i>
-                Tuyệt vời! Hiện tại bạn không có công việc tồn đọng cần xử lý.
+                ${emptyMsg}
             </div>
         `;
         return;
@@ -1738,16 +1800,14 @@ function renderDashboardTasksView() {
         LOW: '<span class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-slate-100 text-slate-700 border border-slate-200 font-heading shrink-0">Thấp</span>',
     };
 
-    const myUserId = window.CURRENT_USER?.id;
-
     if (currentDashboardTaskViewMode === 'kanban') {
         // --- CHẾ ĐỘ XEM KANBAN MINI ---
         listEl.classList.add('hidden');
         kanbanEl.classList.remove('hidden');
 
-        const todoTasks = cachedDashboardTasks.filter(t => t.status === 'TODO');
-        const progressTasks = cachedDashboardTasks.filter(t => t.status === 'IN_PROGRESS');
-        const reviewTasks = cachedDashboardTasks.filter(t => !['TODO', 'IN_PROGRESS'].includes(t.status));
+        const todoTasks = filteredTasks.filter(t => t.status === 'TODO');
+        const progressTasks = filteredTasks.filter(t => t.status === 'IN_PROGRESS');
+        const reviewTasks = filteredTasks.filter(t => !['TODO', 'IN_PROGRESS'].includes(t.status));
 
         // Cập nhật số đếm các cột
         const cntTodo = document.getElementById('kanban-col-count-todo');
@@ -1840,7 +1900,7 @@ function renderDashboardTasksView() {
         kanbanEl.classList.add('hidden');
 
         let html = '';
-        cachedDashboardTasks.forEach(t => {
+        filteredTasks.forEach(t => {
             const prioBadge = priorityBadges[t.priority] || priorityBadges.MEDIUM;
             const reporterClean = cleanPersonName(t.reporter_name) || 'Hệ thống';
             const assigneeClean = cleanPersonName(t.assignee_name) || 'Chưa gán';

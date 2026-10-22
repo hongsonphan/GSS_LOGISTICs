@@ -979,17 +979,19 @@ class DashboardBGDAPIView(APIView):
         # --- 11. TRÍCH XUẤT WIDGET QUẢN LÝ CÔNG VIỆC ƯU TIÊN (ACTIONABLE TASKS) ---
         tasks_qs = OfficeTask.objects.filter(is_deleted=False).exclude(status__in=[TaskStatus.DONE, TaskStatus.CANCELLED])
         if is_exec:
-            # Giám đốc xem các task khẩn cấp/cao của toàn cty hoặc do mình giao/nhận
+            # Giám đốc xem các task khẩn cấp/cao của toàn cty hoặc do mình giao/nhận/theo dõi
             tasks_qs = tasks_qs.filter(
                 Q(priority__in=[TaskPriority.HIGH, TaskPriority.URGENT]) |
                 Q(assignee=user) |
-                Q(reporter=user)
+                Q(reporter=user) |
+                Q(followers=user)
             ).distinct()
         elif employee and employee.is_department_head:
             # Trưởng phòng xem task của phòng mình hoặc task của cá nhân
             tasks_qs = tasks_qs.filter(
                 Q(department=employee.department) |
                 Q(assignee=user) |
+                Q(reporter=user) |
                 Q(followers=user)
             ).distinct()
         else:
@@ -1066,6 +1068,10 @@ class DashboardBGDAPIView(APIView):
                 'checklists_total': total_chk,
                 'assignee_id': task.assignee_id,
                 'reporter_id': task.reporter_id,
+                'follower_ids': list(task.followers.values_list('id', flat=True)),
+                'is_reporter': bool(task.reporter_id == user.id),
+                'is_assignee': bool(task.assignee_id == user.id),
+                'is_follower': bool(user.id in list(task.followers.values_list('id', flat=True))),
                 'extension_status': task.extension_status,
                 'requested_deadline': task.requested_deadline.strftime('%d/%m/%Y') if task.requested_deadline else None,
                 'extension_reason': task.extension_reason,

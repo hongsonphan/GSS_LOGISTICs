@@ -58,11 +58,16 @@ class OfficeTaskListCreateAPIView(views.APIView):
             'assignee', 'reporter', 'related_trip', 'related_customer', 'related_vehicle'
         ).prefetch_related('checklists', 'comments')
 
-        # Lọc phạm vi
-        if scope == 'my_tasks':
+        # Lọc phạm vi (Tất cả | Đã giao | Được giao | Liên quan)
+        if scope == 'assigned_to_me':
+            qs = qs.filter(assignee=request.user)
+        elif scope == 'my_tasks':
+            # Tương thích ngược: Được giao hoặc Theo dõi
             qs = qs.filter(Q(assignee=request.user) | Q(followers=request.user)).distinct()
         elif scope == 'assigned_by_me':
             qs = qs.filter(reporter=request.user)
+        elif scope in ['related', 'following']:
+            qs = qs.filter(followers=request.user).distinct()
 
         # Lọc phòng ban
         if dept and dept != 'ALL':

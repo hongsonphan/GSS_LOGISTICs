@@ -599,10 +599,10 @@ function switchTaskView(mode) {
 
 function setTaskScope(scope) {
     currentTaskScope = scope;
-    ['all', 'my_tasks', 'assigned_by_me'].forEach(s => {
-        const btn = document.getElementById(`scope-${s.replace('_', '-')}`);
+    ['all', 'assigned_by_me', 'assigned_to_me', 'related', 'my_tasks'].forEach(s => {
+        const btn = document.getElementById(`scope-${s.replace(/_/g, '-')}`);
         if (btn) {
-            if (s === scope) {
+            if (s === scope || (scope === 'assigned_to_me' && s === 'my_tasks')) {
                 btn.className = 'px-2.5 py-1 rounded-lg bg-white text-teal-800 shadow-xs transition-colors';
             } else {
                 btn.className = 'px-2.5 py-1 rounded-lg hover:text-teal-800 transition-colors';

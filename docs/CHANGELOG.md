@@ -6,6 +6,23 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.1] - 2026-10-22 (Đồng Bộ Quản Lý Công Việc & Bộ Lọc 4 Chiều: Tất Cả | Đã Giao | Được Giao | Liên Quan)
+
+### 1. Đồng Bộ Hóa Nhãn Điều Hướng Widget Quản Lý Công Việc (`view_dashboard.html`):
+- **Chuyển đổi nhãn:** Thay thế nút `[Bảng việc ->]` thành `[Xem tất cả ->]` nhằm tạo tính nhất quán 100% với Widget Bản Tin & Thông Báo bên cạnh.
+- **Điều hướng có ngữ cảnh (`goToTasksFromDashboard`):** Khi người dùng đang chọn một bộ lọc cụ thể trên Dashboard (ví dụ: `Đã giao` hoặc `Được giao`), bấm `[Xem tất cả ->]` sẽ tự động kích hoạt bộ lọc tương ứng trên phân hệ Quản lý công việc toàn diện (`view_tasks.html`).
+
+### 2. Tích Hợp Bộ Lọc 4 Chiều Toàn Diện (Tất Cả | Đã Giao | Được Giao | Liên Quan):
+- **Widget Dashboard (`view_dashboard.html` & `static/js/app.js`):**
+  * Tích hợp thanh pills 4 tùy chọn ngay trên toolbar của Widget Công việc: `Tất cả` (`all`), `Đã giao` (`assigned_by_me`), `Được giao` (`assigned_to_me`), `Liên quan` (`related`).
+  * Xử lý lọc dữ liệu tức thì (0ms latency) trên `cachedDashboardTasks`, cập nhật tự động huy hiệu số lượng việc còn tồn đọng và hiển thị thông điệp trống thân thiện theo từng phạm vi.
+- **Phân Hệ Quản Lý Công Việc Chi Tiết (`view_tasks.html`, `static/js/collaboration.js` & `tasks_api.py`):**
+  * Đồng bộ 4 nút lọc trên thanh Header: `Tất cả` | `Đã giao` | `Được giao` | `Liên quan`.
+  * Cập nhật API `OfficeTaskListCreateAPIView` hỗ trợ `scope=assigned_to_me` và `scope=related` bên cạnh `assigned_by_me` và `all`.
+  * Bổ sung trường `follower_ids`, `is_reporter`, `is_assignee`, `is_follower` trong payload của `DashboardBGDAPIView` để tối ưu hóa việc phân loại.
+
+---
+
 ## [v4.1.0] - 2026-10-22 (Tối Ưu Giao Diện: Tinh Gọn Profile Dropdown Menu Chuẩn Modern SaaS)
 
 ### 1. Tinh Gọn & Tái Cấu Trúc Bố Cục Thẻ Hồ Sơ Người Dùng (`templates/components/topbar.html`):

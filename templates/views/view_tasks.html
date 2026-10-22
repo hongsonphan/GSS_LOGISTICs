@@ -35,11 +35,12 @@
                 </button>
             </div>
 
-            <!-- Scope Filter Pills -->
+            <!-- Scope Filter Pills: Tất cả | Đã giao | Được giao | Liên quan -->
             <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">
                 <button type="button" onclick="setTaskScope('all')" id="scope-all" class="px-2.5 py-1 rounded-lg bg-white text-teal-800 shadow-xs transition-colors">Tất cả</button>
-                <button type="button" onclick="setTaskScope('my_tasks')" id="scope-my-tasks" class="px-2.5 py-1 rounded-lg hover:text-teal-800 transition-colors">Việc của tôi</button>
-                <button type="button" onclick="setTaskScope('assigned_by_me')" id="scope-assigned-by-me" class="px-2.5 py-1 rounded-lg hover:text-teal-800 transition-colors">Tôi đã giao</button>
+                <button type="button" onclick="setTaskScope('assigned_by_me')" id="scope-assigned-by-me" class="px-2.5 py-1 rounded-lg hover:text-teal-800 transition-colors">Đã giao</button>
+                <button type="button" onclick="setTaskScope('assigned_to_me')" id="scope-assigned-to-me" class="px-2.5 py-1 rounded-lg hover:text-teal-800 transition-colors">Được giao</button>
+                <button type="button" onclick="setTaskScope('related')" id="scope-related" class="px-2.5 py-1 rounded-lg hover:text-teal-800 transition-colors">Liên quan</button>
             </div>
 
             <!-- Department Filter -->
