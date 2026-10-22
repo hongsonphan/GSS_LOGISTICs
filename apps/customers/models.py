@@ -110,10 +110,11 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
     status = models.CharField(
         max_length=30,
         choices=[
-            ('NEGOTIATING', 'Đang thương lượng'),
-            ('PENDING_APPROVAL', 'Chờ Ban Giám Đốc duyệt'),
-            ('APPROVED', 'Đã duyệt (Tháng này)'),
-            ('REJECTED', 'Từ chối / Không chốt'),
+            ('APPROVED', 'Đã ký hợp đồng'),
+            ('PENDING_APPROVAL', 'Chờ ký hợp đồng'),
+            ('NEGOTIATING', 'Đang đàm phán'),
+            ('SENT', 'Đã gửi báo giá'),
+            ('REJECTED', 'Từ chối'),
             ('EXPIRED', 'Hết hiệu lực')
         ],
         default='NEGOTIATING'

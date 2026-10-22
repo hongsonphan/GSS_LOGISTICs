@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.2.0] - 2026-10-22 (Chuẩn Hóa 5 Thẻ Báo Giá & Hợp Đồng Khách Hàng Và 5 Thẻ Booking / Đơn Đặt Hàng)
+
+### 1. Chuẩn Hóa Tab 1: BÁO GIÁ & HỢP ĐỒNG KHÁCH HÀNG (`view_sales.html`, `api_views.py`, `models.py` & `app.js`):
+- **Tên Tab & Tiêu đề:** Đổi thành `BÁO GIÁ & HỢP ĐỒNG KHÁCH HÀNG`.
+- **Khái niệm chuẩn xác:** Sử dụng thuật ngữ `DOANH THU KẾ HOẠCH` (loại bỏ hoàn toàn từ "tháng" vì phản ánh đúng bản chất Hợp đồng đã ký kết).
+- **Bộ 5 Thẻ Trạng Thái Báo Giá (Từ Trái Qua Phải):**
+  1. **ĐÃ KÝ HỢP ĐỒNG (`APPROVED` - Emerald):** Doanh số kế hoạch, Số tuyến đã ký.
+  2. **CHỜ KÝ HỢP ĐỒNG (`PENDING_APPROVAL` - Indigo):** Doanh số chờ ký, Số tuyến chờ ký.
+  3. **ĐANG ĐÀM PHÁN (`NEGOTIATING` - Amber):** Doanh số đang đàm phán, Số tuyến đàm phán.
+  4. **ĐÃ GỬI BÁO GIÁ (`SENT` - Blue):** Doanh số đã gửi khách hàng, Số tuyến đã gửi.
+  5. **TỪ CHỐI (`REJECTED` / `EXPIRED` - Rose):** Doanh số từ chối/hết hạn, Số tuyến từ chối.
+- **Quy chuẩn hiển thị:** Mỗi thẻ thể hiện rõ ràng 2 dòng số liệu:
+  * `DOANH SỐ:` ... đ
+  * `SỐ TUYẾN:` ... Tuyến
+
+### 2. Chuẩn Hóa Tab 2: BOOKING / ĐƠN ĐẶT HÀNG (`view_sales.html`, `api_views.py` & `app.js`):
+- **Tên Tab & Tiêu đề:** Đổi thành `BOOKING / ĐƠN ĐẶT HÀNG`.
+- **Bộ 5 Thẻ Vận Chuyển Booking (Từ Trái Qua Phải):**
+  1. **CHỜ ĐIỀU XE (`PENDING_DISPATCH` - Amber)**
+  2. **ĐANG ĐIỀU XE (`PARTIALLY_DISPATCHED` - Teal)**
+  3. **ĐƠN GẤP (`is_urgent` - Rose):** Đóng hàng trong vòng 48h hoặc đơn cần ưu tiên gấp.
+  4. **CHẠY CẮT KÉO (`has_drop_hook` - Indigo):** Đơn hàng có kế hoạch chạy cắt kéo (drop-hook).
+  5. **ĐÃ HOÀN TẤT (`COMPLETED` - Emerald)**
+- **Quy chuẩn hiển thị:** Mỗi thẻ hiển thị đầy đủ các dòng số liệu nghiệp vụ:
+  * `TỔNG SỐ CHUYẾN/ CONT:` X Chuyến / Y Cont
+  * `ĐÃ HOÀN THÀNH:` X Cont
+  * `CHƯA HOÀN THÀNH:` Y Cont
+
+---
+
 ## [v4.1.10] - 2026-10-22 (Loại Bỏ Badge Viền Hộp Khỏi Dropdown Đồng Nghiệp & Chuẩn Hóa [Tên] | [Phòng Ban])
 
 ### 1. Trình Bày Phẳng Liền Mạch [Tên] | [Phòng Ban] Không Bọc Badge (`static/js/app.js` & `static/js/collaboration.js`):

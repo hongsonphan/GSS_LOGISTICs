@@ -4616,6 +4616,48 @@ class SalesAPIView(APIView):
             'win_rate_note': f"{negotiating_count} đang đàm phán · {pending_approval_count} chờ duyệt"
         }
 
+        # 1. Thống kê 5 nhóm BÁO GIÁ & HỢP ĐỒNG KHÁCH HÀNG:
+        # [ĐÃ KÝ HỢP ĐỒNG | CHỜ KÝ HỢP ĐỒNG | ĐANG ĐÀM PHÁN | ĐÃ GỬI BÁO GIÁ | TỪ CHỐI]
+        def calc_quote_group(qs_group):
+            rev = sum(float(q.expected_revenue or 0) for q in qs_group)
+            routes = sum(q.items.filter(is_deleted=False).count() or 1 for q in qs_group)
+            return {'count': qs_group.count(), 'revenue': rev, 'routes': routes}
+
+        q_signed = calc_quote_group(quotations.filter(status='APPROVED'))
+        q_pending = calc_quote_group(quotations.filter(status='PENDING_APPROVAL'))
+        q_negotiating = calc_quote_group(quotations.filter(status='NEGOTIATING'))
+        q_sent = calc_quote_group(quotations.filter(status='SENT'))
+        q_rejected = calc_quote_group(quotations.filter(status__in=['REJECTED', 'EXPIRED']))
+
+        # 2. Thống kê 5 nhóm BOOKING / ĐƠN ĐẶT HÀNG:
+        # [CHỜ ĐIỀU XE | ĐANG ĐIỀU XE | ĐƠN GẤP | CHẠY CẮT KÉO | ĐÃ HOÀN TẤT]
+        def calc_booking_group(b_group, is_completed_group=False):
+            cnt = b_group.count()
+            conts = sum(b.total_containers or 1 for b in b_group)
+            trips_qs = DispatchTrip.objects.filter(is_deleted=False, booking_order__in=b_group)
+            trips_cnt = trips_qs.count()
+            if is_completed_group:
+                completed_conts = conts
+                uncompleted_conts = 0
+            else:
+                completed_conts = sum(b.dispatched_containers or 0 for b in b_group)
+                uncompleted_conts = max(0, conts - completed_conts)
+            return {
+                'count': cnt,
+                'total_trips': trips_cnt,
+                'total_containers': conts,
+                'completed_containers': completed_conts,
+                'uncompleted_containers': uncompleted_conts
+            }
+
+        bk_pending = calc_booking_group(bookings.filter(status=BookingStatus.PENDING_DISPATCH))
+        bk_dispatching = calc_booking_group(bookings.filter(status=BookingStatus.PARTIALLY_DISPATCHED))
+        bk_urgent = calc_booking_group(bookings.exclude(status=BookingStatus.COMPLETED).filter(
+            Q(loading_date__lte=today + datetime.timedelta(days=2)) | Q(status=BookingStatus.PENDING_DISPATCH)
+        ).distinct())
+        bk_drop_hook = calc_booking_group(bookings.filter(trips__is_split_trip=True).distinct())
+        bk_completed = calc_booking_group(bookings.filter(status=BookingStatus.COMPLETED), is_completed_group=True)
+
         return Response({
             'quotations': q_results,
             'bookings': b_results,
@@ -4623,18 +4665,30 @@ class SalesAPIView(APIView):
             'stats': {
                 'overview': overview_metrics,
                 'quotation_stats': {
+                    'signed': q_signed,
+                    'pending': q_pending,
+                    'negotiating': q_negotiating,
+                    'sent': q_sent,
+                    'rejected': q_rejected,
+                    # Tương thích ngược
                     'total_quotes': total_quotes,
-                    'negotiating': negotiating_count,
-                    'pending_approval': pending_approval_count,
-                    'approved': approved_count,
-                    'rejected': rejected_count,
+                    'negotiating_count': q_negotiating['count'],
+                    'pending_approval': q_pending['count'],
+                    'approved': q_signed['count'],
+                    'rejected_count': q_rejected['count'],
                     'expected_revenue': total_monthly_expected_revenue
                 },
                 'booking_stats': {
+                    'pending_dispatch_group': bk_pending,
+                    'partially_dispatched_group': bk_dispatching,
+                    'urgent_group': bk_urgent,
+                    'drop_hook_group': bk_drop_hook,
+                    'completed_group': bk_completed,
+                    # Tương thích ngược
                     'total_bookings': bookings.count(),
-                    'pending_dispatch': bookings.filter(status=BookingStatus.PENDING_DISPATCH).count(),
-                    'partially_dispatched': bookings.filter(status=BookingStatus.PARTIALLY_DISPATCHED).count(),
-                    'completed': bookings.filter(status=BookingStatus.COMPLETED).count(),
+                    'pending_dispatch': bk_pending['count'],
+                    'partially_dispatched': bk_dispatching['count'],
+                    'completed': bk_completed['count'],
                     'cancelled': bookings.filter(status=BookingStatus.CANCELLED).count(),
                     'total_containers': total_containers_sum,
                     'dispatched_containers': dispatched_containers_sum,

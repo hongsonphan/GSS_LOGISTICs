@@ -14888,35 +14888,131 @@ async function loadSalesData() {
         const bBookingCount = document.getElementById('badge-count-bookings');
         if (bBookingCount && data.bookings) bBookingCount.innerText = new Intl.NumberFormat('vi-VN').format(data.bookings.length);
 
-        // Cập nhật stats con cho Báo giá & Booking (Dashboard riêng từng tab)
+        // Cập nhật stats con cho Báo giá & Booking (Dashboard riêng từng tab 5 thẻ)
         if (data.stats) {
+            const fmtMoney = (v) => new Intl.NumberFormat('vi-VN').format(Math.round(v || 0)) + ' đ';
+            const fmtNum = (v) => new Intl.NumberFormat('vi-VN').format(Math.round(v || 0));
+
+            // 1. Dãy 5 Thẻ BÁO GIÁ & HỢP ĐỒNG KHÁCH HÀNG:
+            // [ĐÃ KÝ HỢP ĐỒNG | CHỜ KÝ HỢP ĐỒNG | ĐANG ĐÀM PHÁN | ĐÃ GỬI BÁO GIÁ | TỪ CHỐI]
             const qs = data.stats.quotation_stats;
             if (qs) {
-                const qNeg = document.getElementById('stat-quote-negotiating');
-                if (qNeg) qNeg.innerText = new Intl.NumberFormat('vi-VN').format(qs.negotiating || 0);
-                const qPending = document.getElementById('stat-quote-pending');
-                if (qPending) qPending.innerText = new Intl.NumberFormat('vi-VN').format(qs.pending_approval || 0);
-                const qApp = document.getElementById('stat-quote-approved');
-                if (qApp) qApp.innerText = new Intl.NumberFormat('vi-VN').format(qs.approved || 0);
-                const qRev = document.getElementById('stat-quote-revenue');
-                if (qRev) qRev.innerText = new Intl.NumberFormat('vi-VN').format(qs.expected_revenue || 0) + ' đ';
+                const qSigned = qs.signed || { revenue: qs.expected_revenue || 0, routes: qs.approved || 0, count: qs.approved || 0 };
+                const qPending = qs.pending || { revenue: 0, routes: qs.pending_approval || 0, count: qs.pending_approval || 0 };
+                const qNeg = qs.negotiating || { revenue: 0, routes: qs.negotiating_count || 0, count: qs.negotiating_count || 0 };
+                const qSent = qs.sent || { revenue: 0, routes: 0, count: 0 };
+                const qRej = qs.rejected || { revenue: 0, routes: qs.rejected_count || 0, count: qs.rejected_count || 0 };
+
+                // Thẻ 1: ĐÃ KÝ HỢP ĐỒNG
+                const sMain = document.getElementById('stat-quote-signed-main');
+                if (sMain) sMain.innerText = fmtMoney(qSigned.revenue);
+                const sRev = document.getElementById('stat-quote-signed-rev');
+                if (sRev) sRev.innerText = fmtMoney(qSigned.revenue);
+                const sRoutes = document.getElementById('stat-quote-signed-routes');
+                if (sRoutes) sRoutes.innerText = `${fmtNum(qSigned.routes)} Tuyến`;
+
+                // Thẻ 2: CHỜ KÝ HỢP ĐỒNG
+                const pMain = document.getElementById('stat-quote-pending-main');
+                if (pMain) pMain.innerText = fmtMoney(qPending.revenue);
+                const pRev = document.getElementById('stat-quote-pending-rev');
+                if (pRev) pRev.innerText = fmtMoney(qPending.revenue);
+                const pRoutes = document.getElementById('stat-quote-pending-routes');
+                if (pRoutes) pRoutes.innerText = `${fmtNum(qPending.routes)} Tuyến`;
+
+                // Thẻ 3: ĐANG ĐÀM PHÁN
+                const nMain = document.getElementById('stat-quote-negotiating-main');
+                if (nMain) nMain.innerText = fmtMoney(qNeg.revenue);
+                const nRev = document.getElementById('stat-quote-negotiating-rev');
+                if (nRev) nRev.innerText = fmtMoney(qNeg.revenue);
+                const nRoutes = document.getElementById('stat-quote-negotiating-routes');
+                if (nRoutes) nRoutes.innerText = `${fmtNum(qNeg.routes)} Tuyến`;
+
+                // Thẻ 4: ĐÃ GỬI BÁO GIÁ
+                const sentMain = document.getElementById('stat-quote-sent-main');
+                if (sentMain) sentMain.innerText = fmtMoney(qSent.revenue);
+                const sentRev = document.getElementById('stat-quote-sent-rev');
+                if (sentRev) sentRev.innerText = fmtMoney(qSent.revenue);
+                const sentRoutes = document.getElementById('stat-quote-sent-routes');
+                if (sentRoutes) sentRoutes.innerText = `${fmtNum(qSent.routes)} Tuyến`;
+
+                // Thẻ 5: TỪ CHỐI
+                const rMain = document.getElementById('stat-quote-rejected-main');
+                if (rMain) rMain.innerText = fmtMoney(qRej.revenue);
+                const rRev = document.getElementById('stat-quote-rejected-rev');
+                if (rRev) rRev.innerText = fmtMoney(qRej.revenue);
+                const rRoutes = document.getElementById('stat-quote-rejected-routes');
+                if (rRoutes) rRoutes.innerText = `${fmtNum(qRej.routes)} Tuyến`;
+
+                // Tương thích ngược các element cũ nếu còn tồn tại
+                const oldNeg = document.getElementById('stat-quote-negotiating');
+                if (oldNeg) oldNeg.innerText = fmtNum(qNeg.count);
+                const oldPending = document.getElementById('stat-quote-pending');
+                if (oldPending) oldPending.innerText = fmtNum(qPending.count);
+                const oldApp = document.getElementById('stat-quote-approved');
+                if (oldApp) oldApp.innerText = fmtNum(qSigned.count);
+                const oldRev = document.getElementById('stat-quote-revenue');
+                if (oldRev) oldRev.innerText = fmtMoney(qs.expected_revenue || qSigned.revenue);
             }
 
+            // 2. Dãy 5 Thẻ BOOKING / ĐƠN ĐẶT HÀNG:
+            // [CHỜ ĐIỀU XE | ĐANG ĐIỀU XE | ĐƠN GẤP | CHẠY CẮT KÉO | ĐÃ HOÀN TẤT]
             const bs = data.stats.booking_stats;
             if (bs) {
-                const pEl = document.getElementById('sales-stat-pending-dispatch');
-                if (pEl) pEl.innerText = new Intl.NumberFormat('vi-VN').format(bs.pending_dispatch || 0);
-                const partEl = document.getElementById('sales-stat-partially-dispatched');
-                if (partEl) partEl.innerText = new Intl.NumberFormat('vi-VN').format(bs.partially_dispatched || 0);
-                const cEl = document.getElementById('sales-stat-completed');
-                if (cEl) cEl.innerText = new Intl.NumberFormat('vi-VN').format(bs.completed || 0);
+                const bkPend = bs.pending_dispatch_group || { count: bs.pending_dispatch || 0, total_trips: 0, total_containers: 0, completed_containers: 0, uncompleted_containers: 0 };
+                const bkDisp = bs.partially_dispatched_group || { count: bs.partially_dispatched || 0, total_trips: 0, total_containers: 0, completed_containers: 0, uncompleted_containers: 0 };
+                const bkUrg = bs.urgent_group || { count: 0, total_trips: 0, total_containers: 0, completed_containers: 0, uncompleted_containers: 0 };
+                const bkHook = bs.drop_hook_group || { count: 0, total_trips: 0, total_containers: 0, completed_containers: 0, uncompleted_containers: 0 };
+                const bkDone = bs.completed_group || { count: bs.completed || 0, total_trips: 0, total_containers: 0, completed_containers: 0, uncompleted_containers: 0 };
 
-                const dispContEl = document.getElementById('sales-stat-dispatched-containers');
-                if (dispContEl) dispContEl.innerText = new Intl.NumberFormat('vi-VN').format(bs.dispatched_containers || 0);
-                const totContEl = document.getElementById('sales-stat-total-containers');
-                if (totContEl) totContEl.innerText = new Intl.NumberFormat('vi-VN').format(bs.total_containers || 0);
-                const remContEl = document.getElementById('sales-stat-remaining-containers');
-                if (remContEl) remContEl.innerText = new Intl.NumberFormat('vi-VN').format(bs.remaining_containers || 0);
+                // Thẻ 1: CHỜ ĐIỀU XE
+                const pEl = document.getElementById('sales-stat-pending-dispatch');
+                if (pEl) pEl.innerText = fmtNum(bkPend.count);
+                const pTripsConts = document.getElementById('sales-stat-pending-trips-conts');
+                if (pTripsConts) pTripsConts.innerText = `${fmtNum(bkPend.total_trips)} Chuyến / ${fmtNum(bkPend.total_containers)} Cont`;
+                const pDone = document.getElementById('sales-stat-pending-completed');
+                if (pDone) pDone.innerText = `${fmtNum(bkPend.completed_containers)} Cont`;
+                const pUncompleted = document.getElementById('sales-stat-pending-uncompleted');
+                if (pUncompleted) pUncompleted.innerText = `${fmtNum(bkPend.uncompleted_containers)} Cont`;
+
+                // Thẻ 2: ĐANG ĐIỀU XE
+                const partEl = document.getElementById('sales-stat-partially-dispatched');
+                if (partEl) partEl.innerText = fmtNum(bkDisp.count);
+                const partTripsConts = document.getElementById('sales-stat-dispatching-trips-conts');
+                if (partTripsConts) partTripsConts.innerText = `${fmtNum(bkDisp.total_trips)} Chuyến / ${fmtNum(bkDisp.total_containers)} Cont`;
+                const partDone = document.getElementById('sales-stat-dispatching-completed');
+                if (partDone) partDone.innerText = `${fmtNum(bkDisp.completed_containers)} Cont`;
+                const partUncompleted = document.getElementById('sales-stat-dispatching-uncompleted');
+                if (partUncompleted) partUncompleted.innerText = `${fmtNum(bkDisp.uncompleted_containers)} Cont`;
+
+                // Thẻ 3: ĐƠN GẤP
+                const urgCount = document.getElementById('sales-stat-urgent-count');
+                if (urgCount) urgCount.innerText = fmtNum(bkUrg.count);
+                const urgTripsConts = document.getElementById('sales-stat-urgent-trips-conts');
+                if (urgTripsConts) urgTripsConts.innerText = `${fmtNum(bkUrg.total_trips)} Chuyến / ${fmtNum(bkUrg.total_containers)} Cont`;
+                const urgDone = document.getElementById('sales-stat-urgent-completed');
+                if (urgDone) urgDone.innerText = `${fmtNum(bkUrg.completed_containers)} Cont`;
+                const urgUncompleted = document.getElementById('sales-stat-urgent-uncompleted');
+                if (urgUncompleted) urgUncompleted.innerText = `${fmtNum(bkUrg.uncompleted_containers)} Cont`;
+
+                // Thẻ 4: CHẠY CẮT KÉO
+                const hookCount = document.getElementById('sales-stat-drop-hook-count');
+                if (hookCount) hookCount.innerText = fmtNum(bkHook.count);
+                const hookTripsConts = document.getElementById('sales-stat-drop-hook-trips-conts');
+                if (hookTripsConts) hookTripsConts.innerText = `${fmtNum(bkHook.total_trips)} Chuyến / ${fmtNum(bkHook.total_containers)} Cont`;
+                const hookDone = document.getElementById('sales-stat-drop-hook-completed');
+                if (hookDone) hookDone.innerText = `${fmtNum(bkHook.completed_containers)} Cont`;
+                const hookUncompleted = document.getElementById('sales-stat-drop-hook-uncompleted');
+                if (hookUncompleted) hookUncompleted.innerText = `${fmtNum(bkHook.uncompleted_containers)} Cont`;
+
+                // Thẻ 5: ĐÃ HOÀN TẤT
+                const cEl = document.getElementById('sales-stat-completed');
+                if (cEl) cEl.innerText = fmtNum(bkDone.count);
+                const cTripsConts = document.getElementById('sales-stat-completed-trips-conts');
+                if (cTripsConts) cTripsConts.innerText = `${fmtNum(bkDone.total_trips)} Chuyến / ${fmtNum(bkDone.total_containers)} Cont`;
+                const cDone = document.getElementById('sales-stat-completed-done');
+                if (cDone) cDone.innerText = `${fmtNum(bkDone.completed_containers)} Cont`;
+                const cUncompleted = document.getElementById('sales-stat-completed-uncompleted');
+                if (cUncompleted) cUncompleted.innerText = '0 Cont';
             }
         }
 

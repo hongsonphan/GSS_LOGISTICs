@@ -22,7 +22,7 @@
             <!-- Metric 1: Doanh Thu Hợp Đồng Tuyến / Tháng -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Kế Hoạch / Tháng</span>
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Kế Hoạch</span>
                     <span id="sales-trend-revenue" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
                         <i class="ph-bold ph-trend-up"></i> +14.8%
                     </span>
@@ -86,7 +86,7 @@
             <button id="tab-btn-quotations" onclick="switchSalesSubTab('quotations')" 
                 class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-sm font-bold font-heading flex items-center justify-center space-x-2.5 transition-all shadow-sm bg-indigo-700 text-white">
                 <i class="ph-bold ph-handshake text-base"></i>
-                <span>1. Báo Giá & Khách Hàng (Sales / NVKD)</span>
+                <span>1. Báo Giá & Hợp Đồng Khách Hàng</span>
                 <span class="px-2 py-0.5 rounded-full text-xs font-black bg-white/20 text-white tabular-nums" id="badge-count-quotes">4</span>
             </button>
             
@@ -94,7 +94,7 @@
             <button id="tab-btn-bookings" onclick="switchSalesSubTab('bookings')" 
                 class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl text-sm font-bold font-heading flex items-center justify-center space-x-2.5 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
                 <i class="ph-bold ph-truck text-base"></i>
-                <span>2. Đơn Đặt Hàng / Booking Từ Khách (Sale Admin / CS)</span>
+                <span>2. Booking / Đơn Đặt Hàng</span>
                 <span class="px-2 py-0.5 rounded-full text-xs font-black bg-teal-100 text-teal-800 tabular-nums" id="badge-count-bookings">8</span>
             </button>
         </div>
@@ -116,7 +116,7 @@
             <div class="flex items-center space-x-2.5">
                 <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-sm font-heading">1</span>
                 <div>
-                    <h3 class="font-black text-slate-900 font-heading text-base">Bảng Báo Giá Tuyến Cước & Phễu Khách Hàng (CRM)</h3>
+                    <h3 class="font-black text-slate-900 font-heading text-base">Báo Giá & Hợp Đồng Khách Hàng</h3>
                     <p class="text-xs text-slate-500">NVKD chủ động tìm kiếm khách hàng, chào giá cước vận chuyển, định mức chuyến và theo dõi duyệt hợp đồng</p>
                 </div>
             </div>
@@ -146,54 +146,121 @@
             </div>
         </div>
 
-        <!-- DASHBOARD RIÊNG TAB 1: 4 TRẠNG THÁI CHU KỲ BÁO GIÁ -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <!-- Thẻ 1: Đang Thương Lượng -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Đang Thương Lượng</span>
-                    <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
-                        <i class="ph-bold ph-chats-circle"></i>
-                    </span>
+        <!-- DASHBOARD RIÊNG TAB 1: 5 TRẠNG THÁI BÁO GIÁ & HỢP ĐỒNG KHÁCH HÀNG -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+            <!-- Thẻ 1: ĐÃ KÝ HỢP ĐỒNG -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐÃ KÝ HỢP ĐỒNG</span>
+                        <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-check-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-signed-main">-- đ</p>
                 </div>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-negotiating">1</p>
-                <p class="text-xs text-amber-700 font-medium mt-1.5">Đang đàm phán cước & tuyến</p>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">DOANH SỐ:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11.5px]" id="stat-quote-signed-rev">-- đ</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">SỐ TUYẾN:</span>
+                        <strong class="text-emerald-700 font-black font-heading" id="stat-quote-signed-routes">-- Tuyến</strong>
+                    </div>
+                </div>
             </div>
 
-            <!-- Thẻ 2: Chờ BGĐ Duyệt -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Chờ BGĐ Phê Duyệt</span>
-                    <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
-                        <i class="ph-bold ph-file-dashed"></i>
-                    </span>
+            <!-- Thẻ 2: CHỜ KÝ HỢP ĐỒNG -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CHỜ KÝ HỢP ĐỒNG</span>
+                        <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-file-dashed"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-pending-main">-- đ</p>
                 </div>
-                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-pending">1</p>
-                <p class="text-xs text-indigo-700 font-medium mt-1.5">Trình duyệt cước & lương chuyến</p>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">DOANH SỐ:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11.5px]" id="stat-quote-pending-rev">-- đ</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">SỐ TUYẾN:</span>
+                        <strong class="text-indigo-700 font-black font-heading" id="stat-quote-pending-routes">-- Tuyến</strong>
+                    </div>
+                </div>
             </div>
 
-            <!-- Thẻ 3: Tuyến Cước Đã Duyệt -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tuyến Cước Đã Duyệt</span>
-                    <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
-                        <i class="ph-bold ph-check-circle"></i>
-                    </span>
+            <!-- Thẻ 3: ĐANG ĐÀM PHÁN -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐANG ĐÀM PHÁN</span>
+                        <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-chats-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-negotiating-main">-- đ</p>
                 </div>
-                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-approved">2</p>
-                <p class="text-xs text-emerald-700 font-medium mt-1.5">Sẵn sàng nhận booking</p>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">DOANH SỐ:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11.5px]" id="stat-quote-negotiating-rev">-- đ</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">SỐ TUYẾN:</span>
+                        <strong class="text-amber-700 font-black font-heading" id="stat-quote-negotiating-routes">-- Tuyến</strong>
+                    </div>
+                </div>
             </div>
 
-            <!-- Thẻ 4: Doanh Thu Kế Hoạch (Tháng) -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Kế Hoạch (Tháng)</span>
-                    <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-base">
-                        <i class="ph-bold ph-currency-circle-dollar"></i>
-                    </span>
+            <!-- Thẻ 4: ĐÃ GỬI BÁO GIÁ -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-blue-500 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐÃ GỬI BÁO GIÁ</span>
+                        <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-paper-plane-tilt"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-blue-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-sent-main">-- đ</p>
                 </div>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-revenue">429.500.000 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1.5">Sản lượng cam kết hàng tháng</p>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">DOANH SỐ:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11.5px]" id="stat-quote-sent-rev">-- đ</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">SỐ TUYẾN:</span>
+                        <strong class="text-blue-700 font-black font-heading" id="stat-quote-sent-routes">-- Tuyến</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 5: TỪ CHỐI -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">TỪ CHỐI</span>
+                        <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-x-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl 2xl:text-2xl font-black text-rose-700 tabular-nums font-heading tracking-tight mt-1" id="stat-quote-rejected-main">-- đ</p>
+                </div>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">DOANH SỐ:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11.5px]" id="stat-quote-rejected-rev">-- đ</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10.5px]">SỐ TUYẾN:</span>
+                        <strong class="text-rose-700 font-black font-heading" id="stat-quote-rejected-routes">-- Tuyến</strong>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -350,7 +417,7 @@
             <div class="flex items-center space-x-2.5">
                 <span class="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-sm font-heading">2</span>
                 <div>
-                    <h3 class="font-black text-slate-900 font-heading text-base">Danh Sách Đơn Đặt Hàng / Booking Từ Khách Hàng Chờ Điều Xe</h3>
+                    <h3 class="font-black text-slate-900 font-heading text-base">Danh Sách Booking / Đơn Đặt Hàng</h3>
                     <p class="text-xs text-slate-500">Sale Admin / CS tiếp nhận đơn đặt vận chuyển từ khách hàng (kèm Booking hãng tàu hoặc vận tải nội địa), kiểm soát chứng từ và liên thông sang Điều Vận</p>
                 </div>
             </div>
@@ -380,58 +447,151 @@
             </div>
         </div>
 
-        <!-- DASHBOARD RIÊNG TAB 2: 4 CHỈ SỐ TRẠNG THÁI VẬN CHUYỂN CỦA ĐƠN VỊ VẬN TẢI -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <!-- Thẻ 1: Chờ Điều Xe -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chờ Điều Xe</span>
-                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
-                        <i class="ph-bold ph-clock-countdown"></i>
-                    </span>
+        <!-- DASHBOARD RIÊNG TAB 2: 5 CHỈ SỐ BOOKING / ĐƠN ĐẶT HÀNG -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+            <!-- Thẻ 1: CHỜ ĐIỀU XE -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CHỜ ĐIỀU XE</span>
+                        <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-clock-countdown"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-black text-slate-800 tabular-nums font-heading mt-1">
+                        <span id="sales-stat-pending-dispatch">--</span> <span class="text-xs font-bold text-slate-500 uppercase">Đơn</span>
+                    </p>
                 </div>
-                <p class="text-2xl font-black text-slate-800 tabular-nums font-heading" id="sales-stat-pending-dispatch">6</p>
-                <p class="text-[11px] text-rose-600 font-bold mt-1">Chưa gán xe (Ưu tiên điều gấp)</p>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">TỔNG SỐ CHUYẾN/ CONT:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11px]" id="sales-stat-pending-trips-conts">-- Chuyến / -- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">ĐÃ HOÀN THÀNH:</span>
+                        <strong class="text-emerald-700 font-black font-heading text-[11px]" id="sales-stat-pending-completed">-- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">CHƯA HOÀN THÀNH:</span>
+                        <strong class="text-rose-600 font-black font-heading text-[11px]" id="sales-stat-pending-uncompleted">-- Cont</strong>
+                    </div>
+                </div>
             </div>
 
-            <!-- Thẻ 2: Đang Điều Xe -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đang Điều Xe</span>
-                    <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
-                        <i class="ph-bold ph-truck"></i>
-                    </span>
+            <!-- Thẻ 2: ĐANG ĐIỀU XE -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐANG ĐIỀU XE</span>
+                        <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-truck"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-black text-teal-700 tabular-nums font-heading mt-1">
+                        <span id="sales-stat-partially-dispatched">--</span> <span class="text-xs font-bold text-slate-500 uppercase">Đơn</span>
+                    </p>
                 </div>
-                <p class="text-2xl font-black text-teal-700 tabular-nums font-heading" id="sales-stat-partially-dispatched">2</p>
-                <p class="text-[11px] text-teal-700 font-medium mt-1">Đang kéo cont theo từng đợt</p>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">TỔNG SỐ CHUYẾN/ CONT:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11px]" id="sales-stat-dispatching-trips-conts">-- Chuyến / -- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">ĐÃ HOÀN THÀNH:</span>
+                        <strong class="text-teal-700 font-black font-heading text-[11px]" id="sales-stat-dispatching-completed">-- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">CHƯA HOÀN THÀNH:</span>
+                        <strong class="text-amber-700 font-black font-heading text-[11px]" id="sales-stat-dispatching-uncompleted">-- Cont</strong>
+                    </div>
+                </div>
             </div>
 
-            <!-- Thẻ 3: Đã Hoàn Thành / Đủ Xe -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Đủ Xe / Hoàn Tất</span>
-                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
-                        <i class="ph-bold ph-check-circle"></i>
-                    </span>
+            <!-- Thẻ 3: ĐƠN GẤP -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐƠN GẤP</span>
+                        <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-warning-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-black text-rose-700 tabular-nums font-heading mt-1">
+                        <span id="sales-stat-urgent-count">--</span> <span class="text-xs font-bold text-slate-500 uppercase">Đơn</span>
+                    </p>
                 </div>
-                <p class="text-2xl font-black text-emerald-700 tabular-nums font-heading" id="sales-stat-completed">0</p>
-                <p class="text-[11px] text-emerald-700 font-medium mt-1">Đã phát lệnh 100% số cont</p>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">TỔNG SỐ CHUYẾN/ CONT:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11px]" id="sales-stat-urgent-trips-conts">-- Chuyến / -- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">ĐÃ HOÀN THÀNH:</span>
+                        <strong class="text-emerald-700 font-black font-heading text-[11px]" id="sales-stat-urgent-completed">-- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">CHƯA HOÀN THÀNH:</span>
+                        <strong class="text-rose-600 font-black font-heading text-[11px]" id="sales-stat-urgent-uncompleted">-- Cont</strong>
+                    </div>
+                </div>
             </div>
 
-            <!-- Thẻ 4: Sản Lượng Container -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sản Lượng Container</span>
-                    <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
-                        <i class="ph-bold ph-package"></i>
-                    </span>
+            <!-- Thẻ 4: CHẠY CẮT KÉO -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CHẠY CẮT KÉO</span>
+                        <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-arrows-split"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-black text-indigo-700 tabular-nums font-heading mt-1">
+                        <span id="sales-stat-drop-hook-count">--</span> <span class="text-xs font-bold text-slate-500 uppercase">Đơn</span>
+                    </p>
                 </div>
-                <p class="text-2xl font-black text-slate-800 tabular-nums font-heading">
-                    <span id="sales-stat-dispatched-containers">3</span> / <span id="sales-stat-total-containers">20</span> <span class="text-xs font-bold text-slate-500">Cont</span>
-                </p>
-                <p class="text-[11px] text-slate-500 font-medium mt-1">
-                    Còn lại: <span id="sales-stat-remaining-containers" class="font-bold text-amber-700">17</span> cont cần kéo
-                </p>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">TỔNG SỐ CHUYẾN/ CONT:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11px]" id="sales-stat-drop-hook-trips-conts">-- Chuyến / -- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">ĐÃ HOÀN THÀNH:</span>
+                        <strong class="text-indigo-700 font-black font-heading text-[11px]" id="sales-stat-drop-hook-completed">-- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">CHƯA HOÀN THÀNH:</span>
+                        <strong class="text-slate-600 font-black font-heading text-[11px]" id="sales-stat-drop-hook-uncompleted">-- Cont</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 5: ĐÃ HOÀN TẤT -->
+            <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐÃ HOÀN TẤT</span>
+                        <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                            <i class="ph-bold ph-check-circle"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-black text-emerald-700 tabular-nums font-heading mt-1">
+                        <span id="sales-stat-completed">--</span> <span class="text-xs font-bold text-slate-500 uppercase">Đơn</span>
+                    </p>
+                </div>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">TỔNG SỐ CHUYẾN/ CONT:</span>
+                        <strong class="text-slate-900 font-black font-heading text-[11px]" id="sales-stat-completed-trips-conts">-- Chuyến / -- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">ĐÃ HOÀN THÀNH:</span>
+                        <strong class="text-emerald-700 font-black font-heading text-[11px]" id="sales-stat-completed-done">-- Cont</strong>
+                    </div>
+                    <div class="flex items-center justify-between font-semibold">
+                        <span class="text-slate-500 uppercase font-bold text-[10px]">CHƯA HOÀN THÀNH:</span>
+                        <strong class="text-slate-400 font-black font-heading text-[11px]" id="sales-stat-completed-uncompleted">0 Cont</strong>
+                    </div>
+                </div>
             </div>
         </div>
 
