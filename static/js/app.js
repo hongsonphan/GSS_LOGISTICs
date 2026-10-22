@@ -27852,6 +27852,12 @@ function resolveInitialRoute() {
     const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     const hash = window.location.hash ? window.location.hash.replace('#', '').replace(/^\/+/, '') : '';
 
+    // 0. Kiểm tra URL trang chi tiết bản tin: /news/<hashid> (đã được Django render trên base.html)
+    const newsDetailMatch = pathname.match(/^\/news\/([a-zA-Z0-9_-]+)/);
+    if (newsDetailMatch && newsDetailMatch[1]) {
+        return;
+    }
+
     // 1. Kiểm tra deep-link chi tiết chuyến xe: /dispatch/trips/<hashid> hoặc /dispatch/trips/new
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/) || (hash.startsWith('trip/') ? hash.match(/^trip\/([a-zA-Z0-9_-]+)/) : null);
     if (tripMatch && tripMatch[1]) {
@@ -28001,6 +28007,9 @@ function resolveInitialRoute() {
 // Lắng nghe sự kiện Back/Forward của trình duyệt để chuyển view mượt mà
 window.addEventListener('popstate', (event) => {
     const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+    if (pathname.match(/^\/news\/([a-zA-Z0-9_-]+)/)) {
+        return;
+    }
     const tripMatch = pathname.match(/^\/dispatch\/trips\/([a-zA-Z0-9_-]+)/);
     const quoteMatch = pathname.match(/^\/sales\/quotations\/([a-zA-Z0-9_-]+)/);
     const bookingMatch = pathname.match(/^\/sales\/bookings\/([a-zA-Z0-9_-]+)/);
