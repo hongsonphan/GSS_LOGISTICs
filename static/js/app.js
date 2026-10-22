@@ -16097,10 +16097,10 @@ function renderDriverAdvancesTable(list) {
             cells: [
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `${list.length} phiếu tạm ứng chuyến`, colspan: 5 },
-                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalAdvAmount)} đ</span>`, align: 'right' },
+                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalAdvAmount)}</span>`, align: 'right' },
                 { text: '' },
-                { html: `<span class="text-slate-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalActualSpent)} đ</span>`, align: 'right' },
-                { html: `<span class="${totalDiff >= 0 ? 'text-blue-700' : 'text-rose-700'} font-bold tabular-nums font-mono">${totalDiff >= 0 ? '+' : ''}${formatMoneyVND(totalDiff)} đ</span>`, align: 'center' },
+                { html: `<span class="text-slate-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalActualSpent)}</span>`, align: 'right' },
+                { html: `<span class="${totalDiff >= 0 ? 'text-blue-700' : 'text-rose-700'} font-bold tabular-nums font-mono">${totalDiff >= 0 ? '+' : ''}${formatMoneyVND(totalDiff)}</span>`, align: 'center' },
                 { text: '', align: 'center', colspan: 2 }
             ]
         });
@@ -16204,10 +16204,10 @@ function renderDispatcherFundsTable(list) {
             cells: [
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `${list.length} quỹ điều vận`, colspan: 3 },
-                { html: `<span class="text-slate-900 font-bold tabular-nums font-mono">${formatMoneyVND(totalAmount)} đ</span>`, align: 'right' },
-                { html: `<span class="text-amber-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalDisbursed)} đ</span>`, align: 'right' },
-                { html: `<span class="text-emerald-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalSettled)} đ</span>`, align: 'right' },
-                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalBalance)} đ</span>`, align: 'right' },
+                { html: `<span class="text-slate-900 font-bold tabular-nums font-mono">${formatMoneyVND(totalAmount)}</span>`, align: 'right' },
+                { html: `<span class="text-amber-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalDisbursed)}</span>`, align: 'right' },
+                { html: `<span class="text-emerald-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalSettled)}</span>`, align: 'right' },
+                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalBalance)}</span>`, align: 'right' },
                 { text: '', align: 'center', colspan: 3 }
             ]
         });
@@ -16609,9 +16609,9 @@ function renderSettlementTable(data) {
             cells: [
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading', colspan: 2 },
                 { html: `${pageAllTripsList.length} chuyến xe quyết toán`, colspan: 5 },
-                { html: `<span class="text-amber-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalSettleAdv)} đ</span>`, align: 'right' },
-                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalSettleSpent)} đ</span>`, align: 'right' },
-                { html: `<span class="${totalSettleDiff >= 0 ? 'text-blue-700' : 'text-rose-700'} font-bold tabular-nums font-mono text-center">${totalSettleDiff >= 0 ? '+' : ''}${formatMoneyVND(totalSettleDiff)} đ</span>`, align: 'center' },
+                { html: `<span class="text-amber-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalSettleAdv)}</span>`, align: 'right' },
+                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalSettleSpent)}</span>`, align: 'right' },
+                { html: `<span class="${totalSettleDiff >= 0 ? 'text-blue-700' : 'text-rose-700'} font-bold tabular-nums font-mono text-center">${totalSettleDiff >= 0 ? '+' : ''}${formatMoneyVND(totalSettleDiff)}</span>`, align: 'center' },
                 { text: '', align: 'center', colspan: 3 }
             ]
         });
@@ -17159,7 +17159,7 @@ function renderReimbursablesTable(list) {
             cells: [
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `${list.length} khoản chi hộ | Đã thu: <span class="text-emerald-700 font-bold font-mono">${formatMoneyVND(totalCollected)}</span> | Chờ thu: <span class="text-amber-700 font-bold font-mono">${formatMoneyVND(totalPending)}</span>`, colspan: 6 },
-                { html: `<span class="text-slate-900 font-black tabular-nums font-mono text-sm">${formatMoneyVND(totalAmount)} đ</span>`, align: 'right' },
+                { html: `<span class="text-slate-900 font-black tabular-nums font-mono text-sm">${formatMoneyVND(totalAmount)}</span>`, align: 'right' },
                 { text: '', align: 'center', colspan: 5 }
             ]
         });
@@ -17517,7 +17517,7 @@ function renderCashBookTable(list) {
             cells: [
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `${list.length} phiếu GD | Thu: <span class="text-emerald-700 font-bold font-mono">+${formatMoneyVND(totalInflow)}</span> | Chi: <span class="text-rose-700 font-bold font-mono">-${formatMoneyVND(totalOutflow)}</span>`, colspan: 7 },
-                { html: `<span class="${netBalance >= 0 ? 'text-emerald-700' : 'text-rose-700'} font-black tabular-nums font-mono text-sm">${netBalance >= 0 ? '+' : ''}${formatMoneyVND(netBalance)} đ</span>`, align: 'right' },
+                { html: `<span class="${netBalance >= 0 ? 'text-emerald-700' : 'text-rose-700'} font-black tabular-nums font-mono text-sm">${netBalance >= 0 ? '+' : ''}${formatMoneyVND(netBalance)}</span>`, align: 'right' },
                 { text: '', align: 'center', colspan: 3 }
             ]
         });
@@ -18743,11 +18743,11 @@ function renderSubcontractorTable(list) {
             cells: [
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `${list.length} chuyến xe bạn`, colspan: 4 },
-                { html: `<span class="text-slate-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalCustRev)} đ</span>`, align: 'right' },
-                { html: `<span class="text-rose-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalSubCost)} đ</span>`, align: 'right' },
-                { html: `<span class="text-teal-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalMargin)} đ</span>`, align: 'right' },
-                { html: `<span class="text-amber-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalAdv)} đ</span>`, align: 'right' },
-                { html: `<span class="text-slate-900 font-black tabular-nums font-mono text-sm">${formatMoneyVND(totalPayable)} đ</span>`, align: 'right' },
+                { html: `<span class="text-slate-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalCustRev)}</span>`, align: 'right' },
+                { html: `<span class="text-rose-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalSubCost)}</span>`, align: 'right' },
+                { html: `<span class="text-teal-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalMargin)}</span>`, align: 'right' },
+                { html: `<span class="text-amber-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalAdv)}</span>`, align: 'right' },
+                { html: `<span class="text-slate-900 font-black tabular-nums font-mono text-sm">${formatMoneyVND(totalPayable)}</span>`, align: 'right' },
                 { text: '', align: 'center', colspan: 3 }
             ]
         });
@@ -18976,9 +18976,9 @@ function renderBotAuditTable(list) {
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `${list.length} chuyến đối soát BOT`, colspan: 4 },
                 { html: `<span class="text-slate-800 font-bold tabular-nums font-mono">${totalTickets} vé</span>`, align: 'center' },
-                { html: `<span class="text-rose-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalActual)} đ</span>`, align: 'right' },
-                { html: `<span class="text-indigo-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalStandard)} đ</span>`, align: 'right' },
-                { html: `<span class="${totalDiff > 0 ? 'text-rose-600' : 'text-emerald-600'} font-black tabular-nums font-mono">${totalDiff > 0 ? '+' : ''}${formatMoneyVND(totalDiff)} đ</span>`, align: 'right' },
+                { html: `<span class="text-rose-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalActual)}</span>`, align: 'right' },
+                { html: `<span class="text-indigo-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalStandard)}</span>`, align: 'right' },
+                { html: `<span class="${totalDiff > 0 ? 'text-rose-600' : 'text-emerald-600'} font-black tabular-nums font-mono">${totalDiff > 0 ? '+' : ''}${formatMoneyVND(totalDiff)}</span>`, align: 'right' },
                 { text: '', align: 'center', colspan: 2 }
             ]
         });
@@ -27956,8 +27956,8 @@ function renderCustomsTable(list) {
             cells: [
                 { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
                 { html: `<span class="text-teal-800 font-extrabold">${list.length}</span> tờ khai hải quan điện tử`, colspan: 6, class: 'text-slate-700' },
-                { html: `<span class="text-slate-900 font-bold tabular-nums font-mono text-xs">${formatMoney(totalTax)} đ</span>`, align: 'right' },
-                { html: `<span class="text-amber-800 font-bold tabular-nums font-mono text-xs">${formatMoney(totalReimburse)} đ</span>`, align: 'right' },
+                { html: `<span class="text-slate-900 font-bold tabular-nums font-mono text-xs">${formatMoney(totalTax)}</span>`, align: 'right' },
+                { html: `<span class="text-amber-800 font-bold tabular-nums font-mono text-xs">${formatMoney(totalReimburse)}</span>`, align: 'right' },
                 { text: '', align: 'center' }
             ]
         });
@@ -31977,18 +31977,18 @@ async function viewDriverAdvanceDetail(advanceId) {
             if (adv.status === 'SETTLED') {
                 sumBox.classList.remove('hidden');
                 const spentEl = document.getElementById('adv-display-actual-spent');
-                if (spentEl) spentEl.innerText = `${formatMoneyVND(adv.actual_spent)} đ`;
+                if (spentEl) spentEl.innerText = formatMoneyVND(adv.actual_spent);
 
                 const diffLabel = document.getElementById('adv-display-diff-label');
                 const diffVal = document.getElementById('adv-display-diff-val');
                 if (diffVal) {
                     if (adv.settlement_diff_type === 'DRIVER_REFUND') {
                         if (diffLabel) diffLabel.innerText = 'Tài xế đã nộp lại tiền thừa:';
-                        diffVal.innerText = `+${formatMoneyVND(adv.refund_amount)} đ`;
+                        diffVal.innerText = `+${formatMoneyVND(adv.refund_amount)}`;
                         diffVal.className = 'font-black tabular-nums font-mono text-sm text-blue-700';
                     } else if (adv.settlement_diff_type === 'COMPANY_REIMBURSE') {
                         if (diffLabel) diffLabel.innerText = 'Công ty đã chi trả bù cho tài xế:';
-                        diffVal.innerText = `-${formatMoneyVND(adv.reimburse_amount)} đ`;
+                        diffVal.innerText = `-${formatMoneyVND(adv.reimburse_amount)}`;
                         diffVal.className = 'font-black tabular-nums font-mono text-sm text-rose-700';
                     } else {
                         if (diffLabel) diffLabel.innerText = 'Kết quả đối soát:';
@@ -32245,7 +32245,7 @@ async function printDriverAdvanceVoucher(advanceId) {
     <div class="money-box">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 12pt; font-weight: bold;">Số tiền tạm ứng:</span>
-            <span style="font-size: 16pt; font-weight: bold; color: #0f766e;">${formatMoneyVND(adv.amount)} VNĐ</span>
+            <span style="font-size: 16pt; font-weight: bold; color: #0f766e;">${formatMoneyVND(adv.amount)}</span>
         </div>
         <div style="font-style: italic; margin-top: 6px; font-size: 11pt;">
             (Bằng chữ: <em>${escapeHtml(numberToWordsVN(adv.amount))}</em>)
@@ -32407,11 +32407,11 @@ async function viewDispatcherFundDetail(fundId) {
         if (statsBox) {
             statsBox.classList.remove('hidden');
             const disEl = document.getElementById('fund-display-disbursed');
-            if (disEl) disEl.innerText = `${formatMoneyVND(fund.disbursed_amount)} đ`;
+            if (disEl) disEl.innerText = formatMoneyVND(fund.disbursed_amount);
             const setEl = document.getElementById('fund-display-settled');
-            if (setEl) setEl.innerText = `${formatMoneyVND(fund.settled_amount)} đ`;
+            if (setEl) setEl.innerText = formatMoneyVND(fund.settled_amount);
             const remEl = document.getElementById('fund-display-remaining');
-            if (remEl) remEl.innerText = `${formatMoneyVND(fund.remaining_balance)} đ`;
+            if (remEl) remEl.innerText = formatMoneyVND(fund.remaining_balance);
 
             const appByEl = document.getElementById('fund-display-approved-by');
             if (appByEl) appByEl.innerText = fund.approved_by || 'Chờ duyệt';
@@ -32645,7 +32645,7 @@ async function printDispatcherFundVoucher(fundId) {
     <div class="money-box">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 12pt; font-weight: bold;">Tổng số tiền cấp quỹ:</span>
-            <span style="font-size: 16pt; font-weight: bold; color: #3730a3;">${formatMoneyVND(fund.amount)} VNĐ</span>
+            <span style="font-size: 16pt; font-weight: bold; color: #3730a3;">${formatMoneyVND(fund.amount)}</span>
         </div>
         <div style="font-style: italic; margin-top: 6px; font-size: 11pt;">
             (Bằng chữ: <em>${escapeHtml(numberToWordsVN(fund.amount))}</em>)
@@ -32835,22 +32835,22 @@ function printSubcontractorVoucher(tripId = null) {
         <tbody>
             <tr>
                 <td><strong>1. Cước thỏa thuận trả xe bạn</strong></td>
-                <td style="text-align: right; font-weight: bold;">${formatMoneyVND(trip.subcontractor_cost)} đ</td>
+                <td style="text-align: right; font-weight: bold;">${formatMoneyVND(trip.subcontractor_cost)}</td>
                 <td>Cước phí trọn gói theo chuyến</td>
             </tr>
             <tr>
                 <td><strong>2. Các khoản chi hộ hoàn lại 3PL</strong></td>
-                <td style="text-align: right; font-weight: bold; color: #b45309;">+ ${formatMoneyVND(trip.sub_reimbursable_expenses || 0)} đ</td>
+                <td style="text-align: right; font-weight: bold; color: #b45309;">+ ${formatMoneyVND(trip.sub_reimbursable_expenses || 0)}</td>
                 <td>Vé cầu đường, nâng hạ cảng thầu phụ đã chi</td>
             </tr>
             <tr>
                 <td><strong>3. Đã tạm ứng trước</strong></td>
-                <td style="text-align: right; font-weight: bold; color: #dc2626;">- ${formatMoneyVND(trip.subcontractor_advance)} đ</td>
+                <td style="text-align: right; font-weight: bold; color: #dc2626;">- ${formatMoneyVND(trip.subcontractor_advance)}</td>
                 <td>Tiền công ty đã chi tạm ứng</td>
             </tr>
             <tr style="background: #f0fdf4;">
                 <td style="font-size: 12pt; font-weight: bold; text-transform: uppercase;">Còn phải thanh toán (1 + 2 - 3):</td>
-                <td style="text-align: right; font-size: 14pt; font-weight: bold; color: #047857;">${formatMoneyVND(trip.remaining_payable)} đ</td>
+                <td style="text-align: right; font-size: 14pt; font-weight: bold; color: #047857;">${formatMoneyVND(trip.remaining_payable)}</td>
                 <td>${trip.subcontractor_settlement_status === 'SETTLED' ? 'Đã quyết toán' : 'Chờ thanh toán'}</td>
             </tr>
         </tbody>
@@ -32959,11 +32959,11 @@ function printSettlementAdvanceVoucher() {
         </tr>
         <tr>
             <td style="font-weight: bold;">Số tiền đã tạm ứng:</td>
-            <td style="font-weight: bold; font-size: 12pt; color: #0f766e;">${formatMoneyVND(adv.amount)} đ</td>
+            <td style="font-weight: bold; font-size: 12pt; color: #0f766e;">${formatMoneyVND(adv.amount)}</td>
         </tr>
         <tr>
             <td style="font-weight: bold;">Tổng chi phí thực tế đã chi:</td>
-            <td style="font-weight: bold; font-size: 12pt; color: #1e293b;">${formatMoneyVND(actualSpent)} đ</td>
+            <td style="font-weight: bold; font-size: 12pt; color: #1e293b;">${formatMoneyVND(actualSpent)}</td>
         </tr>
     </table>
 
@@ -32971,9 +32971,9 @@ function printSettlementAdvanceVoucher() {
         <div style="font-weight: bold; font-size: 12pt;">KẾT QUẢ ĐỐI SOÁT HOÀN ỨNG:</div>
         <div style="font-size: 13pt; margin-top: 6px;">
             ${(Number(adv.amount) - Number(String(actualSpent).replace(/\./g, ''))) > 0 ? 
-                `Tài xế nộp lại tiền thừa cho công ty: <strong style="color: #1d4ed8;">+${formatMoneyVND(Number(adv.amount) - Number(String(actualSpent).replace(/\./g, '')))} đ</strong>` : 
+                `Tài xế nộp lại tiền thừa cho công ty: <strong style="color: #1d4ed8;">+${formatMoneyVND(Number(adv.amount) - Number(String(actualSpent).replace(/\./g, '')))}</strong>` : 
                 ((Number(adv.amount) - Number(String(actualSpent).replace(/\./g, ''))) < 0 ? 
-                    `Công ty chi trả bù thêm cho tài xế: <strong style="color: #b91c1c;">-${formatMoneyVND(Math.abs(Number(adv.amount) - Number(String(actualSpent).replace(/\./g, ''))))} đ</strong>` : 
+                    `Công ty chi trả bù thêm cho tài xế: <strong style="color: #b91c1c;">-${formatMoneyVND(Math.abs(Number(adv.amount) - Number(String(actualSpent).replace(/\./g, ''))))}</strong>` : 
                     `<strong style="color: #047857;">Hai bên đối soát khớp đúng 100% (0 đ)</strong>`)}
         </div>
     </div>

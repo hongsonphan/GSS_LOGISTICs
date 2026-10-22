@@ -801,11 +801,19 @@
                     const colspan = cell.colspan ? `colspan="${cell.colspan}"` : '';
                     const align = cell.align ? `text-${cell.align}` : 'text-left';
                     const cls = cell.class || '';
-                    trHtml += `<td ${colspan} class="px-3 py-2.5 ${align} ${cls} font-heading font-bold">${cell.html || cell.text || ''}</td>`;
+                    let content = cell.html || cell.text || '';
+                    if (typeof content === 'string') {
+                        content = content.replace(/(?:đ\s*đ|đ\s*VNĐ|VNĐ\s*đ|VNĐ\s*VNĐ)/gi, 'đ');
+                    }
+                    trHtml += `<td ${colspan} class="px-3 py-2.5 ${align} ${cls} font-heading font-bold">${content}</td>`;
                 });
             } else {
                 trHtml += `<td class="px-3 py-2.5 text-center font-black text-slate-900 font-heading">TỔNG</td>`;
-                trHtml += `<td colspan="${colCount - 1}" class="px-3 py-2.5 text-slate-700 font-bold">${config.summary || ''}</td>`;
+                let summary = config.summary || '';
+                if (typeof summary === 'string') {
+                    summary = summary.replace(/(?:đ\s*đ|đ\s*VNĐ|VNĐ\s*đ|VNĐ\s*VNĐ)/gi, 'đ');
+                }
+                trHtml += `<td colspan="${colCount - 1}" class="px-3 py-2.5 text-slate-700 font-bold">${summary}</td>`;
             }
             trHtml += '</tr>';
 
