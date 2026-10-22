@@ -242,56 +242,59 @@
                     {% endfor %}
                 </div>
 
-                <!-- Preview Header Bar -->
-                <div class="bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs text-slate-600 flex-wrap gap-2">
-                    <div class="flex items-center gap-2">
-                        <i id="preview-active-icon" class="ph-bold ph-file-text text-base text-teal-600"></i>
-                        <span>Đang xem: <strong id="preview-active-filename" class="text-slate-900 font-bold"></strong></span>
-                        <span id="preview-active-size" class="text-slate-400"></span>
-                    </div>
-                </div>
-
-                <!-- Frame Viewer Container -->
-                <div id="preview-container" class="w-full bg-slate-900/5 rounded-2xl border border-slate-200 overflow-hidden min-h-[500px] flex flex-col items-center justify-center relative">
+                <!-- Frame Viewer Container (Thiết kế phẳng đồng màu BIM, không viền tối, tinh gọn tối đa) -->
+                <div id="preview-container" class="w-full bg-slate-50/70 rounded-2xl border border-slate-200/90 overflow-hidden min-h-[500px] flex flex-col items-center justify-center relative">
                     <div id="preview-loading" class="hidden absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 space-y-2">
                         <i class="ph-bold ph-spinner-gap fa-spin text-3xl text-teal-600"></i>
                         <span class="text-xs font-bold text-slate-600">Đang chuẩn bị hiển thị nội dung tài liệu...</span>
                     </div>
 
-                    <!-- 1. PDF.js Native Canvas Viewer & Thanh Điều Khiển Chuyên Nghiệp -->
-                    <div id="pdf-viewer-wrapper" class="hidden w-full flex flex-col bg-slate-900 text-white rounded-xl overflow-hidden shadow-inner">
-                        <!-- Toolbar điều khiển PDF -->
-                        <div class="bg-slate-950 px-4 py-2 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="changePdfPage(-1)" id="pdf-prev-btn" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold flex items-center gap-1 transition-colors cursor-pointer" title="Trang trước">
+                    <!-- 1. PDF.js Native Canvas Viewer (Đồng màu sáng, Có Nút Xoay 90° & Tự động thích ứng khổ ngang) -->
+                    <div id="pdf-viewer-wrapper" class="hidden w-full flex flex-col bg-white">
+                        <!-- Toolbar điều khiển PDF tinh gọn, đồng màu hệ sinh thái BIM -->
+                        <div class="bg-slate-50/90 px-4 py-2.5 border-b border-slate-200/90 flex items-center justify-between flex-wrap gap-2 text-xs text-slate-700">
+                            <!-- Phân trang -->
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="changePdfPage(-1)" id="pdf-prev-btn" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg font-bold border border-slate-200 shadow-2xs flex items-center gap-1 transition-all cursor-pointer" title="Trang trước">
                                     <i class="ph-bold ph-caret-left"></i> Trước
                                 </button>
-                                <span class="text-slate-300 font-medium">Trang <strong id="pdf-current-page" class="text-teal-400 font-bold">1</strong> / <span id="pdf-total-pages" class="text-slate-400">1</span></span>
-                                <button type="button" onclick="changePdfPage(1)" id="pdf-next-btn" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold flex items-center gap-1 transition-colors cursor-pointer" title="Trang tiếp">
+                                <span class="text-slate-600 font-medium px-2.5 py-1 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
+                                    Trang <strong id="pdf-current-page" class="text-teal-700 font-bold">1</strong> / <span id="pdf-total-pages" class="text-slate-500">1</span>
+                                </span>
+                                <button type="button" onclick="changePdfPage(1)" id="pdf-next-btn" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg font-bold border border-slate-200 shadow-2xs flex items-center gap-1 transition-all cursor-pointer" title="Trang tiếp">
                                     Sau <i class="ph-bold ph-caret-right"></i>
                                 </button>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="zoomPdf(-0.2)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors cursor-pointer" title="Thu nhỏ">
+
+                            <!-- Phóng to / Thu nhỏ / Vừa màn hình -->
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="zoomPdf(-0.2)" class="p-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 shadow-2xs transition-all cursor-pointer" title="Thu nhỏ (-20%)">
                                     <i class="ph-bold ph-minus text-xs"></i>
                                 </button>
-                                <span id="pdf-zoom-level" class="text-[11px] font-mono text-slate-300 w-12 text-center">125%</span>
-                                <button type="button" onclick="zoomPdf(0.2)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors cursor-pointer" title="Phóng to">
+                                <span id="pdf-zoom-level" class="text-xs font-bold text-slate-700 w-12 text-center bg-white py-1 rounded-lg border border-slate-200/80 shadow-2xs">100%</span>
+                                <button type="button" onclick="zoomPdf(0.2)" class="p-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 shadow-2xs transition-all cursor-pointer" title="Phóng to (+20%)">
                                     <i class="ph-bold ph-plus text-xs"></i>
                                 </button>
-                                <button type="button" onclick="resetPdfZoom()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer" title="Khôi phục 100%">
+                                <button type="button" onclick="fitWidthPdf()" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 shadow-2xs transition-all cursor-pointer" title="Căn vừa vặn chiều ngang màn hình (Tối ưu cho sơ đồ ngang)">
+                                    <i class="ph-bold ph-arrows-out-line-horizontal mr-1 text-teal-600"></i>Vừa ngang
+                                </button>
+                                <button type="button" onclick="resetPdfZoom()" class="px-2 py-1.5 bg-white hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-medium border border-slate-200 shadow-2xs transition-all cursor-pointer" title="Khôi phục 100%">
                                     100%
                                 </button>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="openCurrentAttachmentNewTab()" class="px-2.5 py-1 bg-teal-700 hover:bg-teal-600 text-white rounded-lg font-bold flex items-center gap-1 transition-colors cursor-pointer text-xs" title="Mở file thô trong tab mới">
-                                    <i class="ph-bold ph-arrow-square-out"></i> Mở tab mới
+
+                            <!-- Nút Xoay 90° (Cho sơ đồ tổ chức & file nằm ngang) -->
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="rotatePdf(90)" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg font-bold text-xs border border-teal-200 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Xoay 90° theo chiều kim đồng hồ">
+                                    <i class="ph-bold ph-arrow-clockwise text-teal-700 text-sm"></i>
+                                    <span>Xoay 90°</span>
+                                    <span id="pdf-rotation-badge" class="text-[10px] text-teal-700 bg-teal-100/70 px-1 py-0.2 rounded font-mono ml-0.5">0°</span>
                                 </button>
                             </div>
                         </div>
-                        <!-- Canvas container cuộn nét cao -->
-                        <div id="pdf-canvas-container" class="w-full max-h-[750px] overflow-auto p-4 flex flex-col items-center justify-center bg-slate-900/90 custom-scrollbar">
-                            <canvas id="pdf-render-canvas" class="shadow-2xl rounded-sm max-w-full bg-white"></canvas>
+                        <!-- Canvas container cuộn nét cao trên nền ghi sáng đồng màu -->
+                        <div id="pdf-canvas-container" class="w-full max-h-[820px] overflow-auto p-4 sm:p-6 flex flex-col items-center justify-center bg-slate-100/60 custom-scrollbar">
+                            <canvas id="pdf-render-canvas" class="shadow-sm border border-slate-200/90 rounded-sm bg-white transition-all duration-150"></canvas>
                         </div>
                     </div>
 
@@ -603,16 +606,22 @@
         }
     }
 
-    // 1. Render PDF (Hỗ trợ PDF.js Native Canvas sắc nét + Fallback SAMEORIGIN Iframe)
+    // 1. Render PDF (Hỗ trợ PDF.js Native Canvas sắc nét, Xoay 90° & Tự động vừa chiều rộng)
     let pdfDoc = null;
     let pdfPageNum = 1;
-    let pdfScale = 1.25;
+    let pdfScale = 1.0;
+    let pdfRotation = 0;
     let pdfPageRendering = false;
     let pdfPageNumPending = null;
 
     async function renderPdfPreview(url) {
         const wrapper = document.getElementById('pdf-viewer-wrapper');
         const frame = document.getElementById('pdf-viewer-frame');
+
+        // Reset rotation về 0 khi nạp tệp mới
+        pdfRotation = 0;
+        const rotBadge = document.getElementById('pdf-rotation-badge');
+        if (rotBadge) rotBadge.textContent = '0°';
 
         if (window.pdfjsLib && wrapper) {
             try {
@@ -629,6 +638,24 @@
                 const totalPagesEl = document.getElementById('pdf-total-pages');
                 if (totalPagesEl) totalPagesEl.textContent = pdfDoc.numPages;
                 pdfPageNum = 1;
+
+                // Tự động nhận diện khổ ngang (Landscape) để bung vừa chiều rộng
+                try {
+                    const firstPage = await pdfDoc.getPage(1);
+                    const initRot = (firstPage.rotate + pdfRotation) % 360;
+                    const unscaled = firstPage.getViewport({ scale: 1.0, rotation: initRot });
+                    const container = document.getElementById('pdf-canvas-container');
+                    const availWidth = Math.max((container ? container.clientWidth : 800) - 48, 320);
+
+                    if (unscaled.width >= unscaled.height || unscaled.width > 700) {
+                        pdfScale = Math.round((availWidth / unscaled.width) * 100) / 100;
+                    } else {
+                        pdfScale = Math.min(Math.round((availWidth / unscaled.width) * 100) / 100, 1.25);
+                    }
+                } catch(e) {
+                    pdfScale = 1.15;
+                }
+
                 await renderPdfPage(pdfPageNum);
                 return;
             } catch (e) {
@@ -655,8 +682,10 @@
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
 
-            const viewport = page.getViewport({ scale: pdfScale });
+            const totalRotation = (page.rotate + pdfRotation) % 360;
+            const viewport = page.getViewport({ scale: pdfScale, rotation: totalRotation });
             const outputScale = window.devicePixelRatio || 1;
+
             canvas.width = Math.floor(viewport.width * outputScale);
             canvas.height = Math.floor(viewport.height * outputScale);
             canvas.style.width = Math.floor(viewport.width) + "px";
@@ -716,15 +745,41 @@
 
     function zoomPdf(delta) {
         if (!pdfDoc) return;
-        const newScale = Math.min(Math.max(pdfScale + delta, 0.5), 3.0);
+        const newScale = Math.min(Math.max(pdfScale + delta, 0.4), 3.5);
         pdfScale = Math.round(newScale * 10) / 10;
         queueRenderPdfPage(pdfPageNum);
     }
 
     function resetPdfZoom() {
         if (!pdfDoc) return;
-        pdfScale = 1.25;
+        pdfScale = 1.0;
         queueRenderPdfPage(pdfPageNum);
+    }
+
+    // Xoay trang 90° (Hỗ trợ file sơ đồ nằm ngang / lộn dọc)
+    function rotatePdf(delta = 90) {
+        if (!pdfDoc) return;
+        pdfRotation = (pdfRotation + delta) % 360;
+        const rotBadge = document.getElementById('pdf-rotation-badge');
+        if (rotBadge) rotBadge.textContent = `${pdfRotation}°`;
+        // Tự động vừa chiều rộng theo hướng xoay mới
+        fitWidthPdf();
+    }
+
+    // Tự động căn vừa chiều ngang màn hình
+    async function fitWidthPdf() {
+        if (!pdfDoc) return;
+        try {
+            const page = await pdfDoc.getPage(pdfPageNum);
+            const totalRotation = (page.rotate + pdfRotation) % 360;
+            const unscaled = page.getViewport({ scale: 1.0, rotation: totalRotation });
+            const container = document.getElementById('pdf-canvas-container');
+            const availWidth = Math.max((container ? container.clientWidth : 800) - 48, 320);
+            pdfScale = Math.round((availWidth / unscaled.width) * 100) / 100;
+            queueRenderPdfPage(pdfPageNum);
+        } catch(e) {
+            console.error('Fit width error:', e);
+        }
     }
 
     // 2. Render Image

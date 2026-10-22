@@ -295,6 +295,19 @@ eport-14 (Tuổi đơn tồn đọng) cho Khối Kinh Doanh (Sales) để đôn 
 
 ---
 
+## [v4.1.12] - 2026-10-22 (Tinh Gọn Bộ Xem Trước PDF: Đồng Màu Trắng Sáng, Nút Xoay 90° & Tự Động Vừa Chiều Ngang)
+
+### 1. Đồng Bộ Hóa Thiết Kế Sáng Màu & Xóa Bỏ Khung Viền Tối Cồng Kềnh (`templates/news_detail.html`):
+- **Bối cảnh & Yêu cầu:** Người dùng phản ánh bộ xem trước PDF trước đây có khung nền tối màu đen/slate-950 tách biệt ("viền infinity"), các thành phần bị trùng lặp (dòng "Đang xem: [tệp]" lặp lại tên tệp trên Tabs; nút "Mở tab mới" bị double ở cả Header và Toolbar). Ngoài ra, các tài liệu dạng sơ đồ tổ chức nằm ngang (Landscape) bị hiển thị lộn dọc không đọc được.
+- **Giải pháp UX/UI Tinh Gọn & Hiện Đại:**
+  * **Thiết kế đồng màu sáng:** Chuyển toàn bộ Toolbar sang tông màu xám nhạt (`bg-slate-50/90`), viền mỏng tinh tế (`border-slate-200/90`) và nền Canvas giấy trắng thanh lịch trên nền ghi nhẹ (`bg-slate-100/60`).
+  * **Loại bỏ 100% sự trùng lặp:** Xóa bỏ thanh header "Đang xem: ..." phụ; loại bỏ nút "Mở tab mới" lặp lại trong Toolbar PDF, chỉ giữ 1 nút duy nhất ở Header trên cùng.
+- **Tính năng Xoay 90° (Rotate) & Tự động thích ứng khổ ngang (Fit Width):**
+  * **Nút bấm "Xoay 90°":** Cho phép người dùng xoay trang PDF theo chiều kim đồng hồ ($0^\circ ightarrow 90^\circ ightarrow 180^\circ ightarrow 270^\circ ightarrow 0^\circ$) để xem các sơ đồ tổ chức, bản vẽ hoặc bảng biểu nằm ngang cực kỳ dễ dàng.
+  * **Tự động vừa chiều ngang (Fit Width):** Hệ thống tự động tính toán tỷ lệ khung hình và chiều rộng hiển thị của màn hình để bung rộng toàn bộ chiều ngang của sơ đồ, chữ to rõ nét căng mà không cần căn chỉnh thủ công.
+
+---
+
 ## [v4.1.11] - 2026-10-22 (Bổ Sung Tính Năng Chỉnh Sửa Thông Báo Cho Người Ban Hành & Tích Hợp PDF.js Viewer Sắc Nét)
 
 ### 1. Bổ Sung Quyền & Giao Diện Chỉnh Sửa / Xóa Thông Báo Cho Người Ban Hành:
