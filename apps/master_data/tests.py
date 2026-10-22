@@ -171,6 +171,22 @@ class MasterDataAPITestCase(TestCase):
         self.assertEqual(design3, 32000)
         self.assertEqual(disp3, "32.000")
 
+        # Kiểm thử tự động loại bỏ dấu gạch ngang thừa, ký tự kg và khoảng trắng
+        cap4, design4, disp4 = parse_payload_input("400.000/878.979- kg")
+        self.assertEqual(cap4, 878979)
+        self.assertEqual(design4, 400000)
+        self.assertEqual(disp4, "400.000/878.979")
+
+        cap5, design5, disp5 = parse_payload_input("—")
+        self.assertEqual(cap5, 0)
+        self.assertIsNone(design5)
+        self.assertEqual(disp5, "")
+
+        cap6, design6, disp6 = parse_payload_input("")
+        self.assertEqual(cap6, 0)
+        self.assertIsNone(design6)
+        self.assertEqual(disp6, "")
+
         # 2. Tạo rơ-moóc với loại tùy chỉnh người dùng tự gõ và tải trọng dạng 30000/27360
         res = self.client.post('/api/master-data/trailers/', {
             'license_plate': '51R-888.99',

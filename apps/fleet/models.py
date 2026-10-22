@@ -1,3 +1,4 @@
+import re
 from django.db import models
 from django.utils import timezone
 from core.models import TimeStampedModel, SoftDeleteModel
@@ -6,36 +7,53 @@ def parse_payload_input(val):
     """
     Chuẩn hóa tải trọng theo Sổ Đăng Kiểm Việt Nam (Design / Authorized payload).
     Ví dụ: '30000/27360', '30.000/27.360', '32000', 32000.
+    Tự động lọc bỏ các ký tự thừa như '-', '—', 'kg', khoảng trắng.
     Trả về tuple: (payload_capacity_kg, design_payload_kg, payload_display)
     """
-    if val is None or str(val).strip() == '':
+    if val is None:
         return 0, None, ''
     
     val_str = str(val).strip()
+    val_str = re.sub(r'(?i)\s*kg\s*', '', val_str)
+    val_str = val_str.strip().strip('-—').strip()
+    
+    if not val_str or val_str in ['-', '—']:
+        return 0, None, ''
+
     if '/' in val_str:
         parts = val_str.split('/')
-        p1 = parts[0].strip().replace('.', '').replace(',', '')
-        p2 = parts[1].strip().replace('.', '').replace(',', '')
+        p1 = re.sub(r'[^\d]', '', parts[0].strip())
+        p2 = re.sub(r'[^\d]', '', parts[1].strip())
         try:
-            design = int(p1)
+            design = int(p1) if p1 else 0
         except ValueError:
             design = 0
         try:
-            authorized = int(p2)
+            authorized = int(p2) if p2 else 0
         except ValueError:
             authorized = 0
         
-        # Tạo chuỗi hiển thị chuẩn: 30.000/27.360
-        disp = f"{design:,}/{authorized:,}".replace(',', '.') if (design and authorized) else val_str
-        cap = authorized if authorized > 0 else design
+        if design > 0 and authorized > 0:
+            disp = f"{design:,}/{authorized:,}".replace(',', '.')
+            cap = authorized
+        elif design > 0:
+            disp = f"{design:,}".replace(',', '.')
+            cap = design
+        elif authorized > 0:
+            disp = f"{authorized:,}".replace(',', '.')
+            cap = authorized
+        else:
+            disp = ''
+            cap = 0
+            
         return cap, (design if design > 0 else None), disp
     else:
-        cleaned = val_str.replace('.', '').replace(',', '').strip()
+        cleaned = re.sub(r'[^\d]', '', val_str)
         try:
-            num = int(cleaned)
+            num = int(cleaned) if cleaned else 0
         except ValueError:
             num = 0
-        disp = f"{num:,}".replace(',', '.') if num > 0 else val_str
+        disp = f"{num:,}".replace(',', '.') if num > 0 else ''
         return num, (num if num > 0 else None), disp
 
 class VehicleType(models.TextChoices):
@@ -88,13 +106,14 @@ class Vehicle(TimeStampedModel, SoftDeleteModel):
 
     @property
     def display_payload(self):
-        if self.payload_display:
-            return self.payload_display
+        disp = (self.payload_display or '').strip().strip('-—').strip()
+        if disp and disp not in ['—', '-']:
+            return disp
         if self.design_payload_kg and self.payload_capacity_kg and self.design_payload_kg != self.payload_capacity_kg:
             return f"{self.design_payload_kg:,}/{self.payload_capacity_kg:,}".replace(',', '.')
-        if self.payload_capacity_kg:
+        if self.payload_capacity_kg and self.payload_capacity_kg > 0:
             return f"{self.payload_capacity_kg:,}".replace(',', '.')
-        return "—"
+        return ""
 
     @property
     def is_registration_warning(self):
@@ -130,13 +149,14 @@ class Trailer(TimeStampedModel, SoftDeleteModel):
 
     @property
     def display_payload(self):
-        if self.payload_display:
-            return self.payload_display
+        disp = (self.payload_display or '').strip().strip('-—').strip()
+        if disp and disp not in ['—', '-']:
+            return disp
         if self.design_payload_kg and self.payload_capacity_kg and self.design_payload_kg != self.payload_capacity_kg:
             return f"{self.design_payload_kg:,}/{self.payload_capacity_kg:,}".replace(',', '.')
-        if self.payload_capacity_kg:
+        if self.payload_capacity_kg and self.payload_capacity_kg > 0:
             return f"{self.payload_capacity_kg:,}".replace(',', '.')
-        return "—"
+        return ""
 
     @property
     def is_registration_warning(self):

@@ -21358,7 +21358,12 @@ function renderMasterDataTable(items, total = items.length) {
                         : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe Nhà (TVL)'}</span>`}
                 </td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
-                <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${item.payload_display ? `${item.payload_display} kg` : (item.payload_capacity_kg ? `${formatNumberVN(item.payload_capacity_kg)} kg` : '—')}</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${(() => {
+                    const disp = (item.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                    if (disp && disp !== '—' && disp !== '-') return `${disp} kg`;
+                    if (item.payload_capacity_kg && item.payload_capacity_kg > 0) return `${formatNumberVN(item.payload_capacity_kg)} kg`;
+                    return '<span class="text-slate-400 font-normal">—</span>';
+                })()}</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.driver_name || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.insurance_expiry || '—'}</td>
@@ -21397,7 +21402,12 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2 px-3 text-[13px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.license_plate}</td>
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.trailer_type}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
-                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${item.payload_display ? `${item.payload_display} kg` : (item.payload_capacity_kg ? `${formatNumberVN(item.payload_capacity_kg)} kg` : '—')}</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${(() => {
+                    const disp = (item.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                    if (disp && disp !== '—' && disp !== '-') return `${disp} kg`;
+                    if (item.payload_capacity_kg && item.payload_capacity_kg > 0) return `${formatNumberVN(item.payload_capacity_kg)} kg`;
+                    return '<span class="text-slate-400 font-normal">—</span>';
+                })()}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
                 <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold text-slate-800">
                     ${item.status === 'IDLE' ? 'Nằm bãi' : (item.status === 'ACTIVE' ? 'Đang kéo' : item.status)}
@@ -22426,7 +22436,12 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng TK / Cho Phép (kg)</label>
                     </div>
-                    <input type="text" id="mdf-payload" value="${d.payload_display || (d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000/27.360')}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right w-full" placeholder="VD: 30000/27360 hoặc 30000">
+                    <input type="text" id="mdf-payload" value="${(() => {
+                        const disp = (d.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                        if (disp && disp !== '—' && disp !== '-') return disp;
+                        if (d.payload_capacity_kg && d.payload_capacity_kg > 0) return formatNumberVN(d.payload_capacity_kg);
+                        return d.id ? '' : '30.000/27.360';
+                    })()}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right w-full" placeholder="VD: 30000/27360 hoặc 30000">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -22540,7 +22555,12 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng TK / Cho Phép (kg)</label>
                     </div>
-                    <input type="text" id="mdf-trailer-payload" value="${d.payload_display || (d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000/27.360')}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right w-full" placeholder="VD: 30000/27360 hoặc 32000">
+                    <input type="text" id="mdf-trailer-payload" value="${(() => {
+                        const disp = (d.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                        if (disp && disp !== '—' && disp !== '-') return disp;
+                        if (d.payload_capacity_kg && d.payload_capacity_kg > 0) return formatNumberVN(d.payload_capacity_kg);
+                        return d.id ? '' : '30.000/27.360';
+                    })()}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right w-full" placeholder="VD: 30000/27360 hoặc 32000">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -30761,7 +30781,12 @@ function renderSubcontractorVehiclesTable(subId) {
                         </select>
                     </td>
                     <td class="py-1 px-2">
-                        <input type="text" id="edit-subveh-payload-${v.id}" value="${v.payload_display || (v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) : '30.000/27.360')}" class="form-input h-7.5 px-2 py-0.5 text-xs font-mono text-right w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="VD: 30000/27360">
+                        <input type="text" id="edit-subveh-payload-${v.id}" value="${(() => {
+                            const disp = (v.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                            if (disp && disp !== '—' && disp !== '-') return disp;
+                            if (v.payload_capacity_kg && v.payload_capacity_kg > 0) return formatNumberVN(v.payload_capacity_kg);
+                            return '';
+                        })()}" class="form-input h-7.5 px-2 py-0.5 text-xs font-mono text-right w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="VD: 30000/27360">
                     </td>
                     <td class="py-1 px-2">
                         <input type="text" id="edit-subveh-brand-${v.id}" value="${escapeHtml(v.brand || '')}" class="form-input h-7.5 px-2 py-0.5 text-xs w-full rounded border-teal-500 bg-white shadow-2xs" placeholder="Hãng / Dòng xe">
@@ -30783,7 +30808,12 @@ function renderSubcontractorVehiclesTable(subId) {
             <tr id="subveh-row-${v.id}" class="hover:bg-amber-50/50 transition-colors border-b border-slate-100">
                 <td class="py-2 px-3 font-mono font-bold text-slate-900">${escapeHtml(v.license_plate)}</td>
                 <td class="py-2 px-3 font-medium text-slate-800">${escapeHtml(v.vehicle_type || '—')}</td>
-                <td class="py-2 px-3 font-mono text-slate-700 text-right">${v.payload_display ? `${v.payload_display} kg` : (v.payload_capacity_kg ? formatNumberVN(v.payload_capacity_kg) + ' kg' : '—')}</td>
+                <td class="py-2 px-3 font-mono text-slate-700 text-right">${(() => {
+                    const disp = (v.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                    if (disp && disp !== '—' && disp !== '-') return `${disp} kg`;
+                    if (v.payload_capacity_kg && v.payload_capacity_kg > 0) return `${formatNumberVN(v.payload_capacity_kg)} kg`;
+                    return '<span class="text-slate-400 font-normal">—</span>';
+                })()}</td>
                 <td class="py-2 px-3 text-slate-600">${escapeHtml(v.brand || '—')}</td>
                 <td class="py-2 px-2.5 text-center whitespace-nowrap">
                     <div class="flex items-center justify-center gap-1.5">
