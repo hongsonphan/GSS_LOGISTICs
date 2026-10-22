@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.5] - 2026-10-22 (Chuẩn Hóa UX Sổ Quỹ Thu Chi & Minh Bạch Số Liệu Tồn Quỹ Lũy Kế)
+
+### 1. Minh Bạch Số Liệu Tồn Quỹ & Khắc Phục Hiểu Nhầm Bộ Lọc Kỳ:
+- **Làm rõ bản chất 2 lớp số liệu kế toán:**
+  * **Lớp 1 (3 Thẻ Tồn Quỹ Đầu Kỳ / Hiện Tại):** Thể hiện số dư thực tế tích lũy tại két sắt và tài khoản ngân hàng của toàn doanh nghiệp tính đến thời điểm hiện tại.
+  * **Lớp 2 (Bảng Giao Dịch & Dòng Tiền Thuần):** Thể hiện các phiếu thu/chi phát sinh trong kỳ lọc thời gian được chọn trên Topbar (mặc định 10 ngày qua).
+- **Cập nhật Phụ đề KPI Trực Quan:**
+  * *Tồn Quỹ Tiền Mặt:* "Lũy kế tồn két cty đến nay".
+  * *Số Dư Tài Khoản Ngân Hàng:* "Lũy kế TK ngân hàng đến nay".
+  * *Tổng Tồn Quỹ Toàn Cty:* "Két cty + Số dư ngân hàng đến nay".
+- **Empty State Thông Minh với Nút Chuyển Nhanh (Smart Empty State):**
+  * Khi kỳ lọc được chọn (ví dụ "10 Ngày qua") chưa có phiếu phát sinh, giao diện không chỉ hiện thông báo khô khan mà giải thích rõ: *"Chưa có phiếu thu / chi nào trong khoảng '10 Ngày qua'. Ba thẻ chỉ số ở trên thể hiện số dư tồn quỹ thực tế tích lũy của toàn công ty tính đến thời điểm hiện tại"*.
+  * Cung cấp ngay 2 nút chuyển nhanh: `[Xem Phiếu Tháng Này]` và `[Xem Cả Năm]` để người dùng bấm 1 chạm là hiển thị ngay toàn bộ các phiếu đã có.
+- **Kiểm Thử & Đồng Bộ VPS Live:**
+  * 144/144 Unit Tests backend và frontend syntax passed 100%.
+  * Đã push lên GitHub và deploy lên VPS live `https://logistics.bim.info.vn`.
+  * Đã kiểm chứng thị giác thực tế bằng Playwright (Artifacts #208, #209).
+
 ## [v4.0.4] - 2026-10-22 (Xử Lý Triệt Để Lỗi Kế Toán ReferenceError & Khôi Phục Phân Hệ Quyết Toán Gom Chuyến)
 
 ### 1. Khắc Phục Triệt Để Toast Lỗi & ReferenceError Khi Vào Tab Kế Toán:
