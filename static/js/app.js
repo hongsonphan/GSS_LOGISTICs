@@ -15951,7 +15951,9 @@ async function loadAccountingAdvancesData() {
         applyDispatcherFundsFilter();
 
         // Nạp options cho các modal
-        populateAdvanceModalOptions(data);
+        if (typeof populateAdvanceModalOptions === 'function') {
+            populateAdvanceModalOptions(data);
+        }
 
     } catch (err) {
         console.error('Lỗi khi nạp dữ liệu tạm ứng:', err);
@@ -16188,6 +16190,320 @@ function renderDispatcherFundsTable(list) {
                             </button>
                         ` : ''}
                     </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    if (window.BimTableFooter && Array.isArray(list)) {
+        const totalAmount = list.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+        const totalDisbursed = list.reduce((sum, i) => sum + (Number(i.disbursed_amount) || 0), 0);
+        const totalSettled = list.reduce((sum, i) => sum + (Number(i.settled_amount) || 0), 0);
+        const totalBalance = list.reduce((sum, i) => sum + (Number(i.remaining_balance) || 0), 0);
+        window.BimTableFooter.render('accounting-fund-table', {
+            cells: [
+                { text: 'TỔNG', align: 'center', class: 'font-black text-slate-900 font-heading' },
+                { html: `${list.length} quỹ điều vận`, colspan: 3 },
+                { html: `<span class="text-slate-900 font-bold tabular-nums font-mono">${formatMoneyVND(totalAmount)} đ</span>`, align: 'right' },
+                { html: `<span class="text-amber-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalDisbursed)} đ</span>`, align: 'right' },
+                { html: `<span class="text-emerald-700 font-bold tabular-nums font-mono">${formatMoneyVND(totalSettled)} đ</span>`, align: 'right' },
+                { html: `<span class="text-teal-800 font-bold tabular-nums font-mono">${formatMoneyVND(totalBalance)} đ</span>`, align: 'right' },
+                { text: '', align: 'center', colspan: 3 }
+            ]
+        });
+    }
+}
+
+// -------------------------------------------------------------
+// MODAL CẤP TẠM ỨNG CHUYẾN CHO TÀI XẾ
+// -------------------------------------------------------------
+function populateAdvanceModalOptions(data) {
+    if (!data) return;
+    // Dropdown Chuyến xe
+    const tripSelect = document.getElementById('adv-inp-trip');
+    if (tripSelect && data.available_trips) {
+        tripSelect.innerHTML = '<option value="">-- Chọn chuyến xe cần cấp tạm ứng --</option>' +
+            data.available_trips.map(t => `<option value="${t.id}" data-driver="${t.driver_id || ''}" data-driver-name="${escapeHtml(t.driver_name)}" data-plate="${escapeHtml(t.license_plate)}" data-route="${escapeHtml(t.route)}">[${t.trip_code}] ${escapeHtml(t.customer_name)} (${escapeHtml(t.license_plate)})</option>`).join('');
+    }
+
+    // Dropdown Tài xế
+    const driverSelect = document.getElementById('adv-inp-driver');
+    if (driverSelect && data.drivers) {
+        driverSelect.innerHTML = '<option value="">-- Chọn tài xế nhận tạm ứng --</option>' +
+            data.drivers.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+    }
+
+    // Dropdown Quỹ điều vận khả dụng
+    const fundSelect = document.getElementById('adv-inp-fund');
+    if (fundSelect && data.active_funds) {
+        fundSelect.innerHTML = '<option value="">-- Chọn Quỹ Điều Vận khả dụng --</option>' +
+            data.active_funds.map(f => `<option value="${f.id}" data-balance="${f.remaining_balance}">${escapeHtml(f.code)} - ${escapeHtml(f.dispatcher_name)} (Còn: ${formatMoneyVND(f.remaining_balance)})</option>`).join('');
+    }
+
+    // Dropdown Điều phối viên nhận quỹ
+    const dispSelect = document.getElementById('fund-inp-dispatcher');
+    if (dispSelect && data.dispatchers) {
+        dispSelect.innerHTML = '<option value="">-- Chọn nhân viên điều phối nhận quỹ --</option>' +
+            data.dispatchers.map(dp => `<option value="${dp.id}">${escapeHtml(dp.name)}</option>`).join('');
+    }
+}
+
+// -------------------------------------------------------------
+// PHÂN HỆ QUYẾT TOÁN GOM CHUYẾN (DRIVER SETTLEMENTS VIEW)
+// -------------------------------------------------------------
+let pageSettlementData = null;
+let pageAllTripsList = [];
+let batchSettlementData = null;
+let batchAllTripsList = [];
+
+function onSettlementGroupByChange() {
+    const groupBy = document.getElementById('settle-group-by')?.value || 'driver';
+    populateSettlementTargetOptions(groupBy);
+    loadSettlementData();
+}
+
+function populateSettlementTargetOptions(groupBy, preselectedId = null) {
+    const targetLabel = document.getElementById('settle-target-label');
+    const targetSelect = document.getElementById('settle-target-select');
+    if (!targetSelect) return;
+
+    targetSelect.innerHTML = '<option value="">-- Tất cả --</option>';
+
+    if (groupBy === 'driver') {
+        if (targetLabel) targetLabel.innerText = 'Chọn Bác Tài:';
+        if (typeof masterDataFormOptionsCache !== 'undefined' && masterDataFormOptionsCache?.drivers && masterDataFormOptionsCache.drivers.length > 0) {
+            masterDataFormOptionsCache.drivers.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.innerText = d.label || `${d.full_name || d.nickname} (${d.phone || 'Tài xế'})`;
+                if (preselectedId && String(d.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        } else if (window.rawPersonnelList && window.rawPersonnelList.length > 0) {
+            const drivers = window.rawPersonnelList.filter(p => p.role === 'DRIVER' || p.role === 'Lái xe' || p.department === 'Đội Xe');
+            drivers.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.innerText = `${d.full_name} (${d.nickname || d.phone_number || 'Tài xế'})`;
+                if (preselectedId && String(d.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        }
+    } else if (groupBy === 'customer') {
+        if (targetLabel) targetLabel.innerText = 'Chọn Khách Hàng:';
+        if (typeof masterDataFormOptionsCache !== 'undefined' && masterDataFormOptionsCache?.customers && masterDataFormOptionsCache.customers.length > 0) {
+            masterDataFormOptionsCache.customers.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = c.label || `${c.company_name || c.name || c.short_name || 'Khách hàng'}`;
+                if (preselectedId && String(c.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        } else if (window.rawCustomersList && window.rawCustomersList.length > 0) {
+            window.rawCustomersList.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = `${c.company_name || c.name || c.short_name || 'Khách hàng'}`;
+                if (preselectedId && String(c.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        } else {
+            fetchWithAuth('/api/customers/').then(r => r.json()).then(data => {
+                const list = data.customers || data.results || (Array.isArray(data) ? data : []);
+                window.rawCustomersList = list;
+                list.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.innerText = `${c.company_name || c.name || c.short_name || 'Khách hàng'}`;
+                    if (preselectedId && String(c.id) === String(preselectedId)) opt.selected = true;
+                    targetSelect.appendChild(opt);
+                });
+            }).catch(() => {});
+        }
+    } else if (groupBy === 'vehicle') {
+        if (targetLabel) targetLabel.innerText = 'Chọn Đầu Xe:';
+        if (typeof masterDataFormOptionsCache !== 'undefined' && masterDataFormOptionsCache?.vehicles && masterDataFormOptionsCache.vehicles.length > 0) {
+            masterDataFormOptionsCache.vehicles.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.innerText = v.label || `${v.plate || v.license_plate} (${v.type || 'Đầu kéo'})`;
+                if (preselectedId && String(v.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        } else if (window.rawFleetVehiclesList && window.rawFleetVehiclesList.length > 0) {
+            window.rawFleetVehiclesList.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.innerText = `${v.license_plate} (${v.vehicle_type || 'Đầu kéo'})`;
+                if (preselectedId && String(v.id) === String(preselectedId)) opt.selected = true;
+                targetSelect.appendChild(opt);
+            });
+        }
+    } else {
+        if (targetLabel) targetLabel.innerText = 'Đối tượng:';
+        targetSelect.innerHTML = '<option value="">-- Toàn bộ chuyến xe --</option>';
+    }
+}
+
+function setSettlementDatePreset(preset) {
+    const fromDateInp = document.getElementById('settle-from-date');
+    const toDateInp = document.getElementById('settle-to-date');
+    if (!fromDateInp || !toDateInp) return;
+
+    const today = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const formatD = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    if (preset === 'today') {
+        fromDateInp.value = formatD(today);
+        toDateInp.value = formatD(today);
+    } else if (preset === 'week') {
+        const dayOfWeek = today.getDay(); // 0 is Sunday
+        const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Monday
+        const monday = new Date(today.setDate(diff));
+        fromDateInp.value = formatD(monday);
+        toDateInp.value = formatD(new Date());
+    } else if (preset === 'month') {
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        fromDateInp.value = formatD(firstDay);
+        toDateInp.value = formatD(lastDay);
+    } else if (preset === 'last_month') {
+        const firstDayPrev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastDayPrev = new Date(today.getFullYear(), today.getMonth(), 0);
+        fromDateInp.value = formatD(firstDayPrev);
+        toDateInp.value = formatD(lastDayPrev);
+    }
+
+    loadSettlementData();
+}
+
+function resetSettlementFilters() {
+    const groupBy = document.getElementById('settle-group-by');
+    if (groupBy) groupBy.value = 'driver';
+    populateSettlementTargetOptions('driver');
+    const targetSelect = document.getElementById('settle-target-select');
+    if (targetSelect) targetSelect.value = '';
+    const statusFilter = document.getElementById('settle-status-filter');
+    if (statusFilter) statusFilter.value = 'PENDING';
+    const searchInp = document.getElementById('settle-search-input');
+    if (searchInp) searchInp.value = '';
+
+    setSettlementDatePreset('month');
+}
+
+function filterSettlementClientSide() {
+    const searchVal = (document.getElementById('settle-search-input')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('#page-settle-tbody tr.settle-trip-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (!searchVal || text.includes(searchVal)) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    const badgeInfo = document.getElementById('settle-table-badge-info');
+    if (badgeInfo) {
+        badgeInfo.innerHTML = `Hiển thị: <strong>${visibleCount}</strong> chuyến`;
+    }
+    onSettlementTripSelectionChange();
+}
+
+async function loadSettlementData() {
+    const groupBy = document.getElementById('settle-group-by')?.value || 'driver';
+    let fromDate = document.getElementById('settle-from-date')?.value || '';
+    let toDate = document.getElementById('settle-to-date')?.value || '';
+    const targetId = document.getElementById('settle-target-select')?.value || '';
+    const statusFilter = document.getElementById('settle-status-filter')?.value || 'PENDING';
+
+    if (!fromDate || !toDate) {
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        fromDate = firstDay.toISOString().slice(0, 10);
+        toDate = today.toISOString().slice(0, 10);
+        const fromInp = document.getElementById('settle-from-date');
+        const toInp = document.getElementById('settle-to-date');
+        if (fromInp && !fromInp.value) fromInp.value = fromDate;
+        if (toInp && !toInp.value) toInp.value = toDate;
+    }
+
+    let url = `/api/accounting/driver-settlements/batch-preview/?group_by=${groupBy}&from_date=${fromDate}&to_date=${toDate}`;
+    if (groupBy === 'driver' && targetId) url += `&driver_id=${targetId}`;
+    if (groupBy === 'vehicle' && targetId) url += `&vehicle_id=${targetId}`;
+    if (groupBy === 'customer' && targetId) url += `&customer_id=${targetId}`;
+
+    const tbody = document.getElementById('page-settle-tbody');
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-12 text-slate-500 font-medium"><i class="ph-bold ph-spinner ph-spin text-3xl mb-2 block text-teal-600"></i> Đang phân tích và gom dữ liệu chuyến xe...</td></tr>`;
+    }
+
+    try {
+        const res = await fetchWithAuth(url);
+        const data = await res.json();
+        if (res.ok && data.success) {
+            pageSettlementData = data;
+            batchSettlementData = data;
+            renderSettlementTable(data);
+        } else {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-rose-500 font-bold">${data.error || 'Không thể tải dữ liệu'}</td></tr>`;
+        }
+    } catch (err) {
+        console.error(err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-rose-500 font-bold">Lỗi kết nối máy chủ</td></tr>`;
+    }
+}
+
+function renderSettlementTable(data) {
+    const tbody = document.getElementById('page-settle-tbody');
+    const badgeInfo = document.getElementById('settle-table-badge-info');
+    const statusFilter = document.getElementById('settle-status-filter')?.value || 'PENDING';
+    if (!tbody) return;
+
+    const groups = data.groups || [];
+    pageAllTripsList = [];
+    batchAllTripsList = [];
+
+    if (groups.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-12 text-slate-400 font-semibold"><i class="ph-bold ph-info text-3xl mb-2 block"></i> Không có chuyến xe nào trong khoảng thời gian đã chọn.</td></tr>`;
+        if (badgeInfo) badgeInfo.innerHTML = 'Hiển thị: <strong>0</strong> chuyến';
+        onSettlementTripSelectionChange();
+        return;
+    }
+
+    let html = '';
+    let totalTripsInView = 0;
+
+    groups.forEach((group, gIdx) => {
+        let trips = group.trips || [];
+        if (statusFilter === 'PENDING') {
+            trips = trips.filter(t => !t.is_settled);
+        } else if (statusFilter === 'SETTLED') {
+            trips = trips.filter(t => t.is_settled);
+        }
+
+        if (trips.length === 0) return;
+        totalTripsInView += trips.length;
+
+        // Group Header Row
+        html += `
+            <tr class="bg-teal-50/80 font-bold text-slate-800 border-y border-teal-200 group-header-row" data-group-index="${gIdx}">
+                <td colspan="11" class="py-2.5 px-3">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-teal-800 text-white flex items-center justify-center text-xs font-black">
+                                ${gIdx + 1}
+                            </span>
+                            <span class="text-sm font-black text-teal-950">${escapeHtml(group.group_label)}</span>
+                            <span class="text-xs text-slate-600 font-normal">(${escapeHtml(group.group_sub)})</span>
+                            <button type="button" onclick="toggleGroupSettlementSelection(${gIdx})" class="px-2 py-0.5 rounded bg-white hover:bg-teal-100 text-teal-900 border border-teal-300 text-[11px] font-bold transition-colors ml-2">
+                                Chọn nhóm này
+                            </button>
+                        </div>
                         <div class="flex items-center gap-4 text-xs">
                             <span class="text-slate-600 font-medium">Số chuyến: <strong class="text-slate-900 font-bold">${trips.length}</strong></span>
                             <span class="text-amber-800 font-medium">Tạm ứng: <strong class="font-mono font-bold">${formatMoneyVND(trips.reduce((acc, t) => acc + (t.advance_amount || 0), 0))}</strong></span>
@@ -28833,32 +29149,32 @@ function exportAccountingReportToExcel() {
     showToast('success', `Đã xuất báo cáo "${filename}" thành công!`, 'Xuất Excel Thành Công');
 }
 
-window.switchTab = switchTab;
-window.switchAccountingSubTab = switchAccountingSubTab;
-window.selectAccountingReportType = selectAccountingReportType;
-window.switchAccountingReportType = selectAccountingReportType;
-window.setAccountingReportPeriod = setAccountingReportPeriod;
-window.changeAccountingReportPeriod = setAccountingReportPeriod;
-window.loadAccountingReportData = loadAccountingReportData;
-window.exportAccountingReportToExcel = exportAccountingReportToExcel;
-window.openAccountingReportDrilldown = openAccountingReportDrilldown;
-window.closeAccountingDrilldownModal = closeAccountingDrilldownView;
-window.switchDrilldownTab = switchDrilldownTab;
-window.exportAccountingDrilldownToExcel = exportAccountingDrilldownToExcel;
+window.switchTab = typeof switchTab !== 'undefined' ? switchTab : window.switchTab;
+window.switchAccountingSubTab = typeof switchAccountingSubTab !== 'undefined' ? switchAccountingSubTab : undefined;
+window.selectAccountingReportType = typeof selectAccountingReportType !== 'undefined' ? selectAccountingReportType : undefined;
+window.switchAccountingReportType = typeof selectAccountingReportType !== 'undefined' ? selectAccountingReportType : undefined;
+window.setAccountingReportPeriod = typeof setAccountingReportPeriod !== 'undefined' ? setAccountingReportPeriod : undefined;
+window.changeAccountingReportPeriod = typeof setAccountingReportPeriod !== 'undefined' ? setAccountingReportPeriod : undefined;
+window.loadAccountingReportData = typeof loadAccountingReportData !== 'undefined' ? loadAccountingReportData : undefined;
+window.exportAccountingReportToExcel = typeof exportAccountingReportToExcel !== 'undefined' ? exportAccountingReportToExcel : undefined;
+window.openAccountingReportDrilldown = typeof openAccountingReportDrilldown !== 'undefined' ? openAccountingReportDrilldown : undefined;
+window.closeAccountingDrilldownModal = typeof closeAccountingDrilldownView !== 'undefined' ? closeAccountingDrilldownView : undefined;
+window.switchDrilldownTab = typeof switchDrilldownTab !== 'undefined' ? switchDrilldownTab : undefined;
+window.exportAccountingDrilldownToExcel = typeof exportAccountingDrilldownToExcel !== 'undefined' ? exportAccountingDrilldownToExcel : undefined;
 
 // Phân hệ Quyết Toán Gom Chuyến (Driver Settlements View)
-window.loadSettlementData = loadSettlementData;
-window.onSettlementGroupByChange = onSettlementGroupByChange;
-window.populateSettlementTargetOptions = populateSettlementTargetOptions;
-window.setSettlementDatePreset = setSettlementDatePreset;
-window.resetSettlementFilters = resetSettlementFilters;
-window.filterSettlementClientSide = filterSettlementClientSide;
-window.selectSettlementTrips = selectSettlementTrips;
-window.toggleGroupSettlementSelection = toggleGroupSettlementSelection;
-window.toggleMasterSettlementCheckbox = toggleMasterSettlementCheckbox;
-window.onSettlementTripSelectionChange = onSettlementTripSelectionChange;
-window.executePageSettlementSubmit = executePageSettlementSubmit;
-window.exportSettlementToExcel = exportSettlementToExcel;
+window.loadSettlementData = typeof loadSettlementData !== 'undefined' ? loadSettlementData : undefined;
+window.onSettlementGroupByChange = typeof onSettlementGroupByChange !== 'undefined' ? onSettlementGroupByChange : undefined;
+window.populateSettlementTargetOptions = typeof populateSettlementTargetOptions !== 'undefined' ? populateSettlementTargetOptions : undefined;
+window.setSettlementDatePreset = typeof setSettlementDatePreset !== 'undefined' ? setSettlementDatePreset : undefined;
+window.resetSettlementFilters = typeof resetSettlementFilters !== 'undefined' ? resetSettlementFilters : undefined;
+window.filterSettlementClientSide = typeof filterSettlementClientSide !== 'undefined' ? filterSettlementClientSide : undefined;
+window.selectSettlementTrips = typeof selectSettlementTrips !== 'undefined' ? selectSettlementTrips : undefined;
+window.toggleGroupSettlementSelection = typeof toggleGroupSettlementSelection !== 'undefined' ? toggleGroupSettlementSelection : undefined;
+window.toggleMasterSettlementCheckbox = typeof toggleMasterSettlementCheckbox !== 'undefined' ? toggleMasterSettlementCheckbox : undefined;
+window.onSettlementTripSelectionChange = typeof onSettlementTripSelectionChange !== 'undefined' ? onSettlementTripSelectionChange : undefined;
+window.executePageSettlementSubmit = typeof executePageSettlementSubmit !== 'undefined' ? executePageSettlementSubmit : undefined;
+window.exportSettlementToExcel = typeof exportSettlementToExcel !== 'undefined' ? exportSettlementToExcel : undefined;
 
 
 // ==============================================================================
