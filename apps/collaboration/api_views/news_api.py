@@ -221,6 +221,106 @@ class CompanyPostDetailAPIView(views.APIView):
         serializer = CompanyPostDetailSerializer(post, context={'request': request})
         return Response({'success': True, 'data': serializer.data})
 
+    def patch(self, request, pk):
+        """Cập nhật bản tin / thông báo cho người ban hành hoặc Ban Giám Đốc."""
+        post_id = resolve_post_id(pk)
+        if not post_id:
+            return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            post = CompanyPost.objects.select_related('category', 'author').get(pk=post_id, is_deleted=False)
+        except CompanyPost.DoesNotExist:
+            return Response({'success': False, 'message': 'Bản tin không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
+
+        employee = getattr(request.user, 'employee', None)
+        is_bgd_or_admin = (
+            request.user.is_superuser or
+            (employee and (
+                getattr(employee, 'hierarchy_level', 0) >= 80 or
+                getattr(employee, 'role', '') == EmployeeRole.DIRECTOR or
+                getattr(employee, 'department', '') == Department.MANAGEMENT
+            ))
+        )
+        can_edit = (
+            (post.author_id == request.user.id) or
+            is_bgd_or_admin
+        )
+        if not can_edit:
+            return Response({
+                'success': False,
+                'message': 'Bạn không có quyền chỉnh sửa bản tin này. Chỉ người ban hành hoặc Ban Giám Đốc mới có thẩm quyền chỉnh sửa.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+        if 'title' in data:
+            title = str(data.get('title')).strip()
+            if not title:
+                return Response({'success': False, 'message': 'Tiêu đề không được để trống.'}, status=status.HTTP_400_BAD_REQUEST)
+            post.title = title
+
+        if 'content' in data:
+            content = str(data.get('content')).strip()
+            if not content:
+                return Response({'success': False, 'message': 'Nội dung không được để trống.'}, status=status.HTTP_400_BAD_REQUEST)
+            post.content = content
+
+        if 'summary' in data:
+            post.summary = str(data.get('summary', '')).strip()
+
+        if 'category_id' in data:
+            cat_id = data.get('category_id')
+            post.category_id = int(cat_id) if cat_id else None
+
+        if 'target_department' in data:
+            post.target_department = data.get('target_department') or 'ALL'
+
+        if 'is_pinned' in data:
+            post.is_pinned = str(data.get('is_pinned', '')).lower() in ['true', '1']
+
+        if 'is_urgent' in data:
+            post.is_urgent = str(data.get('is_urgent', '')).lower() in ['true', '1']
+
+        if 'is_published' in data:
+            post.is_published = str(data.get('is_published', '')).lower() in ['true', '1']
+
+        if 'cover_image' in request.FILES:
+            post.cover_image = request.FILES['cover_image']
+        elif data.get('remove_cover') in ['true', '1']:
+            post.cover_image = None
+
+        post.save()
+
+        # Xóa các tệp đính kèm được chọn xóa
+        deleted_ids_raw = data.get('deleted_attachment_ids')
+        if deleted_ids_raw:
+            if isinstance(deleted_ids_raw, str):
+                deleted_ids = [int(i.strip()) for i in deleted_ids_raw.split(',') if i.strip().isdigit()]
+            elif isinstance(deleted_ids_raw, list):
+                deleted_ids = [int(i) for i in deleted_ids_raw if str(i).isdigit()]
+            else:
+                deleted_ids = []
+            if deleted_ids:
+                post.attachments.filter(id__in=deleted_ids).update(is_deleted=True)
+
+        # Thêm các tệp đính kèm mới nếu có
+        files = request.FILES.getlist('attachments')
+        for f in files:
+            PostAttachment.objects.create(
+                post=post,
+                file=f,
+                file_name=f.name,
+                file_size=f.size
+            )
+
+        serializer = CompanyPostDetailSerializer(post, context={'request': request})
+        return Response({
+            'success': True,
+            'message': 'Đã cập nhật bản tin thành công.',
+            'data': serializer.data
+        })
+
+    def put(self, request, pk):
+        return self.patch(request, pk)
+
     def delete(self, request, pk):
         post_id = resolve_post_id(pk)
         if not post_id:

@@ -8,6 +8,13 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- Mammoth.js cho xem trước tài liệu Word (.docx) chuyển thành HTML -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <!-- Mozilla PDF.js cho xem trước trực tiếp tài liệu PDF sắc nét trên Canvas, không bị chặn iframe -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
 
   <style>
     /* Style bảng tính Excel sau khi parse */
@@ -80,8 +87,19 @@
             </nav>
         </div>
 
-        <!-- Quick Actions Header (In ấn & Sao chép link) -->
+        <!-- Quick Actions Header (Sửa, In ấn & Sao chép link) -->
         <div class="flex items-center gap-2 shrink-0">
+            {% if can_edit %}
+            <button type="button" onclick="openEditNewsModal()" class="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-bold transition-all border border-teal-300 flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Chỉnh sửa thông báo này">
+                <i class="ph-bold ph-pencil-simple text-sm text-teal-700"></i>
+                <span>Sửa thông báo</span>
+            </button>
+            <button type="button" onclick="confirmDeleteNews()" class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all border border-rose-200 flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Xóa thông báo">
+                <i class="ph-bold ph-trash text-sm text-rose-600"></i>
+                <span class="hidden md:inline">Xóa</span>
+            </button>
+            <div class="h-4 w-px bg-slate-200 hidden sm:block shrink-0"></div>
+            {% endif %}
             <button type="button" onclick="window.print()" class="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" title="In văn bản này">
                 <i class="ph-bold ph-printer text-sm text-slate-500"></i>
                 <span class="hidden md:inline">In văn bản</span>
@@ -240,7 +258,44 @@
                         <span class="text-xs font-bold text-slate-600">Đang chuẩn bị hiển thị nội dung tài liệu...</span>
                     </div>
 
-                    <!-- 1. PDF Native Frame -->
+                    <!-- 1. PDF.js Native Canvas Viewer & Thanh Điều Khiển Chuyên Nghiệp -->
+                    <div id="pdf-viewer-wrapper" class="hidden w-full flex flex-col bg-slate-900 text-white rounded-xl overflow-hidden shadow-inner">
+                        <!-- Toolbar điều khiển PDF -->
+                        <div class="bg-slate-950 px-4 py-2 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="changePdfPage(-1)" id="pdf-prev-btn" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold flex items-center gap-1 transition-colors cursor-pointer" title="Trang trước">
+                                    <i class="ph-bold ph-caret-left"></i> Trước
+                                </button>
+                                <span class="text-slate-300 font-medium">Trang <strong id="pdf-current-page" class="text-teal-400 font-bold">1</strong> / <span id="pdf-total-pages" class="text-slate-400">1</span></span>
+                                <button type="button" onclick="changePdfPage(1)" id="pdf-next-btn" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold flex items-center gap-1 transition-colors cursor-pointer" title="Trang tiếp">
+                                    Sau <i class="ph-bold ph-caret-right"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="zoomPdf(-0.2)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors cursor-pointer" title="Thu nhỏ">
+                                    <i class="ph-bold ph-minus text-xs"></i>
+                                </button>
+                                <span id="pdf-zoom-level" class="text-[11px] font-mono text-slate-300 w-12 text-center">125%</span>
+                                <button type="button" onclick="zoomPdf(0.2)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors cursor-pointer" title="Phóng to">
+                                    <i class="ph-bold ph-plus text-xs"></i>
+                                </button>
+                                <button type="button" onclick="resetPdfZoom()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer" title="Khôi phục 100%">
+                                    100%
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="openCurrentAttachmentNewTab()" class="px-2.5 py-1 bg-teal-700 hover:bg-teal-600 text-white rounded-lg font-bold flex items-center gap-1 transition-colors cursor-pointer text-xs" title="Mở file thô trong tab mới">
+                                    <i class="ph-bold ph-arrow-square-out"></i> Mở tab mới
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Canvas container cuộn nét cao -->
+                        <div id="pdf-canvas-container" class="w-full max-h-[750px] overflow-auto p-4 flex flex-col items-center justify-center bg-slate-900/90 custom-scrollbar">
+                            <canvas id="pdf-render-canvas" class="shadow-2xl rounded-sm max-w-full bg-white"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 1b. Fallback Native Frame nếu PDF.js không tải được -->
                     <iframe id="pdf-viewer-frame" src="" class="hidden w-full h-[720px] rounded-xl border-none"></iframe>
 
                     <!-- 2. Word HTML Rendered Container -->
@@ -329,6 +384,118 @@
         </div>
     </div>
 </div>
+
+{% if can_edit %}
+<!-- MODAL SỬA BẢN TIN & THÔNG BÁO CHO NGƯỜI BAN HÀNH -->
+<div id="modal-edit-news" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 animate-fade-in">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+            <h3 class="font-extrabold text-slate-800 text-sm tracking-wide uppercase flex items-center gap-2">
+                <i class="ph-bold ph-note-pencil text-teal-600 text-lg"></i>
+                Chỉnh Sửa Bản Tin & Thông Báo Nội Bộ
+            </h3>
+            <button type="button" onclick="closeEditNewsModal()" class="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="ph-bold ph-x text-base"></i>
+            </button>
+        </div>
+
+        <form id="edit-news-form" onsubmit="handleEditNewsSubmit(event)" class="p-6 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+            <!-- Tiêu đề -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tiêu đề thông báo <span class="text-rose-500">*</span></label>
+                <input type="text" id="edit-news-title" required value="{{ post.title }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none font-bold text-slate-800">
+            </div>
+
+            <!-- Danh mục & Phòng ban đích -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Danh mục</label>
+                    <select id="edit-news-category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if post.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Phòng ban nhận tin</label>
+                    <select id="edit-news-department" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                        <option value="ALL" {% if post.target_department == 'ALL' %}selected{% endif %}>Toàn thể công ty</option>
+                        <option value="DISPATCH" {% if post.target_department == 'DISPATCH' %}selected{% endif %}>Phòng Điều Vận</option>
+                        <option value="ACCOUNTING" {% if post.target_department == 'ACCOUNTING' %}selected{% endif %}>Kế Toán Tài Chính</option>
+                        <option value="SALES" {% if post.target_department == 'SALES' %}selected{% endif %}>Phòng Kinh Doanh</option>
+                        <option value="HR" {% if post.target_department == 'HR' %}selected{% endif %}>Hành Chính Nhân Sự</option>
+                        <option value="FLEET" {% if post.target_department == 'FLEET' %}selected{% endif %}>Đội Xe & Bãi</option>
+                        <option value="CUSTOMS" {% if post.target_department == 'CUSTOMS' %}selected{% endif %}>Thủ Tục Hải Quan</option>
+                        <option value="MANAGEMENT" {% if post.target_department == 'MANAGEMENT' %}selected{% endif %}>Ban Giám Đốc</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Checkbox ghim & khẩn cấp -->
+            <div class="flex items-center gap-6 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="edit-news-pinned" {% if post.is_pinned %}checked{% endif %} class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500">
+                    <span class="text-xs font-bold text-slate-700">Ghim lên đầu trang</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="edit-news-urgent" {% if post.is_urgent %}checked{% endif %} class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
+                    <span class="text-xs font-bold text-rose-700">Thông báo khẩn cấp</span>
+                </label>
+            </div>
+
+            <!-- Tóm tắt ngắn -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tóm tắt ngắn (Hiển thị ngoài danh sách)</label>
+                <input type="text" id="edit-news-summary" value="{{ post.summary|default:'' }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+            </div>
+
+            <!-- Nội dung chi tiết -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nội dung chi tiết <span class="text-rose-500">*</span></label>
+                <textarea id="edit-news-content" rows="6" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none leading-relaxed">{{ post.content }}</textarea>
+            </div>
+
+            <!-- Quản lý tệp đính kèm hiện tại -->
+            {% if attachments %}
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">Tệp đính kèm hiện có</label>
+                <div class="space-y-1.5 p-3 bg-slate-50 rounded-xl border border-slate-200" id="edit-existing-attachments-list">
+                    {% for att in attachments %}
+                    <div class="flex items-center justify-between text-xs p-2 bg-white rounded-lg border border-slate-200" id="existing-att-row-{{ att.id }}">
+                        <span class="truncate max-w-sm flex items-center gap-1.5 text-slate-700 font-medium">
+                            <i class="ph-bold {{ att.icon_class }} {{ att.icon_color }}"></i>
+                            {{ att.file_name }} ({{ att.size_str }})
+                        </span>
+                        <button type="button" onclick="toggleMarkDeleteAttachment({{ att.id }})" id="btn-del-att-{{ att.id }}" class="px-2.5 py-0.5 text-rose-600 hover:bg-rose-50 rounded text-[11px] font-bold border border-rose-200 transition-colors cursor-pointer" title="Đánh dấu xóa tệp này">
+                            Xóa
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tải thêm tệp đính kèm mới -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Thêm tệp đính kèm mới</label>
+                <input type="file" id="edit-news-files" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+            </div>
+
+            <!-- Nút bấm -->
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button type="button" onclick="closeEditNewsModal()" class="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-bold transition-colors cursor-pointer">
+                    Hủy bỏ
+                </button>
+                <button type="submit" id="btn-save-edit-news" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <i class="ph-bold ph-floppy-disk"></i>
+                    <span>Lưu thay đổi</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_scripts %}
@@ -421,7 +588,7 @@
     }
 
     function hideAllViewers() {
-        const ids = ['pdf-viewer-frame', 'word-viewer-container', 'excel-viewer-container', 'image-viewer-container', 'fallback-viewer-container'];
+        const ids = ['pdf-viewer-wrapper', 'pdf-viewer-frame', 'word-viewer-container', 'excel-viewer-container', 'image-viewer-container', 'fallback-viewer-container'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.add('hidden');
@@ -436,12 +603,128 @@
         }
     }
 
-    // 1. Render PDF
-    function renderPdfPreview(url) {
+    // 1. Render PDF (Hỗ trợ PDF.js Native Canvas sắc nét + Fallback SAMEORIGIN Iframe)
+    let pdfDoc = null;
+    let pdfPageNum = 1;
+    let pdfScale = 1.25;
+    let pdfPageRendering = false;
+    let pdfPageNumPending = null;
+
+    async function renderPdfPreview(url) {
+        const wrapper = document.getElementById('pdf-viewer-wrapper');
         const frame = document.getElementById('pdf-viewer-frame');
-        if (!frame) return;
-        frame.src = url;
-        frame.classList.remove('hidden');
+
+        if (window.pdfjsLib && wrapper) {
+            try {
+                showLoading(true);
+                wrapper.classList.remove('hidden');
+                if (frame) frame.classList.add('hidden');
+
+                const loadingTask = pdfjsLib.getDocument({
+                    url: url,
+                    cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+                    cMapPacked: true
+                });
+                pdfDoc = await loadingTask.promise;
+                const totalPagesEl = document.getElementById('pdf-total-pages');
+                if (totalPagesEl) totalPagesEl.textContent = pdfDoc.numPages;
+                pdfPageNum = 1;
+                await renderPdfPage(pdfPageNum);
+                return;
+            } catch (e) {
+                console.warn('PDF.js render failed, trying native frame fallback:', e);
+                wrapper.classList.add('hidden');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Fallback: Sử dụng iframe với cờ X-Frame-Options: SAMEORIGIN
+        if (frame) {
+            frame.src = url;
+            frame.classList.remove('hidden');
+        }
+    }
+
+    async function renderPdfPage(num) {
+        if (!pdfDoc) return;
+        pdfPageRendering = true;
+        try {
+            const page = await pdfDoc.getPage(num);
+            const canvas = document.getElementById('pdf-render-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const viewport = page.getViewport({ scale: pdfScale });
+            const outputScale = window.devicePixelRatio || 1;
+            canvas.width = Math.floor(viewport.width * outputScale);
+            canvas.height = Math.floor(viewport.height * outputScale);
+            canvas.style.width = Math.floor(viewport.width) + "px";
+            canvas.style.height = Math.floor(viewport.height) + "px";
+
+            const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+            const renderContext = {
+                canvasContext: ctx,
+                transform: transform,
+                viewport: viewport
+            };
+            await page.render(renderContext).promise;
+        } catch (err) {
+            console.error('Error rendering page:', err);
+        } finally {
+            pdfPageRendering = false;
+        }
+
+        const curEl = document.getElementById('pdf-current-page');
+        if (curEl) curEl.textContent = num;
+        const zoomEl = document.getElementById('pdf-zoom-level');
+        if (zoomEl) zoomEl.textContent = Math.round(pdfScale * 100) + '%';
+
+        const prevBtn = document.getElementById('pdf-prev-btn');
+        if (prevBtn) {
+            prevBtn.disabled = (num <= 1);
+            prevBtn.classList.toggle('opacity-50', num <= 1);
+        }
+        const nextBtn = document.getElementById('pdf-next-btn');
+        if (nextBtn) {
+            nextBtn.disabled = (num >= pdfDoc.numPages);
+            nextBtn.classList.toggle('opacity-50', num >= pdfDoc.numPages);
+        }
+
+        if (pdfPageNumPending !== null) {
+            renderPdfPage(pdfPageNumPending);
+            pdfPageNumPending = null;
+        }
+    }
+
+    function queueRenderPdfPage(num) {
+        if (pdfPageRendering) {
+            pdfPageNumPending = num;
+        } else {
+            renderPdfPage(num);
+        }
+    }
+
+    function changePdfPage(offset) {
+        if (!pdfDoc) return;
+        const target = pdfPageNum + offset;
+        if (target >= 1 && target <= pdfDoc.numPages) {
+            pdfPageNum = target;
+            queueRenderPdfPage(pdfPageNum);
+        }
+    }
+
+    function zoomPdf(delta) {
+        if (!pdfDoc) return;
+        const newScale = Math.min(Math.max(pdfScale + delta, 0.5), 3.0);
+        pdfScale = Math.round(newScale * 10) / 10;
+        queueRenderPdfPage(pdfPageNum);
+    }
+
+    function resetPdfZoom() {
+        if (!pdfDoc) return;
+        pdfScale = 1.25;
+        queueRenderPdfPage(pdfPageNum);
     }
 
     // 2. Render Image
@@ -653,5 +936,140 @@
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
         });
     }
+
+    // XỬ LÝ CHỈNH SỬA & XÓA BẢN TIN (DÀNH CHO NGƯỜI BAN HÀNH HOẶC QUẢN TRỊ)
+    let deletedAttachmentIds = [];
+
+    function openEditNewsModal() {
+        const modal = document.getElementById('modal-edit-news');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeEditNewsModal() {
+        const modal = document.getElementById('modal-edit-news');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function toggleMarkDeleteAttachment(attId) {
+        const row = document.getElementById(`existing-att-row-${attId}`);
+        const btn = document.getElementById(`btn-del-att-${attId}`);
+        const idx = deletedAttachmentIds.indexOf(attId);
+        if (idx === -1) {
+            deletedAttachmentIds.push(attId);
+            if (row) row.classList.add('opacity-40', 'line-through', 'bg-rose-50');
+            if (btn) {
+                btn.textContent = 'Hoàn tác';
+                btn.className = 'px-2.5 py-0.5 text-slate-600 hover:bg-slate-100 rounded text-[11px] font-bold border border-slate-200 transition-colors cursor-pointer';
+            }
+        } else {
+            deletedAttachmentIds.splice(idx, 1);
+            if (row) row.classList.remove('opacity-40', 'line-through', 'bg-rose-50');
+            if (btn) {
+                btn.textContent = 'Xóa';
+                btn.className = 'px-2.5 py-0.5 text-rose-600 hover:bg-rose-50 rounded text-[11px] font-bold border border-rose-200 transition-colors cursor-pointer';
+            }
+        }
+    }
+
+    async function handleEditNewsSubmit(e) {
+        e.preventDefault();
+        const title = document.getElementById('edit-news-title').value.trim();
+        const content = document.getElementById('edit-news-content').value.trim();
+        const catId = document.getElementById('edit-news-category')?.value;
+        const dept = document.getElementById('edit-news-department')?.value;
+        const summary = document.getElementById('edit-news-summary')?.value.trim();
+        const isPinned = document.getElementById('edit-news-pinned')?.checked;
+        const isUrgent = document.getElementById('edit-news-urgent')?.checked;
+        const files = document.getElementById('edit-news-files')?.files;
+
+        if (!title || !content) {
+            alert('Vui lòng điền đầy đủ tiêu đề và nội dung.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
+        if (catId) formData.append('category_id', catId);
+        if (dept) formData.append('target_department', dept);
+        formData.append('summary', summary || '');
+        formData.append('is_pinned', isPinned ? '1' : '0');
+        formData.append('is_urgent', isUrgent ? '1' : '0');
+        if (deletedAttachmentIds.length > 0) {
+            formData.append('deleted_attachment_ids', deletedAttachmentIds.join(','));
+        }
+        if (files) {
+            for (let i = 0; i < files.length; i++) {
+                formData.append('attachments', files[i]);
+            }
+        }
+
+        const saveBtn = document.getElementById('btn-save-edit-news');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Đang lưu...';
+        }
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || getCookie('csrftoken') || '';
+            const res = await fetch(`/api/collaboration/news/posts/${POST_ID}/`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+            const json = await res.json();
+            if (json.success) {
+                if (typeof showToast === 'function') {
+                    showToast('success', 'Đã cập nhật thông báo thành công!');
+                } else {
+                    alert('Đã cập nhật thông báo thành công!');
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 350);
+            } else {
+                alert(json.message || 'Không thể cập nhật thông báo.');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Lưu thay đổi';
+                }
+            }
+        } catch (err) {
+            console.error('Error updating news:', err);
+            alert('Lỗi hệ thống khi cập nhật thông báo.');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Lưu thay đổi';
+            }
+        }
+    }
+
+    async function confirmDeleteNews() {
+        if (!confirm('Bạn có chắc chắn muốn xóa bản tin / thông báo này không? Sau khi xóa, thông báo sẽ không còn hiển thị trên hệ thống.')) {
+            return;
+        }
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || getCookie('csrftoken') || '';
+            const res = await fetch(`/api/collaboration/news/posts/${POST_ID}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            const json = await res.json();
+            if (json.success) {
+                alert('Đã xóa bản tin thành công.');
+                window.location.href = '/news';
+            } else {
+                alert(json.message || 'Không thể xóa bản tin.');
+            }
+        } catch (e) {
+            console.error('Error deleting news:', e);
+            alert('Lỗi kết nối khi xóa bản tin.');
+        }
+    }
+
 </script>
 {% endblock %}

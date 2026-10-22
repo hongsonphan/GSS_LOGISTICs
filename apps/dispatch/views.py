@@ -624,6 +624,10 @@ def news_detail_page_view(request, post_identifier):
         company_profile_data = {}
     company_profile_json = json.dumps(company_profile_data, ensure_ascii=False)
 
+    from apps.collaboration.models.news import PostCategory
+    categories = PostCategory.objects.all().order_by('order', 'name')
+    can_edit = bool(is_privileged or (post.author_id == request.user.id))
+
     context = {
         'post': post,
         'company': company,
@@ -640,6 +644,10 @@ def news_detail_page_view(request, post_identifier):
         'share_url': request.build_absolute_uri(f'/news/{post.hashid}/'),
         'post_hashid': post.hashid,
         'current_user': request.user,
+        'can_edit': can_edit,
+        'can_delete': can_edit,
+        'is_author': (post.author_id == request.user.id),
+        'categories': categories,
     }
     return render(request, 'news_detail.html', context)
 

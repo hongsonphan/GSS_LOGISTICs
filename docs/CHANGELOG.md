@@ -32,6 +32,33 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 
 ---
 
+## [v4.1.11] - 2026-10-22 (Bổ Sung Tính Năng Chỉnh Sửa Thông Báo Cho Người Ban Hành & Tích Hợp PDF.js Viewer Sắc Nét)
+
+### 1. Bổ Sung Quyền & Giao Diện Chỉnh Sửa / Xóa Thông Báo Cho Người Ban Hành:
+- **Backend API (`apps/collaboration/api_views/news_api.py`):**
+  * Bổ sung phương thức `PATCH` & `PUT` vào `CompanyPostDetailAPIView`.
+  * **Kiểm soát phân quyền chặt chẽ:** Chỉ người ban hành (`post.author == request.user`) hoặc Ban Giám Đốc/Admin cấp cao (`hierarchy_level >= 80`, `role=DIRECTOR`, `department=MANAGEMENT`) mới có quyền chỉnh sửa.
+  * Cho phép hiệu chỉnh đầy đủ: Tiêu đề, Danh mục, Phòng ban tiếp nhận, Tóm tắt, Nội dung chi tiết, trạng thái Ghim, Khẩn cấp, Xuất bản, cùng khả năng xóa tệp đính kèm cũ và bổ sung tài liệu mới.
+- **Trang Chi Tiết Văn Bản (`templates/news_detail.html` & `apps/dispatch/views.py`):**
+  * Truyền biến `can_edit`, `can_delete` vào context.
+  * Bổ sung nút **"Sửa thông báo"** (icon `ph-pencil-simple`) và nút **"Xóa"** (icon `ph-trash`) ngay trên thanh Subheader hành động.
+  * Tích hợp Modal Chỉnh Sửa Thông Báo (`#modal-edit-news`) trực tiếp trên trang chi tiết, cho phép chỉnh sửa nội dung, danh mục, phòng ban và quản lý tệp đính kèm tức thì.
+- **Trang Danh Sách Feed (`templates/views/view_news.html` & `static/js/collaboration.js`):**
+  * Tự động hiển thị nút Sửa & Xóa trên từng thẻ bài viết và trên modal xem nhanh cho tác giả ban hành.
+  * Bổ sung Modal Chỉnh Sửa Feed (`#modal-edit-news-feed`) để chỉnh sửa nhanh mà không cần chuyển trang.
+
+### 2. Tinh Chỉnh & Khắc Phục Triệt Để Chế Độ Xem Trước File Đính Kèm (PDF.js Canvas Renderer):
+- **Khắc phục lỗi chặn Iframe "Sad Paper" (`core/media_views.py`):**
+  * Nguyên nhân: Middleware Django áp dụng `X-Frame-Options: DENY`, khiến trình duyệt Chromium chặn nhúng PDF trực tiếp vào thẻ `<iframe>`, sinh ra icon trang giấy mặt buồn.
+  * Xử lý: Áp dụng decorator `@xframe_options_sameorigin` và gán header `X-Frame-Options: SAMEORIGIN` kèm `Content-Disposition: inline` cho các tệp media phục vụ qua `safe_media_serve`.
+- **Tích Hợp Thư Viện Mozilla PDF.js Chuẩn Công Nghiệp (`templates/news_detail.html`):**
+  * Nhúng thư viện `pdf.js` và `pdf.worker.js` từ CDN.
+  * Xây dựng **Bộ xem trước PDF Native Canvas** chất lượng cao: render trực tiếp lên HTML5 Canvas với tỷ lệ sắc nét thích ứng màn hình Retina/High-DPI.
+  * **Thanh điều khiển chuyên nghiệp:** Nút chuyển trang (Trước/Sau, hiển thị `Trang 1 / N`), Phóng to / Thu nhỏ (`-`, `+`, `100%`), Tải tệp về máy và Mở toàn màn hình trong tab mới.
+  * Cơ chế dự phòng (Fallback) đa tầng: Nếu PDF.js không nạp được mạng $ightarrow$ tự động chuyển sang Iframe SAMEORIGIN $ightarrow$ Thẻ Tải xuống trực tiếp.
+
+---
+
 ## [v4.1.10] - 2026-10-22 (Loại Bỏ Badge Viền Hộp Khỏi Dropdown Đồng Nghiệp & Chuẩn Hóa [Tên] | [Phòng Ban])
 
 ### 1. Trình Bày Phẳng Liền Mạch [Tên] | [Phòng Ban] Không Bọc Badge (`static/js/app.js` & `static/js/collaboration.js`):

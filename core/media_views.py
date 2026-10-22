@@ -4,6 +4,7 @@ import mimetypes
 from django.conf import settings
 from django.http import Http404, HttpResponse, FileResponse
 from django.views.static import serve
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from PIL import Image, ImageDraw
 
 def generate_sample_doc_pdf(filename, full_path):
@@ -102,11 +103,13 @@ def generate_fallback_placeholder_pdf(filename, full_path):
     return full_path
 
 
+@xframe_options_sameorigin
 def safe_media_serve(request, path, document_root=None, show_indexes=False):
     """
     View phục vụ media an toàn:
     - Nếu file tồn tại -> trả về file bình thường.
     - Nếu file không tồn tại -> tự động fallback sinh file mẫu hoặc placeholder chuẩn, không bao giờ bị 404!
+    - Hỗ trợ nhúng iframe nội bộ SAMEORIGIN để xem trước trực tiếp tài liệu PDF.
     """
     doc_root = document_root or settings.MEDIA_ROOT
     full_path = os.path.join(doc_root, path)
@@ -137,6 +140,9 @@ def safe_media_serve(request, path, document_root=None, show_indexes=False):
         content_type = content_type or 'application/octet-stream'
         response = FileResponse(open(full_path, 'rb'), content_type=content_type)
         response['Content-Disposition'] = f'inline; filename="{os.path.basename(full_path)}"'
+        response['X-Frame-Options'] = 'SAMEORIGIN'
         return response
 
-    return serve(request, path, document_root=doc_root, show_indexes=show_indexes)
+    res = serve(request, path, document_root=doc_root, show_indexes=show_indexes)
+    res['X-Frame-Options'] = 'SAMEORIGIN'
+    return res

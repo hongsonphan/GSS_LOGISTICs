@@ -692,3 +692,15 @@ class PersonnelHRMAPITestCase(TestCase):
         code_lead_customs = Employee.generate_next_code(role=EmployeeRole.LEAD_CUSTOMS, department=Department.CUSTOMS)
         self.assertTrue(code_lead_customs.startswith('HQ'))
 
+    def test_user_to_employee_name_and_email_sync(self):
+        """Kiểm thử khi cập nhật Họ Tên & Email của User trong Django Admin thì Employee tự động đồng bộ."""
+        self.director_user.last_name = "Nguyễn Minh"
+        self.director_user.first_name = "Thuận"
+        self.director_user.email = "dieudo.tvl@trienvo.com"
+        self.director_user.save()
+
+        # Reload Employee và kiểm tra
+        emp = Employee.objects.get(id=self.director_emp.id)
+        self.assertEqual(emp.full_name, "Nguyễn Minh Thuận")
+        self.assertEqual(emp.email, "dieudo.tvl@trienvo.com")
+

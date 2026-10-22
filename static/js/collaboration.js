@@ -239,7 +239,19 @@ async function loadCompanyNews() {
                             ` : ''}
                         </div>
 
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
+                            ${(p.author_id === window.CURRENT_USER?.id || window.CURRENT_USER?.is_superuser || (window.CURRENT_USER?.hierarchy_level >= 80) || (window.CURRENT_USER?.role === 'DIRECTOR')) ? `
+                                <button type="button" onclick="openEditNewsModalFromFeed(${p.id}, event)" 
+                                    class="p-1 rounded-md text-slate-400 hover:text-teal-700 hover:bg-teal-50 transition-colors" 
+                                    title="Chỉnh sửa bản tin này">
+                                    <i class="ph-bold ph-pencil-simple text-xs"></i>
+                                </button>
+                                <button type="button" onclick="deleteNewsFromFeed(${p.id}, event)" 
+                                    class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" 
+                                    title="Xóa bản tin này">
+                                    <i class="ph-bold ph-trash text-xs"></i>
+                                </button>
+                            ` : ''}
                             ${canCreatePost ? `
                                 <button type="button" onclick="quickTogglePinNews(${p.id}, event)" 
                                     class="p-1 rounded-md text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors" 
@@ -247,7 +259,7 @@ async function loadCompanyNews() {
                                     <i class="ph-${p.is_pinned ? 'fill text-amber-600' : 'bold'} ph-push-pin text-xs"></i>
                                 </button>
                             ` : ''}
-                            <span class="text-teal-700 font-bold group-hover:underline flex items-center text-xs">
+                            <span class="text-teal-700 font-bold group-hover:underline flex items-center text-xs ml-1">
                                 Đọc tiếp <i class="ph ph-caret-right ml-0.5 text-xs"></i>
                             </span>
                         </div>
@@ -312,6 +324,22 @@ async function openNewsDetailModal(postId) {
         if (urgentBadge) {
             if (p.is_urgent) urgentBadge.classList.remove('hidden');
             else urgentBadge.classList.add('hidden');
+        }
+
+        // Phân quyền hiển thị nút Sửa & Xóa trong Modal
+        const currentUserId = window.CURRENT_USER?.id;
+        const isManager = window.CURRENT_USER?.is_superuser || (window.CURRENT_USER?.hierarchy_level >= 80) || (window.CURRENT_USER?.role === 'DIRECTOR');
+        const canEditThisPost = (p.author_id === currentUserId) || isManager;
+
+        const editBtn = document.getElementById('news-modal-edit-btn');
+        if (editBtn) {
+            if (canEditThisPost) editBtn.classList.remove('hidden');
+            else editBtn.classList.add('hidden');
+        }
+        const delBtn = document.getElementById('news-modal-delete-btn');
+        if (delBtn) {
+            if (canEditThisPost) delBtn.classList.remove('hidden');
+            else delBtn.classList.add('hidden');
         }
 
         // Pin button icon & tooltip
@@ -547,6 +575,218 @@ async function handleCreateNewsSubmit(e) {
 
 
 // ==========================================================================
+
+// ==========================================================================
+// TÍNH NĂNG CHỈNH SỬA & XÓA BẢN TIN TRÊN TRANG FEED (DANH SÁCH)
+// ==========================================================================
+
+let feedDeletedAttachmentIds = [];
+
+async function openEditNewsModalFromFeed(postId, event) {
+    if (event) event.stopPropagation();
+    const modal = document.getElementById('modal-edit-news-feed');
+    if (!modal) return;
+
+    feedDeletedAttachmentIds = [];
+    document.getElementById('edit-feed-post-id').value = postId;
+
+    // Load categories vào select nếu chưa có
+    const catSelect = document.getElementById('edit-feed-category');
+    const mainCatSelect = document.getElementById('news-category-filter');
+    if (catSelect && mainCatSelect) {
+        catSelect.innerHTML = '';
+        for (let i = 0; i < mainCatSelect.options.length; i++) {
+            const opt = mainCatSelect.options[i];
+            if (opt.value) {
+                const newOpt = document.createElement('option');
+                newOpt.value = opt.value;
+                newOpt.textContent = opt.textContent;
+                catSelect.appendChild(newOpt);
+            }
+        }
+    }
+
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) {
+            showToast('error', 'Không thể tải thông tin bản tin để chỉnh sửa.');
+            return;
+        }
+        const p = json.data;
+        document.getElementById('edit-feed-title').value = p.title || '';
+        document.getElementById('edit-feed-summary').value = p.summary || '';
+        document.getElementById('edit-feed-content').value = p.content || '';
+        if (catSelect) catSelect.value = p.category || '';
+        const deptSelect = document.getElementById('edit-feed-department');
+        if (deptSelect) deptSelect.value = p.target_department || 'ALL';
+        document.getElementById('edit-feed-pinned').checked = !!p.is_pinned;
+        document.getElementById('edit-feed-urgent').checked = !!p.is_urgent;
+
+        // Render attachments hiện tại
+        const attWrapper = document.getElementById('edit-feed-attachments-wrapper');
+        const attList = document.getElementById('edit-feed-attachments-list');
+        if (attWrapper && attList) {
+            if (p.attachments && p.attachments.length > 0) {
+                attList.innerHTML = p.attachments.map(att => `
+                    <div class="flex items-center justify-between text-xs p-2 bg-white rounded-lg border border-slate-200" id="feed-att-row-${att.id}">
+                        <span class="truncate max-w-sm text-slate-700 font-medium">
+                            <i class="ph-bold ph-paperclip text-teal-600 mr-1"></i>
+                            ${escapeHtml(att.file_name)}
+                        </span>
+                        <button type="button" onclick="toggleMarkDeleteFeedAttachment(${att.id})" id="btn-del-feed-att-${att.id}" class="px-2.5 py-0.5 text-rose-600 hover:bg-rose-50 rounded text-[11px] font-bold border border-rose-200 transition-colors cursor-pointer">
+                            Xóa
+                        </button>
+                    </div>
+                `).join('');
+                attWrapper.classList.remove('hidden');
+            } else {
+                attList.innerHTML = '';
+                attWrapper.classList.add('hidden');
+            }
+        }
+
+        modal.classList.remove('hidden');
+    } catch (err) {
+        console.error('Error fetching news for edit:', err);
+        showToast('error', 'Lỗi khi tải dữ liệu bài viết.');
+    }
+}
+
+function closeEditNewsFeedModal() {
+    const modal = document.getElementById('modal-edit-news-feed');
+    if (modal) modal.classList.add('hidden');
+}
+
+function toggleMarkDeleteFeedAttachment(attId) {
+    const row = document.getElementById(`feed-att-row-${attId}`);
+    const btn = document.getElementById(`btn-del-feed-att-${attId}`);
+    const idx = feedDeletedAttachmentIds.indexOf(attId);
+    if (idx === -1) {
+        feedDeletedAttachmentIds.push(attId);
+        if (row) row.classList.add('opacity-40', 'line-through', 'bg-rose-50');
+        if (btn) {
+            btn.textContent = 'Hoàn tác';
+            btn.className = 'px-2.5 py-0.5 text-slate-600 hover:bg-slate-100 rounded text-[11px] font-bold border border-slate-200 transition-colors cursor-pointer';
+        }
+    } else {
+        feedDeletedAttachmentIds.splice(idx, 1);
+        if (row) row.classList.remove('opacity-40', 'line-through', 'bg-rose-50');
+        if (btn) {
+            btn.textContent = 'Xóa';
+            btn.className = 'px-2.5 py-0.5 text-rose-600 hover:bg-rose-50 rounded text-[11px] font-bold border border-rose-200 transition-colors cursor-pointer';
+        }
+    }
+}
+
+async function handleEditNewsFeedSubmit(e) {
+    e.preventDefault();
+    const postId = document.getElementById('edit-feed-post-id').value;
+    const title = document.getElementById('edit-feed-title').value.trim();
+    const content = document.getElementById('edit-feed-content').value.trim();
+    const catId = document.getElementById('edit-feed-category')?.value;
+    const dept = document.getElementById('edit-feed-department')?.value;
+    const summary = document.getElementById('edit-feed-summary')?.value.trim();
+    const isPinned = document.getElementById('edit-feed-pinned')?.checked;
+    const isUrgent = document.getElementById('edit-feed-urgent')?.checked;
+    const files = document.getElementById('edit-feed-files')?.files;
+
+    if (!postId || !title || !content) {
+        showToast('warning', 'Vui lòng điền đầy đủ tiêu đề và nội dung.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    if (catId) formData.append('category_id', catId);
+    if (dept) formData.append('target_department', dept);
+    formData.append('summary', summary || '');
+    formData.append('is_pinned', isPinned ? '1' : '0');
+    formData.append('is_urgent', isUrgent ? '1' : '0');
+    if (feedDeletedAttachmentIds.length > 0) {
+        formData.append('deleted_attachment_ids', feedDeletedAttachmentIds.join(','));
+    }
+    if (files) {
+        for (let i = 0; i < files.length; i++) {
+            formData.append('attachments', files[i]);
+        }
+    }
+
+    const saveBtn = document.getElementById('btn-save-edit-feed');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Đang lưu...';
+    }
+
+    try {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type'];
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/`, {
+            method: 'PATCH',
+            headers,
+            body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', 'Đã cập nhật bản tin thành công!');
+            closeEditNewsFeedModal();
+            loadCompanyNews();
+        } else {
+            showToast('error', json.message || 'Không thể cập nhật bản tin.');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Lưu thay đổi';
+            }
+        }
+    } catch (err) {
+        console.error('Error updating news from feed:', err);
+        showToast('error', 'Lỗi hệ thống khi cập nhật bản tin.');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Lưu thay đổi';
+        }
+    }
+}
+
+function openEditNewsFromModal() {
+    if (currentViewingNewsId) {
+        const id = currentViewingNewsId;
+        closeNewsDetailModal();
+        openEditNewsModalFromFeed(id);
+    }
+}
+
+async function deleteNewsFromModal() {
+    if (!currentViewingNewsId) return;
+    deleteNewsFromFeed(currentViewingNewsId);
+}
+
+async function deleteNewsFromFeed(postId, event) {
+    if (event) event.stopPropagation();
+    if (!confirm('Bạn có chắc chắn muốn xóa bản tin này không? Sau khi xóa, bài viết sẽ không còn hiển thị.')) return;
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', 'Đã xóa bản tin thành công.');
+            closeNewsDetailModal();
+            loadCompanyNews();
+        } else {
+            showToast('error', json.message || 'Không thể xóa bản tin.');
+        }
+    } catch (e) {
+        console.error('Error deleting news:', e);
+        showToast('error', 'Lỗi khi xóa bản tin.');
+    }
+}
+
+
 // 2. PHÂN HỆ: QUẢN LÝ CÔNG VIỆC & GIAO VIỆC VĂN PHÒNG (JIRA/ASANA STANDARD)
 // ==========================================================================
 

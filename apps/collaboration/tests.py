@@ -823,3 +823,54 @@ class CollaborationTestSuite(TestCase):
         self.assertIn("Lịch trực điều vận", disp_titles)
         self.assertNotIn("Quy định tạm ứng kế toán", disp_titles)
         self.assertNotIn("Kiểm tra kỹ thuật đầu kéo", disp_titles)
+
+    def test_news_update_permissions_and_media_pdf_headers(self):
+        """Kiểm thử phân quyền chỉnh sửa bản tin cho người ban hành và cấu hình SAMEORIGIN cho PDF."""
+        from apps.collaboration.models import CompanyPost, PostAttachment
+
+        # 1. Dispatcher tạo bài viết
+        post = CompanyPost.objects.create(
+            title="Thông báo lịch điều xe đêm",
+            content="Nội dung lịch trực đêm cần phối hợp.",
+            author=self.dispatcher_user,
+            target_department=Department.DISPATCH,
+            is_published=True
+        )
+
+        # 2. Người khác (Kế toán viên) cố tình sửa bài viết -> 403 Forbidden
+        self.client.force_login(self.accountant_user)
+        res_fail = self.client.patch(f'/api/collaboration/news/posts/{post.id}/', {
+            'title': 'Tiêu đề bị sửa trái phép'
+        }, content_type='application/json')
+        self.assertEqual(res_fail.status_code, 403)
+        self.assertIn("Bạn không có quyền chỉnh sửa", res_fail.json()['message'])
+
+        # 3. Chính tác giả (Dispatcher) sửa bài viết của mình -> 200 OK
+        self.client.force_login(self.dispatcher_user)
+        res_ok = self.client.patch(f'/api/collaboration/news/posts/{post.id}/', {
+            'title': 'Thông báo lịch điều xe đêm [ĐÃ HIỆU CHỈNH]',
+            'summary': 'Tóm tắt điều chỉnh mới',
+            'is_pinned': 'true'
+        }, content_type='application/json')
+        self.assertEqual(res_ok.status_code, 200)
+        self.assertTrue(res_ok.json()['success'])
+        
+        post.refresh_from_db()
+        self.assertEqual(post.title, 'Thông báo lịch điều xe đêm [ĐÃ HIỆU CHỈNH]')
+        self.assertEqual(post.summary, 'Tóm tắt điều chỉnh mới')
+        self.assertTrue(post.is_pinned)
+
+        # 4. Ban Giám Đốc có quyền sửa bài viết của nhân viên -> 200 OK
+        self.client.force_login(self.director_user)
+        res_bgd = self.client.patch(f'/api/collaboration/news/posts/{post.hashid}/', {
+            'title': 'Thông báo lịch điều xe đêm [BGD PHÊ DUYỆT]'
+        }, content_type='application/json')
+        self.assertEqual(res_bgd.status_code, 200)
+        post.refresh_from_db()
+        self.assertEqual(post.title, 'Thông báo lịch điều xe đêm [BGD PHÊ DUYỆT]')
+
+        # 5. Kiểm tra safe_media_serve trả về header X-Frame-Options: SAMEORIGIN
+        res_media = self.client.get('/media/company_news/attachments/2026/10/sample_doc_1.pdf')
+        self.assertEqual(res_media.status_code, 200)
+        self.assertEqual(res_media.headers.get('X-Frame-Options'), 'SAMEORIGIN')
+        self.assertIn('inline', res_media.headers.get('Content-Disposition', ''))
