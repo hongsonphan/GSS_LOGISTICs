@@ -2,34 +2,46 @@
 <div id="view-dieu-van" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
 
 
-    <!-- KPI Cards for Dispatch -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white px-5 py-5 rounded-2xl border border-slate-200 border-l-4 border-l-blue-600 shadow-sm flex items-center">
-            <div class="bg-blue-100 p-3.5 rounded-xl mr-4"><i class="ph-bold ph-truck text-blue-600 text-2xl"></i></div>
+    <!-- KPI Cards for Dispatch (Enterprise B2B Minimalist Standard) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
             <div>
-                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Tổng chuyến (Tháng)</p>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-total-trips">0</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider font-heading">Tổng chuyến (Tháng)</p>
+                <p class="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1" id="stat-total-trips">0</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Kỳ điều độ hiện tại</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-200/60 flex items-center justify-center text-teal-700 shrink-0">
+                <i class="ph-bold ph-truck text-2xl"></i>
             </div>
         </div>
-        <div class="bg-white px-5 py-5 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-sm flex items-center">
-            <div class="bg-amber-100 p-3.5 rounded-xl mr-4"><i class="ph-bold ph-navigation-arrow text-amber-600 text-2xl"></i></div>
+        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
             <div>
-                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Đang chạy h.nay</p>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="stat-transit">0</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider font-heading">Đang chạy hôm nay</p>
+                <p class="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1" id="stat-transit">0</p>
+                <p class="text-[11px] text-teal-600 font-semibold mt-0.5">Xe đang trên lộ trình</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-700 shrink-0">
+                <i class="ph-bold ph-navigation-arrow text-2xl"></i>
             </div>
         </div>
-        <div class="bg-white px-5 py-5 rounded-2xl border border-slate-200 border-l-4 border-l-orange-500 shadow-sm flex items-center">
-            <div class="bg-orange-100 p-3.5 rounded-xl mr-4"><i class="ph-bold ph-warning-circle text-orange-600 text-2xl"></i></div>
+        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
             <div>
-                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Chờ duyệt phí</p>
-                <p class="text-3xl font-black text-orange-600 tabular-nums font-heading tracking-tight mt-1" id="stat-pending-expenses">0</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider font-heading">Chờ duyệt chi phí</p>
+                <p class="text-2xl sm:text-3xl font-black text-amber-700 tabular-nums font-heading tracking-tight mt-1" id="stat-pending-expenses">0</p>
+                <p class="text-[11px] text-amber-600 font-semibold mt-0.5">Khoản kê cần xác nhận</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-700 shrink-0">
+                <i class="ph-bold ph-receipt text-2xl"></i>
             </div>
         </div>
-        <div class="bg-white px-5 py-5 rounded-2xl border border-slate-200 border-l-4 border-l-rose-500 shadow-sm flex items-center">
-            <div class="bg-rose-100 p-3.5 rounded-xl mr-4"><i class="ph-bold ph-siren text-rose-600 text-2xl"></i></div>
+        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
             <div>
-                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Cảnh báo Cắt Máng</p>
-                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="stat-cutoff-warning">0</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider font-heading">Cảnh báo Cắt Máng</p>
+                <p class="text-2xl sm:text-3xl font-black text-rose-700 tabular-nums font-heading tracking-tight mt-1" id="stat-cutoff-warning">0</p>
+                <p class="text-[11px] text-rose-600 font-semibold mt-0.5">Chuyến cần ưu tiên hạ</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-rose-50 border border-rose-200/60 flex items-center justify-center text-rose-700 shrink-0">
+                <i class="ph-bold ph-siren text-2xl"></i>
             </div>
         </div>
     </div>
