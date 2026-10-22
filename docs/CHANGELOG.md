@@ -2,6 +2,31 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.4] - 2026-10-22 (Chuẩn Hóa Hiển Thị Trạng Thái Dạng Text Thuần & Kích Hoạt Nút Sửa Trên Bảng Đội Xe)
+
+### 1. Chuẩn Hóa Cột Trạng Thái (Bỏ Toàn Bộ Badge Nền Pill, Dùng Text Thuần Trực Quan):
+- **Bảng Rơ-Moóc Container (`fleet-trailers-table`):** Loại bỏ hoàn toàn lớp badge `bg-slate-100`, `bg-teal-100`, `bg-emerald-100`, `bg-amber-100` và `px-2.5 py-1 rounded-md`. Chuyển sang hiển thị text thuần túy:
+  * Nằm bãi (Chờ kéo): `text-teal-700 font-bold text-xs uppercase tracking-wider`
+  * Đang kéo: `text-emerald-700 font-bold text-xs uppercase tracking-wider`
+  * Bảo trì / Hư hỏng: `text-amber-700 font-bold text-xs uppercase tracking-wider`
+  * Mặc định khác: `text-slate-700 font-bold text-xs uppercase tracking-wider`
+- **Bảng Đầu Kéo & Phương Tiện (`fleet-table`):** Đồng bộ loại bỏ badge, chuyển sang text thuần trực quan:
+  * Sẵn sàng hoạt động: `text-emerald-700 font-bold text-xs uppercase tracking-wider`
+  * Cảnh báo đăng kiểm/bảo trì: `text-amber-700 font-bold text-xs uppercase tracking-wider`
+  * Hết hạn đăng kiểm: `text-rose-700 font-black text-xs uppercase tracking-wider`
+
+### 2. Sửa Lỗi Nút "Chỉnh Sửa" Thao Tác Đội Xe Không Có Hiệu Lực:
+- **Nguyên nhân gốc rễ:** Hàm `editFleetTrailer(id)` và `editFleetVehicle(id)` kích hoạt `openEditMasterDataModal(id)`. Tuy nhiên, khi người dùng thao tác ở tab Đội xe (`currentTab === 'xe-bai'`), danh mục Cài đặt `masterDataCache['trailers']` và `masterDataCache['vehicles']` chưa được tải vào bộ nhớ đệm, dẫn tới việc tìm kiếm phần tử bị trả về `undefined` và hàm âm thầm `return;` mà không mở modal.
+- **Giải pháp xử lý triệt để:**
+  * Bổ sung cơ chế **Fallback Two-Tier**:
+    1. Khi cache rỗng, tự động gọi API danh mục `/api/master-data/trailers/` hoặc `/api/master-data/vehicles/` để nạp dữ liệu đầy đủ, lưu vào cache và mở modal sửa tương ứng.
+    2. Fallback thứ 2 từ dữ liệu mảng `rawFleetTrailers` / `rawFleetVehicles` có sẵn trên trang nếu gọi API mạng gặp sự cố.
+  * Hiệu chỉnh `submitMasterDataForm`: Khi người dùng lưu thay đổi ở tab Đội xe, hệ thống tự động gọi `loadFleetData()` để làm mới ngay tức thì danh sách phương tiện và các thẻ KPI tổng hợp mà không làm gián đoạn hay tải lại toàn bộ trang.
+
+### 3. Kiểm Thử & Kiểm Chứng Hệ Thống:
+- Kiểm tra cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/modules/fleet.js` đạt chuẩn 100%.
+- Kiểm thử tự động hồi quy Django: Chạy `python manage.py test --keepdb` đạt **147/147 tests PASSED**.
+
 ## [v4.3.3] - 2026-10-22 (Kiểm Thử Giả Lập Toàn Bộ Ứng Dụng & Khắc Phục Triệt Để Toàn Bộ Lỗi Hàm Nút Bấm Trên Toàn App)
 
 ### 1. Quét & Rà Soát Tĩnh Toàn Diện (Full Codebase AST & Inline Event Audit):

@@ -292,9 +292,9 @@ function renderFleetTable(vehicles) {
     }
 
     vehicles.forEach((v, idx) => {
-        let statusCls = 'bg-emerald-100 text-emerald-800';
-        if (v.is_reg_expired) statusCls = 'bg-rose-100 text-rose-700 font-black';
-        else if (v.is_reg_warning || v.is_maint_warning || v.is_ins_warning) statusCls = 'bg-amber-100 text-amber-700 font-bold';
+        let statusCls = 'text-emerald-700 font-bold';
+        if (v.is_reg_expired) statusCls = 'text-rose-700 font-black';
+        else if (v.is_reg_warning || v.is_maint_warning || v.is_ins_warning) statusCls = 'text-amber-700 font-bold';
 
         let regBadge = '';
         if (v.is_reg_expired) {
@@ -333,7 +333,7 @@ function renderFleetTable(vehicles) {
                 ${maintBadge}
             </td>
             <td class="p-4">
-                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(v.status)}</span>
+                <span class="text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(v.status)}</span>
             </td>
             <td class="p-4 text-center">
                 <div class="flex items-center justify-center space-x-1">
@@ -511,13 +511,13 @@ function renderTrailerTable(trailers) {
     }
 
     trailers.forEach((t, idx) => {
-        let statusCls = 'bg-slate-100 text-slate-700';
+        let statusCls = 'text-slate-700 font-bold';
         if (t.status_raw === 'ACTIVE' || (t.status && t.status.includes('Đang kéo'))) {
-            statusCls = 'bg-emerald-100 text-emerald-800';
+            statusCls = 'text-emerald-700 font-bold';
         } else if (t.status_raw === 'IDLE' || (t.status && t.status.includes('Nằm bãi'))) {
-            statusCls = 'bg-teal-100 text-teal-800';
+            statusCls = 'text-teal-700 font-bold';
         } else if (t.status_raw === 'MAINTENANCE' || (t.status && (t.status.includes('Bảo trì') || t.status.includes('Hư hỏng')))) {
-            statusCls = 'bg-amber-100 text-amber-800 font-bold';
+            statusCls = 'text-amber-700 font-bold';
         }
 
         let regBadge = '';
@@ -548,7 +548,7 @@ function renderTrailerTable(trailers) {
                 ${regBadge}
             </td>
             <td class="p-4">
-                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(t.status)}</span>
+                <span class="text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(t.status || '—')}</span>
             </td>
             <td class="p-4 text-center">
                 <div class="flex items-center justify-center space-x-1">

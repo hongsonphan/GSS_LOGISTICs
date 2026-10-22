@@ -11095,9 +11095,9 @@ function renderFleetTable(vehicles) {
     }
 
     vehicles.forEach((v, idx) => {
-        let statusCls = 'bg-emerald-100 text-emerald-800';
-        if (v.is_reg_expired) statusCls = 'bg-rose-100 text-rose-700 font-black';
-        else if (v.is_reg_warning || v.is_maint_warning || v.is_ins_warning) statusCls = 'bg-amber-100 text-amber-700 font-bold';
+        let statusCls = 'text-emerald-700 font-bold';
+        if (v.is_reg_expired) statusCls = 'text-rose-700 font-black';
+        else if (v.is_reg_warning || v.is_maint_warning || v.is_ins_warning) statusCls = 'text-amber-700 font-bold';
 
         let regBadge = '';
         if (v.is_reg_expired) {
@@ -11136,7 +11136,7 @@ function renderFleetTable(vehicles) {
                 ${maintBadge}
             </td>
             <td class="p-4">
-                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(v.status)}</span>
+                <span class="text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(v.status)}</span>
             </td>
             <td class="p-4 text-center">
                 <div class="flex items-center justify-center space-x-1">
@@ -11314,13 +11314,13 @@ function renderTrailerTable(trailers) {
     }
 
     trailers.forEach((t, idx) => {
-        let statusCls = 'bg-slate-100 text-slate-700';
+        let statusCls = 'text-slate-700 font-bold';
         if (t.status_raw === 'ACTIVE' || (t.status && t.status.includes('Đang kéo'))) {
-            statusCls = 'bg-emerald-100 text-emerald-800';
+            statusCls = 'text-emerald-700 font-bold';
         } else if (t.status_raw === 'IDLE' || (t.status && t.status.includes('Nằm bãi'))) {
-            statusCls = 'bg-teal-100 text-teal-800';
+            statusCls = 'text-teal-700 font-bold';
         } else if (t.status_raw === 'MAINTENANCE' || (t.status && (t.status.includes('Bảo trì') || t.status.includes('Hư hỏng')))) {
-            statusCls = 'bg-amber-100 text-amber-800 font-bold';
+            statusCls = 'text-amber-700 font-bold';
         }
 
         let regBadge = '';
@@ -11351,7 +11351,7 @@ function renderTrailerTable(trailers) {
                 ${regBadge}
             </td>
             <td class="p-4">
-                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(t.status)}</span>
+                <span class="text-xs font-bold uppercase tracking-wider font-heading ${statusCls}">${escapeHtml(t.status || '—')}</span>
             </td>
             <td class="p-4 text-center">
                 <div class="flex items-center justify-center space-x-1">
@@ -23565,9 +23565,77 @@ async function openEditMasterDataModal(id) {
         window.open(`/admin/auth/group/${id}/change/`, '_blank');
         return;
     }
-    const items = masterDataCache[currentMasterDataTab] || [];
-    const item = items.find(i => i.id === id);
-    if (!item) return;
+    let items = masterDataCache[currentMasterDataTab] || [];
+    let item = items.find(i => i.id === id);
+    if (!item) {
+        // Fallback 1: Nạp trực tiếp từ API nếu danh mục chưa được nạp vào cache
+        const endpoints = {
+            'vehicles': '/api/master-data/vehicles/',
+            'trailers': '/api/master-data/trailers/',
+            'customers': '/api/master-data/customers/',
+            'locations': '/api/master-data/locations/',
+            'subcontractors': '/api/master-data/subcontractors/',
+            'driver_tariffs': '/api/master-data/driver-tariffs/',
+            'allowances': '/api/master-data/allowances/',
+            'expenses': '/api/master-data/expense-items/',
+            'containers': '/api/master-data/container-types/',
+            'shipping_lines': '/api/master-data/shipping-lines/',
+            'opening_balance': '/api/master-data/opening-balances/'
+        };
+        const ep = endpoints[currentMasterDataTab];
+        if (ep) {
+            try {
+                const res = await fetchWithAuth(ep);
+                if (res.ok) {
+                    const data = await res.json();
+                    items = data.results || data.items || [];
+                    masterDataCache[currentMasterDataTab] = items;
+                    item = items.find(i => i.id === id);
+                }
+            } catch (err) {
+                console.error('[MasterData] Fallback fetch item error:', err);
+            }
+        }
+    }
+    if (!item) {
+        // Fallback 2: Lấy từ cache dữ liệu Đội xe nếu có sẵn
+        if (currentMasterDataTab === 'trailers' && typeof rawFleetTrailers !== 'undefined' && Array.isArray(rawFleetTrailers)) {
+            const rawT = rawFleetTrailers.find(i => i.id === id);
+            if (rawT) {
+                item = {
+                    id: rawT.id,
+                    license_plate: rawT.plate,
+                    trailer_type: rawT.type,
+                    brand: rawT.brand,
+                    payload_capacity_kg: rawT.payload_capacity_kg,
+                    payload_display: rawT.payload_display,
+                    registration_expiry: rawT.reg_expiry,
+                    status: rawT.status_raw || (rawT.status && rawT.status.includes('Nằm bãi') ? 'IDLE' : (rawT.status && rawT.status.includes('Đang kéo') ? 'ACTIVE' : 'MAINTENANCE'))
+                };
+            }
+        } else if (currentMasterDataTab === 'vehicles' && typeof rawFleetVehicles !== 'undefined' && Array.isArray(rawFleetVehicles)) {
+            const rawV = rawFleetVehicles.find(i => i.id === id);
+            if (rawV) {
+                item = {
+                    id: rawV.id,
+                    license_plate: rawV.plate,
+                    vehicle_type: rawV.type,
+                    ownership_type: rawV.ownership_code || 'OWNED',
+                    brand: rawV.brand,
+                    payload_capacity_kg: rawV.payload_capacity_kg,
+                    current_driver_id: rawV.driver_id,
+                    registration_expiry: rawV.reg_expiry,
+                    status: rawV.status_raw || 'ACTIVE'
+                };
+            }
+        }
+    }
+    if (!item) {
+        if (typeof showToast === 'function') {
+            showToast('warning', 'Không tìm thấy dữ liệu đối tượng cần chỉnh sửa.', 'Thông Báo');
+        }
+        return;
+    }
 
     document.getElementById('md-edit-id').value = id;
     document.getElementById('md-catalog-key').value = currentMasterDataTab;
@@ -25122,7 +25190,9 @@ async function submitMasterDataForm(e) {
                 return;
             }
 
-            loadMasterData();
+            if (typeof currentTab !== 'undefined' && currentTab === 'cai-dat') {
+                loadMasterData();
+            }
             if (tabKey === 'vehicles' || tabKey === 'trailers') {
                 if (typeof loadFleetData === 'function') loadFleetData();
             }
