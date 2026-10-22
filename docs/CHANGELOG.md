@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+# CHANGELOG — BIM LOGISTICS PLATFORM
+
+Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
+
+## [v4.1.0] - 2026-10-22 (Tối Ưu Giao Diện: Tinh Gọn Profile Dropdown Menu Chuẩn Modern SaaS)
+
+### 1. Tinh Gọn & Tái Cấu Trúc Bố Cục Thẻ Hồ Sơ Người Dùng (`templates/components/topbar.html`):
+- **Bối cảnh & Vấn đề Cũ:**
+  * Menu Dropdown thông tin tài khoản cá nhân có chiều cao quá lớn (>380px) và bị chia thành nhiều khối rời rạc.
+  * Thông tin bị trùng lặp: Họ tên nhân viên hiển thị 2 lần liên tiếp (ở Header và lại ở dòng "Tên:"), Nút "Cài đặt" xuất hiện 2 lần (ở góc trên Header và ở danh sách hành động).
+  * Khối giữa kẻ bảng phân dòng ("Tên:", "User:", "Email:", "Mã NV:") với icon màu xanh thô kệch, tạo cảm giác form hành chính cũ thay vì profile card hiện đại.
+  * Nút "Đăng xuất" bị đóng khối viền hồng dày tách biệt, thiếu tính liền mạch tinh tế.
+- **Giải pháp Chuẩn Hóa UI/UX SaaS Cao Cấp:**
+  * **Header Profile Tích Hợp Thông Minh:** Tích hợp trọn vẹn Avatar (icon nhận diện vai trò), Họ tên, Email, Huy hiệu chức vụ (`role pill`), Mã nhân viên (`#KT001`) và Tên phòng ban trong một Card phần đầu duy nhất với nền `slate-50/teal-50` trang nhã.
+  * **Loại bỏ Hoàn Toàn Khối Kẻ Bảng Trùng Lặp Ở Giữa:** Giảm 40% chiều cao menu (từ 380px xuống ~240px), giúp dropdown menu hiển thị cực kỳ thanh thoát, trực quan và không che khuất màn hình làm việc.
+  * **Chuẩn Hóa Danh Mục Hành Động 1-Touch:**
+    - `Cài đặt tài khoản` (Icon bánh răng `ph-gear-six`, phụ đề "Hồ sơ, mật khẩu & liên hệ", mở modal `openProfileSettingsModal()`).
+    - `Hướng dẫn sử dụng` (Icon quyển sách `ph-book-open`, phụ đề "Sổ tay nghiệp vụ & quy trình", mở `/helps`).
+    - `Đăng xuất` (Icon `ph-sign-out`, tone màu rose thanh lịch, chuyển tiếp mượt mà).
+  * **Bảo toàn 100% Khả Năng Tương Thích JavaScript (Zero-Regression):** Giữ nguyên các ID DOM (`topbar-dropdown-fullname`, `topbar-profile-val-name`, `topbar-profile-val-email`, `topbar-dropdown-role`) để logic cập nhật họ tên/email tức thì trong file `static/js/app.js` luôn hoạt động chuẩn xác 100%.
+
+---
+
 ## [v4.0.9] - 2026-10-22 (Chuẩn Hóa Enterprise B2B ERP: Tái Cấu Trúc Bố Cục Điều Vận, Khử Màu Sci-Fi AI & Tích Hợp Ngăn Kéo Giả Lập Điện Thoại Thông Minh)
 
 ### 1. Tích Hợp Giả Lập Điện Thoại Tài Xế Thành Ngăn Kéo Mở Rộng Thông Minh (Collapsible Right Side Drawer):
