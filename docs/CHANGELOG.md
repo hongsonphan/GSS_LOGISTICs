@@ -2,6 +2,43 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.8] - 2026-10-22 (Tái Cấu Trúc Toàn Diện Chuẩn Enterprise — Xóa Bỏ Hơi Hướng AI Demo & Nâng Cấp Bàn Điều Phối Thực Tế)
+
+### 1. Loại Bỏ Khung Điện Thoại iPhone Simulator & Nâng Cấp Bàn Điều Phối Desktop:
+- **Bối cảnh & Vấn đề:**
+  * Màn hình Chi tiết Chuyến xe (view_trip_detail.html) trước đây dành tới 35% diện tích bên phải để hiển thị một khung điện thoại iPhone giả lập (Simulator) chạy app tài xế.
+  * Trong thực tế vận hành, điều độ viên làm việc trên máy tính cần không gian hiển thị tối đa cho số liệu, lộ trình, mốc thời gian và chứng từ; trong khi tài xế sử dụng cổng di động riêng (driver_portal.html) trên điện thoại cá nhân. Việc nhét khung điện thoại vào màn hình quản trị là tư duy showcase AI/hackathon, gây lãng phí diện tích và làm rối mắt người vận hành.
+- **Giải pháp Kỹ Thuật Đạt Chuẩn Enterprise:**
+  * **Xóa bỏ hoàn toàn khung iPhone Simulator:** Giải phóng 100% diện tích chiều ngang màn hình cho dữ liệu nghiệp vụ.
+  * **Thanh Điều Hành & Cập Nhật Mốc Tiếp Theo (Dispatcher Smart Action Bar):**
+    - Đặt ngay trên cùng của màn hình chi tiết, hiển thị rõ ràng: Trạng thái hiện tại, Mốc tiếp theo (#dispatcher-next-step-label, #dispatcher-next-action-title, #dispatcher-next-action-desc).
+    - Cụm nút hành động 1-chạm (#dispatcher-next-action-btns): Cho phép Điều độ viên bấm xác nhận tức thì các bước (Nhận chuyến, Xuất phát, Báo sắp đến kho, Check-in cổng kho, Đóng/dỡ hàng, POD, Kéo cont hạ bãi, Đã hạ cont) thay cho tài xế nếu tài xế báo qua điện thoại hoặc bộ đàm.
+    - Cụm phím tắt nghiệp vụ nhanh: Thêm Chi Phí, Đính Kèm Chứng Từ / POD, Ghi Nhận Sự Cố.
+  * **Bố cục Lưới 2 Cột Desktop Enterprise (7 Cột Trái / 5 Cột Phải):**
+    - Cột Trái (Nghiệp vụ Vận tải, Lộ trình & Mốc tiến độ): Thông tin EIR & Vận chuyển hiện trường, Quản lý hạn Free DEM/DET, 7 Mốc thời gian thực tế tại kho và Bảng tiến độ thực hiện (11 bước).
+    - Cột Phải (Tài chính, Chi phí & Chứng từ số): Hộp tóm tắt P&L Chuyến xe, Bảng kê chi phí phát sinh Triền Võ (cost-sheet-card) và Danh sách chứng từ số / Hóa đơn điện tử liên quan.
+  * **Cột Thao Tác Trực Tiếp Trên Bảng Tiến Độ 11 Bước:**
+    - Bổ sung cột thứ 5 'Thao Tác Điều Độ' trong bảng #detail-timeline.
+    - Khi một mốc đang active, hiển thị nút [Xác nhận] màu xanh teal chuẩn Enterprise; khi click, hàm confirmDispatcherMilestone(step) tự động ánh xạ mốc và gửi cập nhật lên backend API /api/trips/<trip>/milestones/.
+
+### 2. Xóa Bỏ Tính Năng Giả Mạo AI OCR — Nâng Cấp Thành Trình Tiếp Nhận Hóa Đơn Số & Chứng Từ Thực Tế:
+- **Bối cảnh & Vấn đề:**
+  * Component modal_ocr.html và hàm startOcrScan() cũ sử dụng lệnh chờ setTimeout 1000ms, in ra dòng chữ 'AI OCR đang xử lý... Quét thành công (Độ chính xác 98.5%)' và gán cố định dữ liệu chuỗi 'Trạm thu phí Cầu Đồng Nai - 120.000 VNĐ'. Đây là dấu hiệu của bản mock demo AI biểu diễn cho người xem, không phục vụ sản xuất thực tế.
+- **Giải pháp Kỹ Thuật Đạt Chuẩn Enterprise:**
+  * **Tái thiết kế modal_ocr.html:** Chuyển đổi thành Modal Tiếp Nhận Hóa Đơn & Chứng Từ Vận Tải Thực Tế.
+  * **Tải tệp & Dán từ Clipboard:** Cho phép chọn file ảnh/PDF hóa đơn điện tử thực tế từ máy tính HOẶC bấm nút / phím tắt Ctrl+V để dán ảnh chụp màn hình từ clipboard. Hiển thị thẻ preview tên tệp, dung lượng và icon (PDF / Image) trước khi lưu.
+  * **Nhập liệu đầy đủ chuẩn Kế toán Logistics:** Phân loại rõ ràng giữa Chi Phí Phát Sinh (Khoản mục, Số tiền VNĐ, Số HĐĐT, Mã tra cứu HĐĐT, Ghi chú) và Chứng Từ Nghiệm Thu (Loại chứng từ: EIR, POD, Phiếu cân, HĐ GTGT; Số Cont, Số Seal).
+  * **Truyền nhận tệp thực tế qua FormData:** Hàm submitOcrData() đóng gói dữ liệu và file đính kèm gửi trực tiếp tới API /api/trips/<trip>/expenses/ hoặc /api/trips/<trip>/documents/, cập nhật dữ liệu tức thì.
+
+### 3. Chuẩn Hóa Giao Diện Đăng Nhập & Hệ Thống Màu Sắc:
+- **Trang Đăng Nhập (login.html):**
+  * Loại bỏ hoàn toàn animation gradient nền 15s và các hình trang trí tròn xoay chuyển động (deco-circle blur-2xl).
+  * Áp dụng nền Slate trung tính nhẹ dịu (bg-slate-100), card đăng nhập gọn gàng bg-white rounded-2xl shadow-xl border border-slate-200/90.
+  * Nút đăng nhập chuyển sang tông Teal thương hiệu vững chắc (bg-teal-700 hover:bg-teal-800), xóa bỏ hiệu ứng phát sáng neon lòe loẹt.
+- **Bảo Vệ Zero-Regression Toàn Diện:**
+  * Cú pháp JS: node -c static/js/app.js & node -c static/js/column_manager.js (0 lỗi).
+  * Toàn bộ 144/144 Unit Tests backend và frontend integrity passed 100% (Ran 144 tests in 47.899s - OK).
+
 ## [v4.0.7] - 2026-10-22 (Chuẩn Hóa Topbar Cố Định Cực Tối Giản & Tích Hợp Bộ Lọc Kỳ Nội Bộ Phân Hệ - Zero Layout Shift & Zero Extra Rows)
 
 ### 1. Tối Ưu Bố Cục UI/UX: Chuyển Bộ Chọn Kỳ & Nút Thao Tác Khỏi Topbar Về Nội Bộ Phân Hệ:
