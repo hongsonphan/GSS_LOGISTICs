@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.1] - 2026-10-22 (Kiểm Tra & Chuẩn Hóa Ma Trận Tài Khoản Đăng Nhập, Kích Hoạt Active và Xóa Phần Tài Xế)
+
+### 1. Xóa Bỏ Tài Khoản Đăng Nhập Của Tài Xế (Bảo Toàn 100% Hồ Sơ Nhân Sự Hiện Trường):
+- **Bản chất nghiệp vụ:** Tài xế không sử dụng tài khoản đăng nhập Web ERP văn phòng (thao tác hiện trường qua Mobile Driver Portal chuyên dụng bằng Token chuyến xe).
+- **Xử lý xóa User tài xế:**
+  * Xóa bỏ hoàn toàn tài khoản User `taixe`, `tx_that`, `tx_that_1792065354` khỏi bảng `auth_user` trên cả Local và VPS Production.
+  * Quan hệ `Employee.user` được thiết lập `on_delete=models.SET_NULL`, bảo toàn 100% dữ liệu hồ sơ nhân sự tài xế (mã `TX001` - Nguyễn Văn Bụi, `TX-S1792065314` - Hoàng Văn Thật...), danh mục điều xe, lịch sử chuyến đi, bảng chấm công và tiền lương tạm tính.
+- **Trang Đăng Nhập (`templates/login.html`):**
+  * Xóa bỏ tiền tố ví dụ `TX001...` khỏi placeholder ô nhập tài khoản; chuẩn hóa thành: `placeholder="Username, Mã NV (BGD01, DD001, KT001...)"`.
+
+### 2. Chuẩn Hóa & Kích Hoạt Mật Khẩu Cho 5 Tài Khoản Văn Phòng Chính Thức:
+- **Khắc phục sự cố trên VPS Production:** Phát hiện và sửa lỗi tài khoản `ketoan` và `sales` bị `is_active = False` trên máy chủ; đặt lại mật khẩu chuẩn xác 100%:
+  1. **`admin`** / `Admin@2026`: Võ Công Triền - Ban Giám Đốc (Superuser toàn quyền).
+  2. **`dieudo`** / `DieuDo@2026`: Trần Điều Độ - Phòng Điều Vận (Dispatcher).
+  3. **`ketoan`** / `KeToan@2026`: Trần Thị Kế Toán - Phòng Kế Toán & Tài Chính (Accountant, kích hoạt lại `is_active=True`).
+  4. **`sales`** / `Sales@2026`: Nguyễn Minh Thuân / Lê Hoàng Nam - Phòng Kinh Doanh (Salesman, kích hoạt lại `is_active=True`).
+  5. **`nhansu`** / `NhanSu@2026`: Lê Thị Thu Thảo - Phòng Hành Chính Nhân Sự (HR).
+
+---
+
 ## [v4.0.0] - 2026-10-22 (Chuẩn Hóa Thao Tác CRUD Cho Các Phiếu Ở Phân Hệ Tài Chính & Kế Toán: Chuẩn 2 Nút Bảng Thao Tác & Bộ 4 Nút Sửa - Lưu - In - Xóa)
 
 ### 1. Chuẩn Hóa Cột Thao Tác Tại Các Bảng Kế Toán (2 Nút Bấm Trực Quan Chuẩn BIM):
