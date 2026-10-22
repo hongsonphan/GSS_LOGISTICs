@@ -4197,7 +4197,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         setTopbarFullpageMode({
             backFn: backToTrips,
             prefix: originPrefix,
-            title: `Chi tiết chuyến | ${trip.id || trip.trip_code || ''}`
+            title: `Chi tiết chuyến ${trip.id || trip.trip_code || ''}`
         });
 
         const tripBackLabel = document.getElementById('trip-detail-back-label');
@@ -4429,6 +4429,10 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const driverPortalBtn = document.getElementById('driver-portal-btn');
         if (driverPortalBtn) {
             driverPortalBtn.href = driverPortalUrl;
+        }
+        const phoneOpenTabBtn = document.getElementById('driver-phone-open-tab');
+        if (phoneOpenTabBtn) {
+            phoneOpenTabBtn.href = driverPortalUrl;
         }
 
         const zaloLink = document.getElementById('zalo-driver-link');
@@ -5506,7 +5510,7 @@ function renderDriverMobileApp(trip) {
 
     // 4.5. DYNAMICALLY RENDER & LOCK QUICK MILESTONES (ZERO JUMP & COMPLETED LOCK)
     
-    // Sync with Dispatcher Smart Action Bar
+    // Sync with Dispatcher Smart Action Bar (Enterprise B2B Button Styling)
     const dNextStep = document.getElementById('dispatcher-next-step-label');
     const dNextTitle = document.getElementById('dispatcher-next-action-title');
     const dNextDesc = document.getElementById('dispatcher-next-action-desc');
@@ -5515,7 +5519,82 @@ function renderDriverMobileApp(trip) {
     if (dNextStep && nextStepLabel) dNextStep.innerText = nextStepLabel.innerText;
     if (dNextTitle && nextActionTitle) dNextTitle.innerText = nextActionTitle.innerText;
     if (dNextDesc && nextActionDesc) dNextDesc.innerText = nextActionDesc.innerText;
-    if (dNextBtns && nextActionBtns) dNextBtns.innerHTML = nextActionBtns.innerHTML;
+
+    if (dNextBtns) {
+        if (st === 'DRAFT' || st === 'DISPATCHED') {
+            dNextBtns.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="driverReportMilestone('DECLINED_TRIP')" class="px-3.5 py-2 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-x-circle text-base"></i> Từ Chối
+                    </button>
+                    <button type="button" onclick="driverReportMilestone('ACCEPTED_TRIP')" class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-check-circle text-base"></i> Nhận Chuyến (Thay TX)
+                    </button>
+                </div>
+            `;
+        } else if (st === 'ACCEPTED') {
+            dNextBtns.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openOcrApp('chung-tu')" class="px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-camera text-base text-teal-600"></i> Chụp Vỏ Cont
+                    </button>
+                    <button type="button" onclick="driverReportMilestone('DEPARTED')" class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-paper-plane-tilt text-base"></i> Xuất Phát Đi
+                    </button>
+                </div>
+            `;
+        } else if (st === 'CONTAINER_PICKED') {
+            dNextBtns.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="driverReportMilestone('APPROACHING_WAREHOUSE')" class="px-3.5 py-2 rounded-xl border border-teal-300 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-bell-ringing text-base text-teal-600"></i> Báo Sắp Đến
+                    </button>
+                    <button type="button" onclick="driverReportMilestone('ARRIVED_WAREHOUSE')" class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-map-pin text-base"></i> Đến Cổng Kho
+                    </button>
+                </div>
+            `;
+        } else if (st === 'IN_TRANSIT' || st === 'AT_WAREHOUSE') {
+            dNextBtns.innerHTML = `
+                <button type="button" onclick="driverReportMilestone('START_UNLOADING')" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                    <i class="ph-bold ph-package text-base"></i>
+                    <span>BẮT ĐẦU ĐÓNG / DỠ HÀNG</span>
+                </button>
+            `;
+        } else if (st === 'UNLOADING') {
+            dNextBtns.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openOcrApp('chung-tu')" class="px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-camera text-base text-teal-600"></i> Chụp POD
+                    </button>
+                    <button type="button" onclick="driverReportMilestone('FINISHED_UNLOADING')" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                        <i class="ph-bold ph-check-circle text-base"></i> Đóng Xong
+                    </button>
+                </div>
+            `;
+        } else if (st === 'DELIVERED') {
+            dNextBtns.innerHTML = `
+                <button type="button" onclick="driverReportMilestone('DEPART_TO_DROPOFF')" class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                    <i class="ph-bold ph-truck text-base"></i>
+                    <span>KÉO CONT RỜI KHO — VỀ BÃI HẠ</span>
+                </button>
+            `;
+        } else if (st === 'RETURNING_EMPTY') {
+            dNextBtns.innerHTML = `
+                <button type="button" onclick="driverReportMilestone('DROPOFF_COMPLETED')" class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                    <i class="ph-bold ph-anchor text-base"></i>
+                    <span>ĐÃ HẠ CONT — LẤY PHIẾU EIR</span>
+                </button>
+            `;
+        } else {
+            dNextBtns.innerHTML = `
+                <div class="py-1.5 px-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 font-bold text-xs flex items-center gap-1.5">
+                    <i class="ph-bold ph-check-fat text-emerald-600"></i>
+                    <span>Chuyến Xe Đã Hoàn Tất</span>
+                </div>
+            `;
+        }
+    }
 
     renderSimQuickMilestones(trip.status, !!trip.is_overnight_detention);
 
@@ -6910,6 +6989,32 @@ function closeSimRouteDetailsModal() {
     const modal = document.getElementById('modal-sim-route-details');
     if (modal) modal.classList.add('hidden-view');
 }
+
+function toggleDriverPhoneDrawer(forceState) {
+    const drawer = document.getElementById('driver-phone-drawer');
+    const btn = document.getElementById('btn-toggle-driver-phone');
+    const btnLabel = document.getElementById('btn-toggle-driver-phone-label');
+    if (!drawer) return;
+
+    let shouldOpen = forceState !== undefined ? forceState : drawer.classList.contains('hidden');
+    if (shouldOpen) {
+        drawer.classList.remove('hidden');
+        if (btn) {
+            btn.classList.add('bg-teal-700', 'ring-2', 'ring-teal-400');
+        }
+        if (btnLabel) btnLabel.innerText = 'Ẩn Giả Lập';
+        if (window.currentTripDetail) {
+            renderDriverMobileApp(window.currentTripDetail);
+        }
+    } else {
+        drawer.classList.add('hidden');
+        if (btn) {
+            btn.classList.remove('bg-teal-700', 'ring-2', 'ring-teal-400');
+        }
+        if (btnLabel) btnLabel.innerText = 'Màn Hình Tài Xế';
+    }
+}
+window.toggleDriverPhoneDrawer = toggleDriverPhoneDrawer;
 
 function toggleSimTimelineAccordion() {
     const body = document.getElementById('sim-timeline-body');

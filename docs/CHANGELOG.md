@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.9] - 2026-10-22 (Chuẩn Hóa Enterprise B2B ERP: Tái Cấu Trúc Bố Cục Điều Vận, Khử Màu Sci-Fi AI & Tích Hợp Ngăn Kéo Giả Lập Điện Thoại Thông Minh)
+
+### 1. Tích Hợp Giả Lập Điện Thoại Tài Xế Thành Ngăn Kéo Mở Rộng Thông Minh (Collapsible Right Side Drawer):
+- **Bối cảnh & Nghiệp vụ Thực Tế:**
+  * Điều độ viên văn phòng đôi khi cần hỗ trợ thao tác trực tiếp hoặc kiểm tra màn hình điện thoại của tài xế ngay trong lúc đang theo dõi dữ liệu chuyến xe mà không muốn mở trang mới (mất ngữ cảnh điều vận) hay bị một khung điện thoại chiếm cố định diện tích gây lệch giao diện.
+- **Giải pháp Kỹ Thuật Đạt Chuẩn UI/UX Quốc Tế:**
+  * **Cơ chế Ngăn Kéo Thông Minh (`#driver-phone-drawer`):**
+    - Thiết kế drawer bên phải (`w-[380px] xl:w-[410px] shrink-0 border-l border-slate-200 bg-slate-100 flex flex-col h-full overflow-hidden shadow-2xl transition-all duration-300`).
+    - Khi đóng: Vùng làm việc chính của điều độ tự động dãn rộng 100% full-width (`flex-1 min-w-0`), hiển thị trọn vẹn và cân xứng tất cả các bảng biểu (7 mốc kho, Bảng kê chi phí 8 mục, Bảng tiến độ 11 bước, P&L).
+    - Khi mở: Drawer trượt ra mượt mà bên phải màn hình với khung điện thoại iPhone mô phỏng chân thực, đầy đủ các nút bấm 1-chạm (Nhận lệnh, Chụp POD, Chỉ đường 3 điểm, Báo mốc, Kê chi phí, Báo sự cố, Gọi điều độ/nhận hàng).
+  * **Nút Điều Khiển Trên Header (`#btn-toggle-driver-phone`):**
+    - Tích hợp nút toggle `[Màn Hình Tài Xế]` / `[Ẩn Giả Lập]` trên header, đi kèm nút mở tab riêng độc lập nếu muốn.
+    - Hàm `window.toggleDriverPhoneDrawer(forceState)` điều khiển đóng mở và tự động đồng bộ dữ liệu thời gian thực của chuyến xe vào app di động.
+
+### 2. Tái Bố Cục Bảng Biểu & Khử Triệt Để Màu Sắc Hơi Hướng AI Candy/Sci-Fi:
+- **Tái cấu trúc 4 Hàng Dữ Liệu Nghiệp Vụ Chuẩn Mực:**
+  * **Hàng 1 (Tổng quan Thiết bị & EIR):** Thông tin xe, tài xế, cont, seal, booking, dock và lộ trình 3 điểm cân xứng với Quản lý hạn Free DEM/DET cảng & tình trạng vỏ EIR (bỏ viền neon chói, đưa về tone Slate/Teal trang nhã).
+  * **Hàng 2 (Tiến độ thời gian 7 Mốc Kho):** Trải rộng toàn màn hình với 7 ô mốc đồng bộ nền `bg-slate-50 border border-slate-200`, hiển thị giờ rõ nét chuẩn font số monospace, xóa bỏ hoàn toàn 7 màu pastel sặc sỡ (xanh, đỏ, tím, vàng...) gây rối mắt.
+  * **Hàng 3 (Bảng Kê Chi Phí Triền Võ 8 Mục & P&L):** Trải rộng 100% toàn màn hình, bảng 8 cột được dàn thoáng đãng, dễ kiểm tra đối chiếu hóa đơn điện tử và số tiền phát sinh kèm 3 card P&L (Doanh thu, Chi phí, Lợi nhuận gộp).
+  * **Hàng 4 (Tiến độ 11 Bước & Chứng Từ Gốc):** Lưới 2 cột chia tỉ lệ 7/5 giữa Bảng quy trình điều vận khép kín và Danh sách chứng từ gốc/hóa đơn điện tử.
+- **Thanh Điều Hành Bước Tiếp Theo (`#dispatcher-smart-action-bar`):**
+  * Xóa bỏ nền đen gradient sci-fi (`from-slate-900 via-slate-800 to-teal-950`) phong cách AI dark-mode.
+  * Chuyển thành thẻ Enterprise Clean B2B (`bg-white rounded-2xl border border-slate-200 border-l-4 border-l-teal-600 p-4 shadow-2xs`), chữ tối màu dễ đọc, cụm nút bấm điều hành màu sắc rõ nét (Teal đậm, Emerald, Amber, Rose tinh tế) tối ưu cho thao tác nhanh của Điều độ viên.
+- **Chuẩn Hóa 4 Thẻ KPI Phân Hệ Điều Vận (`view_dispatch.html`):**
+  * Loại bỏ viền dày 4px sặc sỡ kiểu template dashboard AI, đưa về card phẳng tối giản `bg-white border border-slate-200 shadow-2xs` với phân cấp số liệu lớn và icon semantic tinh tế.
+
+### 3. Sửa Lỗi Breadcrumb & Chữ Đè Trên Topbar:
+- Sửa tiêu đề trang chi tiết chuyến xe: Chuyển từ `Chi tiết chuyến | ${trip.id}` thành `Chi tiết chuyến ${trip.id}` để loại bỏ ký tự phân cách `|` bị lặp lại hai lần liên tiếp trên Topbar, tránh đè chữ lên nút Back và các nhãn điều hướng.
+
 ## [v4.0.8] - 2026-10-22 (Tối Ưu Bố Cục Toolbar Điều Vận & Bổ Sung Bộ Lọc Kỳ Nội Bộ Cho Kinh Doanh, Điều Vận, Hải Quan)
 
 ### 1. Di Chuyển Nút Thao Tác Xuống Toolbar Bảng Điều Vận (Theo Hình 1 & 2):
