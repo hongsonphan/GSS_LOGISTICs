@@ -8522,11 +8522,29 @@ async function loadEmployeesData() {
             const statsJson = await statsRes.json();
             const s = statsJson.stats || {};
             const el = id => document.getElementById(id);
-            if (el('hr-kpi-total')) el('hr-kpi-total').innerText = s.total || 0;
-            if (el('hr-kpi-drivers')) el('hr-kpi-drivers').innerText = s.drivers || 0;
-            if (el('hr-kpi-office')) el('hr-kpi-office').innerText = (s.dispatchers || 0) + (s.accountants || 0) + (s.sales || 0);
-            const warningTotal = (s.expiring_licenses_count || 0) + (s.expiring_contracts_count || 0);
-            if (el('hr-kpi-warning')) el('hr-kpi-warning').innerText = warningTotal;
+            const setTxt = (id, val) => { const elem = el(id); if (elem && val !== undefined) elem.innerText = val; };
+
+            setTxt('hr-kpi-total', s.total || 0);
+            setTxt('hr-card-total-line1', s.card_total?.line_1);
+            setTxt('hr-card-total-line2', s.card_total?.line_2);
+
+            setTxt('hr-kpi-drivers', s.drivers || 0);
+            setTxt('hr-card-drivers-line1', s.card_drivers?.line_1);
+            setTxt('hr-card-drivers-line2', s.card_drivers?.line_2);
+
+            const officeCount = s.card_office?.total !== undefined ? s.card_office.total : ((s.dispatchers || 0) + (s.accountants || 0) + (s.sales || 0));
+            setTxt('hr-kpi-office', officeCount);
+            setTxt('hr-card-office-line1', s.card_office?.line_1);
+            setTxt('hr-card-office-line2', s.card_office?.line_2);
+
+            const warningTotal = s.card_compliance?.total !== undefined ? s.card_compliance.total : ((s.expiring_licenses_count || 0) + (s.expiring_contracts_count || 0));
+            setTxt('hr-kpi-warning', warningTotal);
+            setTxt('hr-card-compliance-line1', s.card_compliance?.line_1);
+            setTxt('hr-card-compliance-line2', s.card_compliance?.line_2);
+
+            setTxt('hr-kpi-payroll', s.card_payroll?.total || '-- đ');
+            setTxt('hr-card-payroll-line1', s.card_payroll?.line_1);
+            setTxt('hr-card-payroll-line2', s.card_payroll?.line_2);
         }
 
         if (empRes.ok) {
@@ -11339,6 +11357,20 @@ async function loadFleetData() {
         if (statRegEl) statRegEl.innerText = data.reg_warning_count || 0;
         const statMaintEl = document.getElementById('fleet-stat-maint');
         if (statMaintEl) statMaintEl.innerText = data.maint_warning_count || 0;
+
+        // Cập nhật 2 dòng số liệu nghiệp vụ 5 Thẻ Đội Xe
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el && val) el.innerText = val; };
+        setTxt('fleet-stat-availability', data.card_availability?.rate || '100%');
+        setTxt('fleet-card-tractors-line1', data.card_tractors?.line_1);
+        setTxt('fleet-card-tractors-line2', data.card_tractors?.line_2);
+        setTxt('fleet-card-trailers-line1', data.card_trailers?.line_1);
+        setTxt('fleet-card-trailers-line2', data.card_trailers?.line_2);
+        setTxt('fleet-card-avail-line1', data.card_availability?.line_1);
+        setTxt('fleet-card-avail-line2', data.card_availability?.line_2);
+        setTxt('fleet-card-reg-line1', data.card_reg?.line_1);
+        setTxt('fleet-card-reg-line2', data.card_reg?.line_2);
+        setTxt('fleet-card-maint-line1', data.card_maint?.line_1);
+        setTxt('fleet-card-maint-line2', data.card_maint?.line_2);
 
         const badgeTractorsEl = document.getElementById('fleet-badge-tractors-count');
         if (badgeTractorsEl) badgeTractorsEl.innerText = data.total_tractors || 0;
@@ -29247,17 +29279,29 @@ async function fetchCustomsDeclarations() {
 }
 
 function renderCustomsKPIs(stats) {
-    const totalEl = document.getElementById('customs-kpi-total');
-    const greenEl = document.getElementById('customs-kpi-green');
-    const yellowEl = document.getElementById('customs-kpi-yellow');
-    const redEl = document.getElementById('customs-kpi-red');
-    const rateEl = document.getElementById('customs-kpi-rate');
+    if (!stats) return;
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.innerText = val; };
 
-    if (totalEl) totalEl.innerText = stats.total || 0;
-    if (greenEl) greenEl.innerText = stats.green_count || 0;
-    if (yellowEl) yellowEl.innerText = stats.yellow_count || 0;
-    if (redEl) redEl.innerText = stats.red_count || 0;
-    if (rateEl) rateEl.innerText = `Tỷ lệ thông quan: ${stats.clearance_rate || 0}%`;
+    setTxt('customs-kpi-total', stats.total || 0);
+    setTxt('customs-card-total-line1', stats.card_total?.line_1);
+    setTxt('customs-card-total-line2', stats.card_total?.line_2);
+
+    setTxt('customs-kpi-green', stats.green_count || 0);
+    setTxt('customs-card-green-line1', stats.card_green?.line_1);
+    setTxt('customs-card-green-line2', stats.card_green?.line_2);
+
+    setTxt('customs-kpi-yellow', stats.yellow_count || 0);
+    setTxt('customs-card-yellow-line1', stats.card_yellow?.line_1);
+    setTxt('customs-card-yellow-line2', stats.card_yellow?.line_2);
+
+    setTxt('customs-kpi-red', stats.red_count || 0);
+    setTxt('customs-card-red-line1', stats.card_red?.line_1);
+    setTxt('customs-card-red-line2', stats.card_red?.line_2);
+
+    setTxt('customs-kpi-rate-val', `${stats.clearance_rate || 0}%`);
+    setTxt('customs-kpi-rate', `Tỷ lệ thông quan: ${stats.clearance_rate || 0}%`);
+    setTxt('customs-card-clearance-line1', stats.card_clearance?.line_1);
+    setTxt('customs-card-clearance-line2', stats.card_clearance?.line_2);
 }
 
 function renderCustomsTable(list) {

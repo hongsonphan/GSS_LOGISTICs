@@ -256,6 +256,48 @@ class EmployeeStatsAPIView(APIView):
         roles = [{'value': r[0], 'label': r[1]} for r in EmployeeRole.choices]
         contract_types = [{'value': ct[0], 'label': ct[1]} for ct in ContractType.choices]
 
+        # Tính toán chi tiết 5 Thẻ Vận Hành Nhân Sự & Tiền Lương Thực Tế
+        probation_count = LaborContract.objects.filter(contract_type='PROBATION', status=ContractStatus.ACTIVE).count()
+        drivers_on_trip = DispatchTrip.objects.filter(
+            status__in=[TripStatus.ACCEPTED, TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.RETURNING_EMPTY],
+            is_deleted=False
+        ).values('driver').distinct().count()
+        drivers_standby = max(0, drivers_count - drivers_on_trip)
+        office_total = dispatchers_count + accountants_count + sales_count + mechanics_count + directors_count
+
+        exp_lic_count = expiring_licenses.count()
+        exp_cont_count = expiring_contracts.count()
+        total_compliance_warning = exp_lic_count + exp_cont_count
+
+        total_base_sal = sum(int(e.base_salary or 0) for e in Employee.objects.filter(is_active=True))
+        total_advances = sum(int(d.current_advance or 0) for d in Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True))
+
+        card_total = {
+            'total': total_employees,
+            'line_1': f"CHÍNH THỨC: {active_employees} · THỬ VIỆC: {probation_count}",
+            'line_2': f"HOẠT ĐỘNG: {active_employees} · NGHỈ VIỆC: {inactive_count}"
+        }
+        card_drivers = {
+            'total': drivers_count,
+            'line_1': f"TRÊN TUYẾN: {drivers_on_trip} Bác tài",
+            'line_2': f"SẴN SÀNG: {drivers_standby} Bác tài"
+        }
+        card_office = {
+            'total': office_total,
+            'line_1': f"ĐIỀU VẬN: {dispatchers_count} · KINH DOANH: {sales_count}",
+            'line_2': f"KẾ TOÁN: {accountants_count} · BẢO TRÌ/QL: {mechanics_count + directors_count}"
+        }
+        card_compliance = {
+            'total': total_compliance_warning,
+            'line_1': f"GPLX SẮP HẠN: {exp_lic_count} Tài xế",
+            'line_2': f"HĐLĐ ĐẾN HẠN: {exp_cont_count} Hợp đồng"
+        }
+        card_payroll = {
+            'total': f"{total_base_sal:,} đ".replace(',', '.'),
+            'line_1': f"LƯƠNG CƠ BẢN: {total_base_sal:,} đ".replace(',', '.'),
+            'line_2': f"TẠM ỨNG: {total_advances:,} đ".replace(',', '.')
+        }
+
         return Response({
             'stats': {
                 'total': total_employees,
@@ -267,8 +309,14 @@ class EmployeeStatsAPIView(APIView):
                 'sales': sales_count,
                 'mechanics': mechanics_count,
                 'directors': directors_count,
-                'expiring_licenses_count': expiring_licenses.count(),
-                'expiring_contracts_count': expiring_contracts.count(),
+                'expiring_licenses_count': exp_lic_count,
+                'expiring_contracts_count': exp_cont_count,
+                # Cấu trúc 5 Thẻ Nhân Sự Chuẩn
+                'card_total': card_total,
+                'card_drivers': card_drivers,
+                'card_office': card_office,
+                'card_compliance': card_compliance,
+                'card_payroll': card_payroll,
             },
             'expiring_licenses': list(expiring_licenses),
             'expiring_contracts': list(expiring_contracts),

@@ -2,62 +2,133 @@
 <div id="view-hai-quan" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
 
 
-    <!-- 4 KPI Cards (Thiết kế đồng bộ chuẩn thẻ như Hình 2) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-5">
-        <!-- Tổng Tờ Khai -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Tổng Số Tờ Khai</span>
-                <span class="text-xs font-black text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <i class="ph-bold ph-files"></i> VNACCS
-                </span>
+    <!-- BỘ 5 THẺ THÔNG QUAN HẢI QUAN VNACCS/VCIS (CUSTOMS PIPELINE) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-5">
+        <!-- Thẻ 1: Tổng Số Tờ Khai (Teal) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">TỔNG TỜ KHAI</span>
+                    <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-files"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="customs-kpi-total">0</span> <span class="text-xs font-bold text-slate-400">tờ khai</span>
+                </p>
             </div>
-            <p id="customs-kpi-total" class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1">0</p>
-            <p id="customs-kpi-rate" class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
-                <i class="ph-bold ph-check-circle text-teal-600 text-xs"></i> Tỷ lệ thông quan: 0%
-            </p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">LOẠI HÌNH:</span>
+                    <strong class="text-teal-700 font-black font-heading text-[11px]" id="customs-card-total-line1">-- XK · -- NK</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">TIẾN ĐỘ:</span>
+                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="customs-card-total-line2">-- Thông quan · -- Chờ</strong>
+                </div>
+            </div>
         </div>
 
-        <!-- Luồng Xanh (1) -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-500 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Luồng Xanh (Tự Động)</span>
-                <span class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <i class="ph-bold ph-check"></i> Luồng 1
-                </span>
+        <!-- Thẻ 2: Luồng Xanh Tự Động (Emerald) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-500 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">LUỒNG XANH (1)</span>
+                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-check"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="customs-kpi-green">0</span> <span class="text-xs font-bold text-emerald-400">tờ</span>
+                </p>
             </div>
-            <p id="customs-kpi-green" class="text-3xl font-black text-emerald-600 tabular-nums font-heading tracking-tight mt-1">0</p>
-            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
-                <i class="ph-bold ph-check-circle text-emerald-600 text-xs"></i> Thông quan tức thì
-            </p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">THÔNG QUAN:</span>
+                    <strong class="text-emerald-700 font-black font-heading text-[11px]" id="customs-card-green-line1">Tự động thông quan</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">TỶ LỆ LUỒNG:</span>
+                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="customs-card-green-line2">-- %</strong>
+                </div>
+            </div>
         </div>
 
-        <!-- Luồng Vàng (2) -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Luồng Vàng (Xét Hồ Sơ)</span>
-                <span class="text-xs font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <i class="ph-bold ph-file-text"></i> Luồng 2
-                </span>
+        <!-- Thẻ 3: Luồng Vàng Xét Hồ Sơ (Amber) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">LUỒNG VÀNG (2)</span>
+                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-file-text"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-amber-600 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="customs-kpi-yellow">0</span> <span class="text-xs font-bold text-amber-400">tờ</span>
+                </p>
             </div>
-            <p id="customs-kpi-yellow" class="text-3xl font-black text-amber-600 tabular-nums font-heading tracking-tight mt-1">0</p>
-            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
-                <i class="ph-bold ph-warning-circle text-amber-600 text-xs"></i> Kiểm tra C/O, HĐ, B/L
-            </p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">XÉT HỒ SƠ:</span>
+                    <strong class="text-amber-700 font-black font-heading text-[11px]" id="customs-card-yellow-line1">-- Tờ đang xét</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">YÊU CẦU:</span>
+                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="customs-card-yellow-line2">Check C/O, HĐ, B/L</strong>
+                </div>
+            </div>
         </div>
 
-        <!-- Luồng Đỏ (3) -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider font-heading">Luồng Đỏ (Kiểm Hóa)</span>
-                <span class="text-xs font-black text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <i class="ph-bold ph-magnifying-glass"></i> Luồng 3
-                </span>
+        <!-- Thẻ 4: Luồng Đỏ Kiểm Hóa (Rose) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">LUỒNG ĐỎ (3)</span>
+                    <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-magnifying-glass"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="customs-kpi-red">0</span> <span class="text-xs font-bold text-rose-400">tờ</span>
+                </p>
             </div>
-            <p id="customs-kpi-red" class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1">0</p>
-            <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1">
-                <i class="ph-bold ph-siren text-rose-600 text-xs"></i> Soi chiếu / Mở cont kiểm tra
-            </p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">KIỂM HÓA:</span>
+                    <strong class="text-rose-700 font-black font-heading text-[11px]" id="customs-card-red-line1">Soi chiếu / Mở cont</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">XỬ LÝ:</span>
+                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="customs-card-red-line2">Hiện trường cảng</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thẻ 5: Tỷ Lệ Thông Quan & Thuế XNK (Indigo) -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">TỶ LỆ THÔNG QUAN</span>
+                    <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                        <i class="ph-bold ph-chart-donut"></i>
+                    </span>
+                </div>
+                <p class="text-2xl 2xl:text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="customs-kpi-rate-val">0%</span>
+                </p>
+                <!-- Tương thích ngược -->
+                <span id="customs-kpi-rate" class="hidden">Tỷ lệ: 0%</span>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">ĐÃ THÔNG QUAN:</span>
+                    <strong class="text-indigo-700 font-black font-heading text-[11px]" id="customs-card-clearance-line1">-- Tờ khai</strong>
+                </div>
+                <div class="flex items-center justify-between font-semibold">
+                    <span class="text-slate-500 uppercase font-bold text-[10.5px]">THUẾ TREO:</span>
+                    <strong class="text-amber-600 font-black font-heading text-[11px]" id="customs-card-clearance-line2">-- đ</strong>
+                </div>
+            </div>
         </div>
     </div>
 

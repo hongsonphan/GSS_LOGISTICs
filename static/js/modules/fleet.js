@@ -590,6 +590,20 @@ async function loadFleetData() {
         const statMaintEl = document.getElementById('fleet-stat-maint');
         if (statMaintEl) statMaintEl.innerText = data.maint_warning_count || 0;
 
+        // Cập nhật 2 dòng số liệu nghiệp vụ 5 Thẻ Đội Xe
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el && val) el.innerText = val; };
+        setTxt('fleet-stat-availability', data.card_availability?.rate || '100%');
+        setTxt('fleet-card-tractors-line1', data.card_tractors?.line_1);
+        setTxt('fleet-card-tractors-line2', data.card_tractors?.line_2);
+        setTxt('fleet-card-trailers-line1', data.card_trailers?.line_1);
+        setTxt('fleet-card-trailers-line2', data.card_trailers?.line_2);
+        setTxt('fleet-card-avail-line1', data.card_availability?.line_1);
+        setTxt('fleet-card-avail-line2', data.card_availability?.line_2);
+        setTxt('fleet-card-reg-line1', data.card_reg?.line_1);
+        setTxt('fleet-card-reg-line2', data.card_reg?.line_2);
+        setTxt('fleet-card-maint-line1', data.card_maint?.line_1);
+        setTxt('fleet-card-maint-line2', data.card_maint?.line_2);
+
         const badgeTractorsEl = document.getElementById('fleet-badge-tractors-count');
         if (badgeTractorsEl) badgeTractorsEl.innerText = data.total_tractors || 0;
         const badgeTrailersEl = document.getElementById('fleet-badge-trailers-count');

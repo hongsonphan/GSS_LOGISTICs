@@ -2,6 +2,38 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.0] - 2026-10-22 (Chuẩn Hóa Toàn Diện Bộ 5 Thẻ Vận Hành Cho Phân Hệ Đội Xe, Nhân Sự & Hải Quan)
+
+### 1. Chuẩn Hóa Phân Hệ Đội Xe & Kỹ Thuật (iew_fleet.html, pi_views.py, pp.js & leet.js):
+- **Bộ 5 Thẻ Vận Hành Kỹ Thuật (Fleet Pipeline & Readiness):**
+  1. **ĐẦU KÉO / TẢI (Teal):** Phân tách số lượng Xe Nhà vs Thầu Phụ, tình trạng Đang hoạt động vs Nằm bãi.
+  2. **RƠ-MOÓC CONT (Indigo):** Phân tách số lượng Moóc đang gán kéo vs Nằm bãi, dải tải trọng thiết kế.
+  3. **SẴN SÀNG NHẬN ĐƠN (Emerald):** Tỷ lệ phương tiện sẵn sàng điều độ (%), số xe trên đường vs xe chờ việc.
+  4. **CẢNH BÁO HẠN KIỂM (Rose):** Phân tách phương tiện Quá hạn đăng kiểm (đỏ) vs Sắp đến hạn trong 30 ngày.
+  5. **BẢO DƯỠNG & BẢO HIỂM (Amber):** Số phương tiện đến hạn bảo trì định kỳ / thay dầu vs Bảo hiểm TNDS sắp hết hạn.
+
+### 2. Chuẩn Hóa Phân Hệ Nhân Sự & Tiền Lương (iew_personnel.html, pps/personnel/api_views.py & pp.js):
+- **Bộ 5 Thẻ Quản Trị Nhân Lực & Quỹ Lương (HRM Pipeline):**
+  1. **TỔNG NHÂN SỰ (Indigo):** Phân tách HĐLĐ Chính thức vs Thử việc, nhân sự Đang hoạt động vs Đã nghỉ việc.
+  2. **ĐỘI TÀI XẾ (Teal):** Phân tách Bác tài đang trên tuyến vận hành vs Bác tài sẵn sàng nhận chuyến/nghỉ ca.
+  3. **VĂN PHÒNG & ĐIỀU ĐỘ (Blue):** Phân bổ Điều vận, Kinh doanh (Sales), Kế toán và Ban Quản lý.
+  4. **CẢNH BÁO HẠN 30 NGÀY (Rose):** Cảnh báo hạn Giấy phép lái xe (GPLX) tài xế và Hạn hợp đồng lao động.
+  5. **LƯƠNG & TẠM ỨNG (Emerald):** Tổng quỹ lương cơ bản định kỳ và Tổng công nợ tạm ứng tài xế trong tháng.
+
+### 3. Chuẩn Hóa Phân Hệ Hải Quan & Thông Quan Điện Tử (iew_customs.html, pps/customs/api_views.py & pp.js):
+- **Bộ 5 Thẻ Thông Quan VNACCS/VCIS (Customs Pipeline):**
+  1. **TỔNG TỜ KHAI (Teal):** Phân tách Xuất khẩu vs Nhập khẩu, số tờ Đã thông quan vs Chờ xử lý.
+  2. **LUỒNG XANH (Emerald):** Số tờ tự động thông quan tức thì và tỷ lệ phân luồng xanh.
+  3. **LUỒNG VÀNG (Amber):** Số tờ đang xét duyệt chứng từ hải quan (C/O, Hóa đơn thương mại, B/L).
+  4. **LUỒNG ĐỎ (Rose):** Số tờ phải kiểm hóa thực tế (soi chiếu container hoặc mở cont kiểm tra).
+  5. **TỶ LỆ THÔNG QUAN (Indigo):** Tỷ lệ thông quan tổng thể (%), số tờ đã thông quan và tiền thuế XNK đang treo.
+
+### 4. Kiểm Thử Hệ Thống (Zero-Regression):**
+- Toàn bộ cú pháp JavaScript: 100% PASS không có lỗi.
+- 147/147 Unit Tests của hệ thống vượt qua thành công.
+
+---
+
 ## [v4.2.2] - 2026-10-22 (Chuẩn Hóa Bộ 5 Thẻ Vận Hành Chiến Lược Trang Điều Vận - TMS Dispatch Pipeline)
 
 ### 1. Nâng Cấp Giao Diện & Kiến Trúc Bộ 5 Thẻ Vận Hành Trang Điều Vận (iew_dispatch.html & pp.js):

@@ -118,6 +118,38 @@ class CustomsDeclarationListCreateAPIView(APIView):
                 'created_at': d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else ''
             })
 
+        export_count = all_qs.filter(direction=CustomsDirection.EXPORT).count()
+        import_count = all_qs.filter(direction=CustomsDirection.IMPORT).count()
+        pending_clearance = max(0, total_count - cleared_count)
+        clearance_rate = round(cleared_count / total_count * 100, 1) if total_count > 0 else 0
+        green_rate = round(green_count / total_count * 100, 1) if total_count > 0 else 0
+
+        card_total = {
+            'total': total_count,
+            'line_1': f"XUẤT KHẨU: {export_count} · NHẬP KHẨU: {import_count}",
+            'line_2': f"THÔNG QUAN: {cleared_count} · CHỜ XỬ LÝ: {pending_clearance}"
+        }
+        card_green = {
+            'total': green_count,
+            'line_1': f"TỰ ĐỘNG THÔNG QUAN: {green_count} Tờ khai",
+            'line_2': f"TỶ LỆ PHÂN LUỒNG: {green_rate}%"
+        }
+        card_yellow = {
+            'total': yellow_count,
+            'line_1': f"XÉT HỒ SƠ: {yellow_count} Tờ khai",
+            'line_2': f"CẦN CHECK: C/O, Invoice, B/L"
+        }
+        card_red = {
+            'total': red_count,
+            'line_1': f"KIỂM HÓA / SOI: {red_count} Tờ khai",
+            'line_2': f"CẦN MỞ CONT KIỂM THỰC TẾ"
+        }
+        card_clearance = {
+            'total': f"{clearance_rate}%",
+            'line_1': f"ĐÃ THÔNG QUAN: {cleared_count} Tờ khai",
+            'line_2': f"THUẾ TREO: {unpaid_tax_qs.count()} Tờ ({int(unpaid_tax_total):,} đ)".replace(',', '.')
+        }
+
         return Response({
             'stats': {
                 'total': total_count,
@@ -125,9 +157,15 @@ class CustomsDeclarationListCreateAPIView(APIView):
                 'yellow_count': yellow_count,
                 'red_count': red_count,
                 'cleared_count': cleared_count,
-                'clearance_rate': round(cleared_count / total_count * 100, 1) if total_count > 0 else 0,
+                'clearance_rate': clearance_rate,
                 'unpaid_tax_count': unpaid_tax_qs.count(),
                 'unpaid_tax_total': float(unpaid_tax_total),
+                # Chuẩn 5 Thẻ Hải Quan
+                'card_total': card_total,
+                'card_green': card_green,
+                'card_yellow': card_yellow,
+                'card_red': card_red,
+                'card_clearance': card_clearance,
             },
             'results': declarations_data,
             'total': len(declarations_data)

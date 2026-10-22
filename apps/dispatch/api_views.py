@@ -4440,14 +4440,65 @@ class FleetAPIView(APIView):
                 'status_raw': tr.status
             })
 
-        total_reg_warning = sum(1 for v in veh_list if v['is_reg_warning'] or v['is_reg_expired']) + sum(1 for t in trailer_list if t['is_reg_warning'] or t['is_reg_expired'])
+        total_tractors = Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR, is_deleted=False).count()
+        owned_tractors = Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR, ownership_type=VehicleOwnership.OWNED, is_deleted=False).count()
+        subcontractor_tractors = max(0, total_tractors - owned_tractors)
+        active_tractors = Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR, status=VehicleStatus.ACTIVE, is_deleted=False).count()
+        idle_tractors = Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR, status=VehicleStatus.IDLE, is_deleted=False).count()
+
+        total_trailers = len(trailer_list)
+        active_trailers = sum(1 for t in trailer_list if t['status_raw'] == 'ACTIVE')
+        idle_trailers = sum(1 for t in trailer_list if t['status_raw'] == 'IDLE')
+
+        total_fleet = total_tractors + total_trailers
+        ready_fleet = active_tractors + idle_tractors + active_trailers + idle_trailers
+        availability_rate = round(ready_fleet / total_fleet * 100, 1) if total_fleet > 0 else 100.0
+
+        reg_expired_count = sum(1 for v in veh_list if v['is_reg_expired']) + sum(1 for t in trailer_list if t['is_reg_expired'])
+        reg_warning_count = sum(1 for v in veh_list if v['is_reg_warning']) + sum(1 for t in trailer_list if t['is_reg_warning'])
+        total_reg_warning = reg_expired_count + reg_warning_count
+
+        maint_warning_count = sum(1 for v in veh_list if v['is_maint_warning'])
+        ins_warning_count = sum(1 for v in veh_list if v['is_ins_warning'] or v['is_ins_expired'])
+
+        # Cấu trúc Bộ 5 Thẻ Vận Hành Kỹ Thuật Đội Xe
+        card_tractors = {
+            'total': total_tractors,
+            'line_1': f"XE NHÀ: {owned_tractors} · THẦU PHỤ: {subcontractor_tractors}",
+            'line_2': f"HOẠT ĐỘNG: {active_tractors} · NẰM BÃI: {idle_tractors}"
+        }
+        card_trailers = {
+            'total': total_trailers,
+            'line_1': f"ĐANG KÉO: {active_trailers} · NẰM BÃI: {idle_trailers}",
+            'line_2': f"TẢI TRỌNG TB: 30 - 32 Tấn"
+        }
+        card_availability = {
+            'rate': f"{availability_rate}%",
+            'line_1': f"SẴN SÀNG ĐIỀU ĐỘ: {active_tractors + idle_tractors} Xe",
+            'line_2': f"ĐANG LĂN BÁNH: {active_tractors} Xe"
+        }
+        card_reg = {
+            'total': total_reg_warning,
+            'line_1': f"QUÁ HẠN: {reg_expired_count} Phương tiện",
+            'line_2': f"SẮP HẾT HẠN: {reg_warning_count} Phương tiện"
+        }
+        card_maint = {
+            'total': maint_warning_count,
+            'line_1': f"ĐẾN HẠN BẢO TRÌ: {maint_warning_count} Xe",
+            'line_2': f"BẢO HIỂM SẮP HẠN: {ins_warning_count} Xe"
+        }
 
         return Response({
-            'total_tractors': Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR, is_deleted=False).count(),
-            'total_trailers': len(trailer_list),
+            'total_tractors': total_tractors,
+            'total_trailers': total_trailers,
             'reg_warning_count': total_reg_warning,
-            'ins_warning_count': sum(1 for v in veh_list if v['is_ins_warning'] or v['is_ins_expired']),
-            'maint_warning_count': sum(1 for v in veh_list if v['is_maint_warning']),
+            'ins_warning_count': ins_warning_count,
+            'maint_warning_count': maint_warning_count,
+            'card_tractors': card_tractors,
+            'card_trailers': card_trailers,
+            'card_availability': card_availability,
+            'card_reg': card_reg,
+            'card_maint': card_maint,
             'vehicles': veh_list,
             'trailers': trailer_list
         })
