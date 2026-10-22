@@ -6,6 +6,31 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.3] - 2026-10-22 (Tích Hợp Toàn Diện Trang Chi Tiết Bản Tin Nằm Trên Base & Loại Bỏ Mở Tab Mới)
+
+### 1. Tích Hợp Chi Tiết Bản Tin Trực Tiếp Vào Khung Ứng Dụng Chuẩn (`templates/news_detail.html` kế thừa `base.html`):
+- **Kiến trúc Base Thống Nhất:**
+  * Chuyển đổi `news_detail.html` từ trang standalone độc lập sang kế thừa trực tiếp từ `templates/base.html` (`{% extends 'base.html' %}`).
+  * Duy trì Sidebar điều hướng bên trái và Topbar chuẩn của hệ thống BIM Logistics (có logo, breadcrumbs, nút Trợ giúp, Chuông thông báo, Hồ sơ tài khoản).
+  * Subheader trong nội dung tích hợp nút "Quay lại Bản tin" mượt mà kèm Breadcrumbs: `Dashboard > Bản tin & Thông báo > [Tên bài viết]`.
+  * Topbar fullpage mode (`setTopbarFullpageMode`) kích hoạt tự động với prefix `Bản tin & Thông báo` và tiêu đề `Chi tiết văn bản`.
+  * Mục `ban-tin` trên Sidebar tự động được làm nổi bật (active) với màu xanh ngọc đồng bộ.
+  * Trong `switchTab`: Bổ sung cơ chế điều hướng URL an toàn (`window.location.href = routePath`) khi người dùng click vào bất kỳ menu nào trên Sidebar từ trang chi tiết bản tin.
+
+### 2. Loại Bỏ Triệt Để Mở Tab Mới (`_blank`), Tăng Trải Nghiệm Chuyên Nghiệp:
+- **Widget Dashboard (`static/js/app.js`):**
+  * Chuyển đổi sự kiện click vào tin tức từ `window.open(..., '_blank')` sang điều hướng trực tiếp trong cùng tab `window.location.href = '/news/' + hashid + '/'`.
+- **Phân Hệ Bản Tin Công Ty (`static/js/collaboration.js` & `templates/views/view_news.html`):**
+  * Hàm `openNewsDetailPage`: Chuyển sang `window.location.href = '/news/' + target + '/'`.
+  * Banner thông báo khẩn cấp / đã ghim: Đổi nhãn `Mở xem trang mới` kèm icon `ph-arrow-square-out` thành `Xem chi tiết` kèm icon `ph-arrow-right`.
+  * Modal chi tiết bản tin (`modal-news-detail`): Cập nhật nút xem toàn văn sang icon `ph-book-open`, tooltip chuẩn chỉ không gây hiểu nhầm về tab mới.
+
+### 3. Bảo Toàn 100% Tính Năng Của Bộ Xem Trước Tài Liệu Trực Tiếp (Live Document Previewer):
+- Giữ nguyên toàn bộ 5 chế độ xem trước: PDF iframe native, Word qua Mammoth.js, Excel bảng tính tương tác qua SheetJS, Trình xem ảnh và Fallback tải về.
+- Giữ nguyên hệ thống thảo luận/bình luận nội bộ và sao chép liên kết HashID bảo mật.
+
+---
+
 ## [v4.1.2] - 2026-10-22 (Chuẩn Hóa Thẻ KPI Điều Vận Đồng Bộ & Nâng Cấp Nút Chọn Kỳ Chuẩn SaaS)
 
 ### 1. Tái Cấu Trúc Toàn Diện Thẻ KPI Điều Vận & Hải Quan (Đồng bộ theo Hình 2):

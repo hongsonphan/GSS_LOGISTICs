@@ -580,9 +580,36 @@ def news_detail_page_view(request, post_identifier):
     except Exception:
         company = None
 
+    import json
+    try:
+        company_profile_data = {
+            'id': company.id,
+            'company_name': company.company_name,
+            'short_name': company.short_name,
+            'tax_code': company.tax_code,
+            'phone': company.phone,
+            'email': company.email,
+            'website': company.website,
+            'address': company.address,
+            'representative_name': company.representative_name,
+            'representative_role': company.representative_role,
+            'bank_account_number': company.bank_account_number,
+            'bank_name': company.bank_name,
+            'bank_branch': company.bank_branch,
+            'operating_license': company.operating_license,
+            'default_vat_rate': float(company.default_vat_rate) if company.default_vat_rate else 8.0,
+            'fuel_reference_price': float(company.fuel_reference_price) if company.fuel_reference_price else 21000.0,
+            'logo_url': company.logo_url or '/static/images/trienvo_logo.png',
+        } if company else {}
+    except Exception:
+        company_profile_data = {}
+    company_profile_json = json.dumps(company_profile_data, ensure_ascii=False)
+
     context = {
         'post': post,
         'company': company,
+        'current_employee': employee,
+        'company_profile_json': company_profile_json,
         'author_name': author_name,
         'author_role': author_role,
         'author_dept': author_dept,

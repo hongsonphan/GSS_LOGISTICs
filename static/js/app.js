@@ -1559,7 +1559,7 @@ function renderDashboardNews(announcements) {
         const urgentBadge = p.is_urgent ? `<span class="inline-flex items-center text-[10px] font-black text-rose-700 bg-rose-100/80 px-1.5 py-0.2 rounded border border-rose-200 mr-1"><i class="ph-bold ph-warning-circle text-[10px] mr-0.5"></i>Khẩn</span>` : '';
         
         html += `
-        <div onclick="window.open('/news/' + ('${p.hashid || p.id}') + '/', '_blank');" title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)"
+        <div onclick="window.location.href = '/news/' + ('${p.hashid || p.id}') + '/';" title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)"
             class="p-2.5 rounded-lg border ${p.is_pinned ? 'border-amber-300 ring-1 ring-amber-200/60 bg-amber-50/25' : 'border-slate-100 hover:border-teal-300 hover:bg-teal-50/30'} transition-all cursor-pointer group flex flex-col justify-between space-y-1">
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center space-x-1.5 flex-wrap">
@@ -14960,12 +14960,16 @@ function switchTab(tabId, updateHistory = true) {
     if (soaDetailView) soaDetailView.classList.add('hidden-view');
 
     // Chuyển đổi hiển thị view
-    document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
     const targetView = document.getElementById(`view-${tabId}`);
-    if (targetView) {
-        targetView.classList.remove('hidden-view');
-        targetView.scrollTop = 0;
+    if (!targetView) {
+        // Nếu trang hiện tại là trang đơn (như /news/<hashid>/), điều hướng sang URL tương ứng
+        const routePath = TAB_ROUTE_MAP[tabId] || '/';
+        window.location.href = routePath;
+        return;
     }
+    document.querySelectorAll('.view').forEach(view => view.classList.add('hidden-view'));
+    targetView.classList.remove('hidden-view');
+    targetView.scrollTop = 0;
 
     // Cập nhật Tiêu đề Phân hệ trên Topbar
     const topbarTitleEl = document.getElementById('topbar-page-title');
