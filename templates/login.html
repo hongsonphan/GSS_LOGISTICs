@@ -22,58 +22,30 @@
     @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
     body {
-      font-family: "Inter", sans-serif;
-    }
-
-    /* Subtle animated gradient background (BIM Teal Theme) */
-    .login-bg {
-      background: linear-gradient(135deg, #e0f2f1 0%, #f0fdf4 25%, #ecfdf5 50%, #e0f7f5 75%, #d1fae5 100%);
-      background-size: 400% 400%;
-      animation: gradientShift 15s ease infinite;
-    }
-
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* Card entrance animation */
-    .login-card {
-      animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      opacity: 0;
-      transform: translateY(20px);
-    }
-
-    @keyframes cardEntrance {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f1f5f9;
     }
 
     /* Focus ring styling */
     .input-field:focus {
-      border-color: #0d9488;
-      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+      border-color: #0f766e;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
     }
 
-    /* Button hover glow */
+    /* Button styling */
     .login-btn {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s ease-in-out;
     }
     .login-btn:hover {
-      box-shadow: 0 8px 25px -5px rgba(13, 118, 113, 0.4);
-      transform: translateY(-1px);
+      background-color: #115e59;
     }
     .login-btn:active {
-      transform: translateY(0) scale(0.98);
-      box-shadow: 0 4px 12px -2px rgba(13, 118, 113, 0.3);
+      transform: scale(0.99);
     }
 
     /* Error shake animation */
     .shake {
-      animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
     }
     @keyframes shake {
       10%, 90% { transform: translate3d(-1px, 0, 0); }
@@ -81,26 +53,13 @@
       30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
       40%, 60% { transform: translate3d(3px, 0, 0); }
     }
-
-    /* Decorative shapes */
-    .deco-circle {
-      position: absolute;
-      border-radius: 50%;
-      opacity: 0.12;
-      pointer-events: none;
-    }
   </style>
 </head>
 
-<body class="login-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden selection:bg-teal-100 selection:text-teal-900">
-
-  <!-- Decorative Background Elements -->
-  <div class="deco-circle w-[520px] h-[520px] bg-teal-400 -top-40 -right-40 fixed blur-2xl"></div>
-  <div class="deco-circle w-[380px] h-[380px] bg-teal-500 -bottom-32 -left-32 fixed blur-2xl"></div>
-  <div class="deco-circle w-[220px] h-[220px] bg-emerald-400 top-1/3 -left-20 fixed blur-xl"></div>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4 relative selection:bg-teal-100 selection:text-teal-900">
 
   <!-- Login Card Container -->
-  <div class="login-card max-w-[440px] w-full bg-white/95 backdrop-blur-sm rounded-[24px] shadow-[0_20px_60px_-15px_rgba(13,148,136,0.15)] border border-teal-100 relative z-10">
+  <div class="max-w-[440px] w-full bg-white rounded-2xl shadow-xl border border-slate-200/90 relative z-10 overflow-hidden">
     <div class="px-8 sm:px-10 pt-8 pb-6">
 
       <!-- Logo & Brand Header -->
@@ -214,7 +173,7 @@
           <button
             id="login-submit-btn"
             type="submit"
-            class="login-btn w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-[15px] font-bold text-white bg-gradient-to-r from-[#0d7671] to-[#0f766e] shadow-lg shadow-teal-700/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 cursor-pointer"
+            class="login-btn w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-[15px] font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 cursor-pointer"
           >
             <span id="btn-text">Đăng nhập vào Hệ thống</span>
             <i id="btn-spinner" class="fa-solid fa-spinner fa-spin text-sm hidden"></i>

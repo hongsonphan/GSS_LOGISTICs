@@ -14679,34 +14679,8 @@ function switchTab(tabId, updateHistory = true) {
         topbarTitleEl.innerText = TAB_NAME_MAP[tabId] || 'Dashboard Tổng quan';
     }
 
-    // Cụm Bộ Chọn Kỳ Toàn Cục trên Topbar: Ẩn tại màn hình Quyết Toán (đã có bộ lọc từ ngày - đến ngày chuyên biệt)
-    const dashboardActionsEl = document.getElementById('topbar-dashboard-actions');
-    if (dashboardActionsEl) {
-        if (tabId === 'quyet-toan') {
-            dashboardActionsEl.classList.add('hidden');
-        } else {
-            dashboardActionsEl.classList.remove('hidden');
-        }
-    }
-
-    const periodContainerEl = document.getElementById('dashboard-period-dropdown-container');
-    if (periodContainerEl) {
-        if (['nhan-su', 'xe-bai', 'cai-dat', 'ban-tin', 'giao-viec'].includes(tabId)) {
-            periodContainerEl.classList.add('hidden');
-        } else {
-            periodContainerEl.classList.remove('hidden');
-        }
-    }
-
-    // Nút Ẩn / Hiện Biểu Đồ chỉ hiển thị ở Dashboard
-    const btnToggleCharts = document.getElementById('btn-toggle-dashboard-charts');
-    if (btnToggleCharts) {
-        if (tabId === 'dashboard') {
-            btnToggleCharts.classList.remove('hidden');
-        } else {
-            btnToggleCharts.classList.add('hidden');
-        }
-    }
+    // Topbar đã được chuẩn hóa cố định (Clean & Stable Topbar - Zero Layout Shift)
+    // Các bộ chọn kỳ và thao tác được tích hợp trực tiếp trong nội bộ từng phân hệ
 
     // Đồng bộ khoảng ngày hiện tại vào các view có bộ lọc ngày
     const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
@@ -17366,15 +17340,28 @@ function exportReimbursablesToExcel() {
 // ==============================================================================
 let rawCashTransactionsList = [];
 
+function setCashBookPeriod(period) {
+    const sel = document.getElementById('cash-filter-period');
+    if (sel) {
+        sel.value = period;
+    }
+    loadCashBookData();
+}
+window.setCashBookPeriod = setCashBookPeriod;
+
 async function loadCashBookData() {
     try {
         const method = document.getElementById('cash-filter-method')?.value || 'ALL';
         const type = document.getElementById('cash-filter-type')?.value || 'ALL';
         const category = document.getElementById('cash-filter-category')?.value || 'ALL';
         const search = document.getElementById('cash-search')?.value || '';
+        const period = document.getElementById('cash-filter-period')?.value || 'this_month';
 
-        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
-        let url = `/api/accounting/cashbook/?payment_method=${method}&transaction_type=${type}&category=${category}&from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`;
+        let url = `/api/accounting/cashbook/?payment_method=${method}&transaction_type=${type}&category=${category}`;
+        if (period !== 'all') {
+            const dateRange = getDateRangeForPeriod(period, currentDashboardCustomStart, currentDashboardCustomEnd);
+            url += `&from_date=${dateRange.fromDate}&to_date=${dateRange.toDate}`;
+        }
         if (search) url += `&search=${encodeURIComponent(search)}`;
 
         const res = await fetchWithAuth(url);
@@ -17417,7 +17404,8 @@ function renderCashBookTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        const periodLabel = document.getElementById('topbar-period-label')?.innerText || 'kỳ đã chọn';
+        const periodSelect = document.getElementById('cash-filter-period');
+        const periodLabel = periodSelect ? (periodSelect.options[periodSelect.selectedIndex]?.text || 'kỳ đã chọn') : 'kỳ đã chọn';
         tbody.innerHTML = `
             <tr>
                 <td colspan="12" class="py-12 px-4 text-center">
@@ -17431,14 +17419,18 @@ function renderCashBookTable(list) {
                             Để xem lại các phiếu thu chi phát sinh trong tháng hoặc toàn bộ thời gian, bạn có thể chọn nhanh:
                         </p>
                         <div class="pt-2 flex items-center justify-center gap-2">
-                            <button type="button" onclick="setDashboardPeriod('this_month', 'Tháng này')" 
+                            <button type="button" onclick="setCashBookPeriod('this_month')" 
                                 class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold font-heading shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer">
                                 <i class="ph-bold ph-calendar"></i>
                                 <span>Xem Phiếu Tháng Này</span>
                             </button>
-                            <button type="button" onclick="setDashboardPeriod('this_year', 'Năm nay')" 
+                            <button type="button" onclick="setCashBookPeriod('this_year')" 
                                 class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold font-heading transition-all inline-flex items-center gap-1.5 cursor-pointer">
                                 <span>Xem Cả Năm</span>
+                            </button>
+                            <button type="button" onclick="setCashBookPeriod('all')" 
+                                class="px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold font-heading transition-all inline-flex items-center gap-1.5 cursor-pointer">
+                                <span>Tất Cả Thời Gian</span>
                             </button>
                         </div>
                     </div>

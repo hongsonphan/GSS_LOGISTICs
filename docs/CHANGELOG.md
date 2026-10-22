@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.7] - 2026-10-22 (Chuẩn Hóa Topbar Cố Định Cực Tối Giản & Tích Hợp Bộ Lọc Kỳ Nội Bộ Phân Hệ - Zero Layout Shift & Zero Extra Rows)
+
+### 1. Tối Ưu Bố Cục UI/UX: Chuyển Bộ Chọn Kỳ & Nút Thao Tác Khỏi Topbar Về Nội Bộ Phân Hệ:
+- **Bối cảnh & Vấn đề giải quyết:**
+  * Trước đây, Topbar chứa cụm #topbar-dashboard-actions (Bộ chọn kỳ toàn cục, Nút ẩn/hiện biểu đồ, Nút làm mới). Cụm này lúc ẩn lúc hiện tùy thuộc vào tab đang truy cập (ví dụ: ẩn khi vào Quyết toán, Xe bãi, Nhân sự, Cài đặt... và hiện khi vào Dashboard).
+  * Việc bật/tắt liên tục các phần tử trên Topbar gây ra hiện tượng **Layout Shift (CLS > 0)**: thanh Topbar co dãn, tiêu đề và nút bấm bị xê dịch vị trí khiến tầm mắt và con trỏ chuột của người dùng bị xáo trộn khi chuyển phân hệ.
+  * Ngoài ra, mỗi phân hệ có nhu cầu quản lý thời gian độc lập (Dashboard cần theo dõi chiến lược 10 ngày/quý, Sổ Quỹ Kế toán cần xem phát sinh tháng này, Báo cáo & Thống kê có thanh kỳ riêng...).
+- **Giải pháp Kỹ Thuật Đạt Chuẩn 2 Ràng Buộc (Zero Layout Shift & Zero Extra Rows):**
+  * **Topbar Cố Định Tuyệt Đối (Clean & Stable Navigation Header):**
+    - Loại bỏ hoàn toàn khối #topbar-dashboard-actions khỏi templates/components/topbar.html.
+    - Chiều cao (64px - h-16) và vị trí các khối trên Topbar (Nút Sidebar, Tiêu đề phân hệ bên trái; Ngày hôm nay, Trợ giúp, Chuông thông báo, User Avatar bên phải) được cố định 100% trên toàn bộ mọi phân hệ.
+    - Khi chuyển tab, giao diện Topbar giữ nguyên không gian thị giác hoàn hảo, chỉ cập nhật chuỗi text tiêu đề trang (#topbar-page-title).
+  * **Tích Hợp Đúng Chuẩn Tại Dashboard (Zero Extra Rows):**
+    - Chuyển bộ chọn kỳ (#dashboard-period-dropdown-container), popover chọn ngày tùy chọn (#topbar-custom-date-popover), nút ẩn/hiện biểu đồ (#btn-toggle-dashboard-charts) và nút làm mới vào chung hàng flex có sẵn của khối chào mừng (view_dashboard.html).
+    - Tất cả nằm thẳng hàng với bộ chọn góc nhìn phòng ban (#dash-view-as-container), không tạo thêm bất kỳ hàng/dòng phụ nào, giữ trọn vẹn không gian hiển thị của 4 trụ cột chiến lược P&L.
+  * **Tích Hợp Đúng Chuẩn Tại Kế Toán - Sổ Quỹ Thu Chi (Zero Extra Rows):**
+    - Nâng cấp grid bộ lọc Sổ Quỹ từ 4 cột lên 5 cột (lg:grid-cols-5) trên templates/views/view_accounting.html.
+    - Bổ sung dropdown #cash-filter-period (mặc định: *Kỳ: Tháng Này*) nằm chung một hàng cùng với Quỹ, Loại giao dịch, Khoản mục và Tìm kiếm.
+    - Cập nhật loadCashBookData() và renderCashBookTable() trong static/js/app.js để đọc trực tiếp kỳ từ dropdown nội bộ, hoàn toàn độc lập với Topbar.
+- **Kiểm Thử & Xác Nhận Hệ Thống:**
+  * Cú pháp JS: node -c static/js/app.js & node -c static/js/column_manager.js (0 lỗi).
+  * Toàn bộ 144/144 Unit Tests backend & frontend integrity vượt qua thành công 100% (Ran 144 tests in 45.777s - OK).
+
 ## [v4.0.6] - 2026-10-22 (Rà Soát Toàn Diện & Xử Lý Triệt Để Lỗi Trùng Lặp Ký Hiệu Tiền Tệ "đ đ")
 
 ### 1. Khử Trùng Lặp Ký Hiệu Tiền Tệ Trên Toàn Bộ Hệ Thống:
@@ -120,7 +143,7 @@ enderReport14 trong từng khối 	ry...catch riêng biệt; tự động chuy�
 hansu:
 - Cập nhật vai trò nhân sự 
 hansu từ chức danh kế toán cũ thành chuẩn vị trí **Phòng Hành Chính & Kế Toán (STAFF_ADMIN_ACC - Hành chính nhân sự)** theo đúng sơ đồ tổ chức công ty.
-- Cấp quyền xem Báo cáo Lương chuyến & Năng suất tài xế (iew_report_driver_salary) và Đúng giờ (iew_report_otp) cho nhóm Quản Lý Nhân Sự.
+- Cấp quyền xem Báo cáo Lương chuyến & Năng suất tài xế (view_report_driver_salary) và Đúng giờ (view_report_otp) cho nhóm Quản Lý Nhân Sự.
 
 ---
 
@@ -159,7 +182,7 @@ hansu từ chức danh kế toán cũ thành chuẩn vị trí **Phòng Hành Ch
   * Nâng cấp cột thao tác: Nút 1 [Sửa] thỏa thuận cước và Nút 2 [Quyết Toán] (hoặc [In Phiếu] nếu đã hoàn tất).
 
 ### 2. Thiết Kế Bộ 4 Nút Hành Động Chuẩn BIM Khi Mở Chi Tiết Phiếu (Sửa - Lưu - In - Xóa):
-- **Modal Chi Tiết Phiếu Tạm Ứng Tài Xế (	emplates/components/modal_driver_advance.html):**
+- **Modal Chi Tiết Phiếu Tạm Ứng Tài Xế (templates/components/modal_driver_advance.html):**
   * Hỗ trợ 2 chế độ: **Tạo mới (Create)** và **Chi tiết (View/Edit)**.
   * Hiển thị mã phiếu (TUTX-...), banner trạng thái (Đang tạm ứng / Đã hoàn ứng), khối tóm tắt quyết toán hoàn ứng (thực chi, tiền hoàn/bù, người chốt).
   * Bộ 4 nút hành động ở chân trang:
@@ -167,7 +190,7 @@ hansu từ chức danh kế toán cũ thành chuẩn vị trí **Phòng Hành Ch
     2. **[In Phiếu]** (màu slate, icon ph-printer): Xuất bản in Phiếu Chi Tạm Ứng Chuyến Xe Mẫu 02-TT / C40-BB theo chuẩn Bộ Tài Chính A4 sắc nét, có bảng ký 5 bên.
     3. **[Sửa]** (màu amber, icon ph-pencil-simple): Mở khóa các trường dữ liệu để hiệu chỉnh.
     4. **[Lưu]** (màu teal, icon ph-check): Gọi API PUT cập nhật dữ liệu.
-- **Modal Chi Tiết Quỹ Điều Vận (	emplates/components/modal_dispatcher_fund.html):**
+- **Modal Chi Tiết Quỹ Điều Vận (templates/components/modal_dispatcher_fund.html):**
   * Hiển thị đầy đủ số tiền cấp quỹ, số tiền đã giải ngân cho các chuyến xe, số tiền đã thu hồi và số dư khả dụng còn lại.
   * Đầy đủ bộ 4 nút hành động: [Xóa Quỹ] (chỉ cho phép xóa khi chưa giải ngân), [In Phiếu], [Sửa], [Lưu], [Đóng].
 - **Modal Quyết Toán Xe Bạn Thầu Phụ 3PL (modal_subcontractor_settle.html):**
@@ -187,9 +210,7 @@ hansu từ chức danh kế toán cũ thành chuẩn vị trí **Phòng Hành Ch
 ### 4. Đảm Bảo Chất Lượng & Kiểm Thử Hồi Quy 100%:
 - Bổ sung test case 	est_accounting_driver_advance_and_fund_crud vào pps/billing/tests.py.
 - Toàn bộ 142/142 tests passing (python manage.py test --keepdb).
-- Đạt 100% chuẩn cú pháp JavaScript (
-ode -c static/js/app.js và 
-ode -c static/js/column_manager.js).
+- Đạt 100% chuẩn cú pháp JavaScript (node -c static/js/app.js và node -c static/js/column_manager.js).
 
 ---
 
@@ -611,8 +632,7 @@ ode -c static/js/column_manager.js).
 - Khắc phục lỗi FieldError: Cannot resolve keyword 'delivery_location' khi xóa địa điểm (Location) trong pps/master_data/api_views.py.
 - Khắc phục lỗi import RouteTariff từ pps.customers.models khi xóa khách hàng (Customer).
 - Toàn bộ bộ kiểm thử tự động 121/121 tests passed (python manage.py test --keepdb).
-- Cú pháp JS hợp lệ 100% (
-ode -c static/js/app.js; node -c static/js/column_manager.js).
+- Cú pháp JS hợp lệ 100% (node -c static/js/app.js; node -c static/js/column_manager.js).
 
 ## [v3.8.1] - 2026-10-21 (Rà Soát Toàn Diện Hệ Thống & Loại Bỏ Số Liệu Quỹ Ảo Trên Dashboard)
 
@@ -1110,7 +1130,7 @@ enderPivotChartCanvas):**
 - **Phân quyền Xem Bản tin (/news/<pk>/ & CompanyPostDetailAPIView):**
   * Bản tin nháp/chưa xuất bản (is_published=False): Chỉ tác giả bài viết hoặc Ban Giám Đốc mới được xem trước; người khác nhận phản hồi HTTP 404 Not Found.
   * Bản tin giới hạn phòng ban (	arget_department != 'ALL'): Chỉ nhân viên cùng phòng ban, tác giả hoặc Ban Giám Đốc (hierarchy_level >= 80) mới được xem; nhân sự phòng ban khác bị chặn bởi HTTP 403 Forbidden.
-- **Trang lỗi 403 Forbidden Chuyên Dụng (	emplates/403.html):** Thiết kế giao diện sang trọng, chuẩn nhận diện BIM Logistics (icon ph-shield-warning, viền đỏ/nền xám tinh tế) kèm thông điệp giải thích rõ ràng và các nút điều hướng 'Quay lại', 'Về Bàn Làm Việc'.
+- **Trang lỗi 403 Forbidden Chuyên Dụng (templates/403.html):** Thiết kế giao diện sang trọng, chuẩn nhận diện BIM Logistics (icon ph-shield-warning, viền đỏ/nền xám tinh tế) kèm thông điệp giải thích rõ ràng và các nút điều hướng 'Quay lại', 'Về Bàn Làm Việc'.
 
 ### 3. Siết Chặt Phân Quyền REST API (Least Privilege & RBAC):
 - **API Bản tin (CompanyPostDetailAPIView.delete):** Chặn xóa bài viết trái thẩm quyền. Chỉ tác giả bài viết, Ban Giám Đốc hoặc Trưởng phòng Hành chính Nhân sự mới có quyền xóa.
@@ -1123,9 +1143,7 @@ enderPivotChartCanvas):**
 esolveInitialRoute trong static/js/app.js):** Tự động phát hiện và kích hoạt Drawer công việc (#task-<id>) hoặc Modal bản tin (#news-<id>) khi người dùng click link chia sẻ hoặc truy cập trực tiếp từ URL trình duyệt.
 
 ### 5. Kiểm Thử Hệ Thống & Bảo Đảm Zero-Regression:
-- **Kiểm tra Cú pháp JS:** 
-ode -c static/js/app.js & 
-ode -c static/js/collaboration.js -> 100% Passed.
+- **Kiểm tra Cú pháp JS:** node -c static/js/app.js & node -c static/js/collaboration.js -> 100% Passed.
 - **Bộ Kiểm Thử Tự Động:** Toàn bộ 110 Unit Tests của dự án (python manage.py test --keepdb) -> 100% Passed (110/110 passed, 0 failures, 0 errors).
 
 ## [v3.6.5] - 2026-10-21 (Chuẩn Hóa Luồng Gia Hạn & Duyệt Gia Hạn Task: Phân Quyền Người Phụ Trách, Bắt Buộc Lý Do Từ Chối, Chuông Thông Báo 2 Chiều & Line Bọc Viền Đổi Màu Theo Trạng Thái)
