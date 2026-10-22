@@ -17417,7 +17417,34 @@ function renderCashBookTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy giao dịch thu chi nào phù hợp</td></tr>`;
+        const periodLabel = document.getElementById('topbar-period-label')?.innerText || 'kỳ đã chọn';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="12" class="py-12 px-4 text-center">
+                    <div class="max-w-md mx-auto space-y-2.5">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-2xl">
+                            <i class="ph-bold ph-calendar-blank"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-700">Chưa có phiếu thu / chi nào trong khoảng <span class="text-teal-700 font-black">"${escapeHtml(periodLabel)}"</span></p>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            💡 Ba thẻ chỉ số ở trên thể hiện <strong>số dư tồn quỹ thực tế tích lũy của toàn công ty</strong> tính đến thời điểm hiện tại.<br>
+                            Để xem lại các phiếu thu chi phát sinh trong tháng hoặc toàn bộ thời gian, bạn có thể chọn nhanh:
+                        </p>
+                        <div class="pt-2 flex items-center justify-center gap-2">
+                            <button type="button" onclick="setDashboardPeriod('this_month', 'Tháng này')" 
+                                class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold font-heading shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer">
+                                <i class="ph-bold ph-calendar"></i>
+                                <span>Xem Phiếu Tháng Này</span>
+                            </button>
+                            <button type="button" onclick="setDashboardPeriod('this_year', 'Năm nay')" 
+                                class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold font-heading transition-all inline-flex items-center gap-1.5 cursor-pointer">
+                                <span>Xem Cả Năm</span>
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
         return;
     }
 
