@@ -223,6 +223,35 @@ ode -c static/js/column_manager.js).
 
 ---
 
+## [v3.9.6] - 2026-10-22 (Mở Rộng Loại Rơ-Moóc Tùy Biến Datalist & Tải Trọng Thiết Kế / Cho Phép TGGT Chuẩn Đăng Kiểm xxxx/yyyy)
+
+### 1. Phân Hệ Quản Lý Phương Tiện & Danh Mục Master Data (`apps/fleet`, `apps/master_data`, `static/js/app.js`):
+- **Mở Rộng Ô "Loại Rơ-Moóc" Cho Phép Tự Do Nhập (Creatable Datalist Dropdown):**
+  * Thay thế dropdown tĩnh cứng trước đây bằng trường nhập liệu thông minh tích hợp `datalist` gồm 12 loại moóc thông dụng chuẩn logistics Việt Nam: *Moóc Xương 40ft (3 Trục), Moóc Cổ Cò 40ft (Cont Lạnh/HC), Moóc Xương 20ft (3 Trục), Moóc Sàn 40ft, Moóc Sàn 45ft, Moóc Lùn / Chuyên Dụng, Moóc Ben (Tự đổ), Moóc Bồn (Xitéc), Moóc Rút (Siêu trường siêu trọng), Moóc Lồng / Khung mui, Moóc Xương 45ft, Moóc Xương 2 Trục*.
+  * Người dùng có thể nhấp đúp để chọn nhanh từ danh sách gợi ý, hoặc **tự gõ bất kỳ loại moóc chuyên dụng nào khác** mà không bị giới hạn cứng.
+  * Mở rộng `Trailer.trailer_type` lên `max_length=100` để lưu trọn vẹn tên loại moóc tùy biến có dấu tiếng Việt.
+
+- **Nâng Cấp Ô "Tải Trọng" Cho Phép Nhập Dạng `xxxx/yyyy` (Chuẩn Sổ Đăng Kiểm Cục Đăng Kiểm VN):**
+  * Hỗ trợ lưu trữ và phân tách 2 chỉ số tải trọng pháp lý:
+    - **`xxxx`:** Khối lượng hàng chuyên chở theo Thiết kế (*Design payload*).
+    - **`yyyy`:** Khối lượng hàng chuyên chở Cho phép tham gia giao thông (*Authorized payload*).
+  * Thuật toán phân giải tải trọng `parse_payload_input`: Nhận diện linh hoạt các cách gõ: `30000/27360`, `30.000/27.360`, `30000 / 27360` hoặc số đơn `32000`.
+  * Tự động lưu:
+    - `design_payload_kg`: Lưu số nguyên tải trọng thiết kế (kg).
+    - `payload_capacity_kg`: Lưu số nguyên tải trọng cho phép tham gia giao thông (kg) phục vụ thuật toán kiểm soát an toàn xếp cont chống phạt quá tải cầu đường.
+    - `payload_display`: Lưu chuỗi hiển thị chuẩn hóa có dấu chấm phân cách hàng nghìn (`30.000/27.360`).
+  * Áp dụng đồng bộ trên cả **Rơ-Moóc (`trailers`)**, **Đầu kéo & Xe tải (`vehicles`)** và **Đội xe Thầu phụ 3PL (`subcontractor_vehicles`)**.
+  * Bảng danh sách hiển thị đẹp mắt theo chuẩn đăng kiểm: `30.000 / 27.360 kg`.
+
+- **Hỗ Trợ Nhập/Xuất Excel (`apps/master_data/import_export_service.py`):**
+  * Xử lý trường tải trọng dạng `xxxx/yyyy` khi đọc file Excel hàng loạt mà không phát sinh lỗi ép kiểu số nguyên.
+
+### 2. Kiểm Thử Hệ Thống & Zero-Regression:
+- Bổ sung 2 bài kiểm thử chuyên sâu: `test_trailer_custom_type_and_dual_payload` và `test_vehicle_dual_payload`.
+- Cú pháp Frontend JS: `node -c static/js/app.js` và `node -c static/js/column_manager.js` hợp lệ 100%.
+- Kiểm tra toàn vẹn hệ thống: `python manage.py check` xác nhận 0 issues.
+- Toàn bộ bộ kiểm thử tự động của dự án: `python manage.py test --keepdb` đạt **144/144 tests passed 100%**.
+
 ## [v3.9.5] - 2026-10-21 (Rà Soát & Biên Soạn Chuẩn Hướng Dẫn Sử Dụng Người Dùng Cuối, Cổng Tài Xế Mobile, Tra Cứu Công Khai & Bộ Q&A 10 Tình Huống)
 
 ### 1. Trung Tâm Trợ Giúp Tương Tác & Tài Liệu Sổ Tay Người Dùng (`templates/help.html` & `docs/USER_GUIDE.md`):

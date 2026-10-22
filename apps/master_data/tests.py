@@ -151,6 +151,83 @@ class MasterDataAPITestCase(TestCase):
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(Trailer.objects.filter(id=tr_id).exists())
 
+    def test_trailer_custom_type_and_dual_payload(self):
+        """Kiểm thử người dùng tự do nhập loại rơ-moóc mới và tải trọng dạng xxxx/yyyy chuẩn đăng kiểm."""
+        from apps.fleet.models import Trailer, parse_payload_input
+
+        # 1. Kiểm thử parse_payload_input helper
+        cap1, design1, disp1 = parse_payload_input("30000/27360")
+        self.assertEqual(cap1, 27360)
+        self.assertEqual(design1, 30000)
+        self.assertEqual(disp1, "30.000/27.360")
+
+        cap2, design2, disp2 = parse_payload_input("30.000/27.360")
+        self.assertEqual(cap2, 27360)
+        self.assertEqual(design2, 30000)
+        self.assertEqual(disp2, "30.000/27.360")
+
+        cap3, design3, disp3 = parse_payload_input("32000")
+        self.assertEqual(cap3, 32000)
+        self.assertEqual(design3, 32000)
+        self.assertEqual(disp3, "32.000")
+
+        # 2. Tạo rơ-moóc với loại tùy chỉnh người dùng tự gõ và tải trọng dạng 30000/27360
+        res = self.client.post('/api/master-data/trailers/', {
+            'license_plate': '51R-888.99',
+            'trailer_type': 'Moóc Ben Tự Đổ (Hàng Nặng)',
+            'brand': 'Doosung',
+            'payload_capacity_kg': '30000/27360',
+            'registration_expiry': '2027-06-30',
+            'status': 'IDLE'
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        tr_id = res.data['id']
+
+        tr = Trailer.objects.get(id=tr_id)
+        self.assertEqual(tr.trailer_type, 'Moóc Ben Tự Đổ (Hàng Nặng)')
+        self.assertEqual(tr.design_payload_kg, 30000)
+        self.assertEqual(tr.payload_capacity_kg, 27360)
+        self.assertEqual(tr.payload_display, '30.000/27.360')
+        self.assertEqual(tr.display_payload, '30.000/27.360')
+
+        # 3. Kiểm tra GET API trả về payload_display chuẩn
+        get_res = self.client.get('/api/master-data/trailers/')
+        matched = [x for x in get_res.data['results'] if x['id'] == tr_id]
+        self.assertTrue(len(matched) > 0)
+        self.assertEqual(matched[0]['payload_display'], '30.000/27.360')
+        self.assertEqual(matched[0]['trailer_type'], 'Moóc Ben Tự Đổ (Hàng Nặng)')
+
+        # 4. Cập nhật sang dạng số đơn
+        up_res = self.client.put(f'/api/master-data/trailers/{tr_id}/', {
+            'payload_capacity_kg': '32.500'
+        }, format='json')
+        self.assertEqual(up_res.status_code, status.HTTP_200_OK)
+        tr.refresh_from_db()
+        self.assertEqual(tr.payload_capacity_kg, 32500)
+        self.assertEqual(tr.payload_display, '32.500')
+
+    def test_vehicle_dual_payload(self):
+        """Kiểm thử đầu kéo / xe tải nhập tải trọng xxxx/yyyy chuẩn đăng kiểm."""
+        from apps.fleet.models import Vehicle
+
+        res = self.client.post('/api/master-data/vehicles/', {
+            'license_plate': '51C-777.88',
+            'vehicle_type': 'TRACTOR',
+            'ownership_type': 'OWNED',
+            'brand': 'Freightliner Cascadia',
+            'payload_capacity_kg': '34985/32345',
+            'registration_expiry': '2027-12-31',
+            'insurance_expiry': '2027-12-31',
+            'status': 'IDLE'
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        v_id = res.data['id']
+
+        veh = Vehicle.objects.get(id=v_id)
+        self.assertEqual(veh.design_payload_kg, 34985)
+        self.assertEqual(veh.payload_capacity_kg, 32345)
+        self.assertEqual(veh.payload_display, '34.985/32.345')
+
     def test_subcontractors_crud(self):
         from apps.master_data.models import Subcontractor
         # List
