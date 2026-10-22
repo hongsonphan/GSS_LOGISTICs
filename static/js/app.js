@@ -28732,18 +28732,18 @@ function applyReport14Filters() {
 
         let levelBadge = '';
         if (item.aging_level === 'CRITICAL') {
-            levelBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">> 30 Ngày (Cực Gấp)</span>';
+            levelBadge = '<span class="text-xs font-bold text-rose-700 uppercase tracking-wide">> 30 Ngày (Cực Gấp)</span>';
         } else if (item.aging_level === 'WARNING') {
-            levelBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">16 - 30 Ngày (Cảnh Báo)</span>';
+            levelBadge = '<span class="text-xs font-bold text-amber-700 uppercase tracking-wide">16 - 30 Ngày (Cảnh Báo)</span>';
         } else if (item.aging_level === 'WATCH') {
-            levelBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800 border border-sky-300">8 - 15 Ngày (Đốc Thúc POD)</span>';
+            levelBadge = '<span class="text-xs font-bold text-sky-700 uppercase tracking-wide">8 - 15 Ngày (Đôn Thúc POD)</span>';
         } else {
-            levelBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">0 - 7 Ngày (Bình Thường)</span>';
+            levelBadge = '<span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">0 - 7 Ngày (Bình Thường)</span>';
         }
 
         const podBadge = item.has_pod
-            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Đã Có POD</span>'
-            : '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-700">Thiếu POD Gốc</span>';
+            ? '<span class="text-xs font-bold text-emerald-700 uppercase">Đã Có POD</span>'
+            : '<span class="text-xs font-bold text-rose-700 uppercase">Thiếu POD Gốc</span>';
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -28781,7 +28781,7 @@ function applyReport14Filters() {
                 </td>
                 <td class="text-center text-xs">${podBadge}</td>
                 <td class="text-center text-xs">
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">${escapeHtml(item.status_label)}</span>
+                    <span class="text-xs font-semibold text-slate-700 uppercase">${escapeHtml(item.status_label)}</span>
                 </td>
             </tr>
         `;

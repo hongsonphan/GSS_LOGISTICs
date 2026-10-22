@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.5] - 2026-10-22 (Chuẩn Hóa Hiển Thị Bảng Theo Dõi Tuổi Đơn Tồn Đọng - Chuyển Toàn Bộ Badge Sang Text Thuần)
+
+### 1. Loại Bỏ Toàn Bộ Badge Pill Trong Bảng Tuổi Đơn Tồn Chưa Quyết Toán (`rep14-unsettled-aging-table`):
+- **Cột Mức Độ Cảnh Báo:** Bỏ toàn bộ lớp viền, bo góc pill `rounded-full`, nền `bg-rose-100`, `bg-amber-100`, `bg-sky-100`, `bg-slate-100` và hiệu ứng nhấp nháy `animate-pulse`. Chuyển sang hiển thị text thuần túy trực quan:
+  * > 30 Ngày (Cực Gấp): `text-xs font-bold text-rose-700 uppercase tracking-wide`
+  * 16 - 30 Ngày (Cảnh Báo): `text-xs font-bold text-amber-700 uppercase tracking-wide`
+  * 8 - 15 Ngày (Đôn Thúc POD): `text-xs font-bold text-sky-700 uppercase tracking-wide`
+  * 0 - 7 Ngày (Bình Thường): `text-xs font-semibold text-slate-600 uppercase tracking-wide`
+- **Cột Tình Trạng POD:** Chuyển từ badge pill sang text thuần in hoa:
+  * Đã Có POD: `text-xs font-bold text-emerald-700 uppercase`
+  * Thiếu POD Gốc: `text-xs font-bold text-rose-700 uppercase`
+- **Cột Trạng Thái Vận Hành:** Chuyển từ badge pill sang text thuần:
+  * Trạng thái chuyến: `text-xs font-semibold text-slate-700 uppercase`
+
+### 2. Kiểm Thử & Kiểm Chứng:
+- Đồng bộ mã nguồn trên cả `static/js/app.js` và `static/js/modules/reports.js`.
+- Cú pháp JS hợp lệ 100% qua `node -c static/js/app.js` và `node -c static/js/modules/reports.js`.
+- Kiểm thử hồi quy hệ thống Django: Chạy `python manage.py test --keepdb` đạt **147/147 tests PASSED**.
+
 ## [v4.3.4] - 2026-10-22 (Chuẩn Hóa Hiển Thị Trạng Thái Dạng Text Thuần & Kích Hoạt Nút Sửa Trên Bảng Đội Xe)
 
 ### 1. Chuẩn Hóa Cột Trạng Thái (Bỏ Toàn Bộ Badge Nền Pill, Dùng Text Thuần Trực Quan):
