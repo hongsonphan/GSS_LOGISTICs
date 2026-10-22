@@ -80,12 +80,18 @@ class Command(BaseCommand):
 
         for acc in demo_accounts:
             user, created = User.objects.get_or_create(username=acc['username'])
-            user.set_password(acc['password'])
-            user.email = acc['email']
-            user.is_staff = acc['is_staff']
-            user.is_superuser = acc['is_superuser']
-            user.is_active = True
-            user.save()
+            if created:
+                user.set_password(acc['password'])
+                user.email = acc['email']
+                user.is_staff = acc['is_staff']
+                user.is_superuser = acc['is_superuser']
+                user.is_active = True
+                user.save()
+                self.stdout.write(self.style.SUCCESS(f"[Created User] Khoi tao tai khoan moi: {acc['username']}"))
+            else:
+                # BẢO VỆ DỮ LIỆU ĐÃ CẤU HÌNH CỦA NGƯỜI DÙNG:
+                # Tuyệt đối không được ghi đè email, mật khẩu hay họ tên của tài khoản đã tồn tại!
+                self.stdout.write(self.style.NOTICE(f"[Preserved User] Tai khoan {acc['username']} da ton tai - Giu nguyen email/mat khau nguoi dung da cau hinh."))
 
             emp = getattr(Employee, 'all_objects', Employee.objects).filter(code=acc['emp_code']).first()
             if not emp:
@@ -99,12 +105,10 @@ class Command(BaseCommand):
                     user=user,
                 )
             else:
-                emp.user = user
-                emp.full_name = acc['full_name']
-                emp.role = acc['role']
-                emp.department = acc['department']
-                emp.is_deleted = False
-                emp.save(update_fields=['user', 'full_name', 'role', 'department', 'is_deleted'])
+                if not emp.user:
+                    emp.user = user
+                    emp.is_deleted = False
+                    emp.save(update_fields=['user', 'is_deleted'])
 
             # Gán Nhóm vai trò (Group) tương ứng
             group_name = acc.get('group_name')
