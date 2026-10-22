@@ -87,7 +87,7 @@ class Command(BaseCommand):
             user.is_active = True
             user.save()
 
-            emp = Employee.objects.filter(code=acc['emp_code']).first()
+            emp = getattr(Employee, 'all_objects', Employee.objects).filter(code=acc['emp_code']).first()
             if not emp:
                 emp = Employee.objects.create(
                     code=acc['emp_code'],
@@ -103,7 +103,8 @@ class Command(BaseCommand):
                 emp.full_name = acc['full_name']
                 emp.role = acc['role']
                 emp.department = acc['department']
-                emp.save(update_fields=['user', 'full_name', 'role', 'department'])
+                emp.is_deleted = False
+                emp.save(update_fields=['user', 'full_name', 'role', 'department', 'is_deleted'])
 
             # Gán Nhóm vai trò (Group) tương ứng
             group_name = acc.get('group_name')
