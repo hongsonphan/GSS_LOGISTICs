@@ -3043,7 +3043,8 @@ async function toggleChatDirectoryDropdown() {
                 if (u.user_id !== currentUserId) {
                     const opt = document.createElement('option');
                     opt.value = u.user_id;
-                    opt.textContent = `${u.full_name} (${u.department_name})`;
+                    const dept = u.department_name ? u.department_name : 'Văn phòng';
+                    opt.textContent = `${u.full_name} | ${dept}`;
                     select.appendChild(opt);
                 }
             });
