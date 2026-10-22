@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.8] - 2026-10-22 (Tối Ưu Bố Cục Toolbar Điều Vận & Bổ Sung Bộ Lọc Kỳ Nội Bộ Cho Kinh Doanh, Điều Vận, Hải Quan)
+
+### 1. Di Chuyển Nút Thao Tác Xuống Toolbar Bảng Điều Vận (Theo Hình 1 & 2):
+- Loại bỏ hàng nút bấm trôi nổi phía trên đỉnh phân hệ Điều Vận.
+- Di chuyển nút [Quyết Toán Đợt Tài Xế] và [+ Tạo mới] xuống thanh header/toolbar của bảng danh sách chuyến xe (ngay cạnh các nút Hiển thị, Ẩn Đã Hoàn Thành, Cột, Đặt lại).
+- 4 thẻ KPI Điều Vận được đưa lên sát mép trên, tối ưu hóa không gian hiển thị, loại bỏ khoảng trống thừa.
+- Bổ sung dropdown **Bộ chọn Kỳ Điều Vận** (#filter-dispatch-period - Mặc định: *Kỳ: Tháng Này*) trực tiếp trên thanh toolbar này và cập nhật hàm loadTripsData().
+
+### 2. Bổ Sung Bộ Chọn Kỳ Cho Kinh Doanh / Sale & Booking (Theo Hình 3 & 4):
+- **Subtab 1 - Báo Giá Tuyến Cước (CRM):** Bổ sung dropdown #quote-filter-period ([Kỳ: Tháng Này v]) vào header của Subtab 1, đứng cạnh nhãn *Sales / NVKD* và nút *+ Tạo mới*.
+- **Subtab 2 - Đơn Đặt Hàng / Booking (CS):** Bổ sung dropdown #booking-filter-period ([Kỳ: Tháng Này v]) vào header của Subtab 2, đứng cạnh nhãn *Sale Admin / CS* và nút *+ Tạo mới*.
+- Cập nhật hàm loadSalesData() trong static/js/app.js để đọc kỳ lọc tương ứng và đồng bộ dữ liệu.
+
+### 3. Chuẩn Hóa Bố Cục Đồng Bộ Phân Hệ Hải Quan:
+- Di chuyển [Xuất Bảng Kê Excel] và [+ Tạo mới] từ đỉnh trang xuống thanh Filter Toolbar sát bên trên lưới bảng tờ khai.
+- Bổ sung dropdown #customs-filter-period ([Kỳ: Tháng Này v]) và cập nhật etchCustomsDeclarations().
+
 ## [v4.0.8] - 2026-10-22 (Tái Cấu Trúc Toàn Diện Chuẩn Enterprise — Xóa Bỏ Hơi Hướng AI Demo & Nâng Cấp Bàn Điều Phối Thực Tế)
 
 ### 1. Loại Bỏ Khung Điện Thoại iPhone Simulator & Nâng Cấp Bàn Điều Phối Desktop:

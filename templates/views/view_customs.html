@@ -1,15 +1,6 @@
 <!-- 5. PHÂN HỆ THỦ TỤC HẢI QUAN & THÔNG QUAN ĐIỆN TỬ (VNACCS/VCIS) -->
 <div id="view-hai-quan" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
-    <div class="mb-4 flex justify-end items-center gap-2">
-        <button onclick="exportCustomsExcel()" class="px-3.5 py-1.5 bg-transparent border border-slate-600 text-slate-700 hover:bg-slate-700 hover:text-white rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center space-x-1.5 transition-all cursor-pointer">
-            <i class="ph-bold ph-microsoft-excel-logo text-emerald-600 text-sm"></i>
-            <span>Xuất Bảng Kê Excel</span>
-        </button>
-        <button onclick="openCustomsModal()" class="px-3.5 py-1.5 bg-transparent border border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer">
-            <i class="ph-bold ph-plus text-sm"></i>
-            <span>Tạo mới</span>
-        </button>
-    </div>
+
 
     <!-- 4 KPI Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
@@ -106,16 +97,33 @@
             </select>
         </div>
 
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-2 flex-wrap gap-1.5">
+            <!-- Dropdown chọn kỳ hải quan -->
+            <select id="customs-filter-period" onchange="fetchCustomsDeclarations()" class="app-form-control text-xs w-auto font-medium shadow-2xs cursor-pointer">
+                <option value="this_month">Kỳ: Tháng Này</option>
+                <option value="today">Kỳ: Hôm Nay</option>
+                <option value="10_days">Kỳ: 10 Ngày Qua</option>
+                <option value="this_quarter">Kỳ: Quý Này</option>
+                <option value="this_year">Kỳ: Năm Nay</option>
+                <option value="all">Kỳ: Tất Cả</option>
+            </select>
             <!-- Nút Tùy Chỉnh Cột Hải Quan -->
             <button type="button" onclick="openColumnCustomizer('customs-declarations-table')" 
-                class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
                 <i class="ph-bold ph-columns text-teal-700"></i>
                 <span>Cột</span>
             </button>
-            <button onclick="fetchCustomsDeclarations()" class="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="Làm mới dữ liệu">
-                <i class="ph-bold ph-arrows-clockwise text-base"></i>
+            <button onclick="exportCustomsExcel()" class="px-3 py-1.5 bg-transparent border border-slate-300 hover:border-slate-400 text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-bold font-heading shadow-2xs flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap" title="Xuất bảng kê Excel">
+                <i class="ph-bold ph-microsoft-excel-logo text-emerald-600 text-xs"></i>
+                <span>Xuất Excel</span>
+            </button>
+            <button onclick="openCustomsModal()" class="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap" title="Tạo mới tờ khai hải quan">
+                <i class="ph-bold ph-plus text-xs"></i>
+                <span>Tạo mới</span>
+            </button>
+            <button onclick="fetchCustomsDeclarations()" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="Làm mới dữ liệu">
+                <i class="ph-bold ph-arrows-clockwise text-sm"></i>
             </button>
         </div>
     </div>

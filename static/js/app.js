@@ -4130,8 +4130,13 @@ function renderDispatchTable(trips) {
 
 async function loadTripsData() {
     try {
-        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
-        const res = await fetchWithAuth(`/api/trips/?from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`);
+        const period = document.getElementById('filter-dispatch-period')?.value || 'this_month';
+        let url = '/api/trips/';
+        if (period !== 'all') {
+            const dateRange = getDateRangeForPeriod(period);
+            url += `?from_date=${dateRange.fromDate}&to_date=${dateRange.toDate}`;
+        }
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error('Lỗi tải danh sách chuyến');
         const data = await res.json();
 
@@ -14256,8 +14261,13 @@ function renderBookingsTable(bookings) {
 
 async function loadSalesData() {
     try {
-        const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
-        const res = await fetchWithAuth(`/api/sales/?from_date=${globalDates.fromDate}&to_date=${globalDates.toDate}`);
+        const period = (currentSalesSubTab === 'quotations' ? document.getElementById('quote-filter-period')?.value : document.getElementById('booking-filter-period')?.value) || 'this_month';
+        let url = '/api/sales/';
+        if (period !== 'all') {
+            const dateRange = getDateRangeForPeriod(period);
+            url += `?from_date=${dateRange.fromDate}&to_date=${dateRange.toDate}`;
+        }
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error('Lỗi tải dữ liệu kinh doanh');
         const data = await res.json();
 
@@ -27920,6 +27930,12 @@ async function fetchCustomsDeclarations() {
         if (status) params.append('status', status);
         if (direction) params.append('direction', direction);
         if (tax !== '') params.append('is_tax_paid', tax);
+        const custPeriod = document.getElementById('customs-filter-period')?.value || 'this_month';
+        if (custPeriod !== 'all') {
+            const dateRange = getDateRangeForPeriod(custPeriod);
+            params.append('from_date', dateRange.fromDate);
+            params.append('to_date', dateRange.toDate);
+        }
 
         const globalDates = getDateRangeForPeriod(currentDashboardPeriod, currentDashboardCustomStart, currentDashboardCustomEnd);
         if (globalDates.fromDate) params.append('from_date', globalDates.fromDate);
