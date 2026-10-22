@@ -27576,14 +27576,15 @@ function applyReport10Filters() {
 
     tbody.innerHTML = list.map((item, index) => {
         let statusBadge = '';
-        if (item.status === 'APPROVED') {
-            statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Đang lưu hành</span>';
+        if (item.status === 'APPROVED' || item.status === 'ACTIVE') {
+            statusBadge = '<span class="text-xs font-bold text-indigo-700 uppercase">Đang lưu hành</span>';
         } else if (item.status === 'SETTLED') {
-            statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã quyết toán</span>';
+            statusBadge = '<span class="text-xs font-bold text-emerald-700 uppercase">Đã quyết toán</span>';
         } else if (item.status === 'PENDING') {
-            statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Chờ duyệt xuất</span>';
+            statusBadge = '<span class="text-xs font-bold text-amber-700 uppercase">Chờ duyệt xuất</span>';
         } else {
-            statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">${escapeHtml(item.status_label)}</span>`;
+            const sLabel = item.status_label || (item.status === 'ACTIVE' ? 'Đang lưu hành' : item.status) || '—';
+            statusBadge = `<span class="text-xs font-semibold text-slate-700 uppercase">${escapeHtml(sLabel)}</span>`;
         }
 
         const utilPercent = Math.min(100, Math.max(0, item.utilization_rate || 0));

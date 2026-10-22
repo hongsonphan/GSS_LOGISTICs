@@ -2,6 +2,20 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.6] - 2026-10-22 (Chuẩn Hóa Sổ Quỹ Tạm Ứng Điều Vận - Chuyển Badge Sang Text Thuần Trực Quan)
+
+### 1. Loại Bỏ Toàn Bộ Badge Pill Trong Sổ Quỹ Tạm Ứng & Hoàn Ứng Điều Vận (`rep10-dispatcher-funds-table`):
+- **Cột Trạng Thái:** Loại bỏ hoàn toàn lớp viền, bo góc pill tròn (`rounded-full`), lớp nền `bg-slate-100`, `bg-indigo-50`, `bg-emerald-50`, `bg-amber-50`. Chuyển sang hiển thị Text thuần túy in hoa trực quan:
+  * Đang lưu hành (`APPROVED` / `ACTIVE`): `text-xs font-bold text-indigo-700 uppercase`
+  * Đã quyết toán (`SETTLED`): `text-xs font-bold text-emerald-700 uppercase`
+  * Chờ duyệt xuất (`PENDING`): `text-xs font-bold text-amber-700 uppercase`
+  * Mặc định khác: `text-xs font-semibold text-slate-700 uppercase`
+- **Tiêu Đề Bảng:** Chuyển nhãn phân cấp luồng tiền từ badge bo tròn viền sang Text thuần: `(Cấp 1: Cty ➔ Điều Vận)` màu indigo.
+
+### 2. Kiểm Thử & Kiểm Chứng:
+- Đồng bộ mã nguồn trên `templates/views/view_reports.html`, `static/js/app.js` và `static/js/modules/reports.js`.
+- Cú pháp JS hợp lệ 100% qua `node -c static/js/app.js` và `node -c static/js/modules/reports.js`.
+
 ## [v4.3.5] - 2026-10-22 (Chuẩn Hóa Hiển Thị Bảng Theo Dõi Tuổi Đơn Tồn Đọng - Chuyển Toàn Bộ Badge Sang Text Thuần)
 
 ### 1. Loại Bỏ Toàn Bộ Badge Pill Trong Bảng Tuổi Đơn Tồn Chưa Quyết Toán (`rep14-unsettled-aging-table`):
