@@ -18,6 +18,12 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
   * Đã push lên GitHub `origin master` (commit `3ddfe4e`) và deploy lên VPS Production `https://logistics.bim.info.vn`.
   * Kiểm thử thị giác thực tế trên VPS bằng Playwright thành công tuyệt đối (Artifacts #195, #196, #197).
 
+### 2. Loại Bỏ Triệt Để Dấu Gạch Ngang Thừa Ở Tải Trọng (Zero-Redundant Dash):
+- **Xóa bỏ hậu tố gạch ngang (`-`) trong chuỗi tải trọng:** Cập nhật helper `parse_payload_input` tự động lọc bỏ các ký tự gạch nối/gạch ngang thừa (`-`, `—`, `kg`) ở đầu/cuối chuỗi nhập liệu. Bản ghi `50RM-080.80` mang giá trị `400.000/878.979-` đã được chuẩn hóa sạch 100% thành `400.000/878.979`.
+- **Loại bỏ hiển thị `— kg` khi chưa có dữ liệu:** Khi phương tiện hoặc rơ-moóc chưa có thông số tải trọng, bảng hiển thị dấu gạch ngang mờ `—` đơn thuần (không ghép chữ `kg`), đồng bộ với các cột Hãng sản xuất, Tài xế, Hạn đăng kiểm.
+- **Form Input An Toàn:** Ô nhập liệu tải trọng trong modal Chỉnh sửa không còn bị điền trước dấu `—` khi chưa có số liệu, giúp người dùng nhập số trực tiếp không bị dính ký tự thừa phía sau.
+- **Kiểm Thử & Đồng Bộ VPS:** 144/144 Unit Tests passed 100%, deploy lên VPS `https://logistics.bim.info.vn` và kiểm chứng thị giác thực tế (Artifacts #198, #199, #200).
+
 ## [v4.0.2] - 2026-10-22 (Rà Soát Giả Lập Vai Trò 5 Người Dùng, Khắc Phục Màn Hình Trắng Báo Cáo & Cơ Cấu Ma Trận Phân Quyền CRUD)
 
 ### 1. Khắc Phục Triệt Để Lỗi Màn Hình Trắng Báo Cáo & Toast Kế Toán:
