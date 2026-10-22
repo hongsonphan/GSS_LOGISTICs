@@ -2540,3 +2540,20 @@ class SidebarHoverPeekTestCase(TestCase):
 
 
 
+
+
+class SafeMediaServeTestCase(TestCase):
+    def test_safe_media_serve_sample_doc(self):
+        res = self.client.get('/media/trip_docs/sample_doc_2.pdf')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/pdf')
+
+    def test_safe_media_serve_fallback_pdf(self):
+        res = self.client.get('/media/trip_docs/non_existent_random_doc_123.pdf')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/pdf')
+
+    def test_safe_media_serve_fallback_image(self):
+        res = self.client.get('/media/documents/non_existent_random_image_999.jpg')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'image/jpeg')

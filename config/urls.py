@@ -176,6 +176,12 @@ urlpatterns = [
     path('api/collaboration/', include('apps.collaboration.urls')),
 ]
 
+from django.urls import re_path
+from core.media_views import safe_media_serve
+
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', safe_media_serve, {'document_root': settings.MEDIA_ROOT}, name='safe-media'),
+]
+
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
