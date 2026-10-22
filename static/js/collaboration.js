@@ -123,115 +123,125 @@ async function loadCompanyNews() {
 
         const canCreatePost = json.can_create_post !== false;
 
-        // 1. Render Pinned & Urgent Banner (nếu có bài ghim hoặc khẩn cấp)
-        const bannerPosts = json.data.filter(p => p.is_pinned || p.is_urgent);
+        // 1. Dọn dẹp pinned container để tránh trùng lặp bài viết
         if (pinnedEl) {
-            if (bannerPosts.length > 0) {
-                pinnedEl.innerHTML = bannerPosts.map(p => `
-                    <div onclick="openNewsDetailPage('${p.hashid || p.id}', event)" class="p-4 rounded-2xl border ${p.is_urgent ? 'bg-rose-50/90 border-rose-300 shadow-rose-100' : 'bg-amber-50/80 border-amber-300 shadow-amber-100'} shadow-sm flex items-start justify-between gap-4 cursor-pointer hover:shadow-md transition-all group" title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)">
-                        <div class="flex items-start gap-3.5">
-                            <div class="w-10 h-10 rounded-xl ${p.is_urgent ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'} flex items-center justify-center shrink-0 shadow-xs">
-                                <i class="${p.is_urgent ? 'ph-bold ph-warning-octagon' : 'ph-bold ph-push-pin'} text-xl"></i>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${p.is_urgent ? 'bg-rose-200 text-rose-900' : 'bg-amber-200 text-amber-900'}">
-                                        ${p.is_urgent ? 'Thông Báo Khẩn Cấp' : 'Được Ghim Lên Đầu'}
-                                    </span>
-                                    <span class="text-xs text-slate-500 font-medium">${p.author_name} • ${formatDateTime(p.created_at)}</span>
-                                </div>
-                                <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors leading-snug">
-                                    ${escapeHtml(p.title)}
-                                </h4>
-                                <p class="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
-                                    ${escapeHtml(p.summary || '')}
-                                </p>
-                            </div>
-                        </div>
-                        <span class="text-xs font-bold ${p.is_urgent ? 'text-rose-700' : 'text-amber-700'} shrink-0 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                            Xem chi tiết <i class="ph-bold ph-arrow-right"></i>
-                        </span>
-                    </div>
-                `).join('');
-            } else {
-                pinnedEl.innerHTML = '';
-            }
+            pinnedEl.innerHTML = '';
+            pinnedEl.classList.add('hidden');
         }
 
-        // 2. Render Toàn Bộ Lưới Bản Tin Chính (Bài ghim ĐƯỢC ĐƯA LÊN ĐẦU TIÊN của grid!)
+        // 2. Render Toàn Bộ Bản Tin Theo Định Dạng Dòng/Đoạn Thống Nhất (Chuẩn Thẻ Số 1, Tinh Gọn Không Thẻ Bọc Thô)
         if (json.data.length === 0) {
-            gridEl.innerHTML = '<div class="col-span-full text-center py-16 text-slate-400 text-xs">Chưa có thông báo nào được đăng tải.</div>';
+            gridEl.innerHTML = `
+                <div class="text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                        <i class="ph ph-newspaper text-2xl"></i>
+                    </div>
+                    <p class="text-slate-600 font-bold text-xs">Chưa có thông báo nào được đăng tải.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Các thông báo điều hành và văn bản chỉ đạo sẽ hiển thị tại đây.</p>
+                </div>
+            `;
             return;
         }
 
-        gridEl.innerHTML = json.data.map(p => `
-            <div onclick="openNewsDetailPage('${p.hashid || p.id}', event)" class="bg-white rounded-2xl border ${p.is_pinned ? 'border-amber-300 ring-2 ring-amber-300/40 bg-gradient-to-b from-amber-50/25 to-white shadow-xs' : 'border-slate-200 shadow-xs hover:border-slate-300'} hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group relative" title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)">
-                ${p.cover_image ? `
-                    <div class="h-44 w-full bg-slate-100 overflow-hidden relative">
-                        <img src="${p.cover_image}" alt="Ảnh bài viết" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        ${p.is_pinned ? `
-                            <div class="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shadow-md">
-                                <i class="ph-bold ph-push-pin text-xs"></i> Đã ghim
-                            </div>
-                        ` : ''}
-                        ${p.is_urgent ? `
-                            <div class="absolute top-3 ${p.is_pinned ? 'left-24' : 'left-3'} flex items-center gap-1 px-2 py-0.5 rounded-lg bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md">
-                                <i class="ph-bold ph-warning-octagon text-xs"></i> Khẩn cấp
-                            </div>
-                        ` : ''}
-                    </div>
-                ` : `
-                    <div class="h-28 w-full ${p.is_pinned ? 'bg-gradient-to-br from-amber-700 via-teal-800 to-slate-900' : 'bg-gradient-to-br from-teal-700 to-slate-800'} p-4 flex flex-col justify-between text-white relative">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            ${p.is_pinned ? `
-                                <span class="px-2 py-0.5 rounded-md bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                                    <i class="ph-bold ph-push-pin text-[11px]"></i> Đã ghim
-                                </span>
-                            ` : ''}
-                            ${p.is_urgent ? `
-                                <span class="px-2 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                                    <i class="ph-bold ph-warning-octagon text-[11px]"></i> Khẩn cấp
-                                </span>
-                            ` : ''}
-                            <span class="text-xs font-bold uppercase tracking-wider text-teal-200">${escapeHtml(p.category_info?.name || 'Thông báo chung')}</span>
+        gridEl.innerHTML = json.data.map(p => {
+            // Xác định vạch viền định danh bên trái và icon theo mức độ ưu tiên
+            let borderAccent = 'border-l-teal-600';
+            let iconBoxClass = 'bg-teal-50 text-teal-700 border-teal-200';
+            let iconClass = 'ph-bold ph-newspaper';
+            let priorityBadge = '';
+
+            if (p.is_urgent) {
+                borderAccent = 'border-l-rose-500 bg-rose-50/20';
+                iconBoxClass = 'bg-rose-100 text-rose-700 border-rose-200 shadow-xs';
+                iconClass = 'ph-bold ph-warning-octagon';
+                priorityBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200 shrink-0 flex items-center gap-1"><i class="ph-bold ph-warning-octagon text-[10px]"></i> Khẩn cấp</span>`;
+            } else if (p.is_pinned) {
+                borderAccent = 'border-l-amber-500 bg-amber-50/20';
+                iconBoxClass = 'bg-amber-100 text-amber-800 border-amber-200 shadow-xs';
+                iconClass = 'ph-bold ph-push-pin';
+                priorityBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200 shrink-0 flex items-center gap-1"><i class="ph-bold ph-push-pin text-[10px]"></i> Đã ghim</span>`;
+            }
+
+            const catName = p.category_info?.name || 'Thông báo chung';
+            const catColor = p.category_info?.color || '#0d9488';
+            const catBadge = `<span class="text-xs font-bold px-2.5 py-0.5 rounded-full border shrink-0" style="background-color: ${catColor}15; border-color: ${catColor}35; color: ${catColor};">${escapeHtml(catName)}</span>`;
+            const deptDisplay = p.target_department === 'ALL' ? 'Toàn công ty' : (p.target_department || 'Nội bộ');
+            const summaryText = p.summary || '';
+
+            return `
+                <div onclick="openNewsDetailPage('${p.hashid || p.id}', event)" 
+                    class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs hover:border-teal-500 p-4 sm:p-5 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-start justify-between gap-4 group border-l-4 ${borderAccent}"
+                    title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)">
+                    
+                    <!-- Khối bên trái: Icon + Đoạn thông tin tương ứng -->
+                    <div class="flex items-start gap-3.5 min-w-0 flex-1">
+                        <!-- Icon nhận diện gọn gàng -->
+                        <div class="w-10 h-10 rounded-xl ${iconBoxClass} border flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                            <i class="${iconClass} text-xl"></i>
                         </div>
-                        <i class="ph ph-newspaper text-3xl opacity-20 absolute right-3 bottom-3"></i>
-                    </div>
-                `}
-                <div class="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2 font-medium">
-                            <span class="font-semibold text-slate-600 flex items-center gap-1">
-                                <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
-                                ${p.author_name}
-                            </span>
-                            <span>${formatDateTime(p.created_at)}</span>
+
+                        <!-- Nội dung bản tin dạng đoạn -->
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <!-- Dòng 1: Badges + Tác giả + Ngày đăng + Phòng ban -->
+                            <div class="flex items-center gap-2 flex-wrap text-xs">
+                                ${priorityBadge}
+                                ${catBadge}
+                                <span class="text-slate-300 font-normal">|</span>
+                                <span class="font-bold text-slate-700 flex items-center gap-1">
+                                    <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
+                                    ${escapeHtml(p.author_name || 'Ban Giám Đốc')}
+                                </span>
+                                <span class="text-slate-400 font-medium text-[11.5px]">• ${formatDateTime(p.created_at)}</span>
+                                <span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">Áp dụng: ${escapeHtml(deptDisplay)}</span>
+                            </div>
+
+                            <!-- Dòng 2: Tiêu đề bản tin to rõ nét -->
+                            <h4 class="text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors font-heading leading-snug pt-0.5">
+                                ${escapeHtml(p.title)}
+                            </h4>
+
+                            <!-- Dòng 3: Đoạn tóm tắt nội dung tương ứng -->
+                            ${summaryText ? `
+                                <p class="text-xs sm:text-[13px] text-slate-600 line-clamp-2 leading-relaxed font-normal">
+                                    ${escapeHtml(summaryText)}
+                                </p>
+                            ` : ''}
+
+                            <!-- Dòng 4: Tiện ích đính kèm + Lượt xem + Thảo luận -->
+                            <div class="flex items-center gap-4 text-xs text-slate-400 pt-1.5">
+                                <span class="flex items-center gap-1 font-medium" title="Lượt xem">
+                                    <i class="ph ph-eye text-teal-600 text-sm"></i> ${p.view_count || 0} lượt xem
+                                </span>
+                                <span class="flex items-center gap-1 font-medium" title="Ý kiến thảo luận">
+                                    <i class="ph ph-chat-centered-text text-teal-600 text-sm"></i> ${p.comments_count || 0} thảo luận
+                                </span>
+                                ${p.has_attachments || p.attachments_count > 0 ? `
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/70">
+                                        <i class="ph-bold ph-paperclip text-teal-600"></i> Có tệp đính kèm (${p.attachments_count || 1})
+                                    </span>
+                                ` : ''}
+                            </div>
                         </div>
-                        <h4 class="text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-2 leading-snug">
-                            ${escapeHtml(p.title)}
-                        </h4>
-                        <p class="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
-                            ${escapeHtml(p.summary || '')}
-                        </p>
                     </div>
 
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                        <div class="flex items-center gap-3">
-                            <span class="flex items-center gap-1" title="Lượt xem"><i class="ph ph-eye text-sm"></i> ${p.view_count || 0}</span>
-                            <span class="flex items-center gap-1" title="Bình luận"><i class="ph ph-chat-centered-text text-sm"></i> ${p.comments_count || 0}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            ${canCreatePost ? `
-                                <button type="button" onclick="quickTogglePinNews(${p.id}, event)" class="p-1 rounded-md ${p.is_pinned ? 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-transparent'} transition-colors" title="${p.is_pinned ? 'Bỏ ghim khỏi đầu trang' : 'Ghim bài lên đầu trang'}">
-                                    <i class="ph-bold ph-push-pin text-xs"></i>
-                                </button>
-                            ` : ''}
-                            <span class="text-teal-700 font-bold group-hover:underline text-[11px]">Đọc tiếp</span>
-                        </div>
+                    <!-- Khối bên phải: Nút Ghim & Nút Xem chi tiết -->
+                    <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        ${canCreatePost ? `
+                            <button type="button" onclick="quickTogglePinNews(${p.id}, event)" 
+                                class="p-1.5 rounded-xl ${p.is_pinned ? 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-slate-200'} transition-colors shadow-2xs" 
+                                title="${p.is_pinned ? 'Bỏ ghim khỏi đầu trang' : 'Ghim bài lên đầu trang'}">
+                                <i class="ph-bold ph-push-pin text-sm"></i>
+                            </button>
+                        ` : ''}
+                        <button type="button" 
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 group-hover:bg-teal-700 text-slate-700 group-hover:text-white border border-slate-200 group-hover:border-teal-700 text-xs font-bold transition-all shadow-2xs shrink-0 cursor-pointer">
+                            <span>Xem chi tiết</span>
+                            <i class="ph-bold ph-arrow-right text-xs group-hover:translate-x-0.5 transition-transform"></i>
+                        </button>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
     } catch (e) {
         console.error('Error loading company news:', e);

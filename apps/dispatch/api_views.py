@@ -4247,6 +4247,7 @@ class FleetAPIView(APIView):
             ins_days = (v.insurance_expiry - today).days if v.insurance_expiry else None
 
             veh_list.append({
+                'id': v.id,
                 'plate': v.license_plate,
                 'type': v.get_vehicle_type_display(),
                 'driver': v.current_driver.nickname if v.current_driver else '-',
@@ -4266,13 +4267,49 @@ class FleetAPIView(APIView):
                 'status': v.get_status_display(),
                 'status_raw': v.status
             })
+
+        trailers = Trailer.objects.filter(is_deleted=False)
+        trailer_list = []
+        for tr in trailers:
+            reg_days = (tr.registration_expiry - today).days if tr.registration_expiry else None
+            st = tr.status
+            if st == 'IDLE':
+                st_disp = 'Nằm bãi (Chờ việc)'
+            elif st == 'ACTIVE':
+                st_disp = 'Đang kéo (Có hàng)'
+            elif st == 'MAINTENANCE':
+                st_disp = 'Hư hỏng / Bảo trì'
+            elif st == 'DECOMMISSIONED':
+                st_disp = 'Ngừng sử dụng'
+            else:
+                st_disp = st
+
+            trailer_list.append({
+                'id': tr.id,
+                'plate': tr.license_plate,
+                'type': tr.trailer_type,
+                'brand': tr.brand or '-',
+                'payload_display': tr.display_payload or (f"{tr.payload_capacity_kg:,}".replace(',', '.') if tr.payload_capacity_kg else '-'),
+                'payload_capacity_kg': tr.payload_capacity_kg,
+                'design_payload_kg': tr.design_payload_kg,
+                'reg_expiry': tr.registration_expiry.strftime('%d/%m/%Y') if tr.registration_expiry else '-',
+                'reg_days_left': reg_days,
+                'is_reg_expired': (reg_days is not None and reg_days <= 0),
+                'is_reg_warning': (reg_days is not None and 0 < reg_days <= 15),
+                'status': st_disp,
+                'status_raw': tr.status
+            })
+
+        total_reg_warning = sum(1 for v in veh_list if v['is_reg_warning'] or v['is_reg_expired']) + sum(1 for t in trailer_list if t['is_reg_warning'] or t['is_reg_expired'])
+
         return Response({
             'total_tractors': Vehicle.objects.filter(vehicle_type=VehicleType.TRACTOR, is_deleted=False).count(),
-            'total_trailers': Trailer.objects.filter(is_deleted=False).count(),
-            'reg_warning_count': sum(1 for v in veh_list if v['is_reg_warning'] or v['is_reg_expired']),
+            'total_trailers': len(trailer_list),
+            'reg_warning_count': total_reg_warning,
             'ins_warning_count': sum(1 for v in veh_list if v['is_ins_warning'] or v['is_ins_expired']),
             'maint_warning_count': sum(1 for v in veh_list if v['is_maint_warning']),
-            'vehicles': veh_list
+            'vehicles': veh_list,
+            'trailers': trailer_list
         })
 
 class BookingActiveAPIView(APIView):

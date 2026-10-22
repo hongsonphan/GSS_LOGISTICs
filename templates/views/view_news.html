@@ -48,22 +48,21 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-        <!-- Pinned / Urgent Announcements Banner -->
-        <div id="news-pinned-container" class="space-y-3">
-            <!-- Pinned cards will be injected here via JS -->
-        </div>
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
+        <!-- Pinned / Urgent Announcements Banner (Ẩn để hiển thị danh sách feed thống nhất không bị trùng lặp) -->
+        <div id="news-pinned-container" class="hidden"></div>
 
-        <!-- News Post Grid -->
-        <div>
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                    <i class="ph-bold ph-list-dashes text-teal-600"></i>
-                    Bản tin & Thông báo gần đây
+        <!-- News Post Feed -->
+        <div class="max-w-6xl mx-auto space-y-3.5">
+            <div class="flex items-center justify-between pb-1">
+                <h3 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 font-heading">
+                    <i class="ph-bold ph-newspaper text-teal-600 text-base"></i>
+                    Bản tin & Thông báo nội bộ
                 </h3>
+                <span class="text-xs text-slate-400 font-medium hidden sm:inline">Bấm vào từng bản tin để xem toàn văn và tài liệu đính kèm</span>
             </div>
-            <div id="news-posts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <!-- Cards injected here via JS -->
+            <div id="news-posts-grid" class="space-y-3">
+                <!-- News Feed items injected here via JS -->
             </div>
         </div>
     </div>

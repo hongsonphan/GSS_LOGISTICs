@@ -64,6 +64,8 @@ class CompanyPostListSerializer(serializers.ModelSerializer):
     category_info = PostCategorySerializer(source='category', read_only=True)
     author_name = serializers.CharField(read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
+    has_attachments = serializers.SerializerMethodField()
+    attachments_count = serializers.SerializerMethodField()
     is_read = serializers.SerializerMethodField()
 
     class Meta:
@@ -72,8 +74,14 @@ class CompanyPostListSerializer(serializers.ModelSerializer):
             'id', 'hashid', 'title', 'category', 'category_info', 'author_name',
             'summary', 'cover_image', 'is_pinned', 'is_urgent',
             'target_department', 'published_at', 'view_count',
-            'comments_count', 'is_read', 'created_at'
+            'comments_count', 'has_attachments', 'attachments_count', 'is_read', 'created_at'
         ]
+
+    def get_has_attachments(self, obj):
+        return obj.attachments.filter(is_deleted=False).exists()
+
+    def get_attachments_count(self, obj):
+        return obj.attachments.filter(is_deleted=False).count()
 
     def get_is_read(self, obj):
         user = self.context.get('request').user if self.context.get('request') else None

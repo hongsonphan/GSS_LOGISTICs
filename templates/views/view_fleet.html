@@ -1,31 +1,90 @@
 <!-- 4. XE & BÃI -->
 <div id="view-xe-bai" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
+    <!-- 4 KPI Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-teal-600">
-            <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Tổng Đầu kéo</p>
-            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-tractors">19</p>
+        <!-- 1. Tổng Đầu kéo -->
+        <div onclick="switchFleetSubTab('vehicles')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-teal-600 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group" title="Bấm vào để xem danh sách Đầu Kéo & Xe Tải">
+            <div class="flex items-center justify-between">
+                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider group-hover:text-teal-700 transition-colors">Tổng Đầu kéo</p>
+                <i class="ph-bold ph-truck text-teal-600 text-lg opacity-80 group-hover:scale-110 transition-transform"></i>
+            </div>
+            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-tractors">0</p>
         </div>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-indigo-600">
-            <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Tổng Rơ-moóc</p>
-            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-trailers">25</p>
+
+        <!-- 2. Tổng Rơ-moóc -->
+        <div onclick="switchFleetSubTab('trailers')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-indigo-600 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group" title="Bấm vào để xem danh sách Rơ-Moóc Container">
+            <div class="flex items-center justify-between">
+                <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider group-hover:text-indigo-700 transition-colors">Tổng Rơ-moóc</p>
+                <i class="ph-bold ph-arrows-horizontal text-indigo-600 text-lg opacity-80 group-hover:scale-110 transition-transform"></i>
+            </div>
+            <p class="text-3xl font-black text-slate-800 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-trailers">0</p>
         </div>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-rose-200 bg-rose-50/30 border-l-4 border-l-rose-500">
-            <p class="text-[13px] text-rose-600 font-bold uppercase tracking-wider">Cảnh báo Đăng kiểm</p>
-            <p class="text-3xl font-black text-rose-700 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-reg">2</p>
+
+        <!-- 3. Cảnh báo Đăng kiểm -->
+        <div onclick="filterFleetByWarning('REG_WARNING')" class="bg-white p-5 rounded-2xl shadow-sm border border-rose-200 bg-rose-50/30 border-l-4 border-l-rose-500 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group" title="Bấm vào để lọc phương tiện sắp hoặc quá hạn đăng kiểm">
+            <div class="flex items-center justify-between">
+                <p class="text-[13px] text-rose-600 font-bold uppercase tracking-wider group-hover:text-rose-700 transition-colors">Cảnh báo Đăng kiểm</p>
+                <i class="ph-bold ph-warning-circle text-rose-500 text-lg opacity-80 group-hover:scale-110 transition-transform"></i>
+            </div>
+            <p class="text-3xl font-black text-rose-700 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-reg">0</p>
         </div>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-200 bg-amber-50/30 border-l-4 border-l-amber-500">
-            <p class="text-[13px] text-amber-700 font-bold uppercase tracking-wider">Đến hạn Bảo trì</p>
-            <p class="text-3xl font-black text-amber-700 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-maint">4</p>
+
+        <!-- 4. Đến hạn Bảo trì -->
+        <div onclick="filterFleetByWarning('MAINT_WARNING')" class="bg-white p-5 rounded-2xl shadow-sm border border-amber-200 bg-amber-50/30 border-l-4 border-l-amber-500 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group" title="Bấm vào để lọc phương tiện đến hạn bảo dưỡng kỹ thuật">
+            <div class="flex items-center justify-between">
+                <p class="text-[13px] text-amber-700 font-bold uppercase tracking-wider group-hover:text-amber-800 transition-colors">Đến hạn Bảo trì</p>
+                <i class="ph-bold ph-wrench text-amber-600 text-lg opacity-80 group-hover:scale-110 transition-transform"></i>
+            </div>
+            <p class="text-3xl font-black text-amber-700 mt-1 tabular-nums font-heading tracking-tight" id="fleet-stat-maint">0</p>
+        </div>
+    </div>
+
+    <!-- Thanh Chuyển Đổi Tab Phương Tiện (Fleet Subtabs Bar) -->
+    <div class="flex items-center justify-between border border-slate-200 bg-white px-4 py-2.5 rounded-2xl shadow-2xs flex-wrap gap-2">
+        <div class="flex items-center space-x-2">
+            <!-- Tab 1: Đầu kéo & Xe tải -->
+            <button type="button" onclick="switchFleetSubTab('vehicles')" id="fleet-tab-btn-vehicles"
+                class="fleet-subtab-btn px-4 py-2 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center space-x-2 bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs cursor-pointer">
+                <i class="ph-bold ph-truck text-base text-teal-700"></i>
+                <span>Đầu Kéo & Xe Tải</span>
+                <span id="fleet-badge-tractors-count" class="ml-1.5 px-2 py-0.5 text-xs font-black rounded-full bg-teal-600 text-white">0</span>
+            </button>
+
+            <!-- Tab 2: Rơ-Moóc Container -->
+            <button type="button" onclick="switchFleetSubTab('trailers')" id="fleet-tab-btn-trailers"
+                class="fleet-subtab-btn px-4 py-2 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center space-x-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent cursor-pointer">
+                <i class="ph-bold ph-arrows-horizontal text-base text-indigo-600"></i>
+                <span>Rơ-Moóc Container</span>
+                <span id="fleet-badge-trailers-count" class="ml-1.5 px-2 py-0.5 text-xs font-black rounded-full bg-indigo-600 text-white">0</span>
+            </button>
+        </div>
+
+        <!-- Quick Action Buttons: Xuất Excel & Tạo Mới -->
+        <div class="flex items-center space-x-2">
+            <button type="button" onclick="exportCurrentFleetList()" 
+                class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Xuất danh sách ra tệp Excel">
+                <i class="ph-bold ph-file-xls text-emerald-600 text-base"></i>
+                <span class="hidden sm:inline">Xuất Excel</span>
+            </button>
+            <button type="button" onclick="openCreateFleetItemModal()" id="btn-fleet-create-new"
+                class="text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 px-3.5 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                <i class="ph-bold ph-plus-circle text-base"></i>
+                <span id="btn-fleet-create-label">Thêm Đầu Kéo</span>
+            </button>
         </div>
     </div>
     
-    <div class="erp-table-container flex-1 flex flex-col shadow-sm">
+    <!-- ========================================== -->
+    <!-- PANEL 1: QUẢN LÝ ĐẦU KÉO & XE TẢI -->
+    <!-- ========================================== -->
+    <div id="fleet-panel-vehicles" class="erp-table-container flex-1 flex flex-col shadow-sm">
         <!-- Header thông tin & Bộ lọc đa cột thông minh cho Đội Xe -->
         <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
             <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                 <div class="flex items-center space-x-2 text-slate-700 font-semibold">
                     <i class="ph-bold ph-funnel text-teal-700 text-sm"></i>
-                    <span>Bộ Lọc & Sắp Xếp: <strong>Giám sát đội xe, bảo trì & đăng kiểm</strong></span>
+                    <span>Bộ Lọc & Sắp Xếp: <strong>Giám sát đầu kéo, bảo trì & đăng kiểm</strong></span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
@@ -33,12 +92,12 @@
                     </span>
                     <!-- Nút Tùy Chỉnh Cột Đội Xe -->
                     <button type="button" onclick="openColumnCustomizer('fleet-vehicles-table')" 
-                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                        class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
                         title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
                         <i class="ph-bold ph-columns text-teal-700"></i>
                         <span>Cột</span>
                     </button>
-                    <button type="button" onclick="resetFleetFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1">
+                    <button type="button" onclick="resetFleetFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1 cursor-pointer">
                         <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
                     </button>
                 </div>
@@ -69,9 +128,9 @@
                 <div>
                     <div class="relative">
                         <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="text" id="filter-fleet-search" oninput="applyFleetFilters()" placeholder="Tìm biển số, tài xế..." 
+                        <input type="text" id="filter-fleet-search" oninput="applyFleetFilters()" placeholder="Tìm biển số xe, tài xế..." 
                             class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-teal-600 focus:ring-1 focus:ring-teal-500">
-                        <button type="button" onclick="clearFleetSearch()" id="btn-clear-fleet-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <button type="button" onclick="clearFleetSearch()" id="btn-clear-fleet-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
                             <i class="ph-bold ph-x text-xs"></i>
                         </button>
                     </div>
@@ -133,9 +192,142 @@
                                 <i id="sort-icon-fleet-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
                             </div>
                         </th>
+
+                        <!-- 7. Thao tác -->
+                        <th data-col-key="actions" data-col-name="Thao tác" class="text-center w-20">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100" id="fleet-tbody">
+                    <!-- Rendered via API -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PANEL 2: QUẢN LÝ RƠ-MOÓC CONTAINER -->
+    <!-- ========================================== -->
+    <div id="fleet-panel-trailers" class="erp-table-container flex-1 flex flex-col shadow-sm hidden">
+        <!-- Header thông tin & Bộ lọc đa cột thông minh cho Rơ-Moóc -->
+        <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5">
+            <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+                <div class="flex items-center space-x-2 text-slate-700 font-semibold">
+                    <i class="ph-bold ph-funnel text-indigo-700 text-sm"></i>
+                    <span>Bộ Lọc & Sắp Xếp: <strong>Giám sát rơ-moóc container & hạn đăng kiểm</strong></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded-full border border-indigo-200">
+                        Hiển thị: <strong id="trailer-filtered-count">0</strong> / <span id="trailer-total-count">0</span> rơ-moóc
+                    </span>
+                    <!-- Nút Tùy Chỉnh Cột Rơ-Moóc -->
+                    <button type="button" onclick="openColumnCustomizer('fleet-trailers-table')" 
+                        class="text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
+                        <i class="ph-bold ph-columns text-indigo-700"></i>
+                        <span>Cột</span>
+                    </button>
+                    <button type="button" onclick="resetTrailerFilters()" class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors flex items-center gap-1 cursor-pointer">
+                        <i class="ph-bold ph-arrow-counter-clockwise"></i> Đặt lại
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thanh lọc theo từng cột (Column Filters Bar) cho Rơ-Moóc -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                <!-- 1. Lọc Loại Rơ-moóc -->
+                <div>
+                    <select id="filter-trailer-type" onchange="applyTrailerFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500">
+                        <option value="">-- Tất cả Loại Rơ-moóc --</option>
+                    </select>
+                </div>
+
+                <!-- 2. Lọc Trạng thái / Cảnh báo -->
+                <div>
+                    <select id="filter-trailer-status" onchange="applyTrailerFilters()" 
+                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500">
+                        <option value="">-- Tất cả Trạng thái --</option>
+                        <option value="REG_WARNING">Cảnh báo Hết hạn Đăng kiểm</option>
+                        <option value="IDLE">Nằm bãi (Chờ việc)</option>
+                        <option value="ACTIVE">Đang kéo (Có hàng)</option>
+                        <option value="MAINTENANCE">Hư hỏng / Bảo trì</option>
+                    </select>
+                </div>
+
+                <!-- 3. Tìm kiếm từ khóa Rơ-moóc -->
+                <div>
+                    <div class="relative">
+                        <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="filter-trailer-search" oninput="applyTrailerFilters()" placeholder="Tìm biển số moóc, thương hiệu..." 
+                            class="w-full pl-7 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500">
+                        <button type="button" onclick="clearTrailerSearch()" id="btn-clear-trailer-search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <i class="ph-bold ph-x text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto flex-1">
+            <table class="erp-table whitespace-nowrap" id="fleet-trailers-table" data-table-title="Quản Lý Rơ-Moóc Container">
+                <thead>
+                    <tr>
+                        <!-- 0. STT Cố Định -->
+                        <th data-col-key="stt" data-col-name="STT" data-col-locked="true" class="w-12 text-center select-none font-bold text-slate-700">STT</th>
+
+                        <!-- 1. Biển số Moóc -->
+                        <th data-col-key="plate" data-col-name="Biển số Moóc" data-col-locked="true" onclick="toggleTrailerSort('plate')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Biển Số Moóc">
+                            <div class="flex items-center gap-1.5">
+                                <span>Biển số Moóc</span>
+                                <i id="sort-icon-trailer-plate" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 2. Loại / Quy Cách Moóc -->
+                        <th data-col-key="type" data-col-name="Quy Cách / Loại Moóc" onclick="toggleTrailerSort('type')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Quy Cách Moóc">
+                            <div class="flex items-center gap-1.5">
+                                <span>Quy Cách / Loại Moóc</span>
+                                <i id="sort-icon-trailer-type" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 3. Hãng Sản Xuất -->
+                        <th data-col-key="brand" data-col-name="Hãng Sản Xuất" onclick="toggleTrailerSort('brand')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Hãng Sản Xuất">
+                            <div class="flex items-center gap-1.5">
+                                <span>Hãng Sản Xuất</span>
+                                <i id="sort-icon-trailer-brand" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 4. Tải Trọng -->
+                        <th data-col-key="payload" data-col-name="Tải Trọng (kg)" onclick="toggleTrailerSort('payload')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors text-right" title="Click để sắp xếp theo Tải Trọng">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <span>Tải Trọng (kg)</span>
+                                <i id="sort-icon-trailer-payload" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 5. Hạn Đăng kiểm -->
+                        <th data-col-key="reg_expiry" data-col-name="Hạn Đăng kiểm" onclick="toggleTrailerSort('reg_expiry')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Hạn Đăng kiểm">
+                            <div class="flex items-center gap-1.5">
+                                <span>Hạn Đăng kiểm</span>
+                                <i id="sort-icon-trailer-reg_expiry" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 6. Trạng thái -->
+                        <th data-col-key="status" data-col-name="Trạng thái" onclick="toggleTrailerSort('status')" class="cursor-pointer select-none hover:bg-slate-100 transition-colors" title="Click để sắp xếp theo Trạng thái">
+                            <div class="flex items-center gap-1.5">
+                                <span>Trạng thái</span>
+                                <i id="sort-icon-trailer-status" class="ph-bold ph-arrows-down-up text-slate-400 text-xs"></i>
+                            </div>
+                        </th>
+
+                        <!-- 7. Thao tác -->
+                        <th data-col-key="actions" data-col-name="Thao tác" class="text-center w-20">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="trailer-tbody">
                     <!-- Rendered via API -->
                 </tbody>
             </table>

@@ -24,6 +24,29 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 
 ---
 
+## [v4.1.4] - 2026-10-22 (Chuẩn Hóa Danh Sách Bản Tin Dạng Đoạn Thống Nhất, Loại Bỏ Thẻ Bọc Nắp Gradient & Triệt Tiêu Trùng Lặp)
+
+### 1. Thống Nhất Trình Bày Bản Tin Dạng Đoạn Tin Tức Chuẩn Mực (`static/js/collaboration.js` & `view_news.html`):
+- **Đồng bộ hóa cấu trúc thông tin theo chuẩn Thẻ 1:**
+  * Toàn bộ danh sách bản tin được chuẩn hóa hiển thị thành các đoạn tin tức thanh thoát, trải rộng theo chiều ngang (Clean Streamlined Feed).
+  * Mỗi đoạn bản tin có vạch định danh bên trái (`border-l-4`):
+    - Đỏ (`border-l-rose-500 bg-rose-50/20`) cho thông báo Khẩn cấp.
+    - Hổ phách (`border-l-amber-500 bg-amber-50/20`) cho thông báo Đã ghim.
+    - Xanh ngọc (`border-l-teal-600 bg-white`) cho thông báo chung/vận hành.
+  * Cấu trúc thông tin phân tầng sắc nét:
+    - **Hàng 1:** Huy hiệu loại tin (`Khẩn cấp`, `Đã ghim`, `Tên danh mục`) + Tác giả (`Võ Triển (Giám Đốc)`) + Thời gian đăng + Huy hiệu phạm vi phòng ban.
+    - **Hàng 2:** Tiêu đề to bản, đậm nét, chuyển màu teal khi rê chuột (`text-base sm:text-[17px] font-extrabold text-slate-900`).
+    - **Hàng 3:** Đoạn tóm tắt nội dung trích dẫn tương ứng (`line-clamp-2 text-slate-600 leading-relaxed font-normal`), cho phép đọc nhanh cốt lõi chỉ đạo.
+    - **Hàng 4:** Lượt xem, số lượng thảo luận và huy hiệu tệp đính kèm (`Có tệp đính kèm`).
+  * Bên phải: Nút ghim/bỏ ghim (nếu có quyền) và nút **`Xem chi tiết ->`** gọn gàng, tinh tế.
+
+### 2. Loại Bỏ Khối Thẻ Bọc Cồng Kềnh & Triệt Tiêu Trùng Lặp Bài Viết:
+- **Loại bỏ thẻ bọc nắp gradient:** Xóa bỏ hoàn toàn kiểu card 3 cột cồng kềnh với nắp ảnh/gradient xanh đen tối tăm (`h-28` / `h-44`) chiếm dụng diện tích thị giác.
+- **Loại bỏ thẻ bọc viền đỏ:** Bỏ khối banner bọc viền đỏ rực riêng biệt ở trên để gom tất cả bài viết vào một danh sách feed duy nhất.
+- **Triệt tiêu 100% tình trạng lặp lại:** Bài viết không còn xuất hiện 2 lần trên cùng một màn hình; bài ghim và khẩn cấp tự động đứng đầu feed với vạch nhận diện nổi bật.
+
+---
+
 ## [v4.1.3] - 2026-10-22 (Tích Hợp Toàn Diện Trang Chi Tiết Bản Tin Nằm Trên Base & Loại Bỏ Mở Tab Mới)
 
 ### 1. Tích Hợp Chi Tiết Bản Tin Trực Tiếp Vào Khung Ứng Dụng Chuẩn (`templates/news_detail.html` kế thừa `base.html`):
