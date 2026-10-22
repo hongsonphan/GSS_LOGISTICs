@@ -49,6 +49,20 @@ class Command(BaseCommand):
                 'phone': '0908111222',
             },
             {
+                'username': 'sales',
+                'password': 'Sales@2026',
+                'email': 'sales@bim.info.vn',
+                'is_staff': False,
+                'is_superuser': False,
+                'emp_code': 'KD001',
+                'full_name': 'Nguyễn Văn Sales',
+                'nickname': 'KINH DOANH',
+                'role': EmployeeRole.SALESMAN,
+                'department': Department.SALES,
+                'phone': '0901888999',
+                'group_name': 'Kinh Doanh (Sales)'
+            },
+            {
                 'username': 'nhansu',
                 'password': 'NhanSu@2026',
                 'email': 'nhansu@bim.info.vn',
