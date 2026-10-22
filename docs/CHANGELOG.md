@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.2] - 2026-10-22 (Chuẩn Hóa Giao Diện Bảng Tạm Ứng Tài Xế, Cân Đối Thao Tác & Sửa Lỗi Modal Quyết Toán)
+
+### 1. Chuẩn Hóa Cột Chênh Lệch & Trạng Thái (Text Thuần Túy):
+- **Loại bỏ badge rườm rà:** Chuyển toàn bộ các viên thuốc badge có nền màu và viền bo tròn trên 2 cột **Chênh Lệch Hoàn Ứng** và **Trạng Thái** sang hiển thị dạng text thuần túy:
+  * Trạng thái: Text màu trực quan (Đã Hoàn Ứng - xanh emerald, Đang Tạm Ứng - vàng hổ phách).
+  * Chênh lệch hoàn ứng: Text monospace số tiền (+550.000 đ (Dư) - xanh dương, -150.000 đ (Thiếu) - đỏ cam, Khớp Đúng 100% - xanh lá).
+
+### 2. Cân Đối Cột Thao Tác & Triệt Tiêu Lệch Hàng:
+- **Cố định kích thước & vị trí nút:**
+  * Nút [Xem]: Cố định độ rộng w-[70px], chiều cao h-7.
+  * Nút thứ hai: Cố định độ rộng w-[96px], chiều cao h-7. Hiển thị [Quyết Toán] (khi đang tạm ứng) hoặc [In Phiếu] (khi đã hoàn ứng).
+  * Khung bao bọc: Cụm flex căn giữa với khoảng cách gap-2 đồng nhất, cố định tổng bề rộng 174px trên mọi hàng.
+  * Cột <th> Thao tác: Gán độ rộng cố định w-[190px] min-w-[190px] trong view_accounting.html.
+  * Kết quả: Các nút [Xem] và [Quyết Toán] / [In Phiếu] thẳng tắp hàng dọc 100%, không bị xê dịch hay nhảy ô lung tung giữa các dòng.
+
+### 3. Khắc Phục Triệt Để Lỗi toggleAdvanceSourceType is not a function:
+- Tích hợp và đồng bộ đầy đủ toàn bộ bộ điều khiển Tạm ứng & Quyết toán hoàn ứng vào static/js/app.js:
+  * toggleAdvanceSourceType(): Đổi hiển thị nguồn tiền quỹ điều vận / công ty chi.
+  * onAdvanceTripChange(): Tự động điền tài xế & xe theo chuyến.
+  * closeDriverAdvanceModal() & submitDriverAdvanceForm(): Xử lý đóng modal và gửi tạo phiếu ứng.
+  * openSettleAdvanceModal() & closeSettleAdvanceModal(): Mở/đóng popup quyết toán hoàn ứng chuyến.
+  * calculateSettlementDiff() & recalculateActualExpensesFromTrip(): Tự động tính chênh lệch thực chi vs tạm ứng.
+  * submitSettleAdvanceForm(): Gửi quyết toán đối soát chi phí thực tế.
+  * Khai báo biến toàn cục currentActiveAdvance phục vụ in phiếu quyết toán hoàn ứng.
+  * Expose đầy đủ lên đối tượng window để các sự kiện HTML inline hoạt động hoàn hảo.
+
+### 4. Kiểm Thử Hệ Thống (Zero-Regression):
+- Cú pháp JS: node -c static/js/app.js và node -c static/js/modules/accounting.js đạt 100% PASS.
+- Test Suite Backend: python manage.py test --keepdb đạt 147/147 tests PASSED.
+
 ## [v4.3.1] - 2026-10-22 (Cơ Cấu Lại 4 Nhóm Báo Cáo Chiến Lược Chuẩn Quản Trị Logistics TMS)
 
 ### 1. Chuẩn Hóa 4 Nhóm Báo Cáo Chiến Lược (iew_reports.html, pp.js & 
@@ -179,7 +209,9 @@ eport-14 (Tuổi đơn tồn đọng) cho Khối Kinh Doanh (Sales) để đôn 
   * Nhúng thư viện `pdf.js` và `pdf.worker.js` từ CDN.
   * Xây dựng **Bộ xem trước PDF Native Canvas** chất lượng cao: render trực tiếp lên HTML5 Canvas với tỷ lệ sắc nét thích ứng màn hình Retina/High-DPI.
   * **Thanh điều khiển chuyên nghiệp:** Nút chuyển trang (Trước/Sau, hiển thị `Trang 1 / N`), Phóng to / Thu nhỏ (`-`, `+`, `100%`), Tải tệp về máy và Mở toàn màn hình trong tab mới.
-  * Cơ chế dự phòng (Fallback) đa tầng: Nếu PDF.js không nạp được mạng $ightarrow$ tự động chuyển sang Iframe SAMEORIGIN $ightarrow$ Thẻ Tải xuống trực tiếp.
+  * Cơ chế dự phòng (Fallback) đa tầng: Nếu PDF.js không nạp được mạng $
+ightarrow$ tự động chuyển sang Iframe SAMEORIGIN $
+ightarrow$ Thẻ Tải xuống trực tiếp.
 
 ---
 

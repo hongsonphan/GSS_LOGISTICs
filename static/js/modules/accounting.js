@@ -564,33 +564,33 @@ function renderDriverAdvancesTable(list) {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy phiếu tạm ứng chuyến nào phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy phiếu tạm ứng chuyến nào phù hợp</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(item => {
+    tbody.innerHTML = list.map((item, index) => {
         const isSettled = item.status === 'SETTLED';
-        const statusBadge = isSettled
-            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đã Hoàn Ứng</span>`
-            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Đang Tạm Ứng</span>`;
+        const statusText = isSettled
+            ? `<span class="text-xs font-bold text-emerald-700 whitespace-nowrap">Đã Hoàn Ứng</span>`
+            : `<span class="text-xs font-bold text-amber-600 whitespace-nowrap">Đang Tạm Ứng</span>`;
 
-        let diffBadge = '';
+        let diffText = '';
         if (isSettled) {
             if (item.settlement_diff_type === 'DRIVER_REFUND') {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800" title="Tài xế đã hoàn trả tiền thừa">TX Hoàn +${formatMoneyVND(item.refund_amount)}</span>`;
+                diffText = `<span class="text-xs font-bold text-blue-700 font-mono tabular-nums whitespace-nowrap" title="Tài xế đã hoàn trả tiền thừa">TX Hoàn +${formatMoneyVND(item.refund_amount)}</span>`;
             } else if (item.settlement_diff_type === 'COMPANY_REIMBURSE') {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800" title="Công ty chi bù thêm">Cty Bù -${formatMoneyVND(item.reimburse_amount)}</span>`;
+                diffText = `<span class="text-xs font-bold text-rose-600 font-mono tabular-nums whitespace-nowrap" title="Công ty chi bù thêm">Cty Bù -${formatMoneyVND(item.reimburse_amount)}</span>`;
             } else {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Khớp Đúng 100%</span>`;
+                diffText = `<span class="text-xs font-bold text-emerald-700 whitespace-nowrap">Khớp Đúng 100%</span>`;
             }
         } else {
             const diff = item.difference || 0;
             if (diff > 0) {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200" title="Dự kiến hoàn trả cty">+${formatMoneyVND(diff)} (Dư)</span>`;
+                diffText = `<span class="text-xs font-bold text-blue-700 font-mono tabular-nums whitespace-nowrap" title="Dự kiến hoàn trả cty">+${formatMoneyVND(diff)} (Dư)</span>`;
             } else if (diff < 0) {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200" title="Dự kiến cty chi bù">${formatMoneyVND(diff)} (Thiếu)</span>`;
+                diffText = `<span class="text-xs font-bold text-rose-600 font-mono tabular-nums whitespace-nowrap" title="Dự kiến cty chi bù">${formatMoneyVND(diff)} (Thiếu)</span>`;
             } else {
-                diffBadge = `<span class="text-xs text-slate-400 font-medium">Khớp tạm tính</span>`;
+                diffText = `<span class="text-xs text-slate-500 font-medium whitespace-nowrap">Khớp tạm tính</span>`;
             }
         }
 
@@ -600,6 +600,9 @@ function renderDriverAdvancesTable(list) {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
+                <td class="w-12 text-center select-none font-bold text-slate-500 border-r border-slate-200 font-mono text-xs tabular-nums">
+                    ${index + 1}
+                </td>
                 <td class="font-black text-slate-900 font-mono text-xs whitespace-nowrap">${escapeHtml(formatCodeCompact(item.code))}</td>
                 <td class="whitespace-nowrap">
                     <a href="javascript:void(0)" onclick="viewTripDetail('${item.trip_code}')" class="font-mono text-teal-700 hover:underline font-bold text-xs">${escapeHtml(formatCodeCompact(item.trip_code))}</a>
@@ -613,17 +616,30 @@ function renderDriverAdvancesTable(list) {
                 <td class="text-right font-black text-teal-800 text-xs tabular-nums">${formatMoneyVND(item.amount)}</td>
                 <td>${sourceBadge}</td>
                 <td class="text-right font-semibold text-slate-800 text-xs tabular-nums">${formatMoneyVND(item.actual_spent)}</td>
-                <td class="text-center">${diffBadge}</td>
-                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${diffText}</td>
+                <td class="text-center">${statusText}</td>
                 <td class="text-center">
-                    <div class="flex items-center justify-center space-x-1.5">
+                    <div class="inline-flex items-center justify-center gap-2">
+                        <button type="button" onclick="viewDriverAdvanceDetail(${item.id})"
+                            class="w-[70px] h-7 px-2 py-1 bg-white hover:bg-teal-50 text-teal-700 border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                            title="Xem chi tiết, Sửa, Lưu, In & Xóa phiếu tạm ứng">
+                            <i class="ph-bold ph-eye"></i>
+                            <span>Xem</span>
+                        </button>
                         ${!isSettled ? `
-                            <button onclick="openSettleAdvanceModal(${item.id})" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1 transition-all">
+                            <button type="button" onclick="openSettleAdvanceModal(${item.id})"
+                                class="w-[96px] h-7 px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-2xs inline-flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0"
+                                title="Đối soát chi phí thực tế & quyết toán hoàn ứng chuyến xe">
                                 <i class="ph-bold ph-calculator text-xs"></i>
                                 <span>Quyết Toán</span>
                             </button>
                         ` : `
-                            <span class="text-xs text-slate-400 italic">Đã chốt sổ</span>
+                            <button type="button" onclick="printDriverAdvanceVoucher(${item.id})"
+                                class="w-[96px] h-7 px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0"
+                                title="In phiếu chi tạm ứng chuyến xe khổ A4/A5">
+                                <i class="ph-bold ph-printer"></i>
+                                <span>In Phiếu</span>
+                            </button>
                         `}
                     </div>
                 </td>

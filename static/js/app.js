@@ -17431,27 +17431,27 @@ function renderDriverAdvancesTable(list) {
 
     tbody.innerHTML = list.map((item, index) => {
         const isSettled = item.status === 'SETTLED';
-        const statusBadge = isSettled
-            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Đã Hoàn Ứng</span>`
-            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Đang Tạm Ứng</span>`;
+        const statusText = isSettled
+            ? `<span class="text-xs font-bold text-emerald-700 whitespace-nowrap">Đã Hoàn Ứng</span>`
+            : `<span class="text-xs font-bold text-amber-600 whitespace-nowrap">Đang Tạm Ứng</span>`;
 
-        let diffBadge = '';
+        let diffText = '';
         if (isSettled) {
             if (item.settlement_diff_type === 'DRIVER_REFUND') {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800" title="Tài xế đã hoàn trả tiền thừa">TX Hoàn +${formatMoneyVND(item.refund_amount)}</span>`;
+                diffText = `<span class="text-xs font-bold text-blue-700 font-mono tabular-nums whitespace-nowrap" title="Tài xế đã hoàn trả tiền thừa">TX Hoàn +${formatMoneyVND(item.refund_amount)}</span>`;
             } else if (item.settlement_diff_type === 'COMPANY_REIMBURSE') {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800" title="Công ty chi bù thêm">Cty Bù -${formatMoneyVND(item.reimburse_amount)}</span>`;
+                diffText = `<span class="text-xs font-bold text-rose-600 font-mono tabular-nums whitespace-nowrap" title="Công ty chi bù thêm">Cty Bù -${formatMoneyVND(item.reimburse_amount)}</span>`;
             } else {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Khớp Đúng 100%</span>`;
+                diffText = `<span class="text-xs font-bold text-emerald-700 whitespace-nowrap">Khớp Đúng 100%</span>`;
             }
         } else {
             const diff = item.difference || 0;
             if (diff > 0) {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200" title="Dự kiến hoàn trả cty">+${formatMoneyVND(diff)} (Dư)</span>`;
+                diffText = `<span class="text-xs font-bold text-blue-700 font-mono tabular-nums whitespace-nowrap" title="Dự kiến hoàn trả cty">+${formatMoneyVND(diff)} (Dư)</span>`;
             } else if (diff < 0) {
-                diffBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200" title="Dự kiến cty chi bù">${formatMoneyVND(diff)} (Thiếu)</span>`;
+                diffText = `<span class="text-xs font-bold text-rose-600 font-mono tabular-nums whitespace-nowrap" title="Dự kiến cty chi bù">${formatMoneyVND(diff)} (Thiếu)</span>`;
             } else {
-                diffBadge = `<span class="text-xs text-slate-400 font-medium">Khớp tạm tính</span>`;
+                diffText = `<span class="text-xs text-slate-500 font-medium whitespace-nowrap">Khớp tạm tính</span>`;
             }
         }
 
@@ -17477,29 +17477,29 @@ function renderDriverAdvancesTable(list) {
                 <td class="text-right font-black text-teal-800 text-xs tabular-nums">${formatMoneyVND(item.amount)}</td>
                 <td>${sourceBadge}</td>
                 <td class="text-right font-semibold text-slate-800 text-xs tabular-nums">${formatMoneyVND(item.actual_spent)}</td>
-                <td class="text-center">${diffBadge}</td>
-                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${diffText}</td>
+                <td class="text-center">${statusText}</td>
                 <td class="text-center">
-                    <div class="inline-flex items-center gap-1.5 justify-center">
+                    <div class="inline-flex items-center justify-center gap-2">
                         <button type="button" onclick="viewDriverAdvanceDetail(${item.id})"
-                            class="px-2.5 py-1 bg-transparent hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                            class="w-[70px] h-7 px-2 py-1 bg-white hover:bg-teal-50 text-teal-700 border border-teal-600 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-1 cursor-pointer shrink-0"
                             title="Xem chi tiết, Sửa, Lưu, In & Xóa phiếu tạm ứng">
                             <i class="ph-bold ph-eye"></i>
                             <span>Xem</span>
                         </button>
                         ${!isSettled ? `
                             <button type="button" onclick="openSettleAdvanceModal(${item.id})"
-                                class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs inline-flex items-center gap-1 transition-all cursor-pointer"
+                                class="w-[96px] h-7 px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold font-heading shadow-2xs inline-flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0"
                                 title="Đối soát chi phí thực tế & quyết toán hoàn ứng chuyến xe">
                                 <i class="ph-bold ph-calculator text-xs"></i>
                                 <span>Quyết Toán</span>
                             </button>
                         ` : `
                             <button type="button" onclick="printDriverAdvanceVoucher(${item.id})"
-                                class="px-2.5 py-1 bg-transparent hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                                class="w-[96px] h-7 px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0"
                                 title="In phiếu chi tạm ứng chuyến xe khổ A4/A5">
                                 <i class="ph-bold ph-printer"></i>
-                                <span>In</span>
+                                <span>In Phiếu</span>
                             </button>
                         `}
                     </div>
@@ -33271,6 +33271,225 @@ window.submitEmployeeImport = typeof submitEmployeeImport !== 'undefined' ? subm
 
 // =============================================================================
 // =============================================================================
+// -------------------------------------------------------------
+// BIM ACCOUNTING ADVANCE & SETTLEMENT CONTROLLERS
+// -------------------------------------------------------------
+let currentActiveAdvance = null;
+
+function closeDriverAdvanceModal() {
+    const modal = document.getElementById('modal-driver-advance');
+    if (modal) modal.classList.add('hidden');
+}
+
+function onAdvanceTripChange() {
+    const tripSelect = document.getElementById('adv-inp-trip');
+    if (!tripSelect) return;
+    const selectedOption = tripSelect.options[tripSelect.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+        const info = document.getElementById('adv-trip-info');
+        if (info) info.classList.add('hidden');
+        return;
+    }
+
+    const driverId = selectedOption.getAttribute('data-driver');
+    const plate = selectedOption.getAttribute('data-plate');
+    const route = selectedOption.getAttribute('data-route');
+
+    if (driverId) {
+        const drvSelect = document.getElementById('adv-inp-driver');
+        if (drvSelect) drvSelect.value = driverId;
+    }
+
+    const infoEl = document.getElementById('adv-trip-info');
+    if (infoEl) {
+        infoEl.innerHTML = `<i class="ph-bold ph-truck"></i> Xe: <strong>${escapeHtml(plate || '')}</strong> | Tuyến: ${escapeHtml(route || '')}`;
+        infoEl.classList.remove('hidden');
+    }
+}
+
+function toggleAdvanceSourceType() {
+    const sourceVal = document.querySelector('input[name="adv_source"]:checked')?.value;
+    const boxFund = document.getElementById('adv-box-dispatcher-fund');
+    if (!boxFund) return;
+    if (sourceVal === 'DISPATCHER_FUND') {
+        boxFund.classList.remove('hidden');
+    } else {
+        boxFund.classList.add('hidden');
+    }
+}
+
+async function submitDriverAdvanceForm(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    const tripId = document.getElementById('adv-inp-trip')?.value;
+    const driverId = document.getElementById('adv-inp-driver')?.value;
+    const amountStr = document.getElementById('adv-inp-amount')?.value;
+    const advanceDate = document.getElementById('adv-inp-date')?.value;
+    const sourceVal = document.querySelector('input[name="adv_source"]:checked')?.value || 'DISPATCHER_FUND';
+    const fundId = document.getElementById('adv-inp-fund')?.value;
+    const purpose = document.getElementById('adv-inp-purpose')?.value;
+    const notes = document.getElementById('adv-inp-notes')?.value;
+
+    const payload = {
+        trip_id: tripId,
+        driver_id: driverId,
+        amount: amountStr,
+        advance_date: advanceDate,
+        advance_source: sourceVal,
+        dispatcher_fund_id: (sourceVal === 'DISPATCHER_FUND' && fundId) ? fundId : null,
+        purpose: purpose,
+        notes: notes
+    };
+
+    try {
+        const res = await fetchWithAuth('/api/accounting/driver-advances/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || 'Cấp tạm ứng thành công', 'Cấp Tạm Ứng Thành Công');
+            closeDriverAdvanceModal();
+            if (typeof loadAccountingAdvancesData === 'function') {
+                loadAccountingAdvancesData();
+            }
+        } else {
+            showToast('danger', data.error || 'Không thể tạo phiếu tạm ứng');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+function openSettleAdvanceModal(advanceId) {
+    const advance = (rawDriverAdvancesList || []).find(a => a.id === advanceId);
+    if (!advance) return;
+    currentActiveAdvance = advance;
+
+    const modal = document.getElementById('modal-settle-advance');
+    if (!modal) return;
+
+    const idEl = document.getElementById('settle-adv-id');
+    if (idEl) idEl.value = advance.id;
+    const codeEl = document.getElementById('settle-adv-code');
+    if (codeEl) codeEl.innerText = advance.code;
+    const tripEl = document.getElementById('settle-adv-trip-info');
+    if (tripEl) tripEl.innerText = `[${advance.trip_code}] ${advance.customer_name || ''} (${advance.license_plate || ''})`;
+    const drvEl = document.getElementById('settle-adv-driver-name');
+    if (drvEl) drvEl.innerText = advance.driver_name;
+    const amtEl = document.getElementById('settle-adv-amount-display');
+    if (amtEl) amtEl.innerText = formatMoneyVND(advance.amount);
+
+    const spentInp = document.getElementById('settle-adv-actual-spent');
+    if (spentInp) {
+        spentInp.value = new Intl.NumberFormat('vi-VN').format(advance.actual_spent || advance.amount);
+    }
+
+    calculateSettlementDiff();
+    modal.classList.remove('hidden');
+}
+
+function closeSettleAdvanceModal() {
+    const modal = document.getElementById('modal-settle-advance');
+    if (modal) modal.classList.add('hidden');
+}
+
+function calculateSettlementDiff() {
+    if (!currentActiveAdvance) return;
+    const spentStr = document.getElementById('settle-adv-actual-spent')?.value || '0';
+    const spent = parseInt(spentStr.replace(/\D/g, ''), 10) || 0;
+    const advance = parseInt(currentActiveAdvance.amount, 10) || 0;
+    const diff = advance - spent;
+
+    const box = document.getElementById('settle-adv-diff-box');
+    const badgeEl = document.getElementById('settle-adv-diff-badge');
+    const descEl = document.getElementById('settle-adv-diff-desc');
+    const amountEl = document.getElementById('settle-adv-diff-amount');
+
+    if (!box || !badgeEl || !descEl || !amountEl) return;
+
+    if (diff > 0) {
+        box.className = 'p-4 rounded-2xl border bg-blue-50/70 border-blue-200 text-blue-900';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-200 text-blue-900';
+        badgeEl.innerText = 'TÀI XẾ HOÀN LẠI TIỀN THỪA';
+        descEl.innerText = 'Số tiền tài xế nộp lại vào quỹ:';
+        amountEl.className = 'text-xl font-black tabular-nums font-heading text-blue-800';
+        amountEl.innerText = `+${formatMoneyVND(diff)}`;
+    } else if (diff < 0) {
+        box.className = 'p-4 rounded-2xl border bg-rose-50/70 border-rose-200 text-rose-900';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-200 text-rose-900';
+        badgeEl.innerText = 'CÔNG TY CHI TRẢ BÙ';
+        descEl.innerText = 'Số tiền công ty/điều vận chi bù cho tài xế:';
+        amountEl.className = 'text-xl font-black tabular-nums font-heading text-rose-700';
+        amountEl.innerText = `-${formatMoneyVND(Math.abs(diff))}`;
+    } else {
+        box.className = 'p-4 rounded-2xl border bg-emerald-50/70 border-emerald-200 text-emerald-900';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-200 text-emerald-900';
+        badgeEl.innerText = 'KHỚP ĐÚNG 100%';
+        descEl.innerText = 'Không phát sinh chênh lệch:';
+        amountEl.className = 'text-xl font-black tabular-nums font-heading text-emerald-800';
+        amountEl.innerText = '0 đ';
+    }
+}
+
+function recalculateActualExpensesFromTrip() {
+    if (!currentActiveAdvance) return;
+    const spentInp = document.getElementById('settle-adv-actual-spent');
+    if (spentInp) {
+        spentInp.value = new Intl.NumberFormat('vi-VN').format(currentActiveAdvance.actual_spent);
+        calculateSettlementDiff();
+    }
+}
+
+async function submitSettleAdvanceForm(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (!currentActiveAdvance) return;
+
+    const spentStr = document.getElementById('settle-adv-actual-spent')?.value || '0';
+    const spent = parseInt(spentStr.replace(/\D/g, ''), 10) || 0;
+    const notes = document.getElementById('settle-adv-notes')?.value || '';
+
+    try {
+        const res = await fetchWithAuth(`/api/accounting/driver-advances/${currentActiveAdvance.id}/settle/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                actual_spent: spent,
+                settlement_notes: notes
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('success', data.message || 'Quyết toán hoàn ứng thành công', 'Quyết Toán Hoàn Ứng Thành Công');
+            closeSettleAdvanceModal();
+            if (typeof loadAccountingAdvancesData === 'function') {
+                loadAccountingAdvancesData();
+            }
+            if (data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code) {
+                setTimeout(() => {
+                    if (typeof openCashVoucherModal === 'function') {
+                        openCashVoucherModal(data.cash_transaction || data.cash_transaction_id || data.cash_transaction_code);
+                    }
+                }, 300);
+            }
+        } else {
+            showToast('danger', data.error || 'Không thể quyết toán');
+        }
+    } catch (err) {
+        showToast('danger', 'Lỗi kết nối máy chủ');
+    }
+}
+
+window.closeDriverAdvanceModal = closeDriverAdvanceModal;
+window.onAdvanceTripChange = onAdvanceTripChange;
+window.toggleAdvanceSourceType = toggleAdvanceSourceType;
+window.submitDriverAdvanceForm = submitDriverAdvanceForm;
+window.openSettleAdvanceModal = openSettleAdvanceModal;
+window.closeSettleAdvanceModal = closeSettleAdvanceModal;
+window.calculateSettlementDiff = calculateSettlementDiff;
+window.recalculateActualExpensesFromTrip = recalculateActualExpensesFromTrip;
+window.submitSettleAdvanceForm = submitSettleAdvanceForm;
+
 // BIM ACCOUNTING ADVANCES & FUNDS - COMPREHENSIVE CRUD (VIEW, EDIT, SAVE, PRINT, DELETE)
 // =============================================================================
 let currentActiveDriverAdvance = null;
@@ -34486,3 +34705,12 @@ function printSettlementAdvanceVoucher() {
     printWindow.document.write(html);
     printWindow.document.close();
 }
+window.viewDriverAdvanceDetail = viewDriverAdvanceDetail;
+window.enableDriverAdvanceEdit = enableDriverAdvanceEdit;
+window.saveDriverAdvanceUpdate = saveDriverAdvanceUpdate;
+window.confirmDeleteDriverAdvance = confirmDeleteDriverAdvance;
+window.printCurrentDriverAdvance = printCurrentDriverAdvance;
+window.printDriverAdvanceVoucher = printDriverAdvanceVoucher;
+window.printSettlementAdvanceVoucher = printSettlementAdvanceVoucher;
+window.openDriverAdvanceModal = openDriverAdvanceModal;
+window.setDriverAdvanceFormDisabled = setDriverAdvanceFormDisabled;
