@@ -2,6 +2,31 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.7] - 2026-10-22 (Rà Soát Toàn Bộ Bảng Báo Cáo & Các Phân Hệ: Loại Bỏ Hết Badge Trạng Thái Sang Text Thuần)
+
+### 1. Chuẩn Hóa Toàn Diện Hệ Thống Báo Cáo (Reports 1 ➔ 14):
+- **Báo cáo 1 (Doanh thu xe):** Cột hình thức sở hữu `ownershipBadge` (Xe Nhà / Xe Bạn) -> chuyển text thuần in hoa.
+- **Báo cáo 2 (Hạn Free DEM/DET hãng tàu):** Cột `Trạng Thái Hạn` (An toàn / Còn X ngày / Quá hạn) bỏ badge pill bo tròn nền xanh/đỏ/vàng -> chuyển sang text thuần in hoa; bỏ badge đếm số cảnh báo/quá hạn của hãng tàu.
+- **Báo cáo 3 (Giao nhận đúng hẹn):** Cột `ĐÚNG HẸN / TRỄ HẸN` -> chuyển text thuần `Đúng Hẹn` (xanh) / `Trễ Hẹn` (đỏ).
+- **Báo cáo 4 (Thu hồi chi hộ cảng bãi):** Cột `Đã thu hồi / Chờ khách trả` -> chuyển text thuần.
+- **Báo cáo 5 (Cắt kéo & Lưu xe sau 0H):** Cột `Cắt Kéo Đổi Xe / Lưu Xe Sau 0H` -> chuyển text thuần.
+- **Báo cáo 8 (Đối soát xe ngoài 3PL):** Cột `Đã quyết toán / Đang đối soát` -> chuyển text thuần.
+- **Báo cáo 9 (Lương chuyến tài xế):** Số chuyến cắt kéo -> chuyển text số font-bold không nền.
+- **Báo cáo 11 (Tạm ứng chi phí phát sinh):** Cột `Tài xế nộp lại / Cty chi bù`, `Đã hoàn ứng / Đang tạm ứng`, số lượng chứng từ -> chuyển text thuần; bỏ badge tiêu đề phân cấp luồng tiền.
+- **Báo cáo 12 (Công nợ gối đầu & Chuyển kỳ):** Cột `Tồn T- trước / Trong kỳ`, `Đã Quyết Toán / Chưa Chốt`, `Đã Thu POD / Thiếu POD` -> chuyển text thuần.
+
+### 2. Chuẩn Hóa Lưới Các Bảng Khác (Kế Toán & Quyết Toán):
+- **Kế toán - Quỹ điều vận (`acct-fund-tbody`):** Cột trạng thái `Đang Lưu Hành / Chờ Cty Duyệt / Đã Hoàn Ứng Xong` -> chuyển text thuần.
+- **Kế toán - Thu hồi chi hộ (`acct-reimburse-tbody`):** Cột trạng thái `Chờ Thu / Đã Lập Debit Note / Đã Thu Hồi` -> chuyển text thuần.
+- **Kế toán - Đối soát 3PL (`acct-subcon-tbody`):** Cột trạng thái `Chờ Quyết Toán / Đã Trả Một Phần / Đã Quyết Toán` -> chuyển text thuần.
+- **Kế toán - Vé BOT (`acct-bot-tbody`):** Cột cảnh báo `Vượt định mức / Tiết kiệm / Bình thường` -> chuyển text thuần.
+- **Quyết toán gom chuyến (`settlement-trips-table`):** Cột Chênh lệch `diffBadge` (+Thừa / -Bù / Khớp) và Trạng thái `ĐÃ KHÓA SỔ / CHỜ QUYẾT TOÁN` -> chuyển text thuần.
+- **Ngoại lệ bảo toàn:** Giữ nguyên highlight badge phân luồng tờ khai hải quan (`LUỒNG ĐỎ`, `LUỒNG VÀNG`, `LUỒNG XANH`) trong cột `BOOKING / CONT / SEAL` theo đúng yêu cầu.
+
+### 3. Kiểm Thử Hệ Thống:
+- Cú pháp JavaScript hợp lệ 100% qua `node -c`.
+- Bộ kiểm thử tự động Django `python manage.py test --keepdb` đạt **147/147 tests PASSED**.
+
 ## [v4.3.6] - 2026-10-22 (Chuẩn Hóa Sổ Quỹ Tạm Ứng Điều Vận - Chuyển Badge Sang Text Thuần Trực Quan)
 
 ### 1. Loại Bỏ Toàn Bộ Badge Pill Trong Sổ Quỹ Tạm Ứng & Hoàn Ứng Điều Vận (`rep10-dispatcher-funds-table`):

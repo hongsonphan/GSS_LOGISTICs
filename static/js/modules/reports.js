@@ -424,8 +424,8 @@ function applyReport1Filters() {
     tbody.innerHTML = list.map(item => {
         const isOwned = item.ownership_code === 'OWNED';
         const ownershipBadge = isOwned
-            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Xe Nhà</span>`
-            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Xe Bạn / 3PL</span>`;
+            ? `<span class="text-xs font-bold text-teal-700 uppercase">Xe Nhà</span>`
+            : `<span class="text-xs font-semibold text-slate-600 uppercase">Xe Bạn / 3PL</span>`;
         
         const profitColor = item.profit >= 0 ? 'text-emerald-700' : 'text-rose-600';
         const marginColor = item.margin_percent >= 20 ? 'bg-emerald-100 text-emerald-800' :
@@ -520,8 +520,8 @@ function renderReport2(data) {
                     </td>
                     <td class="text-center font-mono font-bold text-slate-900 text-xs">${sl.total_containers}</td>
                     <td class="text-center font-mono font-bold text-emerald-700 text-xs">${sl.safe_count}</td>
-                    <td class="text-center font-mono font-bold text-amber-700 text-xs">${sl.warning_count > 0 ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">${sl.warning_count}</span>` : '0'}</td>
-                    <td class="text-center font-mono font-bold text-rose-700 text-xs">${sl.overdue_count > 0 ? `<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-black">${sl.overdue_count}</span>` : '0'}</td>
+                    <td class="text-center font-mono font-bold text-amber-700 text-xs">${sl.warning_count > 0 ? `<span class="font-bold text-amber-700">${sl.warning_count}</span>` : '0'}</td>
+                    <td class="text-center font-mono font-bold text-rose-700 text-xs">${sl.overdue_count > 0 ? `<span class="font-black text-rose-700">${sl.overdue_count}</span>` : '0'}</td>
                     <td class="text-right font-black text-rose-600 text-xs tabular-nums">${formatMoneyVND(sl.estimated_fines)}</td>
                 </tr>
             `).join('');
@@ -581,11 +581,11 @@ function applyReport2Filters() {
     tbody.innerHTML = list.map(item => {
         let statusBadge = '';
         if (item.det_status === 'OVERDUE') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">Quá hạn (${Math.abs(item.days_left)} ngày)</span>`;
+            statusBadge = `<span class="text-xs font-bold text-rose-700 uppercase">Quá hạn (${Math.abs(item.days_left)} ngày)</span>`;
         } else if (item.det_status === 'WARNING') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Còn ${item.days_left} ngày</span>`;
+            statusBadge = `<span class="text-xs font-bold text-amber-700 uppercase">Còn ${item.days_left} ngày</span>`;
         } else {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">An toàn</span>`;
+            statusBadge = `<span class="text-xs font-bold text-emerald-700 uppercase">An toàn</span>`;
         }
 
         const finesFormatted = item.estimated_fines > 0
@@ -685,8 +685,8 @@ function applyReport3Filters() {
 
     tbody.innerHTML = list.map(item => {
         const onTimeBadge = item.is_on_time
-            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">ĐÚNG HẸN</span>`
-            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">TRỄ HẸN</span>`;
+            ? `<span class="text-xs font-bold text-emerald-700 uppercase">Đúng Hẹn</span>`
+            : `<span class="text-xs font-bold text-rose-700 uppercase">Trễ Hẹn</span>`;
 
         const reasonText = !item.is_on_time
             ? `<span class="text-xs font-semibold text-rose-700">${escapeHtml(item.delay_reason)}</span>`
@@ -787,8 +787,8 @@ function applyReport4Filters() {
 
     tbody.innerHTML = list.map(item => {
         const settleBadge = item.is_settled
-            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Đã thu hồi</span>`
-            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200">Chờ khách trả</span>`;
+            ? `<span class="text-xs font-bold text-emerald-700 uppercase">Đã thu hồi</span>`
+            : `<span class="text-xs font-bold text-rose-700 uppercase">Chờ khách trả</span>`;
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -885,8 +885,8 @@ function applyReport5Filters() {
 
     tbody.innerHTML = list.map(item => {
         const typeBadge = item.is_split_trip
-            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">Cắt Kéo Đổi Xe</span>`
-            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-200">Lưu Xe Sau 0H</span>`;
+            ? `<span class="text-xs font-bold text-indigo-700 uppercase">Cắt Kéo Đổi Xe</span>`
+            : `<span class="text-xs font-bold text-amber-700 uppercase">Lưu Xe Sau 0H</span>`;
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -1226,10 +1226,9 @@ function applyReport8Filters() {
                 const settledDisp = canViewFinance ? formatMoneyVND(s.settled_amount) : '***';
                 const balDisp = canViewFinance ? formatMoneyVND(s.balance_due) : '***';
 
-                let statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">${escapeHtml(s.settlement_status)}</span>`;
-                if (s.balance_due <= 0) {
-                    statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Đã quyết toán</span>`;
-                }
+                let statusBadge = s.balance_due <= 0
+                    ? `<span class="text-xs font-bold text-emerald-700 uppercase">Đã quyết toán</span>`
+                    : `<span class="text-xs font-bold text-amber-700 uppercase">${escapeHtml(s.settlement_status)}</span>`;
 
                 return `
                     <tr class="hover:bg-slate-50 transition-colors">
@@ -1416,7 +1415,7 @@ function applyReport9Filters() {
                 <td class="font-mono text-slate-500 text-xs">${escapeHtml(item.driver_code)}</td>
                 <td class="text-xs font-mono text-slate-600">${escapeHtml(item.phone)}</td>
                 <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
-                <td class="text-center text-slate-600 text-xs tabular-nums">${item.split_trips_count > 0 ? `<span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold">${item.split_trips_count}</span>` : '0'}</td>
+                <td class="text-center text-slate-600 text-xs tabular-nums">${item.split_trips_count > 0 ? `<span class="font-bold text-teal-700">${item.split_trips_count}</span>` : '0'}</td>
                 <td class="text-right text-xs font-bold text-slate-800 tabular-nums">${baseDisp}</td>
                 <td class="text-right text-xs text-amber-700 tabular-nums">${layoverDisp}</td>
                 <td class="text-right text-xs text-slate-600 tabular-nums">${specialDisp}</td>
@@ -1717,16 +1716,16 @@ function applyReport11Filters() {
 
         let actionBadge = '';
         if (item.settlement_action === 'REFUND') {
-            actionBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Tài xế nộp lại</span>';
+            actionBadge = '<span class="text-xs font-bold text-emerald-700 uppercase">Tài xế nộp lại</span>';
         } else if (item.settlement_action === 'REIMBURSE') {
-            actionBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Cty/ĐV chi bù</span>';
+            actionBadge = '<span class="text-xs font-bold text-amber-700 uppercase">Cty/ĐV chi bù</span>';
         } else {
-            actionBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">Khớp đúng</span>';
+            actionBadge = '<span class="text-xs font-semibold text-slate-600 uppercase">Khớp đúng</span>';
         }
 
         const statusBadge = item.is_settled
-            ? '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã hoàn ứng</span>'
-            : '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>';
+            ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã hoàn ứng</span>'
+            : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-clock"></i> Đang tạm ứng</span>';
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -1762,7 +1761,7 @@ function applyReport11Filters() {
                 <td class="text-center text-xs">${statusBadge}</td>
                 <td class="text-center text-xs font-bold tabular-nums">
                     ${item.documents_count > 0 
-                        ? `<span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 inline-flex items-center gap-1"><i class="ph-bold ph-receipt"></i> ${item.documents_count}</span>` 
+                        ? `<span class="text-xs font-bold text-teal-700 inline-flex items-center gap-1"><i class="ph-bold ph-receipt"></i> ${item.documents_count}</span>` 
                         : '<span class="text-slate-300">-</span>'}
                 </td>
                 <td class="text-xs text-slate-500">
@@ -1885,22 +1884,22 @@ function applyReport12Filters() {
 
         let categoryBadge = '';
         if (item.category_tag === 'BACKLOG_SETTLED') {
-            categoryBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Tồn T- trước ➔ Đã Q.Toán</span>';
+            categoryBadge = '<span class="text-xs font-bold text-purple-700 uppercase">Tồn T- trước ➔ Đã Q.Toán</span>';
         } else if (item.category_tag === 'BACKLOG_PENDING') {
-            categoryBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">Tồn T- trước ➔ Nợ Tiếp</span>';
+            categoryBadge = '<span class="text-xs font-bold text-rose-700 uppercase">Tồn T- trước ➔ Nợ Tiếp</span>';
         } else if (item.category_tag === 'CURRENT_SETTLED') {
-            categoryBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200">Trong kỳ ➔ Đã Q.Toán</span>';
+            categoryBadge = '<span class="text-xs font-bold text-teal-700 uppercase">Trong kỳ ➔ Đã Q.Toán</span>';
         } else {
-            categoryBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Trong kỳ ➔ Chưa Chốt</span>';
+            categoryBadge = '<span class="text-xs font-bold text-amber-700 uppercase">Trong kỳ ➔ Chưa Chốt</span>';
         }
 
         const settlementBadge = item.is_settled
-            ? '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã Quyết Toán</span>'
-            : '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>';
+            ? '<span class="text-xs font-bold text-emerald-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-check-circle"></i> Đã Quyết Toán</span>'
+            : '<span class="text-xs font-bold text-amber-700 uppercase flex items-center gap-1 justify-center"><i class="ph-bold ph-hourglass"></i> Chưa Chốt</span>';
 
         const podBadge = item.has_pod
-            ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 inline-flex items-center gap-1"><i class="ph-bold ph-file-check"></i> Đã Thu POD</span>'
-            : '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i> Thiếu POD</span>';
+            ? '<span class="text-xs font-bold text-emerald-700 uppercase inline-flex items-center gap-1"><i class="ph-bold ph-file-check"></i> Đã Thu POD</span>'
+            : '<span class="text-xs font-bold text-rose-700 uppercase inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i> Thiếu POD</span>';
 
         const ownershipBadge = item.vehicle_ownership === 'OWNED'
             ? '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-50 text-teal-800">Xe Nhà</span>'
