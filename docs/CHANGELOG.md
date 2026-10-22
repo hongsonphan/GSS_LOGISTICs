@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.1.9] - 2026-10-22 (Nâng Cấp Bộ Thẻ KPI Đầu Trang Dashboard Thành 5 Ô Chiến Lược)
+
+### 1. Phân Tách Rõ Ràng Số Liệu Thực Hiện vs. Kế Hoạch Kinh Doanh (`apps/dispatch/api_views.py`):
+- **Bối cảnh & Yêu cầu:** Người dùng yêu cầu mở rộng hàng thẻ KPI đầu trang Dashboard từ 4 ô lên 5 ô, phân định dứt khoát giữa số liệu Tài chính thực tế (đã hoàn thành) và số liệu Kinh doanh kế hoạch (Báo giá đã duyệt/ký hợp đồng và booking đã nhận).
+- **Cấu hình 5 Trụ cột KPI Chiến lược (Ban Giám Đốc):**
+  1. **Ô 1: TÀI CHÍNH & QUỸ (Thực Hiện / Đã Hoàn Thành - Theme Emerald):**
+     * Metric chính: Lợi Nhuận Gộp Thực Hiện (`agg_profit`).
+     * Dòng 1: Doanh thu thực tế (`agg_revenue`) | Chi phí thực tế (`agg_expense`).
+     * Dòng 2: Số dư Quỹ Khả dụng: Tiền mặt (`cash_on_hand`) | Ngân hàng (`bank_balance`).
+     * Thao tác: Bấm vào chuyển nhanh sang phân hệ Kế toán (`ke-toan`).
+  2. **Ô 2: KINH DOANH & KẾ HOẠCH (Đã Ký Hợp Đồng / Booking Nhận - Theme Indigo):**
+     * Metric chính: Doanh Thu Kế Hoạch Đã Ký (`sales_plan_rev` = Tổng doanh thu dự kiến của các Báo giá trạng thái `APPROVED`).
+     * Dòng 1: Booking đã nhận (`dash_bookings_count` Đơn kèm số lượng Cont kế hoạch `dash_containers_plan`).
+     * Dòng 2: Tuyến cước đã duyệt (`approved_quotes_count` Tuyến) kèm Tỷ lệ chốt hợp đồng (`sales_win_rate` %).
+     * Thao tác: Bấm vào chuyển nhanh sang phân hệ Sale & CRM (`kinh-doanh`).
+  3. **Ô 3: VẬN HÀNH CHUYẾN (Điều Vận - Theme Teal):** Chuyến đang vận hành, chuyến đã xong, tỷ lệ giao đúng giờ OTD và tình trạng sự cố/chậm trễ.
+  4. **Ô 4: KHẢ DỤNG ĐỘI XE (Phương Tiện & Tài Xế - Theme Blue):** Tỷ lệ khai thác xe (% và số xe lăn bánh/tổng xe), xe bãi chờ, xe bảo trì và tài xế sẵn sàng nhận lệnh.
+  5. **Ô 5: ĐƠN HÀNG & HẢI QUAN (Customs & DEM/DET - Theme Amber):** Tờ khai hải quan luồng xanh, tỷ lệ thông quan, đơn hàng chờ điều xe, cảnh báo hạn lưu bãi/cont (DEM/DET).
+
+### 2. Tinh Chỉnh Giao Diện Lưới 5 Cột & Động Hóa Layout (`templates/views/view_dashboard.html` & `static/js/app.js`):
+- **Template HTML tĩnh:** Cập nhật container `#dashboard-row-pillars` sang `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 2xl:gap-3.5`, bổ sung đầy đủ thẻ tĩnh Pillar 2 (Kinh doanh) để triệt tiêu hiện tượng giật cục khung hình (layout shift) trước khi API trả về.
+- **Tự động thích ứng số lượng thẻ trong JavaScript (`renderRoleKpiCards`):**
+  * Tự động phát hiện số lượng thẻ: nếu có 5 thẻ (view Ban Giám Đốc) -> kích hoạt lưới `xl:grid-cols-5`; nếu có 4 thẻ (các vai trò phòng ban khác) -> tự động chuyển về `xl:grid-cols-4`, đảm bảo bố cục luôn lấp đầy cân đối 100% chiều ngang màn hình.
+  * Hỗ trợ đầy đủ bảng màu nhận diện thương hiệu BIM: `emerald`, `indigo`, `teal`, `blue`, `amber`, `rose`.
+
+---
+
 ## [v4.1.8] - 2026-10-22 (Tinh Chỉnh Khoảng Đệm Tránh Chữ Đè Icon Kính Lúp Trong Universal Combobox)
 
 ### 1. Khắc Phục Lỗi Chữ Đè Lên Icon Kính Lúp (`static/css/main.css` & `static/js/app.js`):

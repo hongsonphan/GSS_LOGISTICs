@@ -546,8 +546,22 @@ class DashboardBGDAPIView(APIView):
         # 9.2. Dữ liệu bổ sung cho Kinh doanh & Khách hàng
         total_bookings_count = BookingOrder.objects.filter(is_deleted=False).count()
         quotes_count = Quotation.objects.filter(is_deleted=False).count()
-        quote_conversion_rate = round(Quotation.objects.filter(is_deleted=False, status='APPROVED').count() / quotes_count * 100, 1) if quotes_count > 0 else 0.0
+        approved_quotes_qs = Quotation.objects.filter(is_deleted=False, status='APPROVED')
+        approved_quotes_count = approved_quotes_qs.count()
+        sales_plan_rev = sum(float(q.expected_revenue or 0) for q in approved_quotes_qs)
+        sales_win_rate = round(approved_quotes_count / quotes_count * 100, 1) if quotes_count > 0 else 0.0
+        quote_conversion_rate = sales_win_rate
         active_customers_count = Customer.objects.filter(is_deleted=False).count()
+
+        # Booking tiếp nhận theo kỳ hoặc toàn bộ
+        bookings_period_qs = BookingOrder.objects.filter(
+            Q(loading_date__range=[start_date, end_date]) | Q(loading_date__isnull=True, created_at__date__range=[start_date, end_date]),
+            is_deleted=False
+        )
+        if not bookings_period_qs.exists():
+            bookings_period_qs = BookingOrder.objects.filter(is_deleted=False)
+        dash_bookings_count = bookings_period_qs.count()
+        dash_containers_plan = int(bookings_period_qs.aggregate(total=Sum('total_containers'))['total'] or dash_bookings_count)
 
         # 9.3. Dữ liệu bổ sung cho Đội xe: Kiểm định sắp hết hạn trong 30 ngày
         thirty_days_later = today + datetime.timedelta(days=30)
@@ -570,13 +584,13 @@ class DashboardBGDAPIView(APIView):
             'DIRECTOR': {
                 'name': 'Ban Giám Đốc',
                 'badge': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                'description': 'Toàn cảnh chiến lược P&L, Dòng tiền, Khai thác đội xe & Chỉ số SLA vận tải',
+                'description': 'Toàn cảnh chiến lược P&L thực tế, Kế hoạch kinh doanh, Điều vận, Đội xe & Hải quan',
                 'cards': [
                     {
                         'id': 'pillar_financial',
                         'title': '1. Tài Chính & Quỹ',
-                        'badge_title': 'Tài Chính & Quỹ',
-                        'metric_label': 'Lợi Nhuận Gộp Tạm Tính',
+                        'badge_title': '1. Tài Chính & Quỹ',
+                        'metric_label': 'Lợi Nhuận Gộp Thực Hiện',
                         'metric_value': f"{int(agg_profit):,} đ".replace(',', '.'),
                         'metric_color': 'text-emerald-600',
                         'icon': 'ph-calculator',
@@ -587,9 +601,23 @@ class DashboardBGDAPIView(APIView):
                         'action_label': 'Sổ kế toán',
                     },
                     {
+                        'id': 'pillar_sales_plan',
+                        'title': '2. Kinh Doanh & Kế Hoạch',
+                        'badge_title': '2. Kinh Doanh',
+                        'metric_label': 'Doanh Thu Kế Hoạch (Đã Ký HĐ)',
+                        'metric_value': f"{int(sales_plan_rev):,} đ".replace(',', '.'),
+                        'metric_color': 'text-indigo-600',
+                        'icon': 'ph-handshake',
+                        'theme': 'indigo',
+                        'line_1': f"Booking đã nhận: <strong>{dash_bookings_count} Đơn ({dash_containers_plan} Cont)</strong>",
+                        'line_2': f"Tuyến đã ký: <strong>{approved_quotes_count} Tuyến</strong> | Tỷ lệ chốt: <strong>{sales_win_rate}%</strong>",
+                        'target_tab': 'kinh-doanh',
+                        'action_label': 'Sale & CRM',
+                    },
+                    {
                         'id': 'pillar_dispatch',
-                        'title': '2. Vận Hành Chuyến',
-                        'badge_title': 'Vận Hành Chuyến',
+                        'title': '3. Vận Hành Chuyến',
+                        'badge_title': '3. Vận Hành Chuyến',
                         'metric_label': 'Chuyến Đang Vận Hành',
                         'metric_value': f"{today_active_trips} / {total_trips} Chuyến",
                         'metric_color': 'text-teal-700',
@@ -602,31 +630,31 @@ class DashboardBGDAPIView(APIView):
                     },
                     {
                         'id': 'pillar_fleet',
-                        'title': '3. Khả Dụng Đội Xe',
-                        'badge_title': 'Khả Dụng Đội Xe',
+                        'title': '4. Khả Dụng Đội Xe',
+                        'badge_title': '4. Khả Dụng Đội Xe',
                         'metric_label': 'Tỷ Lệ Khai Thác (Utilization)',
                         'metric_value': f"{utilization_rate}% ({vehicles_active}/{total_vehicles} Xe)",
-                        'metric_color': 'text-indigo-700',
+                        'metric_color': 'text-blue-700',
                         'icon': 'ph-garage',
-                        'theme': 'indigo',
+                        'theme': 'blue',
                         'line_1': f"Bãi chờ: <strong>{vehicles_idle}</strong> • Bảo trì: <strong class='text-rose-600'>{vehicles_maint}</strong>",
-                        'line_2': f"Tài xế sẵn sàng: <strong class='text-indigo-800'>{drivers_working}/{total_drivers} TX</strong>",
+                        'line_2': f"Tài xế sẵn sàng: <strong class='text-blue-800'>{drivers_working}/{total_drivers} TX</strong>",
                         'target_tab': 'xe-bai',
                         'action_label': 'Quản lý xe',
                     },
                     {
-                        'id': 'pillar_sales_customs',
-                        'title': '4. Đơn Hàng & Hải Quan',
-                        'badge_title': 'Đơn Hàng & Hải Quan',
+                        'id': 'pillar_customs',
+                        'title': '5. Đơn Hàng & Hải Quan',
+                        'badge_title': '5. Đơn Hàng & Hải Quan',
                         'metric_label': 'Tờ Khai HQ Luồng Xanh',
                         'metric_value': f"{c_green} ({c_rate}% Thông quan)",
                         'metric_color': 'text-amber-700',
-                        'icon': 'ph-handshake',
+                        'icon': 'ph-anchor',
                         'theme': 'amber',
                         'line_1': f"Chờ gán xe: <strong class='text-amber-800'>{pending_bookings} đơn</strong> • Vàng/Đỏ: <strong>{c_yellow}/{c_red}</strong>",
                         'line_2': "DEM/DET: <strong class='text-emerald-700'>0 Cont quá hạn</strong>",
-                        'target_tab': 'kinh-doanh',
-                        'action_label': 'Theo dõi đơn',
+                        'target_tab': 'hai-quan',
+                        'action_label': 'Thông quan',
                     }
                 ]
             },

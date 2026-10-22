@@ -1490,6 +1490,13 @@ function renderRoleKpiCards(cards) {
     const container = document.getElementById('dashboard-row-pillars');
     if (!container || !Array.isArray(cards) || cards.length === 0) return;
 
+    // Cân chỉnh lưới grid tự động theo số lượng thẻ: 5 thẻ -> xl:grid-cols-5, 4 thẻ -> xl:grid-cols-4
+    if (cards.length === 5) {
+        container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 2xl:gap-3.5 shrink-0 transition-all duration-300';
+    } else {
+        container.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5 2xl:gap-3.5 shrink-0 transition-all duration-300';
+    }
+
     const themeColors = {
         emerald: { border: 'border-l-emerald-500', badge: 'text-emerald-800 bg-emerald-100/70 border-emerald-200', icon: 'bg-emerald-100/80 text-emerald-700', val: 'text-emerald-600', link: 'text-emerald-700' },
         teal: { border: 'border-l-teal-500', badge: 'text-teal-800 bg-teal-100/70 border-teal-200', icon: 'bg-teal-100/80 text-teal-700', val: 'text-teal-700', link: 'text-teal-700' },
