@@ -15547,15 +15547,19 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
     wrapper.className = 'bim-combobox-wrapper relative w-full inline-block text-left';
     wrapper.setAttribute('data-target-id', selectId);
 
-    // 2. Ô hiển thị & nhập chính (Main Trigger / Free-text Input)
+    // 2. Ô hiển thị & nhập chính (1 Ô TÌM KIẾM DUY NHẤT CÓ KÍNH LÚP & GÕ FREE-TEXT - KHÔNG BỊ DOUBLE)
     const triggerContainer = document.createElement('div');
     triggerContainer.className = 'relative flex items-center w-full';
+
+    // Biểu tượng kính lúp cố định ở ô tìm kiếm chính
+    const searchIcon = document.createElement('i');
+    searchIcon.className = 'ph-bold ph-magnifying-glass absolute left-2.5 text-teal-600 text-xs pointer-events-none z-10';
 
     const mainInput = document.createElement('input');
     mainInput.type = 'text';
     mainInput.autocomplete = 'off';
     mainInput.spellcheck = false;
-    mainInput.className = `bim-combobox-main-input form-input ${baseHeight} ${baseFontSize} ${fontWeight} ${textColor} ${isUppercase ? 'uppercase' : ''} ${rounded} w-full pl-2.5 pr-14 py-1 bg-white border border-slate-300 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-600 shadow-2xs transition-all cursor-pointer`;
+    mainInput.className = `bim-combobox-main-input form-input ${baseHeight} ${baseFontSize} ${fontWeight} ${textColor} ${isUppercase ? 'uppercase' : ''} ${rounded} w-full pl-8 pr-14 py-1 bg-white border border-slate-300 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-600 shadow-2xs transition-all cursor-text`;
     mainInput.setAttribute('role', 'combobox');
     mainInput.setAttribute('aria-expanded', 'false');
 
@@ -15575,35 +15579,19 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
     caretBtn.className = 'bim-combobox-caret absolute right-0 inset-y-0 px-2 flex items-center justify-center text-slate-400 hover:text-teal-700 transition-colors cursor-pointer';
     caretBtn.innerHTML = '<i class="ph-bold ph-caret-down text-xs transition-transform duration-200"></i>';
 
+    triggerContainer.appendChild(searchIcon);
     triggerContainer.appendChild(mainInput);
     triggerContainer.appendChild(clearBtn);
     triggerContainer.appendChild(caretBtn);
 
-    // 3. Dropdown Menu
+    // 3. Dropdown Menu (Chỉ chứa danh sách kết quả optionsList, loại bỏ hoàn toàn ô searchHeader thừa để không bị double)
     const dropdown = document.createElement('div');
     dropdown.className = 'bim-combobox-dropdown absolute left-0 right-0 mt-1 max-h-72 flex flex-col bg-white border border-teal-300 rounded-xl shadow-2xl z-[9999] hidden text-xs overflow-hidden';
 
-    // 4. "TRONG CHÍNH DÒNG ĐẦU TIÊN CỦA DROPDOWN CÓ 1 CÁI KÍNH LÚP ĐỂ TÌM KIẾM NHANH":
-    const searchHeader = document.createElement('div');
-    searchHeader.className = 'p-2 border-b border-slate-100 bg-slate-50/95 sticky top-0 z-10 shrink-0';
-    searchHeader.innerHTML = `
-        <div class="relative flex items-center w-full">
-            <i class="ph-bold ph-magnifying-glass absolute left-2.5 text-teal-600 text-xs pointer-events-none"></i>
-            <input type="text" class="bim-combobox-search-input w-full h-8 pl-8 pr-7 py-1 text-xs bg-white border border-slate-300 rounded-md focus:border-teal-600 focus:ring-1 focus:ring-teal-600 text-slate-900 font-medium placeholder:text-slate-400 shadow-2xs"
-                placeholder="Gõ từ khóa tìm kiếm nhanh..."
-                autocomplete="off"
-                spellcheck="false">
-            <button type="button" tabindex="-1" class="bim-combobox-search-clear absolute right-2 text-slate-400 hover:text-rose-500 hidden p-0.5 cursor-pointer">
-                <i class="ph-bold ph-x text-[10px]"></i>
-            </button>
-        </div>
-    `;
-
-    // 5. Container chứa danh sách options có scroll
+    // Container chứa danh sách options có scroll
     const optionsList = document.createElement('div');
-    optionsList.className = 'bim-combobox-options-list flex-1 overflow-y-auto divide-y divide-slate-50 py-1 max-h-56';
+    optionsList.className = 'bim-combobox-options-list flex-1 overflow-y-auto divide-y divide-slate-50 py-1 max-h-60';
 
-    dropdown.appendChild(searchHeader);
     dropdown.appendChild(optionsList);
 
     wrapper.appendChild(triggerContainer);
@@ -15615,17 +15603,15 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
     selectEl.setAttribute('aria-hidden', 'true');
     selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
 
-    const searchInput = searchHeader.querySelector('.bim-combobox-search-input');
-    const searchClear = searchHeader.querySelector('.bim-combobox-search-clear');
-
     let currentHighlightedIndex = -1;
     let visibleOptions = [];
 
-    // Nếu có label trỏ tới selectId, khi click label thì mở dropdown
+    // Nếu có label trỏ tới selectId, khi click label thì focus vào ô tìm kiếm
     const labels = document.querySelectorAll(`label[for="${selectId}"]`);
     labels.forEach(lbl => {
         lbl.addEventListener('click', (e) => {
             e.preventDefault();
+            mainInput.focus();
             openDropdown();
         });
     });
@@ -15688,23 +15674,14 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
         }
     }
 
-    function openDropdown(prefillQuery = '') {
+    function openDropdown(query = '') {
         closeAllSearchableComboboxes(wrapper);
         updatePosition();
-        searchInput.value = prefillQuery;
-        searchClear.classList.toggle('hidden', !prefillQuery);
-        renderOptions(prefillQuery);
+        renderOptions(query);
         dropdown.classList.remove('hidden');
         caretBtn.querySelector('i')?.classList.add('rotate-180', 'text-teal-700');
         wrapper.classList.add('bim-combobox-open');
         mainInput.setAttribute('aria-expanded', 'true');
-
-        setTimeout(() => {
-            searchInput.focus();
-            if (prefillQuery) {
-                searchInput.select();
-            }
-        }, 30);
     }
 
     function closeDropdown() {
@@ -15826,7 +15803,7 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
 
     // --- SỰ KIỆN TƯƠNG TÁC ---
 
-    // Click hoặc Focus vào ô chính -> Mở dropdown và chọn sẵn text
+    // Click hoặc Focus vào ô chính -> Mở dropdown
     mainInput.addEventListener('click', () => {
         if (!isOpen()) {
             openDropdown(mainInput.value.trim());
@@ -15835,48 +15812,49 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
 
     mainInput.addEventListener('focus', () => {
         if (!isOpen()) {
-            openDropdown(mainInput.value.trim());
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            if (!selectedOpt || !selectedOpt.value) {
+                openDropdown('');
+            } else {
+                openDropdown(mainInput.value.trim());
+            }
         }
     });
 
     // Cho phép gõ free-text trực tiếp trong ô chính ("trong ô đó luôn")
     mainInput.addEventListener('input', () => {
-        if (!isOpen()) openDropdown(mainInput.value);
-        searchInput.value = mainInput.value;
-        searchClear.classList.toggle('hidden', !mainInput.value);
-        renderOptions(mainInput.value);
+        if (!isOpen()) {
+            openDropdown(mainInput.value);
+        } else {
+            renderOptions(mainInput.value);
+        }
+        clearBtn.classList.toggle('hidden', !mainInput.value);
     });
 
-    // Gõ trong ô tìm kiếm có kính lúp (dòng đầu tiên của dropdown)
-    searchInput.addEventListener('input', () => {
-        searchClear.classList.toggle('hidden', !searchInput.value);
-        renderOptions(searchInput.value.trim());
-    });
-
-    // Xóa từ khóa trong ô tìm kiếm dòng đầu
-    searchClear.addEventListener('click', (e) => {
-        e.preventDefault();
-        searchInput.value = '';
-        searchClear.classList.add('hidden');
-        renderOptions('');
-        searchInput.focus();
-    });
-
-    // Phím điều hướng từ ô tìm kiếm dòng đầu hoặc ô chính
+    // Phím điều hướng từ ô chính
     const handleKeyNav = (e) => {
         if (e.key === 'ArrowDown') {
             e.preventDefault();
+            if (!isOpen()) {
+                openDropdown(mainInput.value);
+                return;
+            }
             if (visibleOptions.length > 0) {
                 currentHighlightedIndex = (currentHighlightedIndex + 1) % visibleOptions.length;
                 updateHighlight();
             }
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
+            if (!isOpen()) {
+                openDropdown(mainInput.value);
+                return;
+            }
             if (visibleOptions.length > 0) {
                 currentHighlightedIndex = (currentHighlightedIndex - 1 + visibleOptions.length) % visibleOptions.length;
                 updateHighlight();
             }
         } else if (e.key === 'Enter') {
+            if (!isOpen()) return;
             e.preventDefault();
             e.stopPropagation();
             if (currentHighlightedIndex >= 0 && visibleOptions[currentHighlightedIndex]) {
@@ -15884,7 +15862,7 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
             } else if (visibleOptions.length === 1) {
                 selectOption(visibleOptions[0]);
             } else if (visibleOptions.length > 1) {
-                const cleanInp = removeVietnameseAccents(searchInput.value || mainInput.value);
+                const cleanInp = removeVietnameseAccents(mainInput.value);
                 const exactMatch = visibleOptions.find(o => removeVietnameseAccents(o.text) === cleanInp || removeVietnameseAccents(o.value) === cleanInp);
                 if (exactMatch) {
                     selectOption(exactMatch);
@@ -15892,16 +15870,14 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
                     selectOption(visibleOptions[0]);
                 }
             }
-        } else if (e.key === 'Escape') {
-            closeDropdown();
-            syncDisplay();
-        } else if (e.key === 'Tab') {
-            closeDropdown();
-            syncDisplay();
+        } else if (e.key === 'Escape' || e.key === 'Tab') {
+            if (isOpen()) {
+                closeDropdown();
+                syncDisplay();
+            }
         }
     };
 
-    searchInput.addEventListener('keydown', handleKeyNav);
     mainInput.addEventListener('keydown', handleKeyNav);
 
     // Click nút Mũi tên Caret
@@ -15911,6 +15887,7 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
         if (isOpen()) {
             closeDropdown();
         } else {
+            mainInput.focus();
             openDropdown();
         }
     });
@@ -15927,7 +15904,8 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
         if (typeof selectEl.onchange === 'function') {
             selectEl.onchange();
         }
-        openDropdown();
+        mainInput.focus();
+        openDropdown('');
     });
 
     // Click ra ngoài -> Đóng dropdown và khôi phục text hợp lệ
@@ -15965,13 +15943,12 @@ function makeSearchableSelect(selectEl, customOptions = {}) {
     const api = {
         wrapper,
         mainInput,
-        searchInput,
         selectEl,
         open: openDropdown,
         close: closeDropdown,
         sync: () => {
             syncDisplay();
-            if (isOpen()) renderOptions(searchInput.value.trim());
+            if (isOpen()) renderOptions(mainInput.value.trim());
         },
         destroy: () => {
             wrapper.remove();

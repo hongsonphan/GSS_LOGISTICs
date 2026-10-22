@@ -8,9 +8,8 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 - **Bối cảnh & Yêu cầu:** Dropdown "CHỌN ĐỒNG NGHIỆP ĐỂ NHẮN TIN" trong cửa sổ Chat Nổi trước đây là thẻ `<select>` truyền thống, có dòng placeholder chiếm chỗ, không hỗ trợ gõ từ khóa và khó tìm kiếm khi danh bạ nhân sự đông.
 - **Nâng cấp UX/UI Hiện Đại ("có search như lúc nãy"):**
   * Tự động khởi tạo `makeSearchableSelect` khi mở dropdown "Nhắn tin mới".
-  * **Kính lúp & thanh tìm kiếm dòng đầu:** Cố định ở dòng 1 của menu xổ xuống với icon kính lúp (`ph-magnifying-glass`), hỗ trợ gõ tìm kiếm tiếng Việt không dấu.
-  * **Gõ Free-Text trực tiếp:** Người dùng có thể gõ trực tiếp tên đồng nghiệp, tên phòng ban hoặc chức vụ vào ô chính để mở dropdown và lọc thời gian thực.
-  * **Loại bỏ hoàn toàn dòng placeholder thừa:** Không còn dòng `-- Chọn đồng nghiệp văn phòng --` trong menu xổ xuống, mở ra thấy ngay danh sách nhân sự thực tế.
+  * **1 Ô Tìm Kiếm Duy Nhất & Triệt Tiêu Lỗi Bị Double:** Tích hợp trực tiếp icon kính lúp (`ph-magnifying-glass`) vào bên trái ô chính `mainInput`, loại bỏ hoàn toàn ô `searchHeader` phụ bên trong menu dropdown. Người dùng gõ từ khóa trực tiếp ngay trong ô ("trong ô đó luôn"), menu xổ xuống lập tức hiển thị danh sách kết quả lọc mà không bị lặp 2 ô input tìm kiếm xếp chồng lên nhau.
+  * **Loại bỏ hoàn toàn dòng placeholder thừa:** Không còn dòng `-- Chọn ... --` trong menu xổ xuống, mở ra thấy ngay danh sách kết quả thực tế.
   * **Thao tác 1 chạm:** Chọn hoặc nhấn Enter lập tức mở phòng chat 1-1 riêng (`startDirectChat`), tự động đóng dropdown và reset ô chọn về trạng thái sạch sẽ cho lần dùng kế tiếp.
   * Bổ sung nút đóng `×` nhanh trên thanh tiêu đề dropdown để tắt nhanh khi đổi ý.
 
