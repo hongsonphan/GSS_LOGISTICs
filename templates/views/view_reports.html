@@ -47,15 +47,45 @@
                         <i class="ph-bold ph-chart-line-up"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">DOANH THU & HIỆU SUẤT ĐỘI XE</div>
-                        <div class="text-xs font-bold text-teal-700 font-heading truncate mt-0.5">P&L, Sản Lượng & Chi Phí Tuyến</div>
+                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">DOANH THU & HIỆU SUẤT</div>
+                        <div class="text-xs font-bold text-teal-700 font-heading truncate mt-0.5">P&L, Suất Tiêu Hao & Gom Chuyến</div>
                     </div>
                 </div>
                 <span class="px-2.5 py-1 rounded-full text-xs font-black bg-teal-50 text-teal-800 border border-teal-200 shrink-0">3 BC</span>
             </button>
 
-            <!-- Nhóm 2: VẬN HÀNH & SỰ CỐ -->
+            <!-- Nhóm 2: KINH DOANH & KHÁCH HÀNG -->
             <button type="button" onclick="switchReportGroup('group-2')" id="report-group-btn-2" 
+                class="report-group-btn p-4 sm:p-5 rounded-2xl border transition-all text-left flex items-center justify-between bg-white border-slate-200 hover:border-slate-300 shadow-xs hover:bg-slate-50 hover:shadow-md cursor-pointer">
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold text-2xl shrink-0 shadow-2xs">
+                        <i class="ph-bold ph-handshake"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">KINH DOANH & KHÁCH HÀNG</div>
+                        <div class="text-xs font-bold text-indigo-700 font-heading truncate mt-0.5">Sản Lượng TEU, Công Nợ AR & Tuổi Nợ</div>
+                    </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shrink-0">3 BC</span>
+            </button>
+
+            <!-- Nhóm 3: TÀI CHÍNH & QUẢN TRỊ -->
+            <button type="button" onclick="switchReportGroup('group-3')" id="report-group-btn-3" 
+                class="report-group-btn p-4 sm:p-5 rounded-2xl border transition-all text-left flex items-center justify-between bg-white border-slate-200 hover:border-slate-300 shadow-xs hover:bg-slate-50 hover:shadow-md cursor-pointer">
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-2xl shrink-0 shadow-2xs">
+                        <i class="ph-bold ph-wallet"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">TÀI CHÍNH & QUẢN TRỊ</div>
+                        <div class="text-xs font-bold text-amber-700 font-heading truncate mt-0.5">Sổ Quỹ, Tạm Ứng, Lương & Xe Thầu 3PL</div>
+                    </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 shrink-0">4 BC</span>
+            </button>
+
+            <!-- Nhóm 4: VẬN HÀNH & SỰ CỐ -->
+            <button type="button" onclick="switchReportGroup('group-4')" id="report-group-btn-4" 
                 class="report-group-btn p-4 sm:p-5 rounded-2xl border transition-all text-left flex items-center justify-between bg-white border-slate-200 hover:border-slate-300 shadow-xs hover:bg-slate-50 hover:shadow-md cursor-pointer">
                 <div class="flex items-center gap-3.5 min-w-0">
                     <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-2xl shrink-0 shadow-2xs">
@@ -63,82 +93,48 @@
                     </div>
                     <div class="min-w-0">
                         <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">VẬN HÀNH & SỰ CỐ</div>
-                        <div class="text-xs font-bold text-blue-700 font-heading truncate mt-0.5">Vỏ Cont, DEM/DET & Đúng Giờ</div>
+                        <div class="text-xs font-bold text-blue-700 font-heading truncate mt-0.5">Vỏ Cont, DEM/DET, Đúng Giờ & OS&D</div>
                     </div>
                 </div>
                 <span class="px-2.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 shrink-0">4 BC</span>
-            </button>
-
-            <!-- Nhóm 3: LƯƠNG CHUYẾN & TẠM ỨNG -->
-            <button type="button" onclick="switchReportGroup('group-3')" id="report-group-btn-3" 
-                class="report-group-btn p-4 sm:p-5 rounded-2xl border transition-all text-left flex items-center justify-between bg-white border-slate-200 hover:border-slate-300 shadow-xs hover:bg-slate-50 hover:shadow-md cursor-pointer">
-                <div class="flex items-center gap-3.5 min-w-0">
-                    <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold text-2xl shrink-0 shadow-2xs">
-                        <i class="ph-bold ph-wallet"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">LƯƠNG CHUYẾN & TẠM ỨNG</div>
-                        <div class="text-xs font-bold text-indigo-700 font-heading truncate mt-0.5">Sổ Quỹ, Ứng Tiền & Xe Thầu 3PL</div>
-                    </div>
-                </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shrink-0">4 BC</span>
-            </button>
-
-            <!-- Nhóm 4: CÔNG NỢ KHÁCH -->
-            <button type="button" onclick="switchReportGroup('group-4')" id="report-group-btn-4" 
-                class="report-group-btn p-4 sm:p-5 rounded-2xl border transition-all text-left flex items-center justify-between bg-white border-slate-200 hover:border-slate-300 shadow-xs hover:bg-slate-50 hover:shadow-md cursor-pointer">
-                <div class="flex items-center gap-3.5 min-w-0">
-                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-2xl shrink-0 shadow-2xs">
-                        <i class="ph-bold ph-coins"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">CÔNG NỢ KHÁCH</div>
-                        <div class="text-xs font-bold text-amber-700 font-heading truncate mt-0.5">Phải Thu (AR), Quyết Toán & Tồn</div>
-                    </div>
-                </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 shrink-0">3 BC</span>
             </button>
         </div>
 
         <!-- Thanh Nút Chọn Báo Cáo Con Thuộc Nhóm Đang Chọn (Chuẩn 2-Tier Enterprise, gọn gàng, cách ly từng nhóm) -->
         <div class="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-2">
 
-            <!-- Các Nút Báo Cáo (Không đánh số) -->
-            <!-- Nhóm 1 -->
+            <!-- Các Nút Báo Cáo Thuộc Từng Nhóm Chuẩn Hóa -->
+            <!-- Nhóm 1: DOANH THU & HIỆU SUẤT ĐỘI XE (3 Báo Cáo) -->
             <button id="report-tab-btn-1" data-report-group="group-1" onclick="switchReportSubTab('report-1')" class="report-subtab-btn active px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all bg-teal-700 text-white shadow-sm">
-                <i class="ph-bold ph-truck text-base"></i>
+                <i class="ph-bold ph-chart-line-up text-base"></i>
                 <span>Hiệu Suất Đội Xe & P&L</span>
-            </button>
-            <button id="report-tab-btn-7" data-report-group="group-1" onclick="switchReportSubTab('report-7')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-                <i class="ph-bold ph-buildings text-base"></i>
-                <span>Doanh Thu Khách & Sản Lượng TEU</span>
             </button>
             <button id="report-tab-btn-4" data-report-group="group-1" onclick="switchReportSubTab('report-4')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
                 <i class="ph-bold ph-receipt text-base"></i>
-                <span>Chi Phí Tuyến & Hoàn Chi Hộ</span>
+                <span>Chi Phí Tuyến & Suất Tiêu Hao</span>
+            </button>
+            <button id="report-tab-btn-12" data-report-group="group-1" onclick="switchReportSubTab('report-12')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                <i class="ph-bold ph-stack text-base"></i>
+                <span>Quyết Toán Gom Chuyến & Backlog</span>
+                <span id="badge-report-carryover-count" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-100 text-teal-800">0</span>
             </button>
 
-            <!-- Nhóm 2 -->
-            <button id="report-tab-btn-2" data-report-group="group-2" onclick="switchReportSubTab('report-2')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-warning text-base"></i>
-                <span>Vỏ Cont & DEM/DET Hãng Tàu</span>
-                <span id="badge-report-det-warning" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-700">0</span>
+            <!-- Nhóm 2: KINH DOANH & KHÁCH HÀNG (3 Báo Cáo) -->
+            <button id="report-tab-btn-7" data-report-group="group-2" onclick="switchReportSubTab('report-7')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-buildings text-base"></i>
+                <span>Doanh Thu Khách & Sản Lượng TEU</span>
             </button>
-            <button id="report-tab-btn-3" data-report-group="group-2" onclick="switchReportSubTab('report-3')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-clock text-base"></i>
-                <span>Đúng Giờ & Chất Lượng OTP</span>
+            <button id="report-tab-btn-13" data-report-group="group-2" onclick="switchReportSubTab('report-13')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-coins text-base"></i>
+                <span>Công Nợ Phải Thu (AR)</span>
             </button>
-            <button id="report-tab-btn-5" data-report-group="group-2" onclick="switchReportSubTab('report-5')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-moon-stars text-base"></i>
-                <span>Cắt Kéo & Lưu Xe Sau 0H</span>
-                <span id="badge-report-layover" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800">0</span>
-            </button>
-            <button id="report-tab-btn-6" data-report-group="group-2" onclick="switchReportSubTab('report-6')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-shield-warning text-base"></i>
-                <span>Ngoại Lệ & Sự Cố (OS&D)</span>
+            <button id="report-tab-btn-14" data-report-group="group-2" onclick="switchReportSubTab('report-14')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-hourglass-high text-base"></i>
+                <span>Tuổi Đơn Tồn Đọng Chưa Chốt</span>
+                <span id="badge-report-unsettled-critical" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800">0</span>
             </button>
 
-            <!-- Nhóm 3 -->
+            <!-- Nhóm 3: TÀI CHÍNH & QUẢN TRỊ NỘI BỘ (4 Báo Cáo) -->
             <button id="report-tab-btn-10" data-report-group="group-3" onclick="switchReportSubTab('report-10')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
                 <i class="ph-bold ph-wallet text-base"></i>
                 <span>Quỹ Tạm Ứng Điều Vận (Kế Toán QL)</span>
@@ -151,27 +147,31 @@
             </button>
             <button id="report-tab-btn-9" data-report-group="group-3" onclick="switchReportSubTab('report-9')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
                 <i class="ph-bold ph-identification-badge text-base"></i>
-                <span>Lương Chuyến & Tài Xế</span>
+                <span>Bảng Lương Chuyến & Tài Xế</span>
             </button>
             <button id="report-tab-btn-8" data-report-group="group-3" onclick="switchReportSubTab('report-8')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
                 <i class="ph-bold ph-handshake text-base"></i>
                 <span>Quyết Toán Xe Thầu Phụ 3PL</span>
             </button>
 
-            <!-- Nhóm 4 -->
-            <button id="report-tab-btn-13" data-report-group="group-4" onclick="switchReportSubTab('report-13')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-coins text-base"></i>
-                <span>Công Nợ Phải Thu (AR)</span>
+            <!-- Nhóm 4: VẬN HÀNH & SỰ CỐ HIỆN TRƯỜNG (4 Báo Cáo) -->
+            <button id="report-tab-btn-2" data-report-group="group-4" onclick="switchReportSubTab('report-2')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-warning text-base"></i>
+                <span>Vỏ Cont & DEM/DET Hãng Tàu</span>
+                <span id="badge-report-det-warning" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-700">0</span>
             </button>
-            <button id="report-tab-btn-12" data-report-group="group-4" onclick="switchReportSubTab('report-12')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-receipt text-base"></i>
-                <span>Quyết Toán Chuyến & Backlog</span>
-                <span id="badge-report-carryover-count" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-100 text-teal-800">0</span>
+            <button id="report-tab-btn-3" data-report-group="group-4" onclick="switchReportSubTab('report-3')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-clock text-base"></i>
+                <span>Đúng Giờ & Chất Lượng OTP</span>
             </button>
-            <button id="report-tab-btn-14" data-report-group="group-4" onclick="switchReportSubTab('report-14')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-hourglass-high text-base"></i>
-                <span>Tuổi Đơn Tồn Đọng Chưa Chốt</span>
-                <span id="badge-report-unsettled-critical" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800">0</span>
+            <button id="report-tab-btn-5" data-report-group="group-4" onclick="switchReportSubTab('report-5')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-moon-stars text-base"></i>
+                <span>Cắt Kéo & Lưu Xe Sau 0H</span>
+                <span id="badge-report-layover" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800">0</span>
+            </button>
+            <button id="report-tab-btn-6" data-report-group="group-4" onclick="switchReportSubTab('report-6')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-shield-warning text-base"></i>
+                <span>Biên Bản Ngoại Lệ & Sự Cố (OS&D)</span>
             </button>
         </div>
     </div>

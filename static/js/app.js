@@ -25787,10 +25787,10 @@ let currentActiveReportGroup = 'group-1';
 let currentReportViewMode = 'group'; // 'group' hoặc 'all'
 
 const REPORT_GROUP_MAPPING = {
-    'group-1': ['report-1', 'report-7', 'report-4'],
-    'group-2': ['report-2', 'report-3', 'report-5', 'report-6'],
+    'group-1': ['report-1', 'report-4', 'report-12'],
+    'group-2': ['report-7', 'report-13', 'report-14'],
     'group-3': ['report-10', 'report-11', 'report-9', 'report-8'],
-    'group-4': ['report-13', 'report-12', 'report-14']
+    'group-4': ['report-2', 'report-3', 'report-5', 'report-6']
 };
 
 const REPORT_PERMISSION_MAPPING = {
@@ -25835,7 +25835,7 @@ function canAccessReport(reportId) {
 
     // 2. Kinh Doanh (SALES): Báo cáo 7 (Doanh thu khách & TEU), Báo cáo 4 (Chi phí tuyến), Báo cáo 3 (Đúng giờ OTP), Báo cáo 13 (Công nợ AR)
     if (role === 'SALESMAN' || role === 'LEAD_SALES' || role === 'CSKH' || dept === 'SALES') {
-        return ['report-7', 'report-4', 'report-3', 'report-13'].includes(reportId);
+        return ['report-7', 'report-4', 'report-3', 'report-13', 'report-14'].includes(reportId);
     }
 
     // 3. Nhân Sự (HR): Báo cáo 9 (Lương chuyến & Năng suất tài xế), Báo cáo 3 (Đúng giờ OTP), Báo cáo 6 (Sự cố)

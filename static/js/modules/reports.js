@@ -79,10 +79,10 @@ let currentActiveReportGroup = 'group-1';
 let currentReportViewMode = 'group'; // 'group' hoặc 'all'
 
 const REPORT_GROUP_MAPPING = {
-    'group-1': ['report-1', 'report-7', 'report-4'],
-    'group-2': ['report-2', 'report-3', 'report-5', 'report-6'],
+    'group-1': ['report-1', 'report-4', 'report-12'],
+    'group-2': ['report-7', 'report-13', 'report-14'],
     'group-3': ['report-10', 'report-11', 'report-9', 'report-8'],
-    'group-4': ['report-13', 'report-12', 'report-14']
+    'group-4': ['report-2', 'report-3', 'report-5', 'report-6']
 };
 
 function switchReportGroup(groupId, autoSwitchFirstChild = true) {

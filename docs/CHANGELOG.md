@@ -2,6 +2,56 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.1] - 2026-10-22 (Cơ Cấu Lại 4 Nhóm Báo Cáo Chiến Lược Chuẩn Quản Trị Logistics TMS)
+
+### 1. Chuẩn Hóa 4 Nhóm Báo Cáo Chiến Lược (iew_reports.html, pp.js & 
+eports.js):
+- **Đồng bộ cơ cấu 4 nhóm chuẩn theo chu trình nghiệp vụ vận tải:**
+  1. **DOANH THU & HIỆU SUẤT ĐỘI XE (Teal - 3 BC):**
+     * 
+eport-1: Hiệu Suất Đội Xe & P&L (Doanh thu, chi phí, lãi gộp từng xe).
+     * 
+eport-4: Chi Phí Tuyến & Suất Tiêu Hao (Định mức dầu, vé BOT, phụ phí).
+     * 
+eport-12: Quyết Toán Gom Chuyến & Backlog (Tiến độ xử lý chuyến tồn đọng).
+  2. **KINH DOANH & KHÁCH HÀNG (Indigo - 3 BC):**
+     * 
+eport-7: Doanh Thu Khách & Sản Lượng TEU (Doanh số và số lượng container theo khách hàng).
+     * 
+eport-13: Công Nợ Phải Thu Khách Hàng - AR (Bảng kê đối soát SOA, hóa đơn chưa thu).
+     * 
+eport-14: Tuổi Đơn Tồn Đọng Chưa Chốt - Aging (Đơn hàng giao lâu ngày chưa chốt xuất hóa đơn).
+  3. **TÀI CHÍNH & QUẢN TRỊ NỘI BỘ (Amber - 4 BC):**
+     * 
+eport-10: Quỹ Tạm Ứng Điều Vận (Kế toán cấp và số dư quỹ khả dụng).
+     * 
+eport-11: Tạm Ứng & Chi Phí Tài Xế (Ứng tiền đường dài và hoàn ứng chứng từ).
+     * 
+eport-9: Bảng Lương Chuyến & Tài Xế (Lương cơ bản + lương chuyến + thưởng vượt mốc).
+     * 
+eport-8: Quyết Toán Xe Thầu Phụ 3PL (Công nợ phải trả AP và lịch thanh toán nhà xe bạn).
+  4. **VẬN HÀNH & SỰ CỐ HIỆN TRƯỜNG (Blue / Rose - 4 BC):**
+     * 
+eport-2: Vỏ Cont & DEM/DET Hãng Tàu (Theo dõi free-time và hạn trả rỗng tránh phạt tiền).
+     * 
+eport-3: Đúng Giờ & Chất Lượng OTP (Tỷ lệ xe đến cảng/kho đóng hàng đúng hẹn SLA).
+     * 
+eport-5: Cắt Kéo & Lưu Xe Sau 0H (Chuyến chạy cắt móc và phí lưu ca qua đêm).
+     * 
+eport-6: Biên Bản Ngoại Lệ & Sự Cố - OS&D (Nhật ký hàng hỏng, rách seal, đền bù).
+
+### 2. Tinh Chỉnh Phân Quyền & Chuyển Nhóm Mượt Mà (Frontend Logic):
+- Cập nhật ma trận REPORT_GROUP_MAPPING trong cả static/js/app.js và static/js/modules/reports.js.
+- Bổ sung quyền xem 
+eport-14 (Tuổi đơn tồn đọng) cho Khối Kinh Doanh (Sales) để đôn đốc khách hàng nghiệm thu/thanh toán công nợ.
+- Đảm bảo hiển thị cách ly nghiêm ngặt giữa các nhóm: bấm nhóm nào chỉ hiển thị đúng các báo cáo thuộc nhóm đó.
+
+### 3. Kiểm Thử Hệ Thống (Zero-Regression):
+- Cú pháp JavaScript static/js/app.js và static/js/modules/reports.js: 100% PASS không có lỗi.
+- Toàn bộ 147/147 Unit Tests của hệ thống vượt qua thành công.
+
+---
+
 ## [v4.3.0] - 2026-10-22 (Chuẩn Hóa Toàn Diện Bộ 5 Thẻ Vận Hành Cho Phân Hệ Đội Xe, Nhân Sự & Hải Quan)
 
 ### 1. Chuẩn Hóa Phân Hệ Đội Xe & Kỹ Thuật (iew_fleet.html, pi_views.py, pp.js & leet.js):
