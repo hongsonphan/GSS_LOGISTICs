@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.0.4] - 2026-10-22 (Xử Lý Triệt Để Lỗi Kế Toán ReferenceError & Khôi Phục Phân Hệ Quyết Toán Gom Chuyến)
+
+### 1. Khắc Phục Triệt Để Toast Lỗi & ReferenceError Khi Vào Tab Kế Toán:
+- **Nguyên nhân gốc rễ (Root Cause Analysis):**
+  * Khi người dùng bấm vào tab *"Tài chính & Kế toán"* (`switchTab('ke-toan')`), hệ thống kích hoạt hàm `loadAccountingAdvancesData()`. Hàm này gọi tới `populateAdvanceModalOptions(data)` để nạp danh sách chuyến xe và tài xế vào modal Tạm ứng.
+  * Trong một commit trước đó (`eb2d2aa`), khi chuẩn hóa các nút bấm CRUD của Quỹ Điều Vận, phần thân bảng `renderSettlementTable` đã bị dán đè nhầm vào giữa hàm `renderDispatcherFundsTable()`. Sự cố này vô tình làm cắt cụt hàm render Quỹ Điều Vận và xóa mất định nghĩa hàm `populateAdvanceModalOptions(data)`.
+  * Do `populateAdvanceModalOptions` không tồn tại, JS engine quăng ngoại lệ `ReferenceError: populateAdvanceModalOptions is not defined`, rơi vào khối `catch` và kích hoạt Toast đỏ: *"[Lỗi Kế Toán] Không thể kết nối máy chủ để tải dữ liệu tạm ứng"*.
+  * Đồng thời, các hàm phân hệ Quyết toán gom chuyến (`loadSettlementData`, `onSettlementGroupByChange`, `populateSettlementTargetOptions`, `setSettlementDatePreset`, `resetSettlementFilters`, `filterSettlementClientSide`) bị thiếu định nghĩa, nhưng tại dòng 28850 lại có lệnh gán trực tiếp không bọc an toàn: `window.loadSettlementData = loadSettlementData;` gây ra `Uncaught ReferenceError: loadSettlementData is not defined`, làm ngưng toàn bộ quá trình export ra `window` từ dòng 28850 đến 32665.
+
+- **Giải pháp kỹ thuật (Defensive & Resilient Architecture):**
+  * **Phòng thủ đa tầng (Guarded Calls):** Trong `loadAccountingAdvancesData()`, bọc lời gọi bằng `if (typeof populateAdvanceModalOptions === 'function') populateAdvanceModalOptions(data);`.
+  * **Khôi phục hoàn chỉnh `populateAdvanceModalOptions(data)`:** Nạp đầy đủ 4 dropdown liên kết (Chuyến xe, Bác tài, Quỹ điều vận, Nhân viên điều phối).
+  * **Hoàn thiện cấu trúc `renderDispatcherFundsTable(list)`:** Đóng đúng thẻ `</tr>` và gọi `window.BimTableFooter.render('accounting-fund-table', ...)` để hiển thị dòng TỔNG tiền quỹ, đã xuất cấp, đã hoàn ứng và số dư khả dụng.
+  * **Khôi phục toàn bộ phân hệ Quyết toán gom chuyến:** Tái lập đầy đủ `loadSettlementData()`, `onSettlementGroupByChange()`, `populateSettlementTargetOptions()`, `setSettlementDatePreset()`, `resetSettlementFilters()`, `filterSettlementClientSide()`, và phần đầu của `renderSettlementTable(data)`.
+  * **Bọc an toàn 100% các lệnh gán window object:** Bọc toàn bộ các lệnh gán từ dòng 28836 đến 28862 bằng cú pháp `typeof fn !== 'undefined' ? fn : undefined;`, triệt tiêu hoàn toàn nguy cơ dừng script do `ReferenceError`.
+
+- **Kiểm Thử & Xác Minh Thực Tế (Goal-Driven Verification):**
+  * `node -c static/js/app.js` & `node -c static/js/column_manager.js`: 0 cú pháp lỗi.
+  * Toàn bộ 144/144 Unit Tests backend và frontend syntax passed 100% (`Ran 144 tests in 40.490s - OK`).
+  * Đã push lên GitHub `origin master` (commit `fe4f280`) và deploy lên VPS Production `https://logistics.bim.info.vn`.
+  * Kiểm thử tự động trên VPS Live bằng Playwright xác nhận:
+    - Khi click tab Kế toán: **0 Console Error, 0 Uncaught Exception, 0 Toast Lỗi Đỏ**.
+    - Bảng Tạm ứng tài xế hiển thị đầy đủ 4 dòng kèm tính chênh lệch và footer tổng tiền.
+    - Subtab Quỹ Điều Vận hiển thị chính xác số dư quỹ 43.250.000 đ.
+    - Subtab Khóa Sổ Quyết Toán Chuyến Xe hiển thị 4 chuyến xe đối soát P&L trơn tru.
+  * Artifacts minh chứng: `201_vps_accounting_tab_clean_no_error.png`, `203_vps_accounting_driver_advances_tab.png`, `204_vps_accounting_dispatcher_funds_tab.png`, `205_vps_accounting_settlements_tab.png`.
+
 ## [v4.0.3] - 2026-10-22 (Chuẩn Hóa Droplist Loại Rơ-Moóc Native & Tải Trọng Đăng Kiểm Kép)
 
 ### 1. Chuẩn Hóa Droplist Loại Rơ-Moóc (Master Data Fleet):
