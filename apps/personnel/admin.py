@@ -9,9 +9,10 @@ from .models import (
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('code', 'full_name', 'nickname', 'role', 'department', 'phone_number', 'national_id', 'bank_account', 'is_active')
-    list_filter = ('role', 'department', 'is_active', 'is_social_insurance_participant')
-    search_fields = ('code', 'full_name', 'nickname', 'phone_number', 'national_id', 'bank_account')
+    list_display = ('code', 'full_name', 'user', 'role', 'department', 'phone_number', 'national_id', 'is_active')
+    list_filter = ('role', 'department', 'is_active', ('user', admin.EmptyFieldListFilter), 'is_social_insurance_participant')
+    search_fields = ('code', 'full_name', 'nickname', 'phone_number', 'national_id', 'user__username', 'user__email')
+    raw_id_fields = ('user',)
     ordering = ('code',)
 
 @admin.register(EmployeeDependent)
