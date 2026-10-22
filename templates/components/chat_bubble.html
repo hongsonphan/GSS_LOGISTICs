@@ -45,11 +45,19 @@
                 </button>
             </div>
 
-            <!-- Dropdown chọn nhân viên chat 1-1 -->
-            <div id="chat-directory-dropdown" class="hidden p-2 bg-teal-50/90 border-b border-teal-200 shrink-0">
-                <p class="text-[10px] font-bold text-teal-800 uppercase mb-1">Chọn đồng nghiệp để nhắn tin:</p>
+            <!-- Dropdown chọn nhân viên chat 1-1 (Universal Searchable Combobox) -->
+            <div id="chat-directory-dropdown" class="hidden p-2.5 bg-teal-50/95 border-b border-teal-200 shrink-0 relative z-30 shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                    <p class="text-[10.5px] font-bold text-teal-800 uppercase flex items-center gap-1">
+                        <i class="ph-bold ph-chats-circle text-teal-700"></i>
+                        <span>Chọn đồng nghiệp để nhắn tin:</span>
+                    </p>
+                    <button type="button" onclick="toggleChatDirectoryDropdown()" class="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer" title="Đóng">
+                        <i class="ph-bold ph-x text-xs"></i>
+                    </button>
+                </div>
                 <select id="chat-select-colleague" onchange="startDirectChat(this.value)" class="w-full bg-white border border-teal-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 outline-none">
-                    <option value="">-- Chọn nhân sự văn phòng --</option>
+                    <option value="">-- Chọn đồng nghiệp văn phòng --</option>
                 </select>
             </div>
 

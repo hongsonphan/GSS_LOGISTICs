@@ -1679,12 +1679,12 @@ let createTaskFollowersList = []; // Mảng chứa các user_id đã chọn
 
 async function ensureOfficeDirectoryLoaded() {
     if (officeDirectoryUsers && officeDirectoryUsers.length > 0) {
-        return;
+        return officeDirectoryUsers;
     }
     // Ưu tiên nạp tức thì từ window.PRELOADED_OFFICE_USERS (Zero latency)
     if (window.PRELOADED_OFFICE_USERS && Array.isArray(window.PRELOADED_OFFICE_USERS) && window.PRELOADED_OFFICE_USERS.length > 0) {
         officeDirectoryUsers = window.PRELOADED_OFFICE_USERS;
-        return;
+        return officeDirectoryUsers;
     }
     // Fallback nạp từ API bất đồng bộ
     try {
@@ -1692,13 +1692,15 @@ async function ensureOfficeDirectoryLoaded() {
             headers: getAuthHeaders()
         });
         const json = await res.json();
-        if (json.success) {
+        if (json.success && json.office_users) {
             officeDirectoryUsers = json.office_users || [];
             collaborationUserPerms = json.current_user_permission || null;
+            return officeDirectoryUsers;
         }
     } catch (e) {
         console.error('Error fetching office directory:', e);
     }
+    return officeDirectoryUsers || [];
 }
 window.ensureOfficeDirectoryLoaded = ensureOfficeDirectoryLoaded;
 
@@ -2379,25 +2381,7 @@ async function checkChatUnreadCount() {
     }
 }
 
-async function ensureOfficeDirectoryLoaded() {
-    if (officeDirectoryUsers && officeDirectoryUsers.length > 0) {
-        return officeDirectoryUsers;
-    }
-    try {
-        const dirRes = await authFetch('/api/collaboration/tasks/directory/', {
-            headers: getAuthHeaders()
-        });
-        const dirJson = await dirRes.json();
-        if (dirJson.success && dirJson.office_users) {
-            officeDirectoryUsers = dirJson.office_users;
-            collaborationUserPerms = dirJson.current_user_permission || null;
-            return officeDirectoryUsers;
-        }
-    } catch (e) {
-        console.error('Error loading office directory:', e);
-    }
-    return [];
-}
+// ensureOfficeDirectoryLoaded defined above
 
 function toggleChatWindow() {
     const win = document.getElementById('chat-floating-window');
@@ -3051,16 +3035,35 @@ async function toggleChatDirectoryDropdown() {
         dropdown.classList.remove('hidden');
         select.innerHTML = '<option value="">-- Đang tải nhân sự văn phòng... --</option>';
         const users = await ensureOfficeDirectoryLoaded();
+        
         select.innerHTML = '<option value="">-- Chọn đồng nghiệp văn phòng --</option>';
         if (users && users.length > 0) {
+            const currentUserId = window.CURRENT_USER?.id;
             users.forEach(u => {
-                if (u.user_id !== window.CURRENT_USER?.id) {
+                if (u.user_id !== currentUserId) {
                     const opt = document.createElement('option');
                     opt.value = u.user_id;
                     opt.textContent = `${u.full_name} (${u.department_name})`;
                     select.appendChild(opt);
                 }
             });
+        }
+
+        // Kích hoạt Universal Searchable Combobox có kính lúp dòng đầu & gõ search trực tiếp
+        if (typeof makeSearchableSelect === 'function') {
+            if (select._bimCombobox) {
+                select._bimCombobox.sync();
+            } else {
+                makeSearchableSelect(select, { uppercase: false });
+            }
+            // Tự động focus sẵn sàng gõ từ khóa tìm kiếm
+            setTimeout(() => {
+                const wrapper = select.nextElementSibling;
+                const mainInput = wrapper?.querySelector('.bim-combobox-main-input');
+                if (mainInput) {
+                    mainInput.focus();
+                }
+            }, 60);
         }
     } else {
         dropdown.classList.add('hidden');
@@ -3077,7 +3080,18 @@ async function startDirectChat(targetUserId) {
         });
         const json = await res.json();
         if (json.success && json.data) {
-            document.getElementById('chat-directory-dropdown').classList.add('hidden');
+            const dropdown = document.getElementById('chat-directory-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            
+            // Reset giá trị select & combobox
+            const select = document.getElementById('chat-select-colleague');
+            if (select) {
+                select.value = '';
+                if (select._bimCombobox) {
+                    select._bimCombobox.sync();
+                }
+            }
+
             openChatRoom(json.data.id, json.data.name);
         } else {
             showToast('error', json.message || 'Không thể tạo cuộc trò chuyện.');
