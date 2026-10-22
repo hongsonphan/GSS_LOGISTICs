@@ -21,19 +21,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                        <div class="md:col-span-5">
-                            <label class="block font-bold text-slate-700 text-xs mb-1">
-                                Tìm Khách Hàng / MST
-                            </label>
-                            <div class="relative">
-                                <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
-                                <input type="text" id="fullpage-quote-customer-search" oninput="filterCustomerSelectOptions('fullpage-quote-customer-search', 'fullpage-quote-customer')" 
-                                    placeholder="Gõ tên khách hàng hoặc mã số thuế..." 
-                                    class="w-full h-9.5 pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-teal-600 text-xs text-slate-800 transition-all font-medium">
-                            </div>
-                        </div>
-
-                        <div class="md:col-span-7">
+                        <div class="md:col-span-12">
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block font-bold text-slate-700 text-xs truncate">
                                     Khách Hàng / Đối Tác Doanh Nghiệp <span class="text-rose-500">*</span>
@@ -44,9 +32,11 @@
                                 </button>
                             </div>
                             <select id="fullpage-quote-customer" required onchange="if(typeof onFullpageQuoteCustomerChange==='function') onFullpageQuoteCustomerChange();"
-                                class="w-full h-9.5 px-3 py-1 bg-white border border-slate-200 rounded-xl focus:border-teal-600 font-bold text-slate-900 text-xs transition-all">
+                                class="w-full h-9.5 px-3 py-1 bg-white border border-slate-200 rounded-xl focus:border-teal-600 font-bold text-slate-900 text-xs transition-all"
+                                data-searchable="true">
                                 <option value="">-- Chọn Khách Hàng Trong Danh Mục --</option>
                             </select>
+                            <input type="hidden" id="fullpage-quote-customer-search">
                         </div>
                     </div>
 

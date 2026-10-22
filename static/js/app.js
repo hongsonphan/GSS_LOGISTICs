@@ -15084,17 +15084,539 @@ async function loadMasterDataFormOptions(forceReload = false) {
     return masterDataFormOptionsCache;
 }
 
+
+// =========================================================================
+// UNIVERSAL SEARCHABLE DROPDOWN / COMBOBOX COMPONENT (BIM TMS STANDARD)
+// Chuẩn Tìm Kiếm Dropdown: Dòng đầu tiên có kính lúp để tìm kiếm + Cho phép
+// gõ trực tiếp từ khóa vào ô để lọc nhanh thời gian thực.
+// =========================================================================
+
+function removeVietnameseAccents(str) {
+    if (!str) return '';
+    return String(str)
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .toLowerCase()
+        .trim();
+}
+
+function closeAllSearchableComboboxes(exceptWrapper = null) {
+    document.querySelectorAll('.bim-combobox-wrapper.bim-combobox-open').forEach(w => {
+        if (!exceptWrapper || w !== exceptWrapper) {
+            const targetId = w.getAttribute('data-target-id');
+            const targetSelect = document.getElementById(targetId);
+            if (targetSelect && targetSelect._bimCombobox) {
+                targetSelect._bimCombobox.close();
+            }
+        }
+    });
+}
+
+function makeSearchableSelect(selectEl, customOptions = {}) {
+    if (!selectEl) return null;
+    if (typeof selectEl === 'string') {
+        selectEl = document.getElementById(selectEl);
+    }
+    if (!selectEl || selectEl.tagName !== 'SELECT') return null;
+
+    // Nếu đã khởi tạo rồi, chỉ cần đồng bộ lại options và giá trị hiển thị
+    if (selectEl._bimCombobox) {
+        selectEl._bimCombobox.sync();
+        return selectEl._bimCombobox;
+    }
+
+    const selectId = selectEl.id || ('bim-select-' + Math.random().toString(36).substr(2, 9));
+    const isUppercase = selectEl.classList.contains('uppercase') || customOptions.uppercase;
+    const baseHeight = selectEl.classList.contains('h-9') ? 'h-9' : (selectEl.classList.contains('h-9.5') ? 'h-9.5' : 'h-8.5');
+    const baseFontSize = 'text-xs';
+    const fontWeight = selectEl.classList.contains('font-black') ? 'font-black' : (selectEl.classList.contains('font-bold') ? 'font-bold' : 'font-semibold');
+    const textColor = selectEl.classList.contains('text-teal-900') ? 'text-teal-900' : (selectEl.classList.contains('text-amber-900') ? 'text-amber-900' : (selectEl.classList.contains('text-emerald-900') ? 'text-emerald-900' : 'text-slate-800'));
+    const rounded = selectEl.classList.contains('rounded-xl') ? 'rounded-xl' : 'rounded-lg';
+
+    // 1. Tạo Wrapper Container
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bim-combobox-wrapper relative w-full inline-block text-left';
+    wrapper.setAttribute('data-target-id', selectId);
+
+    // 2. Ô hiển thị & nhập chính (Main Trigger / Free-text Input)
+    const triggerContainer = document.createElement('div');
+    triggerContainer.className = 'relative flex items-center w-full';
+
+    const mainInput = document.createElement('input');
+    mainInput.type = 'text';
+    mainInput.autocomplete = 'off';
+    mainInput.spellcheck = false;
+    mainInput.className = `bim-combobox-main-input form-input ${baseHeight} ${baseFontSize} ${fontWeight} ${textColor} ${isUppercase ? 'uppercase' : ''} ${rounded} w-full pl-2.5 pr-14 py-1 bg-white border border-slate-300 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-600 shadow-2xs transition-all cursor-pointer`;
+    mainInput.setAttribute('role', 'combobox');
+    mainInput.setAttribute('aria-expanded', 'false');
+
+    // Nút Clear (Xóa lựa chọn)
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.tabIndex = -1;
+    clearBtn.title = 'Xóa lựa chọn';
+    clearBtn.className = 'bim-combobox-clear absolute right-7 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-rose-500 rounded-full transition-colors hidden cursor-pointer';
+    clearBtn.innerHTML = '<i class="ph-bold ph-x text-[10px]"></i>';
+
+    // Nút Mũi tên Caret
+    const caretBtn = document.createElement('button');
+    caretBtn.type = 'button';
+    caretBtn.tabIndex = -1;
+    caretBtn.title = 'Mở danh sách';
+    caretBtn.className = 'bim-combobox-caret absolute right-0 inset-y-0 px-2 flex items-center justify-center text-slate-400 hover:text-teal-700 transition-colors cursor-pointer';
+    caretBtn.innerHTML = '<i class="ph-bold ph-caret-down text-xs transition-transform duration-200"></i>';
+
+    triggerContainer.appendChild(mainInput);
+    triggerContainer.appendChild(clearBtn);
+    triggerContainer.appendChild(caretBtn);
+
+    // 3. Dropdown Menu
+    const dropdown = document.createElement('div');
+    dropdown.className = 'bim-combobox-dropdown absolute left-0 right-0 mt-1 max-h-72 flex flex-col bg-white border border-teal-300 rounded-xl shadow-2xl z-[9999] hidden text-xs overflow-hidden';
+
+    // 4. "TRONG CHÍNH DÒNG ĐẦU TIÊN CỦA DROPDOWN CÓ 1 CÁI KÍNH LÚP ĐỂ TÌM KIẾM NHANH":
+    const searchHeader = document.createElement('div');
+    searchHeader.className = 'p-2 border-b border-slate-100 bg-slate-50/95 sticky top-0 z-10 shrink-0';
+    searchHeader.innerHTML = `
+        <div class="relative flex items-center w-full">
+            <i class="ph-bold ph-magnifying-glass absolute left-2.5 text-teal-600 text-xs pointer-events-none"></i>
+            <input type="text" class="bim-combobox-search-input w-full h-8 pl-8 pr-7 py-1 text-xs bg-white border border-slate-300 rounded-md focus:border-teal-600 focus:ring-1 focus:ring-teal-600 text-slate-900 font-medium placeholder:text-slate-400 shadow-2xs"
+                placeholder="Gõ từ khóa tìm kiếm nhanh..."
+                autocomplete="off"
+                spellcheck="false">
+            <button type="button" tabindex="-1" class="bim-combobox-search-clear absolute right-2 text-slate-400 hover:text-rose-500 hidden p-0.5 cursor-pointer">
+                <i class="ph-bold ph-x text-[10px]"></i>
+            </button>
+        </div>
+    `;
+
+    // 5. Container chứa danh sách options có scroll
+    const optionsList = document.createElement('div');
+    optionsList.className = 'bim-combobox-options-list flex-1 overflow-y-auto divide-y divide-slate-50 py-1 max-h-56';
+
+    dropdown.appendChild(searchHeader);
+    dropdown.appendChild(optionsList);
+
+    wrapper.appendChild(triggerContainer);
+    wrapper.appendChild(dropdown);
+
+    // Ẩn select gốc nhưng giữ nguyên trong DOM để bảo toàn 100% logic form
+    selectEl.style.setProperty('display', 'none', 'important');
+    selectEl.setAttribute('tabindex', '-1');
+    selectEl.setAttribute('aria-hidden', 'true');
+    selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
+
+    const searchInput = searchHeader.querySelector('.bim-combobox-search-input');
+    const searchClear = searchHeader.querySelector('.bim-combobox-search-clear');
+
+    let currentHighlightedIndex = -1;
+    let visibleOptions = [];
+
+    // Nếu có label trỏ tới selectId, khi click label thì mở dropdown
+    const labels = document.querySelectorAll(`label[for="${selectId}"]`);
+    labels.forEach(lbl => {
+        lbl.addEventListener('click', (e) => {
+            e.preventDefault();
+            openDropdown();
+        });
+    });
+
+    // Lấy danh sách options từ select gốc
+    function getOptionsData() {
+        const opts = [];
+        for (let i = 0; i < selectEl.options.length; i++) {
+            const opt = selectEl.options[i];
+            opts.push({
+                index: i,
+                value: opt.value,
+                text: opt.text,
+                disabled: opt.disabled,
+                isPlaceholder: opt.value === '',
+                selected: opt.selected
+            });
+        }
+        return opts;
+    }
+
+    // Cập nhật Placeholder & Text hiển thị ban đầu
+    function syncDisplay() {
+        const selectedOpt = selectEl.options[selectEl.selectedIndex];
+        const placeholderOpt = selectEl.options[0];
+        const placeholderText = (placeholderOpt && placeholderOpt.value === '') ? placeholderOpt.text : (customOptions.placeholder || selectEl.getAttribute('placeholder') || '-- Chọn --');
+        mainInput.placeholder = placeholderText;
+
+        if (selectedOpt && selectedOpt.value !== '') {
+            mainInput.value = selectedOpt.text;
+            clearBtn.classList.remove('hidden');
+        } else {
+            mainInput.value = '';
+            clearBtn.classList.add('hidden');
+        }
+
+        // Đồng bộ lỗi viền đỏ nếu có
+        if (selectEl.classList.contains('input-error')) {
+            mainInput.classList.add('input-error');
+        } else {
+            mainInput.classList.remove('input-error');
+        }
+    }
+
+    // Định vị thông minh: mở lên trên nếu gần đáy màn hình
+    function updatePosition() {
+        const rect = mainInput.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        if (spaceBelow < 260 && spaceAbove > spaceBelow) {
+            dropdown.style.bottom = 'calc(100% + 4px)';
+            dropdown.style.top = 'auto';
+            dropdown.style.marginTop = '0';
+            dropdown.style.marginBottom = '4px';
+        } else {
+            dropdown.style.top = 'calc(100% + 4px)';
+            dropdown.style.bottom = 'auto';
+            dropdown.style.marginTop = '4px';
+            dropdown.style.marginBottom = '0';
+        }
+    }
+
+    function openDropdown(prefillQuery = '') {
+        closeAllSearchableComboboxes(wrapper);
+        updatePosition();
+        searchInput.value = prefillQuery;
+        searchClear.classList.toggle('hidden', !prefillQuery);
+        renderOptions(prefillQuery);
+        dropdown.classList.remove('hidden');
+        caretBtn.querySelector('i')?.classList.add('rotate-180', 'text-teal-700');
+        wrapper.classList.add('bim-combobox-open');
+        mainInput.setAttribute('aria-expanded', 'true');
+
+        setTimeout(() => {
+            searchInput.focus();
+            if (prefillQuery) {
+                searchInput.select();
+            }
+        }, 30);
+    }
+
+    function closeDropdown() {
+        dropdown.classList.add('hidden');
+        caretBtn.querySelector('i')?.classList.remove('rotate-180', 'text-teal-700');
+        wrapper.classList.remove('bim-combobox-open');
+        mainInput.setAttribute('aria-expanded', 'false');
+        currentHighlightedIndex = -1;
+    }
+
+    function isOpen() {
+        return !dropdown.classList.contains('hidden');
+    }
+
+    function renderOptions(query = '') {
+        const allOpts = getOptionsData();
+        optionsList.innerHTML = '';
+        currentHighlightedIndex = -1;
+
+        const cleanQuery = removeVietnameseAccents(query);
+        const terms = cleanQuery.split(/\s+/).filter(Boolean);
+
+        visibleOptions = allOpts.filter(opt => {
+            if (opt.isPlaceholder && cleanQuery) return false;
+            if (!terms.length) return true;
+            const cleanText = removeVietnameseAccents(opt.text);
+            const cleanVal = removeVietnameseAccents(opt.value);
+            return terms.every(term => cleanText.includes(term) || cleanVal.includes(term));
+        });
+
+        if (visibleOptions.length === 0) {
+            const emptyEl = document.createElement('div');
+            emptyEl.className = 'px-4 py-4 text-center text-slate-400 italic text-[11px] flex flex-col items-center gap-1.5';
+            emptyEl.innerHTML = `<i class="ph-bold ph-magnifying-glass text-xl text-slate-300"></i><span>Không tìm thấy "<b>${escapeHtml(query)}</b>"</span><span class="text-[10px] text-slate-400">Thử gõ từ khóa khác hoặc nhấn ESC để đóng</span>`;
+            optionsList.appendChild(emptyEl);
+            return;
+        }
+
+        visibleOptions.forEach((opt, idx) => {
+            const itemEl = document.createElement('div');
+            const isSelected = (selectEl.value === opt.value && opt.value !== '');
+            itemEl.className = `bim-combobox-item px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors ${
+                isSelected ? 'bg-teal-50 text-teal-900 font-bold border-l-3 border-teal-600' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+            }`;
+            itemEl.setAttribute('data-index', idx);
+            itemEl.setAttribute('data-value', opt.value);
+
+            // Tách badge nếu có format e.g. "CẢNG CÁT LÁI (CẢNG BIỂN)" hoặc "[KH001] TÊN"
+            let mainLabel = opt.text;
+            let tagBadge = '';
+            const matchTag = opt.text.match(/^(.*?)\s*(\([^\)]+\)|\[[^\]]+\])$/);
+            if (matchTag && !opt.isPlaceholder) {
+                mainLabel = matchTag[1].trim();
+                const tagContent = matchTag[2].slice(1, -1).trim();
+                tagBadge = `<span class="text-[9.5px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200/80 ml-2 shrink-0">${escapeHtml(tagContent)}</span>`;
+            }
+
+            // Highlight từ khóa khớp
+            let highlightedLabel = escapeHtml(mainLabel);
+            if (terms.length > 0 && !opt.isPlaceholder) {
+                terms.forEach(term => {
+                    if (!term) return;
+                    const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp(`(${safeTerm})`, 'gi');
+                    highlightedLabel = highlightedLabel.replace(regex, '<mark class="bg-amber-100 text-teal-950 font-bold px-0.5 rounded">$1</mark>');
+                });
+            }
+
+            itemEl.innerHTML = `
+                <div class="flex items-center justify-between w-full min-w-0 pr-1">
+                    <span class="truncate ${opt.isPlaceholder ? 'italic text-slate-400 font-normal' : ''}">${highlightedLabel}</span>
+                    ${tagBadge}
+                </div>
+                ${isSelected ? '<i class="ph-bold ph-check text-teal-600 text-xs shrink-0 ml-1"></i>' : ''}
+            `;
+
+            itemEl.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                selectOption(opt);
+            });
+
+            optionsList.appendChild(itemEl);
+        });
+    }
+
+    function selectOption(opt) {
+        selectEl.value = opt.value;
+        syncDisplay();
+        closeDropdown();
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+        if (typeof selectEl.onchange === 'function') {
+            selectEl.onchange();
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function updateHighlight() {
+        const items = optionsList.querySelectorAll('.bim-combobox-item');
+        items.forEach((it, idx) => {
+            if (idx === currentHighlightedIndex) {
+                it.classList.add('bg-teal-100', 'text-teal-950');
+                it.scrollIntoView({ block: 'nearest' });
+            } else {
+                it.classList.remove('bg-teal-100', 'text-teal-950');
+            }
+        });
+    }
+
+    // --- SỰ KIỆN TƯƠNG TÁC ---
+
+    // Click hoặc Focus vào ô chính -> Mở dropdown và chọn sẵn text
+    mainInput.addEventListener('click', () => {
+        if (!isOpen()) {
+            openDropdown(mainInput.value.trim());
+        }
+    });
+
+    mainInput.addEventListener('focus', () => {
+        if (!isOpen()) {
+            openDropdown(mainInput.value.trim());
+        }
+    });
+
+    // Cho phép gõ free-text trực tiếp trong ô chính ("trong ô đó luôn")
+    mainInput.addEventListener('input', () => {
+        if (!isOpen()) openDropdown(mainInput.value);
+        searchInput.value = mainInput.value;
+        searchClear.classList.toggle('hidden', !mainInput.value);
+        renderOptions(mainInput.value);
+    });
+
+    // Gõ trong ô tìm kiếm có kính lúp (dòng đầu tiên của dropdown)
+    searchInput.addEventListener('input', () => {
+        searchClear.classList.toggle('hidden', !searchInput.value);
+        renderOptions(searchInput.value.trim());
+    });
+
+    // Xóa từ khóa trong ô tìm kiếm dòng đầu
+    searchClear.addEventListener('click', (e) => {
+        e.preventDefault();
+        searchInput.value = '';
+        searchClear.classList.add('hidden');
+        renderOptions('');
+        searchInput.focus();
+    });
+
+    // Phím điều hướng từ ô tìm kiếm dòng đầu hoặc ô chính
+    const handleKeyNav = (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (visibleOptions.length > 0) {
+                currentHighlightedIndex = (currentHighlightedIndex + 1) % visibleOptions.length;
+                updateHighlight();
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (visibleOptions.length > 0) {
+                currentHighlightedIndex = (currentHighlightedIndex - 1 + visibleOptions.length) % visibleOptions.length;
+                updateHighlight();
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (currentHighlightedIndex >= 0 && visibleOptions[currentHighlightedIndex]) {
+                selectOption(visibleOptions[currentHighlightedIndex]);
+            } else if (visibleOptions.length === 1) {
+                selectOption(visibleOptions[0]);
+            } else if (visibleOptions.length > 1) {
+                const cleanInp = removeVietnameseAccents(searchInput.value || mainInput.value);
+                const exactMatch = visibleOptions.find(o => removeVietnameseAccents(o.text) === cleanInp || removeVietnameseAccents(o.value) === cleanInp);
+                if (exactMatch) {
+                    selectOption(exactMatch);
+                } else {
+                    selectOption(visibleOptions[0]);
+                }
+            }
+        } else if (e.key === 'Escape') {
+            closeDropdown();
+            syncDisplay();
+        } else if (e.key === 'Tab') {
+            closeDropdown();
+            syncDisplay();
+        }
+    };
+
+    searchInput.addEventListener('keydown', handleKeyNav);
+    mainInput.addEventListener('keydown', handleKeyNav);
+
+    // Click nút Mũi tên Caret
+    caretBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isOpen()) {
+            closeDropdown();
+        } else {
+            openDropdown();
+        }
+    });
+
+    // Click nút Clear (X) ở ô chính
+    clearBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectEl.value = '';
+        mainInput.value = '';
+        clearBtn.classList.add('hidden');
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+        if (typeof selectEl.onchange === 'function') {
+            selectEl.onchange();
+        }
+        openDropdown();
+    });
+
+    // Click ra ngoài -> Đóng dropdown và khôi phục text hợp lệ
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+            if (isOpen()) {
+                closeDropdown();
+                syncDisplay();
+            }
+        }
+    });
+
+    // Đồng bộ khi select gốc thay đổi từ bên ngoài (Code JS)
+    selectEl.addEventListener('change', () => {
+        syncDisplay();
+    });
+
+    // Forward focus từ select gốc sang mainInput
+    selectEl.focus = () => {
+        mainInput.focus();
+    };
+
+    // Theo dõi class input-error trên selectEl
+    if (window.MutationObserver) {
+        const observer = new MutationObserver(() => {
+            if (selectEl.classList.contains('input-error')) {
+                mainInput.classList.add('input-error');
+            } else {
+                mainInput.classList.remove('input-error');
+            }
+        });
+        observer.observe(selectEl, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    const api = {
+        wrapper,
+        mainInput,
+        searchInput,
+        selectEl,
+        open: openDropdown,
+        close: closeDropdown,
+        sync: () => {
+            syncDisplay();
+            if (isOpen()) renderOptions(searchInput.value.trim());
+        },
+        destroy: () => {
+            wrapper.remove();
+            selectEl.style.display = '';
+            delete selectEl._bimCombobox;
+        }
+    };
+
+    selectEl._bimCombobox = api;
+    syncDisplay();
+    return api;
+}
+
+function initAllSearchableComboboxes(container = document) {
+    if (!container) return;
+    const targetIds = [
+        'inp-customer', 'inp-pickup', 'inp-warehouse', 'inp-dropoff', 'inp-subcontractor',
+        'inp-driver', 'inp-vehicle', 'inp-trailer', 'inp-driver-leg1', 'inp-dropoff-driver',
+        'inp-vehicle-leg1', 'inp-dropoff-vehicle',
+        'edit-inp-customer', 'edit-inp-driver', 'edit-inp-vehicle', 'edit-inp-trailer',
+        'booking-customer', 'booking-pickup', 'booking-delivery', 'booking-dropoff',
+        'fullpage-booking-customer', 'fullpage-booking-pickup', 'fullpage-booking-delivery', 'fullpage-booking-dropoff',
+        'quote-customer', 'fullpage-quote-customer', 'quote-route-preset',
+        'adv-inp-trip', 'adv-inp-driver', 'adv-inp-fund'
+    ];
+    targetIds.forEach(id => {
+        const els = container.querySelectorAll('#' + id);
+        els.forEach(el => {
+            if (el && el.tagName === 'SELECT') {
+                makeSearchableSelect(el);
+            }
+        });
+    });
+    // Khởi tạo thêm các select có data-searchable="true"
+    container.querySelectorAll('select[data-searchable="true"]').forEach(el => {
+        makeSearchableSelect(el);
+    });
+}
+
+
 function setSelectValueCaseInsensitive(selectEl, value, label = null) {
     if (!selectEl || value === undefined || value === null) return;
     const strVal = String(value).trim();
     if (!strVal) {
         selectEl.value = '';
+        if (selectEl._bimCombobox) selectEl._bimCombobox.sync();
         return;
     }
     for (let i = 0; i < selectEl.options.length; i++) {
         if (selectEl.options[i].value.toLowerCase() === strVal.toLowerCase() ||
             selectEl.options[i].text.toLowerCase() === strVal.toLowerCase()) {
             selectEl.selectedIndex = i;
+            if (selectEl._bimCombobox) selectEl._bimCombobox.sync();
             return;
         }
     }
@@ -15103,6 +15625,7 @@ function setSelectValueCaseInsensitive(selectEl, value, label = null) {
     opt.innerText = label || strVal;
     selectEl.appendChild(opt);
     selectEl.value = strVal;
+    if (selectEl._bimCombobox) selectEl._bimCombobox.sync();
 }
 
 function populateMasterDataDropdowns() {
@@ -15128,6 +15651,8 @@ function populateMasterDataDropdowns() {
             if (currentVal) {
                 setSelectValueCaseInsensitive(sel, currentVal);
             }
+            // Tự động nâng cấp sang Searchable Combobox chuẩn Bim TMS (Kính lúp dòng 1 + gõ free-text)
+            makeSearchableSelect(sel);
         });
     }
 
@@ -15190,6 +15715,13 @@ function filterCustomerSelectOptions(searchId, selectId) {
     const searchInput = document.getElementById(searchId);
     const selectEl = document.getElementById(selectId);
     if (!searchInput || !selectEl) return;
+    
+    // Nếu select đã được nâng cấp sang Searchable Combobox thì proxy vào combobox
+    if (selectEl._bimCombobox) {
+        selectEl._bimCombobox.searchInput.value = searchInput.value;
+        selectEl._bimCombobox.sync();
+        return;
+    }
     
     const keyword = searchInput.value.trim().toLowerCase();
     const options = selectEl.options;
@@ -15677,6 +16209,7 @@ async function openModal(id, extraParam = null) {
     const el = document.getElementById(id);
     if (el) el.classList.remove('hidden-view'); 
     initAllNumberInputs();
+    if (el) initAllSearchableComboboxes(el);
     if (id === 'modal-create-trip') {
         clearBookingFileSelection();
         const chk = document.getElementById('chk-drop-hook');
@@ -15698,6 +16231,7 @@ async function openModal(id, extraParam = null) {
 }
 
 function closeModal(id) { 
+    closeAllSearchableComboboxes();
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden-view'); 
     if (id === 'modal-ocr') resetOcr();

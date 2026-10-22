@@ -2,9 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-# CHANGELOG — BIM LOGISTICS PLATFORM
+## [v4.1.4] - 2026-10-22 (Cơ Cấu Toàn Diện Dropdown Tìm Kiếm Trực Tiếp: Kính Lúp Dòng Đầu & Gõ Free-Text Trong Ô)
 
-Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
+### 1. Chuẩn Hóa Kiến Trúc Dropdown Tìm Kiếm Hai Chiều (Universal Searchable Combobox):
+- **Bối cảnh & Yêu cầu:** Các danh mục Cảng/Depot, Kho bãi, Khách hàng, Đối tác 3PL, Tài xế, Xe đầu kéo có danh sách rất dài, trước đây sử dụng HTML `<select>` thuần khiến người dùng phải cuộn chuột tìm kiếm thủ công rất bất tiện.
+- **Giải pháp UX/UI Hiện Đại (`static/js/app.js` & `static/css/main.css`):**
+  * **Kính lúp & Thanh tìm kiếm dòng đầu tiên:** Khi mở dropdown, ngay trên dòng đầu tiên có thanh tìm kiếm cố định (sticky) với biểu tượng kính lúp (`ph-magnifying-glass`), placeholder gợi ý rõ ràng và tự động focus sẵn sàng gõ từ khóa.
+  * **Gõ Free-Text trực tiếp trong ô ("trong ô đó luôn"):** Người dùng có thể gõ trực tiếp từ khóa vào ô hiển thị chính, danh sách dropdown sẽ tự động mở và lọc tức thì theo thời gian thực.
+  * **Bộ lọc thông minh không dấu:** Tự động chuẩn hóa tiếng Việt loại bỏ dấu (`removeVietnameseAccents`), cho phép gõ "cat lai" để tìm "CẢNG CÁT LÁI", "song than" để tìm "CHÂN THẬT SÓNG THẦN".
+  * **Highlight từ khóa:** Tự động bôi vàng nổi bật các ký tự khớp từ khóa (`<mark class="bg-amber-100 font-bold">`).
+  * **Tách Badge phân loại:** Tự động tách và gắn nhãn tag thẩm mỹ cho các phân loại ví dụ `(CẢNG BIỂN)`, `(KHO NGOẠI QUAN)`, `[Mã KH]` giúp giao diện trực quan và chuyên nghiệp.
+  * **Điều hướng bàn phím hoàn chỉnh:** Hỗ trợ `ArrowUp`/`ArrowDown` di chuyển chọn mục, `Enter` để chọn, `Escape` hoặc `Tab` để đóng, `Click Outside` tự động khôi phục dữ liệu hợp lệ.
+  * **Nút Xóa Nhanh (Clear `×`):** Xuất hiện khi đã chọn giá trị, click 1 chạm để xóa và chọn lại.
+
+### 2. Tinh Gọn Layout Biểu Mẫu, Loại Bỏ Các Ô Search Tách Rời:
+- Loại bỏ hoàn toàn các ô input tìm kiếm tách riêng cồng kềnh trước đây (`inp-customer-search`, `quote-customer-search`, `booking-customer-search`) chiếm tới 5 cột trên lưới.
+- Mở rộng ô chọn Khách Hàng, Điểm Lấy/Kho/Hạ thành ô Combobox đồng nhất toàn chiều rộng, tích hợp tính năng tìm kiếm trực tiếp trong ô giúp giao diện gọn gàng, thoáng đãng.
+- Tự động áp dụng trên toàn bộ hệ thống: Modal Tạo Chuyến Xe, Chi Tiết Chuyến Xe, Modal Booking, Chi Tiết Booking, Modal Báo Giá, Chi Tiết Báo Giá, Modal Tạm Ứng Tài Xế.
+- Bảo toàn 100% tính nguyên vẹn: Thẻ `<select>` gốc được duy trì ẩn trong DOM, đảm bảo toàn bộ hàm `getVal()`, event listener `change`, và xác thực form hoạt động ổn định không phát sinh lỗi hồi quy.
+
+---
 
 ## [v4.1.3] - 2026-10-22 (Tích Hợp Toàn Diện Trang Chi Tiết Bản Tin Nằm Trên Base & Loại Bỏ Mở Tab Mới)
 

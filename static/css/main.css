@@ -1477,3 +1477,46 @@ input[list="list-times-24h"]::-webkit-list-button {
     color: #ffffff !important;
     fill: #ffffff !important;
 }
+
+/* ── UNIVERSAL SEARCHABLE COMBOBOX DROPDOWN (BIM TMS STANDARD) ── */
+.bim-combobox-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.bim-combobox-dropdown {
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.2), 0 8px 10px -6px rgba(15, 23, 42, 0.15) !important;
+}
+
+.bim-combobox-options-list {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+.bim-combobox-options-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.bim-combobox-options-list::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.bim-combobox-options-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 8px;
+}
+
+.bim-combobox-options-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.bim-combobox-wrapper.bim-combobox-open .bim-combobox-main-input {
+    border-color: #0d9488 !important;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2) !important;
+}
+
+.bim-combobox-item {
+    user-select: none;
+    -webkit-user-select: none;
+}

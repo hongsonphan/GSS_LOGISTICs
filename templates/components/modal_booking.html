@@ -47,21 +47,8 @@
                         </select>
                     </div>
 
-                    <!-- Tìm Khách Hàng (col 3) -->
-                    <div class="md:col-span-3">
-                        <div class="flex items-center justify-between h-5 mb-1">
-                            <label class="block font-bold text-slate-700 text-xs truncate">Tìm Kiếm Khách Hàng</label>
-                        </div>
-                        <div class="relative">
-                            <i class="ph ph-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
-                            <input type="text" id="booking-customer-search" oninput="filterCustomerSelectOptions('booking-customer-search', 'booking-customer')" 
-                                placeholder="Gõ tên hoặc MST..." 
-                                class="w-full h-8.5 pl-7 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium focus:bg-white focus:border-teal-600 transition-all">
-                        </div>
-                    </div>
-
-                    <!-- Chọn Khách Hàng (col 3) -->
-                    <div class="md:col-span-3">
+                    <!-- Chọn Khách Hàng (col 6) -->
+                    <div class="md:col-span-6">
                         <div class="flex items-center justify-between h-5 mb-1">
                             <label id="label-booking-customer" class="block font-bold text-slate-700 text-xs truncate">Khách Hàng <span class="text-rose-500">*</span></label>
                             <button type="button" tabindex="-1" onclick="openMasterDataModalQuick('customers', 'booking-customer')" 
@@ -70,9 +57,11 @@
                             </button>
                         </div>
                         <select id="booking-customer" required 
-                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-900 text-xs transition-all">
+                            class="w-full h-8.5 px-2 py-1 bg-white border border-slate-200 rounded-lg focus:border-teal-600 font-bold text-slate-900 text-xs transition-all"
+                            data-searchable="true">
                             <option value="">-- Chọn Khách Hàng --</option>
                         </select>
+                        <input type="hidden" id="booking-customer-search">
                     </div>
 
                     <!-- Số Booking Khách Cung Cấp / Số PO (col 3) -->
