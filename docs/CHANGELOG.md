@@ -2,6 +2,18 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.0] - 2026-10-23 (Chuẩn Hóa Giao Diện Thẻ KPI: Bọc Viền Màu & Dải Chuyển Sắc Quang Phổ Tự Nhiên)
+
+### 1. Áp Dụng Dải Màu Chuyển Sắc (Chromatic Progression) 5 Trụ Cột KPI Dashboard:
+- **Viền bọc màu trái (`border-l-[5px]`) & Tông màu đồng bộ (Badge, Icon, Số liệu KPI):**
+  * **Thẻ 1 (Tài Chính & Quỹ):** Sắc Xanh ngọc lục bảo (**Emerald**) — `border-l-emerald-500`, badge `bg-emerald-50 text-emerald-800`, KPI `text-emerald-600`.
+  * **Thẻ 2 (Kinh Doanh):** Sắc Xanh mòng két (**Teal**) — `border-l-teal-500`, badge `bg-teal-50 text-teal-800`, KPI `text-teal-700`.
+  * **Thẻ 3 (Vận Hành Chuyến):** Sắc Xanh lơ da trời (**Sky**) — `border-l-sky-500`, badge `bg-sky-50 text-sky-800`, KPI `text-sky-700`.
+  * **Thẻ 4 (Khả Dụng Đội Xe):** Sắc Xanh chàm tím (**Indigo**) — `border-l-indigo-500`, badge `bg-indigo-50 text-indigo-800`, KPI `text-indigo-700`.
+  * **Thẻ 5 (Đơn Hàng & Hải Quan):** Sắc Vàng hổ phách (**Amber**) — `border-l-amber-500`, badge `bg-amber-50 text-amber-800`, KPI `text-amber-700`.
+- **Hiệu ứng thị giác:** Chuyển đổi mượt mà từ dải màu lạnh tươi mát sang dải ấm dần theo quang phổ tự nhiên ($\text{Emerald} \to \text{Teal} \to \text{Sky} \to \text{Indigo} \to \text{Amber}$), phân bố màu đều và không trùng lặp, tối ưu trải nghiệm trực quan cho người điều hành.
+- **Phạm vi áp dụng:** Thử nghiệm trước ở 5 thẻ Dashboard theo chỉ đạo của người dùng trước khi áp dụng đồng loạt ra toàn bộ các phân hệ trong hệ thống.
+
 ## [v4.3.9] - 2026-10-23 (Rà Soát Toàn Diện Các Phân Hệ Còn Lại: Chuẩn Hóa Text Đồng Nhất & Loại Bỏ Triệt Để Badge)
 
 ### 1. Chuẩn Hóa Toàn Diện Typography & Chuyển Badge Sang Text Chuẩn:
