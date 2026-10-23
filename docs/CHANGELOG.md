@@ -2,6 +2,24 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.9] - 2026-10-23 (Tối Ưu Bố Trí Con Số Lớn Vào Khoảng Trống Hàng Trên Cùng Badge & Icon Cho Cả Báo Giá Và Booking)
+
+### 1. Bố Cục Thẻ Gọn Gàng & Hiện Đại Chuẩn SaaS:
+- **Tận dụng tối đa khoảng trống hàng trên:**
+  * Đưa con số lớn (**Doanh Số** kế hoạch của Báo giá & **Số Đơn** của Booking) lên nằm cùng một hàng với Badge trạng thái và Icon.
+  * Bố cục 2 khối đối xứng cân bằng (`flex items-center justify-between gap-1.5`):
+    - **Bên trái:** Badge trạng thái (`shrink-0`).
+    - **Bên phải:** Con số lớn hiển thị nổi bật, tăng size lên `text-xl xl:text-2xl 2xl:text-[26px] font-black` (cho Báo giá) và `text-2xl xl:text-3xl font-black` (cho Booking), đặt cạnh Icon nhận diện (`shrink-0`).
+- **Ưu điểm vượt trội:**
+  * Loại bỏ hoàn toàn khoảng trống lãng phí ở hàng trên.
+  * Thẻ giảm chiều cao, không chiếm nhiều diện tích dọc màn hình, giúp bảng dữ liệu bên dưới hiển thị nhiều dòng hơn.
+  * Con số chính to rõ đập ngay vào mắt người dùng.
+- **Áp dụng đồng bộ:** Cả 5 thẻ Báo giá Tuyến cước (Subtab 1) và 5 thẻ Booking Đơn đặt hàng (Subtab 2).
+
+### 2. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
 ## [v4.4.8] - 2026-10-23 (Chuẩn Hóa Dãy 5 Thẻ Booking Chuẩn TMS Container: Ô Lớn [Số Đơn] & Subtext [Tổng Cont | Đã Giao Cont | Còn Lại Cont])
 
 ### 1. Chuẩn Hóa Bố Cục & Đơn Vị Thẻ Booking Theo Best-Practice TMS Container:
