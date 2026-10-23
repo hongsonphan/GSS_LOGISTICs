@@ -4069,7 +4069,7 @@ function renderDispatchTable(trips) {
                     <i class="ph ph-barcode text-teal-600 text-sm"></i>
                     <span>${escapeHtml(trip.container)}</span>
                     ${trip.is_twin_container ? `
-                        <span class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase bg-teal-100 text-teal-800 border border-teal-300 inline-flex items-center gap-0.5" title="Chế độ Ghép 2 Cont 20ft">
+                        <span class="text-teal-700 font-bold text-[11px] uppercase inline-flex items-center gap-0.5" title="Chế độ Ghép 2 Cont 20ft">
                             <i class="ph-bold ph-stack"></i> 2x20ft
                         </span>
                     ` : ''}
@@ -4086,16 +4086,16 @@ function renderDispatchTable(trips) {
                     </div>
                 ` : ''}
                 ${trip.det_status && (trip.det_status.status === 'OVERDUE' || trip.det_status.status === 'TODAY' || trip.det_status.status === 'WARNING') ? `
-                    <div class="mt-1">
+                    <div class="mt-0.5">
                         ${trip.det_status.status === 'OVERDUE' 
-                            ? `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300 inline-flex items-center gap-0.5 animate-pulse" title="Quá hạn Free DET ${Math.abs(trip.det_status.days_remaining)} ngày">
+                            ? `<span class="text-[11px] font-bold uppercase text-rose-700 font-mono inline-flex items-center gap-0.5 animate-pulse" title="Quá hạn Free DET ${Math.abs(trip.det_status.days_remaining)} ngày">
                                 <i class="ph-bold ph-warning"></i> Quá Hạn DET (${Math.abs(trip.det_status.days_remaining)}N)
                                </span>`
                             : trip.det_status.status === 'TODAY'
-                            ? `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-0.5" title="Hôm nay hết hạn trả vỏ">
+                            ? `<span class="text-[11px] font-bold uppercase text-amber-700 font-mono inline-flex items-center gap-0.5" title="Hôm nay hết hạn trả vỏ">
                                 <i class="ph-bold ph-clock"></i> DET Hết Hôm Nay
                                </span>`
-                            : `<span class="px-1.5 py-0.2 rounded text-[9.5px] font-bold uppercase bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-0.5" title="Còn 1 ngày Free DET">
+                            : `<span class="text-[11px] font-bold uppercase text-amber-700 font-mono inline-flex items-center gap-0.5" title="Còn 1 ngày Free DET">
                                 <i class="ph-bold ph-clock-countdown"></i> DET Còn 1N
                                </span>`
                         }
@@ -4116,31 +4116,31 @@ function renderDispatchTable(trips) {
             <td class="px-3 py-2 border-r border-slate-200/70">
                 <div class="flex items-center space-x-1.5">
                     ${trip.commercial_invoice && trip.commercial_invoice !== '-' ? `
-                        <span class="font-mono text-[11.5px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded shadow-2xs" title="Hóa đơn thương mại">
+                        <span class="font-mono text-xs font-bold text-teal-800" title="Hóa đơn thương mại">
                             <i class="ph ph-file-text"></i> ${escapeHtml(trip.commercial_invoice)}
                         </span>
-                    ` : `<span class="text-slate-400 text-[11.5px] italic">-</span>`}
+                    ` : `<span class="text-slate-400 text-[11px] italic">-</span>`}
                 </div>
                 <div class="mt-0.5">
                     ${trip.warehouse_dock && trip.warehouse_dock !== '-' ? `
-                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 font-heading">
+                        <span class="text-[11px] font-bold text-indigo-700 font-mono">
                             DOCK: ${escapeHtml(trip.warehouse_dock)}
                         </span>
-                    ` : `<span class="text-[11.5px] text-slate-400 font-medium">Chưa chỉ định dock</span>`}
+                    ` : `<span class="text-[11px] text-slate-400 font-medium">Chưa chỉ định dock</span>`}
                 </div>
             </td>
             <td class="px-3 py-2 border-r border-slate-200/70">
                 <div class="flex items-center space-x-1.5">
                     <span class="font-bold text-slate-900 font-mono text-[13px]">${escapeHtml(trip.vehicle)}</span>
                     ${trip.vehicle_ownership_code === 'OWNED' 
-                        ? `<span class="px-1.5 py-0.2 text-[10.5px] font-black uppercase rounded bg-teal-100 text-teal-800 border border-teal-200">Xe Nhà</span>`
-                        : `<span class="px-1.5 py-0.2 text-[10.5px] font-black uppercase rounded bg-amber-100 text-amber-800 border border-amber-200">Xe Bạn</span>`
+                        ? `<span class="text-[11px] font-bold uppercase text-teal-700">Xe Nhà</span>`
+                        : `<span class="text-[11px] font-bold uppercase text-slate-600">Xe Bạn</span>`
                     }
                 </div>
                 <div class="text-[11.5px] text-slate-500 mt-0.5 flex items-center space-x-1.5 flex-wrap gap-y-0.5">
                     <span>Tài: <strong class="text-slate-900 font-bold">${escapeHtml(trip.driver)}</strong></span>
                     ${trip.is_split_trip ? `
-                        <span class="text-amber-800 bg-amber-100 border border-amber-300 px-1 py-0.2 rounded font-black text-[10px] uppercase inline-flex items-center gap-0.5" title="Cắt kéo: Chặng 2 hạ do ${escapeHtml(trip.dropoff_driver || 'Tài khác')} đảm nhiệm">
+                        <span class="text-amber-700 font-bold text-[11px] uppercase inline-flex items-center gap-0.5" title="Cắt kéo: Chặng 2 hạ do ${escapeHtml(trip.dropoff_driver || 'Tài khác')} đảm nhiệm">
                             <i class="ph-bold ph-arrows-split"></i> Hạ: ${escapeHtml(trip.dropoff_driver || trip.dropoff_vehicle || 'Tài 2')}
                         </span>
                     ` : (trip.dropoff_vehicle && trip.dropoff_vehicle !== '-' && trip.dropoff_vehicle !== trip.vehicle ? `
@@ -4151,7 +4151,7 @@ function renderDispatchTable(trips) {
             </td>
             <td class="px-3 py-2 border-r border-slate-200/70">
                 <div class="flex items-center">
-                    <span class="px-1.5 py-0.2 rounded text-[10.5px] font-bold uppercase tracking-wider ${trip.cont_location_type === 'BÃI TVL' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
+                    <span class="text-[11px] font-bold uppercase ${trip.cont_location_type === 'BÃI TVL' ? 'text-purple-700' : 'text-slate-600'}">
                         <i class="ph ph-map-pin"></i> ${escapeHtml(trip.cont_location_type)}
                     </span>
                 </div>
@@ -4166,7 +4166,7 @@ function renderDispatchTable(trips) {
                     <span class="text-indigo-700">${escapeHtml(trip.dropoff || 'Bãi rỗng')}</span>
                 </div>
                 <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
-                    <span class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase font-heading ${typeColor}">${escapeHtml(trip.type)}</span>
+                    <span class="text-[11px] font-bold uppercase ${typeColor}">${escapeHtml(trip.type)}</span>
                     <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                 </div>
             </td>
@@ -4380,10 +4380,10 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         if (ownerBadge) {
             if (trip.vehicle_ownership_code === 'OWNED') {
                 ownerBadge.innerText = 'Xe Nhà';
-                ownerBadge.className = 'text-[9.5px] font-black uppercase px-1.5 py-0.2 rounded bg-teal-100 text-teal-800 border border-teal-200';
+                ownerBadge.className = 'text-xs font-bold uppercase text-teal-700';
             } else {
                 ownerBadge.innerText = 'Xe Bạn';
-                ownerBadge.className = 'text-[9.5px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200';
+                ownerBadge.className = 'text-xs font-bold uppercase text-slate-600';
             }
         }
 
@@ -4459,13 +4459,13 @@ async function viewTripDetail(tripCode, updateHistory = true) {
         const condBadge = document.getElementById('detail-condition-badge');
         if (condBadge) {
             if (trip.container_condition === 'DAMAGED') {
-                condBadge.className = 'text-[10.5px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 border border-rose-200';
+                condBadge.className = 'text-xs font-bold uppercase text-rose-700';
                 condBadge.innerText = 'Hư hỏng (EIR)';
             } else if (trip.container_condition === 'CLEANING_REQUIRED') {
-                condBadge.className = 'text-[10.5px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200';
+                condBadge.className = 'text-xs font-bold uppercase text-amber-700';
                 condBadge.innerText = 'Cần vệ sinh';
             } else {
-                condBadge.className = 'text-[10.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200';
+                condBadge.className = 'text-xs font-bold uppercase text-emerald-700';
                 condBadge.innerText = 'Đạt chuẩn';
             }
         }
@@ -4712,7 +4712,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                     let textClass = 'text-slate-400 font-normal text-[13px]';
                     let actorTextClass = 'text-slate-400 font-normal text-[13px]';
                     let actorDisplay = '—';
-                    let badgeHtml = '<span class="inline-block px-2 py-0.5 rounded text-[10px] font-normal text-slate-400 bg-slate-100 border border-slate-200">Chưa thực hiện</span>';
+                    let badgeHtml = '<span class="text-xs font-normal text-slate-400 uppercase">Chưa thực hiện</span>';
                     
                     if (item.active) {
                         rowClass = 'bg-teal-50/40 hover:bg-teal-50/70 transition-colors border-l-4 border-l-teal-600';
@@ -4720,14 +4720,14 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                         textClass = 'text-teal-950 font-bold text-[13.5px]';
                         actorTextClass = 'text-teal-900 font-bold text-[13px]';
                         actorDisplay = (item.actor && item.actor !== '—') ? item.actor : '—';
-                        badgeHtml = '<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300 whitespace-nowrap animate-pulse">ĐANG THỰC HIỆN</span>';
+                        badgeHtml = '<span class="text-xs font-bold text-teal-700 uppercase whitespace-nowrap animate-pulse">ĐANG THỰC HIỆN</span>';
                     } else if (item.done) {
                         rowClass = 'hover:bg-slate-50/80 transition-colors';
                         iconHtml = '<div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-xs mx-auto"><i class="ph-bold ph-check text-xs"></i></div>';
                         textClass = 'text-slate-800 font-medium text-[13px]';
                         actorTextClass = 'text-slate-700 font-medium text-[13px]';
                         actorDisplay = (item.actor && item.actor !== '—') ? item.actor : '—';
-                        badgeHtml = '<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">Hoàn thành</span>';
+                        badgeHtml = '<span class="text-xs font-bold text-emerald-700 uppercase whitespace-nowrap">Hoàn thành</span>';
                     }
 
                     // Chứng từ đính kèm (Chỉ hiển thị khi có chứng từ thật đính kèm)
@@ -4943,8 +4943,8 @@ function renderCostSheetTable(trip) {
             const vPlate = exp.vehicle_plate || t.vehicle || 'Xe 1';
             return `
                 <div class="flex items-center space-x-1.5 flex-wrap">
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-teal-100 text-teal-900 border border-teal-300 shrink-0">
-                        <i class="ph-bold ph-arrow-circle-right text-teal-700 mr-1"></i>Chặng 1
+                    <span class="inline-flex items-center text-[11px] font-bold text-teal-700 uppercase shrink-0">
+                        <i class="ph-bold ph-arrow-circle-right mr-1"></i>Chặng 1
                     </span>
                     <span class="font-bold text-slate-800 text-[12px]">${dName}</span>
                     <span class="text-[11px] text-slate-500 font-mono">(${vPlate})</span>
@@ -4955,8 +4955,8 @@ function renderCostSheetTable(trip) {
             const vPlate = exp.vehicle_plate || t.dropoff_vehicle || 'Xe 2';
             return `
                 <div class="flex items-center space-x-1.5 flex-wrap">
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-indigo-100 text-indigo-900 border border-indigo-300 shrink-0">
-                        <i class="ph-bold ph-arrow-circle-down text-indigo-700 mr-1"></i>Chặng 2
+                    <span class="inline-flex items-center text-[11px] font-bold text-indigo-700 uppercase shrink-0">
+                        <i class="ph-bold ph-arrow-circle-down mr-1"></i>Chặng 2
                     </span>
                     <span class="font-bold text-slate-800 text-[12px]">${dName}</span>
                     <span class="text-[11px] text-slate-500 font-mono">(${vPlate})</span>
@@ -8801,14 +8801,14 @@ function renderContractsTable(items) {
         const allowancesSum = (c.allowance_amount || 0) + (c.subsidy_amount || 0);
 
         const bhxhBadge = c.is_social_insurance_participant !== false 
-            ? `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200" title="Có đóng BHXH">BHXH</span>`
-            : `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-400" title="Không tham gia BHXH">-</span>`;
+            ? `<span class="font-bold text-[11px] text-teal-700" title="Có đóng BHXH">BHXH</span>`
+            : `<span class="font-medium text-[11px] text-slate-300" title="Không tham gia BHXH">-</span>`;
         const tncnBadge = c.is_taxable !== false 
-            ? `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title="Có tính thuế TNCN">TNCN</span>`
-            : `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-400" title="Miễn tính thuế">-</span>`;
+            ? `<span class="font-bold text-[11px] text-indigo-700" title="Có tính thuế TNCN">TNCN</span>`
+            : `<span class="font-medium text-[11px] text-slate-300" title="Miễn tính thuế">-</span>`;
         const congDoanBadge = c.is_union_member === true 
-            ? `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Đoàn viên công đoàn">CĐ</span>`
-            : `<span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-400" title="Không tham gia">-</span>`;
+            ? `<span class="font-bold text-[11px] text-amber-700" title="Đoàn viên công đoàn">CĐ</span>`
+            : `<span class="font-medium text-[11px] text-slate-300" title="Không tham gia">-</span>`;
 
         const deptDisplay = c.department_label || c.department || '—';
         const roleDisplay = c.job_title || c.role_label || c.role || '—';
@@ -11101,18 +11101,18 @@ function renderFleetTable(vehicles) {
 
         let regBadge = '';
         if (v.is_reg_expired) {
-            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-300 mt-0.5"><i class="ph-bold ph-warning-circle mr-1"></i>Hết hạn (${Math.abs(v.reg_days_left)}N)</span>`;
+            regBadge = `<span class="text-[11px] font-bold text-rose-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i>Hết hạn (${Math.abs(v.reg_days_left)}N)</span>`;
         } else if (v.is_reg_warning) {
-            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 mt-0.5"><i class="ph-bold ph-clock mr-1"></i>Còn ${v.reg_days_left} ngày</span>`;
+            regBadge = `<span class="text-[11px] font-bold text-amber-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-clock"></i>Còn ${v.reg_days_left} ngày</span>`;
         } else if (v.reg_days_left !== null && v.reg_days_left !== undefined) {
-            regBadge = `<span class="text-[10.5px] text-emerald-600 font-bold mt-0.5 block">Hợp lệ (${v.reg_days_left}N)</span>`;
+            regBadge = `<span class="text-[11px] text-emerald-700 font-bold mt-0.5 block">Hợp lệ (${v.reg_days_left}N)</span>`;
         }
 
         let maintBadge = '';
         if (v.is_maint_warning) {
-            maintBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 mt-0.5"><i class="ph-bold ph-wrench mr-1"></i>Đến hạn (${v.maint_days_left}N)</span>`;
+            maintBadge = `<span class="text-[11px] font-bold text-amber-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-wrench"></i>Đến hạn (${v.maint_days_left}N)</span>`;
         } else if (v.maint_days_left !== null && v.maint_days_left !== undefined) {
-            maintBadge = `<span class="text-[10.5px] text-slate-400 font-medium mt-0.5 block">Còn ${v.maint_days_left}N</span>`;
+            maintBadge = `<span class="text-[11px] text-slate-500 font-medium mt-0.5 block">Còn ${v.maint_days_left}N</span>`;
         }
 
         const tr = document.createElement('tr');
@@ -11325,11 +11325,11 @@ function renderTrailerTable(trailers) {
 
         let regBadge = '';
         if (t.is_reg_expired) {
-            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-300 mt-0.5"><i class="ph-bold ph-warning-circle mr-1"></i>Hết hạn (${Math.abs(t.reg_days_left)}N)</span>`;
+            regBadge = `<span class="text-[11px] font-bold text-rose-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i>Hết hạn (${Math.abs(t.reg_days_left)}N)</span>`;
         } else if (t.is_reg_warning) {
-            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 mt-0.5"><i class="ph-bold ph-clock mr-1"></i>Còn ${t.reg_days_left} ngày</span>`;
+            regBadge = `<span class="text-[11px] font-bold text-amber-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-clock"></i>Còn ${t.reg_days_left} ngày</span>`;
         } else if (t.reg_days_left !== null && t.reg_days_left !== undefined) {
-            regBadge = `<span class="text-[10.5px] text-emerald-600 font-bold mt-0.5 block">Hợp lệ (${t.reg_days_left}N)</span>`;
+            regBadge = `<span class="text-[11px] text-emerald-700 font-bold mt-0.5 block">Hợp lệ (${t.reg_days_left}N)</span>`;
         }
 
         const tr = document.createElement('tr');
@@ -14827,14 +14827,14 @@ function renderBookingsTable(bookings) {
             : '<span class="text-xs font-semibold text-rose-700 whitespace-nowrap">Đã hủy</span>';
 
         const urgentBadge = b.is_urgent ? `
-            <span class="ml-1 px-1.5 py-0.2 rounded text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200 inline-flex items-center gap-0.5">
-                <i class="ph-bold ph-warning-circle text-[11px]"></i> GẤP
+            <span class="ml-1 text-[11px] font-bold text-rose-700 uppercase inline-flex items-center gap-0.5">
+                <i class="ph-bold ph-warning-circle"></i> GẤP
             </span>
         ` : '';
 
         const dropHookBadge = b.has_drop_hook ? `
-            <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-0.5" title="Có ${b.drop_hook_count} cont chạy chế độ cắt kéo (đổi tài)">
-                <i class="ph-bold ph-arrows-split"></i> CẮT KÉO (${b.drop_hook_count})
+            <span class="ml-1 text-[11px] font-bold text-amber-700 uppercase inline-flex items-center gap-0.5" title="Có ${b.drop_hook_count} cont chạy chế độ cắt kéo (đổi tài)">
+                <i class="ph-bold ph-arrows-split"></i> Cắt Kéo (${b.drop_hook_count})
             </span>
         ` : '';
 
@@ -20291,7 +20291,7 @@ function renderSubcontractorTable(list) {
                     <div class="text-[11px] text-slate-400">${item.created_at}</div>
                 </td>
                 <td>
-                    <div class="font-bold text-slate-800 font-mono bg-slate-100 px-2 py-0.5 rounded inline-block">${escapeHtml(item.vehicle_plate)}</div>
+                    <div class="font-bold text-slate-900 font-mono text-xs">${escapeHtml(item.vehicle_plate)}</div>
                 </td>
                 <td>
                     <div class="font-semibold text-slate-800">${escapeHtml(item.driver_name)}</div>
@@ -20535,8 +20535,8 @@ function renderBotAuditTable(list) {
 
         // Tóm tắt các vé
         const ticketsDesc = (item.tickets_detail || []).map(tk => 
-            `<span class="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 mr-1" title="${escapeHtml(tk.invoice_issuer || '')}">${formatMoneyVND(tk.amount)}</span>`
-        ).join('');
+            `<span class="text-[11px] text-slate-700 font-mono mr-1.5" title="${escapeHtml(tk.invoice_issuer || '')}">${formatMoneyVND(tk.amount)}</span>`
+        ).join('· ');
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -20545,7 +20545,7 @@ function renderBotAuditTable(list) {
                     <div class="font-bold text-slate-900 font-heading">[${escapeHtml(item.trip_code)}]</div>
                 </td>
                 <td>
-                    <div class="font-bold text-slate-800 font-mono bg-slate-100 px-2 py-0.5 rounded inline-block">${escapeHtml(item.vehicle_plate)}</div>
+                    <div class="font-bold text-slate-900 font-mono text-xs">${escapeHtml(item.vehicle_plate)}</div>
                 </td>
                 <td>
                     <div class="font-semibold text-slate-800">${escapeHtml(item.driver_name)}</div>
@@ -22921,10 +22921,10 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name)}</td>
                 <td class="py-2.5 px-3 text-[12px] text-slate-600 border-r border-slate-200">${escapeHtml(item.description || 'Quản lý phân quyền theo nhóm nghiệp vụ')}</td>
                 <td class="py-2.5 px-3 text-center border-r border-slate-200">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">${item.user_count || 0} nhân sự</span>
+                    <span class="text-xs font-bold text-blue-700">${item.user_count || 0} nhân sự</span>
                 </td>
                 <td class="py-2.5 px-3 text-center border-r border-slate-200">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">${item.permission_count || 0} quyền</span>
+                    <span class="text-xs font-bold text-emerald-700">${item.permission_count || 0} quyền</span>
                 </td>
                 <td class="py-2.5 px-3 text-center border-r border-slate-200 text-xs font-semibold text-emerald-700">Đang kích hoạt</td>
                 <td class="py-2.5 px-3 text-center">
@@ -23304,7 +23304,7 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.vehicle_type_label || item.vehicle_type}</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">
                     ${item.ownership_type === 'SUBCONTRACTOR' 
-                        ? `<span class="inline-flex items-center gap-1 text-amber-800 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px] border border-amber-200" title="Xe bạn / 3PL: ${escapeHtml(item.subcontractor_name || '')}"><i class="ph-bold ph-handshake"></i> ${item.subcontractor_name && item.subcontractor_name !== '-' ? escapeHtml(item.subcontractor_name) : 'Xe Bạn (3PL)'}</span>`
+                        ? `<span class="text-xs font-bold text-slate-600 uppercase" title="Xe bạn / 3PL: ${escapeHtml(item.subcontractor_name || '')}">${item.subcontractor_name && item.subcontractor_name !== '-' ? escapeHtml(item.subcontractor_name) : 'Xe Bạn (3PL)'}</span>`
                         : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe Nhà (TVL)'}</span>`}
                 </td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
@@ -29573,13 +29573,13 @@ function renderCustomsTable(list) {
     };
 
     const statusBadges = {
-        'DRAFT': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600">Chờ truyền TK</span>',
-        'SUBMITTED': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700">Đã đăng ký</span>',
-        'PROCESSING': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700">Đang thẩm định</span>',
-        'INSPECTION': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-700">Kiểm hóa bãi/cảng</span>',
-        'CLEARED': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700">Đã thông quan</span>',
-        'RELEASED': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-teal-100 text-teal-800">Đã qua giám sát</span>',
-        'CANCELLED': '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700">Hủy tờ khai</span>',
+        'DRAFT': '<span class="text-xs font-bold text-slate-600 uppercase">Chờ truyền TK</span>',
+        'SUBMITTED': '<span class="text-xs font-bold text-blue-700 uppercase">Đã đăng ký</span>',
+        'PROCESSING': '<span class="text-xs font-bold text-amber-700 uppercase">Đang thẩm định</span>',
+        'INSPECTION': '<span class="text-xs font-bold text-purple-700 uppercase">Kiểm hóa bãi/cảng</span>',
+        'CLEARED': '<span class="text-xs font-bold text-emerald-700 uppercase">Đã thông quan</span>',
+        'RELEASED': '<span class="text-xs font-bold text-teal-800 uppercase">Đã qua giám sát</span>',
+        'CANCELLED': '<span class="text-xs font-bold text-rose-700 uppercase">Hủy tờ khai</span>',
     };
 
     tbody.innerHTML = list.map((d, index) => {
@@ -29610,7 +29610,7 @@ function renderCustomsTable(list) {
                 <td class="py-2.5 px-3 border-r border-slate-200">
                     <div class="font-mono font-bold text-teal-900 text-xs">${d.declaration_number}</div>
                     <div class="flex items-center space-x-1.5 mt-0.5">
-                        <span class="px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 text-[10px] font-bold">${d.declaration_type}</span>
+                        <span class="text-[11px] font-bold text-slate-700 uppercase">${d.declaration_type}</span>
                         <span class="text-[11px] text-slate-400 font-medium">${d.declaration_date}</span>
                         <span class="text-[10px] font-bold ${d.direction === 'IMPORT' ? 'text-blue-600' : 'text-amber-600'}">${d.direction === 'IMPORT' ? 'NHẬP' : 'XUẤT'}</span>
                     </div>
@@ -30398,11 +30398,11 @@ function renderAccountingReportTable(data) {
                 displayVal = val > 0 ? `<span class="text-amber-700 font-bold font-mono">-${displayVal}</span>` : '-';
             } else if (h.key === 'settlement_balance') {
                 if (val > 0) {
-                    displayVal = `<span class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold font-mono">+${fmt(val)} đ <span class="text-[10px] font-normal">(Nộp cty)</span></span>`;
+                    displayVal = `<span class="font-bold text-xs text-emerald-700 font-mono">+${fmt(val)} đ <span class="text-[11px] font-normal text-slate-500">(Nộp cty)</span></span>`;
                 } else if (val < 0) {
-                    displayVal = `<span class="inline-flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded font-bold font-mono">${fmt(val)} đ <span class="text-[10px] font-normal">(Cty bù)</span></span>`;
+                    displayVal = `<span class="font-bold text-xs text-rose-700 font-mono">${fmt(val)} đ <span class="text-[11px] font-normal text-slate-500">(Cty bù)</span></span>`;
                 } else {
-                    displayVal = `<span class="text-slate-400 font-mono">0 đ (Khớp)</span>`;
+                    displayVal = `<span class="text-slate-400 font-mono text-xs">0 đ (Khớp)</span>`;
                 }
             }
 
@@ -30619,7 +30619,7 @@ async function openAccountingReportDrilldown(targetId, encodedTargetKey) {
                             <td class="py-3 px-3.5 text-right font-mono text-amber-700">${t.reimbursable_expense > 0 ? fmt(t.reimbursable_expense) + ' đ' : '-'}</td>
                             <td class="py-3 px-3.5 text-right font-mono font-black text-emerald-700">${fmt(t.gross_profit)} đ</td>
                             <td class="py-3 px-3.5 text-center">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusClass}">
+                                <span class="text-xs font-bold uppercase ${statusClass}">
                                     ${t.status_display}
                                 </span>
                             </td>

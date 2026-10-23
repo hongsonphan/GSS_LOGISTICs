@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.3.9] - 2026-10-23 (Đồng Bộ Số Liệu Bảng Chi Tiết Khớp Tuyệt Đối Với KPI & Badge Trong Phân Hệ Kế Toán)
+
+### 1. Khắc Phục Lỗi Bảng Chi Tiết Quỹ Điều Vận Trống Trơn:
+- **Nguyên nhân:** Hàm `applyDispatcherFundsFilter()` bị định nghĩa 2 lần trong `static/js/app.js`. Định nghĩa thứ 2 (dòng 33322) ghi đè hàm trước đó bằng bộ lọc DOM thô sơ `querySelectorAll('#acct-fund-tbody tr')`. Do bảng chưa được render lần nào nên bảng luôn trống trơn dù KPI và Badge đều có dữ liệu (45.000.000 đ, 2 phiếu quỹ).
+- **Giải pháp:**
+  * Khử trùng định nghĩa hàm, tích hợp bộ lọc từ khóa trực tiếp trên mảng dữ liệu `rawDispatcherFundsList` và tự động kích hoạt `renderDispatcherFundsTable(filteredList)`.
+  * Bảng Quỹ Điều Vận hiển thị chuẩn xác và đầy đủ các phiếu quỹ đang lưu hành (STT, Mã quỹ, Điều phối nhận, Ngày tạm ứng, Tiền tạm ứng, Đã cấp tài xế, Đã hoàn ứng, Dư khả dụng, Trạng thái và các nút Thao tác).
+
+### 2. Khắc Phục Lệch Số Dòng Khoản Chi Hộ (Hiển Thị 2 Dòng vs KPI 4 Dòng):
+- **Nguyên nhân:** Dropdown bộ lọc trạng thái chi hộ (`#reimburse-filter-status`) trong `templates/views/view_accounting.html` bị set thuộc tính mặc định `selected` tại option `PENDING` ("Chờ thu / Chưa gửi Debit Note"). Khi người dùng mở tab "Khoản Chi Hộ (4)", API tự động lọc ra chỉ 2 khoản chưa lập Debit Note (3.800.000 đ), ẩn mất 2 khoản đã lập Debit Note (4.500.000 đ), gây cảm giác mất dữ liệu hoặc không khớp với Badge (4) và KPI Tổng (8.300.000 đ).
+- **Giải pháp:**
+  * Chuyển giá trị mặc định của bộ lọc sang `ALL` ("-- Tất cả trạng thái thu hồi --").
+  * Người dùng vào tab sẽ thấy ngay toàn bộ 4 dòng chi hộ (tổng 8.300.000 đ), khớp 100% với KPI Thẻ 1 và Badge tab.
+  * Đồng bộ tương tự cho Tab **Xe Bạn (3PL)** (`#subcon-filter-status`): chuyển mặc định sang `ALL` để hiển thị toàn bộ danh sách chuyến thầu phụ khớp với số liệu tổng hợp.
+
+### 3. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
 ## [v4.3.8] - 2026-10-23 (Loại Bỏ Triệt Để Badge, Icon Tay Lái & Chuẩn Hóa Nút Thao Tác Theo Chuẩn Nút In)
 
 ### 1. Loại Bỏ Triệt Để Badge Trong Hiệu Suất Đội Xe, Gom Chuyến & Công Nợ:
@@ -336,7 +355,11 @@ eport-14 (Tuổi đơn tồn đọng) cho Khối Kinh Doanh (Sales) để đôn 
   * **Thiết kế đồng màu sáng:** Chuyển toàn bộ Toolbar sang tông màu xám nhạt (`bg-slate-50/90`), viền mỏng tinh tế (`border-slate-200/90`) và nền Canvas giấy trắng thanh lịch trên nền ghi nhẹ (`bg-slate-100/60`).
   * **Loại bỏ 100% sự trùng lặp:** Xóa bỏ thanh header "Đang xem: ..." phụ; loại bỏ nút "Mở tab mới" lặp lại trong Toolbar PDF, chỉ giữ 1 nút duy nhất ở Header trên cùng.
 - **Tính năng Xoay 90° (Rotate) & Tự động thích ứng khổ ngang (Fit Width):**
-  * **Nút bấm "Xoay 90°":** Cho phép người dùng xoay trang PDF theo chiều kim đồng hồ ($0^\circ ightarrow 90^\circ ightarrow 180^\circ ightarrow 270^\circ ightarrow 0^\circ$) để xem các sơ đồ tổ chức, bản vẽ hoặc bảng biểu nằm ngang cực kỳ dễ dàng.
+  * **Nút bấm "Xoay 90°":** Cho phép người dùng xoay trang PDF theo chiều kim đồng hồ ($0^\circ 
+ightarrow 90^\circ 
+ightarrow 180^\circ 
+ightarrow 270^\circ 
+ightarrow 0^\circ$) để xem các sơ đồ tổ chức, bản vẽ hoặc bảng biểu nằm ngang cực kỳ dễ dàng.
   * **Tự động vừa chiều ngang (Fit Width):** Hệ thống tự động tính toán tỷ lệ khung hình và chiều rộng hiển thị của màn hình để bung rộng toàn bộ chiều ngang của sơ đồ, chữ to rõ nét căng mà không cần căn chỉnh thủ công.
 
 ---
