@@ -17565,7 +17565,16 @@ function renderDriverAdvancesTable(list) {
 // RENDER & FILTER BẢNG QUỸ ĐIỀU VẬN (COMPANY ➔ DISPATCHER)
 // -------------------------------------------------------------
 function applyDispatcherFundsFilter() {
-    renderDispatcherFundsTable(rawDispatcherFundsList);
+    const q = (document.getElementById('fund-search')?.value || '').toLowerCase().trim();
+    if (!q) {
+        renderDispatcherFundsTable(rawDispatcherFundsList || []);
+        return;
+    }
+    const filtered = (rawDispatcherFundsList || []).filter(item => {
+        const text = [item.code, item.dispatcher_name, item.purpose, item.status, item.status_label, item.approved_by, item.notes].filter(Boolean).join(' ').toLowerCase();
+        return text.includes(q);
+    });
+    renderDispatcherFundsTable(filtered);
 }
 
 function renderDispatcherFundsTable(list) {
@@ -33319,14 +33328,7 @@ function filterPayrollTable() {
     });
 }
 
-function applyDispatcherFundsFilter() {
-    const q = (document.getElementById('fund-search')?.value || '').toLowerCase().trim();
-    const rows = document.querySelectorAll('#acct-fund-tbody tr');
-    rows.forEach(r => {
-        if (!q) { r.style.display = ''; return; }
-        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
-    });
-}
+// applyDispatcherFundsFilter is defined above
 
 function applyBotAuditFilter() {
     const q = (document.getElementById('bot-search')?.value || '').toLowerCase().trim();
