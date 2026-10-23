@@ -110,14 +110,14 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
     status = models.CharField(
         max_length=30,
         choices=[
-            ('APPROVED', 'Đã ký hợp đồng'),
-            ('PENDING_APPROVAL', 'Chờ ký hợp đồng'),
-            ('NEGOTIATING', 'Đang đàm phán'),
             ('SENT', 'Đã gửi báo giá'),
-            ('REJECTED', 'Từ chối'),
+            ('NEGOTIATING', 'Đang đàm phán'),
+            ('PENDING_APPROVAL', 'Chờ ký Hợp đồng'),
+            ('APPROVED', 'Đã ký Hợp đồng'),
+            ('REJECTED', 'Từ chối/ Hủy'),
             ('EXPIRED', 'Hết hiệu lực')
         ],
-        default='NEGOTIATING'
+        default='SENT'
     )
     # Phương thức báo giá & cơ chế định giá cước (Pricing Method)
     pricing_method = models.CharField(

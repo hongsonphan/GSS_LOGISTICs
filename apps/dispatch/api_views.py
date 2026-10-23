@@ -4587,6 +4587,7 @@ class SalesAPIView(APIView):
 
         q_results = []
         total_monthly_expected_revenue = 0
+        sent_count = 0
         negotiating_count = 0
         pending_approval_count = 0
         approved_count = 0
@@ -4595,13 +4596,15 @@ class SalesAPIView(APIView):
         for q in quotations:
             rev = float(q.expected_revenue)
             total_monthly_expected_revenue += rev
-            if q.status == 'NEGOTIATING':
+            if q.status == 'SENT':
+                sent_count += 1
+            elif q.status == 'NEGOTIATING':
                 negotiating_count += 1
             elif q.status == 'PENDING_APPROVAL':
                 pending_approval_count += 1
             elif q.status == 'APPROVED':
                 approved_count += 1
-            elif q.status == 'REJECTED':
+            elif q.status in ['REJECTED', 'EXPIRED']:
                 rejected_count += 1
 
             q_items = []
@@ -5341,7 +5344,7 @@ class QuotationStatusAPIView(APIView):
         if not q:
             return Response({'error': 'Không tìm thấy báo giá'}, status=status.HTTP_404_NOT_FOUND)
         new_status = request.data.get('status')
-        valid_statuses = ['NEGOTIATING', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'EXPIRED']
+        valid_statuses = ['SENT', 'NEGOTIATING', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'EXPIRED']
         if new_status not in valid_statuses:
             return Response({'error': f'Trạng thái không hợp lệ. Cho phép: {valid_statuses}'}, status=status.HTTP_400_BAD_REQUEST)
         q.status = new_status

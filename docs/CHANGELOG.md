@@ -2,6 +2,32 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.3] - 2026-10-23 (Cơ Cấu Lại Chuẩn 5 Trạng Thái Báo Giá CRM: Đã Gửi Báo Giá | Đang Đàm Phán | Chờ Ký Hợp Đồng | Đã Ký Hợp Đồng | Từ Chối/ Hủy)
+
+### 1. Chuẩn Hóa Danh Mục 5 Trạng Thái Báo Giá (Quotation Statuses):
+- **Cơ cấu lại máy trạng thái chu trình Báo giá (Sales Funnel):**
+  1. `SENT`: **Đã gửi báo giá** (Mặc định khi tạo mới)
+  2. `NEGOTIATING`: **Đang đàm phán**
+  3. `PENDING_APPROVAL`: **Chờ ký Hợp đồng**
+  4. `APPROVED`: **Đã ký Hợp đồng**
+  5. `REJECTED`: **Từ chối/ Hủy**
+- **Đồng bộ cơ sở dữ liệu & Backend:**
+  * Cập nhật `Quotation.status` trong `apps/customers/models.py` với `choices` và `default='SENT'`.
+  * Tạo Django migration `customers.0018_alter_quotation_status`.
+  * Cập nhật `SalesAPIView` & `QuotationStatusAPIView` trong `apps/dispatch/api_views.py` đếm chuẩn xác số lượng `sent_count`, `negotiating_count`, `pending_approval_count`, `approved_count`, `rejected_count`.
+
+### 2. Đồng Bộ Giao Diện & Bộ Lọc Frontend:
+- **Bộ lọc Báo giá (`view_sales.html`):** Thay thế dropdown `#filter-quote-status` 4 mục cũ sang đầy đủ 5 trạng thái chuẩn với giá trị khớp mã hệ thống (`SENT`, `NEGOTIATING`, `PENDING_APPROVAL`, `APPROVED`, `REJECTED`).
+- **Modal Tạo/Sửa Báo giá (`modal_quotation.html`) & Trang chi tiết (`view_quotation_detail.html`):** Cập nhật select dropdown 5 options chuẩn hóa theo đúng thứ tự chu trình phễu kinh doanh.
+- **Bảng dữ liệu CRM (`static/js/app.js`):**
+  * `applyQuoteFilters()`: Hỗ trợ lọc chuẩn xác theo cả `status_raw` và text nhãn tiếng Việt.
+  * `renderQuotationsTable()`: Hiển thị trạng thái dạng text chuẩn (không badge) với màu sắc nhận diện trực quan: Xanh da trời (`SENT`), Vàng hổ phách (`NEGOTIATING`), Xanh chàm tím (`PENDING_APPROVAL`), Xanh ngọc lục bảo (`APPROVED`), Đỏ hoa hồng (`REJECTED`).
+
+### 3. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
+
 ## [v4.4.2] - 2026-10-23 (Chuẩn Hóa Trải Nghiệm Xem Trước Văn Bản Full Viền Chuẩn Apple iOS Quick Look)
 
 ### 1. Nâng Cấp Document Previewer Full Viền (Edge-to-Edge):

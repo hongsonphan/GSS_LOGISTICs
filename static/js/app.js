@@ -12138,7 +12138,7 @@ async function openCreateQuotationPage(updateHistory = true) {
     onFullpageQuotationPricingMethodChange('MULTI_ROUTE');
 
     const statusEl = document.getElementById('fullpage-quote-status');
-    if (statusEl) statusEl.value = 'NEGOTIATING';
+    if (statusEl) statusEl.value = 'SENT';
 
     const tplEl = document.getElementById('fullpage-quote-template-type');
     if (tplEl) tplEl.value = 'STANDARD';
@@ -12246,11 +12246,20 @@ async function viewQuotationDetail(quoteIdentifier, updateHistory = true) {
         if (statusBadge) {
             statusBadge.classList.remove('hidden');
             statusBadge.innerText = q.status_display || q.status;
-            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' +
-                (q.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                 q.status === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                 q.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
-                 'bg-teal-50 text-teal-800 border-teal-200');
+            const st = (q.status_raw || q.status || '').toUpperCase();
+            let badgeCls = 'bg-slate-50 text-slate-800 border-slate-200';
+            if (st === 'APPROVED') {
+                badgeCls = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+            } else if (st === 'PENDING_APPROVAL') {
+                badgeCls = 'bg-indigo-50 text-indigo-800 border-indigo-200';
+            } else if (st === 'NEGOTIATING') {
+                badgeCls = 'bg-amber-50 text-amber-800 border-amber-200';
+            } else if (st === 'SENT') {
+                badgeCls = 'bg-sky-50 text-sky-800 border-sky-200';
+            } else if (['REJECTED', 'EXPIRED'].includes(st)) {
+                badgeCls = 'bg-rose-50 text-rose-800 border-rose-200';
+            }
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ' + badgeCls;
         }
         const pricingBadge = document.getElementById('fullpage-quote-pricing-badge');
         if (pricingBadge) {
@@ -15219,8 +15228,14 @@ function applyQuoteFilters() {
         if (filterCust && (q.customer || '').toLowerCase() !== filterCust) return false;
         
         if (filterStatus) {
+            const rawStatus = (q.status_raw || '').toUpperCase();
             const st = (q.status || '').toLowerCase();
-            if (!st.includes(filterStatus)) return false;
+            const filterUpper = filterStatus.toUpperCase();
+            const filterLower = filterStatus.toLowerCase();
+            const matchesRaw = (rawStatus === filterUpper) || 
+                               (filterUpper === 'REJECTED' && ['REJECTED', 'EXPIRED'].includes(rawStatus));
+            const matchesText = st.includes(filterLower);
+            if (!matchesRaw && !matchesText) return false;
         }
 
         if (filterSearch) {
@@ -15323,10 +15338,20 @@ function renderQuotationsTable(quotations) {
     }
 
     quotations.forEach((s, idx) => {
-        let statusCls = 'text-teal-700 font-semibold';
-        if (s.status.includes('Đã duyệt')) statusCls = 'text-emerald-700 font-semibold';
-        if (s.status.includes('Chờ') || s.status.includes('thương lượng')) statusCls = 'text-amber-700 font-semibold';
-        if (s.status.includes('Từ chối') || s.status.includes('hết hiệu lực')) statusCls = 'text-rose-700 font-semibold';
+        let statusCls = 'text-slate-700 font-semibold';
+        const stRaw = (s.status_raw || '').toUpperCase();
+        const stText = (s.status || '').toLowerCase();
+        if (stRaw === 'APPROVED' || stText.includes('đã ký')) {
+            statusCls = 'text-emerald-700 font-semibold';
+        } else if (stRaw === 'PENDING_APPROVAL' || stText.includes('chờ ký')) {
+            statusCls = 'text-indigo-700 font-semibold';
+        } else if (stRaw === 'NEGOTIATING' || stText.includes('đàm phán') || stText.includes('thương lượng')) {
+            statusCls = 'text-amber-700 font-semibold';
+        } else if (stRaw === 'SENT' || stText.includes('đã gửi')) {
+            statusCls = 'text-sky-700 font-semibold';
+        } else if (['REJECTED', 'EXPIRED'].includes(stRaw) || stText.includes('từ chối') || stText.includes('hủy')) {
+            statusCls = 'text-rose-700 font-semibold';
+        }
 
         const hasMultiRoutes = (s.items_count && s.items_count > 1) || (s.items && s.items.length > 1);
         const routeCount = s.items_count || (s.items ? s.items.length : 1);
