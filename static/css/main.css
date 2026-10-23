@@ -689,13 +689,18 @@ button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled
     font-size: 13px !important;
 }
 
+.erp-table, .bim-table, table.erp-table, table.bim-table,
+.erp-table thead th, .erp-table tbody td, .erp-table tfoot td, .erp-table tfoot th,
+.bim-table thead th, .bim-table tbody td, .bim-table tfoot td, .bim-table tfoot th {
+    font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
 .erp-table thead th, .bim-table thead th, table.erp-table thead th, table.bim-table thead th {
     position: sticky;
     top: 0;
     z-index: 10;
     background-color: #f2f5f8;
     color: #334155;
-    font-family: var(--font-heading) !important;
     font-size: 12.5px !important;
     font-weight: 700;
     padding: 7px 12px;
@@ -741,7 +746,7 @@ button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled
 /* Hàng dữ liệu đơn (Single-line row): chiều cao chuẩn ~34px - 36px */
 .erp-table tbody td, .bim-table tbody td, table.erp-table tbody td, table.bim-table tbody td {
     padding: 6px 12px;
-    font-family: var(--font-body) !important;
+    font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif !important;
     font-size: 13px !important;
     line-height: 1.4;
     color: #1e293b;
@@ -749,7 +754,7 @@ button[class*="bg-red-600"]:not(.btn-keep-solid):not([class*="/"]):not([disabled
     vertical-align: middle;
 }
 
-/* Hàng chân bảng tổng cộng (Footer total row): chiều cao & padding đồng bộ 100% với tbody và thead */
+/* Hàng chân bảng tổng cộng (Footer total row): chiều cao & padding đồng bộ 100% với tbody và thead, cùng 1 font family */
 .erp-table tfoot td,
 .bim-table tfoot td,
 table.erp-table tfoot td,
@@ -759,9 +764,10 @@ div[id^="view-"] table tfoot td,
 .bim-table tfoot th,
 table.erp-table tfoot th,
 table.bim-table tfoot th {
-    padding: 6px 12px !important;
-    font-family: var(--font-body) !important;
+    padding: 7px 12px !important;
+    font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif !important;
     font-size: 13px !important;
+    font-weight: 800 !important;
     line-height: 1.4;
     color: #0f172a;
     vertical-align: middle;

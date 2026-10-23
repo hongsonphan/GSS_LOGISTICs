@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.4] - 2026-10-23 (Đồng Bộ 100% Một Font-Family Duy Nhất Toàn Bộ Bảng Table & Dòng Total)
+
+### 1. Đồng Bộ Font-Family Tuyệt Đối:
+- **Khắc phục nguyên nhân chữ dòng Total nhỏ hơn:**
+  * Dòng `tbody` trước đây dùng font Sans (`Plus Jakarta Sans` / `Be Vietnam Pro`), trong khi các ô số ở dòng `tfoot` lại bị gán class `font-mono` (ui-monospace / Courier / Consolas) khiến con chữ bị hẹp và nhỏ hơn thực tế.
+  * Đã loại bỏ hoàn toàn class `font-mono` ở cả Báo Cáo 1 và Báo Cáo 2, chuyển sang dùng `tabular-nums` thuần túy.
+- **Ép font-family đồng nhất qua CSS (`static/css/main.css`):**
+  * Thiết lập một font-family duy nhất cho toàn bộ bảng:
+    `font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif !important;`
+    áp dụng cho cả `thead th`, `tbody td`, và `tfoot td`.
+  * Cố định kích thước `font-size: 13px !important;` và `font-weight: 800 !important;` cho `tfoot td`, giúp chữ và số dòng Total to rõ, sắc nét, đồng bộ tuyệt đối với dòng dữ liệu bên trên.
+
+### 2. Triển Khai & Kiểm Thử:
+- `node -c static/js/app.js` & `node -c static/js/column_manager.js` (100% Passed).
+- `python manage.py test --keepdb` (147/147 tests Passed).
+- Deploy thành công lên VPS `149.118.60.194`.
+
 ## [v4.5.3] - 2026-10-23 (Tăng Font Size Dòng Total Lên Bằng Dòng Dữ Liệu & Chuẩn Hóa Cột Tỷ Lệ % Thành Số Nguyên)
 
 ### 1. Tăng Cỡ Chữ Dòng Total (tfoot):
