@@ -2,18 +2,18 @@
 <div id="view-dieu-van" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
 
 
-    <!-- BỘ 5 THẺ VẬN HÀNH CHIẾN LƯỢC TRANG ĐIỀU VẬN (TMS DISPATCH PIPELINE) -->
+    <!-- BỘ 5 THẺ VẬN HÀNH ĐIỀU ĐỘ CHUYẾN XE (CHUẨN VÒNG ĐỜI VẬN TẢI TỪ TRÁI QUA PHẢI) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-6">
-        <!-- Thẻ 1: TỔNG KẾ HOẠCH ĐIỀU ĐỘ (Indigo) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 1: TỔNG KẾ HOẠCH ĐIỀU ĐỘ -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">TỔNG ĐIỀU ĐỘ</span>
-                    <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                    <span class="text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider font-heading">1. TỔNG ĐIỀU ĐỘ</span>
+                    <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-truck"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
                     <span id="dispatch-stat-total-trips">0</span> <span class="text-xs font-bold text-slate-400">chuyến</span>
                 </p>
                 <!-- Tương thích ngược -->
@@ -22,7 +22,7 @@
             <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
                 <div class="flex items-center justify-between font-semibold">
                     <span class="text-slate-500 uppercase font-bold text-[10.5px]">KẾ HOẠCH:</span>
-                    <strong class="text-indigo-700 font-black font-heading text-[11.5px]" id="dispatch-plan-line1">-- Chuyến · -- Cont</strong>
+                    <strong class="text-slate-900 font-black font-heading text-[11.5px]" id="dispatch-plan-line1">-- Chuyến · -- Cont</strong>
                 </div>
                 <div class="flex items-center justify-between font-semibold">
                     <span class="text-slate-500 uppercase font-bold text-[10.5px]">ĐỘI XE:</span>
@@ -31,17 +31,17 @@
             </div>
         </div>
 
-        <!-- Thẻ 2: CHỜ TÀI XẾ NHẬN LỆNH (Amber) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 2: CHỜ TÀI XẾ NHẬN LỆNH -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CHỜ NHẬN LỆNH</span>
+                    <span class="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">2. CHỜ NHẬN LỆNH</span>
                     <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-clock-countdown"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-amber-800 tabular-nums font-heading tracking-tight mt-1">
-                    <span id="dispatch-stat-pending-trips">0</span> <span class="text-xs font-bold text-amber-400">chuyến</span>
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-pending-trips">0</span> <span class="text-xs font-bold text-slate-400">chuyến</span>
                 </p>
             </div>
             <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
@@ -56,17 +56,17 @@
             </div>
         </div>
 
-        <!-- Thẻ 3: ĐANG LĂN BÁNH TRÊN ĐƯỜNG (Teal) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 3: ĐANG TRÊN TUYẾN -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐANG TRÊN TUYẾN</span>
+                    <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">3. ĐANG TRÊN TUYẾN</span>
                     <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-navigation-arrow"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1">
-                    <span id="dispatch-stat-transit-trips">0</span> <span class="text-xs font-bold text-teal-400">chuyến</span>
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
+                    <span id="dispatch-stat-transit-trips">0</span> <span class="text-xs font-bold text-slate-400">chuyến</span>
                 </p>
                 <!-- Tương thích ngược -->
                 <span id="stat-transit" class="hidden">0</span>
@@ -83,11 +83,11 @@
             </div>
         </div>
 
-        <!-- Thẻ 4: CẢNH BÁO RỦI RO (CẮT MÁNG / LƯU CA) (Rose) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 4: CẢNH BÁO RỦI RO -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CẢNH BÁO RỦI RO</span>
+                    <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">4. CẢNH BÁO RỦI RO</span>
                     <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-siren"></i>
                     </span>
@@ -111,11 +111,11 @@
             </div>
         </div>
 
-        <!-- Thẻ 5: ĐÃ GIAO HÀNG & THU HỒI POD (Emerald) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 5: ĐÃ GIAO & THU POD -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐÃ GIAO & THU POD</span>
+                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">5. ĐÃ GIAO & THU POD</span>
                     <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-check-circle"></i>
                     </span>

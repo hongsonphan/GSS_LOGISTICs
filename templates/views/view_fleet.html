@@ -1,17 +1,17 @@
 <!-- 4. XE & BÃI -->
 <div id="view-xe-bai" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
-    <!-- BỘ 5 THẺ VẬN HÀNH KỸ THUẬT ĐỘI XE (FLEET PIPELINE & READINESS) -->
+    <!-- BỘ 5 THẺ VẬN HÀNH KỸ THUẬT ĐỘI XE (CHUẨN TÀI SẢN & VẬN HÀNH TỪ TRÁI QUA PHẢI) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-4">
-        <!-- Thẻ 1: Tổng Đầu kéo & Xe tải (Teal) -->
-        <div onclick="switchFleetSubTab('vehicles')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để xem danh sách Đầu Kéo & Xe Tải">
+        <!-- Thẻ 1: Tổng Đầu kéo & Xe tải -->
+        <div onclick="switchFleetSubTab('vehicles')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để xem danh sách Đầu Kéo & Xe Tải">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐẦU KÉO / TẢI</span>
-                    <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm group-hover:scale-110 transition-transform">
+                    <span class="text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider font-heading">1. ĐẦU KÉO / TẢI</span>
+                    <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-sm group-hover:scale-110 transition-transform">
                         <i class="ph-bold ph-truck"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
                     <span id="fleet-stat-tractors">0</span> <span class="text-xs font-bold text-slate-400">xe</span>
                 </p>
             </div>
@@ -27,16 +27,16 @@
             </div>
         </div>
 
-        <!-- Thẻ 2: Rơ-moóc Container (Indigo) -->
-        <div onclick="switchFleetSubTab('trailers')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để xem danh sách Rơ-Moóc Container">
+        <!-- Thẻ 2: Rơ-moóc Container -->
+        <div onclick="switchFleetSubTab('trailers')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để xem danh sách Rơ-Moóc Container">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">RƠ-MOÓC CONT</span>
+                    <span class="text-xs font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">2. RƠ-MOÓC CONT</span>
                     <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm group-hover:scale-110 transition-transform">
                         <i class="ph-bold ph-arrows-horizontal"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
                     <span id="fleet-stat-trailers">0</span> <span class="text-xs font-bold text-slate-400">moóc</span>
                 </p>
             </div>
@@ -52,23 +52,23 @@
             </div>
         </div>
 
-        <!-- Thẻ 3: Tính Sẵn Sàng Đội Xe (Emerald) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 3: Tính Sẵn Sàng Đội Xe -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">SẴN SÀNG NHẬN ĐƠN</span>
-                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                    <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">3. SẴN SÀNG NHẬN ĐƠN</span>
+                    <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-check-circle"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1">
+                <p class="text-2xl 2xl:text-3xl font-black text-teal-700 tabular-nums font-heading tracking-tight mt-1">
                     <span id="fleet-stat-availability">100%</span>
                 </p>
             </div>
             <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
                 <div class="flex items-center justify-between font-semibold">
                     <span class="text-slate-500 uppercase font-bold text-[10.5px]">KHẢ DỤNG:</span>
-                    <strong class="text-emerald-700 font-black font-heading text-[11px]" id="fleet-card-avail-line1">-- Xe sẵn sàng</strong>
+                    <strong class="text-teal-700 font-black font-heading text-[11px]" id="fleet-card-avail-line1">-- Xe sẵn sàng</strong>
                 </div>
                 <div class="flex items-center justify-between font-semibold">
                     <span class="text-slate-500 uppercase font-bold text-[10.5px]">ĐANG CHẠY:</span>
@@ -77,11 +77,11 @@
             </div>
         </div>
 
-        <!-- Thẻ 4: Cảnh báo Đăng kiểm & Phù hiệu (Rose) -->
-        <div onclick="filterFleetByWarning('REG_WARNING')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để lọc phương tiện sắp hoặc quá hạn đăng kiểm">
+        <!-- Thẻ 4: Cảnh báo Đăng kiểm & Phù hiệu -->
+        <div onclick="filterFleetByWarning('REG_WARNING')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để lọc phương tiện sắp hoặc quá hạn đăng kiểm">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CẢNH BÁO HẠN KIỂM</span>
+                    <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">4. CẢNH BÁO HẠN KIỂM</span>
                     <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm group-hover:scale-110 transition-transform">
                         <i class="ph-bold ph-warning-circle"></i>
                     </span>
@@ -102,11 +102,11 @@
             </div>
         </div>
 
-        <!-- Thẻ 5: Đến hạn Bảo trì & Bảo hiểm (Amber) -->
-        <div onclick="filterFleetByWarning('MAINT_WARNING')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để lọc phương tiện đến hạn bảo dưỡng kỹ thuật">
+        <!-- Thẻ 5: Đến hạn Bảo trì & Kỹ thuật -->
+        <div onclick="filterFleetByWarning('MAINT_WARNING')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để lọc phương tiện đến hạn bảo dưỡng kỹ thuật">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">BẢO DƯỠNG & BẢO HIỂM</span>
+                    <span class="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">5. BẢO DƯỠNG & KỸ THUẬT</span>
                     <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm group-hover:scale-110 transition-transform">
                         <i class="ph-bold ph-wrench"></i>
                     </span>
@@ -118,11 +118,11 @@
             <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
                 <div class="flex items-center justify-between font-semibold">
                     <span class="text-slate-500 uppercase font-bold text-[10.5px]">BẢO DƯỠNG:</span>
-                    <strong class="text-amber-700 font-black font-heading text-[11px]" id="fleet-card-maint-line1">0 Xe đến hạn</strong>
+                    <strong class="text-amber-700 font-black font-heading text-[11px]" id="fleet-card-maint-line1">0 Phương tiện</strong>
                 </div>
                 <div class="flex items-center justify-between font-semibold">
                     <span class="text-slate-500 uppercase font-bold text-[10.5px]">BẢO HIỂM:</span>
-                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="fleet-card-maint-line2">0 Xe sắp hạn</strong>
+                    <strong class="text-slate-700 font-bold font-heading text-[11px]" id="fleet-card-maint-line2">0 Phương tiện</strong>
                 </div>
             </div>
         </div>

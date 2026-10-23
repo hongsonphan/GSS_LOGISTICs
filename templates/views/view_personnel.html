@@ -2,18 +2,18 @@
 
 <div id="view-nhan-su" class="view hidden-view p-4 md:p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
 
-    <!-- BỘ 5 THẺ CHIẾN LƯỢC NHÂN SỰ & TIỀN LƯƠNG (HRM PIPELINE STANDARD) -->
+    <!-- BỘ 5 THẺ CHIẾN LƯỢC NHÂN SỰ & TIỀN LƯƠNG (CHUẨN VÒNG ĐỜI TỪ TRÁI QUA PHẢI) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-4 shrink-0">
-        <!-- Thẻ 1: Tổng Nhân Sự (Indigo) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 1: Tổng Nhân Sự -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">TỔNG NHÂN SỰ</span>
-                    <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                    <span class="text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider font-heading">1. TỔNG NHÂN SỰ</span>
+                    <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-users"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
                     <span id="hr-kpi-total">0</span> <span class="text-xs font-bold text-slate-400">người</span>
                 </p>
             </div>
@@ -29,16 +29,16 @@
             </div>
         </div>
 
-        <!-- Thẻ 2: Đội Ngũ Tài Xế Container (Teal) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 2: Đội Ngũ Tài Xế Container -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">ĐỘI TÀI XẾ</span>
+                    <span class="text-xs font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">2. ĐỘI TÀI XẾ</span>
                     <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-steering-wheel"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
                     <span id="hr-kpi-drivers">0</span> <span class="text-xs font-bold text-slate-400">tài xế</span>
                 </p>
             </div>
@@ -54,16 +54,16 @@
             </div>
         </div>
 
-        <!-- Thẻ 3: Khối Văn Phòng & Điều Độ (Blue) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-blue-600 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 3: Khối Văn Phòng & Điều Độ -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">VĂN PHÒNG & ĐIỀU ĐỘ</span>
+                    <span class="text-xs font-bold text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">3. VĂN PHÒNG & ĐIỀU ĐỘ</span>
                     <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-headset"></i>
                     </span>
                 </div>
-                <p class="text-2xl 2xl:text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1">
+                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1">
                     <span id="hr-kpi-office">0</span> <span class="text-xs font-bold text-slate-400">nhân sự</span>
                 </p>
             </div>
@@ -79,11 +79,11 @@
             </div>
         </div>
 
-        <!-- Thẻ 4: Cảnh báo Hạn GPLX & Hợp Đồng (Rose) -->
-        <div onclick="filterExpiringItems()" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để lọc nhân sự sắp hoặc quá hạn GPLX, HĐLĐ">
+        <!-- Thẻ 4: Cảnh báo Hạn GPLX & Hợp Đồng -->
+        <div onclick="filterExpiringItems()" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để lọc nhân sự sắp hoặc quá hạn GPLX, HĐLĐ">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">CẢNH BÁO HẠN (30N)</span>
+                    <span class="text-xs font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">4. CẢNH BÁO HẠN (30N)</span>
                     <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm group-hover:scale-110 transition-transform">
                         <i class="ph-bold ph-bell-ringing"></i>
                     </span>
@@ -104,11 +104,11 @@
             </div>
         </div>
 
-        <!-- Thẻ 5: Quỹ Lương & Tạm Ứng (Emerald) -->
-        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all flex flex-col justify-between">
+        <!-- Thẻ 5: Quỹ Lương & Tạm Ứng -->
+        <div class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">LƯƠNG & TẠM ỨNG</span>
+                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded uppercase tracking-wider font-heading">5. LƯƠNG & TẠM ỨNG</span>
                     <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
                         <i class="ph-bold ph-hand-coins"></i>
                     </span>
@@ -129,8 +129,6 @@
             </div>
         </div>
     </div>
-
-
 
     <!-- Main Container with 5 Sub-Tabs -->
 
