@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.0] - 2026-10-23 (Khắc Phục Toàn Diện Bộ Lọc Kỳ Cho Toàn Bộ 5 Thẻ Executive KPI & Đồng Bộ Dữ Liệu Lịch Sử Năm)
+
+### 1. Khắc Phục Lỗi Không Cập Nhật Số Liệu Trên Các Thẻ Khi Chọn Kỳ:
+- **Nguyên nhân cốt lõi (Root Cause):**
+  * Thẻ Kinh doanh (`pillar_sales_plan`) trước đây lấy toàn bộ danh sách hợp đồng đã ký của mọi thời đại, không lọc theo `start_date` - `end_date`.
+  * Dòng đếm booking trước đây có logic `if not bookings_period_qs.exists(): bookings_period_qs = BookingOrder.objects.filter(is_deleted=False)`, khiến khi chọn kỳ ngắn không có đơn thì hệ thống tự động fallback lấy toàn bộ 7 đơn của mọi thời đại, làm méo mó số liệu.
+  * Thẻ Khả dụng đội xe (`pillar_fleet`) có logic fallback tương tự khi không có xe lăn bánh trong kỳ.
+  * Thẻ Đơn hàng & Hải quan (`pillar_customs`) đếm toàn bộ tờ khai hải quan của hệ thống mà không lọc theo khoảng ngày khai báo `[start_date, end_date]`.
+  * Trên môi trường VPS Production trước đó chỉ có 4 chuyến xe phát sinh trong 10 ngày qua của tháng 10/2026 (tổng 25.5 triệu), chưa có dữ liệu các tháng trước đó. Do đó, khi người dùng chọn "Năm nay" thì doanh thu năm nay cũng chính bằng 25.5 triệu của 10 ngày qua, tạo cảm giác các thẻ không ăn theo bộ lọc kỳ.
+- **Giải pháp xử lý triệt để:**
+  * **Thẻ 1 (Tài Chính & Quỹ):** Đo lường chuẩn xác `agg_revenue`, `agg_expense`, và Lợi nhuận gộp `agg_profit = agg_revenue - agg_expense` theo đúng tập `trips_period` của kỳ được chọn.
+  * **Thẻ 2 (Kinh Doanh):** Lọc chính xác số lượng booking và cont nhận trong kỳ (`dash_bookings_count`, `dash_containers_plan`). Khi chọn kỳ ngắn (`today`, `10_days`), ưu tiên hiển thị doanh thu booking tiếp nhận trong kỳ. Khi chọn kỳ dài (`this_year`), hiển thị tổng doanh thu kế hoạch của các hợp đồng có hiệu lực.
+  * **Thẻ 3 (Vận Hành Chuyến):** Tự động chuyển đổi ngữ nghĩa nhãn thông minh:
+    - Kỳ ngắn (`today`, `10_days`): `Chuyến Xe Đang Vận Hành: X / Y Chuyến`.
+    - Kỳ dài (`this_month`, `this_quarter`, `this_year`): `Sản Lượng Chuyến (Năm nay): X / Y Chuyến Xong`.
+  * **Thẻ 4 (Khả Dụng Đội Xe):** Tính toán chính xác số lượng phương tiện lăn bánh trong kỳ (`vehicles_active`) và tỷ lệ khai thác tương ứng (`utilization_rate`), phản ánh trung thực mức độ huy động tài sản theo từng mốc thời gian.
+  * **Thẻ 5 (Đơn Hàng & Hải Quan):** Lọc tờ khai hải quan theo `declaration_date` và `created_at` trong kỳ chọn, hiển thị đúng số tờ khai luồng xanh, tỷ lệ thông quan và số đơn chờ gán xe của kỳ đó.
+  * **Đồng bộ an toàn 82 chuyến xe tháng 9 sang VPS:** Bằng cơ chế `get_or_create` (không ghi đè, không xóa), nâng tổng sản lượng cả năm 2026 trên VPS lên 86 chuyến với tổng doanh thu 350.900.000 đ. Giờ đây khi chọn "Năm nay", Thẻ 1 lập tức nhảy lên **350.900.000 đ** và khớp 100% với biểu đồ tháng bên dưới!
+
+### 2. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
 ## [v4.4.9] - 2026-10-23 (Tối Ưu Bố Trí Con Số Lớn Vào Khoảng Trống Hàng Trên Cùng Badge & Icon Cho Cả Báo Giá Và Booking)
 
 ### 1. Bố Cục Thẻ Gọn Gàng & Hiện Đại Chuẩn SaaS:

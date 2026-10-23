@@ -443,12 +443,15 @@ class DashboardBGDAPIView(APIView):
         from apps.customs.models import CustomsDeclaration, CustomsLane, CustomsDeclarationStatus
         from apps.collaboration.models import CompanyPost, OfficeTask, TaskStatus, TaskPriority
         
-        total_customs = CustomsDeclaration.objects.count()
+        customs_period = CustomsDeclaration.objects.filter(is_deleted=False).filter(
+            Q(declaration_date__range=[start_date, end_date]) | Q(declaration_date__isnull=True, created_at__date__range=[start_date, end_date])
+        )
+        total_customs = customs_period.count()
         if total_customs > 0:
-            c_green = CustomsDeclaration.objects.filter(customs_lane=CustomsLane.GREEN).count()
-            c_yellow = CustomsDeclaration.objects.filter(customs_lane=CustomsLane.YELLOW).count()
-            c_red = CustomsDeclaration.objects.filter(customs_lane=CustomsLane.RED).count()
-            c_cleared = CustomsDeclaration.objects.filter(status__in=[CustomsDeclarationStatus.CLEARED, CustomsDeclarationStatus.RELEASED]).count()
+            c_green = customs_period.filter(customs_lane=CustomsLane.GREEN).count()
+            c_yellow = customs_period.filter(customs_lane=CustomsLane.YELLOW).count()
+            c_red = customs_period.filter(customs_lane=CustomsLane.RED).count()
+            c_cleared = customs_period.filter(status__in=[CustomsDeclarationStatus.CLEARED, CustomsDeclarationStatus.RELEASED]).count()
             c_rate = round(c_cleared / total_customs * 100, 1)
         else:
             c_green, c_yellow, c_red, c_rate = 0, 0, 0, 0.0
@@ -543,25 +546,35 @@ class DashboardBGDAPIView(APIView):
         pending_adv_total = int(pending_adv_qs.aggregate(total=Sum('amount'))['total'] or 0)
         pending_adv_drivers_count = pending_adv_qs.values('driver').distinct().count()
 
-        # 9.2. Dữ liệu bổ sung cho Kinh doanh & Khách hàng
+        # 9.2. Dữ liệu bổ sung cho Kinh doanh & Khách hàng CHUẨN THEO KỲ CHỌN
         total_bookings_count = BookingOrder.objects.filter(is_deleted=False).count()
         quotes_count = Quotation.objects.filter(is_deleted=False).count()
         approved_quotes_qs = Quotation.objects.filter(is_deleted=False, status='APPROVED')
         approved_quotes_count = approved_quotes_qs.count()
-        sales_plan_rev = sum(float(q.expected_revenue or 0) for q in approved_quotes_qs)
+        all_sales_plan = sum(float(q.expected_revenue or 0) for q in approved_quotes_qs)
         sales_win_rate = round(approved_quotes_count / quotes_count * 100, 1) if quotes_count > 0 else 0.0
         quote_conversion_rate = sales_win_rate
         active_customers_count = Customer.objects.filter(is_deleted=False).count()
 
-        # Booking tiếp nhận theo kỳ hoặc toàn bộ
+        # Booking tiếp nhận chính xác theo kỳ chọn (không fallback lấy cả database khi rỗng)
         bookings_period_qs = BookingOrder.objects.filter(
             Q(loading_date__range=[start_date, end_date]) | Q(loading_date__isnull=True, created_at__date__range=[start_date, end_date]),
             is_deleted=False
         )
-        if not bookings_period_qs.exists():
-            bookings_period_qs = BookingOrder.objects.filter(is_deleted=False)
         dash_bookings_count = bookings_period_qs.count()
-        dash_containers_plan = int(bookings_period_qs.aggregate(total=Sum('total_containers'))['total'] or dash_bookings_count)
+        dash_containers_plan = int(bookings_period_qs.aggregate(total=Sum('total_containers'))['total'] or 0)
+        pending_bookings_period = bookings_period_qs.filter(status=BookingStatus.PENDING_DISPATCH).count()
+        
+        # Doanh thu booking nhận trong kỳ
+        period_booking_rev = sum(float(b.selling_freight_price or 0) * (b.total_containers or 1) for b in bookings_period_qs)
+        
+        # Điều chỉnh doanh thu kế hoạch & nhãn theo kỳ
+        if period in ['today', '10_days'] and period_booking_rev > 0:
+            sales_plan_rev = period_booking_rev
+            sales_metric_label = 'Doanh Thu Booking Trong Kỳ'
+        else:
+            sales_plan_rev = all_sales_plan
+            sales_metric_label = 'Doanh Thu Kế Hoạch (Đã Ký HĐ)'
 
         # 9.3. Dữ liệu bổ sung cho Đội xe: Kiểm định sắp hết hạn trong 30 ngày
         thirty_days_later = today + datetime.timedelta(days=30)
@@ -604,7 +617,7 @@ class DashboardBGDAPIView(APIView):
                         'id': 'pillar_sales_plan',
                         'title': '2. Kinh Doanh & Kế Hoạch',
                         'badge_title': '2. Kinh Doanh',
-                        'metric_label': 'Doanh Thu Kế Hoạch (Đã Ký HĐ)',
+                        'metric_label': sales_metric_label if 'sales_metric_label' in locals() else 'Doanh Thu Kế Hoạch (Đã Ký HĐ)',
                         'metric_value': f"{int(sales_plan_rev):,} đ".replace(',', '.'),
                         'metric_color': 'text-indigo-600',
                         'icon': 'ph-handshake',
@@ -618,8 +631,8 @@ class DashboardBGDAPIView(APIView):
                         'id': 'pillar_dispatch',
                         'title': '3. Vận Hành Chuyến',
                         'badge_title': '3. Vận Hành Chuyến',
-                        'metric_label': 'Chuyến Đang Vận Hành',
-                        'metric_value': f"{today_active_trips} / {total_trips} Chuyến",
+                        'metric_label': ('Chuyến Xe Đang Vận Hành' if period in ['today', '10_days', '7_days'] else f'Sản Lượng Chuyến ({period_label})'),
+                        'metric_value': (f"{today_active_trips} / {total_trips} Chuyến" if period == 'today' else (f"{today_active_trips} Đang chạy / {total_trips} Chuyến" if period in ['10_days', '7_days'] else f"{completed_trips} / {total_trips} Chuyến Xong")),
                         'metric_color': 'text-teal-700',
                         'icon': 'ph-truck',
                         'theme': 'teal',
@@ -647,11 +660,11 @@ class DashboardBGDAPIView(APIView):
                         'title': '5. Đơn Hàng & Hải Quan',
                         'badge_title': '5. Đơn Hàng & Hải Quan',
                         'metric_label': 'Tờ Khai HQ Luồng Xanh',
-                        'metric_value': f"{c_green} ({c_rate}% Thông quan)",
+                        'metric_value': f"{c_green} ({c_rate}% Thông quan)" if total_customs > 0 else "0 (0% Thông quan)",
                         'metric_color': 'text-amber-700',
                         'icon': 'ph-anchor',
                         'theme': 'amber',
-                        'line_1': f"Chờ gán xe: <strong class='text-amber-800'>{pending_bookings} đơn</strong> • Vàng/Đỏ: <strong>{c_yellow}/{c_red}</strong>",
+                        'line_1': f"Chờ gán xe: <strong class='text-amber-800'>{pending_bookings_period if 'pending_bookings_period' in locals() else pending_bookings} đơn</strong> • Vàng/Đỏ: <strong>{c_yellow}/{c_red}</strong>",
                         'line_2': "DEM/DET: <strong class='text-emerald-700'>0 Cont quá hạn</strong>",
                         'target_tab': 'hai-quan',
                         'action_label': 'Thông quan',
