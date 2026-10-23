@@ -121,6 +121,22 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 - Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
 
 
+## [v4.4.3] - 2026-10-23 (Tính Năng Kéo Thả Chiều Rộng Cột Bảng Dữ Liệu & Khắc Phục Cắt Chữ Toàn Hệ Thống)
+
+### 1. Tính Năng Kéo Thả Điều Chỉnh Chiều Rộng Cột (BimTableResizable):
+- **Kéo giãn mép cột (Col-Resize Dragging):** Khi rê chuột vào vạch ranh giới giữa 2 cột tiêu đề `<th>`, con trỏ chuột tự động chuyển thành biểu tượng mũi tên 2 chiều `↔` (`col-resize`). Người dùng có thể nhấn giữ và kéo sang trái/phải để mở rộng hoặc thu hẹp độ rộng cột tùy thích theo thời gian thực.
+- **Đường Line Chỉ Dẫn Trực Quan (Guide Line):** Xuất hiện thanh chỉ dẫn màu xanh ngọc thương hiệu `#0d9488` chạy dọc toàn bộ chiều cao của bảng trong suốt quá trình kéo thả, mang lại cảm giác mượt mà và trực quan.
+- **Tự động lưu vào LocalStorage:** Chiều rộng tùy chỉnh của từng cột được lưu bền vững theo ID từng bảng (`bim_col_widths_{tableId}`). Khi chuyển tab, tải lại trang hoặc đăng nhập lại, các bảng vẫn duy trì độ rộng đã tinh chỉnh.
+- **Nhấp Đúp Tự Căn Vừa Chữ (Double-Click Auto-Fit):** Nhấp đúp chuột vào mép cột sẽ tự động tính toán độ dài nội dung lớn nhất của cột và căn vừa vặn khít khao nội dung hệt như thao tác trên Microsoft Excel / Google Sheets.
+
+### 2. Khắc Phục Triệt Để Hiện Tượng Cắt Mất Chữ:
+- **Loại bỏ kẹp cứng `max-w`:** Tự động mở rộng các phần tử text `truncate` theo 100% chiều rộng của cột (`td`). Khi người dùng kéo cột tên khách hàng, lộ trình, loại hàng ra rộng, tên công ty và chi tiết tuyến đường sẽ bung ra toàn bộ, không bị cắt dấu `...` làm mất thông tin quan trọng.
+- **Áp dụng phổ quát toàn diện:** Hỗ trợ trên tất cả các bảng dữ liệu trong toàn hệ sinh thái (Điều vận, Đơn hàng Booking, Đội xe, Kế toán, Khách hàng, Báo cáo).
+
+### 3. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/column_manager.js`, `node -c static/js/app.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
 ## [v4.4.2] - 2026-10-23 (Chuẩn Hóa Trải Nghiệm Xem Trước Văn Bản Full Viền Chuẩn Apple iOS Quick Look)
 
 ### 1. Nâng Cấp Document Previewer Full Viền (Edge-to-Edge):
