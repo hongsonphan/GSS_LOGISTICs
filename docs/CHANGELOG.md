@@ -2,6 +2,14 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.1] - 2026-10-23 (Tái Cấu Trúc Toàn Diện 5 Thẻ KPI: Bọc Màu Trọn Khối & Dải Quang Phổ Rõ Nét)
+
+### 1. Bọc Màu Toàn Diện (Full-Card Color Enclosure) Thay Cho Nền Trắng Đơn Điệu:
+- **Nâng cấp từ viền đơn lẻ sang bọc màu nguyên khối sang trọng:**
+  * Thay thế toàn bộ nền trắng phẳng (`bg-white`) bằng lớp nền tint màu dịu chuyên nghiệp (`bg-emerald-50/40`, `bg-teal-50/40`, `bg-sky-50/40`, `bg-indigo-50/40`, `bg-amber-50/40`), có hiệu ứng tương tác đổi sáng khi hover (`hover:bg-...-50/80`).
+  * Bọc viền toàn bộ card bằng dải màu đồng bộ (`border-emerald-200/90`, `border-teal-200/90`, `border-sky-200/90`, `border-indigo-200/90`, `border-amber-200/90`), kết hợp cạnh trái nhấn đậm `border-l-[5px]` và đường phân cách bên trong (`border-t border-...-200/60`).
+  * Khắc phục triệt để tình trạng thẻ trông như nền trắng cũ; đảm bảo độ tương phản rõ rệt, phân bố màu đều và chuyển sắc tự nhiên.
+
 ## [v4.4.0] - 2026-10-23 (Chuẩn Hóa Giao Diện Thẻ KPI: Bọc Viền Màu & Dải Chuyển Sắc Quang Phổ Tự Nhiên)
 
 ### 1. Áp Dụng Dải Màu Chuyển Sắc (Chromatic Progression) 5 Trụ Cột KPI Dashboard:
