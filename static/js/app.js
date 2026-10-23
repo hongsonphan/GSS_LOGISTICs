@@ -26107,8 +26107,8 @@ let currentActiveReportGroup = 'group-1';
 let currentReportViewMode = 'group'; // 'group' hoặc 'all'
 
 const REPORT_GROUP_MAPPING = {
-    'group-1': ['report-1', 'report-4', 'report-12'],
-    'group-2': ['report-7', 'report-13', 'report-14'],
+    'group-1': ['report-1', 'report-7', 'report-4', 'report-12'],
+    'group-2': ['report-13', 'report-14'],
     'group-3': ['report-10', 'report-11', 'report-9', 'report-8'],
     'group-4': ['report-2', 'report-3', 'report-5', 'report-6']
 };
@@ -26501,23 +26501,30 @@ function renderReport1(data) {
     const s = data.summary || {};
     const r1 = data.report1_fleet_utilization || {};
 
-    const elOwnedRatio = document.getElementById('rep1-stat-owned-ratio');
-    if (elOwnedRatio) elOwnedRatio.innerText = `${s.owned_ratio || 0.0}%`;
+    // 1. Thẻ Doanh thu vận tải
+    const elRev = document.getElementById('rep1-stat-revenue');
+    if (elRev) elRev.innerText = formatMoneyVND(s.total_revenue || r1.total_revenue || 0);
+
+    // 2. Thẻ Sản lượng đội xe (Số Chuyến · Số Cont)
+    const elVol = document.getElementById('rep1-stat-volume');
+    const totalTrips = r1.total_trips || s.total_trips || 0;
+    const totalConts = r1.total_containers || totalTrips;
+    if (elVol) elVol.innerText = `${totalTrips} Chuyến · ${totalConts} Cont`;
 
     const elNoteOwned = document.getElementById('rep1-note-owned');
-    if (elNoteOwned) elNoteOwned.innerText = `Xe Nhà: ${r1.owned_trips || 0} chuyến · Xe Bạn: ${r1.partner_trips || 0} chuyến`;
+    if (elNoteOwned) elNoteOwned.innerText = `Xe Nhà: ${r1.owned_trips || 0} chuyến · Xe Bạn / 3PL: ${r1.partner_trips || 0} chuyến`;
 
-    const elRev = document.getElementById('rep1-stat-revenue');
-    if (elRev) elRev.innerText = formatMoneyVND(s.total_revenue || 0);
+    // 3. Thẻ Doanh thu bình quân / chuyến và / cont
+    const avgRevTrip = r1.avg_revenue_per_trip || (totalTrips > 0 ? Math.round((s.total_revenue || 0) / totalTrips) : 0);
+    const avgRevCont = r1.avg_revenue_per_container || (totalConts > 0 ? Math.round((s.total_revenue || 0) / totalConts) : 0);
+    const elAvgRev = document.getElementById('rep1-stat-avg-rev');
+    if (elAvgRev) elAvgRev.innerText = `${formatMoneyVND(avgRevTrip)} / Chuyến`;
+    const elAvgCont = document.getElementById('rep1-stat-avg-cont');
+    if (elAvgCont) elAvgCont.innerText = `BQ: ${formatMoneyVND(avgRevCont)} / Cont`;
 
+    // 4. Thẻ Chi phí phát sinh hiện trường
     const elExp = document.getElementById('rep1-stat-expense');
-    if (elExp) elExp.innerText = formatMoneyVND(s.total_expense || 0);
-
-    const elProfit = document.getElementById('rep1-stat-profit');
-    if (elProfit) elProfit.innerText = formatMoneyVND(s.total_profit || 0);
-
-    const elMargin = document.getElementById('rep1-stat-margin');
-    if (elMargin) elMargin.innerText = `Biên LN gộp: ${s.margin_avg || 0.0}%`;
+    if (elExp) elExp.innerText = formatMoneyVND(s.total_expense || r1.total_expense || 0);
 
     rep1DataCache = r1.fleet_pnl || [];
     applyReport1Filters();
@@ -26528,7 +26535,6 @@ function applyReport1Filters() {
     let list = rep1DataCache.filter(item => {
         if (!searchVal) return true;
         return (item.plate || '').toLowerCase().includes(searchVal) ||
-               (item.driver || '').toLowerCase().includes(searchVal) ||
                (item.vehicle_type || '').toLowerCase().includes(searchVal) ||
                (item.ownership || '').toLowerCase().includes(searchVal);
     });
@@ -26556,10 +26562,11 @@ function applyReport1Filters() {
 
     // Tính tổng cộng
     const totalTrips = list.reduce((sum, item) => sum + (Number(item.trips_count) || 0), 0);
+    const totalConts = list.reduce((sum, item) => sum + (Number(item.containers_count || item.trips_count) || 0), 0);
     const totalRev = list.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0);
     const totalExp = list.reduce((sum, item) => sum + (Number(item.expense) || 0), 0);
-    const totalProfit = list.reduce((sum, item) => sum + (Number(item.profit) || 0), 0);
-    const avgMargin = totalRev > 0 ? ((totalProfit / totalRev) * 100).toFixed(1) : '0.0';
+    const overallAvgPerTrip = totalTrips > 0 ? Math.round(totalRev / totalTrips) : 0;
+    const overallAvgPerCont = totalConts > 0 ? Math.round(totalRev / totalConts) : 0;
 
     tbody.innerHTML = list.map((item, index) => {
         const isOwned = item.ownership_code === 'OWNED';
@@ -26567,14 +26574,11 @@ function applyReport1Filters() {
             ? `<span class="text-xs font-bold text-teal-700 uppercase">Xe Nhà</span>`
             : `<span class="text-xs font-semibold text-slate-600 uppercase">Xe Bạn / 3PL</span>`;
         
-        const profitColor = item.profit >= 0 ? 'text-emerald-700' : 'text-rose-600';
-        const marginColor = item.margin_percent >= 20 ? 'text-emerald-700' :
-                            (item.margin_percent >= 10 ? 'text-teal-700' : 'text-amber-700');
-
         const revDisplay = formatMoneyVND(item.revenue);
         const expDisplay = formatMoneyVND(item.expense);
-        const profitDisplay = formatMoneyVND(item.profit);
-        const marginDisplay = `${item.margin_percent}%`;
+        const contsCount = item.containers_count || item.trips_count;
+        const avgPerTripDisplay = formatMoneyVND(item.avg_revenue_per_trip || (item.trips_count > 0 ? Math.round(item.revenue / item.trips_count) : 0));
+        const avgPerContDisplay = formatMoneyVND(item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0));
 
         return `
             <tr class="hover:bg-teal-50/30 transition-colors">
@@ -26582,16 +26586,12 @@ function applyReport1Filters() {
                 <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.plate)}</td>
                 <td class="text-xs text-slate-600">${escapeHtml(item.vehicle_type)}</td>
                 <td>${ownershipBadge}</td>
-                <td class="text-xs font-medium text-slate-700">${escapeHtml(item.driver)}</td>
                 <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
-                <td class="text-right font-semibold text-slate-800 text-xs tabular-nums">${revDisplay}</td>
-                <td class="text-right font-medium text-rose-600 text-xs tabular-nums">${expDisplay}</td>
-                <td class="text-right font-black ${profitColor} text-xs tabular-nums">${profitDisplay}</td>
-                <td class="text-center">
-                    <span class="text-xs font-bold ${marginColor} tabular-nums">
-                        ${marginDisplay}
-                    </span>
-                </td>
+                <td class="text-center font-black text-teal-800 text-xs tabular-nums bg-teal-50/40">${contsCount}</td>
+                <td class="text-right font-black text-slate-900 text-xs tabular-nums">${canViewFinance ? revDisplay : '***'}</td>
+                <td class="text-right font-bold text-emerald-700 text-xs tabular-nums">${canViewFinance ? avgPerTripDisplay : '***'}</td>
+                <td class="text-right font-bold text-indigo-700 text-xs tabular-nums">${canViewFinance ? avgPerContDisplay : '***'}</td>
+                <td class="text-right font-medium text-amber-700 text-xs tabular-nums">${canViewFinance ? expDisplay : '***'}</td>
             </tr>
         `;
     }).join('');
@@ -26599,12 +26599,13 @@ function applyReport1Filters() {
     if (tfoot) {
         tfoot.innerHTML = `
             <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
-                <td colspan="5" class="py-2.5 px-3 text-slate-800 font-bold uppercase">TỔNG CỘNG: ${list.length} Đầu Xe</td>
+                <td colspan="4" class="py-2.5 px-3 text-slate-800 font-bold uppercase">TỔNG CỘNG: ${list.length} Đầu Xe</td>
                 <td class="text-center font-black font-mono tabular-nums text-slate-900">${totalTrips}</td>
+                <td class="text-center font-black font-mono tabular-nums text-teal-900 bg-teal-100/60">${totalConts}</td>
                 <td class="text-right font-black font-mono tabular-nums text-slate-900">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
-                <td class="text-right font-black font-mono tabular-nums text-rose-700">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
-                <td class="text-right font-black font-mono tabular-nums ${totalProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${canViewFinance ? formatMoneyVND(totalProfit) : '***'}</td>
-                <td class="text-center font-black font-mono tabular-nums text-teal-800">${canViewFinance ? `${avgMargin}%` : '***'}</td>
+                <td class="text-right font-black font-mono tabular-nums text-emerald-800">${canViewFinance ? formatMoneyVND(overallAvgPerTrip) : '***'}</td>
+                <td class="text-right font-black font-mono tabular-nums text-indigo-800">${canViewFinance ? formatMoneyVND(overallAvgPerCont) : '***'}</td>
+                <td class="text-right font-black font-mono tabular-nums text-amber-800">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
             </tr>
         `;
     }
@@ -27232,10 +27233,16 @@ function applyReport7Filters() {
     const totalRev = list.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0);
     const avgMargin = list.length > 0 ? (list.reduce((sum, item) => sum + (Number(item.margin_percent) || 0), 0) / list.length).toFixed(1) : '0.0';
 
+    const totalConts = list.reduce((sum, item) => sum + (Number(item.containers_count || item.trips_count) || 0), 0);
+    const overallAvgTrip = totalTrips > 0 ? Math.round(totalRev / totalTrips) : 0;
+    const overallAvgCont = totalConts > 0 ? Math.round(totalRev / totalConts) : 0;
+
     tbody.innerHTML = list.map((item, index) => {
         const revDisplay = formatMoneyVND(item.revenue);
         const shareDisplay = `${item.revenue_share}%`;
-        const marginDisplay = `${item.margin_percent}%`;
+        const contsCount = item.containers_count || item.trips_count;
+        const avgPerTrip = item.avg_revenue_per_trip || (item.trips_count > 0 ? Math.round(item.revenue / item.trips_count) : 0);
+        const avgPerCont = item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0);
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -27250,7 +27257,8 @@ function applyReport7Filters() {
                 <td class="text-xs text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
                 <td class="text-right font-black text-indigo-700 text-xs tabular-nums">${revDisplay}</td>
                 <td class="text-center font-bold text-slate-700 text-xs tabular-nums">${shareDisplay}</td>
-                <td class="text-center text-xs tabular-nums font-bold ${item.margin_percent >= 20 ? 'text-emerald-700' : 'text-slate-600'}">${marginDisplay}</td>
+                <td class="text-right font-bold text-emerald-700 text-xs tabular-nums">${formatMoneyVND(avgPerTrip)}</td>
+                <td class="text-right font-bold text-indigo-700 text-xs tabular-nums">${formatMoneyVND(avgPerCont)}</td>
             </tr>
         `;
     }).join('');
@@ -27267,7 +27275,8 @@ function applyReport7Filters() {
                 <td></td>
                 <td class="text-right font-mono font-black text-indigo-700 tabular-nums">${formatMoneyVND(totalRev)}</td>
                 <td class="text-center font-mono font-bold tabular-nums">100.0%</td>
-                <td class="text-center font-mono font-bold tabular-nums">${avgMargin}%</td>
+                <td class="text-right font-mono font-black text-emerald-800 tabular-nums">${formatMoneyVND(overallAvgTrip)}</td>
+                <td class="text-right font-mono font-black text-indigo-800 tabular-nums">${formatMoneyVND(overallAvgCont)}</td>
             </tr>
         `;
     }

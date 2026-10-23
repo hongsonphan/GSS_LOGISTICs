@@ -173,12 +173,17 @@ class ReportsAPIView(APIView):
                     'ownership_code': t.vehicle.ownership_type if t.vehicle else 'OWNED',
                     'driver': t.driver.full_name if t.driver else '-',
                     'trips_count': 0,
+                    'containers_count': 0,
                     'revenue': 0,
                     'expense': 0,
                     'profit': 0,
-                    'margin_percent': 0.0
+                    'margin_percent': 0.0,
+                    'avg_revenue_per_trip': 0,
+                    'avg_revenue_per_container': 0
                 }
+            conts = 2 if t.is_twin_container else 1
             vehicles_dict[plate]['trips_count'] += 1
+            vehicles_dict[plate]['containers_count'] += conts
             vehicles_dict[plate]['revenue'] += rev
             vehicles_dict[plate]['expense'] += exp
             vehicles_dict[plate]['profit'] += prof
@@ -187,9 +192,15 @@ class ReportsAPIView(APIView):
 
         fleet_pnl = list(vehicles_dict.values())
         for f in fleet_pnl:
-            if f['revenue'] > 0:
-                f['margin_percent'] = round(f['profit'] / f['revenue'] * 100, 1)
+            trips = f['trips_count']
+            conts = f['containers_count']
+            rev = f['revenue']
+            f['avg_revenue_per_trip'] = round(rev / trips) if trips > 0 else 0
+            f['avg_revenue_per_container'] = round(rev / conts) if conts > 0 else 0
+            if rev > 0:
+                f['margin_percent'] = round(f['profit'] / rev * 100, 1)
         fleet_pnl.sort(key=lambda x: x['revenue'], reverse=True)
+        total_fleet_containers = sum(f['containers_count'] for f in fleet_pnl)
 
         # Xếp hạng tài xế
         driver_dict = {}
@@ -527,6 +538,7 @@ class ReportsAPIView(APIView):
                     'customer_name': c_name,
                     'customer_code': c_code,
                     'trips_count': 0,
+                    'containers_count': 0,
                     'total_teu': 0.0,
                     'teu_20_count': 0,
                     'teu_40_count': 0,
@@ -536,12 +548,15 @@ class ReportsAPIView(APIView):
                     'profit': 0,
                     'margin_percent': 0.0,
                     'revenue_share': 0.0,
+                    'avg_revenue_per_trip': 0,
+                    'avg_revenue_per_container': 0,
                     'routes_dict': {},
                     'top_route': '-'
                 }
 
             row = customer_analytics_dict[c_name]
             row['trips_count'] += 1
+            row['containers_count'] += (2 if t.is_twin_container else 1)
             row['total_teu'] += teu_factor
             if is_20:
                 row['teu_20_count'] += (2 if t.is_twin_container else 1)
@@ -562,6 +577,11 @@ class ReportsAPIView(APIView):
         customer_analytics_list = list(customer_analytics_dict.values())
         for c in customer_analytics_list:
             c['total_teu'] = round(c['total_teu'], 2)
+            c_trips = c['trips_count']
+            c_conts = c['containers_count']
+            c_rev = c['revenue']
+            c['avg_revenue_per_trip'] = round(c_rev / c_trips) if c_trips > 0 else 0
+            c['avg_revenue_per_container'] = round(c_rev / c_conts) if c_conts > 0 else 0
             if c['revenue'] > 0:
                 c['margin_percent'] = round(c['profit'] / c['revenue'] * 100, 1)
                 c['revenue_share'] = round(c['revenue'] / total_revenue * 100, 1) if total_revenue > 0 else 0.0
@@ -1509,6 +1529,12 @@ class ReportsAPIView(APIView):
             },
             'report1_fleet_utilization': {
                 'total_tractors': Vehicle.objects.filter(is_deleted=False).count(),
+                'total_trips': total_trips,
+                'total_containers': total_fleet_containers,
+                'total_revenue': total_revenue,
+                'total_expense': total_expense,
+                'avg_revenue_per_trip': round(total_revenue / total_trips) if total_trips > 0 else 0,
+                'avg_revenue_per_container': round(total_revenue / total_fleet_containers) if total_fleet_containers > 0 else 0,
                 'owned_ratio': owned_ratio,
                 'owned_trips': owned_trips,
                 'partner_trips': partner_trips,

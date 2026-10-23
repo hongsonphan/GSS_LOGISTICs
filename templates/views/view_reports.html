@@ -39,7 +39,7 @@
     <div class="space-y-3">
         <!-- 4 Nhóm Báo Cáo Chiến Lược (Kích thước lớn, to rõ, chuẩn quốc tế) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <!-- Nhóm 1: DOANH THU & HIỆU SUẤT ĐỘI XE -->
+            <!-- Nhóm 1: DOANH THU THỰC HIỆN -->
             <button type="button" onclick="switchReportGroup('group-1')" id="report-group-btn-1" 
                 class="report-group-btn active p-4 sm:p-5 rounded-2xl border-2 transition-all text-left flex items-center justify-between bg-white border-teal-600 shadow-md ring-2 ring-teal-600/30 hover:shadow-lg cursor-pointer">
                 <div class="flex items-center gap-3.5 min-w-0">
@@ -47,11 +47,11 @@
                         <i class="ph-bold ph-chart-line-up"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">DOANH THU & HIỆU SUẤT</div>
-                        <div class="text-xs font-bold text-teal-700 font-heading truncate mt-0.5">P&L, Suất Tiêu Hao & Gom Chuyến</div>
+                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">DOANH THU THỰC HIỆN</div>
+                        <div class="text-xs font-bold text-teal-700 font-heading truncate mt-0.5">Đội Xe, Khách Hàng, Tuyến & Gom Chuyến</div>
                     </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-teal-50 text-teal-800 border border-teal-200 shrink-0">3 BC</span>
+                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-teal-50 text-teal-800 border border-teal-200 shrink-0">4 BC</span>
             </button>
 
             <!-- Nhóm 2: KINH DOANH & KHÁCH HÀNG -->
@@ -66,7 +66,7 @@
                         <div class="text-xs font-bold text-indigo-700 font-heading truncate mt-0.5">Sản Lượng TEU, Công Nợ AR & Tuổi Nợ</div>
                     </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shrink-0">3 BC</span>
+                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shrink-0">2 BC</span>
             </button>
 
             <!-- Nhóm 3: TÀI CHÍNH & QUẢN TRỊ -->
@@ -104,10 +104,14 @@
         <div class="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-2">
 
             <!-- Các Nút Báo Cáo Thuộc Từng Nhóm Chuẩn Hóa -->
-            <!-- Nhóm 1: DOANH THU & HIỆU SUẤT ĐỘI XE (3 Báo Cáo) -->
+            <!-- Nhóm 1: DOANH THU THỰC HIỆN (4 Báo Cáo) -->
             <button id="report-tab-btn-1" data-report-group="group-1" onclick="switchReportSubTab('report-1')" class="report-subtab-btn active px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all bg-teal-700 text-white shadow-sm">
-                <i class="ph-bold ph-chart-line-up text-base"></i>
-                <span>Hiệu Suất Đội Xe & P&L</span>
+                <i class="ph-bold ph-truck text-base"></i>
+                <span>Doanh Thu Theo Đội Xe</span>
+            </button>
+            <button id="report-tab-btn-7" data-report-group="group-1" onclick="switchReportSubTab('report-7')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                <i class="ph-bold ph-buildings text-base"></i>
+                <span>Doanh Thu Theo Khách Hàng</span>
             </button>
             <button id="report-tab-btn-4" data-report-group="group-1" onclick="switchReportSubTab('report-4')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
                 <i class="ph-bold ph-receipt text-base"></i>
@@ -119,11 +123,7 @@
                 <span id="badge-report-carryover-count" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-100 text-teal-800">0</span>
             </button>
 
-            <!-- Nhóm 2: KINH DOANH & KHÁCH HÀNG (3 Báo Cáo) -->
-            <button id="report-tab-btn-7" data-report-group="group-2" onclick="switchReportSubTab('report-7')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-buildings text-base"></i>
-                <span>Doanh Thu Khách & Sản Lượng TEU</span>
-            </button>
+            <!-- Nhóm 2: KINH DOANH & KHÁCH HÀNG (2 Báo Cáo) -->
             <button id="report-tab-btn-13" data-report-group="group-2" onclick="switchReportSubTab('report-13')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
                 <i class="ph-bold ph-coins text-base"></i>
                 <span>Công Nợ Phải Thu (AR)</span>
@@ -178,42 +178,42 @@
 
 
     <!-- ========================================================================= -->
-    <!-- BÁO CÁO 1: HIỆU SUẤT ĐỘI XE & TÀI XẾ (FLEET & DRIVER UTILIZATION) -->
+    <!-- BÁO CÁO 1: DOANH THU THEO ĐỘI XE -->
     <!-- ========================================================================= -->
     <div id="subtab-report-1" class="report-subtab-content space-y-4">
-        <!-- 4 Metric Cards -->
+        <!-- 4 Metric Cards (Tập trung Doanh thu & Sản lượng Kinh doanh) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Xe Nhà Khai Thác</span>
-                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="rep1-stat-owned-ratio">0.0%</p>
-                <p class="text-xs text-slate-500 font-medium mt-1" id="rep1-note-owned">Xe Nhà: 0 chuyến · Xe Bạn: 0 chuyến</p>
-            </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Doanh Thu Vận Tải</span>
                 <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep1-stat-revenue">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Cước hợp đồng vận chuyển</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Doanh thu thực hiện từ các chuyến xe</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chi Phí Vận Hành Đội Xe</span>
-                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading mt-1" id="rep1-stat-expense">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Lương tài xế, dầu, BOT, bồi dưỡng</p>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Sản Lượng Đội Xe</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep1-stat-volume">0 Chuyến · 0 Cont</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep1-note-owned">Xe Nhà: 0 chuyến · Xe Bạn: 0 chuyến</p>
             </div>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Lợi Nhuận Gộp & Biên LN</span>
-                <p class="text-3xl font-black text-emerald-600 tabular-nums font-heading mt-1" id="rep1-stat-profit">0 đ</p>
-                <p class="text-xs text-emerald-700 font-bold mt-1" id="rep1-stat-margin">Biên LN gộp: 0.0%</p>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Bình Quân</span>
+                <p class="text-2xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep1-stat-avg-rev">0 đ / Chuyến</p>
+                <p class="text-xs text-emerald-800 font-bold mt-1" id="rep1-stat-avg-cont">BQ: 0 đ / Cont</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chi Phí Phát Sinh Hiện Trường</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep1-stat-expense">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">BOT, bồi dưỡng, nâng hạ (chưa gồm dầu & QL)</p>
             </div>
         </div>
 
-        <!-- Bảng P&L Từng Đầu Xe -->
+        <!-- Bảng Doanh Thu Từng Đầu Xe -->
         <div class="erp-table-container flex flex-col shadow-sm">
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
                 <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
-                    <i class="ph-bold ph-chart-bar text-teal-700"></i>
-                    Bảng P&L Chi Tiết Từng Đầu Xe (Vehicle Profit Center)
+                    <i class="ph-bold ph-truck text-teal-700"></i>
+                    Bảng Doanh Thu Theo Đội Xe
                 </h3>
                 <div class="flex items-center gap-2">
-                    <input type="text" id="filter-rep1-search" oninput="applyReport1Filters()" placeholder="Tìm biển số, tài xế..." 
+                    <input type="text" id="filter-rep1-search" oninput="applyReport1Filters()" placeholder="Tìm biển số, loại xe..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-52 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep1-pnl-table')" 
                         class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
@@ -224,7 +224,7 @@
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap" id="rep1-pnl-table" data-table-title="Báo Cáo P&L Từng Đầu Xe">
+                <table class="erp-table whitespace-nowrap" id="rep1-pnl-table" data-table-title="Báo Cáo Doanh Thu Theo Đội Xe">
                     <thead>
                         <tr>
                             <th class="text-center w-12 font-bold">STT</th>
@@ -237,23 +237,23 @@
                             <th onclick="toggleReport1Sort('ownership')" class="cursor-pointer hover:bg-slate-100">
                                 <div class="flex items-center gap-1"><span>Sở Hữu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('driver')" class="cursor-pointer hover:bg-slate-100">
-                                <div class="flex items-center gap-1"><span>Tài Xế Mặc Định</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
-                            </th>
                             <th onclick="toggleReport1Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center">
                                 <div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right">
+                            <th onclick="toggleReport1Sort('containers_count')" class="cursor-pointer hover:bg-slate-100 text-center text-teal-800 font-black">
+                                <div class="flex items-center justify-center gap-1"><span>Số CONT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-teal-600"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right font-black">
                                 <div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
+                            <th onclick="toggleReport1Sort('avg_revenue_per_trip')" class="cursor-pointer hover:bg-slate-100 text-right">
+                                <div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CHUYẾN</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th onclick="toggleReport1Sort('avg_revenue_per_container')" class="cursor-pointer hover:bg-slate-100 text-right">
+                                <div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CONT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
                             <th onclick="toggleReport1Sort('expense')" class="cursor-pointer hover:bg-slate-100 text-right">
-                                <div class="flex items-center justify-end gap-1"><span>Chi Phí</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
-                            </th>
-                            <th onclick="toggleReport1Sort('profit')" class="cursor-pointer hover:bg-slate-100 text-right">
-                                <div class="flex items-center justify-end gap-1"><span>Lợi Nhuận Gộp</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
-                            </th>
-                            <th onclick="toggleReport1Sort('margin_percent')" class="cursor-pointer hover:bg-slate-100 text-center">
-                                <div class="flex items-center justify-center gap-1"><span>Biên LN (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                                <div class="flex items-center justify-end gap-1"><span>CHI PHÍ PHÁT SINH</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
                         </tr>
                     </thead>
@@ -697,7 +697,7 @@
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
                 <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
                     <i class="ph-bold ph-buildings text-teal-700"></i>
-                    Bảng Phân Tích Doanh Thu, Sản Lượng TEU & Tuyến Chủ Lực Khách Hàng
+                    Báo Cáo Doanh Thu Theo Khách Hàng
                 </h3>
                 <div class="flex items-center gap-2">
                     <input type="text" id="filter-rep7-search" oninput="applyReport7Filters()" placeholder="Tìm tên khách, mã KH, tuyến..." 
@@ -723,9 +723,10 @@
                             <th onclick="toggleReport7Sort('teu_40_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>40ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport7Sort('teu_45_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>45ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th>Tuyến Vận Chuyển Chủ Lực</th>
-                            <th onclick="toggleReport7Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right font-black"><div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th onclick="toggleReport7Sort('revenue_share')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tỷ Trọng (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('margin_percent')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Biên LN (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('avg_revenue_per_trip')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CHUYẾN</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport7Sort('avg_revenue_per_container')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CONT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep7-tbody">
