@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.1] - 2026-10-23 (Chuẩn Hóa Nhóm Báo Cáo "DOANH THU THỰC HIỆN", Doanh Thu Theo Đội Xe & Doanh Thu Theo Khách Hàng)
+
+### 1. Chuẩn Hóa Nhóm Báo Cáo "DOANH THU THỰC HIỆN":
+- Đổi tên Nhóm 1 từ `DOANH THU & HIỆU SUẤT` thành **`DOANH THU THỰC HIỆN`** (Đội Xe, Khách Hàng, Tuyến Vận Tải & Gom Chuyến).
+- Cập nhật số lượng báo cáo nhóm 1 thành `4 BC`.
+
+### 2. Báo Cáo 1: "Doanh Thu Theo Đội Xe":
+- Đổi tên subtab thành **"Doanh Thu Theo Đội Xe"** (cũ: "Hiệu Suất Đội Xe & P&L").
+- **Thêm cột mới:**
+  * Cột **"Số CONT"**: Thể hiện chính xác số lượng container thực tế vận chuyển (hỗ trợ tự động tính cả trường hợp chạy kẹp 2 container 20ft: $1 \text{ chuyến twin} = 2 \text{ cont}$).
+  * Cột **"DOANH THU BQ CHUYẾN"** = $\text{Tổng Doanh Thu} / \text{Tổng Số Chuyến}$.
+  * Cột **"DOANH THU BQ CONT"** = $\text{Tổng Doanh Thu} / \text{Tổng Số Cont}$.
+- **Loại bỏ cột:**
+  * Bỏ cột "TÀI XẾ MẶC ĐỊNH".
+  * Bỏ cột "Lợi Nhuận Gộp".
+  * Bỏ cột "Biên Lợi Nhuận (%)".
+- **Chuẩn hóa cột chi phí:** Cột "Chi Phí" đổi thành **"CHI PHÍ PHÁT SINH"** (phản ánh trung thực các chi phí phát sinh hiện trường như vé cầu đường BOT, bồi dưỡng, nâng hạ; chưa gồm dầu ước tính và chi phí quản lý nên không tính lợi nhuận, tập trung thuần túy vào chỉ số kinh doanh).
+- **Chuẩn hóa 4 Thẻ KPI đầu trang:**
+  * Thẻ 1: Tổng Doanh Thu Vận Tải Thực Hiện (`rep1-stat-revenue`).
+  * Thẻ 2: Tổng Sản Lượng Đội Xe: `X Chuyến · Y Cont` (`rep1-stat-volume`).
+  * Thẻ 3: Doanh Thu Bình Quân: `A đ / Chuyến · B đ / Cont` (`rep1-stat-avg-rev` & `rep1-stat-avg-cont`).
+  * Thẻ 4: Chi Phí Phát Sinh Hiện Trường: `C đ` (`rep1-stat-expense`).
+
+### 3. Báo Cáo 2: Bổ Sung Báo Cáo "Doanh Thu Theo Khách Hàng":
+- Đưa báo cáo **"Doanh Thu Theo Khách Hàng"** (`report-7`) vào vị trí thứ 2 trong nhóm **DOANH THU THỰC HIỆN**.
+- Bổ sung các chỉ số kinh doanh tương tự: Doanh Thu BQ Chuyến, Doanh Thu BQ Cont/TEU; loại bỏ cột Biên LN để đồng nhất nguyên tắc ghi nhận doanh thu kinh doanh thực tế.
+
+### 4. Kiểm Thử Cú Pháp & Hồi Quy:
+- JavaScript Syntax: `node -c static/js/app.js`, `node -c static/js/modules/reports.js`, `node -c static/js/column_manager.js` (100% Passed).
+- Django Unit Tests: `python manage.py test --keepdb` (147/147 tests Passed).
+
 ## [v4.5.0] - 2026-10-23 (Khắc Phục Toàn Diện Bộ Lọc Kỳ Cho Toàn Bộ 5 Thẻ Executive KPI & Đồng Bộ Dữ Liệu Lịch Sử Năm)
 
 ### 1. Khắc Phục Lỗi Không Cập Nhật Số Liệu Trên Các Thẻ Khi Chọn Kỳ:
