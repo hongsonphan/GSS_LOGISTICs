@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.2] - 2026-10-23 (Chuẩn Hóa Trải Nghiệm Xem Trước Văn Bản Full Viền Chuẩn Apple iOS Quick Look)
+
+### 1. Nâng Cấp Document Previewer Full Viền (Edge-to-Edge):
+- **Tràn viền toàn diện:** Loại bỏ hoàn toàn các lớp padding đệm xám dày quanh canvas (`p-4 sm:p-6` -> `p-0`), canvas tài liệu tự động tính toán bung rộng 100% chiều ngang khả dụng của container mà không còn bị co cụm lọt thỏm.
+- **Khử viền lồng viền:** Loại bỏ đường viền xám cứng bao quanh canvas (`border border-slate-200/90`), thay thế bằng bóng mờ tự nhiên chuẩn Apple (`shadow-[0_2px_16px_rgba(0,0,0,0.06)]`).
+- **Khung hiển thị liền mạch:** Hợp nhất `preview-container` thành một khung hiển thị sang trọng, bo cong nhẹ nhàng `rounded-2xl` với nền trắng tinh khôi.
+
+### 2. Chuẩn Hóa Thanh Công Cụ (Toolbar) Chuẩn Phong Cách iOS:
+- **Hiệu ứng Kính Mờ (Frosted Glass):** Nền toolbar trong suốt mờ ảo `bg-white/90 backdrop-blur-md` dính liền ở trên cùng (`sticky top-0 z-20`) với đường phân cách siêu mảnh `border-b border-slate-200/70`.
+- **Segmented Controls chuẩn Apple:**
+  * **Cụm Phân trang:** Gom nhóm liền khối dạng pill `[ < ]  Trang 1 / 1  [ > ]` với nút bo cong mềm, chuyển trang mượt mà.
+  * **Cụm Thu phóng & Vừa ngang:** Dạng Segmented Control Apple `[ − ]  100%  [ + ]` | Nút `[ Vừa ngang ]` kích hoạt tự động bung tràn viền 100%.
+  * **Cụm Xoay Tinh Tế:** Bỏ việc lặp lại chữ số `90° 90°`, chuẩn hóa thành nút `[ ↻ Xoay 0° ]` tự động cập nhật góc độ hiện tại (0°, 90°, 180°, 270°).
+  * **Chế độ Toàn Màn Hình (Fullscreen Quick Look):** Bổ sung nút phóng to toàn màn hình `[ ⤢ ]` giúp người dùng/khách hàng xem trọn vẹn sơ đồ tổ chức, công văn khổ ngang trên mọi thiết bị.
+
+### 3. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
 ## [v4.4.1] - 2026-10-23 (Tái Cấu Trúc Toàn Diện 5 Thẻ KPI: Bọc Màu Trọn Khối & Dải Quang Phổ Rõ Nét)
 
 ### 1. Bọc Màu Toàn Diện (Full-Card Color Enclosure) Thay Cho Nền Trắng Đơn Điệu:
