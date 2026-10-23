@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.5] - 2026-10-23 (Tái Cấu Trúc Bố Cục Thẻ KPI Báo Giá Chia Đôi 2 Dòng: Doanh Số To Rõ & Tuyến | Chuyến Cân Đối)
+
+### 1. Tái Cấu Trúc Bố Cục 5 Thẻ KPI Báo Giá Tuyến Cước (CRM Sales Funnel):
+- **Phân tách 2 dòng độc lập, tăng kích thước chữ, chống trùng lặp dữ liệu:**
+  * **Dòng trên:**
+    - Bên trái: Nhãn `DOANH SỐ` (`text-xs font-bold text-slate-500 uppercase tracking-wider`).
+    - Bên phải: `SỐ TUYẾN: [X] Tuyến` (`text-xs 2xl:text-[13px] font-black font-heading`).
+  * **Dòng dưới:**
+    - Bên trái: Số tiền Doanh số kế hoạch `[SỐ] đ` hiển thị to đậm nổi bật (`text-xl 2xl:text-2xl font-black tabular-nums font-heading tracking-tight`).
+    - Bên phải: `SỐ CHUYẾN: [Y] Chuyến` (`text-xs 2xl:text-[13px] font-black font-heading text-slate-800`).
+- **Khử bỏ lặp số tiền:** Loại bỏ hoàn toàn sự trùng lặp của con số doanh thu kế hoạch (vừa xuất hiện ở giữa thẻ, vừa lặp lại ở dòng phụ bên dưới), tối ưu không gian hiển thị, số liệu to rõ và dễ đọc trên mọi màn hình.
+
+### 2. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
+
 ## [v4.4.4] - 2026-10-23 (Cơ Cấu Subtext 3 Thông Số Thẻ KPI Báo Giá: Doanh Số & Số Tuyến | Số Chuyến)
 
 ### 1. Chuẩn Hóa Cụm Subtext Dưới 5 Thẻ KPI Báo Giá Tuyến Cước:
