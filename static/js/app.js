@@ -15118,52 +15118,87 @@ async function loadSalesData() {
                 // Thẻ 1: CHỜ ĐIỀU XE
                 const pEl = document.getElementById('sales-stat-pending-dispatch');
                 if (pEl) pEl.innerText = fmtNum(bkPend.count);
+                const pTotal = document.getElementById('sales-stat-pending-total-conts');
+                if (pTotal) pTotal.innerText = fmtNum(bkPend.total_containers);
+                const pDone = document.getElementById('sales-stat-pending-completed-conts');
+                if (pDone) pDone.innerText = fmtNum(bkPend.completed_containers);
+                const pUncompleted = document.getElementById('sales-stat-pending-uncompleted-conts');
+                if (pUncompleted) pUncompleted.innerText = fmtNum(bkPend.uncompleted_containers);
+                // Fallbacks cũ
                 const pTripsConts = document.getElementById('sales-stat-pending-trips-conts');
                 if (pTripsConts) pTripsConts.innerText = `${fmtNum(bkPend.total_trips)} Chuyến / ${fmtNum(bkPend.total_containers)} Cont`;
-                const pDone = document.getElementById('sales-stat-pending-completed');
-                if (pDone) pDone.innerText = `${fmtNum(bkPend.completed_containers)} Cont`;
-                const pUncompleted = document.getElementById('sales-stat-pending-uncompleted');
-                if (pUncompleted) pUncompleted.innerText = `${fmtNum(bkPend.uncompleted_containers)} Cont`;
+                const pDoneOld = document.getElementById('sales-stat-pending-completed');
+                if (pDoneOld) pDoneOld.innerText = `${fmtNum(bkPend.completed_containers)} Cont`;
+                const pUncompletedOld = document.getElementById('sales-stat-pending-uncompleted');
+                if (pUncompletedOld) pUncompletedOld.innerText = `${fmtNum(bkPend.uncompleted_containers)} Cont`;
 
                 // Thẻ 2: ĐANG ĐIỀU XE
                 const partEl = document.getElementById('sales-stat-partially-dispatched');
                 if (partEl) partEl.innerText = fmtNum(bkDisp.count);
+                const partTotal = document.getElementById('sales-stat-dispatching-total-conts');
+                if (partTotal) partTotal.innerText = fmtNum(bkDisp.total_containers);
+                const partDone = document.getElementById('sales-stat-dispatching-completed-conts');
+                if (partDone) partDone.innerText = fmtNum(bkDisp.completed_containers);
+                const partUncompleted = document.getElementById('sales-stat-dispatching-uncompleted-conts');
+                if (partUncompleted) partUncompleted.innerText = fmtNum(bkDisp.uncompleted_containers);
+                // Fallbacks cũ
                 const partTripsConts = document.getElementById('sales-stat-dispatching-trips-conts');
                 if (partTripsConts) partTripsConts.innerText = `${fmtNum(bkDisp.total_trips)} Chuyến / ${fmtNum(bkDisp.total_containers)} Cont`;
-                const partDone = document.getElementById('sales-stat-dispatching-completed');
-                if (partDone) partDone.innerText = `${fmtNum(bkDisp.completed_containers)} Cont`;
-                const partUncompleted = document.getElementById('sales-stat-dispatching-uncompleted');
-                if (partUncompleted) partUncompleted.innerText = `${fmtNum(bkDisp.uncompleted_containers)} Cont`;
+                const partDoneOld = document.getElementById('sales-stat-dispatching-completed');
+                if (partDoneOld) partDoneOld.innerText = `${fmtNum(bkDisp.completed_containers)} Cont`;
+                const partUncompletedOld = document.getElementById('sales-stat-dispatching-uncompleted');
+                if (partUncompletedOld) partUncompletedOld.innerText = `${fmtNum(bkDisp.uncompleted_containers)} Cont`;
 
-                // Thẻ 3: ĐƠN GẤP
-                const urgCount = document.getElementById('sales-stat-urgent-count');
-                if (urgCount) urgCount.innerText = fmtNum(bkUrg.count);
-                const urgTripsConts = document.getElementById('sales-stat-urgent-trips-conts');
-                if (urgTripsConts) urgTripsConts.innerText = `${fmtNum(bkUrg.total_trips)} Chuyến / ${fmtNum(bkUrg.total_containers)} Cont`;
-                const urgDone = document.getElementById('sales-stat-urgent-completed');
-                if (urgDone) urgDone.innerText = `${fmtNum(bkUrg.completed_containers)} Cont`;
-                const urgUncompleted = document.getElementById('sales-stat-urgent-uncompleted');
-                if (urgUncompleted) urgUncompleted.innerText = `${fmtNum(bkUrg.uncompleted_containers)} Cont`;
-
-                // Thẻ 4: CHẠY CẮT KÉO
+                // Thẻ 3: CHẠY CẮT KÉO
                 const hookCount = document.getElementById('sales-stat-drop-hook-count');
                 if (hookCount) hookCount.innerText = fmtNum(bkHook.count);
+                const hookTotal = document.getElementById('sales-stat-drop-hook-total-conts');
+                if (hookTotal) hookTotal.innerText = fmtNum(bkHook.total_containers);
+                const hookDone = document.getElementById('sales-stat-drop-hook-completed-conts');
+                if (hookDone) hookDone.innerText = fmtNum(bkHook.completed_containers);
+                const hookUncompleted = document.getElementById('sales-stat-drop-hook-uncompleted-conts');
+                if (hookUncompleted) hookUncompleted.innerText = fmtNum(bkHook.uncompleted_containers);
+                // Fallbacks cũ
                 const hookTripsConts = document.getElementById('sales-stat-drop-hook-trips-conts');
                 if (hookTripsConts) hookTripsConts.innerText = `${fmtNum(bkHook.total_trips)} Chuyến / ${fmtNum(bkHook.total_containers)} Cont`;
-                const hookDone = document.getElementById('sales-stat-drop-hook-completed');
-                if (hookDone) hookDone.innerText = `${fmtNum(bkHook.completed_containers)} Cont`;
-                const hookUncompleted = document.getElementById('sales-stat-drop-hook-uncompleted');
-                if (hookUncompleted) hookUncompleted.innerText = `${fmtNum(bkHook.uncompleted_containers)} Cont`;
+                const hookDoneOld = document.getElementById('sales-stat-drop-hook-completed');
+                if (hookDoneOld) hookDoneOld.innerText = `${fmtNum(bkHook.completed_containers)} Cont`;
+                const hookUncompletedOld = document.getElementById('sales-stat-drop-hook-uncompleted');
+                if (hookUncompletedOld) hookUncompletedOld.innerText = `${fmtNum(bkHook.uncompleted_containers)} Cont`;
+
+                // Thẻ 4: ĐƠN GẤP
+                const urgCount = document.getElementById('sales-stat-urgent-count');
+                if (urgCount) urgCount.innerText = fmtNum(bkUrg.count);
+                const urgTotal = document.getElementById('sales-stat-urgent-total-conts');
+                if (urgTotal) urgTotal.innerText = fmtNum(bkUrg.total_containers);
+                const urgDone = document.getElementById('sales-stat-urgent-completed-conts');
+                if (urgDone) urgDone.innerText = fmtNum(bkUrg.completed_containers);
+                const urgUncompleted = document.getElementById('sales-stat-urgent-uncompleted-conts');
+                if (urgUncompleted) urgUncompleted.innerText = fmtNum(bkUrg.uncompleted_containers);
+                // Fallbacks cũ
+                const urgTripsConts = document.getElementById('sales-stat-urgent-trips-conts');
+                if (urgTripsConts) urgTripsConts.innerText = `${fmtNum(bkUrg.total_trips)} Chuyến / ${fmtNum(bkUrg.total_containers)} Cont`;
+                const urgDoneOld = document.getElementById('sales-stat-urgent-completed');
+                if (urgDoneOld) urgDoneOld.innerText = `${fmtNum(bkUrg.completed_containers)} Cont`;
+                const urgUncompletedOld = document.getElementById('sales-stat-urgent-uncompleted');
+                if (urgUncompletedOld) urgUncompletedOld.innerText = `${fmtNum(bkUrg.uncompleted_containers)} Cont`;
 
                 // Thẻ 5: ĐÃ HOÀN TẤT
                 const cEl = document.getElementById('sales-stat-completed');
                 if (cEl) cEl.innerText = fmtNum(bkDone.count);
+                const cTotal = document.getElementById('sales-stat-completed-total-conts');
+                if (cTotal) cTotal.innerText = fmtNum(bkDone.total_containers);
+                const cDone = document.getElementById('sales-stat-completed-completed-conts');
+                if (cDone) cDone.innerText = fmtNum(bkDone.completed_containers);
+                const cUncompleted = document.getElementById('sales-stat-completed-uncompleted-conts');
+                if (cUncompleted) cUncompleted.innerText = '0';
+                // Fallbacks cũ
                 const cTripsConts = document.getElementById('sales-stat-completed-trips-conts');
                 if (cTripsConts) cTripsConts.innerText = `${fmtNum(bkDone.total_trips)} Chuyến / ${fmtNum(bkDone.total_containers)} Cont`;
-                const cDone = document.getElementById('sales-stat-completed-done');
-                if (cDone) cDone.innerText = `${fmtNum(bkDone.completed_containers)} Cont`;
-                const cUncompleted = document.getElementById('sales-stat-completed-uncompleted');
-                if (cUncompleted) cUncompleted.innerText = '0 Cont';
+                const cDoneOld = document.getElementById('sales-stat-completed-done');
+                if (cDoneOld) cDoneOld.innerText = `${fmtNum(bkDone.completed_containers)} Cont`;
+                const cUncompletedOld = document.getElementById('sales-stat-completed-uncompleted');
+                if (cUncompletedOld) cUncompletedOld.innerText = '0 Cont';
             }
         }
 

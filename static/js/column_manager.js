@@ -98,6 +98,9 @@
                     BimTableColumnManager.register(tbl.id);
                 }
                 BimTableSorter.initTable(tbl);
+                if (window.BimTableResizable) {
+                    BimTableResizable.initTable(tbl);
+                }
             });
         }
     };
@@ -325,10 +328,25 @@
     TableColumnInstance.prototype.resetToDefault = function() {
         try {
             localStorage.removeItem(this.storageKey);
+            localStorage.removeItem('bim_col_widths_' + this.tableId);
         } catch (e) {}
 
         this.columns = this.defaultColumns.map(function(c) {
             return Object.assign({}, c);
+        });
+
+        const ths = this.table.querySelectorAll('thead th');
+        ths.forEach(function(th) {
+            th.style.width = '';
+            th.style.minWidth = '';
+            th.style.maxWidth = '';
+        });
+
+        const tds = this.table.querySelectorAll('tbody td');
+        tds.forEach(function(td) {
+            td.style.width = '';
+            td.style.minWidth = '';
+            td.style.maxWidth = '';
         });
 
         this.apply();
@@ -428,6 +446,10 @@
                         });
                     }
                 });
+
+                if (window.BimTableResizable && typeof window.BimTableResizable.applyWidthsToBody === 'function') {
+                    window.BimTableResizable.applyWidthsToBody(this.table, window.BimTableResizable.loadSavedWidths(this.tableId));
+                }
             }
         } catch (err) {
             console.error('[BimColumnManager] Lỗi áp dụng cấu hình cột:', err);
@@ -823,6 +845,327 @@
             }
         }
     };
+
+    /**
+     * =========================================================================
+     * BIM TABLE RESIZABLE (KÉO THẢ THAY ĐỔI CHIỀU RỘNG CỘT TRỰC TIẾP TRÊN BẢNG)
+     * =========================================================================
+     * - Rê chuột vào mép giữa 2 cột: con trỏ chuyển thành col-resize (kéo qua lại).
+     * - Thanh chỉ dẫn Guide Line màu xanh Teal (#0d9488) chạy dọc bảng khi kéo.
+     * - Tự động ghi nhớ kích thước vào localStorage (bim_col_widths_{tableId}).
+     * - Nhấp đúp (Double-click) vào mép cột để tự động căn vừa khít nội dung chữ.
+     * - Tự động mở rộng text, không làm cắt mất chữ khi kéo rộng cột.
+     */
+    const BimTableResizable = {
+        guideLine: null,
+        currentTh: null,
+        currentTable: null,
+        startX: 0,
+        startWidth: 0,
+        storagePrefix: 'bim_col_widths_',
+        isStylesInjected: false,
+
+        injectStyles: function() {
+            if (this.isStylesInjected) return;
+            this.isStylesInjected = true;
+            if (document.getElementById('bim-table-resizable-styles')) return;
+
+            const style = document.createElement('style');
+            style.id = 'bim-table-resizable-styles';
+            style.textContent = `
+                .bim-col-resizer {
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    width: 7px;
+                    height: 100%;
+                    cursor: col-resize;
+                    user-select: none;
+                    z-index: 25;
+                    background: transparent;
+                    transition: background 0.15s ease;
+                }
+                .bim-col-resizer::after {
+                    content: '';
+                    position: absolute;
+                    top: 25%;
+                    bottom: 25%;
+                    right: 1px;
+                    width: 2px;
+                    background: #cbd5e1;
+                    border-radius: 1px;
+                    opacity: 0;
+                    transition: opacity 0.15s ease, background 0.15s ease;
+                }
+                th:hover .bim-col-resizer::after {
+                    opacity: 0.8;
+                }
+                .bim-col-resizer:hover::after,
+                .bim-col-resizer.is-resizing::after {
+                    opacity: 1;
+                    background: #0d9488 !important;
+                    width: 3px;
+                    top: 10%;
+                    bottom: 10%;
+                }
+                body.bim-col-resizing {
+                    cursor: col-resize !important;
+                    user-select: none !important;
+                }
+                body.bim-col-resizing * {
+                    user-select: none !important;
+                }
+                .erp-table th {
+                    position: relative;
+                    box-sizing: border-box;
+                }
+                .erp-table td {
+                    box-sizing: border-box;
+                }
+                /* Cho phép nội dung bung rộng linh hoạt theo chiều rộng cột, không bị kẹp mất chữ */
+                .erp-table td[data-col-key] .truncate,
+                .erp-table td[data-col-key] [class*="max-w-"] {
+                    max-width: 100% !important;
+                }
+            `;
+            document.head.appendChild(style);
+        },
+
+        createGuideLine: function() {
+            if (this.guideLine) return;
+            let el = document.getElementById('bim-table-resizer-line');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'bim-table-resizer-line';
+                el.style.cssText = 'position:fixed;top:0;bottom:0;width:2px;background:#0d9488;z-index:99999;pointer-events:none;display:none;box-shadow:0 0 8px rgba(13,148,136,0.6);';
+                document.body.appendChild(el);
+            }
+            this.guideLine = el;
+        },
+
+        init: function() {
+            this.injectStyles();
+            this.createGuideLine();
+            this.bindGlobalEvents();
+        },
+
+        initTable: function(table) {
+            if (!table || table.hasAttribute('data-no-resizable')) return;
+            this.injectStyles();
+            this.createGuideLine();
+
+            const thead = table.querySelector('thead');
+            if (!thead) return;
+
+            const tableId = table.id;
+            const savedWidths = this.loadSavedWidths(tableId);
+
+            const trHead = thead.querySelector('tr:first-child');
+            if (!trHead) return;
+            const ths = Array.from(trHead.children);
+
+            const self = this;
+            ths.forEach(function(th, idx) {
+                // Không gắn resizer cho cột cuối cùng
+                if (idx === ths.length - 1) return;
+
+                th.style.position = 'relative';
+
+                // Áp dụng độ rộng đã lưu nếu có
+                const colKey = th.getAttribute('data-col-key') || ('col_' + idx);
+                if (savedWidths && savedWidths[colKey]) {
+                    const w = savedWidths[colKey];
+                    th.style.width = w + 'px';
+                    th.style.minWidth = w + 'px';
+                    th.style.maxWidth = w + 'px';
+                }
+
+                // Gắn resizer handle nếu chưa có
+                let resizer = th.querySelector('.bim-col-resizer');
+                if (!resizer) {
+                    resizer = document.createElement('div');
+                    resizer.className = 'bim-col-resizer';
+                    resizer.setAttribute('title', 'Kéo sang trái/phải để chỉnh độ rộng cột • Nhấp đúp để tự vừa khít chữ');
+                    th.appendChild(resizer);
+
+                    resizer.addEventListener('mousedown', function(e) {
+                        self.onMouseDown(e, th, table);
+                    });
+
+                    resizer.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        self.autoFitColumn(th, table);
+                    });
+                }
+            });
+
+            // Đồng bộ độ rộng xuống tbody nếu đã có cấu hình đã lưu
+            if (savedWidths && Object.keys(savedWidths).length > 0) {
+                this.applyWidthsToBody(table, savedWidths);
+            }
+        },
+
+        loadSavedWidths: function(tableId) {
+            if (!tableId) return {};
+            try {
+                const raw = localStorage.getItem(this.storagePrefix + tableId);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) {
+                return {};
+            }
+        },
+
+        saveWidths: function(tableId, widths) {
+            if (!tableId) return;
+            try {
+                localStorage.setItem(this.storagePrefix + tableId, JSON.stringify(widths));
+            } catch (e) {}
+        },
+
+        onMouseDown: function(e, th, table) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            this.currentTh = th;
+            this.currentTable = table;
+            this.startX = e.pageX;
+            this.startWidth = th.getBoundingClientRect().width;
+
+            const resizer = th.querySelector('.bim-col-resizer');
+            if (resizer) resizer.classList.add('is-resizing');
+
+            if (this.guideLine) {
+                this.guideLine.style.left = e.pageX + 'px';
+                this.guideLine.style.display = 'block';
+            }
+
+            document.body.classList.add('bim-col-resizing');
+        },
+
+        bindGlobalEvents: function() {
+            if (this.eventsBound) return;
+            this.eventsBound = true;
+            const self = this;
+
+            window.addEventListener('mousemove', function(e) {
+                if (!self.currentTh) return;
+                const deltaX = e.pageX - self.startX;
+                const newWidth = Math.max(Math.round(self.startWidth + deltaX), 48);
+
+                if (self.guideLine) {
+                    self.guideLine.style.left = e.pageX + 'px';
+                }
+
+                // Cập nhật real-time độ rộng th
+                self.currentTh.style.width = newWidth + 'px';
+                self.currentTh.style.minWidth = newWidth + 'px';
+                self.currentTh.style.maxWidth = newWidth + 'px';
+
+                // Đồng bộ real-time các td tương ứng trong tbody
+                const colKey = self.currentTh.getAttribute('data-col-key');
+                if (colKey && self.currentTable) {
+                    const tds = self.currentTable.querySelectorAll(`tbody td[data-col-key="${colKey}"]`);
+                    tds.forEach(function(td) {
+                        td.style.width = newWidth + 'px';
+                        td.style.minWidth = newWidth + 'px';
+                        td.style.maxWidth = newWidth + 'px';
+                    });
+                }
+            });
+
+            window.addEventListener('mouseup', function(e) {
+                if (!self.currentTh) return;
+                const th = self.currentTh;
+                const table = self.currentTable;
+
+                const resizer = th.querySelector('.bim-col-resizer');
+                if (resizer) resizer.classList.remove('is-resizing');
+
+                self.currentTh = null;
+                self.currentTable = null;
+
+                if (self.guideLine) {
+                    self.guideLine.style.display = 'none';
+                }
+                document.body.classList.remove('bim-col-resizing');
+
+                if (table && table.id) {
+                    const finalWidth = Math.round(th.getBoundingClientRect().width);
+                    th.style.width = finalWidth + 'px';
+                    th.style.minWidth = finalWidth + 'px';
+                    th.style.maxWidth = finalWidth + 'px';
+
+                    const colKey = th.getAttribute('data-col-key') || '';
+                    if (colKey) {
+                        const widths = self.loadSavedWidths(table.id);
+                        widths[colKey] = finalWidth;
+                        self.saveWidths(table.id, widths);
+                    }
+
+                    // Đồng bộ xuống tbody
+                    self.applyWidthsToBody(table, self.loadSavedWidths(table.id));
+                }
+            });
+        },
+
+        autoFitColumn: function(th, table) {
+            if (!th || !table) return;
+            const colKey = th.getAttribute('data-col-key');
+            if (!colKey) return;
+
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            let maxContentWidth = th.scrollWidth;
+            const cells = tbody.querySelectorAll(`td[data-col-key="${colKey}"]`);
+            cells.forEach(function(td) {
+                let cellW = td.scrollWidth;
+                const children = td.children;
+                for (let i = 0; i < children.length; i++) {
+                    cellW = Math.max(cellW, children[i].scrollWidth || 0);
+                }
+                maxContentWidth = Math.max(maxContentWidth, cellW);
+            });
+
+            const targetWidth = Math.min(Math.max(maxContentWidth + 28, 64), 700);
+            th.style.width = targetWidth + 'px';
+            th.style.minWidth = targetWidth + 'px';
+            th.style.maxWidth = targetWidth + 'px';
+
+            if (table.id) {
+                const widths = this.loadSavedWidths(table.id);
+                widths[colKey] = targetWidth;
+                this.saveWidths(table.id, widths);
+                this.applyWidthsToBody(table, widths);
+            }
+
+            if (window.showToast) {
+                const colName = th.getAttribute('data-col-name') || 'cột';
+                window.showToast('info', `Đã tự động căn vừa chiều rộng cột: ${colName} (${targetWidth}px)`, 'Tự căn cột');
+            }
+        },
+
+        applyWidthsToBody: function(table, widths) {
+            if (!table || !widths) return;
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            Object.keys(widths).forEach(function(key) {
+                const w = widths[key];
+                const tds = tbody.querySelectorAll(`td[data-col-key="${key}"]`);
+                tds.forEach(function(td) {
+                    td.style.width = w + 'px';
+                    td.style.minWidth = w + 'px';
+                    td.style.maxWidth = w + 'px';
+                });
+            });
+        }
+    };
+
+    // Khởi tạo BimTableResizable
+    BimTableResizable.init();
+    window.BimTableResizable = BimTableResizable;
 
     // Export module
     window.BimTableSorter = BimTableSorter;

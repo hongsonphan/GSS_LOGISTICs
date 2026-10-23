@@ -2,6 +2,32 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.8] - 2026-10-23 (Chuẩn Hóa Dãy 5 Thẻ Booking Chuẩn TMS Container: Ô Lớn [Số Đơn] & Subtext [Tổng Cont | Đã Giao Cont | Còn Lại Cont])
+
+### 1. Chuẩn Hóa Bố Cục & Đơn Vị Thẻ Booking Theo Best-Practice TMS Container:
+- **Đồng bộ hóa layout & font size với dãy 5 thẻ Báo giá:**
+  * **Ô lớn bên trên:** Hiển thị con số lớn duy nhất là **Số Đơn** (`[SỐ] Đơn` font `text-xl 2xl:text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1`).
+  * **Dòng subtext bên dưới (1 dòng tinh gọn, ngăn cách bởi vạch `|`):**
+    $$\text{TỔNG: } \mathbf{X} \text{ Cont} \quad \mid \quad \text{ĐÃ GIAO: } \mathbf{Y} \text{ Cont} \quad \mid \quad \text{CÒN LẠI: } \mathbf{Z} \text{ Cont}$$
+- **Quy chuẩn Font Size & Nhãn:**
+  * Nhãn (`TỔNG:`, `ĐÃ GIAO:`, `CÒN LẠI:`): `text-xs 2xl:text-[12.5px] uppercase font-bold text-slate-500`.
+  * Con số: `text-sm 2xl:text-[15px] font-black font-heading`.
+  * Đơn vị: `text-xs 2xl:text-[12px] font-bold text-slate-400`.
+- **Đồng bộ trên cả 5 thẻ vòng đời:**
+  1. `1. CHỜ ĐIỀU XE`: Tiếp nhận booking, đếm số cont chưa phân bổ.
+  2. `2. ĐANG ĐIỀU XE`: Đơn đang chạy dở dang, theo dõi tiến độ số cont đã giao và cont còn lại.
+  3. `3. CHẠY CẮT KÉO`: Booking vận hành rơ-moóc Drop & Hook.
+  4. `4. CẢNH BÁO ĐƠN GẤP`: Đơn sát hạn cut-off/đóng bãi cảng.
+  5. `5. ĐÃ HOÀN TẤT`: Booking hoàn thành 100%, tồn bãi = 0.
+
+### 2. Frontend & Backend Synchronization:
+- Cập nhật `templates/views/view_sales.html` cho toàn bộ 5 thẻ Booking.
+- Cập nhật hàm gán dữ liệu `loadSalesData()` trong `static/js/app.js` cho các thẻ container mới, duy trì 100% backward compatibility với các element IDs cũ.
+
+### 3. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
 ## [v4.4.7] - 2026-10-23 (Chuẩn Hóa Số Chuyến Dự Kiến Của Báo Giá Đa Tuyến & Tăng Font Subtext Thẻ KPI Lên 2 Cỡ)
 
 ### 1. Khắc Phục Lệch Số Chuyến Tại Cột "Sản Lượng Dự Kiến" & Thẻ KPI:
