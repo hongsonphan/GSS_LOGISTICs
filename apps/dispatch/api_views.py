@@ -4644,7 +4644,8 @@ class SalesAPIView(APIView):
                 'estimated_km': q.estimated_km or 0,
                 'route': q.route_description,
                 'unit_price': float(q.unit_price),
-                'monthly_trips': q.expected_trips_monthly,
+                'monthly_trips': q.total_expected_trips,
+                'total_trips': q.total_expected_trips,
                 'expected_revenue': float(q.expected_revenue),
                 'items': q_items,
                 'items_count': len(q_items),
@@ -5015,7 +5016,7 @@ class SalesAPIView(APIView):
                 it0 = items_list[0]
                 first_route = it0.get('route_description', first_route) or first_route
                 first_unit_price = float(it0.get('unit_price', first_unit_price) or first_unit_price)
-                first_trips = int(it0.get('expected_trips_monthly', first_trips) or first_trips)
+                first_trips = sum(int(it.get('expected_trips_monthly') or 0) for it in items_list) or int(it0.get('expected_trips_monthly', first_trips) or first_trips)
                 first_orig_zone = it0.get('origin_zone', first_orig_zone) or first_orig_zone
                 first_dest_zone = it0.get('destination_zone', first_dest_zone) or first_dest_zone
                 first_est_km = int(it0.get('estimated_km', first_est_km) or first_est_km)
@@ -5270,7 +5271,7 @@ class QuotationDetailAPIView(APIView):
                 it0 = items_list[0]
                 q.route_description = it0.get('route_description', q.route_description)
                 q.unit_price = float(it0.get('unit_price', q.unit_price) or q.unit_price)
-                q.expected_trips_monthly = int(it0.get('expected_trips_monthly', q.expected_trips_monthly) or q.expected_trips_monthly)
+                q.expected_trips_monthly = sum(int(it.get('expected_trips_monthly') or 0) for it in items_list) or int(it0.get('expected_trips_monthly', q.expected_trips_monthly) or q.expected_trips_monthly)
                 if it0.get('origin_zone'): q.origin_zone = it0.get('origin_zone')
                 if it0.get('destination_zone'): q.destination_zone = it0.get('destination_zone')
                 if it0.get('estimated_km'): q.estimated_km = int(it0.get('estimated_km'))

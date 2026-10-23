@@ -2,6 +2,25 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.7] - 2026-10-23 (Chuẩn Hóa Số Chuyến Dự Kiến Của Báo Giá Đa Tuyến & Tăng Font Subtext Thẻ KPI Lên 2 Cỡ)
+
+### 1. Khắc Phục Lệch Số Chuyến Tại Cột "Sản Lượng Dự Kiến" & Thẻ KPI:
+- **Nguyên nhân gốc rễ (Root Cause):** Đối với các báo giá đa tuyến (`Quotation` có nhiều `QuotationItem`), trường `expected_trips_monthly` trên bảng cha trước đây chỉ lưu số chuyến của tuyến đầu tiên (`it0`), dẫn đến cột *Sản Lượng Dự Kiến* hiển thị thiếu (ví dụ báo giá 5 tuyến tổng 90 chuyến nhưng cột bảng chỉ hiện 10 chuyến).
+- **Giải pháp triệt để:**
+  * Đồng bộ `monthly_trips` trả về trong `SalesAPIView` lấy từ `q.total_expected_trips` (tự động cộng dồn sản lượng cam kết của toàn bộ các tuyến thuộc báo giá).
+  * Cập nhật logic tạo mới (`post`) và sửa đổi (`put`/`patch`) của `QuotationDetailAPIView`: tự động gán `expected_trips_monthly = sum(it.expected_trips_monthly)` cho toàn bộ các tuyến chi tiết.
+  * Giờ đây, số liệu tại cột *Sản Lượng Dự Kiến* và số tổng ở chân bảng khớp 100% với *SỐ CHUYẾN* trên 5 Thẻ KPI.
+
+### 2. Tăng 2 Cỡ Font Chữ Dòng Subtext 5 Thẻ KPI:
+- Nâng cấp kích thước chữ nhãn từ `text-[10px]` lên `text-xs 2xl:text-[12.5px] font-bold text-slate-500`.
+- Nâng cấp kích thước số từ `text-xs` lên `text-sm 2xl:text-[15px] font-black font-heading`.
+- Tối ưu khoảng cách đệm `mt-3 pt-2.5` giúp hàng 3 thông số (`SỐ TUYẾN | SỐ CHUYẾN | SỐ BÁO GIÁ`) to rõ, thông thoáng, nổi bật và dễ đọc.
+
+### 3. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
+
 ## [v4.4.6] - 2026-10-23 (Chuẩn Hóa 5 Thẻ KPI Báo Giá: Doanh Số Lớn Bên Trên & Bên Dưới 3 Thông Số: Số Tuyến | Số Chuyến | Số Báo Giá)
 
 ### 1. Chuẩn Hóa Bố Cục Thẻ KPI Báo Giá Tuyến Cước (CRM Sales Funnel):
