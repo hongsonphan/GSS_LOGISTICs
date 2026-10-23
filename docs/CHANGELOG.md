@@ -2,6 +2,20 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.3] - 2026-10-23 (Tăng Font Size Dòng Total Lên Bằng Dòng Dữ Liệu & Chuẩn Hóa Cột Tỷ Lệ % Thành Số Nguyên)
+
+### 1. Tăng Cỡ Chữ Dòng Total (tfoot):
+- Nâng cấp cỡ chữ dòng Total ở cả Báo Cáo 1 (Doanh Thu Theo Đội Xe) và Báo Cáo 2 (Doanh Thu Theo Khách Hàng) từ `text-[11px]` lên **`text-xs sm:text-[13px] font-black`**, đảm bảo to rõ, đậm đà, đồng bộ kích thước chữ với dòng dữ liệu bên trên.
+- Đặt padding `py-3 px-3` giúp dòng Total thông thoáng, dễ nhìn và chuyên nghiệp chuẩn ERP/SaaS.
+
+### 2. Chuẩn Hóa Cột Tỷ Trọng (%) Thành Số Nguyên:
+- Loại bỏ phần thập phân `.0%` ở cột Tỷ Trọng (ví dụ: hiển thị **`100%`**, **`25%`** thay vì `100.0%`, `25.0%`).
+- Áp dụng đồng bộ cho cả dòng dữ liệu `tbody` và dòng tổng cộng `tfoot` ở cả 2 báo cáo.
+
+### 3. Đồng Bộ & Triển Khai:
+- `node -c static/js/app.js` & `node -c static/js/column_manager.js` (100% Passed).
+- Đã build và deploy lên VPS `149.118.60.194`.
+
 ## [v4.5.2] - 2026-10-23 (Bổ Sung Cột Tỷ Trọng % Báo Cáo Đội Xe & Căn Chỉnh Khớp 100% Cột Dòng Total Báo Cáo Khách Hàng)
 
 ### 1. Báo Cáo Doanh Thu Theo Đội Xe:
