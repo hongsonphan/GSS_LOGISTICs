@@ -2,24 +2,39 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
-## [v4.3.9] - 2026-10-23 (Đồng Bộ Số Liệu Bảng Chi Tiết Khớp Tuyệt Đối Với KPI & Badge Trong Phân Hệ Kế Toán)
+## [v4.3.9] - 2026-10-23 (Rà Soát Toàn Diện Các Phân Hệ Còn Lại: Chuẩn Hóa Text Đồng Nhất & Loại Bỏ Triệt Để Badge)
 
-### 1. Khắc Phục Lỗi Bảng Chi Tiết Quỹ Điều Vận Trống Trơn:
-- **Nguyên nhân:** Hàm `applyDispatcherFundsFilter()` bị định nghĩa 2 lần trong `static/js/app.js`. Định nghĩa thứ 2 (dòng 33322) ghi đè hàm trước đó bằng bộ lọc DOM thô sơ `querySelectorAll('#acct-fund-tbody tr')`. Do bảng chưa được render lần nào nên bảng luôn trống trơn dù KPI và Badge đều có dữ liệu (45.000.000 đ, 2 phiếu quỹ).
-- **Giải pháp:**
-  * Khử trùng định nghĩa hàm, tích hợp bộ lọc từ khóa trực tiếp trên mảng dữ liệu `rawDispatcherFundsList` và tự động kích hoạt `renderDispatcherFundsTable(filteredList)`.
-  * Bảng Quỹ Điều Vận hiển thị chuẩn xác và đầy đủ các phiếu quỹ đang lưu hành (STT, Mã quỹ, Điều phối nhận, Ngày tạm ứng, Tiền tạm ứng, Đã cấp tài xế, Đã hoàn ứng, Dư khả dụng, Trạng thái và các nút Thao tác).
+### 1. Chuẩn Hóa Toàn Diện Typography & Chuyển Badge Sang Text Chuẩn:
+- **Phân hệ Điều Vận (Dispatch Table):**
+  * Ghép 2 cont 20ft: Chuyển sang text chuẩn in hoa `text-teal-700 font-bold text-[11px] uppercase`.
+  * Cảnh báo Free DET (Quá hạn / Hết hôm nay / Còn 1N): Bỏ hoàn toàn khung nền badge màu, chuyển sang text font-bold kèm icon cảnh báo trực quan.
+  * Hóa đơn thương mại & Dock kho: Bỏ badge nền màu viền bo góc, chuyển sang text font-mono bold; Dock hiển thị text indigo font-mono chuẩn.
+  * Nguồn xe (Xe Nhà / Xe Bạn): Chuyển badge sang text thuần in hoa (`text-teal-700` / `text-slate-600`).
+  * Cắt kéo (Drop & Hook): Bỏ khung badge nền vàng, chuyển sang text inline in hoa kèm icon `ph-arrows-split`.
+  * Vị trí cont & Loại chuyến: Chuyển badge sang text thuần in hoa phân biệt màu sắc.
+- **Phân hệ Quản Lý Đội Xe (Đầu kéo & Rơ-moóc):**
+  * Hạn đăng kiểm (Hết hạn / Cảnh báo / Hợp lệ): Loại bỏ hoàn toàn khối pill nền đỏ/vàng, chuyển sang text chuẩn in hoa đậm màu (`text-rose-700` / `text-amber-700` / `text-emerald-700`).
+  * Hạn bảo dưỡng: Loại bỏ badge nền vàng, chuyển sang text chuẩn.
+- **Phân hệ Tờ Khai Hải Quan:**
+  * Trạng thái đăng ký tờ khai (`Chờ truyền TK`, `Đã đăng ký`, `Đang thẩm định`, `Kiểm hóa`, `Đã thông quan`, `Đã qua giám sát`, `Hủy`): Loại bỏ toàn bộ khung badge bo tròn, chuyển sang text thuần in hoa chuẩn. (Bảo toàn ngoại lệ phân luồng hải quan Luồng Xanh / Vàng / Đỏ).
+  * Loại tờ khai: Bỏ badge nền xám, chuyển sang text font-bold.
+- **Phân hệ Hợp Đồng Lao Động:**
+  * Chế độ phúc lợi (`BHXH`, `TNCN`, `CĐ`): Loại bỏ khung badge bo góc nền màu, chuyển sang text thuần gọn gàng.
+- **Phân hệ Đơn Hàng / Booking:**
+  * Nhãn `GẤP` và `CẮT KÉO`: Chuyển sang text in hoa đậm nét không dùng nền khối đặc.
+- **Phân hệ Kế Toán & Chi Tiết Chuyến Xe:**
+  * Bảng mốc tiến độ 11 bước: Chuyển badge trạng thái (`Chưa thực hiện`, `ĐANG THỰC HIỆN`, `Hoàn thành`) sang text thuần in hoa.
+  * Bảng kê chi phí chuyến: Chuyển nhãn chặng xe (`Chặng 1`, `Chặng 2`) sang text thuần in hoa.
+  * Bảng đối soát vé BOT & Đối soát 3PL: Biển số xe và chi tiết vé BOT bỏ badge nền xám bo góc, chuyển sang text font-mono bold đồng nhất.
+  * Bảng báo cáo tài chính kế toán: Chênh lệch quyết toán (`Nộp cty`, `Cty bù`) chuyển sang text font-mono bold không nền.
 
-### 2. Khắc Phục Lệch Số Dòng Khoản Chi Hộ (Hiển Thị 2 Dòng vs KPI 4 Dòng):
-- **Nguyên nhân:** Dropdown bộ lọc trạng thái chi hộ (`#reimburse-filter-status`) trong `templates/views/view_accounting.html` bị set thuộc tính mặc định `selected` tại option `PENDING` ("Chờ thu / Chưa gửi Debit Note"). Khi người dùng mở tab "Khoản Chi Hộ (4)", API tự động lọc ra chỉ 2 khoản chưa lập Debit Note (3.800.000 đ), ẩn mất 2 khoản đã lập Debit Note (4.500.000 đ), gây cảm giác mất dữ liệu hoặc không khớp với Badge (4) và KPI Tổng (8.300.000 đ).
-- **Giải pháp:**
-  * Chuyển giá trị mặc định của bộ lọc sang `ALL` ("-- Tất cả trạng thái thu hồi --").
-  * Người dùng vào tab sẽ thấy ngay toàn bộ 4 dòng chi hộ (tổng 8.300.000 đ), khớp 100% với KPI Thẻ 1 và Badge tab.
-  * Đồng bộ tương tự cho Tab **Xe Bạn (3PL)** (`#subcon-filter-status`): chuyển mặc định sang `ALL` để hiển thị toàn bộ danh sách chuyến thầu phụ khớp với số liệu tổng hợp.
+### 2. Nguyên Tắc Đồng Nhất Font & Size (Visual Hierarchy):
+- Mọi record dữ liệu chính: áp dụng đồng nhất `text-xs font-bold` (hoặc `font-mono font-bold` cho mã số, biển số, tiền tệ, cont).
+- Thông tin phụ đi kèm trong cùng ô: tự động giảm 1 size xuống `text-[11px] font-normal text-slate-500` đảm bảo phân cấp thị giác rõ ràng, không rối mắt.
 
-### 3. Kiểm Thử Hệ Thống:
-- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
-- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+### 3. Kiểm Thử & Triển Khai:
+- Cú pháp JavaScript hợp lệ 100%: `node -c static/js/app.js`, `node -c static/js/modules/reports.js`, `node -c static/js/column_manager.js`.
+- Đạt chuẩn **147/147 automated tests PASSED**.
 
 ## [v4.3.8] - 2026-10-23 (Loại Bỏ Triệt Để Badge, Icon Tay Lái & Chuẩn Hóa Nút Thao Tác Theo Chuẩn Nút In)
 

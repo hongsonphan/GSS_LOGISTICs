@@ -115,151 +115,27 @@
         </div>
     </div>
 
-    <!-- HÀNG 1: 5 TRỤ CỘT ĐIỀU HÀNH CHIẾN LƯỢC THEO VAI TRÒ (CHUẨN VÒNG ĐỜI VẬN TẢI TỪ TRÁI QUA PHẢI) -->
+    <!-- HÀNG 1: 5 TRỤ CỘT ĐIỀU HÀNH CHIẾN LƯỢC THEO VAI TRÒ (BỘ MÀU CHUYỂN TIẾP TỰ NHIÊN: EMERALD ➔ TEAL ➔ SKY ➔ INDIGO ➔ AMBER) -->
     <div id="dashboard-row-pillars" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 2xl:gap-3.5 shrink-0 transition-all duration-300">
         
-        <!-- Pillar 1: Kinh Doanh & Kế Hoạch (Đầu vào chuỗi cung ứng) -->
-        <div onclick="switchTab('kinh-doanh')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs cursor-pointer hover:shadow-xs hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem Báo giá & Booking tại phân hệ Sale & CRM">
+        <!-- Pillar 1: Tài Chính & Quỹ (Sắc Xanh Ngọc Lục Bảo - Emerald) -->
+        <div onclick="switchTab('ke-toan')" class="bg-white p-3.5 2xl:p-4 rounded-xl border border-slate-200/90 shadow-2xs border-l-[5px] border-l-emerald-500 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem sổ sách đối soát tại Quản lý Kế toán">
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded font-heading">
-                        1. Kinh Doanh & Booking
+                    <span class="text-[11px] 2xl:text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-heading">
+                        1. TÀI CHÍNH & QUỸ
                     </span>
-                    <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="ph-bold ph-handshake text-base"></i>
-                    </div>
-                </div>
-                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Doanh Thu Kế Hoạch (Đã Ký HĐ)</p>
-                <p class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="bgd-sales-plan-rev">-- đ</p>
-            </div>
-            
-            <div class="space-y-1 mt-2.5 pt-2 border-t border-slate-100 text-xs">
-                <div class="flex items-center justify-between font-semibold text-slate-600 gap-1 truncate">
-                    <span class="truncate">Booking nhận: <strong class="text-slate-900 font-black font-heading text-[11.5px] 2xl:text-xs" id="bgd-sales-bookings">-- Đơn (-- Cont)</strong></span>
-                </div>
-                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
-                    <span class="truncate">Tuyến đã ký: <strong class="text-teal-700 font-black font-heading" id="bgd-approved-quotes">-- Tuyến</strong></span>
-                    <span class="text-teal-700 font-black group-hover:translate-x-0.5 transition-transform flex items-center font-heading shrink-0 ml-1">
-                        Sale & CRM <i class="ph-bold ph-arrow-right ml-0.5 text-[11px]"></i>
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pillar 2: Vận Hành & Năng Suất Chuyến (Thực thi điều vận) -->
-        <div onclick="switchTab('dieu-van')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs cursor-pointer hover:shadow-xs hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem bàn điều phối tại phân hệ Điều Vận">
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold uppercase tracking-wider text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded font-heading">
-                        2. Điều Vận Chuyến Xe
-                    </span>
-                    <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="ph-bold ph-truck text-base"></i>
-                    </div>
-                </div>
-                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Chuyến Đang Vận Hành</p>
-                <div class="flex items-baseline space-x-1.5 mt-1">
-                    <span class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading" id="bgd-today-trips">--</span>
-                    <span class="text-[11px] 2xl:text-xs font-bold text-slate-500 uppercase">/ <span id="bgd-total-trips" class="font-extrabold text-slate-800">--</span> Tổng Chuyến</span>
-                </div>
-            </div>
-            
-            <div class="space-y-1 mt-2.5 pt-2 border-t border-slate-100 text-xs">
-                <div class="flex items-center justify-between font-semibold text-slate-600">
-                    <span>Đã xong: <strong class="text-slate-900 font-black font-heading text-xs 2xl:text-[13px]" id="bgd-yesterday-trips">-- chuyến</strong></span>
-                    <span class="px-1.5 py-0.2 bg-teal-100 text-teal-800 rounded font-black text-[10.5px] 2xl:text-[11px] font-heading" id="bgd-otd-rate">--% OTD</span>
-                </div>
-                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
-                    <span>Hành trình: <strong class="text-emerald-700 font-black">100% Đúng hạn</strong></span>
-                    <span class="text-blue-700 font-black group-hover:translate-x-0.5 transition-transform flex items-center font-heading">
-                        Bàn điều xe <i class="ph-bold ph-arrow-right ml-0.5 text-[11px]"></i>
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pillar 3: Khai Thác Tài Sản Đội Xe & Tài Xế (Phương tiện & Tài xế) -->
-        <div onclick="switchTab('xe-bai')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs cursor-pointer hover:shadow-xs hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem đội xe & bãi tại Xe & Bãi">
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-2 py-0.5 rounded font-heading">
-                        3. Khả Dụng Đội Xe
-                    </span>
-                    <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="ph-bold ph-garage text-base"></i>
-                    </div>
-                </div>
-                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Tỷ Lệ Khai Thác (Utilization)</p>
-                <div class="flex items-baseline space-x-1.5 mt-1">
-                    <span class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading" id="bgd-fleet-utilization">--%</span>
-                    <span class="text-[11px] 2xl:text-xs font-bold text-slate-500 uppercase">(<span id="bgd-fleet-active" class="font-black text-slate-900">--</span>/<span id="bgd-fleet-total" class="font-black text-slate-900">--</span> Xe)</span>
-                </div>
-            </div>
-            
-            <div class="space-y-1 mt-2.5 pt-2 border-t border-slate-100 text-xs">
-                <div class="flex items-center justify-between font-semibold text-slate-600">
-                    <span>Chờ: <strong class="text-slate-800 font-black font-heading text-xs 2xl:text-[13px]" id="bgd-fleet-idle">--</strong> • Trì: <strong class="text-rose-600 font-black font-heading text-xs 2xl:text-[13px]" id="bgd-fleet-maint">--</strong></span>
-                    <span class="px-1.5 py-0.2 bg-slate-200 text-slate-800 rounded font-black text-[10.5px] 2xl:text-[11px] font-heading" id="bgd-hr-active">-- TX</span>
-                </div>
-                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
-                    <span>Bãi xe: <strong class="text-slate-800 font-black">Sẵn sàng nhận lệnh</strong></span>
-                    <span class="text-slate-700 font-black group-hover:translate-x-0.5 transition-transform flex items-center font-heading">
-                        Quản lý xe <i class="ph-bold ph-arrow-right ml-0.5 text-[11px]"></i>
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pillar 4: Khách Hàng, Sự Cố & Dịch Vụ Hải Quan (Cảnh báo & Ngoại lệ) -->
-        <div onclick="switchTab('hai-quan')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs cursor-pointer hover:shadow-xs hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem Tờ khai & Hải quan tại phân hệ Hải Quan">
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded font-heading">
-                        4. Cảnh Báo & Hải Quan
-                    </span>
-                    <div class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="ph-bold ph-warning-circle text-base"></i>
-                    </div>
-                </div>
-                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Tờ Khai Hải Quan Luồng Xanh</p>
-                <div class="flex items-baseline space-x-1.5 mt-1">
-                    <span class="text-2xl 2xl:text-3xl font-black text-slate-900 tabular-nums font-heading" id="bgd-customs-green">--</span>
-                    <span class="text-[11px] 2xl:text-xs font-bold text-emerald-700 uppercase" id="bgd-customs-rate">(0% Thông quan)</span>
-                </div>
-            </div>
-            
-            <div class="space-y-1 mt-2.5 pt-2 border-t border-slate-100 text-xs">
-                <div class="flex items-center justify-between font-semibold text-slate-600">
-                    <span>Chờ điều xe: <strong class="text-amber-800 font-black font-heading text-xs 2xl:text-[13px]" id="bgd-pending-bookings">-- đơn</strong></span>
-                    <span class="px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded font-black text-[10.5px] 2xl:text-[11px] font-heading" id="bgd-customs-lanes">0 Vàng / 0 Đỏ</span>
-                </div>
-                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
-                    <span>DEM/DET: <strong class="text-emerald-700 font-black">0 Cont</strong></span>
-                    <span class="text-amber-700 font-black group-hover:translate-x-0.5 transition-transform flex items-center font-heading">
-                        Theo dõi đơn <i class="ph-bold ph-arrow-right ml-0.5 text-[11px]"></i>
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pillar 5: Tài Chính & Quỹ (Kết quả kinh doanh P&L cuối cùng) -->
-        <div onclick="switchTab('ke-toan')" class="bg-white p-4 2xl:p-5 rounded-2xl border border-slate-200/90 shadow-2xs cursor-pointer hover:shadow-xs hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem sổ sách đối soát tại Quản lý Kế toán">
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded font-heading">
-                        5. Tài Chính & Quỹ
-                    </span>
-                    <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="ph-bold ph-calculator text-base"></i>
+                    <div class="w-6 h-6 2xl:w-7 2xl:h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="ph-bold ph-calculator text-sm 2xl:text-base"></i>
                     </div>
                 </div>
                 <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Lợi Nhuận Gộp Thực Hiện</p>
-                <p class="text-2xl 2xl:text-3xl font-black text-emerald-600 tabular-nums font-heading mt-1" id="bgd-gross-profit">-- đ</p>
+                <p class="text-xl 2xl:text-2xl font-black text-emerald-600 tabular-nums font-heading mt-0.5" id="bgd-gross-profit">-- đ</p>
             </div>
             
-            <div class="space-y-1 mt-2.5 pt-2 border-t border-slate-100 text-xs">
+            <div class="space-y-1 mt-2 pt-2 border-t border-slate-100 text-xs">
                 <!-- Dòng trên: Doanh thu | Chi phí -->
-                <div class="flex items-center justify-between font-semibold text-slate-600 gap-1">
+                <div class="flex items-center justify-between font-semibold text-slate-600 gap-1 text-[11px] 2xl:text-xs">
                     <span class="whitespace-nowrap">Doanh thu: <strong class="text-slate-900 font-black font-heading text-[11.5px] 2xl:text-xs" id="bgd-monthly-rev">-- đ</strong></span>
                     <span class="text-slate-300">|</span>
                     <span class="whitespace-nowrap">Chi phí: <strong class="text-slate-700 font-black font-heading text-[11.5px] 2xl:text-xs" id="bgd-monthly-exp">-- đ</strong></span>
@@ -267,12 +143,138 @@
 
                 <!-- Dòng dưới: Quỹ Khả dụng: Tiền mặt | Ngân hàng -->
                 <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
-                    <span class="text-slate-500 font-bold uppercase text-[10px] shrink-0">Quỹ:</span>
-                    <div class="flex items-center space-x-1 font-bold truncate ml-1">
-                        <span class="text-slate-700 truncate">Tiền mặt: <strong class="text-emerald-700 font-black font-heading" id="bgd-cash-val">-- đ</strong></span>
+                    <div class="flex items-center space-x-1 font-bold truncate">
+                        <span class="text-slate-700 truncate">Quỹ TM: <strong class="text-emerald-700 font-black font-heading" id="bgd-cash-val">-- đ</strong></span>
                         <span class="text-slate-300">|</span>
-                        <span class="text-slate-700 truncate">NH: <strong class="text-blue-700 font-black font-heading" id="bgd-bank-val">-- đ</strong></span>
+                        <span class="text-slate-700 truncate">NH: <strong class="text-slate-900 font-black font-heading" id="bgd-bank-val">-- đ</strong></span>
                     </div>
+                    <span class="text-emerald-700 font-bold group-hover:translate-x-0.5 transition-transform flex items-center font-heading shrink-0 ml-1">
+                        Sổ kế toán <i class="ph-bold ph-arrow-right ml-0.5 text-[10px]"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pillar 2: Kinh Doanh (Sắc Xanh Mòng Két - Teal) -->
+        <div onclick="switchTab('kinh-doanh')" class="bg-white p-3.5 2xl:p-4 rounded-xl border border-slate-200/90 shadow-2xs border-l-[5px] border-l-teal-500 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem Báo giá & Booking tại phân hệ Sale & CRM">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] 2xl:text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 font-heading">
+                        2. KINH DOANH
+                    </span>
+                    <div class="w-6 h-6 2xl:w-7 2xl:h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="ph-bold ph-handshake text-sm 2xl:text-base"></i>
+                    </div>
+                </div>
+                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Doanh Thu Kế Hoạch (Đã Ký HĐ)</p>
+                <p class="text-xl 2xl:text-2xl font-black text-teal-700 tabular-nums font-heading mt-0.5" id="bgd-sales-plan-rev">-- đ</p>
+            </div>
+            
+            <div class="space-y-1 mt-2 pt-2 border-t border-slate-100 text-xs">
+                <div class="flex items-center justify-between font-semibold text-slate-600 gap-1 truncate text-[11px] 2xl:text-xs">
+                    <span class="truncate">Booking đã nhận: <strong class="text-slate-900 font-black font-heading text-[11.5px] 2xl:text-xs" id="bgd-sales-bookings">-- Đơn (-- Cont)</strong></span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
+                    <span class="truncate">Tuyến đã ký: <strong class="text-teal-700 font-black font-heading" id="bgd-approved-quotes">-- Tuyến</strong></span>
+                    <span class="text-teal-700 font-bold group-hover:translate-x-0.5 transition-transform flex items-center font-heading shrink-0 ml-1">
+                        Sale & CRM <i class="ph-bold ph-arrow-right ml-0.5 text-[10px]"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pillar 3: Vận Hành Chuyến (Sắc Xanh Lơ Trời - Sky) -->
+        <div onclick="switchTab('dieu-van')" class="bg-white p-3.5 2xl:p-4 rounded-xl border border-slate-200/90 shadow-2xs border-l-[5px] border-l-sky-500 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem bàn điều phối tại phân hệ Điều Vận">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] 2xl:text-xs font-bold uppercase tracking-wider text-sky-800 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 font-heading">
+                        3. VẬN HÀNH CHUYẾN
+                    </span>
+                    <div class="w-6 h-6 2xl:w-7 2xl:h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="ph-bold ph-truck text-sm 2xl:text-base"></i>
+                    </div>
+                </div>
+                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Chuyến Đang Vận Hành</p>
+                <div class="flex items-baseline space-x-1.5 mt-0.5">
+                    <span class="text-xl 2xl:text-2xl font-black text-sky-700 tabular-nums font-heading" id="bgd-today-trips">--</span>
+                    <span class="text-[11px] 2xl:text-xs font-bold text-slate-600 uppercase">/ <span id="bgd-total-trips" class="font-extrabold text-slate-800">--</span> Tổng Chuyến</span>
+                </div>
+            </div>
+            
+            <div class="space-y-1 mt-2 pt-2 border-t border-slate-100 text-xs">
+                <div class="flex items-center justify-between font-semibold text-slate-600 text-[11px] 2xl:text-xs">
+                    <span>Đã xong: <strong class="text-slate-900 font-black font-heading text-xs 2xl:text-[13px]" id="bgd-yesterday-trips">-- chuyến</strong></span>
+                    <span class="px-1.5 py-0.2 bg-sky-100 text-sky-800 rounded font-black text-[10.5px] 2xl:text-[11px] font-heading" id="bgd-otd-rate">--% OTD</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
+                    <span>Hành trình: <strong class="text-emerald-700 font-black">100% Đúng tiến độ</strong></span>
+                    <span class="text-sky-700 font-bold group-hover:translate-x-0.5 transition-transform flex items-center font-heading">
+                        Bàn điều xe <i class="ph-bold ph-arrow-right ml-0.5 text-[10px]"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pillar 4: Khả Dụng Đội Xe (Sắc Xanh Chàm - Indigo) -->
+        <div onclick="switchTab('xe-bai')" class="bg-white p-3.5 2xl:p-4 rounded-xl border border-slate-200/90 shadow-2xs border-l-[5px] border-l-indigo-500 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem đội xe & bãi tại Xe & Bãi">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] 2xl:text-xs font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-heading">
+                        4. KHẢ DỤNG ĐỘI XE
+                    </span>
+                    <div class="w-6 h-6 2xl:w-7 2xl:h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="ph-bold ph-garage text-sm 2xl:text-base"></i>
+                    </div>
+                </div>
+                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Tỷ Lệ Khai Thác (Utilization)</p>
+                <div class="flex items-baseline space-x-1.5 mt-0.5">
+                    <span class="text-xl 2xl:text-2xl font-black text-indigo-700 tabular-nums font-heading" id="bgd-fleet-utilization">--%</span>
+                    <span class="text-[11px] 2xl:text-xs font-bold text-slate-600 uppercase">(<span id="bgd-fleet-active" class="font-black text-slate-900">--</span>/<span id="bgd-fleet-total" class="font-black text-slate-900">--</span> Xe)</span>
+                </div>
+            </div>
+            
+            <div class="space-y-1 mt-2 pt-2 border-t border-slate-100 text-xs">
+                <div class="flex items-center justify-between font-semibold text-slate-600 text-[11px] 2xl:text-xs">
+                    <span>Bãi chờ: <strong class="text-slate-800 font-black font-heading text-xs 2xl:text-[13px]" id="bgd-fleet-idle">--</strong> • Bảo trì: <strong class="text-rose-600 font-black font-heading text-xs 2xl:text-[13px]" id="bgd-fleet-maint">--</strong></span>
+                    <span class="px-1.5 py-0.2 bg-indigo-100 text-indigo-800 rounded font-black text-[10.5px] 2xl:text-[11px] font-heading" id="bgd-hr-active">-- TX</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
+                    <span>Tài xế sẵn sàng: <strong class="text-slate-800 font-black">Nhận lệnh</strong></span>
+                    <span class="text-indigo-700 font-bold group-hover:translate-x-0.5 transition-transform flex items-center font-heading">
+                        Quản lý xe <i class="ph-bold ph-arrow-right ml-0.5 text-[10px]"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pillar 5: Đơn Hàng & Hải Quan (Sắc Vàng Hổ Phách - Amber) -->
+        <div onclick="switchTab('hai-quan')" class="bg-white p-3.5 2xl:p-4 rounded-xl border border-slate-200/90 shadow-2xs border-l-[5px] border-l-amber-500 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden flex flex-col justify-between" title="Bấm vào để xem Tờ khai & Hải quan tại phân hệ Hải Quan">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] 2xl:text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-heading">
+                        5. ĐƠN HÀNG & HẢI QUAN
+                    </span>
+                    <div class="w-6 h-6 2xl:w-7 2xl:h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="ph-bold ph-anchor text-sm 2xl:text-base"></i>
+                    </div>
+                </div>
+                <p class="text-[11px] 2xl:text-xs font-semibold text-slate-500">Tờ Khai HQ Luồng Xanh</p>
+                <div class="flex items-baseline space-x-1.5 mt-0.5">
+                    <span class="text-xl 2xl:text-2xl font-black text-amber-700 tabular-nums font-heading" id="bgd-customs-green">--</span>
+                    <span class="text-[11px] 2xl:text-xs font-bold text-emerald-700 uppercase" id="bgd-customs-rate">(0% Thông quan)</span>
+                </div>
+            </div>
+            
+            <div class="space-y-1 mt-2 pt-2 border-t border-slate-100 text-xs">
+                <div class="flex items-center justify-between font-semibold text-slate-600 text-[11px] 2xl:text-xs">
+                    <span>Chờ gán xe: <strong class="text-amber-800 font-black font-heading text-xs 2xl:text-[13px]" id="bgd-pending-bookings">-- đơn</strong></span>
+                    <span class="px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded font-black text-[10.5px] 2xl:text-[11px] font-heading" id="bgd-customs-lanes">0 Vàng / 0 Đỏ</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] 2xl:text-[11.5px] text-slate-600 font-semibold pt-1 border-t border-slate-100/60">
+                    <span>DEM/DET: <strong class="text-emerald-700 font-black">0 Cont quá hạn</strong></span>
+                    <span class="text-amber-700 font-bold group-hover:translate-x-0.5 transition-transform flex items-center font-heading">
+                        Thông quan <i class="ph-bold ph-arrow-right ml-0.5 text-[10px]"></i>
+                    </span>
                 </div>
             </div>
         </div>
