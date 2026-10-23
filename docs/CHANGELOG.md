@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.5] - 2026-10-23 (Xóa Bỏ Ký Tự Rác Dòng Total, Đồng Bộ Chuẩn Kích Thước & Font Family Toàn Diện)
+
+### 1. Xử Lý Triệt Để Dòng Total (tfoot):
+- **Loại bỏ toàn bộ dấu gạch `-` vô nghĩa ở các cột text rỗng:**
+  * Ở Báo Cáo 1 (Đội Xe): Các cột `Loại Phương Tiện` (`vehicle_type`) và `Sở Hữu` (`ownership`) để trống hoàn toàn `""` thay vì dấu `-`.
+  * Ở Báo Cáo 2 (Khách Hàng): Các cột `Mã KH` (`customer_code`) và `Tuyến Vận Chuyển Chủ Lực` (`top_route`) để trống hoàn toàn `""` thay vì dấu `-`.
+  * Khắc phục triệt để tình trạng khi người dùng đảo vị trí cột (ví dụ đưa `Sở Hữu` lên trước `Biển Số Xe` hay `Mã KH` lên trước `Tên Khách Hàng`), dòng Total không còn bị hiện lủng củng `TỔNG` | `-` | `1 ĐẦU XE` | `-`.
+- **Đồng bộ màu sắc & hiển thị:**
+  * Cột Doanh Thu ở Báo Cáo Khách Hàng được chuẩn hóa từ màu tím sang màu đen tuyền đậm `text-slate-900 font-black` đồng bộ với Báo Cáo Đội Xe.
+  * Cột Tỷ Trọng (%) hiển thị số nguyên chuẩn xác `100%`.
+
+### 2. Đồng Bộ Tuyệt Đối Font-Size & Font-Family:
+- Gán inline style trực tiếp trên từng ô `<td>` của dòng Total (`tfoot`):
+  `font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;`
+- Cập nhật CSS toàn cục `.erp-table tfoot td`: `font-size: 13.5px !important; font-weight: 800 !important;`.
+- Tăng phiên bản cache-busting trong `templates/base.html` lên `?v=2.9.50` (`main.css?v=2.9.50`, `column_manager.js?v=2.9.50`, `app.js?v=2.9.50`), giải phóng triệt để cache trình duyệt cũ.
+- Tự động gọi lại `BimTableColumnManager.instances[...].apply()` ngay sau khi render xong `tfoot` để đảm bảo thứ tự cột lập tức ăn khớp theo cấu hình lưu trữ của người dùng.
+
+### 3. Kiểm Thử & Triển Khai:
+- `node -c static/js/app.js` & `node -c static/js/column_manager.js` (100% Passed).
+- `python manage.py test --keepdb` (147/147 tests Passed).
+- Sẵn sàng deploy lên VPS `149.118.60.194`.
+
 ## [v4.5.4] - 2026-10-23 (Đồng Bộ 100% Một Font-Family Duy Nhất Toàn Bộ Bảng Table & Dòng Total)
 
 ### 1. Đồng Bộ Font-Family Tuyệt Đối:

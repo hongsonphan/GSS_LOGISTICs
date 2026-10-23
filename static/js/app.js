@@ -26600,20 +26600,23 @@ function applyReport1Filters() {
 
     if (tfoot) {
         tfoot.innerHTML = `
-            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900 text-[13px]">
-                <td data-col-key="stt" class="text-center font-black text-slate-900 uppercase text-[13px]">TỔNG</td>
-                <td data-col-key="plate" class="py-3 px-3 font-black text-slate-900 uppercase text-[13px]">${list.length} Đầu Xe</td>
-                <td data-col-key="vehicle_type" class="text-center text-slate-400 font-normal text-[13px]">-</td>
-                <td data-col-key="ownership" class="text-center text-slate-400 font-normal text-[13px]">-</td>
-                <td data-col-key="trips_count" class="text-center font-black tabular-nums text-slate-900 text-[13px]">${totalTrips}</td>
-                <td data-col-key="containers_count" class="text-center font-black tabular-nums text-teal-900 bg-teal-100/60 text-[13px]">${totalConts}</td>
-                <td data-col-key="revenue" class="text-right font-black tabular-nums text-slate-900 text-[13px]">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
-                <td data-col-key="revenue_share" class="text-center font-black tabular-nums text-slate-900 text-[13px]">${canViewFinance ? '100%' : '***'}</td>
-                <td data-col-key="avg_revenue_per_trip" class="text-right font-black tabular-nums text-emerald-800 text-[13px]">${canViewFinance ? formatMoneyVND(overallAvgPerTrip) : '***'}</td>
-                <td data-col-key="avg_revenue_per_container" class="text-right font-black tabular-nums text-indigo-800 text-[13px]">${canViewFinance ? formatMoneyVND(overallAvgPerCont) : '***'}</td>
-                <td data-col-key="expense" class="text-right font-black tabular-nums text-amber-800 text-[13px]">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900 text-[13.5px]">
+                <td data-col-key="stt" class="text-center font-black text-slate-900 uppercase text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">TỔNG</td>
+                <td data-col-key="plate" class="py-3 px-3 font-black text-slate-900 uppercase text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${list.length} Đầu Xe</td>
+                <td data-col-key="vehicle_type" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
+                <td data-col-key="ownership" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
+                <td data-col-key="trips_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${totalTrips}</td>
+                <td data-col-key="containers_count" class="text-center font-black tabular-nums text-teal-900 bg-teal-100/60 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${totalConts}</td>
+                <td data-col-key="revenue" class="text-right font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
+                <td data-col-key="revenue_share" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${canViewFinance ? '100%' : '***'}</td>
+                <td data-col-key="avg_revenue_per_trip" class="text-right font-black tabular-nums text-emerald-800 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${canViewFinance ? formatMoneyVND(overallAvgPerTrip) : '***'}</td>
+                <td data-col-key="avg_revenue_per_container" class="text-right font-black tabular-nums text-indigo-800 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${canViewFinance ? formatMoneyVND(overallAvgPerCont) : '***'}</td>
+                <td data-col-key="expense" class="text-right font-black tabular-nums text-amber-800 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
             </tr>
         `;
+        if (window.BimTableColumnManager && window.BimTableColumnManager.instances && window.BimTableColumnManager.instances['rep1-pnl-table']) {
+            window.BimTableColumnManager.instances['rep1-pnl-table'].apply();
+        }
     }
 }
 
@@ -27273,22 +27276,25 @@ function applyReport7Filters() {
     if (tfoot) {
         const teuDisplay = (totalTeu % 1 === 0) ? totalTeu.toFixed(0) : totalTeu.toFixed(1);
         tfoot.innerHTML = `
-            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900 text-[13px]">
-                <td data-col-key="stt" class="text-center font-black text-slate-900 uppercase text-[13px]">TỔNG</td>
-                <td data-col-key="customer_name" class="py-3 px-3 uppercase text-slate-900 font-black text-[13px]">${list.length} Khách Hàng</td>
-                <td data-col-key="customer_code" class="text-center text-slate-400 font-normal text-[13px]">-</td>
-                <td data-col-key="trips_count" class="text-center font-black tabular-nums text-slate-900 text-[13px]">${totalTrips}</td>
-                <td data-col-key="total_teu" class="text-center font-black tabular-nums text-teal-800 bg-teal-50/80 text-[13px]">${teuDisplay}</td>
-                <td data-col-key="teu_20_count" class="text-center font-black tabular-nums text-slate-900 text-[13px]">${total20}</td>
-                <td data-col-key="teu_40_count" class="text-center font-black tabular-nums text-slate-900 text-[13px]">${total40}</td>
-                <td data-col-key="teu_45_count" class="text-center font-black tabular-nums text-slate-900 text-[13px]">${total45}</td>
-                <td data-col-key="top_route" class="text-center text-slate-400 font-normal text-[13px]">-</td>
-                <td data-col-key="revenue" class="text-right font-black text-indigo-700 tabular-nums text-[13px]">${formatMoneyVND(totalRev)}</td>
-                <td data-col-key="revenue_share" class="text-center font-black text-slate-900 tabular-nums text-[13px]">100%</td>
-                <td data-col-key="avg_revenue_per_trip" class="text-right font-black text-emerald-800 tabular-nums text-[13px]">${formatMoneyVND(overallAvgTrip)}</td>
-                <td data-col-key="avg_revenue_per_container" class="text-right font-black text-indigo-800 tabular-nums text-[13px]">${formatMoneyVND(overallAvgCont)}</td>
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900 text-[13.5px]">
+                <td data-col-key="stt" class="text-center font-black text-slate-900 uppercase text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">TỔNG</td>
+                <td data-col-key="customer_name" class="py-3 px-3 uppercase text-slate-900 font-black text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${list.length} Khách Hàng</td>
+                <td data-col-key="customer_code" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
+                <td data-col-key="trips_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${totalTrips}</td>
+                <td data-col-key="total_teu" class="text-center font-black tabular-nums text-teal-800 bg-teal-50/80 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${teuDisplay}</td>
+                <td data-col-key="teu_20_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${total20}</td>
+                <td data-col-key="teu_40_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${total40}</td>
+                <td data-col-key="teu_45_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${total45}</td>
+                <td data-col-key="top_route" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
+                <td data-col-key="revenue" class="text-right font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(totalRev)}</td>
+                <td data-col-key="revenue_share" class="text-center font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">100%</td>
+                <td data-col-key="avg_revenue_per_trip" class="text-right font-black text-emerald-800 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(overallAvgTrip)}</td>
+                <td data-col-key="avg_revenue_per_container" class="text-right font-black text-indigo-800 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(overallAvgCont)}</td>
             </tr>
         `;
+        if (window.BimTableColumnManager && window.BimTableColumnManager.instances && window.BimTableColumnManager.instances['rep7-customer-table']) {
+            window.BimTableColumnManager.instances['rep7-customer-table'].apply();
+        }
     }
 }
 
