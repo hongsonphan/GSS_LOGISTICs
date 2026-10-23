@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.4] - 2026-10-23 (Cơ Cấu Subtext 3 Thông Số Thẻ KPI Báo Giá: Doanh Số & Số Tuyến | Số Chuyến)
+
+### 1. Chuẩn Hóa Cụm Subtext Dưới 5 Thẻ KPI Báo Giá Tuyến Cước:
+- **Trình bày trực quan 3 thông số kinh doanh cốt lõi:**
+  * **Dòng 1:** `DOANH SỐ:` — hiển thị doanh thu kế hoạch (VNĐ).
+  * **Dòng 2:** `SỐ TUYẾN: [X] Tuyến | SỐ CHUYẾN: [Y] Chuyến` — liên kết 2 chiều giữa số lượng tuyến đường và sản lượng chuyến cam kết trong tháng.
+- **Tính toán chuẩn xác từ Backend:**
+  * Bổ sung thuộc tính `total_expected_trips` vào model `Quotation` trong `apps/customers/models.py`, tự động tổng hợp số chuyến cam kết từ bảng chi tiết `QuotationItem` hoặc fallback về `Quotation.expected_trips_monthly`.
+  * Cập nhật hàm `calc_quote_group()` trong `apps/dispatch/api_views.py` tổng hợp chính xác số chuyến `trips` cho cả 5 nhóm trạng thái (`SENT`, `NEGOTIATING`, `PENDING_APPROVAL`, `APPROVED`, `REJECTED`).
+  * Đồng bộ ràng buộc dữ liệu DOM vào các phần tử `#stat-quote-...-trips` trên `static/js/app.js`.
+
+### 2. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
+
 ## [v4.4.3] - 2026-10-23 (Cơ Cấu Lại Chuẩn 5 Trạng Thái Báo Giá CRM: Đã Gửi Báo Giá | Đang Đàm Phán | Chờ Ký Hợp Đồng | Đã Ký Hợp Đồng | Từ Chối/ Hủy)
 
 ### 1. Chuẩn Hóa Danh Mục 5 Trạng Thái Báo Giá (Quotation Statuses):

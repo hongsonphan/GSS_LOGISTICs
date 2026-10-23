@@ -189,6 +189,13 @@ class Quotation(TimeStampedModel, SoftDeleteModel):
         super().save(*args, **kwargs)
 
     @property
+    def total_expected_trips(self):
+        items = self.items.filter(is_deleted=False) if hasattr(self, 'items') else None
+        if items and items.exists():
+            return sum(it.expected_trips_monthly for it in items)
+        return self.expected_trips_monthly or 0
+
+    @property
     def expected_revenue(self):
         # Nếu có các dòng tuyến đường chi tiết (QuotationItem), tính tổng doanh thu kế hoạch của tất cả các dòng
         items = self.items.filter(is_deleted=False) if hasattr(self, 'items') else None

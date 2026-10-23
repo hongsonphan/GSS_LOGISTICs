@@ -4762,7 +4762,8 @@ class SalesAPIView(APIView):
         def calc_quote_group(qs_group):
             rev = sum(float(q.expected_revenue or 0) for q in qs_group)
             routes = sum(q.items.filter(is_deleted=False).count() or 1 for q in qs_group)
-            return {'count': qs_group.count(), 'revenue': rev, 'routes': routes}
+            trips = sum(int(q.total_expected_trips or 0) for q in qs_group)
+            return {'count': qs_group.count(), 'revenue': rev, 'routes': routes, 'trips': trips}
 
         q_signed = calc_quote_group(quotations.filter(status='APPROVED'))
         q_pending = calc_quote_group(quotations.filter(status='PENDING_APPROVAL'))

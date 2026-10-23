@@ -15034,45 +15034,55 @@ async function loadSalesData() {
                 const qSent = qs.sent || { revenue: 0, routes: 0, count: 0 };
                 const qRej = qs.rejected || { revenue: 0, routes: qs.rejected_count || 0, count: qs.rejected_count || 0 };
 
-                // Thẻ 1: ĐÃ KÝ HỢP ĐỒNG
+                // Thẻ 1: ĐÃ KÝ HỢP ĐỒNG (qSigned)
                 const sMain = document.getElementById('stat-quote-signed-main');
                 if (sMain) sMain.innerText = fmtMoney(qSigned.revenue);
                 const sRev = document.getElementById('stat-quote-signed-rev');
                 if (sRev) sRev.innerText = fmtMoney(qSigned.revenue);
                 const sRoutes = document.getElementById('stat-quote-signed-routes');
-                if (sRoutes) sRoutes.innerText = `${fmtNum(qSigned.routes)} Tuyến (${fmtNum(qSigned.count)} HĐ)`;
+                if (sRoutes) sRoutes.innerText = `${fmtNum(qSigned.routes)} Tuyến`;
+                const sTrips = document.getElementById('stat-quote-signed-trips');
+                if (sTrips) sTrips.innerText = `${fmtNum(qSigned.trips || 0)} Chuyến`;
 
-                // Thẻ 2: CHỜ KÝ HỢP ĐỒNG
+                // Thẻ 2: CHỜ KÝ HỢP ĐỒNG (qPending)
                 const pMain = document.getElementById('stat-quote-pending-main');
                 if (pMain) pMain.innerText = fmtMoney(qPending.revenue);
                 const pRev = document.getElementById('stat-quote-pending-rev');
                 if (pRev) pRev.innerText = fmtMoney(qPending.revenue);
                 const pRoutes = document.getElementById('stat-quote-pending-routes');
                 if (pRoutes) pRoutes.innerText = `${fmtNum(qPending.routes)} Tuyến`;
+                const pTrips = document.getElementById('stat-quote-pending-trips');
+                if (pTrips) pTrips.innerText = `${fmtNum(qPending.trips || 0)} Chuyến`;
 
-                // Thẻ 3: ĐANG ĐÀM PHÁN
+                // Thẻ 3: ĐANG ĐÀM PHÁN (qNeg)
                 const nMain = document.getElementById('stat-quote-negotiating-main');
                 if (nMain) nMain.innerText = fmtMoney(qNeg.revenue);
                 const nRev = document.getElementById('stat-quote-negotiating-rev');
                 if (nRev) nRev.innerText = fmtMoney(qNeg.revenue);
                 const nRoutes = document.getElementById('stat-quote-negotiating-routes');
-                if (nRoutes) nRoutes.innerText = `${fmtNum(qNeg.routes)} Tuyến (${fmtNum(qNeg.count)} HĐ)`;
+                if (nRoutes) nRoutes.innerText = `${fmtNum(qNeg.routes)} Tuyến`;
+                const nTrips = document.getElementById('stat-quote-negotiating-trips');
+                if (nTrips) nTrips.innerText = `${fmtNum(qNeg.trips || 0)} Chuyến`;
 
-                // Thẻ 4: ĐÃ GỬI BÁO GIÁ
+                // Thẻ 4: ĐÃ GỬI BÁO GIÁ (qSent)
                 const sentMain = document.getElementById('stat-quote-sent-main');
                 if (sentMain) sentMain.innerText = fmtMoney(qSent.revenue);
                 const sentRev = document.getElementById('stat-quote-sent-rev');
                 if (sentRev) sentRev.innerText = fmtMoney(qSent.revenue);
                 const sentRoutes = document.getElementById('stat-quote-sent-routes');
                 if (sentRoutes) sentRoutes.innerText = `${fmtNum(qSent.routes)} Tuyến`;
+                const sentTrips = document.getElementById('stat-quote-sent-trips');
+                if (sentTrips) sentTrips.innerText = `${fmtNum(qSent.trips || 0)} Chuyến`;
 
-                // Thẻ 5: TỪ CHỐI
+                // Thẻ 5: TỪ CHỐI / HUỶ (qRej)
                 const rMain = document.getElementById('stat-quote-rejected-main');
                 if (rMain) rMain.innerText = fmtMoney(qRej.revenue);
                 const rRev = document.getElementById('stat-quote-rejected-rev');
                 if (rRev) rRev.innerText = fmtMoney(qRej.revenue);
                 const rRoutes = document.getElementById('stat-quote-rejected-routes');
                 if (rRoutes) rRoutes.innerText = `${fmtNum(qRej.routes)} Tuyến`;
+                const rTrips = document.getElementById('stat-quote-rejected-trips');
+                if (rTrips) rTrips.innerText = `${fmtNum(qRej.trips || 0)} Chuyến`;
 
                 // Tương thích ngược các element cũ nếu còn tồn tại
                 const oldNeg = document.getElementById('stat-quote-negotiating');
