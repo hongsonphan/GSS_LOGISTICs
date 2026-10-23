@@ -2,6 +2,21 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.4.6] - 2026-10-23 (Chuẩn Hóa 5 Thẻ KPI Báo Giá: Doanh Số Lớn Bên Trên & Bên Dưới 3 Thông Số: Số Tuyến | Số Chuyến | Số Báo Giá)
+
+### 1. Chuẩn Hóa Bố Cục Thẻ KPI Báo Giá Tuyến Cước (CRM Sales Funnel):
+- **Phần trên:** Hiển thị con số lớn duy nhất là **Doanh Số** kế hoạch (`text-xl 2xl:text-2xl font-black text-slate-900 tabular-nums font-heading tracking-tight`).
+- **Phần dưới (Subtext 3 thông số):**
+  - Trình bày dạng một dòng cân đối, tinh gọn có vạch phân cách `|`:
+    $$\text{SỐ TUYẾN: } \mathbf{X} \quad \mid \quad \text{SỐ CHUYẾN: } \mathbf{Y} \quad \mid \quad \text{SỐ BÁO GIÁ: } \mathbf{Z}$$
+  - **Khử trùng lặp triệt để:** Bỏ hoàn toàn dòng phụ `DOANH SỐ:` ở bên dưới để tránh lặp lại con số doanh thu 2 lần trên cùng 1 thẻ.
+  - Đồng bộ trên cả 5 thẻ KPI trạng thái (`1. ĐÃ GỬI BÁO GIÁ`, `2. ĐANG ĐÀM PHÁN`, `3. CHỜ KÝ HỢP ĐỒNG`, `4. ĐÃ KÝ HỢP ĐỒNG`, `5. TỪ CHỐI / HUỶ`).
+
+### 2. Kiểm Thử Hệ Thống:
+- Đạt 100% cú pháp JS: `node -c static/js/app.js`, `node -c static/js/column_manager.js`.
+- Đạt 100% Django Unit Test: `python manage.py test --keepdb` (**147/147 tests PASSED**).
+
+
 ## [v4.4.5] - 2026-10-23 (Tái Cấu Trúc Bố Cục Thẻ KPI Báo Giá Chia Đôi 2 Dòng: Doanh Số To Rõ & Tuyến | Chuyến Cân Đối)
 
 ### 1. Tái Cấu Trúc Bố Cục 5 Thẻ KPI Báo Giá Tuyến Cước (CRM Sales Funnel):
