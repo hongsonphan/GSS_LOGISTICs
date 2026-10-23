@@ -451,6 +451,43 @@
                     window.BimTableResizable.applyWidthsToBody(this.table, window.BimTableResizable.loadSavedWidths(this.tableId));
                 }
             }
+
+            // 3. Đồng bộ tfoot td elements đảm bảo các ô tổng cộng luôn khớp 100% cột
+            const tfoot = this.table.querySelector('tfoot');
+            if (tfoot) {
+                const footRows = tfoot.querySelectorAll('tr');
+                const defaultCols = this.defaultColumns;
+                const columns = this.columns;
+
+                footRows.forEach(function(tr) {
+                    if (tr.classList.contains('no-col-reorder')) return;
+                    const tds = Array.from(tr.children);
+                    if (tds.length === defaultCols.length) {
+                        tds.forEach(function(td, idx) {
+                            if (!td.getAttribute('data-col-key')) {
+                                td.setAttribute('data-col-key', defaultCols[idx].key);
+                            }
+                        });
+                    }
+
+                    const sortedTds = [];
+                    columns.forEach(function(c) {
+                        const found = tds.find(function(td) {
+                            return td.getAttribute('data-col-key') === c.key;
+                        });
+                        if (found) {
+                            found.style.display = c.visible ? '' : 'none';
+                            sortedTds.push(found);
+                        }
+                    });
+
+                    if (sortedTds.length > 0) {
+                        sortedTds.forEach(function(td) {
+                            tr.appendChild(td);
+                        });
+                    }
+                });
+            }
         } catch (err) {
             console.error('[BimColumnManager] Lỗi áp dụng cấu hình cột:', err);
         } finally {

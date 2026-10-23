@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.2] - 2026-10-23 (Bổ Sung Cột Tỷ Trọng % Báo Cáo Đội Xe & Căn Chỉnh Khớp 100% Cột Dòng Total Báo Cáo Khách Hàng)
+
+### 1. Báo Cáo Doanh Thu Theo Đội Xe:
+- Bổ sung cột **"TỶ TRỌNG (%)"** (`revenue_share`): Đo lường tỷ lệ đóng góp doanh thu của từng phương tiện trên tổng doanh thu vận tải của đội xe.
+- Cập nhật cả `<thead>`, `<tbody>` và dòng tổng cộng `<tfoot>` (`100.0%`).
+
+### 2. Báo Cáo Doanh Thu Theo Khách Hàng:
+- **Khắc phục triệt để lỗi lệch cột dòng Total (tfoot):**
+  * Tách cấu trúc `<tfoot>` thành 13 ô tương ứng 1:1 chính xác với 13 cột `<thead>`.
+  * Gán nhãn nhận diện `data-col-key` cho toàn bộ các ô trong `<thead>`, `<tbody>` và `<tfoot>`.
+  * Nâng cấp `BimColumnManager` trong `static/js/column_manager.js` để tự động đồng bộ và căn chỉnh cả các ô trong `<tfoot>` khi người dùng ẩn/hiện hoặc kéo thả sắp xếp lại cột.
+  * Các con số tổng (Số chuyến, Tổng TEU, 20ft, 40ft, 45ft, Doanh thu, Tỷ trọng, Doanh thu BQ Chuyến, Doanh thu BQ Cont) giờ đây **thẳng hàng 100% với từng cột dữ liệu**.
+
+### 3. Kiểm Thử & Triển Khai:
+- `node -c static/js/app.js` & `node -c static/js/column_manager.js` (100% Passed).
+- `python manage.py test --keepdb` (147/147 tests Passed).
+
 ## [v4.5.1] - 2026-10-23 (Chuẩn Hóa Nhóm Báo Cáo "DOANH THU THỰC HIỆN", Doanh Thu Theo Đội Xe & Doanh Thu Theo Khách Hàng)
 
 ### 1. Chuẩn Hóa Nhóm Báo Cáo "DOANH THU THỰC HIỆN":

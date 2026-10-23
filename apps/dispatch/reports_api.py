@@ -179,7 +179,8 @@ class ReportsAPIView(APIView):
                     'profit': 0,
                     'margin_percent': 0.0,
                     'avg_revenue_per_trip': 0,
-                    'avg_revenue_per_container': 0
+                    'avg_revenue_per_container': 0,
+                    'revenue_share': 0.0
                 }
             conts = 2 if t.is_twin_container else 1
             vehicles_dict[plate]['trips_count'] += 1
@@ -197,6 +198,7 @@ class ReportsAPIView(APIView):
             rev = f['revenue']
             f['avg_revenue_per_trip'] = round(rev / trips) if trips > 0 else 0
             f['avg_revenue_per_container'] = round(rev / conts) if conts > 0 else 0
+            f['revenue_share'] = round(rev / total_revenue * 100, 1) if total_revenue > 0 else 0.0
             if rev > 0:
                 f['margin_percent'] = round(f['profit'] / rev * 100, 1)
         fleet_pnl.sort(key=lambda x: x['revenue'], reverse=True)

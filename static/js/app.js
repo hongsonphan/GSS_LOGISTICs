@@ -26577,21 +26577,23 @@ function applyReport1Filters() {
         const revDisplay = formatMoneyVND(item.revenue);
         const expDisplay = formatMoneyVND(item.expense);
         const contsCount = item.containers_count || item.trips_count;
+        const shareDisplay = totalRev > 0 ? ((item.revenue / totalRev) * 100).toFixed(1) + '%' : '0.0%';
         const avgPerTripDisplay = formatMoneyVND(item.avg_revenue_per_trip || (item.trips_count > 0 ? Math.round(item.revenue / item.trips_count) : 0));
         const avgPerContDisplay = formatMoneyVND(item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0));
 
         return `
             <tr class="hover:bg-teal-50/30 transition-colors">
-                <td class="text-center font-bold text-slate-500 text-xs">${index + 1}</td>
-                <td class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.plate)}</td>
-                <td class="text-xs text-slate-600">${escapeHtml(item.vehicle_type)}</td>
-                <td>${ownershipBadge}</td>
-                <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
-                <td class="text-center font-black text-teal-800 text-xs tabular-nums bg-teal-50/40">${contsCount}</td>
-                <td class="text-right font-black text-slate-900 text-xs tabular-nums">${canViewFinance ? revDisplay : '***'}</td>
-                <td class="text-right font-bold text-emerald-700 text-xs tabular-nums">${canViewFinance ? avgPerTripDisplay : '***'}</td>
-                <td class="text-right font-bold text-indigo-700 text-xs tabular-nums">${canViewFinance ? avgPerContDisplay : '***'}</td>
-                <td class="text-right font-medium text-amber-700 text-xs tabular-nums">${canViewFinance ? expDisplay : '***'}</td>
+                <td data-col-key="stt" class="text-center font-bold text-slate-500 text-xs">${index + 1}</td>
+                <td data-col-key="plate" class="font-black text-slate-900 font-mono text-xs">${escapeHtml(item.plate)}</td>
+                <td data-col-key="vehicle_type" class="text-xs text-slate-600">${escapeHtml(item.vehicle_type)}</td>
+                <td data-col-key="ownership">${ownershipBadge}</td>
+                <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
+                <td data-col-key="containers_count" class="text-center font-black text-teal-800 text-xs tabular-nums bg-teal-50/40">${contsCount}</td>
+                <td data-col-key="revenue" class="text-right font-black text-slate-900 text-xs tabular-nums">${canViewFinance ? revDisplay : '***'}</td>
+                <td data-col-key="revenue_share" class="text-center font-bold text-slate-700 text-xs tabular-nums">${canViewFinance ? shareDisplay : '***'}</td>
+                <td data-col-key="avg_revenue_per_trip" class="text-right font-bold text-emerald-700 text-xs tabular-nums">${canViewFinance ? avgPerTripDisplay : '***'}</td>
+                <td data-col-key="avg_revenue_per_container" class="text-right font-bold text-indigo-700 text-xs tabular-nums">${canViewFinance ? avgPerContDisplay : '***'}</td>
+                <td data-col-key="expense" class="text-right font-medium text-amber-700 text-xs tabular-nums">${canViewFinance ? expDisplay : '***'}</td>
             </tr>
         `;
     }).join('');
@@ -26599,13 +26601,17 @@ function applyReport1Filters() {
     if (tfoot) {
         tfoot.innerHTML = `
             <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
-                <td colspan="4" class="py-2.5 px-3 text-slate-800 font-bold uppercase">TỔNG CỘNG: ${list.length} Đầu Xe</td>
-                <td class="text-center font-black font-mono tabular-nums text-slate-900">${totalTrips}</td>
-                <td class="text-center font-black font-mono tabular-nums text-teal-900 bg-teal-100/60">${totalConts}</td>
-                <td class="text-right font-black font-mono tabular-nums text-slate-900">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
-                <td class="text-right font-black font-mono tabular-nums text-emerald-800">${canViewFinance ? formatMoneyVND(overallAvgPerTrip) : '***'}</td>
-                <td class="text-right font-black font-mono tabular-nums text-indigo-800">${canViewFinance ? formatMoneyVND(overallAvgPerCont) : '***'}</td>
-                <td class="text-right font-black font-mono tabular-nums text-amber-800">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
+                <td data-col-key="stt" class="text-center text-slate-800 font-bold uppercase text-[11px]">TỔNG</td>
+                <td data-col-key="plate" class="py-2.5 px-3 text-slate-800 font-bold uppercase">${list.length} Đầu Xe</td>
+                <td data-col-key="vehicle_type" class="text-center text-slate-400 font-normal">-</td>
+                <td data-col-key="ownership" class="text-center text-slate-400 font-normal">-</td>
+                <td data-col-key="trips_count" class="text-center font-black font-mono tabular-nums text-slate-900">${totalTrips}</td>
+                <td data-col-key="containers_count" class="text-center font-black font-mono tabular-nums text-teal-900 bg-teal-100/60">${totalConts}</td>
+                <td data-col-key="revenue" class="text-right font-black font-mono tabular-nums text-slate-900">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
+                <td data-col-key="revenue_share" class="text-center font-black font-mono tabular-nums text-slate-900">${canViewFinance ? '100.0%' : '***'}</td>
+                <td data-col-key="avg_revenue_per_trip" class="text-right font-black font-mono tabular-nums text-emerald-800">${canViewFinance ? formatMoneyVND(overallAvgPerTrip) : '***'}</td>
+                <td data-col-key="avg_revenue_per_container" class="text-right font-black font-mono tabular-nums text-indigo-800">${canViewFinance ? formatMoneyVND(overallAvgPerCont) : '***'}</td>
+                <td data-col-key="expense" class="text-right font-black font-mono tabular-nums text-amber-800">${canViewFinance ? formatMoneyVND(totalExp) : '***'}</td>
             </tr>
         `;
     }
@@ -27246,19 +27252,19 @@ function applyReport7Filters() {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
-                <td class="text-center font-bold text-slate-500 text-xs">${index + 1}</td>
-                <td class="font-bold text-slate-900 text-xs">${escapeHtml(item.customer_name)}</td>
-                <td class="font-mono text-slate-500 text-xs">${escapeHtml(item.customer_code)}</td>
-                <td class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
-                <td class="text-center font-black text-teal-800 text-xs tabular-nums bg-teal-50/50">${item.total_teu}</td>
-                <td class="text-center text-slate-600 text-xs tabular-nums">${item.teu_20_count}</td>
-                <td class="text-center text-slate-600 text-xs tabular-nums">${item.teu_40_count}</td>
-                <td class="text-center text-slate-600 text-xs tabular-nums">${item.teu_45_count}</td>
-                <td class="text-xs text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
-                <td class="text-right font-black text-indigo-700 text-xs tabular-nums">${revDisplay}</td>
-                <td class="text-center font-bold text-slate-700 text-xs tabular-nums">${shareDisplay}</td>
-                <td class="text-right font-bold text-emerald-700 text-xs tabular-nums">${formatMoneyVND(avgPerTrip)}</td>
-                <td class="text-right font-bold text-indigo-700 text-xs tabular-nums">${formatMoneyVND(avgPerCont)}</td>
+                <td data-col-key="stt" class="text-center font-bold text-slate-500 text-xs">${index + 1}</td>
+                <td data-col-key="customer_name" class="font-bold text-slate-900 text-xs">${escapeHtml(item.customer_name)}</td>
+                <td data-col-key="customer_code" class="font-mono text-slate-500 text-xs">${escapeHtml(item.customer_code)}</td>
+                <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-xs tabular-nums">${item.trips_count}</td>
+                <td data-col-key="total_teu" class="text-center font-black text-teal-800 text-xs tabular-nums bg-teal-50/50">${item.total_teu}</td>
+                <td data-col-key="teu_20_count" class="text-center text-slate-600 text-xs tabular-nums">${item.teu_20_count}</td>
+                <td data-col-key="teu_40_count" class="text-center text-slate-600 text-xs tabular-nums">${item.teu_40_count}</td>
+                <td data-col-key="teu_45_count" class="text-center text-slate-600 text-xs tabular-nums">${item.teu_45_count}</td>
+                <td data-col-key="top_route" class="text-xs text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
+                <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-xs tabular-nums">${revDisplay}</td>
+                <td data-col-key="revenue_share" class="text-center font-bold text-slate-700 text-xs tabular-nums">${shareDisplay}</td>
+                <td data-col-key="avg_revenue_per_trip" class="text-right font-bold text-emerald-700 text-xs tabular-nums">${formatMoneyVND(avgPerTrip)}</td>
+                <td data-col-key="avg_revenue_per_container" class="text-right font-bold text-indigo-700 text-xs tabular-nums">${formatMoneyVND(avgPerCont)}</td>
             </tr>
         `;
     }).join('');
@@ -27266,17 +27272,19 @@ function applyReport7Filters() {
     if (tfoot) {
         tfoot.innerHTML = `
             <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
-                <td colspan="3" class="py-2.5 px-3 uppercase">TỔNG CỘNG: ${list.length} Khách Hàng</td>
-                <td class="text-center font-mono font-black tabular-nums">${totalTrips}</td>
-                <td class="text-center font-mono font-black text-teal-800 bg-teal-50/80 tabular-nums">${totalTeu.toFixed(1)}</td>
-                <td class="text-center font-mono font-bold tabular-nums">${total20}</td>
-                <td class="text-center font-mono font-bold tabular-nums">${total40}</td>
-                <td class="text-center font-mono font-bold tabular-nums">${total45}</td>
-                <td></td>
-                <td class="text-right font-mono font-black text-indigo-700 tabular-nums">${formatMoneyVND(totalRev)}</td>
-                <td class="text-center font-mono font-bold tabular-nums">100.0%</td>
-                <td class="text-right font-mono font-black text-emerald-800 tabular-nums">${formatMoneyVND(overallAvgTrip)}</td>
-                <td class="text-right font-mono font-black text-indigo-800 tabular-nums">${formatMoneyVND(overallAvgCont)}</td>
+                <td data-col-key="stt" class="text-center text-slate-800 font-bold uppercase text-[11px]">TỔNG</td>
+                <td data-col-key="customer_name" class="py-2.5 px-3 uppercase text-slate-900 font-bold">${list.length} Khách Hàng</td>
+                <td data-col-key="customer_code" class="text-center text-slate-400 font-normal">-</td>
+                <td data-col-key="trips_count" class="text-center font-mono font-black tabular-nums">${totalTrips}</td>
+                <td data-col-key="total_teu" class="text-center font-mono font-black text-teal-800 bg-teal-50/80 tabular-nums">${totalTeu.toFixed(1)}</td>
+                <td data-col-key="teu_20_count" class="text-center font-mono font-bold tabular-nums">${total20}</td>
+                <td data-col-key="teu_40_count" class="text-center font-mono font-bold tabular-nums">${total40}</td>
+                <td data-col-key="teu_45_count" class="text-center font-mono font-bold tabular-nums">${total45}</td>
+                <td data-col-key="top_route" class="text-center text-slate-400 font-normal">-</td>
+                <td data-col-key="revenue" class="text-right font-mono font-black text-indigo-700 tabular-nums">${formatMoneyVND(totalRev)}</td>
+                <td data-col-key="revenue_share" class="text-center font-mono font-bold tabular-nums">100.0%</td>
+                <td data-col-key="avg_revenue_per_trip" class="text-right font-mono font-black text-emerald-800 tabular-nums">${formatMoneyVND(overallAvgTrip)}</td>
+                <td data-col-key="avg_revenue_per_container" class="text-right font-mono font-black text-indigo-800 tabular-nums">${formatMoneyVND(overallAvgCont)}</td>
             </tr>
         `;
     }

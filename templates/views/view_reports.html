@@ -227,32 +227,35 @@
                 <table class="erp-table whitespace-nowrap" id="rep1-pnl-table" data-table-title="Báo Cáo Doanh Thu Theo Đội Xe">
                     <thead>
                         <tr>
-                            <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport1Sort('plate')" class="cursor-pointer hover:bg-slate-100">
+                            <th data-col-key="stt" class="text-center w-12 font-bold">STT</th>
+                            <th data-col-key="plate" onclick="toggleReport1Sort('plate')" class="cursor-pointer hover:bg-slate-100">
                                 <div class="flex items-center gap-1"><span>Biển Số Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('vehicle_type')" class="cursor-pointer hover:bg-slate-100">
+                            <th data-col-key="vehicle_type" onclick="toggleReport1Sort('vehicle_type')" class="cursor-pointer hover:bg-slate-100">
                                 <div class="flex items-center gap-1"><span>Loại Phương Tiện</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('ownership')" class="cursor-pointer hover:bg-slate-100">
+                            <th data-col-key="ownership" onclick="toggleReport1Sort('ownership')" class="cursor-pointer hover:bg-slate-100">
                                 <div class="flex items-center gap-1"><span>Sở Hữu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center">
+                            <th data-col-key="trips_count" onclick="toggleReport1Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center">
                                 <div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('containers_count')" class="cursor-pointer hover:bg-slate-100 text-center text-teal-800 font-black">
+                            <th data-col-key="containers_count" onclick="toggleReport1Sort('containers_count')" class="cursor-pointer hover:bg-slate-100 text-center text-teal-800 font-black">
                                 <div class="flex items-center justify-center gap-1"><span>Số CONT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-teal-600"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right font-black">
+                            <th data-col-key="revenue" onclick="toggleReport1Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right font-black">
                                 <div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('avg_revenue_per_trip')" class="cursor-pointer hover:bg-slate-100 text-right">
+                            <th data-col-key="revenue_share" onclick="toggleReport1Sort('revenue_share')" class="cursor-pointer hover:bg-slate-100 text-center font-bold">
+                                <div class="flex items-center justify-center gap-1"><span>Tỷ Trọng (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th data-col-key="avg_revenue_per_trip" onclick="toggleReport1Sort('avg_revenue_per_trip')" class="cursor-pointer hover:bg-slate-100 text-right">
                                 <div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CHUYẾN</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('avg_revenue_per_container')" class="cursor-pointer hover:bg-slate-100 text-right">
+                            <th data-col-key="avg_revenue_per_container" onclick="toggleReport1Sort('avg_revenue_per_container')" class="cursor-pointer hover:bg-slate-100 text-right">
                                 <div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CONT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
-                            <th onclick="toggleReport1Sort('expense')" class="cursor-pointer hover:bg-slate-100 text-right">
+                            <th data-col-key="expense" onclick="toggleReport1Sort('expense')" class="cursor-pointer hover:bg-slate-100 text-right">
                                 <div class="flex items-center justify-end gap-1"><span>CHI PHÍ PHÁT SINH</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
                         </tr>
@@ -714,19 +717,19 @@
                 <table class="erp-table whitespace-nowrap" id="rep7-customer-table" data-table-title="Doanh Thu Khách Hàng & Sản Lượng TEU">
                     <thead>
                         <tr>
-                            <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport7Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tên Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('customer_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã KH</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('total_teu')" class="cursor-pointer hover:bg-slate-100 text-center text-teal-800 font-black"><div class="flex items-center justify-center gap-1"><span>Tổng TEU</span><i class="ph-bold ph-arrows-down-up text-[11px] text-teal-600"></i></div></th>
-                            <th onclick="toggleReport7Sort('teu_20_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>20ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('teu_40_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>40ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('teu_45_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>45ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th>Tuyến Vận Chuyển Chủ Lực</th>
-                            <th onclick="toggleReport7Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right font-black"><div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('revenue_share')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tỷ Trọng (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('avg_revenue_per_trip')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CHUYẾN</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport7Sort('avg_revenue_per_container')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CONT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="stt" class="text-center w-12 font-bold">STT</th>
+                            <th data-col-key="customer_name" onclick="toggleReport7Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tên Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="customer_code" onclick="toggleReport7Sort('customer_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã KH</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="trips_count" onclick="toggleReport7Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="total_teu" onclick="toggleReport7Sort('total_teu')" class="cursor-pointer hover:bg-slate-100 text-center text-teal-800 font-black"><div class="flex items-center justify-center gap-1"><span>Tổng TEU</span><i class="ph-bold ph-arrows-down-up text-[11px] text-teal-600"></i></div></th>
+                            <th data-col-key="teu_20_count" onclick="toggleReport7Sort('teu_20_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>20ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="teu_40_count" onclick="toggleReport7Sort('teu_40_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>40ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="teu_45_count" onclick="toggleReport7Sort('teu_45_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>45ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="top_route">Tuyến Vận Chuyển Chủ Lực</th>
+                            <th data-col-key="revenue" onclick="toggleReport7Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right font-black"><div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="revenue_share" onclick="toggleReport7Sort('revenue_share')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tỷ Trọng (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="avg_revenue_per_trip" onclick="toggleReport7Sort('avg_revenue_per_trip')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CHUYẾN</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th data-col-key="avg_revenue_per_container" onclick="toggleReport7Sort('avg_revenue_per_container')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CONT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep7-tbody">
