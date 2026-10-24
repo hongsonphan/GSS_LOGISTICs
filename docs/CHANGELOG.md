@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.9] - 2026-10-24 (Tối Ưu Hóa Trải Nghiệm Master-Detail: Lưới Con Chuyến Xe Xổ Trực Tiếp Trên Lưới Hiện Hữu, Loại Bỏ Modal Popup)
+
+### 1. Trải Nghiệm Xuyên Suốt (Seamless Inline Accordion Sub-table):
+- **Hiện thị danh sách chuyến ngay dưới hàng được chọn:**
+  * Thay vì bật modal popup che khuất màn hình làm đứt gãy mạch quan sát, người dùng nhấp vào bất kỳ hàng đầu xe nào (ở Báo cáo Đội Xe) hoặc khách hàng nào (ở Báo cáo Khách Hàng) thì ngay dưới hàng đó mở ra một Lưới Con (Nested Sub-table) liệt kê toàn bộ chuyến xe trong kỳ lọc.
+  * Icon mũi tên ph-caret-right xoay 90 độ mượt mà, hàng cha được highlight nền teal nhạt.
+  * Nhấp lại lần nữa hoặc bấm nút 'Thu gọn' sẽ đóng lưới con. Người dùng có thể mở nhiều hàng cùng lúc để so sánh đối chiếu trực quan.
+- **Thông tin trên Lưới Con:**
+  * Header tóm tắt ngắn gọn với các thông tin: Biển số/Tên KH, loại xe, tài xế/tuyến chủ lực.
+  * Bảng danh sách chuyến chi tiết (STT, Mã chuyến, Ngày chạy, Khách hàng / Xe & Tài xế, Số Cont & Loại vỏ, Tuyến đường, Trạng thái, Doanh thu, Chi phí phát sinh) kèm dòng Tổng cộng chân bảng.
+  * Hỗ trợ cuộn max-h-80 kèm thead sticky, đảm bảo gọn gàng kể cả khi có hàng chục chuyến.
+- **Sửa lỗi xung đột biến toàn cục:**
+  * Khắc phục lỗi biến rep1DataFiltered bị hàm filterSalesBookings gán đè trong quá trình tải trang, giúp dữ liệu trips luôn sẵn sàng và hiển thị ngay tức thì 100%.
+  * Thêm class no-col-reorder trên các dòng tr con để tránh bị tác động bởi BimTableColumnManager.
+
+### 2. Kiểm Thử & Triển Khai:
+- node -c static/js/app.js & node -c static/js/column_manager.js (100% Passed).
+- python manage.py test --keepdb (147/147 tests Passed).
+- Nâng query parameter cache busting trong templates/base.html lên ?v=2.9.57.
+
+
 ## [v4.5.8] - 2026-10-24 (Tối Ưu Hóa Trải Nghiệm Báo Cáo: Tự Động Đẩy Số Liệu Khi Tải Trang & Lưu Nhớ Trạng Thái Lọc Kỳ)
 
 ### 1. Tự Động Tải Dữ Liệu Báo Cáo (Auto-Load on Page Load & Tab Switch):

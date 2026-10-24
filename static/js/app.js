@@ -14739,7 +14739,7 @@ function applyBookingFilters() {
     const totalCountEl = document.getElementById('booking-total-count');
     if (totalCountEl) totalCountEl.innerText = rawSalesBookings.length;
 
-    rep1DataFiltered = list;
+    window.rawSalesBookingsFiltered = list;
     // Sắp xếp
     list.sort((a, b) => {
         let valA, valB;
@@ -26592,7 +26592,7 @@ function applyReport1Filters() {
     const overallAvgPerTrip = totalTrips > 0 ? Math.round(totalRev / totalTrips) : 0;
     const overallAvgPerCont = totalConts > 0 ? Math.round(totalRev / totalConts) : 0;
 
-    tbody.innerHTML = list.map((item, index) => {
+tbody.innerHTML = list.map((item, index) => {
         const isOwned = item.ownership_code === 'OWNED';
         const ownershipBadge = isOwned
             ? `<span class="text-xs font-bold text-teal-700 uppercase">Xe Nhà</span>`
@@ -26604,14 +26604,21 @@ function applyReport1Filters() {
         const shareDisplay = totalRev > 0 ? Math.round((item.revenue / totalRev) * 100) + '%' : '0%';
         const avgPerTripDisplay = formatMoneyVND(item.avg_revenue_per_trip || (item.trips_count > 0 ? Math.round(item.revenue / item.trips_count) : 0));
         const avgPerContDisplay = formatMoneyVND(item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0));
+        const trips = item.trips || [];
+        const nestedTripsTable = renderNestedTripsTableHtml(trips, 'VEHICLE', item.plate);
 
         return `
-            <tr class="hover:bg-teal-50/50 transition-colors cursor-pointer group" onclick="openVehicleDrilldown(${index})" title="Nhấn để xem danh sách chuyến xe của ${escapeHtml(item.plate)}">
-                <td data-col-key="stt" class="text-center font-bold text-slate-500 text-[13px]">${index + 1}</td>
+            <tr id="rep1-row-${index}" class="hover:bg-teal-50/50 transition-colors cursor-pointer group" onclick="toggleReport1VehicleRow(${index})" title="Nhấp để xem danh sách chuyến xe của ${escapeHtml(item.plate)} ngay dưới bảng">
+                <td data-col-key="stt" class="text-center font-bold text-slate-500 text-[13px]">
+                    <div class="flex items-center justify-center gap-1">
+                        <i id="rep1-caret-${index}" class="ph-bold ph-caret-right text-teal-600 text-xs transition-transform duration-200"></i>
+                        <span>${index + 1}</span>
+                    </div>
+                </td>
                 <td data-col-key="plate" class="font-black text-teal-800 text-[13px] group-hover:text-teal-600 transition-colors">
                     <div class="flex items-center gap-1.5">
-                        <span>${escapeHtml(item.plate)}</span>
-                        <i class="ph-bold ph-arrow-square-out text-teal-500 text-xs opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                        <span class="font-mono">${escapeHtml(item.plate)}</span>
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
                     </div>
                 </td>
                 <td data-col-key="vehicle_type" class="text-[13px] text-slate-600">${escapeHtml(item.vehicle_type)}</td>
@@ -26623,6 +26630,22 @@ function applyReport1Filters() {
                 <td data-col-key="avg_revenue_per_trip" class="text-right font-bold text-emerald-700 text-[13px] tabular-nums">${canViewFinance ? avgPerTripDisplay : '***'}</td>
                 <td data-col-key="avg_revenue_per_container" class="text-right font-bold text-indigo-700 text-[13px] tabular-nums">${canViewFinance ? avgPerContDisplay : '***'}</td>
                 <td data-col-key="expense" class="text-right font-medium text-amber-700 text-[13px] tabular-nums">${canViewFinance ? expDisplay : '***'}</td>
+            </tr>
+            <tr id="rep1-detail-${index}" class="no-col-reorder hidden bg-slate-50/90 border-y-2 border-teal-500/30">
+                <td colspan="11" class="p-3 sm:p-4 bg-teal-50/20">
+                    <div class="mb-2.5 flex items-center justify-between text-xs font-heading">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-teal-600 inline-block"></span>
+                            <span class="font-bold text-slate-800">Danh Sách Chuyến Xe Của Đầu Xe:</span>
+                            <span class="font-black text-teal-800 font-mono text-sm">${escapeHtml(item.plate)}</span>
+                            <span class="text-slate-500">(${escapeHtml(item.vehicle_type)} · ${item.ownership || 'Xe Nhà'} · Tài xế: ${escapeHtml(item.driver || '-')})</span>
+                        </div>
+                        <button type="button" onclick="event.stopPropagation(); toggleReport1VehicleRow(${index})" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-teal-100/50 transition-colors cursor-pointer">
+                            <i class="ph-bold ph-caret-up"></i> Thu gọn
+                        </button>
+                    </div>
+                    ${nestedTripsTable}
+                </td>
             </tr>
         `;
     }).join('');
@@ -27300,21 +27323,28 @@ function applyReport7Filters() {
     const elAvgCont = document.getElementById('rep7-stat-avg-cont');
     if (elAvgCont) elAvgCont.innerText = `BQ: ${formatMoneyVND(overallAvgCont)} / Cont`;
 
-    tbody.innerHTML = list.map((item, index) => {
+tbody.innerHTML = list.map((item, index) => {
         const revDisplay = formatMoneyVND(item.revenue);
         const shareVal = item.revenue_share !== undefined ? item.revenue_share : (totalRev > 0 ? (item.revenue / totalRev * 100) : 0);
         const shareDisplay = Math.round(Number(shareVal) || 0) + '%';
         const contsCount = item.containers_count || item.trips_count;
         const avgPerTrip = item.avg_revenue_per_trip || (item.trips_count > 0 ? Math.round(item.revenue / item.trips_count) : 0);
         const avgPerCont = item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0);
+        const trips = item.trips || [];
+        const nestedTripsTable = renderNestedTripsTableHtml(trips, 'CUSTOMER', item.customer_name);
 
         return `
-            <tr class="hover:bg-teal-50/50 transition-colors cursor-pointer group" onclick="openCustomerDrilldown(${index})" title="Nhấn để xem danh sách chuyến xe của ${escapeHtml(item.customer_name)}">
-                <td data-col-key="stt" class="text-center font-bold text-slate-500 text-[13px]">${index + 1}</td>
+            <tr id="rep7-row-${index}" class="hover:bg-teal-50/50 transition-colors cursor-pointer group" onclick="toggleReport7CustomerRow(${index})" title="Nhấp để xem danh sách chuyến xe của ${escapeHtml(item.customer_name)} ngay dưới bảng">
+                <td data-col-key="stt" class="text-center font-bold text-slate-500 text-[13px]">
+                    <div class="flex items-center justify-center gap-1">
+                        <i id="rep7-caret-${index}" class="ph-bold ph-caret-right text-teal-600 text-xs transition-transform duration-200"></i>
+                        <span>${index + 1}</span>
+                    </div>
+                </td>
                 <td data-col-key="customer_name" class="font-bold text-teal-900 text-[13px] group-hover:text-teal-700 transition-colors">
                     <div class="flex items-center gap-1.5">
                         <span>${escapeHtml(item.customer_name)}</span>
-                        <i class="ph-bold ph-arrow-square-out text-teal-500 text-xs opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
                     </div>
                 </td>
                 <td data-col-key="customer_code" class="text-slate-600 text-[13px]">${escapeHtml(item.customer_code)}</td>
@@ -27328,6 +27358,22 @@ function applyReport7Filters() {
                 <td data-col-key="revenue_share" class="text-center font-bold text-slate-700 text-[13px] tabular-nums">${shareDisplay}</td>
                 <td data-col-key="avg_revenue_per_trip" class="text-right font-bold text-emerald-700 text-[13px] tabular-nums">${formatMoneyVND(avgPerTrip)}</td>
                 <td data-col-key="avg_revenue_per_container" class="text-right font-bold text-indigo-700 text-[13px] tabular-nums">${formatMoneyVND(avgPerCont)}</td>
+            </tr>
+            <tr id="rep7-detail-${index}" class="no-col-reorder hidden bg-slate-50/90 border-y-2 border-teal-500/30">
+                <td colspan="13" class="p-3 sm:p-4 bg-teal-50/20">
+                    <div class="mb-2.5 flex items-center justify-between text-xs font-heading">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-teal-600 inline-block"></span>
+                            <span class="font-bold text-slate-800">Danh Sách Chuyến Xe Vận Chuyển Cho Khách Hàng:</span>
+                            <span class="font-black text-teal-800 text-sm">${escapeHtml(item.customer_name)}</span>
+                            <span class="text-slate-500 font-mono">(${escapeHtml(item.customer_code || '-')} · Tuyến: ${escapeHtml(item.top_route || '-')})</span>
+                        </div>
+                        <button type="button" onclick="event.stopPropagation(); toggleReport7CustomerRow(${index})" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-teal-100/50 transition-colors cursor-pointer">
+                            <i class="ph-bold ph-caret-up"></i> Thu gọn
+                        </button>
+                    </div>
+                    ${nestedTripsTable}
+                </td>
             </tr>
         `;
     }).join('');
@@ -27370,6 +27416,132 @@ function toggleReport7Sort(col) {
 // -------------------------------------------------------------
 // DRILL-DOWN MODAL: XEM DANH SÁCH CHUYẾN XE (ĐỘI XE & KHÁCH HÀNG)
 // -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// LƯỚI CON CHI TIẾT CÁC CHUYẾN XE (INLINE ACCORDION DETAIL)
+// -------------------------------------------------------------
+function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
+    if (!trips || trips.length === 0) {
+        return `
+            <div class="p-5 text-center text-slate-400 font-medium bg-white rounded-xl border border-dashed border-slate-300">
+                <i class="ph-bold ph-truck text-2xl mb-1 text-slate-300 block"></i>
+                Không có dữ liệu chuyến xe nào được ghi nhận trong kỳ lọc này
+            </div>
+        `;
+    }
+
+    const partnerHeader = mode === 'VEHICLE' ? 'Khách Hàng' : 'Biển Số & Tài Xế';
+    const sumRev = trips.reduce((s, t) => s + (Number(t.revenue) || 0), 0);
+    const sumExp = trips.reduce((s, t) => s + (Number(t.expense) || 0), 0);
+
+    const rowsHtml = trips.map((t, idx) => {
+        let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">Mới tạo</span>';
+        const st = (t.status || '').toUpperCase();
+        if (st === 'COMPLETED' || st === 'DELIVERED') {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn Thành</span>';
+        } else if (st === 'IN_TRANSIT' || st === 'AT_WAREHOUSE' || st === 'UNLOADING') {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Đang Chạy</span>';
+        } else if (st === 'CANCELLED') {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Đã Hủy</span>';
+        } else {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Đã Giao Tài</span>';
+        }
+
+        const partnerCol = mode === 'VEHICLE'
+            ? `<div class="font-bold text-slate-800">${escapeHtml(t.customer_name || 'Khách lẻ')}</div><div class="text-[11px] text-slate-400 font-mono">${escapeHtml(t.customer_code || '-')}</div>`
+            : `<div class="font-bold text-slate-800 font-mono">${escapeHtml(t.vehicle_plate || 'Chưa gán xe')}</div><div class="text-[11px] text-slate-500">${escapeHtml(t.driver_name || '-')}</div>`;
+
+        return `
+            <tr class="hover:bg-teal-50/40 transition-colors">
+                <td class="text-center font-bold text-slate-500 py-2 px-2.5">${idx + 1}</td>
+                <td class="font-black text-teal-800 font-mono py-2 px-2.5">${escapeHtml(t.trip_code || '-')}</td>
+                <td class="text-center text-slate-600 font-mono py-2 px-2.5">${escapeHtml(t.date || '-')}</td>
+                <td class="py-2 px-2.5">${partnerCol}</td>
+                <td class="py-2 px-2.5 font-mono text-slate-800">
+                    <span class="font-bold">${escapeHtml(t.container_number || '-')}</span>
+                    <span class="text-[11px] text-slate-400 ml-1">(${escapeHtml(t.container_type || '40HC')})</span>
+                </td>
+                <td class="py-2 px-2.5 text-slate-600 max-w-xs truncate" title="${escapeHtml(t.route || '-')}">${escapeHtml(t.route || '-')}</td>
+                <td class="text-center py-2 px-2.5">${statusBadge}</td>
+                <td class="text-right font-black text-slate-900 tabular-nums py-2 px-2.5">${canViewFinance ? formatMoneyVND(t.revenue) : '***'}</td>
+                <td class="text-right font-bold text-amber-700 tabular-nums py-2 px-2.5">${canViewFinance ? formatMoneyVND(t.expense) : '***'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div class="bg-white rounded-xl border border-teal-200 shadow-2xs overflow-hidden text-xs">
+            <div class="overflow-x-auto max-h-80">
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead class="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-slate-700 font-bold border-b border-slate-200 uppercase text-[11px] tracking-wider z-10 font-heading">
+                        <tr>
+                            <th class="py-2 px-2.5 text-center w-10">STT</th>
+                            <th class="py-2 px-2.5">Mã Chuyến</th>
+                            <th class="py-2 px-2.5 text-center">Ngày Chạy</th>
+                            <th class="py-2 px-2.5">${partnerHeader}</th>
+                            <th class="py-2 px-2.5">Số Cont & Loại Vỏ</th>
+                            <th class="py-2 px-2.5">Tuyến Đường Vận Chuyển</th>
+                            <th class="py-2 px-2.5 text-center">Trạng Thái</th>
+                            <th class="py-2 px-2.5 text-right">Doanh Thu</th>
+                            <th class="py-2 px-2.5 text-right">Chi Phí Phát Sinh</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        ${rowsHtml}
+                    </tbody>
+                    <tfoot class="bg-slate-50 font-black border-t-2 border-slate-200 text-slate-900 text-xs">
+                        <tr>
+                            <td class="text-center font-black py-2">TỔNG</td>
+                            <td colspan="5" class="py-2 px-2.5 uppercase font-bold text-slate-800">${trips.length} Chuyến Vận Đơn Thực Hiện</td>
+                            <td class="text-center">-</td>
+                            <td class="text-right font-black tabular-nums py-2 px-2.5 text-slate-900">${canViewFinance ? formatMoneyVND(sumRev) : '***'}</td>
+                            <td class="text-right font-black tabular-nums py-2 px-2.5 text-amber-800">${canViewFinance ? formatMoneyVND(sumExp) : '***'}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function toggleReport1VehicleRow(index) {
+    const detailRow = document.getElementById(`rep1-detail-${index}`);
+    const caretIcon = document.getElementById(`rep1-caret-${index}`);
+    const parentRow = document.getElementById(`rep1-row-${index}`);
+    if (!detailRow) return;
+
+    const isHidden = detailRow.classList.contains('hidden');
+    if (isHidden) {
+        detailRow.classList.remove('hidden');
+        if (caretIcon) caretIcon.classList.add('rotate-90');
+        if (parentRow) parentRow.classList.add('bg-teal-50/70', 'font-semibold');
+    } else {
+        detailRow.classList.add('hidden');
+        if (caretIcon) caretIcon.classList.remove('rotate-90');
+        if (parentRow) parentRow.classList.remove('bg-teal-50/70', 'font-semibold');
+    }
+}
+window.toggleReport1VehicleRow = toggleReport1VehicleRow;
+
+function toggleReport7CustomerRow(index) {
+    const detailRow = document.getElementById(`rep7-detail-${index}`);
+    const caretIcon = document.getElementById(`rep7-caret-${index}`);
+    const parentRow = document.getElementById(`rep7-row-${index}`);
+    if (!detailRow) return;
+
+    const isHidden = detailRow.classList.contains('hidden');
+    if (isHidden) {
+        detailRow.classList.remove('hidden');
+        if (caretIcon) caretIcon.classList.add('rotate-90');
+        if (parentRow) parentRow.classList.add('bg-teal-50/70', 'font-semibold');
+    } else {
+        detailRow.classList.add('hidden');
+        if (caretIcon) caretIcon.classList.remove('rotate-90');
+        if (parentRow) parentRow.classList.remove('bg-teal-50/70', 'font-semibold');
+    }
+}
+window.toggleReport7CustomerRow = toggleReport7CustomerRow;
+
 function openVehicleDrilldown(index) {
     const item = (typeof rep1DataFiltered !== 'undefined' && rep1DataFiltered[index]) ? rep1DataFiltered[index] : rep1DataCache[index];
     if (!item) return;
