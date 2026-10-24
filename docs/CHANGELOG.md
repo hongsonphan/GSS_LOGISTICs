@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.7] - 2026-10-24 (Bổ Sung Tính Năng Drill-Down: Nhấp Vào Dòng Xe / Khách Hàng Để Mở Danh Sách Chuyến Xe Chi Tiết)
+
+### 1. Tính Năng Drill-Down Chuyến Xe Chi Tiết:
+- **Tương tác trên bảng dữ liệu:**
+  * Thêm hiệu ứng hover, con trỏ pointer và icon điều hướng `ph-arrow-square-out` trên từng dòng của "Bảng Doanh Thu Theo Đội Xe" và "Báo Cáo Doanh Thu Theo Khách Hàng".
+  * Khi người dùng nhấp vào bất kỳ dòng đầu xe nào $ightarrow$ Mở ngay Modal hiển thị danh sách tất cả các chuyến xe của đầu xe đó trong kỳ lọc.
+  * Khi người dùng nhấp vào bất kỳ dòng khách hàng nào $ightarrow$ Mở ngay Modal hiển thị danh sách tất cả các chuyến xe thực hiện cho khách hàng đó trong kỳ lọc.
+- **Giao diện Modal Drill-down (`modal-report-drilldown-trips`):**
+  * Header gradient chuẩn BIM Logistics hiển thị rõ thông tin xe/khách hàng, phân loại sở hữu/mã khách hàng, và thông tin tài xế/tuyến chủ lực.
+  * 4 Thẻ Mini KPI Tóm tắt: Tổng số chuyến, Tổng số cont, Tổng doanh thu, Chi phí phát sinh.
+  * Bảng danh sách chuyến chi tiết: Mã chuyến, Ngày chạy, Đối tác (Khách hàng hoặc Xe/Tài xế), Số cont & loại vỏ, Tuyến đường, Badge trạng thái vận hành chuẩn TMS, Doanh thu, Chi phí phát sinh.
+  * Ô tìm kiếm nội bộ: Cho phép gõ tìm nhanh chuyến xe theo mã chuyến, số cont, tài xế, tuyến đường... với dòng tổng cộng `tfoot` tự động co giãn theo kết quả tìm kiếm.
+
+### 2. Backend & Bảo Mật Dữ Liệu:
+- Backend `apps/dispatch/reports_api.py` trích xuất danh sách `trips` tương ứng cho từng đầu xe và từng khách hàng.
+- Tuân thủ nghiêm ngặt Defensive Backend & Data Masking: Nếu người dùng không có quyền xem tài chính (`can_view_finance=False`), toàn bộ số liệu doanh thu và chi phí của các chuyến con trong modal tự động bị mask về 0 (`***`).
+
+### 3. Kiểm Thử & Triển Khai:
+- `node -c static/js/app.js` & `node -c static/js/column_manager.js` (100% Passed).
+- `python manage.py test --keepdb` (147/147 tests Passed).
+- Nâng query parameter cache busting trong `templates/base.html` lên `?v=2.9.55`.
+
 ## [v4.5.6] - 2026-10-24 (Tái Cấu Trúc 4 Thẻ KPI Báo Cáo Doanh Thu Theo Khách Hàng Chuẩn Phương Án 1)
 
 ### 1. Bố Trí 4 Thẻ KPI Mới Cho Báo Cáo Khách Hàng:

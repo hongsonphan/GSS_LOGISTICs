@@ -1476,3 +1476,97 @@
 
 </div>
 
+
+    <!-- ========================================================================= -->
+    <!-- MODAL CHI TIẾT DANH SÁCH CHUYẾN XE (DRILL-DOWN TỪ ĐỘI XE & KHÁCH HÀNG) -->
+    <!-- ========================================================================= -->
+    <div id="modal-report-drilldown-trips" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 hidden animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden">
+            <!-- Header Modal -->
+            <div class="p-4 bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-teal-300 text-xl border border-white/10" id="drilldown-modal-icon">
+                        <i class="ph-bold ph-truck"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-black tracking-wide font-heading" id="drilldown-modal-title">Chi Tiết Các Chuyến Xe</h3>
+                            <span id="drilldown-modal-badge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-500/20 text-teal-200 border border-teal-400/30">Xe Nhà</span>
+                        </div>
+                        <p class="text-xs text-teal-100/80 font-medium mt-0.5" id="drilldown-modal-subtitle">Đang tải thông tin...</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeReportDrilldownModal()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer" title="Đóng modal">
+                    <i class="ph-bold ph-x text-base"></i>
+                </button>
+            </div>
+
+            <!-- Body Modal -->
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 bg-slate-50">
+                <!-- 4 Thẻ Mini KPI Tóm Tắt Nhanh -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs border-l-4 border-l-teal-600">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng Chuyến</span>
+                        <div class="text-xl font-black text-slate-900 mt-0.5 tabular-nums font-heading" id="drilldown-stat-trips">0 Chuyến</div>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs border-l-4 border-l-indigo-600">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng Vỏ Cont</span>
+                        <div class="text-xl font-black text-indigo-700 mt-0.5 tabular-nums font-heading" id="drilldown-stat-conts">0 Cont</div>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs border-l-4 border-l-emerald-600">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng Doanh Thu</span>
+                        <div class="text-xl font-black text-emerald-700 mt-0.5 tabular-nums font-heading" id="drilldown-stat-rev">0 đ</div>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs border-l-4 border-l-amber-500">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="drilldown-stat-fourth-label">Chi Phí Phát Sinh</span>
+                        <div class="text-xl font-black text-amber-700 mt-0.5 tabular-nums font-heading" id="drilldown-stat-fourth-val">0 đ</div>
+                    </div>
+                </div>
+
+                <!-- Bảng Danh Sách Chuyến Xe -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+                    <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                        <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 font-heading">
+                            <i class="ph-bold ph-list-numbers text-teal-700"></i>
+                            <span id="drilldown-table-heading">Danh Sách Vận Đơn Thực Hiện</span>
+                        </span>
+                        <input type="text" id="drilldown-table-search" oninput="filterDrilldownTable()" placeholder="Tìm mã chuyến, cont, tài xế, tuyến..." 
+                            class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-teal-600 focus:outline-hidden">
+                    </div>
+                    <div class="overflow-x-auto max-h-96">
+                        <table class="erp-table whitespace-nowrap text-xs w-full" id="drilldown-trips-table">
+                            <thead class="sticky top-0 bg-slate-100 z-10 font-heading">
+                                <tr>
+                                    <th class="text-center w-10">STT</th>
+                                    <th>Mã Chuyến</th>
+                                    <th class="text-center">Ngày Chạy</th>
+                                    <th id="drilldown-th-partner">Khách Hàng / Đối Tác</th>
+                                    <th>Số Cont & Loại Vỏ</th>
+                                    <th>Tuyến Vận Chuyển</th>
+                                    <th class="text-center">Trạng Thái</th>
+                                    <th class="text-right">Doanh Thu</th>
+                                    <th class="text-right" id="drilldown-th-last">Chi Phí Phát Sinh</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100" id="drilldown-trips-tbody">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                            <tfoot class="bg-slate-100 font-black border-t-2 border-slate-300 text-[13px] text-slate-900" id="drilldown-trips-tfoot">
+                                <!-- Rendered by JS -->
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="p-3.5 bg-white border-t border-slate-200 flex items-center justify-between text-xs">
+                <div class="text-slate-500 italic text-[11px]">
+                    * Nhấp vào từng chuyến để xem chi tiết hoặc sao chép mã vận đơn.
+                </div>
+                <button type="button" onclick="closeReportDrilldownModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer">
+                    Đóng Lại
+                </button>
+            </div>
+        </div>
+    </div>

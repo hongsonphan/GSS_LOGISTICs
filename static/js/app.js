@@ -14739,6 +14739,7 @@ function applyBookingFilters() {
     const totalCountEl = document.getElementById('booking-total-count');
     if (totalCountEl) totalCountEl.innerText = rawSalesBookings.length;
 
+    rep1DataFiltered = list;
     // Sắp xếp
     list.sort((a, b) => {
         let valA, valB;
@@ -26038,6 +26039,9 @@ let canViewFinance = true;
 
 // Caches & Sort States cho toàn bộ 14 Báo cáo TMS
 let rep1DataCache = [];
+let rep1DataFiltered = [];
+let currentTmsDrilldownMode = 'VEHICLE';
+let currentTmsDrilldownTarget = null;
 let rep1SortCol = 'revenue';
 let rep1SortAsc = false;
 
@@ -26063,6 +26067,7 @@ let rep6SortCol = 'estimated_damage';
 let rep6SortAsc = false;
 
 let rep7DataCache = [];
+let rep7DataFiltered = [];
 let rep7SortCol = 'total_teu';
 let rep7SortAsc = false;
 
@@ -26539,6 +26544,7 @@ function applyReport1Filters() {
                (item.ownership || '').toLowerCase().includes(searchVal);
     });
 
+    rep1DataFiltered = list;
     // Sắp xếp
     list.sort((a, b) => {
         let valA = a[rep1SortCol];
@@ -26582,9 +26588,14 @@ function applyReport1Filters() {
         const avgPerContDisplay = formatMoneyVND(item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0));
 
         return `
-            <tr class="hover:bg-teal-50/30 transition-colors">
+            <tr class="hover:bg-teal-50/50 transition-colors cursor-pointer group" onclick="openVehicleDrilldown(${index})" title="Nhấn để xem danh sách chuyến xe của ${escapeHtml(item.plate)}">
                 <td data-col-key="stt" class="text-center font-bold text-slate-500 text-[13px]">${index + 1}</td>
-                <td data-col-key="plate" class="font-black text-slate-900 text-[13px]">${escapeHtml(item.plate)}</td>
+                <td data-col-key="plate" class="font-black text-teal-800 text-[13px] group-hover:text-teal-600 transition-colors">
+                    <div class="flex items-center gap-1.5">
+                        <span>${escapeHtml(item.plate)}</span>
+                        <i class="ph-bold ph-arrow-square-out text-teal-500 text-xs opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                    </div>
+                </td>
                 <td data-col-key="vehicle_type" class="text-[13px] text-slate-600">${escapeHtml(item.vehicle_type)}</td>
                 <td data-col-key="ownership">${ownershipBadge}</td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
@@ -27198,6 +27209,7 @@ function applyReport7Filters() {
                (item.top_route || '').toLowerCase().includes(searchVal);
     });
 
+    rep7DataFiltered = list;
     list.sort((a, b) => {
         let valA = a[rep7SortCol];
         let valB = b[rep7SortCol];
@@ -27279,9 +27291,14 @@ function applyReport7Filters() {
         const avgPerCont = item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0);
 
         return `
-            <tr class="hover:bg-slate-50 transition-colors">
+            <tr class="hover:bg-teal-50/50 transition-colors cursor-pointer group" onclick="openCustomerDrilldown(${index})" title="Nhấn để xem danh sách chuyến xe của ${escapeHtml(item.customer_name)}">
                 <td data-col-key="stt" class="text-center font-bold text-slate-500 text-[13px]">${index + 1}</td>
-                <td data-col-key="customer_name" class="font-bold text-slate-900 text-[13px]">${escapeHtml(item.customer_name)}</td>
+                <td data-col-key="customer_name" class="font-bold text-teal-900 text-[13px] group-hover:text-teal-700 transition-colors">
+                    <div class="flex items-center gap-1.5">
+                        <span>${escapeHtml(item.customer_name)}</span>
+                        <i class="ph-bold ph-arrow-square-out text-teal-500 text-xs opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                    </div>
+                </td>
                 <td data-col-key="customer_code" class="text-slate-600 text-[13px]">${escapeHtml(item.customer_code)}</td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
                 <td data-col-key="total_teu" class="text-center font-black text-teal-800 text-[13px] tabular-nums bg-teal-50/50">${item.total_teu}</td>
@@ -27330,6 +27347,184 @@ function toggleReport7Sort(col) {
         rep7SortAsc = false;
     }
     applyReport7Filters();
+}
+
+// -------------------------------------------------------------
+// DRILL-DOWN MODAL: XEM DANH SÁCH CHUYẾN XE (ĐỘI XE & KHÁCH HÀNG)
+// -------------------------------------------------------------
+function openVehicleDrilldown(index) {
+    const item = (typeof rep1DataFiltered !== 'undefined' && rep1DataFiltered[index]) ? rep1DataFiltered[index] : rep1DataCache[index];
+    if (!item) return;
+
+    currentTmsDrilldownMode = 'VEHICLE';
+    currentTmsDrilldownTarget = item;
+
+    const iconEl = document.getElementById('drilldown-modal-icon');
+    if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-truck text-xl"></i>';
+
+    const titleEl = document.getElementById('drilldown-modal-title');
+    if (titleEl) titleEl.innerText = `Chi Tiết Các Chuyến Xe: ${item.plate}`;
+
+    const badgeEl = document.getElementById('drilldown-modal-badge');
+    if (badgeEl) {
+        badgeEl.innerText = item.ownership || 'Xe Nhà';
+        badgeEl.className = item.ownership_code === 'OWNED' 
+            ? 'px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-500/20 text-teal-200 border border-teal-400/30'
+            : 'px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500/20 text-amber-200 border border-amber-400/30';
+    }
+
+    const subEl = document.getElementById('drilldown-modal-subtitle');
+    if (subEl) subEl.innerText = `Loại xe: ${item.vehicle_type || 'Đầu kéo'} · Tài xế: ${item.driver || '-'}`;
+
+    const thPartner = document.getElementById('drilldown-th-partner');
+    if (thPartner) thPartner.innerText = 'Khách Hàng';
+
+    const thLast = document.getElementById('drilldown-th-last');
+    if (thLast) thLast.innerText = 'Chi Phí Phát Sinh';
+
+    const lblFourth = document.getElementById('drilldown-stat-fourth-label');
+    if (lblFourth) lblFourth.innerText = 'Chi Phí Phát Sinh';
+
+    const valFourth = document.getElementById('drilldown-stat-fourth-val');
+    if (valFourth) valFourth.innerText = canViewFinance ? formatMoneyVND(item.expense || 0) : '***';
+
+    renderDrilldownData(item);
+}
+
+function openCustomerDrilldown(index) {
+    const item = (typeof rep7DataFiltered !== 'undefined' && rep7DataFiltered[index]) ? rep7DataFiltered[index] : rep7DataCache[index];
+    if (!item) return;
+
+    currentTmsDrilldownMode = 'CUSTOMER';
+    currentTmsDrilldownTarget = item;
+
+    const iconEl = document.getElementById('drilldown-modal-icon');
+    if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-buildings text-xl"></i>';
+
+    const titleEl = document.getElementById('drilldown-modal-title');
+    if (titleEl) titleEl.innerText = `Chi Tiết Các Chuyến Của Khách Hàng: ${item.customer_name}`;
+
+    const badgeEl = document.getElementById('drilldown-modal-badge');
+    if (badgeEl) {
+        badgeEl.innerText = item.customer_code ? `Mã KH: ${item.customer_code}` : 'Doanh Nghiệp';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 font-mono';
+    }
+
+    const subEl = document.getElementById('drilldown-modal-subtitle');
+    if (subEl) subEl.innerText = `Tuyến chủ lực: ${item.top_route || '-'} · Tỷ trọng: ${item.revenue_share || 0}%`;
+
+    const thPartner = document.getElementById('drilldown-th-partner');
+    if (thPartner) thPartner.innerText = 'Biển Số & Tài Xế';
+
+    const thLast = document.getElementById('drilldown-th-last');
+    if (thLast) thLast.innerText = 'Chi Phí Phát Sinh';
+
+    const lblFourth = document.getElementById('drilldown-stat-fourth-label');
+    if (lblFourth) lblFourth.innerText = 'Chi Phí Phát Sinh';
+
+    const valFourth = document.getElementById('drilldown-stat-fourth-val');
+    if (valFourth) valFourth.innerText = canViewFinance ? formatMoneyVND(item.expense || 0) : '***';
+
+    renderDrilldownData(item);
+}
+
+function renderDrilldownData(item) {
+    const trips = item.trips || [];
+
+    const statTrips = document.getElementById('drilldown-stat-trips');
+    if (statTrips) statTrips.innerText = `${item.trips_count || trips.length} Chuyến`;
+
+    const statConts = document.getElementById('drilldown-stat-conts');
+    if (statConts) statConts.innerText = `${item.containers_count || trips.length} Cont`;
+
+    const statRev = document.getElementById('drilldown-stat-rev');
+    if (statRev) statRev.innerText = canViewFinance ? formatMoneyVND(item.revenue || 0) : '***';
+
+    const searchInput = document.getElementById('drilldown-table-search');
+    if (searchInput) searchInput.value = '';
+
+    filterDrilldownTable();
+
+    const modal = document.getElementById('modal-report-drilldown-trips');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function filterDrilldownTable() {
+    if (!currentTmsDrilldownTarget) return;
+
+    const trips = currentTmsDrilldownTarget.trips || [];
+    const searchVal = (document.getElementById('drilldown-table-search')?.value || '').toLowerCase().trim();
+
+    const filtered = trips.filter(t => {
+        if (!searchVal) return true;
+        const txt = `${t.trip_code} ${t.container_number} ${t.customer_name} ${t.customer_code} ${t.vehicle_plate} ${t.driver_name} ${t.route} ${t.status_label || ''}`.toLowerCase();
+        return txt.includes(searchVal);
+    });
+
+    const tbody = document.getElementById('drilldown-trips-tbody');
+    const tfoot = document.getElementById('drilldown-trips-tfoot');
+    if (!tbody) return;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium"><i class="ph-bold ph-info text-2xl mb-1 block"></i> Không có chuyến xe nào phù hợp với bộ lọc tìm kiếm</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
+        return;
+    }
+
+    const sumRev = filtered.reduce((s, t) => s + (Number(t.revenue) || 0), 0);
+    const sumExp = filtered.reduce((s, t) => s + (Number(t.expense) || 0), 0);
+
+    tbody.innerHTML = filtered.map((t, idx) => {
+        let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">Mới tạo</span>';
+        const st = (t.status || '').toUpperCase();
+        if (st === 'COMPLETED' || st === 'DELIVERED') {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn Thành</span>';
+        } else if (st === 'IN_TRANSIT' || st === 'AT_WAREHOUSE' || st === 'UNLOADING') {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Đang Chạy</span>';
+        } else if (st === 'CANCELLED') {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Đã Hủy</span>';
+        } else if (st === 'CONTAINER_PICKED' || st === 'ACCEPTED' || st === 'DISPATCHED') {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Đã Giao Tài</span>';
+        }
+
+        const partnerCol = currentTmsDrilldownMode === 'VEHICLE'
+            ? `<div class="font-bold text-slate-800">${escapeHtml(t.customer_name)}</div><div class="text-[11px] text-slate-400 font-mono">${escapeHtml(t.customer_code)}</div>`
+            : `<div class="font-bold text-slate-800">${escapeHtml(t.vehicle_plate)}</div><div class="text-[11px] text-slate-500">${escapeHtml(t.driver_name)}</div>`;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="text-center font-bold text-slate-500 py-2.5">${idx + 1}</td>
+                <td class="font-black text-teal-800 font-mono py-2.5">${escapeHtml(t.trip_code)}</td>
+                <td class="text-center text-slate-600 font-mono py-2.5">${escapeHtml(t.date)}</td>
+                <td class="py-2.5">${partnerCol}</td>
+                <td class="py-2.5 font-mono text-slate-800">
+                    <span class="font-bold">${escapeHtml(t.container_number)}</span>
+                    <span class="text-xs text-slate-400 ml-1">(${escapeHtml(t.container_type)})</span>
+                </td>
+                <td class="py-2.5 text-slate-600 max-w-xs truncate" title="${escapeHtml(t.route)}">${escapeHtml(t.route)}</td>
+                <td class="text-center py-2.5">${statusBadge}</td>
+                <td class="text-right font-black text-slate-900 tabular-nums py-2.5">${canViewFinance ? formatMoneyVND(t.revenue) : '***'}</td>
+                <td class="text-right font-bold text-amber-700 tabular-nums py-2.5">${canViewFinance ? formatMoneyVND(t.expense) : '***'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900 text-[13px]">
+                <td class="text-center font-black">TỔNG</td>
+                <td colspan="5" class="py-2.5 px-3 uppercase">${filtered.length} Chuyến Vận Đơn</td>
+                <td class="text-center">-</td>
+                <td class="text-right font-black tabular-nums py-2.5 text-slate-900">${canViewFinance ? formatMoneyVND(sumRev) : '***'}</td>
+                <td class="text-right font-black tabular-nums py-2.5 text-amber-800">${canViewFinance ? formatMoneyVND(sumExp) : '***'}</td>
+            </tr>
+        `;
+    }
+}
+
+function closeReportDrilldownModal() {
+    const modal = document.getElementById('modal-report-drilldown-trips');
+    if (modal) modal.classList.add('hidden');
 }
 
 // -------------------------------------------------------------

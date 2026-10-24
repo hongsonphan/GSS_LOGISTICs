@@ -180,7 +180,8 @@ class ReportsAPIView(APIView):
                     'margin_percent': 0.0,
                     'avg_revenue_per_trip': 0,
                     'avg_revenue_per_container': 0,
-                    'revenue_share': 0.0
+                    'revenue_share': 0.0,
+                    'trips': []
                 }
             conts = 2 if t.is_twin_container else 1
             vehicles_dict[plate]['trips_count'] += 1
@@ -188,6 +189,24 @@ class ReportsAPIView(APIView):
             vehicles_dict[plate]['revenue'] += rev
             vehicles_dict[plate]['expense'] += exp
             vehicles_dict[plate]['profit'] += prof
+
+            t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
+            vehicles_dict[plate]['trips'].append({
+                'id': t.id,
+                'trip_code': t.trip_code,
+                'date': t_date.strftime('%d/%m/%Y') if t_date else '-',
+                'customer_name': t.customer.name if t.customer else 'Khách lẻ',
+                'customer_code': t.customer.code if t.customer else '-',
+                'driver_name': t.driver.nickname or t.driver.full_name if t.driver else '-',
+                'vehicle_plate': plate,
+                'container_number': t.container_number or '-',
+                'container_type': t.container_type or ('40HC' if not t.container_type else t.container_type),
+                'route': f"{t.pickup_location or 'Cảng'} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}",
+                'status': t.status,
+                'status_label': t.get_status_display(),
+                'revenue': rev,
+                'expense': exp,
+            })
 
         margin_avg = round(float(total_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0
 
@@ -553,7 +572,8 @@ class ReportsAPIView(APIView):
                     'avg_revenue_per_trip': 0,
                     'avg_revenue_per_container': 0,
                     'routes_dict': {},
-                    'top_route': '-'
+                    'top_route': '-',
+                    'trips': []
                 }
 
             row = customer_analytics_dict[c_name]
@@ -571,6 +591,24 @@ class ReportsAPIView(APIView):
             row['revenue'] += rev
             row['expense'] += exp
             row['profit'] += prof
+
+            t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
+            row['trips'].append({
+                'id': t.id,
+                'trip_code': t.trip_code,
+                'date': t_date.strftime('%d/%m/%Y') if t_date else '-',
+                'customer_name': c_name,
+                'customer_code': c_code,
+                'driver_name': t.driver.nickname or t.driver.full_name if t.driver else '-',
+                'vehicle_plate': t.vehicle.license_plate if t.vehicle else 'Chưa gán xe',
+                'container_number': t.container_number or '-',
+                'container_type': t.container_type or ('40HC' if not t.container_type else t.container_type),
+                'route': f"{t.pickup_location or 'Cảng'} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}",
+                'status': t.status,
+                'status_label': t.get_status_display(),
+                'revenue': rev,
+                'expense': exp,
+            })
 
             # Thống kê tuyến đường phổ biến nhất của khách
             route_name = f"{t.pickup_location} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}"
@@ -795,6 +833,9 @@ class ReportsAPIView(APIView):
                 f['expense'] = 0
                 f['profit'] = 0
                 f['margin_percent'] = 0.0
+                for tr in f.get('trips', []):
+                    tr['revenue'] = 0
+                    tr['expense'] = 0
             for d in driver_scorecards:
                 d['revenue'] = 0
                 d['allowance'] = 0
@@ -811,6 +852,9 @@ class ReportsAPIView(APIView):
                 c['profit'] = 0
                 c['margin_percent'] = 0.0
                 c['revenue_share'] = 0.0
+                for tr in c.get('trips', []):
+                    tr['revenue'] = 0
+                    tr['expense'] = 0
             top_key_account_share = 0.0
 
             # Mask Report 8 (Thầu phụ 3PL)
