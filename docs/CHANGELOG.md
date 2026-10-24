@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.8] - 2026-10-24 (Tối Ưu Hóa Trải Nghiệm Báo Cáo: Tự Động Đẩy Số Liệu Khi Tải Trang & Lưu Nhớ Trạng Thái Lọc Kỳ)
+
+### 1. Tự Động Tải Dữ Liệu Báo Cáo (Auto-Load on Page Load & Tab Switch):
+- **Khắc phục triệt để lỗi không có dữ liệu khi reload/chuyển tab:**
+  * Trước đây, khi F5 hoặc chuyển vào tab Báo Cáo, hệ thống tự động gán đè kỳ báo cáo thành 'week' (7 ngày gần nhất) lấy theo dashboard. Vì các chuyến hoàn thành thực tế trong cơ sở dữ liệu thường nằm ngoài 7 ngày gần đây, API trả về 0 bản ghi khiến người dùng phải bấm nút refresh hoặc chọn lại kỳ mới thấy số liệu.
+  * Đã loại bỏ logic ghi đè ngầm này; hệ thống ưu tiên khôi phục kỳ lọc được lưu trong localStorage ('bim_report_period') hoặc mặc định là 'year' (Năm nay) để bao quát toàn bộ dữ liệu phát sinh.
+  * Tích hợp hàm syncReportPeriodButtonsUI(period) để đồng bộ trạng thái active (sáng đèn) của nút bấm kỳ trên thanh công cụ khớp 100% với kỳ đang được nạp.
+- **Lưu nhớ trạng thái báo cáo (Persistence State):**
+  * Ghi nhớ nhóm báo cáo đang chọn ('bim_report_group') và phân hệ subtab con ('bim_report_subtab').
+  * Khi người dùng F5 tải lại trang hoặc điều hướng đi nơi khác rồi quay lại, tab Báo Cáo tự động khôi phục chính xác nhóm báo cáo và subtab mà người dùng đang làm việc dở dang, đồng thời tự động kích hoạt API nạp số liệu ngay lập tức mà không cần bấm thêm bất kỳ nút nào.
+
+### 2. Kiểm Thử & Triển Khai:
+- node -c static/js/app.js & node -c static/js/column_manager.js (100% Passed).
+- python manage.py test --keepdb (147/147 tests Passed).
+- Nâng query parameter cache busting trong templates/base.html lên ?v=2.9.56.
+
+
 ## [v4.5.7] - 2026-10-24 (Bổ Sung Tính Năng Drill-Down: Nhấp Vào Dòng Xe / Khách Hàng Để Mở Danh Sách Chuyến Xe Chi Tiết)
 
 ### 1. Tính Năng Drill-Down Chuyến Xe Chi Tiết:

@@ -15722,17 +15722,10 @@ function switchTab(tabId, updateHistory = true) {
         if (acctFrom) acctFrom.value = globalDates.fromDate;
         if (acctTo) acctTo.value = globalDates.toDate;
     } else if (tabId === 'bao-cao') {
-        const reportPeriodMap = {
-            'today': 'today',
-            '10_days': 'week',
-            '7_days': 'week',
-            'this_month': 'month',
-            'this_quarter': 'quarter',
-            'this_year': 'all',
-            'custom': 'month'
-        };
-        if (typeof currentReportPeriod !== 'undefined') {
-            currentReportPeriod = reportPeriodMap[currentDashboardPeriod] || 'week';
+        const savedPeriod = (function() { try { return localStorage.getItem('bim_report_period') || currentReportPeriod || 'year'; } catch(e) { return currentReportPeriod || 'year'; } })();
+        currentReportPeriod = savedPeriod;
+        if (typeof syncReportPeriodButtonsUI === 'function') {
+            syncReportPeriodButtonsUI(savedPeriod);
         }
     }
 
@@ -15751,6 +15744,16 @@ function switchTab(tabId, updateHistory = true) {
         if (tabId === 'hai-quan') fetchCustomsDeclarations();
         if (tabId === 'bao-cao') {
             initReportPermissions();
+            try {
+                const savedGroup = localStorage.getItem('bim_report_group');
+                const savedSubtab = localStorage.getItem('bim_report_subtab');
+                if (savedGroup && typeof switchReportGroup === 'function') {
+                    switchReportGroup(savedGroup, false);
+                }
+                if (savedSubtab && typeof switchReportSubTab === 'function' && typeof canAccessReport === 'function' && canAccessReport(savedSubtab)) {
+                    switchReportSubTab(savedSubtab);
+                }
+            } catch(e) {}
             loadReportsData();
         }
         if (tabId === 'cai-dat') loadMasterData();
@@ -26033,7 +26036,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 8. PHÂN HỆ BÁO CÁO & PHÂN TÍCH QUẢN TRỊ TMS (BI ANALYTICS LOGIC)
 // =========================================================================
 
-let currentReportPeriod = 'month';
+let currentReportPeriod = (function() { try { return localStorage.getItem('bim_report_period') || 'year'; } catch(e) { return 'year'; } })();
 let rawReportsData = null;
 let canViewFinance = true;
 
@@ -26245,6 +26248,9 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
     }
 
     currentActiveReportGroup = groupId;
+    try {
+        localStorage.setItem('bim_report_group', groupId);
+    } catch(e) {}
     currentReportViewMode = 'group'; // Luôn khóa cố định chế độ xem theo nhóm được chọn
 
     // Cập nhật trạng thái hiển thị của 4 Card Nhóm Lớn
@@ -26308,6 +26314,12 @@ function switchReportSubTab(subtabId) {
     }
 
     currentActiveReportSubtab = subtabId;
+    try {
+        localStorage.setItem('bim_report_subtab', subtabId);
+        if (currentActiveReportGroup) {
+            localStorage.setItem('bim_report_group', currentActiveReportGroup);
+        }
+    } catch(e) {}
 
     // Tự động nhận diện và kích hoạt Nhóm cha tương ứng nếu khác nhóm hiện tại
     for (const [grp, rpts] of Object.entries(REPORT_GROUP_MAPPING)) {
@@ -26350,11 +26362,7 @@ window.switchReportGroup = switchReportGroup;
 window.toggleReportViewMode = toggleReportViewMode;
 window.switchReportSubTab = switchReportSubTab;
 
-function changeReportPeriod(period) {
-    if (period === 'this_year') period = 'year';
-    currentReportPeriod = period;
-
-    // Cập nhật giao diện nút kỳ
+function syncReportPeriodButtonsUI(period) {
     const periodButtons = ['today', 'week', 'month', 'quarter', 'year', 'all'];
     periodButtons.forEach(p => {
         const btn = document.getElementById(`btn-period-${p}`);
@@ -26365,7 +26373,17 @@ function changeReportPeriod(period) {
             btn.className = 'report-period-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer';
         }
     });
+}
+window.syncReportPeriodButtonsUI = syncReportPeriodButtonsUI;
 
+function changeReportPeriod(period) {
+    if (period === 'this_year') period = 'year';
+    currentReportPeriod = period;
+    try {
+        localStorage.setItem('bim_report_period', period);
+    } catch(e) {}
+
+    syncReportPeriodButtonsUI(period);
     loadReportsData();
 }
 
