@@ -26640,9 +26640,14 @@ tbody.innerHTML = list.map((item, index) => {
                             <span class="font-black text-teal-800 font-mono text-sm">${escapeHtml(item.plate)}</span>
                             <span class="text-slate-500">(${escapeHtml(item.vehicle_type)} · ${item.ownership || 'Xe Nhà'} · Tài xế: ${escapeHtml(item.driver || '-')})</span>
                         </div>
-                        <button type="button" onclick="event.stopPropagation(); toggleReport1VehicleRow(${index})" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-teal-100/50 transition-colors cursor-pointer">
-                            <i class="ph-bold ph-caret-up"></i> Thu gọn
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="event.stopPropagation(); openDedicatedReportDetail('VEHICLE', ${index})" class="text-[11px] font-bold text-white bg-teal-700 hover:bg-teal-800 flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-2xs transition-colors cursor-pointer" title="Mở trang chi tiết riêng toàn màn hình của xe này để xem thoáng và rộng rãi hơn">
+                                <i class="ph-bold ph-arrows-out-simple"></i> Mở Trang Chi Tiết
+                            </button>
+                            <button type="button" onclick="event.stopPropagation(); toggleReport1VehicleRow(${index})" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-teal-100/50 transition-colors cursor-pointer">
+                                <i class="ph-bold ph-caret-up"></i> Thu gọn
+                            </button>
+                        </div>
                     </div>
                     ${nestedTripsTable}
                 </td>
@@ -27368,9 +27373,14 @@ tbody.innerHTML = list.map((item, index) => {
                             <span class="font-black text-teal-800 text-sm">${escapeHtml(item.customer_name)}</span>
                             <span class="text-slate-500 font-mono">(${escapeHtml(item.customer_code || '-')} · Tuyến: ${escapeHtml(item.top_route || '-')})</span>
                         </div>
-                        <button type="button" onclick="event.stopPropagation(); toggleReport7CustomerRow(${index})" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-teal-100/50 transition-colors cursor-pointer">
-                            <i class="ph-bold ph-caret-up"></i> Thu gọn
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="event.stopPropagation(); openDedicatedReportDetail('CUSTOMER', ${index})" class="text-[11px] font-bold text-white bg-teal-700 hover:bg-teal-800 flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-2xs transition-colors cursor-pointer" title="Mở trang chi tiết riêng toàn màn hình của khách hàng này để xem thoáng và rộng rãi hơn">
+                                <i class="ph-bold ph-arrows-out-simple"></i> Mở Trang Chi Tiết
+                            </button>
+                            <button type="button" onclick="event.stopPropagation(); toggleReport7CustomerRow(${index})" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-teal-100/50 transition-colors cursor-pointer">
+                                <i class="ph-bold ph-caret-up"></i> Thu gọn
+                            </button>
+                        </div>
                     </div>
                     ${nestedTripsTable}
                 </td>
@@ -27413,6 +27423,259 @@ function toggleReport7Sort(col) {
     applyReport7Filters();
 }
 
+
+// =========================================================================
+// TRANG CHI TIẾT RIÊNG TOÀN MÀN HÌNH (DEDICATED FULL-VIEW TMS REPORTS)
+// =========================================================================
+let currentFullviewTarget = null;
+let currentFullviewMode = 'CUSTOMER'; // 'CUSTOMER' or 'VEHICLE'
+let currentFullviewTrips = [];
+
+function openDedicatedCustomerByName(custName) {
+    if (!custName || custName === 'Khách lẻ') {
+        if (typeof showNotification === 'function') showNotification('Không có thông tin khách hàng cụ thể cho chuyến này', 'info');
+        return;
+    }
+
+    // 1. Tìm trong rep7DataCache
+    let target = (typeof rep7DataCache !== 'undefined' && rep7DataCache) ? rep7DataCache.find(c => c.customer_name === custName) : null;
+
+    if (!target) {
+        // Gom các chuyến của khách này từ toàn bộ dữ liệu xe đã nạp
+        const allTrips = [];
+        if (typeof rep1DataCache !== 'undefined' && rep1DataCache) {
+            rep1DataCache.forEach(v => {
+                (v.trips || []).forEach(tr => {
+                    if (tr.customer_name === custName) allTrips.push(tr);
+                });
+            });
+        }
+        if (allTrips.length === 0) {
+            if (typeof showNotification === 'function') showNotification(`Chưa tìm thấy dữ liệu chuyến của khách hàng ${custName} trong kỳ này`, 'warning');
+            return;
+        }
+        target = {
+            customer_name: custName,
+            customer_code: allTrips[0]?.customer_code || '-',
+            top_route: allTrips[0]?.route || '-',
+            trips_count: allTrips.length,
+            containers_count: allTrips.length,
+            total_teu: allTrips.length,
+            revenue: allTrips.reduce((s, t) => s + (Number(t.revenue) || 0), 0),
+            expense: allTrips.reduce((s, t) => s + (Number(t.expense) || 0), 0),
+            trips: allTrips
+        };
+    }
+
+    showFullview(target, 'CUSTOMER');
+}
+window.openDedicatedCustomerByName = openDedicatedCustomerByName;
+
+function openDedicatedReportDetail(mode, index) {
+    let target = null;
+    if (mode === 'VEHICLE') {
+        target = (typeof rep1DataFiltered !== 'undefined' && rep1DataFiltered[index]) ? rep1DataFiltered[index] : (typeof rep1DataCache !== 'undefined' && rep1DataCache[index]);
+    } else {
+        target = (typeof rep7DataFiltered !== 'undefined' && rep7DataFiltered[index]) ? rep7DataFiltered[index] : (typeof rep7DataCache !== 'undefined' && rep7DataCache[index]);
+    }
+    if (!target) return;
+    showFullview(target, mode);
+}
+window.openDedicatedReportDetail = openDedicatedReportDetail;
+
+function showFullview(target, mode) {
+    currentFullviewTarget = target;
+    currentFullviewMode = mode;
+    currentFullviewTrips = target.trips || [];
+
+    // Ẩn bảng tổng hợp, hiện Fullview
+    const summaryView = document.getElementById('report-summary-view');
+    const fullView = document.getElementById('report-drilldown-fullview');
+    if (summaryView) summaryView.classList.add('hidden');
+    if (fullView) fullView.classList.remove('hidden');
+
+    // Cập nhật Header
+    const iconEl = document.getElementById('fullview-icon');
+    const titleEl = document.getElementById('fullview-title');
+    const badgeEl = document.getElementById('fullview-badge');
+    const subtitleEl = document.getElementById('fullview-subtitle');
+    const thPartner = document.getElementById('fullview-th-partner');
+
+    if (mode === 'VEHICLE') {
+        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-truck"></i>';
+        if (titleEl) titleEl.innerText = `Báo Cáo Chi Tiết Vận Đơn: ${target.plate}`;
+        if (badgeEl) {
+            badgeEl.innerText = target.plate;
+            badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-100 text-teal-800 font-mono';
+        }
+        if (subtitleEl) subtitleEl.innerText = `Loại xe: ${target.vehicle_type || 'Đầu kéo'} · ${target.ownership || 'Xe Nhà'} · Tài xế: ${target.driver || '-'}`;
+        if (thPartner) thPartner.innerText = 'Khách Hàng';
+    } else {
+        if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-buildings"></i>';
+        if (titleEl) titleEl.innerText = `Báo Cáo Chi Tiết Vận Đơn Khách Hàng: ${target.customer_name}`;
+        if (badgeEl) {
+            badgeEl.innerText = target.customer_code ? `Mã: ${target.customer_code}` : 'Doanh Nghiệp';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-100 text-indigo-800 font-mono';
+        }
+        if (subtitleEl) subtitleEl.innerText = `Tuyến chủ lực: ${target.top_route || '-'}`;
+        if (thPartner) thPartner.innerText = 'Biển Số & Tài Xế';
+    }
+
+    // Cập nhật 4 Thẻ KPI
+    const statRev = document.getElementById('fullview-stat-rev');
+    if (statRev) statRev.innerText = canViewFinance ? formatMoneyVND(target.revenue || 0) : '***';
+
+    const statTrips = document.getElementById('fullview-stat-trips');
+    if (statTrips) statTrips.innerText = `${target.trips_count || currentFullviewTrips.length} Chuyến`;
+
+    const statConts = document.getElementById('fullview-stat-conts');
+    if (statConts) statConts.innerText = `${target.containers_count || currentFullviewTrips.length} Cont`;
+
+    const statContsSub = document.getElementById('fullview-stat-conts-sub');
+    if (statContsSub) {
+        if (target.total_teu) {
+            statContsSub.innerText = `Quy đổi: ${target.total_teu} TEU (20': ${target.teu_20_count || 0} · 40': ${target.teu_40_count || 0} · 45': ${target.teu_45_count || 0})`;
+        } else {
+            statContsSub.innerText = `Tổng số lượng vỏ container thực hiện`;
+        }
+    }
+
+    const statExp = document.getElementById('fullview-stat-expense');
+    if (statExp) statExp.innerText = canViewFinance ? formatMoneyVND(target.expense || 0) : '***';
+
+    // Reset ô tìm kiếm và render bảng
+    const searchInput = document.getElementById('fullview-search-input');
+    if (searchInput) searchInput.value = '';
+
+    filterFullviewTrips();
+
+    // Cuộn lên đầu view-bao-cao mượt mà
+    document.getElementById('view-bao-cao')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeDedicatedReportDetail() {
+    const summaryView = document.getElementById('report-summary-view');
+    const fullView = document.getElementById('report-drilldown-fullview');
+    if (fullView) fullView.classList.add('hidden');
+    if (summaryView) summaryView.classList.remove('hidden');
+}
+window.closeDedicatedReportDetail = closeDedicatedReportDetail;
+
+function filterFullviewTrips() {
+    if (!currentFullviewTarget) return;
+
+    const trips = currentFullviewTrips || [];
+    const searchVal = (document.getElementById('fullview-search-input')?.value || '').toLowerCase().trim();
+
+    const filtered = trips.filter(t => {
+        if (!searchVal) return true;
+        const txt = `${t.trip_code} ${t.container_number} ${t.customer_name} ${t.customer_code} ${t.vehicle_plate} ${t.driver_name} ${t.route} ${t.status_label || ''}`.toLowerCase();
+        return txt.includes(searchVal);
+    });
+
+    const tbody = document.getElementById('fullview-trips-tbody');
+    const tfoot = document.getElementById('fullview-trips-tfoot');
+    const countEl = document.getElementById('fullview-table-count');
+
+    if (countEl) countEl.innerText = `Hiển thị ${filtered.length} / ${trips.length} chuyến xe`;
+
+    if (!tbody) return;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400 font-medium"><i class="ph-bold ph-info text-3xl mb-1 block"></i> Không có chuyến xe nào phù hợp với từ khóa tìm kiếm</td></tr>`;
+        if (tfoot) tfoot.innerHTML = '';
+        return;
+    }
+
+    const sumRev = filtered.reduce((s, t) => s + (Number(t.revenue) || 0), 0);
+    const sumExp = filtered.reduce((s, t) => s + (Number(t.expense) || 0), 0);
+
+    tbody.innerHTML = filtered.map((t, idx) => {
+        let statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">Mới tạo</span>';
+        const st = (t.status || '').toUpperCase();
+        if (st === 'COMPLETED' || st === 'DELIVERED') {
+            statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn Thành</span>';
+        } else if (st === 'IN_TRANSIT' || st === 'AT_WAREHOUSE' || st === 'UNLOADING') {
+            statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Đang Chạy</span>';
+        } else if (st === 'CANCELLED') {
+            statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">Đã Hủy</span>';
+        } else {
+            statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">Đã Giao Tài</span>';
+        }
+
+        const partnerCol = currentFullviewMode === 'VEHICLE'
+            ? `<div><span class="font-bold text-slate-900">${escapeHtml(t.customer_name || 'Khách lẻ')}</span></div><div class="text-xs text-slate-400 font-mono">${escapeHtml(t.customer_code || '-')}</div>`
+            : `<div><span class="font-bold text-slate-900 font-mono">${escapeHtml(t.vehicle_plate || 'Chưa gán')}</span></div><div class="text-xs text-slate-500">${escapeHtml(t.driver_name || '-')}</div>`;
+
+        return `
+            <tr class="hover:bg-teal-50/30 transition-colors">
+                <td class="text-center font-bold text-slate-500 py-3">${idx + 1}</td>
+                <td class="font-black text-teal-800 font-mono py-3 text-[13px]">${escapeHtml(t.trip_code || '-')}</td>
+                <td class="text-center text-slate-600 font-mono py-3 text-[13px]">${escapeHtml(t.date || '-')}</td>
+                <td class="py-3">${partnerCol}</td>
+                <td class="py-3 font-mono text-slate-800">
+                    <span class="font-bold text-[13px]">${escapeHtml(t.container_number || '-')}</span>
+                    <span class="text-xs text-slate-400 ml-1">(${escapeHtml(t.container_type || '40HC')})</span>
+                </td>
+                <td class="py-3 text-slate-700 max-w-sm truncate text-[13px]" title="${escapeHtml(t.route || '-')}">${escapeHtml(t.route || '-')}</td>
+                <td class="text-center py-3">${statusBadge}</td>
+                <td class="text-right font-black text-slate-900 tabular-nums py-3 text-[13px]">${canViewFinance ? formatMoneyVND(t.revenue) : '***'}</td>
+                <td class="text-right font-bold text-amber-700 tabular-nums py-3 text-[13px]">${canViewFinance ? formatMoneyVND(t.expense) : '***'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900 text-[13.5px]">
+                <td class="text-center font-black py-3">TỔNG</td>
+                <td colspan="5" class="py-3 px-3 uppercase">${filtered.length} Chuyến Vận Đơn Thực Hiện</td>
+                <td class="text-center">-</td>
+                <td class="text-right font-black tabular-nums py-3 text-slate-900">${canViewFinance ? formatMoneyVND(sumRev) : '***'}</td>
+                <td class="text-right font-black tabular-nums py-3 text-amber-800">${canViewFinance ? formatMoneyVND(sumExp) : '***'}</td>
+            </tr>
+        `;
+    }
+}
+window.filterFullviewTrips = filterFullviewTrips;
+
+function exportFullviewToExcel() {
+    if (!currentFullviewTarget) return;
+    const trips = currentFullviewTrips || [];
+    if (trips.length === 0) {
+        if (typeof showNotification === 'function') showNotification('Không có dữ liệu chuyến xe để xuất', 'warning');
+        return;
+    }
+    const cleanName = (currentFullviewMode === 'VEHICLE' ? currentFullviewTarget.plate : currentFullviewTarget.customer_name).replace(/[^a-zA-Z0-9_À-ɏḀ-ỿ]/g, '_');
+    const title = `Bao_Cao_Chuyen_Xe_${cleanName}`;
+
+    let csv = '\uFEFF';
+    csv += 'STT,Mã Chuyến,Ngày Chạy,Đối Tác,Số Cont,Loại Vỏ,Tuyến Đường,Trạng Thái,Doanh Thu (VNĐ),Chi Phí Phát Sinh (VNĐ)\n';
+    trips.forEach((t, i) => {
+        const partner = currentFullviewMode === 'VEHICLE' ? (t.customer_name || '') : `${t.vehicle_plate || ''} - ${t.driver_name || ''}`;
+        const row = [
+            i + 1,
+            `"${t.trip_code || ''}"`,
+            `"${t.date || ''}"`,
+            `"${partner.replace(/"/g, '""')}"`,
+            `"${t.container_number || ''}"`,
+            `"${t.container_type || ''}"`,
+            `"${(t.route || '').replace(/"/g, '""')}"`,
+            `"${t.status_label || t.status || ''}"`,
+            t.revenue || 0,
+            t.expense || 0
+        ];
+        csv += row.join(',') + '\n';
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${title}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+}
+window.exportFullviewToExcel = exportFullviewToExcel;
+
 // -------------------------------------------------------------
 // DRILL-DOWN MODAL: XEM DANH SÁCH CHUYẾN XE (ĐỘI XE & KHÁCH HÀNG)
 // -------------------------------------------------------------
@@ -27448,7 +27711,13 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
         }
 
         const partnerCol = mode === 'VEHICLE'
-            ? `<div class="font-bold text-slate-800">${escapeHtml(t.customer_name || 'Khách lẻ')}</div><div class="text-[11px] text-slate-400 font-mono">${escapeHtml(t.customer_code || '-')}</div>`
+            ? `<div class="flex items-center gap-1.5 flex-wrap">
+                   <span class="font-bold text-slate-800 hover:text-teal-700 transition-colors cursor-pointer group" onclick="event.stopPropagation(); openDedicatedCustomerByName('${escapeHtml(t.customer_name || '')}')" title="Nhấn để mở trang chi tiết riêng của khách hàng này">${escapeHtml(t.customer_name || 'Khách lẻ')}</span>
+                   <button type="button" onclick="event.stopPropagation(); openDedicatedCustomerByName('${escapeHtml(t.customer_name || '')}')" class="text-teal-600 hover:text-teal-800 p-0.5 rounded hover:bg-teal-100 transition-colors cursor-pointer inline-flex items-center" title="Mở trang chi tiết riêng của khách hàng ${escapeHtml(t.customer_name || '')}">
+                       <i class="ph-bold ph-arrow-square-out text-xs"></i>
+                   </button>
+               </div>
+               <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(t.customer_code || '-')}</div>`
             : `<div class="font-bold text-slate-800 font-mono">${escapeHtml(t.vehicle_plate || 'Chưa gán xe')}</div><div class="text-[11px] text-slate-500">${escapeHtml(t.driver_name || '-')}</div>`;
 
         return `

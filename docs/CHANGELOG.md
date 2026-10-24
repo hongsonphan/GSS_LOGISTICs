@@ -2,6 +2,26 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.0] - 2026-10-24 (Bổ Sung Tính Năng Mở Trang Chi Tiết Vận Đơn Riêng Biệt Trên Nền Tảng Màn Hình, Không Dùng Modal)
+
+### 1. Trang Xem Chi Tiết Vận Đơn Toàn Màn Hình (Dedicated Full-Screen View):
+- **Trải nghiệm xem chuyến xe thoáng đãng và chuyên sâu:**
+  * Bổ sung nút 'Mở Trang Chi Tiết' trên header của cả 2 lưới sub (Báo cáo Đội xe và Báo cáo Khách hàng).
+  * Trên cột 'Khách Hàng' của lưới sub Đội xe, mỗi tên khách hàng được trang bị nút bấm và hiệu ứng click điều hướng: Nhấp vào lập tức mở ngay Trang Chi Tiết Riêng của chính khách hàng đó (openDedicatedCustomerByName) trên toàn bộ màn hình.
+  * Hoàn toàn không dùng popup modal che khuất màn hình; chuyển đổi mượt mà ngay trên nền tảng Single Page Application của phân hệ Báo Cáo.
+- **Cấu trúc Trang Chi Tiết Riêng (report-drilldown-fullview):**
+  * Nút 'Quay Lại Báo Cáo Tổng Hợp' ở góc trên bên trái cho phép trở về bảng tổng hợp nguyên trạng, không bị reload hay mất bộ lọc.
+  * Tiêu đề, badge biển số/mã khách hàng, phân loại và tuyến chủ lực.
+  * 4 Thẻ KPI lớn: Tổng Doanh Thu, Tổng Số Chuyến, Sản Lượng Container & Quy Đổi TEU, Chi Phí Phát Sinh.
+  * Ô tìm kiếm vận đơn nội bộ thời gian thực và nút xuất Excel danh sách chuyến của riêng đối tượng đó (exportFullviewToExcel).
+  * Lưới bảng chi tiết toàn màn hình, khoảng cách thoáng đãng, font chữ rõ nét, dòng Tổng cộng tfoot tự động co giãn.
+
+### 2. Kiểm Thử & Triển Khai:
+- node -c static/js/app.js & node -c static/js/column_manager.js (100% Passed).
+- python manage.py test --keepdb (147/147 tests Passed).
+- Nâng query parameter cache busting trong templates/base.html lên ?v=2.9.58.
+
+
 ## [v4.5.9] - 2026-10-24 (Tối Ưu Hóa Trải Nghiệm Master-Detail: Lưới Con Chuyến Xe Xổ Trực Tiếp Trên Lưới Hiện Hữu, Loại Bỏ Modal Popup)
 
 ### 1. Trải Nghiệm Xuyên Suốt (Seamless Inline Accordion Sub-table):
