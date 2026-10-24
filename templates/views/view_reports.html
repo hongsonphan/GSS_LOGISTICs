@@ -671,27 +671,34 @@
     <!-- BÁO CÁO 7: PHÂN TÍCH DOANH THU KHÁCH HÀNG & SẢN LƯỢNG TEU (CUSTOMER MATRIX) -->
     <!-- ========================================================================= -->
     <div id="subtab-report-7" class="report-subtab-content space-y-4 hidden">
-        <!-- 4 Metric Cards -->
+        <!-- 4 Metric Cards (Phương Án 1: Doanh Thu Khách Hàng | Tổng Số Chuyến | Tổng Số Cont | Doanh Thu Bình Quân) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- Thẻ 1: DOANH THU KHÁCH HÀNG -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Sản Lượng TEU</span>
-                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="rep7-stat-teu">0.0 TEU</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Quy đổi: 20ft=1.0, 40ft=2.0, 45ft=2.25</p>
-            </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Khách Hàng</span>
-                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep7-stat-rev">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Doanh thu cước vận chuyển theo hợp đồng</p>
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep7-stat-rev">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep7-stat-rev-sub">Doanh thu thực hiện từ hợp đồng khách hàng</p>
             </div>
+
+            <!-- Thẻ 2: TỔNG SỐ CHUYẾN -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Số Chuyến</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep7-stat-trips">0 Chuyến</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep7-stat-trips-sub">Chuyến xe vận chuyển hoàn thành</p>
+            </div>
+
+            <!-- Thẻ 3: TỔNG SỐ CONTAINER -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Khách Hàng Trọng Tâm (Key Account)</span>
-                <p class="text-2xl font-black text-slate-900 truncate font-heading mt-1" id="rep7-stat-top">-</p>
-                <p class="text-xs text-emerald-700 font-bold mt-1" id="rep7-stat-top-share">Đóng góp 0.0% doanh thu</p>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Số Container</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep7-stat-conts">0 Cont</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep7-stat-teu-sub">Quy đổi: 0 TEU (20': 0 · 40': 0 · 45': 0)</p>
             </div>
+
+            <!-- Thẻ 4: DOANH THU BÌNH QUÂN -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sản Lượng Bình Quân / Chuyến</span>
-                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep7-stat-avg">0.0 TEU</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Hiệu quả ghép hàng & cơ cấu vỏ cont</p>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Bình Quân</span>
+                <p class="text-2xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep7-stat-avg-trip">0 đ / Chuyến</p>
+                <p class="text-xs text-amber-800 font-bold mt-1" id="rep7-stat-avg-cont">BQ: 0 đ / Cont</p>
             </div>
         </div>
 

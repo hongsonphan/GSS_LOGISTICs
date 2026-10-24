@@ -2,6 +2,28 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.5.6] - 2026-10-24 (Tái Cấu Trúc 4 Thẻ KPI Báo Cáo Doanh Thu Theo Khách Hàng Chuẩn Phương Án 1)
+
+### 1. Bố Trí 4 Thẻ KPI Mới Cho Báo Cáo Khách Hàng:
+- **Thẻ 1: DOANH THU KHÁCH HÀNG:**
+  * Hiển thị tổng doanh thu từ khách hàng trong kỳ (`rep7-stat-rev`).
+  * Subtext: `Tổng X Khách hàng phát sinh đơn`.
+- **Thẻ 2: TỔNG SỐ CHUYẾN:**
+  * Hiển thị tổng số chuyến hoàn thành (`rep7-stat-trips`).
+  * Subtext: `Chuyến xe vận chuyển hoàn thành`.
+- **Thẻ 3: TỔNG SỐ CONTAINER:**
+  * Hiển thị tổng số vỏ container (`rep7-stat-conts`).
+  * Subtext: Chi tiết quy đổi TEU và cơ cấu vỏ cont `Quy đổi: X TEU (20': A · 40': B · 45': C)`.
+- **Thẻ 4: DOANH THU BÌNH QUÂN:**
+  * Hiển thị doanh thu bình quân trên mỗi chuyến (`rep7-stat-avg-trip`).
+  * Subtext: `BQ: X đ / Cont` (`rep7-stat-avg-cont`).
+- Đồng bộ phản ứng dữ liệu thời gian thực: Khi người dùng gõ tìm kiếm theo tên/mã khách hàng trên thanh tìm kiếm, cả 4 thẻ KPI lập tức nhảy số tương ứng với danh sách đã lọc.
+
+### 2. Kiểm Thử & Triển Khai:
+- `node -c static/js/app.js` & `node -c static/js/column_manager.js` (100% Passed).
+- `python manage.py test --keepdb` (147/147 tests Passed).
+- Nâng query parameter cache busting trong `templates/base.html` lên `?v=2.9.52`.
+
 ## [v4.5.5] - 2026-10-23 (Xóa Bỏ Ký Tự Rác Dòng Total, Đồng Bộ Chuẩn Kích Thước & Font Family Toàn Diện)
 
 ### 1. Xử Lý Triệt Để Dòng Total (tfoot):

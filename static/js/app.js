@@ -27184,22 +27184,6 @@ function toggleReport6Sort(col) {
 // -------------------------------------------------------------
 function renderReport7(data) {
     const r7 = data.report7_customer_analytics || {};
-
-    const elTeu = document.getElementById('rep7-stat-teu');
-    if (elTeu) elTeu.innerText = `${r7.total_system_teu || 0.0} TEU`;
-
-    const elRev = document.getElementById('rep7-stat-rev');
-    if (elRev) elRev.innerText = formatMoneyVND(r7.total_customer_revenue || 0);
-
-    const elTop = document.getElementById('rep7-stat-top');
-    if (elTop) elTop.innerText = r7.top_key_account || '-';
-
-    const elTopShare = document.getElementById('rep7-stat-top-share');
-    if (elTopShare) elTopShare.innerText = `Đóng góp ${r7.top_key_account_share || 0.0}% doanh thu`;
-
-    const elAvg = document.getElementById('rep7-stat-avg');
-    if (elAvg) elAvg.innerText = `${r7.avg_teu_per_trip || 0.0} TEU`;
-
     rep7DataCache = r7.customers || [];
     applyReport7Filters();
 }
@@ -27229,8 +27213,23 @@ function applyReport7Filters() {
     if (!tbody) return;
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu khách hàng phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu khách hàng phù hợp</td></tr>`;
         if (tfoot) tfoot.innerHTML = '';
+        
+        const elRev = document.getElementById('rep7-stat-rev');
+        if (elRev) elRev.innerText = '0 đ';
+        const elRevSub = document.getElementById('rep7-stat-rev-sub');
+        if (elRevSub) elRevSub.innerText = 'Tổng 0 Khách hàng phát sinh đơn';
+        const elTrips = document.getElementById('rep7-stat-trips');
+        if (elTrips) elTrips.innerText = '0 Chuyến';
+        const elConts = document.getElementById('rep7-stat-conts');
+        if (elConts) elConts.innerText = '0 Cont';
+        const elTeuSub = document.getElementById('rep7-stat-teu-sub');
+        if (elTeuSub) elTeuSub.innerText = "Quy đổi: 0 TEU (20': 0 · 40': 0)";
+        const elAvgTrip = document.getElementById('rep7-stat-avg-trip');
+        if (elAvgTrip) elAvgTrip.innerText = '0 đ / Chuyến';
+        const elAvgCont = document.getElementById('rep7-stat-avg-cont');
+        if (elAvgCont) elAvgCont.innerText = 'BQ: 0 đ / Cont';
         return;
     }
 
@@ -27245,6 +27244,31 @@ function applyReport7Filters() {
     const totalConts = list.reduce((sum, item) => sum + (Number(item.containers_count || item.trips_count) || 0), 0);
     const overallAvgTrip = totalTrips > 0 ? Math.round(totalRev / totalTrips) : 0;
     const overallAvgCont = totalConts > 0 ? Math.round(totalRev / totalConts) : 0;
+    const teuDisplay = (totalTeu % 1 === 0) ? totalTeu.toFixed(0) : totalTeu.toFixed(1);
+
+    // Cập nhật 4 Thẻ Metric Cards chuẩn Phương Án 1
+    const elRev = document.getElementById('rep7-stat-rev');
+    if (elRev) elRev.innerText = formatMoneyVND(totalRev);
+    const elRevSub = document.getElementById('rep7-stat-rev-sub');
+    if (elRevSub) elRevSub.innerText = `Tổng ${list.length} Khách hàng phát sinh đơn`;
+
+    const elTrips = document.getElementById('rep7-stat-trips');
+    if (elTrips) elTrips.innerText = `${totalTrips} Chuyến`;
+
+    const elConts = document.getElementById('rep7-stat-conts');
+    if (elConts) elConts.innerText = `${totalConts} Cont`;
+
+    const elTeuSub = document.getElementById('rep7-stat-teu-sub');
+    if (elTeuSub) {
+        let teuDetails = `20': ${total20} · 40': ${total40}`;
+        if (total45 > 0) teuDetails += ` · 45': ${total45}`;
+        elTeuSub.innerText = `Quy đổi: ${teuDisplay} TEU (${teuDetails})`;
+    }
+
+    const elAvgTrip = document.getElementById('rep7-stat-avg-trip');
+    if (elAvgTrip) elAvgTrip.innerText = `${formatMoneyVND(overallAvgTrip)} / Chuyến`;
+    const elAvgCont = document.getElementById('rep7-stat-avg-cont');
+    if (elAvgCont) elAvgCont.innerText = `BQ: ${formatMoneyVND(overallAvgCont)} / Cont`;
 
     tbody.innerHTML = list.map((item, index) => {
         const revDisplay = formatMoneyVND(item.revenue);
