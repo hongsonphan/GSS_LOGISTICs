@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.1] - 2026-10-25 (Sửa Triệt Để Lỗi Trắng Màn Hình & Xây Dựng Trang Bảng Kê Chi Tiết Toàn Bộ Vận Đơn Với Bộ Lọc Khách Hàng / Đầu Xe Toàn Màn Hình)
+
+### 1. Khắc Phục Lỗi Màn Hình Trắng Khi Mở Chi Tiết:
+- **Nguyên nhân cốt lõi:** Thẻ đóng </div> của view container #view-bao-cao trong templates/views/view_reports.html bị đặt trước thẻ mở của report-drilldown-fullview. Khi JavaScript kích hoạt ẩn report-summary-view, cả khu vực hiển thị bị trống trơn do report-drilldown-fullview nằm ngoài tab active của SPA.
+- **Giải pháp:** Tái cấu trúc DOM chuẩn mực, đưa report-drilldown-fullview vào bên trong #view-bao-cao, đảm bảo độ đóng/mở thẻ div cân bằng 100% (depth = 0).
+
+### 2. Trang Bảng Kê Chi Tiết Toàn Bộ Vận Đơn (Master Trip Detail / Ledger View):
+- **Trải nghiệm trang chung toàn diện (All-in-One Ledger):**
+  * Bổ sung nút '[ Bảng Kê Chi Tiết ]' ngay trên thanh công cụ kỳ của phân hệ Báo cáo để mở nhanh toàn bộ danh sách vận đơn trong kỳ mà không cần click vào từng khách/xe.
+  * Hỗ trợ mở từ bất kỳ Khách hàng hoặc Xe cụ thể trên lưới sub với dropdown được tự động chọn sẵn đối tượng tương ứng.
+  * Nút '[← Quay Lại Báo Cáo Tổng Hợp]' cho phép trở về bảng tổng hợp nguyên trạng ngay tức thì, không reload trang.
+- **Thanh Công Cụ Lọc Đa Chiều & Phân Loại Thông Minh:**
+  * Dropdown Lọc Khách Hàng (#fullview-filter-customer): Tự động tổng hợp danh sách khách hàng trong kỳ kèm số chuyến, cho phép lọc từng khách hoặc xem toàn bộ khách hàng.
+  * Dropdown Lọc Đầu Xe (#fullview-filter-vehicle): Tự động tổng hợp danh sách biển số xe kèm số chuyến để lọc theo từng phương tiện.
+  * Dropdown Lọc Trạng Thái (#fullview-filter-status): Lọc nhanh Đã giao hàng / Hoàn tất chứng từ / Đang vận chuyển.
+  * Ô Tìm Kiếm Thời Gian Thực (#fullview-trip-search): Tìm kiếm tức thì theo mã chuyến, mã vận đơn, số container, tuyến đường, tài xế.
+  * Nút Đặt Lại Bộ Lọc (resetFullviewFilters): Khôi phục trạng thái xem tất cả chỉ bằng 1 click.
+- **Bảng Lưới Chi Tiết Toàn Màn Hình & Sắp Xếp Cột Đa Năng:**
+  * Hỗ trợ Click vào tiêu đề cột để Sắp xếp (Sorting): Ngày chạy, Mã chuyến, Khách hàng, Biển số xe, Doanh thu, Chi phí (tăng dần ↕ giảm dần).
+  * 4 Thẻ KPI trên đỉnh trang tự động tính toán lại số liệu thời gian thực theo danh sách kết quả sau khi lọc/tìm kiếm.
+  * Dòng Tổng Cộng chân bảng tự động tổng kết Số Chuyến, Tổng Doanh Thu, Tổng Chi Phí theo dữ liệu lọc hiện hành.
+  * Tích hợp nút Xuất Excel xuất file chi tiết các chuyến đang hiển thị trên lưới.
+
+### 3. Kiểm Thử & Triển Khai:
+- node -c static/js/app.js & node -c static/js/column_manager.js (100% Passed).
+- python manage.py test --keepdb (147/147 tests Passed).
+- Nâng cache-busting version trong templates/base.html lên ?v=2.9.59.
+
+
 ## [v4.6.0] - 2026-10-24 (Bổ Sung Tính Năng Mở Trang Chi Tiết Vận Đơn Riêng Biệt Trên Nền Tảng Màn Hình, Không Dùng Modal)
 
 ### 1. Trang Xem Chi Tiết Vận Đơn Toàn Màn Hình (Dedicated Full-Screen View):
@@ -65,8 +94,10 @@ Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận the
 ### 1. Tính Năng Drill-Down Chuyến Xe Chi Tiết:
 - **Tương tác trên bảng dữ liệu:**
   * Thêm hiệu ứng hover, con trỏ pointer và icon điều hướng `ph-arrow-square-out` trên từng dòng của "Bảng Doanh Thu Theo Đội Xe" và "Báo Cáo Doanh Thu Theo Khách Hàng".
-  * Khi người dùng nhấp vào bất kỳ dòng đầu xe nào $ightarrow$ Mở ngay Modal hiển thị danh sách tất cả các chuyến xe của đầu xe đó trong kỳ lọc.
-  * Khi người dùng nhấp vào bất kỳ dòng khách hàng nào $ightarrow$ Mở ngay Modal hiển thị danh sách tất cả các chuyến xe thực hiện cho khách hàng đó trong kỳ lọc.
+  * Khi người dùng nhấp vào bất kỳ dòng đầu xe nào $
+ightarrow$ Mở ngay Modal hiển thị danh sách tất cả các chuyến xe của đầu xe đó trong kỳ lọc.
+  * Khi người dùng nhấp vào bất kỳ dòng khách hàng nào $
+ightarrow$ Mở ngay Modal hiển thị danh sách tất cả các chuyến xe thực hiện cho khách hàng đó trong kỳ lọc.
 - **Giao diện Modal Drill-down (`modal-report-drilldown-trips`):**
   * Header gradient chuẩn BIM Logistics hiển thị rõ thông tin xe/khách hàng, phân loại sở hữu/mã khách hàng, và thông tin tài xế/tuyến chủ lực.
   * 4 Thẻ Mini KPI Tóm tắt: Tổng số chuyến, Tổng số cont, Tổng doanh thu, Chi phí phát sinh.
