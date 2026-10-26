@@ -28430,32 +28430,42 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
         `;
     }
 
-    const partnerHeader = mode === 'VEHICLE' ? 'Khách Hàng' : 'Biển Số & Tài Xế';
+    let partnerHeader = 'Khách Hàng';
+    if (mode === 'CUSTOMER') {
+        partnerHeader = 'Biển Số & Tài Xế';
+    } else if (mode === 'ROUTE' || mode === 'DRIVER') {
+        partnerHeader = 'Xe & Khách Hàng';
+    }
+
     const sumRev = trips.reduce((s, t) => s + (Number(t.revenue) || 0), 0);
     const sumExp = trips.reduce((s, t) => s + (Number(t.expense) || 0), 0);
 
     const rowsHtml = trips.map((t, idx) => {
-        let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">Mới tạo</span>';
-        const st = (t.status || '').toUpperCase();
-        if (st === 'COMPLETED' || st === 'DELIVERED') {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn Thành</span>';
-        } else if (st === 'IN_TRANSIT' || st === 'AT_WAREHOUSE' || st === 'UNLOADING') {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Đang Chạy</span>';
-        } else if (st === 'CANCELLED') {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Đã Hủy</span>';
-        } else {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Đã Giao Tài</span>';
-        }
+        const isSettled = Boolean(t.is_settled || t.settlement_status === 'Đã đối soát');
+        const settlementBadge = isSettled
+            ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300" title="Chuyến xe đã được kế toán đối soát & quyết toán công nợ"><i class="ph-bold ph-check-circle text-xs"></i> Đã Đối Soát</span>'
+            : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ"><i class="ph-bold ph-clock text-xs"></i> Chờ Đối Soát</span>';
 
-        const partnerCol = mode === 'VEHICLE'
-            ? `<div class="flex items-center gap-1.5 flex-wrap">
-                   <span class="font-bold text-slate-800 hover:text-teal-700 transition-colors cursor-pointer group" onclick="event.stopPropagation(); openMasterTripFullview({ customer: '${escapeHtml(t.customer_name || '')}' })" title="Nhấn để mở trang chi tiết riêng của khách hàng này">${escapeHtml(t.customer_name || 'Khách lẻ')}</span>
-                   <button type="button" onclick="event.stopPropagation(); openMasterTripFullview({ customer: '${escapeHtml(t.customer_name || '')}' })" class="text-teal-600 hover:text-teal-800 p-0.5 rounded hover:bg-teal-100 transition-colors cursor-pointer inline-flex items-center" title="Mở trang chi tiết riêng của khách hàng ${escapeHtml(t.customer_name || '')}">
-                       <i class="ph-bold ph-arrow-square-out text-xs"></i>
-                   </button>
-               </div>
-               <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(t.customer_code || '-')}</div>`
-            : `<div class="font-bold text-slate-800 font-mono">${escapeHtml(t.vehicle_plate || 'Chưa gán xe')}</div><div class="text-[11px] text-slate-500">${escapeHtml(t.driver_name || '-')}</div>`;
+        let partnerCol = '';
+        if (mode === 'VEHICLE') {
+            partnerCol = `
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-bold text-slate-800 hover:text-teal-700 transition-colors cursor-pointer" onclick="event.stopPropagation(); openMasterTripFullview({ customer: '${escapeHtml(t.customer_name || '')}' })" title="Nhấn để mở trang chi tiết riêng của khách hàng này">${escapeHtml(t.customer_name || 'Khách lẻ')}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(t.customer_code || '-')}</div>
+            `;
+        } else if (mode === 'CUSTOMER') {
+            partnerCol = `
+                <div class="font-bold text-slate-800 font-mono">${escapeHtml(t.vehicle_plate || 'Chưa gán xe')}</div>
+                <div class="text-[11px] text-slate-500">${escapeHtml(t.driver_name || '-')}</div>
+            `;
+        } else {
+            // ROUTE or DRIVER
+            partnerCol = `
+                <div class="font-bold text-slate-800 font-mono">${escapeHtml(t.vehicle_plate || 'Chưa gán xe')}</div>
+                <div class="text-[11px] text-teal-800 font-semibold truncate max-w-[160px]" title="${escapeHtml(t.customer_name || '')}">${escapeHtml(t.customer_name || 'Khách lẻ')}</div>
+            `;
+        }
 
         return `
             <tr class="hover:bg-teal-50/40 transition-colors">
@@ -28468,7 +28478,12 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
                     <span class="text-[11px] text-slate-400 ml-1">(${escapeHtml(t.container_type || '40HC')})</span>
                 </td>
                 <td class="py-2 px-2.5 text-slate-600 max-w-xs truncate" title="${escapeHtml(t.route || '-')}">${escapeHtml(t.route || '-')}</td>
-                <td class="text-center py-2 px-2.5">${statusBadge}</td>
+                <td class="text-center py-2 px-2.5">
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Giao thành công</span>
+                        ${settlementBadge}
+                    </div>
+                </td>
                 <td class="text-right font-black text-slate-900 tabular-nums py-2 px-2.5">${canViewFinance ? formatMoneyVND(t.revenue) : '***'}</td>
                 <td class="text-right font-bold text-amber-700 tabular-nums py-2 px-2.5">${canViewFinance ? formatMoneyVND(t.expense) : '***'}</td>
             </tr>
@@ -28478,7 +28493,7 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
     return `
         <div class="bg-white rounded-xl border border-teal-200 shadow-2xs overflow-hidden text-xs">
             <div class="overflow-x-auto max-h-80">
-                <table class="w-full text-xs text-left border-collapse">
+                <table class="w-full text-xs text-left border-collapse" data-no-col-manager="true">
                     <thead class="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-slate-700 font-bold border-b border-slate-200 uppercase text-[11px] tracking-wider z-10 font-heading">
                         <tr>
                             <th class="py-2 px-2.5 text-center w-10">STT</th>
@@ -28487,7 +28502,7 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
                             <th class="py-2 px-2.5">${partnerHeader}</th>
                             <th class="py-2 px-2.5">Số Cont & Loại Vỏ</th>
                             <th class="py-2 px-2.5">Tuyến Đường Vận Chuyển</th>
-                            <th class="py-2 px-2.5 text-center">Trạng Thái</th>
+                            <th class="py-2 px-2.5 text-center">Trạng Thái & Đối Soát</th>
                             <th class="py-2 px-2.5 text-right">Doanh Thu</th>
                             <th class="py-2 px-2.5 text-right">Chi Phí Phát Sinh</th>
                         </tr>
@@ -28495,10 +28510,10 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
                     <tbody class="divide-y divide-slate-100">
                         ${rowsHtml}
                     </tbody>
-                    <tfoot class="bg-slate-50 font-black border-t-2 border-slate-200 text-slate-900 text-xs">
-                        <tr>
+                    <tfoot class="bg-slate-50 font-black border-t-2 border-slate-200 text-slate-900 text-xs no-col-reorder">
+                        <tr class="no-col-reorder">
                             <td class="text-center font-black py-2">TỔNG</td>
-                            <td colspan="5" class="py-2 px-2.5 uppercase font-bold text-slate-800">${trips.length} Chuyến Vận Đơn Thực Hiện</td>
+                            <td colspan="5" class="py-2 px-2.5 uppercase font-bold text-slate-800">${trips.length} Chuyến Hoàn Thành Giao Hàng</td>
                             <td class="text-center">-</td>
                             <td class="text-right font-black tabular-nums py-2 px-2.5 text-slate-900">${canViewFinance ? formatMoneyVND(sumRev) : '***'}</td>
                             <td class="text-right font-black tabular-nums py-2 px-2.5 text-amber-800">${canViewFinance ? formatMoneyVND(sumExp) : '***'}</td>

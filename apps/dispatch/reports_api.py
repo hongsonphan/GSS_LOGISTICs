@@ -110,6 +110,13 @@ class ReportsAPIView(APIView):
             'customer', 'vehicle', 'driver', 'trailer', 'dropoff_driver', 'dropoff_vehicle', 'booking_order'
         ).prefetch_related('expenses', 'event_logs', 'timeline_items', 'documents', 'driver_advances', 'driver_advances__settled_by')
 
+        # QUY CHUẨN KẾ TOÁN & ĐIỀU HÀNH VẬN TẢI CHO NHÓM DOANH THU THỰC HIỆN:
+        # Nhóm Báo Cáo 1 (Doanh Thu Thực Hiện - 4 Báo Cáo: Đội Xe, Khách Hàng, Tuyến & Gom Chuyến):
+        # CHỈ GHI NHẬN CÁC CHUYẾN ĐÃ HOÀN THÀNH CHUYẾN (ĐÃ GIAO NHẬN THÀNH CÔNG, CÓ POD).
+        # Các chuyến đang chạy (IN_TRANSIT), chưa chạy (DRAFT/DISPATCHED) tuyệt đối KHÔNG thể hiện ở nhóm này.
+        COMPLETED_EARNED_STATUSES = [TripStatus.DELIVERED, TripStatus.COMPLETED]
+        earned_trips_qs = trips_qs.filter(status__in=COMPLETED_EARNED_STATUSES)
+
         # Helper tính doanh thu / chi phí thực tế cho từng chuyến nếu cache chưa cập nhật
         def get_trip_financials(t):
             rev = int(t.cached_revenue or 0)
@@ -142,14 +149,14 @@ class ReportsAPIView(APIView):
             profit = rev - exp
             return rev, exp, profit
 
-        # Dữ liệu phục vụ Báo cáo 1: Hiệu suất Đội xe & P&L Đầu Xe
-        total_trips = trips_qs.count()
-        owned_trips = trips_qs.filter(vehicle__ownership_type='OWNED').count()
+        # Dữ liệu phục vụ Báo cáo 1: Hiệu suất Đội xe & P&L Đầu Xe (Chỉ tính chuyến đã hoàn thành)
+        total_trips = earned_trips_qs.count()
+        owned_trips = earned_trips_qs.filter(vehicle__ownership_type='OWNED').count()
         partner_trips = total_trips - owned_trips
         owned_ratio = round((owned_trips / total_trips * 100), 1) if total_trips > 0 else 0.0
 
-        split_trips_count = trips_qs.filter(is_split_trip=True).count()
-        twin_trips_count = trips_qs.filter(is_twin_container=True).count()
+        split_trips_count = earned_trips_qs.filter(is_split_trip=True).count()
+        twin_trips_count = earned_trips_qs.filter(is_twin_container=True).count()
         
         # Tổng hợp tài chính chuẩn xác từ các record trong database
         total_revenue = 0
@@ -158,7 +165,7 @@ class ReportsAPIView(APIView):
 
         # Gom nhóm P&L theo đầu xe
         vehicles_dict = {}
-        for t in trips_qs:
+        for t in earned_trips_qs:
             rev, exp, prof = get_trip_financials(t)
             total_revenue += rev
             total_expense += exp
@@ -191,6 +198,7 @@ class ReportsAPIView(APIView):
             vehicles_dict[plate]['profit'] += prof
 
             t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
+            is_cust_settled = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
             vehicles_dict[plate]['trips'].append({
                 'id': t.id,
                 'trip_code': t.trip_code,
@@ -204,6 +212,8 @@ class ReportsAPIView(APIView):
                 'route': f"{t.pickup_location or 'Cảng'} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}",
                 'status': t.status,
                 'status_label': t.get_status_display(),
+                'is_settled': is_cust_settled,
+                'settlement_status': 'Đã đối soát' if is_cust_settled else 'Chờ đối soát',
                 'revenue': rev,
                 'expense': exp,
             })
@@ -223,9 +233,9 @@ class ReportsAPIView(APIView):
         fleet_pnl.sort(key=lambda x: x['revenue'], reverse=True)
         total_fleet_containers = sum(f['containers_count'] for f in fleet_pnl)
 
-        # Xếp hạng tài xế
+        # Xếp hạng tài xế (Chỉ tính chuyến đã hoàn thành)
         driver_dict = {}
-        for t in trips_qs:
+        for t in earned_trips_qs:
             rev, _, _ = get_trip_financials(t)
             drv = t.driver.full_name if t.driver else 'Chưa gán'
             if drv not in driver_dict:
@@ -401,8 +411,9 @@ class ReportsAPIView(APIView):
 
         # -------------------------------------------------------------
         # Dữ liệu phục vụ Báo cáo 4: Chi Phí Phát Sinh Tuyến (Theo Xe, Theo Tài & Theo Khách Hàng)
+        # Chỉ tính chi phí trên các chuyến xe ĐÃ HOÀN THÀNH GIAO NHẬN THÀNH CÔNG
         # -------------------------------------------------------------
-        all_expenses = TripExpense.objects.filter(trip__in=trips_qs, is_deleted=False).select_related(
+        all_expenses = TripExpense.objects.filter(trip__in=earned_trips_qs, is_deleted=False).select_related(
             'trip', 'trip__customer', 'trip__vehicle', 'trip__driver'
         )
         reimbursable_expenses = []
@@ -439,7 +450,7 @@ class ReportsAPIView(APIView):
         drv_cost_dict = {}
         cust_cost_dict = {}
 
-        for t in trips_qs:
+        for t in earned_trips_qs:
             t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
             t_route = f"{t.pickup_location or 'Cảng'} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}"
             t_plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán xe'
@@ -473,6 +484,7 @@ class ReportsAPIView(APIView):
             t_total_cost = t_direct_exp + t_reimb
             total_route_cost += t_direct_exp
 
+            is_cust_settled = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
             trip_item = {
                 'id': t.id,
                 'trip_code': t.trip_code,
@@ -486,6 +498,8 @@ class ReportsAPIView(APIView):
                 'container_type': t.container_type or '40HC',
                 'status': t.status,
                 'status_label': t.get_status_display(),
+                'is_settled': is_cust_settled,
+                'settlement_status': 'Đã đối soát' if is_cust_settled else 'Chờ đối soát',
                 'revenue': rev,
                 'expense': t_direct_exp,
                 'bot_fee': t_bot,
@@ -732,11 +746,12 @@ class ReportsAPIView(APIView):
 
         # =============================================================
         # BÁO CÁO 7: PHÂN TÍCH DOANH THU KHÁCH HÀNG & SẢN LƯỢNG TEU
+        # CHỈ GHI NHẬN CÁC CHUYẾN XE ĐÃ HOÀN THÀNH GIAO NHẬN THÀNH CÔNG
         # =============================================================
         customer_analytics_dict = {}
         total_system_teu = 0.0
 
-        for t in trips_qs:
+        for t in earned_trips_qs:
             c_name = t.customer.name if t.customer else 'Khách vãng lai'
             c_code = t.customer.code if t.customer else 'CUST_WALKIN'
 
@@ -801,6 +816,7 @@ class ReportsAPIView(APIView):
             row['profit'] += prof
 
             t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
+            is_cust_settled = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
             row['trips'].append({
                 'id': t.id,
                 'trip_code': t.trip_code,
@@ -814,6 +830,8 @@ class ReportsAPIView(APIView):
                 'route': f"{t.pickup_location or 'Cảng'} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}",
                 'status': t.status,
                 'status_label': t.get_status_display(),
+                'is_settled': is_cust_settled,
+                'settlement_status': 'Đã đối soát' if is_cust_settled else 'Chờ đối soát',
                 'revenue': rev,
                 'expense': exp,
             })
@@ -1263,6 +1281,7 @@ class ReportsAPIView(APIView):
 
         # =========================================================================
         # BÁO CÁO 12: BÁO CÁO QUYẾT TOÁN CHUYẾN XE & BACKLOG CHUYỂN KỲ
+        # CHỈ GHI NHẬN CÁC CHUYẾN XE ĐÃ HOÀN THÀNH GIAO NHẬN THÀNH CÔNG
         # =========================================================================
         settlement_trips_data = []
         settlement_total_count = 0
@@ -1273,7 +1292,7 @@ class ReportsAPIView(APIView):
         settlement_settled_prof = 0
         settlement_unsettled_rev = 0
 
-        current_trip_ids = set(trips_qs.values_list('id', flat=True))
+        current_trip_ids = set(earned_trips_qs.values_list('id', flat=True))
 
         extra_settled_trips = []
         if start_d and end_d:
@@ -1286,7 +1305,7 @@ class ReportsAPIView(APIView):
                 'customer', 'vehicle', 'driver', 'trailer', 'dropoff_driver', 'dropoff_vehicle', 'booking_order', 'settled_by'
             ).prefetch_related('expenses', 'documents'))
 
-        combined_settlement_trips = list(trips_qs) + extra_settled_trips
+        combined_settlement_trips = list(earned_trips_qs) + extra_settled_trips
 
         for t in combined_settlement_trips:
             rev, exp, prof = get_trip_financials(t)

@@ -2178,6 +2178,7 @@ class BimLogisticsCoreTestCase(TestCase):
         """Kiểm tra 3 Báo Cáo mới: Báo Cáo 12 (Quyết toán & Backlog), Báo Cáo 13 (Công Nợ AR) và Báo Cáo 14 (Tuổi đơn tồn đọng)."""
         import datetime
         from django.utils import timezone
+        from apps.dispatch.models import TripStatus
         today = timezone.now().date()
         past_date = today - datetime.timedelta(days=45)
 
@@ -2190,6 +2191,7 @@ class BimLogisticsCoreTestCase(TestCase):
             vehicle=self.vehicle,
             driver=self.driver,
             loading_date=past_date,
+            status=TripStatus.COMPLETED,
             cached_revenue=4500000,
             cached_expense=1500000,
             cached_profit=3000000,
@@ -2205,6 +2207,7 @@ class BimLogisticsCoreTestCase(TestCase):
             vehicle=self.vehicle,
             driver=self.driver,
             loading_date=today,
+            status=TripStatus.COMPLETED,
             cached_revenue=5000000,
             cached_expense=2000000,
             cached_profit=3000000,

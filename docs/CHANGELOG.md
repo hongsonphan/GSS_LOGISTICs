@@ -2,6 +2,30 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.5] - 2026-10-26 (Chuẩn Hóa Doanh Thu Thực Hiện: Chỉ Ghi Nhận Chuyến Đã Hoàn Thành Giao Hàng & Theo Dõi Trạng Thái Đối Soát)
+
+### 1. Chuẩn Hóa Nghiệp Vụ Doanh Thu Thực Hiện (Earned Freight Revenue):
+- Theo đúng quy chuẩn kế toán vận tải và chỉ đạo điều hành: Nhóm báo cáo 1 (Doanh Thu Thực Hiện - gồm 4 báo cáo: Đội Xe, Khách Hàng, Tuyến & Gom Chuyến) chỉ được phép ghi nhận các chuyến xe ĐÃ HOÀN THÀNH CHUYẾN (Đã giao nhận thành công, có POD / COMPLETED, DELIVERED).
+- Các chuyến xe đang chạy trên đường (IN_TRANSIT), đang đóng hàng tại kho (UNLOADING, AT_WAREHOUSE), hoặc mới phát lệnh (DISPATCHED, DRAFT) tuyệt đối KHÔNG đưa vào doanh thu, số chuyến, số cont hay chi phí của nhóm báo cáo này.
+
+### 2. Nâng Cấp Backend API (apps/dispatch/reports_api.py):
+- Thiết lập bộ lọc earned_trips_qs = trips_qs.filter(status__in=[TripStatus.DELIVERED, TripStatus.COMPLETED]) áp dụng đồng bộ cho:
+  * Báo cáo 1 (Doanh thu & Hiệu quả Đội xe): 100% doanh thu, số chuyến, số cont và P&L đầu xe chỉ tính trên chuyến hoàn thành.
+  * Báo cáo 7 (Doanh thu theo Khách hàng): Sản lượng TEU quy đổi và doanh thu từng khách hàng tính trên chuyến hoàn thành.
+  * Báo cáo 4 (Chi phí Tuyến: Xe, Tài & KH): Tổng chi phí trực tiếp, vé BOT, nâng hạ, chi hộ chỉ phát sinh từ chuyến hoàn thành.
+  * Báo cáo 12 (Quyết toán Gom Chuyến & Backlog): Backlog quyết toán chỉ theo dõi các chuyến đã hoàn thành giao hàng.
+- Bổ sung trường dữ liệu is_settled và settlement_status ('Đã đối soát' / 'Chờ đối soát') cho từng chuyến con trong danh sách bóc tách.
+
+### 3. Nâng Cấp Giao Diện Báo Cáo (static/js/app.js):
+- Cập nhật hàm renderNestedTripsTableHtml:
+  * Cột trạng thái hiển thị rõ 2 tầng: Badge vận hành 'Giao thành công' và Badge đối soát công nợ ('Đã Đối Soát' màu xanh lục / 'Chờ Đối Soát' màu hổ phách).
+  * Tiêu đề cột chuẩn hóa thành 'Trạng Thái & Đối Soát', giúp bộ phận điều phối và kế toán theo dõi tức thì tình trạng công nợ từng chuyến.
+
+### 4. Kiểm Thử Hệ Thống:
+- node -c static/js/app.js && node -c static/js/column_manager.js (100% Passed).
+- Chạy 147 test tự động của hệ thống (python manage.py test --keepdb) — 147/147 PASSED.
+- Nâng cache-busting version trong templates/base.html lên ?v=2.9.63.
+
 ## [v4.6.4] - 2026-10-26 (Khắc Phục Triệt Để Lỗi Lệch Cột Dòng Total Do Nested Table & Đồng Bộ Hoàn Hảo TFoot Khi Ẩn/Đổi Thứ Tự Cột)
 
 ### 1. Nguyên Nhân Cốt Lõi (Root-Cause Analysis):
