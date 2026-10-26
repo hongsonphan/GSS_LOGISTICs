@@ -1,8 +1,8 @@
 #!/bin/bash
 # ==============================================================================
 # SCRIPT CẬP NHẬT TỰ ĐỘNG WEBAPP VÀ ĐỒNG BỘ GITHUB CHO BIM LOGISTICS
+# Sử dụng: ./update_all.sh "Ghi chú sửa đổi"
 # ==============================================================================
-set -e
 
 MSG="${1:-Update code directly on VPS}"
 
@@ -11,9 +11,10 @@ cd /home/ubuntu/BIM_LOGISTICS
 echo "=== [1/3] THU THAP TAI NGUYEN TINH VA KHOI DONG LAI WEBAPP ==="
 docker compose exec -T web python manage.py collectstatic --noinput
 docker compose restart web
+sleep 3
 
 echo "=== [2/3] KIEM TRA TRANG THAI WEBAPP ==="
-curl -s -I http://127.0.0.1:8085/login/ | grep -E "HTTP/|Server:"
+curl -s -I http://127.0.0.1:8085/login/ | head -n 5
 
 echo "=== [3/3] COMMIT VA DAY CODE LEN GITHUB ==="
 git add -u
