@@ -123,7 +123,7 @@
             </button>
             <button id="report-tab-btn-4" data-report-group="group-1" onclick="switchReportSubTab('report-4')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
                 <i class="ph-bold ph-receipt text-base"></i>
-                <span>Chi Phí Tuyến & Suất Tiêu Hao</span>
+                <span>Chi Phí Tuyến (Xe, Tài & KH)</span>
             </button>
             <button id="report-tab-btn-12" data-report-group="group-1" onclick="switchReportSubTab('report-12')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
                 <i class="ph-bold ph-stack text-base"></i>
@@ -473,76 +473,96 @@
     <!-- ========================================================================= -->
     <!-- BÁO CÁO 4: ĐỐI SOÁT CHI PHÍ TUYẾN & THU HỒI KHOẢN CHI HỘ (REIMBURSEMENT) -->
     <!-- ========================================================================= -->
+    <!-- BÁO CÁO 4: CHI PHÍ PHÁT SINH TUYẾN (THEO XE, THEO TÀI & THEO KHÁCH HÀNG) -->
+    <!-- ========================================================================= -->
     <div id="subtab-report-4" class="report-subtab-content space-y-4 hidden">
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+        <!-- 4 Thẻ KPI Tóm Tắt Chi Phí Tuyến Chiến Lược -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Chi Phí Tuyến Phát Sinh</span>
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep4-stat-total-cost">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep4-stat-total-sub">Chi phí vận hành các tuyến vận tải</p>
+            </div>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Vé Cầu Đường (BOT)</span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Vé Cầu Đường (BOT / VETC)</span>
                 <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep4-stat-bot">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">ePass / VETC điện tử</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep4-stat-bot-sub">ePass / VETC điện tử qua các trạm</p>
             </div>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-blue-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nhiên Liệu Dầu DO</span>
-                <p class="text-3xl font-black text-blue-700 tabular-nums font-heading mt-1" id="rep4-stat-fuel">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Định mức tiêu hao chuyến</p>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nâng Hạ Cảng & Bãi ICD</span>
+                <p class="text-3xl font-black text-blue-700 tabular-nums font-heading mt-1" id="rep4-stat-lift">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep4-stat-lift-sub">Nâng hạ phụ, cẩu bãi, cược cont, vệ sinh</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Khoản Chi Hộ Khách</span>
-                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading mt-1" id="rep4-stat-reimbursable">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1">Nâng hạ phụ, cẩu bãi, vệ sinh, kiểm dịch</p>
-            </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chi Hộ Chưa Thu Hồi</span>
-                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading mt-1" id="rep4-stat-pending-reimb">0 đ</p>
-                <p class="text-xs text-rose-600 font-bold mt-1">Cần lập bảng kê phụ phí gửi khách</p>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Chi Hộ Khách Hàng (Debit Note)</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep4-stat-reimbursable">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep4-stat-reimb-sub">Chờ thu khách: 0 đ</p>
             </div>
         </div>
 
-        <!-- Bảng Kê Các Khoản Chi Hộ Chờ Thu Hồi Từ Khách Hàng -->
+        <!-- Thanh Chuyển Đổi 5 Góc Nhìn & Bộ Lọc Đa Chiều -->
+        <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-bold font-heading flex-wrap">
+                <button type="button" onclick="switchReport4Perspective('route')" id="rep4-persp-route" class="rep4-persp-btn px-3 py-1.5 rounded-lg bg-teal-700 text-white shadow-xs transition-colors cursor-pointer flex items-center gap-1.5">
+                    <i class="ph-bold ph-path"></i> Theo Tuyến Đường
+                </button>
+                <button type="button" onclick="switchReport4Perspective('vehicle')" id="rep4-persp-vehicle" class="rep4-persp-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <i class="ph-bold ph-truck"></i> Theo Đầu Xe
+                </button>
+                <button type="button" onclick="switchReport4Perspective('driver')" id="rep4-persp-driver" class="rep4-persp-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <i class="ph-bold ph-user"></i> Theo Tài Xế
+                </button>
+                <button type="button" onclick="switchReport4Perspective('customer')" id="rep4-persp-customer" class="rep4-persp-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <i class="ph-bold ph-buildings"></i> Theo Khách Hàng
+                </button>
+                <button type="button" onclick="switchReport4Perspective('reimbursable')" id="rep4-persp-reimbursable" class="rep4-persp-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <i class="ph-bold ph-receipt"></i> Bảng Kê Chi Hộ
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="filter-rep4-search" oninput="applyReport4Filters()" placeholder="Tìm tuyến, xe, tài xế, khách..." 
+                        class="pl-7 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 w-56 sm:w-64 focus:bg-white focus:border-teal-600 outline-none">
+                </div>
+                <button type="button" onclick="exportReport4ToExcel()" 
+                    class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold font-heading flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer" 
+                    title="Xuất bảng dữ liệu hiện tại sang Excel/CSV">
+                    <i class="ph-bold ph-file-xls text-sm"></i>
+                    <span>Xuất Excel</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bảng Dữ Liệu Tổng Hợp Theo Góc Nhìn Đã Chọn -->
         <div class="erp-table-container flex flex-col shadow-sm">
             <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
-                    <i class="ph-bold ph-hand-coins text-teal-700"></i>
-                    Bảng Kê Chi Phí Chi Hộ Khách Hàng Chờ Hoàn Ứng (Reimbursable Ledger)
+                <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5" id="rep4-table-title">
+                    <i class="ph-bold ph-path text-teal-700"></i>
+                    <span>Phân Tích Chi Phí Phát Sinh Theo Tuyến Vận Tải</span>
                 </h3>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="filter-rep4-search" oninput="applyReport4Filters()" placeholder="Tìm khách hàng, số HĐ, loại phí..." 
-                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
-                    <button type="button" onclick="openColumnCustomizer('rep4-expenses-table')" 
-                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-teal-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
-                        title="Tùy chỉnh cột chi phí chi hộ">
-                        <i class="ph-bold ph-columns text-teal-700"></i>
-                        <span>Cột</span>
-                    </button>
-                </div>
+                <span class="text-xs text-slate-500 font-medium" id="rep4-table-subtitle">
+                    Nhấp vào bất kỳ dòng nào để xem danh sách chuyến xe và chi tiết từng khoản phí
+                </span>
             </div>
+
             <div class="overflow-x-auto">
-                <table class="erp-table whitespace-nowrap" id="rep4-expenses-table" data-table-title="Chi Phí Tuyến & Thu Hồi Chi Hộ">
-                    <thead>
-                        <tr>
-                            <th class="text-center w-12 font-bold">STT</th>
-                            <th onclick="toggleReport4Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport4Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport4Sort('expense_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khoản Mục Chi Hộ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport4Sort('expense_type')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Phân Loại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport4Sort('amount')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Số Tiền (VNĐ)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport4Sort('invoice_number')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Số Hóa Đơn / Chứng Từ</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport4Sort('date')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Ngày Phát Sinh</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                            <th onclick="toggleReport4Sort('is_settled')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tình Trạng Thu Hồi</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
-                        </tr>
+                <table class="erp-table whitespace-nowrap" id="rep4-expenses-table" data-table-title="Báo Cáo Chi Phí Tuyến">
+                    <thead id="rep4-thead">
+                        <!-- Rendered dynamically by switchReport4Perspective() -->
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="rep4-tbody">
                         <!-- Rendered by JS -->
                     </tbody>
-                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep4-tfoot">
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-[13.5px]" id="rep4-tfoot">
                         <!-- Rendered by JS -->
                     </tfoot>
                 </table>
             </div>
         </div>
     </div>
-
-    <!-- ========================================================================= -->
-    <!-- BÁO CÁO 5: BÀN GIAO CẮT KÉO & LƯU MOOC / LƯU XE CHỜ HẠ CONT SAU 0H -->
+    
     <!-- ========================================================================= -->
     <div id="subtab-report-5" class="report-subtab-content space-y-4 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">

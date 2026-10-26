@@ -400,36 +400,244 @@ class ReportsAPIView(APIView):
         otp_rate = round(otp_arrival_on_time / total_trips * 100, 1) if total_trips > 0 else 100.0
 
         # -------------------------------------------------------------
-        # Dữ liệu phục vụ Báo cáo 4: Đối Soát Chi Phí & Hoàn Ứng Chi Hộ
+        # Dữ liệu phục vụ Báo cáo 4: Chi Phí Phát Sinh Tuyến (Theo Xe, Theo Tài & Theo Khách Hàng)
         # -------------------------------------------------------------
-        all_expenses = TripExpense.objects.filter(trip__in=trips_qs, is_deleted=False).select_related('trip', 'trip__customer')
+        all_expenses = TripExpense.objects.filter(trip__in=trips_qs, is_deleted=False).select_related(
+            'trip', 'trip__customer', 'trip__vehicle', 'trip__driver'
+        )
         reimbursable_expenses = []
         total_reimbursable = 0
         total_reimbursable_collected = 0
 
         for exp in all_expenses:
             if exp.is_on_behalf_of_customer:
-                total_reimbursable += int(exp.amount)
+                total_reimbursable += int(exp.amount or 0)
                 is_settled = (exp.status == ApprovalStatus.SETTLED or getattr(exp, 'reimbursement_status', '') == 'COLLECTED')
                 if is_settled:
-                    total_reimbursable_collected += int(exp.amount)
+                    total_reimbursable_collected += int(exp.amount or 0)
                 reimbursable_expenses.append({
                     'id': exp.id,
                     'trip_code': exp.trip.trip_code,
                     'customer_name': exp.trip.customer.name if exp.trip.customer else 'Khách lẻ',
                     'expense_name': exp.notes or exp.get_category_display(),
                     'expense_type': exp.get_category_display(),
-                    'amount': int(exp.amount),
+                    'amount': int(exp.amount or 0),
                     'invoice_number': exp.invoice_number or 'Chưa có',
                     'date': exp.created_at.strftime('%d/%m/%Y'),
                     'is_settled': is_settled,
                     'settled_status': 'Đã thu hồi' if is_settled else 'Chờ khách trả'
                 })
 
-        # Đối soát BOT và Cẩu nâng/hạ
-        total_bot = sum(exp.amount for exp in all_expenses if exp.category in [ExpenseCategory.TOLL_FEE, ExpenseCategory.BOT_TOLL])
+        total_bot = sum(int(exp.amount or 0) for exp in all_expenses if exp.category in [ExpenseCategory.TOLL_FEE, ExpenseCategory.BOT_TOLL])
         total_fuel = 0
-        total_port_lift = sum(exp.amount for exp in all_expenses if exp.category in [ExpenseCategory.LIFT_ON, ExpenseCategory.LIFT_OFF, ExpenseCategory.LIFT_ON_OFF])
+        total_port_lift = sum(int(exp.amount or 0) for exp in all_expenses if exp.category in [ExpenseCategory.LIFT_ON, ExpenseCategory.LIFT_OFF, ExpenseCategory.LIFT_ON_OFF, ExpenseCategory.PORT_STORAGE])
+        total_route_cost = 0
+
+        # Khởi tạo các từ điển gom nhóm đa chiều
+        routes_dict = {}
+        veh_cost_dict = {}
+        drv_cost_dict = {}
+        cust_cost_dict = {}
+
+        for t in trips_qs:
+            t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
+            t_route = f"{t.pickup_location or 'Cảng'} ➔ {t.delivery_warehouse or t.dropoff_location or 'Kho KH'}"
+            t_plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán xe'
+            t_driver = t.driver.nickname or t.driver.full_name if t.driver else 'Chưa gán tài'
+            t_driver_code = t.driver.code if t.driver else '-'
+            t_cust = t.customer.name if t.customer else 'Khách lẻ'
+            t_cust_code = t.customer.code if t.customer else '-'
+
+            rev, _, _ = get_trip_financials(t)
+
+            # Phân rã chi phí chi tiết của từng chuyến
+            t_bot = 0
+            t_lift = 0
+            t_reimb = 0
+            t_other = 0
+            for e in t.expenses.all():
+                if e.is_deleted or e.status == ApprovalStatus.REJECTED:
+                    continue
+                amt = int(e.amount or 0)
+                if e.is_on_behalf_of_customer:
+                    t_reimb += amt
+                elif e.category in [ExpenseCategory.TOLL_FEE, ExpenseCategory.BOT_TOLL]:
+                    t_bot += amt
+                elif e.category in [ExpenseCategory.LIFT_ON, ExpenseCategory.LIFT_OFF, ExpenseCategory.LIFT_ON_OFF, ExpenseCategory.PORT_STORAGE]:
+                    t_lift += amt
+                else:
+                    t_other += amt
+
+            t_drv_pay = int(t.driver_allowance or 0) + int(t.detention_driver_allowance or 0) + int(t.dropoff_driver_allowance or 0)
+            t_direct_exp = t_bot + t_lift + t_other + t_drv_pay
+            t_total_cost = t_direct_exp + t_reimb
+            total_route_cost += t_direct_exp
+
+            trip_item = {
+                'id': t.id,
+                'trip_code': t.trip_code,
+                'date': t_date.strftime('%d/%m/%Y') if t_date else '-',
+                'route': t_route,
+                'vehicle_plate': t_plate,
+                'driver_name': t_driver,
+                'customer_name': t_cust,
+                'customer_code': t_cust_code,
+                'container_number': t.container_number or '-',
+                'container_type': t.container_type or '40HC',
+                'status': t.status,
+                'status_label': t.get_status_display(),
+                'revenue': rev,
+                'expense': t_direct_exp,
+                'bot_fee': t_bot,
+                'lift_fee': t_lift,
+                'reimbursable_fee': t_reimb,
+                'other_fee': t_other,
+                'driver_allowance': t_drv_pay,
+                'total_cost': t_total_cost
+            }
+
+            # 1. Gom nhóm theo Tuyến đường (Route)
+            if t_route not in routes_dict:
+                routes_dict[t_route] = {
+                    'route_name': t_route,
+                    'trips_count': 0,
+                    'containers_count': 0,
+                    'revenue': 0,
+                    'direct_expense': 0,
+                    'bot_fee': 0,
+                    'lift_fee': 0,
+                    'reimbursable_fee': 0,
+                    'other_fee': 0,
+                    'driver_allowance': 0,
+                    'total_cost': 0,
+                    'trips': []
+                }
+            r_entry = routes_dict[t_route]
+            r_entry['trips_count'] += 1
+            r_entry['containers_count'] += (2 if t.is_twin_container else 1)
+            r_entry['revenue'] += rev
+            r_entry['direct_expense'] += t_direct_exp
+            r_entry['bot_fee'] += t_bot
+            r_entry['lift_fee'] += t_lift
+            r_entry['reimbursable_fee'] += t_reimb
+            r_entry['other_fee'] += t_other
+            r_entry['driver_allowance'] += t_drv_pay
+            r_entry['total_cost'] += t_total_cost
+            r_entry['trips'].append(trip_item)
+
+            # 2. Gom nhóm theo Đầu xe (Vehicle)
+            if t_plate not in veh_cost_dict:
+                veh_cost_dict[t_plate] = {
+                    'plate': t_plate,
+                    'vehicle_type': t.vehicle.vehicle_type if t.vehicle else 'Đầu kéo',
+                    'ownership': t.vehicle.ownership_type if t.vehicle else 'Xe Nhà',
+                    'routes_freq': {},
+                    'trips_count': 0,
+                    'revenue': 0,
+                    'direct_expense': 0,
+                    'bot_fee': 0,
+                    'lift_fee': 0,
+                    'reimbursable_fee': 0,
+                    'other_fee': 0,
+                    'total_cost': 0,
+                    'trips': []
+                }
+            v_entry = veh_cost_dict[t_plate]
+            v_entry['trips_count'] += 1
+            v_entry['revenue'] += rev
+            v_entry['direct_expense'] += t_direct_exp
+            v_entry['bot_fee'] += t_bot
+            v_entry['lift_fee'] += t_lift
+            v_entry['reimbursable_fee'] += t_reimb
+            v_entry['other_fee'] += t_other
+            v_entry['total_cost'] += t_total_cost
+            v_entry['routes_freq'][t_route] = v_entry['routes_freq'].get(t_route, 0) + 1
+            v_entry['trips'].append(trip_item)
+
+            # 3. Gom nhóm theo Tài xế (Driver)
+            if t_driver not in drv_cost_dict:
+                drv_cost_dict[t_driver] = {
+                    'driver_name': t_driver,
+                    'driver_code': t_driver_code,
+                    'assigned_vehicle': t_plate,
+                    'routes_freq': {},
+                    'trips_count': 0,
+                    'direct_expense': 0,
+                    'bot_fee': 0,
+                    'lift_fee': 0,
+                    'other_fee': 0,
+                    'driver_allowance': 0,
+                    'total_cost': 0,
+                    'trips': []
+                }
+            d_entry = drv_cost_dict[t_driver]
+            d_entry['trips_count'] += 1
+            d_entry['direct_expense'] += t_direct_exp
+            d_entry['bot_fee'] += t_bot
+            d_entry['lift_fee'] += t_lift
+            d_entry['other_fee'] += t_other
+            d_entry['driver_allowance'] += t_drv_pay
+            d_entry['total_cost'] += t_total_cost
+            d_entry['routes_freq'][t_route] = d_entry['routes_freq'].get(t_route, 0) + 1
+            d_entry['trips'].append(trip_item)
+
+            # 4. Gom nhóm theo Khách hàng (Customer)
+            if t_cust not in cust_cost_dict:
+                cust_cost_dict[t_cust] = {
+                    'customer_name': t_cust,
+                    'customer_code': t_cust_code,
+                    'routes_freq': {},
+                    'trips_count': 0,
+                    'revenue': 0,
+                    'direct_expense': 0,
+                    'reimbursable_fee': 0,
+                    'total_cost': 0,
+                    'gross_profit': 0,
+                    'margin_percent': 0.0,
+                    'trips': []
+                }
+            c_entry = cust_cost_dict[t_cust]
+            c_entry['trips_count'] += 1
+            c_entry['revenue'] += rev
+            c_entry['direct_expense'] += t_direct_exp
+            c_entry['reimbursable_fee'] += t_reimb
+            c_entry['total_cost'] += t_total_cost
+            c_entry['routes_freq'][t_route] = c_entry['routes_freq'].get(t_route, 0) + 1
+            c_entry['trips'].append(trip_item)
+
+        # Tính toán các chỉ số phái sinh và sắp xếp
+        routes_cost_list = list(routes_dict.values())
+        for r in routes_cost_list:
+            r_trips = r['trips_count']
+            r['avg_cost_per_trip'] = round(r['direct_expense'] / r_trips) if r_trips > 0 else 0
+            r['cost_ratio'] = round(r['direct_expense'] / r['revenue'] * 100, 1) if r['revenue'] > 0 else 0.0
+        routes_cost_list.sort(key=lambda x: x['direct_expense'], reverse=True)
+
+        vehicles_cost_list = list(veh_cost_dict.values())
+        for v in vehicles_cost_list:
+            v_trips = v['trips_count']
+            v['avg_cost_per_trip'] = round(v['direct_expense'] / v_trips) if v_trips > 0 else 0
+            v['cost_ratio'] = round(v['direct_expense'] / v['revenue'] * 100, 1) if v['revenue'] > 0 else 0.0
+            v['top_route'] = max(v['routes_freq'], key=v['routes_freq'].get) if v['routes_freq'] else '-'
+            del v['routes_freq']
+        vehicles_cost_list.sort(key=lambda x: x['direct_expense'], reverse=True)
+
+        drivers_cost_list = list(drv_cost_dict.values())
+        for d in drivers_cost_list:
+            d_trips = d['trips_count']
+            d['avg_cost_per_trip'] = round(d['direct_expense'] / d_trips) if d_trips > 0 else 0
+            d['top_route'] = max(d['routes_freq'], key=d['routes_freq'].get) if d['routes_freq'] else '-'
+            del d['routes_freq']
+        drivers_cost_list.sort(key=lambda x: x['direct_expense'], reverse=True)
+
+        customers_cost_list = list(cust_cost_dict.values())
+        for c in customers_cost_list:
+            c_profit = c['revenue'] - c['direct_expense']
+            c['gross_profit'] = c_profit
+            c['margin_percent'] = round(c_profit / c['revenue'] * 100, 1) if c['revenue'] > 0 else 0.0
+            c['top_route'] = max(c['routes_freq'], key=c['routes_freq'].get) if c['routes_freq'] else '-'
+            del c['routes_freq']
+        customers_cost_list.sort(key=lambda x: x['direct_expense'], reverse=True)
 
         # -------------------------------------------------------------
         # Dữ liệu phục vụ Báo cáo 5: Bàn Giao Cắt Kéo & Lưu Xe Sau 0H
@@ -1604,12 +1812,17 @@ class ReportsAPIView(APIView):
                 'trips': otp_trips_data
             } if can_otp else None,
             'report4_expenses_reimbursement': {
+                'total_cost': total_route_cost,
                 'total_bot': total_bot,
                 'total_fuel': total_fuel,
                 'total_port_lift': total_port_lift,
                 'total_reimbursable': total_reimbursable,
                 'total_reimbursable_collected': total_reimbursable_collected,
                 'pending_reimbursement': total_reimbursable - total_reimbursable_collected,
+                'routes': routes_cost_list,
+                'vehicles': vehicles_cost_list,
+                'drivers': drivers_cost_list,
+                'customers': customers_cost_list,
                 'items': reimbursable_expenses
             } if can_route else None,
             'report5_drop_hook_and_layover': {

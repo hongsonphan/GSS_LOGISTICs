@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.3] - 2026-10-26 (Báo Cáo Chi Phí Tuyến Đa Chiều: Theo Tuyến Đường, Đầu Xe, Tài Xế, Khách Hàng & Bảng Kê Chi Hộ)
+
+### 1. Phân Tích & Chuẩn Hóa Nghiệp Vụ Chi Phí Vận Tải:
+- Bóc tách minh bạch 2 cấu phần chi phí:
+  * Chi phí cty chịu (Direct Costs): Vé cầu đường BOT (ePass/VETC), Nâng hạ cảng/bãi ICD, Sửa chữa lốp/vá vỏ, Lương chuyến bồi dưỡng tài xế.
+  * Chi phí chi hộ khách hàng (Reimbursable Costs): Cẩu bãi, Cược cont, Kiểm dịch, Vệ sinh rửa vỏ cont, Lưu ca (thu hồi qua Debit Note).
+- Thiết lập 5 góc nhìn quản trị (Perspective Views) đáp ứng trọn vẹn nhu cầu điều hành và kế toán:
+  * 🛣️ **Theo Tuyến Đường (Mặc định):** Tuyến, Số chuyến, Số cont, Doanh thu, Tổng chi phí, Vé BOT, Nâng hạ, Chi hộ, Chi phí BQ/chuyến, Tỷ lệ CP/Doanh thu.
+  * 🚛 **Theo Đầu Xe:** Biển số, Loại xe & sở hữu, Tuyến chủ lực, Số chuyến, Doanh thu, Chi phí tuyến, Vé BOT, Nâng hạ, Chi phí khác, Chi phí BQ/chuyến.
+  * 👤 **Theo Tài Xế:** Họ tên, Mã TX, Xe phụ trách, Tuyến chạy nhiều nhất, Số chuyến, Tổng chi phí hiện trường (BOT, bãi, bồi dưỡng), Chi phí BQ/chuyến.
+  * 🏢 **Theo Khách Hàng:** Tên KH, Mã KH, Tuyến vận chuyển chính, Số chuyến, Doanh thu cước, Chi phí cty chịu, Chi phí chi hộ, Lợi nhuận gộp, Biên LN (%).
+  * 📋 **Bảng Kê Chi Hộ:** Bảng kê chi tiết từng khoản chi hộ có số hóa đơn, ngày phát sinh, chứng từ và tình trạng đối soát thu hồi.
+
+### 2. Nâng Cấp Kỹ Thuật (Backend & Frontend):
+- **Backend API (apps/dispatch/reports_api.py):**
+  * Nâng cấp bộ tính toán trong ReportsAPIView cho report4_expenses_reimbursement, tính toán tức thì đa chiều từ trips_qs và all_expenses.
+  * Trả về đồng bộ 5 danh mục tổng hợp: routes, vehicles, drivers, customers, items.
+- **Frontend SPA (templates/views/view_reports.html & static/js/app.js):**
+  * 4 Thẻ KPI động trên đỉnh trang hiển thị tức thì tổng số liệu chi phí.
+  * Thanh chuyển đổi 5 góc nhìn (Perspective Tabs) tương tác tức thì (zero-latency, không reload).
+  * Lưới con Accordion Inline: click vào từng dòng xổ ra danh sách chuyến xe và các khoản chi cụ thể.
+  * Nút '[Mở Bảng Kê Chi Tiết]' trên sub-row kết nối mượt mà sang Bảng Kê Chi Tiết Toàn Bộ Vận Đơn với chế độ ROUTE, VEHICLE, DRIVER, CUSTOMER.
+  * Tính năng Tìm kiếm tức thì theo từ khóa, Sắp xếp đa cột và Xuất Excel theo góc nhìn hiện hành.
+
+### 3. Kiểm Thử Hệ Thống & Kiểm Chứng Độ Tin Cậy:
+- Cú pháp JavaScript xác thực 100% bằng Node.js compiler: node -c static/js/app.js && node -c static/js/column_manager.js.
+- Chạy toàn bộ 147 test tự động của hệ thống (python manage.py test --keepdb) — 147/147 PASSED.
+- Nâng cache-busting version trong templates/base.html lên ?v=2.9.61.
+
 ## [v4.6.2] - 2026-10-26 (Khắc Phục Triệt Để Lỗi Không Bật Trang Chi Tiết Vận Đơn & Cân Bằng Cấu Trúc Phân Cấp DOM Báo Cáo)
 
 ### 1. Điều Tra & Khắc Phục Nguyên Nhân Cốt Lõi (Root-Cause Investigation via Browser Headless Testing):
