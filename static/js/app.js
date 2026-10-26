@@ -26582,7 +26582,10 @@ function renderReport1(data) {
 
 function applyReport1Filters() {
     const searchVal = (document.getElementById('filter-rep1-search')?.value || '').toLowerCase().trim();
+    const settlementVal = document.getElementById('filter-rep1-settlement')?.value || '';
     let list = rep1DataCache.filter(item => {
+        if (settlementVal === 'SETTLED' && (item.settled_trips_count || 0) === 0) return false;
+        if (settlementVal === 'PENDING' && (item.pending_settlement_trips_count || 0) === 0) return false;
         if (!searchVal) return true;
         return (item.plate || '').toLowerCase().includes(searchVal) ||
                (item.vehicle_type || '').toLowerCase().includes(searchVal) ||
@@ -26632,7 +26635,12 @@ tbody.innerHTML = list.map((item, index) => {
         const avgPerTripDisplay = formatMoneyVND(item.avg_revenue_per_trip || (item.trips_count > 0 ? Math.round(item.revenue / item.trips_count) : 0));
         const avgPerContDisplay = formatMoneyVND(item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0));
         const trips = item.trips || [];
-        const nestedTripsTable = renderNestedTripsTableHtml(trips, 'VEHICLE', item.plate);
+        const displayTrips = settlementVal === 'SETTLED' 
+            ? trips.filter(t => Boolean(t.is_settled || t.settlement_status === 'Đã đối soát'))
+            : (settlementVal === 'PENDING' 
+                ? trips.filter(t => !Boolean(t.is_settled || t.settlement_status === 'Đã đối soát'))
+                : trips);
+        const nestedTripsTable = renderNestedTripsTableHtml(displayTrips, 'VEHICLE', item.plate);
 
         return `
             <tr id="rep1-row-${index}" class="hover:bg-teal-50/50 transition-colors cursor-pointer group" onclick="toggleReport1VehicleRow(${index})" title="Nhấp để xem danh sách chuyến xe của ${escapeHtml(item.plate)} ngay dưới bảng">
@@ -26650,6 +26658,15 @@ tbody.innerHTML = list.map((item, index) => {
                 </td>
                 <td data-col-key="vehicle_type" class="text-[13px] text-slate-600">${escapeHtml(item.vehicle_type)}</td>
                 <td data-col-key="ownership">${ownershipBadge}</td>
+                <td data-col-key="settlement_status" class="text-center font-bold text-[13px]">
+                    ${(() => {
+                        const sCount = item.settled_trips_count || 0;
+                        const pCount = item.pending_settlement_trips_count || 0;
+                        if (sCount > 0 && pCount === 0) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="ph-bold ph-check-circle"></i> Đã Chốt (${sCount})</span>`;
+                        if (sCount === 0) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300"><i class="ph-bold ph-clock"></i> Chờ Chốt (${pCount})</span>`;
+                        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-300"><i class="ph-bold ph-arrows-split"></i> ${sCount} Chốt · ${pCount} Chờ</span>`;
+                    })()}
+                </td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
                 <td data-col-key="containers_count" class="text-center font-black text-teal-800 text-[13px] tabular-nums bg-teal-50/40">${contsCount}</td>
                 <td data-col-key="revenue" class="text-right font-black text-slate-900 text-[13px] tabular-nums">${canViewFinance ? revDisplay : '***'}</td>
@@ -26689,6 +26706,9 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="plate" class="py-3 px-3 font-black text-slate-900 uppercase text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${list.length} Đầu Xe</td>
                 <td data-col-key="vehicle_type" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
                 <td data-col-key="ownership" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
+                <td data-col-key="settlement_status" class="text-center font-black tabular-nums text-slate-800 text-[13px]" style="font-size: 13px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">
+                    <span class="text-emerald-700">${list.reduce((sum, item) => sum + (Number(item.settled_trips_count) || 0), 0)} Chốt</span> · <span class="text-amber-700">${list.reduce((sum, item) => sum + (Number(item.pending_settlement_trips_count) || 0), 0)} Chờ</span>
+                </td>
                 <td data-col-key="trips_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${totalTrips}</td>
                 <td data-col-key="containers_count" class="text-center font-black tabular-nums text-teal-900 bg-teal-100/60 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${totalConts}</td>
                 <td data-col-key="revenue" class="text-right font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${canViewFinance ? formatMoneyVND(totalRev) : '***'}</td>
@@ -27864,8 +27884,11 @@ function renderReport7(data) {
 
 function applyReport7Filters() {
     const searchVal = (document.getElementById('filter-rep7-search')?.value || '').toLowerCase().trim();
+    const settlementVal = document.getElementById('filter-rep7-settlement')?.value || '';
 
     let list = rep7DataCache.filter(item => {
+        if (settlementVal === 'SETTLED' && (item.settled_trips_count || 0) === 0) return false;
+        if (settlementVal === 'PENDING' && (item.pending_settlement_trips_count || 0) === 0) return false;
         if (!searchVal) return true;
         return (item.customer_name || '').toLowerCase().includes(searchVal) ||
                (item.customer_code || '').toLowerCase().includes(searchVal) ||
@@ -27953,7 +27976,12 @@ tbody.innerHTML = list.map((item, index) => {
         const avgPerTrip = item.avg_revenue_per_trip || (item.trips_count > 0 ? Math.round(item.revenue / item.trips_count) : 0);
         const avgPerCont = item.avg_revenue_per_container || (contsCount > 0 ? Math.round(item.revenue / contsCount) : 0);
         const trips = item.trips || [];
-        const nestedTripsTable = renderNestedTripsTableHtml(trips, 'CUSTOMER', item.customer_name);
+        const displayTrips = settlementVal === 'SETTLED' 
+            ? trips.filter(t => Boolean(t.is_settled || t.settlement_status === 'Đã đối soát'))
+            : (settlementVal === 'PENDING' 
+                ? trips.filter(t => !Boolean(t.is_settled || t.settlement_status === 'Đã đối soát'))
+                : trips);
+        const nestedTripsTable = renderNestedTripsTableHtml(displayTrips, 'CUSTOMER', item.customer_name);
 
         return `
             <tr id="rep7-row-${index}" class="hover:bg-teal-50/50 transition-colors cursor-pointer group" onclick="toggleReport7CustomerRow(${index})" title="Nhấp để xem danh sách chuyến xe của ${escapeHtml(item.customer_name)} ngay dưới bảng">
@@ -27981,6 +28009,15 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="teu_40_count" class="text-center text-slate-600 text-[13px] tabular-nums">${item.teu_40_count}</td>
                 <td data-col-key="teu_45_count" class="text-center text-slate-600 text-[13px] tabular-nums">${item.teu_45_count}</td>
                 <td data-col-key="top_route" class="text-[13px] text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
+                <td data-col-key="settlement_status" class="text-center font-bold text-[13px]">
+                    ${(() => {
+                        const sCount = item.settled_trips_count || 0;
+                        const pCount = item.pending_settlement_trips_count || 0;
+                        if (sCount > 0 && pCount === 0) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="ph-bold ph-check-circle"></i> Đã Chốt (${sCount})</span>`;
+                        if (sCount === 0) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300"><i class="ph-bold ph-clock"></i> Chờ Chốt (${pCount})</span>`;
+                        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-300"><i class="ph-bold ph-arrows-split"></i> ${sCount} Chốt · ${pCount} Chờ</span>`;
+                    })()}
+                </td>
                 <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-[13px] tabular-nums">${revDisplay}</td>
                 <td data-col-key="revenue_share" class="text-center font-bold text-slate-700 text-[13px] tabular-nums">${shareDisplay}</td>
                 <td data-col-key="avg_revenue_per_trip" class="text-right font-bold text-emerald-700 text-[13px] tabular-nums">${formatMoneyVND(avgPerTrip)}</td>
@@ -28023,6 +28060,9 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="teu_40_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${total40}</td>
                 <td data-col-key="teu_45_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${total45}</td>
                 <td data-col-key="top_route" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
+                <td data-col-key="settlement_status" class="text-center font-black tabular-nums text-slate-800 text-[13px]" style="font-size: 13px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">
+                    <span class="text-emerald-700">${list.reduce((sum, item) => sum + (Number(item.settled_trips_count) || 0), 0)} Chốt</span> · <span class="text-amber-700">${list.reduce((sum, item) => sum + (Number(item.pending_settlement_trips_count) || 0), 0)} Chờ</span>
+                </td>
                 <td data-col-key="revenue" class="text-right font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(totalRev)}</td>
                 <td data-col-key="revenue_share" class="text-center font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">100%</td>
                 <td data-col-key="avg_revenue_per_trip" class="text-right font-black text-emerald-800 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(overallAvgTrip)}</td>
@@ -30368,20 +30408,33 @@ function toggleReport14Sort(col) {
 // -------------------------------------------------------------
 function renderReport15(data) {
     const r15 = data.report15_crm_quotations || {};
+
+    // Thẻ 1: Doanh Thu Kế Hoạch (Đã Ký Hợp Đồng)
+    const elContracted = document.getElementById('rep15-stat-contracted-val');
+    const contractedVal = r15.contracted_revenue !== undefined ? r15.contracted_revenue : (r15.approved_value || 0);
+    if (elContracted) elContracted.innerText = formatMoneyVND(contractedVal);
+    const elContractedNote = document.getElementById('rep15-note-contracted-val');
+    if (elContractedNote) elContractedNote.innerText = `Đã ký: ${r15.approved_count || 0} hợp đồng`;
+
+    // Thẻ 2: Doanh Thu Kỳ Vọng (Chờ Ký / Đang Đàm Phán)
+    const elExpected = document.getElementById('rep15-stat-expected-val');
+    const expectedVal = r15.expected_revenue !== undefined ? r15.expected_revenue : Math.max(0, (r15.pipeline_value || 0) - (r15.approved_value || 0));
+    if (elExpected) elExpected.innerText = formatMoneyVND(expectedVal);
+    const elExpectedNote = document.getElementById('rep15-note-expected-val');
+    const pendingCount = (r15.negotiating_count || 0) + (r15.pending_approval_count || 0) + (r15.sent_count || 0);
+    if (elExpectedNote) elExpectedNote.innerText = `Đang đàm phán & gửi: ${pendingCount} báo giá`;
+
+    // Thẻ 3: Tổng Giá Trị Chào Giá Phễu
     const elPipe = document.getElementById('rep15-stat-pipeline-val');
     if (elPipe) elPipe.innerText = formatMoneyVND(r15.pipeline_value || 0);
+    const elPipeNote = document.getElementById('rep15-note-pipeline-val');
+    if (elPipeNote) elPipeNote.innerText = `Tổng ${r15.total_quotations || 0} cơ hội chào giá`;
 
+    // Thẻ 4: Tỷ Lệ Chốt Thành Công (Win Rate %)
     const elWin = document.getElementById('rep15-stat-win-rate');
     if (elWin) elWin.innerText = `${r15.win_rate || 0}%`;
-
     const elWinNote = document.getElementById('rep15-note-win-rate');
-    if (elWinNote) elWinNote.innerText = `Đã ký HĐ: ${r15.approved_count || 0} / Tổng ${r15.total_quotations || 0} báo giá`;
-
-    const elNego = document.getElementById('rep15-stat-negotiating');
-    if (elNego) elNego.innerText = `${(r15.negotiating_count || 0) + (r15.pending_approval_count || 0) + (r15.sent_count || 0)}`;
-
-    const elAppVal = document.getElementById('rep15-stat-approved-val');
-    if (elAppVal) elAppVal.innerText = formatMoneyVND(r15.approved_value || 0);
+    if (elWinNote) elWinNote.innerText = `Tỷ lệ ký HĐ thành công`;
 
     rep15DataCache = r15.quotations || [];
     applyReport15Filters();

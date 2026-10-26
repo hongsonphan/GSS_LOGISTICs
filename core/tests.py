@@ -2298,6 +2298,26 @@ class BimLogisticsCoreTestCase(TestCase):
         r15 = data['report15_crm_quotations']
         self.assertGreaterEqual(r15['total_quotations'], 1)
         self.assertGreaterEqual(r15['pipeline_value'], 3500000 * 15)
+        self.assertIn('contracted_revenue', r15)
+        self.assertIn('expected_revenue', r15)
+        self.assertGreaterEqual(r15['contracted_revenue'], 3500000 * 15)
+
+        # Kiểm tra tính toàn vẹn trường đối soát trên Báo Cáo 7 và Báo Cáo 1
+        r7 = data.get('report7_customer_analytics', {})
+        if r7.get('customers'):
+            cust_entry = r7['customers'][0]
+            self.assertIn('settled_trips_count', cust_entry)
+            self.assertIn('pending_settlement_trips_count', cust_entry)
+            self.assertIn('settled_revenue', cust_entry)
+            self.assertIn('pending_revenue', cust_entry)
+
+        r1 = data.get('report1_fleet_utilization', {})
+        if r1.get('fleet_pnl'):
+            veh_entry = r1['fleet_pnl'][0]
+            self.assertIn('settled_trips_count', veh_entry)
+            self.assertIn('pending_settlement_trips_count', veh_entry)
+            self.assertIn('settled_revenue', veh_entry)
+            self.assertIn('pending_revenue', veh_entry)
 
         r16 = data['report16_active_bookings']
         self.assertGreaterEqual(r16['total_bookings'], 1)

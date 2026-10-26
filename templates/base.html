@@ -41,7 +41,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- International Enterprise Typography & Custom Styles -->
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.9.64">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2.9.65">
     {% block extra_head %}{% endblock %}
 </head>
 <body class="flex h-screen bg-slate-100 selection:bg-teal-100 selection:text-teal-900">
@@ -182,8 +182,8 @@
         // Thông tin công ty gốc tiền tải từ Cài đặt hệ thống (Zero-latency cho Báo cáo & Bản in)
         window.SYSTEM_COMPANY = {{ company_profile_json|default:"{}"|safe }};
     </script>
-    <script src="{% static 'js/column_manager.js' %}?v=2.9.64"></script>
-    <script src="{% static 'js/app.js' %}?v=2.9.64"></script>
+    <script src="{% static 'js/column_manager.js' %}?v=2.9.65"></script>
+    <script src="{% static 'js/app.js' %}?v=2.9.65"></script>
     <script src="{% static 'js/collaboration.js' %}?v=1.5.4"></script>
     {% block extra_scripts %}{% endblock %}
 </body>

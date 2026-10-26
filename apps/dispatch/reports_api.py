@@ -180,6 +180,10 @@ class ReportsAPIView(APIView):
                     'ownership_code': t.vehicle.ownership_type if t.vehicle else 'OWNED',
                     'driver': t.driver.full_name if t.driver else '-',
                     'trips_count': 0,
+                    'settled_trips_count': 0,
+                    'pending_settlement_trips_count': 0,
+                    'settled_revenue': 0,
+                    'pending_revenue': 0,
                     'containers_count': 0,
                     'revenue': 0,
                     'expense': 0,
@@ -199,6 +203,12 @@ class ReportsAPIView(APIView):
 
             t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
             is_cust_settled = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
+            if is_cust_settled:
+                vehicles_dict[plate]['settled_trips_count'] += 1
+                vehicles_dict[plate]['settled_revenue'] += rev
+            else:
+                vehicles_dict[plate]['pending_settlement_trips_count'] += 1
+                vehicles_dict[plate]['pending_revenue'] += rev
             vehicles_dict[plate]['trips'].append({
                 'id': t.id,
                 'trip_code': t.trip_code,
@@ -782,6 +792,10 @@ class ReportsAPIView(APIView):
                     'customer_name': c_name,
                     'customer_code': c_code,
                     'trips_count': 0,
+                    'settled_trips_count': 0,
+                    'pending_settlement_trips_count': 0,
+                    'settled_revenue': 0,
+                    'pending_revenue': 0,
                     'containers_count': 0,
                     'total_teu': 0.0,
                     'teu_20_count': 0,
@@ -817,6 +831,12 @@ class ReportsAPIView(APIView):
 
             t_date = t.loading_date or (t.created_at.date() if t.created_at else None)
             is_cust_settled = bool(t.is_customer_settled or t.customer_settlement_status == 'SETTLED')
+            if is_cust_settled:
+                row['settled_trips_count'] += 1
+                row['settled_revenue'] += rev
+            else:
+                row['pending_settlement_trips_count'] += 1
+                row['pending_revenue'] += rev
             row['trips'].append({
                 'id': t.id,
                 'trip_code': t.trip_code,
@@ -2117,6 +2137,8 @@ class ReportsAPIView(APIView):
                 'win_rate': crm_win_rate,
                 'pipeline_value': crm_pipeline_val,
                 'approved_value': crm_approved_val,
+                'contracted_revenue': crm_approved_val,
+                'expected_revenue': crm_pipeline_val - crm_approved_val,
                 'quotations': crm_quotes_data
             } if can_quotes else None,
             'report16_active_bookings': {

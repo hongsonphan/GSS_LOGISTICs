@@ -2,6 +2,33 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.7] - 2026-10-26 (Hoàn Thiện 4 Nhóm Báo Cáo Chiến Lược: Bộ Lọc Đối Soát Chốt Số, Phân Định Doanh Thu Kế Hoạch vs Kỳ Vọng & Chuẩn Hóa Nhóm Xe & Vận Hành)
+
+### 1. Nhóm 1 (Doanh Thu Thực Hiện) — Bổ Sung Trạng Thái & Bộ Lọc Đối Soát Chốt Số:
+- **Bổ Sung Cột Trạng Thái Đối Soát Trên Lưới Tổng Hợp:**
+  * Báo Cáo 7 (Doanh Thu Khách Hàng) & Báo Cáo 1 (Doanh Thu Đội Xe) được bổ sung cột `Đối Soát (Chốt / Chờ)` hiển thị trực quan: `Đã Chốt` (Xanh) vs `Chờ Chốt` (Vàng/Cam) kèm số lượng chuyến cụ thể.
+  * Hàng tổng cộng (Footer) tổng hợp chính xác: Tổng số chuyến Đã Chốt vs Tổng số chuyến Chờ Chốt trên toàn bộ hệ sinh thái.
+- **Bộ Lọc Nhanh Trạng Thái Đối Soát (Settlement Quick Filter):**
+  * Thêm dropdown `<select id="filter-rep7-settlement">` và `<select id="filter-rep1-settlement">` với 3 chế độ: `Tất cả trạng thái đối soát`, `Đã đối soát chốt số`, `Chờ đối soát`.
+  * Khi chọn lọc, bảng tổng hợp và danh sách chuyến con (subrow) tự động lọc chính xác các chuyến tương ứng.
+
+### 2. Nhóm 2 (Kinh Doanh & Khách Hàng) — Phân Định Doanh Thu Kế Hoạch vs Kỳ Vọng:
+- **Tái Cấu Trúc 4 Thẻ KPI Báo Cáo 15 (Phễu Báo Giá CRM):**
+  * Thẻ 1: **Doanh Thu Kế Hoạch (Đã Ký HĐ)** — Tổng doanh thu tháng từ các báo giá đã phê duyệt/ký kết (`APPROVED`).
+  * Thẻ 2: **Doanh Thu Kỳ Vọng (Chờ Ký / Đàm Phán)** — Tổng doanh thu tháng từ các cơ hội đang bám sát (`PENDING_APPROVAL`, `NEGOTIATING`, `SENT`).
+  * Thẻ 3: **Tổng Giá Trị Phễu Báo Giá (Pipeline Value)** — Toàn bộ dung lượng chào giá thị trường.
+  * Thẻ 4: **Tỷ Lệ Chốt Hợp Đồng (Win Rate %)** — Hiệu suất chuyển đổi của đội ngũ Kinh doanh.
+
+### 3. Nhóm 3 (Tài Chính & Quản Trị) & Nhóm 4 (Xe & Vận Hành):
+- **Chuẩn Hóa Nhóm 4:** Đổi tiêu đề thành **`XE & VẬN HÀNH`** (`Tình Trạng Xe, DEM/DET, Đúng Giờ & Sự Cố`) gồm 4 báo cáo chuyên sâu: Vỏ cont & DEM/DET Hãng tàu, Đúng giờ & Chất lượng OTP, Cắt kéo & Lưu xe sau 0H, Biên bản ngoại lệ OS&D.
+- **Nguyên Tắc Zero Mutation:** 100% các báo cáo thuần túy là Báo Cáo Chỉ Đọc (Pure Read-Only) và In Ấn (Print-Ready), không có thao tác thêm/sửa/xóa can thiệp vào dữ liệu vận hành.
+
+### 4. Kiểm Thử Hệ Thống & Đảm Bảo Zero-Regression:
+- Nâng cache version lên `?v=2.9.65` trong `templates/base.html`.
+- Kiểm thử cú pháp JS: `node -c static/js/app.js; node -c static/js/column_manager.js` (100% Passed).
+- Cập nhật unit test `test_reports_15_16_17_crm_and_wip` trong `core/tests.py` kiểm chứng trường đối soát và doanh thu kế hoạch/kỳ vọng.
+- Chạy toàn bộ **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.6.6] - 2026-10-26 (Tái Cấu Trúc Nhóm Báo Cáo KINH DOANH & KHÁCH HÀNG: Phễu Báo Giá CRM, Booking Hãng Tàu & Đơn Đang Chạy WIP)
 
 ### 1. Kiến Trúc Nghiệp Vụ Kinh Doanh & CRM (Sales & Customer Experience Pipeline):

@@ -100,8 +100,8 @@
                         <i class="ph-bold ph-truck"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">VẬN HÀNH & SỰ CỐ</div>
-                        <div class="text-xs font-bold text-blue-700 font-heading truncate mt-0.5">Vỏ Cont, DEM/DET, Đúng Giờ & OS&D</div>
+                        <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">XE & VẬN HÀNH</div>
+                        <div class="text-xs font-bold text-blue-700 font-heading truncate mt-0.5">Tình Trạng Xe, DEM/DET, Đúng Giờ & Sự Cố</div>
                     </div>
                 </div>
                 <span class="px-2.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 shrink-0">4 BC</span>
@@ -175,7 +175,7 @@
                 <span>Quyết Toán Xe Thầu Phụ 3PL</span>
             </button>
 
-            <!-- Nhóm 4: VẬN HÀNH & SỰ CỐ HIỆN TRƯỜNG (4 Báo Cáo) -->
+            <!-- Nhóm 4: XE & VẬN HÀNH (4 Báo Cáo) -->
             <button id="report-tab-btn-2" data-report-group="group-4" onclick="switchReportSubTab('report-2')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
                 <i class="ph-bold ph-warning text-base"></i>
                 <span>Vỏ Cont & DEM/DET Hãng Tàu</span>
@@ -234,6 +234,11 @@
                     Bảng Doanh Thu Theo Đội Xe
                 </h3>
                 <div class="flex items-center gap-2">
+                    <select id="filter-rep1-settlement" onchange="applyReport1Filters()" class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:border-teal-600 font-bold">
+                        <option value="">Tất cả trạng thái đối soát</option>
+                        <option value="SETTLED">Đã đối soát chốt số</option>
+                        <option value="PENDING">Chờ đối soát</option>
+                    </select>
                     <input type="text" id="filter-rep1-search" oninput="applyReport1Filters()" placeholder="Tìm biển số, loại xe..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-52 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep1-pnl-table')" 
@@ -257,6 +262,9 @@
                             </th>
                             <th data-col-key="ownership" onclick="toggleReport1Sort('ownership')" class="cursor-pointer hover:bg-slate-100">
                                 <div class="flex items-center gap-1"><span>Sở Hữu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
+                            </th>
+                            <th data-col-key="settlement_status" onclick="toggleReport1Sort('settled_trips_count')" class="cursor-pointer hover:bg-slate-100 text-center">
+                                <div class="flex items-center justify-center gap-1"><span>Đối Soát (Chốt / Chờ)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
                             </th>
                             <th data-col-key="trips_count" onclick="toggleReport1Sort('trips_count')" class="cursor-pointer hover:bg-slate-100 text-center">
                                 <div class="flex items-center justify-center gap-1"><span>Số Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div>
@@ -751,6 +759,11 @@
                     Báo Cáo Doanh Thu Theo Khách Hàng
                 </h3>
                 <div class="flex items-center gap-2">
+                    <select id="filter-rep7-settlement" onchange="applyReport7Filters()" class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:border-teal-600 font-bold">
+                        <option value="">Tất cả trạng thái đối soát</option>
+                        <option value="SETTLED">Đã đối soát chốt số</option>
+                        <option value="PENDING">Chờ đối soát</option>
+                    </select>
                     <input type="text" id="filter-rep7-search" oninput="applyReport7Filters()" placeholder="Tìm tên khách, mã KH, tuyến..." 
                         class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-56 focus:border-teal-600">
                     <button type="button" onclick="openColumnCustomizer('rep7-customer-table')" 
@@ -774,6 +787,7 @@
                             <th data-col-key="teu_40_count" onclick="toggleReport7Sort('teu_40_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>40ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th data-col-key="teu_45_count" onclick="toggleReport7Sort('teu_45_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>45ft</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th data-col-key="top_route">Tuyến Vận Chuyển Chủ Lực</th>
+                            <th data-col-key="settlement_status" onclick="toggleReport7Sort('settled_trips_count')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Đối Soát (Chốt / Chờ)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th data-col-key="revenue" onclick="toggleReport7Sort('revenue')" class="cursor-pointer hover:bg-slate-100 text-right font-black"><div class="flex items-center justify-end gap-1"><span>Doanh Thu</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th data-col-key="revenue_share" onclick="toggleReport7Sort('revenue_share')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tỷ Trọng (%)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
                             <th data-col-key="avg_revenue_per_trip" onclick="toggleReport7Sort('avg_revenue_per_trip')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>DOANH THU BQ CHUYẾN</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
@@ -1412,27 +1426,42 @@
     <!-- BÁO CÁO 15: PHỄU BÁO GIÁ CRM & TỶ LỆ CHỐT HỢP ĐỒNG (QUOTATIONS PIPELINE) -->
     <!-- ========================================================================= -->
     <div id="subtab-report-15" class="report-subtab-content space-y-4 hidden">
-        <!-- 4 Metric Cards -->
+        <!-- 4 Metric Cards (Phân định Doanh Thu Kế Hoạch vs Doanh Thu Kỳ Vọng) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Giá Trị Chào Giá (Phễu)</span>
-                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep15-stat-pipeline-val">0 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1" id="rep15-note-pipeline-val">Doanh thu dự kiến tháng từ các báo giá</p>
-            </div>
+            <!-- Thẻ 1: DOANH THU KẾ HOẠCH (ĐÃ KÝ HỢP ĐỒNG) -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Chốt Thành Công (Win Rate)</span>
-                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep15-stat-win-rate">0%</p>
-                <p class="text-xs text-emerald-700 font-bold mt-1" id="rep15-note-win-rate">Đã ký HĐ: 0 / Tổng 0 báo giá</p>
+                <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="ph-bold ph-check-circle text-emerald-600 text-sm"></i> Doanh Thu Kế Hoạch (Đã Ký HĐ)
+                </span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep15-stat-contracted-val">0 đ</p>
+                <p class="text-xs text-emerald-800 font-bold mt-1" id="rep15-note-contracted-val">Hợp đồng đã chốt thành công</p>
             </div>
+
+            <!-- Thẻ 2: DOANH THU KỲ VỌNG (CHỜ KÝ / ĐANG ĐÀM PHÁN) -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="ph-bold ph-hourglass-high text-indigo-600 text-sm"></i> Doanh Thu Kỳ Vọng (Chờ Ký HĐ)
+                </span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep15-stat-expected-val">0 đ</p>
+                <p class="text-xs text-indigo-700 font-bold mt-1" id="rep15-note-expected-val">Báo giá đang đàm phán & gửi khách</p>
+            </div>
+
+            <!-- Thẻ 3: TỔNG GIÁ TRỊ CHÀO GIÁ PHỄU -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-slate-700">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="ph-bold ph-funnel text-slate-600 text-sm"></i> Tổng Giá Trị Phễu Báo Giá
+                </span>
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep15-stat-pipeline-val">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep15-note-pipeline-val">Tổng dung lượng cơ hội chào giá</p>
+            </div>
+
+            <!-- Thẻ 4: TỶ LỆ CHỐT THÀNH CÔNG (WIN RATE %) -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đang Đàm Phán & Chờ Duyệt</span>
-                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep15-stat-negotiating">0</p>
-                <p class="text-xs text-amber-700 font-bold mt-1" id="rep15-note-negotiating">Cần bám sát đẩy nhanh ký kết</p>
-            </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-700">
-                <span class="text-xs font-bold text-teal-800 uppercase tracking-wider">Doanh Thu Đã Chốt Hợp Đồng</span>
-                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep15-stat-approved-val">0 đ</p>
-                <p class="text-xs text-teal-700 font-bold mt-1" id="rep15-note-approved-val">Doanh thu dự kiến tháng từ HĐ ký</p>
+                <span class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="ph-bold ph-chart-line-up text-amber-600 text-sm"></i> Tỷ Lệ Chốt Hợp Đồng (Win Rate)
+                </span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep15-stat-win-rate">0%</p>
+                <p class="text-xs text-amber-800 font-bold mt-1" id="rep15-note-win-rate">Đang đàm phán: 0 báo giá</p>
             </div>
         </div>
 
