@@ -26658,14 +26658,8 @@ tbody.innerHTML = list.map((item, index) => {
                 </td>
                 <td data-col-key="vehicle_type" class="text-[13px] text-slate-600">${escapeHtml(item.vehicle_type)}</td>
                 <td data-col-key="ownership">${ownershipBadge}</td>
-                <td data-col-key="settlement_status" class="text-center font-bold text-[13px]">
-                    ${(() => {
-                        const sCount = item.settled_trips_count || 0;
-                        const pCount = item.pending_settlement_trips_count || 0;
-                        if (sCount > 0 && pCount === 0) return `<span class="font-bold text-emerald-700 text-xs">Đã Chốt (${sCount})</span>`;
-                        if (sCount === 0) return `<span class="font-bold text-amber-600 text-xs">Chờ Chốt (${pCount})</span>`;
-                        return `<span class="font-bold text-sky-700 text-xs">${sCount} Chốt · ${pCount} Chờ</span>`;
-                    })()}
+                <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
+                    ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
                 </td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
                 <td data-col-key="containers_count" class="text-center font-black text-teal-800 text-[13px] tabular-nums bg-teal-50/40">${contsCount}</td>
@@ -26706,8 +26700,8 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="plate" class="py-3 px-3 font-black text-slate-900 uppercase text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${list.length} Đầu Xe</td>
                 <td data-col-key="vehicle_type" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
                 <td data-col-key="ownership" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
-                <td data-col-key="settlement_status" class="text-center font-black tabular-nums text-slate-800 text-[13px]" style="font-size: 13px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">
-                    <span class="text-emerald-700">${list.reduce((sum, item) => sum + (Number(item.settled_trips_count) || 0), 0)} Chốt</span> · <span class="text-amber-700">${list.reduce((sum, item) => sum + (Number(item.pending_settlement_trips_count) || 0), 0)} Chờ</span>
+                <td data-col-key="settlement_status" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">
+                    ${list.reduce((sum, item) => sum + (Number(item.settled_trips_count) || 0), 0)}/${totalTrips}
                 </td>
                 <td data-col-key="trips_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${totalTrips}</td>
                 <td data-col-key="containers_count" class="text-center font-black tabular-nums text-teal-900 bg-teal-100/60 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${totalConts}</td>
@@ -28009,14 +28003,8 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="teu_40_count" class="text-center text-slate-600 text-[13px] tabular-nums">${item.teu_40_count}</td>
                 <td data-col-key="teu_45_count" class="text-center text-slate-600 text-[13px] tabular-nums">${item.teu_45_count}</td>
                 <td data-col-key="top_route" class="text-[13px] text-slate-600 max-w-xs truncate" title="${escapeHtml(item.top_route)}">${escapeHtml(item.top_route)}</td>
-                <td data-col-key="settlement_status" class="text-center font-bold text-[13px]">
-                    ${(() => {
-                        const sCount = item.settled_trips_count || 0;
-                        const pCount = item.pending_settlement_trips_count || 0;
-                        if (sCount > 0 && pCount === 0) return `<span class="font-bold text-emerald-700 text-xs">Đã Chốt (${sCount})</span>`;
-                        if (sCount === 0) return `<span class="font-bold text-amber-600 text-xs">Chờ Chốt (${pCount})</span>`;
-                        return `<span class="font-bold text-sky-700 text-xs">${sCount} Chốt · ${pCount} Chờ</span>`;
-                    })()}
+                <td data-col-key="settlement_status" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">
+                    ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-[13px] tabular-nums">${revDisplay}</td>
                 <td data-col-key="revenue_share" class="text-center font-bold text-slate-700 text-[13px] tabular-nums">${shareDisplay}</td>
@@ -28060,8 +28048,8 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="teu_40_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${total40}</td>
                 <td data-col-key="teu_45_count" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${total45}</td>
                 <td data-col-key="top_route" class="text-center text-slate-400 font-normal text-[13.5px]" style="font-size: 13.5px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;"></td>
-                <td data-col-key="settlement_status" class="text-center font-black tabular-nums text-slate-800 text-[13px]" style="font-size: 13px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">
-                    <span class="text-emerald-700">${list.reduce((sum, item) => sum + (Number(item.settled_trips_count) || 0), 0)} Chốt</span> · <span class="text-amber-700">${list.reduce((sum, item) => sum + (Number(item.pending_settlement_trips_count) || 0), 0)} Chờ</span>
+                <td data-col-key="settlement_status" class="text-center font-black tabular-nums text-slate-900 text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">
+                    ${list.reduce((sum, item) => sum + (Number(item.settled_trips_count) || 0), 0)}/${totalTrips}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(totalRev)}</td>
                 <td data-col-key="revenue_share" class="text-center font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">100%</td>
