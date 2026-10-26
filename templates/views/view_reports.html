@@ -71,10 +71,10 @@
                     </div>
                     <div class="min-w-0">
                         <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">KINH DOANH & KHÁCH HÀNG</div>
-                        <div class="text-xs font-bold text-indigo-700 font-heading truncate mt-0.5">Sản Lượng TEU, Công Nợ AR & Tuổi Nợ</div>
+                        <div class="text-xs font-bold text-indigo-700 font-heading truncate mt-0.5">Báo Giá CRM, Booking & Đơn Đang Chạy</div>
                     </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shrink-0">2 BC</span>
+                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shrink-0">3 BC</span>
             </button>
 
             <!-- Nhóm 3: TÀI CHÍNH & QUẢN TRỊ -->
@@ -86,10 +86,10 @@
                     </div>
                     <div class="min-w-0">
                         <div class="text-sm sm:text-[15px] font-black text-slate-900 font-heading tracking-tight uppercase truncate">TÀI CHÍNH & QUẢN TRỊ</div>
-                        <div class="text-xs font-bold text-amber-700 font-heading truncate mt-0.5">Sổ Quỹ, Tạm Ứng, Lương & Xe Thầu 3PL</div>
+                        <div class="text-xs font-bold text-amber-700 font-heading truncate mt-0.5">Công Nợ AR, Sổ Quỹ, Tạm Ứng & Thầu Phụ</div>
                     </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 shrink-0">4 BC</span>
+                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 shrink-0">6 BC</span>
             </button>
 
             <!-- Nhóm 4: VẬN HÀNH & SỰ CỐ -->
@@ -131,18 +131,31 @@
                 <span id="badge-report-carryover-count" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-100 text-teal-800">0</span>
             </button>
 
-            <!-- Nhóm 2: KINH DOANH & KHÁCH HÀNG (2 Báo Cáo) -->
-            <button id="report-tab-btn-13" data-report-group="group-2" onclick="switchReportSubTab('report-13')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+            <!-- Nhóm 2: KINH DOANH & KHÁCH HÀNG (3 Báo Cáo) -->
+            <button id="report-tab-btn-15" data-report-group="group-2" onclick="switchReportSubTab('report-15')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-file-text text-base"></i>
+                <span>Phễu Báo Giá CRM</span>
+            </button>
+            <button id="report-tab-btn-16" data-report-group="group-2" onclick="switchReportSubTab('report-16')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-calendar-check text-base"></i>
+                <span>Đơn Hàng & Booking Hãng Tàu</span>
+            </button>
+            <button id="report-tab-btn-17" data-report-group="group-2" onclick="switchReportSubTab('report-17')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-hourglass-high text-base"></i>
+                <span>Đơn Đang Chạy Chưa Xong (WIP)</span>
+                <span id="badge-report-wip-count" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800">0</span>
+            </button>
+
+            <!-- Nhóm 3: TÀI CHÍNH & QUẢN TRỊ NỘI BỘ (6 Báo Cáo) -->
+            <button id="report-tab-btn-13" data-report-group="group-3" onclick="switchReportSubTab('report-13')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
                 <i class="ph-bold ph-coins text-base"></i>
                 <span>Công Nợ Phải Thu (AR)</span>
             </button>
-            <button id="report-tab-btn-14" data-report-group="group-2" onclick="switchReportSubTab('report-14')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
-                <i class="ph-bold ph-hourglass-high text-base"></i>
+            <button id="report-tab-btn-14" data-report-group="group-3" onclick="switchReportSubTab('report-14')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
+                <i class="ph-bold ph-clock-counter-clockwise text-base"></i>
                 <span>Tuổi Đơn Tồn Đọng Chưa Chốt</span>
                 <span id="badge-report-unsettled-critical" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800">0</span>
             </button>
-
-            <!-- Nhóm 3: TÀI CHÍNH & QUẢN TRỊ NỘI BỘ (4 Báo Cáo) -->
             <button id="report-tab-btn-10" data-report-group="group-3" onclick="switchReportSubTab('report-10')" class="report-subtab-btn px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold font-heading flex items-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 hidden">
                 <i class="ph-bold ph-wallet text-base"></i>
                 <span>Quỹ Tạm Ứng Điều Vận (Kế Toán QL)</span>
@@ -1393,6 +1406,256 @@
             </div>
         </div>
     </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 15: PHỄU BÁO GIÁ CRM & TỶ LỆ CHỐT HỢP ĐỒNG (QUOTATIONS PIPELINE) -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-15" class="report-subtab-content space-y-4 hidden">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Giá Trị Chào Giá (Phễu)</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep15-stat-pipeline-val">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep15-note-pipeline-val">Doanh thu dự kiến tháng từ các báo giá</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Chốt Thành Công (Win Rate)</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep15-stat-win-rate">0%</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1" id="rep15-note-win-rate">Đã ký HĐ: 0 / Tổng 0 báo giá</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đang Đàm Phán & Chờ Duyệt</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep15-stat-negotiating">0</p>
+                <p class="text-xs text-amber-700 font-bold mt-1" id="rep15-note-negotiating">Cần bám sát đẩy nhanh ký kết</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-700">
+                <span class="text-xs font-bold text-teal-800 uppercase tracking-wider">Doanh Thu Đã Chốt Hợp Đồng</span>
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading mt-1" id="rep15-stat-approved-val">0 đ</p>
+                <p class="text-xs text-teal-700 font-bold mt-1" id="rep15-note-approved-val">Doanh thu dự kiến tháng từ HĐ ký</p>
+            </div>
+        </div>
+
+        <!-- Bảng Danh Sách Báo Giá CRM -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                        <i class="ph-bold ph-file-text text-indigo-700"></i>
+                        Bảng Quản Trị Phễu Báo Giá CRM & Tỷ Lệ Chuyển Đổi (CRM Quotation Pipeline)
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="filter-rep15-status" onchange="applyReport15Filters()" class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:border-indigo-600 font-medium">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="APPROVED">Đã ký Hợp đồng</option>
+                        <option value="NEGOTIATING">Đang đàm phán</option>
+                        <option value="PENDING_APPROVAL">Chờ ký HĐ</option>
+                        <option value="SENT">Đã gửi báo giá</option>
+                        <option value="REJECTED">Từ chối / Hủy</option>
+                    </select>
+                    <input type="text" id="filter-rep15-search" oninput="applyReport15Filters()" placeholder="Tìm mã BG, khách hàng, tuyến..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-indigo-600">
+                    <button type="button" onclick="openColumnCustomizer('rep15-quotations-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-indigo-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột">
+                        <i class="ph-bold ph-columns text-indigo-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap" id="rep15-quotations-table" data-table-title="Báo Cáo Phễu Báo Giá CRM">
+                    <thead>
+                        <tr>
+                            <th class="text-center w-12 font-bold">STT</th>
+                            <th onclick="toggleReport15Sort('quotation_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Báo Giá</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport15Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport15Sort('route_description')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tuyến Đường Vận Chuyển</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport15Sort('unit_price')" class="cursor-pointer hover:bg-slate-100 text-right"><div class="flex items-center justify-end gap-1"><span>Đơn Giá Báo</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport15Sort('expected_trips_monthly')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>SL Dự Kiến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport15Sort('monthly_revenue')" class="cursor-pointer hover:bg-slate-100 text-right font-black text-indigo-900"><div class="flex items-center justify-end gap-1"><span>Doanh Thu Tháng (Ước Tính)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th class="text-center">Phương Thức Giá</th>
+                            <th onclick="toggleReport15Sort('status')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Trạng Thái</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport15Sort('created_at')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Ngày Lập</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep15-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep15-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 16: ĐƠN HÀNG BOOKING HÃNG TÀU & TIẾN ĐỘ ĐIỀU XE (ACTIVE BOOKINGS)  -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-16" class="report-subtab-content space-y-4 hidden">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-blue-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Đơn Hàng / Booking Tiếp Nhận</span>
+                <p class="text-3xl font-black text-blue-700 tabular-nums font-heading mt-1" id="rep16-stat-total-bookings">0</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep16-note-total-bookings">Booking FCL Xuất/Nhập & Nội Địa</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-700">
+                <span class="text-xs font-bold text-teal-800 uppercase tracking-wider">Tiến Độ Điều Xe / Cấp Cont</span>
+                <p class="text-3xl font-black text-teal-700 tabular-nums font-heading mt-1" id="rep16-stat-dispatch-progress">0%</p>
+                <p class="text-xs text-teal-700 font-bold mt-1" id="rep16-note-dispatch-progress">Đã điều: 0 / Tổng 0 Cont</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Booking Chờ Điều Xe</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep16-stat-pending-dispatch">0</p>
+                <p class="text-xs text-amber-700 font-bold mt-1" id="rep16-note-pending-dispatch">Cần điều vận khẩn trương gán xe</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Booking Đã Điều Đủ Xe</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep16-stat-completed-dispatch">0</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1" id="rep16-note-completed-dispatch">Đã phát lệnh 100% cont yêu cầu</p>
+            </div>
+        </div>
+
+        <!-- Bảng Danh Sách Booking Hãng Tàu -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                        <i class="ph-bold ph-calendar-check text-blue-700"></i>
+                        Bảng Theo Dõi Đơn Hàng Booking Hãng Tàu & Tiến Độ Điều Xe (Active Booking Orders)
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="filter-rep16-status" onchange="applyReport16Filters()" class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:border-blue-600 font-medium">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="PENDING_DISPATCH">Chờ điều xe</option>
+                        <option value="PARTIALLY_DISPATCHED">Đang điều xe</option>
+                        <option value="COMPLETED">Đã điều đủ</option>
+                        <option value="CANCELLED">Đã hủy</option>
+                    </select>
+                    <input type="text" id="filter-rep16-search" oninput="applyReport16Filters()" placeholder="Tìm mã BK, số booking, hãng tàu, KH..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-blue-600">
+                    <button type="button" onclick="openColumnCustomizer('rep16-bookings-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-blue-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột">
+                        <i class="ph-bold ph-columns text-blue-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap" id="rep16-bookings-table" data-table-title="Báo Cáo Booking Hãng Tàu">
+                    <thead>
+                        <tr>
+                            <th class="text-center w-12 font-bold">STT</th>
+                            <th onclick="toggleReport16Sort('booking_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Đơn (Booking)</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport16Sort('shipping_line')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Hãng Tàu & Số Booking</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport16Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th class="text-center">Loại Vỏ</th>
+                            <th onclick="toggleReport16Sort('total_containers')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Tổng Cont</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th class="text-center">Đã Điều / Còn Lại</th>
+                            <th class="text-left">Lộ Trình Vận Chuyển (3 Điểm)</th>
+                            <th class="text-center">Hạn Closing CY</th>
+                            <th onclick="toggleReport16Sort('status')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Trạng Thái</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport16Sort('created_at')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Ngày Đặt</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep16-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep16-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BÁO CÁO 17: GIÁM SÁT ĐƠN HÀNG ĐANG CHẠY CHƯA HOÀN THÀNH (WIP PIPELINE)     -->
+    <!-- ========================================================================= -->
+    <div id="subtab-report-17" class="report-subtab-content space-y-4 hidden">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Đơn Đang Thực Hiện (WIP)</span>
+                <p class="text-3xl font-black text-amber-700 tabular-nums font-heading mt-1" id="rep17-stat-total-wip">0</p>
+                <p class="text-xs text-slate-500 font-medium mt-1" id="rep17-note-total-wip">Chuyến xe dở dang chưa hoàn thành</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đang Chạy Trên Đường</span>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading mt-1" id="rep17-stat-in-transit">0</p>
+                <p class="text-xs text-emerald-700 font-bold mt-1" id="rep17-note-in-transit">Xe đang di chuyển trên lộ trình</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-purple-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tại Kho Đóng / Dỡ Hàng</span>
+                <p class="text-3xl font-black text-purple-700 tabular-nums font-heading mt-1" id="rep17-stat-at-warehouse">0</p>
+                <p class="text-xs text-purple-700 font-bold mt-1" id="rep17-note-at-warehouse">Xe đang tác nghiệp tại kho khách</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Phát Lệnh Chờ Bốc Hàng</span>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading mt-1" id="rep17-stat-dispatched">0</p>
+                <p class="text-xs text-indigo-700 font-bold mt-1" id="rep17-note-dispatched">Đã điều xe, chuẩn bị lấy cont</p>
+            </div>
+        </div>
+
+        <!-- Bảng Giám Sát Chuyến Xe Đang Chạy -->
+        <div class="erp-table-container flex flex-col shadow-sm">
+            <div class="p-3 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 font-heading text-sm flex items-center gap-1.5">
+                        <i class="ph-bold ph-hourglass-high text-amber-600"></i>
+                        Bảng Giám Sát Đơn Hàng & Chuyến Xe Đang Chạy Chưa Hoàn Thành (WIP Pipeline Tracking)
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="filter-rep17-status" onchange="applyReport17Filters()" class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:border-amber-600 font-medium">
+                        <option value="">Tất cả trạng thái dở dang</option>
+                        <option value="IN_TRANSIT">Đang chạy trên đường</option>
+                        <option value="AT_WAREHOUSE">Tại kho đóng/dỡ</option>
+                        <option value="DISPATCHED">Đã điều xe</option>
+                        <option value="DRAFT">Bản nháp</option>
+                    </select>
+                    <input type="text" id="filter-rep17-search" oninput="applyReport17Filters()" placeholder="Tìm mã chuyến, xe, tài xế, khách..." 
+                        class="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 w-64 focus:border-amber-600">
+                    <button type="button" onclick="openColumnCustomizer('rep17-wip-table')" 
+                        class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 hover:text-amber-800 rounded-lg text-xs font-bold font-heading border border-slate-200 shadow-2xs transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer" 
+                        title="Tùy chỉnh cột">
+                        <i class="ph-bold ph-columns text-amber-700"></i>
+                        <span>Cột</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="erp-table whitespace-nowrap" id="rep17-wip-table" data-table-title="Báo Cáo Đơn Hàng Đang Chạy (WIP)">
+                    <thead>
+                        <tr>
+                            <th class="text-center w-12 font-bold">STT</th>
+                            <th onclick="toggleReport17Sort('trip_code')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Mã Chuyến</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport17Sort('customer_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Khách Hàng</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport17Sort('license_plate')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Biển Số Xe</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th onclick="toggleReport17Sort('driver_name')" class="cursor-pointer hover:bg-slate-100"><div class="flex items-center gap-1"><span>Tài Xế & SĐT</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th class="text-center">Số Cont & Loại Vỏ</th>
+                            <th class="text-left">Lộ Trình Vận Chuyển</th>
+                            <th onclick="toggleReport17Sort('status')" class="cursor-pointer hover:bg-slate-100 text-center"><div class="flex items-center justify-center gap-1"><span>Trạng Thái Hiện Tại</span><i class="ph-bold ph-arrows-down-up text-[11px] text-slate-400"></i></div></th>
+                            <th class="text-center">Số Booking</th>
+                            <th class="text-left">Ghi Chú Đơn Hàng</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rep17-tbody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                    <tfoot class="bg-slate-100/90 font-black border-t-2 border-slate-300 text-xs" id="rep17-tfoot">
+                        <!-- Rendered by JS -->
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
 
     <!-- MODAL ĐỐI SOÁT CÔNG NỢ CHI TIẾT KHÁCH HÀNG (STATEMENT OF ACCOUNT - SOA) -->
     <div id="modal-customer-ar-statement" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 hidden animate-fade-in">

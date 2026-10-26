@@ -2249,6 +2249,64 @@ class BimLogisticsCoreTestCase(TestCase):
         found_backlog = any(r['trip_code'] == 'TRIP-BACKLOG-001' and r['aging_level'] == 'CRITICAL' for r in r14['records'])
         self.assertTrue(found_backlog)
 
+    def test_reports_15_16_17_crm_and_wip(self):
+        """Kiểm tra 3 Báo Cáo Nhóm Kinh Doanh: Báo Cáo 15 (Quotation CRM), Báo Cáo 16 (Booking Orders) và Báo Cáo 17 (WIP Trips)."""
+        from apps.customers.models import Quotation, BookingOrder
+        from apps.dispatch.models import DispatchTrip, TripStatus
+        
+        # 1. Tạo Báo giá mẫu
+        q = Quotation.objects.create(
+            quotation_code="BG-TEST-001",
+            customer=self.customer,
+            route_description="Cát Lái - KCN Sóng Thần",
+            unit_price=3500000,
+            expected_trips_monthly=15,
+            status="APPROVED"
+        )
+        # 2. Tạo Booking mẫu
+        b = BookingOrder.objects.create(
+            booking_code="BK-TEST-001",
+            customer=self.customer,
+            booking_number="BK123456",
+            shipping_line="ONE LINE",
+            total_containers=5,
+            dispatched_containers=2,
+            pickup_location="Cát Lái",
+            delivery_location="Kho Tân Tạo",
+            status="PARTIALLY_DISPATCHED"
+        )
+        # 3. Tạo chuyến WIP dở dang
+        wip_trip = DispatchTrip.objects.create(
+            trip_code="TRIP-WIP-001",
+            customer=self.customer,
+            vehicle=self.vehicle,
+            driver=self.driver,
+            pickup_location="Cát Lái",
+            warehouse_location="Kho Tân Tạo",
+            status=TripStatus.IN_TRANSIT
+        )
+
+        self.client.force_login(self.director_user)
+        res = self.client.get('/api/reports/?period=all')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+
+        self.assertIn('report15_crm_quotations', data)
+        self.assertIn('report16_active_bookings', data)
+        self.assertIn('report17_wip_active_trips', data)
+
+        r15 = data['report15_crm_quotations']
+        self.assertGreaterEqual(r15['total_quotations'], 1)
+        self.assertGreaterEqual(r15['pipeline_value'], 3500000 * 15)
+
+        r16 = data['report16_active_bookings']
+        self.assertGreaterEqual(r16['total_bookings'], 1)
+        self.assertGreaterEqual(r16['total_containers'], 5)
+
+        r17 = data['report17_wip_active_trips']
+        self.assertGreaterEqual(r17['total_wip_count'], 1)
+        self.assertGreaterEqual(r17['in_transit_count'], 1)
+
     def test_customer_settlement_ar_lifecycle(self):
         """
         Kiểm tra vòng đời 4 bước quyết toán nghiệp vụ và quy tắc ghi nhận công nợ AR:

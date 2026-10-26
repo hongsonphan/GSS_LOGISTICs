@@ -2,6 +2,34 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.6] - 2026-10-26 (Tái Cấu Trúc Nhóm Báo Cáo KINH DOANH & KHÁCH HÀNG: Phễu Báo Giá CRM, Booking Hãng Tàu & Đơn Đang Chạy WIP)
+
+### 1. Kiến Trúc Nghiệp Vụ Kinh Doanh & CRM (Sales & Customer Experience Pipeline):
+- **Phân Định Ranh Giới Giữa Kế Toán Quản Trị & Kinh Doanh:**
+  * Di dời Báo Cáo 13 (Công Nợ Phải Thu AR) và Báo Cáo 14 (Tuổi Đơn Tồn Đọng Chưa Chốt) từ Nhóm 2 sang **Nhóm 3 (TÀI CHÍNH & QUẢN TRỊ)** để thống nhất không gian quản trị dòng tiền kế toán (nâng Nhóm 3 lên 6 Báo Cáo).
+  * Quy hoạch toàn diện **Nhóm 2: KINH DOANH & KHÁCH HÀNG (3 Báo Cáo Chiến Lược)** phục vụ riêng cho Phòng Kinh Doanh (Sales / CS) theo dõi toàn bộ phễu bán hàng từ lúc chào giá đến khi xe vận chuyển trên đường.
+
+### 2. Triển Khai 3 Báo Cáo Chiến Lược Mới:
+- **Báo Cáo 15: Phễu Báo Giá CRM & Tỷ Lệ Chốt Hợp Đồng (CRM Quotation Pipeline & Win Rate):**
+  * Theo dõi toàn diện vòng đời chào giá khách hàng: Đã gửi (`SENT`), Đang đàm phán (`NEGOTIATING`), Chờ ký HĐ (`PENDING_APPROVAL`), Đã ký (`APPROVED`), Bị từ chối (`REJECTED`) và Hết hạn (`EXPIRED`).
+  * 4 Thẻ KPI: Tổng Giá Trị Chào Giá Phễu (Pipeline Value VNĐ/tháng), Tỷ Lệ Chốt Thành Công (Win Rate %), Số Lượng Đang Đàm Phán / Chờ Ký, Doanh Thu Hợp Đồng Đã Ký.
+  * Lưới dữ liệu chi tiết kèm link mở trực tiếp báo giá (`Quotation`), đơn giá cước, sản lượng dự kiến và doanh thu tháng ước tính.
+- **Báo Cáo 16: Đơn Hàng Booking Hãng Tàu & Tiến Độ Điều Xe (Active Booking Orders & Cut-offs):**
+  * Giám sát tiến độ tiếp nhận booking FCL xuất nhập và nội địa: Chờ điều xe (`PENDING_DISPATCH`), Đang điều xe (`PARTIALLY_DISPATCHED`), Đã điều đủ xe (`COMPLETED`).
+  * 4 Thẻ KPI: Tổng Đơn Booking Tiếp Nhận, Tiến Độ Điều Xe/Cấp Cont (Số cont đã điều / Tổng cont cần điều %), Số Booking Chờ Gán Xe, Số Booking Đã Đủ Xe.
+  * Cảnh báo các mốc hạn chót hãng tàu: Giờ cắt máng CY (Closing Time), Hạn nộp VGM và gửi SI để Sales cảnh báo khách hàng tránh trễ tàu.
+- **Báo Cáo 17: Giám Sát Đơn Hàng Đang Chạy Chưa Hoàn Thành (WIP Active Trips in Pipeline):**
+  * Tập hợp toàn bộ các chuyến xe **dở dang chưa hoàn thành** (`IN_TRANSIT`, `AT_WAREHOUSE`, `DISPATCHED`, `DRAFT`) — cách ly hoàn toàn khỏi Nhóm 1 Doanh thu thực hiện.
+  * 4 Thẻ KPI: Tổng Đơn Đang Thực Hiện (WIP), Đang Chạy Trên Đường (In Transit), Tại Kho Đóng/Dỡ Hàng (At Warehouse), Đã Phát Lệnh Chờ Bốc Hàng (Dispatched).
+  * Lưới dữ liệu hiển thị tức thì cho Sales/CS: Mã chuyến xe, Khách hàng, Biển số xe, Tài xế & SĐT liên hệ, Số cont & vỏ, Lộ trình, Số booking hãng tàu.
+
+### 3. Nâng Cấp Giao Diện & Đảm Bảo Zero-Regression:
+- Cập nhật `REPORT_GROUP_MAPPING` và ma trận phân quyền `canAccessReport`: Trao quyền xem Nhóm 2 cho phòng Kinh doanh (`LEAD_SALES`, `SALESMAN`, `CSKH`) và Điều phối (`DISPATCHER`).
+- Nâng cache version lên `?v=2.9.64` trong `templates/base.html`.
+- Kiểm thử cú pháp: `node -c static/js/app.js; node -c static/js/column_manager.js` (100% Passed).
+- Bổ sung test case `test_reports_15_16_17_crm_and_wip` vào `core/tests.py`.
+- Toàn bộ **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.6.5] - 2026-10-26 (Chuẩn Hóa Doanh Thu Thực Hiện: Chỉ Ghi Nhận Chuyến Đã Hoàn Thành Giao Hàng & Theo Dõi Trạng Thái Đối Soát)
 
 ### 1. Chuẩn Hóa Nghiệp Vụ Doanh Thu Thực Hiện (Earned Freight Revenue):

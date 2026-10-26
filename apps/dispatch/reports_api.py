@@ -18,7 +18,7 @@ from apps.billing.models import (
     CashTransaction, TransactionType, CashFlowCategory, ReimbursementStatus
 )
 from apps.fleet.models import Vehicle, Trailer
-from apps.customers.models import Customer
+from apps.customers.models import Customer, Quotation, BookingOrder
 from apps.personnel.models import Employee, EmployeeRole
 
 
@@ -1712,6 +1712,182 @@ class ReportsAPIView(APIView):
                 'status_label': t.get_status_display()
             })
 
+        # =========================================================================
+        # BÁO CÁO 15: PHỄU BÁO GIÁ CRM & TỶ LỆ CHỐT HỢP ĐỒNG (QUOTATIONS PIPELINE)
+        # =========================================================================
+        quotations_qs = Quotation.objects.filter(is_deleted=False).select_related('customer')
+        if start_d and end_d:
+            quotations_qs = quotations_qs.filter(created_at__date__gte=start_d, created_at__date__lte=end_d)
+        elif start_d:
+            quotations_qs = quotations_qs.filter(created_at__date=start_d)
+        if customer_id:
+            quotations_qs = quotations_qs.filter(customer_id=customer_id)
+
+        crm_total_quotes = quotations_qs.count()
+        crm_approved_count = quotations_qs.filter(status='APPROVED').count()
+        crm_negotiating_count = quotations_qs.filter(status='NEGOTIATING').count()
+        crm_pending_approval_count = quotations_qs.filter(status='PENDING_APPROVAL').count()
+        crm_sent_count = quotations_qs.filter(status='SENT').count()
+        crm_rejected_count = quotations_qs.filter(status__in=['REJECTED', 'EXPIRED']).count()
+
+        crm_win_rate = round((crm_approved_count / crm_total_quotes * 100), 1) if crm_total_quotes > 0 else 0.0
+        crm_pipeline_val = sum(float(q.unit_price or 0) * (q.expected_trips_monthly or 1) for q in quotations_qs)
+        crm_approved_val = sum(float(q.unit_price or 0) * (q.expected_trips_monthly or 1) for q in quotations_qs.filter(status='APPROVED'))
+
+        crm_quotes_data = []
+        for q in quotations_qs.order_by('-created_at'):
+            m_rev = float(q.unit_price or 0) * (q.expected_trips_monthly or 1)
+            status_map = {
+                'SENT': ('Đã gửi', 'bg-blue-50 text-blue-800 border-blue-200'),
+                'NEGOTIATING': ('Đang đàm phán', 'bg-amber-50 text-amber-800 border-amber-200'),
+                'PENDING_APPROVAL': ('Chờ ký HĐ', 'bg-indigo-50 text-indigo-800 border-indigo-200'),
+                'APPROVED': ('Đã ký HĐ', 'bg-emerald-50 text-emerald-800 border-emerald-200'),
+                'REJECTED': ('Từ chối/Hủy', 'bg-rose-50 text-rose-800 border-rose-200'),
+                'EXPIRED': ('Hết hạn', 'bg-slate-100 text-slate-700 border-slate-300'),
+            }
+            st_label, st_class = status_map.get(q.status, (q.status, 'bg-slate-100 text-slate-700 border-slate-300'))
+            crm_quotes_data.append({
+                'id': q.id,
+                'quotation_code': q.quotation_code,
+                'customer_id': q.customer_id,
+                'customer_name': q.customer.name if q.customer else 'Khách lẻ',
+                'customer_code': q.customer.code if q.customer else '',
+                'route_description': q.route_description or f"{q.origin_zone} ➔ {q.destination_zone}",
+                'unit_price': float(q.unit_price or 0),
+                'expected_trips_monthly': q.expected_trips_monthly or 0,
+                'monthly_revenue': m_rev,
+                'pricing_method': q.get_pricing_method_display() if hasattr(q, 'get_pricing_method_display') else q.pricing_method,
+                'status': q.status,
+                'status_label': st_label,
+                'status_class': st_class,
+                'created_at': q.created_at.strftime('%d/%m/%Y'),
+                'notes': q.notes or ''
+            })
+
+        # =========================================================================
+        # BÁO CÁO 16: ĐƠN HÀNG BOOKING HÃNG TÀU & TIẾN ĐỘ ĐIỀU XE
+        # =========================================================================
+        bookings_qs = BookingOrder.objects.filter(is_deleted=False).select_related('customer')
+        if start_d and end_d:
+            bookings_qs = bookings_qs.filter(created_at__date__gte=start_d, created_at__date__lte=end_d)
+        elif start_d:
+            bookings_qs = bookings_qs.filter(created_at__date=start_d)
+        if customer_id:
+            bookings_qs = bookings_qs.filter(customer_id=customer_id)
+
+        booking_total = bookings_qs.count()
+        booking_pending_dispatch = bookings_qs.filter(status='PENDING_DISPATCH').count()
+        booking_partially_dispatched = bookings_qs.filter(status='PARTIALLY_DISPATCHED').count()
+        booking_completed_dispatch = bookings_qs.filter(status='COMPLETED').count()
+        booking_cancelled = bookings_qs.filter(status='CANCELLED').count()
+
+        booking_total_conts = sum(b.total_containers for b in bookings_qs)
+        booking_dispatched_conts = sum(b.dispatched_containers for b in bookings_qs)
+        booking_dispatch_rate = round((booking_dispatched_conts / booking_total_conts * 100), 1) if booking_total_conts > 0 else 0.0
+
+        booking_items_data = []
+        for b in bookings_qs.order_by('-created_at'):
+            status_map = {
+                'PENDING_DISPATCH': ('Chờ điều xe', 'bg-amber-50 text-amber-800 border-amber-200'),
+                'PARTIALLY_DISPATCHED': ('Đang điều xe', 'bg-blue-50 text-blue-800 border-blue-200'),
+                'COMPLETED': ('Đã điều đủ', 'bg-emerald-50 text-emerald-800 border-emerald-200'),
+                'CANCELLED': ('Đã hủy', 'bg-rose-50 text-rose-800 border-rose-200'),
+            }
+            st_label, st_class = status_map.get(b.status, (b.status, 'bg-slate-100 text-slate-700 border-slate-300'))
+            
+            route_full = f"{b.pickup_location} ➔ {b.delivery_location}"
+            if b.dropoff_location:
+                route_full += f" ➔ {b.dropoff_location}"
+
+            booking_items_data.append({
+                'id': b.id,
+                'booking_code': b.booking_code,
+                'booking_number': b.booking_number or '',
+                'shipping_line': b.shipping_line or 'Nội địa',
+                'customer_id': b.customer_id,
+                'customer_name': b.customer.name if b.customer else 'Khách lẻ',
+                'customer_code': b.customer.code if b.customer else '',
+                'booking_type': b.get_booking_type_display() if hasattr(b, 'get_booking_type_display') else b.booking_type,
+                'container_size': b.container_size or '40HC',
+                'total_containers': b.total_containers,
+                'dispatched_containers': b.dispatched_containers,
+                'remaining_containers': max(0, b.total_containers - b.dispatched_containers),
+                'route_full': route_full,
+                'closing_time': b.closing_time or '-',
+                'si_cutoff': b.si_cutoff or '-',
+                'vgm_cutoff': b.vgm_cutoff or '-',
+                'loading_date': b.loading_date.strftime('%d/%m/%Y') if b.loading_date else '-',
+                'status': b.status,
+                'status_label': st_label,
+                'status_class': st_class,
+                'created_at': b.created_at.strftime('%d/%m/%Y')
+            })
+
+        # =========================================================================
+        # BÁO CÁO 17: GIÁM SÁT ĐƠN HÀNG ĐANG CHẠY CHƯA HOÀN THÀNH (WIP TRIPS)
+        # =========================================================================
+        wip_trips_qs = DispatchTrip.objects.filter(
+            is_deleted=False
+        ).exclude(
+            status__in=[TripStatus.DELIVERED, TripStatus.COMPLETED]
+        ).select_related(
+            'customer', 'vehicle', 'driver', 'trailer', 'booking_order'
+        )
+        if customer_id:
+            wip_trips_qs = wip_trips_qs.filter(customer_id=customer_id)
+        if vehicle_id:
+            wip_trips_qs = wip_trips_qs.filter(vehicle_id=vehicle_id)
+
+        wip_total_count = wip_trips_qs.count()
+        wip_in_transit_count = wip_trips_qs.filter(status=TripStatus.IN_TRANSIT).count()
+        wip_at_warehouse_count = wip_trips_qs.filter(status=TripStatus.AT_WAREHOUSE).count()
+        wip_dispatched_count = wip_trips_qs.filter(status=TripStatus.DISPATCHED).count()
+        wip_other_count = max(0, wip_total_count - (wip_in_transit_count + wip_at_warehouse_count + wip_dispatched_count))
+
+        wip_trips_data = []
+        for t in wip_trips_qs.order_by('-created_at'):
+            status_map = {
+                TripStatus.DRAFT: ('Bản nháp', 'bg-slate-100 text-slate-700 border-slate-300'),
+                TripStatus.DISPATCHED: ('Đã điều xe', 'bg-indigo-50 text-indigo-800 border-indigo-200'),
+                TripStatus.ACCEPTED: ('Tài xế nhận', 'bg-sky-50 text-sky-800 border-sky-200'),
+                TripStatus.CONTAINER_PICKED: ('Đã lấy cont', 'bg-blue-50 text-blue-800 border-blue-200'),
+                TripStatus.AT_WAREHOUSE: ('Tại kho đóng/dỡ', 'bg-purple-50 text-purple-800 border-purple-200'),
+                TripStatus.UNLOADING: ('Đang dỡ hàng', 'bg-violet-50 text-violet-800 border-violet-200'),
+                TripStatus.IN_TRANSIT: ('Đang chạy trên đường', 'bg-amber-50 text-amber-900 border-amber-300'),
+            }
+            st_label, st_class = status_map.get(t.status, (t.get_status_display() if hasattr(t, 'get_status_display') else t.status, 'bg-amber-50 text-amber-800 border-amber-200'))
+            
+            route_display = f"{t.pickup_location} ➔ {t.warehouse_location or ''}"
+            if t.dropoff_location:
+                route_display += f" ➔ {t.dropoff_location}"
+
+            driver_name = t.driver.nickname or t.driver.full_name if t.driver else 'Chưa gán'
+            driver_phone = t.driver.phone_number if t.driver else ''
+            plate = t.vehicle.license_plate if t.vehicle else 'Chưa gán xe'
+            
+            cont_num = t.container_number or (f"{t.container_number_1} / {t.container_number_2}" if getattr(t, 'is_twin_container', False) else 'Chưa cấp')
+            cont_type = t.container_type or '40HC'
+
+            wip_trips_data.append({
+                'id': t.id,
+                'trip_code': t.trip_code,
+                'customer_id': t.customer_id,
+                'customer_name': t.customer.name if t.customer else 'Khách lẻ',
+                'customer_code': t.customer.code if t.customer else '',
+                'license_plate': plate,
+                'driver_name': driver_name,
+                'driver_phone': driver_phone,
+                'container_display': f"{cont_num} ({cont_type})",
+                'route_display': route_display,
+                'loading_date': t.loading_date.strftime('%d/%m/%Y') if t.loading_date else (t.created_at.strftime('%d/%m/%Y')),
+                'status': t.status,
+                'status_label': st_label,
+                'status_class': st_class,
+                'booking_number': t.booking_order.booking_number if t.booking_order else '-',
+                'cargo_notes': t.cargo_notes or t.special_notes or '',
+                'created_at': t.created_at.strftime('%d/%m/%Y %H:%M')
+            })
+
         # -------------------------------------------------------------
         # KIỂM TRA QUYỀN TRUY CẬP TỪNG BÁO CÁO (DJANGO PERMISSIONS CHUẨN)
         # -------------------------------------------------------------
@@ -1761,6 +1937,10 @@ class ReportsAPIView(APIView):
         can_settle = check_report_perm('view_report_settlement_backlog', finance_roles)
         can_ar = check_report_perm('view_report_ar_aging', finance_roles)
         can_unsettled = check_report_perm('view_report_unsettled_aging', finance_roles)
+        sales_roles = [EmployeeRole.DIRECTOR, EmployeeRole.ACCOUNTANT, EmployeeRole.LEAD_SALES, EmployeeRole.SALESMAN, EmployeeRole.CSKH, EmployeeRole.DISPATCHER, EmployeeRole.LEAD_DISPATCH, EmployeeRole.LEAD_ADMIN_ACC]
+        can_quotes = check_report_perm('view_report_crm_quotations', sales_roles)
+        can_bookings = check_report_perm('view_report_active_bookings', sales_roles)
+        can_wip = check_report_perm('view_report_wip_trips', ops_roles + [EmployeeRole.LEAD_SALES, EmployeeRole.SALESMAN, EmployeeRole.CSKH])
 
         can_view_finance = can_pnl
 
@@ -1926,7 +2106,38 @@ class ReportsAPIView(APIView):
                 'over_30_days_count': unsettled_over_30_count,
                 'missing_pod_count': unsettled_missing_pod_count,
                 'records': unsettled_aging_records
-            } if can_unsettled else None
+            } if can_unsettled else None,
+            'report15_crm_quotations': {
+                'total_quotations': crm_total_quotes,
+                'approved_count': crm_approved_count,
+                'negotiating_count': crm_negotiating_count,
+                'pending_approval_count': crm_pending_approval_count,
+                'sent_count': crm_sent_count,
+                'rejected_count': crm_rejected_count,
+                'win_rate': crm_win_rate,
+                'pipeline_value': crm_pipeline_val,
+                'approved_value': crm_approved_val,
+                'quotations': crm_quotes_data
+            } if can_quotes else None,
+            'report16_active_bookings': {
+                'total_bookings': booking_total,
+                'pending_dispatch_count': booking_pending_dispatch,
+                'partially_dispatched_count': booking_partially_dispatched,
+                'completed_dispatch_count': booking_completed_dispatch,
+                'cancelled_count': booking_cancelled,
+                'total_containers': booking_total_conts,
+                'dispatched_containers': booking_dispatched_conts,
+                'dispatch_rate': booking_dispatch_rate,
+                'bookings': booking_items_data
+            } if can_bookings else None,
+            'report17_wip_active_trips': {
+                'total_wip_count': wip_total_count,
+                'in_transit_count': wip_in_transit_count,
+                'at_warehouse_count': wip_at_warehouse_count,
+                'dispatched_count': wip_dispatched_count,
+                'other_count': wip_other_count,
+                'trips': wip_trips_data
+            } if can_wip else None
         }
 
         return Response(data)
