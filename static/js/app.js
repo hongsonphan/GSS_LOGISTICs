@@ -27905,7 +27905,7 @@ function applyReport7Filters() {
     if (!tbody) return;
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu khách hàng phù hợp</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="16" class="p-8 text-center text-slate-400 font-medium">Không tìm thấy dữ liệu khách hàng phù hợp</td></tr>`;
         if (tfoot) tfoot.innerHTML = '';
         
         const elRev = document.getElementById('rep7-stat-rev');
@@ -27931,6 +27931,8 @@ function applyReport7Filters() {
     const total40 = list.reduce((sum, item) => sum + (Number(item.teu_40_count) || 0), 0);
     const total45 = list.reduce((sum, item) => sum + (Number(item.teu_45_count) || 0), 0);
     const totalRev = list.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0);
+    const totalSettledRev = list.reduce((sum, item) => sum + (Number(item.settled_revenue) || 0), 0);
+    const totalPendingRev = list.reduce((sum, item) => sum + (Number(item.pending_revenue !== undefined ? item.pending_revenue : (item.revenue - (item.settled_revenue || 0))) || 0), 0);
     const avgMargin = list.length > 0 ? (list.reduce((sum, item) => sum + (Number(item.margin_percent) || 0), 0) / list.length).toFixed(1) : '0.0';
 
     const totalConts = list.reduce((sum, item) => sum + (Number(item.containers_count || item.trips_count) || 0), 0);
@@ -28007,12 +28009,14 @@ tbody.innerHTML = list.map((item, index) => {
                     ${Number(item.settled_trips_count) || 0}/${Number(item.trips_count) || 0}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-[13px] tabular-nums">${revDisplay}</td>
+                <td data-col-key="settled_revenue" class="text-right font-bold text-slate-800 text-[13px] tabular-nums">${formatMoneyVND(item.settled_revenue || 0)}</td>
+                <td data-col-key="pending_revenue" class="text-right font-bold text-slate-800 text-[13px] tabular-nums">${formatMoneyVND(item.pending_revenue !== undefined ? item.pending_revenue : (item.revenue - (item.settled_revenue || 0)))}</td>
                 <td data-col-key="revenue_share" class="text-center font-bold text-slate-700 text-[13px] tabular-nums">${shareDisplay}</td>
                 <td data-col-key="avg_revenue_per_trip" class="text-right font-bold text-emerald-700 text-[13px] tabular-nums">${formatMoneyVND(avgPerTrip)}</td>
                 <td data-col-key="avg_revenue_per_container" class="text-right font-bold text-indigo-700 text-[13px] tabular-nums">${formatMoneyVND(avgPerCont)}</td>
             </tr>
             <tr id="rep7-detail-${index}" class="no-col-reorder hidden bg-slate-50/90 border-y-2 border-teal-500/30">
-                <td colspan="13" class="p-3 sm:p-4 bg-teal-50/20">
+                <td colspan="16" class="p-3 sm:p-4 bg-teal-50/20">
                     <div class="mb-2.5 flex items-center justify-between text-xs font-heading">
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-teal-600 inline-block"></span>
@@ -28052,6 +28056,8 @@ tbody.innerHTML = list.map((item, index) => {
                     ${list.reduce((sum, item) => sum + (Number(item.settled_trips_count) || 0), 0)}/${totalTrips}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(totalRev)}</td>
+                <td data-col-key="settled_revenue" class="text-right font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(totalSettledRev)}</td>
+                <td data-col-key="pending_revenue" class="text-right font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(totalPendingRev)}</td>
                 <td data-col-key="revenue_share" class="text-center font-black text-slate-900 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">100%</td>
                 <td data-col-key="avg_revenue_per_trip" class="text-right font-black text-emerald-800 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(overallAvgTrip)}</td>
                 <td data-col-key="avg_revenue_per_container" class="text-right font-black text-indigo-800 tabular-nums text-[13.5px]" style="font-size: 13.5px !important; font-weight: 800 !important; font-family: 'Plus Jakarta Sans', sans-serif !important;">${formatMoneyVND(overallAvgCont)}</td>

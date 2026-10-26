@@ -1094,6 +1094,8 @@ class ReportsAPIView(APIView):
             # Mask Report 7 (Khách hàng)
             for c in customer_analytics_list:
                 c['revenue'] = 0
+                c['settled_revenue'] = 0
+                c['pending_revenue'] = 0
                 c['expense'] = 0
                 c['profit'] = 0
                 c['margin_percent'] = 0.0
