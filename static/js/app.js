@@ -26641,7 +26641,7 @@ tbody.innerHTML = list.map((item, index) => {
                             <span class="text-slate-500">(${escapeHtml(item.vehicle_type)} · ${item.ownership || 'Xe Nhà'} · Tài xế: ${escapeHtml(item.driver || '-')})</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button type="button" onclick="event.stopPropagation(); openMasterTripFullview({ vehicle: item.plate })" class="text-[11px] font-bold text-white bg-teal-700 hover:bg-teal-800 flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-2xs transition-colors cursor-pointer" title="Mở trang chi tiết riêng toàn màn hình của xe này để xem thoáng và rộng rãi hơn">
+                            <button type="button" onclick="event.stopPropagation(); openDedicatedReportDetail('VEHICLE', ${index})" class="text-[11px] font-bold text-white bg-teal-700 hover:bg-teal-800 flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-2xs transition-colors cursor-pointer" title="Mở bảng kê chi tiết toàn bộ các chuyến xe của đầu xe này trên toàn màn hình">
                                 <i class="ph-bold ph-arrows-out-simple"></i> Mở Trang Chi Tiết
                             </button>
                             <button type="button" onclick="event.stopPropagation(); toggleReport1VehicleRow(${index})" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-teal-100/50 transition-colors cursor-pointer">
@@ -27347,9 +27347,14 @@ tbody.innerHTML = list.map((item, index) => {
                     </div>
                 </td>
                 <td data-col-key="customer_name" class="font-bold text-teal-900 text-[13px] group-hover:text-teal-700 transition-colors">
-                    <div class="flex items-center gap-1.5">
-                        <span>${escapeHtml(item.customer_name)}</span>
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
+                    <div class="flex items-center gap-1.5 justify-between">
+                        <div class="flex items-center gap-1.5">
+                            <span>${escapeHtml(item.customer_name)}</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
+                        </div>
+                        <button type="button" onclick="event.stopPropagation(); openDedicatedReportDetail('CUSTOMER', ${index})" class="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded cursor-pointer" title="Mở bảng kê chi tiết riêng của khách hàng này">
+                            <i class="ph-bold ph-arrow-square-out text-sm"></i>
+                        </button>
                     </div>
                 </td>
                 <td data-col-key="customer_code" class="text-slate-600 text-[13px]">${escapeHtml(item.customer_code)}</td>
@@ -27374,7 +27379,7 @@ tbody.innerHTML = list.map((item, index) => {
                             <span class="text-slate-500 font-mono">(${escapeHtml(item.customer_code || '-')} · Tuyến: ${escapeHtml(item.top_route || '-')})</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button type="button" onclick="event.stopPropagation(); openMasterTripFullview({ customer: item.customer_name })" class="text-[11px] font-bold text-white bg-teal-700 hover:bg-teal-800 flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-2xs transition-colors cursor-pointer" title="Mở trang chi tiết riêng toàn màn hình của khách hàng này để xem thoáng và rộng rãi hơn">
+                            <button type="button" onclick="event.stopPropagation(); openDedicatedReportDetail('CUSTOMER', ${index})" class="text-[11px] font-bold text-white bg-teal-700 hover:bg-teal-800 flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-2xs transition-colors cursor-pointer" title="Mở bảng kê chi tiết toàn bộ các chuyến xe của khách hàng này trên toàn màn hình">
                                 <i class="ph-bold ph-arrows-out-simple"></i> Mở Trang Chi Tiết
                             </button>
                             <button type="button" onclick="event.stopPropagation(); toggleReport7CustomerRow(${index})" class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-teal-100/50 transition-colors cursor-pointer">
@@ -27436,23 +27441,24 @@ let fullviewSortAsc = false;
 
 function getAllReportTrips() {
     const tripMap = new Map();
-    if (typeof rep1DataCache !== 'undefined' && rep1DataCache) {
-        rep1DataCache.forEach(v => {
-            (v.trips || []).forEach(t => {
-                if (t.id && !tripMap.has(t.id)) {
-                    tripMap.set(t.id, t);
-                }
-            });
+    const addTrips = (trips) => {
+        (trips || []).forEach(t => {
+            if (t && t.id && !tripMap.has(t.id)) {
+                tripMap.set(t.id, t);
+            }
         });
+    };
+
+    if (typeof rep1DataCache !== 'undefined' && rep1DataCache) {
+        rep1DataCache.forEach(v => addTrips(v.trips));
     }
     if (typeof rep7DataCache !== 'undefined' && rep7DataCache) {
-        rep7DataCache.forEach(c => {
-            (c.trips || []).forEach(t => {
-                if (t.id && !tripMap.has(t.id)) {
-                    tripMap.set(t.id, t);
-                }
-            });
-        });
+        rep7DataCache.forEach(c => addTrips(c.trips));
+    }
+    if (typeof rawReportsData !== 'undefined' && rawReportsData) {
+        (rawReportsData.report1_fleet_pnl?.fleet_pnl || []).forEach(v => addTrips(v.trips));
+        (rawReportsData.report7_customer_analytics?.customers || []).forEach(c => addTrips(c.trips));
+        addTrips(rawReportsData.report3_on_time_performance?.trips);
     }
     return Array.from(tripMap.values());
 }
@@ -27534,10 +27540,20 @@ window.openDedicatedCustomerByName = function(custName) {
 };
 window.openDedicatedReportDetail = function(mode, index) {
     if (mode === 'VEHICLE') {
-        const item = (typeof rep1DataFiltered !== 'undefined' && rep1DataFiltered[index]) ? rep1DataFiltered[index] : (typeof rep1DataCache !== 'undefined' && rep1DataCache[index]);
+        let item = (typeof rep1DataFiltered !== 'undefined' && rep1DataFiltered && rep1DataFiltered[index]) 
+            ? rep1DataFiltered[index] 
+            : (typeof rep1DataCache !== 'undefined' && rep1DataCache && rep1DataCache[index]);
+        if (!item && typeof rawReportsData !== 'undefined' && rawReportsData?.report1_fleet_pnl?.fleet_pnl) {
+            item = rawReportsData.report1_fleet_pnl.fleet_pnl[index];
+        }
         openMasterTripFullview({ vehicle: item?.plate || '' });
     } else {
-        const item = (typeof rep7DataFiltered !== 'undefined' && rep7DataFiltered[index]) ? rep7DataFiltered[index] : (typeof rep7DataCache !== 'undefined' && rep7DataCache[index]);
+        let item = (typeof rep7DataFiltered !== 'undefined' && rep7DataFiltered && rep7DataFiltered[index]) 
+            ? rep7DataFiltered[index] 
+            : (typeof rep7DataCache !== 'undefined' && rep7DataCache && rep7DataCache[index]);
+        if (!item && typeof rawReportsData !== 'undefined' && rawReportsData?.report7_customer_analytics?.customers) {
+            item = rawReportsData.report7_customer_analytics.customers[index];
+        }
         openMasterTripFullview({ customer: item?.customer_name || '' });
     }
 };

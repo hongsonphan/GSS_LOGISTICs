@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.2] - 2026-10-26 (Khắc Phục Triệt Để Lỗi Không Bật Trang Chi Tiết Vận Đơn & Cân Bằng Cấu Trúc Phân Cấp DOM Báo Cáo)
+
+### 1. Điều Tra & Khắc Phục Nguyên Nhân Cốt Lõi (Root-Cause Investigation via Browser Headless Testing):
+- **Phát hiện lỗi JavaScript Runtime (Uncaught ReferenceError: item is not defined):**
+  * Trên nút 'Mở Trang Chi Tiết' của lưới sub Báo cáo Đội xe (
+ep1) và Báo cáo Khách hàng (
+ep7), chuỗi gọi hàm inline bị truyền trực tiếp biến cục bộ item.plate và item.customer_name mà không có nội suy template literal ${...}.
+  * Khi người dùng nhấp vào nút này, trình duyệt bắn lỗi ReferenceError làm gián đoạn hoàn toàn luồng kích hoạt hàm mở bảng chi tiết.
+  * **Giải pháp:** Chuyển đổi toàn bộ sang phương thức ủy quyền an toàn openDedicatedReportDetail(mode, index). Hàm này truy xuất trực tiếp đối tượng từ bộ nhớ cache theo chỉ mục số nguyên, triệt tiêu hoàn toàn rủi ro vỡ chuỗi do ký tự đặc biệt hoặc dấu ngoặc đơn/kép.
+- **Phát hiện lỗi Phân cấp Cấu trúc DOM (DOM Hierarchy Anomaly):**
+  * Qua phân tích cây DOM thực tế trên trình duyệt Playwright, khối #report-drilldown-fullview có thẻ mở đặt trước khi đóng thẻ #report-summary-view (thiếu 1 thẻ đóng </div> ở dòng 1410 và thừa 1 thẻ đóng ở cuối file dòng 1576).
+  * Do đó, #report-drilldown-fullview bị trình duyệt hiểu lầm là phần tử con của #report-summary-view. Khi JavaScript gán class hidden cho view tổng hợp, toàn bộ view chi tiết cũng bị ẩn theo (display: none), dẫn đến tình trạng màn hình trắng xóa hoặc không bật ra.
+  * **Giải pháp:** Tái cấu trúc DOM chuẩn mực, đóng kín hoàn toàn #report-summary-view trước khi mở #report-drilldown-fullview, đưa cả hai trở thành 2 phần tử ngang hàng (siblings) trong #view-bao-cao.
+
+### 2. Tối Ưu Nâng Cao Dữ Liệu & Trải Nghiệm Điều Hướng:
+- **Nâng cấp getAllReportTrips():** Tự động quét và hợp nhất danh sách chuyến xe từ cả 
+ep1DataCache, 
+ep7DataCache và dữ liệu thô 
+awReportsData (bao gồm cả báo cáo OTP, DEM/DET), đảm bảo khi mở bảng kê chi tiết toàn diện luôn có đầy đủ 100% dữ liệu dù người dùng đang ở bất kỳ subtab nào.
+- **Nút Mở Nhanh Tiện Lợi (Quick-Open Actions):** Bổ sung nút mở nhanh trực tiếp trên cột Khách Hàng và Biển Số Xe ở bảng chính, cho phép người dùng mở ngay bảng kê chi tiết của đối tượng đó chỉ với 1 cú click chuột mà không cần phải mở rộng lưới sub.
+
+### 3. Kiểm Thử Tự Động & Triển Khai:
+- Kiểm thử thực tế bằng Playwright Chromium Headless (	est_full_flow.py): Mở chi tiết Khách hàng ABC thành công (27 chuyến, 12 triệu VNĐ), Quay lại báo cáo tổng hợp mượt mà, Mở chi tiết Xe 50E-095.78 thành công (36 chuyến, 35.7 triệu VNĐ).
+- 
+ode -c static/js/app.js & 
+ode -c static/js/column_manager.js (100% Passed).
+- python manage.py test --keepdb (147/147 tests Passed).
+- Nâng cache-busting version trong 	emplates/base.html lên ?v=2.9.60.
+
+
 ## [v4.6.1] - 2026-10-25 (Sửa Triệt Để Lỗi Trắng Màn Hình & Xây Dựng Trang Bảng Kê Chi Tiết Toàn Bộ Vận Đơn Với Bộ Lọc Khách Hàng / Đầu Xe Toàn Màn Hình)
 
 ### 1. Khắc Phục Lỗi Màn Hình Trắng Khi Mở Chi Tiết:
