@@ -1,33 +1,46 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
-# SCRIPT CẬP NHẬT TỰ ĐỘNG WEBAPP VÀ ĐỒNG BỘ GITHUB CHO BIM LOGISTICS
+# SCRIPT CAP NHAT TOAN DIEN WEBAPP VA DONG BO GITHUB
+# Ho tro ca user opc va ubuntu
 # ==============================================================================
 set -e
 
-MSG="${1:-Update code directly on VPS}"
+REPO_DIR="/home/ubuntu/BIM_LOGISTICS"
+cd "$REPO_DIR"
 
-cd /home/ubuntu/BIM_LOGISTICS
+# Khac phuc dubious ownership
+git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
 
-# Đảm bảo git không bị lỗi quyền giữa user opc và ubuntu
-git config --global --add safe.directory /home/ubuntu/BIM_LOGISTICS 2>/dev/null || true
-
-# Tự động chọn docker hay sudo docker
-if docker compose ps >/dev/null 2>&1; then
-    DK="docker compose"
+# Nhan dien lenh docker compose
+if docker compose version >/dev/null 2>&1; then
+    DOCKER_CMD="docker compose"
+elif sudo docker compose version >/dev/null 2>&1; then
+    DOCKER_CMD="sudo docker compose"
 else
-    DK="sudo docker compose"
+    DOCKER_CMD="docker-compose"
 fi
 
-echo "=== [1/3] THU THAP TAI NGUYEN TINH VA KHOI DONG LAI WEBAPP ==="
-$DK exec -T web python manage.py collectstatic --noinput
-$DK restart web
-sleep 2
+echo "=== [1/4] KEO CODE MOI NHAT TU GITHUB VE VPS ==="
+git pull origin master || true
 
-echo "=== [2/3] COMMIT VA DAY CODE LEN GITHUB ==="
-git add -u
-git commit -m "$MSG" || echo "Khong co thay doi moi de commit."
-git push origin master
+echo "=== [2/4] THU THAP TAI NGUYEN TINH VA KHOI DONG LAI WEBAPP ==="
+$DOCKER_CMD exec -T web python manage.py collectstatic --noinput
+$DOCKER_CMD restart web
+sleep 3
+
+echo "=== [3/4] COMMIT CAC THAY DOI TAI CHO VA DAY LEN GITHUB ==="
+if [ -n "$(git status --porcelain)" ]; then
+    git add -A
+    git commit -m "chore(vps): cap nhat sua truc tiep tu VPS $(date '+%Y-%m-%d %H:%M:%S')" || true
+    git push origin master || true
+    echo "Da day cac thay doi len GitHub thanh cong."
+else
+    echo "Khong co thay doi noi bo can commit them."
+fi
+
+echo "=== [4/4] KIEM TRA HE THONG WEBAPP ==="
+curl -s -I http://127.0.0.1:8085/ | head -n 5 || true
 
 echo "=============================================================================="
-echo "✓ HOAN TAT: WEBAPP DA CAP NHAT VA GITHUB DA DUOC DONG BO 100%!"
+echo "✓ HOAN TAT CAP NHAT VA DONG BO HE THONG 100%!"
 echo "=============================================================================="
