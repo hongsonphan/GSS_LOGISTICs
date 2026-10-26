@@ -26653,7 +26653,7 @@ tbody.innerHTML = list.map((item, index) => {
                 <td data-col-key="plate" class="font-black text-teal-800 text-[13px] group-hover:text-teal-600 transition-colors">
                     <div class="flex items-center gap-1.5">
                         <span class="font-mono">${escapeHtml(item.plate)}</span>
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
+                        <span class="text-xs text-slate-400 font-normal">(${trips.length} chuyến)</span>
                     </div>
                 </td>
                 <td data-col-key="vehicle_type" class="text-[13px] text-slate-600">${escapeHtml(item.vehicle_type)}</td>
@@ -26662,9 +26662,9 @@ tbody.innerHTML = list.map((item, index) => {
                     ${(() => {
                         const sCount = item.settled_trips_count || 0;
                         const pCount = item.pending_settlement_trips_count || 0;
-                        if (sCount > 0 && pCount === 0) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="ph-bold ph-check-circle"></i> Đã Chốt (${sCount})</span>`;
-                        if (sCount === 0) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300"><i class="ph-bold ph-clock"></i> Chờ Chốt (${pCount})</span>`;
-                        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-300"><i class="ph-bold ph-arrows-split"></i> ${sCount} Chốt · ${pCount} Chờ</span>`;
+                        if (sCount > 0 && pCount === 0) return `<span class="font-bold text-emerald-700 text-xs">Đã Chốt (${sCount})</span>`;
+                        if (sCount === 0) return `<span class="font-bold text-amber-600 text-xs">Chờ Chốt (${pCount})</span>`;
+                        return `<span class="font-bold text-sky-700 text-xs">${sCount} Chốt · ${pCount} Chờ</span>`;
                     })()}
                 </td>
                 <td data-col-key="trips_count" class="text-center font-bold text-slate-800 text-[13px] tabular-nums">${item.trips_count}</td>
@@ -27274,7 +27274,7 @@ function renderReport4Rows(list) {
                         <div class="flex items-center gap-1.5 justify-between">
                             <div class="flex items-center gap-1.5 truncate" title="${escapeHtml(item.route_name)}">
                                 <span class="truncate">${escapeHtml(item.route_name)}</span>
-                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800 shrink-0">${trips.length} chuyến</span>
+                                <span class="text-xs text-slate-400 font-normal">(${trips.length} chuyến)</span>
                             </div>
                         </div>
                     </td>
@@ -27353,7 +27353,7 @@ function renderReport4Rows(list) {
                         <div class="flex items-center gap-1.5 justify-between">
                             <div class="flex items-center gap-1.5">
                                 <span>${escapeHtml(item.plate)}</span>
-                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
+                                <span class="text-xs text-slate-400 font-normal">(${trips.length} chuyến)</span>
                             </div>
                             <button type="button" onclick="event.stopPropagation(); openDedicatedReportDetail('VEHICLE', ${index})" class="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded cursor-pointer" title="Mở bảng kê chi tiết đầu xe này">
                                 <i class="ph-bold ph-arrow-square-out text-sm"></i>
@@ -27435,7 +27435,7 @@ function renderReport4Rows(list) {
                         <div class="flex items-center gap-1.5 justify-between">
                             <div class="flex items-center gap-1.5">
                                 <span>${escapeHtml(item.driver_name)}</span>
-                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
+                                <span class="text-xs text-slate-400 font-normal">(${trips.length} chuyến)</span>
                             </div>
                         </div>
                     </td>
@@ -27508,7 +27508,7 @@ function renderReport4Rows(list) {
                         <div class="flex items-center gap-1.5 justify-between">
                             <div class="flex items-center gap-1.5">
                                 <span>${escapeHtml(item.customer_name)}</span>
-                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
+                                <span class="text-xs text-slate-400 font-normal">(${trips.length} chuyến)</span>
                             </div>
                             <button type="button" onclick="event.stopPropagation(); openDedicatedReportDetail('CUSTOMER', ${index})" class="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded cursor-pointer" title="Mở bảng kê chi tiết khách hàng này">
                                 <i class="ph-bold ph-arrow-square-out text-sm"></i>
@@ -27569,8 +27569,8 @@ function renderReport4Rows(list) {
 
         tbody.innerHTML = list.map((item, index) => {
             const settleBadge = item.is_settled
-                ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã thu hồi</span>`
-                : `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">Chờ khách trả</span>`;
+                ? `<span class="font-bold text-emerald-700 text-xs">Đã thu hồi</span>`
+                : `<span class="font-bold text-rose-600 text-xs">Chờ khách trả</span>`;
 
             return `
                 <tr class="hover:bg-teal-50/40 transition-colors">
@@ -27995,7 +27995,7 @@ tbody.innerHTML = list.map((item, index) => {
                     <div class="flex items-center gap-1.5 justify-between">
                         <div class="flex items-center gap-1.5">
                             <span>${escapeHtml(item.customer_name)}</span>
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">${trips.length} chuyến</span>
+                            <span class="text-xs text-slate-400 font-normal">(${trips.length} chuyến)</span>
                         </div>
                         <button type="button" onclick="event.stopPropagation(); openDedicatedReportDetail('CUSTOMER', ${index})" class="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded cursor-pointer" title="Mở bảng kê chi tiết riêng của khách hàng này">
                             <i class="ph-bold ph-arrow-square-out text-sm"></i>
@@ -28013,9 +28013,9 @@ tbody.innerHTML = list.map((item, index) => {
                     ${(() => {
                         const sCount = item.settled_trips_count || 0;
                         const pCount = item.pending_settlement_trips_count || 0;
-                        if (sCount > 0 && pCount === 0) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="ph-bold ph-check-circle"></i> Đã Chốt (${sCount})</span>`;
-                        if (sCount === 0) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300"><i class="ph-bold ph-clock"></i> Chờ Chốt (${pCount})</span>`;
-                        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-300"><i class="ph-bold ph-arrows-split"></i> ${sCount} Chốt · ${pCount} Chờ</span>`;
+                        if (sCount > 0 && pCount === 0) return `<span class="font-bold text-emerald-700 text-xs">Đã Chốt (${sCount})</span>`;
+                        if (sCount === 0) return `<span class="font-bold text-amber-600 text-xs">Chờ Chốt (${pCount})</span>`;
+                        return `<span class="font-bold text-sky-700 text-xs">${sCount} Chốt · ${pCount} Chờ</span>`;
                     })()}
                 </td>
                 <td data-col-key="revenue" class="text-right font-black text-indigo-700 text-[13px] tabular-nums">${revDisplay}</td>
@@ -28374,16 +28374,16 @@ function applyFullviewFilters() {
     }
 
     tbody.innerHTML = filtered.map((t, idx) => {
-        let statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">Mới tạo</span>';
+        let statusBadge = '<span class="font-bold text-slate-600 text-xs">Mới tạo</span>';
         const st = (t.status || '').toUpperCase();
         if (st === 'COMPLETED' || st === 'DELIVERED') {
-            statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn Thành</span>';
+            statusBadge = '<span class="font-bold text-emerald-700 text-xs">Hoàn Thành</span>';
         } else if (st === 'IN_TRANSIT' || st === 'AT_WAREHOUSE' || st === 'UNLOADING') {
-            statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Đang Chạy</span>';
+            statusBadge = '<span class="font-bold text-amber-600 text-xs">Đang Chạy</span>';
         } else if (st === 'CANCELLED') {
-            statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">Đã Hủy</span>';
+            statusBadge = '<span class="font-bold text-rose-600 text-xs">Đã Hủy</span>';
         } else {
-            statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">Đã Giao Tài</span>';
+            statusBadge = '<span class="font-bold text-teal-700 text-xs">Đã Giao Tài</span>';
         }
 
         return `
@@ -28504,8 +28504,8 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
     const rowsHtml = trips.map((t, idx) => {
         const isSettled = Boolean(t.is_settled || t.settlement_status === 'Đã đối soát');
         const settlementBadge = isSettled
-            ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300" title="Chuyến xe đã được kế toán đối soát & quyết toán công nợ"><i class="ph-bold ph-check-circle text-xs"></i> Đã Đối Soát</span>'
-            : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ"><i class="ph-bold ph-clock text-xs"></i> Chờ Đối Soát</span>';
+            ? '<span class="font-bold text-emerald-700 text-xs" title="Chuyến xe đã được kế toán đối soát & quyết toán công nợ">Đã Đối Soát</span>'
+            : '<span class="font-bold text-amber-600 text-xs" title="Chuyến xe đã giao hàng thành công, đang chờ đối soát công nợ">Chờ Đối Soát</span>';
 
         let partnerCol = '';
         if (mode === 'VEHICLE') {
@@ -28541,7 +28541,7 @@ function renderNestedTripsTableHtml(trips, mode = 'VEHICLE', parentTitle = '') {
                 <td class="py-2 px-2.5 text-slate-600 max-w-xs truncate" title="${escapeHtml(t.route || '-')}">${escapeHtml(t.route || '-')}</td>
                 <td class="text-center py-2 px-2.5">
                     <div class="flex flex-col items-center gap-1">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Giao thành công</span>
+                        <span class="font-bold text-teal-700 text-xs">Giao thành công</span>
                         ${settlementBadge}
                     </div>
                 </td>
@@ -28747,16 +28747,16 @@ function filterDrilldownTable() {
     const sumExp = filtered.reduce((s, t) => s + (Number(t.expense) || 0), 0);
 
     tbody.innerHTML = filtered.map((t, idx) => {
-        let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">Mới tạo</span>';
+        let statusBadge = '<span class="font-bold text-slate-600 text-xs">Mới tạo</span>';
         const st = (t.status || '').toUpperCase();
         if (st === 'COMPLETED' || st === 'DELIVERED') {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn Thành</span>';
+            statusBadge = '<span class="font-bold text-emerald-700 text-xs">Hoàn Thành</span>';
         } else if (st === 'IN_TRANSIT' || st === 'AT_WAREHOUSE' || st === 'UNLOADING') {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Đang Chạy</span>';
+            statusBadge = '<span class="font-bold text-amber-600 text-xs">Đang Chạy</span>';
         } else if (st === 'CANCELLED') {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Đã Hủy</span>';
+            statusBadge = '<span class="font-bold text-rose-600 text-xs">Đã Hủy</span>';
         } else if (st === 'CONTAINER_PICKED' || st === 'ACCEPTED' || st === 'DISPATCHED') {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Đã Giao Tài</span>';
+            statusBadge = '<span class="font-bold text-teal-700 text-xs">Đã Giao Tài</span>';
         }
 
         const partnerCol = currentTmsDrilldownMode === 'VEHICLE'
@@ -30501,9 +30501,14 @@ function applyReport15Filters() {
                 <td class="text-right text-xs font-mono font-black text-indigo-700 tabular-nums">${formatMoneyVND(item.monthly_revenue)}</td>
                 <td class="text-center text-xs text-slate-600">${escapeHtml(item.pricing_method || 'Đa tuyến')}</td>
                 <td class="text-center text-xs">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${item.status_class}">
-                        ${escapeHtml(item.status_label)}
-                    </span>
+                    ${(() => {
+                        if (item.status === 'APPROVED') return '<span class="font-bold text-emerald-700">Đã ký HĐ</span>';
+                        if (item.status === 'NEGOTIATING') return '<span class="font-bold text-amber-600">Đang đàm phán</span>';
+                        if (item.status === 'PENDING_APPROVAL') return '<span class="font-bold text-indigo-700">Chờ duyệt</span>';
+                        if (item.status === 'SENT') return '<span class="font-bold text-blue-700">Đã gửi</span>';
+                        if (item.status === 'REJECTED') return '<span class="font-bold text-rose-600">Từ chối</span>';
+                        return `<span class="font-bold text-slate-600">${escapeHtml(item.status_label)}</span>`;
+                    })()}
                 </td>
                 <td class="text-center text-xs font-mono text-slate-600">${escapeHtml(item.created_at)}</td>
             </tr>
@@ -30596,8 +30601,8 @@ function applyReport16Filters() {
         sumDispatchedConts += (item.dispatched_containers || 0);
         const isFullyDispatched = item.dispatched_containers >= item.total_containers;
         const progressBadge = isFullyDispatched 
-            ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">Đã đủ (${item.dispatched_containers}/${item.total_containers})</span>`
-            : `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">Còn thiếu ${item.remaining_containers} (${item.dispatched_containers}/${item.total_containers})</span>`;
+            ? `<span class="font-bold text-emerald-700 text-xs">Đã đủ (${item.dispatched_containers}/${item.total_containers})</span>`
+            : `<span class="font-bold text-amber-600 text-xs">Còn thiếu ${item.remaining_containers} (${item.dispatched_containers}/${item.total_containers})</span>`;
 
         return `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -30619,9 +30624,14 @@ function applyReport16Filters() {
                 </td>
                 <td class="text-center text-xs font-mono text-rose-700 font-bold">${escapeHtml(item.closing_time)}</td>
                 <td class="text-center text-xs">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${item.status_class}">
-                        ${escapeHtml(item.status_label)}
-                    </span>
+                    ${(() => {
+                        if (item.status === 'APPROVED') return '<span class="font-bold text-emerald-700">Đã ký HĐ</span>';
+                        if (item.status === 'NEGOTIATING') return '<span class="font-bold text-amber-600">Đang đàm phán</span>';
+                        if (item.status === 'PENDING_APPROVAL') return '<span class="font-bold text-indigo-700">Chờ duyệt</span>';
+                        if (item.status === 'SENT') return '<span class="font-bold text-blue-700">Đã gửi</span>';
+                        if (item.status === 'REJECTED') return '<span class="font-bold text-rose-600">Từ chối</span>';
+                        return `<span class="font-bold text-slate-600">${escapeHtml(item.status_label)}</span>`;
+                    })()}
                 </td>
                 <td class="text-center text-xs font-mono text-slate-600">${escapeHtml(item.created_at)}</td>
             </tr>
@@ -30734,9 +30744,14 @@ function applyReport17Filters() {
                     ${escapeHtml(item.route_display)}
                 </td>
                 <td class="text-center text-xs">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${item.status_class}">
-                        ${escapeHtml(item.status_label)}
-                    </span>
+                    ${(() => {
+                        if (item.status === 'APPROVED') return '<span class="font-bold text-emerald-700">Đã ký HĐ</span>';
+                        if (item.status === 'NEGOTIATING') return '<span class="font-bold text-amber-600">Đang đàm phán</span>';
+                        if (item.status === 'PENDING_APPROVAL') return '<span class="font-bold text-indigo-700">Chờ duyệt</span>';
+                        if (item.status === 'SENT') return '<span class="font-bold text-blue-700">Đã gửi</span>';
+                        if (item.status === 'REJECTED') return '<span class="font-bold text-rose-600">Từ chối</span>';
+                        return `<span class="font-bold text-slate-600">${escapeHtml(item.status_label)}</span>`;
+                    })()}
                 </td>
                 <td class="text-center text-xs font-mono text-slate-600">${escapeHtml(item.booking_number)}</td>
                 <td class="text-xs text-slate-600 max-w-xs truncate" title="${escapeHtml(item.cargo_notes)}">${escapeHtml(item.cargo_notes || '-')}</td>
