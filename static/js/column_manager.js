@@ -187,10 +187,10 @@
         this.storageKey = this.getStorageKey();
         this.tableName = this.getTableName();
 
-        const thead = this.table.querySelector('thead');
+        const thead = this.table.tHead || this.table.querySelector(':scope > thead');
         if (!thead) return;
 
-        const ths = thead.querySelectorAll('tr:first-child > th');
+        const ths = thead.querySelectorAll(':scope > tr:first-child > th');
         if (!ths || ths.length === 0) return;
 
         this.defaultColumns = [];
@@ -335,14 +335,14 @@
             return Object.assign({}, c);
         });
 
-        const ths = this.table.querySelectorAll('thead th');
+        const ths = this.table.querySelectorAll(':scope > thead > tr > th');
         ths.forEach(function(th) {
             th.style.width = '';
             th.style.minWidth = '';
             th.style.maxWidth = '';
         });
 
-        const tds = this.table.querySelectorAll('tbody td');
+        const tds = this.table.querySelectorAll(':scope > tbody > tr > td');
         tds.forEach(function(td) {
             td.style.width = '';
             td.style.minWidth = '';
@@ -364,8 +364,9 @@
         this.isApplying = true;
 
         try {
-            const thead = this.table.querySelector('thead');
-            const tbody = this.table.querySelector('tbody');
+            const thead = this.table.tHead || this.table.querySelector(':scope > thead');
+            const tbody = this.table.querySelector(':scope > tbody');
+            const tfoot = this.table.tFoot || this.table.querySelector(':scope > tfoot');
             if (!thead) return;
 
             const colMap = {};
@@ -374,7 +375,7 @@
             });
 
             // 1. Đồng bộ thead th elements
-            const trHead = thead.querySelector('tr:first-child');
+            const trHead = thead.querySelector(':scope > tr:first-child');
             if (trHead) {
                 const thElements = Array.from(trHead.children);
                 
@@ -407,7 +408,7 @@
 
             // 2. Đồng bộ tbody td elements
             if (tbody) {
-                const rows = tbody.querySelectorAll('tr');
+                const rows = tbody.querySelectorAll(':scope > tr');
                 const defaultCols = this.defaultColumns;
                 const columns = this.columns;
 
@@ -453,9 +454,8 @@
             }
 
             // 3. Đồng bộ tfoot td elements đảm bảo các ô tổng cộng luôn khớp 100% cột
-            const tfoot = this.table.querySelector('tfoot');
             if (tfoot) {
-                const footRows = tfoot.querySelectorAll('tr');
+                const footRows = tfoot.querySelectorAll(':scope > tr');
                 const defaultCols = this.defaultColumns;
                 const columns = this.columns;
 
@@ -499,35 +499,47 @@
      * Thiết lập MutationObserver để tự động định dạng lại khi tbody được render lại
      */
     TableColumnInstance.prototype.setupMutationObserver = function() {
-        const tbody = this.table.querySelector('tbody');
-        if (!tbody) return;
-
         const self = this;
         let debounceTimer = null;
 
-        const observer = new MutationObserver(function(mutations) {
-            if (self.isApplying) return;
-            
-            // Kiểm tra xem có node con mới được thêm vào không
-            let hasAddedNodes = false;
-            mutations.forEach(function(m) {
-                if (m.addedNodes && m.addedNodes.length > 0) {
-                    hasAddedNodes = true;
+        const triggerApply = function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                self.apply();
+            }, 10);
+        };
+
+        const tbody = this.table.querySelector(':scope > tbody');
+        if (tbody) {
+            const tbodyObserver = new MutationObserver(function(mutations) {
+                if (self.isApplying) return;
+                let hasAddedNodes = false;
+                for (let i = 0; i < mutations.length; i++) {
+                    if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+                        hasAddedNodes = true;
+                        break;
+                    }
                 }
+                if (hasAddedNodes) triggerApply();
             });
+            tbodyObserver.observe(tbody, { childList: true, subtree: false });
+        }
 
-            if (hasAddedNodes) {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(function() {
-                    self.apply();
-                }, 10);
-            }
-        });
-
-        observer.observe(tbody, {
-            childList: true,
-            subtree: false
-        });
+        const tfoot = this.table.tFoot || this.table.querySelector(':scope > tfoot');
+        if (tfoot) {
+            const tfootObserver = new MutationObserver(function(mutations) {
+                if (self.isApplying) return;
+                let hasAddedNodes = false;
+                for (let i = 0; i < mutations.length; i++) {
+                    if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+                        hasAddedNodes = true;
+                        break;
+                    }
+                }
+                if (hasAddedNodes) triggerApply();
+            });
+            tfootObserver.observe(tfoot, { childList: true, subtree: false });
+        }
     };
 
     /**

@@ -2,6 +2,32 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.4] - 2026-10-26 (Khắc Phục Triệt Để Lỗi Lệch Cột Dòng Total Do Nested Table & Đồng Bộ Hoàn Hảo TFoot Khi Ẩn/Đổi Thứ Tự Cột)
+
+### 1. Nguyên Nhân Cốt Lõi (Root-Cause Analysis):
+- **Xung đột Selector DOM do Lưới Con Accordion (Nested Table Depth-First Query Anomaly):**
+  * Trong static/js/column_manager.js, câu lệnh this.table.querySelector('tfoot') duyệt cây DOM theo Depth-First Search.
+  * Vì mỗi hàng trong tbody đều có một lưới con accordion chứa <table> và <tfoot> riêng (với 5 cột), querySelector('tfoot') đã vô tình trả về tfoot của bảng con đầu tiên thay vì tfoot thật sự của bảng cha.
+  * Do số lượng cột của bảng con (5 cột) không khớp với số cột của bảng cha (13 cột), khối xử lý tfoot bị bỏ qua hoàn toàn, dẫn đến tfoot của bảng cha không bao giờ được đồng bộ.
+- **Hệ quả hiển thị:**
+  * Khi người dùng ẩn cột 'Tổng TEU' (hoặc bất kỳ cột nào), thead và tbody đều ẩn cột (display: none), nhưng tfoot vẫn giữ nguyên toàn bộ 13 cột và thứ tự cũ.
+  * Kết quả là các ô giá trị ở chân bảng (tfoot) bị đẩy lệch sang phải 1 cột (ví dụ: số liệu 174 TEU bị rớt vào cột 20FT, 0 TEU vào cột 40FT, 87 vào cột 45FT...).
+- **Thiếu MutationObserver trên TFoot:**
+  * Hàm setupMutationObserver trước đây chỉ quan sát tbody, không lắng nghe tfoot, khiến việc gán lại tfoot.innerHTML khi người dùng tìm kiếm/lọc không kích hoạt tự động đồng bộ ẩn/hiện cột.
+
+### 2. Giải Pháp Kỹ Thuật Triệt Để:
+- **Chuẩn hóa Scope Selector (:scope >) & Native DOM Properties:**
+  * Thay thế this.table.querySelector('tfoot') bằng this.table.tFoot || this.table.querySelector(':scope > tfoot').
+  * Sử dụng thead.querySelectorAll(':scope > tr:first-child > th'), tbody.querySelectorAll(':scope > tr') và tfoot.querySelectorAll(':scope > tr'), đảm bảo chỉ tác động trực tiếp vào các hàng của bảng cha, tuyệt đối cách ly không can thiệp vào các bảng lồng nhau (nested sub-tables).
+- **Mở rộng MutationObserver cho cả TFoot:**
+  * Thiết lập MutationObserver quan sát cả tbody và tfoot với debounceTimer 10ms, đảm bảo bất cứ khi nào bảng render lại (qua tìm kiếm, đổi kỳ hay gán innerHTML), cấu hình cột luôn được áp dụng tức thì.
+
+### 3. Kiểm Thử Hệ Thống & Kiểm Chứng Thị Giác:
+- Kiểm thử tự động trên trình duyệt thật (Playwright Headless): Giả lập ẩn cột 'total_teu' và gọi applyReport7Filters(), toàn bộ 12 cột của thead, tbody và tfoot đều [MATCH] 100%.
+- node -c static/js/column_manager.js & node -c static/js/app.js (100% Passed).
+- Chạy 147 test tự động của hệ thống (python manage.py test --keepdb) — 147/147 PASSED.
+- Nâng cache-busting version trong templates/base.html lên ?v=2.9.62.
+
 ## [v4.6.3] - 2026-10-26 (Báo Cáo Chi Phí Tuyến Đa Chiều: Theo Tuyến Đường, Đầu Xe, Tài Xế, Khách Hàng & Bảng Kê Chi Hộ)
 
 ### 1. Phân Tích & Chuẩn Hóa Nghiệp Vụ Chi Phí Vận Tải:
