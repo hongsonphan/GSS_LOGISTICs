@@ -2,6 +2,59 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.17] - 2026-10-27 (Lập Báo Cáo Bảng Kê Vận Chuyển Tháng 26 Cột Đối Soát & Xác Nhận Khách Hàng)
+
+### 1. Phân Hệ Kế Toán & Đối Soát Khách Hàng (Bảng Kê Vận Chuyển Tháng 26 Cột):
+- **Cấu Trúc Bảng Kê Chuẩn Nghiệp Vụ Triển Võ Logistics Khớp 100% File Đính Kèm:**
+  * Xây dựng module `apps/billing/customer_statement_service.py` với đầy đủ 26 cột dữ liệu kế toán:
+    1. `STT`: Số thứ tự chuyến xe.
+    2. `NGÀY`: Ngày vận chuyển (`loading_date`).
+    3. `TÊN KHÁCH HÀNG`: Tên rút gọn / tên pháp nhân khách hàng.
+    4. `KHO`: Kho lấy / đóng hàng (`warehouse_location`).
+    5. `NƠI LẤY`: Điểm lấy container / bãi bốc (`pickup_location`).
+    6. `NƠI HẠ`: Điểm hạ vỏ cont / bãi trả (`dropoff_location`).
+    7. `N/X`: Phân loại hàng hóa (`N` - Hàng Nhập, `X` - Hàng Xuất, `NĐ` - Nội địa).
+    8. `CONT 20'`: Đánh dấu số lượng container 20 feet.
+    9. `CONT 40'`: Đánh dấu số lượng container 40 feet / 45 feet.
+    10. `SỐ CONT`: Số hiệu vỏ container (hỗ trợ hiển thị cont đôi khi chạy twin 20ft).
+    11. `BOOKING / BILL`: Số Booking hãng tàu hoặc số Vận đơn (Bill of Lading).
+    12-18. `CƯỚC VẬN CHUYỂN`:
+      - `ĐƠN GIÁ`: Cước vận chuyển cơ bản (`revenue`).
+      - `HẠ XA`: Phụ phí hạ bãi xa ngoài nếu có.
+      - `NEO`: Tiền phạt lưu xe / neo xe qua đêm tính cho khách (`detention_fee_customer`).
+      - `PHỤ THU`: Các khoản phụ phí khác khách chịu.
+      - `CỘNG`: Tổng cước trước thuế.
+      - `VAT 10%`: Tiền thuế GTGT theo thuế suất cấu hình (10%, 8% hoặc 0%).
+      - `THÀNH TIỀN`: Tổng cước vận tải sau thuế.
+    19-20. `HĐ NÂNG`: Số hóa đơn điện tử nâng cont và số tiền nâng (`LIFT_ON`).
+    21-22. `HĐ HẠ`: Số hóa đơn điện tử hạ cont và số tiền hạ (`LIFT_OFF`).
+    23. `CƯỢC`: Tiền cược vỏ container hãng tàu (`CONTAINER_DEPOSIT`).
+    24. `GHI CHÚ`: Lưu ý hàng hóa, chỉ dẫn giao nhận hiện trường.
+    25. `SỐ XE`: Biển số xe đầu kéo thực tế thực hiện.
+    26. `ĐÃ TRẢ`: Tình trạng đối soát / quyết toán công nợ.
+- **Tính Toán & Đọc Số Tiền Bằng Chữ Chuẩn Kế Toán Tiếng Việt:**
+  * Hàm `vietnamese_number_to_words`: Tự động đọc tổng thành tiền chính xác từng chữ kèm đơn vị *"đồng chẵn."* (ví dụ: *"Bốn triệu một trăm nghìn đồng chẵn."*).
+- **Xuất File Excel (.xlsx) Chuẩn 100% Định Dạng Mẫu:**
+  * Sử dụng thư viện `openpyxl` tạo bảng tính Excel chuyên nghiệp: 2 tầng tiêu đề gộp ô (Rowspan/Colspan), kẻ viền border mỏng, định dạng số tiền tệ `#,##0`, màu nền phân biệt cụm cước / nâng hạ / tổng cộng, và 2 khung chữ ký đóng dấu (Khách Hàng & Triển Võ Logistics).
+
+### 2. Giao Diện & API RESTful (Xem Trước, In A4 Ngang & Xuất Excel):
+- **API Endpoints:**
+  * `GET /api/accounting/customer-statement/`: Trích xuất dữ liệu JSON đầy đủ 26 cột và thông tin doanh nghiệp.
+  * `GET /api/accounting/customer-statement/export-excel/`: Tải trực tiếp file Excel `.xlsx` chuẩn mẫu gửi khách hàng.
+- **Component Modal Xem Trước & Bản In A4 Landscape:**
+  * `templates/components/modal_customer_freight_statement.html`:
+    - Bộ lọc Tháng / Năm linh hoạt.
+    - Bộ chọn % VAT (10%, 8%, 0%) tự động tính lại toàn bộ dòng tiền.
+    - Nút In Khổ A4 Ngang (`@media print size: A4 landscape`) tối ưu hóa không bị tràn trang.
+    - Nút Tải File Excel `.xlsx` nhanh chóng chỉ với 1 click.
+- **Tích Hợp Liên Phân Hệ:**
+  * Bổ sung nút *"Bảng Kê Vận Chuyển Tháng"* trong Màn hình Đối soát Khách Hàng (`view_customer_ar_statement.html`), Báo cáo Công Nợ Phải Thu Khách Hàng (`view_reports.html` - Report 13) và Quyết Toán Khách Hàng (`view_settlement.html`).
+
+### 3. Đảm Bảo Vận Hành & Zero-Regression:
+- Nâng asset version lên `?v=2.9.88` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` (100% Passed).
+- Chạy toàn bộ bộ kiểm thử tự động của dự án: **156/156 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.16] - 2026-10-27 (Hiển Thị Số Tiền Hoàn Ứng 20 Triệu & Đồng Bộ Layout Chuẩn Tab Quyết Toán Khách Hàng)
 
 ### 1. Phân Hệ Tài Chính - Kế Toán (Quỹ Điều Vận - Cột Đã Hoàn Ứng Về Cty):
