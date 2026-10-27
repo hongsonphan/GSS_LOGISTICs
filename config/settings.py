@@ -17,6 +17,9 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1')
 
+# Frontend: True = nạp từng module JS riêng (dev), False = nạp app.js đã ghép (production)
+FRONTEND_SPLIT_SCRIPTS = os.environ.get('FRONTEND_SPLIT_SCRIPTS', str(DEBUG)).lower() in ('true', '1')
+
 # Danh sách domain cho phép truy cập
 allowed_hosts_raw = os.environ.get('ALLOWED_HOSTS', '')
 if allowed_hosts_raw:

@@ -185,7 +185,7 @@
         window.SYSTEM_COMPANY = {{ company_profile_json|default:"{}"|safe }};
     </script>
     <script src="{% static 'js/column_manager.js' %}?v=2.9.88"></script>
-    <script src="{% static 'js/app.js' %}?v=2.9.88"></script>
+    {% load app_scripts %}{% app_scripts %}
     <script src="{% static 'js/collaboration.js' %}?v=1.5.4"></script>
     {% block extra_scripts %}{% endblock %}
 </body>

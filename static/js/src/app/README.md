@@ -1,6 +1,13 @@
 # Mã nguồn frontend: static/js/src/app/
 
-`static/js/app.js` là FILE TỰ SINH, ghép từ các file trong thư mục này. Trình duyệt vẫn chỉ nạp một file `app.js` như trước, nên hành vi không đổi.
+Mỗi phân hệ là một file module riêng trong thư mục này. Có hai chế độ nạp, chọn bằng biến `FRONTEND_SPLIT_SCRIPTS`:
+
+| Chế độ | Trình duyệt nạp | Dùng khi |
+| --- | --- | --- |
+| `FRONTEND_SPLIT_SCRIPTS=true` (mặc định khi `DEBUG=True`) | 58 file module riêng theo `manifest.txt` | Phát triển: DevTools hiện đúng tên file, sửa xong chỉ cần F5 |
+| `FRONTEND_SPLIT_SCRIPTS=false` (mặc định khi `DEBUG=False`) | 1 file `static/js/app.js` ghép từ các module | Production: 1 request, nhanh hơn |
+
+`static/js/app.js` là FILE TỰ SINH. Không sửa trực tiếp. Thẻ `<script>` do `{% app_scripts %}` (core/templatetags/app_scripts.py) sinh ra.
 
 ## Quy trình sửa code
 
