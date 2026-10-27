@@ -2,6 +2,34 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.5] - 2026-10-27 (Chuẩn Hóa Nhãn Hàng Nhập/Xuất/Nội Địa, Canh Trái Cột Trạng Thái & Gia Cố Toàn Diện Máy Trạng Thái Tiến Độ Tài Xế)
+
+### 1. Chuẩn Hóa Nhãn Loại Hàng & Bỏ Khối Nền Nặng Nề Bảng Điều Vận:
+- **Thống Nhất Text Chuẩn Ngành Vận Tải:**
+  * Thống nhất 100% nhãn loại hàng thành 3 giá trị chuẩn: **`"HÀNG NHẬP"` / `"HÀNG XUẤT"` / `"NỘI ĐỊA"`** (triệt tiêu tình trạng hiển thị chữ cộc lốc `"Nhập"` xen lẫn `"Hàng Nhập"`).
+  * Hàm `normalize_shipment_type` tại Backend (`apps/dispatch/api_views.py`) tự động chuẩn hóa cả `type` và `type_raw` trả về cho toàn bộ API chuyến xe (`TripListCreateAPIView`, `TripDetailAPIView`).
+- **Tinh Chỉnh Hiệu Ứng Thị Giác (Typography & Color):**
+  * Loại bỏ background badge khối hộp dày (`bg-blue-100`, `bg-emerald-100`, `bg-purple-100`) tại cột *Nơi Lấy ➔ Nơi Hạ* trong `renderDispatchTable`, thay bằng text màu chữ trực tiếp theo chuẩn thiết kế BIM (`text-blue-700`, `text-emerald-700`, `text-purple-700` font-bold uppercase) thanh thoát, đồng bộ và chuyên nghiệp.
+
+### 2. Canh Trái Cột "Trạng Thái" Bảng Điều Vận:
+- **Căn Thẳng Hàng Typography (Left-Aligned Layout):**
+  * Điều chỉnh cả thẻ tiêu đề `<th>` cột Trạng thái trong `templates/views/view_dispatch.html` và dữ liệu `<td>` trong `static/js/app.js` từ `text-center` / `justify-center` sang **`text-left` / `justify-start`**.
+  * Giúp người dùng quét mắt từ trên xuống dưới dễ dàng, badge trạng thái và thời gian SLA chờ nhận lệnh hiển thị thẳng hàng ngăn nắp.
+
+### 3. Gia Cố Toàn Diện Tính Năng Cập Nhật Trạng Thái Chuyến Xe Của Tài Xế:
+- **Mở Rộng Máy Trạng Thái Thực Tế Hiện Trường (`core/workflows.py`):**
+  * Bổ sung các bước chuyển tiếp linh hoạt trong `VALID_TRANSITIONS` phản ánh đúng nghiệp vụ điều vận: từ `AT_WAREHOUSE` cho phép chuyển thẳng sang `RETURNING_EMPTY` hoặc `COMPLETED`; từ `IN_TRANSIT` cho phép chuyển sang `UNLOADING`; khắc phục triệt để lỗi `ValidationError (400 Bad Request)` khi tài xế bấm "Xong đóng hàng / kéo về bãi hạ".
+- **Hỗ Trợ Toàn Diện Tài Xế Chặng 2 (Cắt Kéo - `core/permissions.py`):**
+  * Bổ sung quyền cập nhật mốc thời gian và upload chứng từ cho cả `dropoff_driver` trong lớp phân quyền `IsTripDriverOrDispatcher`, đảm bảo bác tài kéo mooc chặng 2 không bị chặn `403 Forbidden`.
+- **Đồng Bộ Dữ Liệu Thời Gian Thực & Nhật Ký Truy Vết (`apps/dispatch/api_views.py`):**
+  * Khi tài xế báo mốc `FINISHED_UNLOADING`, hệ thống tự động ghi nhận giờ ra cổng kho thực tế (`actual_gate_out_time`, `actual_gate_out_at`).
+  * Ghi nhận sự kiện `TrackingEventLog` bất biến cho mọi thao tác báo mốc của tài xế kể cả khi trạng thái chính của chuyến xe không thay đổi.
+
+### 4. Kiểm Thử Hệ Thống & Đảm Bảo Zero-Regression:
+- Cập nhật asset cache version lên `?v=2.9.76` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` (100% Passed).
+- Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.4] - 2026-10-27 (Tối Ưu Chế Độ Cắt Kéo: Cho Phép Bỏ Trống Tài 2 & Đầu Kéo Chặng 2 Khi Tạo Lệnh Để Gán Bổ Sung Sau Khi Hạ Cont)
 
 ### 1. Bản Chất Nghiệp Vụ Vận Hành Cắt Kéo (Drop & Hook):

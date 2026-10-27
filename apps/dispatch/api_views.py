@@ -2318,6 +2318,17 @@ def calculate_dem_det_status(trip):
             }
     return det_info
 
+def normalize_shipment_type(shipment_type):
+    st = str(shipment_type or '').strip().upper()
+    if 'IMPORT' in st or 'NHẬP' in st or 'NHAP' in st:
+        return 'HÀNG NHẬP', 'IMPORT'
+    elif 'EXPORT' in st or 'XUẤT' in st or 'XUAT' in st:
+        return 'HÀNG XUẤT', 'EXPORT'
+    elif 'DOMESTIC' in st or 'NỘI ĐỊA' in st or 'NOI DIA' in st:
+        return 'NỘI ĐỊA', 'DOMESTIC'
+    return 'NỘI ĐỊA', 'DOMESTIC'
+
+
 class TripListCreateAPIView(APIView):
     """API lấy danh sách chuyến xe và Tạo Lệnh Điều Động mới."""
     permission_classes = [IsDispatcher]
@@ -2417,14 +2428,15 @@ class TripListCreateAPIView(APIView):
             elif t.status in [TripStatus.ACCEPTED, TripStatus.CONTAINER_PICKED, TripStatus.IN_TRANSIT, TripStatus.AT_WAREHOUSE, TripStatus.UNLOADING, TripStatus.DELIVERED, TripStatus.RETURNING_EMPTY, TripStatus.COMPLETED]:
                 acceptance_sla_status = 'ACCEPTED'
 
+            disp_type, raw_type = normalize_shipment_type(t.shipment_type)
             trips_list.append({
                 'id': t.trip_code,
                 'hashid': t.hashid,
                 'driver_hashid': t.driver_hashid,
                 'tracking_hashid': t.tracking_hashid,
                 'customer': t.customer.name if t.customer else 'Khách Hàng',
-                'type': t.get_shipment_type_display(),
-                'type_raw': t.shipment_type,
+                'type': disp_type,
+                'type_raw': raw_type,
                 'route': f"{t.pickup_location} -> {t.warehouse_location} -> {t.dropoff_location or 'Hạ bãi'}",
                 'pickup': t.pickup_location,
                 'warehouse': t.warehouse_location,
@@ -3181,7 +3193,8 @@ class TripDetailAPIView(APIView):
             'driver_hashid': trip.driver_hashid,
             'tracking_hashid': trip.tracking_hashid,
             'customer': customer_name,
-            'type': trip.get_shipment_type_display(),
+            'type': normalize_shipment_type(trip.shipment_type)[0],
+            'type_raw': normalize_shipment_type(trip.shipment_type)[1],
             'route': f"{trip.pickup_location} -> {trip.warehouse_location} -> {trip.dropoff_location or 'Hạ bãi'}",
             'pickup': trip.pickup_location,
             'warehouse': trip.warehouse_location,
@@ -5871,8 +5884,10 @@ class TripDriverMilestoneAPIView(APIView):
             extra_update_fields = ['unloading_started_at']
 
         elif milestone_code == 'FINISHED_UNLOADING':
-            # Không có field riêng; POD sẽ upload riêng qua doc API
-            pass
+            if not trip.actual_gate_out_time:
+                trip.actual_gate_out_time = now_str
+                trip.actual_gate_out_at = now_dt
+                extra_update_fields = ['actual_gate_out_time', 'actual_gate_out_at']
 
         elif milestone_code == 'DEPART_TO_DROPOFF':
             # "Ra Thực Tế" = lúc xe lăn bánh rời kho hướng về bãi hạ
@@ -5923,6 +5938,14 @@ class TripDriverMilestoneAPIView(APIView):
             # Không đổi status nhưng đã lưu fields mới → sync timeline thủ công
             from apps.dispatch.timeline_service import sync_trip_10_step_timeline
             sync_trip_10_step_timeline(trip)
+            from core.models import TrackingEventLog
+            TrackingEventLog.objects.create(
+                trip=trip,
+                actor=actor,
+                event_type=target_status,
+                title=f"Mốc thời gian: {info['title']}",
+                description=notes or info['msg']
+            )
 
         return Response({
             'success': True,

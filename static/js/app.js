@@ -4022,8 +4022,11 @@ function renderDispatchTable(trips) {
     }
 
     trips.forEach((trip, idx) => {
-        const typeColor = trip.type_raw === 'IMPORT' ? 'bg-blue-100 text-blue-700' : 
-                          trip.type_raw === 'EXPORT' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700';
+        const rawUpper = (trip.type_raw || trip.type || '').toUpperCase();
+        const isImport = rawUpper.includes('IMPORT') || rawUpper.includes('NHẬP') || rawUpper.includes('NHAP');
+        const isExport = rawUpper.includes('EXPORT') || rawUpper.includes('XUẤT') || rawUpper.includes('XUAT');
+        const typeColor = isImport ? 'text-blue-700' : (isExport ? 'text-emerald-700' : 'text-purple-700');
+        const displayShipmentType = isImport ? 'HÀNG NHẬP' : (isExport ? 'HÀNG XUẤT' : 'NỘI ĐỊA');
         const statusCls = STATUS_STYLE_MAP[trip.status] || 'bg-slate-100 text-slate-700 border-slate-300';
         const tripIdentifier = trip.hashid || trip.id;
 
@@ -4166,11 +4169,11 @@ function renderDispatchTable(trips) {
                     <span class="text-indigo-700">${escapeHtml(trip.dropoff || 'Bãi rỗng')}</span>
                 </div>
                 <div class="mt-0.5 flex items-center space-x-2 text-[11.5px]">
-                    <span class="text-[11px] font-bold uppercase ${typeColor}">${escapeHtml(trip.type)}</span>
+                    <span class="text-[11px] font-bold uppercase ${typeColor}">${displayShipmentType}</span>
                     <span class="text-rose-600 font-mono font-bold text-[12px] tabular-nums">${new Intl.NumberFormat('vi-VN').format(trip.expense)} đ</span>
                 </div>
             </td>
-            <td class="px-3 py-2 text-center whitespace-nowrap border-r border-slate-200/70">
+            <td class="px-3 py-2 text-left whitespace-nowrap border-r border-slate-200/70">
                 <span class="text-xs ${statusCls}">
                     ${escapeHtml(trip.status_label)}
                 </span>

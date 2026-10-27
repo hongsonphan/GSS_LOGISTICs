@@ -302,6 +302,8 @@ class IsTripDriverOrDispatcher(permissions.BasePermission):
                 return True
             if hasattr(obj, 'driver') and obj.driver == employee:
                 return True
+            if hasattr(obj, 'dropoff_driver') and obj.dropoff_driver == employee:
+                return True
             return False
 
         # Kiểm tra Capability Token chống IDOR cho tài xế truy cập trực tiếp (Tuyệt đối không nhận Tracking Token hay Token cũ đã thu hồi)
