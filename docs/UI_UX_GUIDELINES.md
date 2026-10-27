@@ -472,3 +472,57 @@ Dựa trên nghiên cứu chuẩn mực từ 4 hệ thống SaaS/ERP quốc tế
 5. **Nút Thêm Nhanh Danh Mục (`+ Quick Master Data`):**
    - Các trường Select danh mục (Khách hàng, Địa điểm, Hãng tàu, Nhà xe...) luôn đi kèm nút `+` nhỏ bên cạnh hoặc nút `+ Tạo mới...` ở cuối dropdown để mở modal tạo nhanh không bị gián đoạn luồng làm việc.
 
+
+---
+
+## 9. QUY CHUẨN BỐ CỤC PHÂN TẦNG TỪ TRÊN XUỐNG TOÀN ỨNG DỤNG (STANDARD HIERARCHICAL PAGE ARCHITECTURE)
+
+Nhằm đảm bảo trải nghiệm người dùng nhất quán, tinh gọn và chuẩn mực cao cấp (chuẩn iOS & ERP quốc tế), tất cả các màn hình phân hệ chính (Kinh Doanh, Điều Vận, Xe & Bãi, Nhân Sự, Tài Chính & Kế Toán, Dịch Vụ Hải Quan) bắt buộc phải tuân thủ nghiêm ngặt mô hình bố trí phân tầng 4 bước từ trên xuống dưới:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ TẦNG 1: TOPBAR PHÂN HỆ                                                 │
+│ [Icon] Tên Phân Hệ & Khẩu Hiệu Nghiệp Vụ       [Làm Mới] [Tạo Mới] ... │
+├────────────────────────────────────────────────────────────────────────┤
+│ TẦNG 2: BỘ THẺ TỔNG KPI CHIẾN LƯỢC (4 - 5 Thẻ Viền Trái border-l-4)   │
+│ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────────┐  │
+│ │ Thẻ 1        │ │ Thẻ 2        │ │ Thẻ 3        │ │ Thẻ 4 / 5      │  │
+│ │ Click: Nhảy  │ │ Click: Lọc   │ │ Click: Lọc   │ │ Click: Chuyển  │  │
+│ └──────────────┘ └──────────────┘ └──────────────┘ └────────────────┘  │
+├────────────────────────────────────────────────────────────────────────┤
+│ TẦNG 3: THANH SUBTABS ĐIỀU HƯỚNG CON (NẾU CÓ)                         │
+│ [Tab 1 (Badge)]  [Tab 2 (Badge)]  [Tab 3 (Badge)] ...                  │
+├────────────────────────────────────────────────────────────────────────┤
+│ TẦNG 4: THẺ THÔNG TIN & BẢNG DỮ LIỆU TÍCH HỢP GỌN GÀNG                │
+│ [Header tích hợp bộ lọc & nút chuyển nhanh]                           │
+│ [Bảng dữ liệu erp-table với col-resize, phân trang & audit trail]      │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.1 Chi Tiết Các Tầng Bố Cục:
+
+1. **Tầng 1 — Topbar Phân Hệ:**
+   * **Bên trái:** Tiêu đề phân hệ in hoa xám/màu thương hiệu `text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5` kèm icon kích thước chuẩn `text-sm`.
+   * **Bên phải:** Cụm nút hành động chính (Làm Mới, Thêm Mới, Xuất Excel...). Nút hành động chính dùng `bg-teal-700 hover:bg-teal-800 text-white rounded-xl`, nút phụ dùng `bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl`.
+
+2. **Tầng 2 — Bộ Thẻ Tổng KPI (KPI Summary Cards Pattern):**
+   * **Kích thước & Bo góc:** `bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between`.
+   * **Viền trái màu nhận diện (`border-l-4`):**
+     - Indigo (`border-l-indigo-600`): Kế hoạch, doanh thu, tổng thể
+     - Teal (`border-l-teal-600`): Tiếp nhận, phương tiện, ngân hàng
+     - Emerald (`border-l-emerald-600`): Hoàn thành, tiền mặt, luồng xanh
+     - Amber (`border-l-amber-500`): Chờ nhận lệnh, sản lượng, luồng vàng, bảo dưỡng
+     - Rose (`border-l-rose-600`): Cảnh báo, rủi ro, hạn đăng kiểm, luồng đỏ
+   * **Hàng tiêu đề & Badge Pill:** Tiêu đề `text-[13px] font-bold text-slate-500 uppercase tracking-wider` (trái) + Badge pill bo tròn có viền nhẹ `px-2 py-0.5 rounded-full text-xs font-bold font-heading border flex items-center gap-1` (phải).
+   * **Chỉ số chính:** Số lớn `text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1` kèm hậu tố chữ nhỏ `text-sm font-bold text-slate-500 font-sans`.
+   * **Dòng thông tin phụ (Subtext):** 1 dòng đơn thanh lịch, loại bỏ các tiền tố in hoa thô cứng cũ (`KẾ HOẠCH:`, `XE NHÀ:`...), thay bằng icon màu nhỏ phía trước + dữ liệu phân tách bằng dấu chấm `·` mờ, có `truncate` và `title`.
+   * **Tương tác trực tiếp (Interactive Navigation):** Khi click vào bất kỳ thẻ tổng nào, màn hình tự động chuyển sang tab con tương ứng hoặc tự áp dụng bộ lọc (ví dụ: bấm Thẻ Đầu kéo nhảy tab Đầu kéo, bấm Thẻ Cảnh báo lọc ngay danh sách cảnh báo).
+
+3. **Tầng 3 — Thanh Subtabs Con:**
+   * Thanh bo tròn `bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto`.
+   * Tab đang chọn (`active`): Nền màu đậm/nhạt rõ ràng kèm viền bo tròn hoặc gạch chân nhấn mạnh.
+   * Tab không chọn: Chữ xám thanh lịch, hover chuyển màu mượt mà.
+
+4. **Tầng 4 — Thẻ Thông Tin Tab Con Tích Hợp Gọn Gàng:**
+   * **Nguyên tắc gọn màn hình (Vertical Space Optimization):** Tuyệt đối không tạo thêm các thanh tiêu đề thẻ phụ to cồng kềnh lặp lại thông tin.
+   * Tiêu đề danh sách hoặc tab con được tích hợp trực tiếp vào thanh toolbar bộ lọc hoặc ngay trên nút bấm điều hướng (`Bấm vào tiêu đề thẻ là nhảy chuyển tab/lọc luôn`).

@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.9] - 2026-10-27 (Chuẩn Hóa Đồng Bộ Bố Cục Phân Tầng Toàn App & Style Thẻ KPI Toàn Hệ Sinh Thái)
+
+### 1. Thống Nhất Quy Chuẩn Bố Cục Phân Tầng Từ Trên Xuống (Standard Hierarchical Page Architecture):
+- **Áp Dụng Đồng Nhất Toàn Diện Cho 4 Phân Hệ Lớn Còn Lại:**
+  * **Xe & Bãi (`view_fleet.html`):** Bổ sung Topbar chuẩn; Thay thế 5 thẻ kỹ thuật đội xe sang style Kinh Doanh với viền trái nhận diện (Teal, Indigo, Emerald, Rose, Amber); Tích hợp tính năng bấm vào thẻ để nhảy trực tiếp sang tab Đầu Kéo / Rơ-Moóc hoặc áp dụng ngay bộ lọc Cảnh báo hạn kiểm / Bảo dưỡng.
+  * **Hành Chính & Nhân Sự (`view_personnel.html`):** Bổ sung Topbar chuẩn; Thay thế 5 thẻ nhân sự sang style Kinh Doanh (Indigo, Teal, Blue, Rose, Emerald); Bấm vào thẻ là tự động chuyển sang tab Hồ sơ, Tính lương hoặc áp dụng bộ lọc Tài xế / Văn phòng / Hạn GPLX-HĐLĐ.
+  * **Tài Chính & Kế Toán (`view_accounting.html`):** Tái cấu trúc phân tầng chuẩn: Đưa Topbar lên đầu; Đưa Bộ 4 thẻ KPI Dòng tiền & Thanh khoản (Tồn két tiền mặt, Tài khoản ngân hàng, Tổng tồn quỹ, Dòng tiền thuần) lên cấp phân hệ phía trên thanh subtabs; Giữ thanh 7 Trụ Cột Subtabs thanh lịch, tinh gọn, không bị che khuất; Xóa bỏ các thẻ lặp lại bên trong tab con.
+  * **Dịch Vụ Hải Quan (`view_customs.html`):** Bổ sung Topbar chuẩn; Nâng cấp 5 thẻ thông quan VNACCS/VCIS (Tổng tờ khai, Luồng xanh, Luồng vàng, Luồng đỏ, Tỷ lệ thông quan) với viền trái màu sắc và khả năng bấm vào thẻ tự động lọc ngay danh sách tờ khai theo luồng tương ứng.
+
+### 2. Tinh Gọn Không Gian Thẻ Thông Tin Tab Con (Vertical Space Optimization):
+- Triệt tiêu hoàn toàn các thanh tiêu đề thẻ phụ to cồng kềnh gây lãng phí chiều dọc màn hình.
+- Tích hợp tiêu đề và bộ lọc thông minh trực tiếp vào toolbar danh sách, mang lại giao diện tinh giản, liền mạch và chuẩn mực như ứng dụng iOS / ERP cao cấp.
+
+### 3. Kỹ Thuật & Cập Nhật Hệ Thống:
+- Thêm hàm điều hướng tự động `filterCustomsChannel(laneOrStatus)` trong `static/js/app.js`.
+- Chuẩn hóa các chuỗi text trả về trong `apps/dispatch/api_views.py`, `apps/personnel/api_views.py` và `apps/customs/api_views.py` (loại bỏ các tiền tố in hoa thô cứng).
+- Cập nhật tài liệu thiết kế đặc tả tại `docs/UI_UX_GUIDELINES.md` (Mục 9: Quy chuẩn bố cục phân tầng từ trên xuống toàn ứng dụng).
+- Nâng asset cache version lên `?v=2.9.70` trong `templates/base.html`.
+- Kiểm thử cú pháp JS: 100% Passed.
+- Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.6.8] - 2026-10-27 (Đồng Bộ Thiết Kế 5 Thẻ Vận Hành Phân Hệ Điều Vận Theo Style Phân Hệ Kinh Doanh)
 
 ### 1. Chuẩn Hóa Thiết Kế Giao Diện 5 Thẻ KPI Điều Độ Vận Tải:

@@ -274,28 +274,28 @@ class EmployeeStatsAPIView(APIView):
 
         card_total = {
             'total': total_employees,
-            'line_1': f"CHÍNH THỨC: {active_employees} · THỬ VIỆC: {probation_count}",
-            'line_2': f"HOẠT ĐỘNG: {active_employees} · NGHỈ VIỆC: {inactive_count}"
+            'line_1': f"{active_employees} Chính thức · {probation_count} Thử việc",
+            'line_2': f"{active_employees} Đang làm việc · {inactive_count} Nghỉ"
         }
         card_drivers = {
             'total': drivers_count,
-            'line_1': f"TRÊN TUYẾN: {drivers_on_trip} Bác tài",
-            'line_2': f"SẴN SÀNG: {drivers_standby} Bác tài"
+            'line_1': f"{drivers_on_trip} Trên tuyến",
+            'line_2': f"{drivers_standby} Sẵn sàng"
         }
         card_office = {
             'total': office_total,
-            'line_1': f"ĐIỀU VẬN: {dispatchers_count} · KINH DOANH: {sales_count}",
-            'line_2': f"KẾ TOÁN: {accountants_count} · BẢO TRÌ/QL: {mechanics_count + directors_count}"
+            'line_1': f"{dispatchers_count} Điều vận · {sales_count} Sales",
+            'line_2': f"{accountants_count} Kế toán · {mechanics_count + directors_count} QL"
         }
         card_compliance = {
             'total': total_compliance_warning,
-            'line_1': f"GPLX SẮP HẠN: {exp_lic_count} Tài xế",
-            'line_2': f"HĐLĐ ĐẾN HẠN: {exp_cont_count} Hợp đồng"
+            'line_1': f"{exp_lic_count} GPLX sắp hạn",
+            'line_2': f"{exp_cont_count} HĐLĐ đến hạn"
         }
         card_payroll = {
             'total': f"{total_base_sal:,} đ".replace(',', '.'),
-            'line_1': f"LƯƠNG CƠ BẢN: {total_base_sal:,} đ".replace(',', '.'),
-            'line_2': f"TẠM ỨNG: {total_advances:,} đ".replace(',', '.')
+            'line_1': f"Lương: {total_base_sal:,} đ".replace(',', '.'),
+            'line_2': f"Ứng: {total_advances:,} đ".replace(',', '.')
         }
 
         return Response({

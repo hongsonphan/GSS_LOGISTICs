@@ -31430,6 +31430,19 @@ window.addEventListener('popstate', (event) => {
 let customsDeclarationsCache = [];
 let customsSearchDebounceTimeout = null;
 
+function filterCustomsChannel(laneOrStatus) {
+    const laneSelect = document.getElementById('customs-filter-lane');
+    const statusSelect = document.getElementById('customs-filter-status');
+    if (laneOrStatus === 'CLEARED') {
+        if (laneSelect) laneSelect.value = '';
+        if (statusSelect) statusSelect.value = 'CLEARED';
+    } else {
+        if (laneSelect) laneSelect.value = laneOrStatus || '';
+        if (statusSelect) statusSelect.value = '';
+    }
+    fetchCustomsDeclarations();
+}
+
 function debounceCustomsSearch() {
     clearTimeout(customsSearchDebounceTimeout);
     customsSearchDebounceTimeout = setTimeout(() => {

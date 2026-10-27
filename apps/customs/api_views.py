@@ -126,28 +126,28 @@ class CustomsDeclarationListCreateAPIView(APIView):
 
         card_total = {
             'total': total_count,
-            'line_1': f"XUẤT KHẨU: {export_count} · NHẬP KHẨU: {import_count}",
-            'line_2': f"THÔNG QUAN: {cleared_count} · CHỜ XỬ LÝ: {pending_clearance}"
+            'line_1': f"Xuất: {export_count} · Nhập: {import_count}",
+            'line_2': f"Thông quan: {cleared_count} · Chờ: {pending_clearance}"
         }
         card_green = {
             'total': green_count,
-            'line_1': f"TỰ ĐỘNG THÔNG QUAN: {green_count} Tờ khai",
-            'line_2': f"TỶ LỆ PHÂN LUỒNG: {green_rate}%"
+            'line_1': f"{green_count} Tờ tự động thông quan",
+            'line_2': f"Tỷ lệ luồng {green_rate}%"
         }
         card_yellow = {
             'total': yellow_count,
-            'line_1': f"XÉT HỒ SƠ: {yellow_count} Tờ khai",
-            'line_2': f"CẦN CHECK: C/O, Invoice, B/L"
+            'line_1': f"{yellow_count} Tờ đang xét hồ sơ",
+            'line_2': f"Check C/O, HĐ, B/L"
         }
         card_red = {
             'total': red_count,
-            'line_1': f"KIỂM HÓA / SOI: {red_count} Tờ khai",
-            'line_2': f"CẦN MỞ CONT KIỂM THỰC TẾ"
+            'line_1': f"{red_count} Tờ kiểm hóa / soi chiếu",
+            'line_2': f"Mở cont kiểm thực tế"
         }
         card_clearance = {
             'total': f"{clearance_rate}%",
-            'line_1': f"ĐÃ THÔNG QUAN: {cleared_count} Tờ khai",
-            'line_2': f"THUẾ TREO: {unpaid_tax_qs.count()} Tờ ({int(unpaid_tax_total):,} đ)".replace(',', '.')
+            'line_1': f"{cleared_count} Tờ đã thông quan",
+            'line_2': f"Thuế treo: {unpaid_tax_qs.count()} Tờ ({int(unpaid_tax_total):,} đ)".replace(',', '.')
         }
 
         return Response({

@@ -4477,28 +4477,28 @@ class FleetAPIView(APIView):
         # Cấu trúc Bộ 5 Thẻ Vận Hành Kỹ Thuật Đội Xe
         card_tractors = {
             'total': total_tractors,
-            'line_1': f"XE NHÀ: {owned_tractors} · THẦU PHỤ: {subcontractor_tractors}",
-            'line_2': f"HOẠT ĐỘNG: {active_tractors} · NẰM BÃI: {idle_tractors}"
+            'line_1': f"{owned_tractors} Xe Nhà · {subcontractor_tractors} Thầu Phụ",
+            'line_2': f"{active_tractors} Hoạt động · {idle_tractors} Bãi"
         }
         card_trailers = {
             'total': total_trailers,
-            'line_1': f"ĐANG KÉO: {active_trailers} · NẰM BÃI: {idle_trailers}",
-            'line_2': f"TẢI TRỌNG TB: 30 - 32 Tấn"
+            'line_1': f"{active_trailers} Đang kéo · {idle_trailers} Nằm bãi",
+            'line_2': f"Tải trọng 30 - 32 Tấn"
         }
         card_availability = {
             'rate': f"{availability_rate}%",
-            'line_1': f"SẴN SÀNG ĐIỀU ĐỘ: {active_tractors + idle_tractors} Xe",
-            'line_2': f"ĐANG LĂN BÁNH: {active_tractors} Xe"
+            'line_1': f"{active_tractors + idle_tractors} Xe khả dụng",
+            'line_2': f"{active_tractors} Trên đường"
         }
         card_reg = {
             'total': total_reg_warning,
-            'line_1': f"QUÁ HẠN: {reg_expired_count} Phương tiện",
-            'line_2': f"SẮP HẾT HẠN: {reg_warning_count} Phương tiện"
+            'line_1': f"{reg_expired_count} Quá hạn",
+            'line_2': f"{reg_warning_count} Sắp đến hạn"
         }
         card_maint = {
             'total': maint_warning_count,
-            'line_1': f"ĐẾN HẠN BẢO TRÌ: {maint_warning_count} Xe",
-            'line_2': f"BẢO HIỂM SẮP HẠN: {ins_warning_count} Xe"
+            'line_1': f"{maint_warning_count} Đến hạn bảo dưỡng",
+            'line_2': f"{ins_warning_count} Hạn bảo hiểm"
         }
 
         return Response({
