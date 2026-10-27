@@ -6,7 +6,7 @@
 > 2. **[`CODING_STANDARDS.md`](file:///E:/Bim_Logistics/CODING_STANDARDS.md)** ← ĐỌC NGAY: Chuẩn mực kiến trúc, Django ORM, quy ước đặt tên (PascalCase/snake_case), Defensive Backend và Design Tokens BIM.
 > 3. **Không dùng Hard-Delete:** Mọi dữ liệu vận đơn, POD, OS&D, GPS là bằng chứng pháp lý — chỉ dùng Soft-Delete (`is_deleted=True`).
 > 4. **Tuân thủ State Machine:** Không nhảy cóc trạng thái `Draft ➔ Dispatched ➔ In Transit ➔ Delivered ➔ POD Verified ➔ Settled`.
-> 5. **Zero-Regression:** Sau mỗi thay đổi, chạy `node -c static/js/app.js` và `python manage.py test --keepdb` — 100% passed mới được xác nhận hoàn thành.
+> 5. **Zero-Regression:** Sau mỗi thay đổi, chạy `python scripts/build_app_js.py --check`, `node -c static/js/app.js` và `python manage.py test --keepdb` — 100% passed mới được xác nhận hoàn thành.
 
 ---
 

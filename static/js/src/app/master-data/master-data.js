@@ -1,16 +1,3 @@
-function toggleSubcontractorTypePanels(typeVal) {
-    const isCarrier = (typeVal === 'CARRIER');
-    const vehSec = document.getElementById('section-subcontractor-vehicles-mgmt');
-    const drvSec = document.getElementById('section-subcontractor-drivers-mgmt');
-    if (vehSec) vehSec.style.display = isCarrier ? 'block' : 'none';
-    if (drvSec) drvSec.style.display = isCarrier ? 'block' : 'none';
-}
-window.toggleSubcontractorTypePanels = toggleSubcontractorTypePanels;
-
-/**
- * BIM LOGISTICS — MODULE CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA)
- */
-
 // ==============================================================================
 // 10. PHÂN HỆ CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA CONTROLLER)
 // ==============================================================================
@@ -164,9 +151,9 @@ function switchMasterDataTab(tabKey) {
     }
 
     const labels = {
-        'company': '✏️ Sửa Thông Tin Công Ty',
-        'roles_permissions': '🛡️ Quản Lý Vai Trò',
-        'opening_balance': '💰 Khai Báo Số Dư Đầu Kỳ',
+        'company': 'Sửa Thông Tin Công Ty',
+        'roles_permissions': 'Quản Lý Vai Trò',
+        'opening_balance': 'Khai Báo Số Dư Đầu Kỳ',
         'driver_tariffs': 'Tạo mới',
         'allowances': 'Tạo mới',
         'locations': 'Tạo mới',
@@ -201,6 +188,15 @@ function switchMasterDataTab(tabKey) {
     if (rolesView) rolesView.classList.add('hidden');
     if (openingBalanceView) openingBalanceView.classList.add('hidden');
 
+    // Ẩn/hiện các nút Tải Mẫu, Nhập Excel, Xuất Dữ Liệu theo danh mục
+    const isSpecialTab = (tabKey === 'company' || tabKey === 'roles_permissions');
+    const exportTemplateBtn = document.getElementById('md-export-template-btn');
+    const importBtn = document.getElementById('md-import-btn');
+    const exportDataBtn = document.getElementById('md-export-data-btn');
+    if (exportTemplateBtn) exportTemplateBtn.style.display = isSpecialTab ? 'none' : '';
+    if (importBtn) importBtn.style.display = isSpecialTab ? 'none' : '';
+    if (exportDataBtn) exportDataBtn.style.display = isSpecialTab ? 'none' : '';
+
     loadActiveMasterDataTab();
 }
 
@@ -208,331 +204,16 @@ function reloadActiveMasterDataTab() {
     loadActiveMasterDataTab();
 }
 
-function syncCompanyProfileToPrintForms() {
-    const comp = masterDataCache['company'] || window.SYSTEM_COMPANY || {};
-    const compName = comp.company_name || 'CÔNG TY TNHH ĐẦU TƯ VẬN TẢI TRIỀN VÕ';
-    const compAddress = comp.headquarters_address || comp.address || '153/1 Quốc Lộ 1A, P. An Phú Đông, Quận 12, TP. Hồ Chí Minh';
-    const compTax = comp.tax_code || '0314567890';
-    const compPhone = comp.hotline || comp.phone || '0965.559.561';
-    const compEmail = comp.email || 'Phongkinhdoanh.tvl@trienvo.com';
-    
-    // Đảm bảo luôn lấy logo chính thức của Công ty Triền Võ (không lấy logo phần mềm BIM)
-    let compLogo = comp.logo_url || '/static/images/trienvo_logo.png';
-    if (!compLogo || compLogo.endsWith('/logo.png') || compLogo.includes('static/images/logo.png')) {
-        compLogo = '/static/images/trienvo_logo.png';
-    }
-
-    // 1. Đồng bộ Tên công ty
-    document.querySelectorAll('.print-comp-name').forEach(el => {
-        el.innerText = compName.toUpperCase();
-    });
-
-    // 2. Đồng bộ Địa chỉ
-    document.querySelectorAll('.print-comp-address').forEach(el => {
-        el.innerText = `Đ/c: ${compAddress}`;
-    });
-
-    // 3. Đồng bộ Liên hệ (MST, Hotline, Email)
-    document.querySelectorAll('.print-comp-contact').forEach(el => {
-        el.innerText = `MST: ${compTax} • Hotline: ${compPhone} • Email: ${compEmail}`;
-    });
-
-    // 4. Đồng bộ Logo Công ty Triền Võ
-    document.querySelectorAll('.print-comp-logo').forEach(el => {
-        el.src = compLogo;
-        el.onerror = () => { el.src = '/media/trienvo_logo.png'; };
-    });
-}
-window.syncCompanyProfileToPrintForms = syncCompanyProfileToPrintForms;
-
-async function loadCompanyProfile() {
-    const container = document.getElementById('md-company-view');
-    if (container) {
-        container.innerHTML = `
-            <div class="p-12 text-center text-slate-400">
-                <i class="ph ph-spinner animate-spin text-3xl mb-2 text-teal-600 block"></i>
-                Đang tải thông tin khai báo hệ thống...
-            </div>
-        `;
-    }
-
-    try {
-        const res = await fetchWithAuth('/api/master-data/company/');
-        if (!res.ok) throw new Error(`Máy chủ phản hồi lỗi ${res.status}`);
-        const data = await res.json();
-        const profile = data.data || {};
-        masterDataCache['company'] = profile;
-        window.SYSTEM_COMPANY = profile;
-
-        if (profile.short_name || profile.company_name) {
-            const el = document.getElementById('md-stat-company');
-            if (el) el.innerText = profile.short_name || 'Triền Võ';
-        }
-
-        // Tự động đồng bộ lên tất cả các mẫu in
-        syncCompanyProfileToPrintForms();
-
-        renderCompanyProfileView(profile);
-    } catch (err) {
-        console.error('Lỗi tải thông tin công ty:', err);
-        if (container) {
-            container.innerHTML = `
-                <div class="p-12 text-center text-rose-500 font-bold">
-                    <i class="ph-bold ph-warning-circle text-3xl mb-2 block"></i>
-                    Lỗi tải thông tin khai báo hệ thống: ${err.message || 'Không thể kết nối máy chủ.'}
-                </div>
-            `;
-        }
-    }
-}
-
-function renderCompanyProfileView(company) {
-    const container = document.getElementById('md-company-view');
-    if (!container) return;
-    if (!company) {
-        container.innerHTML = `
-            <div class="p-8 text-center text-slate-400">
-                <i class="ph ph-spinner animate-spin text-3xl mb-2 text-teal-600 block"></i>
-                Đang tải thông tin khai báo hệ thống...
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = `
-        <div class="max-w-6xl mx-auto space-y-4">
-            <!-- Header Card -->
-            <div class="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 border border-teal-700/50">
-                <div class="flex items-start md:items-center space-x-4">
-                    <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl font-black text-teal-300 shadow-inner shrink-0">
-                        <i class="ph-bold ph-buildings"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2 flex-wrap mb-1">
-                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/30 text-teal-200 border border-teal-400/30">
-                                ${escapeHtml(company.short_name || 'TRIỀN VÕ LOGISTICS')}
-                            </span>
-                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
-                                <i class="ph-bold ph-check-circle"></i> Đang hoạt động
-                            </span>
-                            <span class="text-xs text-teal-300 font-mono">
-                                MST: <strong class="text-white">${escapeHtml(company.tax_code || '---')}</strong>
-                            </span>
-                        </div>
-                        <h2 class="text-lg md:text-xl font-black font-heading tracking-tight text-white leading-snug">
-                            ${escapeHtml(company.company_name || 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VẬN TẢI TRIỀN VÕ')}
-                        </h2>
-                        <p class="text-xs text-teal-200/80 mt-1 flex items-center gap-1.5 flex-wrap">
-                            <span><i class="ph-bold ph-map-pin text-teal-300"></i> ${escapeHtml(company.address || '---')}</span>
-                            <span class="text-teal-400">•</span>
-                            <span>Cập nhật: <strong class="text-white">${escapeHtml(company.updated_at || '---')}</strong></span>
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="openCreateMasterDataModal()" class="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl text-xs md:text-sm font-black font-heading shadow-md flex items-center space-x-2 transition-all cursor-pointer">
-                        <i class="ph-bold ph-pencil-simple text-base"></i>
-                        <span>Hiệu Chỉnh Thông Tin</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 6 Structured Information Grid Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Card 1: Pháp lý & Định danh -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
-                            <i class="ph-bold ph-identification-card text-lg text-teal-600"></i>
-                            <span>1. Pháp Lý & Định Danh Doanh Nghiệp</span>
-                        </div>
-                        <span class="text-[11px] font-bold text-slate-400">Pháp nhân</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Tên pháp nhân:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.company_name || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Tên thương hiệu / Viết tắt:</span>
-                            <strong class="text-teal-700 font-bold text-xs">${escapeHtml(company.short_name || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Mã số thuế (MST):</span>
-                            <strong class="text-slate-900 font-mono font-bold text-xs">${escapeHtml(company.tax_code || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Giấy phép KD vận tải:</span>
-                            <strong class="text-indigo-700 font-mono font-bold text-xs">${escapeHtml(company.operating_license || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Người đại diện pháp luật:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.representative_name || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Chức danh đại diện:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.representative_role || 'Giám Đốc')}</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 2: Trụ sở & Kênh liên hệ -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
-                            <i class="ph-bold ph-buildings text-lg text-teal-600"></i>
-                            <span>2. Trụ Sở Chính & Kênh Liên Lạc</span>
-                        </div>
-                        <span class="text-[11px] font-bold text-slate-400">Trụ sở</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div class="sm:col-span-2">
-                            <span class="block text-slate-400 font-medium text-[11px]">Địa chỉ trụ sở chính (Đăng ký KD):</span>
-                            <strong class="text-slate-800 text-xs leading-relaxed">${escapeHtml(company.address || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Hotline / Điện thoại:</span>
-                            <strong class="text-emerald-700 font-mono font-bold text-xs">${escapeHtml(company.phone || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Email công ty:</span>
-                            <strong class="text-blue-700 text-xs font-medium">${escapeHtml(company.email || '-')}</strong>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <span class="block text-slate-400 font-medium text-[11px]">Website chính thức:</span>
-                            <a href="${escapeHtml(company.website || '#')}" target="_blank" class="text-teal-700 hover:underline font-bold text-xs flex items-center gap-1">
-                                <span>${escapeHtml(company.website || '-')}</span>
-                                <i class="ph ph-arrow-square-out text-xs"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 3: Chi nhánh & Văn phòng đại diện -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
-                            <i class="ph-bold ph-storefront text-lg text-purple-600"></i>
-                            <span>3. Chi Nhánh & Văn Phòng Đại Diện</span>
-                        </div>
-                        <span class="text-[11px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Chi nhánh</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Tên chi nhánh / Văn phòng:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.branch_name || 'Văn Phòng Chi Nhánh')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Điện thoại chi nhánh:</span>
-                            <strong class="text-emerald-700 font-mono font-bold text-xs">${escapeHtml(company.branch_phone || '-')}</strong>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <span class="block text-slate-400 font-medium text-[11px]">Địa chỉ chi nhánh:</span>
-                            <strong class="text-slate-800 text-xs leading-relaxed">${escapeHtml(company.branch_address || '-')}</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 4: Bãi xe & Trạm điều phối -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
-                            <i class="ph-bold ph-truck text-lg text-amber-600"></i>
-                            <span>4. Bãi Đỗ Xe & Trạm Điều Phối Đầu Kéo</span>
-                        </div>
-                        <span class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Bãi xe / Depot</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Tên bãi đỗ xe:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.fleet_yard_name || 'Bãi Đỗ Xe & Trạm Điều Phối TVL')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Hotline điều phối trực bãi:</span>
-                            <strong class="text-amber-800 font-mono font-bold text-xs">${escapeHtml(company.fleet_yard_hotline || '-')}</strong>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <span class="block text-slate-400 font-medium text-[11px]">Địa chỉ bãi đỗ xe:</span>
-                            <strong class="text-slate-800 text-xs leading-relaxed">${escapeHtml(company.fleet_yard_address || '-')}</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 5: Tài khoản ngân hàng -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
-                            <i class="ph-bold ph-bank text-lg text-teal-600"></i>
-                            <span>5. Tài Khoản Ngân Hàng Giao Dịch</span>
-                        </div>
-                        <span class="text-[11px] font-bold text-slate-400">Thanh toán</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Số tài khoản:</span>
-                            <strong class="text-emerald-800 font-mono font-black text-sm tracking-wide bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">${escapeHtml(company.bank_account_number || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Chủ tài khoản:</span>
-                            <strong class="text-slate-900 font-bold text-xs uppercase">${escapeHtml(company.company_name || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Tên ngân hàng:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.bank_name || '-')}</strong>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-medium text-[11px]">Chi nhánh ngân hàng:</span>
-                            <strong class="text-slate-800 text-xs">${escapeHtml(company.bank_branch || '-')}</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 6: Tham số hệ thống & Tính cước -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3.5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <div class="flex items-center space-x-2 text-teal-800 font-bold text-sm">
-                            <i class="ph-bold ph-sliders text-lg text-teal-600"></i>
-                            <span>6. Tham Số Vận Hành & Tính Cước Mặc Định</span>
-                        </div>
-                        <span class="text-[11px] font-bold text-slate-400">Cấu hình</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            <span class="block text-slate-500 font-medium text-[11px]">Thuế VAT Mặc Định:</span>
-                            <strong class="text-teal-800 font-mono font-black text-base">${Number(company.default_vat_rate || 8).toFixed(1)} %</strong>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Áp dụng báo giá & hóa đơn</p>
-                        </div>
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            <span class="block text-slate-500 font-medium text-[11px]">Giá Dầu Tham Chiếu:</span>
-                            <strong class="text-amber-700 font-mono font-black text-base">${formatNumberVN(company.fuel_reference_price || 21000)} đ</strong>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Dầu DO 0.05S (VNĐ/Lít)</p>
-                        </div>
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            <span class="block text-slate-500 font-medium text-[11px]">Mẫu Số Quy Đổi CBM:</span>
-                            <strong class="text-indigo-700 font-mono font-black text-base">${company.cbm_formula_divisor || 5000}</strong>
-                            <p class="text-[10px] text-slate-400 mt-0.5">D x R x C / Divisor</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
 async function loadActiveMasterDataTab() {
     const tableBody = document.getElementById('md-table-body');
     if (!tableBody) return;
 
-    tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>Đang tải dữ liệu...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 text-teal-600 block"></i>Đang tải dữ liệu danh mục...</td></tr>`;
 
     const endpoints = {
+        'company': '/api/master-data/company/',
+        'roles_permissions': '/api/master-data/roles-permissions/',
+        'opening_balance': '/api/master-data/opening-balances/',
         'driver_tariffs': '/api/master-data/driver-tariffs/',
         'allowances': '/api/master-data/allowances/',
         'locations': '/api/master-data/locations/',
@@ -554,8 +235,27 @@ async function loadActiveMasterDataTab() {
             throw new Error(`Máy chủ phản hồi lỗi ${res.status}: ${res.statusText}`);
         }
         const data = await res.json();
-        const items = data.results || [];
-        masterDataCache[currentMasterDataTab] = items;
+        
+        let items = [];
+        if (currentMasterDataTab === 'company') {
+            const profile = data.data || (data.results && data.results[0]) || data;
+            masterDataCache['company'] = profile;
+            window.SYSTEM_COMPANY = profile;
+            syncCompanyProfileToPrintForms();
+            items = data.results || data.items || (profile && (profile.company_name || profile.short_name) ? [profile] : []);
+        } else if (currentMasterDataTab === 'roles_permissions') {
+            rolesPermissionsDataCache = data;
+            items = data.results || data.items || data.roles || [];
+        } else if (currentMasterDataTab === 'opening_balance') {
+            openingBalanceState.data = data;
+            items = data.results || data.items || [];
+        } else {
+            items = data.results || [];
+        }
+
+        if (currentMasterDataTab !== 'company') {
+            masterDataCache[currentMasterDataTab] = items;
+        }
         masterDataPagination.filteredItems = items;
         masterDataPagination.currentPage = 1;
 
@@ -563,7 +263,11 @@ async function loadActiveMasterDataTab() {
         renderMasterDataPagedView();
     } catch (err) {
         console.error('Lỗi tải danh mục:', err);
-        tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}</td></tr>`;
+        const isAuthError = (err.message || '').includes('401') || (err.message || '').includes('Unauthorized');
+        const errorContent = isAuthError
+            ? `Phiên đăng nhập đã hết hạn. Vui lòng <a href="/login/?next=${encodeURIComponent(window.location.pathname)}" class="underline text-teal-700 font-black hover:text-teal-900 ml-1">đăng nhập lại tại đây</a>.`
+            : `Lỗi tải danh mục: ${err.message || 'Không thể kết nối máy chủ.'}`;
+        tableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-rose-500 font-bold"><i class="ph-bold ph-warning-circle text-2xl mb-2 block"></i>${errorContent}</td></tr>`;
         renderMasterDataPagination(0, 0, 0, 1, 1);
     }
 }
@@ -573,7 +277,17 @@ function setupMasterDataSecondaryFilter(items) {
     if (!select) return;
 
     let optionsHtml = '<option value="ALL">Tất cả</option>';
-    if (currentMasterDataTab === 'driver_tariffs') {
+    if (currentMasterDataTab === 'company') {
+        optionsHtml = '<option value="ALL">Tất cả thông tin</option>';
+    } else if (currentMasterDataTab === 'roles_permissions') {
+        optionsHtml = '<option value="ALL">Tất cả vai trò</option>';
+    } else if (currentMasterDataTab === 'opening_balance') {
+        const accs = [...new Set(items.map(i => `${i.account_code || ''} - ${i.account_name || ''}`).filter(a => a.trim() !== '-'))];
+        accs.forEach(a => { 
+            const code = a.split(' - ')[0];
+            optionsHtml += `<option value="${code}">${a}</option>`; 
+        });
+    } else if (currentMasterDataTab === 'driver_tariffs') {
         const areas = [...new Set(items.map(i => i.area_group))];
         areas.forEach(a => { optionsHtml += `<option value="${a}">${a}</option>`; });
     } else if (currentMasterDataTab === 'allowances') {
@@ -600,7 +314,14 @@ function setupMasterDataSecondaryFilter(items) {
     } else if (currentMasterDataTab === 'shipping_lines') {
         optionsHtml += '<option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Ngừng hoạt động</option>';
     } else if (currentMasterDataTab === 'subcontractors') {
-        optionsHtml += '<option value="ACTIVE">Đang hợp tác</option><option value="INACTIVE">Tạm ngưng</option>';
+        optionsHtml = `
+            <option value="ALL">Tất cả đối tác</option>
+            <option value="CARRIER">Nhà xe vận tải (3PL)</option>
+            <option value="GARAGE">Gara sửa chữa / Bảo dưỡng</option>
+            <option value="SUPPLIER">Nhà cung cấp vật tư / Dịch vụ</option>
+            <option value="ACTIVE">Đang hợp tác</option>
+            <option value="INACTIVE">Tạm ngưng</option>
+        `;
     }
     select.innerHTML = optionsHtml;
 }
@@ -618,7 +339,8 @@ function filterMasterDataTable() {
         // Subfilter match
         let matchesSub = true;
         if (subFilter !== 'ALL') {
-            if (currentMasterDataTab === 'driver_tariffs') matchesSub = item.area_group === subFilter;
+            if (currentMasterDataTab === 'opening_balance') matchesSub = (item.account_code || '').startsWith(subFilter);
+            else if (currentMasterDataTab === 'driver_tariffs') matchesSub = item.area_group === subFilter;
             else if (currentMasterDataTab === 'allowances') matchesSub = (item.category_label === subFilter || item.category === subFilter);
             else if (currentMasterDataTab === 'locations') matchesSub = (item.location_type_label === subFilter || item.location_type === subFilter);
             else if (currentMasterDataTab === 'expenses') matchesSub = (item.group_type_label === subFilter || item.group_type === subFilter);
@@ -627,7 +349,11 @@ function filterMasterDataTable() {
             else if (currentMasterDataTab === 'trailers') matchesSub = item.trailer_type === subFilter;
             else if (currentMasterDataTab === 'customers') matchesSub = (item.customer_group_label === subFilter || item.customer_group === subFilter);
             else if (currentMasterDataTab === 'shipping_lines') matchesSub = (subFilter === 'ACTIVE' ? item.is_active : !item.is_active);
-            else if (currentMasterDataTab === 'subcontractors') matchesSub = (subFilter === 'ACTIVE' ? item.is_active : !item.is_active);
+            else if (currentMasterDataTab === 'subcontractors') {
+        if (subFilter === 'ACTIVE') matchesSub = item.is_active;
+        else if (subFilter === 'INACTIVE') matchesSub = !item.is_active;
+        else if (['CARRIER', 'GARAGE', 'SUPPLIER'].includes(subFilter)) matchesSub = (item.partner_type === subFilter);
+    }
         }
         return matchesQuery && matchesSub;
     });
@@ -938,10 +664,10 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2.5 px-3 text-[13px] font-bold text-slate-900 border-r border-slate-200">${escapeHtml(item.name)}</td>
                 <td class="py-2.5 px-3 text-[12px] text-slate-600 border-r border-slate-200">${escapeHtml(item.description || 'Quản lý phân quyền theo nhóm nghiệp vụ')}</td>
                 <td class="py-2.5 px-3 text-center border-r border-slate-200">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">${item.user_count || 0} nhân sự</span>
+                    <span class="text-xs font-bold text-blue-700">${item.user_count || 0} nhân sự</span>
                 </td>
                 <td class="py-2.5 px-3 text-center border-r border-slate-200">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">${item.permission_count || 0} quyền</span>
+                    <span class="text-xs font-bold text-emerald-700">${item.permission_count || 0} quyền</span>
                 </td>
                 <td class="py-2.5 px-3 text-center border-r border-slate-200 text-xs font-semibold text-emerald-700">Đang kích hoạt</td>
                 <td class="py-2.5 px-3 text-center">
@@ -1321,11 +1047,16 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.vehicle_type_label || item.vehicle_type}</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">
                     ${item.ownership_type === 'SUBCONTRACTOR' 
-                        ? `<span class="inline-flex items-center gap-1 text-amber-800 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px] border border-amber-200" title="Xe bạn / 3PL: ${escapeHtml(item.subcontractor_name || '')}"><i class="ph-bold ph-handshake"></i> ${item.subcontractor_name && item.subcontractor_name !== '-' ? escapeHtml(item.subcontractor_name) : 'Xe Bạn (3PL)'}</span>`
+                        ? `<span class="text-xs font-bold text-slate-600 uppercase" title="Xe bạn / 3PL: ${escapeHtml(item.subcontractor_name || '')}">${item.subcontractor_name && item.subcontractor_name !== '-' ? escapeHtml(item.subcontractor_name) : 'Xe Bạn (3PL)'}</span>`
                         : `<span class="text-teal-900 font-bold">${item.ownership_type_label || 'Xe Nhà (TVL)'}</span>`}
                 </td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
-                <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
+                <td class="py-2 px-3 text-[12px] font-mono text-slate-800 text-right border-r border-slate-200">${(() => {
+                    const disp = (item.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                    if (disp && disp !== '—' && disp !== '-') return `${disp} kg`;
+                    if (item.payload_capacity_kg && item.payload_capacity_kg > 0) return `${formatNumberVN(item.payload_capacity_kg)} kg`;
+                    return '<span class="text-slate-400 font-normal">—</span>';
+                })()}</td>
                 <td class="py-2 px-3 text-[12px] font-semibold text-slate-800 border-r border-slate-200">${item.driver_name || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.insurance_expiry || '—'}</td>
@@ -1364,7 +1095,12 @@ function renderMasterDataTable(items, total = items.length) {
                 <td class="py-2 px-3 text-[13px] font-mono font-bold text-slate-900 border-r border-slate-200">${item.license_plate}</td>
                 <td class="py-2 px-3 text-[12px] font-medium text-slate-800 border-r border-slate-200">${item.trailer_type}</td>
                 <td class="py-2 px-3 text-[12px] text-slate-600 border-r border-slate-200">${item.brand || '—'}</td>
-                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${formatMoney(item.payload_capacity_kg).replace(' đ', '')} kg</td>
+                <td class="py-2 px-3 text-[13px] font-bold text-slate-900 text-right font-mono tabular-nums border-r border-slate-200">${(() => {
+                    const disp = (item.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                    if (disp && disp !== '—' && disp !== '-') return `${disp} kg`;
+                    if (item.payload_capacity_kg && item.payload_capacity_kg > 0) return `${formatNumberVN(item.payload_capacity_kg)} kg`;
+                    return '<span class="text-slate-400 font-normal">—</span>';
+                })()}</td>
                 <td class="py-2 px-3 text-[12px] text-center font-mono font-bold text-slate-700 border-r border-slate-200">${item.registration_expiry || '—'}</td>
                 <td class="py-2 px-3 text-center border-r border-slate-200 text-xs font-semibold text-slate-800">
                     ${item.status === 'IDLE' ? 'Nằm bãi' : (item.status === 'ACTIVE' ? 'Đang kéo' : item.status)}
@@ -1500,6 +1236,11 @@ function renderMasterDataTable(items, total = items.length) {
     if (window.BimTableColumnManager && window.BimTableColumnManager.instances['md-main-table']) {
         window.BimTableColumnManager.instances['md-main-table'].refreshColumnsFromDOM();
     }
+    if (window.BimTableFooter) {
+        window.BimTableFooter.render('md-main-table', {
+            summary: `Hiển thị <strong>${items.length}</strong> / tổng số <strong>${total || items.length}</strong> bản ghi danh mục`
+        });
+    }
 }
 
 
@@ -1540,7 +1281,13 @@ async function openCreateMasterDataModal() {
         return;
     }
 
+    if (currentMasterDataTab === 'roles_permissions') {
+        window.open('/admin/auth/group/add/', '_blank');
+        return;
+    }
+
     const titles = {
+        'opening_balance': 'Khai Báo Số Dư Đầu Kỳ Mới',
         'driver_tariffs': 'Thêm Tuyến Lương Chuyến Mới',
         'allowances': 'Thêm Phụ Cấp / Kiểm Hóa Mới',
         'locations': 'Thêm Cảng / Kho Bãi Mới',
@@ -1566,14 +1313,87 @@ async function openEditMasterDataModal(id) {
     if (currentMasterDataTab === 'company') {
         return openCreateMasterDataModal();
     }
-    const items = masterDataCache[currentMasterDataTab] || [];
-    const item = items.find(i => i.id === id);
-    if (!item) return;
+    if (currentMasterDataTab === 'roles_permissions') {
+        window.open(`/admin/auth/group/${id}/change/`, '_blank');
+        return;
+    }
+    let items = masterDataCache[currentMasterDataTab] || [];
+    let item = items.find(i => i.id === id);
+    if (!item) {
+        // Fallback 1: Nạp trực tiếp từ API nếu danh mục chưa được nạp vào cache
+        const endpoints = {
+            'vehicles': '/api/master-data/vehicles/',
+            'trailers': '/api/master-data/trailers/',
+            'customers': '/api/master-data/customers/',
+            'locations': '/api/master-data/locations/',
+            'subcontractors': '/api/master-data/subcontractors/',
+            'driver_tariffs': '/api/master-data/driver-tariffs/',
+            'allowances': '/api/master-data/allowances/',
+            'expenses': '/api/master-data/expense-items/',
+            'containers': '/api/master-data/container-types/',
+            'shipping_lines': '/api/master-data/shipping-lines/',
+            'opening_balance': '/api/master-data/opening-balances/'
+        };
+        const ep = endpoints[currentMasterDataTab];
+        if (ep) {
+            try {
+                const res = await fetchWithAuth(ep);
+                if (res.ok) {
+                    const data = await res.json();
+                    items = data.results || data.items || [];
+                    masterDataCache[currentMasterDataTab] = items;
+                    item = items.find(i => i.id === id);
+                }
+            } catch (err) {
+                console.error('[MasterData] Fallback fetch item error:', err);
+            }
+        }
+    }
+    if (!item) {
+        // Fallback 2: Lấy từ cache dữ liệu Đội xe nếu có sẵn
+        if (currentMasterDataTab === 'trailers' && typeof rawFleetTrailers !== 'undefined' && Array.isArray(rawFleetTrailers)) {
+            const rawT = rawFleetTrailers.find(i => i.id === id);
+            if (rawT) {
+                item = {
+                    id: rawT.id,
+                    license_plate: rawT.plate,
+                    trailer_type: rawT.type,
+                    brand: rawT.brand,
+                    payload_capacity_kg: rawT.payload_capacity_kg,
+                    payload_display: rawT.payload_display,
+                    registration_expiry: rawT.reg_expiry,
+                    status: rawT.status_raw || (rawT.status && rawT.status.includes('Nằm bãi') ? 'IDLE' : (rawT.status && rawT.status.includes('Đang kéo') ? 'ACTIVE' : 'MAINTENANCE'))
+                };
+            }
+        } else if (currentMasterDataTab === 'vehicles' && typeof rawFleetVehicles !== 'undefined' && Array.isArray(rawFleetVehicles)) {
+            const rawV = rawFleetVehicles.find(i => i.id === id);
+            if (rawV) {
+                item = {
+                    id: rawV.id,
+                    license_plate: rawV.plate,
+                    vehicle_type: rawV.type,
+                    ownership_type: rawV.ownership_code || 'OWNED',
+                    brand: rawV.brand,
+                    payload_capacity_kg: rawV.payload_capacity_kg,
+                    current_driver_id: rawV.driver_id,
+                    registration_expiry: rawV.reg_expiry,
+                    status: rawV.status_raw || 'ACTIVE'
+                };
+            }
+        }
+    }
+    if (!item) {
+        if (typeof showToast === 'function') {
+            showToast('warning', 'Không tìm thấy dữ liệu đối tượng cần chỉnh sửa.', 'Thông Báo');
+        }
+        return;
+    }
 
     document.getElementById('md-edit-id').value = id;
     document.getElementById('md-catalog-key').value = currentMasterDataTab;
 
     const titles = {
+        'opening_balance': 'Chỉnh Sửa Số Dư Đầu Kỳ Kế Toán',
         'driver_tariffs': 'Chỉnh Sửa Tuyến Lương Chuyến',
         'allowances': 'Chỉnh Sửa Phụ Cấp / Kiểm Hóa',
         'locations': 'Chỉnh Sửa Cảng / Kho Bãi',
@@ -2326,11 +2146,23 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Nguồn Sở Hữu</label>
                     </div>
-                    <select id="mdf-ownership" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
+                    <select id="mdf-ownership" onchange="toggleVehicleSubcontractorField(this.value)" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
                         <option value="OWNED" ${d.ownership_type === 'OWNED' ? 'selected' : ''}>Xe Nhà (Đội Xe Công Ty)</option>
                         <option value="SUBCONTRACTOR" ${d.ownership_type === 'SUBCONTRACTOR' ? 'selected' : ''}>Xe Bạn (Thuê Ngoài / 3PL)</option>
                     </select>
                 </div>
+            </div>
+            <!-- Khối chọn Nhà Xe Thầu Phụ nếu là Xe Bạn -->
+            <div id="div-mdf-subcontractor" class="${d.ownership_type === 'SUBCONTRACTOR' ? '' : 'hidden-view'} p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg">
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-amber-900 text-xs truncate">
+                        <i class="ph-bold ph-handshake mr-1"></i> Nhà Cung Cấp / Đối Tác 3PL Sở Hữu <span class="text-rose-500">*</span>
+                    </label>
+                </div>
+                <select id="mdf-subcontractor-id" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-amber-950 border-amber-300 w-full bg-white">
+                    <option value="">-- Chọn Nhà Cung Cấp / Đối Tác 3PL Sở Hữu --</option>
+                    ${(masterDataFormOptionsCache?.subcontractors || []).map(sc => `<option value="${sc.id}" ${d.subcontractor_id === sc.id ? 'selected' : ''}>[${sc.short_name || sc.code}] ${sc.name}</option>`).join('')}
+                </select>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
@@ -2363,9 +2195,14 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng Cho Phép (kg)</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng TK / Cho Phép (kg)</label>
                     </div>
-                    <input type="text" id="mdf-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '30.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right input-number-vn w-full" placeholder="VD: 30.000">
+                    <input type="text" id="mdf-payload" value="${(() => {
+                        const disp = (d.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                        if (disp && disp !== '—' && disp !== '-') return disp;
+                        if (d.payload_capacity_kg && d.payload_capacity_kg > 0) return formatNumberVN(d.payload_capacity_kg);
+                        return d.id ? '' : '30.000/27.360';
+                    })()}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right w-full" placeholder="VD: 30000/27360 hoặc 30000">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -2401,6 +2238,52 @@ function injectMasterDataModalFields(data) {
             </div>
         `;
     } else if (currentMasterDataTab === 'trailers') {
+        const standardTrailerTypes = [
+            'Moóc Xương 40ft (3 Trục)',
+            'Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)',
+            'Moóc Xương 20ft (3 Trục)',
+            'Moóc Sàn 40ft',
+            'Moóc Sàn 45ft',
+            'Moóc Lùn / Chuyên Dụng',
+            'Moóc Ben (Tự đổ)',
+            'Moóc Bồn (Xitéc)',
+            'Moóc Rút (Siêu trường siêu trọng)',
+            'Moóc Lồng / Khung mui',
+            'Moóc Xương 45ft',
+            'Moóc Xương 2 Trục'
+        ];
+        const legacyTrailerMap = {
+            'mooc_xuong_40': 'Moóc Xương 40ft (3 Trục)',
+            'mooc_co_co_40': 'Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)',
+            'mooc_xuong_20': 'Moóc Xương 20ft (3 Trục)',
+            'mooc_san_40': 'Moóc Sàn 40ft',
+            'mooc_san_45': 'Moóc Sàn 45ft',
+            'mooc_lun': 'Moóc Lùn / Chuyên Dụng',
+            'mooc_ben': 'Moóc Ben (Tự đổ)',
+            'mooc_bon': 'Moóc Bồn (Xitéc)',
+            'mooc_rut': 'Moóc Rút (Siêu trường siêu trọng)',
+            'mooc_long': 'Moóc Lồng / Khung mui',
+            'mooc_xuong_45': 'Moóc Xương 45ft',
+            'mooc_xuong_2_truc': 'Moóc Xương 2 Trục'
+        };
+
+        const currentType = (d.trailer_type || '').trim();
+        let selectedTrailerType = 'Moóc Xương 40ft (3 Trục)';
+        let isCustomTrailerType = false;
+
+        if (currentType) {
+            const lowerCurrent = currentType.toLowerCase();
+            const matchedStd = standardTrailerTypes.find(t => t.toLowerCase() === lowerCurrent);
+            if (matchedStd) {
+                selectedTrailerType = matchedStd;
+            } else if (legacyTrailerMap[lowerCurrent]) {
+                selectedTrailerType = legacyTrailerMap[lowerCurrent];
+            } else {
+                selectedTrailerType = '__OTHER__';
+                isCustomTrailerType = true;
+            }
+        }
+
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
@@ -2413,13 +2296,13 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Loại Rơ-Moóc <span class="text-rose-500">*</span></label>
                     </div>
-                    <select id="mdf-trailer-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
-                        <option value="MOOC_XUONG_40" ${d.trailer_type === 'MOOC_XUONG_40' ? 'selected' : ''}>Moóc Xương 40ft (3 Trục)</option>
-                        <option value="MOOC_CO_CO_40" ${d.trailer_type === 'MOOC_CO_CO_40' ? 'selected' : ''}>Moóc Cổ Cò 40ft (Chở Cont Lạnh/HC)</option>
-                        <option value="MOOC_XUONG_20" ${d.trailer_type === 'MOOC_XUONG_20' ? 'selected' : ''}>Moóc Xương 20ft (3 Trục)</option>
-                        <option value="MOOC_SAN_45" ${d.trailer_type === 'MOOC_SAN_45' ? 'selected' : ''}>Moóc Sàn 45ft</option>
-                        <option value="MOOC_LUN" ${d.trailer_type === 'MOOC_LUN' ? 'selected' : ''}>Moóc Lùn / Chuyên Dụng</option>
+                    <select id="mdf-trailer-type" onchange="toggleCustomTrailerType(this)" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                        ${standardTrailerTypes.map(t => `<option value="${escapeHtml(t)}" ${selectedTrailerType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+                        <option value="__OTHER__" ${isCustomTrailerType ? 'selected' : ''}>➕ Loại khác (Tự nhập tay)...</option>
                     </select>
+                    <div id="mdf-trailer-type-custom-wrap" class="mt-1.5 ${isCustomTrailerType ? '' : 'hidden'}">
+                        <input type="text" id="mdf-trailer-type-custom" value="${isCustomTrailerType ? escapeHtml(currentType) : ''}" placeholder="Nhập tên loại moóc đặc thù..." class="form-input h-8 px-2.5 py-1 text-xs font-semibold text-slate-800 w-full border-dashed border-teal-500 bg-teal-50/30">
+                    </div>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -2431,9 +2314,14 @@ function injectMasterDataModalFields(data) {
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
-                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng Thiết Kế (kg)</label>
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tải Trọng TK / Cho Phép (kg)</label>
                     </div>
-                    <input type="text" id="mdf-trailer-payload" value="${d.payload_capacity_kg ? formatNumberVN(d.payload_capacity_kg) : '32.000'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right input-number-vn w-full" placeholder="VD: 32.000">
+                    <input type="text" id="mdf-trailer-payload" value="${(() => {
+                        const disp = (d.payload_display || '').trim().replace(/[-—]+$/, '').trim();
+                        if (disp && disp !== '—' && disp !== '-') return disp;
+                        if (d.payload_capacity_kg && d.payload_capacity_kg > 0) return formatNumberVN(d.payload_capacity_kg);
+                        return d.id ? '' : '30.000/27.360';
+                    })()}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-right w-full" placeholder="VD: 30000/27360 hoặc 32000">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -2541,7 +2429,7 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tác / Nhà Xe</label>
                     </div>
-                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh nếu để trống (NX_...)" class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
+                    <input type="text" id="mdf-sc-code" value="${escapeHtml(d.code || '')}" placeholder="Tự sinh theo loại: 3PL001, GAR001, SPL001..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase font-mono font-bold w-full" ${d.code ? 'readonly' : ''}>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -2558,18 +2446,19 @@ function injectMasterDataModalFields(data) {
                     <input type="text" id="mdf-sc-tax" value="${escapeHtml(d.tax_code || '')}" placeholder="MST doanh nghiệp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-semibold text-slate-800 w-full">
                 </div>
             </div>
+
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Người Điều Hành Xe</label>
                     </div>
-                    <input type="text" id="mdf-sc-person" value="${d.contact_person || ''}" placeholder="Tên điều độ / chủ xe..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-person" value="${escapeHtml(contactVal)}" placeholder="Tên điều độ / chủ xe..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Số Điện Thoại Điều Xe <span class="text-rose-500">*</span></label>
                     </div>
-                    <input type="text" id="mdf-sc-phone" value="${d.phone || ''}" placeholder="SĐT liên hệ gấp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 w-full" required>
+                    <input type="text" id="mdf-sc-phone" value="${escapeHtml(d.phone || '')}" placeholder="SĐT liên hệ gấp..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 w-full" required>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -2577,13 +2466,13 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Công Ty</label>
                     </div>
-                    <input type="text" id="mdf-sc-address" value="${d.address || ''}" placeholder="Trụ sở, số nhà, đường, quận/huyện..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-address" value="${escapeHtml(d.address || '')}" placeholder="Trụ sở, số nhà, đường, quận/huyện..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
                 <div class="md:col-span-6">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Địa Chỉ Kho / Bãi Xe</label>
                     </div>
-                    <input type="text" id="mdf-sc-yard-address" value="${d.yard_address || ''}" placeholder="Vị trí bãi xe, kho tập kết hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-yard-address" value="${escapeHtml(d.yard_address || '')}" placeholder="Vị trí bãi xe, kho tập kết hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
@@ -2591,30 +2480,214 @@ function injectMasterDataModalFields(data) {
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Số Tài Khoản</label>
                     </div>
-                    <input type="text" id="mdf-sc-acc" value="${d.bank_account_number || ''}" placeholder="Số TK..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-acc" value="${escapeHtml(d.bank_account_number || '')}" placeholder="Số TK..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Tên Ngân Hàng</label>
                     </div>
-                    <input type="text" id="mdf-sc-bank" value="${d.bank_name || ''}" placeholder="VD: VCB, MB..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-bank" value="${escapeHtml(d.bank_name || '')}" placeholder="VD: VCB, MB..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
                 </div>
                 <div class="md:col-span-4">
                     <div class="flex items-center justify-between h-5 mb-1">
                         <label class="block font-bold text-slate-700 text-xs truncate">Chủ Tài Khoản</label>
                     </div>
-                    <input type="text" id="mdf-sc-holder" value="${d.bank_account_holder || ''}" placeholder="Tên in hoa..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase text-slate-800 w-full">
+                    <input type="text" id="mdf-sc-holder" value="${escapeHtml(d.bank_account_holder || '')}" placeholder="Tên in hoa..." class="form-input h-8.5 px-2.5 py-1 text-xs uppercase text-slate-800 w-full">
                 </div>
             </div>
             <div>
                 <div class="flex items-center justify-between h-5 mb-1">
                     <label class="block font-bold text-slate-700 text-xs truncate">Ghi chú</label>
                 </div>
-                <input type="text" id="mdf-sc-notes" value="${d.notes || ''}" placeholder="Ghi chú thêm..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
+                <input type="text" id="mdf-sc-notes" value="${escapeHtml(d.notes || '')}" placeholder="Ghi chú thêm..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
             <div class="flex items-center space-x-2 pt-1">
                 <input type="checkbox" id="mdf-is-active" ${d.is_active !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded cursor-pointer">
                 <label for="mdf-is-active" class="text-xs font-bold text-slate-700 cursor-pointer">Đang hợp tác</label>
+            </div>
+
+            ${d.id ? `
+            <!-- KHỐI 1: QUẢN LÝ ĐỘI XE THUỘC NHÀ XE (3PL) -->
+            <div class="mt-4 pt-3 border-t border-slate-200" id="section-subcontractor-vehicles-mgmt">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block font-bold text-amber-950 text-xs flex items-center gap-1.5 font-heading uppercase tracking-wider">
+                        <i class="ph-bold ph-truck text-amber-700 text-sm"></i> Đội Xe / Phương Tiện Thuộc Nhà Xe (3PL)
+                    </label>
+                    <button type="button" onclick="showAddSubVehicleInline()" class="btn-bim-primary px-2.5 py-1 text-[11px] font-bold rounded-md flex items-center gap-1 cursor-pointer">
+                        <i class="ph-bold ph-plus text-[10px]"></i> Thêm mới
+                    </button>
+                </div>
+
+                <!-- Form Thêm Nhanh Xe 3PL Inline -->
+                <div id="sub-vehicle-add-row" class="hidden-view p-2.5 bg-amber-50/90 border border-amber-300 rounded-xl mb-2.5 space-y-2">
+                    <div class="text-[11px] font-bold text-amber-900 uppercase">Khai Báo Xe Mới Gán Cho Nhà Xe</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <div class="sm:col-span-4">
+                            <input type="text" id="new-subveh-plate" placeholder="Biển số xe (51H-123.45) *" class="form-input h-8 px-2 py-1 text-xs uppercase font-mono font-bold text-slate-800 border-amber-300 w-full rounded">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <select id="new-subveh-type" class="form-select h-8 px-2 py-1 text-xs font-semibold border-amber-300 w-full rounded">
+                                <option value="TRACTOR">Đầu kéo</option>
+                                <option value="TRUCK_10T">Xe tải 10 Tấn</option>
+                                <option value="TRUCK_2T">Xe tải 2 Tấn</option>
+                                <option value="VAN">Xe tải nhỏ / Van</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <input type="text" id="new-subveh-payload" placeholder="VD: 30000/27360" value="30.000/27.360" class="form-input h-8 px-2 py-1 text-xs font-mono text-right border-amber-300 w-full rounded">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <input type="text" id="new-subveh-brand" placeholder="Hãng/Dòng xe (Hino...)" class="form-input h-8 px-2 py-1 text-xs border-amber-300 w-full rounded">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-1">
+                        <button type="button" onclick="hideAddSubVehicleInline()" class="px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-200 rounded font-semibold cursor-pointer">Hủy</button>
+                        <button type="button" onclick="saveNewSubVehicleInline(${d.id})" class="btn-bim-primary px-3.5 py-1 text-xs font-bold shadow-xs cursor-pointer">Lưu Phương Tiện</button>
+                    </div>
+                </div>
+
+                <!-- Bảng Danh Sách Xe Thuộc Nhà Xe -->
+                <div class="border border-slate-200 rounded-xl overflow-hidden max-h-44 overflow-y-auto bg-white shadow-2xs mb-3">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold sticky top-0">
+                            <tr>
+                                <th class="py-2 px-3">Biển Số Xe</th>
+                                <th class="py-2 px-3">Loại Xe</th>
+                                <th class="py-2 px-3 text-right">Tải Trọng Cho Phép</th>
+                                <th class="py-2 px-3">Hãng / Dòng Xe</th>
+                                <th class="py-2 px-2.5 text-center w-24">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sub-vehicles-tbody" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="text-center py-3 text-slate-400"><i class="ph ph-spinner animate-spin mr-1"></i> Đang tải danh sách xe...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- KHỐI 2: QUẢN LÝ DANH BẠ TÀI XẾ THUỘC NHÀ XE (3PL) -->
+            <div class="mt-3 pt-3 border-t border-slate-200" id="section-subcontractor-drivers-mgmt">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block font-bold text-amber-950 text-xs flex items-center gap-1.5 font-heading uppercase tracking-wider">
+                        <i class="ph-bold ph-steering-wheel text-amber-700 text-sm"></i> Danh Bạ Tài Xế Thuộc Nhà Xe (3PL)
+                    </label>
+                    <button type="button" onclick="showAddSubDriverInline()" class="btn-bim-primary px-2.5 py-1 text-[11px] font-bold rounded-md flex items-center gap-1 cursor-pointer">
+                        <i class="ph-bold ph-plus text-[10px]"></i> Thêm mới
+                    </button>
+                </div>
+
+                <!-- Form Thêm Nhanh Tài Xế 3PL Inline -->
+                <div id="sub-driver-add-row" class="hidden-view p-2.5 bg-amber-50/90 border border-amber-300 rounded-xl mb-2.5 space-y-2">
+                    <div class="text-[11px] font-bold text-amber-900 uppercase">Khai Báo Bác Tài Mới Trực Thuộc Nhà Xe</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <div class="sm:col-span-5">
+                            <input type="text" id="new-subdrv-name" placeholder="Họ và tên tài xế *" class="form-input h-8 px-2 py-1 text-xs font-bold text-slate-800 border-amber-300 w-full rounded">
+                        </div>
+                        <div class="sm:col-span-4">
+                            <input type="tel" id="new-subdrv-phone" placeholder="Số điện thoại *" class="form-input h-8 px-2 py-1 text-xs font-mono font-bold text-teal-800 border-amber-300 w-full rounded">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <input type="text" id="new-subdrv-license" placeholder="Số GPLX (Tùy chọn)" class="form-input h-8 px-2 py-1 text-xs font-mono border-amber-300 w-full rounded">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-1">
+                        <button type="button" onclick="hideAddSubDriverInline()" class="px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-200 rounded font-semibold cursor-pointer">Hủy</button>
+                        <button type="button" onclick="saveNewSubDriverInline(${d.id})" class="btn-bim-primary px-3.5 py-1 text-xs font-bold shadow-xs cursor-pointer">Lưu Bác Tài</button>
+                    </div>
+                </div>
+
+                <!-- Bảng Danh Sách Tài Xế Thuộc Nhà Xe -->
+                <div class="border border-slate-200 rounded-xl overflow-hidden max-h-44 overflow-y-auto bg-white shadow-2xs">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold sticky top-0">
+                            <tr>
+                                <th class="py-2 px-3">Họ & Tên Tài Xế</th>
+                                <th class="py-2 px-3">Số Điện Thoại</th>
+                                <th class="py-2 px-3">Số GPLX</th>
+                                <th class="py-2 px-2.5 text-center w-24">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sub-drivers-tbody" class="divide-y divide-slate-100">
+                            <tr><td colspan="4" class="text-center py-3 text-slate-400"><i class="ph ph-spinner animate-spin mr-1"></i> Đang tải danh sách tài xế...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            ` : ''}
+        `;
+        if (d.id) {
+            setTimeout(() => {
+                loadSubcontractorVehiclesInModal(d.id);
+                loadSubcontractorDriversInModal(d.id);
+            }, 50);
+        }
+        toggleSubcontractorTypePanels(d.partner_type || 'CARRIER');
+    } else if (currentMasterDataTab === 'opening_balance') {
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tài Khoản Kế Toán <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-ob-account" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                        <option value="1111" ${d.account_code === '1111' ? 'selected' : ''}>1111 - Tiền Mặt Tại Quỹ</option>
+                        <option value="1121" ${d.account_code === '1121' ? 'selected' : ''}>1121 - Tiền Gửi Ngân Hàng MB Bank</option>
+                        <option value="1122" ${d.account_code === '1122' ? 'selected' : ''}>1122 - Tiền Gửi Ngân Hàng Vietcombank</option>
+                        <option value="131" ${d.account_code === '131' ? 'selected' : ''}>131 - Phải Thu Khách Hàng</option>
+                        <option value="141" ${d.account_code === '141' ? 'selected' : ''}>141 - Tạm Ứng Nhân Viên / Tài Xế</option>
+                        <option value="331" ${d.account_code === '331' ? 'selected' : ''}>331 - Phải Trả Nhà Cung Cấp / Thầu Phụ</option>
+                        <option value="334" ${d.account_code === '334' ? 'selected' : ''}>334 - Phải Trả Người Lao Động (Lương Tài Xế)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Ngày Chốt Số Dư Đầu Kỳ <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="date" id="mdf-ob-date" value="${d.opening_date || d.balance_date || '2026-01-01'}" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-800 w-full" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-8">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tên Đối Tượng / Quỹ / Tài Khoản <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-ob-name" value="${escapeHtml(d.entity_name || '')}" placeholder="VD: Quỹ tiền mặt Triền Võ, KH Công ty ABC, Tài xế Nguyễn Văn A..." class="form-input h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Mã Đối Tượng / Biển Số / Mã NV</label>
+                    </div>
+                    <input type="text" id="mdf-ob-code" value="${escapeHtml(d.entity_code || '')}" placeholder="Mã KH, Mã TX..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Tính Chất Số Dư <span class="text-rose-500">*</span></label>
+                    </div>
+                    <select id="mdf-ob-type" class="form-select h-8.5 px-2.5 py-1 text-xs font-bold text-slate-800 w-full">
+                        <option value="debit" ${(d.debit_amount > 0 || d.is_debit !== false) ? 'selected' : ''}>Dư Nợ (Tiền, Tài sản, Phải thu)</option>
+                        <option value="credit" ${(d.credit_amount > 0 && !d.debit_amount) ? 'selected' : ''}>Dư Có (Phải trả, Nợ phải thanh toán)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Tiền (VNĐ) <span class="text-rose-500">*</span></label>
+                    </div>
+                    <input type="text" id="mdf-ob-amount" value="${formatNumberVN(d.debit_amount > 0 ? d.debit_amount : (d.credit_amount > 0 ? d.credit_amount : (d.amount || 0)))}" placeholder="VD: 50.000.000" class="form-input h-8.5 px-2.5 py-1 text-xs font-mono font-bold text-teal-800 text-right input-number-vn w-full" required>
+                </div>
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between h-5 mb-1">
+                        <label class="block font-bold text-slate-700 text-xs truncate">Số Tài Khoản NH (Nếu có)</label>
+                    </div>
+                    <input type="text" id="mdf-ob-bank-acc" value="${escapeHtml(d.bank_account_number || '')}" placeholder="Số TK ngân hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs font-mono text-slate-800 w-full">
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between h-5 mb-1">
+                    <label class="block font-bold text-slate-700 text-xs truncate">Ghi Chú / Căn Cứ Chứng Từ</label>
+                </div>
+                <input type="text" id="mdf-ob-notes" value="${escapeHtml(d.notes || '')}" placeholder="Căn cứ biên bản đối chiếu công nợ, sao kê ngân hàng..." class="form-input h-8.5 px-2.5 py-1 text-xs text-slate-800 w-full">
             </div>
         `;
     }
@@ -2634,6 +2707,7 @@ async function submitMasterDataForm(e) {
 
     const endpoints = {
         'company': '/api/master-data/company/',
+        'opening_balance': isEdit ? `/api/master-data/opening-balances/${editId}/` : '/api/master-data/opening-balances/',
         'driver_tariffs': isEdit ? `/api/master-data/driver-tariffs/${editId}/` : '/api/master-data/driver-tariffs/',
         'allowances': isEdit ? `/api/master-data/allowances/${editId}/` : '/api/master-data/allowances/',
         'locations': isEdit ? `/api/master-data/locations/${editId}/` : '/api/master-data/locations/',
@@ -2648,7 +2722,22 @@ async function submitMasterDataForm(e) {
     };
 
     let payload = {};
-    if (tabKey === 'company') {
+    if (tabKey === 'opening_balance') {
+        const isDebit = document.getElementById('mdf-ob-type')?.value === 'debit';
+        const amount = parseNumberVN(document.getElementById('mdf-ob-amount')?.value) || 0;
+        payload = {
+            account_code: document.getElementById('mdf-ob-account')?.value || '1111',
+            opening_date: document.getElementById('mdf-ob-date')?.value || '2026-01-01',
+            entity_name: document.getElementById('mdf-ob-name')?.value || '',
+            entity_code: document.getElementById('mdf-ob-code')?.value || '',
+            bank_account_number: document.getElementById('mdf-ob-bank-acc')?.value || '',
+            debit_amount: isDebit ? amount : 0,
+            credit_amount: !isDebit ? amount : 0,
+            amount: amount,
+            is_debit: isDebit,
+            notes: document.getElementById('mdf-ob-notes')?.value || ''
+        };
+    } else if (tabKey === 'company') {
         payload = {
             company_name: document.getElementById('mdf-cp-name')?.value || '',
             short_name: document.getElementById('mdf-cp-short-name')?.value || '',
@@ -2761,12 +2850,14 @@ async function submitMasterDataForm(e) {
             is_active: document.getElementById('mdf-is-active')?.checked ?? true
         };
     } else if (tabKey === 'vehicles') {
+        const subIdVal = document.getElementById('mdf-subcontractor-id')?.value;
         payload = {
             license_plate: document.getElementById('mdf-license-plate').value,
             ownership_type: document.getElementById('mdf-ownership').value,
+            subcontractor_id: (document.getElementById('mdf-ownership').value === 'SUBCONTRACTOR' && subIdVal) ? parseInt(subIdVal) : null,
             vehicle_type: document.getElementById('mdf-vehicle-type').value,
             brand: document.getElementById('mdf-brand').value,
-            payload_capacity_kg: parseNumberVN(document.getElementById('mdf-payload').value) || 0,
+            payload_capacity_kg: document.getElementById('mdf-payload').value.trim(),
             current_driver_id: document.getElementById('mdf-driver-id')?.value ? parseInt(document.getElementById('mdf-driver-id').value) : null,
             registration_expiry: document.getElementById('mdf-reg-expiry')?.value || null,
             insurance_expiry: document.getElementById('mdf-ins-expiry')?.value || null,
@@ -2774,11 +2865,19 @@ async function submitMasterDataForm(e) {
             status: document.getElementById('mdf-vehicle-status')?.value || 'IDLE'
         };
     } else if (tabKey === 'trailers') {
+        const selTrailerType = document.getElementById('mdf-trailer-type')?.value || '';
+        const customTrailerType = document.getElementById('mdf-trailer-type-custom')?.value?.trim() || '';
+        const finalTrailerType = (selTrailerType === '__OTHER__') ? (customTrailerType || 'Loại moóc khác') : selTrailerType;
+        if (selTrailerType === '__OTHER__' && !customTrailerType) {
+            showToast('warning', 'Vui lòng nhập tên loại rơ-moóc cụ thể!');
+            document.getElementById('mdf-trailer-type-custom')?.focus();
+            return;
+        }
         payload = {
-            license_plate: document.getElementById('mdf-trailer-plate').value,
-            trailer_type: document.getElementById('mdf-trailer-type').value,
-            brand: document.getElementById('mdf-trailer-brand').value,
-            payload_capacity_kg: parseNumberVN(document.getElementById('mdf-trailer-payload').value) || 0,
+            license_plate: document.getElementById('mdf-trailer-plate').value.trim().toUpperCase(),
+            trailer_type: finalTrailerType,
+            brand: document.getElementById('mdf-trailer-brand').value.trim(),
+            payload_capacity_kg: document.getElementById('mdf-trailer-payload').value.trim(),
             registration_expiry: document.getElementById('mdf-trailer-expiry').value || null,
             status: document.getElementById('mdf-trailer-status').value
         };
@@ -2798,7 +2897,7 @@ async function submitMasterDataForm(e) {
         payload = {
             partner_type: document.getElementById('mdf-sc-partner-type')?.value || 'CARRIER',
             code: document.getElementById('mdf-sc-code').value,
-            short_name: document.getElementById('mdf-sc-short-name')?.value || '', 
+            short_name: document.getElementById('mdf-sc-short-name')?.value || '',
             tax_code: document.getElementById('mdf-sc-tax').value,
             name: document.getElementById('mdf-sc-name').value,
             contact_person: document.getElementById('mdf-sc-person').value,
@@ -2820,15 +2919,41 @@ async function submitMasterDataForm(e) {
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && (data.success || data.id)) {
+            if (tabKey === 'subcontractors') {
+                const subId = editId || data.id || (data.data && data.data.id);
+                if (subId && typeof saveAllSubcontractorFleetInlineChanges === 'function') {
+                    await saveAllSubcontractorFleetInlineChanges(subId);
+                }
+            }
             showToast('success', data.message || 'Lưu bản ghi thành công!');
             closeMasterDataModal();
-            loadMasterData();
+
+            if (tabKey === 'company') {
+                if (data.data) {
+                    if (typeof masterDataCache !== 'undefined') {
+                        masterDataCache['company'] = data.data;
+                    }
+                    window.SYSTEM_COMPANY = data.data;
+                }
+                syncCompanyProfileToPrintForms();
+                if (typeof loadCompanyProfile === 'function') {
+                    loadCompanyProfile();
+                }
+                return;
+            }
+
+            if (typeof currentTab !== 'undefined' && currentTab === 'cai-dat') {
+                loadMasterData();
+            }
+            if (tabKey === 'vehicles' || tabKey === 'trailers') {
+                if (typeof loadFleetData === 'function') loadFleetData();
+            }
 
             // Tự động tải lại danh mục cho các Modal đang mở và chọn ngay bản ghi vừa tạo
             await loadMasterDataFormOptions(true);
             populateMasterDataDropdowns();
 
-            if (quickMasterDataTargetSelectId) {
+            if (typeof quickMasterDataTargetSelectId !== 'undefined' && quickMasterDataTargetSelectId) {
                 const targetEl = document.getElementById(quickMasterDataTargetSelectId);
                 const createdName = payload.name || payload.code || payload.license_plate || payload.route_name || '';
                 if (targetEl && createdName) {
@@ -2847,6 +2972,7 @@ async function submitMasterDataForm(e) {
             showToast('danger', data.message || data.error || data.detail || 'Có lỗi xảy ra khi lưu dữ liệu!');
         }
     } catch (err) {
+        console.error('Lỗi submitMasterDataForm:', err);
         showToast('danger', 'Lỗi kết nối máy chủ!');
     }
 }
@@ -2885,6 +3011,9 @@ async function deleteMasterDataItem(id) {
         if (res.ok && data.success) {
             showToast('success', data.message || 'Đã xóa bản ghi thành công!');
             loadMasterData();
+            if (currentMasterDataTab === 'vehicles' || currentMasterDataTab === 'trailers') {
+                if (typeof loadFleetData === 'function') loadFleetData();
+            }
         } else {
             showToast('danger', data.message || data.error || data.detail || 'Không thể xóa bản ghi!');
         }
@@ -2892,4 +3021,3 @@ async function deleteMasterDataItem(id) {
         showToast('danger', 'Lỗi kết nối máy chủ!');
     }
 }
-

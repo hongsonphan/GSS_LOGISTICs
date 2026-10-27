@@ -326,18 +326,18 @@ function renderFleetTable(vehicles) {
 
         let regBadge = '';
         if (v.is_reg_expired) {
-            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-300 mt-0.5"><i class="ph-bold ph-warning-circle mr-1"></i>Hết hạn (${Math.abs(v.reg_days_left)}N)</span>`;
+            regBadge = `<span class="text-[11px] font-bold text-rose-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i>Hết hạn (${Math.abs(v.reg_days_left)}N)</span>`;
         } else if (v.is_reg_warning) {
-            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 mt-0.5"><i class="ph-bold ph-clock mr-1"></i>Còn ${v.reg_days_left} ngày</span>`;
+            regBadge = `<span class="text-[11px] font-bold text-amber-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-clock"></i>Còn ${v.reg_days_left} ngày</span>`;
         } else if (v.reg_days_left !== null && v.reg_days_left !== undefined) {
-            regBadge = `<span class="text-[10.5px] text-emerald-600 font-bold mt-0.5 block">Hợp lệ (${v.reg_days_left}N)</span>`;
+            regBadge = `<span class="text-[11px] text-emerald-700 font-bold mt-0.5 block">Hợp lệ (${v.reg_days_left}N)</span>`;
         }
 
         let maintBadge = '';
         if (v.is_maint_warning) {
-            maintBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 mt-0.5"><i class="ph-bold ph-wrench mr-1"></i>Đến hạn (${v.maint_days_left}N)</span>`;
+            maintBadge = `<span class="text-[11px] font-bold text-amber-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-wrench"></i>Đến hạn (${v.maint_days_left}N)</span>`;
         } else if (v.maint_days_left !== null && v.maint_days_left !== undefined) {
-            maintBadge = `<span class="text-[10.5px] text-slate-400 font-medium mt-0.5 block">Còn ${v.maint_days_left}N</span>`;
+            maintBadge = `<span class="text-[11px] text-slate-500 font-medium mt-0.5 block">Còn ${v.maint_days_left}N</span>`;
         }
 
         const tr = document.createElement('tr');
@@ -550,11 +550,11 @@ function renderTrailerTable(trailers) {
 
         let regBadge = '';
         if (t.is_reg_expired) {
-            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-300 mt-0.5"><i class="ph-bold ph-warning-circle mr-1"></i>Hết hạn (${Math.abs(t.reg_days_left)}N)</span>`;
+            regBadge = `<span class="text-[11px] font-bold text-rose-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-warning-circle"></i>Hết hạn (${Math.abs(t.reg_days_left)}N)</span>`;
         } else if (t.is_reg_warning) {
-            regBadge = `<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 mt-0.5"><i class="ph-bold ph-clock mr-1"></i>Còn ${t.reg_days_left} ngày</span>`;
+            regBadge = `<span class="text-[11px] font-bold text-amber-700 mt-0.5 inline-flex items-center gap-1"><i class="ph-bold ph-clock"></i>Còn ${t.reg_days_left} ngày</span>`;
         } else if (t.reg_days_left !== null && t.reg_days_left !== undefined) {
-            regBadge = `<span class="text-[10.5px] text-emerald-600 font-bold mt-0.5 block">Hợp lệ (${t.reg_days_left}N)</span>`;
+            regBadge = `<span class="text-[11px] text-emerald-700 font-bold mt-0.5 block">Hợp lệ (${t.reg_days_left}N)</span>`;
         }
 
         const tr = document.createElement('tr');

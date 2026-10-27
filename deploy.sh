@@ -8,13 +8,15 @@ set -e
 echo "=== [1/6] KIỂM TRA MÔI TRƯỜNG & GIT REPO ==="
 git status
 
-echo "=== [2/6] KIỂM TRA CÚ PHÁP JAVASCRIPT FRONTEND ==="
+echo "=== [2/6] KIỂM TRA FRONTEND: app.js KHỚP MÃ NGUỒN & CÚ PHÁP ==="
+python3 scripts/build_app_js.py --check
 if command -v node >/dev/null 2>&1; then
-    node -c static/js/app.js
-    node -c static/js/column_manager.js
-    echo "✓ Cú pháp JavaScript hợp lệ 100%."
+    node --check static/js/app.js
+    node --check static/js/collaboration.js
+    node --check static/js/column_manager.js
+    echo "✓ Cú pháp JavaScript hợp lệ."
 else
-    echo "⚠ Bỏ qua node check do môi trường chưa cài Node.js."
+    echo "⚠ Bỏ qua kiểm tra cú pháp do môi trường chưa cài Node.js."
 fi
 
 echo "=== [3/6] CẬP NHẬT DATABASE MIGRATIONS ==="
