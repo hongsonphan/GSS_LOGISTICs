@@ -2585,35 +2585,35 @@ class TripListCreateAPIView(APIView):
                     'total_containers': total_plan_containers,
                     'owned_vehicles': owned_vehicles_count,
                     'subcontractor_vehicles': subcontractor_count,
-                    'line_1': f"KẾ HOẠCH: {total_plan_trips} Chuyến · {total_plan_containers} Cont",
-                    'line_2': f"XE NHÀ: {owned_vehicles_count} · THẦU PHỤ: {subcontractor_count}"
+                    'line_1': f"{total_plan_trips} Chuyến ({total_plan_containers} Cont)",
+                    'line_2': f"{owned_vehicles_count} Xe Nhà · {subcontractor_count} Thầu Phụ"
                 },
                 'card_pending': {
                     'pending_count': pending_acceptance_count,
                     'sla_warning_count': sla_warning_count,
-                    'line_1': f"ĐÃ PHÁT LỆNH: {pending_acceptance_count} Chuyến",
-                    'line_2': f"CẢNH BÁO SLA: {sla_warning_count} Quá hạn / Từ chối"
+                    'line_1': f"Đã phát lệnh: {pending_acceptance_count}",
+                    'line_2': f"Cảnh báo SLA: {sla_warning_count}"
                 },
                 'card_transit': {
                     'transit_count': transit_total_count,
                     'carrying_cargo_count': carrying_cargo_count,
                     'returning_or_split_count': returning_or_split_count,
-                    'line_1': f"ĐANG CHỞ HÀNG: {carrying_cargo_count} Chuyến",
-                    'line_2': f"CẮT KÉO / RỖNG: {returning_or_split_count} Chuyến"
+                    'line_1': f"Đang chở hàng: {carrying_cargo_count}",
+                    'line_2': f"Cắt kéo / Rỗng: {returning_or_split_count}"
                 },
                 'card_risk': {
                     'risk_count': risk_total_count,
                     'cutoff_count': cutoff_risk_count,
                     'detention_count': detention_risk_count,
-                    'line_1': f"GẦN CẮT MÁNG: {cutoff_risk_count} Chuyến",
-                    'line_2': f"HẠN RỖNG / KHO: {detention_risk_count} Chuyến"
+                    'line_1': f"Gần cắt máng: {cutoff_risk_count}",
+                    'line_2': f"Hạn rỗng / kho: {detention_risk_count}"
                 },
                 'card_delivered': {
                     'delivered_count': delivered_total_count,
                     'pod_completed_count': pod_completed_count,
                     'pod_pending_count': pod_pending_count,
-                    'line_1': f"ĐÃ CÓ POD: {pod_completed_count} Chuyến",
-                    'line_2': f"CHỜ THU HỒI: {pod_pending_count} Chuyến"
+                    'line_1': f"Đã có POD: {pod_completed_count}",
+                    'line_2': f"Chờ thu hồi: {pod_pending_count}"
                 }
             },
             'trips': trips_list

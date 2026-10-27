@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.6.8] - 2026-10-27 (Đồng Bộ Thiết Kế 5 Thẻ Vận Hành Phân Hệ Điều Vận Theo Style Phân Hệ Kinh Doanh)
+
+### 1. Chuẩn Hóa Thiết Kế Giao Diện 5 Thẻ KPI Điều Độ Vận Tải:
+- **Đồng Bộ Hoàn Toàn Phong Cách Thiết Kế Với Phân Hệ Kinh Doanh:**
+  * Toàn bộ 5 thẻ vận hành điều độ được thiết kế lại với bo góc mềm mại `rounded-2xl border border-slate-200 shadow-xs hover:shadow-sm transition-all p-5 flex flex-col justify-between`.
+  * Viền màu thương hiệu bên trái (Border-left 4px) phân định từng mắt xích vận tải:
+    - **Thẻ 1: Tổng Kế Hoạch Điều Độ** — `border-l-indigo-600` (Viền chàm Indigo).
+    - **Thẻ 2: Chờ Nhận Lệnh** — `border-l-amber-500` (Viền hổ phách Amber).
+    - **Thẻ 3: Đang Trên Tuyến** — `border-l-teal-600` (Viền xanh ngọc Teal).
+    - **Thẻ 4: Cảnh Báo Rủi Ro** — `border-l-rose-600` (Viền hồng cánh sen/đỏ Rose).
+    - **Thẻ 5: Đã Giao & Thu POD** — `border-l-emerald-600` (Viền lục bảo Emerald).
+- **Hàng Tiêu Đề & Badge Trạng Thái Bo Tròn (Header & Badge Pill):**
+  * Tiêu đề in hoa xám thanh lịch: `text-[13px] font-bold text-slate-500 uppercase tracking-wider`.
+  * Badge pill bo tròn góc trên phải (`px-2 py-0.5 rounded-full text-xs font-bold font-heading border flex items-center gap-1`):
+    - Thẻ 1: `Kế Hoạch Đội Xe` (Nền Indigo nhạt, viền indigo).
+    - Thẻ 2: `Chờ Xác Nhận` (Nền Amber nhạt, viền amber).
+    - Thẻ 3: `Đang Trên Tuyến` (Nền Teal nhạt, viền teal).
+    - Thẻ 4: `Cần Xử Lý / An Toàn` (Nền Rose nhạt, viền rose).
+    - Thẻ 5: `Hoàn Thành` (Nền Emerald nhạt, viền emerald).
+- **Chỉ Số Chính & Dòng Phụ Tinh Gọn (Metrics & Subtext):**
+  * Chỉ số số liệu lớn: `text-3xl font-black tabular-nums font-heading tracking-tight mt-1` kèm đơn vị font-sans gọn gàng (`Chuyến`).
+  * Dòng phụ tóm tắt gọn gàng, loại bỏ các tiền tố thô cứng hoa văn cũ (`KẾ HOẠCH:`, `XE NHÀ:`...), thay bằng dòng đơn thanh lịch có icon màu nhận diện và dấu chấm phân cách `·` tinh tế.
+
+### 2. Kỹ Thuật & Khả Năng Tương Thích Ngược:
+- Giữ nguyên toàn bộ ID tương thích ngược (`stat-total-trips`, `stat-transit`, `stat-cutoff-warning`, `stat-pending-expenses`) để không làm gián đoạn bất kỳ luồng xử lý tự động nào.
+- Đồng bộ hóa logic xử lý chuỗi và cập nhật giao diện trong cả `apps/dispatch/api_views.py`, `static/js/modules/dispatch.js` và `static/js/app.js`.
+- Nâng cache version lên `?v=2.9.69` trong `templates/base.html`.
+- Kiểm thử cú pháp JS: `node -c static/js/app.js; node -c static/js/modules/dispatch.js` (100% Passed).
+- Chạy toàn bộ **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.6.7] - 2026-10-26 (Hoàn Thiện 4 Nhóm Báo Cáo Chiến Lược: Bộ Lọc Đối Soát Chốt Số, Phân Định Doanh Thu Kế Hoạch vs Kỳ Vọng & Chuẩn Hóa Nhóm Xe & Vận Hành)
 
 ### 1. Nhóm 1 (Doanh Thu Thực Hiện) — Bổ Sung Trạng Thái & Bộ Lọc Đối Soát Chốt Số:
