@@ -290,7 +290,7 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     elif trip.status == TripStatus.RETURNING_EMPTY:
         has_eir = bool(eir_dropoff_url or (trip.actual_dropoff_time and trip.actual_dropoff_time != '-') or trip.actual_dropoff_at)
         if has_eir:
-            target_active_step = 11  # Đã hạ cont và có EIR -> Bước 9, 10 xong, Bước 11 (Đối soát chi phí) active
+            target_active_step = 10  # Đang ở bước 10 (Hạ cont & nhận EIR)
         else:
             if trip.dropoff_appointment_time and trip.dropoff_appointment_time != '-':
                 target_active_step = 10  # Đã đến bãi hẹn -> Bước 9 xong, Bước 10 (Đang cẩu hạ cont / lấy phiếu) active
@@ -303,10 +303,19 @@ def build_10_step_timeline_spec(trip: DispatchTrip):
     for s in specs:
         step_num = s['step']
         if trip.status == TripStatus.COMPLETED:
-            is_done = True
-            is_active = False
-            time_val = s['time']
-            actor_val = s.get('actor', '—')
+            if step_num == 11:
+                # Bước 11 (Tổng hợp chi phí & Đối soát): Chỉ hoàn thành khi Kế Toán đã chốt sổ (settled_at hoặc is_expenses_settled)
+                # Khi mới hạ cont xong, trạng thái là "Chờ chốt sổ" và hiển thị xám mờ chứ không phải xanh hoàn thành
+                is_settled = bool(trip.settled_at or getattr(trip, 'is_expenses_settled', False))
+                is_done = is_settled
+                is_active = False
+                time_val = s['time'] if is_settled else 'Chờ chốt sổ'
+                actor_val = s.get('actor', '—')
+            else:
+                is_done = True
+                is_active = False
+                time_val = s['time']
+                actor_val = s.get('actor', '—')
         elif trip.status == TripStatus.CANCELLED:
             is_done = False
             is_active = False

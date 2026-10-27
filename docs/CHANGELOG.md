@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.9] - 2026-10-27 (Chuẩn Hóa Bước 11 Chờ Chốt Sổ Xám Mờ & Tức Thì Reload Khi Xác Nhận Mốc Tiến Độ)
+
+### 1. Chuẩn Hóa Hiển Thị Bước 11 "Tổng Hợp Chi Phí & Đối Soát Thanh Toán" (Chờ Chốt Sổ Xám Mờ):
+- **Phân Định Chuẩn Nghiệp Vụ Hoàn Thành Vận Tải vs Quyết Toán Kế Toán:**
+  * Trong `apps/dispatch/timeline_service.py` (`build_10_step_timeline_spec` & `sync_trip_10_step_timeline`):
+    - Khi tài xế hoàn tất cẩu hạ cont (Bước 10) và chuyến chuyển sang `COMPLETED`, toàn bộ 10 bước vận tải hiện trường được đánh dấu hoàn thành (`done = True`).
+    - Riêng Bước 11 (*Tổng hợp chi phí & Đối soát thanh toán*) thuộc phân hệ Kế toán: Nếu chưa có `trip.settled_at` hoặc chưa `trip.is_expenses_settled`, Bước 11 được thiết lập chính xác là `done = False`, `active = False`, thời gian hiển thị là **`Chờ chốt sổ`**. Chỉ khi Kế toán thực sự bấm Chốt sổ chuyến thì Bước 11 mới chuyển sang `done = True`.
+- **Giao Diện Timeline Desktop & Mobile Xám Mờ Đúng Chuẩn:**
+  * Trong `static/js/app.js` (`detail-timeline`): Khi Bước 11 ở trạng thái `Chờ chốt sổ` (`!item.done`), cả hàng hiển thị mờ (`opacity-60`), icon số 11 viền xám, tiêu đề chữ xám mờ (`text-slate-400 font-normal`) và nhãn badge trạng thái là **`CHỜ CHỐT SỔ`** màu xám thay vì hiển thị nhầm thành nút xanh hoàn thành.
+  * Đồng bộ hoàn toàn với màn hình Driver Portal (`templates/driver_portal.html`).
+
+### 2. Tức Thì Reload Màn Hình Ngay Khi Bấm Xác Nhận Mốc (Zero-Delay Refresh):
+- **Triệt Tiêu Thời Gian Chờ Trễ:**
+  * Trong `templates/driver_portal.html` (`forcePageReload` & `doReportMilestone`): Loại bỏ hoàn toàn `setTimeout` chờ đợi sau khi API xác nhận mốc thành công. Hệ thống ngay lập tức gọi `window.location.href = window.location.pathname + '?_v=' + Date.now();` để làm mới màn hình tức thì.
+  * Trong `static/js/app.js` (`driverReportMilestone`): Khi người dùng bấm bất kỳ nút mốc tiến trình nào (trong bảng tiến độ hoặc modal giả lập) và API trả về thành công, hệ thống thực thi `window.location.reload();` ngay lập tức để cập nhật dữ liệu toàn diện trên màn hình.
+
+### 3. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset version lên `?v=2.9.80` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` (100% Passed).
+- Chạy toàn bộ bộ kiểm thử tự động của dự án: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.8] - 2026-10-27 (Khắc Phục Triệt Để Lỗi Cuộn Ngang/Rubber-Banding Mobile & Lỗi Kết Nối Mạng Mốc Thời Gian Tài Xế)
 
 ### 1. Khắc Phục Triệt Để Lỗi Kéo Ngang / Rubber-Banding Màn Hình Mobile (Responsive Auto-Balance):

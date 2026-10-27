@@ -1801,9 +1801,7 @@
         if (text) text.innerText = msg;
         overlay.classList.remove('hidden');
       }
-      setTimeout(() => {
-        window.location.href = window.location.pathname + '?_v=' + Date.now();
-      }, 350);
+      window.location.href = window.location.pathname + '?_v=' + Date.now();
     }
 
     async function executePendingMilestone() {

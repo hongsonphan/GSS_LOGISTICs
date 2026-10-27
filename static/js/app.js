@@ -4714,8 +4714,10 @@ async function viewTripDetail(tripCode, updateHistory = true) {
                     let iconHtml = `<div class="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-normal mx-auto">${item.step}</div>`;
                     let textClass = 'text-slate-400 font-normal text-[13px]';
                     let actorTextClass = 'text-slate-400 font-normal text-[13px]';
-                    let actorDisplay = '—';
-                    let badgeHtml = '<span class="text-xs font-normal text-slate-400 uppercase">Chưa thực hiện</span>';
+                    let actorDisplay = (item.actor && item.actor !== '—') ? item.actor : '—';
+                    let badgeHtml = (item.time === 'Chờ chốt sổ' || (item.step === 11 && !item.done))
+                        ? '<span class="text-xs font-normal text-slate-400 uppercase whitespace-nowrap">Chờ chốt sổ</span>'
+                        : '<span class="text-xs font-normal text-slate-400 uppercase">Chưa thực hiện</span>';
                     
                     if (item.active) {
                         rowClass = 'bg-teal-50/40 hover:bg-teal-50/70 transition-colors border-l-4 border-l-teal-600';
@@ -7185,25 +7187,8 @@ async function driverReportMilestone(milestoneCode) {
         const data = await res.json();
         if (res.ok && data.success) {
             showToast('success', data.message, 'Cập nhật tiến độ');
-            // Cập nhật ngay trạng thái tức thì trên app
-            if (currentActiveTripData) {
-                currentActiveTripData.status = data.new_status;
-                currentActiveTripData.status_label = data.new_status_label;
-            }
-            const appStatusBadge = document.getElementById('app-status-badge');
-            if (appStatusBadge && data.new_status_label) {
-                appStatusBadge.innerText = data.new_status_label;
-            }
-            const detailBadge = document.getElementById('detail-status-badge');
-            if (detailBadge && data.new_status_label) {
-                detailBadge.innerText = data.new_status_label;
-                const statusCls = (typeof STATUS_STYLE_MAP !== 'undefined' && STATUS_STYLE_MAP[data.new_status]) || 'bg-slate-100 text-slate-700 border-slate-300';
-                detailBadge.className = `px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider font-heading ${statusCls}`;
-            }
-            await viewTripDetail(currentActiveTripCode, false);
-            if (typeof loadTripsData === 'function') {
-                loadTripsData();
-            }
+            // Tức thì reload lại màn hình để cập nhật thông tin luôn, không cần chờ
+            window.location.reload();
         } else {
             showToast('danger', data.message || data.error || data.detail || 'Không thể cập nhật mốc');
         }
