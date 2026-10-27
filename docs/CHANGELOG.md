@@ -2,6 +2,27 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.10] - 2026-10-27 (Đồng Bộ Hiển Thị Bước 11 Xám Mờ Trên Màn Hình Tài Xế & Bỏ Nút Báo Thức)
+
+### 1. Đồng Bộ Hiển Thị Bước 11 Xám Mờ Lên Màn Hình Tài Xế (Driver Portal):
+- **Đồng Bộ Hoàn Toàn Giao Diện Tiến Độ Giữa Desktop & Mobile:**
+  * Trong `templates/driver_portal.html` (Khối 5 - Nhật Ký Mốc Thời Gian `timelineContainer`):
+    - Thêm lớp CSS `opacity-60` cho từng dòng mốc khi chưa hoàn thành và chưa hoạt động (`{% if not item.is_done and not item.is_active %}opacity-60{% endif %}`).
+    - Khi Bước 11 ở trạng thái chờ kế toán quyết toán (`item.time_display == 'Chờ chốt sổ'`), badge thời gian được hiển thị với màu xám mờ chuẩn `text-slate-500 bg-slate-100 border-slate-200 font-medium` kèm icon đồng hồ đếm ngược `ph-clock-countdown text-slate-400`.
+    - Đảm bảo khi chuyến vừa cẩu hạ cont xong (`COMPLETED`), Bước 11 trên cả màn hình Điều vận (Desktop) và màn hình Tài xế (Driver Portal) đều thể hiện chính xác trạng thái xám mờ chờ kế toán chốt sổ, không bị hiểu nhầm là đã quyết toán xong.
+
+### 2. Tinh Gọn Giao Diện - Loại Bỏ Dòng Nhắc Hẹn Báo Thức Gây Hiểu Nhầm:
+- **Xóa Bỏ Tính Năng Không Thể Điều Khiển Thiết Bị Trực Tiếp:**
+  * Trình duyệt web trên thiết bị di động (Android Chrome, iOS Safari, Zalo In-App Browser) không có quyền truy cập API đồng hồ báo thức phần cứng (Native Alarm Clock) của điện thoại. Thao tác tải file `.ics` gây phiền hà và không kích hoạt được chuông báo thức thực tế.
+  * Đã gỡ bỏ toàn bộ khối nút bấm "Đặt Nhắc Hẹn Lịch Trình (Báo thức)" tại Card thông tin chuyến trong `templates/driver_portal.html`.
+  * Tinh giản thành nhãn thông tin giờ hẹn đóng hàng trực quan và nhỏ gọn: `⏰ Hẹn đóng: {{ trip.loading_time }}` ngay cạnh thông tin số cont và booking.
+  * Dọn dẹp sạch mã nguồn JavaScript thừa `addToPhoneCalendar()`, giảm dung lượng tải trang và tăng tốc độ xử lý DOM.
+
+### 3. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset version lên `?v=2.9.81` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` (100% Passed).
+- Chạy toàn bộ bộ kiểm thử tự động của dự án: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.9] - 2026-10-27 (Chuẩn Hóa Bước 11 Chờ Chốt Sổ Xám Mờ & Tức Thì Reload Khi Xác Nhận Mốc Tiến Độ)
 
 ### 1. Chuẩn Hóa Hiển Thị Bước 11 "Tổng Hợp Chi Phí & Đối Soát Thanh Toán" (Chờ Chốt Sổ Xám Mờ):

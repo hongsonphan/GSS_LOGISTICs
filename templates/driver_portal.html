@@ -145,36 +145,17 @@
               <span>Thông tin Vận Đơn & Container</span>
               {% if customs_dec %}<span class="w-2 h-2 rounded-full bg-emerald-500" title="Đã có Hải quan"></span>{% endif %}
             </div>
-            <div class="text-[11px] text-slate-500 truncate mt-0.5">
-              Cont: <strong class="text-teal-800 font-mono">{{ trip.container_number|default:'Chưa gán' }}</strong> | BK: {{ trip.booking_or_bill|default:'-' }}
+            <div class="text-[11px] text-slate-500 truncate mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <span>Cont: <strong class="text-teal-800 font-mono">{{ trip.container_number|default:'Chưa gán' }}</strong> | BK: {{ trip.booking_or_bill|default:'-' }}</span>
+              {% if trip.loading_time %}
+                <span class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded font-bold shrink-0">⏰ Hẹn đóng: {{ trip.loading_time }}</span>
+              {% endif %}
             </div>
           </div>
         </div>
         <div class="flex items-center gap-1 text-teal-700 font-bold text-xs shrink-0 pl-2">
           <span>Chi tiết</span>
           <i class="ph-bold ph-caret-right"></i>
-        </div>
-      </button>
-
-      <!-- NÚT ĐẶT LỊCH NHẮC HẸN TRÊN ĐIỆN THOẠI -->
-      <button type="button" onclick="addToPhoneCalendar()" class="touch-btn w-full p-2.5 rounded-xl bg-amber-50/80 hover:bg-amber-100 border border-amber-200 flex items-center justify-between text-left transition-all shadow-2xs">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0">
-            <i class="ph-bold ph-calendar-plus text-base"></i>
-          </div>
-          <div class="overflow-hidden">
-            <div class="text-xs font-black text-amber-950 flex items-center gap-1.5 truncate">
-              <span>Đặt Nhắc Hẹn Lịch Trình</span>
-              <span class="text-[9.5px] bg-amber-200 text-amber-900 font-bold px-1.5 py-0.2 rounded">Báo thức</span>
-            </div>
-            <div class="text-[11px] text-amber-800 truncate mt-0.5">
-              Hẹn đóng hàng: <strong>{{ trip.loading_time|default:'08:00' }}</strong> ({% if trip.loading_date %}{{ trip.loading_date|date:'d/m/Y' }}{% else %}Hôm nay{% endif %})
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center gap-1 text-amber-800 font-bold text-xs shrink-0 pl-2">
-          <span>Tạo lịch</span>
-          <i class="ph-bold ph-bell-simple"></i>
         </div>
       </button>
     </div>
@@ -466,7 +447,7 @@
       <div id="timelineContentWrapper" class="hidden mt-3 pt-3 border-t border-slate-100">
         <div id="timelineContainer" class="relative pl-7 space-y-3.5 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
           {% for item in timelines %}
-          <div class="relative">
+          <div class="relative {% if not item.is_done and not item.is_active %}opacity-60{% endif %}">
             <!-- Dot chỉ báo trạng thái -->
             <div class="absolute -left-7 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shadow-xs
               {% if item.is_done %}bg-teal-600 text-white ring-4 ring-teal-100
@@ -484,11 +465,11 @@
             <!-- Badge thời gian -->
             {% if item.time_display %}
             <div class="flex items-center gap-1.5 mt-1 text-xs font-bold px-2 py-0.5 rounded-md inline-flex border shadow-2xs
-              {% if item.is_done %}text-teal-800 bg-teal-50 border-teal-200/70
+              {% if item.time_display == 'Chờ chốt sổ' %}text-slate-500 bg-slate-100 border-slate-200 font-medium
+              {% elif item.is_done %}text-teal-800 bg-teal-50 border-teal-200/70
               {% elif item.is_active %}text-amber-900 bg-amber-50 border-amber-300 animate-pulse
               {% else %}text-slate-400 bg-slate-50 border-slate-200{% endif %}">
-              <i class="ph-bold ph-clock text-xs
-                {% if item.is_done %}text-teal-600{% elif item.is_active %}text-amber-600{% else %}text-slate-400{% endif %}"></i>
+              <i class="ph-bold {% if item.time_display == 'Chờ chốt sổ' %}ph-clock-countdown text-slate-400{% elif item.is_done %}ph-clock text-teal-600{% elif item.is_active %}ph-clock text-amber-600{% else %}ph-clock text-slate-400{% endif %} text-xs"></i>
               <span>{{ item.time_display }}</span>
             </div>
             {% endif %}
@@ -2843,75 +2824,7 @@
       }
     }
 
-    // 8. ĐẶT LỊCH NHẮC HẸN TRÊN ĐIỆN THOẠI (ICS / NATIVE CALENDAR)
-    function addToPhoneCalendar() {
-      const tripCode = '{{ trip.trip_code|escapejs }}';
-      const loadingTime = '{{ trip.loading_time|default:"08:00"|escapejs }}';
-      const loadingDate = '{% if trip.loading_date %}{{ trip.loading_date|date:"Y-m-d" }}{% else %}{{ today_iso|default:"" }}{% endif %}';
-      const pickup = '{{ trip.pickup_location|escapejs }}';
-      const warehouse = '{{ trip.warehouse_location|escapejs }}';
-      const dropoff = '{{ trip.dropoff_location|escapejs }}';
-      const cont = '{{ trip.container_number|default:"Chưa gán cont"|escapejs }}';
-      const vehicle = '{{ vehicle.license_plate|default:""|escapejs }}';
 
-      const title = `Lệnh Chuyến ${tripCode} - Giao ${warehouse}`;
-      const details = `Đầu kéo: ${vehicle}\\nCont: ${cont}\\nĐiểm 1 (Lấy cont): ${pickup}\\nĐiểm 2 (Giao kho): ${warehouse}\\nĐiểm 3 (Hạ cont): ${dropoff}\\nGiờ hẹn đóng hàng: ${loadingTime}\\nLink thao tác: ${window.location.href}`;
-      const location = warehouse || pickup;
-
-      const now = new Date();
-      let year = now.getFullYear();
-      let month = String(now.getMonth() + 1).padStart(2, '0');
-      let day = String(now.getDate()).padStart(2, '0');
-
-      if (loadingDate && loadingDate.includes('-')) {
-        const parts = loadingDate.split('-');
-        if (parts.length === 3) {
-          year = parts[0];
-          month = parts[1].padStart(2, '0');
-          day = parts[2].padStart(2, '0');
-        }
-      }
-
-      let hour = '08';
-      let min = '00';
-      const match = loadingTime.match(/(\d{1,2})[hH:]?(\d{2})?/);
-      if (match) {
-        hour = match[1].padStart(2, '0');
-        min = (match[2] || '00').padStart(2, '0');
-      }
-
-      const dtStart = `${year}${month}${day}T${hour}${min}00`;
-      const endHour = String((parseInt(hour, 10) + 4) % 24).padStart(2, '0');
-      const dtEnd = `${year}${month}${day}T${endHour}${min}00`;
-
-      const icsContent = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//BIM Logistics//Driver Portal//VI',
-        'BEGIN:VEVENT',
-        `SUMMARY:${title}`,
-        `DESCRIPTION:${details}`,
-        `LOCATION:${location}`,
-        `DTSTART:${dtStart}`,
-        `DTEND:${dtEnd}`,
-        'BEGIN:VALARM',
-        'TRIGGER:-PT30M',
-        'ACTION:DISPLAY',
-        'DESCRIPTION:Nhắc nhở: Sắp đến giờ làm hàng chuyến xe ' + tripCode,
-        'END:VALARM',
-        'END:VEVENT',
-        'END:VCALENDAR'
-      ].join('\\r\\n');
-
-      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.setAttribute('download', `Chuyen_${tripCode}.ics`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
 
     // =========================================================================
     // 9. HIỆU CHỈNH & XÓA KÊ KHAI NHẦM (CHI PHÍ, CHỨNG TỪ, SỐ CONTAINER / SEAL)

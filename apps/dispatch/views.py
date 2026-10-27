@@ -334,6 +334,10 @@ def driver_portal_view(request, trip_hash):
     # Danh sách chứng từ đã tải lên
     documents = trip.documents.filter(is_deleted=False).order_by('-created_at')
 
+    # Đồng bộ 11 bước timeline bảo đảm Bước 11 luôn phản ánh đúng trạng thái chốt sổ
+    from apps.dispatch.timeline_service import sync_trip_10_step_timeline
+    sync_trip_10_step_timeline(trip)
+
     # Danh sách timeline mốc đã thực hiện
     timelines = trip.timeline_items.all().order_by('step_number')
 
