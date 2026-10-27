@@ -54,10 +54,7 @@
                                 <label class="block font-bold text-slate-700 text-xs truncate" for="inp-customer">
                                     Khách hàng / Chủ hàng <span class="text-rose-500">*</span>
                                 </label>
-                                <button type="button" onclick="openMasterDataModalQuick('customers', 'inp-customer')" 
-                                    class="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5 cursor-pointer">
-                                    <i class="ph-bold ph-plus text-[10px]"></i> Tạo mới
-                                </button>
+<!-- Đã loại bỏ nút Tạo mới Khách hàng theo phân quyền Sale -->
                             </div>
                             <div class="relative w-full">
                                 <select
@@ -77,7 +74,7 @@
                                     Loại Hình Vận Chuyển <span class="text-rose-500">*</span>
                                 </label>
                             </div>
-                            <select id="inp-type" class="form-select h-9 px-2.5 py-1 font-bold text-teal-800 text-xs w-full rounded-lg">
+                            <select id="inp-type" onchange="handleCargoTypeChange()" class="form-select h-9 px-2.5 py-1 font-bold text-teal-800 text-xs w-full rounded-lg">
                                 <option value="Nhập">Hàng Nhập (Cảng -> Kho)</option>
                                 <option value="Xuất">Hàng Xuất (Kho -> Cảng)</option>
                                 <option value="Nội địa">Nội địa / Chuyển kho</option>
@@ -273,7 +270,7 @@
 
                     <!-- Thông tin Cắt CY, Invoice, Cửa Dock, Thời gian & Vị trí -->
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-3 pt-1">
-                        <div class="md:col-span-1">
+                        <div class="md:col-span-1 transition-all" id="col-cutoff">
                             <div class="flex items-center justify-between h-5 mb-1">
                                 <label class="block font-bold text-rose-700 text-xs truncate" for="inp-cutoff-date">
                                     <i class="ph-bold ph-clock-countdown mr-0.5 text-rose-600"></i> Cắt CY / SI
@@ -379,7 +376,7 @@
                     </div>
 
                     <!-- Quản lý Hạn Free-time DEM/DET Cảng & Giám Định Vỏ Cont (EIR) -->
-                    <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2.5">
+                    <div id="section-dem-det" class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2.5 transition-all">
                         <div class="flex items-center justify-between border-b border-amber-200 pb-1.5">
                             <span class="text-xs font-bold uppercase tracking-wider text-amber-950 flex items-center gap-1 font-heading">
                                 <i class="ph-bold ph-hourglass-high text-amber-700"></i> Hạn Free DEM/DET & Giám Định Vỏ Cont EIR
@@ -447,10 +444,7 @@
                                 <label class="block font-bold text-teal-900 text-xs truncate" for="inp-pickup">
                                     1. Nơi Lấy (Cảng / ICD) <span class="text-rose-500">*</span>
                                 </label>
-                                <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-pickup')" 
-                                    class="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 flex items-center gap-0.5 cursor-pointer">
-                                    <i class="ph-bold ph-plus text-[9.5px]"></i> Tạo mới
-                                </button>
+<!-- Đã loại bỏ nút Tạo mới Nơi lấy -->
                             </div>
                             <select
                                 id="inp-pickup"
@@ -465,10 +459,7 @@
                                 <label class="block font-bold text-amber-900 text-xs truncate" for="inp-warehouse">
                                     2. Nơi Đóng/Trả (Kho KH) <span class="text-rose-500">*</span>
                                 </label>
-                                <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-warehouse')" 
-                                    class="text-[10px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-0.5 cursor-pointer">
-                                    <i class="ph-bold ph-plus text-[9.5px]"></i> Tạo mới
-                                </button>
+<!-- Đã loại bỏ nút Tạo mới Kho KH -->
                             </div>
                             <select
                                 id="inp-warehouse"
@@ -483,10 +474,7 @@
                                 <label class="block font-bold text-emerald-900 text-xs truncate" for="inp-dropoff">
                                     3. Nơi Hạ (Bãi Rỗng / Cảng)
                                 </label>
-                                <button type="button" onclick="openMasterDataModalQuick('locations', 'inp-dropoff')" 
-                                    class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-0.5 cursor-pointer">
-                                    <i class="ph-bold ph-plus text-[9.5px]"></i> Tạo mới
-                                </button>
+<!-- Đã loại bỏ nút Tạo mới Nơi hạ -->
                             </div>
                             <select
                                 id="inp-dropoff"
@@ -524,7 +512,7 @@
                             <!-- Toggle Cắt Kéo (Chỉ khả dụng khi chạy xe nhà) -->
                             <div id="wrapper-drop-hook-toggle">
                                 <label class="inline-flex items-center cursor-pointer select-none">
-                                    <input type="checkbox" id="chk-drop-hook" onchange="toggleDropHookMode(this.checked)" class="sr-only peer">
+                                    <input type="checkbox" id="chk-drop-hook" onchange="toggleDropHookMode(this.checked)" class="sr-only peer" checked>
                                     <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600 relative"></div>
                                     <span class="ml-2 text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
                                         <i class="ph-bold ph-arrows-split text-amber-600"></i> Cắt Kéo (2 Tài)
@@ -625,16 +613,18 @@
                     </div>
 
                     <!-- Mode 1: Chạy Thẳng 1 Tài (Mặc định) -->
-                    <div id="section-direct-dispatch" class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div id="section-direct-dispatch" class="hidden-view grid grid-cols-1 md:grid-cols-12 gap-3">
                         <!-- 1. Bác tài nhận lệnh -->
                         <div class="md:col-span-4">
                             <div class="flex items-center justify-between h-5 mb-1">
                                 <label class="block font-bold text-slate-700 text-xs truncate" for="inp-driver">
                                     Tài xế nhận lệnh (Toàn trình) <span class="text-rose-500">*</span>
                                 </label>
-                                <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1">
-                                    <i class="ph-bold ph-identification-badge text-teal-600"></i> Nạp từ Nhân sự
-                                </span>
+                                <button type="button" onclick="openQuickCreateDriverModal('inp-driver')"
+                                    class="text-[10px] font-bold text-teal-800 hover:text-teal-950 bg-teal-100/90 hover:bg-teal-200 px-1.5 py-0.2 rounded border border-teal-300 flex items-center gap-0.5 cursor-pointer shadow-2xs transition-all"
+                                    title="Tạo nhanh tài xế mới (chỉ cần Tên & SĐT, Nhân sự sẽ bổ sung sau)">
+                                    <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm tài xế
+                                </button>
                             </div>
                             <select id="inp-driver" onchange="onDriverChange(this.value, this)" class="form-select h-9 px-2.5 py-1 font-bold text-slate-800 text-xs w-full rounded-lg">
                                 <option value="">-- Chọn tài xế điều động --</option>
@@ -679,7 +669,7 @@
                     </div>
 
                     <!-- Mode 2: Chế độ Cắt Kéo / 2 Chặng (Ẩn mặc định, hiện khi bật toggle) -->
-                    <div id="section-drop-hook-dispatch" class="hidden-view space-y-2.5 pt-1">
+                    <div id="section-drop-hook-dispatch" class="space-y-2.5 pt-1">
                         <!-- 2 Chặng Vận Chuyển: Cắt Mooc & Móc Mooc -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <!-- CHẶNG 1: LẤY CONT -> KHO -->
@@ -695,7 +685,11 @@
                                     <div>
                                         <div class="flex items-center justify-between mb-1 h-4">
                                             <label class="form-label text-teal-950 text-xs font-bold truncate" for="inp-driver-leg1">Tài xế Lấy Cont <span class="text-rose-500">*</span></label>
-                                            <span class="text-[9.5px] text-teal-700 bg-teal-100/70 px-1 py-0.2 rounded font-medium">Nhân sự</span>
+                                            <button type="button" onclick="openQuickCreateDriverModal('inp-driver-leg1')"
+                                                class="text-[10px] font-bold text-teal-800 hover:text-teal-950 bg-teal-100/90 hover:bg-teal-200 px-1.5 py-0.2 rounded border border-teal-300 flex items-center gap-0.5 cursor-pointer shadow-2xs transition-all"
+                                                title="Tạo nhanh tài xế mới (chỉ cần Tên & SĐT, Nhân sự sẽ bổ sung sau)">
+                                                <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm tài xế
+                                            </button>
                                         </div>
                                         <select id="inp-driver-leg1" onchange="onDriverLeg1Change(this.value)" class="form-select h-9 px-2 py-1 font-bold text-slate-800 text-xs w-full rounded-lg">
                                             <option value="">-- Chọn tài xế lấy cont --</option>
@@ -726,7 +720,11 @@
                                     <div>
                                         <div class="flex items-center justify-between mb-1 h-4">
                                             <label class="form-label text-indigo-950 text-xs font-bold truncate" for="inp-dropoff-driver">Tài xế Hạ Cont <span class="text-rose-500">*</span></label>
-                                            <span class="text-[9.5px] text-indigo-700 bg-indigo-100/70 px-1 py-0.2 rounded font-medium">Nhân sự</span>
+                                            <button type="button" onclick="openQuickCreateDriverModal('inp-dropoff-driver')"
+                                                class="text-[10px] font-bold text-indigo-800 hover:text-indigo-950 bg-indigo-100/90 hover:bg-indigo-200 px-1.5 py-0.2 rounded border border-indigo-300 flex items-center gap-0.5 cursor-pointer shadow-2xs transition-all"
+                                                title="Tạo nhanh tài xế mới (chỉ cần Tên & SĐT, Nhân sự sẽ bổ sung sau)">
+                                                <i class="ph-bold ph-plus text-[9.5px]"></i> Thêm tài xế
+                                            </button>
                                         </div>
                                         <select id="inp-dropoff-driver" onchange="onDriverLeg2Change(this.value)" class="form-select h-9 px-2 py-1 font-bold text-slate-800 text-xs w-full rounded-lg">
                                             <option value="">-- Chọn tài xế hạ cont --</option>

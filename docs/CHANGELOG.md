@@ -2,6 +2,38 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.2] - 2026-10-27 (Tái Cấu Trúc Điều Vận: Tối Ưu Loại Hình Xuất/Nhập/Nội Địa, Nhân Bản Lệnh Điều Xe, Mặc Định Cắt Kéo & Tạo Nhanh Tài Xế Hiện Trường)
+
+### 1. Tinh Gọn & Chuẩn Hóa Nghiệp Vụ Màn Hình Tạo Lệnh Điều Vận:
+- **Chuẩn Hóa Phân Quyền Danh Mục:**
+  * Loại bỏ hoàn toàn các nút Tạo mới Khách hàng và các nút Tạo mới Điểm Lộ trình (Nơi lấy, Nơi đóng/trả, Nơi hạ) tại màn hình tạo chuyến. Toàn bộ danh mục đối tác và địa điểm được quy chuẩn do Sales / Quản trị thiết lập trước, hạn chế nhập sai lệch tại khâu điều độ.
+- **Tự Động Đóng/Mở Trường Thông Tin Chuẩn Ngành Logistics:**
+  * **Hàng Xuất:** Disable và làm mờ khối Hạn Free DEM/DET & Giám Định Vỏ Cont EIR, kích hoạt trường Cắt CY / SI (Cut-off) và Tên tàu/chuyến.
+  * **Hàng Nhập:** Disable và làm mờ trường Cắt CY / SI, kích hoạt khối Hạn Free DEM/DET & Giám Định Vỏ Cont EIR.
+  * **Hàng Nội Địa:** Disable và làm mờ cả 2 khối thông tin cảng biển/hãng tàu trên, tinh gọn tối đa giao diện điều vận nội địa.
+
+### 2. Nhân Bản Lệnh Điều Vận Siêu Tốc (Duplicate Trip / Multi-container Booking):
+- **Giải Quyết Bài Toán Booking Nhiều Container:**
+  * Bổ sung nút [📋 Nhân bản Lệnh] trên thanh tác nghiệp Chi tiết chuyến xe (iew_trip_detail.html), đặt cạnh nút [✏️ Sửa].
+  * Khi bấm, hệ thống chuyển sang giao diện tạo chuyến mới và kế thừa 100% dữ liệu của lệnh gốc (Khách hàng, Hãng tàu, Booking, Lộ trình, Xe/Tài xế, Cước doanh thu, Ghi chú, File đính kèm), tự động reset trống Số Container và Số Chì (Seal) đồng thời focus con trỏ vào ô Số Cont để Điều độ viên nhập ngay vỏ tiếp theo.
+
+### 3. Mặc Định Chế Độ Cắt Kéo (Drop & Hook) & Tạo Nhanh Tài Xế Hiện Trường:
+- **Tối Ưu Vận Hành Cắt Kéo:**
+  * Checkbox Cắt kéo được bật mặc định (checked = true), mở sẵn 2 chặng điều vận để phục vụ mô hình vận hành chủ đạo của đội xe.
+- **Tạo Nhanh Tài Xế Hiện Trường (Field Quick-Create):**
+  * Tích hợp nút [+ Thêm tài xế] cạnh các ô chọn Tài xế Chặng 1 và Chặng 2.
+  * Cho phép Điều độ viên tạo nhanh tài xế chỉ với 2 thông tin cơ bản: **Họ & Tên** và **Số điện thoại**.
+  * Backend API (/api/personnel/drivers/quick-create/) tự động sinh mã nhân sự TX..., gán vai trò DRIVER và phòng ban FLEET để đưa ngay vào danh sách chọn điều xe. Bộ phận Nhân sự sẽ cập nhật chi tiết hồ sơ sau.
+- **Lọc Gọn Danh Sách Tài Xế:**
+  * API form options lọc nghiêm ngặt nhân sự có vai trò Lái xe (DRIVER), loại bỏ hoàn toàn nhân viên các phòng ban văn phòng khỏi ô chọn tài xế.
+
+### 4. Kỹ Thuật & Đảm Bảo Khả Năng Vận Hành:
+- Cập nhật các template: iew_create_trip.html, modal_create_trip.html, iew_trip_detail.html, modal_quick_driver.html, ase.html.
+- Nâng asset cache version lên ?v=2.9.73.
+- Kiểm thử cú pháp JS: 
+ode -c static/js/app.js (100% Passed).
+- Chạy bộ kiểm thử tự động toàn diện: **148/148 unit tests PASSED 100%** (python manage.py test --keepdb).
+
 ## [v4.7.1] - 2026-10-27 (Tối Ưu Thị Giác Phân Hệ Kinh Doanh: Bỏ Tiêu Đề Thừa, Đồng Nhất Hiệu Ứng Hover & Triệt Tiêu Xê Dịch Chiều Cao Tab)
 
 ### 1. Tinh Gọn Giao Diện & Đồng Nhất Bố Cục:

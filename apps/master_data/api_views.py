@@ -100,10 +100,10 @@ class MasterDataFormOptionsAPIView(APIView):
             else:
                 warehouses.append(loc_dict)
 
-        # 3. Tài xế Nội bộ TVL
-        from apps.personnel.models import EmployeeRole
+        # 3. Tài xế Nội bộ TVL (Chỉ lọc nhân sự Bác tài đang hoạt động, loại trừ nhân viên văn phòng)
+        from apps.personnel.models import EmployeeRole, Department
         drivers = []
-        for drv in Employee.objects.filter(role=EmployeeRole.DRIVER).order_by('nickname', 'full_name'):
+        for drv in Employee.objects.filter(role=EmployeeRole.DRIVER, is_active=True).exclude(department__in=[Department.MANAGEMENT, Department.ACCOUNTING, Department.SALES, Department.HR, Department.DISPATCH]).order_by('nickname', 'full_name'):
             veh = getattr(drv, 'assigned_vehicle', None)
             if not veh and hasattr(drv, 'vehicles'):
                 veh = drv.vehicles.first()

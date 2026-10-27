@@ -1,6 +1,8 @@
 from django.urls import path
+from apps.personnel.quick_driver_views import DriverQuickCreateAPIView
 from apps.personnel.api_views import (
     EmployeeListCreateAPIView,
+
     EmployeeDetailAPIView,
     EmployeeStatsAPIView,
     EmployeeExportTemplateAPIView,
@@ -35,6 +37,7 @@ from apps.personnel.api_views import (
 
 urlpatterns = [
     # 1. Hồ sơ nhân sự
+    path('drivers/quick-create/', DriverQuickCreateAPIView.as_view(), name='api-driver-quick-create'),
     path('employees/', EmployeeListCreateAPIView.as_view(), name='api-employee-list-create'),
     path('employees/export-template/', EmployeeExportTemplateAPIView.as_view(), name='api-employee-export-template'),
     path('employees/import/', EmployeeImportAPIView.as_view(), name='api-employee-import'),

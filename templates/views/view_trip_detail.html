@@ -39,6 +39,12 @@
                 class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all font-heading" title="Hiệu chỉnh thông tin lệnh điều động">
                 <i class="ph-bold ph-note-pencil mr-1.5 text-base text-teal-400"></i> Sửa
             </button>
+            <!-- 2b. Nhân bản Lệnh (Duplicate Booking/Trip) -->
+            <button id="btn-header-duplicate-trip" type="button" onclick="duplicateCurrentTrip()"
+                class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 hover:text-emerald-950 border border-emerald-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all font-heading cursor-pointer"
+                title="Nhân bản lệnh điều vận này sang chuyến mới (giữ nguyên booking, khách hàng, lộ trình; cho nhập cont mới)">
+                <i class="ph-bold ph-copy-simple mr-1.5 text-base text-emerald-600"></i> Nhân bản Lệnh
+            </button>
             <!-- 3. Link Tài xế -->
             <button id="btn-copy-driver-link" onclick="copyDriverPortalLink()" title="Sao chép Lệnh điều xe kèm link Mobile Driver Portal gửi tài xế"
                 class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs flex items-center transition-all font-heading">
