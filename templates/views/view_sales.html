@@ -18,60 +18,74 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <!-- Metric 1: Doanh Thu Hợp Đồng Tuyến / Tháng -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+            <!-- Thẻ 1: DOANH THU THỰC HIỆN -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Kế Hoạch</span>
-                    <span id="sales-trend-revenue" class="text-xs font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
-                        <i class="ph-bold ph-shield-check"></i> Hợp Đồng Đã Ký
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Thực Hiện</span>
+                    <span id="sales-trend-earned" class="text-xs font-bold text-teal-800 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-check-circle"></i> Đã Giao Nhận
                     </span>
                 </div>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-revenue">429.500.000 đ</p>
-                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-revenue">
-                    <i class="ph-bold ph-check-circle text-emerald-600 text-xs"></i> 2 tuyến cước đã duyệt ký kết
+                <p class="text-3xl font-black text-slate-900 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-earned">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-earned">
+                    <i class="ph-bold ph-arrows-left-right text-teal-600 text-xs"></i> 0/0 chuyến đã đối soát
                 </p>
             </div>
 
-            <!-- Metric 2: Tổng Đơn Hàng Booking Vận Chuyển -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm transition-all">
+            <!-- Thẻ 2: DOANH THU DỰ KIẾN -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-indigo-600 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Đơn Hàng Booking</span>
-                    <span id="sales-trend-bookings" class="text-xs font-bold text-teal-800 bg-teal-100/70 border border-teal-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Doanh Thu Dự Kiến</span>
+                    <span id="sales-trend-revenue" class="text-xs font-bold text-indigo-800 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-file-text"></i> Hợp Đồng Đã Ký
+                    </span>
+                </div>
+                <p class="text-3xl font-black text-indigo-700 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-revenue">0 đ</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-revenue">
+                    <i class="ph-bold ph-check-circle text-indigo-600 text-xs"></i> Tuyến cước đã duyệt ký kết
+                </p>
+            </div>
+
+            <!-- Thẻ 3: TỔNG ĐƠN HÀNG -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-sky-600 hover:shadow-sm transition-all">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tổng Đơn Hàng</span>
+                    <span id="sales-trend-bookings" class="text-xs font-bold text-sky-800 flex items-center gap-1 font-heading">
                         <i class="ph-bold ph-truck"></i> Tiếp Nhận
                     </span>
                 </div>
-                <p class="text-3xl font-black text-teal-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-bookings">8 Đơn hàng</p>
+                <p class="text-3xl font-black text-sky-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-bookings">0 Đơn hàng</p>
                 <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-bookings">
-                    <i class="ph-bold ph-truck text-teal-600 text-xs"></i> 6 Chờ điều · 2 Đang chạy
+                    <i class="ph-bold ph-truck text-sky-600 text-xs"></i> 0 Chờ điều · 0 Đang chạy
                 </p>
             </div>
 
-            <!-- Metric 3: Sản Lượng Container Cần Điều -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-amber-500 hover:shadow-sm transition-all">
+            <!-- Thẻ 4: SỐ ĐƠN GẤP -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-rose-500 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Sản Lượng Container</span>
-                    <span id="sales-trend-containers" class="text-xs font-bold text-amber-800 bg-amber-100/70 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
-                        <i class="ph-bold ph-package"></i> Kế Hoạch Cont
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Số Đơn Gấp</span>
+                    <span id="sales-trend-urgent" class="text-xs font-bold text-rose-700 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-clock-countdown"></i> Cần Xử Lý
                     </span>
                 </div>
-                <p class="text-3xl font-black text-slate-800 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-containers">20 Cont</p>
-                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-containers">
-                    <i class="ph-bold ph-package text-amber-600 text-xs"></i> Đã kéo: 3 · Còn lại: 17 cont
+                <p class="text-3xl font-black text-rose-600 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-urgent">0 Đơn</p>
+                <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-urgent">
+                    <i class="ph-bold ph-warning-circle text-rose-600 text-xs"></i> Đóng hàng trong 48h
                 </p>
             </div>
 
-            <!-- Metric 4: Tỷ Lệ Chốt Hợp Đồng Tuyến (Win Rate) -->
+            <!-- Thẻ 5: TỶ LỆ CHỐT BÁO GIÁ -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-emerald-600 hover:shadow-sm transition-all">
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Chốt Tuyến (Win Rate)</span>
-                    <span id="sales-trend-winrate" class="text-xs font-bold text-indigo-800 bg-indigo-100/70 border border-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-heading">
-                        <i class="ph-bold ph-handshake"></i> Tỷ Lệ Ký HĐ
+                    <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Tỷ Lệ Chốt Báo Giá</span>
+                    <span id="sales-trend-winrate" class="text-xs font-bold text-emerald-800 flex items-center gap-1 font-heading">
+                        <i class="ph-bold ph-handshake"></i> Win Rate
                     </span>
                 </div>
-                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-winrate">50.0%</p>
+                <p class="text-3xl font-black text-emerald-700 tabular-nums font-heading tracking-tight mt-1" id="sales-overview-winrate">0%</p>
                 <p class="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1" id="sales-note-winrate">
-                    <i class="ph-bold ph-chats-circle text-indigo-600 text-xs"></i> 1 Đang đàm phán · 1 Chờ duyệt
+                    <i class="ph-bold ph-chats-circle text-emerald-600 text-xs"></i> Báo giá đã duyệt ký kết
                 </p>
             </div>
         </div>

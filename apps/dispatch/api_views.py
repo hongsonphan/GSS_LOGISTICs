@@ -4785,30 +4785,80 @@ class SalesAPIView(APIView):
         q_sent = calc_quote_group(quotations.filter(status='SENT'))
         q_rejected = calc_quote_group(quotations.filter(status__in=['REJECTED', 'EXPIRED']))
 
-        # Cụm chỉ số tổng hợp kinh doanh thực tế (Khớp 100% với thẻ chi tiết, không fake số liệu)
-        overview_metrics = {
-            'revenue_monthly': q_signed['revenue'], # Doanh thu kế hoạch thực tế từ các HĐ đã ký
-            'revenue_total_pipeline': total_monthly_expected_revenue, # Tổng toàn phễu
-            'revenue_trend': f"{approved_count} HĐ Đã Ký",
-            'revenue_trend_direction': 'neutral',
-            'revenue_note': f"{approved_count} HĐ ({q_signed['routes']} tuyến đã ký)" + (f" · {q_negotiating['count']} đang đàm phán" if q_negotiating['count'] > 0 else ""),
+        # Tính toán Doanh thu thực hiện từ các chuyến vận tải đã hoàn thành (DELIVERED / COMPLETED)
+        from apps.dispatch.models import DispatchTrip, TripStatus
+        completed_trips_qs = DispatchTrip.objects.filter(is_deleted=False, status__in=[TripStatus.DELIVERED, TripStatus.COMPLETED])
+        if (booking_from or booking_to) and booking_period != 'all':
+            # Nếu người dùng chọn lọc khoảng ngày cụ thể, lọc chuyến theo ngày hoàn thành/đóng hàng
+            b_ids = bookings.values_list('id', flat=True)
+            matched_trips = completed_trips_qs.filter(booking_order_id__in=b_ids)
+            if matched_trips.exists():
+                completed_trips_qs = matched_trips
 
+        def _calc_t_rev(t):
+            r = int(t.cached_revenue or 0)
+            if r <= 0 and t.booking_order and t.booking_order.selling_freight_price > 0:
+                r = int(t.booking_order.selling_freight_price)
+            if r <= 0 and t.customer:
+                tar = t.customer.tariffs.first()
+                if tar:
+                    r = int(tar.freight_price)
+            return r
+
+        earned_revenue_total = sum(_calc_t_rev(t) for t in completed_trips_qs)
+        settled_trips_count = completed_trips_qs.filter(is_customer_settled=True).count()
+        total_completed_trips = completed_trips_qs.count()
+
+        # Số đơn hàng gấp (cần xử lý trong 48h hoặc đang chờ điều xe)
+        urgent_bookings_qs = bookings.exclude(status=BookingStatus.COMPLETED).filter(
+            Q(loading_date__lte=today + datetime.timedelta(days=2)) | Q(status=BookingStatus.PENDING_DISPATCH)
+        ).distinct()
+        urgent_bookings_count = urgent_bookings_qs.count()
+        urgent_in_48h_count = bookings.exclude(status=BookingStatus.COMPLETED).filter(
+            loading_date__lte=today + datetime.timedelta(days=2)
+        ).distinct().count()
+
+        # Cụm 5 chỉ số tổng hợp kinh doanh tái cấu trúc theo chuẩn ERP:
+        # 1. DOANH THU THỰC HIỆN | 2. DOANH THU DỰ KIẾN | 3. TỔNG ĐƠN HÀNG | 4. SỐ ĐƠN GẤP | 5. TỶ LỆ CHỐT BÁO GIÁ
+        overview_metrics = {
+            # Thẻ 1: DOANH THU THỰC HIỆN
+            'earned_revenue': earned_revenue_total,
+            'earned_revenue_trend': f"{settled_trips_count}/{total_completed_trips} Chuyến Đối Soát",
+            'earned_revenue_note': f"{total_completed_trips} chuyến xe hoàn tất" + (f" · {settled_trips_count} đã đối soát" if settled_trips_count > 0 else ""),
+
+            # Thẻ 2: DOANH THU DỰ KIẾN (Kế hoạch từ HĐ đã ký & phễu)
+            'expected_revenue': q_signed['revenue'], # Doanh thu kế hoạch thực tế từ các HĐ đã ký
+            'revenue_monthly': q_signed['revenue'], # Tương thích ngược
+            'revenue_total_pipeline': total_monthly_expected_revenue, # Tổng toàn phễu
+            'expected_revenue_trend': f"{approved_count} HĐ Đã Ký",
+            'expected_revenue_note': f"{approved_count} HĐ ({q_signed['routes']} tuyến đã ký)" + (f" · {q_negotiating['count']} đang đàm phán" if q_negotiating['count'] > 0 else ""),
+            'revenue_trend': f"{approved_count} HĐ Đã Ký",
+            'revenue_note': f"{approved_count} HĐ ({q_signed['routes']} tuyến đã ký)",
+
+            # Thẻ 3: TỔNG ĐƠN HÀNG
             'total_bookings': bookings.count(),
             'booking_trend': f"{bookings.count()} Đơn Tiếp Nhận",
             'booking_trend_direction': 'neutral',
             'booking_note': f"{bookings.filter(status=BookingStatus.PENDING_DISPATCH).count()} Chờ điều · {bookings.filter(status=BookingStatus.PARTIALLY_DISPATCHED).count()} Đang chạy",
 
+            # Thẻ 4: SỐ ĐƠN GẤP
+            'urgent_bookings': urgent_bookings_count,
+            'urgent_trend': f"{urgent_bookings_count} Đơn Cần Xử Lý",
+            'urgent_note': f"{urgent_in_48h_count} đơn đóng hàng trong 48h",
+
+            # Thẻ 5: TỶ LỆ CHỐT BÁO GIÁ (WIN RATE %)
+            'win_rate': win_rate,
+            'win_rate_trend': f"{approved_count}/{total_quotes} Báo Giá Đã Chốt",
+            'win_rate_trend_direction': 'neutral',
+            'win_rate_note': f"{negotiating_count} đang đàm phán" + (f" · {pending_approval_count} chờ duyệt" if pending_approval_count > 0 else ""),
+
+            # Tương thích ngược các trường cũ
             'total_containers': total_containers_sum,
             'dispatched_containers': dispatched_containers_sum,
             'remaining_containers': remaining_containers_sum,
             'container_trend': f"{total_containers_sum} Cont Kế Hoạch",
             'container_trend_direction': 'neutral',
-            'container_note': f"Đã kéo: {dispatched_containers_sum} · Còn lại: {remaining_containers_sum} cont",
-
-            'win_rate': win_rate,
-            'win_rate_trend': f"{approved_count}/{total_quotes} Hợp Đồng",
-            'win_rate_trend_direction': 'neutral',
-            'win_rate_note': f"{negotiating_count} đang đàm phán" + (f" · {pending_approval_count} chờ duyệt" if pending_approval_count > 0 else "")
+            'container_note': f"Đã kéo: {dispatched_containers_sum} · Còn lại: {remaining_containers_sum} cont"
         }
 
         # 2. Thống kê 5 nhóm BOOKING / ĐƠN ĐẶT HÀNG:

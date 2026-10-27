@@ -14982,36 +14982,50 @@ async function loadSalesData() {
         if (!res.ok) throw new Error('Lỗi tải dữ liệu kinh doanh');
         const data = await res.json();
 
-        // Cập nhật Cụm Chỉ Số Tình Trạng Kinh Doanh & Tăng Trưởng (Màn hình chính)
+        // Cập nhật Cụm 5 Chỉ Số Kinh Doanh Tái Cấu Trúc:
+        // DOANH THU THỰC HIỆN | DOANH THU DỰ KIẾN | TỔNG ĐƠN HÀNG | SỐ ĐƠN GẤP | TỶ LỆ CHỐT BÁO GIÁ
         if (data.overview_metrics) {
             const ov = data.overview_metrics;
-            const revEl = document.getElementById('sales-overview-revenue');
-            if (revEl) revEl.innerText = new Intl.NumberFormat('vi-VN').format(ov.revenue_monthly) + ' đ';
-            const revTrendEl = document.getElementById('sales-trend-revenue');
-            if (revTrendEl) revTrendEl.innerHTML = `<i class="ph-bold ph-shield-check"></i> ${ov.revenue_trend}`;
-            const revNoteEl = document.getElementById('sales-note-revenue');
-            if (revNoteEl) revNoteEl.innerHTML = `<i class="ph-bold ph-check-circle text-emerald-600 text-xs"></i> ${ov.revenue_note}`;
 
+            // Thẻ 1: DOANH THU THỰC HIỆN
+            const earnedEl = document.getElementById('sales-overview-earned');
+            if (earnedEl) earnedEl.innerText = new Intl.NumberFormat('vi-VN').format(ov.earned_revenue || 0) + ' đ';
+            const earnedTrendEl = document.getElementById('sales-trend-earned');
+            if (earnedTrendEl) earnedTrendEl.innerHTML = `<i class="ph-bold ph-check-circle"></i> ${ov.earned_revenue_trend || 'Đã Giao Nhận'}`;
+            const earnedNoteEl = document.getElementById('sales-note-earned');
+            if (earnedNoteEl) earnedNoteEl.innerHTML = `<i class="ph-bold ph-arrows-left-right text-teal-600 text-xs"></i> ${ov.earned_revenue_note || 'Chuyến xe đã hoàn tất'}`;
+
+            // Thẻ 2: DOANH THU DỰ KIẾN
+            const revEl = document.getElementById('sales-overview-revenue');
+            if (revEl) revEl.innerText = new Intl.NumberFormat('vi-VN').format(ov.expected_revenue !== undefined ? ov.expected_revenue : ov.revenue_monthly) + ' đ';
+            const revTrendEl = document.getElementById('sales-trend-revenue');
+            if (revTrendEl) revTrendEl.innerHTML = `<i class="ph-bold ph-file-text"></i> ${ov.expected_revenue_trend || ov.revenue_trend || 'Hợp Đồng Đã Ký'}`;
+            const revNoteEl = document.getElementById('sales-note-revenue');
+            if (revNoteEl) revNoteEl.innerHTML = `<i class="ph-bold ph-check-circle text-indigo-600 text-xs"></i> ${ov.expected_revenue_note || ov.revenue_note || 'Tuyến cước đã duyệt ký kết'}`;
+
+            // Thẻ 3: TỔNG ĐƠN HÀNG
             const bkEl = document.getElementById('sales-overview-bookings');
             if (bkEl) bkEl.innerText = `${new Intl.NumberFormat('vi-VN').format(ov.total_bookings || 0)} Đơn hàng`;
             const bkTrendEl = document.getElementById('sales-trend-bookings');
             if (bkTrendEl) bkTrendEl.innerHTML = `<i class="ph-bold ph-truck"></i> ${ov.booking_trend}`;
             const bkNoteEl = document.getElementById('sales-note-bookings');
-            if (bkNoteEl) bkNoteEl.innerHTML = `<i class="ph-bold ph-truck text-teal-600 text-xs"></i> ${ov.booking_note}`;
+            if (bkNoteEl) bkNoteEl.innerHTML = `<i class="ph-bold ph-truck text-sky-600 text-xs"></i> ${ov.booking_note}`;
 
-            const contEl = document.getElementById('sales-overview-containers');
-            if (contEl) contEl.innerText = `${new Intl.NumberFormat('vi-VN').format(ov.total_containers || 0)} Cont`;
-            const contTrendEl = document.getElementById('sales-trend-containers');
-            if (contTrendEl) contTrendEl.innerHTML = `<i class="ph-bold ph-package"></i> ${ov.container_trend}`;
-            const contNoteEl = document.getElementById('sales-note-containers');
-            if (contNoteEl) contNoteEl.innerHTML = `<i class="ph-bold ph-package text-amber-600 text-xs"></i> ${ov.container_note}`;
+            // Thẻ 4: SỐ ĐƠN GẤP
+            const urgentEl = document.getElementById('sales-overview-urgent');
+            if (urgentEl) urgentEl.innerText = `${new Intl.NumberFormat('vi-VN').format(ov.urgent_bookings || 0)} Đơn`;
+            const urgentTrendEl = document.getElementById('sales-trend-urgent');
+            if (urgentTrendEl) urgentTrendEl.innerHTML = `<i class="ph-bold ph-clock-countdown"></i> ${ov.urgent_trend || 'Cần Xử Lý'}`;
+            const urgentNoteEl = document.getElementById('sales-note-urgent');
+            if (urgentNoteEl) urgentNoteEl.innerHTML = `<i class="ph-bold ph-warning-circle text-rose-600 text-xs"></i> ${ov.urgent_note || 'Đóng hàng trong 48h'}`;
 
+            // Thẻ 5: TỶ LỆ CHỐT BÁO GIÁ
             const winEl = document.getElementById('sales-overview-winrate');
             if (winEl) winEl.innerText = `${ov.win_rate}%`;
             const winTrendEl = document.getElementById('sales-trend-winrate');
             if (winTrendEl) winTrendEl.innerHTML = `<i class="ph-bold ph-handshake"></i> ${ov.win_rate_trend}`;
             const winNoteEl = document.getElementById('sales-note-winrate');
-            if (winNoteEl) winNoteEl.innerHTML = `<i class="ph-bold ph-chats-circle text-indigo-600 text-xs"></i> ${ov.win_rate_note}`;
+            if (winNoteEl) winNoteEl.innerHTML = `<i class="ph-bold ph-chats-circle text-emerald-600 text-xs"></i> ${ov.win_rate_note}`;
         }
 
         // Cập nhật badges số lượng trên 2 tab
