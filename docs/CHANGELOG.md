@@ -2,6 +2,38 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.8] - 2026-10-27 (Khắc Phục Triệt Để Lỗi Cuộn Ngang/Rubber-Banding Mobile & Lỗi Kết Nối Mạng Mốc Thời Gian Tài Xế)
+
+### 1. Khắc Phục Triệt Để Lỗi Kéo Ngang / Rubber-Banding Màn Hình Mobile (Responsive Auto-Balance):
+- **Cố Định Viewport & Chặn Hiện Tượng Trôi Ngang Trình Duyệt:**
+  * Bổ sung quy tắc CSS nghiêm ngặt trên `html` và `body` trong `templates/driver_portal.html`:
+    - `width: 100%; max-width: 100vw; overflow-x: hidden !important; touch-action: pan-y; overscroll-behavior-x: none; -webkit-overflow-scrolling: touch; box-sizing: border-box;`.
+  * Rà soát và áp dụng quy chuẩn `w-full max-w-full box-border overflow-hidden` cho toàn bộ các container chính:
+    - Thanh điều hướng trên cùng (`<header>`).
+    - Khung nội dung chính (`<main>` giới hạn `max-w-lg mx-auto` tự co giãn cân đối từ điện thoại màn hình nhỏ 320px/360px đến màn hình to 414px/430px và máy tính bảng).
+    - Toàn bộ các thẻ Card: Tóm tắt chuyến, Chỉ đường lộ trình 3 điểm, Hero Card hành động tiếp theo, và 4 khối accordion mở rộng.
+    - Thanh tác vụ dính đáy (`<nav>`).
+  * Bổ sung bộ lắng nghe sự kiện `scroll` và `resize` trong JavaScript: Tự động đưa `scrollLeft = 0` ngay tức thì nếu trình duyệt di động (iOS Safari / Android Chrome) kích hoạt hiệu ứng đàn hồi kéo ngang (rubber-band), đảm bảo nội dung luôn căn thẳng tuyệt đối ở giữa màn hình.
+
+### 2. Khắc Phục Triệt Để Lỗi "Lỗi kết nối mạng, vui lòng thử lại":
+- **Triệt Tiêu Báo Lỗi Giả & Bắt Lỗi Phản Hồi Từ Máy Chủ:**
+  * Chuẩn hóa logic bắt lỗi trong `doReportMilestone` và toàn bộ các hàm API tài xế (`submitBatchExpenses`, `submitDocUpload`, `submitIncident`, `submitEditExpense`, `deleteDriverExpense`, `submitEditDoc`, `deleteDriverDocument`, `submitEditContainer`):
+    - Đọc và phân tích JSON an toàn (`try...catch` bọc quanh `response.json()`), nếu máy chủ trả về mã HTTP lỗi (400, 403, 500) hoặc trang HTML, hệ thống tự động trích xuất thông điệp chính xác `data.message || data.error || data.detail` thay vì quăng lỗi chung chung "Lỗi kết nối mạng".
+    - Chỉ báo lỗi mạng khi thiết bị thực sự mất kết nối (`!navigator.onLine` hoặc lỗi kết nối vật lý), đồng thời tự động lưu mốc vào hàng đợi ngoại tuyến (`localStorage`) để gửi lại khi có mạng 4G.
+- **Chống Bấm Đúp (Idempotency & Button Lock):**
+  * Thêm cờ khóa `isMilestoneSubmitting`: Vô hiệu hóa nút bấm và hiển thị trạng thái đang xử lý ngay khi tài xế bấm xác nhận mốc, ngăn chặn tài xế bấm liên tục 2 lần khi mạng chậm.
+  * Tối ưu hóa Toast thông báo `#milestoneToast`: Phân biệt trực quan giữa Trạng thái đang tải (icon xoay spinner màu xanh), Thành công (icon checkmark màu ngọc lục bảo) và Lỗi (icon cảnh báo tam giác màu đỏ rực).
+- **Cơ Chế Làm Mới Trang Toàn Diện (`forcePageReload`):**
+  * Thay thế toàn bộ các lệnh `window.location.reload()` cục bộ bằng hàm `forcePageReload`: Tự động gắn tham số tránh lưu đệm (`?_v=timestamp`) và hiển thị màn hình mờ tải lại (`#driverGlobalLoading`), buộc trình duyệt tải lại giao diện với nút bấm của mốc tiếp theo ngay lập tức.
+- **Đồng Bộ Ngoại Lệ Backend:**
+  * Bổ sung trường `'error'` đồng bộ cùng `'message'` trong `core/exceptions.py` để tương thích 100% với cả mã nguồn frontend cũ và mới.
+  * Tăng tính phòng vệ cho `TripDriverMilestoneAPIView` (`apps/dispatch/api_views.py`): Bọc `try...except` an toàn quanh `TrackingEventLog` và `sync_trip_10_step_timeline` khi mốc không đổi trạng thái.
+
+### 3. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset version lên `?v=2.9.79` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/column_manager.js` (100% Passed).
+- Chạy toàn bộ bộ kiểm thử tự động của dự án: **148/148 unit tests PASSED 100%** (`python manage.py test --keepdb`).
+
 ## [v4.7.7] - 2026-10-27 (Tự Động Vô Hiệu Hóa Link Driver Portal Sau 10 Phút Hoàn Tất Chuyến & Modal Xác Nhận Nút To Rõ Cho Tài Xế)
 
 ### 1. Tự Động Vô Hiệu Hóa Link Tài Xế Sau 10 Phút Kể Từ Khi Hoàn Tất Chuyến:

@@ -57,6 +57,7 @@ def custom_exception_handler(exc, context):
             'success': False,
             'error_code': error_code,
             'message': message,
+            'error': message,
             'details': response.data
         }
         response.data = custom_data
@@ -70,5 +71,6 @@ def custom_exception_handler(exc, context):
         'success': False,
         'error_code': 'ERR_INTERNAL_SERVER_ERROR',
         'message': 'Đã xảy ra lỗi nội bộ máy chủ trong quá trình xử lý vận tải. Vui lòng liên hệ quản trị hệ thống.',
+        'error': 'Đã xảy ra lỗi nội bộ máy chủ trong quá trình xử lý vận tải. Vui lòng liên hệ quản trị hệ thống.',
         'details': None
     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

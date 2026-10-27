@@ -5936,16 +5936,22 @@ class TripDriverMilestoneAPIView(APIView):
                 return Response({'error': f'Không thể chuyển mốc trạng thái: {str(ex)}'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             # Không đổi status nhưng đã lưu fields mới → sync timeline thủ công
-            from apps.dispatch.timeline_service import sync_trip_10_step_timeline
-            sync_trip_10_step_timeline(trip)
-            from core.models import TrackingEventLog
-            TrackingEventLog.objects.create(
-                trip=trip,
-                actor=actor,
-                event_type=target_status,
-                title=f"Mốc thời gian: {info['title']}",
-                description=notes or info['msg']
-            )
+            try:
+                from apps.dispatch.timeline_service import sync_trip_10_step_timeline
+                sync_trip_10_step_timeline(trip)
+            except Exception as st_err:
+                logger.warning(f"[TripDriverMilestone] sync_trip_10_step_timeline warning: {st_err}")
+            try:
+                from core.models import TrackingEventLog
+                TrackingEventLog.objects.create(
+                    trip=trip,
+                    actor=actor,
+                    event_type=target_status,
+                    title=f"Mốc thời gian: {info['title']}",
+                    description=notes or info['msg']
+                )
+            except Exception as log_ex:
+                logger.warning(f"[TripDriverMilestone] TrackingEventLog creation warning: {log_ex}")
 
         return Response({
             'success': True,
