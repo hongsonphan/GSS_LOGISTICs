@@ -408,29 +408,36 @@ function switchAccountingSubTab(subtabId) {
     // Ẩn tất cả subtab contents
     document.querySelectorAll('.acct-subtab-content').forEach(el => el.classList.add('hidden'));
 
-    // Bỏ active tất cả buttons
+    // Đưa tất cả buttons về trạng thái Inactive chuẩn (h-10, border-2, border-transparent)
     document.querySelectorAll('.acct-subtab-btn').forEach(btn => {
-        btn.classList.remove('bg-emerald-700', 'text-white', 'shadow-sm', 'active');
-        btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+        btn.className = 'acct-subtab-btn h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border whitespace-nowrap';
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = icon.className.replace(/text-[a-z]+-[0-9]+/g, 'text-slate-500');
+        const badge = btn.querySelector('span[id^="badge-"]');
+        if (badge) badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200';
     });
 
     // Mở subtab được chọn
     const targetContent = document.getElementById(`subtab-${subtabId}`);
     if (targetContent) targetContent.classList.remove('hidden');
 
-    // Active button tương ứng (Thứ tự mới: 1. Cashbook, 2. Driver Adv, 3. Dispatcher Fund, 4. Settlements, 5. Reimbursables, 6. Subcontractors, 7. BOT)
+    // Active button tương ứng (Thứ tự: 1. Cashbook, 2. Driver Adv, 3. Dispatcher Fund, 4. Settlements, 5. Reimbursables, 6. Subcontractors, 7. BOT)
     let btnId = 'acct-tab-btn-1';
-    if (subtabId === 'acct-driver-advances') btnId = 'acct-tab-btn-2';
-    else if (subtabId === 'acct-dispatcher-funds') btnId = 'acct-tab-btn-3';
-    else if (subtabId === 'acct-settlements') btnId = 'acct-tab-btn-4';
-    else if (subtabId === 'acct-reimbursables') btnId = 'acct-tab-btn-5';
-    else if (subtabId === 'acct-subcontractors') btnId = 'acct-tab-btn-6';
-    else if (subtabId === 'acct-bot-audit') btnId = 'acct-tab-btn-7';
+    let brandColor = 'emerald';
+    if (subtabId === 'acct-driver-advances') { btnId = 'acct-tab-btn-2'; brandColor = 'amber'; }
+    else if (subtabId === 'acct-dispatcher-funds') { btnId = 'acct-tab-btn-3'; brandColor = 'indigo'; }
+    else if (subtabId === 'acct-settlements') { btnId = 'acct-tab-btn-4'; brandColor = 'teal'; }
+    else if (subtabId === 'acct-reimbursables') { btnId = 'acct-tab-btn-5'; brandColor = 'sky'; }
+    else if (subtabId === 'acct-subcontractors') { btnId = 'acct-tab-btn-6'; brandColor = 'rose'; }
+    else if (subtabId === 'acct-bot-audit') { btnId = 'acct-tab-btn-7'; brandColor = 'emerald'; }
 
     const activeBtn = document.getElementById(btnId);
     if (activeBtn) {
-        activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
-        activeBtn.classList.add('bg-emerald-700', 'text-white', 'shadow-sm', 'active');
+        activeBtn.className = `acct-subtab-btn active h-10 px-3.5 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-1.5 transition-all cursor-pointer border-2 border-${brandColor}-600 bg-${brandColor}-50/70 text-${brandColor}-900 shadow-2xs box-border whitespace-nowrap`;
+        const icon = activeBtn.querySelector('i');
+        if (icon) icon.className = icon.className.replace(/text-slate-500/g, `text-${brandColor}-600`);
+        const badge = activeBtn.querySelector('span[id^="badge-"]');
+        if (badge) badge.className = `px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-${brandColor}-100 text-${brandColor}-800 border-${brandColor}-200`;
     }
 
     if (subtabId === 'acct-cashbook') {

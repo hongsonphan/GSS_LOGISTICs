@@ -2,6 +2,35 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.3] - 2026-10-27 (Chuẩn Hóa Đồng Bộ Giao Diện Toàn Ứng Dụng: Xe & Bãi, Hành Chính & Nhân Sự, Kế Toán, Dịch Vụ Hải Quan - Thanh Điều Khiển 1 Dòng Cố Định h-10, Zero Layout Shift & Bỏ Tiêu Đề Thừa)
+
+### 1. Đồng Nhất Cấu Trúc Bố Trí Từ Trên Xuống Toàn Toàn Bộ Ứng Dụng (Top-Down SaaS Hierarchy):
+- **Phân Hệ Áp Dụng:** Xe & Bãi, Hành Chính & Nhân Sự, Tài Chính & Kế Toán, Dịch Vụ Hải Quan (đồng bộ 100% với Phân hệ Kinh Doanh và Điều Vận đã chuẩn hóa).
+- **Loại Bỏ Tiêu Đề Trùng Lặp (Redundant Subtab Headers):** Xóa bỏ hoàn toàn các thanh tiêu đề phân hệ chiếm dụng chiều cao vô ích bên trong từng view (Quản Lý Đội Xe..., Hành Chính Nhân Sự..., Quản Trị Tài Chính..., Thủ Tục Hải Quan...).
+- **Thẻ Tổng Quan Đẩy Lên Đầu Trang:** Bộ thẻ chỉ số tổng quan (KPI Cards) được đưa lên đầu tiên ngay dưới Topbar chính, cho phép người dùng bấm trực tiếp vào từng thẻ để nhảy tab hoặc tự động kích hoạt bộ lọc tương ứng.
+
+### 2. Chuẩn Hóa Thanh Subtabs Con & Cụm Điều Khiển 1 Dòng Duy Nhất (Single Compact Control Row):
+- **Chiều Cao Cố Định h-10 & Triệt Tiêu Xê Dịch (Zero Layout Shift):**
+  * Tất cả các nút tab con (leet-subtab-btn, hr-tab-btn, cct-subtab-btn) đều được định chuẩn kích thước cố định chiều cao h-10 px-3.5 hoặc px-4, 
+ounded-xl, order-2, ox-border.
+  * Trạng thái Active: order-2 border-{brand}-600 bg-{brand}-50/70 text-{brand}-900 shadow-2xs box-border, icon hiển thị màu brand, badge hiển thị viền mờ order bg-{brand}-100 text-{brand}-800 border-{brand}-200.
+  * Trạng thái Inactive: order-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border.
+  * Hiệu ứng Hover đồng bộ toàn hệ thống: hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900.
+- **Cụm Công Cụ Điều Khiển Phía Bên Phải (Right Action Area):**
+  * Tích hợp trực tiếp trên cùng một dòng với các subtab: Nút Làm Mới nhỏ gọn h-10 px-3, bộ lọc kỳ h-10, nút Xuất Excel h-10 px-3, nút Tạo Mới chính h-10 px-3.5.
+  * Không làm xê dịch hay phát sinh thêm dòng làm vỡ bố cục trên các màn hình tablet/laptop.
+
+### 3. Đồng Bộ Trình Điều Khiển JavaScript & Zero-Regression:
+- **Cập Nhật Hàm Chuyển Tab Đa Phân Hệ:**
+  * Hiệu chỉnh switchFleetSubTab(tab): Giữ vững order-2, h-10, đổi màu icon và badge tương ứng của Đầu kéo / Rơ-moóc.
+  * Hiệu chỉnh switchHRSubTab(tabKey): Duy trì h-10, order-2, ctive viền màu order-teal-600 cho 5 phân khu Hồ sơ, Hợp đồng, Chấm công, Tính lương, Chính sách.
+  * Hiệu chỉnh switchAccountingSubTab(subtabId): Tự động đổi màu thương hiệu linh hoạt theo từng trụ cột (Sổ quỹ: emerald, Tạm ứng: amber, Quỹ ĐV: indigo, Khóa sổ: teal, Chi hộ: sky, 3PL: rose, BOT: emerald).
+- **Đảm Bảo Chất Lượng & Tính Toàn Vẹn:**
+  * Cú pháp JavaScript: 
+ode -c static/js/app.js và static/js/modules/*.js đạt chuẩn 100%.
+  * Nâng version asset cache: ?v=2.9.73 trong 	emplates/base.html.
+  * Chạy toàn bộ bộ kiểm thử tự động của dự án: **148/148 unit tests PASSED 100%** (python manage.py test --keepdb).
+
 ## [v4.7.2] - 2026-10-27 (Tái Cấu Trúc Điều Vận: Tối Ưu Loại Hình Xuất/Nhập/Nội Địa, Nhân Bản Lệnh Điều Xe, Mặc Định Cắt Kéo & Tạo Nhanh Tài Xế Hiện Trường)
 
 ### 1. Tinh Gọn & Chuẩn Hóa Nghiệp Vụ Màn Hình Tạo Lệnh Điều Vận:

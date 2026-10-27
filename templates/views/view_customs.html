@@ -2,29 +2,7 @@
 <div id="view-hai-quan" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in">
 
 
-    <!-- 1. TOPBAR QUẢN TRỊ THỦ TỤC HẢI QUAN & THÔNG QUAN -->
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="ph-bold ph-shield-check text-teal-700 text-sm"></i>
-            Thủ Tục Hải Quan, Thông Quan Điện Tử VNACCS/VCIS & Giám Sát Cảng
-        </h3>
-        <div class="flex items-center gap-2">
-            <button onclick="loadCustomsData()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Làm mới dữ liệu">
-                <i class="ph-bold ph-arrows-clockwise text-teal-600"></i>
-                <span>Làm Mới</span>
-            </button>
-            <button onclick="exportCustomsToExcel()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Xuất dữ liệu Excel">
-                <i class="ph-bold ph-file-xls text-emerald-600"></i>
-                <span class="hidden sm:inline">Xuất Excel</span>
-            </button>
-            <button onclick="openCreateCustomsPage()" class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
-                <i class="ph-bold ph-plus-circle text-sm"></i>
-                <span>Thêm Tờ Khai</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- 2. BỘ 5 THẺ THÔNG QUAN HẢI QUAN VNACCS/VCIS (CHUẨN STYLE KINH DOANH & BẤM VÀO ĐỂ LỌC LUỒNG TỰ ĐỘNG) -->
+    <!-- BỘ 5 THẺ THÔNG QUAN HẢI QUAN VNACCS/VCIS (CHUẨN STYLE KINH DOANH & BẤM VÀO ĐỂ LỌC LUỒNG TỰ ĐỘNG) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-4">
         <!-- Thẻ 1: Tổng Số Tờ Khai (Bấm vào hiển thị tất cả) -->
         <div onclick="filterCustomsChannel('')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để xem tất cả tờ khai">
@@ -124,25 +102,25 @@
         </div>
     </div>
 
-    <!-- Filter Toolbar -->
-    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs mb-4 flex flex-wrap items-center justify-between gap-3">
+    <!-- Filter Toolbar (1 DÒNG TÍCH HỢP BỘ LỌC & CỤM ĐIỀU KHIỂN H-10) -->
+    <div class="bg-white px-3 py-2 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-2.5 min-h-[56px] box-border mb-4 shrink-0">
         <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
-            <!-- Ô tìm kiếm -->
-            <div class="relative flex-1 min-w-[200px]">
-                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="customs-filter-q" oninput="debounceCustomsSearch()" placeholder="Tìm số tờ khai, B/L, Cont, khách hàng..." class="app-form-control pl-9 text-xs">
+            <!-- Ô tìm kiếm (Cố định h-10) -->
+            <div class="relative flex-1 min-w-[200px] h-10">
+                <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="customs-filter-q" oninput="debounceCustomsSearch()" placeholder="Tìm số tờ khai, B/L, Cont, khách hàng..." class="h-10 w-full pl-9 pr-3 bg-slate-50 hover:bg-white border border-slate-200 focus:border-teal-500 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-500/20 transition-all box-border">
             </div>
 
-            <!-- Lọc Phân Luồng -->
-            <select id="customs-filter-lane" onchange="fetchCustomsDeclarations()" class="app-form-control text-xs w-auto font-medium">
+            <!-- Lọc Phân Luồng (Cố định h-10) -->
+            <select id="customs-filter-lane" onchange="fetchCustomsDeclarations()" class="h-10 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-heading text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all box-border">
                 <option value="">-- Tất Cả Phân Luồng --</option>
                 <option value="GREEN">Luồng Xanh</option>
                 <option value="YELLOW">Luồng Vàng</option>
                 <option value="RED">Luồng Đỏ</option>
             </select>
 
-            <!-- Lọc Trạng Thái -->
-            <select id="customs-filter-status" onchange="fetchCustomsDeclarations()" class="app-form-control text-xs w-auto font-medium">
+            <!-- Lọc Trạng Thái (Cố định h-10) -->
+            <select id="customs-filter-status" onchange="fetchCustomsDeclarations()" class="h-10 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-heading text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all box-border">
                 <option value="">-- Tất Cả Trạng Thái --</option>
                 <option value="DRAFT">Chờ truyền TK</option>
                 <option value="SUBMITTED">Đã đăng ký VNACCS</option>
@@ -153,27 +131,27 @@
                 <option value="CANCELLED">Hủy tờ khai</option>
             </select>
 
-            <!-- Lọc Chiều -->
-            <select id="customs-filter-direction" onchange="fetchCustomsDeclarations()" class="app-form-control text-xs w-auto font-medium">
+            <!-- Lọc Chiều (Cố định h-10) -->
+            <select id="customs-filter-direction" onchange="fetchCustomsDeclarations()" class="h-10 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-heading text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all box-border">
                 <option value="">-- Chiều Vận Chuyển --</option>
                 <option value="IMPORT">Hàng Nhập Khẩu</option>
                 <option value="EXPORT">Hàng Xuất Khẩu</option>
             </select>
 
-            <!-- Lọc Thuế -->
-            <select id="customs-filter-tax" onchange="fetchCustomsDeclarations()" class="app-form-control text-xs w-auto font-medium">
+            <!-- Lọc Thuế (Cố định h-10) -->
+            <select id="customs-filter-tax" onchange="fetchCustomsDeclarations()" class="h-10 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-heading text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all box-border">
                 <option value="">-- Tình Trạng Thuế --</option>
                 <option value="true">Đã nộp thuế</option>
                 <option value="false">Chưa nộp thuế</option>
             </select>
         </div>
 
-        <div class="flex items-center space-x-2 flex-wrap gap-1.5">
-            <!-- Dropdown chọn kỳ hải quan (Chuẩn đẹp SaaS) -->
-            <div class="relative inline-flex items-center shrink-0">
+        <div class="flex items-center space-x-2 self-end md:self-center h-10 shrink-0">
+            <!-- Dropdown chọn kỳ hải quan (Cố định h-10) -->
+            <div class="relative inline-flex items-center h-10 shrink-0">
                 <i class="ph-bold ph-calendar-check absolute left-2.5 text-teal-600 text-sm pointer-events-none"></i>
                 <select id="customs-filter-period" onchange="fetchCustomsDeclarations()" 
-                    class="pl-8 pr-7 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all"
+                    class="h-10 pl-8 pr-7 bg-white hover:bg-slate-50 border border-slate-200 hover:border-teal-500 text-slate-700 rounded-xl text-xs font-bold font-heading shadow-2xs appearance-none outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all box-border"
                     title="Chọn kỳ tờ khai hải quan">
                     <option value="today">Kỳ: Hôm Nay</option>
                     <option value="10_days">Kỳ: 10 Ngày Qua</option>
@@ -184,23 +162,31 @@
                 </select>
                 <i class="ph ph-caret-down absolute right-2 text-slate-400 text-xs pointer-events-none"></i>
             </div>
+
             <!-- Nút Tùy Chỉnh Cột Hải Quan -->
             <button type="button" onclick="openColumnCustomizer('customs-declarations-table')" 
-                class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                class="h-10 px-3 text-xs font-bold font-heading text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer box-border"
                 title="Tùy chỉnh ẩn/hiện và thứ tự các cột">
-                <i class="ph-bold ph-columns text-teal-700"></i>
-                <span>Cột</span>
+                <i class="ph-bold ph-columns text-teal-700 text-base"></i>
+                <span class="hidden sm:inline">Cột</span>
             </button>
-            <button onclick="exportCustomsExcel()" class="px-3 py-1.5 bg-transparent border border-slate-300 hover:border-slate-400 text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-bold font-heading shadow-2xs flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap" title="Xuất bảng kê Excel">
-                <i class="ph-bold ph-microsoft-excel-logo text-emerald-600 text-xs"></i>
-                <span>Xuất Excel</span>
+
+            <!-- Nút Làm Mới chung -->
+            <button type="button" onclick="fetchCustomsDeclarations()" class="h-10 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer box-border" title="Làm mới dữ liệu Hải Quan">
+                <i class="ph-bold ph-arrows-clockwise text-teal-600 text-sm"></i>
+                <span class="hidden sm:inline">Làm Mới</span>
             </button>
-            <button onclick="openCustomsModal()" class="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold font-heading shadow-xs flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap" title="Tạo mới tờ khai hải quan">
-                <i class="ph-bold ph-plus text-xs"></i>
-                <span>Tạo mới</span>
+
+            <!-- Nút Xuất Excel -->
+            <button type="button" onclick="exportCustomsExcel()" class="h-10 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer box-border" title="Xuất bảng kê Excel">
+                <i class="ph-bold ph-file-xls text-emerald-600 text-base"></i>
+                <span class="hidden sm:inline">Xuất Excel</span>
             </button>
-            <button onclick="fetchCustomsDeclarations()" class="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="Làm mới dữ liệu">
-                <i class="ph-bold ph-arrows-clockwise text-sm"></i>
+
+            <!-- Nút Thêm Mới Tờ Khai -->
+            <button type="button" onclick="openCreateCustomsPage()" class="h-10 px-3.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer box-border" title="Mở trang tạo tờ khai mới toàn màn hình">
+                <i class="ph-bold ph-plus-circle text-base"></i>
+                <span>Thêm Tờ Khai</span>
             </button>
         </div>
     </div>

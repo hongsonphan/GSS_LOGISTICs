@@ -1,31 +1,6 @@
 <!-- 4. XE & BÃI -->
 <div id="view-xe-bai" class="view hidden-view p-6 h-full flex flex-col bg-slate-50 overflow-y-auto animate-fade-in space-y-4">
-    <!-- 1. TOPBAR QUẢN TRỊ ĐỘI XE & TÀI SẢN KỸ THUẬT -->
-    <div class="flex items-center justify-between">
-        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="ph-bold ph-truck text-teal-700 text-sm"></i>
-            Quản Lý Đội Xe, Rơ-Moóc Container & Kỹ Thuật Đăng Kiểm
-        </h3>
-        <div class="flex items-center gap-2">
-            <button onclick="loadFleetData()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Làm mới dữ liệu">
-                <i class="ph-bold ph-arrows-clockwise text-teal-600"></i>
-                <span>Làm Mới</span>
-            </button>
-            <button type="button" onclick="exportCurrentFleetList()" 
-                class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
-                title="Xuất danh sách ra tệp Excel">
-                <i class="ph-bold ph-file-xls text-emerald-600"></i>
-                <span class="hidden sm:inline">Xuất Excel</span>
-            </button>
-            <button type="button" onclick="openCreateFleetItemModal()" id="btn-fleet-create-new-top"
-                class="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
-                <i class="ph-bold ph-plus-circle text-sm"></i>
-                <span id="btn-fleet-create-label-top">Thêm Đầu Kéo</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- 2. BỘ 5 THẺ VẬN HÀNH KỸ THUẬT ĐỘI XE (CHUẨN STYLE KINH DOANH & BẤM VÀO ĐỂ LỌC / NHẢY TAB) -->
+    <!-- BỘ 5 THẺ VẬN HÀNH KỸ THUẬT ĐỘI XE (CHUẨN STYLE KINH DOANH & BẤM VÀO ĐỂ LỌC / NHẢY TAB) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-2">
         <!-- Thẻ 1: Tổng Đầu kéo & Xe tải (Bấm vào nhảy tab Đầu kéo) -->
         <div onclick="switchFleetSubTab('vehicles')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs border-l-4 border-l-teal-600 hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between cursor-pointer group" title="Bấm vào để xem danh sách Đầu Kéo & Xe Tải">
@@ -123,42 +98,52 @@
         </div>
     </div>
 
-    <!-- Thanh Chuyển Đổi Tab Phương Tiện (Fleet Subtabs Bar) -->
-    <div class="flex items-center justify-between border border-slate-200 bg-white px-4 py-2.5 rounded-2xl shadow-2xs flex-wrap gap-2">
-        <div class="flex items-center space-x-2">
-            <!-- Tab 1: Đầu kéo & Xe tải -->
+    <!-- THANH SUB-TABS PHÂN ĐỊNH: ĐẦU KÉO & XE TẢI vs RƠ-MOÓC CONTAINER (1 DÒNG TÍCH HỢP CHUYỂN TAB & CỤM ĐIỀU KHIỂN H-10) -->
+    <div class="bg-white px-3 py-2 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2.5 min-h-[56px] box-border shrink-0">
+        <!-- 2 Nút tab con chính: Cố định h-10, border-2 đồng nhất chuẩn iOS -->
+        <div class="flex items-center space-x-2 w-full md:w-auto">
+            <!-- Tab 1: Đầu kéo & Xe tải (Mặc định Active) -->
             <button type="button" onclick="switchFleetSubTab('vehicles')" id="fleet-tab-btn-vehicles"
-                class="fleet-subtab-btn px-4 py-2 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center space-x-2 bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs cursor-pointer">
-                <i class="ph-bold ph-truck text-base text-teal-700"></i>
-                <span>Đầu Kéo & Xe Tải</span>
-                <span id="fleet-badge-tractors-count" class="ml-1.5 px-2 py-0.5 text-xs font-black rounded-full bg-teal-600 text-white">0</span>
+                class="fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-teal-600 bg-teal-50/70 text-teal-900 shadow-2xs box-border">
+                <i class="ph-bold ph-truck text-base text-teal-600"></i>
+                <span>1. Đầu Kéo & Xe Tải</span>
+                <span id="fleet-badge-tractors-count" class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-teal-100 text-teal-800 border-teal-200">0</span>
             </button>
 
-            <!-- Tab 2: Rơ-Moóc Container -->
+            <!-- Tab 2: Rơ-Moóc Container (Mặc định Inactive) -->
             <button type="button" onclick="switchFleetSubTab('trailers')" id="fleet-tab-btn-trailers"
-                class="fleet-subtab-btn px-4 py-2 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center space-x-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent cursor-pointer">
-                <i class="ph-bold ph-arrows-horizontal text-base text-indigo-600"></i>
-                <span>Rơ-Moóc Container</span>
-                <span id="fleet-badge-trailers-count" class="ml-1.5 px-2 py-0.5 text-xs font-black rounded-full bg-indigo-600 text-white">0</span>
+                class="fleet-subtab-btn flex-1 md:flex-initial h-10 px-4 rounded-xl text-xs md:text-sm font-bold font-heading flex items-center justify-center space-x-2 transition-all cursor-pointer border-2 border-transparent bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200 box-border">
+                <i class="ph-bold ph-arrows-horizontal text-base text-slate-500"></i>
+                <span>2. Rơ-Moóc Container</span>
+                <span id="fleet-badge-trailers-count" class="px-2 py-0.5 rounded-full text-[11px] font-black tabular-nums transition-all border bg-slate-100 text-slate-600 border-slate-200">0</span>
             </button>
         </div>
 
-        <!-- Quick Action Buttons: Xuất Excel & Tạo Mới -->
-        <div class="flex items-center space-x-2">
+        <!-- Cụm công cụ điều khiển bên phải: Cố định h-10 -->
+        <div class="flex items-center space-x-2 self-end md:self-center h-10">
+            <!-- Nút Làm Mới chung -->
+            <button type="button" onclick="loadFleetData()" class="h-10 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer box-border" title="Làm mới toàn bộ số liệu Đội Xe & Bãi">
+                <i class="ph-bold ph-arrows-clockwise text-teal-600 text-sm"></i>
+                <span class="hidden sm:inline">Làm Mới</span>
+            </button>
+
+            <!-- Nút Xuất Excel -->
             <button type="button" onclick="exportCurrentFleetList()" 
-                class="text-xs font-bold text-slate-700 hover:text-teal-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                class="h-10 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold font-heading shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer box-border"
                 title="Xuất danh sách ra tệp Excel">
                 <i class="ph-bold ph-file-xls text-emerald-600 text-base"></i>
                 <span class="hidden sm:inline">Xuất Excel</span>
             </button>
+
+            <!-- Nút Thêm Mới -->
             <button type="button" onclick="openCreateFleetItemModal()" id="btn-fleet-create-new"
-                class="text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 px-3.5 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                class="h-10 px-3.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold font-heading shadow-xs flex items-center gap-1.5 transition-all cursor-pointer box-border">
                 <i class="ph-bold ph-plus-circle text-base"></i>
                 <span id="btn-fleet-create-label">Thêm Đầu Kéo</span>
             </button>
         </div>
     </div>
-    
+
     <!-- ========================================== -->
     <!-- PANEL 1: QUẢN LÝ ĐẦU KÉO & XE TẢI -->
     <!-- ========================================== -->
