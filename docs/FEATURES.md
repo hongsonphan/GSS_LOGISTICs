@@ -571,7 +571,7 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 
 ### 14.3 Frontend SPA (Single Page Application)
 - **`static/js/app.js` (~1MB):** Engine SPA trung tâm, quản lý routing 14 view không reload trang
-- **`static/js/column_manager.js`:** Quản lý hiển thị/ẩn cột trong bảng, lưu preference người dùng
+- **`static/js/src/app/core/table-manager.js`:** Quản lý hiển thị/ẩn cột trong bảng, lưu preference người dùng
 - **14 View:** dashboard, dispatch, trip-detail, sales, booking-detail, accounting, settlement, fleet, personnel, reports, master-data, customs, quotation-detail, create-trip
 
 ### 14.4 Tracking & Traceability
@@ -587,7 +587,7 @@ DRAFT → DISPATCHED → ACCEPTED → CONTAINER_PICKED → IN_TRANSIT
 - **86 Test cases** (tính đến v2.9.13) — 100% passed
 - `FrontendSyntaxIntegrityTestCase`: Tự động kiểm tra cú pháp JS mỗi lần test
 - Chạy: `python manage.py test --keepdb`
-- Kiểm tra JS: `node -c static/js/app.js && node -c static/js/column_manager.js`
+- Kiểm tra JS: `python scripts/build_app_js.py --check && node -c static/js/app.js`
 
 ---
 

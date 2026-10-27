@@ -3,6 +3,1242 @@
 // Sửa mã trong static/js/src/app/ rồi chạy: python scripts/build_app_js.py
 // ==========================================================================
 
+// ---- src/app/core/table-manager.js ----
+/**
+ * =========================================================================================
+ * BIM LOGISTICS — UNIVERSAL TABLE COLUMN MANAGER (QUẢN LÝ CỘT BẢNG DỮ LIỆU TOÀN DIỆN)
+ * =========================================================================================
+ * Chuẩn mực UI/UX SaaS Quốc Tế (Notion / Salesforce / SAP Data Management Standard)
+ * - Tùy biến Ẩn / Hiện cột (Column Visibility Toggle)
+ * - Tùy biến Thứ tự cột (Column Reordering via Drag & Drop / Up & Down Arrows)
+ * - Tự động ghi nhớ cấu hình vào localStorage theo từng bảng và người dùng
+ * - Tự động đồng bộ ngay lập tức khi bảng tải lại dữ liệu mới (MutationObserver)
+ * - Nút Khôi Phục Mặc Định (1-Click Reset to Default)
+ * =========================================================================================
+ */
+
+(function(window, document) {
+    'use strict';
+
+    const BimTableColumnManager = {
+        instances: {},
+        activeTableId: null,
+
+        /**
+         * Đăng ký một bảng vào hệ thống quản lý cột
+         */
+        register: function(tableId, options) {
+            if (!tableId) return null;
+            const table = document.getElementById(tableId);
+            if (!table) return null;
+
+            if (this.instances[tableId]) {
+                return this.instances[tableId];
+            }
+
+            const mgr = new TableColumnInstance(table, options || {});
+            this.instances[tableId] = mgr;
+            return mgr;
+        },
+
+        /**
+         * Mở Modal Tùy chỉnh cột cho bảng cụ thể
+         */
+        open: function(tableId) {
+            let mgr = this.instances[tableId];
+            if (!mgr) {
+                mgr = this.register(tableId);
+            }
+            if (!mgr) {
+                console.warn(`[BimColumnManager] Không tìm thấy bảng #${tableId}`);
+                return;
+            }
+
+            // Đồng bộ lại thead mới nhất từ DOM nếu bảng có dynamic thead (như md-main-table)
+            if (typeof mgr.refreshColumnsFromDOM === 'function') {
+                mgr.refreshColumnsFromDOM();
+            }
+
+            this.activeTableId = tableId;
+            mgr.buildModalUI();
+
+            const modal = document.getElementById('bim-column-customizer-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        },
+
+        /**
+         * Đóng Modal Tùy chỉnh cột
+         */
+        close: function() {
+            const modal = document.getElementById('bim-column-customizer-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+            this.activeTableId = null;
+        },
+
+        /**
+         * Áp dụng cấu hình cho bảng hiện tại hoặc tất cả bảng
+         */
+        apply: function(tableId) {
+            if (tableId && this.instances[tableId]) {
+                this.instances[tableId].apply();
+            } else {
+                Object.values(this.instances).forEach(function(inst) {
+                    inst.apply();
+                });
+            }
+        },
+
+        /**
+         * Tự động quét và đăng ký tất cả bảng có id hoặc có class .erp-table
+         */
+        autoInit: function() {
+            const tables = document.querySelectorAll('table[id]');
+            tables.forEach(function(tbl) {
+                if (tbl.querySelector('thead th') && !tbl.hasAttribute('data-no-col-manager')) {
+                    BimTableColumnManager.register(tbl.id);
+                }
+                BimTableSorter.initTable(tbl);
+                if (window.BimTableResizable) {
+                    BimTableResizable.initTable(tbl);
+                }
+            });
+        }
+    };
+
+    /**
+     * Class quản lý cột cho từng bảng riêng biệt
+     */
+    function TableColumnInstance(table, options) {
+        this.table = table;
+        this.tableId = table.id;
+        this.options = Object.assign({
+            tableName: table.getAttribute('data-table-title') || this.detectTableName(),
+            storagePrefix: 'bim_table_cols_',
+            lockedKeys: ['actions', 'thao_tac', 'action', 'stt', 'check', 'select']
+        }, options);
+
+        this.storageKey = this.getStorageKey();
+        this.tableName = this.getTableName();
+        this.columns = [];         // Cấu hình hiện tại [{ key, label, visible, locked, origIdx }]
+        this.defaultColumns = [];  // Cấu hình mặc định ban đầu
+        this.isApplying = false;
+
+        this.init();
+    }
+
+    TableColumnInstance.prototype.detectTableName = function() {
+        // Tìm tiêu đề bảng từ thẻ h2, h3, h4 gần nhất
+        const container = this.table.closest('.bg-white') || this.table.parentElement;
+        if (container) {
+            const heading = container.querySelector('h2, h3, h4, .font-heading');
+            if (heading) {
+                return heading.textContent.trim().replace(/\s+/g, ' ');
+            }
+        }
+        return 'Bảng Dữ Liệu';
+    };
+
+    TableColumnInstance.prototype.getStorageKey = function() {
+        let key = this.options.storagePrefix + this.tableId;
+        if (this.tableId === 'md-main-table') {
+            const subtab = (typeof window.currentMasterDataTab !== 'undefined' ? window.currentMasterDataTab : (this.table.getAttribute('data-subtab') || '')).trim();
+            if (subtab) {
+                key += '_' + subtab;
+            }
+        }
+        return key;
+    };
+
+    TableColumnInstance.prototype.getTableName = function() {
+        let name = this.options.tableName || this.detectTableName();
+        if (this.tableId === 'md-main-table' && typeof window.currentMasterDataTab !== 'undefined') {
+            const tabNames = {
+                'company': 'Khai Báo Doanh Nghiệp',
+                'roles_permissions': 'Vai Trò & Quyền Hạn',
+                'opening_balance': 'Số Dư Đầu Kỳ Kế Toán',
+                'driver_tariffs': 'Lương Chuyến Tài Xế',
+                'allowances': 'Phụ Cấp & Phí Kiểm Hóa',
+                'locations': 'Cảng & Kho Bãi',
+                'tariffs': 'Biểu Cước Khách Hàng',
+                'customers': 'Danh Mục Khách Hàng',
+                'expenses': 'Khoản Mục Chi Phí',
+                'containers': 'Quy Cách Cont & Xe',
+                'vehicles': 'Đầu Kéo & Xe Tải',
+                'trailers': 'Rơ-Moóc Container',
+                'shipping_lines': 'Hãng Tàu Biển',
+                'subcontractors': 'Đội Xe Thầu Phụ'
+            };
+            const subName = tabNames[window.currentMasterDataTab];
+            if (subName) {
+                name = `Hệ Thống Danh Mục (${subName})`;
+            }
+        }
+        return name;
+    };
+
+    TableColumnInstance.prototype.init = function() {
+        this.refreshColumnsFromDOM();
+
+        // Lắng nghe thay đổi của tbody để tự động áp dụng khi có dữ liệu mới render
+        this.setupMutationObserver();
+    };
+
+    TableColumnInstance.prototype.refreshColumnsFromDOM = function() {
+        this.storageKey = this.getStorageKey();
+        this.tableName = this.getTableName();
+
+        const thead = this.table.tHead || this.table.querySelector(':scope > thead');
+        if (!thead) return;
+
+        const ths = thead.querySelectorAll(':scope > tr:first-child > th');
+        if (!ths || ths.length === 0) return;
+
+        this.defaultColumns = [];
+        const self = this;
+
+        ths.forEach(function(th, idx) {
+            let key = th.getAttribute('data-col-key');
+            if (!key) {
+                // Tạo key từ id hoặc text nội dung
+                const rawText = th.innerText || th.textContent || '';
+                key = th.id ? th.id.replace(/^th[-_]/, '') : self.slugify(rawText) || ('col_' + idx);
+                th.setAttribute('data-col-key', key);
+            }
+
+            let label = th.getAttribute('data-col-name');
+            if (!label) {
+                // Lấy text hiển thị, loại bỏ text icon nếu có
+                const clone = th.cloneNode(true);
+                clone.querySelectorAll('i, svg, button, input, .sort-icon').forEach(function(el) {
+                    el.remove();
+                });
+                label = clone.textContent.trim().replace(/\s+/g, ' ') || ('Cột ' + (idx + 1));
+                th.setAttribute('data-col-name', label);
+            }
+
+            const isLocked = th.getAttribute('data-col-locked') === 'true' || 
+                             self.options.lockedKeys.includes(key.toLowerCase());
+
+            const colObj = {
+                key: key,
+                label: label,
+                visible: true,
+                locked: isLocked,
+                origIdx: idx
+            };
+
+            self.defaultColumns.push(colObj);
+        });
+
+        // Đọc cấu hình từ localStorage nếu đã lưu
+        this.loadSavedConfig();
+
+        // Áp dụng cấu hình ngay lập tức lên DOM
+        this.apply();
+    };
+
+    TableColumnInstance.prototype.slugify = function(text) {
+        if (!text) return '';
+        return text.toString().toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[đĐ]/g, 'd')
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+    };
+
+    TableColumnInstance.prototype.loadSavedConfig = function() {
+        try {
+            const raw = localStorage.getItem(this.storageKey);
+            if (raw) {
+                const saved = JSON.parse(raw);
+                if (Array.isArray(saved) && saved.length > 0) {
+                    // Ghép nối cấu hình đã lưu với các cột mặc định (đề phòng backend thêm cột mới)
+                    const merged = [];
+                    const defaultMap = {};
+                    this.defaultColumns.forEach(function(c) { defaultMap[c.key] = c; });
+
+                    saved.forEach(function(s) {
+                        if (defaultMap[s.key]) {
+                            merged.push({
+                                key: s.key,
+                                label: defaultMap[s.key].label,
+                                visible: s.visible !== false,
+                                locked: defaultMap[s.key].locked,
+                                origIdx: defaultMap[s.key].origIdx
+                            });
+                            delete defaultMap[s.key];
+                        }
+                    });
+
+                    // Thêm bất kỳ cột mới nào chưa có trong cache theo thứ tự origIdx
+                    const remainingCols = Object.values(defaultMap).sort(function(a, b) {
+                        return a.origIdx - b.origIdx;
+                    });
+                    remainingCols.forEach(function(c) {
+                        if (c.key === 'stt' || c.origIdx === 0) {
+                            merged.unshift(Object.assign({}, c));
+                        } else {
+                            const targetIdx = Math.min(c.origIdx, merged.length);
+                            merged.splice(targetIdx, 0, Object.assign({}, c));
+                        }
+                    });
+
+                    // Đảm bảo cột STT luôn luôn ghim ở vị trí đầu tiên (index 0)
+                    const sttIdx = merged.findIndex(function(c) { return c.key === 'stt' || (c.locked && c.origIdx === 0); });
+                    if (sttIdx > 0) {
+                        const sttCol = merged.splice(sttIdx, 1)[0];
+                        merged.unshift(sttCol);
+                    }
+
+                    // Đảm bảo không bao giờ toàn bộ các cột bị ẩn do cache cũ
+                    const visibleCols = merged.filter(function(c) { return c.visible; });
+                    if (visibleCols.length === 0) {
+                        merged.forEach(function(c) { c.visible = true; });
+                    }
+
+                    this.columns = merged;
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('[BimColumnManager] Lỗi đọc localStorage:', e);
+        }
+
+        // Mặc định sao chép từ defaultColumns
+        this.columns = this.defaultColumns.map(function(c) {
+            return Object.assign({}, c);
+        });
+    };
+
+    TableColumnInstance.prototype.saveConfig = function() {
+        try {
+            const toSave = this.columns.map(function(c) {
+                return {
+                    key: c.key,
+                    visible: c.visible,
+                    origIdx: c.origIdx
+                };
+            });
+            localStorage.setItem(this.storageKey, JSON.stringify(toSave));
+        } catch (e) {
+            console.warn('[BimColumnManager] Lỗi ghi localStorage:', e);
+        }
+    };
+
+    TableColumnInstance.prototype.resetToDefault = function() {
+        try {
+            localStorage.removeItem(this.storageKey);
+            localStorage.removeItem('bim_col_widths_' + this.tableId);
+        } catch (e) {}
+
+        this.columns = this.defaultColumns.map(function(c) {
+            return Object.assign({}, c);
+        });
+
+        const ths = this.table.querySelectorAll(':scope > thead > tr > th');
+        ths.forEach(function(th) {
+            th.style.width = '';
+            th.style.minWidth = '';
+            th.style.maxWidth = '';
+        });
+
+        const tds = this.table.querySelectorAll(':scope > tbody > tr > td');
+        tds.forEach(function(td) {
+            td.style.width = '';
+            td.style.minWidth = '';
+            td.style.maxWidth = '';
+        });
+
+        this.apply();
+        this.buildModalUI();
+        if (window.showToast) {
+            window.showToast('info', 'Đã khôi phục thứ tự và trạng thái cột mặc định', 'Khôi phục cột');
+        }
+    };
+
+    /**
+     * Áp dụng thứ tự và trạng thái ẩn/hiện cột trực tiếp vào cây DOM của bảng
+     */
+    TableColumnInstance.prototype.apply = function() {
+        if (this.isApplying) return;
+        this.isApplying = true;
+
+        try {
+            const thead = this.table.tHead || this.table.querySelector(':scope > thead');
+            const tbody = this.table.querySelector(':scope > tbody');
+            const tfoot = this.table.tFoot || this.table.querySelector(':scope > tfoot');
+            if (!thead) return;
+
+            const colMap = {};
+            this.columns.forEach(function(c, i) {
+                colMap[c.key] = { col: c, order: i };
+            });
+
+            // 1. Đồng bộ thead th elements
+            const trHead = thead.querySelector(':scope > tr:first-child');
+            if (trHead) {
+                const thElements = Array.from(trHead.children);
+                
+                // Gán key cho từng th nếu chưa có
+                thElements.forEach(function(th, idx) {
+                    let k = th.getAttribute('data-col-key');
+                    if (!k && idx < this.defaultColumns.length) {
+                        k = this.defaultColumns[idx].key;
+                        th.setAttribute('data-col-key', k);
+                    }
+                }, this);
+
+                // Sắp xếp lại th theo thứ tự columns
+                const sortedThs = [];
+                this.columns.forEach(function(c) {
+                    const found = thElements.find(function(th) {
+                        return th.getAttribute('data-col-key') === c.key;
+                    });
+                    if (found) {
+                        found.style.display = c.visible ? '' : 'none';
+                        sortedThs.push(found);
+                    }
+                });
+
+                // Gắn lại vào thead tr
+                sortedThs.forEach(function(th) {
+                    trHead.appendChild(th);
+                });
+            }
+
+            // 2. Đồng bộ tbody td elements
+            if (tbody) {
+                const rows = tbody.querySelectorAll(':scope > tr');
+                const defaultCols = this.defaultColumns;
+                const columns = this.columns;
+
+                rows.forEach(function(tr) {
+                    // Bỏ qua các hàng thông báo hoặc hàng colspan
+                    if (tr.classList.contains('no-col-reorder') || tr.children.length <= 1) {
+                        return;
+                    }
+
+                    const tds = Array.from(tr.children);
+                    if (tds.length === defaultCols.length) {
+                        // Gán data-col-key cho td dựa theo vị trí gốc ban đầu
+                        tds.forEach(function(td, idx) {
+                            if (!td.getAttribute('data-col-key')) {
+                                td.setAttribute('data-col-key', defaultCols[idx].key);
+                            }
+                        });
+                    }
+
+                    // Sắp xếp lại td theo thứ tự columns hiện tại
+                    const sortedTds = [];
+                    columns.forEach(function(c) {
+                        const found = tds.find(function(td) {
+                            return td.getAttribute('data-col-key') === c.key;
+                        });
+                        if (found) {
+                            found.style.display = c.visible ? '' : 'none';
+                            sortedTds.push(found);
+                        }
+                    });
+
+                    // Gắn lại vào tr
+                    if (sortedTds.length > 0) {
+                        sortedTds.forEach(function(td) {
+                            tr.appendChild(td);
+                        });
+                    }
+                });
+
+                if (window.BimTableResizable && typeof window.BimTableResizable.applyWidthsToBody === 'function') {
+                    window.BimTableResizable.applyWidthsToBody(this.table, window.BimTableResizable.loadSavedWidths(this.tableId));
+                }
+            }
+
+            // 3. Đồng bộ tfoot td elements đảm bảo các ô tổng cộng luôn khớp 100% cột
+            if (tfoot) {
+                const footRows = tfoot.querySelectorAll(':scope > tr');
+                const defaultCols = this.defaultColumns;
+                const columns = this.columns;
+
+                footRows.forEach(function(tr) {
+                    if (tr.classList.contains('no-col-reorder')) return;
+                    const tds = Array.from(tr.children);
+                    if (tds.length === defaultCols.length) {
+                        tds.forEach(function(td, idx) {
+                            if (!td.getAttribute('data-col-key')) {
+                                td.setAttribute('data-col-key', defaultCols[idx].key);
+                            }
+                        });
+                    }
+
+                    const sortedTds = [];
+                    columns.forEach(function(c) {
+                        const found = tds.find(function(td) {
+                            return td.getAttribute('data-col-key') === c.key;
+                        });
+                        if (found) {
+                            found.style.display = c.visible ? '' : 'none';
+                            sortedTds.push(found);
+                        }
+                    });
+
+                    if (sortedTds.length > 0) {
+                        sortedTds.forEach(function(td) {
+                            tr.appendChild(td);
+                        });
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('[BimColumnManager] Lỗi áp dụng cấu hình cột:', err);
+        } finally {
+            this.isApplying = false;
+        }
+    };
+
+    /**
+     * Thiết lập MutationObserver để tự động định dạng lại khi tbody được render lại
+     */
+    TableColumnInstance.prototype.setupMutationObserver = function() {
+        const self = this;
+        let debounceTimer = null;
+
+        const triggerApply = function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                self.apply();
+            }, 10);
+        };
+
+        const tbody = this.table.querySelector(':scope > tbody');
+        if (tbody) {
+            const tbodyObserver = new MutationObserver(function(mutations) {
+                if (self.isApplying) return;
+                let hasAddedNodes = false;
+                for (let i = 0; i < mutations.length; i++) {
+                    if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+                        hasAddedNodes = true;
+                        break;
+                    }
+                }
+                if (hasAddedNodes) triggerApply();
+            });
+            tbodyObserver.observe(tbody, { childList: true, subtree: false });
+        }
+
+        const tfoot = this.table.tFoot || this.table.querySelector(':scope > tfoot');
+        if (tfoot) {
+            const tfootObserver = new MutationObserver(function(mutations) {
+                if (self.isApplying) return;
+                let hasAddedNodes = false;
+                for (let i = 0; i < mutations.length; i++) {
+                    if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+                        hasAddedNodes = true;
+                        break;
+                    }
+                }
+                if (hasAddedNodes) triggerApply();
+            });
+            tfootObserver.observe(tfoot, { childList: true, subtree: false });
+        }
+    };
+
+    /**
+     * Dựng giao diện Modal Tùy chỉnh cột
+     */
+    TableColumnInstance.prototype.buildModalUI = function() {
+        const titleEl = document.getElementById('bim-col-modal-title');
+        const listEl = document.getElementById('bim-col-modal-list');
+        const countEl = document.getElementById('bim-col-modal-visible-count');
+
+        if (titleEl) {
+            titleEl.textContent = this.tableName;
+        }
+
+        if (!listEl) return;
+        listEl.innerHTML = '';
+
+        const self = this;
+        let visibleCount = 0;
+
+        this.columns.forEach(function(col, idx) {
+            if (col.visible) visibleCount++;
+
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-all select-none group';
+            item.draggable = true;
+            item.dataset.index = idx;
+            item.dataset.key = col.key;
+
+            const isFirst = (idx === 0);
+            const isLast = (idx === self.columns.length - 1);
+
+            item.innerHTML = `
+                <div class="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
+                    <!-- Drag Handle -->
+                    <span class="cursor-grab active:cursor-grabbing text-slate-400 hover:text-teal-700 p-1 rounded hover:bg-slate-200/60 transition-colors" title="Kéo thả để đổi thứ tự">
+                        <i class="ph-bold ph-dots-six-vertical text-base"></i>
+                    </span>
+                    
+                    <!-- Checkbox Ẩn / Hiện -->
+                    <label class="flex items-center gap-2 cursor-pointer truncate">
+                        <input type="checkbox" 
+                            class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300 transition-all cursor-pointer ${col.locked ? 'opacity-60 cursor-not-allowed' : ''}" 
+                            ${col.visible ? 'checked' : ''} 
+                            ${col.locked ? 'disabled' : ''}
+                            data-col-toggle="${col.key}">
+                        <span class="text-xs font-bold text-slate-800 font-heading truncate ${!col.visible ? 'line-through text-slate-400' : ''}">
+                            ${col.label}
+                        </span>
+                    </label>
+
+                    ${col.locked ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">Cố định</span>' : ''}
+                </div>
+
+                <!-- Điều khiển Mũi tên Lên / Xuống -->
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" 
+                        class="p-1 rounded-lg hover:bg-teal-50 text-slate-500 hover:text-teal-700 disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-colors" 
+                        title="Di chuyển lên trước"
+                        ${isFirst ? 'disabled' : ''}
+                        onclick="window.BimColumnManager_moveCol('${self.tableId}', ${idx}, -1)">
+                        <i class="ph-bold ph-caret-up text-xs"></i>
+                    </button>
+                    <button type="button" 
+                        class="p-1 rounded-lg hover:bg-teal-50 text-slate-500 hover:text-teal-700 disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-colors" 
+                        title="Di chuyển xuống sau"
+                        ${isLast ? 'disabled' : ''}
+                        onclick="window.BimColumnManager_moveCol('${self.tableId}', ${idx}, 1)">
+                        <i class="ph-bold ph-caret-down text-xs"></i>
+                    </button>
+                </div>
+            `;
+
+            // Lắng nghe sự kiện Checkbox
+            const checkbox = item.querySelector(`[data-col-toggle="${col.key}"]`);
+            if (checkbox && !col.locked) {
+                checkbox.addEventListener('change', function(e) {
+                    col.visible = e.target.checked;
+                    self.saveConfig();
+                    self.apply();
+                    self.buildModalUI();
+                });
+            }
+
+            // Kéo thả HTML5 Drag & Drop
+            item.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('text/plain', idx);
+                item.classList.add('opacity-40', 'border-teal-400');
+            });
+
+            item.addEventListener('dragend', function() {
+                item.classList.remove('opacity-40', 'border-teal-400');
+            });
+
+            item.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                item.classList.add('bg-teal-50/70', 'border-teal-500');
+            });
+
+            item.addEventListener('dragleave', function() {
+                item.classList.remove('bg-teal-50/70', 'border-teal-500');
+            });
+
+            item.addEventListener('drop', function(e) {
+                e.preventDefault();
+                item.classList.remove('bg-teal-50/70', 'border-teal-500');
+                const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                const toIdx = idx;
+                if (!isNaN(fromIdx) && fromIdx !== toIdx) {
+                    const movedItem = self.columns.splice(fromIdx, 1)[0];
+                    self.columns.splice(toIdx, 0, movedItem);
+                    self.saveConfig();
+                    self.apply();
+                    self.buildModalUI();
+                }
+            });
+
+            listEl.appendChild(item);
+        });
+
+        if (countEl) {
+            countEl.textContent = `${visibleCount}/${this.columns.length}`;
+        }
+    };
+
+    /**
+     * Di chuyển vị trí cột lên/xuống
+     */
+    TableColumnInstance.prototype.moveColumn = function(fromIndex, delta) {
+        const toIndex = fromIndex + delta;
+        if (toIndex < 0 || toIndex >= this.columns.length) return;
+
+        const moved = this.columns.splice(fromIndex, 1)[0];
+        this.columns.splice(toIndex, 0, moved);
+
+        this.saveConfig();
+        this.apply();
+        this.buildModalUI();
+    };
+
+    // Helper toàn cục cho các hàm inline onclick
+    window.BimColumnManager_moveCol = function(tableId, fromIdx, delta) {
+        const mgr = BimTableColumnManager.instances[tableId];
+        if (mgr) {
+            mgr.moveColumn(fromIdx, delta);
+        }
+    };
+
+    window.BimColumnManager_reset = function() {
+        if (BimTableColumnManager.activeTableId) {
+            const mgr = BimTableColumnManager.instances[BimTableColumnManager.activeTableId];
+            if (mgr) {
+                mgr.resetToDefault();
+            }
+        }
+    };
+
+    window.openColumnCustomizer = function(tableId) {
+        BimTableColumnManager.open(tableId);
+    };
+
+    window.closeColumnCustomizer = function() {
+        BimTableColumnManager.close();
+    };
+
+
+    // =========================================================================
+    // BIM LOGISTICS — UNIVERSAL CLIENT-SIDE TABLE SORTER (SẮP XẾP BẢNG TOÀN CỤC)
+    // =========================================================================
+    const BimTableSorter = {
+        sortStates: {},
+
+        initTable: function(table) {
+            if (!table) return;
+            const thead = table.querySelector('thead');
+            if (!thead) return;
+
+            const headers = thead.querySelectorAll('th');
+            headers.forEach((th, idx) => {
+                const text = th.innerText.trim().toLowerCase();
+                if (th.hasAttribute('data-no-sort') || text === 'thao tác' || text === '' || th.querySelector('input[type="checkbox"]')) {
+                    return;
+                }
+
+                if (!th.classList.contains('cursor-pointer')) {
+                    th.classList.add('cursor-pointer', 'select-none', 'hover:bg-slate-100', 'transition-colors');
+                }
+
+                let icon = th.querySelector('.sort-indicator-icon');
+                if (!icon && !th.querySelector('i[class*="ph-arrows"], i[class*="ph-caret"]')) {
+                    const iconEl = document.createElement('i');
+                    iconEl.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs ml-1 inline-block sort-indicator-icon';
+                    th.appendChild(iconEl);
+                }
+
+                if (!th.hasAttribute('data-sort-bound')) {
+                    th.setAttribute('data-sort-bound', 'true');
+                    th.addEventListener('click', function(e) {
+                        if (e.target.closest('button, a, input, select')) return;
+                        if (th.hasAttribute('onclick') && th.getAttribute('onclick').includes('toggle')) {
+                            return;
+                        }
+                        BimTableSorter.toggleSort(table, idx);
+                    });
+                }
+            });
+        },
+
+        toggleSort: function(table, colIdx) {
+            const tableId = table.id || ('table_' + Math.random().toString(36).substr(2, 9));
+            const curState = this.sortStates[tableId] || { colIndex: -1, isAsc: true };
+            const isAsc = (curState.colIndex === colIdx) ? !curState.isAsc : true;
+            this.sortStates[tableId] = { colIndex: colIdx, isAsc: isAsc };
+
+            this.sortTable(table, colIdx, isAsc);
+        },
+
+        sortTable: function(table, colIdx, isAsc) {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            if (rows.length <= 1) return;
+            if (rows.length === 1 && rows[0].querySelector('td[colspan]')) return;
+
+            const thead = table.querySelector('thead');
+            if (thead) {
+                const headers = thead.querySelectorAll('th');
+                headers.forEach((th, idx) => {
+                    const icon = th.querySelector('.sort-indicator-icon') || th.querySelector('i[id*="sort-icon"]');
+                    if (icon) {
+                        if (idx === colIdx) {
+                            icon.className = isAsc ? 'ph-bold ph-caret-up text-teal-700 text-xs ml-1 inline-block' : 'ph-bold ph-caret-down text-teal-700 text-xs ml-1 inline-block';
+                        } else {
+                            icon.className = 'ph-bold ph-arrows-down-up text-slate-400 text-xs ml-1 inline-block sort-indicator-icon';
+                        }
+                    }
+                });
+            }
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.children[colIdx];
+                const cellB = rowB.children[colIdx];
+                if (!cellA || !cellB) return 0;
+
+                const textA = (cellA.innerText || cellA.textContent || '').trim();
+                const textB = (cellB.innerText || cellB.textContent || '').trim();
+
+                const numA = this.parseNumeric(textA);
+                const numB = this.parseNumeric(textB);
+                if (numA !== null && numB !== null) {
+                    return isAsc ? numA - numB : numB - numA;
+                }
+
+                const dateA = this.parseDate(textA);
+                const dateB = this.parseDate(textB);
+                if (dateA !== null && dateB !== null) {
+                    return isAsc ? dateA - dateB : dateB - dateA;
+                }
+
+                return isAsc ? textA.localeCompare(textB, 'vi') : textB.localeCompare(textA, 'vi');
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            this.reindexSTT(table);
+        },
+
+        parseNumeric: function(str) {
+            if (!str) return null;
+            const cleaned = str.replace(/[đvn₫%\s]/gi, '').replace(/\./g, '').replace(',', '.');
+            if (/^-?\d+(\.\d+)?$/.test(cleaned)) {
+                return parseFloat(cleaned);
+            }
+            return null;
+        },
+
+        parseDate: function(str) {
+            if (!str) return null;
+            const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+            if (dmy) {
+                return new Date(parseInt(dmy[3]), parseInt(dmy[2]) - 1, parseInt(dmy[1])).getTime();
+            }
+            const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+            if (ymd) {
+                return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3])).getTime();
+            }
+            return null;
+        },
+
+        reindexSTT: function(table) {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((row, idx) => {
+                const firstCell = row.children[0];
+                if (firstCell && (firstCell.classList.contains('font-mono') || /^\d+$/.test(firstCell.innerText.trim()))) {
+                    firstCell.innerText = String(idx + 1);
+                }
+            });
+        },
+
+        autoInit: function() {
+            const tables = document.querySelectorAll('table.erp-table, table[id]');
+            tables.forEach(tbl => BimTableSorter.initTable(tbl));
+        }
+    };
+
+    // =========================================================================
+    // BIM LOGISTICS — UNIVERSAL TABLE FOOTER TOTALS (DÒNG TỔNG CỘNG BẢNG DỮ LIỆU)
+    // =========================================================================
+    const BimTableFooter = {
+        render: function(tableId, config) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            let tfoot = table.querySelector('tfoot');
+            if (!tfoot) {
+                tfoot = document.createElement('tfoot');
+                table.appendChild(tfoot);
+            }
+            tfoot.className = 'bg-slate-100/95 border-t-2 border-slate-300 font-bold text-slate-800 text-xs shadow-2xs sticky bottom-0 z-10';
+
+            const thead = table.querySelector('thead');
+            const colCount = thead ? thead.querySelectorAll('th').length : (config.cells ? config.cells.length : 10);
+
+            let trHtml = '<tr class="no-col-reorder border-b border-slate-300/80 bg-slate-100 hover:bg-slate-200/60 transition-colors">';
+            
+            if (Array.isArray(config.cells)) {
+                config.cells.forEach(cell => {
+                    const colspan = cell.colspan ? `colspan="${cell.colspan}"` : '';
+                    const align = cell.align ? `text-${cell.align}` : 'text-left';
+                    const cls = cell.class || '';
+                    let content = cell.html || cell.text || '';
+                    if (typeof content === 'string') {
+                        content = content.replace(/(?:đ\s*đ|đ\s*VNĐ|VNĐ\s*đ|VNĐ\s*VNĐ)/gi, 'đ');
+                    }
+                    trHtml += `<td ${colspan} class="px-3 py-2.5 ${align} ${cls} font-heading font-bold">${content}</td>`;
+                });
+            } else {
+                trHtml += `<td class="px-3 py-2.5 text-center font-black text-slate-900 font-heading">TỔNG</td>`;
+                let summary = config.summary || '';
+                if (typeof summary === 'string') {
+                    summary = summary.replace(/(?:đ\s*đ|đ\s*VNĐ|VNĐ\s*đ|VNĐ\s*VNĐ)/gi, 'đ');
+                }
+                trHtml += `<td colspan="${colCount - 1}" class="px-3 py-2.5 text-slate-700 font-bold">${summary}</td>`;
+            }
+            trHtml += '</tr>';
+
+            tfoot.innerHTML = trHtml;
+            if (window.BimTableSorter) {
+                window.BimTableSorter.initTable(table);
+            }
+        }
+    };
+
+    /**
+     * =========================================================================
+     * BIM TABLE RESIZABLE (KÉO THẢ THAY ĐỔI CHIỀU RỘNG CỘT TRỰC TIẾP TRÊN BẢNG)
+     * =========================================================================
+     * - Rê chuột vào mép giữa 2 cột: con trỏ chuyển thành col-resize (kéo qua lại).
+     * - Thanh chỉ dẫn Guide Line màu xanh Teal (#0d9488) chạy dọc bảng khi kéo.
+     * - Tự động ghi nhớ kích thước vào localStorage (bim_col_widths_{tableId}).
+     * - Nhấp đúp (Double-click) vào mép cột để tự động căn vừa khít nội dung chữ.
+     * - Tự động mở rộng text, không làm cắt mất chữ khi kéo rộng cột.
+     */
+    const BimTableResizable = {
+        guideLine: null,
+        currentTh: null,
+        currentTable: null,
+        startX: 0,
+        startWidth: 0,
+        storagePrefix: 'bim_col_widths_',
+        isStylesInjected: false,
+
+        injectStyles: function() {
+            if (this.isStylesInjected) return;
+            this.isStylesInjected = true;
+            if (document.getElementById('bim-table-resizable-styles')) return;
+
+            const style = document.createElement('style');
+            style.id = 'bim-table-resizable-styles';
+            style.textContent = `
+                .bim-col-resizer {
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    width: 7px;
+                    height: 100%;
+                    cursor: col-resize;
+                    user-select: none;
+                    z-index: 25;
+                    background: transparent;
+                    transition: background 0.15s ease;
+                }
+                .bim-col-resizer::after {
+                    content: '';
+                    position: absolute;
+                    top: 25%;
+                    bottom: 25%;
+                    right: 1px;
+                    width: 2px;
+                    background: #cbd5e1;
+                    border-radius: 1px;
+                    opacity: 0;
+                    transition: opacity 0.15s ease, background 0.15s ease;
+                }
+                th:hover .bim-col-resizer::after {
+                    opacity: 0.8;
+                }
+                .bim-col-resizer:hover::after,
+                .bim-col-resizer.is-resizing::after {
+                    opacity: 1;
+                    background: #0d9488 !important;
+                    width: 3px;
+                    top: 10%;
+                    bottom: 10%;
+                }
+                body.bim-col-resizing {
+                    cursor: col-resize !important;
+                    user-select: none !important;
+                }
+                body.bim-col-resizing * {
+                    user-select: none !important;
+                }
+                .erp-table th {
+                    position: relative;
+                    box-sizing: border-box;
+                }
+                .erp-table td {
+                    box-sizing: border-box;
+                }
+                /* Cho phép nội dung bung rộng linh hoạt theo chiều rộng cột, không bị kẹp mất chữ */
+                .erp-table td[data-col-key] .truncate,
+                .erp-table td[data-col-key] [class*="max-w-"] {
+                    max-width: 100% !important;
+                }
+            `;
+            document.head.appendChild(style);
+        },
+
+        createGuideLine: function() {
+            if (this.guideLine) return;
+            let el = document.getElementById('bim-table-resizer-line');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'bim-table-resizer-line';
+                el.style.cssText = 'position:fixed;top:0;bottom:0;width:2px;background:#0d9488;z-index:99999;pointer-events:none;display:none;box-shadow:0 0 8px rgba(13,148,136,0.6);';
+                document.body.appendChild(el);
+            }
+            this.guideLine = el;
+        },
+
+        init: function() {
+            this.injectStyles();
+            this.createGuideLine();
+            this.bindGlobalEvents();
+        },
+
+        initTable: function(table) {
+            if (!table || table.hasAttribute('data-no-resizable')) return;
+            this.injectStyles();
+            this.createGuideLine();
+
+            const thead = table.querySelector('thead');
+            if (!thead) return;
+
+            const tableId = table.id;
+            const savedWidths = this.loadSavedWidths(tableId);
+
+            const trHead = thead.querySelector('tr:first-child');
+            if (!trHead) return;
+            const ths = Array.from(trHead.children);
+
+            const self = this;
+            ths.forEach(function(th, idx) {
+                // Không gắn resizer cho cột cuối cùng
+                if (idx === ths.length - 1) return;
+
+                th.style.position = 'relative';
+
+                // Áp dụng độ rộng đã lưu nếu có
+                const colKey = th.getAttribute('data-col-key') || ('col_' + idx);
+                if (savedWidths && savedWidths[colKey]) {
+                    const w = savedWidths[colKey];
+                    th.style.width = w + 'px';
+                    th.style.minWidth = w + 'px';
+                    th.style.maxWidth = w + 'px';
+                }
+
+                // Gắn resizer handle nếu chưa có
+                let resizer = th.querySelector('.bim-col-resizer');
+                if (!resizer) {
+                    resizer = document.createElement('div');
+                    resizer.className = 'bim-col-resizer';
+                    resizer.setAttribute('title', 'Kéo sang trái/phải để chỉnh độ rộng cột • Nhấp đúp để tự vừa khít chữ');
+                    th.appendChild(resizer);
+
+                    resizer.addEventListener('mousedown', function(e) {
+                        self.onMouseDown(e, th, table);
+                    });
+
+                    resizer.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        self.autoFitColumn(th, table);
+                    });
+                }
+            });
+
+            // Đồng bộ độ rộng xuống tbody nếu đã có cấu hình đã lưu
+            if (savedWidths && Object.keys(savedWidths).length > 0) {
+                this.applyWidthsToBody(table, savedWidths);
+            }
+        },
+
+        loadSavedWidths: function(tableId) {
+            if (!tableId) return {};
+            try {
+                const raw = localStorage.getItem(this.storagePrefix + tableId);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) {
+                return {};
+            }
+        },
+
+        saveWidths: function(tableId, widths) {
+            if (!tableId) return;
+            try {
+                localStorage.setItem(this.storagePrefix + tableId, JSON.stringify(widths));
+            } catch (e) {}
+        },
+
+        onMouseDown: function(e, th, table) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            this.currentTh = th;
+            this.currentTable = table;
+            this.startX = e.pageX;
+            this.startWidth = th.getBoundingClientRect().width;
+
+            const resizer = th.querySelector('.bim-col-resizer');
+            if (resizer) resizer.classList.add('is-resizing');
+
+            if (this.guideLine) {
+                this.guideLine.style.left = e.pageX + 'px';
+                this.guideLine.style.display = 'block';
+            }
+
+            document.body.classList.add('bim-col-resizing');
+        },
+
+        bindGlobalEvents: function() {
+            if (this.eventsBound) return;
+            this.eventsBound = true;
+            const self = this;
+
+            window.addEventListener('mousemove', function(e) {
+                if (!self.currentTh) return;
+                const deltaX = e.pageX - self.startX;
+                const newWidth = Math.max(Math.round(self.startWidth + deltaX), 48);
+
+                if (self.guideLine) {
+                    self.guideLine.style.left = e.pageX + 'px';
+                }
+
+                // Cập nhật real-time độ rộng th
+                self.currentTh.style.width = newWidth + 'px';
+                self.currentTh.style.minWidth = newWidth + 'px';
+                self.currentTh.style.maxWidth = newWidth + 'px';
+
+                // Đồng bộ real-time các td tương ứng trong tbody
+                const colKey = self.currentTh.getAttribute('data-col-key');
+                if (colKey && self.currentTable) {
+                    const tds = self.currentTable.querySelectorAll(`tbody td[data-col-key="${colKey}"]`);
+                    tds.forEach(function(td) {
+                        td.style.width = newWidth + 'px';
+                        td.style.minWidth = newWidth + 'px';
+                        td.style.maxWidth = newWidth + 'px';
+                    });
+                }
+            });
+
+            window.addEventListener('mouseup', function(e) {
+                if (!self.currentTh) return;
+                const th = self.currentTh;
+                const table = self.currentTable;
+
+                const resizer = th.querySelector('.bim-col-resizer');
+                if (resizer) resizer.classList.remove('is-resizing');
+
+                self.currentTh = null;
+                self.currentTable = null;
+
+                if (self.guideLine) {
+                    self.guideLine.style.display = 'none';
+                }
+                document.body.classList.remove('bim-col-resizing');
+
+                if (table && table.id) {
+                    const finalWidth = Math.round(th.getBoundingClientRect().width);
+                    th.style.width = finalWidth + 'px';
+                    th.style.minWidth = finalWidth + 'px';
+                    th.style.maxWidth = finalWidth + 'px';
+
+                    const colKey = th.getAttribute('data-col-key') || '';
+                    if (colKey) {
+                        const widths = self.loadSavedWidths(table.id);
+                        widths[colKey] = finalWidth;
+                        self.saveWidths(table.id, widths);
+                    }
+
+                    // Đồng bộ xuống tbody
+                    self.applyWidthsToBody(table, self.loadSavedWidths(table.id));
+                }
+            });
+        },
+
+        autoFitColumn: function(th, table) {
+            if (!th || !table) return;
+            const colKey = th.getAttribute('data-col-key');
+            if (!colKey) return;
+
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            let maxContentWidth = th.scrollWidth;
+            const cells = tbody.querySelectorAll(`td[data-col-key="${colKey}"]`);
+            cells.forEach(function(td) {
+                let cellW = td.scrollWidth;
+                const children = td.children;
+                for (let i = 0; i < children.length; i++) {
+                    cellW = Math.max(cellW, children[i].scrollWidth || 0);
+                }
+                maxContentWidth = Math.max(maxContentWidth, cellW);
+            });
+
+            const targetWidth = Math.min(Math.max(maxContentWidth + 28, 64), 700);
+            th.style.width = targetWidth + 'px';
+            th.style.minWidth = targetWidth + 'px';
+            th.style.maxWidth = targetWidth + 'px';
+
+            if (table.id) {
+                const widths = this.loadSavedWidths(table.id);
+                widths[colKey] = targetWidth;
+                this.saveWidths(table.id, widths);
+                this.applyWidthsToBody(table, widths);
+            }
+
+            if (window.showToast) {
+                const colName = th.getAttribute('data-col-name') || 'cột';
+                window.showToast('info', `Đã tự động căn vừa chiều rộng cột: ${colName} (${targetWidth}px)`, 'Tự căn cột');
+            }
+        },
+
+        applyWidthsToBody: function(table, widths) {
+            if (!table || !widths) return;
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            Object.keys(widths).forEach(function(key) {
+                const w = widths[key];
+                const tds = tbody.querySelectorAll(`td[data-col-key="${key}"]`);
+                tds.forEach(function(td) {
+                    td.style.width = w + 'px';
+                    td.style.minWidth = w + 'px';
+                    td.style.maxWidth = w + 'px';
+                });
+            });
+        }
+    };
+
+    // Khởi tạo BimTableResizable
+    BimTableResizable.init();
+    window.BimTableResizable = BimTableResizable;
+
+    // Export module
+    window.BimTableSorter = BimTableSorter;
+    window.BimTableFooter = BimTableFooter;
+    // Export module
+    window.BimTableColumnManager = BimTableColumnManager;
+
+    // Tự động khởi chạy khi DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            BimTableColumnManager.autoInit();
+        });
+    } else {
+        BimTableColumnManager.autoInit();
+    }
+
+})(window, document);
+
 // ---- src/app/core/utils.js ----
 // Global Debounce Utility (Supports inline: oninput="debounce(fn, wait)()")
 const _debounceNamedTimers = {};
@@ -221,6 +1457,23 @@ function formatTimeString(timeStr) {
 
     return s;
 }
+
+// Định dạng mã công việc & tên người (dùng chung cho Dashboard và Cộng tác)
+function formatTaskCode(code) {
+    if (!code) return '';
+    const match = String(code).match(/^TSK[-.](\d{6})[-.]0*(\d+)$/i);
+    if (match) {
+        return `TSK.${match[1]}.${String(parseInt(match[2], 10)).padStart(3, '0')}`;
+    }
+    return code;
+}
+window.formatTaskCode = formatTaskCode;
+
+function cleanPersonName(name) {
+    if (!name) return '';
+    return String(name).replace(/\s*\([^)]*\)/g, '').trim() || name;
+}
+window.cleanPersonName = cleanPersonName;
 
 // ---- src/app/core/api.js ----
 /**
@@ -1559,38 +2812,6 @@ function populateMasterDataDropdowns() {
     }
 }
 
-// --- BỘ LỌC TÌM KIẾM NHANH KHÁCH HÀNG TRÊN DROPDOWN (SEARCHABLE DROPDOWN) ---
-function filterCustomerSelectOptions(searchId, selectId) {
-    const searchInput = document.getElementById(searchId);
-    const selectEl = document.getElementById(selectId);
-    if (!searchInput || !selectEl) return;
-    
-    // Nếu select đã được nâng cấp sang Searchable Combobox thì proxy vào combobox
-    if (selectEl._bimCombobox) {
-        selectEl._bimCombobox.searchInput.value = searchInput.value;
-        selectEl._bimCombobox.sync();
-        return;
-    }
-    
-    const keyword = searchInput.value.trim().toLowerCase();
-    const options = selectEl.options;
-    let firstMatch = null;
-    
-    for (let i = 0; i < options.length; i++) {
-        const opt = options[i];
-        if (!opt.value) continue;
-        const text = opt.text.toLowerCase();
-        if (!keyword || text.includes(keyword)) {
-            opt.style.display = '';
-            if (!firstMatch && keyword) firstMatch = opt;
-        } else {
-            opt.style.display = 'none';
-        }
-    }
-    if (firstMatch && keyword) {
-        selectEl.value = firstMatch.value;
-    }
-}
 
 // --- QUY TẮC MỞ NHANH MODAL MASTER DATA & TỰ ĐỘNG CHỌN (UNIVERSAL QUICK-ADD) ---
 async function openMasterDataModalQuick(tabKey, targetSelectId = null) {
@@ -1635,11 +2856,6 @@ function closeUserDropdown() {
 }
 window.closeUserDropdown = closeUserDropdown;
 
-function handleUserSettingsClick(e) {
-    closeUserDropdown();
-    openProfileSettingsModal();
-}
-window.handleUserSettingsClick = handleUserSettingsClick;
 
 // --- MODAL CÀI ĐẶT HỒ SƠ & TÀI KHOẢN CÁ NHÂN (USER PROFILE SETTINGS) ---
 let isProfileEditMode = false;
@@ -2750,18 +3966,6 @@ function switchTab(tabId, updateHistory = true) {
     }
 }
 
-function handleSearch(e) {
-    if (e.key === 'Enter') {
-        const topSearch = document.getElementById('top-search-input');
-        const tableSearch = document.getElementById('table-search-input');
-        if (topSearch && tableSearch) {
-            tableSearch.value = topSearch.value;
-        }
-        switchTab('dieu-van');
-        loadTripsData();
-    }
-}
-
 
 // Hàm phân giải URL khi tải trang lần đầu (Hỗ trợ Clean Semantic URL & Deep-link HashID)
 function resolveInitialRoute() {
@@ -2985,7 +4189,7 @@ window.addEventListener('popstate', (event) => {
     }
 });
 
-// ---- src/app/dashboard/dashboard.js ----
+// ---- src/app/dashboard/period-filter.js ----
 // Biến lưu trữ biểu đồ và dữ liệu Dashboard
 let bgdRevenueChart = null;
 let bgdDonutChart = null;
@@ -3184,46 +4388,7 @@ function applyDashboardCustomDate() {
 }
 window.applyDashboardCustomDate = applyDashboardCustomDate;
 
-function refreshCurrentView() {
-    const activeView = document.querySelector('.view:not(.hidden-view)');
-    const currentTab = activeView ? activeView.id.replace('view-', '') : 'dashboard';
-
-    if (currentTab === 'dashboard') {
-        loadDashboardData();
-    } else if (currentTab === 'dieu-van') {
-        loadTripsData();
-    } else if (currentTab === 'kinh-doanh') {
-        loadSalesData();
-    } else if (currentTab === 'ke-toan') {
-        if (currentAccountingSubTab === 'acct-reports') {
-            loadAccountingReportData();
-        } else {
-            switchAccountingSubTab(currentAccountingSubTab || 'acct-cashbook');
-        }
-    } else if (currentTab === 'quyet-toan') {
-        loadSettlementData();
-    } else if (currentTab === 'hai-quan') {
-        fetchCustomsDeclarations();
-    } else if (currentTab === 'bao-cao') {
-        loadReportsData();
-    } else if (currentTab === 'xe-bai') {
-        loadFleetData();
-    } else if (currentTab === 'nhan-su') {
-        loadHRData();
-    } else if (currentTab === 'cai-dat') {
-        loadMasterData();
-    } else if (currentTab === 'trip-detail' && currentActiveTripCode) {
-        viewTripDetail(currentActiveTripCode, false);
-    } else {
-        loadDashboardData();
-    }
-
-    if (typeof showToast === 'function') {
-        showToast('success', 'Đã làm mới dữ liệu mới nhất từ máy chủ!', 'Đồng Bộ Dữ Liệu');
-    }
-}
-window.refreshCurrentView = refreshCurrentView;
-
+// ---- src/app/dashboard/role-widgets.js ----
 // --- 1. TẢI DỮ LIỆU DASHBOARD ĐA VAI TRÒ (CHUẨN QUỐC TẾ TMS, WMS & FLEET) ---
 let currentDashboardRoleView = '';
 
@@ -3408,21 +4573,6 @@ function setDashboardTaskViewMode(mode) {
 }
 window.setDashboardTaskViewMode = setDashboardTaskViewMode;
 
-function formatTaskCode(code) {
-    if (!code) return '';
-    const match = String(code).match(/^TSK[-.](\d{6})[-.]0*(\d+)$/i);
-    if (match) {
-        return `TSK.${match[1]}.${String(parseInt(match[2], 10)).padStart(3, '0')}`;
-    }
-    return code;
-}
-window.formatTaskCode = formatTaskCode;
-
-function cleanPersonName(name) {
-    if (!name) return '';
-    return String(name).replace(/\s*\([^)]*\)/g, '').trim() || name;
-}
-window.cleanPersonName = cleanPersonName;
 
 function renderDashboardTasks(tasks) {
     cachedDashboardTasks = Array.isArray(tasks) ? tasks : [];
@@ -3728,6 +4878,7 @@ function renderDashboardTasksView() {
     }
 }
 
+// ---- src/app/dashboard/dashboard.js ----
 async function loadDashboardData(periodOverride) {
     const period = periodOverride || currentDashboardPeriod || '7_days';
     let url = `/api/dashboard/?period=${period}`;
@@ -3873,36 +5024,6 @@ let rawDashboardTripsPnl = [];
 let dashboardPnlSortColumn = null;
 let dashboardPnlSortDirection = 'asc';
 
-function clearDashboardPnlSearch() {
-    const input = document.getElementById('dashboard-pnl-search');
-    if (input) input.value = '';
-    const clearBtn = document.getElementById('btn-clear-dashboard-pnl-search');
-    if (clearBtn) clearBtn.classList.add('hidden');
-    applyDashboardPnlFilters();
-}
-
-function resetDashboardPnlFilters() {
-    const status = document.getElementById('dashboard-pnl-filter-status');
-    if (status) status.value = '';
-    const search = document.getElementById('dashboard-pnl-search');
-    if (search) search.value = '';
-    const clearBtn = document.getElementById('btn-clear-dashboard-pnl-search');
-    if (clearBtn) clearBtn.classList.add('hidden');
-
-    dashboardPnlSortColumn = null;
-    dashboardPnlSortDirection = 'asc';
-    applyDashboardPnlFilters();
-}
-
-function toggleDashboardPnlSort(col) {
-    if (dashboardPnlSortColumn === col) {
-        dashboardPnlSortDirection = dashboardPnlSortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        dashboardPnlSortColumn = col;
-        dashboardPnlSortDirection = 'asc';
-    }
-    applyDashboardPnlFilters();
-}
 
 function applyDashboardPnlFilters() {
     if (!rawDashboardTripsPnl || !Array.isArray(rawDashboardTripsPnl)) return;
@@ -4567,9 +5688,6 @@ function renderBgdRevenueChart(trendData) {
     }
 }
 function renderBgdDonutChart(type = 'fleet') {
-    switchRoleDonutOption(type === 'customs' ? 2 : 1);
-}
-function switchDonutChart(type) {
     switchRoleDonutOption(type === 'customs' ? 2 : 1);
 }
 
@@ -6621,6 +7739,7 @@ async function viewTripDetail(tripCode, updateHistory = true) {
     }
 }
 
+// ---- src/app/dispatch/trip-cost-sheet.js ----
 // Hàm render Bảng Kê Chi Phí 8 Mục chuẩn theo 5 ảnh thực tế của Triền Võ
 function renderCostSheetTable(trip) {
     const tbody = document.getElementById('cost-sheet-tbody');
@@ -7794,68 +8913,6 @@ function openModalAddExpense() {
     }
 }
 
-/**
- * Toggle switch cho ô Chi hộ KH — dùng chung cho cả Add và Edit modal.
- * @param {string} checkboxId   - id của <input type="checkbox" class="sr-only">
- * @param {string} wrapId       - id của div container (background highlight)
- * @param {string} dotId        - id của nút tròn trượt
- * @param {string} trackId      - id của dải track background
- */
-function toggleBehalfCheckbox(checkboxId, wrapId, dotId, trackId) {
-    const cb = document.getElementById(checkboxId);
-    const wrap = document.getElementById(wrapId);
-    const dot = document.getElementById(dotId);
-    const track = document.getElementById(trackId);
-    if (!cb) return;
-
-    cb.checked = !cb.checked;
-    const isOn = cb.checked;
-
-    // Hiệu ứng track (background)
-    if (track) {
-        track.style.backgroundColor = isOn ? '#0f766e' : ''; // teal-700
-        track.className = track.className.replace(/bg-\S+/, isOn ? 'bg-teal-700' : 'bg-slate-300');
-    }
-    // Hiệu ứng dot trượt
-    if (dot) {
-        dot.style.transform = isOn ? 'translateX(20px)' : 'translateX(0px)';
-    }
-    // Highlight vùng wrap khi bật
-    if (wrap) {
-        if (isOn) {
-            wrap.classList.remove('bg-amber-50', 'border-amber-200');
-            wrap.classList.add('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
-        } else {
-            wrap.classList.remove('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
-            wrap.classList.add('bg-amber-50', 'border-amber-200');
-        }
-    }
-}
-
-/** Reset toggle về mặc định (OFF) */
-function resetBehalfToggle(checkboxId, wrapId, dotId, trackId) {
-    const cb = document.getElementById(checkboxId);
-    const wrap = document.getElementById(wrapId);
-    const dot = document.getElementById(dotId);
-    const track = document.getElementById(trackId);
-    if (cb) cb.checked = false;
-    if (track) { track.style.backgroundColor = ''; track.className = track.className.replace(/bg-teal-700|bg-slate-300/, 'bg-slate-300'); }
-    if (dot) dot.style.transform = 'translateX(0px)';
-    if (wrap) {
-        wrap.classList.remove('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
-        wrap.classList.add('bg-amber-50', 'border-amber-200');
-    }
-}
-
-/** Đặt toggle sang ON (khi mở modal edit và giá trị là true) */
-function setBehalfToggle(value, checkboxId, wrapId, dotId, trackId) {
-    const cb = document.getElementById(checkboxId);
-    if (!cb) return;
-    if (cb.checked !== !!value) {
-        // Chỉ gọi toggle nếu cần thay đổi trạng thái
-        if (!!value) toggleBehalfCheckbox(checkboxId, wrapId, dotId, trackId);
-    }
-}
 
 function selectExpensePayer(payerType) {
     const input = document.getElementById('expense-payer-type-input');
@@ -8196,68 +9253,6 @@ async function deleteExpensePrompt(expenseId, categoryName) {
     }
 }
 
-// --- CÁC HÀM KHÓA SỔ & MỞ SỔ KẾ TOÁN (SETTLEMENT LIFECYCLE) ---
-async function settleTripExpenses() {
-    if (!currentActiveTripCode) return;
-    
-    const confirmSettle = await showConfirmModal({
-        title: 'Chốt Sổ Kế Toán Chuyến Xe',
-        message: `Xác nhận CHỐT SỔ KẾ TOÁN cho chuyến xe [${currentActiveTripCode}]?\n\n• Toàn bộ chi phí thực tế sẽ chuyển sang trạng thái "ĐÃ CHỐT SỔ" (SETTLED).\n• Bảng kê sẽ bị khóa cứng (Read-only), ngăn chặn sửa đổi/xóa.\n• Số liệu được khóa để đối soát P&L và xuất hóa đơn.`,
-        confirmText: 'Chốt Khóa Sổ',
-        cancelText: 'Huỷ bỏ',
-        type: 'success',
-        icon: 'ph-bold ph-seal-check text-2xl'
-    });
-    if (!confirmSettle) return;
-
-    try {
-        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/settle-expenses/`, {
-            method: 'POST'
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            showToast('success', data.message, 'Khóa Sổ Kế Toán Thành Công');
-            viewTripDetail(currentActiveTripCode);
-        } else {
-            showToast('danger', data.message || data.error || data.detail || 'Có lỗi khi chốt sổ');
-        }
-    } catch (err) {
-        console.error('Error settling expenses:', err);
-        showToast('danger', 'Lỗi kết nối máy chủ');
-    }
-}
-
-async function unsettleTripExpenses() {
-    if (!currentActiveTripCode) return;
-    
-    const confirmUnsettle = await showConfirmModal({
-        title: 'Mở Khóa Sổ Kế Toán',
-        message: `MỞ KHÓA SỔ KẾ TOÁN CHO CHUYẾN XE [${currentActiveTripCode}]?\n\nLưu ý: Chỉ thực hiện khi cần điều chỉnh số liệu phát sinh sai sót hoặc bổ sung hóa đơn hợp lệ.`,
-        confirmText: 'Mở Khóa Sổ',
-        cancelText: 'Huỷ bỏ',
-        type: 'warning',
-        icon: 'ph-bold ph-lock-open text-2xl'
-    });
-    if (!confirmUnsettle) return;
-
-    try {
-        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/unsettle-expenses/`, {
-            method: 'POST'
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            showToast('warning', data.message, 'Đã Mở Khóa Sổ Kế Toán');
-            viewTripDetail(currentActiveTripCode);
-        } else {
-            showToast('danger', data.message || data.error || data.detail || 'Không thể mở khóa');
-        }
-    } catch (err) {
-        console.error('Error unsettling expenses:', err);
-        showToast('danger', 'Lỗi kết nối máy chủ');
-    }
-}
 
 // --- THAO TÁC CỦA TÀI XẾ TRÊN MOBILE SIMULATOR ---
 function driverEditExpense(expenseId) {
@@ -9117,7 +10112,7 @@ function openSimContactModal(type) {
     }
 }
 
-// ---- src/app/dispatch/create-trip.js ----
+// ---- src/app/dispatch/create-trip/page.js ----
 function backToTrips() {
     document.getElementById('view-trip-detail').classList.add('hidden-view');
     if (previousActiveTab && previousActiveTab !== 'trip-detail') {
@@ -9544,6 +10539,7 @@ function populateTripFormForDuplicate(trip) {
 }
 window.populateTripFormForDuplicate = populateTripFormForDuplicate;
 
+// ---- src/app/dispatch/create-trip/booking-files.js ----
 // --- XỬ LÝ ĐÍNH KÈM FILE BOOKING / LỆNH CẤP RỖNG (TRIP DISPATCH & SALE) ---
 let currentInheritedBookingFile = null;
 let tripBookingFilesList = [];
@@ -9551,14 +10547,6 @@ let saleBookingFilesList = [];
 let saleBookingExistingDocs = [];
 let currentEditingBookingId = null;
 
-function setBookingTime(timeStr) {
-    const el = document.getElementById('booking-loading-time');
-    if (el) {
-        el.value = timeStr;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-}
 
 function syncBookingClosingTime() {
     const d = document.getElementById('booking-closing-date')?.value;
@@ -9791,6 +10779,8 @@ function removeInheritedBookingFile() {
     renderTripBookingFilesList();
     showToast('info', 'Đã gỡ bỏ file đính kèm kế thừa từ Booking.');
 }
+
+// ---- src/app/dispatch/create-trip/carrier-and-submit.js ----
 // --- 3.8. QUẢN LÝ CHẾ ĐỘ ĐỘI XE: XE NHÀ vs XE BẠN / 3PL (Phương Án 3: Quản Lý Theo Đối Tác) ---
 function setTripCarrierMode(mode) {
     document.querySelectorAll('#inp-carrier-mode').forEach(el => el.value = mode);
@@ -10267,6 +11257,7 @@ async function submitNewTrip(sourceEl = null) {
 // --- 5. CẬP NHẬT HÓA ĐƠN & CHỨNG TỪ VẬN TẢI THỰC TẾ (PRODUCTION ENTERPRISE) ---
 currentOcrMode = 'phi-ton';
 
+// ---- src/app/dispatch/create-trip/form-helpers.js ----
 // --- KHỞI TẠO MẶC ĐỊNH NGÀY/GIỜ CHO CÁC FORM TẠO MỚI ---
 function initDefaultDatesForCreateTrip() {
     const today = new Date();
@@ -10301,13 +11292,6 @@ function initDefaultDatesForCreateTrip() {
     onFreeDaysChange();
 }
 
-function initDefaultDatesForQuotation() {
-    const priceInput = document.getElementById('quote-unit-price');
-    if (priceInput && !priceInput.value) priceInput.value = '';
-    const tripsInput = document.getElementById('quote-monthly-trips');
-    if (tripsInput && !tripsInput.value) tripsInput.value = '';
-    calculateQuoteExpectedRevenue();
-}
 
 // --- NGHIỆP VỤ GHÉP 2 CONT 20FT (TWIN 20FT DRAYAGE TMS STANDARD) ---
 function toggleTwinContMode(isTwin) {
@@ -10507,6 +11491,7 @@ function onCustomSplitRatioInput(val) {
     if (badgeLeg2) badgeLeg2.innerText = `Tỷ lệ: ${100 - r}%`;
 }
 
+// ---- src/app/dispatch/create-trip/booking-link.js ----
 let activeBookingsCache = [];
 
 async function loadActiveBookingsForModal(selectedBookingId = null) {
@@ -10605,14 +11590,6 @@ function onBookingSelected(bookingId) {
     });
 
     showToast('success', `Đã kế thừa 9 trường dữ liệu và file booking từ [${b.booking_code}] - Khách hàng: ${b.customer_name}`, 'Kế Thừa Thành Công');
-}
-
-async function dispatchFromBooking(bookingId) {
-    if (typeof openCreateTripPage === 'function') {
-        await openCreateTripPage(bookingId, true);
-    } else {
-        await openModal('modal-create-trip', bookingId);
-    }
 }
 
 
@@ -12143,136 +13120,6 @@ async function openModalQuotation(quoteId = null, isReadOnly = false) {
     } else {
         return openCreateQuotationPage();
     }
-    await loadMasterDataFormOptions();
-    populateMasterDataDropdowns();
-
-    const form = document.getElementById('form-quotation');
-    if (form) {
-        form.reset();
-        form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = isReadOnly);
-    }
-
-    const titleEl = document.getElementById('modal-quotation-title');
-    const submitBtn = document.getElementById('btn-submit-quote');
-    const btnText = document.getElementById('btn-save-quote-text');
-    const idInput = document.getElementById('quote-id');
-    const routesTbody = document.getElementById('quote-routes-tbody');
-    if (routesTbody) routesTbody.innerHTML = '';
-
-    const editModalBtn = document.getElementById('btn-edit-quote-modal');
-    if (submitBtn) {
-        submitBtn.style.display = isReadOnly ? 'none' : 'inline-flex';
-    }
-    if (editModalBtn) {
-        editModalBtn.classList.toggle('hidden', !isReadOnly);
-    }
-
-    if (!quoteId) {
-        if (idInput) idInput.value = '';
-        if (titleEl) titleEl.innerText = 'Thêm Báo Giá Tuyến Cước Mới';
-        if (btnText) btnText.innerText = 'Lưu';
-
-        const methodEl = document.getElementById('quote-pricing-method');
-        if (methodEl) methodEl.value = 'MULTI_ROUTE';
-        const p0Input = document.getElementById('quote-base-fuel-price');
-        if (p0Input) p0Input.value = formatNumberVN(21000);
-        const stepInput = document.getElementById('quote-fuel-step');
-        if (stepInput) stepInput.value = formatNumberVN(1000);
-        const ratioInput = document.getElementById('quote-fuel-ratio');
-        if (ratioInput) ratioInput.value = '3.5';
-
-        const tplEl = document.getElementById('quote-template-type');
-        if (tplEl) tplEl.value = 'STANDARD';
-        const cargoEl = document.getElementById('quote-cargo-type');
-        if (cargoEl) cargoEl.value = 'Container 40HC / Hàng tổng hợp';
-        const notesEl = document.getElementById('quote-notes');
-        if (notesEl) notesEl.value = DEFAULT_QUOTATION_NOTES.fcl;
-
-        onQuotationPricingMethodChange('MULTI_ROUTE');
-
-        // Mặc định thêm 1 dòng mẫu
-        addQuotationRouteRow({
-            route_description: 'CÁT LÁI ➔ KCN VSIP 2 BÌNH DƯƠNG',
-            cargo_type: 'Cont 40HC',
-            estimated_km: 30,
-            unit_price: 0,
-            expected_trips_monthly: 0
-        });
-    } else {
-        if (idInput) idInput.value = quoteId;
-        if (titleEl) titleEl.innerText = isReadOnly ? 'Đang tải chi tiết báo giá...' : 'Đang tải thông tin báo giá...';
-        if (btnText) btnText.innerText = 'Lưu';
-
-        try {
-            const res = await fetchWithAuth(`/api/quotations/${quoteId}/`);
-            if (!res.ok) throw new Error('Không thể tải báo giá');
-            const q = await res.json();
-
-            if (titleEl) {
-                titleEl.innerText = isReadOnly 
-                    ? `Chi Tiết Báo Giá [${q.quotation_code}]` 
-                    : `Hiệu Chỉnh Báo Giá [${q.quotation_code}]`;
-            }
-            const custEl = document.getElementById('quote-customer');
-            if (custEl) setSelectValueCaseInsensitive(custEl, q.customer_name);
-
-            const methodEl = document.getElementById('quote-pricing-method');
-            if (methodEl) methodEl.value = q.pricing_method || 'MULTI_ROUTE';
-
-            const p0Input = document.getElementById('quote-base-fuel-price');
-            if (p0Input) p0Input.value = formatNumberVN(q.base_fuel_price || 21000);
-            const stepInput = document.getElementById('quote-fuel-step');
-            if (stepInput) stepInput.value = formatNumberVN(q.fuel_step_vnd || 1000);
-            const ratioInput = document.getElementById('quote-fuel-ratio');
-            if (ratioInput) ratioInput.value = q.fuel_ratio_percent || 3.5;
-
-            onQuotationPricingMethodChange(q.pricing_method || 'MULTI_ROUTE');
-
-            const statusEl = document.getElementById('quote-status');
-            if (statusEl) statusEl.value = q.status;
-            const tplEl = document.getElementById('quote-template-type');
-            if (tplEl) tplEl.value = q.template_type || 'STANDARD';
-            const cargoEl = document.getElementById('quote-cargo-type');
-            if (cargoEl) cargoEl.value = q.cargo_type || 'Container 40HC / Hàng tổng hợp';
-            const contactPersonEl = document.getElementById('quote-contact-person');
-            if (contactPersonEl) contactPersonEl.value = q.contact_person || '';
-            const contactPhoneEl = document.getElementById('quote-contact-phone');
-            if (contactPhoneEl) contactPhoneEl.value = q.contact_phone || '';
-            const contactEmailEl = document.getElementById('quote-contact-email');
-            if (contactEmailEl) contactEmailEl.value = q.contact_email || '';
-            const validUntilEl = document.getElementById('quote-valid-until');
-            if (validUntilEl) validUntilEl.value = q.valid_until || '';
-            const notesEl = document.getElementById('quote-notes');
-            if (notesEl) notesEl.value = q.notes || DEFAULT_QUOTATION_NOTES.fcl;
-
-            if (q.items && q.items.length > 0) {
-                q.items.forEach(it => addQuotationRouteRow(it));
-            } else {
-                addQuotationRouteRow({
-                    route_description: q.route_description,
-                    cargo_type: q.cargo_type || 'Cont 40HC',
-                    estimated_km: q.estimated_km || 30,
-                    unit_price: q.unit_price || 0,
-                    expected_trips_monthly: q.expected_trips_monthly || 10
-                });
-            }
-
-            if (isReadOnly && form) {
-                form.querySelectorAll('input, select, textarea, button').forEach(el => {
-                    if (el.id !== 'btn-print-quote-modal' && !el.getAttribute('onclick')?.includes('closeModal') && !el.getAttribute('onclick')?.includes('printQuotation')) {
-                        el.disabled = true;
-                    }
-                });
-            }
-        } catch (err) {
-            console.error('Lỗi tải chi tiết báo giá:', err);
-            showToast('error', 'Không thể tải thông tin báo giá để xem/chỉnh sửa', 'Lỗi');
-            return;
-        }
-    }
-
-    initAllNumberInputs();
-    openModal('modal-quotation');
 }
 
 function enableEditQuotationModal() {
@@ -12416,12 +13263,6 @@ function roundEstimatedKmInput(input) {
     input.value = val;
 }
 
-function setQuoteKm(kmVal) {
-    const el = document.getElementById('quote-estimated-km');
-    if (el) {
-        el.value = kmVal;
-    }
-}
 
 function setTariffKm(kmVal) {
     const el = document.getElementById('mdf-estimated-km');
@@ -12430,78 +13271,7 @@ function setTariffKm(kmVal) {
     }
 }
 
-function onQuoteZonesChanged() {
-    const origZone = document.getElementById('quote-origin-zone')?.value || '';
-    const destZone = document.getElementById('quote-dest-zone')?.value || '';
-    const routeInput = document.getElementById('quote-route');
-    const presetSelect = document.getElementById('quote-route-preset');
-    const kmInput = document.getElementById('quote-estimated-km');
 
-    // Lọc danh sách tuyến mẫu
-    const routes = masterDataFormOptionsCache?.routes || [];
-    let filtered = routes;
-    if (destZone) {
-        const destKeyword = destZone.split('(')[0].trim().toLowerCase();
-        filtered = routes.filter(r => (r.area_group && r.area_group.toLowerCase().includes(destKeyword)) || (r.route_name && r.route_name.toLowerCase().includes(destKeyword)));
-    }
-    if (presetSelect) {
-        presetSelect.innerHTML = '<option value="">-- Chọn Tuyến Mẫu --</option>' +
-            (filtered.length ? filtered : routes).map(r => `<option value="${r.route_name}" data-salary="${r.salary_rate || 0}" data-km="${r.estimated_km || 0}">${r.label || r.route_name}${r.estimated_km ? ` (${r.estimated_km} km)` : ''}</option>`).join('');
-    }
-
-    // Tự sinh tên tuyến nếu cả 2 khu vực được chọn và ô tuyến đang trống hoặc đang là format khu vực cũ
-    if (origZone && destZone && routeInput) {
-        const cleanOrig = origZone.split('(')[0].trim().toUpperCase();
-        const cleanDest = destZone.split('(')[0].trim().toUpperCase();
-        if (!routeInput.value || routeInput.value.includes('➔')) {
-            routeInput.value = `${cleanOrig} ➔ ${cleanDest}`;
-        }
-    }
-
-    // Ước tính số km mặc định theo khoảng cách giữa 2 vùng (chuẩn hóa 10km)
-    if (origZone && destZone && kmInput) {
-        let estKm = 30;
-        const o = origZone.toLowerCase();
-        const d = destZone.toLowerCase();
-        if (o.includes('cái mép') || d.includes('vũng tàu')) {
-            estKm = 70;
-        } else if (d.includes('tây ninh')) {
-            estKm = 80;
-        } else if (d.includes('bình dương') || d.includes('đồng nai') || d.includes('long an')) {
-            estKm = 40;
-        } else if (d.includes('củ chi')) {
-            estKm = 50;
-        } else {
-            estKm = 30;
-        }
-        kmInput.value = estKm;
-    }
-}
-
-function onQuoteRoutePresetChanged(routeVal) {
-    const routeInput = document.getElementById('quote-route');
-    const origZone = document.getElementById('quote-origin-zone')?.value || '';
-    const cleanOrig = origZone ? origZone.split('(')[0].trim().toUpperCase() : 'CÁT LÁI';
-    const presetSelect = document.getElementById('quote-route-preset');
-
-    // Tự động load số km ước tính từ tuyến mẫu nếu có
-    if (presetSelect && presetSelect.selectedOptions && presetSelect.selectedOptions.length > 0) {
-        const opt = presetSelect.selectedOptions[0];
-        const km = opt ? parseInt(opt.getAttribute('data-km')) : 0;
-        if (km && km > 0) {
-            const kmInput = document.getElementById('quote-estimated-km');
-            if (kmInput) kmInput.value = km;
-        }
-    }
-
-    if (routeInput && routeVal) {
-        if (routeVal.toUpperCase().includes('➔') || routeVal.toUpperCase().includes('->')) {
-            routeInput.value = routeVal;
-        } else {
-            routeInput.value = `${cleanOrig} ➔ ${routeVal}`;
-        }
-    }
-}
 
 // ---- src/app/sales/quotation-page.js ----
 // =========================================================================
@@ -12967,19 +13737,6 @@ function backToQuotations() {
     }
 }
 
-function copyQuotationPageLink() {
-    const quoteHash = document.getElementById('fullpage-quote-hashid')?.value || document.getElementById('fullpage-quote-id')?.value;
-    if (!quoteHash) {
-        showToast('warning', 'Báo giá chưa được lưu để lấy liên kết chia sẻ. Vui lòng bấm "Lưu" trước!', 'Cảnh Báo');
-        return;
-    }
-    const fullUrl = `${window.location.origin}/sales/quotations/${quoteHash}`;
-    navigator.clipboard.writeText(fullUrl).then(() => {
-        showToast('success', `Đã sao chép link báo giá:\n${fullUrl}`, 'Thành Công');
-    }).catch(() => {
-        prompt('Sao chép link báo giá:', fullUrl);
-    });
-}
 
 function printQuotationFromFullPage() {
     const id = document.getElementById('fullpage-quote-id')?.value;
@@ -13693,23 +14450,6 @@ function printQuotationFromModal() {
     openQuotationPrintModal(quoteData, templateType);
 }
 
-async function changeQuotationStatus(quoteId, newStatus) {
-    if (!newStatus) return;
-    try {
-        const res = await fetchWithAuth(`/api/quotations/${quoteId}/status/`, {
-            method: 'PATCH',
-            body: JSON.stringify({ status: newStatus })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi chuyển trạng thái');
-
-        showToast('success', data.message || 'Đã cập nhật trạng thái báo giá', 'Thành Công');
-        loadSalesData();
-    } catch (err) {
-        console.error('Error updating quotation status:', err);
-        showToast('error', err.message || 'Lỗi đổi trạng thái', 'Lỗi');
-    }
-}
 
 async function deleteQuotation(quoteId) {
     const confirmed = await showConfirmModal({
@@ -13750,7 +14490,6 @@ window.saveQuotation = saveQuotation;
 window.submitQuotation = saveQuotation;
 window.editQuotation = (quoteId) => openModalQuotation(quoteId, false);
 window.deleteQuotation = deleteQuotation;
-window.changeQuotationStatus = changeQuotationStatus;
 window.printQuotationFromModal = printQuotationFromModal;
 window.printQuotationVoucher = printQuotationVoucher;
 function editQuotationFromPrint() {
@@ -13775,7 +14514,6 @@ window.calculateFullpageQuotationItemsTotal = calculateFullpageQuotationItemsTot
 window.onFullpageQuotationPricingMethodChange = onFullpageQuotationPricingMethodChange;
 window.updateFullpageFuelFormulaText = updateFullpageFuelFormulaText;
 window.setFullpageQuickQuoteNote = setFullpageQuickQuoteNote;
-window.copyQuotationPageLink = copyQuotationPageLink;
 window.printQuotationFromFullPage = printQuotationFromFullPage;
 window.saveFullpageQuotation = saveFullpageQuotation;
 
@@ -13952,27 +14690,6 @@ function clearSaleBookingFileSelection() {
     renderSaleBookingFilesList();
 }
 
-function showSaleExistingBookingFile(fileUrl, fileName, docs = []) {
-    saleBookingFilesList = [];
-    if (docs && docs.length > 0) {
-        saleBookingExistingDocs = docs.map(d => ({
-            id: d.id,
-            name: d.file_name || d.name || d.title || 'Tài liệu Booking',
-            url: d.file_url || d.url || (d.file_path ? `/media/${d.file_path}` : '#'),
-            size_formatted: d.file_size_formatted || d.size_formatted || ''
-        }));
-    } else if (fileUrl) {
-        saleBookingExistingDocs = [{
-            id: null,
-            name: fileName || 'Tài liệu Booking',
-            url: fileUrl,
-            size_formatted: ''
-        }];
-    } else {
-        saleBookingExistingDocs = [];
-    }
-    renderSaleBookingFilesList();
-}
 
 function onBookingTypeChange() {
     applyBookingFormTypeAdapters('');
@@ -13985,196 +14702,6 @@ async function openModalBooking(bookingId = null, isReadOnly = false) {
     } else {
         return viewBookingDetail(bookingId, true);
     }
-
-    await loadMasterDataFormOptions();
-    populateMasterDataDropdowns();
-
-    const form = document.getElementById('form-booking');
-    if (form) {
-        form.reset();
-        form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = isReadOnly);
-    }
-
-    const titleEl = document.getElementById('modal-booking-title');
-    const submitBtn = document.getElementById('btn-submit-booking');
-    const btnText = document.getElementById('btn-save-booking-text');
-    const idInput = document.getElementById('booking-id');
-
-    const editModalBtn = document.getElementById('btn-edit-booking-modal');
-    if (submitBtn) {
-        submitBtn.style.display = isReadOnly ? 'none' : 'inline-flex';
-    }
-    if (editModalBtn) {
-        editModalBtn.classList.toggle('hidden', !isReadOnly);
-    }
-
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    if (!bookingId) {
-        currentEditingBookingId = null;
-        if (idInput) idInput.value = '';
-        if (titleEl) titleEl.innerText = 'Tiếp Nhận Đơn Đặt Hàng / Booking Mới Từ Khách Hàng';
-        if (btnText) btnText.innerText = 'Lưu';
-        const dateInput = document.getElementById('booking-loading-date');
-        if (dateInput) dateInput.value = todayStr;
-        const timeInput = document.getElementById('booking-loading-time');
-        if (timeInput) timeInput.value = '08:00';
-        const closingDateInput = document.getElementById('booking-closing-date');
-        if (closingDateInput) closingDateInput.value = todayStr;
-        const closingTimeValInput = document.getElementById('booking-closing-time-val');
-        if (closingTimeValInput) closingTimeValInput.value = '17:00';
-        syncBookingClosingTime();
-        const siDateInput = document.getElementById('booking-si-date');
-        if (siDateInput) siDateInput.value = todayStr;
-        const siTimeValInput = document.getElementById('booking-si-time-val');
-        if (siTimeValInput) siTimeValInput.value = '12:00';
-        syncBookingSiTime();
-        const totalInput = document.getElementById('booking-total-containers');
-        if (totalInput) totalInput.value = formatNumberVN(1);
-        const detInput = document.getElementById('booking-det');
-        if (detInput) detInput.value = formatNumberVN(7);
-        const demInput = document.getElementById('booking-dem');
-        if (demInput) demInput.value = formatNumberVN(7);
-        const priceInput = document.getElementById('booking-price');
-        if (priceInput) priceInput.value = '';
-        clearSaleBookingFileSelection();
-        onBookingTypeChange();
-    } else {
-        currentEditingBookingId = bookingId;
-        if (idInput) idInput.value = bookingId;
-        if (titleEl) titleEl.innerText = isReadOnly ? 'Đang tải chi tiết đơn hàng / booking...' : 'Đang tải thông tin đơn hàng / booking...';
-        if (btnText) btnText.innerText = 'Lưu';
-
-        try {
-            const res = await fetchWithAuth(`/api/bookings/${bookingId}/`);
-            if (!res.ok) throw new Error('Không thể tải chi tiết đơn hàng / booking');
-            const b = await res.json();
-
-            if (titleEl) {
-                titleEl.innerText = isReadOnly 
-                    ? `Chi Tiết Đơn Hàng / Booking [${b.booking_code}]` 
-                    : `Hiệu Chỉnh Đơn Hàng / Booking [${b.booking_code}]`;
-            }
-            
-            const typeEl = document.getElementById('booking-type');
-            if (typeEl) typeEl.value = b.booking_type || 'EXPORT_FCL';
-            const custEl = document.getElementById('booking-customer');
-            if (custEl) setSelectValueCaseInsensitive(custEl, b.customer_name);
-            const numEl = document.getElementById('booking-number');
-            if (numEl) numEl.value = b.booking_number || '';
-            const shipEl = document.getElementById('booking-shipping-line');
-            if (shipEl) shipEl.value = b.shipping_line || '';
-            const vesEl = document.getElementById('booking-vessel');
-            if (vesEl) vesEl.value = b.vessel_voyage || '';
-            const sizeEl = document.getElementById('booking-container-size');
-            if (sizeEl) setSelectValueCaseInsensitive(sizeEl, b.container_size || '40HC');
-            const totalEl = document.getElementById('booking-total-containers');
-            if (totalEl) totalEl.value = formatNumberVN(b.total_containers || 1);
-            const comEl = document.getElementById('booking-commodity');
-            if (comEl) comEl.value = b.commodity || '';
-            const hsEl = document.getElementById('booking-hs-code');
-            if (hsEl) hsEl.value = b.hs_code || '';
-            const pickEl = document.getElementById('booking-pickup');
-            if (pickEl) setSelectValueCaseInsensitive(pickEl, b.pickup_location);
-            const delEl = document.getElementById('booking-delivery');
-            if (delEl) setSelectValueCaseInsensitive(delEl, b.delivery_location);
-            const dropEl = document.getElementById('booking-dropoff');
-            if (dropEl) setSelectValueCaseInsensitive(dropEl, b.dropoff_location);
-            const dateEl = document.getElementById('booking-loading-date');
-            if (dateEl) dateEl.value = b.loading_date || todayStr;
-            const timeEl = document.getElementById('booking-loading-time');
-            if (timeEl) timeEl.value = b.loading_time || '08:00';
-            parseAndSetDateTimeFields(b.closing_time, 'booking-closing-date', 'booking-closing-time-val', 'booking-closing-time', '17:00');
-            parseAndSetDateTimeFields(b.si_cutoff, 'booking-si-date', 'booking-si-time-val', 'booking-si-cutoff', '12:00');
-            const detEl = document.getElementById('booking-det');
-            if (detEl) detEl.value = formatNumberVN(b.free_time_detention ?? 7);
-            const demEl = document.getElementById('booking-dem');
-            if (demEl) demEl.value = formatNumberVN(b.free_time_demurrage ?? 7);
-            const priceEl = document.getElementById('booking-price');
-            if (priceEl) priceEl.value = (b.selling_freight_price || b.freight_price) ? formatNumberVN(b.selling_freight_price || b.freight_price) : '';
-            const statusEl = document.getElementById('booking-status');
-            if (statusEl) statusEl.value = b.status || 'PENDING_DISPATCH';
-            const notesEl = document.getElementById('booking-notes');
-            if (notesEl) notesEl.value = b.notes || '';
-
-            // Hiển thị file booking đính kèm (nếu có hoặc danh sách documents)
-            showSaleExistingBookingFile(b.booking_file_url, b.booking_file_name, b.documents);
-
-            // Render danh sách container của Booking & Theo dõi Cắt Kéo
-            const tripsTbody = document.getElementById('booking-trips-tbody');
-            const tripsCountBadge = document.getElementById('booking-trips-count-badge');
-            if (tripsTbody) {
-                if (b.trips && b.trips.length > 0) {
-                    if (tripsCountBadge) {
-                        tripsCountBadge.innerText = `${b.trips.length} / ${b.total_containers} Container`;
-                    }
-                    tripsTbody.innerHTML = b.trips.map(t => {
-                        const modeBadge = t.is_split_trip
-                            ? `<span class="px-2 py-0.5 rounded font-black text-[10px] uppercase bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-1" title="Chế độ Cắt Kéo (Drop & Hook) - Tài lấy & Tài hạ khác nhau">
-                                <i class="ph-bold ph-arrows-split"></i> Cắt Kéo (${t.driver_split_ratio}%/${100 - t.driver_split_ratio}%)
-                               </span>`
-                            : `<span class="px-2 py-0.5 rounded font-black text-[10px] uppercase bg-teal-50 text-teal-700 border border-teal-200 inline-flex items-center gap-1">
-                                <i class="ph-bold ph-arrow-right"></i> Chạy Thẳng
-                               </span>`;
-                        
-                        const statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-800 border border-slate-200">${t.status_label || t.status}</span>`;
-
-                        const locBadge = `<span class="px-1.5 py-0.5 rounded text-[11px] font-bold ${t.cont_location_type === 'NHÀ MÁY' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}">${t.cont_location_type || 'NHÀ MÁY'}</span>`;
-
-                        return `
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="p-2.5">
-                                    <p class="font-bold text-slate-900 font-mono text-xs">${t.trip_code}</p>
-                                    <p class="text-[11px] font-mono text-indigo-700 font-bold">${t.container_number}</p>
-                                </td>
-                                <td class="p-2.5">${modeBadge}</td>
-                                <td class="p-2.5">
-                                    <p class="font-bold text-slate-900">${t.driver}</p>
-                                    <p class="text-[11px] text-slate-500 font-medium">Xe: ${t.vehicle}</p>
-                                </td>
-                                <td class="p-2.5">
-                                    ${t.is_split_trip ? `
-                                        <p class="font-bold text-amber-900">${t.dropoff_driver || 'Chưa gán'}</p>
-                                        <p class="text-[11px] text-slate-500 font-medium">Xe: ${t.dropoff_vehicle || '-'}</p>
-                                    ` : `
-                                        <span class="text-slate-400 italic text-[11px]">(Tài xế chặng 1)</span>
-                                    `}
-                                </td>
-                                <td class="p-2.5">${locBadge}</td>
-                                <td class="p-2.5">${statusBadge}</td>
-                                <td class="p-2.5 text-center">
-                                    <button type="button" onclick="closeModal('modal-booking'); viewTripDetail('${t.trip_code}')" 
-                                        class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold transition-colors inline-flex items-center gap-1 font-heading" title="Xem chi tiết chuyến xe">
-                                        <i class="ph-bold ph-arrow-square-out"></i> Xem
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
-                } else {
-                    if (tripsCountBadge) {
-                        tripsCountBadge.innerText = `0 / ${b.total_containers} Container`;
-                    }
-                    tripsTbody.innerHTML = `
-                        <tr>
-                            <td colspan="7" class="p-4 text-center text-slate-400 italic">
-                                Chưa có container nào được phát lệnh điều xe từ Booking này. Bấm "Điều Xe" bên ngoài để phát lệnh.
-                            </td>
-                        </tr>
-                    `;
-                }
-            }
-
-            onBookingTypeChange();
-        } catch (err) {
-            console.error('Lỗi tải chi tiết booking:', err);
-            showToast('error', 'Không thể tải thông tin đơn hàng để xem/chỉnh sửa', 'Lỗi');
-            return;
-        }
-    }
-
-    initAllNumberInputs();
-    openModal('modal-booking');
 }
 
 function enableEditBookingModal() {
@@ -14339,24 +14866,6 @@ async function saveBooking(e) {
     }
 }
 
-async function changeBookingStatus(bookingId, newStatus) {
-    if (!newStatus) return;
-    try {
-        const res = await fetchWithAuth(`/api/bookings/${bookingId}/status/`, {
-            method: 'PATCH',
-            body: JSON.stringify({ status: newStatus })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi chuyển trạng thái');
-
-        showToast('success', data.message || 'Đã cập nhật trạng thái đơn hàng', 'Thành Công');
-        loadSalesData();
-        loadActiveBookingsForModal();
-    } catch (err) {
-        console.error('Error updating booking status:', err);
-        showToast('error', err.message || 'Lỗi đổi trạng thái đơn hàng', 'Lỗi');
-    }
-}
 
 async function deleteBooking(bookingId) {
     const confirmed = await showConfirmModal({
@@ -14384,7 +14893,7 @@ async function deleteBooking(bookingId) {
     }
 }
 
-// ---- src/app/sales/booking-page.js ----
+// ---- src/app/sales/booking-page/files.js ----
 // ==============================================================================
 // 8.1. DEDICATED FULL-PAGE BOOKING VIEW (SALE & BOOKING | TẠO BOOKING)
 // ==============================================================================
@@ -14562,6 +15071,8 @@ function clearFullpageBookingFileSelection() {
     if (input) input.value = '';
     renderFullpageBookingFilesList();
 }
+
+// ---- src/app/sales/booking-page/form.js ----
 /**
  * Tối ưu hóa biểu mẫu Booking thích ứng động theo 3 loại dịch vụ:
  * 1. EXPORT_FCL (Kéo cont xuất khẩu)
@@ -14862,6 +15373,7 @@ function parseSiCutoffToFullpageInputs(siStr) {
     }
 }
 
+// ---- src/app/sales/booking-page/page.js ----
 async function openCreateBookingPage(updateHistory = true) {
     try {
         const currentActiveView = document.querySelector('.view:not(.hidden-view)');
@@ -15215,19 +15727,6 @@ function backToBookings() {
     }
 }
 
-function copyBookingPageLink() {
-    const id = document.getElementById('fullpage-booking-id')?.value;
-    if (!id) {
-        showToast('warning', 'Đơn hàng chưa được lưu để lấy link chia sẻ', 'Cảnh Báo');
-        return;
-    }
-    const fullUrl = `${window.location.origin}/sales/bookings/${id}`;
-    navigator.clipboard.writeText(fullUrl).then(() => {
-        showToast('success', `Đã sao chép link đơn hàng:\n${fullUrl}`, 'Thành Công');
-    }).catch(() => {
-        prompt('Sao chép link đơn hàng:', fullUrl);
-    });
-}
 
 async function saveFullpageBooking(e) {
     if (e && typeof e.preventDefault === 'function') {
@@ -15385,6 +15884,7 @@ async function saveFullpageBooking(e) {
     }
 }
 
+// ---- src/app/sales/booking-page/print.js ----
 /**
  * 2. BOOKING / ĐƠN HÀNG: In trực tiếp từ bảng danh sách & từ form chi tiết
  */
@@ -16302,8 +16802,6 @@ let rawContractsList = [];
 let rawPayrollPeriodsList = [];
 let currentPayrollPeriodDetail = null;
 let currentPayrollSlipsList = [];
-let hrSortColumn = null;
-let hrSortDirection = 'asc';
 
 async function loadHRData() {
     const activeSubTab = currentHRSubTab || 'directory';
@@ -16519,53 +17017,7 @@ function renderEmployeesTable(items) {
     }
 }
 
-function openEmployee360Modal(id) {
-    const emp = (rawEmployeesList || []).find(e => e.id === id);
-    if (!emp) return;
 
-    const modal = document.getElementById('modal-employee-360');
-    if (!modal) return;
-
-    document.getElementById('m360-avatar').innerText = (emp.full_name || 'NV').slice(0, 2).toUpperCase();
-    document.getElementById('m360-name').innerText = `${emp.full_name} (${emp.nickname || emp.code})`;
-    document.getElementById('m360-code-role').innerText = `${emp.code} • ${emp.role_label || emp.role} • ${emp.department_label || emp.department}`;
-
-    const content = document.getElementById('m360-content');
-    content.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-3 border-b border-slate-200">
-            <div class="space-y-1.5">
-                <div class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Thông Tin Cá Nhân & Định Danh</div>
-                <div><strong>CCCD / CMND:</strong> ${emp.national_id || 'Chưa cập nhật'} (Ngày cấp: ${emp.national_id_date || '—'} tại ${emp.national_id_place || '—'})</div>
-                <div><strong>Mã số thuế:</strong> ${emp.tax_id || 'Chưa cập nhật'} | <strong>Số BHXH:</strong> ${emp.insurance_number || 'Chưa cập nhật'}</div>
-                <div><strong>Giới tính:</strong> ${emp.gender_label || '—'} | <strong>Ngày sinh:</strong> ${emp.date_of_birth || '—'}</div>
-                <div><strong>Điện thoại:</strong> ${emp.phone_number || '—'} | <strong>Email:</strong> ${emp.email || '—'}</div>
-                <div><strong>Địa chỉ thường trú:</strong> ${emp.permanent_address || '—'}</div>
-                <div><strong>Chỗ ở hiện nay:</strong> ${emp.current_address || '—'}</div>
-            </div>
-            <div class="space-y-1.5">
-                <div class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Tài Khoản Ngân Hàng & Chế Độ Lương</div>
-                <div><strong>Số tài khoản:</strong> <span class="font-mono font-bold">${emp.bank_account || 'Chưa khai báo'}</span></div>
-                <div><strong>Ngân hàng:</strong> ${emp.bank_name || '—'} ${emp.bank_branch ? '(' + emp.bank_branch + ')' : ''}</div>
-                <div><strong>Chủ thụ hưởng:</strong> ${emp.bank_beneficiary || emp.full_name.toUpperCase()}</div>
-                <div><strong>Lương cơ bản / khoán:</strong> <span class="font-mono font-bold">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</span></div>
-                <div><strong>Lương đóng BHXH:</strong> <span class="font-mono font-bold">${new Intl.NumberFormat('vi-VN').format(emp.insurance_salary || 0)} đ</span> (${emp.is_social_insurance_participant ? 'Có tham gia 10.5%' : 'Không tham gia'})</div>
-                <div><strong>Người phụ thuộc giảm trừ gia cảnh:</strong> <span class="font-bold text-teal-800">${emp.dependents_count || 0} người</span></div>
-                <div><strong>Giấy phép lái xe:</strong> ${emp.license_number || '—'} ${emp.license_expiry ? '(Hạn: ' + emp.license_expiry + ')' : ''}</div>
-            </div>
-        </div>
-    `;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function closeEmployee360Modal() {
-    const modal = document.getElementById('modal-employee-360');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-}
 
 // ---- src/app/hr/contracts.js ----
 // --- SUB-PANEL 2: HỢP ĐỒNG LAO ĐỘNG ---
@@ -17406,7 +17858,7 @@ function filterContractsTable() {
     });
 }
 
-// ---- src/app/hr/attendance-payroll.js ----
+// ---- src/app/hr/attendance.js ----
 // --- SUB-PANEL 3: KỲ LƯƠNG & HYBRID PAYROLL ---
 // --- SUB-PANEL 3: BẢNG CHẤM CÔNG THÁNG (ATTENDANCE & TIMEKEEPING) ---
 let rawAttendanceList = [];
@@ -17665,6 +18117,7 @@ async function autoGenerateMonthlyAttendance() {
     }
 }
 
+// ---- src/app/hr/payroll-periods.js ----
 // --- SUB-PANEL 4: TÍNH LƯƠNG & HYBRID PAYROLL ENGINE ---
 async function loadPayrollPeriodsData() {
     try {
@@ -18166,6 +18619,7 @@ async function submitCreatePeriod(event) {
     }
 }
 
+// ---- src/app/hr/payroll-slip.js ----
 // -------------------------------------------------------------------------
 // 2. DEDICATED FULL-PAGE VIEW: ĐIỀU CHỈNH PHIẾU LƯƠNG (PAYROLL SLIP DETAIL)
 // -------------------------------------------------------------------------
@@ -18371,7 +18825,7 @@ function backToPayroll() {
     }
 }
 
-
+// ---- src/app/hr/payroll-policies.js ----
 // --- SUB-PANEL 4: CHÍNH SÁCH LƯƠNG, BẢO HIỂM, BIỂU THUẾ & PHỤ CẤP ---
 async function loadPayrollPoliciesData() {
     try {
@@ -20085,7 +20539,7 @@ function exportAccountingToExcel() {
     showToast('success', `Đã xuất dữ liệu "${filename}" thành công!`, 'Xuất Excel Thành Công');
 }
 
-// ---- src/app/accounting/advances.js ----
+// ---- src/app/accounting/advances/advances-list.js ----
 // =========================================================================
 // 10.1 PHÂN HỆ TẠM ỨNG & HOÀN ỨNG (DISPATCHER FUND & DRIVER ADVANCES)
 // =========================================================================
@@ -20669,7 +21123,7 @@ async function settleDispatcherFund(fundId) {
     }
 }
 
-
+// ---- src/app/accounting/advances/advance-settle.js ----
 // =============================================================================
 // =============================================================================
 // -------------------------------------------------------------
@@ -20891,6 +21345,7 @@ window.calculateSettlementDiff = calculateSettlementDiff;
 window.recalculateActualExpensesFromTrip = recalculateActualExpensesFromTrip;
 window.submitSettleAdvanceForm = submitSettleAdvanceForm;
 
+// ---- src/app/accounting/advances/driver-advance-detail.js ----
 // BIM ACCOUNTING ADVANCES & FUNDS - COMPREHENSIVE CRUD (VIEW, EDIT, SAVE, PRINT, DELETE)
 // =============================================================================
 let currentActiveDriverAdvance = null;
@@ -21398,6 +21853,7 @@ async function printDriverAdvanceVoucher(advanceId) {
     }
 }
 
+// ---- src/app/accounting/advances/dispatcher-fund-detail.js ----
 // -----------------------------------------------------------------------------
 // DISPATCHER ADVANCE FUND CRUD (VIEW, EDIT, SAVE, PRINT, DELETE)
 // -----------------------------------------------------------------------------
@@ -21791,6 +22247,7 @@ async function printDispatcherFundVoucher(fundId) {
     }
 }
 
+// ---- src/app/accounting/advances/advance-settle-print.js ----
 function printSettlementAdvanceVoucher() {
     if (!currentActiveAdvance) {
         showToast('warning', 'Chưa có thông tin phiếu quyết toán');
@@ -23365,23 +23822,6 @@ window.setDynamicPrintPageStyle = setDynamicPrintPageStyle;
 window.numberToWordsVN = numberToWordsVN;
 
 
-function openCreateCashTransactionModal(defaultType = 'INFLOW') {
-    const modal = document.getElementById('modal-cash-transaction');
-    if (!modal) return;
-
-    document.getElementById('cash-tx-type').value = defaultType;
-    document.getElementById('cash-tx-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('cash-tx-amount').value = '';
-    document.getElementById('cash-tx-partner-name').value = '';
-    document.getElementById('cash-tx-ref').value = '';
-    document.getElementById('cash-tx-notes').value = '';
-
-    onCashTypeChange();
-    onPaymentMethodChange();
-
-    modal.classList.remove('hidden');
-}
-
 function closeCashTransactionModal() {
     const modal = document.getElementById('modal-cash-transaction');
     if (modal) modal.classList.add('hidden');
@@ -23473,50 +23913,7 @@ function exportCashBookToExcel() {
 // URL Chuẩn: /accounting/vouchers/<id_or_code>
 // ==============================================================================
 let currentActiveFullpageVoucher = null;
-let currentFullpageVoucherPrintMode = 'dual';
 
-function setFullpageVoucherSaveButtonState(isEnabled) {
-    const btn = document.getElementById('btn-fullpage-save-voucher');
-    if (!btn) return;
-    if (isEnabled) {
-        btn.disabled = false;
-        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-        btn.classList.add('bg-teal-700', 'hover:bg-teal-800', 'cursor-pointer');
-    } else {
-        btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-        btn.classList.remove('hover:bg-teal-800', 'cursor-pointer');
-    }
-}
-
-function setFullpageVoucherPrintMode(mode = 'dual') {
-    currentFullpageVoucherPrintMode = mode;
-    const printArea = document.getElementById('fullpage-cash-voucher-printable-area');
-    const btnDual = document.getElementById('btn-fullpage-voucher-mode-dual');
-    const btnSingle = document.getElementById('btn-fullpage-voucher-mode-single');
-
-    if (printArea) {
-        if (mode === 'dual') {
-            printArea.classList.add('voucher-mode-dual');
-            printArea.classList.remove('voucher-mode-single');
-        } else {
-            printArea.classList.add('voucher-mode-single');
-            printArea.classList.remove('voucher-mode-dual');
-        }
-    }
-
-    if (btnDual && btnSingle) {
-        if (mode === 'dual') {
-            btnDual.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-emerald-700 text-white shadow-xs cursor-pointer';
-            btnSingle.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer';
-        } else {
-            btnSingle.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-emerald-700 text-white shadow-xs cursor-pointer';
-            btnDual.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer';
-        }
-    }
-
-    setDynamicPrintPageStyle(mode === 'dual' ? '@page { size: A4 portrait; margin: 8mm 10mm; }' : '@page { size: A4 portrait; margin: 15mm 18mm; }');
-}
 
 function renderFullpageVoucherContent(tx) {
     if (!tx) return;
@@ -23859,20 +24256,6 @@ function enableFullpageVoucherEdit() {
     showToast('info', 'Đã chuyển sang chế độ Sửa Phiếu. Bạn có thể thay đổi thông tin và bấm "Lưu".', 'Chế Độ Sửa');
 }
 
-function cancelFullpageVoucherEdit() {
-    const id = document.getElementById('edit-voucher-id')?.value;
-    if (id) {
-        // Nếu đang sửa phiếu đã có: đóng panel form sửa, quay về preview A4
-        const editPanel = document.getElementById('fullpage-voucher-edit-panel');
-        if (editPanel) editPanel.classList.add('hidden');
-        const editBtn = document.getElementById('btn-fullpage-edit-voucher');
-        if (editBtn) editBtn.classList.remove('hidden');
-        setFullpageVoucherSaveButtonState(false);
-    } else {
-        // Đang tạo mới phiếu: hủy và quay về Sổ Quỹ
-        backToAccountingCashbook();
-    }
-}
 
 async function saveFullpageVoucher() {
     const id = document.getElementById('edit-voucher-id')?.value;
@@ -24178,11 +24561,6 @@ function printCurrentFormVoucher() {
     }
 }
 
-function printFullpageCashVoucher() {
-    document.body.classList.add('is-printing-voucher');
-    document.body.classList.remove('is-printing-quotation', 'is-printing-report');
-    window.print();
-}
 
 function backToAccountingCashbook() {
     const detailView = document.getElementById('view-cash-voucher-detail');
@@ -24199,11 +24577,7 @@ window.printCurrentFormVoucher = printCurrentFormVoucher;
 window.confirmDeleteCashVoucher = confirmDeleteCashVoucher;
 window.backToAccountingCashbook = backToAccountingCashbook;
 window.enableFullpageVoucherEdit = enableFullpageVoucherEdit;
-window.cancelFullpageVoucherEdit = cancelFullpageVoucherEdit;
 window.saveFullpageVoucher = saveFullpageVoucher;
-window.printFullpageCashVoucher = printFullpageCashVoucher;
-window.setFullpageVoucherPrintMode = setFullpageVoucherPrintMode;
-window.setFullpageVoucherSaveButtonState = setFullpageVoucherSaveButtonState;
 window.onEditVoucherTypeChange = onEditVoucherTypeChange;
 window.onEditVoucherMethodChange = onEditVoucherMethodChange;
 window.updateLiveVoucherAmount = updateLiveVoucherAmount;
@@ -25060,71 +25434,6 @@ let currentAccountingReportType = 'BY_CUSTOMER';
 let currentAccountingReportPeriod = 'this_month';
 let cachedAccountingReportData = null;
 
-function selectAccountingReportType(reportType) {
-    currentAccountingReportType = reportType;
-    if (typeof closeAccountingDrilldownView === 'function') {
-        closeAccountingDrilldownView();
-    }
-    
-    // Cập nhật giao diện 4 nút
-    const buttons = {
-        'BY_CUSTOMER': 'btn-rep-type-customer',
-        'BY_SUBCONTRACTOR': 'btn-rep-type-subcontractor',
-        'BY_DRIVER': 'btn-rep-type-driver',
-        'BY_ROUTE': 'btn-rep-type-route'
-    };
-
-    Object.entries(buttons).forEach(([type, btnId]) => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            if (type === reportType) {
-                btn.classList.add('active', 'border-teal-600', 'bg-teal-50', 'text-teal-900');
-                btn.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
-            } else {
-                btn.classList.remove('active', 'border-teal-600', 'bg-teal-50', 'text-teal-900');
-                btn.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
-            }
-        }
-    });
-
-    loadAccountingReportData();
-}
-
-function setAccountingReportPeriod(period) {
-    currentAccountingReportPeriod = period;
-    const fromInput = document.getElementById('acct-rep-from-date');
-    const toInput = document.getElementById('acct-rep-to-date');
-    if (!fromInput || !toInput) return;
-
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth(); // 0-indexed
-
-    const pad = (n) => String(n).padStart(2, '0');
-    const formatD = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
-    if (period === 'this_month') {
-        fromInput.value = `${y}-${pad(m + 1)}-01`;
-        const lastDay = new Date(y, m + 1, 0);
-        toInput.value = formatD(lastDay);
-    } else if (period === 'last_month') {
-        const prevMonth = m === 0 ? 11 : m - 1;
-        const prevYear = m === 0 ? y - 1 : y;
-        fromInput.value = `${prevYear}-${pad(prevMonth + 1)}-01`;
-        const lastDay = new Date(prevYear, prevMonth + 1, 0);
-        toInput.value = formatD(lastDay);
-    } else if (period === 'this_quarter') {
-        const qMonth = Math.floor(m / 3) * 3;
-        fromInput.value = `${y}-${pad(qMonth + 1)}-01`;
-        const lastDay = new Date(y, qMonth + 3, 0);
-        toInput.value = formatD(lastDay);
-    } else if (period === 'this_year') {
-        fromInput.value = `${y}-01-01`;
-        toInput.value = `${y}-12-31`;
-    }
-
-    loadAccountingReportData();
-}
 
 async function loadAccountingReportData() {
     try {
@@ -25325,28 +25634,6 @@ let accountingReportSortAsc = false;
 let cachedAccountingDrilldownData = null;
 let currentDrilldownTab = 'trips';
 
-function filterAccountingReportTable() {
-    const input = document.getElementById('acct-rep-search-input');
-    const clearBtn = document.getElementById('acct-rep-search-clear');
-    accountingReportSearchTerm = input ? input.value.trim().toLowerCase() : '';
-
-    if (clearBtn) {
-        if (accountingReportSearchTerm) clearBtn.classList.remove('hidden');
-        else clearBtn.classList.add('hidden');
-    }
-
-    if (cachedAccountingReportData) {
-        renderAccountingReportTable(cachedAccountingReportData);
-    }
-}
-window.filterAccountingReportTable = filterAccountingReportTable;
-
-function clearAccountingReportSearch() {
-    const input = document.getElementById('acct-rep-search-input');
-    if (input) input.value = '';
-    filterAccountingReportTable();
-}
-window.clearAccountingReportSearch = clearAccountingReportSearch;
 
 function sortAccountingReportBy(colKey) {
     if (accountingReportSortColumn === colKey) {
@@ -25830,137 +26117,11 @@ function filterDrilldownTable() {
 }
 window.filterDrilldownTable = filterDrilldownTable;
 
-function clearDrilldownSearch() {
-    const searchInput = document.getElementById('drilldown-table-search');
-    if (searchInput) {
-        searchInput.value = '';
-        filterDrilldownTable();
-        searchInput.focus();
-    }
-}
-window.clearDrilldownSearch = clearDrilldownSearch;
 
-function closeAccountingDrilldownView() {
-    const summaryView = document.getElementById('acct-rep-summary-view');
-    const drilldownView = document.getElementById('acct-rep-drilldown-view');
-    const mainHeader = document.getElementById('acct-main-header');
-    const mainSubtabsBar = document.getElementById('acct-main-subtabs-bar');
 
-    if (drilldownView) drilldownView.classList.add('hidden');
-    if (mainHeader) mainHeader.classList.remove('hidden');
-    if (mainSubtabsBar) mainSubtabsBar.classList.remove('hidden');
-    if (summaryView) summaryView.classList.remove('hidden');
 
-    const mainView = document.getElementById('view-ke-toan');
-    if (mainView) mainView.scrollTo({ top: 0, behavior: 'smooth' });
-}
-window.closeAccountingDrilldownView = closeAccountingDrilldownView;
-window.closeAccountingDrilldownModal = closeAccountingDrilldownView;
 
-function reloadAccountingDrilldown() {
-    if (currentDrilldownTarget) {
-        openAccountingReportDrilldown(currentDrilldownTarget.targetId, currentDrilldownTarget.encodedTargetKey);
-    }
-}
-window.reloadAccountingDrilldown = reloadAccountingDrilldown;
-window.reloadAccountingDrilldown = reloadAccountingDrilldown;
-
-function exportAccountingDrilldownToExcel() {
-    if (!cachedAccountingDrilldownData || !cachedAccountingDrilldownData.trips || cachedAccountingDrilldownData.trips.length === 0) {
-        showToast('warning', 'Chưa có dữ liệu chuyến xe để xuất Excel');
-        return;
-    }
-
-    const data = cachedAccountingDrilldownData;
-    const trips = data.trips;
-    let csvContent = '\uFEFF';
-
-    // Header thông tin
-    csvContent += `"BÁO CÁO CHI TIẾT CHUYẾN XE — ${data.target_name || ''}"\r\n`;
-    csvContent += `"Thời điểm xuất: ${new Date().toLocaleString('vi-VN')}"\r\n\r\n`;
-
-    // Cột
-    csvContent += `"STT","Mã Chuyến","Ngày Chạy","Khách Hàng","Đầu Kéo","Bác Tài","SĐT","Container","Seal","Lộ Trình","Doanh Thu (VNĐ)","Chi Phí Chuyến (VNĐ)","Chi Hộ KH (VNĐ)","Lợi Nhuận Gộp (VNĐ)","Trạng Thái"\r\n`;
-
-    trips.forEach((t, idx) => {
-        const row = [
-            idx + 1,
-            `"${t.trip_code}"`,
-            `"${t.created_date}"`,
-            `"${t.customer_name}"`,
-            `"${t.vehicle_plate}"`,
-            `"${t.driver_name}"`,
-            `"${t.driver_phone}"`,
-            `"${t.container_number} (${t.container_type})"`,
-            `"${t.seal_number}"`,
-            `"${t.route}"`,
-            t.revenue,
-            t.operating_expense,
-            t.reimbursable_expense,
-            t.gross_profit,
-            `"${t.status_display}"`
-        ];
-        csvContent += row.join(',') + '\r\n';
-    });
-
-    const filename = `BIM_ChiTiet_${(data.target_name || 'DoiTuong').replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    showToast('success', `Đã xuất báo cáo chi tiết "${filename}" thành công!`, 'Xuất Excel Thành Công');
-}
-window.exportAccountingDrilldownToExcel = exportAccountingDrilldownToExcel;
-
-function exportAccountingReportToExcel() {
-    if (!cachedAccountingReportData || !cachedAccountingReportData.rows || cachedAccountingReportData.rows.length === 0) {
-        showToast('warning', 'Chưa có dữ liệu báo cáo để xuất Excel');
-        return;
-    }
-
-    const data = cachedAccountingReportData;
-    const headers = data.headers || [];
-    const rows = data.rows || [];
-
-    let csvContent = '\uFEFF';
-    // Title
-    csvContent += `"${data.report_title || 'BÁO CÁO KẾ TOÁN'}"\r\n`;
-    csvContent += `"Thời điểm xuất: ${new Date().toLocaleString('vi-VN')}"\r\n\r\n`;
-
-    // Headers
-    const headerLabels = ['STT', ...headers.map(h => `"${h.label}"`)];
-    csvContent += headerLabels.join(',') + '\r\n';
-
-    // Rows
-    rows.forEach((r, idx) => {
-        const rowData = [idx + 1];
-        headers.forEach(h => {
-            let val = r[h.key];
-            if (val === null || val === undefined) val = '';
-            rowData.push(`"${String(val).replace(/"/g, '""')}"`);
-        });
-        csvContent += rowData.join(',') + '\r\n';
-    });
-
-    const filename = `BIM_Logistics_BaoCao_${data.report_type}_${new Date().toISOString().slice(0, 10)}.csv`;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    showToast('success', `Đã xuất báo cáo "${filename}" thành công!`, 'Xuất Excel Thành Công');
-}
-
-// ---- src/app/master-data/master-data.js ----
+// ---- src/app/master-data/tabs.js ----
 // ==============================================================================
 // 10. PHÂN HỆ CÀI ĐẶT & HỆ THỐNG DANH MỤC (MASTER DATA CONTROLLER)
 // ==============================================================================
@@ -26489,6 +26650,7 @@ function renderMasterDataPagination(startIdx, endIdx, total, totalPages, current
     controls.innerHTML = html;
 }
 
+// ---- src/app/master-data/table.js ----
 // ==============================================================================
 // MASTER DATA SORTING & STT HELPERS
 // ==============================================================================
@@ -27206,8 +27368,7 @@ function renderMasterDataTable(items, total = items.length) {
     }
 }
 
-
-
+// ---- src/app/master-data/form.js ----
 // Open Create Modal with Dynamic Form Fields
 async function openCreateMasterDataModal() {
     await loadMasterDataFormOptions();
@@ -27381,6 +27542,7 @@ function closeMasterDataModal() {
     if (modal) modal.classList.add('hidden');
 }
 
+// ---- src/app/master-data/form-fields.js ----
 function injectMasterDataModalFields(data) {
     const container = document.getElementById('md-modal-fields-container');
     if (!container) return;
@@ -28661,6 +28823,7 @@ function injectMasterDataModalFields(data) {
     }
 }
 
+// ---- src/app/master-data/form-submit.js ----
 // Submit Create or Edit Form
 async function submitMasterDataForm(e) {
     e.preventDefault();
@@ -31500,8 +31663,6 @@ let canViewFinance = true;
 // Caches & Sort States cho toàn bộ 14 Báo cáo TMS
 let rep1DataCache = [];
 let rep1DataFiltered = [];
-let currentTmsDrilldownMode = 'VEHICLE';
-let currentTmsDrilldownTarget = null;
 let rep1SortCol = 'revenue';
 let rep1SortAsc = false;
 
@@ -31760,10 +31921,6 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
     }
 }
 
-function toggleReportViewMode(mode) {
-    currentReportViewMode = mode || 'group';
-    applyReportGroupFilterToButtons();
-}
 
 function applyReportGroupFilterToButtons() {
     const subtabButtons = document.querySelectorAll('.report-subtab-btn');
@@ -31840,7 +31997,6 @@ function switchReportSubTab(subtabId) {
 window.canAccessReport = canAccessReport;
 window.initReportPermissions = initReportPermissions;
 window.switchReportGroup = switchReportGroup;
-window.toggleReportViewMode = toggleReportViewMode;
 window.switchReportSubTab = switchReportSubTab;
 
 function syncReportPeriodButtonsUI(period) {
@@ -32002,8 +32158,6 @@ async function loadReportsData() {
 }
 
 
-
-
 // -------------------------------------------------------------
 // XUẤT BÁO CÁO RA TỆP CSV / EXCEL CHUẨN UTF-8 VỚI BOM
 // -------------------------------------------------------------
@@ -32054,7 +32208,7 @@ function exportReportToExcel() {
     showToast('success', `Đã xuất báo cáo "${filename}" thành công!`, 'Xuất Excel Thành Công');
 }
 
-// ---- src/app/reports/reports-operations.js ----
+// ---- src/app/reports/operations/report-01-03.js ----
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 1: HIỆU SUẤT ĐỘI XE & P&L ĐẦU XE
 // -------------------------------------------------------------
@@ -32491,6 +32645,7 @@ function toggleReport3Sort(col) {
     applyReport3Filters();
 }
 
+// ---- src/app/reports/operations/report-04.js ----
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 4: ĐỐI SOÁT CHI PHÍ TUYẾN & HOÀN CHI HỘ
 // -------------------------------------------------------------
@@ -33182,6 +33337,7 @@ function exportReport4ToExcel() {
 }
 window.exportReport4ToExcel = exportReport4ToExcel;
 
+// ---- src/app/reports/operations/report-05-07.js ----
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 5: BÀN GIAO CẮT KÉO & LƯU XE SAU 0H
 // -------------------------------------------------------------
@@ -33590,7 +33746,7 @@ function toggleReport7Sort(col) {
     applyReport7Filters();
 }
 
-// ---- src/app/reports/reports-finance.js ----
+// ---- src/app/reports/finance/report-08-10.js ----
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 8: QUYẾT TOÁN & CÔNG NỢ NHÀ XE THẦU PHỤ 3PL
 // -------------------------------------------------------------
@@ -34051,7 +34207,7 @@ function toggleReport10Sort(col) {
     applyReport10Filters();
 }
 
-
+// ---- src/app/reports/finance/report-11-13.js ----
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 11: TẠM ỨNG & CHI PHÍ PHÁT SINH TÀI XẾ (ĐIỀU VẬN QUẢN LÝ)
 // -------------------------------------------------------------
@@ -34421,7 +34577,7 @@ function toggleReport13Sort(col) {
     applyReport13Filters();
 }
 
-
+// ---- src/app/reports/finance/report-14-17.js ----
 // -------------------------------------------------------------
 // RENDER BÁO CÁO 14: BÁO CÁO TUỔI ĐƠN TỒN ĐỌNG CHƯA QUYẾT TOÁN (UNSETTLED AGING)
 // -------------------------------------------------------------
@@ -35484,107 +35640,7 @@ function toggleReport7CustomerRow(index) {
 }
 window.toggleReport7CustomerRow = toggleReport7CustomerRow;
 
-function openVehicleDrilldown(index) {
-    const item = (typeof rep1DataFiltered !== 'undefined' && rep1DataFiltered[index]) ? rep1DataFiltered[index] : rep1DataCache[index];
-    if (!item) return;
 
-    currentTmsDrilldownMode = 'VEHICLE';
-    currentTmsDrilldownTarget = item;
-
-    const iconEl = document.getElementById('drilldown-modal-icon');
-    if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-truck text-xl"></i>';
-
-    const titleEl = document.getElementById('drilldown-modal-title');
-    if (titleEl) titleEl.innerText = `Chi Tiết Các Chuyến Xe: ${item.plate}`;
-
-    const badgeEl = document.getElementById('drilldown-modal-badge');
-    if (badgeEl) {
-        badgeEl.innerText = item.ownership || 'Xe Nhà';
-        badgeEl.className = item.ownership_code === 'OWNED' 
-            ? 'px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-500/20 text-teal-200 border border-teal-400/30'
-            : 'px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500/20 text-amber-200 border border-amber-400/30';
-    }
-
-    const subEl = document.getElementById('drilldown-modal-subtitle');
-    if (subEl) subEl.innerText = `Loại xe: ${item.vehicle_type || 'Đầu kéo'} · Tài xế: ${item.driver || '-'}`;
-
-    const thPartner = document.getElementById('drilldown-th-partner');
-    if (thPartner) thPartner.innerText = 'Khách Hàng';
-
-    const thLast = document.getElementById('drilldown-th-last');
-    if (thLast) thLast.innerText = 'Chi Phí Phát Sinh';
-
-    const lblFourth = document.getElementById('drilldown-stat-fourth-label');
-    if (lblFourth) lblFourth.innerText = 'Chi Phí Phát Sinh';
-
-    const valFourth = document.getElementById('drilldown-stat-fourth-val');
-    if (valFourth) valFourth.innerText = canViewFinance ? formatMoneyVND(item.expense || 0) : '***';
-
-    renderDrilldownData(item);
-}
-
-function openCustomerDrilldown(index) {
-    const item = (typeof rep7DataFiltered !== 'undefined' && rep7DataFiltered[index]) ? rep7DataFiltered[index] : rep7DataCache[index];
-    if (!item) return;
-
-    currentTmsDrilldownMode = 'CUSTOMER';
-    currentTmsDrilldownTarget = item;
-
-    const iconEl = document.getElementById('drilldown-modal-icon');
-    if (iconEl) iconEl.innerHTML = '<i class="ph-bold ph-buildings text-xl"></i>';
-
-    const titleEl = document.getElementById('drilldown-modal-title');
-    if (titleEl) titleEl.innerText = `Chi Tiết Các Chuyến Của Khách Hàng: ${item.customer_name}`;
-
-    const badgeEl = document.getElementById('drilldown-modal-badge');
-    if (badgeEl) {
-        badgeEl.innerText = item.customer_code ? `Mã KH: ${item.customer_code}` : 'Doanh Nghiệp';
-        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 font-mono';
-    }
-
-    const subEl = document.getElementById('drilldown-modal-subtitle');
-    if (subEl) subEl.innerText = `Tuyến chủ lực: ${item.top_route || '-'} · Tỷ trọng: ${item.revenue_share || 0}%`;
-
-    const thPartner = document.getElementById('drilldown-th-partner');
-    if (thPartner) thPartner.innerText = 'Biển Số & Tài Xế';
-
-    const thLast = document.getElementById('drilldown-th-last');
-    if (thLast) thLast.innerText = 'Chi Phí Phát Sinh';
-
-    const lblFourth = document.getElementById('drilldown-stat-fourth-label');
-    if (lblFourth) lblFourth.innerText = 'Chi Phí Phát Sinh';
-
-    const valFourth = document.getElementById('drilldown-stat-fourth-val');
-    if (valFourth) valFourth.innerText = canViewFinance ? formatMoneyVND(item.expense || 0) : '***';
-
-    renderDrilldownData(item);
-}
-
-function renderDrilldownData(item) {
-    const trips = item.trips || [];
-
-    const statTrips = document.getElementById('drilldown-stat-trips');
-    if (statTrips) statTrips.innerText = `${item.trips_count || trips.length} Chuyến`;
-
-    const statConts = document.getElementById('drilldown-stat-conts');
-    if (statConts) statConts.innerText = `${item.containers_count || trips.length} Cont`;
-
-    const statRev = document.getElementById('drilldown-stat-rev');
-    if (statRev) statRev.innerText = canViewFinance ? formatMoneyVND(item.revenue || 0) : '***';
-
-    const searchInput = document.getElementById('drilldown-table-search');
-    if (searchInput) searchInput.value = '';
-
-    filterDrilldownTable();
-
-    const modal = document.getElementById('modal-report-drilldown-trips');
-    if (modal) modal.classList.remove('hidden');
-}
-
-function closeReportDrilldownModal() {
-    const modal = document.getElementById('modal-report-drilldown-trips');
-    if (modal) modal.classList.add('hidden');
-}
 
 // ---- src/app/reports/customer-statement.js ----
 // -------------------------------------------------------------
@@ -37221,9 +37277,6 @@ async function openCustomsPage(id = null, updateHistory = true) {
     }
 }
 
-async function openCustomsModal(id = null) {
-    return openCustomsPage(id);
-}
 
 function closeCustomsModal() {
     backToCustoms();
@@ -37671,16 +37724,9 @@ async function openDirectPrintCustoms(customsId) {
 // ---- src/app/zz-global-exports.js ----
 window.switchTab = typeof switchTab !== 'undefined' ? switchTab : window.switchTab;
 window.switchAccountingSubTab = typeof switchAccountingSubTab !== 'undefined' ? switchAccountingSubTab : undefined;
-window.selectAccountingReportType = typeof selectAccountingReportType !== 'undefined' ? selectAccountingReportType : undefined;
-window.switchAccountingReportType = typeof selectAccountingReportType !== 'undefined' ? selectAccountingReportType : undefined;
-window.setAccountingReportPeriod = typeof setAccountingReportPeriod !== 'undefined' ? setAccountingReportPeriod : undefined;
-window.changeAccountingReportPeriod = typeof setAccountingReportPeriod !== 'undefined' ? setAccountingReportPeriod : undefined;
 window.loadAccountingReportData = typeof loadAccountingReportData !== 'undefined' ? loadAccountingReportData : undefined;
-window.exportAccountingReportToExcel = typeof exportAccountingReportToExcel !== 'undefined' ? exportAccountingReportToExcel : undefined;
 window.openAccountingReportDrilldown = typeof openAccountingReportDrilldown !== 'undefined' ? openAccountingReportDrilldown : undefined;
-window.closeAccountingDrilldownModal = typeof closeAccountingDrilldownView !== 'undefined' ? closeAccountingDrilldownView : undefined;
 window.switchDrilldownTab = typeof switchDrilldownTab !== 'undefined' ? switchDrilldownTab : undefined;
-window.exportAccountingDrilldownToExcel = typeof exportAccountingDrilldownToExcel !== 'undefined' ? exportAccountingDrilldownToExcel : undefined;
 
 // Phân hệ Quyết Toán Gom Chuyến (Driver Settlements View)
 window.loadSettlementData = typeof loadSettlementData !== 'undefined' ? loadSettlementData : undefined;
@@ -37718,12 +37764,10 @@ window.submitMasterDataImport = typeof submitMasterDataImport !== 'undefined' ? 
 window.switchAccountingSubTab = typeof switchAccountingSubTab !== 'undefined' ? switchAccountingSubTab : window.switchAccountingSubTab;
 window.switchReportGroup = typeof switchReportGroup !== 'undefined' ? switchReportGroup : undefined;
 window.switchReportSubTab = typeof switchReportSubTab !== 'undefined' ? switchReportSubTab : undefined;
-window.switchDonutChart = typeof switchDonutChart !== 'undefined' ? switchDonutChart : undefined;
 window.toggleSidebar = typeof toggleSidebar !== 'undefined' ? toggleSidebar : undefined;
 window.expandSidebar = typeof expandSidebar !== 'undefined' ? expandSidebar : undefined;
 window.applySidebarStateFromStorage = typeof applySidebarStateFromStorage !== 'undefined' ? applySidebarStateFromStorage : undefined;
 window.toggleDashboardCharts = typeof toggleDashboardCharts !== 'undefined' ? toggleDashboardCharts : undefined;
-window.refreshCurrentView = typeof refreshCurrentView !== 'undefined' ? refreshCurrentView : undefined;
 window.applyDashboardCustomDate = typeof applyDashboardCustomDate !== 'undefined' ? applyDashboardCustomDate : undefined;
 
 // 2. Phân Hệ Điều Vận (Dispatch)
@@ -37835,7 +37879,6 @@ window.exportCashBookToExcel = typeof exportCashBookToExcel !== 'undefined' ? ex
 window.exportReimbursablesToExcel = typeof exportReimbursablesToExcel !== 'undefined' ? exportReimbursablesToExcel : undefined;
 window.exportSubcontractorToExcel = typeof exportSubcontractorToExcel !== 'undefined' ? exportSubcontractorToExcel : undefined;
 window.exportBotAuditToExcel = typeof exportBotAuditToExcel !== 'undefined' ? exportBotAuditToExcel : undefined;
-window.openCreateCashTransactionModal = typeof openCreateCashTransactionModal !== 'undefined' ? openCreateCashTransactionModal : undefined;
 window.closeCashTransactionModal = typeof closeCashTransactionModal !== 'undefined' ? closeCashTransactionModal : undefined;
 window.handleSaveCashTransaction = typeof handleSaveCashTransaction !== 'undefined' ? handleSaveCashTransaction : undefined;
 window.openCreateDebitNoteModal = typeof openCreateDebitNoteModal !== 'undefined' ? openCreateDebitNoteModal : undefined;
@@ -37857,7 +37900,6 @@ window.toggleAdvanceSourceType = typeof toggleAdvanceSourceType !== 'undefined' 
 window.applyDriverAdvancesFilter = typeof applyDriverAdvancesFilter !== 'undefined' ? applyDriverAdvancesFilter : undefined;
 window.selectAllReimbursables = typeof selectAllReimbursables !== 'undefined' ? selectAllReimbursables : undefined;
 window.toggleCheckAllReimbursables = typeof toggleCheckAllReimbursables !== 'undefined' ? toggleCheckAllReimbursables : undefined;
-window.toggleBehalfCheckbox = typeof toggleBehalfCheckbox !== 'undefined' ? toggleBehalfCheckbox : undefined;
 window.calculateSettlementDiff = typeof calculateSettlementDiff !== 'undefined' ? calculateSettlementDiff : undefined;
 window.calculateSubcontractorMargin = typeof calculateSubcontractorMargin !== 'undefined' ? calculateSubcontractorMargin : undefined;
 window.onCashTypeChange = typeof onCashTypeChange !== 'undefined' ? onCashTypeChange : undefined;
@@ -37869,7 +37911,6 @@ window.printCurrentCustomerStatement = typeof printCurrentCustomerStatement !== 
 window.closeCustomerARStatementModal = typeof closeCustomerARStatementModal !== 'undefined' ? closeCustomerARStatementModal : undefined;
 window.toggleReconcileTrip = typeof toggleReconcileTrip !== 'undefined' ? toggleReconcileTrip : undefined;
 window.batchReconcileCustomerAR = typeof batchReconcileCustomerAR !== 'undefined' ? batchReconcileCustomerAR : undefined;
-window.filterCustomerSelectOptions = typeof filterCustomerSelectOptions !== 'undefined' ? filterCustomerSelectOptions : undefined;
 
 // 7. Phân Hệ Quyết Toán Gom Chuyến (Driver Settlements)
 window.openBatchSettlementModal = typeof openBatchSettlementModal !== 'undefined' ? openBatchSettlementModal : undefined;
@@ -37881,7 +37922,6 @@ window.executeBatchSettlementSubmit = typeof executeBatchSettlementSubmit !== 'u
 
 // 8. Phân Hệ Hải Quan (Customs)
 window.fetchCustomsDeclarations = typeof fetchCustomsDeclarations !== 'undefined' ? fetchCustomsDeclarations : undefined;
-window.openCustomsModal = typeof openCustomsModal !== 'undefined' ? openCustomsModal : undefined;
 window.closeCustomsModal = typeof closeCustomsModal !== 'undefined' ? closeCustomsModal : undefined;
 window.submitCustomsDeclarationForm = typeof submitCustomsDeclarationForm !== 'undefined' ? submitCustomsDeclarationForm : undefined;
 window.exportCustomsExcel = typeof exportCustomsExcel !== 'undefined' ? exportCustomsExcel : undefined;
@@ -37895,7 +37935,6 @@ window.onFreeDaysChange = typeof onFreeDaysChange !== 'undefined' ? onFreeDaysCh
 window.loadReportsData = typeof loadReportsData !== 'undefined' ? loadReportsData : undefined;
 window.exportReportToExcel = typeof exportReportToExcel !== 'undefined' ? exportReportToExcel : undefined;
 window.changeReportPeriod = typeof changeReportPeriod !== 'undefined' ? changeReportPeriod : undefined;
-window.toggleReportViewMode = typeof toggleReportViewMode !== 'undefined' ? toggleReportViewMode : undefined;
 window.printReportDocument = typeof printReportDocument !== 'undefined' ? printReportDocument : undefined;
 window.closeReportPrintModal = typeof closeReportPrintModal !== 'undefined' ? closeReportPrintModal : undefined;
 window.setReportPrintOrientation = typeof setReportPrintOrientation !== 'undefined' ? setReportPrintOrientation : undefined;
@@ -37950,9 +37989,6 @@ window.changeMasterDataPageSize = typeof changeMasterDataPageSize !== 'undefined
 // 11. Dashboard & OCR & Tiện ích chung
 window.loadDashboardData = typeof loadDashboardData !== 'undefined' ? loadDashboardData : undefined;
 window.applyDashboardPnlFilters = typeof applyDashboardPnlFilters !== 'undefined' ? applyDashboardPnlFilters : undefined;
-window.clearDashboardPnlSearch = typeof clearDashboardPnlSearch !== 'undefined' ? clearDashboardPnlSearch : undefined;
-window.resetDashboardPnlFilters = typeof resetDashboardPnlFilters !== 'undefined' ? resetDashboardPnlFilters : undefined;
-window.toggleDashboardPnlSort = typeof toggleDashboardPnlSort !== 'undefined' ? toggleDashboardPnlSort : undefined;
 window.openOcrApp = typeof openOcrApp !== 'undefined' ? openOcrApp : undefined;
 window.startOcrScan = typeof startOcrScan !== 'undefined' ? startOcrScan : undefined;
 window.submitOcrData = typeof submitOcrData !== 'undefined' ? submitOcrData : undefined;
@@ -37974,7 +38010,6 @@ window.openCreateBookingPage = typeof openCreateBookingPage !== 'undefined' ? op
 window.viewBookingDetail = typeof viewBookingDetail !== 'undefined' ? viewBookingDetail : undefined;
 window.backToBookings = typeof backToBookings !== 'undefined' ? backToBookings : undefined;
 window.saveFullpageBooking = typeof saveFullpageBooking !== 'undefined' ? saveFullpageBooking : undefined;
-window.copyBookingPageLink = typeof copyBookingPageLink !== 'undefined' ? copyBookingPageLink : undefined;
 window.openCreateEmployeePage = typeof openCreateEmployeePage !== 'undefined' ? openCreateEmployeePage : undefined;
 window.openEditEmployeePage = typeof openEditEmployeePage !== 'undefined' ? openEditEmployeePage : undefined;
 window.backToPersonnel = typeof backToPersonnel !== 'undefined' ? backToPersonnel : undefined;
@@ -37995,3 +38030,3893 @@ window.setBookingLoadingTime = typeof setBookingLoadingTime !== 'undefined' ? se
 window.setFullpageBookingClosingTime = typeof setFullpageBookingClosingTime !== 'undefined' ? setFullpageBookingClosingTime : undefined;
 window.setFullpageBookingSiTime = typeof setFullpageBookingSiTime !== 'undefined' ? setFullpageBookingSiTime : undefined;
 window.setFullpageBookingLoadingTime = typeof setFullpageBookingLoadingTime !== 'undefined' ? setFullpageBookingLoadingTime : undefined;
+
+// ---- src/app/collaboration/shared.js ----
+function formatNewsDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+/**
+ * ==========================================================================
+ * BIM LOGISTICS — COLLABORATION MODULE (NEWS, TASKS, IN-APP TEAM CHAT)
+ * Kế thừa chuẩn quốc tế từ Bim Ecosystem (Bim_Consulting & Bim_ERP-Solutions)
+ * Áp dụng riêng cho Ban Giám Đốc, Quản lý và Cán bộ Nhân viên Văn phòng
+ * ==========================================================================
+ */
+
+// Global State
+let currentNewsList = [];
+let currentViewingNewsId = null;
+let currentTaskViewMode = 'kanban'; // 'kanban' | 'list'
+let currentTaskScope = 'all'; // 'all' | 'my_tasks' | 'assigned_by_me'
+let currentViewingTaskId = null;
+let officeDirectoryUsers = [];
+let collaborationUserPerms = null;
+
+// Chat State
+let chatActiveRoomId = null;
+let chatLatestMessageId = 0;
+let chatPollTimer = null;
+let chatSelectedFiles = [];
+
+async function authFetch(url, options = {}) {
+    if (typeof fetchWithAuth === 'function') {
+        return await fetchWithAuth(url, options);
+    }
+    const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders(options.headers || {}) : (options.headers || {});
+    return await fetch(url, { ...options, headers });
+}
+
+// ---- src/app/collaboration/news.js ----
+// ==========================================================================
+// 1. PHÂN HỆ: BẢN TIN CÔNG TY & THÔNG BÁO NỘI BỘ
+// ==========================================================================
+
+async function loadCompanyNews() {
+    const gridEl = document.getElementById('news-posts-grid');
+    const pinnedEl = document.getElementById('news-pinned-container');
+    const totalBadge = document.getElementById('news-total-badge');
+    const catFilter = document.getElementById('news-category-filter');
+    const searchInput = document.getElementById('news-search-input');
+
+    if (!gridEl) return;
+
+    gridEl.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400 text-xs"><i class="ph ph-spinner ph-spin text-xl mb-2 block"></i>Đang tải bản tin công ty...</div>';
+    if (pinnedEl) pinnedEl.innerHTML = '';
+
+    // Load categories nếu filter chưa có
+    if (catFilter && catFilter.options.length <= 1) {
+        try {
+            const catRes = await authFetch('/api/collaboration/news/categories/', {
+                headers: getAuthHeaders()
+            });
+            const catJson = await catRes.json();
+            if (catJson.success && catJson.data) {
+                catFilter.innerHTML = '<option value="">Tất cả danh mục</option>';
+                const createCatSelect = document.getElementById('create-news-category');
+                if (createCatSelect) createCatSelect.innerHTML = '';
+
+                catJson.data.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    catFilter.appendChild(opt);
+
+                    if (createCatSelect) {
+                        const opt2 = document.createElement('option');
+                        opt2.value = c.id;
+                        opt2.textContent = c.name;
+                        createCatSelect.appendChild(opt2);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error loading news categories:', e);
+        }
+    }
+
+    // Build URL params
+    const params = new URLSearchParams();
+    if (catFilter && catFilter.value) params.append('category_id', catFilter.value);
+    const deptFilter = document.getElementById('news-department-filter');
+    if (deptFilter && deptFilter.value) params.append('department', deptFilter.value);
+    if (searchInput && searchInput.value.trim()) params.append('search', searchInput.value.trim());
+
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/?${params.toString()}`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) {
+            gridEl.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400 text-xs">Không có dữ liệu bản tin.</div>';
+            return;
+        }
+
+        currentNewsList = json.data;
+        if (totalBadge) totalBadge.textContent = `${json.data.length} tin`;
+
+        // Kiểm soát hiển thị nút Đăng Bản Tin Mới theo phân quyền
+        const createBtn = document.getElementById('btn-open-create-news');
+        if (createBtn) {
+            if (json.can_create_post === false) {
+                createBtn.classList.add('hidden');
+            } else {
+                createBtn.classList.remove('hidden');
+            }
+        }
+
+        const canCreatePost = json.can_create_post !== false;
+
+        // 1. Dọn dẹp pinned container để tránh trùng lặp bài viết
+        if (pinnedEl) {
+            pinnedEl.innerHTML = '';
+            pinnedEl.classList.add('hidden');
+        }
+
+        // 2. Render Toàn Bộ Bản Tin Theo Định Dạng Dòng/Đoạn Thống Nhất (Chuẩn Thẻ Số 1, Tinh Gọn Không Thẻ Bọc Thô)
+        if (json.data.length === 0) {
+            gridEl.innerHTML = `
+                <div class="text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                        <i class="ph ph-newspaper text-2xl"></i>
+                    </div>
+                    <p class="text-slate-600 font-bold text-xs">Chưa có thông báo nào được đăng tải.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Các thông báo điều hành và văn bản chỉ đạo sẽ hiển thị tại đây.</p>
+                </div>
+            `;
+            return;
+        }
+
+        gridEl.innerHTML = json.data.map(p => {
+            const urgentBadge = p.is_urgent ? `
+                <span class="inline-flex items-center text-[10px] font-black text-rose-700 bg-rose-100/90 px-1.5 py-0.5 rounded border border-rose-200 mr-1.5 shrink-0 gap-1">
+                    <i class="ph-bold ph-warning-circle text-[10.5px]"></i>Khẩn
+                </span>
+            ` : '';
+
+            const pinnedBadge = p.is_pinned ? `
+                <span class="inline-flex items-center text-[10px] font-black text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded border border-amber-200 mr-1.5 shrink-0 gap-1">
+                    <i class="ph-bold ph-push-pin text-[10.5px]"></i>Ghim
+                </span>
+            ` : '';
+
+            const catName = p.category_info?.name || 'Thông báo chung';
+            const catColor = p.category_info?.color || '#0d9488';
+            const catBadge = `
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 mr-1.5" style="background-color: ${catColor}15; border-color: ${catColor}40; color: ${catColor};">
+                    ${escapeHtml(catName)}
+                </span>
+            `;
+
+            const deptDisplay = p.target_department_display || (p.target_department === 'ALL' ? '' : p.target_department);
+            const deptBadge = (deptDisplay && p.target_department !== 'ALL') ? `
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200/80 mr-1.5 shrink-0">
+                    Phòng: ${escapeHtml(deptDisplay)}
+                </span>
+            ` : '';
+
+            let cardClasses = 'bg-white border-slate-200/90 hover:border-teal-400 hover:bg-teal-50/20 shadow-2xs hover:shadow-xs';
+            if (p.is_urgent) {
+                cardClasses = 'bg-rose-50/20 border-rose-200 hover:border-rose-400 shadow-2xs hover:shadow-xs';
+            } else if (p.is_pinned) {
+                cardClasses = 'bg-amber-50/25 border-amber-300 ring-1 ring-amber-200/60 hover:border-amber-400 shadow-2xs hover:shadow-xs';
+            }
+
+            const dateStr = formatNewsDate(p.published_at || p.created_at);
+            const authorName = p.author_name || 'Ban Giám Đốc';
+
+            return `
+                <div onclick="openNewsDetailPage('${p.hashid || p.id}', event)" 
+                    class="p-3 sm:p-3.5 rounded-xl border ${cardClasses} transition-all cursor-pointer group flex flex-col justify-between space-y-1.5"
+                    title="Bấm để mở trang chi tiết & xem trước tài liệu đính kèm (PDF/Word/Excel)">
+                    
+                    <!-- Hàng 1: Badges bên trái + Ngày bên phải (Chuẩn Hình 3 & 4) -->
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center flex-wrap gap-y-1">
+                            ${urgentBadge}
+                            ${pinnedBadge}
+                            ${catBadge}
+                            ${deptBadge}
+                        </div>
+                        <span class="text-[11px] font-medium text-slate-400 whitespace-nowrap shrink-0">${escapeHtml(dateStr)}</span>
+                    </div>
+
+                    <!-- Hàng 2: Tiêu đề bản tin (Chuẩn Hình 3 & 4) -->
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-teal-800 transition-colors line-clamp-1 sm:line-clamp-2 font-heading leading-snug">
+                        ${escapeHtml(p.title)}
+                    </h4>
+
+                    <!-- Hàng 3: Tóm tắt nội dung (Chuẩn Hình 3 & 4) -->
+                    <p class="text-[11px] sm:text-xs text-slate-500 font-normal line-clamp-2 leading-relaxed">
+                        ${escapeHtml(p.summary || '')}
+                    </p>
+
+                    <!-- Hàng 4: Người đăng bên trái + Đọc tiếp > bên phải (Chuẩn Hình 3 & 4) -->
+                    <div class="flex items-center justify-between text-[10.5px] sm:text-[11px] text-slate-400 pt-1.5 border-t border-slate-100/90">
+                        <div class="flex items-center gap-3">
+                            <span>Người đăng: <strong class="text-slate-600 font-semibold">${escapeHtml(authorName)}</strong></span>
+                            ${p.attachments_count > 0 ? `
+                                <span class="inline-flex items-center text-teal-700 font-semibold gap-1 text-[10.5px]">
+                                    <i class="ph-bold ph-paperclip text-[11px]"></i>${p.attachments_count} tệp
+                                </span>
+                            ` : ''}
+                            ${p.view_count > 0 ? `
+                                <span class="inline-flex items-center text-slate-400 gap-1 text-[10.5px]">
+                                    <i class="ph ph-eye text-[11px]"></i>${p.view_count}
+                                </span>
+                            ` : ''}
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            ${(p.author_id === window.CURRENT_USER?.id || window.CURRENT_USER?.is_superuser || (window.CURRENT_USER?.hierarchy_level >= 80) || (window.CURRENT_USER?.role === 'DIRECTOR')) ? `
+                                <button type="button" onclick="openEditNewsModalFromFeed(${p.id}, event)" 
+                                    class="p-1 rounded-md text-slate-400 hover:text-teal-700 hover:bg-teal-50 transition-colors" 
+                                    title="Chỉnh sửa bản tin này">
+                                    <i class="ph-bold ph-pencil-simple text-xs"></i>
+                                </button>
+                                <button type="button" onclick="deleteNewsFromFeed(${p.id}, event)" 
+                                    class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" 
+                                    title="Xóa bản tin này">
+                                    <i class="ph-bold ph-trash text-xs"></i>
+                                </button>
+                            ` : ''}
+                            ${canCreatePost ? `
+                                <button type="button" onclick="quickTogglePinNews(${p.id}, event)" 
+                                    class="p-1 rounded-md text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors" 
+                                    title="${p.is_pinned ? 'Bỏ ghim khỏi đầu trang' : 'Ghim bài lên đầu trang'}">
+                                    <i class="ph-${p.is_pinned ? 'fill text-amber-600' : 'bold'} ph-push-pin text-xs"></i>
+                                </button>
+                            ` : ''}
+                            <span class="text-teal-700 font-bold group-hover:underline flex items-center text-xs ml-1">
+                                Đọc tiếp <i class="ph ph-caret-right ml-0.5 text-xs"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        console.error('Error loading company news:', e);
+        gridEl.innerHTML = '<div class="col-span-full text-center py-12 text-rose-500 text-xs">Lỗi tải dữ liệu bản tin.</div>';
+    }
+}
+
+let currentViewingNewsHashid = null;
+
+function openNewsDetailPage(postIdentifier, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    const target = postIdentifier || currentViewingNewsHashid || currentViewingNewsId;
+    if (target) {
+        window.location.href = `/news/${target}/`;
+    }
+}
+
+async function openNewsDetailModal(postId) {
+    currentViewingNewsId = postId;
+    const modal = document.getElementById('modal-news-detail');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) {
+            showToast('error', 'Không thể tải chi tiết bản tin.');
+            return;
+        }
+
+        const p = json.data;
+        currentViewingNewsHashid = p.hashid || p.id;
+        document.getElementById('news-modal-title').textContent = p.title;
+        document.getElementById('news-modal-author').textContent = p.author_info?.full_name || p.author_name;
+        document.getElementById('news-modal-date').textContent = formatDateTime(p.created_at);
+        document.getElementById('news-modal-views').textContent = `${p.view_count} lượt xem`;
+        document.getElementById('news-modal-content').textContent = p.content;
+
+        // Category Badge
+        const catBadge = document.getElementById('news-modal-category-badge');
+        if (catBadge) {
+            catBadge.textContent = p.category_info?.name || 'Bản tin nội bộ';
+            catBadge.style.backgroundColor = (p.category_info?.color || '#0d9488') + '20';
+            catBadge.style.color = p.category_info?.color || '#0d9488';
+        }
+
+        // Urgent Badge
+        const urgentBadge = document.getElementById('news-modal-urgent-badge');
+        if (urgentBadge) {
+            if (p.is_urgent) urgentBadge.classList.remove('hidden');
+            else urgentBadge.classList.add('hidden');
+        }
+
+        // Phân quyền hiển thị nút Sửa & Xóa trong Modal
+        const currentUserId = window.CURRENT_USER?.id;
+        const isManager = window.CURRENT_USER?.is_superuser || (window.CURRENT_USER?.hierarchy_level >= 80) || (window.CURRENT_USER?.role === 'DIRECTOR');
+        const canEditThisPost = (p.author_id === currentUserId) || isManager;
+
+        const editBtn = document.getElementById('news-modal-edit-btn');
+        if (editBtn) {
+            if (canEditThisPost) editBtn.classList.remove('hidden');
+            else editBtn.classList.add('hidden');
+        }
+        const delBtn = document.getElementById('news-modal-delete-btn');
+        if (delBtn) {
+            if (canEditThisPost) delBtn.classList.remove('hidden');
+            else delBtn.classList.add('hidden');
+        }
+
+        // Pin button icon & tooltip
+        const pinBtn = document.getElementById('news-modal-pin-btn');
+        if (pinBtn) {
+            if (p.is_pinned) {
+                pinBtn.className = "p-1.5 rounded-lg border border-amber-300 bg-amber-100 hover:bg-amber-200 text-amber-800 transition-colors shadow-2xs cursor-pointer";
+                pinBtn.title = "Bỏ ghim khỏi đầu trang";
+            } else {
+                pinBtn.className = "p-1.5 rounded-lg border border-slate-200 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer";
+                pinBtn.title = "Ghim lên đầu trang";
+            }
+        }
+
+        // Cover
+        const coverWrapper = document.getElementById('news-modal-cover-wrapper');
+        const coverImg = document.getElementById('news-modal-cover');
+        if (coverWrapper && coverImg) {
+            if (p.cover_image) {
+                coverImg.src = p.cover_image;
+                coverWrapper.classList.remove('hidden');
+            } else {
+                coverWrapper.classList.add('hidden');
+            }
+        }
+
+        // Attachments
+        const attWrapper = document.getElementById('news-modal-attachments-wrapper');
+        const attList = document.getElementById('news-modal-attachments-list');
+        if (attWrapper && attList) {
+            if (p.attachments && p.attachments.length > 0) {
+                attWrapper.classList.remove('hidden');
+                attList.innerHTML = p.attachments.map(att => `
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 text-xs">
+                        <span class="flex items-center gap-2 font-medium text-slate-800 truncate">
+                            <i class="ph-bold ph-file-text text-teal-600 text-base"></i>
+                            ${escapeHtml(att.file_name)}
+                        </span>
+                        <a href="${att.file}" target="_blank" download class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded font-bold text-[11px] transition-colors shrink-0">
+                            Tải về
+                        </a>
+                    </div>
+                `).join('');
+            } else {
+                attWrapper.classList.add('hidden');
+            }
+        }
+
+        // Comments
+        renderNewsComments(p.comments || []);
+
+    } catch (e) {
+        console.error('Error fetching news detail:', e);
+    }
+}
+
+function renderNewsComments(comments) {
+    const listEl = document.getElementById('news-modal-comments-list');
+    const countEl = document.getElementById('news-modal-comments-count');
+    if (countEl) countEl.textContent = comments.length;
+    if (!listEl) return;
+
+    if (comments.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-2">Chưa có bình luận nào. Hãy là người đầu tiên đóng góp ý kiến!</div>';
+        return;
+    }
+
+    listEl.innerHTML = comments.map(c => `
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+            <div class="flex items-center justify-between font-bold text-slate-700">
+                <span class="flex items-center gap-1.5 text-teal-800">
+                    <i class="ph-bold ph-user-circle text-sm"></i>
+                    ${escapeHtml(c.author_info?.full_name || c.author_name)}
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">${formatDateTime(c.created_at)}</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed whitespace-pre-line">${escapeHtml(c.content)}</p>
+        </div>
+    `).join('');
+}
+
+async function submitNewsComment() {
+    if (!currentViewingNewsId) return;
+    const input = document.getElementById('news-comment-input');
+    if (!input || !input.value.trim()) return;
+
+    const content = input.value.trim();
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${currentViewingNewsId}/comments/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ content })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+            input.value = '';
+            // Reload news detail modal comments
+            openNewsDetailModal(currentViewingNewsId);
+        } else {
+            showToast('error', json.message || 'Không thể gửi bình luận.');
+        }
+    } catch (e) {
+        console.error('Error submitting comment:', e);
+    }
+}
+
+async function togglePinCurrentNews() {
+    if (!currentViewingNewsId) return;
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${currentViewingNewsId}/pin/`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message);
+            // Cập nhật ngay visual state của nút ghim trong modal mà không đóng modal đột ngột
+            const pinBtn = document.getElementById('news-modal-pin-btn');
+            if (pinBtn) {
+                if (json.is_pinned) {
+                    pinBtn.className = "p-1.5 rounded-lg border border-amber-300 bg-amber-100 hover:bg-amber-200 text-amber-800 transition-colors shadow-2xs cursor-pointer";
+                    pinBtn.title = "Bỏ ghim khỏi đầu trang";
+                } else {
+                    pinBtn.className = "p-1.5 rounded-lg border border-slate-200 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer";
+                    pinBtn.title = "Ghim lên đầu trang";
+                }
+            }
+            // Làm mới danh sách bài viết phân hệ Bản tin để bài ghim lập tức nhảy lên đầu
+            if (typeof loadCompanyNews === 'function') loadCompanyNews();
+            // Đồng bộ widget Bản tin trên Dashboard
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast('error', json.message || 'Không thể thực hiện thao tác.');
+        }
+    } catch (e) {
+        console.error('Error pinning post:', e);
+        showToast('error', 'Lỗi kết nối khi ghim bài viết.');
+    }
+}
+
+async function quickTogglePinNews(postId, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/pin/`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message);
+            if (typeof loadCompanyNews === 'function') loadCompanyNews();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast('error', json.message || 'Không thể thực hiện thao tác.');
+        }
+    } catch (e) {
+        console.error('Error quick pinning post:', e);
+        showToast('error', 'Lỗi kết nối khi ghim bài viết.');
+    }
+}
+
+function closeNewsDetailModal() {
+    const modal = document.getElementById('modal-news-detail');
+    if (modal) modal.classList.add('hidden');
+    currentViewingNewsId = null;
+}
+
+function openCreateNewsModal() {
+    const modal = document.getElementById('modal-create-news');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeCreateNewsModal() {
+    const modal = document.getElementById('modal-create-news');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function handleCreateNewsSubmit(e) {
+    e.preventDefault();
+    const title = document.getElementById('create-news-title').value.trim();
+    const content = document.getElementById('create-news-content').value.trim();
+    const catId = document.getElementById('create-news-category').value;
+    const dept = document.getElementById('create-news-department').value;
+    const summary = document.getElementById('create-news-summary').value.trim();
+    const isPinned = document.getElementById('create-news-pinned').checked;
+    const isUrgent = document.getElementById('create-news-urgent').checked;
+    const coverFile = document.getElementById('create-news-cover').files[0];
+    const files = document.getElementById('create-news-files').files;
+
+    if (!title || !content) {
+        showToast('warning', 'Vui lòng điền đầy đủ tiêu đề và nội dung.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    if (catId) formData.append('category_id', catId);
+    formData.append('target_department', dept);
+    formData.append('summary', summary);
+    formData.append('is_pinned', isPinned ? '1' : '0');
+    formData.append('is_urgent', isUrgent ? '1' : '0');
+    if (coverFile) formData.append('cover_image', coverFile);
+    for (let i = 0; i < files.length; i++) {
+        formData.append('attachments', files[i]);
+    }
+
+    try {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type']; // Let browser set boundary
+        const res = await authFetch('/api/collaboration/news/posts/', {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', 'Đã đăng bản tin thành công!');
+            closeCreateNewsModal();
+            document.getElementById('create-news-form').reset();
+            loadCompanyNews();
+        } else {
+            showToast('error', json.message || 'Không thể đăng bản tin.');
+        }
+    } catch (e) {
+        console.error('Error creating news:', e);
+        showToast('error', 'Lỗi hệ thống khi đăng bản tin.');
+    }
+}
+
+
+// ==========================================================================
+
+// ==========================================================================
+// TÍNH NĂNG CHỈNH SỬA & XÓA BẢN TIN TRÊN TRANG FEED (DANH SÁCH)
+// ==========================================================================
+
+let feedDeletedAttachmentIds = [];
+
+async function openEditNewsModalFromFeed(postId, event) {
+    if (event) event.stopPropagation();
+    const modal = document.getElementById('modal-edit-news-feed');
+    if (!modal) return;
+
+    feedDeletedAttachmentIds = [];
+    document.getElementById('edit-feed-post-id').value = postId;
+
+    // Load categories vào select nếu chưa có
+    const catSelect = document.getElementById('edit-feed-category');
+    const mainCatSelect = document.getElementById('news-category-filter');
+    if (catSelect && mainCatSelect) {
+        catSelect.innerHTML = '';
+        for (let i = 0; i < mainCatSelect.options.length; i++) {
+            const opt = mainCatSelect.options[i];
+            if (opt.value) {
+                const newOpt = document.createElement('option');
+                newOpt.value = opt.value;
+                newOpt.textContent = opt.textContent;
+                catSelect.appendChild(newOpt);
+            }
+        }
+    }
+
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) {
+            showToast('error', 'Không thể tải thông tin bản tin để chỉnh sửa.');
+            return;
+        }
+        const p = json.data;
+        document.getElementById('edit-feed-title').value = p.title || '';
+        document.getElementById('edit-feed-summary').value = p.summary || '';
+        document.getElementById('edit-feed-content').value = p.content || '';
+        if (catSelect) catSelect.value = p.category || '';
+        const deptSelect = document.getElementById('edit-feed-department');
+        if (deptSelect) deptSelect.value = p.target_department || 'ALL';
+        document.getElementById('edit-feed-pinned').checked = !!p.is_pinned;
+        document.getElementById('edit-feed-urgent').checked = !!p.is_urgent;
+
+        // Render attachments hiện tại
+        const attWrapper = document.getElementById('edit-feed-attachments-wrapper');
+        const attList = document.getElementById('edit-feed-attachments-list');
+        if (attWrapper && attList) {
+            if (p.attachments && p.attachments.length > 0) {
+                attList.innerHTML = p.attachments.map(att => `
+                    <div class="flex items-center justify-between text-xs p-2 bg-white rounded-lg border border-slate-200" id="feed-att-row-${att.id}">
+                        <span class="truncate max-w-sm text-slate-700 font-medium">
+                            <i class="ph-bold ph-paperclip text-teal-600 mr-1"></i>
+                            ${escapeHtml(att.file_name)}
+                        </span>
+                        <button type="button" onclick="toggleMarkDeleteFeedAttachment(${att.id})" id="btn-del-feed-att-${att.id}" class="px-2.5 py-0.5 text-rose-600 hover:bg-rose-50 rounded text-[11px] font-bold border border-rose-200 transition-colors cursor-pointer">
+                            Xóa
+                        </button>
+                    </div>
+                `).join('');
+                attWrapper.classList.remove('hidden');
+            } else {
+                attList.innerHTML = '';
+                attWrapper.classList.add('hidden');
+            }
+        }
+
+        modal.classList.remove('hidden');
+    } catch (err) {
+        console.error('Error fetching news for edit:', err);
+        showToast('error', 'Lỗi khi tải dữ liệu bài viết.');
+    }
+}
+
+function closeEditNewsFeedModal() {
+    const modal = document.getElementById('modal-edit-news-feed');
+    if (modal) modal.classList.add('hidden');
+}
+
+function toggleMarkDeleteFeedAttachment(attId) {
+    const row = document.getElementById(`feed-att-row-${attId}`);
+    const btn = document.getElementById(`btn-del-feed-att-${attId}`);
+    const idx = feedDeletedAttachmentIds.indexOf(attId);
+    if (idx === -1) {
+        feedDeletedAttachmentIds.push(attId);
+        if (row) row.classList.add('opacity-40', 'line-through', 'bg-rose-50');
+        if (btn) {
+            btn.textContent = 'Hoàn tác';
+            btn.className = 'px-2.5 py-0.5 text-slate-600 hover:bg-slate-100 rounded text-[11px] font-bold border border-slate-200 transition-colors cursor-pointer';
+        }
+    } else {
+        feedDeletedAttachmentIds.splice(idx, 1);
+        if (row) row.classList.remove('opacity-40', 'line-through', 'bg-rose-50');
+        if (btn) {
+            btn.textContent = 'Xóa';
+            btn.className = 'px-2.5 py-0.5 text-rose-600 hover:bg-rose-50 rounded text-[11px] font-bold border border-rose-200 transition-colors cursor-pointer';
+        }
+    }
+}
+
+async function handleEditNewsFeedSubmit(e) {
+    e.preventDefault();
+    const postId = document.getElementById('edit-feed-post-id').value;
+    const title = document.getElementById('edit-feed-title').value.trim();
+    const content = document.getElementById('edit-feed-content').value.trim();
+    const catId = document.getElementById('edit-feed-category')?.value;
+    const dept = document.getElementById('edit-feed-department')?.value;
+    const summary = document.getElementById('edit-feed-summary')?.value.trim();
+    const isPinned = document.getElementById('edit-feed-pinned')?.checked;
+    const isUrgent = document.getElementById('edit-feed-urgent')?.checked;
+    const files = document.getElementById('edit-feed-files')?.files;
+
+    if (!postId || !title || !content) {
+        showToast('warning', 'Vui lòng điền đầy đủ tiêu đề và nội dung.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    if (catId) formData.append('category_id', catId);
+    if (dept) formData.append('target_department', dept);
+    formData.append('summary', summary || '');
+    formData.append('is_pinned', isPinned ? '1' : '0');
+    formData.append('is_urgent', isUrgent ? '1' : '0');
+    if (feedDeletedAttachmentIds.length > 0) {
+        formData.append('deleted_attachment_ids', feedDeletedAttachmentIds.join(','));
+    }
+    if (files) {
+        for (let i = 0; i < files.length; i++) {
+            formData.append('attachments', files[i]);
+        }
+    }
+
+    const saveBtn = document.getElementById('btn-save-edit-feed');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Đang lưu...';
+    }
+
+    try {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type'];
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/`, {
+            method: 'PATCH',
+            headers,
+            body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', 'Đã cập nhật bản tin thành công!');
+            closeEditNewsFeedModal();
+            loadCompanyNews();
+        } else {
+            showToast('error', json.message || 'Không thể cập nhật bản tin.');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Lưu thay đổi';
+            }
+        }
+    } catch (err) {
+        console.error('Error updating news from feed:', err);
+        showToast('error', 'Lỗi hệ thống khi cập nhật bản tin.');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Lưu thay đổi';
+        }
+    }
+}
+
+function openEditNewsFromModal() {
+    if (currentViewingNewsId) {
+        const id = currentViewingNewsId;
+        closeNewsDetailModal();
+        openEditNewsModalFromFeed(id);
+    }
+}
+
+async function deleteNewsFromModal() {
+    if (!currentViewingNewsId) return;
+    deleteNewsFromFeed(currentViewingNewsId);
+}
+
+async function deleteNewsFromFeed(postId, event) {
+    if (event) event.stopPropagation();
+    if (!confirm('Bạn có chắc chắn muốn xóa bản tin này không? Sau khi xóa, bài viết sẽ không còn hiển thị.')) return;
+    try {
+        const res = await authFetch(`/api/collaboration/news/posts/${postId}/`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', 'Đã xóa bản tin thành công.');
+            closeNewsDetailModal();
+            loadCompanyNews();
+        } else {
+            showToast('error', json.message || 'Không thể xóa bản tin.');
+        }
+    } catch (e) {
+        console.error('Error deleting news:', e);
+        showToast('error', 'Lỗi khi xóa bản tin.');
+    }
+}
+
+// ---- src/app/collaboration/tasks-board.js ----
+// 2. PHÂN HỆ: QUẢN LÝ CÔNG VIỆC & GIAO VIỆC VĂN PHÒNG (JIRA/ASANA STANDARD)
+// ==========================================================================
+
+async function loadOfficeTasks() {
+    const kanbanContainer = document.getElementById('tasks-kanban-container');
+    const listTbody = document.getElementById('tasks-list-tbody');
+    const totalBadge = document.getElementById('tasks-total-badge');
+    const deptFilter = document.getElementById('tasks-dept-filter');
+    const searchInput = document.getElementById('tasks-search-input');
+
+    // Build URL query params
+    const params = new URLSearchParams();
+    params.append('view', currentTaskViewMode);
+    params.append('scope', currentTaskScope);
+    if (deptFilter && deptFilter.value) params.append('department', deptFilter.value);
+    if (searchInput && searchInput.value.trim()) params.append('search', searchInput.value.trim());
+
+    // Nạp directory nếu chưa có
+    if (officeDirectoryUsers.length === 0) {
+        try {
+            const dirRes = await authFetch('/api/collaboration/tasks/directory/', {
+                headers: getAuthHeaders()
+            });
+            const dirJson = await dirRes.json();
+            if (dirJson.success && dirJson.office_users) {
+                officeDirectoryUsers = dirJson.office_users;
+                populateAssigneeSelect();
+            }
+        } catch (e) {
+            console.error('Error loading task directory:', e);
+        }
+    }
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/?${params.toString()}`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success) return;
+
+        if (totalBadge) totalBadge.textContent = `${json.counts?.total || json.total || 0} việc`;
+
+        if (currentTaskViewMode === 'kanban') {
+            renderKanbanColumns(json.columns || {});
+            updateKanbanBadgeCounts(json.counts || {});
+        } else {
+            renderTasksListTable(json.data || []);
+        }
+
+    } catch (e) {
+        console.error('Error loading tasks:', e);
+    }
+}
+
+function switchTaskView(mode) {
+    currentTaskViewMode = mode;
+    const btnKanban = document.getElementById('btn-view-kanban');
+    const btnList = document.getElementById('btn-view-list');
+    const kanbanContainer = document.getElementById('tasks-kanban-container');
+    const listContainer = document.getElementById('tasks-list-container');
+
+    if (mode === 'kanban') {
+        btnKanban.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-teal-800 shadow-xs';
+        btnList.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+        kanbanContainer.classList.remove('hidden');
+        listContainer.classList.add('hidden');
+    } else {
+        btnList.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-teal-800 shadow-xs';
+        btnKanban.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+        kanbanContainer.classList.add('hidden');
+        listContainer.classList.remove('hidden');
+    }
+    loadOfficeTasks();
+}
+
+function setTaskScope(scope) {
+    currentTaskScope = scope;
+    ['all', 'assigned_by_me', 'assigned_to_me', 'related', 'my_tasks'].forEach(s => {
+        const btn = document.getElementById(`scope-${s.replace(/_/g, '-')}`);
+        if (btn) {
+            if (s === scope || (scope === 'assigned_to_me' && s === 'my_tasks')) {
+                btn.className = 'px-2.5 py-1 rounded-lg bg-white text-teal-800 shadow-xs transition-colors';
+            } else {
+                btn.className = 'px-2.5 py-1 rounded-lg hover:text-teal-800 transition-colors';
+            }
+        }
+    });
+    loadOfficeTasks();
+}
+
+function renderKanbanColumns(columns) {
+    const colStatuses = ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'];
+
+    colStatuses.forEach(st => {
+        const colEl = document.getElementById(`kanban-col-${st}`);
+        if (!colEl) return;
+
+        const tasks = columns[st] || [];
+        if (tasks.length === 0) {
+            colEl.innerHTML = '<div class="text-center py-8 text-slate-400 text-[11px] italic">Không có công việc nào</div>';
+            return;
+        }
+
+        colEl.innerHTML = tasks.map(t => {
+            // Xác định màu deadline: chỉ highlight khác màu text, không bọc badge to
+            let deadlineColorClass = 'text-slate-400';
+            let deadlineText = t.due_date ? formatDateDMY(t.due_date) : '';
+            if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+                deadlineColorClass = 'text-rose-600 font-bold';
+            } else if (t.days_remaining === 0) {
+                deadlineColorClass = 'text-amber-600 font-bold';
+                if (deadlineText) deadlineText = `Hôm nay (${deadlineText})`;
+            } else if (t.extension_status === 'PENDING') {
+                deadlineColorClass = 'text-purple-600 font-bold';
+                if (deadlineText) deadlineText += ' (Chờ gia hạn)';
+            }
+
+            // Line bọc (border) trùng màu trạng thái để nổi bật trực quan
+            let cardBorderClass = 'border-slate-200/90 hover:border-teal-400';
+            if (t.status === 'DONE') {
+                cardBorderClass = 'border-emerald-300 hover:border-emerald-400';
+            } else if (t.extension_status === 'PENDING') {
+                cardBorderClass = 'border-2 border-purple-400 hover:border-purple-500 shadow-purple-500/10';
+            } else if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+                cardBorderClass = 'border-2 border-rose-400 hover:border-rose-500 shadow-rose-500/10';
+            } else if (t.days_remaining === 0) {
+                cardBorderClass = 'border-2 border-amber-400 hover:border-amber-500 shadow-amber-500/10';
+            }
+
+            return `
+            <div id="task-card-${t.id}" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetailDrawer(${t.id})" class="bg-white rounded-xl p-3.5 border ${cardBorderClass} shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-2.5 select-none">
+                <!-- Priority & Code -->
+                <div class="flex items-center justify-between text-[10px]">
+                    <span class="font-mono font-bold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">${formatTaskCode(t.code)}</span>
+                    <span class="px-2 py-0.5 rounded font-extrabold uppercase tracking-wide ${getPriorityBadgeClass(t.priority)}">
+                        ${getPriorityText(t.priority)}
+                    </span>
+                </div>
+
+                <!-- Title -->
+                <h4 class="text-xs font-extrabold text-slate-800 group-hover:text-teal-700 transition-colors leading-snug">
+                    ${escapeHtml(t.title)}
+                </h4>
+
+                <!-- Meta row: Checklist & Comments & Progress -->
+                <div class="flex items-center gap-3 text-[11px] text-slate-400">
+                    ${t.checklists_count?.total > 0 ? `
+                        <span class="flex items-center gap-1 font-semibold ${t.checklists_count.done === t.checklists_count.total ? 'text-emerald-600' : 'text-slate-600'}">
+                            <i class="ph-bold ph-list-checks text-xs"></i>
+                            ${t.checklists_count.done}/${t.checklists_count.total}
+                        </span>
+                    ` : ''}
+                    ${t.comments_count > 0 ? `
+                        <span class="flex items-center gap-1 font-semibold text-slate-600">
+                            <i class="ph-bold ph-chat-circle-dots text-xs"></i>
+                            ${t.comments_count}
+                        </span>
+                    ` : ''}
+                    ${(t.progress_percent !== undefined && t.progress_percent !== null) ? `
+                        <span class="font-mono font-bold ${t.progress_percent === 100 ? 'text-emerald-600' : 'text-teal-700'}">${t.progress_percent}%</span>
+                    ` : ''}
+                    <span class="text-[10px] text-slate-400 ml-auto font-medium">${t.department}</span>
+                </div>
+
+                <!-- Footer: 3 Icon: Người giao | Người phụ trách | Người liên quan + Hạn chót -->
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] select-none gap-1">
+                    <div class="flex items-center gap-1.5 truncate min-w-0 text-slate-500">
+                        <!-- 1. Người giao -->
+                        <span class="flex items-center gap-1 truncate shrink min-w-0" title="Người giao: ${escapeHtml(cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống')}">
+                            <i class="ph-bold ph-paper-plane-tilt text-slate-400 shrink-0 text-[11px]"></i>
+                            <span class="truncate font-medium">${escapeHtml(cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống')}</span>
+                        </span>
+
+                        <span class="text-slate-300 shrink-0 font-light">|</span>
+
+                        <!-- 2. Người phụ trách -->
+                        <span class="flex items-center gap-1 truncate shrink min-w-0 font-semibold text-teal-900" title="Người phụ trách: ${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}">
+                            <i class="ph-bold ph-user-check text-teal-600 shrink-0 text-[11px]"></i>
+                            <span class="truncate">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</span>
+                        </span>
+
+                        ${(t.followers_info && t.followers_info.length > 0) ? `
+                        <span class="text-slate-300 shrink-0 font-light">|</span>
+                        <!-- 3. Người liên quan -->
+                        <span class="flex items-center gap-1 text-teal-700 shrink-0 font-bold bg-teal-50 px-1 py-0.2 rounded border border-teal-200/80" title="Người liên quan / theo dõi: ${escapeHtml(t.followers_info.map(f => cleanPersonName(f.full_name)).join(', '))}">
+                            <i class="ph-bold ph-users text-teal-600 shrink-0 text-[11px]"></i>
+                            <span>${t.followers_info.length}</span>
+                        </span>
+                        ` : ''}
+                    </div>
+
+                    ${deadlineText ? `
+                        <span class="text-[9.5px] font-semibold shrink-0 ml-1 ${deadlineColorClass}">
+                            ${deadlineText}
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
+            `;
+        }).join('');
+    });
+}
+
+function updateKanbanBadgeCounts(counts) {
+    const bTodo = document.getElementById('badge-count-todo');
+    const bInp = document.getElementById('badge-count-in_progress');
+    const bRev = document.getElementById('badge-count-review');
+    const bDone = document.getElementById('badge-count-done');
+
+    if (bTodo) bTodo.textContent = counts.todo || 0;
+    if (bInp) bInp.textContent = counts.in_progress || 0;
+    if (bRev) bRev.textContent = counts.review || 0;
+    if (bDone) bDone.textContent = counts.done || 0;
+}
+
+function renderTasksListTable(tasks) {
+    const tbody = document.getElementById('tasks-list-tbody');
+    if (!tbody) return;
+
+    if (tasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-12 text-slate-400">Không có công việc nào</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = tasks.map(t => {
+        let rowBorderClass = 'border-l-2 border-transparent';
+        if (t.status === 'DONE') {
+            rowBorderClass = 'border-l-4 border-l-emerald-400';
+        } else if (t.extension_status === 'PENDING') {
+            rowBorderClass = 'border-l-4 border-l-purple-500 bg-purple-50/15';
+        } else if (t.is_overdue || (t.days_remaining !== null && t.days_remaining < 0)) {
+            rowBorderClass = 'border-l-4 border-l-rose-500 bg-rose-50/15';
+        } else if (t.days_remaining === 0) {
+            rowBorderClass = 'border-l-4 border-l-amber-500 bg-amber-50/15';
+        }
+
+        return `
+        <tr onclick="openTaskDetailDrawer(${t.id})" class="hover:bg-slate-50 cursor-pointer transition-colors ${rowBorderClass}">
+            <td class="py-3 px-4 font-mono font-bold text-teal-800">${formatTaskCode(t.code)}</td>
+            <td class="py-3 px-4 font-bold text-slate-800">${escapeHtml(t.title)}</td>
+            <td class="py-3 px-4 text-slate-600 font-medium">${t.department}</td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${getPriorityBadgeClass(t.priority)}">
+                    ${getPriorityText(t.priority)}
+                </span>
+            </td>
+            <td class="py-3 px-4 font-semibold text-slate-700">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</td>
+            <td class="py-3 px-4">
+                <span class="${t.is_overdue ? 'text-rose-600 font-bold' : (t.days_remaining === 0 ? 'text-amber-600 font-bold' : (t.extension_status === 'PENDING' ? 'text-purple-600 font-bold' : 'text-slate-600 font-medium'))}">
+                    ${t.due_date ? formatDateDMY(t.due_date) : '-'}${t.extension_status === 'PENDING' ? ' (Chờ gia hạn)' : ''}
+                </span>
+            </td>
+            <td class="py-3 px-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono font-bold text-slate-700">${t.progress_percent || 0}%</span>
+                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-teal-600 h-full rounded-full transition-all" style="width: ${t.progress_percent || 0}%"></div>
+                    </div>
+                </div>
+            </td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusBadgeClass(t.status)}">
+                    ${getStatusText(t.status)}
+                </span>
+            </td>
+            <td class="py-3 px-4 text-center">
+                <button type="button" class="text-teal-700 hover:text-teal-900 font-bold">Xem</button>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+// Drag & Drop handlers for Kanban
+let draggedTaskId = null;
+function handleDragStart(e, taskId) {
+    draggedTaskId = taskId;
+    e.dataTransfer.setData('text/plain', taskId);
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+async function handleDrop(e, targetStatus) {
+    e.preventDefault();
+    if (!draggedTaskId) return;
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${draggedTaskId}/status/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ status: targetStatus })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message);
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error changing task status:', e);
+    } finally {
+        draggedTaskId = null;
+    }
+}
+
+// ---- src/app/collaboration/task-detail.js ----
+let currentTaskDetailData = null;
+let isTaskDetailInEditMode = false;
+
+function setTaskDetailEditMode(isEdit) {
+    isTaskDetailInEditMode = !!isEdit;
+    const viewHeader = document.getElementById('task-drawer-view-header');
+    const editHeader = document.getElementById('task-drawer-edit-header');
+    const viewMeta = document.getElementById('task-drawer-view-meta');
+    const editMeta = document.getElementById('task-drawer-edit-meta');
+    const editBtn = document.getElementById('btn-task-edit-bottom');
+    const saveBtn = document.getElementById('btn-task-save-bottom');
+
+    if (isTaskDetailInEditMode) {
+        if (viewHeader) viewHeader.classList.add('hidden');
+        if (editHeader) editHeader.classList.remove('hidden');
+        if (viewMeta) viewMeta.classList.add('hidden');
+        if (editMeta) editMeta.classList.remove('hidden');
+
+        if (editBtn) {
+            editBtn.className = "px-5 py-2.5 bg-transparent border border-slate-400 text-slate-700 hover:bg-slate-200 rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer";
+            editBtn.innerHTML = '<i class="ph-bold ph-x text-base"></i><span>Hủy sửa</span>';
+        }
+        if (saveBtn) {
+            saveBtn.classList.remove('opacity-50', 'pointer-events-none');
+            saveBtn.classList.add('hover:bg-teal-700', 'shadow-sm');
+        }
+    } else {
+        if (viewHeader) viewHeader.classList.remove('hidden');
+        if (editHeader) editHeader.classList.add('hidden');
+        if (viewMeta) viewMeta.classList.remove('hidden');
+        if (editMeta) editMeta.classList.add('hidden');
+
+        if (editBtn) {
+            editBtn.className = "px-5 py-2.5 bg-transparent border border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl font-bold font-heading text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer";
+            editBtn.innerHTML = '<i class="ph-bold ph-pencil-simple text-base"></i><span>Sửa</span>';
+        }
+        if (saveBtn) {
+            saveBtn.classList.add('opacity-50', 'pointer-events-none');
+            saveBtn.classList.remove('hover:bg-teal-700', 'shadow-sm');
+        }
+    }
+}
+window.setTaskDetailEditMode = setTaskDetailEditMode;
+
+function toggleEditCurrentTask() {
+    setTaskDetailEditMode(!isTaskDetailInEditMode);
+}
+window.toggleEditCurrentTask = toggleEditCurrentTask;
+
+async function populateTaskDetailAssigneeSelect(targetDepartment = null, selectedAssigneeId = null) {
+    const select = document.getElementById('task-drawer-edit-assignee');
+    if (!select) return;
+
+    await ensureOfficeDirectoryLoaded();
+
+    const deptSelect = document.getElementById('task-drawer-edit-department');
+    const selectedDept = targetDepartment || deptSelect?.value || 'DISPATCH';
+    const deptName = deptSelect?.options[deptSelect.selectedIndex]?.text || selectedDept;
+
+    select.innerHTML = `<option value="">-- Chọn người phụ trách (${deptName}) --</option>`;
+
+    // CHỈ LẤY DUY NHẤT NHÂN SỰ THUỘC ĐÚNG PHÒNG BAN ĐÃ CHỌN ĐỂ LỌC DỄ DÀNG
+    const deptUsers = (officeDirectoryUsers || []).filter(u => {
+        const userDept = String(u.department || u.department_code || '').trim().toUpperCase();
+        const targetDept = String(selectedDept || '').trim().toUpperCase();
+        return userDept === targetDept;
+    });
+
+    if (deptUsers.length > 0) {
+        deptUsers.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.user_id;
+            opt.textContent = `${cleanPersonName(u.full_name)} — ${u.role || u.position || ''}`;
+            select.appendChild(opt);
+        });
+    } else {
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = "";
+        emptyOpt.disabled = true;
+        emptyOpt.textContent = `(Chưa có nhân sự trong ${deptName})`;
+        select.appendChild(emptyOpt);
+    }
+
+    if (selectedAssigneeId && select.querySelector(`option[value="${selectedAssigneeId}"]`)) {
+        select.value = selectedAssigneeId;
+    } else if (deptUsers.length > 0) {
+        select.value = deptUsers[0].user_id;
+    } else {
+        select.value = "";
+    }
+}
+window.populateTaskDetailAssigneeSelect = populateTaskDetailAssigneeSelect;
+
+function onTaskDetailDepartmentChanged() {
+    const deptSelect = document.getElementById('task-drawer-edit-department');
+    if (deptSelect) {
+        populateTaskDetailAssigneeSelect(deptSelect.value);
+    }
+}
+window.onTaskDetailDepartmentChanged = onTaskDetailDepartmentChanged;
+
+async function saveCurrentTaskEdits() {
+    if (!currentViewingTaskId) return;
+
+    const titleInput = document.getElementById('task-drawer-edit-title');
+    const descInput = document.getElementById('task-drawer-edit-desc');
+    const deptSelect = document.getElementById('task-drawer-edit-department');
+    const assigneeSelect = document.getElementById('task-drawer-edit-assignee');
+    const dueInput = document.getElementById('task-drawer-edit-due');
+
+    const title = titleInput?.value.trim();
+    if (!title) {
+        showToast('warning', 'Vui lòng nhập tiêu đề công việc.');
+        return;
+    }
+
+    const payload = {
+        title: title,
+        description: descInput?.value.trim() || '',
+        department: deptSelect?.value || 'DISPATCH',
+        assignee_id: assigneeSelect?.value ? parseInt(assigneeSelect.value) : null,
+        due_date: dueInput?.value || null
+    };
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/`, {
+            method: 'PUT',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message || 'Cập nhật công việc thành công.');
+            setTaskDetailEditMode(false);
+            await openTaskDetailDrawer(currentViewingTaskId);
+            loadOfficeTasks();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast('error', json.message || 'Không thể lưu thay đổi.');
+        }
+    } catch (e) {
+        console.error('Error saving task edits:', e);
+        showToast('error', 'Có lỗi xảy ra khi lưu thay đổi.');
+    }
+}
+window.saveCurrentTaskEdits = saveCurrentTaskEdits;
+
+function printCurrentTaskSlip() {
+    if (!currentTaskDetailData) {
+        showToast('warning', 'Chưa có thông tin công việc để in.');
+        return;
+    }
+    const t = currentTaskDetailData;
+    const printWindow = window.open('', '_blank', 'width=850,height=1100');
+    if (!printWindow) {
+        window.print();
+        return;
+    }
+
+    const checklistsHtml = (t.checklists || []).map((c, i) => `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 6px 10px; text-align: center; width: 40px; font-weight: 700;">${i + 1}</td>
+            <td style="padding: 6px 10px; width: 45px; text-align: center; font-size: 16px;">${c.is_completed ? '☑' : '☐'}</td>
+            <td style="padding: 6px 10px; ${c.is_completed ? 'text-decoration: line-through; color: #64748b;' : 'font-weight: 600;'}">${escapeHtml(c.title)}</td>
+        </tr>
+    `).join('');
+
+    const attachmentsHtml = (t.attachments || []).map((a, i) => `
+        <li style="margin-bottom: 4px;">${i + 1}. ${escapeHtml(a.original_name)}</li>
+    `).join('');
+
+    const printHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Phiếu Giao Việc - ${formatTaskCode(t.code)}</title>
+            <style>
+                @page { size: A4 portrait; margin: 15mm 20mm; }
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #0f172a; margin: 0; padding: 20px; font-size: 13px; line-height: 1.5; }
+                .header-table { width: 100%; border-bottom: 2px solid #0f766e; padding-bottom: 12px; margin-bottom: 16px; }
+                .company-title { font-size: 16px; font-weight: 900; color: #0f766e; text-transform: uppercase; }
+                .doc-title { font-size: 20px; font-weight: 900; text-align: center; text-transform: uppercase; margin: 16px 0 6px 0; color: #0f172a; }
+                .doc-code { text-align: center; font-family: monospace; font-weight: 700; color: #0f766e; margin-bottom: 20px; font-size: 13px; }
+                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: #f8fafc; border: 1px solid #cbd5e1; }
+                .info-table td { padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 12px; }
+                .info-label { font-weight: 700; color: #475569; width: 22%; background: #f1f5f9; text-transform: uppercase; font-size: 11px; }
+                .section-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #0f766e; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin: 16px 0 8px 0; }
+                .task-desc { padding: 10px 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; white-space: pre-line; margin-bottom: 16px; }
+                .checklist-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                .checklist-table th { background: #0f766e; color: #fff; padding: 6px 10px; font-size: 11px; text-transform: uppercase; text-align: left; }
+                .signatures-table { width: 100%; margin-top: 40px; text-align: center; border-collapse: collapse; }
+                .signatures-table td { width: 50%; vertical-align: top; padding: 10px; }
+                .sig-title { font-weight: 800; text-transform: uppercase; font-size: 12px; margin-bottom: 70px; }
+                .sig-name { font-weight: 700; font-size: 13px; }
+            </style>
+        </head>
+        <body>
+            <table class="header-table">
+                <tr>
+                    <td>
+                        <div class="company-title">CÔNG TY TNHH VẬN TẢI & LOGISTICS TRIỀN VÕ</div>
+                        <div style="font-size: 11px; color: #64748b;">Hệ sinh thái Quản trị Vận tải & Chuỗi cung ứng BIM Logistics</div>
+                    </td>
+                    <td style="text-align: right; font-size: 11px; color: #64748b;">
+                        Ngày in: ${new Date().toLocaleDateString('vi-VN')}
+                    </td>
+                </tr>
+            </table>
+
+            <div class="doc-title">PHIẾU BÀN GIAO & THEO DÕI NHIỆM VỤ NỘI BỘ</div>
+            <div class="doc-code">Mã nhiệm vụ: ${formatTaskCode(t.code)} • Tiến độ: ${t.progress_percent || 0}%</div>
+
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Người giao việc</td>
+                    <td><strong>${escapeHtml(cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống')}</strong></td>
+                    <td class="info-label">Phòng ban</td>
+                    <td><strong>${escapeHtml(t.department || 'Văn Phòng')}</strong></td>
+                </tr>
+                <tr>
+                    <td class="info-label">Người phụ trách</td>
+                    <td><strong>${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán')}</strong></td>
+                    <td class="info-label">Hạn hoàn thành</td>
+                    <td><strong>${t.due_date ? formatDateDMY(t.due_date) : 'Không có'}</strong></td>
+                </tr>
+                <tr>
+                    <td class="info-label">Mức độ ưu tiên</td>
+                    <td><strong>${getPriorityText(t.priority)}</strong></td>
+                    <td class="info-label">Trạng thái hiện tại</td>
+                    <td><strong>${getStatusText(t.status)}</strong></td>
+                </tr>
+            </table>
+
+            <div class="section-title">Tiêu đề & Nội dung công việc</div>
+            <div style="font-size: 14px; font-weight: 800; margin-bottom: 6px; color: #0f172a;">${escapeHtml(t.title)}</div>
+            <div class="task-desc">${escapeHtml(t.description || 'Không có mô tả chi tiết.')}</div>
+
+            ${(t.checklists && t.checklists.length > 0) ? `
+                <div class="section-title">Checklist các tiêu chí bàn giao & kiểm tra</div>
+                <table class="checklist-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center; width: 40px;">STT</th>
+                            <th style="text-align: center; width: 45px;">Đạt</th>
+                            <th>Nội dung bước kiểm tra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${checklistsHtml}
+                    </tbody>
+                </table>
+            ` : ''}
+
+            ${(t.attachments && t.attachments.length > 0) ? `
+                <div class="section-title">Tài liệu & Hồ sơ đính kèm</div>
+                <ul style="padding-left: 20px; font-size: 12px; color: #475569; margin: 4px 0 16px 0;">
+                    ${attachmentsHtml}
+                </ul>
+            ` : ''}
+
+            <table class="signatures-table">
+                <tr>
+                    <td>
+                        <div class="sig-title">Người phụ trách thực hiện</div>
+                        <div class="sig-name">${escapeHtml(cleanPersonName(t.assignee_info?.full_name) || '')}</div>
+                    </td>
+                    <td>
+                        <div class="sig-title">Người giao việc / Quản lý</div>
+                        <div class="sig-name">${escapeHtml(cleanPersonName(t.reporter_info?.full_name) || '')}</div>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 400);
+}
+window.printCurrentTaskSlip = printCurrentTaskSlip;
+
+// Modal Xem và Sửa chi tiết công việc (Hộp thoại Trung tâm, chuẩn SaaS Bộ 4 nút)
+function resetTaskExtensionUI() {
+    const extBanner = document.getElementById('task-drawer-extension-banner');
+    if (extBanner) {
+        extBanner.classList.add('hidden');
+        extBanner.style.display = 'none';
+        const oldDueEl = document.getElementById('ext-banner-old-due');
+        if (oldDueEl) oldDueEl.textContent = '';
+        const newDueEl = document.getElementById('ext-banner-new-due');
+        if (newDueEl) newDueEl.textContent = '';
+        const reasonEl = document.getElementById('ext-banner-reason');
+        if (reasonEl) reasonEl.textContent = '';
+        const byEl = document.getElementById('ext-banner-by');
+        if (byEl) byEl.textContent = '';
+        const atEl = document.getElementById('ext-banner-at');
+        if (atEl) atEl.textContent = '';
+    }
+
+    const extActionsReporter = document.getElementById('ext-banner-actions-reporter');
+    if (extActionsReporter) {
+        extActionsReporter.classList.add('hidden');
+        extActionsReporter.style.display = 'none';
+    }
+
+    const extActionsAssignee = document.getElementById('ext-banner-actions-assignee');
+    if (extActionsAssignee) {
+        extActionsAssignee.classList.add('hidden');
+        extActionsAssignee.style.display = 'none';
+    }
+
+    const rejectBox = document.getElementById('ext-reject-reason-box');
+    if (rejectBox) {
+        rejectBox.classList.add('hidden');
+        rejectBox.style.display = 'none';
+        const rejectInput = document.getElementById('ext-reject-reason-input');
+        if (rejectInput) rejectInput.value = '';
+    }
+
+    const extHist = document.getElementById('task-drawer-extension-history');
+    if (extHist) {
+        extHist.classList.add('hidden');
+        extHist.style.display = 'none';
+        extHist.innerHTML = '';
+    }
+
+    const extForm = document.getElementById('task-drawer-request-extension-form');
+    if (extForm) {
+        extForm.classList.add('hidden');
+        extForm.style.display = 'none';
+        const inputReason = document.getElementById('ext-input-reason');
+        if (inputReason) inputReason.value = '';
+    }
+
+    const btnOpenExt = document.getElementById('btn-open-request-extension');
+    if (btnOpenExt) {
+        btnOpenExt.classList.add('hidden');
+        btnOpenExt.style.display = 'none';
+    }
+}
+window.resetTaskExtensionUI = resetTaskExtensionUI;
+
+async function openTaskDetailDrawer(taskId) {
+    currentViewingTaskId = taskId;
+    resetTaskExtensionUI();
+    const drawer = document.getElementById('drawer-task-detail');
+    if (!drawer) return;
+
+    drawer.classList.remove('hidden');
+    drawer.style.display = '';
+    setTaskDetailEditMode(false);
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${taskId}/`, {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        const t = json.data;
+        currentTaskDetailData = t;
+
+        // View Mode Population
+        const codeEl = document.getElementById('task-drawer-code');
+        if (codeEl) codeEl.textContent = formatTaskCode(t.code);
+        const titleEl = document.getElementById('task-drawer-title');
+        if (titleEl) titleEl.textContent = t.title;
+        const descEl = document.getElementById('task-drawer-desc');
+        if (descEl) descEl.textContent = t.description || 'Không có mô tả chi tiết.';
+        const assigneeEl = document.getElementById('task-drawer-assignee');
+        if (assigneeEl) assigneeEl.textContent = cleanPersonName(t.assignee_info?.full_name) || 'Chưa gán';
+        const reporterEl = document.getElementById('task-drawer-reporter');
+        if (reporterEl) reporterEl.textContent = cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống';
+        const dueEl = document.getElementById('task-drawer-due');
+        if (dueEl) dueEl.textContent = t.due_date ? formatDateDMY(t.due_date) : 'Không có';
+        const deptEl = document.getElementById('task-drawer-department');
+        if (deptEl) deptEl.textContent = t.department;
+
+        // Edit Mode Population
+        const editTitleEl = document.getElementById('task-drawer-edit-title');
+        if (editTitleEl) editTitleEl.value = t.title || '';
+        const editDescEl = document.getElementById('task-drawer-edit-desc');
+        if (editDescEl) editDescEl.value = t.description || '';
+        const editReporterEl = document.getElementById('task-drawer-edit-reporter');
+        if (editReporterEl) editReporterEl.textContent = cleanPersonName(t.reporter_info?.full_name) || 'Hệ thống';
+        const editDeptEl = document.getElementById('task-drawer-edit-department');
+        if (editDeptEl) editDeptEl.value = t.department || 'DISPATCH';
+        const editDueEl = document.getElementById('task-drawer-edit-due');
+        if (editDueEl) editDueEl.value = t.due_date || '';
+
+        await populateTaskDetailAssigneeSelect(t.department, t.assignee_id);
+
+        // Status & Priority Badge
+        const stBadge = document.getElementById('task-drawer-status-badge');
+        if (stBadge) {
+            stBadge.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold ${getStatusBadgeClass(t.status)}`;
+            stBadge.textContent = getStatusText(t.status);
+        }
+
+        const prBadge = document.getElementById('task-drawer-priority-badge');
+        if (prBadge) {
+            prBadge.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold ${getPriorityBadgeClass(t.priority)}`;
+            prBadge.textContent = getPriorityText(t.priority);
+        }
+
+        // Context Trip
+        const ctxWrapper = document.getElementById('task-drawer-context-wrapper');
+        const ctxTrip = document.getElementById('task-drawer-context-trip');
+        if (ctxWrapper && ctxTrip) {
+            if (t.related_trip_code) {
+                ctxTrip.textContent = t.related_trip_code;
+                ctxWrapper.classList.remove('hidden');
+            } else {
+                ctxWrapper.classList.add('hidden');
+            }
+        }
+
+        // Followers (Người theo dõi / liên quan) trong Drawer
+        const followersListEl = document.getElementById('task-drawer-followers-list');
+        if (followersListEl) {
+            const followers = t.followers_info || [];
+            if (followers.length > 0) {
+                followersListEl.innerHTML = followers.map(f => `
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80 shadow-2xs">
+                        <i class="ph-bold ph-user-circle text-teal-600"></i>
+                        <span>${escapeHtml(cleanPersonName(f.full_name))} <span class="text-[10px] text-teal-600/70 font-normal">(${escapeHtml(f.department || '')})</span></span>
+                    </span>
+                `).join('');
+            } else {
+                followersListEl.innerHTML = '<span class="text-slate-400 text-[11px] italic">Không có người theo dõi</span>';
+            }
+        }
+
+        // Progress & Checklist
+        updateDrawerProgress(t.progress_percent || 0);
+        renderDrawerChecklists(t.checklists || []);
+
+        // Attachments
+        renderDrawerAttachments(t.attachments || []);
+
+        // Comments
+        renderDrawerComments(t.comments || []);
+
+        // Activities
+        renderDrawerActivities(t.activities || []);
+
+        // --- XỬ LÝ BANNER ĐỀ XUẤT GIA HẠN & BẬT TẮT NÚT HÀNH ĐỘNG ---
+        const extBanner = document.getElementById('task-drawer-extension-banner');
+        const extForm = document.getElementById('task-drawer-request-extension-form');
+        const btnOpenExt = document.getElementById('btn-open-request-extension');
+        const extActionsReporter = document.getElementById('ext-banner-actions-reporter');
+        const extActionsAssignee = document.getElementById('ext-banner-actions-assignee');
+        const extHist = document.getElementById('task-drawer-extension-history');
+        const rejectBox = document.getElementById('ext-reject-reason-box');
+
+        if (extForm) {
+            extForm.classList.add('hidden');
+            extForm.style.display = 'none';
+        }
+        if (rejectBox) {
+            rejectBox.classList.add('hidden');
+            rejectBox.style.display = 'none';
+        }
+
+        const myUserId = window.CURRENT_USER?.id ? Number(window.CURRENT_USER.id) : null;
+        const isSuper = Boolean(
+            window.CURRENT_USER?.is_superuser === true || 
+            window.CURRENT_USER?.is_staff === true || 
+            (Number(window.CURRENT_USER?.hierarchy_level) >= 100) || 
+            window.CURRENT_USER?.role === 'DIRECTOR' ||
+            window.CURRENT_USER?.role === 'ADMIN' ||
+            (window.hasUserPermission && window.hasUserPermission('collaboration.change_officetask'))
+        );
+
+        const reporterId = Number(t.reporter || t.reporter_id || t.reporter_info?.id);
+        const assigneeId = Number(t.assignee || t.assignee_id || t.assignee_info?.id);
+
+        // Người giao việc: người tạo task HOẶC Admin/Ban Giám Đốc quản trị
+        const isReporter = Boolean((myUserId && reporterId && myUserId === reporterId) || isSuper);
+
+        // Người phụ trách: đúng người được giao task
+        const isAssignee = Boolean((myUserId && assigneeId && myUserId === assigneeId) || (isSuper && !assigneeId));
+        const isCompleted = ['DONE', 'CANCELLED'].includes(t.status);
+
+        if (t.extension_status === 'PENDING') {
+            // Task đang có đề xuất gia hạn chờ duyệt
+            if (extBanner) {
+                extBanner.classList.remove('hidden');
+                extBanner.style.display = 'block';
+                const oldDueEl = document.getElementById('ext-banner-old-due');
+                if (oldDueEl) oldDueEl.textContent = t.due_date ? formatDateDMY(t.due_date) : 'Không có';
+                const newDueEl = document.getElementById('ext-banner-new-due');
+                if (newDueEl) newDueEl.textContent = t.requested_deadline ? formatDateDMY(t.requested_deadline) : '';
+                const reasonEl = document.getElementById('ext-banner-reason');
+                if (reasonEl) reasonEl.textContent = t.extension_reason || 'Không có lý do chi tiết.';
+                const byEl = document.getElementById('ext-banner-by');
+                if (byEl) byEl.textContent = cleanPersonName(t.extension_requested_by_info?.full_name) || 'Người phụ trách';
+                const atEl = document.getElementById('ext-banner-at');
+                if (atEl) atEl.textContent = t.extension_requested_at ? (typeof formatDateTime === 'function' ? formatDateTime(t.extension_requested_at) : t.extension_requested_at) : '';
+            }
+
+            if (btnOpenExt) {
+                btnOpenExt.classList.add('hidden');
+                btnOpenExt.style.display = 'none';
+            }
+            if (extHist) {
+                extHist.classList.add('hidden');
+                extHist.style.display = 'none';
+            }
+
+            // Hiển thị nút Duyệt cho Người giao việc hoặc Quản lý / Ban Giám Đốc
+            if (extActionsReporter) {
+                if (isReporter) {
+                    extActionsReporter.classList.remove('hidden');
+                    extActionsReporter.style.display = 'flex';
+                } else {
+                    extActionsReporter.classList.add('hidden');
+                    extActionsReporter.style.display = 'none';
+                }
+            }
+
+            // Hiển thị trạng thái & nút Thu hồi cho Người phụ trách
+            if (extActionsAssignee) {
+                if (isAssignee) {
+                    extActionsAssignee.classList.remove('hidden');
+                    extActionsAssignee.style.display = 'flex';
+                } else {
+                    extActionsAssignee.classList.add('hidden');
+                    extActionsAssignee.style.display = 'none';
+                }
+            }
+        } else {
+            // Task KHÔNG có đề xuất gia hạn chờ duyệt: Ẩn triệt để banner
+            if (extBanner) {
+                extBanner.classList.add('hidden');
+                extBanner.style.display = 'none';
+            }
+            if (extActionsReporter) {
+                extActionsReporter.classList.add('hidden');
+                extActionsReporter.style.display = 'none';
+            }
+            if (extActionsAssignee) {
+                extActionsAssignee.classList.add('hidden');
+                extActionsAssignee.style.display = 'none';
+            }
+
+            // Nút "Đề xuất gia hạn": Chỉ Người phụ trách mới được gửi khi task chưa xong
+            if (btnOpenExt) {
+                if (isAssignee && !isCompleted) {
+                    btnOpenExt.classList.remove('hidden');
+                    btnOpenExt.style.display = 'inline-flex';
+                } else {
+                    btnOpenExt.classList.add('hidden');
+                    btnOpenExt.style.display = 'none';
+                }
+            }
+
+            // Hiển thị kết quả duyệt / từ chối trước đó nếu có
+            if (extHist) {
+                if (t.extension_status === 'APPROVED') {
+                    extHist.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50/70 text-xs text-emerald-950 flex items-center justify-between gap-2 shadow-2xs';
+                    const noteStr = t.extension_review_note ? `<span class="text-emerald-700 italic">(${escapeHtml(t.extension_review_note)})</span>` : '';
+                    extHist.innerHTML = `<span class="flex items-center gap-1.5 font-bold"><i class="ph-bold ph-check-circle text-emerald-600 text-sm"></i> Hạn chót đã được người giao duyệt dời sang <strong>${formatDateDMY(t.due_date)}</strong></span> ${noteStr}`;
+                    extHist.classList.remove('hidden');
+                    extHist.style.display = 'flex';
+                } else if (t.extension_status === 'REJECTED') {
+                    extHist.className = 'p-3 rounded-xl border border-rose-300 bg-rose-50/70 text-xs text-rose-950 flex items-center justify-between gap-2 shadow-2xs';
+                    const noteStr = t.extension_review_note ? `<span class="text-rose-700 font-medium italic">Lý do: ${escapeHtml(t.extension_review_note)}</span>` : '';
+                    extHist.innerHTML = `<span class="flex items-center gap-1.5 font-bold"><i class="ph-bold ph-x-circle text-rose-600 text-sm"></i> Đề xuất gia hạn đã bị từ chối</span> ${noteStr}`;
+                    extHist.classList.remove('hidden');
+                    extHist.style.display = 'flex';
+                } else {
+                    extHist.classList.add('hidden');
+                    extHist.style.display = 'none';
+                }
+            }
+        }
+
+    } catch (e) {
+        console.error('Error fetching task detail:', e);
+    }
+}
+
+function updateDrawerProgress(percent) {
+    const textEl = document.getElementById('task-drawer-progress-text');
+    const barEl = document.getElementById('task-drawer-progress-bar');
+    if (textEl) textEl.textContent = `${percent}%`;
+    if (barEl) barEl.style.width = `${percent}%`;
+}
+
+function renderDrawerChecklists(checklists) {
+    const listEl = document.getElementById('task-drawer-checklists');
+    if (!listEl) return;
+
+    if (checklists.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1">Chưa có bước kiểm tra nào</div>';
+        return;
+    }
+
+    listEl.innerHTML = checklists.map(c => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100/60 transition-colors">
+            <label class="flex items-center gap-2.5 cursor-pointer select-none flex-1">
+                <input type="checkbox" onchange="toggleChecklistItem(${c.id})" ${c.is_completed ? 'checked' : ''} class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500">
+                <span class="text-xs font-semibold ${c.is_completed ? 'line-through text-slate-400' : 'text-slate-700'}">
+                    ${escapeHtml(c.title)}
+                </span>
+            </label>
+            <button type="button" onclick="deleteChecklistItem(${c.id})" class="text-slate-400 hover:text-rose-600 p-1 transition-colors">
+                <i class="ph ph-trash text-xs"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+async function addChecklistItem() {
+    if (!currentViewingTaskId) return;
+    const input = document.getElementById('task-new-checklist-input');
+    if (!input || !input.value.trim()) return;
+
+    const title = input.value.trim();
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/checklists/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ title })
+        });
+        const json = await res.json();
+        if (json.success) {
+            input.value = '';
+            openTaskDetailDrawer(currentViewingTaskId);
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error adding checklist item:', e);
+    }
+}
+
+async function toggleChecklistItem(itemId) {
+    if (!currentViewingTaskId) return;
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/checklists/`, {
+            method: 'PATCH',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ item_id: itemId })
+        });
+        const json = await res.json();
+        if (json.success) {
+            updateDrawerProgress(json.progress_percent || 0);
+            openTaskDetailDrawer(currentViewingTaskId);
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error toggling checklist:', e);
+    }
+}
+
+async function deleteChecklistItem(itemId) {
+    if (!currentViewingTaskId) return;
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/checklists/?item_id=${itemId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            openTaskDetailDrawer(currentViewingTaskId);
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error deleting checklist item:', e);
+    }
+}
+
+function renderDrawerAttachments(attachments) {
+    const listEl = document.getElementById('task-drawer-attachments');
+    if (!listEl) return;
+
+    if (attachments.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1">Không có tệp đính kèm</div>';
+        return;
+    }
+
+    listEl.innerHTML = attachments.map(att => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
+            <span class="flex items-center gap-1.5 font-medium text-slate-800 truncate">
+                <i class="ph-bold ph-paperclip text-teal-600"></i>
+                ${escapeHtml(att.original_name)}
+            </span>
+            <a href="${att.file}" target="_blank" download class="px-2 py-0.5 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded font-bold text-[11px] transition-colors shrink-0">
+                Tải
+            </a>
+        </div>
+    `).join('');
+}
+
+async function uploadTaskAttachment(e) {
+    if (!currentViewingTaskId || !e.target.files || e.target.files.length === 0) return;
+    const files = e.target.files;
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+
+    try {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type'];
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/attachments/`, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', 'Đã tải tệp lên thành công');
+            openTaskDetailDrawer(currentViewingTaskId);
+        }
+    } catch (err) {
+        console.error('Error uploading attachment:', err);
+    }
+}
+
+function renderDrawerComments(comments) {
+    const listEl = document.getElementById('task-drawer-comments');
+    if (!listEl) return;
+
+    if (comments.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1">Chưa có trao đổi nào</div>';
+        return;
+    }
+
+    listEl.innerHTML = comments.map(c => `
+        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+            <div class="flex items-center justify-between font-bold text-slate-700">
+                <span class="text-teal-800 flex items-center gap-1">
+                    <i class="ph-bold ph-user-circle"></i>
+                    ${escapeHtml(c.author_info?.full_name || 'Đồng nghiệp')}
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">${formatDateTime(c.created_at)}</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed whitespace-pre-line">${escapeHtml(c.content)}</p>
+        </div>
+    `).join('');
+}
+
+async function submitTaskComment() {
+    if (!currentViewingTaskId) return;
+    const input = document.getElementById('task-new-comment-input');
+    if (!input || !input.value.trim()) return;
+
+    const content = input.value.trim();
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/comments/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ content })
+        });
+        const json = await res.json();
+        if (json.success) {
+            input.value = '';
+            openTaskDetailDrawer(currentViewingTaskId);
+        }
+    } catch (e) {
+        console.error('Error sending task comment:', e);
+    }
+}
+
+function renderDrawerActivities(activities) {
+    const listEl = document.getElementById('task-drawer-activities');
+    if (!listEl) return;
+
+    if (activities.length === 0) {
+        listEl.innerHTML = '<div>Chưa có nhật ký hoạt động</div>';
+        return;
+    }
+
+    listEl.innerHTML = activities.slice(0, 8).map(a => `
+        <div class="flex items-start gap-1.5 py-0.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-300 mt-1.5 shrink-0"></span>
+            <span><strong>${escapeHtml(a.user_name)}</strong>: ${escapeHtml(a.description)} <span class="text-slate-400">(${formatDateTime(a.created_at)})</span></span>
+        </div>
+    `).join('');
+}
+
+function closeTaskDetailDrawer() {
+    const drawer = document.getElementById('drawer-task-detail');
+    if (drawer) {
+        drawer.classList.add('hidden');
+        drawer.style.display = 'none';
+    }
+    resetTaskExtensionUI();
+    currentViewingTaskId = null;
+}
+
+async function deleteCurrentTask() {
+    if (!currentViewingTaskId) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa công việc này không?')) return;
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('success', json.message);
+            closeTaskDetailDrawer();
+            loadOfficeTasks();
+        }
+    } catch (e) {
+        console.error('Error deleting task:', e);
+    }
+}
+
+// ---- src/app/collaboration/task-create.js ----
+// Quản lý danh sách Người liên quan (Theo dõi chung) trong modal tạo việc (Hỗ trợ Multi-Select)
+let createTaskFollowersList = []; // Mảng chứa các user_id đã chọn
+
+async function ensureOfficeDirectoryLoaded() {
+    if (officeDirectoryUsers && officeDirectoryUsers.length > 0) {
+        return officeDirectoryUsers;
+    }
+    // Ưu tiên nạp tức thì từ window.PRELOADED_OFFICE_USERS (Zero latency)
+    if (window.PRELOADED_OFFICE_USERS && Array.isArray(window.PRELOADED_OFFICE_USERS) && window.PRELOADED_OFFICE_USERS.length > 0) {
+        officeDirectoryUsers = window.PRELOADED_OFFICE_USERS;
+        return officeDirectoryUsers;
+    }
+    // Fallback nạp từ API bất đồng bộ
+    try {
+        const res = await authFetch('/api/collaboration/tasks/directory/', {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success && json.office_users) {
+            officeDirectoryUsers = json.office_users || [];
+            collaborationUserPerms = json.current_user_permission || null;
+            return officeDirectoryUsers;
+        }
+    } catch (e) {
+        console.error('Error fetching office directory:', e);
+    }
+    return officeDirectoryUsers || [];
+}
+window.ensureOfficeDirectoryLoaded = ensureOfficeDirectoryLoaded;
+
+function toggleFollowersDropdown(e) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById('task-followers-dropdown-panel');
+    const chevron = document.getElementById('task-followers-chevron');
+    if (!panel) return;
+
+    const isHidden = panel.classList.contains('hidden');
+    if (isHidden) {
+        panel.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+        renderFollowersMultiSelectOptions();
+        const searchInput = document.getElementById('task-followers-search');
+        if (searchInput) {
+            searchInput.value = '';
+            setTimeout(() => searchInput.focus(), 50);
+        }
+    } else {
+        closeFollowersDropdown();
+    }
+}
+window.toggleFollowersDropdown = toggleFollowersDropdown;
+
+function closeFollowersDropdown() {
+    const panel = document.getElementById('task-followers-dropdown-panel');
+    const chevron = document.getElementById('task-followers-chevron');
+    if (panel) panel.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+}
+window.closeFollowersDropdown = closeFollowersDropdown;
+
+function renderFollowersMultiSelectOptions(searchQuery = '') {
+    const container = document.getElementById('task-followers-options-list');
+    if (!container) return;
+
+    const q = searchQuery.trim().toLowerCase();
+    const users = (officeDirectoryUsers || []).filter(u => {
+        if (!q) return true;
+        const name = (u.full_name || '').toLowerCase();
+        const dept = (u.department_name || u.department || '').toLowerCase();
+        const role = (u.role || u.position || '').toLowerCase();
+        const code = (u.employee_code || '').toLowerCase();
+        return name.includes(q) || dept.includes(q) || role.includes(q) || code.includes(q);
+    });
+
+    if (users.length === 0) {
+        container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs italic">Không tìm thấy nhân sự phù hợp</div>';
+        return;
+    }
+
+    let html = '';
+    users.forEach(u => {
+        const isChecked = createTaskFollowersList.includes(u.user_id);
+        const initial = (u.full_name || 'U').charAt(0).toUpperCase();
+        const dept = u.department_name || u.department || 'Văn Phòng';
+        const role = u.role || u.position || u.employee_code || 'Nhân viên';
+
+        html += `
+            <div onclick="toggleFollowerSelection(${u.user_id})" class="grid grid-cols-12 items-center gap-2 px-3 py-2 rounded-xl hover:bg-teal-50/70 cursor-pointer select-none transition-all border ${isChecked ? 'bg-teal-50/70 border-teal-200 font-semibold shadow-2xs' : 'border-slate-100 hover:border-teal-200'}">
+                <!-- Cột 1: Checkbox & Phòng ban (4 cols) -->
+                <div class="col-span-4 flex items-center gap-2 min-w-0">
+                    <input type="checkbox" id="chk-follower-${u.user_id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleFollowerSelection(${u.user_id});" class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer shrink-0">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200/80 truncate" title="${escapeHtml(dept)}">
+                        ${escapeHtml(dept)}
+                    </span>
+                </div>
+                <!-- Cột 2: Tên người (Avatar + Họ tên) (5 cols) -->
+                <div class="col-span-5 flex items-center gap-2 min-w-0">
+                    <div class="w-6 h-6 rounded-full bg-teal-700 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
+                        ${initial}
+                    </div>
+                    <span class="text-xs text-slate-900 font-bold truncate" title="${escapeHtml(u.full_name)}">
+                        ${escapeHtml(cleanPersonName(u.full_name))}
+                    </span>
+                </div>
+                <!-- Cột 3: Chức vụ (3 cols) -->
+                <div class="col-span-3 text-right truncate">
+                    <span class="text-[11px] text-slate-500 font-normal" title="${escapeHtml(role)}">
+                        ${escapeHtml(role)}
+                    </span>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    updateFollowersCounterUI();
+}
+window.renderFollowersMultiSelectOptions = renderFollowersMultiSelectOptions;
+
+function toggleFollowerSelection(userId) {
+    userId = parseInt(userId);
+    if (!userId) return;
+
+    const idx = createTaskFollowersList.indexOf(userId);
+    if (idx > -1) {
+        createTaskFollowersList.splice(idx, 1);
+    } else {
+        createTaskFollowersList.push(userId);
+    }
+
+    // Update checkbox & class nếu panel đang mở
+    const chk = document.getElementById(`chk-follower-${userId}`);
+    if (chk) chk.checked = createTaskFollowersList.includes(userId);
+
+    renderCreateTaskFollowersChips();
+    updateFollowersCounterUI();
+}
+window.toggleFollowerSelection = toggleFollowerSelection;
+
+function selectAllFollowers() {
+    const searchInput = document.getElementById('task-followers-search');
+    const q = (searchInput?.value || '').trim().toLowerCase();
+    
+    // Nếu có tìm kiếm thì chỉ chọn những người đang hiển thị trong search
+    const visibleUsers = (officeDirectoryUsers || []).filter(u => {
+        if (!q) return true;
+        const name = (u.full_name || '').toLowerCase();
+        const dept = (u.department_name || '').toLowerCase();
+        return name.includes(q) || dept.includes(q);
+    });
+
+    visibleUsers.forEach(u => {
+        if (!createTaskFollowersList.includes(u.user_id)) {
+            createTaskFollowersList.push(u.user_id);
+        }
+    });
+
+    renderFollowersMultiSelectOptions(q);
+    renderCreateTaskFollowersChips();
+    updateFollowersCounterUI();
+}
+window.selectAllFollowers = selectAllFollowers;
+
+function clearAllFollowers() {
+    createTaskFollowersList = [];
+    const searchInput = document.getElementById('task-followers-search');
+    renderFollowersMultiSelectOptions(searchInput?.value || '');
+    renderCreateTaskFollowersChips();
+    updateFollowersCounterUI();
+}
+window.clearAllFollowers = clearAllFollowers;
+
+function filterFollowersDropdown(val) {
+    renderFollowersMultiSelectOptions(val);
+}
+window.filterFollowersDropdown = filterFollowersDropdown;
+
+function removeCreateTaskFollower(userId) {
+    userId = parseInt(userId);
+    createTaskFollowersList = createTaskFollowersList.filter(id => id !== userId);
+    
+    // Cập nhật checkbox trong dropdown nếu đang mở
+    const chk = document.getElementById(`chk-follower-${userId}`);
+    if (chk) chk.checked = false;
+
+    renderCreateTaskFollowersChips();
+    updateFollowersCounterUI();
+}
+window.removeCreateTaskFollower = removeCreateTaskFollower;
+
+function updateFollowersCounterUI() {
+    const count = createTaskFollowersList.length;
+    const badge = document.getElementById('task-followers-count-badge');
+    const summaryCount = document.getElementById('task-followers-summary-count');
+
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = `${count} người`;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    if (summaryCount) {
+        summaryCount.textContent = count;
+    }
+}
+
+function renderCreateTaskFollowersChips() {
+    const container = document.getElementById('create-task-followers-chips');
+    if (!container) return;
+
+    if (createTaskFollowersList.length === 0) {
+        container.innerHTML = `
+            <span id="create-task-followers-placeholder" class="text-xs text-slate-400 select-none">
+                -- Bấm để chọn người liên quan (chọn nhiều) --
+            </span>
+        `;
+        return;
+    }
+
+    const selectedUsers = officeDirectoryUsers.filter(u => createTaskFollowersList.includes(u.user_id));
+
+    container.innerHTML = selectedUsers.map(u => `
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200/90 shadow-2xs animate-fade-in select-none">
+            <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
+            <span>${escapeHtml(u.full_name)} <span class="text-[10px] text-teal-600/80 font-normal">(${escapeHtml(u.department_name)})</span></span>
+            <button type="button" onclick="event.stopPropagation(); removeCreateTaskFollower(${u.user_id});" class="ml-0.5 text-teal-600 hover:text-rose-600 hover:bg-rose-50 rounded p-0.5 transition-colors" title="Bỏ chọn">
+                <i class="ph-bold ph-x text-[11px]"></i>
+            </button>
+        </span>
+    `).join('');
+}
+window.renderCreateTaskFollowersChips = renderCreateTaskFollowersChips;
+
+// Lắng nghe click bên ngoài để đóng dropdown panel
+document.addEventListener('click', (e) => {
+    const multiselect = document.getElementById('task-followers-multiselect-container');
+    if (multiselect && !multiselect.contains(e.target)) {
+        closeFollowersDropdown();
+    }
+});
+
+async function populateAssigneeSelect(targetDepartment = null) {
+    const select = document.getElementById('create-task-assignee');
+    if (!select) return;
+
+    await ensureOfficeDirectoryLoaded();
+
+    const currentVal = select.value;
+    const deptSelect = document.getElementById('create-task-department');
+    const selectedDept = targetDepartment || deptSelect?.value || 'DISPATCH';
+    const deptName = deptSelect?.options[deptSelect.selectedIndex]?.text || selectedDept;
+
+    select.innerHTML = `<option value="">-- Chọn người phụ trách (${deptName}) --</option>`;
+    const myId = window.CURRENT_USER?.id;
+
+    // CHỈ LẤY DUY NHẤT NHÂN SỰ THUỘC ĐÚNG PHÒNG BAN ĐÃ CHỌN ĐỂ LỌC DỄ DÀNG
+    const deptUsers = (officeDirectoryUsers || []).filter(u => {
+        const userDept = String(u.department || u.department_code || '').trim().toUpperCase();
+        const targetDept = String(selectedDept || '').trim().toUpperCase();
+        return userDept === targetDept;
+    });
+
+    if (deptUsers.length > 0) {
+        deptUsers.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.user_id;
+            const isMe = u.user_id === myId;
+            if (isMe) {
+                opt.textContent = `${cleanPersonName(u.full_name)} — [Chính bạn - Việc cá nhân]`;
+                select.appendChild(opt);
+            } else if (u.can_assign !== false) {
+                opt.textContent = `${cleanPersonName(u.full_name)} — ${u.role || u.position || ''}`;
+                select.appendChild(opt);
+            } else {
+                opt.textContent = `${cleanPersonName(u.full_name)} — [Cấp trên / Ngoài thẩm quyền]`;
+                opt.disabled = true;
+                opt.className = 'text-slate-400 bg-slate-50';
+                select.appendChild(opt);
+            }
+        });
+    } else {
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = "";
+        emptyOpt.disabled = true;
+        emptyOpt.textContent = `(Chưa có nhân sự trong ${deptName})`;
+        select.appendChild(emptyOpt);
+    }
+
+    // Nếu giá trị hiện tại vẫn thuộc đúng phòng ban mới này thì giữ nguyên
+    if (currentVal && select.querySelector(`option[value="${currentVal}"]:not([disabled])`)) {
+        select.value = currentVal;
+    } else if (deptUsers.length > 0) {
+        // Tự động chọn nhân sự đầu tiên hợp lệ trong phòng ban
+        const firstAssignable = deptUsers.find(u => u.can_assign !== false || u.user_id === myId);
+        if (firstAssignable) {
+            select.value = firstAssignable.user_id;
+        } else {
+            select.value = "";
+        }
+    } else {
+        select.value = "";
+    }
+}
+window.populateAssigneeSelect = populateAssigneeSelect;
+
+function onTaskDepartmentChanged() {
+    const deptSelect = document.getElementById('create-task-department');
+    if (deptSelect) {
+        populateAssigneeSelect(deptSelect.value);
+    }
+}
+window.onTaskDepartmentChanged = onTaskDepartmentChanged;
+
+// Quản lý Checklist và Tệp đính kèm khởi tạo trong trang con Tạo việc
+let createTaskInitialChecklists = [];
+let createTaskInitialFiles = [];
+
+function addInitialChecklistItem() {
+    const input = document.getElementById('create-task-new-checklist-input');
+    if (!input || !input.value.trim()) return;
+
+    const val = input.value.trim();
+    createTaskInitialChecklists.push(val);
+    input.value = '';
+    renderCreateTaskInitialChecklists();
+}
+window.addInitialChecklistItem = addInitialChecklistItem;
+
+function removeInitialChecklistItem(idx) {
+    if (idx >= 0 && idx < createTaskInitialChecklists.length) {
+        createTaskInitialChecklists.splice(idx, 1);
+        renderCreateTaskInitialChecklists();
+    }
+}
+window.removeInitialChecklistItem = removeInitialChecklistItem;
+
+function renderCreateTaskInitialChecklists() {
+    const listEl = document.getElementById('create-task-checklists-list');
+    const countEl = document.getElementById('create-task-checklists-count');
+    if (!listEl) return;
+
+    if (countEl) countEl.textContent = `${createTaskInitialChecklists.length} mục`;
+
+    if (createTaskInitialChecklists.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1" id="create-task-checklists-empty">Chưa có bước kiểm tra nào được thêm</div>';
+        return;
+    }
+
+    listEl.innerHTML = createTaskInitialChecklists.map((title, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/70 transition-colors">
+            <span class="flex items-center gap-2 text-xs font-semibold text-slate-700 min-w-0">
+                <span class="w-4 h-4 rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span>
+                <span class="truncate">${escapeHtml(title)}</span>
+            </span>
+            <button type="button" onclick="removeInitialChecklistItem(${idx})" class="text-slate-400 hover:text-rose-600 p-1 transition-colors" title="Xóa bước này">
+                <i class="ph ph-trash text-xs"></i>
+            </button>
+        </div>
+    `).join('');
+}
+window.renderCreateTaskInitialChecklists = renderCreateTaskInitialChecklists;
+
+function handleInitialFilesSelected(input) {
+    if (!input || !input.files) return;
+    for (let i = 0; i < input.files.length; i++) {
+        createTaskInitialFiles.push(input.files[i]);
+    }
+    input.value = '';
+    renderCreateTaskInitialFiles();
+}
+window.handleInitialFilesSelected = handleInitialFilesSelected;
+
+function removeInitialFile(idx) {
+    if (idx >= 0 && idx < createTaskInitialFiles.length) {
+        createTaskInitialFiles.splice(idx, 1);
+        renderCreateTaskInitialFiles();
+    }
+}
+window.removeInitialFile = removeInitialFile;
+
+function renderCreateTaskInitialFiles() {
+    const previewEl = document.getElementById('create-task-files-preview');
+    if (!previewEl) return;
+
+    if (createTaskInitialFiles.length === 0) {
+        previewEl.innerHTML = '<div class="text-xs text-slate-400 italic py-1" id="create-task-files-empty">Chưa có tệp đính kèm nào</div>';
+        return;
+    }
+
+    previewEl.innerHTML = createTaskInitialFiles.map((file, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-xl border border-slate-200 bg-slate-50 text-xs">
+            <span class="flex items-center gap-2 truncate text-slate-700 min-w-0">
+                <i class="ph-bold ph-file-text text-teal-600 text-sm shrink-0"></i>
+                <span class="truncate font-medium">${escapeHtml(file.name)}</span>
+                <span class="text-[10px] text-slate-400 shrink-0 font-normal">(${Math.round(file.size / 1024)} KB)</span>
+            </span>
+            <button type="button" onclick="removeInitialFile(${idx})" class="text-slate-400 hover:text-rose-600 p-1 transition-colors" title="Bỏ tệp này">
+                <i class="ph ph-x text-xs"></i>
+            </button>
+        </div>
+    `).join('');
+}
+window.renderCreateTaskInitialFiles = renderCreateTaskInitialFiles;
+
+
+function setCreateTaskDueDateOffset(days) {
+    const dueInput = document.getElementById('create-task-due');
+    if (!dueInput) return;
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + days);
+
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(targetDate.getDate()).padStart(2, '0');
+    dueInput.value = `${yyyy}-${mm}-${dd}`;
+
+    updateDueDateQuickPills(days);
+}
+window.setCreateTaskDueDateOffset = setCreateTaskDueDateOffset;
+
+function updateDueDateQuickPills(activeDays) {
+    const dueInput = document.getElementById('create-task-due');
+    if (!dueInput) return;
+
+    if (activeDays === undefined && dueInput.value) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const parts = dueInput.value.split('-');
+        if (parts.length === 3) {
+            const selected = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            selected.setHours(0, 0, 0, 0);
+            const diffTime = selected.getTime() - today.getTime();
+            activeDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        }
+    }
+
+    [1, 3, 7].forEach(d => {
+        const btn = document.getElementById(`btn-due-offset-${d}`);
+        if (!btn) return;
+        if (d === activeDays) {
+            btn.className = "px-1.5 py-0.5 rounded text-[10.5px] font-extrabold bg-teal-100 text-teal-800 border border-teal-300 shadow-2xs cursor-pointer";
+        } else {
+            btn.className = "px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-teal-50 hover:text-teal-800 transition-colors cursor-pointer";
+        }
+    });
+}
+window.updateDueDateQuickPills = updateDueDateQuickPills;
+
+async function openCreateTaskModal() {
+    const modal = document.getElementById('modal-create-task');
+    if (modal) {
+        createTaskFollowersList = [];
+        createTaskInitialChecklists = [];
+        createTaskInitialFiles = [];
+        renderCreateTaskFollowersChips();
+        renderCreateTaskInitialChecklists();
+        renderCreateTaskInitialFiles();
+
+        const reporterDisplay = document.getElementById('create-task-reporter-display');
+        if (reporterDisplay && window.CURRENT_USER) {
+            reporterDisplay.innerHTML = `
+                <i class="ph-bold ph-user-circle text-teal-600 text-sm"></i>
+                <span class="truncate">${escapeHtml(window.CURRENT_USER.full_name || window.CURRENT_USER.username)}</span>
+            `;
+        }
+
+        // Mặc định hạn hoàn thành là ngày mai (+1 ngày) và kích hoạt nút +1d
+        setCreateTaskDueDateOffset(1);
+
+        // Đồng bộ phòng ban mặc định và nạp danh sách người phụ trách thuộc phòng ban đó
+        const deptSelect = document.getElementById('create-task-department');
+        const defaultDept = deptSelect?.value || 'DISPATCH';
+        await populateAssigneeSelect(defaultDept);
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeCreateTaskModal() {
+    const modal = document.getElementById('modal-create-task');
+    if (modal) {
+        modal.classList.add('hidden');
+        createTaskFollowersList = [];
+        createTaskInitialChecklists = [];
+        createTaskInitialFiles = [];
+        renderCreateTaskFollowersChips();
+        renderCreateTaskInitialChecklists();
+        renderCreateTaskInitialFiles();
+    }
+}
+
+// ESC key to close create task modal
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('modal-create-task');
+        if (modal && !modal.classList.contains('hidden')) {
+            closeCreateTaskModal();
+        }
+    }
+});
+
+async function handleCreateTaskSubmit(e) {
+    e.preventDefault();
+    const title = document.getElementById('create-task-title').value.trim();
+    const department = document.getElementById('create-task-department').value;
+    const priority = document.getElementById('create-task-priority').value;
+    const assigneeId = document.getElementById('create-task-assignee').value || null;
+    const dueDate = document.getElementById('create-task-due').value || null;
+    const description = document.getElementById('create-task-description').value.trim();
+    const followersIds = createTaskFollowersList.map(item => (typeof item === 'object' && item !== null) ? item.user_id : parseInt(item)).filter(id => !isNaN(id) && id > 0);
+
+    if (!title) {
+        showToast('warning', 'Vui lòng nhập tên công việc.');
+        return;
+    }
+
+    try {
+        const res = await authFetch('/api/collaboration/tasks/', {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+                title,
+                department,
+                priority,
+                assignee_id: assigneeId,
+                followers_ids: followersIds,
+                due_date: dueDate,
+                description,
+                checklists: createTaskInitialChecklists
+            })
+        });
+        const json = await res.json();
+        if (json.success) {
+            const newTaskId = json.data?.id;
+
+            // Nếu có tệp đính kèm ban đầu, tải lên ngay lập tức
+            if (newTaskId && createTaskInitialFiles.length > 0) {
+                try {
+                    const formData = new FormData();
+                    createTaskInitialFiles.forEach(f => formData.append('files', f));
+                    const uploadHeaders = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {};
+                    delete uploadHeaders['Content-Type']; // Để browser tự động set multipart boundary
+                    await fetch(`/api/collaboration/tasks/${newTaskId}/attachments/`, {
+                        method: 'POST',
+                        headers: uploadHeaders,
+                        body: formData
+                    });
+                } catch (errUpload) {
+                    console.error('Error uploading initial attachments:', errUpload);
+                }
+            }
+
+            showToast('success', json.message);
+            closeCreateTaskModal();
+            document.getElementById('create-task-form').reset();
+            createTaskFollowersList = [];
+            createTaskInitialChecklists = [];
+            createTaskInitialFiles = [];
+            renderCreateTaskFollowersChips();
+            renderCreateTaskInitialChecklists();
+            renderCreateTaskInitialFiles();
+            loadOfficeTasks();
+            if (typeof loadDashboardData === 'function') {
+                loadDashboardData();
+            }
+        } else {
+            showToast('error', json.message || 'Không thể tạo công việc.');
+        }
+    } catch (e) {
+        console.error('Error creating task:', e);
+    }
+}
+
+// ---- src/app/collaboration/chat.js ----
+// ==========================================================================
+// 3. PHÂN HỆ: CHAT BUBBLE & FLOATING TEAM CHAT (IN-APP MESSAGING)
+// ==========================================================================
+
+function syncMobileChatViewport() {
+    const win = document.getElementById('chat-floating-window');
+    if (!win || win.classList.contains('hidden')) return;
+
+    if (window.innerWidth < 1024) {
+        const vv = window.visualViewport;
+        const height = vv ? Math.round(vv.height) : window.innerHeight;
+        const offsetTop = vv ? Math.round(vv.offsetTop) : 0;
+        win.style.setProperty('--chat-vv-top', `${offsetTop}px`);
+        win.style.setProperty('--chat-vv-height', `${height}px`);
+
+        const scrollEl = document.getElementById('chat-messages-scroll');
+        if (scrollEl && !document.getElementById('chat-messages-view')?.classList.contains('hidden')) {
+            scrollEl.scrollTop = scrollEl.scrollHeight;
+        }
+    } else {
+        win.style.removeProperty('--chat-vv-top');
+        win.style.removeProperty('--chat-vv-height');
+    }
+}
+window.syncMobileChatViewport = syncMobileChatViewport;
+
+
+function formatChatMessageContent(rawText, isMe) {
+    if (!rawText) return '';
+    let text = escapeHtml(rawText);
+
+    // 1. Format URL link
+    const linkClass = isMe
+        ? 'underline break-all text-white hover:text-teal-100 font-medium'
+        : 'underline break-all text-[#00897b] hover:text-teal-800 font-medium';
+    text = text.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="${linkClass}">${url}</a>`;
+    });
+
+    // 2. Format @ Tag Tên nhân sự: chỉ highlight khác màu, không bọc badge
+    const userMentionClass = isMe
+        ? 'font-bold text-teal-100 underline decoration-teal-300/60'
+        : 'font-bold text-teal-700 hover:underline';
+    text = text.replace(/@([A-ZÀ-Ỹa-zà-ỹ0-9_.\s]+?)(?=[.,!?\s]|$)/g, (match, name) => {
+        if (name.trim().length >= 2) {
+            return `<span class="${userMentionClass}">@${name.trim()}</span>`;
+        }
+        return match;
+    });
+
+    // 3. Format # Mã công việc: chỉ highlight khác màu, không bọc badge
+    const taskMentionClass = isMe
+        ? 'font-bold text-sky-200 underline cursor-pointer'
+        : 'font-bold text-indigo-600 hover:underline cursor-pointer';
+    text = text.replace(/#(CV-[0-9.]+)(\s*\[.*?\])?/g, (match, code) => {
+        return `<span class="${taskMentionClass}" onclick="openOfficeTaskFromChat('${code}')">${match}</span>`;
+    });
+
+    return text;
+}
+
+function initCollaborationChat() {
+    // Đếm tin nhắn chưa đọc định kỳ mỗi 30s
+    checkChatUnreadCount();
+    setInterval(checkChatUnreadCount, 30000);
+
+    // Lắng nghe sự kiện bàn phím ảo (visualViewport) trên thiết bị di động
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncMobileChatViewport);
+        window.visualViewport.addEventListener('scroll', syncMobileChatViewport);
+    }
+    window.addEventListener('resize', syncMobileChatViewport);
+
+    const chatInput = document.getElementById('chat-message-input');
+    if (chatInput) {
+        chatInput.addEventListener('focus', () => {
+            setTimeout(syncMobileChatViewport, 100);
+            setTimeout(syncMobileChatViewport, 300);
+        });
+        chatInput.addEventListener('blur', () => {
+            setTimeout(syncMobileChatViewport, 100);
+        });
+    }
+}
+
+async function checkChatUnreadCount() {
+    try {
+        const res = await authFetch('/api/collaboration/chat/rooms/', {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            const badge = document.getElementById('chat-unread-badge');
+            if (badge) {
+                if (json.total_unread > 0) {
+                    badge.textContent = json.total_unread > 99 ? '99+' : json.total_unread;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+    } catch (e) {
+        // Silent fail
+    }
+}
+
+// ensureOfficeDirectoryLoaded defined above
+
+function toggleChatWindow() {
+    const win = document.getElementById('chat-floating-window');
+    const container = document.getElementById('chat-bubble-container');
+    if (!win) return;
+
+    if (win.classList.contains('hidden')) {
+        win.classList.remove('hidden');
+        if (container) container.classList.add('chat-is-open');
+        syncMobileChatViewport();
+
+        if (chatActiveRoomId) {
+            const input = document.getElementById('chat-message-input');
+            if (input && window.innerWidth >= 1024) setTimeout(() => input.focus(), 150);
+            const scrollEl = document.getElementById('chat-messages-scroll');
+            if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+            startChatPolling();
+        } else {
+            loadChatRooms();
+        }
+        // Pre-fetch directory users for fast direct messaging
+        ensureOfficeDirectoryLoaded();
+    } else {
+        win.classList.add('hidden');
+        if (container) container.classList.remove('chat-is-open');
+        const input = document.getElementById('chat-message-input');
+        if (input) input.blur();
+        stopChatPolling();
+    }
+}
+
+async function loadChatRooms() {
+    const listEl = document.getElementById('chat-rooms-list');
+    if (!listEl) return;
+
+    try {
+        const res = await authFetch('/api/collaboration/chat/rooms/', {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        if (json.data.length === 0) {
+            listEl.innerHTML = '<div class="text-center py-8 text-xs text-slate-400">Không có phòng trò chuyện nào.</div>';
+            return;
+        }
+
+        listEl.innerHTML = json.data.map(r => `
+            <div onclick="openChatRoom(${r.id}, '${escapeHtml(r.name)}')" class="p-3 bg-white rounded-xl border border-slate-200/80 hover:border-teal-400 hover:bg-teal-50/40 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-2xs group">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-9 h-9 rounded-xl ${r.room_type === 'COMPANY' ? 'bg-teal-700 text-white' : (r.room_type === 'DEPARTMENT' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-white')} flex items-center justify-center shrink-0 text-sm font-bold shadow-2xs">
+                        <i class="${r.room_type === 'COMPANY' ? 'ph-bold ph-buildings' : (r.room_type === 'DEPARTMENT' ? 'ph-bold ph-users-three' : 'ph-bold ph-chat-teardrop-text')}"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h5 class="text-xs font-bold text-slate-800 group-hover:text-teal-800 truncate">${escapeHtml(r.name)}</h5>
+                        <p class="text-[11px] text-slate-400 truncate mt-0.5">
+                            ${r.last_message ? `${escapeHtml(r.last_message.sender_name)}: ${escapeHtml(r.last_message.content || '[Tệp tin]')}` : 'Chưa có tin nhắn'}
+                        </p>
+                    </div>
+                </div>
+
+                ${r.unread_count > 0 ? `
+                    <span class="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold shrink-0">
+                        ${r.unread_count}
+                    </span>
+                ` : ''}
+            </div>
+        `).join('');
+
+    } catch (e) {
+        console.error('Error loading chat rooms:', e);
+    }
+}
+
+function showChatRoomsList() {
+    stopChatPolling();
+    chatActiveRoomId = null;
+
+    document.getElementById('chat-rooms-view').classList.remove('hidden');
+    document.getElementById('chat-messages-view').classList.add('hidden');
+    document.getElementById('chat-btn-back-rooms').classList.add('hidden');
+
+    document.getElementById('chat-header-title').textContent = 'Trò Chuyện Nội Bộ';
+    document.getElementById('chat-header-subtitle').textContent = 'Văn phòng Triền Võ Logistics';
+
+    loadChatRooms();
+}
+
+async function openChatRoom(roomId, roomTitle) {
+    chatActiveRoomId = roomId;
+    chatLatestMessageId = 0;
+
+    document.getElementById('chat-rooms-view').classList.add('hidden');
+    document.getElementById('chat-messages-view').classList.remove('hidden');
+    document.getElementById('chat-btn-back-rooms').classList.remove('hidden');
+
+    document.getElementById('chat-header-title').textContent = roomTitle;
+    document.getElementById('chat-header-subtitle').textContent = 'Đang trực tuyến';
+
+    const scrollEl = document.getElementById('chat-messages-scroll');
+    scrollEl.innerHTML = '<div class="text-center py-4 text-xs text-slate-400"><i class="ph ph-spinner ph-spin text-base mr-1"></i>Đang tải tin nhắn...</div>';
+
+    // Đánh dấu đã đọc
+    fetch(`/api/collaboration/chat/rooms/${roomId}/mark-read/`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+    });
+
+    // Tải tin nhắn ban đầu
+    await pollChatMessages(false);
+    syncMobileChatViewport();
+
+    // Kích hoạt Polling định kỳ mỗi 3s (Tối ưu cache backend)
+    startChatPolling();
+}
+
+async function pollChatMessages(isPeriodic = true) {
+    if (!chatActiveRoomId) return;
+
+    try {
+        const url = `/api/collaboration/chat/rooms/${chatActiveRoomId}/messages/?after_id=${chatLatestMessageId}`;
+        const res = await authFetch(url, { headers: getAuthHeaders() });
+        const json = await res.json();
+        if (!json.success) return;
+
+        const scrollEl = document.getElementById('chat-messages-scroll');
+        if (!isPeriodic) {
+            scrollEl.innerHTML = '';
+        }
+
+        // Cập nhật trạng thái 2 check (đã đọc) cho các tin nhắn trước đó của tôi nếu đối phương đã đọc
+        if (json.max_other_read_id) {
+            document.querySelectorAll('#chat-messages-scroll [data-my-msg-id]').forEach(el => {
+                const msgId = parseInt(el.getAttribute('data-my-msg-id'), 10);
+                if (msgId <= json.max_other_read_id) {
+                    const statusEl = el.querySelector('.chat-status-icon');
+                    if (statusEl && !statusEl.classList.contains('text-teal-600')) {
+                        statusEl.className = 'chat-status-icon text-teal-600 inline-flex items-center ml-1';
+                        statusEl.setAttribute('title', 'Đã đọc');
+                        statusEl.innerHTML = '<i class="ph-bold ph-checks text-[12px]"></i>';
+                    }
+                }
+            });
+        }
+
+        if (json.messages && json.messages.length > 0) {
+            const currentUserId = window.CURRENT_USER?.id;
+            json.messages.forEach(msg => {
+                const isMe = currentUserId && msg.sender === currentUserId;
+                const msgEl = document.createElement('div');
+                msgEl.id = `chat-msg-${msg.id}`;
+                msgEl.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`;
+                if (isMe) {
+                    msgEl.setAttribute('data-my-msg-id', msg.id);
+                }
+
+                const timeStr = formatTimeOnly(msg.created_at);
+                const checkIconHtml = isMe ? (
+                    msg.is_read ?
+                    `<span class="chat-status-icon text-teal-600 inline-flex items-center ml-1" title="Đã đọc"><i class="ph-bold ph-checks text-[12px]"></i></span>` :
+                    `<span class="chat-status-icon text-slate-400 inline-flex items-center ml-1" title="Đã gửi (Chưa đọc)"><i class="ph-bold ph-check text-[10.5px]"></i></span>`
+                ) : '';
+
+                msgEl.innerHTML = `
+                    ${!isMe ? `<span class="text-[10px] font-bold text-slate-500 px-1">${escapeHtml(msg.sender_info?.full_name || msg.sender_name)}</span>` : ''}
+                    <div class="max-w-[80%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed shadow-2xs ${isMe ? 'bg-teal-700 text-white rounded-br-xs' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-xs'}">
+                        ${msg.reply_to_snippet ? `
+                            <div class="mb-1 pb-1 border-b border-white/20 text-[10px] opacity-80">
+                                <strong>${escapeHtml(msg.reply_to_snippet.sender_name)}:</strong> ${escapeHtml(msg.reply_to_snippet.snippet)}
+                            </div>
+                        ` : ''}
+                        <div class="whitespace-pre-line break-words">${formatChatMessageContent(msg.content, isMe)}</div>
+                        ${msg.attachments && msg.attachments.length > 0 ? `
+                            <div class="mt-2 space-y-1.5 pt-1.5 border-t ${isMe ? 'border-teal-600' : 'border-slate-100'}">
+                                ${msg.attachments.map(att => {
+                                    const isImg = att.file && /\.(png|jpe?g|gif|webp)$/i.test(att.original_name || att.file);
+                                    if (isImg) {
+                                        return `
+                                            <div class="rounded-lg overflow-hidden border ${isMe ? 'border-teal-600/80' : 'border-slate-200'} max-w-[240px]">
+                                                <a href="${att.file}" target="_blank" rel="noopener noreferrer">
+                                                    <img src="${att.file}" alt="${escapeHtml(att.original_name)}" class="w-full max-h-56 object-cover hover:scale-102 transition-transform duration-200 rounded-lg cursor-pointer" loading="lazy" />
+                                                </a>
+                                            </div>
+                                        `;
+                                    }
+                                    return `
+                                        <a href="${att.file}" target="_blank" download class="flex items-center gap-1.5 text-[10.5px] ${isMe ? 'text-teal-100 hover:text-white' : 'text-teal-700 hover:underline'}">
+                                            <i class="ph-bold ph-paperclip"></i> ${escapeHtml(att.original_name)}
+                                        </a>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="flex items-center text-[9px] text-slate-400 px-1">
+                        <span>${timeStr}</span>
+                        ${checkIconHtml}
+                    </div>
+                `;
+                scrollEl.appendChild(msgEl);
+            });
+
+            chatLatestMessageId = json.latest_id;
+            scrollEl.scrollTop = scrollEl.scrollHeight;
+        } else if (!isPeriodic && (!json.messages || json.messages.length === 0)) {
+            scrollEl.innerHTML = '<div class="text-center py-12 text-xs text-slate-400">Bắt đầu cuộc trò chuyện...</div>';
+        }
+
+    } catch (e) {
+        console.error('Error polling messages:', e);
+    }
+}
+
+function startChatPolling() {
+    stopChatPolling();
+    chatPollTimer = setInterval(() => {
+        pollChatMessages(true);
+    }, 3000);
+}
+
+function stopChatPolling() {
+    if (chatPollTimer) {
+        clearInterval(chatPollTimer);
+        chatPollTimer = null;
+    }
+}
+
+function handleChatInputKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+    }
+}
+
+// ---- src/app/collaboration/chat-composer.js ----
+let chatMentionCurrentTab = 'users';
+let chatMentionFilterKeyword = '';
+let chatCachedTasksList = null;
+let chatCurrentRelatedTaskId = null;
+
+function renderChatPendingFilesPreview() {
+    const preview = document.getElementById('chat-pending-files-preview');
+    const content = document.getElementById('chat-pending-files-content');
+    if (!preview || !content) return;
+
+    if (!chatSelectedFiles || chatSelectedFiles.length === 0) {
+        preview.classList.add('hidden');
+        content.innerHTML = '';
+        return;
+    }
+
+    preview.classList.remove('hidden');
+    content.innerHTML = chatSelectedFiles.map((file, idx) => {
+        const isImg = file.type && file.type.startsWith('image/');
+        const url = isImg ? URL.createObjectURL(file) : null;
+        return `
+            <div class="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-slate-200 shrink-0 shadow-2xs max-w-[200px]">
+                ${isImg ? `
+                    <img src="${url}" class="w-8 h-8 rounded-md object-cover shrink-0 border border-slate-100" />
+                ` : `
+                    <i class="ph-bold ph-file text-base text-slate-500 shrink-0"></i>
+                `}
+                <div class="min-w-0 flex-1">
+                    <p class="text-[11px] font-bold text-slate-700 truncate" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</p>
+                    <p class="text-[9px] text-slate-400 font-mono">${(file.size / 1024).toFixed(1)} KB</p>
+                </div>
+                <button type="button" onclick="removeChatSelectedFile(${idx})" class="text-slate-400 hover:text-rose-600 p-0.5 rounded cursor-pointer shrink-0" title="Bỏ ảnh này">
+                    <i class="ph-bold ph-x text-xs"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function removeChatSelectedFile(idx) {
+    if (chatSelectedFiles && chatSelectedFiles[idx]) {
+        chatSelectedFiles.splice(idx, 1);
+        renderChatPendingFilesPreview();
+    }
+}
+window.removeChatSelectedFile = removeChatSelectedFile;
+window.renderChatPendingFilesPreview = renderChatPendingFilesPreview;
+
+async function sendChatMessage() {
+    if (!chatActiveRoomId) return;
+    const input = document.getElementById('chat-message-input');
+    const content = input.value.trim();
+
+    if (!content && chatSelectedFiles.length === 0) return;
+
+    const formData = new FormData();
+    formData.append('content', content);
+    if (chatCurrentRelatedTaskId) {
+        formData.append('related_task_id', chatCurrentRelatedTaskId);
+        chatCurrentRelatedTaskId = null;
+    }
+
+    for (let i = 0; i < chatSelectedFiles.length; i++) {
+        formData.append('files', chatSelectedFiles[i]);
+    }
+
+    input.value = '';
+    input.style.height = 'auto';
+    clearPendingChatFiles();
+    closeChatMentionDropdown();
+
+    try {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type'];
+        const res = await authFetch(`/api/collaboration/chat/rooms/${chatActiveRoomId}/messages/`, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+            pollChatMessages(true);
+        }
+    } catch (e) {
+        console.error('Error sending chat message:', e);
+    }
+}
+
+function handleChatFilesSelected(e) {
+    if (e.target.files && e.target.files.length > 0) {
+        Array.from(e.target.files).forEach(f => chatSelectedFiles.push(f));
+        renderChatPendingFilesPreview();
+    }
+}
+
+function clearPendingChatFiles() {
+    chatSelectedFiles = [];
+    const fileInput = document.getElementById('chat-file-input');
+    if (fileInput) fileInput.value = '';
+    renderChatPendingFilesPreview();
+}
+
+function addChatSelectedFile(file) {
+    if (!file) return;
+    chatSelectedFiles.push(file);
+    renderChatPendingFilesPreview();
+}
+window.addChatSelectedFile = addChatSelectedFile;
+
+async function captureScreenForChat() {
+    try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            showToast('info', 'Trình duyệt chưa hỗ trợ chụp trực tiếp qua API. Bạn vui lòng nhấn phím Win + Shift + S (hoặc PrintScreen) rồi nhấn Ctrl + V để dán ảnh vào chat.', 'Chụp Màn Hình');
+            return;
+        }
+
+        showToast('info', 'Vui lòng chọn cửa sổ hoặc màn hình bạn muốn chụp...', 'Chụp Ảnh Màn Hình');
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { displaySurface: 'monitor', cursor: 'always' }
+        });
+
+        const track = stream.getVideoTracks()[0];
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.muted = true;
+        await video.play();
+
+        await new Promise(r => setTimeout(r, 200));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        track.stop();
+        stream.getTracks().forEach(t => t.stop());
+
+        canvas.toBlob((blob) => {
+            if (blob) {
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const timeStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+                const file = new File([blob], `capture_${timeStr}.png`, { type: 'image/png' });
+                addChatSelectedFile(file);
+                showToast('success', `Đã chụp và đính kèm ảnh "${file.name}" vào tin nhắn`, 'Chụp Ảnh Thành Công');
+            }
+        }, 'image/png');
+    } catch (err) {
+        if (err.name !== 'NotAllowedError') {
+            console.warn('Lỗi khi chụp màn hình:', err);
+            showToast('warning', 'Không thể chụp tự động. Hãy dùng phím Win + Shift + S rồi nhấn Ctrl + V.', 'Hướng Dẫn');
+        }
+    }
+}
+window.captureScreenForChat = captureScreenForChat;
+
+async function toggleChatMentionMenu(e, defaultTab = null) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const dropdown = document.getElementById('chat-mention-dropdown');
+    if (!dropdown) return;
+
+    if (dropdown.classList.contains('hidden') || defaultTab) {
+        dropdown.classList.remove('hidden');
+        if (defaultTab) chatMentionCurrentTab = defaultTab;
+        const searchInput = document.getElementById('chat-mention-search-input');
+        if (searchInput) {
+            searchInput.value = '';
+            setTimeout(() => searchInput.focus(), 60);
+        }
+        await switchChatMentionTab(chatMentionCurrentTab);
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+window.toggleChatMentionMenu = toggleChatMentionMenu;
+
+function closeChatMentionDropdown() {
+    const dropdown = document.getElementById('chat-mention-dropdown');
+    if (dropdown) dropdown.classList.add('hidden');
+}
+window.closeChatMentionDropdown = closeChatMentionDropdown;
+
+async function switchChatMentionTab(tab) {
+    chatMentionCurrentTab = tab;
+    const tabUsers = document.getElementById('chat-mention-tab-users');
+    const tabTasks = document.getElementById('chat-mention-tab-tasks');
+    const searchInput = document.getElementById('chat-mention-search-input');
+
+    if (tab === 'users') {
+        if (tabUsers) tabUsers.className = 'py-1 px-2.5 rounded-lg font-bold text-xs flex items-center gap-1 bg-white text-teal-800 shadow-xs border border-slate-200/80 cursor-pointer transition-all';
+        if (tabTasks) tabTasks.className = 'py-1 px-2.5 rounded-lg font-bold text-xs flex items-center gap-1 text-slate-600 hover:text-slate-900 cursor-pointer transition-all';
+        if (searchInput) searchInput.placeholder = 'Tìm tên hoặc phòng ban nhân sự...';
+        await renderChatMentionUsers(chatMentionFilterKeyword);
+    } else {
+        if (tabUsers) tabUsers.className = 'py-1 px-2.5 rounded-lg font-bold text-xs flex items-center gap-1 text-slate-600 hover:text-slate-900 cursor-pointer transition-all';
+        if (tabTasks) tabTasks.className = 'py-1 px-2.5 rounded-lg font-bold text-xs flex items-center gap-1 bg-white text-indigo-800 shadow-xs border border-slate-200/80 cursor-pointer transition-all';
+        if (searchInput) searchInput.placeholder = 'Tìm mã hoặc tên mục việc...';
+        await renderChatMentionTasks(chatMentionFilterKeyword);
+    }
+}
+window.switchChatMentionTab = switchChatMentionTab;
+
+async function renderChatMentionUsers(keyword = '') {
+    const listEl = document.getElementById('chat-mention-items-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="p-3 text-center text-slate-400 text-xs"><i class="ph ph-spinner ph-spin mr-1"></i>Đang tải nhân sự...</div>';
+
+    const users = await ensureOfficeDirectoryLoaded();
+    const cleanKw = (keyword || '').toLowerCase().trim();
+
+    const filtered = (users || []).filter(u => {
+        if (!cleanKw) return true;
+        const name = (u.full_name || '').toLowerCase();
+        const dept = (u.department_name || '').toLowerCase();
+        const role = (u.role_name || '').toLowerCase();
+        return name.includes(cleanKw) || dept.includes(cleanKw) || role.includes(cleanKw);
+    });
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="p-3 text-center text-slate-400 text-xs">Không tìm thấy nhân sự phù hợp.</div>';
+        return;
+    }
+
+    listEl.innerHTML = filtered.map(u => {
+        const initials = (u.full_name || 'U').split(' ').map(n => n[0]).slice(-2).join('').toUpperCase();
+        return `
+            <div onclick="selectChatMentionUser('${escapeHtml(u.full_name)}', ${u.user_id})" class="flex items-center gap-2 p-2 hover:bg-teal-50/80 rounded-xl cursor-pointer transition-colors group">
+                <div class="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-[11px] shrink-0 border border-teal-200 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+                    ${initials}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="font-bold text-slate-800 text-xs group-hover:text-teal-900 truncate">@${escapeHtml(u.full_name)}</p>
+                    <p class="text-[10.5px] text-slate-400 truncate">${escapeHtml(u.department_name || 'Văn phòng')} ${u.role_name ? `• ${escapeHtml(u.role_name)}` : ''}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+window.renderChatMentionUsers = renderChatMentionUsers;
+
+async function renderChatMentionTasks(keyword = '') {
+    const listEl = document.getElementById('chat-mention-items-list');
+    if (!listEl) return;
+
+    if (!chatCachedTasksList) {
+        listEl.innerHTML = '<div class="p-3 text-center text-slate-400 text-xs"><i class="ph ph-spinner ph-spin mr-1"></i>Đang tải danh sách mục việc...</div>';
+        try {
+            const res = await authFetch('/api/collaboration/tasks/?limit=30', { headers: getAuthHeaders() });
+            const json = await res.json();
+            if (json.success && json.data) {
+                chatCachedTasksList = json.data;
+            } else {
+                chatCachedTasksList = [];
+            }
+        } catch (e) {
+            console.warn('Lỗi nạp nhiệm vụ chat mention:', e);
+            chatCachedTasksList = [];
+        }
+    }
+
+    const cleanKw = (keyword || '').toLowerCase().trim();
+    const filtered = (chatCachedTasksList || []).filter(t => {
+        if (!cleanKw) return true;
+        const code = (t.code || '').toLowerCase();
+        const title = (t.title || '').toLowerCase();
+        return code.includes(cleanKw) || title.includes(cleanKw);
+    });
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="p-3 text-center text-slate-400 text-xs">Không tìm thấy mục việc phù hợp.</div>';
+        return;
+    }
+
+    listEl.innerHTML = filtered.map(t => {
+        return `
+            <div onclick="selectChatMentionTask('${escapeHtml(t.code)}', '${escapeHtml(t.title)}', ${t.id})" class="flex items-start gap-2 p-2 hover:bg-indigo-50/80 rounded-xl cursor-pointer transition-colors group">
+                <span class="px-1.5 py-0.5 rounded font-mono font-bold text-[10px] bg-indigo-100 text-indigo-800 border border-indigo-200 shrink-0 mt-0.5">
+                    ${escapeHtml(t.code)}
+                </span>
+                <div class="min-w-0 flex-1">
+                    <p class="font-bold text-slate-800 text-xs group-hover:text-indigo-900 truncate">${escapeHtml(t.title)}</p>
+                    <p class="text-[10px] text-slate-400 truncate">Hạn: ${t.due_date ? normalizeDateToISO(t.due_date) : 'Không hạn'} • Tiến độ: ${t.progress_percent || 0}%</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+window.renderChatMentionTasks = renderChatMentionTasks;
+
+function filterChatMentionList(keyword) {
+    chatMentionFilterKeyword = keyword;
+    if (chatMentionCurrentTab === 'users') {
+        renderChatMentionUsers(keyword);
+    } else {
+        renderChatMentionTasks(keyword);
+    }
+}
+window.filterChatMentionList = filterChatMentionList;
+
+function selectChatMentionUser(fullName, userId) {
+    const input = document.getElementById('chat-message-input');
+    if (!input) return;
+
+    const mentionText = `@${fullName} `;
+    insertTextAtCursor(input, mentionText);
+    closeChatMentionDropdown();
+    input.focus();
+}
+window.selectChatMentionUser = selectChatMentionUser;
+
+function selectChatMentionTask(code, title, taskId) {
+    const input = document.getElementById('chat-message-input');
+    if (!input) return;
+
+    chatCurrentRelatedTaskId = taskId;
+    const mentionText = `#${code} [${title}] `;
+    insertTextAtCursor(input, mentionText);
+    closeChatMentionDropdown();
+    input.focus();
+}
+window.selectChatMentionTask = selectChatMentionTask;
+
+function insertTextAtCursor(textarea, text) {
+    const val = textarea.value;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const before = val.substring(0, start);
+    const after = val.substring(end);
+
+    const match = before.match(/([@#])[^@#\s]*$/);
+    if (match) {
+        const replaceStart = match.index;
+        textarea.value = val.substring(0, replaceStart) + text + after;
+        textarea.selectionStart = textarea.selectionEnd = replaceStart + text.length;
+    } else {
+        textarea.value = before + text + after;
+        textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    }
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function handleChatInputTyping(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+
+    const val = textarea.value;
+    const cursor = textarea.selectionStart;
+    const before = val.substring(0, cursor);
+
+    const matchUser = before.match(/@([^@#\s]*)$/);
+    const matchTask = before.match(/#([^@#\s]*)$/);
+
+    if (matchUser) {
+        const query = matchUser[1];
+        chatMentionFilterKeyword = query;
+        toggleChatMentionMenu(null, 'users');
+        renderChatMentionUsers(query);
+    } else if (matchTask) {
+        const query = matchTask[1];
+        chatMentionFilterKeyword = query;
+        toggleChatMentionMenu(null, 'tasks');
+        renderChatMentionTasks(query);
+    } else {
+        closeChatMentionDropdown();
+    }
+}
+window.handleChatInputTyping = handleChatInputTyping;
+
+function openOfficeTaskFromChat(taskCode) {
+    if (!taskCode) return;
+    if (chatCachedTasksList) {
+        const found = chatCachedTasksList.find(t => t.code === taskCode);
+        if (found && typeof openTaskDetailDrawer === 'function') {
+            openTaskDetailDrawer(found.id);
+            return;
+        }
+    }
+    authFetch(`/api/collaboration/tasks/?q=${encodeURIComponent(taskCode)}`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(json => {
+            if (json.success && json.data && json.data.length > 0) {
+                if (typeof openTaskDetailDrawer === 'function') {
+                    openTaskDetailDrawer(json.data[0].id);
+                }
+            } else {
+                showToast('info', `Không tìm thấy thông tin mục việc ${taskCode}`);
+            }
+        }).catch(e => console.warn('Lỗi mở nhiệm vụ từ chat:', e));
+}
+window.openOfficeTaskFromChat = openOfficeTaskFromChat;
+
+// Bắt sự kiện dán ảnh Clipboard (Ctrl + V) trên ô chat
+document.addEventListener('DOMContentLoaded', () => {
+    const chatInput = document.getElementById('chat-message-input');
+    if (chatInput) {
+        chatInput.addEventListener('paste', (e) => {
+            if (typeof window.extractImageFromClipboardEvent === 'function') {
+                const file = window.extractImageFromClipboardEvent(e);
+                if (file) {
+                    e.preventDefault();
+                    addChatSelectedFile(file);
+                    showToast('success', `Đã dán ảnh "${file.name}" vào tin nhắn`, 'Dán Ảnh Thành Công');
+                }
+            }
+        });
+    }
+});
+
+async function toggleChatDirectoryDropdown() {
+    const dropdown = document.getElementById('chat-directory-dropdown');
+    const select = document.getElementById('chat-select-colleague');
+    if (!dropdown || !select) return;
+
+    if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        select.innerHTML = '<option value="">-- Đang tải nhân sự văn phòng... --</option>';
+        const users = await ensureOfficeDirectoryLoaded();
+        
+        select.innerHTML = '<option value="">-- Chọn đồng nghiệp văn phòng --</option>';
+        if (users && users.length > 0) {
+            const currentUserId = window.CURRENT_USER?.id;
+            users.forEach(u => {
+                if (u.user_id !== currentUserId) {
+                    const opt = document.createElement('option');
+                    opt.value = u.user_id;
+                    const dept = u.department_name ? u.department_name : 'Văn phòng';
+                    opt.textContent = `${u.full_name} | ${dept}`;
+                    select.appendChild(opt);
+                }
+            });
+        }
+
+        // Kích hoạt Universal Searchable Combobox có kính lúp dòng đầu & gõ search trực tiếp
+        if (typeof makeSearchableSelect === 'function') {
+            if (select._bimCombobox) {
+                select._bimCombobox.sync();
+            } else {
+                makeSearchableSelect(select, { uppercase: false });
+            }
+            // Tự động focus sẵn sàng gõ từ khóa tìm kiếm
+            setTimeout(() => {
+                const wrapper = select.nextElementSibling;
+                const mainInput = wrapper?.querySelector('.bim-combobox-main-input');
+                if (mainInput) {
+                    mainInput.focus();
+                }
+            }, 60);
+        }
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+async function startDirectChat(targetUserId) {
+    if (!targetUserId) return;
+    try {
+        const res = await authFetch('/api/collaboration/chat/rooms/', {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ target_user_id: targetUserId })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+            const dropdown = document.getElementById('chat-directory-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            
+            // Reset giá trị select & combobox
+            const select = document.getElementById('chat-select-colleague');
+            if (select) {
+                select.value = '';
+                if (select._bimCombobox) {
+                    select._bimCombobox.sync();
+                }
+            }
+
+            openChatRoom(json.data.id, json.data.name);
+        } else {
+            showToast('error', json.message || 'Không thể tạo cuộc trò chuyện.');
+        }
+    } catch (e) {
+        console.error('Error starting direct chat:', e);
+    }
+}
+
+// ---- src/app/collaboration/formatters.js ----
+// ==========================================================================
+// 4. HELPER UTILITIES
+// ==========================================================================
+
+function getPriorityBadgeClass(priority) {
+    switch (priority) {
+        case 'URGENT': return 'bg-rose-100 text-rose-800 border border-rose-200';
+        case 'HIGH': return 'bg-orange-100 text-orange-800 border border-orange-200';
+        case 'MEDIUM': return 'bg-sky-100 text-sky-800 border border-sky-200';
+        case 'LOW': return 'bg-slate-100 text-slate-700 border border-slate-200';
+        default: return 'bg-slate-100 text-slate-700';
+    }
+}
+
+function getPriorityText(priority) {
+    switch (priority) {
+        case 'URGENT': return 'Khẩn cấp';
+        case 'HIGH': return 'Cao';
+        case 'MEDIUM': return 'Bình thường';
+        case 'LOW': return 'Thấp';
+        default: return priority;
+    }
+}
+
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'DONE': return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+        case 'REVIEW': return 'bg-amber-100 text-amber-800 border border-amber-200';
+        case 'IN_PROGRESS': return 'bg-sky-100 text-sky-800 border border-sky-200';
+        case 'TODO': return 'bg-slate-100 text-slate-700 border border-slate-200';
+        default: return 'bg-slate-100 text-slate-700';
+    }
+}
+
+function getStatusText(status) {
+    switch (status) {
+        case 'DONE': return 'Hoàn thành';
+        case 'REVIEW': return 'Chờ nghiệm thu';
+        case 'IN_PROGRESS': return 'Đang làm';
+        case 'TODO': return 'Cần làm';
+        case 'CANCELLED': return 'Đã hủy';
+        default: return status;
+    }
+}
+
+function formatDateDMY(dStr) {
+    if (!dStr) return '';
+    const parts = dStr.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return dStr;
+}
+
+function parseDateFlexible(dateStr) {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr;
+    if (typeof dateStr === 'string') {
+        const str = dateStr.trim();
+        // Kiểm tra định dạng DD/MM/YYYY HH:mm[:ss] hoặc DD/MM/YYYY
+        const dmyMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+        if (dmyMatch) {
+            const day = parseInt(dmyMatch[1], 10);
+            const month = parseInt(dmyMatch[2], 10) - 1;
+            const year = parseInt(dmyMatch[3], 10);
+            const hour = parseInt(dmyMatch[4] || 0, 10);
+            const minute = parseInt(dmyMatch[5] || 0, 10);
+            const second = parseInt(dmyMatch[6] || 0, 10);
+            const parsed = new Date(year, month, day, hour, minute, second);
+            if (!isNaN(parsed.getTime())) return parsed;
+        }
+        // Thử parse Date thông thường (hỗ trợ ISO YYYY-MM-DDTHH:mm:ssZ)
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+}
+
+function formatDateTime(isoStr) {
+
+    if (!isoStr) return '';
+    const d = parseDateFlexible(isoStr);
+    if (!d) return isoStr;
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+window.formatDateTime = formatDateTime;
+window.formatDateTimeDMY = formatDateTime;
+
+function formatTimeOnly(isoStr) {
+    if (!isoStr) return '';
+    // Nếu là string có dạng time HH:mm
+    if (typeof isoStr === 'string') {
+        const timeMatch = isoStr.match(/\b(\d{1,2}:\d{2})(?::\d{2})?\b/);
+        if (timeMatch) {
+            return timeMatch[1];
+        }
+    }
+    const d = parseDateFlexible(isoStr);
+    if (!d) return '';
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function formatTimeAgo(isoStr) {
+    if (!isoStr) return '';
+    const d = parseDateFlexible(isoStr);
+    if (!d) return '';
+    const diffMs = Date.now() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// ---- src/app/collaboration/notifications.js ----
+// ==========================================================================
+// 5. PHÂN HỆ: CHUÔNG THÔNG BÁO NỘI BỘ (IN-APP BELL NOTIFICATIONS)
+// ==========================================================================
+
+let currentNotificationFilter = 'all'; // 'all' | 'unread'
+let currentNotificationsList = [];
+
+function initBellNotifications() {
+    checkNotificationUnreadCount();
+    // Định kỳ kiểm tra thông báo chuông mỗi 15s
+    if (window.bellNotifTimer) clearInterval(window.bellNotifTimer);
+    window.bellNotifTimer = setInterval(checkNotificationUnreadCount, 15000);
+
+    // Đóng dropdown khi click ra ngoài
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('topbar-notification-container');
+        const menu = document.getElementById('notification-dropdown-menu');
+        if (container && menu && !container.contains(e.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+}
+
+async function checkNotificationUnreadCount() {
+    try {
+        const res = await authFetch('/api/collaboration/notifications/?limit=1', {
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            updateNotificationBadge(json.total_unread);
+        }
+    } catch (e) {
+        // Silent fail
+    }
+}
+
+function updateNotificationBadge(unreadCount) {
+    const badge = document.getElementById('notification-unread-badge');
+    const pill = document.getElementById('notification-count-pill');
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+    if (pill) {
+        pill.textContent = `${unreadCount} mới`;
+    }
+}
+
+function toggleNotificationDropdown(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('notification-dropdown-menu');
+    if (!menu) return;
+
+    if (menu.classList.contains('hidden')) {
+        menu.classList.remove('hidden');
+        loadNotifications(currentNotificationFilter);
+    } else {
+        menu.classList.add('hidden');
+    }
+}
+
+function filterNotifications(filterMode) {
+    currentNotificationFilter = filterMode;
+    const tabAll = document.getElementById('notif-tab-all');
+    const tabUnread = document.getElementById('notif-tab-unread');
+
+    if (filterMode === 'all') {
+        if (tabAll) {
+            tabAll.className = 'px-3 py-1.5 border-b-2 border-teal-600 text-teal-800 font-bold transition-colors';
+        }
+        if (tabUnread) {
+            tabUnread.className = 'px-3 py-1.5 border-b-2 border-transparent text-slate-600 hover:text-teal-800 transition-colors';
+        }
+    } else {
+        if (tabAll) {
+            tabAll.className = 'px-3 py-1.5 border-b-2 border-transparent text-slate-600 hover:text-teal-800 transition-colors';
+        }
+        if (tabUnread) {
+            tabUnread.className = 'px-3 py-1.5 border-b-2 border-teal-600 text-teal-800 font-bold transition-colors';
+        }
+    }
+    loadNotifications(filterMode);
+}
+
+async function loadNotifications(filterMode = 'all') {
+    const listEl = document.getElementById('notification-items-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div class="p-6 text-center text-xs text-slate-400"><i class="ph ph-spinner ph-spin text-lg mb-1 block"></i>Đang tải thông báo...</div>';
+
+    try {
+        const url = filterMode === 'unread' ? '/api/collaboration/notifications/?unread=1' : '/api/collaboration/notifications/';
+        const res = await authFetch(url, { headers: getAuthHeaders() });
+        const json = await res.json();
+        if (!json.success || !json.data) {
+            listEl.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">Không thể tải thông báo.</div>';
+            return;
+        }
+
+        updateNotificationBadge(json.total_unread);
+        currentNotificationsList = json.data;
+
+        if (json.data.length === 0) {
+            listEl.innerHTML = `
+                <div class="p-8 text-center text-xs text-slate-400">
+                    <i class="ph ph-bell-simple-slash text-2xl mb-1.5 text-slate-300 block"></i>
+                    ${filterMode === 'unread' ? 'Không có thông báo chưa đọc nào.' : 'Chưa có thông báo nào gửi đến bạn.'}
+                </div>
+            `;
+            return;
+        }
+
+        listEl.innerHTML = json.data.map(item => {
+            let iconClass = 'ph-bold ph-bell bg-slate-100 text-slate-600';
+            if (item.notification_type === 'TASK_ASSIGNED') {
+                iconClass = 'ph-bold ph-check-square-offset bg-amber-50 text-amber-700 border border-amber-200';
+            } else if (item.notification_type === 'TASK_STATUS_CHANGED') {
+                iconClass = 'ph-bold ph-arrows-clockwise bg-sky-50 text-sky-700 border border-sky-200';
+            } else if (item.notification_type === 'NEWS_URGENT') {
+                iconClass = 'ph-bold ph-warning-octagon bg-rose-50 text-rose-700 border border-rose-200';
+            } else if (item.notification_type === 'NEWS_NEW') {
+                iconClass = 'ph-bold ph-newspaper bg-teal-50 text-teal-700 border border-teal-200';
+            } else if (item.notification_type === 'CHAT_MENTION') {
+                iconClass = 'ph-bold ph-at bg-indigo-50 text-indigo-700 border border-indigo-200';
+            } else if (item.notification_type === 'TASK_EXTENSION_REQUESTED') {
+                iconClass = 'ph-bold ph-clock-countdown bg-purple-50 text-purple-700 border border-purple-200';
+            } else if (item.notification_type === 'TASK_EXTENSION_REVIEWED') {
+                iconClass = 'ph-bold ph-calendar-check bg-emerald-50 text-emerald-700 border border-emerald-200';
+            }
+
+            return `
+                <div onclick="handleNotificationClick(${item.id}, '${item.target_type}', ${item.target_id || 'null'}, '${escapeHtml(item.link_url || '')}')" 
+                    class="p-3.5 flex items-start gap-3 hover:bg-teal-50/50 cursor-pointer transition-colors relative group ${item.is_read ? 'bg-white opacity-85' : 'bg-slate-50/80 font-medium'}">
+                    
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm shadow-2xs ${iconClass}">
+                        <i class="${iconClass.split(' ')[0]} ${iconClass.split(' ')[1]}"></i>
+                    </div>
+
+                    <div class="flex-1 min-w-0 pr-4">
+                        <div class="flex items-center justify-between gap-2 mb-0.5">
+                            <span class="text-[10px] font-bold uppercase tracking-wider ${item.is_read ? 'text-slate-400' : 'text-teal-800'}">
+                                ${escapeHtml(item.type_display || 'Thông báo')}
+                            </span>
+                            <span class="text-[10px] text-slate-400 shrink-0 font-normal">
+                                ${formatTimeAgo(item.created_at)}
+                            </span>
+                        </div>
+                        <h5 class="text-xs font-bold ${item.is_read ? 'text-slate-700' : 'text-slate-900'} leading-snug truncate">
+                            ${escapeHtml(item.title)}
+                        </h5>
+                        <p class="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                            ${escapeHtml(item.message)}
+                        </p>
+                    </div>
+
+                    ${!item.is_read ? `
+                        <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0 absolute right-3 top-4 shadow-2xs" title="Chưa đọc"></span>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        console.error('Error loading notifications:', e);
+        listEl.innerHTML = '<div class="p-6 text-center text-xs text-rose-500">Lỗi kết nối máy chủ.</div>';
+    }
+}
+
+async function handleNotificationClick(notifId, targetType, targetId, linkUrl) {
+    // 1. Đánh dấu đã đọc
+    try {
+        await authFetch(`/api/collaboration/notifications/${notifId}/mark-read/`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        checkNotificationUnreadCount();
+    } catch (e) {
+        console.error('Error marking read:', e);
+    }
+
+    // 2. Đóng dropdown chuông
+    const menu = document.getElementById('notification-dropdown-menu');
+    if (menu) menu.classList.add('hidden');
+
+    // 3. Điều hướng an toàn & thông minh
+    if (targetType === 'NEWS' && targetId) {
+        if (typeof showView === 'function') {
+            showView('view-ban-tin');
+            if (typeof openNewsDetailModal === 'function') {
+                openNewsDetailModal(targetId);
+            }
+        } else {
+            window.location.href = linkUrl || `/news/${targetId}/`;
+        }
+    } else if (targetType === 'TASK' && targetId) {
+        if (typeof showView === 'function') {
+            showView('view-giao-viec');
+            if (typeof openTaskDetailDrawer === 'function') {
+                openTaskDetailDrawer(targetId);
+            }
+        } else {
+            window.location.href = `/tasks/#task-${targetId}`;
+        }
+    } else if (targetType === 'CHAT') {
+        toggleChatWindow();
+    } else if (linkUrl) {
+        // Bảo mật URL: Chặn Open Redirect sang domain ngoài, chỉ hỗ trợ relative link (# hoặc /)
+        if (linkUrl.startsWith('#')) {
+            const viewId = linkUrl.substring(1);
+            if (typeof showView === 'function') {
+                showView(viewId === 'tasks' ? 'view-giao-viec' : (viewId === 'news' ? 'view-ban-tin' : viewId));
+            } else {
+                window.location.href = `/${linkUrl}`;
+            }
+        } else if (linkUrl.startsWith('/tasks')) {
+            if (typeof showView === 'function') {
+                showView('view-giao-viec');
+                if (targetId && typeof openTaskDetailDrawer === 'function') {
+                    openTaskDetailDrawer(targetId);
+                }
+            } else {
+                window.location.href = linkUrl;
+            }
+        } else if (linkUrl.startsWith('/news')) {
+            if (typeof showView === 'function' && targetId) {
+                showView('view-ban-tin');
+                if (typeof openNewsDetailModal === 'function') {
+                    openNewsDetailModal(targetId);
+                }
+            } else {
+                window.location.href = linkUrl;
+            }
+        } else if (linkUrl.startsWith('/') && !linkUrl.startsWith('//')) {
+            window.location.href = linkUrl;
+        }
+    }
+}
+
+async function markAllNotificationsAsRead() {
+    try {
+        const res = await authFetch('/api/collaboration/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+            updateNotificationBadge(0);
+            loadNotifications(currentNotificationFilter);
+            if (typeof showToast === 'function') {
+                showToast('success', 'Đã đánh dấu tất cả thông báo là đã đọc.');
+            }
+        }
+    } catch (e) {
+        console.error('Error marking all read:', e);
+    }
+}
+
+// ---- src/app/collaboration/task-extension.js ----
+// ==========================================
+// THAO TÁC ĐỀ XUẤT GIA HẠN & PHÊ DUYỆT GIA HẠN CÔNG VIỆC
+// ==========================================
+
+function openRequestExtensionInline() {
+    const form = document.getElementById('task-drawer-request-extension-form');
+    if (!form) return;
+    form.classList.remove('hidden');
+    form.style.display = 'block';
+
+    const inputDate = document.getElementById('ext-input-new-deadline');
+    const inputReason = document.getElementById('ext-input-reason');
+
+    if (inputReason) inputReason.value = '';
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const minDateStr = tomorrow.toISOString().split('T')[0];
+
+    if (inputDate) {
+        inputDate.min = minDateStr;
+        if (currentTaskDetailData && currentTaskDetailData.due_date) {
+            try {
+                const cur = new Date(currentTaskDetailData.due_date);
+                cur.setDate(cur.getDate() + 3);
+                inputDate.value = cur.toISOString().split('T')[0];
+            } catch(e) {
+                inputDate.value = minDateStr;
+            }
+        } else {
+            inputDate.value = minDateStr;
+        }
+        inputDate.focus();
+    }
+}
+window.openRequestExtensionInline = openRequestExtensionInline;
+
+function closeRequestExtensionInline() {
+    const form = document.getElementById('task-drawer-request-extension-form');
+    if (form) {
+        form.classList.add('hidden');
+        form.style.display = 'none';
+    }
+}
+window.closeRequestExtensionInline = closeRequestExtensionInline;
+
+async function submitTaskExtensionRequest() {
+    if (!currentViewingTaskId) return;
+    const inputDate = document.getElementById('ext-input-new-deadline');
+    const inputReason = document.getElementById('ext-input-reason');
+
+    const requested_deadline = inputDate?.value;
+    const reason = inputReason?.value?.trim();
+
+    if (!requested_deadline) {
+        showToast('Vui lòng chọn hạn hoàn thành mới đề xuất.', 'warning');
+        if (inputDate) inputDate.focus();
+        return;
+    }
+    if (!reason) {
+        showToast('Vui lòng nhập lý do đề xuất dời hạn để người giao việc duyệt.', 'warning');
+        if (inputReason) inputReason.focus();
+        return;
+    }
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/extension/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+                action: 'request',
+                requested_deadline,
+                reason
+            })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast(json.message || 'Đã gửi đề xuất gia hạn thành công!', 'success');
+            closeRequestExtensionInline();
+            await openTaskDetailDrawer(currentViewingTaskId);
+            if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof checkNotificationUnreadCount === 'function') checkNotificationUnreadCount();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast(json.message || 'Không thể gửi đề xuất gia hạn.', 'error');
+        }
+    } catch (e) {
+        console.error('Error requesting task extension:', e);
+        showToast('Lỗi kết nối máy chủ.', 'error');
+    }
+}
+window.submitTaskExtensionRequest = submitTaskExtensionRequest;
+
+function toggleRejectExtensionBox(show) {
+    const box = document.getElementById('ext-reject-reason-box');
+    if (!box) return;
+    if (show) {
+        box.classList.remove('hidden');
+        box.style.display = 'block';
+        const input = document.getElementById('ext-reject-reason-input');
+        if (input) {
+            input.value = '';
+            setTimeout(() => input.focus(), 60);
+        }
+    } else {
+        box.classList.add('hidden');
+        box.style.display = 'none';
+    }
+}
+window.toggleRejectExtensionBox = toggleRejectExtensionBox;
+
+async function submitRejectTaskExtension() {
+    if (!currentViewingTaskId) return;
+    const input = document.getElementById('ext-reject-reason-input');
+    const note = (input ? input.value : '').trim();
+    if (!note) {
+        showToast('Vui lòng nhập lý do không đồng ý gia hạn để phản hồi cho người phụ trách.', 'warning');
+        if (input) input.focus();
+        return;
+    }
+    await reviewTaskExtension('reject', note);
+    toggleRejectExtensionBox(false);
+}
+window.submitRejectTaskExtension = submitRejectTaskExtension;
+
+async function reviewTaskExtension(action, directNote = '') {
+    if (!currentViewingTaskId) return;
+    let note = directNote;
+
+    if (action === 'approve') {
+        const ok = confirm('XÁC NHẬN ĐỒNG Ý GIA HẠN:\nBạn có chắc chắn muốn phê duyệt dời hạn hoàn thành công việc này sang ngày mới?');
+        if (!ok) return;
+    }
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/extension/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+                action,
+                note
+            })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast(json.message || 'Đã cập nhật trạng thái gia hạn!', 'success');
+            await openTaskDetailDrawer(currentViewingTaskId);
+            if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof checkNotificationUnreadCount === 'function') checkNotificationUnreadCount();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast(json.message || 'Thao tác không thành công.', 'error');
+        }
+    } catch (e) {
+        console.error('Error reviewing task extension:', e);
+        showToast('Lỗi kết nối máy chủ.', 'error');
+    }
+}
+window.reviewTaskExtension = reviewTaskExtension;
+
+async function cancelTaskExtension() {
+    if (!currentViewingTaskId) return;
+    const ok = confirm('Bạn có chắc chắn muốn thu hồi yêu cầu đề xuất gia hạn này?');
+    if (!ok) return;
+
+    try {
+        const res = await authFetch(`/api/collaboration/tasks/${currentViewingTaskId}/extension/`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ action: 'cancel' })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast(json.message || 'Đã thu hồi đề xuất gia hạn.', 'info');
+            await openTaskDetailDrawer(currentViewingTaskId);
+            if (typeof loadOfficeTasks === 'function') loadOfficeTasks();
+            if (typeof checkNotificationUnreadCount === 'function') checkNotificationUnreadCount();
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            showToast(json.message || 'Thao tác không thành công.', 'error');
+        }
+    } catch (e) {
+        console.error('Error cancelling task extension:', e);
+        showToast('Lỗi kết nối máy chủ.', 'error');
+    }
+}
+window.cancelTaskExtension = cancelTaskExtension;
+
+// ---- src/app/collaboration/init.js ----
+// Khởi chạy module Collaboration an toàn (kể cả khi DOM đã tải xong)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        initCollaborationChat();
+        initBellNotifications();
+    });
+} else {
+    initCollaborationChat();
+    initBellNotifications();
+}
+window.initBellNotifications = initBellNotifications;
+window.checkNotificationUnreadCount = checkNotificationUnreadCount;

@@ -3,50 +3,7 @@
 // URL Chuẩn: /accounting/vouchers/<id_or_code>
 // ==============================================================================
 let currentActiveFullpageVoucher = null;
-let currentFullpageVoucherPrintMode = 'dual';
 
-function setFullpageVoucherSaveButtonState(isEnabled) {
-    const btn = document.getElementById('btn-fullpage-save-voucher');
-    if (!btn) return;
-    if (isEnabled) {
-        btn.disabled = false;
-        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-        btn.classList.add('bg-teal-700', 'hover:bg-teal-800', 'cursor-pointer');
-    } else {
-        btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-        btn.classList.remove('hover:bg-teal-800', 'cursor-pointer');
-    }
-}
-
-function setFullpageVoucherPrintMode(mode = 'dual') {
-    currentFullpageVoucherPrintMode = mode;
-    const printArea = document.getElementById('fullpage-cash-voucher-printable-area');
-    const btnDual = document.getElementById('btn-fullpage-voucher-mode-dual');
-    const btnSingle = document.getElementById('btn-fullpage-voucher-mode-single');
-
-    if (printArea) {
-        if (mode === 'dual') {
-            printArea.classList.add('voucher-mode-dual');
-            printArea.classList.remove('voucher-mode-single');
-        } else {
-            printArea.classList.add('voucher-mode-single');
-            printArea.classList.remove('voucher-mode-dual');
-        }
-    }
-
-    if (btnDual && btnSingle) {
-        if (mode === 'dual') {
-            btnDual.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-emerald-700 text-white shadow-xs cursor-pointer';
-            btnSingle.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer';
-        } else {
-            btnSingle.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-emerald-700 text-white shadow-xs cursor-pointer';
-            btnDual.className = 'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer';
-        }
-    }
-
-    setDynamicPrintPageStyle(mode === 'dual' ? '@page { size: A4 portrait; margin: 8mm 10mm; }' : '@page { size: A4 portrait; margin: 15mm 18mm; }');
-}
 
 function renderFullpageVoucherContent(tx) {
     if (!tx) return;
@@ -389,20 +346,6 @@ function enableFullpageVoucherEdit() {
     showToast('info', 'Đã chuyển sang chế độ Sửa Phiếu. Bạn có thể thay đổi thông tin và bấm "Lưu".', 'Chế Độ Sửa');
 }
 
-function cancelFullpageVoucherEdit() {
-    const id = document.getElementById('edit-voucher-id')?.value;
-    if (id) {
-        // Nếu đang sửa phiếu đã có: đóng panel form sửa, quay về preview A4
-        const editPanel = document.getElementById('fullpage-voucher-edit-panel');
-        if (editPanel) editPanel.classList.add('hidden');
-        const editBtn = document.getElementById('btn-fullpage-edit-voucher');
-        if (editBtn) editBtn.classList.remove('hidden');
-        setFullpageVoucherSaveButtonState(false);
-    } else {
-        // Đang tạo mới phiếu: hủy và quay về Sổ Quỹ
-        backToAccountingCashbook();
-    }
-}
 
 async function saveFullpageVoucher() {
     const id = document.getElementById('edit-voucher-id')?.value;
@@ -708,11 +651,6 @@ function printCurrentFormVoucher() {
     }
 }
 
-function printFullpageCashVoucher() {
-    document.body.classList.add('is-printing-voucher');
-    document.body.classList.remove('is-printing-quotation', 'is-printing-report');
-    window.print();
-}
 
 function backToAccountingCashbook() {
     const detailView = document.getElementById('view-cash-voucher-detail');
@@ -729,11 +667,7 @@ window.printCurrentFormVoucher = printCurrentFormVoucher;
 window.confirmDeleteCashVoucher = confirmDeleteCashVoucher;
 window.backToAccountingCashbook = backToAccountingCashbook;
 window.enableFullpageVoucherEdit = enableFullpageVoucherEdit;
-window.cancelFullpageVoucherEdit = cancelFullpageVoucherEdit;
 window.saveFullpageVoucher = saveFullpageVoucher;
-window.printFullpageCashVoucher = printFullpageCashVoucher;
-window.setFullpageVoucherPrintMode = setFullpageVoucherPrintMode;
-window.setFullpageVoucherSaveButtonState = setFullpageVoucherSaveButtonState;
 window.onEditVoucherTypeChange = onEditVoucherTypeChange;
 window.onEditVoucherMethodChange = onEditVoucherMethodChange;
 window.updateLiveVoucherAmount = updateLiveVoucherAmount;

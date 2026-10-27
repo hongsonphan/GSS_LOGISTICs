@@ -448,23 +448,6 @@ function printQuotationFromModal() {
     openQuotationPrintModal(quoteData, templateType);
 }
 
-async function changeQuotationStatus(quoteId, newStatus) {
-    if (!newStatus) return;
-    try {
-        const res = await fetchWithAuth(`/api/quotations/${quoteId}/status/`, {
-            method: 'PATCH',
-            body: JSON.stringify({ status: newStatus })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || data.error || data.detail || 'Lỗi chuyển trạng thái');
-
-        showToast('success', data.message || 'Đã cập nhật trạng thái báo giá', 'Thành Công');
-        loadSalesData();
-    } catch (err) {
-        console.error('Error updating quotation status:', err);
-        showToast('error', err.message || 'Lỗi đổi trạng thái', 'Lỗi');
-    }
-}
 
 async function deleteQuotation(quoteId) {
     const confirmed = await showConfirmModal({
@@ -505,7 +488,6 @@ window.saveQuotation = saveQuotation;
 window.submitQuotation = saveQuotation;
 window.editQuotation = (quoteId) => openModalQuotation(quoteId, false);
 window.deleteQuotation = deleteQuotation;
-window.changeQuotationStatus = changeQuotationStatus;
 window.printQuotationFromModal = printQuotationFromModal;
 window.printQuotationVoucher = printQuotationVoucher;
 function editQuotationFromPrint() {
@@ -530,6 +512,5 @@ window.calculateFullpageQuotationItemsTotal = calculateFullpageQuotationItemsTot
 window.onFullpageQuotationPricingMethodChange = onFullpageQuotationPricingMethodChange;
 window.updateFullpageFuelFormulaText = updateFullpageFuelFormulaText;
 window.setFullpageQuickQuoteNote = setFullpageQuickQuoteNote;
-window.copyQuotationPageLink = copyQuotationPageLink;
 window.printQuotationFromFullPage = printQuotationFromFullPage;
 window.saveFullpageQuotation = saveFullpageQuotation;

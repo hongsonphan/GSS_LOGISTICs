@@ -21,7 +21,7 @@ Mỗi phân hệ là một file module riêng trong thư mục này. Có hai ch�
 
 | Thư mục | Nội dung |
 | --- | --- |
-| `core/` | Hàm dùng chung: định dạng số/ngày, gọi API kèm token, toast & modal xác nhận, ô nhập giờ 24h, ô số, dán ảnh từ clipboard, combobox tìm kiếm, nạp danh mục cho form, sidebar/topbar/hồ sơ cá nhân, bộ chọn giờ, router (switchTab, URL) |
+| `core/` | `table-manager.js` (ẩn/hiện, sắp xếp, kéo giãn cột, dòng tổng — trước đây là `static/js/column_manager.js`). Hàm dùng chung: định dạng số/ngày, gọi API kèm token, toast & modal xác nhận, ô nhập giờ 24h, ô số, dán ảnh từ clipboard, combobox tìm kiếm, nạp danh mục cho form, sidebar/topbar/hồ sơ cá nhân, bộ chọn giờ, router (switchTab, URL) |
 | `dashboard/` | Dashboard theo vai trò, biểu đồ, trình dựng biểu đồ pivot, thanh kéo chia khung |
 | `dispatch/` | Danh sách chuyến, chi tiết chuyến, sửa/huỷ/đổi tài xế, chi phí chuyến, mô phỏng app tài xế, tạo lệnh điều động, OCR chứng từ |
 | `sales/` | Danh sách báo giá & booking, modal và trang báo giá, in báo giá, modal và trang booking |
@@ -31,6 +31,7 @@ Mỗi phân hệ là một file module riêng trong thư mục này. Có hai ch�
 | `master-data/` | Danh mục, hồ sơ công ty & phân quyền, số dư đầu kỳ, nhập/xuất Excel danh mục, xe & tài xế thầu phụ |
 | `reports/` | Báo cáo 1–17, bảng kê toàn trang, drill-down, bảng kê/công nợ khách hàng, in báo cáo |
 | `customs/` | Tờ khai hải quan |
+| `collaboration/` | Bản tin, giao việc (kanban, chi tiết, tạo mới, gia hạn), chat nội bộ, chuông thông báo — trước đây là `static/js/collaboration.js` |
 | `zz-global-exports.js` | Gán hàm lên `window` cho các `onclick` trong template. Luôn nằm cuối. |
 
 ## Quy tắc

@@ -12,8 +12,6 @@ echo "=== [2/6] KIỂM TRA FRONTEND: app.js KHỚP MÃ NGUỒN & CÚ PHÁP ==="
 python3 scripts/build_app_js.py --check
 if command -v node >/dev/null 2>&1; then
     node --check static/js/app.js
-    node --check static/js/collaboration.js
-    node --check static/js/column_manager.js
     echo "✓ Cú pháp JavaScript hợp lệ."
 else
     echo "⚠ Bỏ qua kiểm tra cú pháp do môi trường chưa cài Node.js."

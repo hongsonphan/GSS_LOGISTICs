@@ -5,8 +5,6 @@ let rawContractsList = [];
 let rawPayrollPeriodsList = [];
 let currentPayrollPeriodDetail = null;
 let currentPayrollSlipsList = [];
-let hrSortColumn = null;
-let hrSortDirection = 'asc';
 
 async function loadHRData() {
     const activeSubTab = currentHRSubTab || 'directory';
@@ -222,50 +220,4 @@ function renderEmployeesTable(items) {
     }
 }
 
-function openEmployee360Modal(id) {
-    const emp = (rawEmployeesList || []).find(e => e.id === id);
-    if (!emp) return;
 
-    const modal = document.getElementById('modal-employee-360');
-    if (!modal) return;
-
-    document.getElementById('m360-avatar').innerText = (emp.full_name || 'NV').slice(0, 2).toUpperCase();
-    document.getElementById('m360-name').innerText = `${emp.full_name} (${emp.nickname || emp.code})`;
-    document.getElementById('m360-code-role').innerText = `${emp.code} • ${emp.role_label || emp.role} • ${emp.department_label || emp.department}`;
-
-    const content = document.getElementById('m360-content');
-    content.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-3 border-b border-slate-200">
-            <div class="space-y-1.5">
-                <div class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Thông Tin Cá Nhân & Định Danh</div>
-                <div><strong>CCCD / CMND:</strong> ${emp.national_id || 'Chưa cập nhật'} (Ngày cấp: ${emp.national_id_date || '—'} tại ${emp.national_id_place || '—'})</div>
-                <div><strong>Mã số thuế:</strong> ${emp.tax_id || 'Chưa cập nhật'} | <strong>Số BHXH:</strong> ${emp.insurance_number || 'Chưa cập nhật'}</div>
-                <div><strong>Giới tính:</strong> ${emp.gender_label || '—'} | <strong>Ngày sinh:</strong> ${emp.date_of_birth || '—'}</div>
-                <div><strong>Điện thoại:</strong> ${emp.phone_number || '—'} | <strong>Email:</strong> ${emp.email || '—'}</div>
-                <div><strong>Địa chỉ thường trú:</strong> ${emp.permanent_address || '—'}</div>
-                <div><strong>Chỗ ở hiện nay:</strong> ${emp.current_address || '—'}</div>
-            </div>
-            <div class="space-y-1.5">
-                <div class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Tài Khoản Ngân Hàng & Chế Độ Lương</div>
-                <div><strong>Số tài khoản:</strong> <span class="font-mono font-bold">${emp.bank_account || 'Chưa khai báo'}</span></div>
-                <div><strong>Ngân hàng:</strong> ${emp.bank_name || '—'} ${emp.bank_branch ? '(' + emp.bank_branch + ')' : ''}</div>
-                <div><strong>Chủ thụ hưởng:</strong> ${emp.bank_beneficiary || emp.full_name.toUpperCase()}</div>
-                <div><strong>Lương cơ bản / khoán:</strong> <span class="font-mono font-bold">${new Intl.NumberFormat('vi-VN').format(emp.base_salary || 0)} đ</span></div>
-                <div><strong>Lương đóng BHXH:</strong> <span class="font-mono font-bold">${new Intl.NumberFormat('vi-VN').format(emp.insurance_salary || 0)} đ</span> (${emp.is_social_insurance_participant ? 'Có tham gia 10.5%' : 'Không tham gia'})</div>
-                <div><strong>Người phụ thuộc giảm trừ gia cảnh:</strong> <span class="font-bold text-teal-800">${emp.dependents_count || 0} người</span></div>
-                <div><strong>Giấy phép lái xe:</strong> ${emp.license_number || '—'} ${emp.license_expiry ? '(Hạn: ' + emp.license_expiry + ')' : ''}</div>
-            </div>
-        </div>
-    `;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function closeEmployee360Modal() {
-    const modal = document.getElementById('modal-employee-360');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-}

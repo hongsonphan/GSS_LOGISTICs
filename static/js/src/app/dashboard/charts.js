@@ -392,6 +392,3 @@ function renderBgdRevenueChart(trendData) {
 function renderBgdDonutChart(type = 'fleet') {
     switchRoleDonutOption(type === 'customs' ? 2 : 1);
 }
-function switchDonutChart(type) {
-    switchRoleDonutOption(type === 'customs' ? 2 : 1);
-}

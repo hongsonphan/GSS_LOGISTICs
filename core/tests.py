@@ -2422,7 +2422,7 @@ class FrontendSyntaxIntegrityTestCase(TestCase):
     def setUp(self):
         self.static_js_dir = os.path.join(settings.BASE_DIR, 'static', 'js')
         self.app_js_path = os.path.join(self.static_js_dir, 'app.js')
-        self.column_mgr_path = os.path.join(self.static_js_dir, 'column_manager.js')
+        self.column_mgr_path = os.path.join(self.static_js_dir, 'src', 'app', 'core', 'table-manager.js')
 
     def test_no_duplicate_top_level_let_const_in_app_js(self):
         """Kiểm tra không có bất kỳ biến top-level let/const nào bị khai báo trùng lặp trong app.js"""

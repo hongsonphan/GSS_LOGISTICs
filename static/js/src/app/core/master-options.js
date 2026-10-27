@@ -104,38 +104,6 @@ function populateMasterDataDropdowns() {
     }
 }
 
-// --- BỘ LỌC TÌM KIẾM NHANH KHÁCH HÀNG TRÊN DROPDOWN (SEARCHABLE DROPDOWN) ---
-function filterCustomerSelectOptions(searchId, selectId) {
-    const searchInput = document.getElementById(searchId);
-    const selectEl = document.getElementById(selectId);
-    if (!searchInput || !selectEl) return;
-    
-    // Nếu select đã được nâng cấp sang Searchable Combobox thì proxy vào combobox
-    if (selectEl._bimCombobox) {
-        selectEl._bimCombobox.searchInput.value = searchInput.value;
-        selectEl._bimCombobox.sync();
-        return;
-    }
-    
-    const keyword = searchInput.value.trim().toLowerCase();
-    const options = selectEl.options;
-    let firstMatch = null;
-    
-    for (let i = 0; i < options.length; i++) {
-        const opt = options[i];
-        if (!opt.value) continue;
-        const text = opt.text.toLowerCase();
-        if (!keyword || text.includes(keyword)) {
-            opt.style.display = '';
-            if (!firstMatch && keyword) firstMatch = opt;
-        } else {
-            opt.style.display = 'none';
-        }
-    }
-    if (firstMatch && keyword) {
-        selectEl.value = firstMatch.value;
-    }
-}
 
 // --- QUY TẮC MỞ NHANH MODAL MASTER DATA & TỰ ĐỘNG CHỌN (UNIVERSAL QUICK-ADD) ---
 async function openMasterDataModalQuick(tabKey, targetSelectId = null) {

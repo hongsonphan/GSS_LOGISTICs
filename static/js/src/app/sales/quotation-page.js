@@ -461,19 +461,6 @@ function backToQuotations() {
     }
 }
 
-function copyQuotationPageLink() {
-    const quoteHash = document.getElementById('fullpage-quote-hashid')?.value || document.getElementById('fullpage-quote-id')?.value;
-    if (!quoteHash) {
-        showToast('warning', 'Báo giá chưa được lưu để lấy liên kết chia sẻ. Vui lòng bấm "Lưu" trước!', 'Cảnh Báo');
-        return;
-    }
-    const fullUrl = `${window.location.origin}/sales/quotations/${quoteHash}`;
-    navigator.clipboard.writeText(fullUrl).then(() => {
-        showToast('success', `Đã sao chép link báo giá:\n${fullUrl}`, 'Thành Công');
-    }).catch(() => {
-        prompt('Sao chép link báo giá:', fullUrl);
-    });
-}
 
 function printQuotationFromFullPage() {
     const id = document.getElementById('fullpage-quote-id')?.value;

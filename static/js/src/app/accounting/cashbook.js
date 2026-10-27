@@ -409,23 +409,6 @@ window.setDynamicPrintPageStyle = setDynamicPrintPageStyle;
 window.numberToWordsVN = numberToWordsVN;
 
 
-function openCreateCashTransactionModal(defaultType = 'INFLOW') {
-    const modal = document.getElementById('modal-cash-transaction');
-    if (!modal) return;
-
-    document.getElementById('cash-tx-type').value = defaultType;
-    document.getElementById('cash-tx-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('cash-tx-amount').value = '';
-    document.getElementById('cash-tx-partner-name').value = '';
-    document.getElementById('cash-tx-ref').value = '';
-    document.getElementById('cash-tx-notes').value = '';
-
-    onCashTypeChange();
-    onPaymentMethodChange();
-
-    modal.classList.remove('hidden');
-}
-
 function closeCashTransactionModal() {
     const modal = document.getElementById('modal-cash-transaction');
     if (modal) modal.classList.add('hidden');

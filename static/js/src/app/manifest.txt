@@ -1,5 +1,6 @@
 # Thứ tự ghép các file nguồn thành static/js/app.js (một dòng một file, tương đối với static/js/src/app/)
 # 1. Nền tảng dùng chung
+core/table-manager.js
 core/utils.js
 core/api.js
 core/ui.js
@@ -12,6 +13,8 @@ core/layout.js
 core/time-picker.js
 core/router.js
 # 2. Dashboard
+dashboard/period-filter.js
+dashboard/role-widgets.js
 dashboard/dashboard.js
 dashboard/charts.js
 dashboard/pivot-builder.js
@@ -19,10 +22,15 @@ dashboard/resizers.js
 # 3. Điều vận
 dispatch/trip-list.js
 dispatch/trip-detail.js
+dispatch/trip-cost-sheet.js
 dispatch/trip-actions.js
 dispatch/trip-expenses.js
 dispatch/driver-simulator.js
-dispatch/create-trip.js
+dispatch/create-trip/page.js
+dispatch/create-trip/booking-files.js
+dispatch/create-trip/carrier-and-submit.js
+dispatch/create-trip/form-helpers.js
+dispatch/create-trip/booking-link.js
 dispatch/ocr.js
 # 4. Kinh doanh (Sale & Booking)
 sales/sales-lists.js
@@ -30,18 +38,28 @@ sales/quotation-modal.js
 sales/quotation-page.js
 sales/quotation-print.js
 sales/booking-modal.js
-sales/booking-page.js
+sales/booking-page/files.js
+sales/booking-page/form.js
+sales/booking-page/page.js
+sales/booking-page/print.js
 # 5. Đội xe
 fleet/fleet.js
 # 6. Nhân sự
 hr/employees.js
 hr/contracts.js
-hr/attendance-payroll.js
+hr/attendance.js
+hr/payroll-periods.js
+hr/payroll-slip.js
+hr/payroll-policies.js
 hr/employee-form.js
 hr/employee-import.js
 # 7. Kế toán
 accounting/trip-costs.js
-accounting/advances.js
+accounting/advances/advances-list.js
+accounting/advances/advance-settle.js
+accounting/advances/driver-advance-detail.js
+accounting/advances/dispatcher-fund-detail.js
+accounting/advances/advance-settle-print.js
 accounting/settlement.js
 accounting/reimbursables.js
 accounting/cashbook.js
@@ -51,20 +69,40 @@ accounting/bot-audit.js
 accounting/customer-settlement.js
 accounting/reports-center.js
 # 8. Danh mục & cài đặt
-master-data/master-data.js
+master-data/tabs.js
+master-data/table.js
+master-data/form.js
+master-data/form-fields.js
+master-data/form-submit.js
 master-data/company-roles.js
 master-data/opening-balance.js
 master-data/import-export.js
 master-data/subcontractor-fleet.js
 # 9. Báo cáo
 reports/reports-core.js
-reports/reports-operations.js
-reports/reports-finance.js
+reports/operations/report-01-03.js
+reports/operations/report-04.js
+reports/operations/report-05-07.js
+reports/finance/report-08-10.js
+reports/finance/report-11-13.js
+reports/finance/report-14-17.js
 reports/report-fullview.js
 reports/report-drilldown.js
 reports/customer-statement.js
 reports/report-print.js
 # 10. Hải quan
 customs/customs.js
-# 11. Đăng ký hàm toàn cục cho onclick trong template (luôn để cuối)
+# 11. Đăng ký hàm toàn cục cho onclick trong template
 zz-global-exports.js
+# 12. Cộng tác: bản tin, giao việc, chat, thông báo (nạp sau cùng như trước đây)
+collaboration/shared.js
+collaboration/news.js
+collaboration/tasks-board.js
+collaboration/task-detail.js
+collaboration/task-create.js
+collaboration/chat.js
+collaboration/chat-composer.js
+collaboration/formatters.js
+collaboration/notifications.js
+collaboration/task-extension.js
+collaboration/init.js

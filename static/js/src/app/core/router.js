@@ -276,18 +276,6 @@ function switchTab(tabId, updateHistory = true) {
     }
 }
 
-function handleSearch(e) {
-    if (e.key === 'Enter') {
-        const topSearch = document.getElementById('top-search-input');
-        const tableSearch = document.getElementById('table-search-input');
-        if (topSearch && tableSearch) {
-            tableSearch.value = topSearch.value;
-        }
-        switchTab('dieu-van');
-        loadTripsData();
-    }
-}
-
 
 // Hàm phân giải URL khi tải trang lần đầu (Hỗ trợ Clean Semantic URL & Deep-link HashID)
 function resolveInitialRoute() {

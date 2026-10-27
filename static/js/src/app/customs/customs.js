@@ -395,9 +395,6 @@ async function openCustomsPage(id = null, updateHistory = true) {
     }
 }
 
-async function openCustomsModal(id = null) {
-    return openCustomsPage(id);
-}
 
 function closeCustomsModal() {
     backToCustoms();

@@ -61,7 +61,7 @@ Mọi tính năng và sửa đổi phải được kiểm chứng bằng kịch 
 
 - **Bắt buộc kiểm thử hồi quy toàn diện (Full Regression Testing & Frontend JS Syntax Verification):**
   * **Frontend Source of Truth:** `static/js/app.js` là FILE TỰ SINH. Chỉ sửa mã trong `static/js/src/app/<phân hệ>/`, sau đó chạy `python scripts/build_app_js.py` và commit cả nguồn lẫn `app.js`. Tuyệt đối không sửa trực tiếp `app.js` (deploy sẽ dừng ở bước `--check`). Xem `static/js/src/app/README.md`.
-  * **Frontend Verification:** Bắt buộc chạy `node -c static/js/app.js` và `node -c static/js/column_manager.js` trước mỗi lần commit/deploy để đảm bảo 100% cú pháp JS chuẩn mực, không có biến `let`/`const` bị khai báo trùng lặp (Uncaught SyntaxError) làm tê liệt điều hướng trang và các nút bấm.
+  * **Frontend Verification:** Bắt buộc chạy `node -c static/js/app.js`  trước mỗi lần commit/deploy để đảm bảo 100% cú pháp JS chuẩn mực, không có biến `let`/`const` bị khai báo trùng lặp (Uncaught SyntaxError) làm tê liệt điều hướng trang và các nút bấm.
   * **Backend & System Verification:** Chạy toàn bộ bộ kiểm thử tự động của dự án (`python manage.py test --keepdb` - bao gồm `FrontendSyntaxIntegrityTestCase`) để xác nhận 100% tính năng mới và các tính năng cũ liên quan đều chạy trơn tru, không phát sinh bất kỳ lỗi hồi quy nào.
 
 Với các tác vụ nhiều bước, luôn tóm tắt kế hoạch:

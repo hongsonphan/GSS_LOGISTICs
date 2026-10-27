@@ -9,8 +9,6 @@ let canViewFinance = true;
 // Caches & Sort States cho toàn bộ 14 Báo cáo TMS
 let rep1DataCache = [];
 let rep1DataFiltered = [];
-let currentTmsDrilldownMode = 'VEHICLE';
-let currentTmsDrilldownTarget = null;
 let rep1SortCol = 'revenue';
 let rep1SortAsc = false;
 
@@ -269,10 +267,6 @@ function switchReportGroup(groupId, autoSwitchFirstChild = true) {
     }
 }
 
-function toggleReportViewMode(mode) {
-    currentReportViewMode = mode || 'group';
-    applyReportGroupFilterToButtons();
-}
 
 function applyReportGroupFilterToButtons() {
     const subtabButtons = document.querySelectorAll('.report-subtab-btn');
@@ -349,7 +343,6 @@ function switchReportSubTab(subtabId) {
 window.canAccessReport = canAccessReport;
 window.initReportPermissions = initReportPermissions;
 window.switchReportGroup = switchReportGroup;
-window.toggleReportViewMode = toggleReportViewMode;
 window.switchReportSubTab = switchReportSubTab;
 
 function syncReportPeriodButtonsUI(period) {
@@ -509,8 +502,6 @@ async function loadReportsData() {
         showToast('danger', 'Không thể nạp dữ liệu phân tích báo cáo: ' + err.message, 'Lỗi Báo Cáo');
     }
 }
-
-
 
 
 // -------------------------------------------------------------

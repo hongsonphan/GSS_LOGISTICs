@@ -33,11 +33,6 @@ function closeUserDropdown() {
 }
 window.closeUserDropdown = closeUserDropdown;
 
-function handleUserSettingsClick(e) {
-    closeUserDropdown();
-    openProfileSettingsModal();
-}
-window.handleUserSettingsClick = handleUserSettingsClick;
 
 // --- MODAL CÀI ĐẶT HỒ SƠ & TÀI KHOẢN CÁ NHÂN (USER PROFILE SETTINGS) ---
 let isProfileEditMode = false;

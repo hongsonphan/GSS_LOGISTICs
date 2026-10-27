@@ -40,68 +40,6 @@ function openModalAddExpense() {
     }
 }
 
-/**
- * Toggle switch cho ô Chi hộ KH — dùng chung cho cả Add và Edit modal.
- * @param {string} checkboxId   - id của <input type="checkbox" class="sr-only">
- * @param {string} wrapId       - id của div container (background highlight)
- * @param {string} dotId        - id của nút tròn trượt
- * @param {string} trackId      - id của dải track background
- */
-function toggleBehalfCheckbox(checkboxId, wrapId, dotId, trackId) {
-    const cb = document.getElementById(checkboxId);
-    const wrap = document.getElementById(wrapId);
-    const dot = document.getElementById(dotId);
-    const track = document.getElementById(trackId);
-    if (!cb) return;
-
-    cb.checked = !cb.checked;
-    const isOn = cb.checked;
-
-    // Hiệu ứng track (background)
-    if (track) {
-        track.style.backgroundColor = isOn ? '#0f766e' : ''; // teal-700
-        track.className = track.className.replace(/bg-\S+/, isOn ? 'bg-teal-700' : 'bg-slate-300');
-    }
-    // Hiệu ứng dot trượt
-    if (dot) {
-        dot.style.transform = isOn ? 'translateX(20px)' : 'translateX(0px)';
-    }
-    // Highlight vùng wrap khi bật
-    if (wrap) {
-        if (isOn) {
-            wrap.classList.remove('bg-amber-50', 'border-amber-200');
-            wrap.classList.add('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
-        } else {
-            wrap.classList.remove('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
-            wrap.classList.add('bg-amber-50', 'border-amber-200');
-        }
-    }
-}
-
-/** Reset toggle về mặc định (OFF) */
-function resetBehalfToggle(checkboxId, wrapId, dotId, trackId) {
-    const cb = document.getElementById(checkboxId);
-    const wrap = document.getElementById(wrapId);
-    const dot = document.getElementById(dotId);
-    const track = document.getElementById(trackId);
-    if (cb) cb.checked = false;
-    if (track) { track.style.backgroundColor = ''; track.className = track.className.replace(/bg-teal-700|bg-slate-300/, 'bg-slate-300'); }
-    if (dot) dot.style.transform = 'translateX(0px)';
-    if (wrap) {
-        wrap.classList.remove('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-300');
-        wrap.classList.add('bg-amber-50', 'border-amber-200');
-    }
-}
-
-/** Đặt toggle sang ON (khi mở modal edit và giá trị là true) */
-function setBehalfToggle(value, checkboxId, wrapId, dotId, trackId) {
-    const cb = document.getElementById(checkboxId);
-    if (!cb) return;
-    if (cb.checked !== !!value) {
-        // Chỉ gọi toggle nếu cần thay đổi trạng thái
-        if (!!value) toggleBehalfCheckbox(checkboxId, wrapId, dotId, trackId);
-    }
-}
 
 function selectExpensePayer(payerType) {
     const input = document.getElementById('expense-payer-type-input');
@@ -442,68 +380,6 @@ async function deleteExpensePrompt(expenseId, categoryName) {
     }
 }
 
-// --- CÁC HÀM KHÓA SỔ & MỞ SỔ KẾ TOÁN (SETTLEMENT LIFECYCLE) ---
-async function settleTripExpenses() {
-    if (!currentActiveTripCode) return;
-    
-    const confirmSettle = await showConfirmModal({
-        title: 'Chốt Sổ Kế Toán Chuyến Xe',
-        message: `Xác nhận CHỐT SỔ KẾ TOÁN cho chuyến xe [${currentActiveTripCode}]?\n\n• Toàn bộ chi phí thực tế sẽ chuyển sang trạng thái "ĐÃ CHỐT SỔ" (SETTLED).\n• Bảng kê sẽ bị khóa cứng (Read-only), ngăn chặn sửa đổi/xóa.\n• Số liệu được khóa để đối soát P&L và xuất hóa đơn.`,
-        confirmText: 'Chốt Khóa Sổ',
-        cancelText: 'Huỷ bỏ',
-        type: 'success',
-        icon: 'ph-bold ph-seal-check text-2xl'
-    });
-    if (!confirmSettle) return;
-
-    try {
-        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/settle-expenses/`, {
-            method: 'POST'
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            showToast('success', data.message, 'Khóa Sổ Kế Toán Thành Công');
-            viewTripDetail(currentActiveTripCode);
-        } else {
-            showToast('danger', data.message || data.error || data.detail || 'Có lỗi khi chốt sổ');
-        }
-    } catch (err) {
-        console.error('Error settling expenses:', err);
-        showToast('danger', 'Lỗi kết nối máy chủ');
-    }
-}
-
-async function unsettleTripExpenses() {
-    if (!currentActiveTripCode) return;
-    
-    const confirmUnsettle = await showConfirmModal({
-        title: 'Mở Khóa Sổ Kế Toán',
-        message: `MỞ KHÓA SỔ KẾ TOÁN CHO CHUYẾN XE [${currentActiveTripCode}]?\n\nLưu ý: Chỉ thực hiện khi cần điều chỉnh số liệu phát sinh sai sót hoặc bổ sung hóa đơn hợp lệ.`,
-        confirmText: 'Mở Khóa Sổ',
-        cancelText: 'Huỷ bỏ',
-        type: 'warning',
-        icon: 'ph-bold ph-lock-open text-2xl'
-    });
-    if (!confirmUnsettle) return;
-
-    try {
-        const res = await fetchWithAuth(`/api/trips/${currentActiveTripCode}/unsettle-expenses/`, {
-            method: 'POST'
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            showToast('warning', data.message, 'Đã Mở Khóa Sổ Kế Toán');
-            viewTripDetail(currentActiveTripCode);
-        } else {
-            showToast('danger', data.message || data.error || data.detail || 'Không thể mở khóa');
-        }
-    } catch (err) {
-        console.error('Error unsettling expenses:', err);
-        showToast('danger', 'Lỗi kết nối máy chủ');
-    }
-}
 
 // --- THAO TÁC CỦA TÀI XẾ TRÊN MOBILE SIMULATOR ---
 function driverEditExpense(expenseId) {

@@ -215,3 +215,20 @@ function formatTimeString(timeStr) {
 
     return s;
 }
+
+// Định dạng mã công việc & tên người (dùng chung cho Dashboard và Cộng tác)
+function formatTaskCode(code) {
+    if (!code) return '';
+    const match = String(code).match(/^TSK[-.](\d{6})[-.]0*(\d+)$/i);
+    if (match) {
+        return `TSK.${match[1]}.${String(parseInt(match[2], 10)).padStart(3, '0')}`;
+    }
+    return code;
+}
+window.formatTaskCode = formatTaskCode;
+
+function cleanPersonName(name) {
+    if (!name) return '';
+    return String(name).replace(/\s*\([^)]*\)/g, '').trim() || name;
+}
+window.cleanPersonName = cleanPersonName;
