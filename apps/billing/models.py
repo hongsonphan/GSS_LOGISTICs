@@ -310,7 +310,7 @@ class DispatcherAdvanceFund(TimeStampedModel, SoftDeleteModel):
     @property
     def total_disbursed(self):
         """Tổng tiền đã cấp cho tài xế từ quỹ này."""
-        return sum(a.amount for a in self.trip_advances.filter(is_deleted=False, status__in=['ADVANCED', 'SETTLED']))
+        return sum(a.amount for a in self.trip_advances.filter(is_deleted=False, status__in=['ADVANCED', 'PENDING', 'APPROVED', 'DISBURSED', 'SETTLED']))
 
     @property
     def total_settled_spent(self):
@@ -325,7 +325,7 @@ class DispatcherAdvanceFund(TimeStampedModel, SoftDeleteModel):
     @property
     def remaining_balance(self):
         """Số dư quỹ điều vận hiện tại = Tiền ứng ban đầu - Tiền đã phát cho tài xế + Tiền tài xế hoàn lại."""
-        if self.status != FundStatus.APPROVED:
+        if self.status not in (FundStatus.APPROVED, 'ACTIVE'):
             return 0
         return self.amount - self.total_disbursed + self.total_refunds_returned
 

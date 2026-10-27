@@ -671,14 +671,17 @@
 
                 <div class="flex items-center gap-2">
 
-                    <div class="relative w-64">
-
+                    <div class="relative w-56">
                         <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-
                         <input type="text" id="fund-search" oninput="applyDispatcherFundsFilter()" placeholder="Tìm mã quỹ, điều độ..." class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-teal-600">
-
                     </div>
-
+                    <div>
+                        <select id="filter-fund-status" onchange="applyDispatcherFundsFilter()" class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                            <option value="ALL">-- Tất cả Tình trạng --</option>
+                            <option value="ACTIVE">Đang lưu hành (Hoạt động)</option>
+                            <option value="SETTLED">Đã hoàn ứng quyết toán</option>
+                        </select>
+                    </div>
                     <!-- Nút Tùy Chỉnh Cột Quỹ Điều Vận -->
                     <button type="button" onclick="openColumnCustomizer('accounting-fund-table')" 
                         class="text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"

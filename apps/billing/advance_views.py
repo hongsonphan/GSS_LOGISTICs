@@ -58,11 +58,20 @@ class AccountingAdvancesAPIView(APIView):
             refunds = f.total_refunds_returned
             bal = f.remaining_balance
 
-            if f.status == FundStatus.APPROVED:
+            # Tổng các phiếu quỹ do công ty cấp (khớp 100% với dòng TỔNG bảng quỹ)
+            if f.status != FundStatus.REJECTED:
                 total_dispatcher_funds += int(f.amount)
+
+            # Các quỹ đang lưu hành (APPROVED / ACTIVE)
+            if f.status in (FundStatus.APPROVED, 'ACTIVE'):
                 total_fund_disbursed += int(disbursed)
-                total_fund_settled += int(settled_spent)
                 total_fund_remaining += int(bal)
+
+            # Đã hoàn ứng về công ty: gồm quỹ đã đóng sổ tất toán (SETTLED) + chi phí hoàn ứng từ các chuyến
+            if f.status == FundStatus.SETTLED:
+                total_fund_settled += int(f.amount)
+            else:
+                total_fund_settled += int(settled_spent)
 
             funds_data.append({
                 'id': f.id,
@@ -110,7 +119,8 @@ class AccountingAdvancesAPIView(APIView):
             actual_spent = int(a.actual_spent) if a.status == DriverAdvanceStatus.SETTLED else int(trip_expenses_sum)
             diff = int(a.amount) - actual_spent
 
-            if a.status == DriverAdvanceStatus.ADVANCED:
+            is_active_advance = a.status in (DriverAdvanceStatus.ADVANCED, 'ADVANCED', 'PENDING', 'APPROVED', 'DISBURSED')
+            if is_active_advance:
                 pending_advances_count += 1
                 total_driver_advance_amount += int(a.amount)
                 total_driver_actual_spent += actual_spent

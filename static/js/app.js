@@ -18148,14 +18148,24 @@ function renderDriverAdvancesTable(list) {
 // -------------------------------------------------------------
 function applyDispatcherFundsFilter() {
     const q = (document.getElementById('fund-search')?.value || '').toLowerCase().trim();
-    if (!q) {
-        renderDispatcherFundsTable(rawDispatcherFundsList || []);
-        return;
-    }
+    const statusFilter = document.getElementById('filter-fund-status')?.value || 'ALL';
+
     const filtered = (rawDispatcherFundsList || []).filter(item => {
-        const text = [item.code, item.dispatcher_name, item.purpose, item.status, item.status_label, item.approved_by, item.notes].filter(Boolean).join(' ').toLowerCase();
-        return text.includes(q);
+        if (statusFilter === 'ACTIVE') {
+            if (item.status !== 'APPROVED' && item.status !== 'ACTIVE') return false;
+        } else if (statusFilter === 'SETTLED') {
+            if (item.status !== 'SETTLED') return false;
+        } else if (statusFilter === 'PENDING') {
+            if (item.status !== 'PENDING') return false;
+        }
+
+        if (q) {
+            const text = [item.code, item.dispatcher_name, item.purpose, item.status, item.status_label, item.approved_by, item.notes].filter(Boolean).join(' ').toLowerCase();
+            if (!text.includes(q)) return false;
+        }
+        return true;
     });
+
     renderDispatcherFundsTable(filtered);
 }
 

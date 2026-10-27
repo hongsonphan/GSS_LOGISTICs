@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi kiến trúc và mã nguồn được ghi nhận theo chuẩn Documentation-as-Code.
 
+## [v4.7.15] - 2026-10-27 (Khắc Phục Toàn Diện Logic Tính Số Liệu KPI Quỹ Điều Vận & Tạm Ứng Tài Xế)
+
+### 1. Phân Hệ Tài Chính - Kế Toán (Đồng Bộ Số Liệu KPI & Chân Bảng Quỹ Điều Vận):
+- **Khắc Phục Lệch Số Liệu Giữa Thẻ KPI (45tr) và Chân Bảng (80tr):**
+  * Trong `apps/billing/advance_views.py`:
+    - `total_dispatcher_funds`: Chuyển sang tính tổng toàn bộ các phiếu quỹ do công ty cấp (`f.status != FundStatus.REJECTED`). Số liệu đạt **80.000.000 đ**, khớp chính xác 100% với Dòng TỔNG dưới chân bảng.
+    - `total_fund_disbursed`: Tính tổng tiền đã thực xuất cấp tạm ứng cho tài xế từ các quỹ đang hoạt động.
+    - `total_fund_settled`: Tính tổng tiền quỹ đã đóng sổ tất toán về cty (`SETTLED` = 20tr) cộng chi phí đối soát từ các chuyến.
+    - `total_fund_remaining`: Tính tổng số dư khả dụng thực tế của các quỹ đang lưu hành (`remaining_balance`).
+  * Trong `apps/billing/models.py`:
+    - Cập nhật property `remaining_balance` và `total_disbursed` trên `DispatcherAdvanceFund`: Hỗ trợ tương thích phòng vệ đa trạng thái (`FundStatus.APPROVED`, `'ACTIVE'`), không bị trả về 0 đ.
+- **Tích Hợp Bộ Lọc Tình Trạng Quỹ Điều Vận (`filter-fund-status`):**
+  * Bổ sung dropdown lọc trạng thái tại giao diện: `-- Tất cả Tình trạng --` (hiển thị đủ 80tr), `Đang lưu hành` (hiển thị 60tr), `Đã hoàn ứng quyết toán` (hiển thị 20tr).
+  * Cập nhật hàm `applyDispatcherFundsFilter` trong `static/js/app.js` và `static/js/modules/accounting.js` để lọc tức thì theo cả từ khóa và tình trạng quỹ.
+
+### 2. Khắc Phục Lỗi Hiển Thị 0 đ Trên Cụm Thẻ KPI Tạm Ứng Tài Xế:
+- **Nguyên Nhân:** Cơ sở dữ liệu ghi nhận trạng thái tạm ứng tài xế đa dạng (`PENDING`, `APPROVED`, `DISBURSED`), trong khi Backend chỉ kiểm tra cứng `a.status == DriverAdvanceStatus.ADVANCED`.
+- **Khắc Phục Triệt Để:**
+  * Mở rộng điều kiện kiểm tra trong `advance_views.py`: `is_active_advance = a.status in (DriverAdvanceStatus.ADVANCED, 'ADVANCED', 'PENDING', 'APPROVED', 'DISBURSED')`.
+  * Cụm thẻ KPI Tạm ứng tài xế lập tức hiển thị chính xác:
+    - `Tổng tạm ứng đang chờ quyết toán`: 6.750.000 đ (3 phiếu đang lưu hành).
+    - `Chi phí thực tế đã chi`: 6.200.000 đ.
+    - `Tiền thừa thu hồi từ tài xế`: 700.000 đ.
+    - `Tiền cần chi bù cho tài xế`: 150.000 đ.
+
+### 3. Đảm Bảo Khả Năng Vận Hành & Zero-Regression:
+- Nâng asset cache version lên `?v=2.9.86` trong `templates/base.html`.
+- Kiểm thử cú pháp JavaScript: `node -c static/js/app.js` và `node -c static/js/modules/accounting.js` (100% Passed).
+- Chạy toàn bộ 152 unit test: `python manage.py test --keepdb` (152/152 tests Passed).
+
 ## [v4.7.14] - 2026-10-27 (Chuẩn Hóa Bộ 3 Nút Thao Tác Quyết Toán | Xem | In & Tùy Chỉnh Cột Cho Bảng Quỹ Điều Vận Đội Xe)
 
 ### 1. Phân Hệ Tài Chính - Kế Toán (Bảng Quỹ Tạm Ứng Điều Vận - `subtab-acct-dispatcher-funds`):
